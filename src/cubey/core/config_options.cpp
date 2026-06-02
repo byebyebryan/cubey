@@ -55,11 +55,13 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
                                         std::string_view cli_name, std::string_view label,
                                         std::string_view group_path, std::string_view help,
                                         ConfigOptionType type, ConfigOptionRange range = no_range(),
-                                        ConfigEnumChoices choices = {}) {
+                                        ConfigEnumChoices choices = {},
+                                        std::string_view negative_cli_name = {}) {
     return {
         .id = id,
         .path = path,
         .cli_name = cli_name,
+        .negative_cli_name = negative_cli_name,
         .label = label,
         .group_path = group_path,
         .help = help,
@@ -89,7 +91,8 @@ constexpr std::array<ConfigOptionDescriptor, 68> kRunConfigOptions{
     option(RunConfigOptionId::Headless, "headless", "--headless", "Headless", "Host",
            "Run without opening a window.", ConfigOptionType::Bool),
     option(RunConfigOptionId::Validation, "validation", "--validation", "Validation", "Host",
-           "Enable Vulkan validation when available.", ConfigOptionType::Bool),
+           "Enable Vulkan validation when available.", ConfigOptionType::Bool, no_range(), {},
+           "--no-validation"),
     option(RunConfigOptionId::RequireValidation, "require_validation", "--require-validation",
            "Require Validation", "Host", "Fail startup if validation layers are unavailable.",
            ConfigOptionType::Bool),
@@ -130,10 +133,11 @@ constexpr std::array<ConfigOptionDescriptor, 68> kRunConfigOptions{
            enum_choices(kOceanCascades)),
     option(RunConfigOptionId::OceanSpectralDomains, "ocean.spectral_domains",
            "--ocean-spectral-domains", "Spectral Domains", "Ocean",
-           "Enable wavelength-domain separation between ocean cascades.", ConfigOptionType::Bool),
+           "Enable wavelength-domain separation between ocean cascades.", ConfigOptionType::Bool,
+           no_range(), {}, "--no-ocean-spectral-domains"),
     option(RunConfigOptionId::OceanTerrainFields, "ocean.terrain_fields", "--ocean-terrain-fields",
            "Terrain Fields", "Ocean", "Enable terrain-ocean fields as an ocean influence.",
-           ConfigOptionType::Bool),
+           ConfigOptionType::Bool, no_range(), {}, "--no-ocean-terrain-fields"),
     option(RunConfigOptionId::OceanWireOverlay, "ocean.wire_overlay", "--ocean-wire-overlay",
            "Wire Overlay", "Ocean", "Draw ocean mesh wire overlay.", ConfigOptionType::Bool),
     option(RunConfigOptionId::OceanWireOpacity, "ocean.wire_opacity", "--ocean-wire-opacity",
@@ -171,7 +175,8 @@ constexpr std::array<ConfigOptionDescriptor, 68> kRunConfigOptions{
            "Terrain", "Valley terrain contribution.", ConfigOptionType::Float, min_range(0.0)),
     option(RunConfigOptionId::TerrainWaterSurface, "terrain.water_surface",
            "--terrain-water-surface", "Water Surface", "Terrain",
-           "Enable the terrain water surface.", ConfigOptionType::Bool),
+           "Enable the terrain water surface.", ConfigOptionType::Bool, no_range(), {},
+           "--no-terrain-water-surface"),
     option(RunConfigOptionId::AtmospherePreset, "atmosphere.preset", "--atmosphere-preset",
            "Preset", "Atmosphere", "Atmosphere preset name.", ConfigOptionType::String),
     option(RunConfigOptionId::AtmosphereTimeOfDayMode, "atmosphere.time_of_day_mode",
@@ -217,7 +222,7 @@ constexpr std::array<ConfigOptionDescriptor, 68> kRunConfigOptions{
            "Pause Time", "Atmosphere", "Start atmosphere time paused.", ConfigOptionType::Bool),
     option(RunConfigOptionId::AtmosphereAutoExposure, "atmosphere.auto_exposure", "--auto-exposure",
            "Auto Exposure", "Atmosphere", "Enable atmosphere-driven automatic exposure.",
-           ConfigOptionType::Bool),
+           ConfigOptionType::Bool, no_range(), {}, "--no-auto-exposure"),
     option(RunConfigOptionId::AtmosphereExposureBias, "atmosphere.exposure_bias", "--exposure-bias",
            "Exposure Bias", "Atmosphere", "Exposure bias applied to automatic exposure.",
            ConfigOptionType::Float, bounded_range(-4.0, 4.0)),
@@ -262,7 +267,8 @@ constexpr std::array<ConfigOptionDescriptor, 68> kRunConfigOptions{
            "--moon-size-scale", "Moon Size", "Atmosphere", "Visual moon disk scale.",
            ConfigOptionType::Float, bounded_range(0.000001, 8.0)),
     option(RunConfigOptionId::AtmosphereMoon, "atmosphere.moon", "--moon", "Moon", "Atmosphere",
-           "Enable the procedural moon and moonlight.", ConfigOptionType::Bool),
+           "Enable the procedural moon and moonlight.", ConfigOptionType::Bool, no_range(), {},
+           "--no-moon"),
 };
 
 template <typename T>
@@ -817,6 +823,16 @@ const ConfigOptionDescriptor* find_run_config_option(std::string_view path) {
     const auto it =
         std::find_if(kRunConfigOptions.begin(), kRunConfigOptions.end(),
                      [path](const ConfigOptionDescriptor& option) { return option.path == path; });
+    return it == kRunConfigOptions.end() ? nullptr : &*it;
+}
+
+const ConfigOptionDescriptor* find_run_config_option_by_cli_name(std::string_view cli_name) {
+    const auto it = std::find_if(
+        kRunConfigOptions.begin(), kRunConfigOptions.end(),
+        [cli_name](const ConfigOptionDescriptor& option) {
+            return option.cli_name == cli_name ||
+                   (!option.negative_cli_name.empty() && option.negative_cli_name == cli_name);
+        });
     return it == kRunConfigOptions.end() ? nullptr : &*it;
 }
 

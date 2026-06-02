@@ -106,6 +106,7 @@ struct ConfigOptionDescriptor {
     RunConfigOptionId id;
     std::string_view path;
     std::string_view cli_name;
+    std::string_view negative_cli_name;
     std::string_view label;
     std::string_view group_path;
     std::string_view help;
@@ -120,6 +121,8 @@ struct RunConfigFileApplyResult {
 
 [[nodiscard]] std::span<const ConfigOptionDescriptor> run_config_option_descriptors();
 [[nodiscard]] const ConfigOptionDescriptor* find_run_config_option(std::string_view path);
+[[nodiscard]] const ConfigOptionDescriptor*
+find_run_config_option_by_cli_name(std::string_view cli_name);
 [[nodiscard]] bool config_option_has_choice(const ConfigOptionDescriptor& option,
                                             std::string_view value);
 void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDescriptor& option,

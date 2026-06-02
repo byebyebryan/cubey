@@ -5,8 +5,10 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace {
 
@@ -157,6 +159,41 @@ void test_run_config_descriptors_have_help_text() {
     require(saw_atmosphere, "config descriptors should include atmosphere controls");
 }
 
+void test_run_config_descriptor_cli_names_are_unique() {
+    const std::span<const cubey::ConfigOptionDescriptor> options =
+        cubey::run_config_option_descriptors();
+    for (std::size_t i = 0; i < options.size(); ++i) {
+        const cubey::ConfigOptionDescriptor& option = options[i];
+        require(!option.cli_name.empty(), "config descriptor CLI name should not be empty");
+        require(cubey::find_run_config_option_by_cli_name(option.cli_name) == &option,
+                "config descriptor positive CLI lookup should resolve the option");
+        if (!option.negative_cli_name.empty()) {
+            require(option.type == cubey::ConfigOptionType::Bool,
+                    "only bool config descriptors should expose negative CLI names");
+            require(cubey::find_run_config_option_by_cli_name(option.negative_cli_name) == &option,
+                    "config descriptor negative CLI lookup should resolve the option");
+            require(option.negative_cli_name != option.cli_name,
+                    "config descriptor positive and negative CLI names should differ");
+        }
+
+        for (std::size_t j = i + 1U; j < options.size(); ++j) {
+            const cubey::ConfigOptionDescriptor& other = options[j];
+            require(option.cli_name != other.cli_name,
+                    "config descriptor positive CLI names should be unique");
+            if (!option.negative_cli_name.empty()) {
+                require(option.negative_cli_name != other.cli_name,
+                        "config descriptor negative CLI name should not duplicate a positive name");
+                require(option.negative_cli_name != other.negative_cli_name,
+                        "config descriptor negative CLI names should be unique");
+            }
+            if (!other.negative_cli_name.empty()) {
+                require(option.cli_name != other.negative_cli_name,
+                        "config descriptor positive CLI name should not duplicate a negative name");
+            }
+        }
+    }
+}
+
 void test_run_config_loads_json_config_file() {
     const std::filesystem::path path = temp_config_path("cubey-run-config-load-test.json");
     write_text_file(path,
@@ -249,6 +286,25 @@ void test_run_config_cli_and_set_override_config_file() {
     require(config.pbr.environment_source == "atmosphere",
             "--set should override nested config values");
     require(config.ocean.terrain_fields == 1, "--set should parse bool overrides");
+}
+
+void test_run_config_descriptor_cli_and_set_precedence() {
+    std::string program = "cubey";
+    std::string terrain_flag = "--ocean-terrain-fields";
+    std::string auto_exposure_flag = "--no-auto-exposure";
+    std::string set_flag = "--set";
+    std::string set_terrain = "ocean.terrain_fields=false";
+    std::string set_auto_exposure = "atmosphere.auto_exposure=true";
+    std::array<char*, 7> argv{program.data(),        terrain_flag.data(), set_flag.data(),
+                              set_terrain.data(),    auto_exposure_flag.data(),
+                              set_flag.data(),       set_auto_exposure.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.ocean.terrain_fields == 0,
+            "--set should override descriptor-backed positive bool CLI flags");
+    require(config.atmosphere.auto_exposure == 1,
+            "--set should override descriptor-backed negative bool CLI flags");
 }
 
 void test_run_config_rejects_invalid_json_config_file() {

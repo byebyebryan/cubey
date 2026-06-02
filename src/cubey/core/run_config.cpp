@@ -25,17 +25,6 @@ std::uint32_t parse_u32(std::string_view value, const char* name) {
     return static_cast<std::uint32_t>(parsed);
 }
 
-std::uint64_t parse_u64(std::string_view value, const char* name) {
-    std::uint64_t parsed = 0;
-    const char* begin = value.data();
-    const char* end = value.data() + value.size();
-    auto result = std::from_chars(begin, end, parsed);
-    if (result.ec != std::errc{} || result.ptr != end) {
-        throw std::runtime_error("invalid unsigned integer for " + std::string(name));
-    }
-    return parsed;
-}
-
 std::uint32_t parse_positive_u32(std::string_view value, const char* name) {
     const std::uint32_t parsed = parse_u32(value, name);
     if (parsed == 0) {
@@ -53,28 +42,6 @@ float parse_float(std::string_view value, const char* name) {
         throw std::runtime_error("invalid float for " + std::string(name));
     }
     return parsed;
-}
-
-int parse_ocean_cascade(std::string_view value, const char* name) {
-    if (value == "all") {
-        return -1;
-    }
-    if (value == "0") {
-        return 0;
-    }
-    if (value == "1") {
-        return 1;
-    }
-    if (value == "2") {
-        return 2;
-    }
-    if (value == "3") {
-        return 3;
-    }
-    if (value == "4") {
-        return 4;
-    }
-    throw std::runtime_error(std::string(name) + " must be all, 0, 1, 2, 3, or 4");
 }
 
 std::filesystem::path profile_output_prefix(std::string_view value) {
@@ -129,22 +96,16 @@ RunConfig parse_run_config(int argc, char** argv) {
 
         if (arg == "--config" || arg == "--set" || arg == "--write-config-template") {
             static_cast<void>(need_value(arg));
-        } else if (arg == "--headless") {
-            config.headless = true;
-        } else if (arg == "--validation") {
-            config.validation = true;
-        } else if (arg == "--no-validation") {
-            config.validation = false;
-            config.require_validation = false;
-        } else if (arg == "--require-validation") {
-            config.validation = true;
-            config.require_validation = true;
-        } else if (arg == "--title") {
-            config.title = std::string(need_value("--title"));
-        } else if (arg == "--width") {
-            config.width = parse_u32(need_value("--width"), "--width");
-        } else if (arg == "--height") {
-            config.height = parse_u32(need_value("--height"), "--height");
+        } else if (const ConfigOptionDescriptor* option = find_run_config_option_by_cli_name(arg)) {
+            const std::string_view value =
+                option->type == ConfigOptionType::Bool
+                    ? (arg == option->negative_cli_name ? std::string_view("false")
+                                                        : std::string_view("true"))
+                    : need_value(arg);
+            set_run_config_option_from_string(config, *option, value);
+            if (option->id == RunConfigOptionId::OutputPath) {
+                output_path_explicit = true;
+            }
         } else if (arg == "--grid-width") {
             config.grid.width = parse_positive_u32(need_value("--grid-width"), "--grid-width");
         } else if (arg == "--grid-height") {
@@ -268,12 +229,6 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--explosion-boost") {
             config.pyro.explosion_boost =
                 parse_float(need_value("--explosion-boost"), "--explosion-boost");
-        } else if (arg == "--frames") {
-            config.frames = parse_u32(need_value("--frames"), "--frames");
-        } else if (arg == "--fps") {
-            config.fps = parse_u32(need_value("--fps"), "--fps");
-        } else if (arg == "--print-frame-stats") {
-            config.print_frame_stats = true;
         } else if (arg == "--profile-output") {
             config.profile_output_prefix = profile_output_prefix(need_value("--profile-output"));
         } else if (arg == "--profile-warmup-frames") {
@@ -284,47 +239,6 @@ RunConfig parse_run_config(int argc, char** argv) {
         } else if (arg == "--profile-diagnostic-interval") {
             config.profile_diagnostic_interval = parse_positive_u32(
                 need_value("--profile-diagnostic-interval"), "--profile-diagnostic-interval");
-        } else if (arg == "--capture") {
-            const std::string_view mode = need_value("--capture");
-            if (mode == "png") {
-                config.capture_mode = CaptureMode::Png;
-            } else if (mode == "video") {
-                config.capture_mode = CaptureMode::Video;
-            } else {
-                throw std::runtime_error("capture mode must be png or video");
-            }
-        } else if (arg == "--input") {
-            config.gltf.input_path = std::string(need_value("--input"));
-        } else if (arg == "--environment") {
-            config.pbr.environment_path = std::string(need_value("--environment"));
-        } else if (arg == "--debug-view") {
-            config.debug_view = std::string(need_value("--debug-view"));
-        } else if (arg == "--terrain-seed") {
-            config.terrain.seed = parse_u64(need_value("--terrain-seed"), "--terrain-seed");
-            config.terrain.seed_set = true;
-        } else if (arg == "--terrain-cell-size") {
-            config.terrain.cell_size =
-                parse_float(need_value("--terrain-cell-size"), "--terrain-cell-size");
-        } else if (arg == "--terrain-sea-level") {
-            config.terrain.sea_level =
-                parse_float(need_value("--terrain-sea-level"), "--terrain-sea-level");
-        } else if (arg == "--terrain-land-extent") {
-            config.terrain.land_extent =
-                parse_float(need_value("--terrain-land-extent"), "--terrain-land-extent");
-        } else if (arg == "--terrain-coast-noise") {
-            config.terrain.coast_noise =
-                parse_float(need_value("--terrain-coast-noise"), "--terrain-coast-noise");
-        } else if (arg == "--terrain-relief") {
-            config.terrain.relief = parse_float(need_value("--terrain-relief"), "--terrain-relief");
-        } else if (arg == "--terrain-ridges") {
-            config.terrain.ridges = parse_float(need_value("--terrain-ridges"), "--terrain-ridges");
-        } else if (arg == "--terrain-valleys") {
-            config.terrain.valleys =
-                parse_float(need_value("--terrain-valleys"), "--terrain-valleys");
-        } else if (arg == "--terrain-water-surface") {
-            config.terrain.water_surface = 1;
-        } else if (arg == "--no-terrain-water-surface") {
-            config.terrain.water_surface = 0;
         } else if (arg == "--water2d-transfer") {
             config.water2d.transfer_mode = std::string(need_value("--water2d-transfer"));
         } else if (arg == "--water2d-transfer-limit") {
@@ -369,137 +283,6 @@ RunConfig parse_run_config(int argc, char** argv) {
             config.water3d.whitewater = 1;
         } else if (arg == "--no-water3d-whitewater") {
             config.water3d.whitewater = 0;
-        } else if (arg == "--ocean-map-size") {
-            config.ocean.map_size =
-                parse_positive_u32(need_value("--ocean-map-size"), "--ocean-map-size");
-        } else if (arg == "--ocean-spectral-domains") {
-            config.ocean.spectral_domains = 1;
-        } else if (arg == "--no-ocean-spectral-domains") {
-            config.ocean.spectral_domains = 0;
-        } else if (arg == "--ocean-terrain-fields") {
-            config.ocean.terrain_fields = 1;
-        } else if (arg == "--no-ocean-terrain-fields") {
-            config.ocean.terrain_fields = 0;
-        } else if (arg == "--ocean-cascade") {
-            config.ocean.cascade =
-                parse_ocean_cascade(need_value("--ocean-cascade"), "--ocean-cascade");
-        } else if (arg == "--ocean-wire-overlay") {
-            config.ocean.wire_overlay = true;
-        } else if (arg == "--ocean-wire-opacity") {
-            config.ocean.wire_opacity =
-                parse_float(need_value("--ocean-wire-opacity"), "--ocean-wire-opacity");
-        } else if (arg == "--ocean-ref-map-size") {
-            config.ocean_ref.map_size =
-                parse_positive_u32(need_value("--ocean-ref-map-size"), "--ocean-ref-map-size");
-        } else if (arg == "--ocean-ref-wire-overlay") {
-            config.ocean_ref.wire_overlay = true;
-        } else if (arg == "--ocean-ref-wire-opacity") {
-            config.ocean_ref.wire_opacity =
-                parse_float(need_value("--ocean-ref-wire-opacity"), "--ocean-ref-wire-opacity");
-        } else if (arg == "--ibl-intensity") {
-            config.pbr.ibl_intensity =
-                parse_float(need_value("--ibl-intensity"), "--ibl-intensity");
-        } else if (arg == "--pbr-environment-source") {
-            config.pbr.environment_source = std::string(need_value("--pbr-environment-source"));
-        } else if (arg == "--environment-rotation-degrees") {
-            config.pbr.environment_rotation_degrees = parse_float(
-                need_value("--environment-rotation-degrees"), "--environment-rotation-degrees");
-        } else if (arg == "--exposure") {
-            config.pbr.exposure = parse_float(need_value("--exposure"), "--exposure");
-            config.pbr.exposure_explicit = true;
-        } else if (arg == "--atmosphere-preset") {
-            config.atmosphere.preset = std::string(need_value("--atmosphere-preset"));
-        } else if (arg == "--time-of-day-mode") {
-            config.atmosphere.time_of_day_mode = std::string(need_value("--time-of-day-mode"));
-        } else if (arg == "--night-sky-mode") {
-            config.atmosphere.night_sky_mode = std::string(need_value("--night-sky-mode"));
-        } else if (arg == "--milky-way-layer") {
-            config.atmosphere.milky_way_layer = std::string(need_value("--milky-way-layer"));
-        } else if (arg == "--sun-elevation") {
-            config.atmosphere.sun_elevation_degrees =
-                parse_float(need_value("--sun-elevation"), "--sun-elevation");
-        } else if (arg == "--sun-azimuth") {
-            config.atmosphere.sun_azimuth_degrees =
-                parse_float(need_value("--sun-azimuth"), "--sun-azimuth");
-        } else if (arg == "--camera-altitude-km") {
-            config.atmosphere.camera_altitude_km =
-                parse_float(need_value("--camera-altitude-km"), "--camera-altitude-km");
-        } else if (arg == "--mie-scale") {
-            config.atmosphere.mie_scale = parse_float(need_value("--mie-scale"), "--mie-scale");
-        } else if (arg == "--time-hours") {
-            config.atmosphere.time_hours = parse_float(need_value("--time-hours"), "--time-hours");
-        } else if (arg == "--day-of-year") {
-            config.atmosphere.day_of_year =
-                parse_float(need_value("--day-of-year"), "--day-of-year");
-        } else if (arg == "--latitude-degrees") {
-            config.atmosphere.latitude_degrees =
-                parse_float(need_value("--latitude-degrees"), "--latitude-degrees");
-        } else if (arg == "--sun-azimuth-offset") {
-            config.atmosphere.sun_azimuth_offset_degrees =
-                parse_float(need_value("--sun-azimuth-offset"), "--sun-azimuth-offset");
-        } else if (arg == "--time-speed-hours-per-second") {
-            config.atmosphere.time_speed_hours_per_second = parse_float(
-                need_value("--time-speed-hours-per-second"), "--time-speed-hours-per-second");
-        } else if (arg == "--pause-time") {
-            config.atmosphere.time_paused = 1;
-        } else if (arg == "--auto-exposure") {
-            config.atmosphere.auto_exposure = 1;
-        } else if (arg == "--no-auto-exposure") {
-            config.atmosphere.auto_exposure = 0;
-        } else if (arg == "--exposure-bias") {
-            config.atmosphere.exposure_bias =
-                parse_float(need_value("--exposure-bias"), "--exposure-bias");
-        } else if (arg == "--twilight-strength") {
-            config.atmosphere.twilight_strength =
-                parse_float(need_value("--twilight-strength"), "--twilight-strength");
-        } else if (arg == "--twilight-horizon-warmth") {
-            config.atmosphere.twilight_horizon_warmth =
-                parse_float(need_value("--twilight-horizon-warmth"), "--twilight-horizon-warmth");
-        } else if (arg == "--star-intensity") {
-            config.atmosphere.star_intensity =
-                parse_float(need_value("--star-intensity"), "--star-intensity");
-        } else if (arg == "--star-density") {
-            config.atmosphere.star_density =
-                parse_float(need_value("--star-density"), "--star-density");
-        } else if (arg == "--milky-way-intensity") {
-            config.atmosphere.milky_way_intensity =
-                parse_float(need_value("--milky-way-intensity"), "--milky-way-intensity");
-        } else if (arg == "--milky-way-contrast") {
-            config.atmosphere.milky_way_contrast =
-                parse_float(need_value("--milky-way-contrast"), "--milky-way-contrast");
-        } else if (arg == "--light-pollution") {
-            config.atmosphere.light_pollution =
-                parse_float(need_value("--light-pollution"), "--light-pollution");
-        } else if (arg == "--milky-way-variation") {
-            config.atmosphere.milky_way_variation =
-                parse_float(need_value("--milky-way-variation"), "--milky-way-variation");
-        } else if (arg == "--moon-intensity") {
-            config.atmosphere.moon_intensity =
-                parse_float(need_value("--moon-intensity"), "--moon-intensity");
-        } else if (arg == "--moonlight-intensity") {
-            config.atmosphere.moonlight_intensity =
-                parse_float(need_value("--moonlight-intensity"), "--moonlight-intensity");
-        } else if (arg == "--moon-phase-offset-days") {
-            config.atmosphere.moon_phase_offset_days =
-                parse_float(need_value("--moon-phase-offset-days"), "--moon-phase-offset-days");
-        } else if (arg == "--moon-size-scale") {
-            config.atmosphere.moon_size_scale =
-                parse_float(need_value("--moon-size-scale"), "--moon-size-scale");
-        } else if (arg == "--moon") {
-            config.atmosphere.moon = 1;
-        } else if (arg == "--no-moon") {
-            config.atmosphere.moon = 0;
-        } else if (arg == "--animation-index") {
-            config.gltf.animation_index =
-                parse_u32(need_value("--animation-index"), "--animation-index");
-        } else if (arg == "--animation-speed") {
-            config.gltf.animation_speed =
-                parse_float(need_value("--animation-speed"), "--animation-speed");
-        } else if (arg == "--pause-animation") {
-            config.gltf.animation_paused = true;
-        } else if (arg == "--output") {
-            config.output_path = std::string(need_value("--output"));
-            output_path_explicit = true;
         } else {
             throw std::runtime_error("unknown argument: " + std::string(arg));
         }
