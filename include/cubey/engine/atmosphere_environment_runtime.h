@@ -56,7 +56,7 @@ class AtmosphereEnvironmentRuntime {
                           const AtmosphereEnvironmentRuntimePipelineConfig& config);
     void destroy();
 
-    void set_environment(const render::AtmosphereEnvironmentConfig& environment);
+    bool set_environment(const render::AtmosphereEnvironmentConfig& environment);
     void mark_full_update_pending();
     void record_pending_update(const cubey::vulkan::CommandRecorder& recorder,
                                render::FrameSlot frame_slot);
@@ -80,6 +80,7 @@ class AtmosphereEnvironmentRuntime {
     render::AtmosphereEnvironmentConfig environment_{};
     render::AtmosphereEnvironmentLighting lighting_{};
     render::AtmosphereReflectionProbe reflection_probe_{};
+    bool environment_initialized_ = false;
     bool full_update_pending_ = true;
     std::uint32_t face_cursor_ = 0;
     std::uint32_t pending_face_updates_ = 0;

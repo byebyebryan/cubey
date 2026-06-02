@@ -243,7 +243,6 @@ class Water3DApp {
         cubey::atmosphere_environment_resolve_run_state(atmosphere_state_);
         if (atmosphere_runtime_.resources_created()) {
             atmosphere_runtime_.set_environment(atmosphere_state_.environment);
-            atmosphere_runtime_.mark_full_update_pending();
         }
     }
 

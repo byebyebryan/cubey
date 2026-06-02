@@ -159,6 +159,21 @@ void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment(
             "atmosphere runtime scene environment should expose derived SH");
 }
 
+void test_atmosphere_environment_runtime_reports_changed_environment() {
+    cubey::AtmosphereEnvironmentRuntime runtime;
+    cubey::render::AtmosphereEnvironmentConfig environment;
+    environment.sun_elevation_degrees = 25.0F;
+
+    require(runtime.set_environment(environment),
+            "atmosphere runtime should report the first environment assignment as changed");
+    require(!runtime.set_environment(environment),
+            "atmosphere runtime should not dirty unchanged environment assignments");
+
+    environment.sun_elevation_degrees = 30.0F;
+    require(runtime.set_environment(environment),
+            "atmosphere runtime should report semantic environment edits as changed");
+}
+
 void test_atmosphere_environment_runtime_builds_frame_payload() {
     cubey::AtmosphereEnvironmentRuntime runtime;
     cubey::render::AtmosphereEnvironmentConfig environment;
@@ -206,8 +221,16 @@ void test_atmosphere_environment_runtime_queues_all_faces_after_environment_chan
         source_root / "src/cubey/engine/atmosphere_environment_runtime.cpp");
 
     cubey::tests::require_contains(
+        header, "bool set_environment",
+        "atmosphere runtime should expose whether set_environment changed state");
+    cubey::tests::require_contains(
+        header, "environment_initialized_",
+        "atmosphere runtime should track whether an environment has been assigned");
+    cubey::tests::require_contains(
         header, "std::uint32_t pending_face_updates_",
         "atmosphere runtime should track queued incremental face updates");
+    cubey::tests::require_contains(source, "return false",
+                                   "atmosphere runtime should skip unchanged environment updates");
     cubey::tests::require_contains(
         source, "pending_face_updates_ = 6U",
         "atmosphere runtime should refresh every cube face after an environment change");
