@@ -29,8 +29,8 @@ cubey_add_app_target(
         ../sim/water_3d/shaders/water_3d_surface_repair.frag
         ../sim/water_3d/shaders/water_3d_surface_smooth.frag
         ../sim/water_3d/shaders/water_3d_surface_composite.frag
-        ../../atmosphere/shaders/atmosphere.vert
-        ../../atmosphere/shaders/atmosphere.frag
+        ../../../shaders/cubey/atmosphere/atmosphere.vert
+        ../../../shaders/cubey/atmosphere/atmosphere.frag
         ../../../shaders/cubey/atmosphere_reflection_prefilter.frag
         ../sim/water_3d/shaders/water_3d_reset.comp
         ../sim/water_3d/shaders/water_3d_clear_grid.comp

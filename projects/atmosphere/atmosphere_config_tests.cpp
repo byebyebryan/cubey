@@ -701,7 +701,8 @@ int main() {
         read_text_file(repo_root / "src/cubey/render/atmosphere_background_frame.cpp");
     const std::string shared_helper_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere.glsl");
-    const std::string shader_source = read_text_file(source_root / "shaders/atmosphere.frag");
+    const std::string shader_source =
+        read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere.frag");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
     const std::string render_cmake_source = read_text_file(repo_root / "src/cubey/CMakeLists.txt");
     require_contains(shared_environment_header, "struct AtmosphereEnvironmentFrameUniforms",

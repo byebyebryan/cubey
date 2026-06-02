@@ -10,8 +10,8 @@ cubey_add_app_target(
         atmosphere_ui.cpp
         main.cpp
     SHADERS
-        shaders/atmosphere.vert
-        shaders/atmosphere.frag
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
     SHADER_INCLUDE_DIRS

@@ -38,8 +38,8 @@ set(CUBEY_PYRO_3D_SOURCES
 set(CUBEY_PYRO_3D_SHADERS
     ../sim/pyro_3d/shaders/pyro_3d.vert
     ../sim/pyro_3d/shaders/pyro_3d_raymarch.frag
-    ../../atmosphere/shaders/atmosphere.vert
-    ../../atmosphere/shaders/atmosphere.frag
+    ../../../shaders/cubey/atmosphere/atmosphere.vert
+    ../../../shaders/cubey/atmosphere/atmosphere.frag
     ../sim/pyro_3d/shaders/pyro_3d_reset.comp
     ../sim/pyro_3d/shaders/pyro_3d_advect.comp
     ../sim/pyro_3d/shaders/pyro_3d_advect_correct.comp

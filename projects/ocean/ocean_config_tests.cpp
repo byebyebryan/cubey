@@ -506,7 +506,7 @@ int main() {
                          "app should load the shared PBR post shader");
         require_contains(cmake_source, "forward_pbr_post.frag",
                          "ocean build should compile the shared PBR post fragment shader");
-        require_contains(cmake_source, "projects/atmosphere/shaders/atmosphere.frag",
+        require_contains(cmake_source, "shaders/cubey/atmosphere/atmosphere.frag",
                          "ocean build should compile the shared atmosphere background shader");
         require_contains(cmake_source, "atmosphere_reflection_prefilter.frag",
                          "ocean build should compile the atmosphere reflection prefilter shader");
