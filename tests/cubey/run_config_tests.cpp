@@ -31,6 +31,10 @@ std::filesystem::path temp_config_path(const char* name) {
     return std::filesystem::temp_directory_path() / name;
 }
 
+std::filesystem::path source_root_path() {
+    return std::filesystem::path(CUBEY_SOURCE_DIR);
+}
+
 void write_text_file(const std::filesystem::path& path, const std::string& text) {
     std::ofstream output(path);
     if (!output) {
@@ -45,6 +49,25 @@ std::string read_text_file(const std::filesystem::path& path) {
         throw std::runtime_error("failed to read test file");
     }
     return {std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
+}
+
+bool contains(std::string_view text, std::string_view needle) {
+    return text.find(needle) != std::string_view::npos;
+}
+
+void require_contains(std::string_view text, std::string_view needle, const char* message) {
+    require(contains(text, needle), message);
+}
+
+void require_not_contains(std::string_view text, std::string_view needle, const char* message) {
+    require(!contains(text, needle), message);
+}
+
+const cubey::ConfigOptionDescriptor& require_option(std::string_view path) {
+    if (const cubey::ConfigOptionDescriptor* option = cubey::find_run_config_option(path)) {
+        return *option;
+    }
+    throw std::runtime_error("missing config descriptor for " + std::string(path));
 }
 
 } // namespace
@@ -206,6 +229,107 @@ void test_run_config_descriptor_cli_names_are_unique() {
                         "config descriptor positive CLI name should not duplicate a negative name");
             }
         }
+    }
+}
+
+void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
+    const std::string source = read_text_file(source_root_path() / "src/cubey/core/run_config.cpp");
+
+    require_contains(source, "find_run_config_option_by_cli_name(arg)",
+                     "run config parser should route ordinary CLI flags through descriptors");
+
+    constexpr std::array promoted_flags{
+        "--grid-width",         "--profile-output",        "--profile-diagnostic-interval",
+        "--smoke-injectors",    "--smoke-pressure-solver", "--pyro-sources",
+        "--pyro-source-radius", "--shadow-grid-width",     "--water2d-transfer",
+        "--water2d-hose",       "--water3d-transfer",      "--water3d-p2g-mode",
+        "--water3d-whitewater",
+    };
+    for (std::string_view flag : promoted_flags) {
+        const std::string explicit_branch = "arg == \"" + std::string(flag) + "\"";
+        require_not_contains(source, explicit_branch,
+                             "promoted CLI flags should not regain explicit parser branches");
+    }
+}
+
+void test_run_config_descriptors_cover_project_control_paths() {
+    constexpr std::array project_control_paths{
+        "grid.width",
+        "grid.height",
+        "grid.depth",
+        "profile.output",
+        "profile.warmup_frames",
+        "profile.diagnostics",
+        "profile.diagnostic_interval",
+        "pbr.environment_source",
+        "pbr.ibl_intensity",
+        "pbr.exposure",
+        "ocean.map_size",
+        "ocean.cascade",
+        "ocean.spectral_domains",
+        "ocean.terrain_fields",
+        "terrain.cell_size",
+        "terrain.sea_level",
+        "terrain.water_surface",
+        "atmosphere.time_of_day_mode",
+        "atmosphere.sun_elevation_degrees",
+        "atmosphere.time_speed_hours_per_second",
+        "atmosphere.auto_exposure",
+        "atmosphere.moon",
+        "smoke.injectors",
+        "smoke.pressure_iterations",
+        "smoke.pressure_solver",
+        "smoke.injector_force",
+        "smoke.injector_orbit_radius",
+        "smoke.vorticity",
+        "pyro.shadow_grid.width",
+        "pyro.shadow_steps",
+        "pyro.sources",
+        "pyro.source_height",
+        "pyro.source_radius",
+        "pyro.source_force",
+        "pyro.buoyancy",
+        "pyro.ignition_temperature",
+        "pyro.explosion_boost",
+        "water2d.transfer",
+        "water2d.transfer_limit",
+        "water2d.hose",
+        "water2d.drain",
+        "water2d.wave",
+        "water3d.transfer",
+        "water3d.transfer_limit",
+        "water3d.p2g_mode",
+        "water3d.hose",
+        "water3d.drain",
+        "water3d.rain",
+        "water3d.wave",
+        "water3d.whitewater",
+    };
+
+    for (std::string_view path : project_control_paths) {
+        const cubey::ConfigOptionDescriptor& option = require_option(path);
+        require(!option.cli_name.empty(), "project control descriptors should expose a CLI name");
+        require(!option.group_path.empty(), "project control descriptors should expose a UI group");
+    }
+}
+
+void test_run_config_toggle_descriptors_have_negative_aliases() {
+    constexpr std::array toggles{
+        "validation",           "profile.diagnostics",   "ocean.spectral_domains",
+        "ocean.terrain_fields", "terrain.water_surface", "atmosphere.auto_exposure",
+        "atmosphere.moon",      "water2d.hose",          "water2d.drain",
+        "water2d.wave",         "water3d.hose",          "water3d.drain",
+        "water3d.rain",         "water3d.wave",          "water3d.whitewater",
+    };
+
+    for (std::string_view path : toggles) {
+        const cubey::ConfigOptionDescriptor& option = require_option(path);
+        require(option.type == cubey::ConfigOptionType::Bool,
+                "toggle descriptors should be bool options");
+        require(!option.negative_cli_name.empty(),
+                "project toggles should expose a negative CLI alias");
+        require(cubey::find_run_config_option_by_cli_name(option.negative_cli_name) == &option,
+                "negative CLI alias should resolve to the toggle descriptor");
     }
 }
 
