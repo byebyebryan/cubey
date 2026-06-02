@@ -108,11 +108,15 @@ Current checkpoint:
 - Reusable `cubey::ConfigOptionDescriptor` and JSON run-config loading provide
   the first shared option metadata layer: stable option paths, labels, groups,
   value kinds, ranges, enum choices, help text, config templates, and generic
-  `--set path=value` overrides. Existing named CLI flags remain compatible.
+  `--set path=value` overrides. Descriptor-covered named CLI flags now parse
+  through the same metadata, including negative aliases for selected bool
+  options, while special/demo-specific legacy flags remain explicit parser
+  branches until they justify promotion.
 - Reusable ImGui helpers now cover hierarchical debug-panel groups, standard
-  option hover help, and common bool/int/float/enum/color controls. Active
-  ocean, atmosphere, and terrain panels use those helpers while keeping project
-  commands and diagnostics project-owned.
+  option hover help, and common bool/int/unsigned-int/float/vector/enum/color
+  controls. Active ocean, atmosphere, terrain, smoke, water, fire, and explosion
+  panels use those helpers while keeping project commands, diagnostics, and
+  reset behavior project-owned.
 - Reusable `cubey::math` wraps GLM matrix/vector/quaternion types and the
   current Vulkan transform/projection conventions used by the shared
   transform/camera helpers and cube examples.

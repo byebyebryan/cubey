@@ -220,8 +220,11 @@ Shared run options can also be loaded from JSON config files:
 ```
 
 Config precedence is defaults, `--config`, named CLI flags, then `--set
-path=value`. Config descriptors carry labels, groups, value ranges, and help
-text so command-line, config-file, and ImGui control surfaces stay aligned.
+path=value`. Config descriptors carry stable paths, labels, groups, value
+ranges, enum choices, and help text for config templates, generic `--set`
+overrides, and descriptor-backed named CLI flags. Runtime ImGui panels are still
+hand-authored project surfaces, but active projects use shared group/control
+helpers so hover help and hierarchy stay visually consistent.
 `smoke_2d` defaults to a `1024x1024` solver grid and five procedural
 injectors; use `--grid-width`, `--grid-height`, and `--smoke-injectors 1..16` to
 compare other simulation/demo shapes. Use `--smoke-pressure-solver jacobi|rbgs`

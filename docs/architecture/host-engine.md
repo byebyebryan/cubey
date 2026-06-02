@@ -18,12 +18,14 @@ The host layer is responsible for host flow:
   diagnostics, and project-tuning options. JSON config files load before named
   CLI flags, and generic `--set path=value` overrides are applied last.
 - Shared option descriptors for configurable runtime state: stable paths,
-  labels, group paths, value kinds, ranges, enum choices, and help text. UI,
-  config templates, docs, and CLI overrides should reuse this metadata instead
-  of inventing parallel option names.
+  labels, group paths, value kinds, ranges, enum choices, and help text. Config
+  templates, generic `--set path=value` overrides, and descriptor-backed named
+  CLI flags should reuse this metadata instead of inventing parallel option
+  names.
 - Shared ImGui control helpers for project debug panels: hierarchical groups,
-  consistent parent/child visual treatment, and hover help sourced from option
-  metadata where the control is descriptor-backed.
+  consistent parent/child visual treatment, common scalar/vector/enum widgets,
+  and title/control hover help. Project panels stay hand-authored until a
+  descriptor-generated editor is clearly worth the cost.
 - Swapchain resize/out-of-date recreation orchestration.
 - Project lifecycle calls.
 
@@ -260,6 +262,14 @@ setup before swapchain setup, and callback forwarding.
   deferred work by completed GPU submission tickets. It also owns project-level
   RGBA8 image readback tickets with pending/completed/failed status and
   completed pixel payload handoff.
+- `cubey::ConfigOptionDescriptor` currently drives JSON config templates,
+  descriptor-backed named CLI parsing, bool negative aliases, and generic
+  `--set path=value` overrides. Special/demo-specific legacy flags remain
+  explicit parser branches until they justify descriptor promotion.
+- Shared ImGui helpers now cover hierarchical debug-panel groups, hover help,
+  and bool/int/unsigned-int/float/vector/enum/color controls. Active ocean,
+  atmosphere, terrain, smoke, water, fire, and explosion panels use those
+  helpers while keeping commands, diagnostics, and reset behavior project-owned.
 - A generic project host is still deferred; the current contract is limited to
   shared service ownership, GPU bridge attachment, and frame bridging.
 
