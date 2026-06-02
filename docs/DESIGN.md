@@ -420,6 +420,7 @@ cubey/
         windowed_app.h     -- small app-facing shell over the windowed host loop
         windowed_host.h    -- shared windowed host loop
       render/
+        environment_lighting.h -- compact shared light/ambient/sky/exposure uniforms
         generated_ibl.h    -- generated and HDR-backed PBR IBL environment resources
         material.h         -- material metadata and material/pass contracts
         pbr.h              -- current PBR vertex, scene, skybox, material, and push-constant contract
@@ -560,7 +561,7 @@ cubey/
             water_2d_render.frag
         sim/pyro_3d/
           pyro_3d_app.*     -- shared host/headless/input orchestration
-          pyro_3d_commands.* -- simulation and raymarch draw command recording
+          pyro_3d_commands.* -- simulation, environment-lit shadow, and raymarch draw recording
           pyro_3d_gpu_resources.* -- shared 3D textures/descriptors/pipelines
           pyro_3d_sources.* -- fire/explosion source generation
           shaders/

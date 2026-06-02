@@ -4,8 +4,11 @@
 #include "pyro_3d_sources.h"
 
 #include <cubey/engine/project_gpu_services.h>
+#include <cubey/render/atmosphere_background_frame.h>
+#include <cubey/render/environment_lighting.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/texture.h>
+#include <cubey/render/uniform_buffer.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
@@ -27,7 +30,10 @@ class Pyro3DGpuResources {
                                            const Pyro3DConfig& config,
                                            std::uint32_t frame_slot_count);
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
-                                VkExtent2D extent);
+                                VkExtent2D extent,
+                                const std::optional<
+                                    cubey::render::AtmosphereBackgroundTextureBindings>&
+                                    atmosphere_background_textures);
     void destroy_swapchain_resources();
     void destroy_all_resources();
 
@@ -74,6 +80,17 @@ class Pyro3DGpuResources {
     [[nodiscard]] VkDescriptorSet shadow_descriptor_set(bool density_a_current) const;
     [[nodiscard]] VkDescriptorSet render_descriptor_set(bool density_a_current,
                                                         bool velocity_a_current) const;
+    [[nodiscard]] VkDescriptorSet environment_descriptor_set(std::uint32_t frame_slot_index) const;
+    void upload_environment_lighting(
+        std::uint32_t frame_slot_index,
+        const cubey::render::EnvironmentLightingUniforms& uniforms) const;
+    void upload_atmosphere_background(
+        std::uint32_t frame_slot_index,
+        const cubey::render::AtmosphereEnvironmentFrameUniforms& uniforms) const;
+    [[nodiscard]] const cubey::render::AtmosphereBackgroundFrame&
+    atmosphere_background() const;
+    [[nodiscard]] VkDescriptorSet
+    atmosphere_background_descriptor_set(std::uint32_t frame_slot_index) const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
         return profiler_.has_value() ? &profiler_.value() : nullptr;
     }
@@ -102,6 +119,10 @@ class Pyro3DGpuResources {
     [[nodiscard]] VkDescriptorSetLayout shadow_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& shadow_descriptor_pool() const;
     [[nodiscard]] const cubey::vulkan::DescriptorSetArray& render_descriptors() const;
+    [[nodiscard]] VkDescriptorSetLayout environment_descriptor_layout() const;
+    [[nodiscard]] const cubey::vulkan::DescriptorSetArray& environment_descriptors() const;
+    [[nodiscard]] const cubey::vulkan::Buffer&
+    environment_lighting_uniform_buffer(std::uint32_t frame_slot_index) const;
 
     std::optional<cubey::render::Texture3D> density_a_;
     std::optional<cubey::render::Texture3D> density_b_;
@@ -140,6 +161,11 @@ class Pyro3DGpuResources {
     std::optional<cubey::vulkan::DescriptorPool> shadow_descriptor_pool_;
     std::array<VkDescriptorSet, 2> shadow_descriptor_sets_{};
     std::optional<cubey::vulkan::DescriptorSetArray> render_descriptors_;
+    std::optional<cubey::render::FrameUniformBuffer<cubey::render::EnvironmentLightingUniforms>>
+        environment_lighting_uniforms_;
+    std::optional<cubey::vulkan::DescriptorSetArray> environment_descriptors_;
+    cubey::render::AtmosphereBackgroundFrame atmosphere_background_;
+    std::uint32_t frame_slot_count_ = 0;
     std::optional<cubey::render::ComputePipelineResource> reset_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> advect_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> advect_correct_pipeline_;

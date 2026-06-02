@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/color_space.glsl"
+#include "cubey/environment_lighting.glsl"
 #include "fluid_ray_box.glsl"
 
 layout(push_constant) uniform RenderParams {
@@ -18,6 +19,9 @@ layout(push_constant) uniform RenderParams {
 layout(set = 0, binding = 0) uniform sampler3D density_volume;
 layout(set = 0, binding = 1) uniform sampler3D velocity_volume;
 layout(set = 0, binding = 2) uniform sampler3D shadow_volume;
+layout(set = 1, binding = 0) uniform EnvironmentLightingBlock {
+    CubeyEnvironmentLighting environment_lighting;
+};
 
 layout(location = 0) in vec2 frag_position;
 layout(location = 1) in vec2 frag_uv;
@@ -49,6 +53,10 @@ bool fire_render_mode() {
 
 bool explosion_render_mode() {
     return int(params.obstacle_options.z + 0.5) == 1;
+}
+
+bool external_background_enabled() {
+    return params.color_options.w > 0.5 && int(params.ray_forward_debug.w + 0.5) == 0;
 }
 
 bool ray_sphere_intersection(vec3 origin, vec3 direction, out float hit_t) {
@@ -107,13 +115,13 @@ vec3 background_color(vec2 uv) {
     float floor_band = 1.0 - smoothstep(0.00, 0.34, uv.y);
     color = mix(color, horizon, floor_band * 0.50);
 
-    vec2 grid_uv = vec2(uv.x * 8.0, uv.y * 5.0);
-    vec2 grid_cell = abs(fract(grid_uv) - 0.5);
-    float grid = 1.0 - smoothstep(0.470, 0.500, max(grid_cell.x, grid_cell.y));
-    color += cubey_srgb_to_linear(vec3(0.115, 0.135, 0.155)) * grid *
-             params.color_options.w * (0.35 + floor_band * 0.65);
-
-    return color * mix(0.70, 1.35, clamp(params.style_options.y, 0.0, 1.0));
+    vec3 sky_tint = cubey_env_sky_color(environment_lighting);
+    float sky_luma = max(max(sky_tint.r, sky_tint.g), sky_tint.b);
+    float tint_response = clamp(environment_lighting.sky_color_options.w, 0.0, 1.0);
+    float dynamic_scale = mix(0.35, 1.35, clamp(sky_luma * 2.2, 0.0, 1.0));
+    vec3 tinted = mix(color, max(sky_tint, color), tint_response * 0.55);
+    return tinted * mix(0.70, 1.35, clamp(params.style_options.y, 0.0, 1.0)) *
+           mix(1.0, dynamic_scale, tint_response);
 }
 
 float base_volume_extinction(vec3 position) {
@@ -189,7 +197,7 @@ vec3 flame_emission(vec4 density, vec3 position) {
 }
 
 vec3 display_transform(vec3 color) {
-    float exposure = exp2(params.style_options.x);
+    float exposure = exp2(cubey_env_exposure(environment_lighting));
     return vec3(1.0) - exp(-max(color, vec3(0.0)) * exposure);
 }
 
@@ -219,17 +227,18 @@ void main() {
     float aspect = params.ray_up_aspect.w;
     vec3 direction = normalize(forward + right * screen_position.x * aspect * tan_half_fovy +
                                up * screen_position.y * tan_half_fovy);
-    vec3 light_direction = normalize(vec3(0.45, 0.82, 0.35));
-    vec3 light_color = cubey_srgb_to_linear(vec3(1.0, 0.92, 0.80));
-    vec3 sky_color = cubey_srgb_to_linear(vec3(0.42, 0.54, 0.76));
+    vec3 light_direction = cubey_env_primary_light_direction(environment_lighting);
+    vec3 light_color = cubey_env_primary_light(environment_lighting);
+    vec3 sky_color = cubey_env_sky_color(environment_lighting);
     float obstacle_t = 0.0;
     bool obstacle_hit = ray_sphere_intersection(origin, direction, obstacle_t);
 
     float near_t = 0.0;
     float far_t = 0.0;
-    vec3 background = background_color(screen_uv);
+    bool external_background = external_background_enabled();
+    vec3 background = external_background ? vec3(0.0) : background_color(screen_uv);
     if (!ray_box_intersection(origin, direction, near_t, far_t)) {
-        out_color = vec4(background, 1.0);
+        out_color = external_background ? vec4(0.0) : vec4(background, 1.0);
         return;
     }
 
@@ -282,6 +291,7 @@ void main() {
         }
     }
 
-    vec3 color = accumulated + background * transmittance;
-    out_color = vec4(clamp(display_transform(color), vec3(0.0), vec3(1.0)), 1.0);
+    vec3 color = external_background ? accumulated : accumulated + background * transmittance;
+    float alpha = external_background ? clamp(1.0 - transmittance, 0.0, 1.0) : 1.0;
+    out_color = vec4(clamp(display_transform(color), vec3(0.0), vec3(1.0)), alpha);
 }

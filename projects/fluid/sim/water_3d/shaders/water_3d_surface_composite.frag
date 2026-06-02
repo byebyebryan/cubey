@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/color_space.glsl"
+#include "cubey/environment_lighting.glsl"
 #include "cubey/pbr.glsl"
 #include "water_3d_surface_common.glsl"
 
@@ -14,6 +15,9 @@ layout(set = 0, binding = 1) uniform sampler2D scene_color_texture;
 layout(set = 0, binding = 2) uniform sampler2D scene_depth_texture;
 layout(set = 0, binding = 3) uniform samplerCube environment_cube;
 layout(set = 0, binding = 4) uniform sampler2D whitewater_texture;
+layout(set = 0, binding = 5) uniform EnvironmentLightingBlock {
+    CubeyEnvironmentLighting environment_lighting;
+};
 
 layout(location = 0) in vec2 frag_uv;
 layout(location = 0) out vec4 out_color;
@@ -261,9 +265,7 @@ void main() {
         return;
     }
     if (!water_surface_has_depth(surface.x)) {
-        vec3 air_whitewater = mix(background, whitewater_color(whitewater),
-                                  clamp(whitewater.coverage * 0.55, 0.0, 0.65));
-        out_color = vec4(apply_display_transform(air_whitewater), 1.0);
+        out_color = vec4(apply_display_transform(background), 1.0);
         return;
     }
 
@@ -324,9 +326,12 @@ void main() {
     vec3 refracted_scene = texture(scene_color_texture, refract_uv).rgb;
     vec3 refracted = mix(refracted_scene * transmittance, foam_color, foam * 0.85);
     vec3 reflected = mix(sample_environment(reflect_dir), foam_color, foam * 0.35);
-    vec3 light_dir = normalize(vec3(-0.28, 0.80, 0.52));
+    vec3 light_dir = cubey_env_primary_light_direction(environment_lighting);
     vec3 half_dir = normalize(light_dir + view_dir);
-    float specular = pow(max(dot(normal, half_dir), 0.0), 96.0) * 0.22 * (1.0 - foam * 0.65);
+    vec3 direct_light = cubey_env_primary_light(environment_lighting);
+    float specular_luma = max(max(direct_light.r, direct_light.g), direct_light.b);
+    float specular = pow(max(dot(normal, half_dir), 0.0), 96.0) * 0.16 *
+                     specular_luma * (1.0 - foam * 0.65);
     vec3 water_tint = cubey_srgb_to_linear(vec3(0.025, 0.22, 0.30)) * (1.0 - transmittance) *
                       (1.0 - foam * 0.70);
     vec3 color = mix(refracted + water_tint, reflected, fresnel) + vec3(specular);

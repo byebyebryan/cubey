@@ -55,14 +55,15 @@ Current projects:
   frame/memory diagnostics, and deterministic headless capture output.
 - `water_3d`: 3D APIC free-surface liquid in a long showcase tank, with stable
   particle-grid transfer ranges, screen-space water surface rendering, rain,
-  hose/drain/wave controls, whitewater, profiling diagnostics, and headless
-  capture output.
+  hose/drain/wave controls, whitewater, shared procedural environment lighting,
+  profiling diagnostics, and headless capture output.
 - `fire_3d`: dense volumetric pyro fire demo with 3D storage textures,
   MacCormack advection, combustion, projection, vorticity confinement,
-  raymarching, shadow-volume lighting, orbit camera controls, debug views, and
-  headless capture output.
+  raymarching, shared procedural environment lighting, orbit camera controls,
+  debug views, and headless capture output.
 - `explosion_3d`: the same shared 3D pyro solver presented as repeated impulse
-  bursts with explosion-specific timing and boost controls.
+  bursts with explosion-specific timing, boost controls, and shared environment
+  lighting.
 - `ocean`: active ocean renderer derived from the GodotOceanWaves
   spectrum/FFT/unpack core, with camera-relative mesh LOD, foam/debug views,
   and wire/LOD diagnostics.
@@ -242,12 +243,18 @@ and Water2D frame/memory diagnostics.
 particle storage stable and builds sorted particle-index ranges for transfer,
 then renders the default view through a screen-space surface path with
 refraction, absorption, environment reflection, foam, and secondary whitewater.
+By default it uses the shared procedural atmosphere as its sky/reflection/
+lighting source; `--pbr-environment-source static` keeps the older static IBL
+fallback.
 Use `--water3d-transfer apic|pic-flip`, `--water3d-transfer-limit N`,
 `--water3d-p2g-mode active|tiled`, `--water3d-hose`, `--water3d-drain`,
 `--water3d-rain`, `--water3d-wave`, `--water3d-whitewater`, and
 `--profile-diagnostics` for focused solver/render profiling.
 `fire_3d` and `explosion_3d` share the `pyro_3d` dense solver core. They default
-to a `128x128x128` solver volume with a decoupled `64x64x64` shadow volume. Use
+to a `128x128x128` solver volume with a decoupled `64x64x64` shadow volume.
+Their raymarch and shadow paths use the shared procedural atmosphere for dynamic
+light direction, color, sky tint, and exposure by default; pass
+`--pbr-environment-source static` for the legacy fixed-light fallback. Use
 `--grid-width`, `--grid-height`, `--grid-depth`, `--shadow-grid-width`,
 `--shadow-grid-height`, `--shadow-grid-depth`, `--shadow-steps`,
 `--shadow-update-interval`, `--pyro-sources`, `--pyro-source-radius`,

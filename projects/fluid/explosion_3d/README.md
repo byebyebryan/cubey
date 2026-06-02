@@ -7,6 +7,10 @@ hot flash, an expanding smoke shell, and the buoyant plume that rises from the
 injected heat and soot. The obstacle is disabled by default, but a configurable
 ball obstacle can be enabled when the impulse should break around a solid shape.
 
+By default, the raymarch and shadow passes consume the shared procedural
+atmosphere for dynamic light direction, color, sky tint, and exposure; pass
+`--pbr-environment-source static` for the legacy fixed-light fallback.
+
 Useful controls:
 
 - Left-drag: orbit camera.
@@ -16,9 +20,9 @@ Useful controls:
 - `D`: cycle smoke, density slice, and velocity debug views.
 - Escape: close.
 - The runtime UI groups simulation, source, explosion model, obstacle,
-  rendering, shadow, and diagnostics controls. The Rendering group owns the
-  presentation style: exposure, backdrop, rim/scatter, smoke warmth, and flame
-  shaping.
+  environment, rendering, shadow, and diagnostics controls. The Rendering group
+  owns the local presentation style: exposure bias, backdrop, rim/scatter, smoke
+  warmth, and flame shaping.
 
 Useful commands:
 

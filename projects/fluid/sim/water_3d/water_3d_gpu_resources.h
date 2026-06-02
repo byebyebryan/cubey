@@ -3,6 +3,8 @@
 #include "water_3d_config.h"
 
 #include <cubey/engine/project_gpu_services.h>
+#include <cubey/render/atmosphere_background_frame.h>
+#include <cubey/render/environment_lighting.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/material_instance.h>
@@ -23,6 +25,15 @@
 
 namespace cubey::projects::fluid::water_3d {
 
+struct Water3DEnvironmentTextureBindings {
+    cubey::render::PbrEnvironmentTextureBindings pbr{};
+    VkSampler display_sampler = VK_NULL_HANDLE;
+    VkImageView display_view = VK_NULL_HANDLE;
+    VkImageLayout display_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    std::optional<cubey::render::AtmosphereBackgroundTextureBindings>
+        atmosphere_background_textures{};
+};
+
 class Water3DGpuResources {
   public:
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
@@ -31,7 +42,7 @@ class Water3DGpuResources {
                                            std::uint32_t frame_slot_count);
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
                                 VkExtent2D extent,
-                                const cubey::render::GeneratedPbrEnvironment& environment);
+                                const Water3DEnvironmentTextureBindings& environment);
     void destroy_swapchain_resources();
     void destroy_all_resources();
 
@@ -93,6 +104,12 @@ class Water3DGpuResources {
     simulation_uniform_buffer(cubey::render::FrameSlot frame_slot) const;
     void upload_simulation_uniforms(cubey::render::FrameSlot frame_slot,
                                     const Water3DSimulationUniforms& uniforms) const;
+    void upload_environment_lighting(
+        cubey::render::FrameSlot frame_slot,
+        const cubey::render::EnvironmentLightingUniforms& uniforms) const;
+    void upload_atmosphere_background(
+        cubey::render::FrameSlot frame_slot,
+        const cubey::render::AtmosphereEnvironmentFrameUniforms& uniforms) const;
     [[nodiscard]] VkDescriptorSet field_descriptor_set(cubey::render::FrameSlot frame_slot) const;
 
     [[nodiscard]] const cubey::render::ComputePipelineResource& reset_pipeline_resource() const;
@@ -160,6 +177,8 @@ class Water3DGpuResources {
     surface_composite_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource&
     whitewater_pipeline_resource() const;
+    [[nodiscard]] const cubey::render::AtmosphereBackgroundFrame&
+    atmosphere_background() const;
     [[nodiscard]] VkDescriptorSet
     surface_scene_descriptor_set(cubey::render::FrameSlot frame_slot) const;
     [[nodiscard]] VkDescriptorSet
@@ -182,7 +201,7 @@ class Water3DGpuResources {
                                     cubey::render::RenderGraphSampledTextureView scene_color,
                                     cubey::render::RenderGraphSampledTextureView scene_depth,
                                     cubey::render::RenderGraphSampledTextureView whitewater,
-                                    const cubey::render::GeneratedPbrEnvironment& environment);
+                                    const Water3DEnvironmentTextureBindings& environment);
     [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const;
 
   private:
@@ -190,6 +209,8 @@ class Water3DGpuResources {
     void create_descriptor_resources(cubey::vulkan::Device& device);
     void update_field_descriptors(cubey::vulkan::Device& device);
     void create_compute_pipelines(cubey::vulkan::Device& device);
+    [[nodiscard]] const cubey::vulkan::Buffer&
+    environment_lighting_uniform_buffer(cubey::render::FrameSlot frame_slot) const;
     [[nodiscard]] VkDescriptorSetLayout field_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& field_descriptor_pool() const;
 
@@ -244,6 +265,8 @@ class Water3DGpuResources {
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
     std::optional<cubey::render::FrameUniformBuffer<Water3DSimulationUniforms>>
         simulation_uniforms_;
+    std::optional<cubey::render::FrameUniformBuffer<cubey::render::EnvironmentLightingUniforms>>
+        environment_lighting_uniforms_;
     std::optional<cubey::vulkan::DescriptorSetLayout> field_descriptor_layout_;
     std::optional<cubey::vulkan::DescriptorPool> field_descriptor_pool_;
     std::vector<VkDescriptorSet> field_descriptor_sets_;
@@ -283,6 +306,7 @@ class Water3DGpuResources {
     std::optional<cubey::vulkan::Sampler> surface_sampler_;
     std::optional<cubey::vulkan::Sampler> whitewater_sampler_;
     std::optional<cubey::render::MaterialInstance> surface_scene_material_;
+    cubey::render::AtmosphereBackgroundFrame atmosphere_background_;
     std::optional<cubey::render::MaterialInstance> surface_thickness_material_;
     std::optional<cubey::render::MaterialInstance> surface_pack_material_;
     std::optional<cubey::render::MaterialInstance> surface_source_a_material_;

@@ -193,8 +193,9 @@ Current checkpoint:
 - Reusable atmosphere and terrain-adjacent render helpers now cover atmosphere
   frame uniforms, background atlas bindings, lunar and night-sky generated
   atlases, runtime atmosphere reflection-probe cubemaps for dynamic PBR
-  environment lighting, terrain-ocean field packing, and shared 2D clipmap grid
-  planning for ocean and terrain LOD diagnostics.
+  environment lighting, a shared lightweight environment-lighting uniform/GLSL
+  include consumed by water and volumetric pyro, terrain-ocean field packing,
+  and shared 2D clipmap grid planning for ocean and terrain LOD diagnostics.
 - Reusable `cubey::render::ResourceTable`,
   `cubey::render::RenderItem`,
   `cubey::render::MaterialPassInfo`,

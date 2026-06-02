@@ -145,8 +145,6 @@ int main() {
                 "pyro 3D flame intensity should match the tuned default");
         require(config.render_flame_core_strength == 1.35F,
                 "pyro 3D flame core should match the tuned default");
-        require(config.render_backdrop_grid_strength == 0.42F,
-                "pyro 3D backdrop grid should match the tuned default");
         require(pyro::volume_cell_count(config) == kExpectedCellCount,
                 "pyro 3D cell count should multiply all dimensions");
         require(pyro::volume_byte_size(config, 8) == 8U * kExpectedCellCount,
@@ -519,6 +517,9 @@ int main() {
             read_text_file(source_dir / "shaders" / "pyro_3d_raymarch.frag");
         const std::string shadow_shader =
             read_text_file(source_dir / "shaders" / "pyro_3d_shadow.comp");
+        const std::string app_source = read_text_file(source_dir / "pyro_3d_app.cpp");
+        const std::string gpu_resources_source =
+            read_text_file(source_dir / "pyro_3d_gpu_resources.cpp");
         require(count_occurrences(commands_source,
                                   "static_cast<float>(static_cast<std::uint32_t>(config.mode))") >=
                     2,
@@ -551,22 +552,54 @@ int main() {
                          "pyro 3D raymarch shader should render the ball obstacle");
         require_contains(raymarch_shader, "cubey/color_space.glsl",
                          "pyro 3D raymarch shader should use shared color conversion");
+        require_contains(raymarch_shader, "cubey/environment_lighting.glsl",
+                         "pyro 3D raymarch shader should use shared environment lighting");
+        require_contains(raymarch_shader, "layout(set = 1, binding = 0)",
+                         "pyro 3D raymarch shader should bind environment lighting uniforms");
         require_contains(raymarch_shader, "style_options",
                          "pyro 3D raymarch shader should expose render style controls");
         require_contains(raymarch_shader, "color_options",
                          "pyro 3D raymarch shader should expose palette controls");
         require_contains(raymarch_shader, "display_transform",
                          "pyro 3D raymarch shader should apply exposure display transform");
+        require_contains(raymarch_shader, "cubey_env_exposure",
+                         "pyro 3D raymarch shader should use resolved shared exposure");
+        require_contains(raymarch_shader, "cubey_env_primary_light(",
+                         "pyro 3D raymarch lighting should use shared environment light");
         require_contains(raymarch_shader, "soot_signal",
                          "pyro 3D raymarch shader should darken smoke as soot dominates");
         require_contains(raymarch_shader, "flame_height",
                          "pyro 3D raymarch shader should fade flame emission into upper smoke");
         require_contains(raymarch_shader, "explosion_render_mode",
                          "pyro 3D raymarch shader should keep explosion flash separate from fire");
-        require_contains(raymarch_shader, "params.color_options.w",
-                         "pyro 3D raymarch shader should expose backdrop grid strength");
+        require_contains(raymarch_shader, "external_background_enabled",
+                         "pyro 3D raymarch shader should composite over direct backgrounds");
         require_contains(shadow_shader, "light_transmittance",
                          "pyro 3D shadow shader should retain shadow raymarching");
+        require_contains(shadow_shader, "cubey/environment_lighting.glsl",
+                         "pyro 3D shadow shader should use shared environment lighting");
+        require_contains(shadow_shader, "cubey_env_primary_light_direction",
+                         "pyro 3D shadow rays should follow the shared environment light");
+        require_contains(commands_source, "environment_descriptor_set(frame_slot_index)",
+                         "pyro 3D commands should bind per-frame environment descriptors");
+        require_contains(commands_source, "atmosphere_background_descriptor_set",
+                         "pyro 3D commands should draw the direct atmosphere background");
+        require_contains(gpu_resources_source, "EnvironmentLightingUniforms",
+                         "pyro 3D GPU resources should allocate environment lighting uniforms");
+        require_contains(gpu_resources_source, "AtmosphereBackgroundFrameMaterialConfig",
+                         "pyro 3D GPU resources should create atmosphere background descriptors");
+        require_contains(gpu_resources_source, "atmosphere_background_.create_pipeline",
+                         "pyro 3D GPU resources should create the atmosphere background pipeline");
+        require_contains(gpu_resources_source, "ComputePipelineResourceConfig",
+                         "pyro 3D shadow pipeline should support multiple descriptor sets");
+        require_contains(app_source, "draw_atmosphere_environment_controls",
+                         "pyro 3D should expose shared environment controls");
+        require_contains(app_source, "create_atmosphere_background_generated_textures",
+                         "pyro 3D should create shared atmosphere background atlases");
+        require_contains(app_source, "upload_atmosphere_background",
+                         "pyro 3D should upload direct atmosphere background uniforms");
+        require_contains(app_source, "resolved_render_exposure",
+                         "pyro 3D should combine shared exposure with the project render bias");
     } catch (const std::exception& error) {
         std::fprintf(stderr, "pyro_3d_config_tests: %s\n", error.what());
         return 1;

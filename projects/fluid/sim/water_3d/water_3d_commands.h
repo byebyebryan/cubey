@@ -54,7 +54,7 @@ void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
                                   Water3DRenderView render_view, const Water3DRenderCamera& camera,
                                   cubey::render::ColorTargetView color_target,
                                   Water3DRenderTargetMode target_mode,
-                                  const cubey::render::GeneratedPbrEnvironment& environment,
+                                  const Water3DEnvironmentTextureBindings& environment,
                                   cubey::vulkan::GpuTimestampProfiler* profiler = nullptr);
 
 } // namespace cubey::projects::fluid::water_3d

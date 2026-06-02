@@ -10,6 +10,10 @@ namespace cubey::vulkan {
 class Device;
 } // namespace cubey::vulkan
 
+namespace cubey {
+struct AtmosphereEnvironmentRunState;
+} // namespace cubey
+
 namespace cubey::projects::fluid::water_3d {
 
 class Water3DGpuResources;
@@ -17,6 +21,7 @@ class Water3DGpuResources;
 struct Water3DUiContext {
     const char* title = nullptr;
     Water3DConfig& config;
+    cubey::AtmosphereEnvironmentRunState* atmosphere = nullptr;
     Water3DRuntimeState& runtime_state;
     Water3DGpuResources& resources;
     cubey::vulkan::Device& device;
@@ -28,6 +33,6 @@ struct Water3DUiContext {
     double latest_frame_ms = 0.0;
 };
 
-void draw_water_3d_ui(Water3DUiContext ui);
+[[nodiscard]] bool draw_water_3d_ui(Water3DUiContext ui);
 
 } // namespace cubey::projects::fluid::water_3d

@@ -33,6 +33,19 @@ std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_WATER_3D_SHADER_DIR) / filename;
 }
 
+void validate_water_3d_environment_texture_bindings(
+    const Water3DEnvironmentTextureBindings& environment) {
+    cubey::render::validate_pbr_environment_texture_bindings(environment.pbr);
+    if (environment.atmosphere_background_textures.has_value()) {
+        cubey::render::validate_atmosphere_background_texture_bindings(
+            environment.atmosphere_background_textures.value());
+    }
+    if (environment.display_sampler == VK_NULL_HANDLE ||
+        environment.display_view == VK_NULL_HANDLE) {
+        throw std::runtime_error("water 3D display environment cube binding is not initialized");
+    }
+}
+
 [[nodiscard]] VkPushConstantRange simulation_push_constant_range() {
     return {
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -79,7 +92,23 @@ std::filesystem::path shader_path(const char* filename) {
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_scene_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.scene",
-        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0)},
+        .descriptor_sets =
+            {cubey::render::MaterialDescriptorSetLayout{
+                .set = 0,
+                .bindings =
+                    {
+                        cubey::vulkan::DescriptorSetBindingConfig{
+                            .binding = 0,
+                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                        },
+                        cubey::vulkan::DescriptorSetBindingConfig{
+                            .binding = 1,
+                            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                        },
+                    },
+            }},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = true,
         .depth_write = true,
@@ -139,7 +168,43 @@ std::filesystem::path shader_path(const char* filename) {
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_composite_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.composite",
-        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0, 5)},
+        .descriptor_sets =
+            {cubey::render::MaterialDescriptorSetLayout{
+                .set = 0,
+                .bindings =
+                    {
+                        cubey::vulkan::DescriptorSetBindingConfig{
+                            .binding = 0,
+                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                        },
+                        cubey::vulkan::DescriptorSetBindingConfig{
+                            .binding = 1,
+                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                        },
+                        cubey::vulkan::DescriptorSetBindingConfig{
+                            .binding = 2,
+                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                        },
+                        cubey::vulkan::DescriptorSetBindingConfig{
+                            .binding = 3,
+                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                        },
+                        cubey::vulkan::DescriptorSetBindingConfig{
+                            .binding = 4,
+                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                        },
+                        cubey::vulkan::DescriptorSetBindingConfig{
+                            .binding = 5,
+                            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                        },
+                    },
+            }},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = false,
         .depth_write = false,
@@ -232,6 +297,7 @@ void Water3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
 
     create_field_buffers(gpu, config);
     simulation_uniforms_.emplace(device, frame_slot_count_);
+    environment_lighting_uniforms_.emplace(device, frame_slot_count_);
     create_descriptor_resources(device);
     create_compute_pipelines(device);
     profiler_.emplace(device, frame_slot_count_, kWater3DGpuProfilerPassCapacity);
@@ -246,6 +312,7 @@ void Water3DGpuResources::destroy_swapchain_resources() {
     surface_thickness_pipeline_resource_.reset();
     surface_depth_pipeline_resource_.reset();
     surface_scene_pipeline_resource_.reset();
+    atmosphere_background_.destroy_pipeline();
     surface_composite_material_.reset();
     surface_source_b_material_.reset();
     surface_source_a_material_.reset();
@@ -260,6 +327,7 @@ void Water3DGpuResources::destroy_swapchain_resources() {
 
 void Water3DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
+    atmosphere_background_.destroy();
     whitewater_draw_args_pipeline_resource_.reset();
     active_whitewater_indices_pipeline_resource_.reset();
     emit_whitewater_pipeline_resource_.reset();
@@ -289,6 +357,7 @@ void Water3DGpuResources::destroy_all_resources() {
     field_descriptor_pool_.reset();
     field_descriptor_layout_.reset();
     field_descriptor_sets_.clear();
+    environment_lighting_uniforms_.reset();
     simulation_uniforms_.reset();
     profiler_.reset();
     frame_slot_count_ = 0;
@@ -371,7 +440,8 @@ VkDeviceSize Water3DGpuResources::allocated_buffer_bytes() const {
            optional_buffer_size(active_face_dispatch_args_) +
            optional_buffer_size(active_tile_flags_) + optional_buffer_size(active_tile_indices_) +
            optional_buffer_size(active_tile_dispatch_args_) + optional_buffer_size(diagnostics_) +
-           optional_frame_uniform_buffer_size(simulation_uniforms_);
+           optional_frame_uniform_buffer_size(simulation_uniforms_) +
+           optional_frame_uniform_buffer_size(environment_lighting_uniforms_);
 }
 
 void Water3DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
@@ -803,7 +873,8 @@ void Water3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
 
 void Water3DGpuResources::create_render_pipeline(
     cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
-    const cubey::render::GeneratedPbrEnvironment& environment) {
+    const Water3DEnvironmentTextureBindings& environment) {
+    validate_water_3d_environment_texture_bindings(environment);
     depth_attachment_.emplace(device, extent);
     surface_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
                                          .min_filter = VK_FILTER_LINEAR,
@@ -885,6 +956,16 @@ void Water3DGpuResources::create_render_pipeline(
         cubey::render::ShaderStageFile{
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
             .path = shader_path("water_3d_scene.frag.spv"),
+        },
+    };
+    const std::array<cubey::render::ShaderStageFile, 2> atmosphere_shaders{
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .path = shader_path("atmosphere.vert.spv"),
+        },
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .path = shader_path("atmosphere.frag.spv"),
         },
     };
     const std::array<cubey::render::ShaderStageFile, 2> surface_particle_depth_shaders{
@@ -981,6 +1062,25 @@ void Water3DGpuResources::create_render_pipeline(
                                       depth_attachment().format(), surface_scene_shaders,
                                       scene_set_layouts, surface_scene_material_pass,
                                       surface_scene_pipeline_resource_);
+    if (environment.atmosphere_background_textures.has_value()) {
+        if (!atmosphere_background_.materials_created()) {
+            atmosphere_background_.create_materials(
+                device, cubey::render::AtmosphereBackgroundFrameMaterialConfig{
+                            .frame_slot_count = frame_slot_count_,
+                            .textures = environment.atmosphere_background_textures.value(),
+                        });
+        } else {
+            atmosphere_background_.update_texture_bindings(
+                device, environment.atmosphere_background_textures.value());
+        }
+        atmosphere_background_.create_pipeline(
+            device, cubey::render::AtmosphereBackgroundFramePipelineConfig{
+                        .extent = extent,
+                        .color_format = kWater3DSceneColorFormat,
+                        .depth_format = depth_attachment().format(),
+                        .shader_stage_files = atmosphere_shaders,
+                    });
+    }
     create_graphics_pipeline_resource(device, extent, kWater3DSurfaceScalarFormat,
                                       depth_attachment().format(), surface_particle_depth_shaders,
                                       field_set_layouts, surface_depth_material_pass,
@@ -1013,8 +1113,11 @@ void Water3DGpuResources::create_render_pipeline(
             .count = frame_slot_count_,
         };
         writes.combined_image_sampler(surface_scene_descriptor_set(frame_slot), 0,
-                                      environment.prefiltered_cube.sampler().handle(),
-                                      environment.prefiltered_cube.view());
+                                      environment.display_sampler, environment.display_view,
+                                      environment.display_layout)
+            .uniform_buffer(surface_scene_descriptor_set(frame_slot), 1,
+                            environment_lighting_uniform_buffer(frame_slot).handle(),
+                            environment_lighting_uniform_buffer(frame_slot).size());
     }
     writes.update(device);
 }
@@ -1263,6 +1366,30 @@ void Water3DGpuResources::upload_simulation_uniforms(
     buffers.upload(frame_slot, uniforms);
 }
 
+void Water3DGpuResources::upload_environment_lighting(
+    cubey::render::FrameSlot frame_slot,
+    const cubey::render::EnvironmentLightingUniforms& uniforms) const {
+    const cubey::render::FrameUniformBuffer<cubey::render::EnvironmentLightingUniforms>& buffers =
+        require_initialized(environment_lighting_uniforms_,
+                            "water 3D environment lighting uniform buffers are not initialized");
+    buffers.upload(frame_slot, uniforms);
+}
+
+void Water3DGpuResources::upload_atmosphere_background(
+    cubey::render::FrameSlot frame_slot,
+    const cubey::render::AtmosphereEnvironmentFrameUniforms& uniforms) const {
+    atmosphere_background().upload(frame_slot, uniforms);
+}
+
+const cubey::vulkan::Buffer&
+Water3DGpuResources::environment_lighting_uniform_buffer(
+    cubey::render::FrameSlot frame_slot) const {
+    const cubey::render::FrameUniformBuffer<cubey::render::EnvironmentLightingUniforms>& buffers =
+        require_initialized(environment_lighting_uniforms_,
+                            "water 3D environment lighting uniform buffers are not initialized");
+    return buffers.buffer(frame_slot);
+}
+
 VkDescriptorSet
 Water3DGpuResources::field_descriptor_set(cubey::render::FrameSlot frame_slot) const {
     cubey::render::validate_frame_slot(frame_slot);
@@ -1494,6 +1621,14 @@ Water3DGpuResources::whitewater_pipeline_resource() const {
                                "water 3D whitewater pipeline is not initialized");
 }
 
+const cubey::render::AtmosphereBackgroundFrame&
+Water3DGpuResources::atmosphere_background() const {
+    if (!atmosphere_background_.materials_created()) {
+        throw std::runtime_error("water 3D atmosphere background is not initialized");
+    }
+    return atmosphere_background_;
+}
+
 VkDescriptorSet
 Water3DGpuResources::surface_scene_descriptor_set(cubey::render::FrameSlot frame_slot) const {
     return require_initialized(surface_scene_material_,
@@ -1546,7 +1681,8 @@ void Water3DGpuResources::update_surface_descriptors(
     cubey::render::RenderGraphSampledTextureView scene_color,
     cubey::render::RenderGraphSampledTextureView scene_depth,
     cubey::render::RenderGraphSampledTextureView whitewater,
-    const cubey::render::GeneratedPbrEnvironment& environment) {
+    const Water3DEnvironmentTextureBindings& environment) {
+    validate_water_3d_environment_texture_bindings(environment);
     const cubey::vulkan::Sampler& sampler =
         require_initialized(surface_sampler_, "water 3D surface sampler is not initialized");
     const VkSampler sampler_handle = sampler.handle();
@@ -1571,10 +1707,14 @@ void Water3DGpuResources::update_surface_descriptors(
                                 scene_color.layout)
         .combined_image_sampler(composite_set, 2, sampler_handle, scene_depth.view,
                                 scene_depth.layout)
-        .combined_image_sampler(composite_set, 3, environment.prefiltered_cube.sampler().handle(),
-                                environment.prefiltered_cube.view())
+        .combined_image_sampler(composite_set, 3, environment.pbr.prefiltered_sampler,
+                                environment.pbr.prefiltered_view,
+                                environment.pbr.prefiltered_layout)
         .combined_image_sampler(composite_set, 4, whitewater_sampler.handle(), whitewater.view,
-                                whitewater.layout);
+                                whitewater.layout)
+        .uniform_buffer(composite_set, 5,
+                        environment_lighting_uniform_buffer(frame_slot).handle(),
+                        environment_lighting_uniform_buffer(frame_slot).size());
     writes.update(device);
 }
 

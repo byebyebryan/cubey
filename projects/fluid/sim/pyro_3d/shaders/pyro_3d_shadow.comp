@@ -1,6 +1,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
+#include "cubey/environment_lighting.glsl"
 #include "fluid_ray_box.glsl"
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
@@ -17,6 +18,9 @@ layout(push_constant) uniform SimulationParams {
 
 layout(set = 0, binding = 0) uniform sampler3D density_volume;
 layout(r32f, set = 0, binding = 1) uniform writeonly image3D shadow_volume;
+layout(set = 1, binding = 0) uniform EnvironmentLightingBlock {
+    CubeyEnvironmentLighting environment_lighting;
+};
 
 float rand_float(vec3 value) {
     return fract(sin(dot(value, vec3(12.9898, 78.233, 56.8346))) * 43758.5453);
@@ -51,7 +55,7 @@ float soot_density_at(vec3 uv) {
 }
 
 float light_transmittance(vec3 uv) {
-    vec3 light_direction = normalize(vec3(0.45, 0.82, 0.35));
+    vec3 light_direction = cubey_env_primary_light_direction(environment_lighting);
     float distance_to_exit = ray_box_exit_distance(uv, light_direction);
     if (distance_to_exit <= 0.0) {
         return 1.0;

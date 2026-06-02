@@ -45,6 +45,11 @@ std::filesystem::path shader_path(const char* filename) {
     return {
         .label = "pyro_3d.raymarch",
         .push_constants = {render_push_constant_range()},
+        .blend_enable = true,
+        .src_color_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
     };
 }
 
@@ -124,6 +129,22 @@ void emplace_simulation_compute_pipeline(
         descriptor_layout, push_constants);
 }
 
+void emplace_shadow_compute_pipeline(
+    cubey::vulkan::Device& device, VkDescriptorSetLayout shadow_descriptor_layout,
+    VkDescriptorSetLayout environment_descriptor_layout,
+    std::optional<cubey::render::ComputePipelineResource>& destination) {
+    const std::array<VkDescriptorSetLayout, 2> set_layouts{shadow_descriptor_layout,
+                                                           environment_descriptor_layout};
+    const std::array<VkPushConstantRange, 1> push_constants{simulation_push_constant_range()};
+    destination.emplace(device, cubey::render::ComputePipelineResourceConfig{
+                                    .shader_stage =
+                                        cubey::render::compute_shader_file(
+                                            shader_path("pyro_3d_shadow.comp.spv")),
+                                    .descriptor_set_layouts = set_layouts,
+                                    .push_constants = push_constants,
+                                });
+}
+
 } // namespace
 
 void Pyro3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
@@ -137,7 +158,13 @@ void Pyro3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device
         return;
     }
 
+    if (frame_slot_count == 0) {
+        throw std::runtime_error("pyro 3D resources require at least one frame slot");
+    }
+    frame_slot_count_ = frame_slot_count;
+
     create_volume_resources(device, gpu, config);
+    environment_lighting_uniforms_.emplace(device, frame_slot_count_);
     create_descriptor_resources(device);
     create_compute_pipelines(device);
     profiler_.emplace(device, frame_slot_count, 9);
@@ -178,10 +205,12 @@ void Pyro3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
 
 void Pyro3DGpuResources::destroy_swapchain_resources() {
     render_pipeline_.reset();
+    atmosphere_background_.destroy_pipeline();
 }
 
 void Pyro3DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
+    atmosphere_background_.destroy();
     profiler_.reset();
     shadow_pipeline_.reset();
     projection_pipeline_.reset();
@@ -194,6 +223,9 @@ void Pyro3DGpuResources::destroy_all_resources() {
     shadow_descriptor_pool_.reset();
     shadow_descriptor_layout_.reset();
     render_descriptors_.reset();
+    environment_descriptors_.reset();
+    environment_lighting_uniforms_.reset();
+    frame_slot_count_ = 0;
     projection_descriptor_pool_.reset();
     projection_descriptor_layout_.reset();
     pressure_descriptor_pool_.reset();
@@ -398,6 +430,15 @@ void Pyro3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& devi
     const cubey::vulkan::DescriptorSetInfo render_info(render_bindings, 4);
     render_descriptors_.emplace(device, render_info);
 
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> environment_bindings{{
+        {.binding = 0,
+         .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT},
+    }};
+    const cubey::vulkan::DescriptorSetInfo environment_info(environment_bindings,
+                                                            frame_slot_count_);
+    environment_descriptors_.emplace(device, environment_info);
+
     update_descriptors(device);
 }
 
@@ -414,6 +455,11 @@ void Pyro3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
 
     const std::array<const cubey::render::Texture3D*, 2> densities{&density_a(), &density_b()};
     const std::array<const cubey::render::Texture3D*, 2> velocities{&velocity_a(), &velocity_b()};
+    for (std::uint32_t slot_index = 0; slot_index < frame_slot_count_; ++slot_index) {
+        const cubey::vulkan::Buffer& buffer = environment_lighting_uniform_buffer(slot_index);
+        writes.uniform_buffer(environment_descriptor_set(slot_index), 0, buffer.handle(),
+                              buffer.size());
+    }
     for (std::uint32_t density_index = 0; density_index < 2; ++density_index) {
         for (std::uint32_t velocity_index = 0; velocity_index < 2; ++velocity_index) {
             const bool density_a_current = density_index == 0U;
@@ -514,12 +560,14 @@ void Pyro3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device)
                                         pressure_descriptor_layout(), pressure_pipeline_);
     emplace_simulation_compute_pipeline(device, "pyro_3d_projection.comp.spv",
                                         projection_descriptor_layout(), projection_pipeline_);
-    emplace_simulation_compute_pipeline(device, "pyro_3d_shadow.comp.spv",
-                                        shadow_descriptor_layout(), shadow_pipeline_);
+    emplace_shadow_compute_pipeline(device, shadow_descriptor_layout(),
+                                    environment_descriptor_layout(), shadow_pipeline_);
 }
 
-void Pyro3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
-                                                VkFormat color_format, VkExtent2D extent) {
+void Pyro3DGpuResources::create_render_pipeline(
+    cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
+    const std::optional<cubey::render::AtmosphereBackgroundTextureBindings>&
+        atmosphere_background_textures) {
     const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
         cubey::render::ShaderStageFile{
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
@@ -530,7 +578,36 @@ void Pyro3DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
             .path = shader_path("pyro_3d_raymarch.frag.spv"),
         },
     };
-    const std::array<VkDescriptorSetLayout, 1> set_layouts{render_descriptors().layout()};
+    const std::array<cubey::render::ShaderStageFile, 2> atmosphere_shaders{
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .path = shader_path("atmosphere.vert.spv"),
+        },
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .path = shader_path("atmosphere.frag.spv"),
+        },
+    };
+    const std::array<VkDescriptorSetLayout, 2> set_layouts{render_descriptors().layout(),
+                                                           environment_descriptor_layout()};
+    if (atmosphere_background_textures.has_value()) {
+        if (!atmosphere_background_.materials_created()) {
+            atmosphere_background_.create_materials(
+                device, cubey::render::AtmosphereBackgroundFrameMaterialConfig{
+                            .frame_slot_count = frame_slot_count_,
+                            .textures = atmosphere_background_textures.value(),
+                        });
+        } else {
+            atmosphere_background_.update_texture_bindings(
+                device, atmosphere_background_textures.value());
+        }
+        atmosphere_background_.create_pipeline(
+            device, cubey::render::AtmosphereBackgroundFramePipelineConfig{
+                        .extent = extent,
+                        .color_format = color_format,
+                        .shader_stage_files = atmosphere_shaders,
+                    });
+    }
     render_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                          .extent = extent,
                                          .color_format = color_format,
@@ -573,6 +650,54 @@ VkDescriptorSet Pyro3DGpuResources::shadow_descriptor_set(bool density_a_current
 VkDescriptorSet Pyro3DGpuResources::render_descriptor_set(bool density_a_current,
                                                           bool velocity_a_current) const {
     return render_descriptors().set(advect_index(density_a_current, velocity_a_current));
+}
+
+VkDescriptorSet Pyro3DGpuResources::environment_descriptor_set(
+    std::uint32_t frame_slot_index) const {
+    if (frame_slot_index >= frame_slot_count_) {
+        throw std::runtime_error("pyro 3D environment descriptor frame slot is out of range");
+    }
+    return environment_descriptors().set(frame_slot_index);
+}
+
+void Pyro3DGpuResources::upload_environment_lighting(
+    std::uint32_t frame_slot_index,
+    const cubey::render::EnvironmentLightingUniforms& uniforms) const {
+    const cubey::render::FrameSlot frame_slot{
+        .index = frame_slot_index,
+        .count = frame_slot_count_,
+    };
+    if (!environment_lighting_uniforms_.has_value()) {
+        throw std::runtime_error(
+            "pyro 3D environment lighting uniform buffers are not initialized");
+    }
+    environment_lighting_uniforms_->upload(frame_slot, uniforms);
+}
+
+void Pyro3DGpuResources::upload_atmosphere_background(
+    std::uint32_t frame_slot_index,
+    const cubey::render::AtmosphereEnvironmentFrameUniforms& uniforms) const {
+    const cubey::render::FrameSlot frame_slot{
+        .index = frame_slot_index,
+        .count = frame_slot_count_,
+    };
+    atmosphere_background().upload(frame_slot, uniforms);
+}
+
+const cubey::render::AtmosphereBackgroundFrame&
+Pyro3DGpuResources::atmosphere_background() const {
+    if (!atmosphere_background_.materials_created()) {
+        throw std::runtime_error("pyro 3D atmosphere background is not initialized");
+    }
+    return atmosphere_background_;
+}
+
+VkDescriptorSet Pyro3DGpuResources::atmosphere_background_descriptor_set(
+    std::uint32_t frame_slot_index) const {
+    return atmosphere_background().material().set(cubey::render::FrameSlot{
+        .index = frame_slot_index,
+        .count = frame_slot_count_,
+    });
 }
 
 const cubey::render::Texture3D& Pyro3DGpuResources::density_a() const {
@@ -832,6 +957,30 @@ const cubey::vulkan::DescriptorSetArray& Pyro3DGpuResources::render_descriptors(
         throw std::runtime_error("pyro 3D render descriptors are not initialized");
     }
     return render_descriptors_.value();
+}
+
+VkDescriptorSetLayout Pyro3DGpuResources::environment_descriptor_layout() const {
+    return environment_descriptors().layout();
+}
+
+const cubey::vulkan::DescriptorSetArray& Pyro3DGpuResources::environment_descriptors() const {
+    if (!environment_descriptors_.has_value()) {
+        throw std::runtime_error("pyro 3D environment descriptors are not initialized");
+    }
+    return environment_descriptors_.value();
+}
+
+const cubey::vulkan::Buffer& Pyro3DGpuResources::environment_lighting_uniform_buffer(
+    std::uint32_t frame_slot_index) const {
+    const cubey::render::FrameSlot frame_slot{
+        .index = frame_slot_index,
+        .count = frame_slot_count_,
+    };
+    if (!environment_lighting_uniforms_.has_value()) {
+        throw std::runtime_error(
+            "pyro 3D environment lighting uniform buffers are not initialized");
+    }
+    return environment_lighting_uniforms_->buffer(frame_slot);
 }
 
 const std::vector<cubey::vulkan::GpuPassTiming>& Pyro3DGpuResources::latest_timings() const {

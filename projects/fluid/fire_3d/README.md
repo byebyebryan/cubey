@@ -6,6 +6,10 @@ volume resources, source model, combustion pass, shadow volume, and raymarch
 renderer shared with `explosion_3d`. A configurable ball obstacle is embedded in
 the volume so the plume has a solid object to flow around and shadow against.
 
+By default, the raymarch and shadow passes consume the shared procedural
+atmosphere for dynamic light direction, color, sky tint, and exposure; pass
+`--pbr-environment-source static` for the legacy fixed-light fallback.
+
 Useful controls:
 
 - Left-drag: orbit camera.
@@ -14,9 +18,10 @@ Useful controls:
 - `R`: reset the volume.
 - `D`: cycle smoke, density slice, and velocity debug views.
 - Escape: close.
-- The runtime UI groups simulation, source, fire model, obstacle, rendering,
-  shadow, and diagnostics controls. The Rendering group owns the presentation
-  style: exposure, backdrop, rim/scatter, smoke warmth, and flame shaping.
+- The runtime UI groups simulation, source, fire model, obstacle, environment,
+  rendering, shadow, and diagnostics controls. The Rendering group owns the
+  local presentation style: exposure bias, backdrop, rim/scatter, smoke warmth,
+  and flame shaping.
 
 Useful commands:
 

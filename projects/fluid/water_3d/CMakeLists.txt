@@ -29,6 +29,9 @@ cubey_add_app_target(
         ../sim/water_3d/shaders/water_3d_surface_repair.frag
         ../sim/water_3d/shaders/water_3d_surface_smooth.frag
         ../sim/water_3d/shaders/water_3d_surface_composite.frag
+        ../../atmosphere/shaders/atmosphere.vert
+        ../../atmosphere/shaders/atmosphere.frag
+        ../../../shaders/cubey/atmosphere_reflection_prefilter.frag
         ../sim/water_3d/shaders/water_3d_reset.comp
         ../sim/water_3d/shaders/water_3d_clear_grid.comp
         ../sim/water_3d/shaders/water_3d_clear_bins.comp
@@ -64,7 +67,9 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_surface_common.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_surface_helpers.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/common/shaders/water_3d_grid.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/environment_lighting.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )
 

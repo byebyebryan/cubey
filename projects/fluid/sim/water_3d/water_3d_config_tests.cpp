@@ -380,6 +380,8 @@ int main() {
             std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_commands.cpp");
         const std::string app =
             read_text_file(std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_app.cpp");
+        const std::string ui =
+            read_text_file(std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_ui.cpp");
         const std::string diagnostics_cpp = read_text_file(
             std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_diagnostics.cpp");
 
@@ -676,6 +678,12 @@ int main() {
                          "water 3D scene pass should preserve sampleable scene depth");
         require_contains(scene_shader, "environment_cube",
                          "water 3D scene pass should use the shared environment cube");
+        require_contains(scene_shader, "cubey/environment_lighting.glsl",
+                         "water 3D scene pass should include shared environment lighting");
+        require_contains(scene_shader, "layout(set = 0, binding = 1)",
+                         "water 3D scene pass should bind environment lighting uniforms");
+        require_contains(scene_shader, "cubey_env_primary_light_direction",
+                         "water 3D scene lighting should follow the shared environment light");
         require_contains(scene_shader, "water_surface_domain_min",
                          "water 3D scene pass should size the ground plane from domain scale");
         require_contains(surface_depth, "gl_FragDepth",
@@ -714,6 +722,12 @@ int main() {
                          "water 3D surface composite should occlude against scene depth");
         require_contains(surface_composite, "cubey_pbr_apply_display_transform",
                          "water 3D surface composite should apply the shared display transform");
+        require_contains(surface_composite, "cubey/environment_lighting.glsl",
+                         "water 3D surface composite should include shared environment lighting");
+        require_contains(surface_composite, "layout(set = 0, binding = 5)",
+                         "water 3D surface composite should bind environment lighting uniforms");
+        require_contains(surface_composite, "cubey_env_primary_light(",
+                         "water 3D surface specular should use shared environment light");
         require_contains(surface_composite, "foam_mask",
                          "water 3D surface composite should derive screen-space foam");
         require_contains(surface_composite, "surface_gate",
@@ -748,6 +762,34 @@ int main() {
                          "water 3D surface render should support iterative smoothing");
         require_contains(commands, "update_surface_descriptors",
                          "water 3D surface render should bind graph transient textures");
+        require_contains(gpu_resources, "Water3DEnvironmentTextureBindings",
+                         "water 3D surface descriptors should accept water environment bindings");
+        require_contains(gpu_resources, "display_sampler",
+                         "water 3D scene descriptors should bind a fallback environment cube");
+        require_contains(gpu_resources, "AtmosphereBackgroundFrameMaterialConfig",
+                         "water 3D should create direct atmosphere background descriptors");
+        require_contains(gpu_resources, "atmosphere_background_.create_pipeline",
+                         "water 3D should create a direct atmosphere background pipeline");
+        require_contains(gpu_resources, "FrameUniformBuffer<cubey::render::EnvironmentLightingUniforms>",
+                         "water 3D GPU resources should allocate environment lighting uniforms");
+        require_contains(gpu_resources, "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER",
+                         "water 3D surface layouts should bind environment lighting uniforms");
+        require_contains(scene_shader, "external_sky",
+                         "water 3D scene shader should preserve direct atmosphere sky pixels");
+        require_contains(commands, "resources.atmosphere_background().pipeline()",
+                         "water 3D scene pass should draw the direct atmosphere background");
+        require_contains(app, "AtmosphereEnvironmentRuntime",
+                         "water 3D should own the shared atmosphere environment runtime");
+        require_contains(app, "atmosphere_background_uniforms",
+                         "water 3D should upload camera-aligned atmosphere background uniforms");
+        require_contains(app, "upload_atmosphere_background",
+                         "water 3D should upload direct atmosphere background uniforms");
+        require_contains(app, "mark_full_update_pending",
+                         "water 3D should keep atmosphere reflection updates coherent");
+        require_contains(app, "record_pending_update",
+                         "water 3D should refresh the atmosphere reflection probe before drawing");
+        require_contains(ui, "draw_atmosphere_environment_controls",
+                         "water 3D should expose shared environment controls");
         require_contains(commands, "record_whitewater_compute",
                          "water 3D simulation should run visual whitewater compute passes");
         require_contains(commands, "record_dispatch_indirect",

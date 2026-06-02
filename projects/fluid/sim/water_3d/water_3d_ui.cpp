@@ -2,6 +2,7 @@
 
 #include "water_3d_gpu_resources.h"
 
+#include <cubey/host/atmosphere_environment_ui.h>
 #include <cubey/host/imgui_helpers.h>
 #include <cubey/vulkan/device.h>
 
@@ -42,10 +43,11 @@ void reset_simulation(Water3DUiContext& ui) {
 
 } // namespace
 
-void draw_water_3d_ui(Water3DUiContext ui) {
+bool draw_water_3d_ui(Water3DUiContext ui) {
+    bool environment_changed = false;
     if (!cubey::host::begin_control_panel(ui.title)) {
         ImGui::End();
-        return;
+        return false;
     }
 
     ImGui::Checkbox("Paused", &ui.paused);
@@ -235,6 +237,15 @@ void draw_water_3d_ui(Water3DUiContext ui) {
                                         "%.2f");
     }
 
+    if (ui.atmosphere != nullptr) {
+        environment_changed |= cubey::host::draw_atmosphere_environment_controls(
+            *ui.atmosphere,
+            {.label = "Environment",
+             .default_open = false,
+             .help = "Shared procedural atmosphere driving water lighting, reflection, and "
+                     "exposure."});
+    }
+
     if (const cubey::host::ScopedImGuiGroup group{
             "Foam and whitewater",
             {.default_open = false, .help = "Foam shading and whitewater particle controls."}};
@@ -289,6 +300,7 @@ void draw_water_3d_ui(Water3DUiContext ui) {
         cubey::host::draw_device_memory_budget(water_bytes, memory_budget, "Water GPU buffers");
     }
     ImGui::End();
+    return environment_changed;
 }
 
 } // namespace cubey::projects::fluid::water_3d

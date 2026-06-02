@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/color_space.glsl"
+#include "cubey/environment_lighting.glsl"
 #include "water_3d_surface_common.glsl"
 
 WATER3D_SURFACE_PARAMS;
@@ -9,6 +10,9 @@ WATER3D_SURFACE_PARAMS;
 #include "water_3d_surface_helpers.glsl"
 
 layout(set = 0, binding = 0) uniform samplerCube environment_cube;
+layout(set = 0, binding = 1) uniform EnvironmentLightingBlock {
+    CubeyEnvironmentLighting environment_lighting;
+};
 
 layout(location = 0) in vec2 frag_uv;
 layout(location = 0) out vec4 out_color;
@@ -60,16 +64,20 @@ vec3 ground_color(vec3 world_position) {
     vec3 base = mix(base_a, base_b, checker);
     vec3 color = mix(base, line, grid * 0.55);
 
-    vec3 light_dir = normalize(vec3(-0.42, 0.78, 0.46));
+    vec3 light_dir = cubey_env_primary_light_direction(environment_lighting);
     float diffuse = max(dot(vec3(0.0, 1.0, 0.0), light_dir), 0.0);
-    return color * (0.42 + diffuse * 0.58);
+    vec3 ambient = cubey_env_ambient_light(environment_lighting) * 1.35;
+    vec3 direct = cubey_env_primary_light(environment_lighting) * diffuse * 0.58;
+    return color * max(ambient + direct, vec3(0.055));
 }
 
 void main() {
     vec3 camera_position = water_surface_camera_position();
     vec3 ray = scene_view_ray(frag_uv);
-    vec3 color = sample_environment(ray);
+    bool external_sky = surface_params.environment_options.w > 0.001;
+    vec3 color = external_sky ? vec3(0.0) : sample_environment(ray);
     float depth = 1.0;
+    bool hit_scene = !external_sky;
 
     const float ground_y = -0.025;
     if (ray.y < -0.0001) {
@@ -82,8 +90,13 @@ void main() {
                 world_position.z >= domain_min.z && world_position.z <= domain_max.z) {
                 color = ground_color(world_position);
                 depth = clip_depth(world_position);
+                hit_scene = true;
             }
         }
+    }
+
+    if (!hit_scene) {
+        discard;
     }
 
     out_color = vec4(color, 1.0);

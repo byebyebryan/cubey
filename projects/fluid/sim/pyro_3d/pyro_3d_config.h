@@ -88,7 +88,6 @@ struct Pyro3DConfig {
     float render_smoke_warmth = 0.18F;
     float render_flame_intensity = 1.65F;
     float render_flame_core_strength = 1.35F;
-    float render_backdrop_grid_strength = 0.42F;
 };
 
 [[nodiscard]] inline Pyro3DDebugView next_debug_view(Pyro3DDebugView view) {
@@ -189,7 +188,6 @@ struct Pyro3DConfig {
         result.render_smoke_warmth = 0.24F;
         result.render_flame_intensity = 2.35F;
         result.render_flame_core_strength = 2.10F;
-        result.render_backdrop_grid_strength = 0.50F;
     }
     if (config.grid.width != 0) {
         result.grid_width = config.grid.width;

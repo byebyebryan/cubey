@@ -13,16 +13,20 @@ render-domain scale rather than a full anisotropic-cell rewrite.
 Rain particles use the same particle-grid solver path as water, but they carry a
 separate render state so falling droplets draw smaller than bulk liquid particles.
 
-The default renderer is a screen-space surface path: an HDR/generated environment
-and simple ground scene are rendered into offscreen color/depth targets, particles
-write front depth and thickness into render-graph transients, a separable bilateral
-pass repairs small holes and runs configurable depth-aware smoothing, and a composite
-pass shades the water with Fresnel, scene-color refraction, environment reflection,
-Beer-Lambert absorption, a heuristic screen-space foam mask, and visual-only
-secondary whitewater spray/foam particles. The old particle splats remain as an
-opaque debug view. SSR, anisotropic particle kernels, marching cubes, mesh
-generation, and richer collision are still deferred until the 3D solver and
-renderer contract are stable.
+The default renderer is a screen-space surface path: the selected environment and
+simple ground scene are rendered into offscreen color/depth targets, particles
+write front depth and thickness into render-graph transients, a separable
+bilateral pass repairs small holes and runs configurable depth-aware smoothing,
+and a composite pass shades the water with Fresnel, scene-color refraction,
+environment reflection, Beer-Lambert absorption, a heuristic screen-space foam
+mask, and visual-only secondary whitewater spray/foam particles. The default
+environment source is the shared procedural atmosphere, including dynamic
+reflection-probe updates, environment lighting, exposure, and nested Environment
+controls. Pass `--pbr-environment-source static` to use the generated/HDR IBL
+fallback instead. The old particle splats remain as an opaque debug view. SSR,
+anisotropic particle kernels, marching cubes, mesh generation, and richer
+collision are still deferred until the 3D solver and renderer contract are
+stable.
 
 Useful render views:
 

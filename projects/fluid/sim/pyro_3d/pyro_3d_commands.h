@@ -46,6 +46,7 @@ void record_pyro_3d_draw(VkCommandBuffer command_buffer, const Pyro3DGpuResource
                           cubey::render::ColorTargetView color_target,
                           const Pyro3DFrameState& frame_state,
                           cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
-                          std::uint32_t frame_slot_index = 0);
+                          std::uint32_t frame_slot_index = 0,
+                          bool atmosphere_background_enabled = false);
 
 } // namespace cubey::projects::fluid::pyro_3d
