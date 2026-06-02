@@ -557,17 +557,21 @@ int main() {
                          "fragment shader should keep crest foam as the coherent carrier");
         require_contains(fragment_shader, "float detail_gate",
                          "fragment shader should gate detail foam by existing support");
-        require_contains(fragment_shader, "vec3 ocean_shaded_foam(",
-                         "fragment shader should shade foam as a material");
+        require_contains(fragment_shader, "vec3 ocean_material_sky_color(vec3 direction)",
+                         "fragment shader should use a reference-style sky curve for water color");
+        require_contains(fragment_shader, "vec3 reflection = ocean_material_sky_color",
+                         "fragment shader should shade water from the reference-style sky");
+        require_contains(fragment_shader, "water = mix(water, foam_color, foam_coverage)",
+                         "fragment shader should mix final whitecaps directly toward foam color");
         require_contains(
             fragment_shader, "ocean_primary_light_intensity()",
-            "fragment shader should scale material lighting by atmosphere light energy");
+            "fragment shader should keep atmosphere light energy available to diagnostics");
         require_contains(fragment_shader,
-                         "specular *= direct_light * mix(1.0, 0.35, material_distance)",
-                         "fragment shader should reduce far and foam-covered specular");
+                         "water += ocean_primary_light_color() * specular",
+                         "fragment shader should keep sun-colored specular on the water");
         require_contains(fragment_shader,
-                         "float ocean_horizon_fog_factor(vec3 view_dir, float dist)",
-                         "fragment shader should use view-angle-aware horizon haze");
+                         "float ocean_horizon_fog_factor(float dist)",
+                         "fragment shader should use reference-style distance horizon haze");
         require_contains(fragment_shader, "color = vec3(foam_coverage);",
                          "fragment shader should keep debug foam view as presentation coverage");
         require_contains(fragment_shader, "color = vec3(foam_current);",
@@ -673,7 +677,7 @@ int main() {
             fragment_shader, "samplerCube atmosphere_reflection_texture",
             "ocean surface shader should sample the shared atmosphere reflection probe");
         require_contains(fragment_shader, "ocean_environment_reflection",
-                         "ocean surface shader should isolate atmosphere reflection lookup");
+                         "ocean surface shader should isolate atmosphere reflection diagnostics");
 
         require_not_contains(vertex_shader, "ocean_macro_waves",
                              "ocean vertex shader should not use Cubey macro waves");
