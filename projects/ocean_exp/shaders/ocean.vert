@@ -177,8 +177,7 @@ float cascade_displacement_lod_weight(uint cascade, float camera_distance) {
 }
 
 float horizon_displacement_weight(float camera_distance) {
-    return 1.0 - smoothstep(ocean.mesh_options.z * 0.36, ocean.mesh_options.z * 0.76,
-                            camera_distance);
+    return min(exp(-(camera_distance - 150.0) * 0.007), 1.0);
 }
 
 vec3 sample_ocean_displacement(uint cascade, vec2 position, float tile_length) {
