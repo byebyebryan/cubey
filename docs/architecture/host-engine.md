@@ -264,8 +264,11 @@ setup before swapchain setup, and callback forwarding.
   completed pixel payload handoff.
 - `cubey::ConfigOptionDescriptor` currently drives JSON config templates,
   descriptor-backed named CLI parsing, bool negative aliases, and generic
-  `--set path=value` overrides. Special/demo-specific legacy flags remain
-  explicit parser branches until they justify descriptor promotion.
+  `--set path=value` overrides. Shared host, capture, profiling, grid,
+  atmosphere, PBR, terrain, ocean, smoke, pyro, and water tuning flags now flow
+  through the same descriptor registry. The explicit parser path is reserved
+  for bootstrap-only commands such as loading config files, deferred
+  `--set path=value` overrides, and writing config templates.
 - Shared ImGui helpers now cover hierarchical debug-panel groups, hover help,
   and bool/int/unsigned-int/float/vector/enum/color controls. Active ocean,
   atmosphere, terrain, smoke, water, fire, and explosion panels use those

@@ -110,8 +110,10 @@ Current checkpoint:
   value kinds, ranges, enum choices, help text, config templates, and generic
   `--set path=value` overrides. Descriptor-covered named CLI flags now parse
   through the same metadata, including negative aliases for selected bool
-  options, while special/demo-specific legacy flags remain explicit parser
-  branches until they justify promotion.
+  options. Shared host, capture, profiling, grid, atmosphere, PBR, terrain,
+  ocean, smoke, pyro, and water tuning flags now share that descriptor path;
+  explicit parser branches are kept for bootstrap commands like `--config`,
+  `--set`, and `--write-config-template`.
 - Reusable ImGui helpers now cover hierarchical debug-panel groups, standard
   option hover help, and common bool/int/unsigned-int/float/vector/enum/color
   controls. Active ocean, atmosphere, terrain, smoke, water, fire, and explosion

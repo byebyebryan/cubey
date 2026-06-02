@@ -203,8 +203,9 @@ full engine architecture.
   forward PBR pipelines, HDR scene-color graph target, post pipeline,
   scene/skybox/post material descriptors, depth attachment, and render-graph
   recording for a 3D PBR view. The reusable GLSL package lives under
-  `shaders/cubey/forward_pbr`, and the shader-directory config helper maps
-  that package to compiled `.spv` paths. The public renderer header exposes
+  `shaders/cubey/forward_pbr`, the shared atmosphere background shaders live
+  under `shaders/cubey/atmosphere`, and the shader-directory config helper maps
+  those packages to compiled `.spv` paths. The public renderer header exposes
   config, resource, and request contracts while keeping shadow, pipeline,
   graph, sampler, and attachment runtime state behind the engine
   implementation boundary. Projects still decide when to create the renderer

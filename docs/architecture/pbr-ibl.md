@@ -40,6 +40,9 @@ Radiance HDR equirectangular environment assets:
   direct light data, low-order diffuse irradiance SH, a runtime atmosphere
   reflection probe for specular IBL, and explicit environment bindings that use
   generated/HDR fallback resources for diffuse irradiance and DFG lookup.
+  The shared atmosphere draw shaders live under
+  `shaders/cubey/atmosphere/`, while the atmosphere model include and
+  reflection prefilter remain in `shaders/cubey/`.
   `Environment3D` can opt into SH diffuse ambient, while the reusable forward
   PBR renderer can bind either a complete generated/HDR environment or explicit
   environment texture bindings supplied by a project. `projects/ocean` also
@@ -120,8 +123,9 @@ renderer-wide material management explicit future work.
   fog, and fill, but its water material remains bespoke rather than a full PBR
   surface. The runtime is intentionally V1: it keeps the static/generated
   diffuse irradiance and DFG resources as fallback foundation pieces, uses SH for
-  atmosphere diffuse lighting, updates all reflection faces on first use, and
-  then updates one face per frame when procedural time is animated.
+  atmosphere diffuse lighting, updates all reflection faces on first use, skips
+  unchanged environment assignments, and then updates one reflection face per
+  frame after an actual procedural environment change.
 - The current clearcoat, sheen, anisotropy, and iridescence lobes are pragmatic
   real-time approximations. Transmission, refraction, volume absorption,
   dispersion, and OIT-quality transparent material behavior remain future work.
