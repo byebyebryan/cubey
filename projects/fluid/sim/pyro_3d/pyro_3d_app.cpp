@@ -232,9 +232,9 @@ class Pyro3DApp {
             return;
         }
 
-        ImGui::Checkbox("Paused", &paused_);
+        cubey::host::imgui_checkbox("Paused", &paused_, "Pause volume simulation time.");
         ImGui::SameLine();
-        if (ImGui::Button("Reset")) {
+        if (cubey::host::imgui_button("Reset", "Restart the volume simulation.")) {
             reset_simulation();
         }
 

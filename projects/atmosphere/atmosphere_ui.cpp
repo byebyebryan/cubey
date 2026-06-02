@@ -75,7 +75,8 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
         ui.render_view = preserved_view;
     }
     ImGui::SameLine();
-    if (ImGui::Button("Reset")) {
+    if (cubey::host::imgui_button("Reset",
+                                  "Restart atmosphere time and rebuild generated atlases.")) {
         ui.reset_requested = true;
     }
 

@@ -270,9 +270,11 @@ setup before swapchain setup, and callback forwarding.
   for bootstrap-only commands such as loading config files, deferred
   `--set path=value` overrides, and writing config templates.
 - Shared ImGui helpers now cover hierarchical debug-panel groups, hover help,
-  and bool/int/unsigned-int/float/vector/enum/color controls. Active ocean,
-  atmosphere, terrain, smoke, water, fire, and explosion panels use those
-  helpers while keeping commands, diagnostics, and reset behavior project-owned.
+  common command buttons, and bool/int/unsigned-int/float/vector/enum/color
+  controls. Active ocean, atmosphere, terrain, smoke, water, fire, and
+  explosion panels use those helpers for standard controls while keeping
+  commands, diagnostics, reset behavior, and genuinely custom selectors
+  project-owned.
 - A generic project host is still deferred; the current contract is limited to
   shared service ownership, GPU bridge attachment, and frame bridging.
 

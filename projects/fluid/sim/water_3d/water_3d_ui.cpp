@@ -50,9 +50,10 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
         return false;
     }
 
-    ImGui::Checkbox("Paused", &ui.paused);
+    cubey::host::imgui_checkbox("Paused", &ui.paused, "Pause water simulation time.");
     ImGui::SameLine();
-    if (ImGui::Button("Reset")) {
+    if (cubey::host::imgui_button("Reset",
+                                  "Restart the water simulation from the current setup.")) {
         reset_simulation(ui);
     }
 

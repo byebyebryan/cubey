@@ -115,10 +115,11 @@ Current checkpoint:
   explicit parser branches are kept for bootstrap commands like `--config`,
   `--set`, and `--write-config-template`.
 - Reusable ImGui helpers now cover hierarchical debug-panel groups, standard
-  option hover help, and common bool/int/unsigned-int/float/vector/enum/color
-  controls. Active ocean, atmosphere, terrain, smoke, water, fire, and explosion
-  panels use those helpers while keeping project commands, diagnostics, and
-  reset behavior project-owned.
+  option hover help, command buttons, and common
+  bool/int/unsigned-int/float/vector/enum/color controls. Active ocean,
+  atmosphere, terrain, smoke, water, fire, and explosion panels use those
+  helpers for standard controls while keeping project commands, diagnostics,
+  reset behavior, and custom selectors project-owned.
 - Reusable `cubey::math` wraps GLM matrix/vector/quaternion types and the
   current Vulkan transform/projection conventions used by the shared
   transform/camera helpers and cube examples.

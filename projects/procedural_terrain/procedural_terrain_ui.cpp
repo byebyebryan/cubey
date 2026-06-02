@@ -50,10 +50,10 @@ void draw_seed_control(TerrainConfig& config) {
     int seed = config.seed > static_cast<std::uint64_t>(std::numeric_limits<int>::max())
                    ? std::numeric_limits<int>::max()
                    : static_cast<int>(config.seed);
-    if (ImGui::InputInt("Seed", &seed, 1, 1000)) {
+    if (cubey::host::imgui_input_int("Seed", &seed, 1, 1000,
+                                     "Deterministic terrain seed.")) {
         config.seed = static_cast<std::uint64_t>(std::max(seed, 0));
     }
-    cubey::host::imgui_attach_help("Deterministic terrain seed.");
 }
 
 void draw_material_table(const TerrainDiagnostics& diagnostics) {
@@ -87,11 +87,12 @@ void draw_terrain_ui(TerrainUiContext ui) {
         return;
     }
 
-    if (ImGui::Button("Reset Camera")) {
+    if (cubey::host::imgui_button("Reset Camera",
+                                  "Return the terrain camera to its default view.")) {
         ui.reset_camera_requested = true;
     }
     ImGui::SameLine();
-    if (ImGui::Button("Defaults")) {
+    if (cubey::host::imgui_button("Defaults", "Reset editable terrain settings to defaults.")) {
         const TerrainDebugView debug_view = ui.active_config.debug_view;
         ui.edit_config = TerrainConfig{};
         ui.edit_config.debug_view = debug_view;
@@ -134,11 +135,12 @@ void draw_terrain_ui(TerrainUiContext ui) {
 
     const bool pending_rebuild = !terrain_rebuild_config_equal(ui.active_config, ui.edit_config);
     ImGui::BeginDisabled(!pending_rebuild);
-    if (ImGui::Button("Apply Terrain")) {
+    if (cubey::host::imgui_button("Apply Terrain", "Rebuild terrain from the editable settings.")) {
         ui.rebuild_requested = true;
     }
     ImGui::SameLine();
-    if (ImGui::Button("Discard Edits")) {
+    if (cubey::host::imgui_button("Discard Edits",
+                                  "Restore editable settings from the active terrain.")) {
         ui.discard_edits_requested = true;
     }
     ImGui::EndDisabled();

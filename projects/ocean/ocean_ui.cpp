@@ -43,23 +43,8 @@ void format_cascade_label(char* buffer, std::size_t size, std::uint32_t index) {
 }
 
 void draw_map_size_combo(OceanConfig& config) {
-    char preview[40]{};
-    std::snprintf(preview, sizeof(preview), "%u", config.map_size);
-    if (ImGui::BeginCombo("Map size", preview)) {
-        for (const std::uint32_t map_size : kOceanSupportedMapSizes) {
-            const bool selected = config.map_size == map_size;
-            char label[16]{};
-            std::snprintf(label, sizeof(label), "%u", map_size);
-            if (ImGui::Selectable(label, selected)) {
-                config.map_size = map_size;
-            }
-            if (selected) {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-    }
-    cubey::host::imgui_attach_help("FFT texture resolution for each ocean cascade.");
+    cubey::host::imgui_uint32_combo("Map size", &config.map_size, kOceanSupportedMapSizes,
+                                    "FFT texture resolution for each ocean cascade.");
 }
 
 void draw_selected_cascade_combo(OceanDiagnosticsConfig& diagnostics) {
@@ -106,7 +91,7 @@ void draw_camera_preset_button(OceanUiContext& ui, OceanCameraPreset preset, con
     if (selected) {
         ImGui::BeginDisabled();
     }
-    if (ImGui::Button(label)) {
+    if (cubey::host::imgui_button(label, "Move the camera to this inspection preset.")) {
         request_camera_preset(ui, preset);
     }
     if (selected) {
@@ -202,12 +187,12 @@ void draw_ocean_ui(OceanUiContext ui) {
 
     cubey::host::imgui_checkbox("Paused", &ui.paused, "Pause ocean time integration.");
     ImGui::SameLine();
-    if (ImGui::Button("Reset")) {
+    if (cubey::host::imgui_button("Reset", "Reset ocean time and regenerate spectrum state.")) {
         ui.reset_requested = true;
     }
     ImGui::SameLine();
     ImGui::BeginDisabled(!ui.paused);
-    if (ImGui::Button("Step")) {
+    if (cubey::host::imgui_button("Step", "Advance one ocean frame while paused.")) {
         ui.step_requested = true;
     }
     ImGui::EndDisabled();

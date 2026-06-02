@@ -32,9 +32,9 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
         return;
     }
 
-    ImGui::Checkbox("Paused", &ui.paused);
+    cubey::host::imgui_checkbox("Paused", &ui.paused, "Pause smoke simulation time.");
     ImGui::SameLine();
-    if (ImGui::Button("Reset")) {
+    if (cubey::host::imgui_button("Reset", "Restart the smoke field and injector state.")) {
         ui.reset_requested = true;
         ui.reset_injectors_requested = true;
     }

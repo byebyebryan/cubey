@@ -9,6 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -119,6 +120,19 @@ inline bool imgui_checkbox(const char* label, bool* value, const char* help = nu
     return changed;
 }
 
+inline bool imgui_button(const char* label, const char* help = nullptr) {
+    const bool activated = ImGui::Button(label);
+    imgui_attach_help(help);
+    return activated;
+}
+
+inline bool imgui_input_int(const char* label, int* value, int step = 1, int step_fast = 100,
+                            const char* help = nullptr) {
+    const bool changed = ImGui::InputInt(label, value, step, step_fast);
+    imgui_attach_help(help);
+    return changed;
+}
+
 inline bool imgui_slider_float(const char* label, float* value, float min, float max,
                                const char* format = "%.3f", const char* help = nullptr) {
     const bool changed = ImGui::SliderFloat(label, value, min, max, format);
@@ -161,6 +175,32 @@ inline bool imgui_slider_float3(const char* label, float* value, float min, floa
 
 inline bool imgui_color_edit3(const char* label, float* value, const char* help = nullptr) {
     const bool changed = ImGui::ColorEdit3(label, value);
+    imgui_attach_help(help);
+    return changed;
+}
+
+template <std::size_t Count>
+bool imgui_uint32_combo(const char* label, std::uint32_t* value,
+                        const std::array<std::uint32_t, Count>& values,
+                        const char* help = nullptr) {
+    char preview[32]{};
+    std::snprintf(preview, sizeof(preview), "%u", *value);
+    bool changed = false;
+    if (ImGui::BeginCombo(label, preview)) {
+        for (const std::uint32_t candidate : values) {
+            char option_label[32]{};
+            std::snprintf(option_label, sizeof(option_label), "%u", candidate);
+            const bool selected = candidate == *value;
+            if (ImGui::Selectable(option_label, selected)) {
+                *value = candidate;
+                changed = true;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
     imgui_attach_help(help);
     return changed;
 }

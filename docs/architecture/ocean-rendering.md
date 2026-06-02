@@ -7,10 +7,12 @@ Cubey now keeps three ocean lanes with different jobs:
   that baseline until changes clearly improve it.
 - `projects/ocean_ref` is the frozen reference port. Keep it source-stable so
   active ocean changes can be checked against a working wave-shape guardrail,
-  not treated as an oracle.
+  not treated as an oracle. It is intentionally exempt from current active-panel
+  UI cleanup unless a bug blocks comparison work.
 - `projects/ocean_legacy` is the previous Cubey experimental renderer. It is a
   feature donor for macro crests, persistent foam history, refraction, seafloor,
-  atmosphere hooks, and shoreline/bathymetry ideas.
+  atmosphere hooks, and shoreline/bathymetry ideas. It is not expected to track
+  shared UI/config helper adoption except when a feature is actively ported.
 
 This split keeps wave shape and foam quality grounded in a known-good
 implementation while preserving the older work for selective porting.
