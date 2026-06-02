@@ -202,118 +202,149 @@ class Pyro3DApp {
 
         ImGui::Text("Mode: %s", pyro_3d_mode_name(pyro_config_.mode));
 
-        if (cubey::host::imgui_section("Simulation", true)) {
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Simulation",
+                {.help = "Pressure projection, decay, buoyancy, and vorticity controls."}};
+            group) {
             const cubey::host::ScopedImGuiId section_id("Simulation");
-            int pressure_iterations = static_cast<int>(pyro_config_.pressure_iterations);
-            if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 48)) {
-                pyro_config_.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
-            }
-            ImGui::SliderFloat("Density decay", &pyro_config_.density_decay_per_second, 0.960F,
-                               1.0F, "%.4f");
-            ImGui::SliderFloat("Velocity decay", &pyro_config_.velocity_decay_per_second, 0.960F,
-                               1.0F, "%.4f");
-            ImGui::SliderFloat("Buoyancy", &pyro_config_.buoyancy_strength, -2.0F, 6.0F, "%.2f");
-            ImGui::SliderFloat("Vorticity", &pyro_config_.vorticity_strength, 0.0F, 1.5F, "%.2f");
+            cubey::host::imgui_slider_uint32("Pressure iterations",
+                                             &pyro_config_.pressure_iterations, 1U, 48U);
+            cubey::host::imgui_slider_float("Density decay",
+                                            &pyro_config_.density_decay_per_second, 0.960F, 1.0F,
+                                            "%.4f");
+            cubey::host::imgui_slider_float("Velocity decay",
+                                            &pyro_config_.velocity_decay_per_second, 0.960F, 1.0F,
+                                            "%.4f");
+            cubey::host::imgui_slider_float("Buoyancy", &pyro_config_.buoyancy_strength, -2.0F,
+                                            6.0F, "%.2f");
+            cubey::host::imgui_slider_float("Vorticity", &pyro_config_.vorticity_strength, 0.0F,
+                                            1.5F, "%.2f");
         }
 
-        if (cubey::host::imgui_section("Sources", true)) {
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Sources", {.help = "Procedural fuel, heat, smoke, and velocity sources."}};
+            group) {
             const cubey::host::ScopedImGuiId section_id("Sources");
-            int source_count = static_cast<int>(pyro_config_.source_count);
-            if (ImGui::SliderInt("Sources", &source_count, 1,
-                                 static_cast<int>(kMaxPyro3DSourceCount))) {
-                pyro_config_.source_count = static_cast<std::uint32_t>(source_count);
+            if (cubey::host::imgui_slider_uint32("Sources", &pyro_config_.source_count, 1U,
+                                                 kMaxPyro3DSourceCount)) {
                 reset_sources();
             }
-            ImGui::SliderFloat("Source height", &pyro_config_.source_center_height, 0.020F, 0.500F,
-                               "%.3f");
-            ImGui::SliderFloat("Source radius", &pyro_config_.source_radius, 0.020F, 0.180F,
-                               "%.3f");
-            ImGui::SliderFloat("Smoke", &pyro_config_.source_smoke_amount, 0.0F, 32.0F, "%.2f");
-            ImGui::SliderFloat("Heat", &pyro_config_.source_heat_amount, 0.0F, 8.0F, "%.2f");
-            ImGui::SliderFloat(pyro_config_.mode == Pyro3DMode::Fire ? "Fuel" : "Flame",
-                               &pyro_config_.source_flame_amount, 0.0F, 12.0F, "%.2f");
-            ImGui::SliderFloat("Velocity force", &pyro_config_.source_velocity_strength, 0.0F,
-                               16.0F, "%.2f");
+            cubey::host::imgui_slider_float("Source height", &pyro_config_.source_center_height,
+                                            0.020F, 0.500F, "%.3f");
+            cubey::host::imgui_slider_float("Source radius", &pyro_config_.source_radius, 0.020F,
+                                            0.180F, "%.3f");
+            cubey::host::imgui_slider_float("Smoke", &pyro_config_.source_smoke_amount, 0.0F,
+                                            32.0F, "%.2f");
+            cubey::host::imgui_slider_float("Heat", &pyro_config_.source_heat_amount, 0.0F, 8.0F,
+                                            "%.2f");
+            cubey::host::imgui_slider_float(
+                pyro_config_.mode == Pyro3DMode::Fire ? "Fuel" : "Flame",
+                &pyro_config_.source_flame_amount, 0.0F, 12.0F, "%.2f");
+            cubey::host::imgui_slider_float("Velocity force",
+                                            &pyro_config_.source_velocity_strength, 0.0F, 16.0F,
+                                            "%.2f");
         }
 
         const char* model_section =
             pyro_config_.mode == Pyro3DMode::Fire ? "Fire model" : "Explosion model";
-        if (cubey::host::imgui_section(model_section, true)) {
+        if (const cubey::host::ScopedImGuiGroup group{
+                model_section,
+                {.help = "Mode-specific flame, combustion, and explosion shaping controls."}};
+            group) {
             const cubey::host::ScopedImGuiId section_id(model_section);
             if (pyro_config_.mode == Pyro3DMode::Explosion) {
-                ImGui::SliderFloat("Explosion interval", &pyro_config_.explosion_interval_seconds,
-                                   0.25F, 8.0F, "%.2f");
+                cubey::host::imgui_slider_float("Explosion interval",
+                                                &pyro_config_.explosion_interval_seconds, 0.25F,
+                                                8.0F, "%.2f");
                 const float max_duration = std::min(pyro_config_.explosion_interval_seconds, 1.0F);
                 pyro_config_.explosion_duration_seconds =
                     std::min(pyro_config_.explosion_duration_seconds, max_duration);
-                ImGui::SliderFloat("Explosion duration", &pyro_config_.explosion_duration_seconds,
-                                   0.016F, max_duration, "%.3f");
-                ImGui::SliderFloat("Explosion boost", &pyro_config_.explosion_boost, 0.0F, 40.0F,
-                                   "%.2f");
+                cubey::host::imgui_slider_float("Explosion duration",
+                                                &pyro_config_.explosion_duration_seconds, 0.016F,
+                                                max_duration, "%.3f");
+                cubey::host::imgui_slider_float("Explosion boost", &pyro_config_.explosion_boost,
+                                                0.0F, 40.0F, "%.2f");
             }
             if (pyro_config_.mode == Pyro3DMode::Fire) {
-                ImGui::SliderFloat("Ignition", &pyro_config_.fire_ignition_temperature, 0.0F, 2.0F,
-                                   "%.2f");
-                ImGui::SliderFloat("Burn rate", &pyro_config_.fire_burn_rate, 0.0F, 10.0F, "%.2f");
-                ImGui::SliderFloat("Heat output", &pyro_config_.fire_heat_output, 0.0F, 8.0F,
-                                   "%.2f");
-                ImGui::SliderFloat("Soot yield", &pyro_config_.fire_soot_yield, 0.0F, 1.5F, "%.2f");
+                cubey::host::imgui_slider_float("Ignition",
+                                                &pyro_config_.fire_ignition_temperature, 0.0F,
+                                                2.0F, "%.2f");
+                cubey::host::imgui_slider_float("Burn rate", &pyro_config_.fire_burn_rate, 0.0F,
+                                                10.0F, "%.2f");
+                cubey::host::imgui_slider_float("Heat output", &pyro_config_.fire_heat_output,
+                                                0.0F, 8.0F, "%.2f");
+                cubey::host::imgui_slider_float("Soot yield", &pyro_config_.fire_soot_yield, 0.0F,
+                                                1.5F, "%.2f");
             }
-            ImGui::SliderFloat("Expansion", &pyro_config_.fire_expansion, 0.0F, 4.0F, "%.2f");
-            ImGui::SliderFloat("Flame cooling", &pyro_config_.fire_flame_cooling, 0.0F, 8.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Shredding", &pyro_config_.fire_shredding, 0.0F, 8.0F, "%.2f");
-            ImGui::SliderFloat("Turbulence", &pyro_config_.fire_turbulence, 0.0F, 3.0F, "%.2f");
+            cubey::host::imgui_slider_float("Expansion", &pyro_config_.fire_expansion, 0.0F,
+                                            4.0F, "%.2f");
+            cubey::host::imgui_slider_float("Flame cooling", &pyro_config_.fire_flame_cooling,
+                                            0.0F, 8.0F, "%.2f");
+            cubey::host::imgui_slider_float("Shredding", &pyro_config_.fire_shredding, 0.0F, 8.0F,
+                                            "%.2f");
+            cubey::host::imgui_slider_float("Turbulence", &pyro_config_.fire_turbulence, 0.0F,
+                                            3.0F, "%.2f");
         }
 
-        if (cubey::host::imgui_section("Obstacles", false)) {
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Obstacles",
+                {.default_open = false, .help = "Solid obstacle placement for the volume solve."}};
+            group) {
             const cubey::host::ScopedImGuiId section_id("Obstacles");
-            ImGui::SliderFloat("Obstacle height", &pyro_config_.obstacle_center_height, 0.0F, 1.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Obstacle radius", &pyro_config_.obstacle_radius, 0.0F,
-                               kMaxPyro3DObstacleRadius, "%.3f");
+            cubey::host::imgui_slider_float("Obstacle height",
+                                            &pyro_config_.obstacle_center_height, 0.0F, 1.0F,
+                                            "%.2f");
+            cubey::host::imgui_slider_float("Obstacle radius", &pyro_config_.obstacle_radius, 0.0F,
+                                            kMaxPyro3DObstacleRadius, "%.3f");
         }
 
-        if (cubey::host::imgui_section("Rendering", true)) {
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Rendering", {.help = "Raymarch, exposure, flame, smoke, and backdrop controls."}};
+            group) {
             const cubey::host::ScopedImGuiId section_id("Rendering");
-            int raymarch_steps = static_cast<int>(pyro_config_.raymarch_steps);
-            if (ImGui::SliderInt("Raymarch steps", &raymarch_steps, 24, 192)) {
-                pyro_config_.raymarch_steps = static_cast<std::uint32_t>(raymarch_steps);
-            }
-            ImGui::SliderFloat("Exposure", &pyro_config_.render_exposure, -2.0F, 2.0F, "%.2f");
-            ImGui::SliderFloat("Backdrop", &pyro_config_.render_background_lift, 0.0F, 1.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Backdrop grid", &pyro_config_.render_backdrop_grid_strength, 0.0F,
-                               1.5F, "%.2f");
-            ImGui::SliderFloat("Absorption", &pyro_config_.absorption, 0.5F, 48.0F, "%.2f");
-            ImGui::SliderFloat("Light", &pyro_config_.emission, 0.1F, 4.0F, "%.2f");
-            ImGui::SliderFloat("Ambient", &pyro_config_.ambient_light, 0.0F, 1.0F, "%.2f");
-            ImGui::SliderFloat("Rim", &pyro_config_.render_rim_strength, 0.0F, 3.0F, "%.2f");
-            ImGui::SliderFloat("Scatter", &pyro_config_.render_scatter_strength, 0.0F, 3.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Smoke warmth", &pyro_config_.render_smoke_warmth, 0.0F, 1.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Flame intensity", &pyro_config_.render_flame_intensity, 0.0F, 3.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Flame core", &pyro_config_.render_flame_core_strength, 0.0F, 3.0F,
-                               "%.2f");
+            cubey::host::imgui_slider_uint32("Raymarch steps", &pyro_config_.raymarch_steps, 24U,
+                                             192U);
+            cubey::host::imgui_slider_float("Exposure", &pyro_config_.render_exposure, -2.0F,
+                                            2.0F, "%.2f");
+            cubey::host::imgui_slider_float("Backdrop", &pyro_config_.render_background_lift, 0.0F,
+                                            1.0F, "%.2f");
+            cubey::host::imgui_slider_float("Backdrop grid",
+                                            &pyro_config_.render_backdrop_grid_strength, 0.0F,
+                                            1.5F, "%.2f");
+            cubey::host::imgui_slider_float("Absorption", &pyro_config_.absorption, 0.5F, 48.0F,
+                                            "%.2f");
+            cubey::host::imgui_slider_float("Light", &pyro_config_.emission, 0.1F, 4.0F, "%.2f");
+            cubey::host::imgui_slider_float("Ambient", &pyro_config_.ambient_light, 0.0F, 1.0F,
+                                            "%.2f");
+            cubey::host::imgui_slider_float("Rim", &pyro_config_.render_rim_strength, 0.0F, 3.0F,
+                                            "%.2f");
+            cubey::host::imgui_slider_float("Scatter", &pyro_config_.render_scatter_strength, 0.0F,
+                                            3.0F, "%.2f");
+            cubey::host::imgui_slider_float("Smoke warmth", &pyro_config_.render_smoke_warmth,
+                                            0.0F, 1.0F, "%.2f");
+            cubey::host::imgui_slider_float("Flame intensity",
+                                            &pyro_config_.render_flame_intensity, 0.0F, 3.0F,
+                                            "%.2f");
+            cubey::host::imgui_slider_float("Flame core",
+                                            &pyro_config_.render_flame_core_strength, 0.0F, 3.0F,
+                                            "%.2f");
         }
 
-        if (cubey::host::imgui_section("Shadows", false)) {
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Shadows",
+                {.default_open = false, .help = "Volume shadow marching and update cadence."}};
+            group) {
             const cubey::host::ScopedImGuiId section_id("Shadows");
-            ImGui::SliderFloat("Shadow", &pyro_config_.shadow_absorption, 0.0F, 96.0F, "%.2f");
-            int shadow_steps = static_cast<int>(pyro_config_.shadow_steps);
-            if (ImGui::SliderInt("Shadow steps", &shadow_steps, 8, 192)) {
-                pyro_config_.shadow_steps = static_cast<std::uint32_t>(shadow_steps);
-            }
-            int shadow_update_interval = static_cast<int>(pyro_config_.shadow_update_interval);
-            if (ImGui::SliderInt("Shadow interval", &shadow_update_interval, 1, 8)) {
-                pyro_config_.shadow_update_interval =
-                    static_cast<std::uint32_t>(shadow_update_interval);
-            }
+            cubey::host::imgui_slider_float("Shadow", &pyro_config_.shadow_absorption, 0.0F,
+                                            96.0F, "%.2f");
+            cubey::host::imgui_slider_uint32("Shadow steps", &pyro_config_.shadow_steps, 8U, 192U);
+            cubey::host::imgui_slider_uint32("Shadow interval",
+                                             &pyro_config_.shadow_update_interval, 1U, 8U);
         }
 
-        if (cubey::host::imgui_section("Diagnostics", true)) {
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Diagnostics", {.help = "Read-only grid and GPU timing statistics."}};
+            group) {
             const cubey::host::ScopedImGuiId section_id("Diagnostics");
             ImGui::Text("Grid: %u x %u x %u", pyro_config_.grid_width, pyro_config_.grid_height,
                         pyro_config_.grid_depth);

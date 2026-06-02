@@ -58,163 +58,214 @@ void draw_water_3d_ui(Water3DUiContext ui) {
                                   water_3d_render_view_name);
 
     ImGui::Spacing();
-    if (cubey::host::imgui_section("Simulation", true)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Simulation",
+            {.help = "FLIP/PIC transfer, pressure, damping, and boundary controls."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Simulation");
         cubey::host::imgui_enum_combo("Transfer", ui.config.transfer_mode, kTransferModes,
                                       water_3d_transfer_mode_name);
 
-        int pressure_iterations = static_cast<int>(ui.config.pressure_iterations);
-        if (ImGui::SliderInt("Pressure iterations", &pressure_iterations, 1, 128)) {
-            ui.config.pressure_iterations = static_cast<std::uint32_t>(pressure_iterations);
-        }
-        int substeps = static_cast<int>(ui.config.substeps);
-        if (ImGui::SliderInt("Substeps", &substeps, 1, 4)) {
-            ui.config.substeps = static_cast<std::uint32_t>(substeps);
-        }
-        ImGui::SliderFloat("PIC/FLIP blend", &ui.config.flip_ratio, 0.0F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Velocity limit", &ui.config.velocity_limit, 1.0F, 8.0F, "%.2f");
-        ImGui::SliderFloat("Particle damping", &ui.config.particle_damping, 0.980F, 1.000F, "%.3f");
-        ImGui::SliderFloat("Particle volume strength", &ui.config.particle_volume_strength, 0.0F,
-                           48.0F, "%.1f");
-        int transfer_limit = static_cast<int>(ui.config.max_particles_per_cell);
-        if (ImGui::SliderInt("Transfer limit/cell", &transfer_limit, 8, 256)) {
-            ui.config.max_particles_per_cell = static_cast<std::uint32_t>(transfer_limit);
-        }
-        ImGui::SliderFloat("Gravity", &ui.config.gravity, -4.0F, 0.0F, "%.2f");
-        ImGui::SliderFloat("Boundary bounce", &ui.config.boundary_restitution, 0.0F, 0.8F, "%.2f");
+        cubey::host::imgui_slider_uint32("Pressure iterations", &ui.config.pressure_iterations, 1U,
+                                         128U);
+        cubey::host::imgui_slider_uint32("Substeps", &ui.config.substeps, 1U, 4U);
+        cubey::host::imgui_slider_float("PIC/FLIP blend", &ui.config.flip_ratio, 0.0F, 1.0F,
+                                        "%.2f");
+        cubey::host::imgui_slider_float("Velocity limit", &ui.config.velocity_limit, 1.0F, 8.0F,
+                                        "%.2f");
+        cubey::host::imgui_slider_float("Particle damping", &ui.config.particle_damping, 0.980F,
+                                        1.000F, "%.3f");
+        cubey::host::imgui_slider_float("Particle volume strength",
+                                        &ui.config.particle_volume_strength, 0.0F, 48.0F, "%.1f");
+        cubey::host::imgui_slider_uint32("Transfer limit/cell",
+                                         &ui.config.max_particles_per_cell, 8U, 256U);
+        cubey::host::imgui_slider_float("Gravity", &ui.config.gravity, -4.0F, 0.0F, "%.2f");
+        cubey::host::imgui_slider_float("Boundary bounce", &ui.config.boundary_restitution, 0.0F,
+                                        0.8F, "%.2f");
     }
 
-    if (cubey::host::imgui_section("Initial volume", false)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Initial volume",
+            {.default_open = false, .help = "Initial particle fill dimensions for reset."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Initial volume");
-        if (ImGui::SliderFloat("Fill width", &ui.config.initial_fill_width, kWater3DMinFillFraction,
-                               kWater3DMaxFillFraction, "%.2f")) {
+        if (cubey::host::imgui_slider_float("Fill width", &ui.config.initial_fill_width,
+                                            kWater3DMinFillFraction, kWater3DMaxFillFraction,
+                                            "%.2f")) {
             refresh_particle_counts(ui.config);
             reset_simulation(ui);
         }
-        if (ImGui::SliderFloat("Fill height", &ui.config.initial_fill_height,
-                               kWater3DMinFillFraction, kWater3DMaxFillFraction, "%.2f")) {
+        if (cubey::host::imgui_slider_float("Fill height", &ui.config.initial_fill_height,
+                                            kWater3DMinFillFraction, kWater3DMaxFillFraction,
+                                            "%.2f")) {
             refresh_particle_counts(ui.config);
             reset_simulation(ui);
         }
-        if (ImGui::SliderFloat("Fill depth", &ui.config.initial_fill_depth, kWater3DMinFillFraction,
-                               kWater3DMaxFillFraction, "%.2f")) {
+        if (cubey::host::imgui_slider_float("Fill depth", &ui.config.initial_fill_depth,
+                                            kWater3DMinFillFraction, kWater3DMaxFillFraction,
+                                            "%.2f")) {
             refresh_particle_counts(ui.config);
             reset_simulation(ui);
         }
         bool fill_center_changed = false;
-        fill_center_changed |= ImGui::SliderFloat(
+        fill_center_changed |= cubey::host::imgui_slider_float(
             "Fill center X", &ui.config.initial_fill_center[0], 0.05F, 0.95F, "%.2f");
-        fill_center_changed |= ImGui::SliderFloat(
+        fill_center_changed |= cubey::host::imgui_slider_float(
             "Fill center Z", &ui.config.initial_fill_center[1], 0.05F, 0.95F, "%.2f");
         if (fill_center_changed) {
             reset_simulation(ui);
         }
-        ImGui::SliderFloat3("Domain scale", ui.config.domain.scale.data(), 0.25F, 3.0F, "%.2f");
+        cubey::host::imgui_slider_float3("Domain scale", ui.config.domain.scale.data(), 0.25F,
+                                         3.0F, "%.2f");
     }
 
-    if (cubey::host::imgui_section("Sources and forces", true)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Sources and forces",
+            {.help = "Particle emitters, drains, rain, and wave forcing controls."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Sources and forces");
-        ImGui::SeparatorText("Hose");
-        ImGui::PushID("hose");
-        ImGui::Checkbox("Enabled", &ui.config.hose.enabled);
-        ImGui::SliderFloat3("Position", ui.config.hose.position.data(), 0.02F, 0.98F, "%.2f");
-        ImGui::SliderFloat("Yaw", &ui.config.hose.yaw_degrees, -180.0F, 180.0F, "%.1f deg");
-        ImGui::SliderFloat("Pitch", &ui.config.hose.pitch_degrees, -70.0F, 20.0F, "%.1f deg");
-        ImGui::SliderFloat("Speed", &ui.config.hose.speed, 0.2F, 6.0F, "%.2f");
-        ImGui::SliderFloat("Radius", &ui.config.hose.radius, 0.004F, 0.080F, "%.3f");
-        ImGui::SliderFloat("Rate", &ui.config.hose.particles_per_second, 0.0F, 60000.0F, "%.0f/s");
-        ImGui::SliderFloat("Spread", &ui.config.hose.spread_degrees, 0.0F, 45.0F, "%.1f deg");
-        ImGui::PopID();
+        if (const cubey::host::ScopedImGuiGroup hose_group{
+                "Hose", {.level = 1U, .help = "Continuous particle emitter."}};
+            hose_group) {
+            const cubey::host::ScopedImGuiId hose_id("hose");
+            cubey::host::imgui_checkbox("Enabled", &ui.config.hose.enabled);
+            cubey::host::imgui_slider_float3("Position", ui.config.hose.position.data(), 0.02F,
+                                             0.98F, "%.2f");
+            cubey::host::imgui_slider_float("Yaw", &ui.config.hose.yaw_degrees, -180.0F, 180.0F,
+                                            "%.1f deg");
+            cubey::host::imgui_slider_float("Pitch", &ui.config.hose.pitch_degrees, -70.0F, 20.0F,
+                                            "%.1f deg");
+            cubey::host::imgui_slider_float("Speed", &ui.config.hose.speed, 0.2F, 6.0F, "%.2f");
+            cubey::host::imgui_slider_float("Radius", &ui.config.hose.radius, 0.004F, 0.080F,
+                                            "%.3f");
+            cubey::host::imgui_slider_float("Rate", &ui.config.hose.particles_per_second, 0.0F,
+                                            60000.0F, "%.0f/s");
+            cubey::host::imgui_slider_float("Spread", &ui.config.hose.spread_degrees, 0.0F, 45.0F,
+                                            "%.1f deg");
+        }
 
-        ImGui::SeparatorText("Drain");
-        ImGui::PushID("drain");
-        ImGui::Checkbox("Enabled", &ui.config.drain.enabled);
-        ImGui::SliderFloat3("Center", ui.config.drain.center.data(), 0.02F, 0.98F, "%.2f");
-        ImGui::SliderFloat3("Half size", ui.config.drain.half_size.data(), 0.005F, 0.35F, "%.3f");
-        ImGui::SliderFloat("Pull speed", &ui.config.drain.pull_speed, 0.0F, 6.0F, "%.2f");
-        ImGui::SliderFloat("Pull radius", &ui.config.drain.pull_radius, 0.05F, 1.5F, "%.2f");
-        ImGui::PopID();
+        if (const cubey::host::ScopedImGuiGroup drain_group{
+                "Drain", {.level = 1U, .help = "Particle removal and pull-force volume."}};
+            drain_group) {
+            const cubey::host::ScopedImGuiId drain_id("drain");
+            cubey::host::imgui_checkbox("Enabled", &ui.config.drain.enabled);
+            cubey::host::imgui_slider_float3("Center", ui.config.drain.center.data(), 0.02F, 0.98F,
+                                             "%.2f");
+            cubey::host::imgui_slider_float3("Half size", ui.config.drain.half_size.data(), 0.005F,
+                                             0.35F, "%.3f");
+            cubey::host::imgui_slider_float("Pull speed", &ui.config.drain.pull_speed, 0.0F, 6.0F,
+                                            "%.2f");
+            cubey::host::imgui_slider_float("Pull radius", &ui.config.drain.pull_radius, 0.05F,
+                                            1.5F, "%.2f");
+        }
 
-        ImGui::SeparatorText("Wave");
-        ImGui::PushID("wave");
-        ImGui::Checkbox("Enabled", &ui.config.wave.enabled);
-        ImGui::SliderFloat3("Center", ui.config.wave.center.data(), 0.02F, 0.98F, "%.2f");
-        ImGui::SliderFloat3("Half size", ui.config.wave.half_size.data(), 0.01F, 0.55F, "%.2f");
-        ImGui::SliderFloat("Amplitude", &ui.config.wave.amplitude, 0.0F, 4.0F, "%.2f");
-        ImGui::SliderFloat("Frequency", &ui.config.wave.frequency_hz, 0.0F, 2.0F, "%.2f Hz");
-        ImGui::PopID();
+        if (const cubey::host::ScopedImGuiGroup wave_group{
+                "Wave", {.level = 1U, .help = "Moving force volume for surface motion."}};
+            wave_group) {
+            const cubey::host::ScopedImGuiId wave_id("wave");
+            cubey::host::imgui_checkbox("Enabled", &ui.config.wave.enabled);
+            cubey::host::imgui_slider_float3("Center", ui.config.wave.center.data(), 0.02F, 0.98F,
+                                             "%.2f");
+            cubey::host::imgui_slider_float3("Half size", ui.config.wave.half_size.data(), 0.01F,
+                                             0.55F, "%.2f");
+            cubey::host::imgui_slider_float("Amplitude", &ui.config.wave.amplitude, 0.0F, 4.0F,
+                                            "%.2f");
+            cubey::host::imgui_slider_float("Frequency", &ui.config.wave.frequency_hz, 0.0F, 2.0F,
+                                            "%.2f Hz");
+        }
 
-        ImGui::SeparatorText("Rain");
-        ImGui::PushID("rain");
-        ImGui::Checkbox("Enabled", &ui.config.rain.enabled);
-        ImGui::SliderFloat3("Center", ui.config.rain.center.data(), 0.02F, 0.98F, "%.2f");
-        ImGui::SliderFloat3("Half size", ui.config.rain.half_size.data(), 0.005F, 0.50F, "%.2f");
-        ImGui::SliderFloat("Speed", &ui.config.rain.speed, 0.2F, 6.0F, "%.2f");
-        ImGui::SliderFloat("Radius", &ui.config.rain.radius, 0.002F, 0.060F, "%.3f");
-        ImGui::SliderFloat("Rate", &ui.config.rain.particles_per_second, 0.0F, 30000.0F, "%.0f/s");
-        ImGui::SliderFloat("Spread", &ui.config.rain.spread_degrees, 0.0F, 30.0F, "%.1f deg");
-        ImGui::PopID();
+        if (const cubey::host::ScopedImGuiGroup rain_group{
+                "Rain", {.level = 1U, .help = "Volume emitter for falling particles."}};
+            rain_group) {
+            const cubey::host::ScopedImGuiId rain_id("rain");
+            cubey::host::imgui_checkbox("Enabled", &ui.config.rain.enabled);
+            cubey::host::imgui_slider_float3("Center", ui.config.rain.center.data(), 0.02F, 0.98F,
+                                             "%.2f");
+            cubey::host::imgui_slider_float3("Half size", ui.config.rain.half_size.data(), 0.005F,
+                                             0.50F, "%.2f");
+            cubey::host::imgui_slider_float("Speed", &ui.config.rain.speed, 0.2F, 6.0F, "%.2f");
+            cubey::host::imgui_slider_float("Radius", &ui.config.rain.radius, 0.002F, 0.060F,
+                                            "%.3f");
+            cubey::host::imgui_slider_float("Rate", &ui.config.rain.particles_per_second, 0.0F,
+                                            30000.0F, "%.0f/s");
+            cubey::host::imgui_slider_float("Spread", &ui.config.rain.spread_degrees, 0.0F, 30.0F,
+                                            "%.1f deg");
+        }
     }
 
-    if (cubey::host::imgui_section("Surface and lighting", false)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Surface and lighting",
+            {.default_open = false,
+             .help = "Screen-space surface reconstruction, lighting, and debug slice controls."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Surface and lighting");
-        ImGui::SliderFloat("Particle radius", &ui.config.particle_radius, 0.004F, 0.040F, "%.4f");
-        ImGui::SliderFloat("Particle max px", &ui.config.surface_particle_max_radius_px, 4.0F,
-                           kWater3DSurfaceMaxParticleRadiusPx, "%.0f");
-        ImGui::SliderFloat("Surface thickness", &ui.config.surface_thickness_scale, 0.1F, 4.0F,
-                           "%.2f");
-        ImGui::SliderFloat("Surface fill px", &ui.config.surface_gap_fill_radius_px, 0.0F, 3.0F,
-                           "%.1f");
-        ImGui::SliderFloat("Surface smooth world", &ui.config.surface_smoothing_radius_world, 0.0F,
-                           0.04F, "%.3f");
-        ImGui::SliderFloat("Surface smooth max px", &ui.config.surface_smoothing_max_radius_px,
-                           1.0F, kWater3DSurfaceMaxSmoothRadiusPx, "%.0f");
-        int surface_smoothing_iterations = static_cast<int>(ui.config.surface_smoothing_iterations);
-        if (ImGui::SliderInt("Surface smooth passes", &surface_smoothing_iterations, 0, 8)) {
-            ui.config.surface_smoothing_iterations =
-                static_cast<std::uint32_t>(surface_smoothing_iterations);
-        }
-        ImGui::SliderFloat("Surface depth sigma", &ui.config.surface_depth_sigma, 0.005F, 0.120F,
-                           "%.3f");
-        ImGui::SliderFloat("Thickness smoothing", &ui.config.surface_thickness_smoothing, 0.0F,
-                           1.0F, "%.2f");
-        ImGui::SliderFloat("Surface absorption", &ui.config.surface_absorption, 0.0F, 5.0F, "%.2f");
-        ImGui::SliderFloat("Surface refraction", &ui.config.surface_refraction_strength, 0.0F,
-                           0.12F, "%.3f");
-        ImGui::SliderFloat("Environment intensity", &ui.config.environment_intensity, 0.0F, 4.0F,
-                           "%.2f");
-        ImGui::SliderFloat("Environment rotation", &ui.config.environment_rotation_degrees, -180.0F,
-                           180.0F, "%.0f deg");
-        ImGui::SliderFloat("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f");
-        ImGui::SliderFloat("Slice depth", &ui.config.slice_depth, 0.02F, 0.98F, "%.2f");
+        cubey::host::imgui_slider_float("Particle radius", &ui.config.particle_radius, 0.004F,
+                                        0.040F, "%.4f");
+        cubey::host::imgui_slider_float("Particle max px",
+                                        &ui.config.surface_particle_max_radius_px, 4.0F,
+                                        kWater3DSurfaceMaxParticleRadiusPx, "%.0f");
+        cubey::host::imgui_slider_float("Surface thickness", &ui.config.surface_thickness_scale,
+                                        0.1F, 4.0F, "%.2f");
+        cubey::host::imgui_slider_float("Surface fill px", &ui.config.surface_gap_fill_radius_px,
+                                        0.0F, 3.0F, "%.1f");
+        cubey::host::imgui_slider_float("Surface smooth world",
+                                        &ui.config.surface_smoothing_radius_world, 0.0F, 0.04F,
+                                        "%.3f");
+        cubey::host::imgui_slider_float("Surface smooth max px",
+                                        &ui.config.surface_smoothing_max_radius_px, 1.0F,
+                                        kWater3DSurfaceMaxSmoothRadiusPx, "%.0f");
+        cubey::host::imgui_slider_uint32("Surface smooth passes",
+                                         &ui.config.surface_smoothing_iterations, 0U, 8U);
+        cubey::host::imgui_slider_float("Surface depth sigma", &ui.config.surface_depth_sigma,
+                                        0.005F, 0.120F, "%.3f");
+        cubey::host::imgui_slider_float("Thickness smoothing",
+                                        &ui.config.surface_thickness_smoothing, 0.0F, 1.0F,
+                                        "%.2f");
+        cubey::host::imgui_slider_float("Surface absorption", &ui.config.surface_absorption, 0.0F,
+                                        5.0F, "%.2f");
+        cubey::host::imgui_slider_float("Surface refraction", &ui.config.surface_refraction_strength,
+                                        0.0F, 0.12F, "%.3f");
+        cubey::host::imgui_slider_float("Environment intensity", &ui.config.environment_intensity,
+                                        0.0F, 4.0F, "%.2f");
+        cubey::host::imgui_slider_float("Environment rotation",
+                                        &ui.config.environment_rotation_degrees, -180.0F, 180.0F,
+                                        "%.0f deg");
+        cubey::host::imgui_slider_float("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f");
+        cubey::host::imgui_slider_float("Slice depth", &ui.config.slice_depth, 0.02F, 0.98F,
+                                        "%.2f");
     }
 
-    if (cubey::host::imgui_section("Foam and whitewater", false)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Foam and whitewater",
+            {.default_open = false, .help = "Foam shading and whitewater particle controls."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Foam and whitewater");
-        ImGui::SliderFloat("Foam amount", &ui.config.foam_amount, 0.0F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Foam sharpness", &ui.config.foam_sharpness, 0.2F, 4.0F, "%.2f");
-        ImGui::Checkbox("Whitewater", &ui.config.whitewater_enabled);
-        ImGui::SliderFloat("Whitewater intensity", &ui.config.whitewater_intensity, 0.0F, 3.0F,
-                           "%.2f");
-        int whitewater_max_emit = static_cast<int>(ui.config.whitewater_max_emit_per_frame);
-        if (ImGui::SliderInt("Whitewater emit/frame", &whitewater_max_emit, 0, 8192)) {
-            ui.config.whitewater_max_emit_per_frame =
-                static_cast<std::uint32_t>(whitewater_max_emit);
-        }
-        ImGui::SliderFloat("Whitewater speed", &ui.config.whitewater_speed_threshold, 0.05F, 3.5F,
-                           "%.2f");
-        ImGui::SliderFloat("Whitewater radius", &ui.config.whitewater_radius, 0.002F, 0.035F,
-                           "%.3f");
-        ImGui::SliderFloat("Whitewater blur px", &ui.config.whitewater_blur_radius_px, 0.0F,
-                           kWater3DWhitewaterMaxBlurPx, "%.2f");
-        ImGui::SliderFloat("Whitewater lifetime", &ui.config.whitewater_lifetime, 0.15F, 5.0F,
-                           "%.2f");
-        ImGui::SliderFloat("Whitewater drag", &ui.config.whitewater_drag, 0.50F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Whitewater gravity", &ui.config.whitewater_gravity_scale, 0.0F, 1.5F,
-                           "%.2f");
+        cubey::host::imgui_slider_float("Foam amount", &ui.config.foam_amount, 0.0F, 1.0F,
+                                        "%.2f");
+        cubey::host::imgui_slider_float("Foam sharpness", &ui.config.foam_sharpness, 0.2F, 4.0F,
+                                        "%.2f");
+        cubey::host::imgui_checkbox("Whitewater", &ui.config.whitewater_enabled);
+        cubey::host::imgui_slider_float("Whitewater intensity", &ui.config.whitewater_intensity,
+                                        0.0F, 3.0F, "%.2f");
+        cubey::host::imgui_slider_uint32("Whitewater emit/frame",
+                                         &ui.config.whitewater_max_emit_per_frame, 0U, 8192U);
+        cubey::host::imgui_slider_float("Whitewater speed", &ui.config.whitewater_speed_threshold,
+                                        0.05F, 3.5F, "%.2f");
+        cubey::host::imgui_slider_float("Whitewater radius", &ui.config.whitewater_radius, 0.002F,
+                                        0.035F, "%.3f");
+        cubey::host::imgui_slider_float("Whitewater blur px", &ui.config.whitewater_blur_radius_px,
+                                        0.0F, kWater3DWhitewaterMaxBlurPx, "%.2f");
+        cubey::host::imgui_slider_float("Whitewater lifetime", &ui.config.whitewater_lifetime,
+                                        0.15F, 5.0F, "%.2f");
+        cubey::host::imgui_slider_float("Whitewater drag", &ui.config.whitewater_drag, 0.50F,
+                                        1.0F, "%.2f");
+        cubey::host::imgui_slider_float("Whitewater gravity",
+                                        &ui.config.whitewater_gravity_scale, 0.0F, 1.5F, "%.2f");
     }
 
-    if (cubey::host::imgui_section("Diagnostics", true)) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Diagnostics", {.help = "Read-only particle, frame, and GPU-memory statistics."}};
+        group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u x %u", ui.config.grid_width, ui.config.grid_height,
                     ui.config.grid_depth);

@@ -133,6 +133,32 @@ inline bool imgui_slider_int(const char* label, int* value, int min, int max,
     return changed;
 }
 
+inline bool imgui_slider_uint32(const char* label, std::uint32_t* value, std::uint32_t min,
+                                std::uint32_t max, const char* help = nullptr) {
+    int current = static_cast<int>(*value);
+    const bool changed =
+        ImGui::SliderInt(label, &current, static_cast<int>(min), static_cast<int>(max));
+    if (changed) {
+        *value = static_cast<std::uint32_t>(current);
+    }
+    imgui_attach_help(help);
+    return changed;
+}
+
+inline bool imgui_slider_float2(const char* label, float* value, float min, float max,
+                                const char* format = "%.3f", const char* help = nullptr) {
+    const bool changed = ImGui::SliderFloat2(label, value, min, max, format);
+    imgui_attach_help(help);
+    return changed;
+}
+
+inline bool imgui_slider_float3(const char* label, float* value, float min, float max,
+                                const char* format = "%.3f", const char* help = nullptr) {
+    const bool changed = ImGui::SliderFloat3(label, value, min, max, format);
+    imgui_attach_help(help);
+    return changed;
+}
+
 inline bool imgui_color_edit3(const char* label, float* value, const char* help = nullptr) {
     const bool changed = ImGui::ColorEdit3(label, value);
     imgui_attach_help(help);
