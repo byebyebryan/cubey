@@ -21,6 +21,7 @@ add_executable(cubey_core_tests
     frame_resources_tests.cpp
     host_headless_png_host_tests.cpp
     host_frame_stats_tests.cpp
+    host_performance_ui_tests.cpp
     hdr_image_tests.cpp
     submission_tickets_tests.cpp
     gpu_runtime_tests.cpp

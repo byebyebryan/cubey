@@ -2,11 +2,10 @@
 
 #include "procedural_terrain_config.h"
 
-#include <cubey/host/frame_stats.h>
+#include <cubey/host/performance_ui.h>
 
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <string>
 
 namespace cubey::projects::procedural_terrain {
@@ -53,14 +52,12 @@ struct TerrainUiContext {
     TerrainConfig& active_config;
     TerrainConfig& edit_config;
     const TerrainDiagnostics& diagnostics;
-    std::optional<cubey::host::FrameStatsSnapshot>& latest_frame_stats;
+    cubey::host::PerformanceUiContext performance;
     std::string& rebuild_error;
     bool& water_visible;
     bool& rebuild_requested;
     bool& discard_edits_requested;
     bool& reset_camera_requested;
-    double latest_fps = 0.0;
-    double latest_frame_ms = 0.0;
 };
 
 void draw_terrain_ui(TerrainUiContext ui);

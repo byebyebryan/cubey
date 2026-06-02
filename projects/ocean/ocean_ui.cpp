@@ -308,12 +308,19 @@ void draw_ocean_ui(OceanUiContext ui) {
         }
     }
 
+    const std::array<cubey::host::PerformanceCounter, 2> performance_counters{
+        cubey::host::PerformanceCounter{"Mesh patches", ocean_mesh_patch_count(ui.config), nullptr},
+        cubey::host::PerformanceCounter{"LOD levels", ui.config.mesh_lod_levels, nullptr},
+    };
+    cubey::host::PerformanceUiContext performance = ui.performance;
+    performance.counters = performance_counters;
+    cubey::host::draw_performance_ui(performance);
+
     if (const cubey::host::ScopedImGuiGroup group{
             "Diagnostics",
             {.default_open = false, .help = "Read-only runtime, cascade, and mesh statistics."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
-        cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
         ImGui::Text("Map: %u", ui.config.map_size);
         ImGui::Text("Spectral domains: %s",
                     ui.config.spectral_domains_enabled ? "enabled" : "disabled");

@@ -152,13 +152,14 @@ void draw_terrain_ui(TerrainUiContext ui) {
         ImGui::TextWrapped("Rebuild failed: %s", ui.rebuild_error.c_str());
     }
 
+    cubey::host::draw_performance_ui(ui.performance);
+
     if (const cubey::host::ScopedImGuiGroup group{
             "Diagnostics",
             {.default_open = false,
              .help = "Read-only terrain rebuild, LOD, and field statistics."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
-        cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
         ImGui::Text("Grid: %u x %u", ui.active_config.grid_width, ui.active_config.grid_height);
         ImGui::Text("Cell: %.1f m | Sea: %.1f m", ui.active_config.cell_size_m,
                     ui.active_config.sea_level_m);

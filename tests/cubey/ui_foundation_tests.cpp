@@ -124,6 +124,29 @@ void test_imgui_helper_layer_covers_active_common_controls() {
                                    "shared UI helpers should cover simple uint preset combos");
 }
 
+void test_active_project_ui_uses_shared_performance_panel() {
+    constexpr std::array active_ui_files{
+        "projects/atmosphere/atmosphere_ui.cpp",
+        "projects/ocean/ocean_ui.cpp",
+        "projects/procedural_terrain/procedural_terrain_ui.cpp",
+        "projects/fluid/sim/smoke_2d/smoke_2d_ui.cpp",
+        "projects/fluid/sim/water_2d/water_2d_ui.cpp",
+        "projects/fluid/sim/water_3d/water_3d_ui.cpp",
+        "projects/fluid/sim/pyro_3d/pyro_3d_app.cpp",
+    };
+
+    for (const char* relative_path : active_ui_files) {
+        const std::string source = cubey::tests::read_source_file(source_root() / relative_path);
+        cubey::tests::require_contains(
+            source, "draw_performance_ui",
+            "active UI panels should route shared stats through the performance panel");
+        cubey::tests::require_not_contains(source, "draw_frame_stats",
+                                           "active UI panels should not draw frame stats directly");
+        cubey::tests::require_not_contains(source, "draw_gpu_timings",
+                                           "active UI panels should not draw GPU timings directly");
+    }
+}
+
 void test_active_project_ui_starts_low_noise_sections_collapsed() {
     require_section_default_collapsed("projects/atmosphere/atmosphere_ui.cpp", "Sun",
                                       "atmosphere manual sun controls should start collapsed");

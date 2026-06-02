@@ -242,13 +242,14 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
         }
     }
 
+    cubey::host::draw_performance_ui(ui.performance);
+
     if (const cubey::host::ScopedImGuiGroup group{
             "Diagnostics",
             {.default_open = false,
              .help = "Read-only atmosphere runtime and frame statistics."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
-        cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
         ImGui::Text("Radii: %.0f km / %.0f km", ui.config.bottom_radius_km,
                     ui.config.top_radius_km);
         ImGui::Text("Scale heights: R %.1f km / M %.1f km", ui.config.rayleigh_scale_height_km,

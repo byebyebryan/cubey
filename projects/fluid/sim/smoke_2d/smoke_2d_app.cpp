@@ -33,6 +33,7 @@ namespace {
 using cubey::FrameTiming;
 using cubey::ProjectFrame;
 using cubey::host::FrameStatsSample;
+using cubey::host::FrameStatsSnapshot;
 
 class Smoke2DApp {
   public:
@@ -78,15 +79,9 @@ class Smoke2DApp {
             record_frame(context, frame, project_frame);
         };
         callbacks.frame_stats_sample =
-            [](cubey::host::WindowedAppContext& context,
-               const FrameTiming& timing) -> std::optional<FrameStatsSample> {
-            const VkExtent2D extent = context.swapchain().extent();
-            return FrameStatsSample{
-                .delta_seconds = timing.delta_seconds,
-                .width = extent.width,
-                .height = extent.height,
-                .triangles = 1,
-            };
+            [this](cubey::host::WindowedAppContext& context,
+                   const FrameTiming& timing) -> std::optional<FrameStatsSample> {
+            return record_frame_stats(context.swapchain().extent(), timing);
         };
         callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
             (void)context;
@@ -129,12 +124,19 @@ class Smoke2DApp {
     }
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
-        (void)context;
         bool reset_injectors_requested = false;
         draw_smoke_2d_ui({
             .title = "Smoke 2D",
             .config = smoke_config_,
             .debug_view = debug_view_,
+            .performance =
+                {
+                    .frame_stats = latest_frame_stats_,
+                    .latest_fps = latest_fps_,
+                    .latest_frame_ms = latest_frame_ms_,
+                    .process = process_stats_.sample(),
+                    .device_memory_budget = context.device().device_memory_budget(),
+                },
             .resources = resources_,
             .paused = paused_,
             .reset_requested = reset_requested_,
@@ -143,6 +145,23 @@ class Smoke2DApp {
         if (reset_injectors_requested) {
             reset_injectors();
         }
+    }
+
+    std::optional<FrameStatsSample> record_frame_stats(VkExtent2D extent,
+                                                       const FrameTiming& timing) {
+        latest_frame_ms_ = timing.delta_seconds * 1000.0;
+        latest_fps_ = timing.delta_seconds > 0.0 ? 1.0 / timing.delta_seconds : 0.0;
+        const FrameStatsSample sample{
+            .delta_seconds = timing.delta_seconds,
+            .width = extent.width,
+            .height = extent.height,
+            .triangles = 1,
+        };
+        if (std::optional<FrameStatsSnapshot> stats = ui_frame_stats_.record_frame(sample);
+            stats.has_value()) {
+            latest_frame_stats_ = stats.value();
+        }
+        return sample;
     }
 
     void reset_injectors() {
@@ -324,7 +343,12 @@ class Smoke2DApp {
     std::vector<Smoke2DInjectorGpu> injector_gpu_;
     Smoke2DGpuResources resources_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
+    cubey::host::FrameStats ui_frame_stats_{0.25};
+    std::optional<FrameStatsSnapshot> latest_frame_stats_;
+    cubey::host::ProcessResourceStatsSampler process_stats_;
     Smoke2DDebugView debug_view_ = Smoke2DDebugView::Dye;
+    double latest_fps_ = 0.0;
+    double latest_frame_ms_ = 0.0;
     double last_gpu_timing_print_seconds_ = -1.0;
     bool paused_ = false;
     bool reset_requested_ = false;

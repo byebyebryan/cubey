@@ -374,13 +374,20 @@ class OceanApp {
         };
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
                                   const FrameTiming& timing) { update_windowed(context, timing); };
-        callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) {
+        callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) {
             bool atmosphere_changed = false;
             draw_ocean_ui({
                 .config = ocean_config_,
                 .diagnostics = diagnostics_,
                 .atmosphere = atmosphere_state_,
-                .latest_frame_stats = latest_frame_stats_,
+                .performance =
+                    {
+                        .frame_stats = latest_frame_stats_,
+                        .latest_fps = latest_fps_,
+                        .latest_frame_ms = latest_frame_ms_,
+                        .process = process_stats_.sample(),
+                        .device_memory_budget = context.device().device_memory_budget(),
+                    },
                 .render_view = render_view_,
                 .camera_preset = camera_preset_,
                 .paused = paused_,
@@ -388,8 +395,6 @@ class OceanApp {
                 .step_requested = step_requested_,
                 .camera_preset_requested = camera_preset_requested_,
                 .atmosphere_changed = atmosphere_changed,
-                .latest_fps = latest_fps_,
-                .latest_frame_ms = latest_frame_ms_,
             });
             if (camera_preset_requested_) {
                 apply_camera_preset(camera_preset_);
@@ -1225,6 +1230,7 @@ class OceanApp {
     cubey::OrbitController orbit_controller_;
     cubey::host::FrameStats ui_frame_stats_;
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
+    cubey::host::ProcessResourceStatsSampler process_stats_;
     OceanGpuResources ocean_gpu_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};

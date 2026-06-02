@@ -277,6 +277,11 @@ setup before swapchain setup, and callback forwarding.
   project-owned. Project panels curate startup disclosure state: only primary
   controls start expanded, while diagnostics, source details, solver tuning,
   and deep render controls start collapsed.
+- `cubey::host::draw_performance_ui` is the shared performance panel contract:
+  frame time/FPS/resolution/triangles, process CPU/RAM, device-local VRAM
+  budget, optional project-owned GPU allocation, optional workload counters, and
+  collapsed GPU pass timings. Project diagnostics still own domain-specific
+  rows such as grids, particles, cascades, or terrain fields.
 - A generic project host is still deferred; the current contract is limited to
   shared service ownership, GPU bridge attachment, and frame bridging.
 

@@ -122,6 +122,9 @@ Current checkpoint:
   reset behavior, and custom selectors project-owned. Startup panel disclosure
   is curated so diagnostics, source details, solver tuning, and deep render
   controls stay collapsed until needed.
+- Shared performance UI now groups common frame stats, process CPU/RAM, VRAM
+  budget, project-owned GPU allocation, workload counters, and GPU pass timings
+  so demos do not reimplement those rows in each diagnostics panel.
 - Reusable `cubey::math` wraps GLM matrix/vector/quaternion types and the
   current Vulkan transform/projection conventions used by the shared
   transform/camera helpers and cube examples.

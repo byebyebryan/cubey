@@ -13,6 +13,8 @@ void test_image_io_writes_rgba_png();
 void test_inline_executor_runs_jobs_immediately();
 void test_job_system_runs_jobs_and_propagates_errors();
 void test_job_system_shutdown_rejects_new_jobs();
+void test_process_resource_stats_sampler_reports_memory();
+void test_process_resource_stats_sampler_reports_cpu_after_second_sample();
 void test_math_helpers_match_vulkan_projection_conventions();
 void test_math_quaternion_helpers_match_rotation_matrices();
 void test_profile_recorder_skips_warmup_and_records_spans();
@@ -22,6 +24,7 @@ void test_active_project_ui_uses_shared_common_controls();
 void test_active_project_ui_raw_combo_exceptions_are_explicit();
 void test_reference_ocean_ui_exceptions_are_documented();
 void test_imgui_helper_layer_covers_active_common_controls();
+void test_active_project_ui_uses_shared_performance_panel();
 void test_active_project_ui_starts_low_noise_sections_collapsed();
 void test_run_config_parses_animation_options();
 void test_run_config_parses_video_capture_defaults();
@@ -73,6 +76,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_active_project_ui_raw_combo_exceptions_are_explicit),
         CUBEY_TEST(test_reference_ocean_ui_exceptions_are_documented),
         CUBEY_TEST(test_imgui_helper_layer_covers_active_common_controls),
+        CUBEY_TEST(test_active_project_ui_uses_shared_performance_panel),
         CUBEY_TEST(test_active_project_ui_starts_low_noise_sections_collapsed),
         CUBEY_TEST(test_run_config_parses_video_capture_defaults),
         CUBEY_TEST(test_run_config_preserves_explicit_video_capture_timing_and_output),
@@ -116,6 +120,8 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_cli_app_sets_default_title_and_returns_runner_status),
         CUBEY_TEST(test_file_io_round_trips_binary_bytes),
         CUBEY_TEST(test_frame_clock_tracks_delta_elapsed_and_index),
+        CUBEY_TEST(test_process_resource_stats_sampler_reports_memory),
+        CUBEY_TEST(test_process_resource_stats_sampler_reports_cpu_after_second_sample),
         CUBEY_TEST(test_gltf_animation_wraps_looping_playback_time),
         CUBEY_TEST(test_gltf_animation_samples_linear_translation),
         CUBEY_TEST(test_gltf_animation_samples_step_scale),

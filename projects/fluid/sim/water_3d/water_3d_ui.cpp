@@ -4,10 +4,8 @@
 
 #include <cubey/host/atmosphere_environment_ui.h>
 #include <cubey/host/imgui_helpers.h>
-#include <cubey/vulkan/device.h>
 
 #include <imgui.h>
-#include <vulkan/vulkan.h>
 
 #include <array>
 #include <cstdint>
@@ -286,6 +284,32 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
                                         &ui.config.whitewater_gravity_scale, 0.0F, 1.5F, "%.2f");
     }
 
+    const std::uint32_t scanned_particles =
+        water_3d_runtime_particle_scan_count(ui.config, ui.runtime_state);
+    const std::uint32_t touched_emitter_particles =
+        scanned_particles > ui.config.active_particle_count
+            ? scanned_particles - ui.config.active_particle_count
+            : 0U;
+    const std::array<cubey::host::PerformanceCounter, 5> performance_counters{
+        cubey::host::PerformanceCounter{"Reset particles", ui.config.active_particle_count, nullptr},
+        cubey::host::PerformanceCounter{"Compute particles", scanned_particles, nullptr},
+        cubey::host::PerformanceCounter{
+            "Grid voxels",
+            static_cast<std::uint64_t>(ui.config.grid_width) *
+                static_cast<std::uint64_t>(ui.config.grid_height) *
+                static_cast<std::uint64_t>(ui.config.grid_depth),
+            nullptr},
+        cubey::host::PerformanceCounter{"Emitter pool", touched_emitter_particles, nullptr},
+        cubey::host::PerformanceCounter{"Whitewater capacity", ui.config.whitewater_capacity,
+                                        nullptr},
+    };
+    cubey::host::PerformanceUiContext performance = ui.performance;
+    performance.owned_gpu_bytes = ui.resources.allocated_buffer_bytes();
+    performance.owned_gpu_label = "Water GPU buffers";
+    performance.counters = performance_counters;
+    performance.gpu_timings = ui.resources.latest_timings();
+    cubey::host::draw_performance_ui(performance);
+
     if (const cubey::host::ScopedImGuiGroup group{
             "Diagnostics",
             {.default_open = false,
@@ -294,24 +318,14 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u x %u", ui.config.grid_width, ui.config.grid_height,
                     ui.config.grid_depth);
-        const std::uint32_t scanned_particles =
-            water_3d_runtime_particle_scan_count(ui.config, ui.runtime_state);
         ImGui::Text("Particles: %u reset / %u capacity", ui.config.active_particle_count,
                     ui.config.particle_capacity);
         ImGui::Text("Compute particles: %u scanned", scanned_particles);
         ImGui::Text("Emitter pool: %u touched / %u available",
-                    scanned_particles - ui.config.active_particle_count,
+                    touched_emitter_particles,
                     emitter_particle_pool_capacity_for_config(ui.config));
         ImGui::Text("Whitewater: %u capacity / %u max emit", ui.config.whitewater_capacity,
                     ui.config.whitewater_max_emit_per_frame);
-        cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
-
-        cubey::host::draw_gpu_timings(ui.resources.latest_timings());
-
-        const VkDeviceSize water_bytes = ui.resources.allocated_buffer_bytes();
-        const cubey::vulkan::DeviceMemoryBudgetInfo memory_budget =
-            ui.device.device_memory_budget();
-        cubey::host::draw_device_memory_budget(water_bytes, memory_budget, "Water GPU buffers");
     }
     ImGui::End();
     return environment_changed;

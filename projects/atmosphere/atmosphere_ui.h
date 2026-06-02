@@ -2,9 +2,8 @@
 
 #include "atmosphere_config.h"
 
-#include <cubey/host/frame_stats.h>
+#include <cubey/host/performance_ui.h>
 
-#include <optional>
 #include <string>
 
 namespace cubey::projects::atmosphere {
@@ -20,12 +19,10 @@ struct AtmosphereLoadingStatus {
 
 struct AtmosphereUiContext {
     AtmosphereConfig& config;
-    std::optional<cubey::host::FrameStatsSnapshot>& latest_frame_stats;
+    cubey::host::PerformanceUiContext performance;
     AtmosphereRenderView& render_view;
     bool& reset_requested;
     const AtmosphereLoadingStatus& loading_status;
-    double latest_fps = 0.0;
-    double latest_frame_ms = 0.0;
 };
 
 void draw_atmosphere_ui(AtmosphereUiContext ui);

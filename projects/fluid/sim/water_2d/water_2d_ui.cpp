@@ -3,10 +3,8 @@
 #include "water_2d_gpu_resources.h"
 
 #include <cubey/host/imgui_helpers.h>
-#include <cubey/vulkan/device.h>
 
 #include <imgui.h>
-#include <vulkan/vulkan.h>
 
 #include <array>
 #include <cstdint>
@@ -242,6 +240,30 @@ void draw_water_2d_ui(Water2DUiContext ui) {
                                         "%.2f");
     }
 
+    const std::uint32_t hose_pool_capacity = hose_particle_pool_capacity_for_config(ui.config);
+    const std::uint32_t scanned_particles =
+        water_2d_runtime_particle_scan_count(ui.config, ui.runtime_state);
+    const std::uint32_t touched_hose_particles =
+        scanned_particles > ui.config.active_particle_count
+            ? scanned_particles - ui.config.active_particle_count
+            : 0U;
+    const std::array<cubey::host::PerformanceCounter, 4> performance_counters{
+        cubey::host::PerformanceCounter{"Reset particles", ui.config.active_particle_count, nullptr},
+        cubey::host::PerformanceCounter{"Compute particles", scanned_particles, nullptr},
+        cubey::host::PerformanceCounter{
+            "Grid cells",
+            static_cast<std::uint64_t>(ui.config.grid_width) *
+                static_cast<std::uint64_t>(ui.config.grid_height),
+            nullptr},
+        cubey::host::PerformanceCounter{"Hose pool", hose_pool_capacity, nullptr},
+    };
+    cubey::host::PerformanceUiContext performance = ui.performance;
+    performance.owned_gpu_bytes = ui.resources.allocated_buffer_bytes();
+    performance.owned_gpu_label = "Water GPU buffers";
+    performance.counters = performance_counters;
+    performance.gpu_timings = ui.resources.latest_timings();
+    cubey::host::draw_performance_ui(performance);
+
     if (const cubey::host::ScopedImGuiGroup group{
             "Diagnostics",
             {.default_open = false,
@@ -249,27 +271,12 @@ void draw_water_2d_ui(Water2DUiContext ui) {
         group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u", ui.config.grid_width, ui.config.grid_height);
-        const std::uint32_t hose_pool_capacity = hose_particle_pool_capacity_for_config(ui.config);
-        const std::uint32_t scanned_particles =
-            water_2d_runtime_particle_scan_count(ui.config, ui.runtime_state);
-        const std::uint32_t touched_hose_particles =
-            scanned_particles > ui.config.active_particle_count
-                ? scanned_particles - ui.config.active_particle_count
-                : 0U;
         ImGui::Text("Particles: %u reset / %u hose pool / %u total",
                     ui.config.active_particle_count, hose_pool_capacity,
                     ui.config.particle_capacity);
         ImGui::Text("Compute particles: %u scanned / %u total", scanned_particles,
                     ui.config.particle_capacity);
         ImGui::Text("Hose touched: %u / %u", touched_hose_particles, hose_pool_capacity);
-        cubey::host::draw_frame_stats(ui.latest_frame_stats, ui.latest_fps, ui.latest_frame_ms);
-
-        cubey::host::draw_gpu_timings(ui.resources.latest_timings());
-
-        const VkDeviceSize water_bytes = ui.resources.allocated_buffer_bytes();
-        const cubey::vulkan::DeviceMemoryBudgetInfo memory_budget =
-            ui.device.device_memory_budget();
-        cubey::host::draw_device_memory_budget(water_bytes, memory_budget, "Water GPU buffers");
     }
     ImGui::End();
 }

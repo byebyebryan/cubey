@@ -283,14 +283,19 @@ void ProceduralTerrainApp::draw_ui(cubey::host::WindowedAppContext& context) {
         .active_config = terrain_config_,
         .edit_config = edit_terrain_config_,
         .diagnostics = diagnostics_,
-        .latest_frame_stats = latest_frame_stats_,
+        .performance =
+            {
+                .frame_stats = latest_frame_stats_,
+                .latest_fps = latest_fps_,
+                .latest_frame_ms = latest_frame_ms_,
+                .process = process_stats_.sample(),
+                .device_memory_budget = context.device().device_memory_budget(),
+            },
         .rebuild_error = rebuild_error_,
         .water_visible = water_visible_,
         .rebuild_requested = rebuild_requested_,
         .discard_edits_requested = discard_edits_requested_,
         .reset_camera_requested = reset_camera_requested_,
-        .latest_fps = latest_fps_,
-        .latest_frame_ms = latest_frame_ms_,
     });
     if (discard_edits_requested_) {
         edit_terrain_config_ = terrain_config_;

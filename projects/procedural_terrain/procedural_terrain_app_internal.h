@@ -89,6 +89,7 @@ class ProceduralTerrainApp {
     cubey::host::FrameStats ui_frame_stats_;
     TerrainDiagnostics diagnostics_{};
     std::optional<cubey::host::FrameStatsSnapshot> latest_frame_stats_;
+    cubey::host::ProcessResourceStatsSampler process_stats_;
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
     std::uint64_t rebuild_count_ = 0;

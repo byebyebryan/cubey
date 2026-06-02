@@ -4,6 +4,7 @@ add_library(cubey_host STATIC
     glfw_window.cpp
     headless_png_host.cpp
     imgui_overlay.cpp
+    performance_ui.cpp
     windowed_app.cpp
     windowed_host.cpp
 )

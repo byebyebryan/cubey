@@ -112,6 +112,19 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
         ImGui::Text("Debug view: %s", smoke_2d_debug_view_name(ui.debug_view));
     }
 
+    const std::array<cubey::host::PerformanceCounter, 2> performance_counters{
+        cubey::host::PerformanceCounter{
+            "Grid cells",
+            static_cast<std::uint64_t>(ui.config.grid_width) *
+                static_cast<std::uint64_t>(ui.config.grid_height),
+            nullptr},
+        cubey::host::PerformanceCounter{"Injectors", ui.config.procedural_injector_count, nullptr},
+    };
+    cubey::host::PerformanceUiContext performance = ui.performance;
+    performance.counters = performance_counters;
+    performance.gpu_timings = ui.resources.latest_timings();
+    cubey::host::draw_performance_ui(performance);
+
     if (const cubey::host::ScopedImGuiGroup group{
             "Diagnostics",
             {.default_open = false,
@@ -120,7 +133,6 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         ImGui::Text("Grid: %u x %u", ui.config.grid_width, ui.config.grid_height);
         ImGui::Text("Injectors: %u", ui.config.procedural_injector_count);
-        cubey::host::draw_gpu_timings(ui.resources.latest_timings());
     }
 
     ImGui::End();

@@ -218,13 +218,17 @@ class Water3DApp {
                     use_atmosphere_environment_source() ? &atmosphere_state_ : nullptr,
                 .runtime_state = runtime_state_,
                 .resources = resources_,
-                .device = context.device(),
-                .latest_frame_stats = latest_frame_stats_,
+                .performance =
+                    {
+                        .frame_stats = latest_frame_stats_,
+                        .latest_fps = latest_fps_,
+                        .latest_frame_ms = latest_frame_ms_,
+                        .process = process_stats_.sample(),
+                        .device_memory_budget = context.device().device_memory_budget(),
+                    },
                 .render_view = render_view_,
                 .paused = paused_,
                 .reset_requested = reset_requested_,
-                .latest_fps = latest_fps_,
-                .latest_frame_ms = latest_frame_ms_,
             })) {
             refresh_atmosphere_environment();
         }
@@ -657,6 +661,7 @@ class Water3DApp {
     cubey::OrbitController orbit_controller_;
     cubey::host::FrameStats ui_frame_stats_{0.25};
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
+    cubey::host::ProcessResourceStatsSampler process_stats_;
     Water3DRenderView render_view_ = Water3DRenderView::Surface;
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;

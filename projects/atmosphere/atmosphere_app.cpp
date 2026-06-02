@@ -155,16 +155,21 @@ class AtmosphereApp {
         };
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
                                   const FrameTiming& timing) { update_windowed(context, timing); };
-        callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) {
+        callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) {
             refresh_loading_status();
             draw_atmosphere_ui({
                 .config = atmosphere_config_,
-                .latest_frame_stats = latest_frame_stats_,
+                .performance =
+                    {
+                        .frame_stats = latest_frame_stats_,
+                        .latest_fps = latest_fps_,
+                        .latest_frame_ms = latest_frame_ms_,
+                        .process = process_stats_.sample(),
+                        .device_memory_budget = context.device().device_memory_budget(),
+                    },
                 .render_view = render_view_,
                 .reset_requested = reset_requested_,
                 .loading_status = loading_status_,
-                .latest_fps = latest_fps_,
-                .latest_frame_ms = latest_frame_ms_,
             });
         };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
@@ -661,6 +666,7 @@ class AtmosphereApp {
     }};
     cubey::host::FrameStats ui_frame_stats_;
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
+    cubey::host::ProcessResourceStatsSampler process_stats_;
     AtmosphereLoadingStatus loading_status_{};
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;

@@ -12,6 +12,7 @@
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/imgui_helpers.h>
+#include <cubey/host/performance_ui.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
@@ -45,6 +46,7 @@ namespace {
 using cubey::FrameTiming;
 using cubey::ProjectFrame;
 using cubey::host::FrameStatsSample;
+using cubey::host::FrameStatsSnapshot;
 
 constexpr float kFireCameraDistance = 2.05F;
 constexpr float kExplosionCameraDistance = 2.18F;
@@ -170,15 +172,9 @@ class Pyro3DApp {
             record_frame(context, frame, project_frame);
         };
         callbacks.frame_stats_sample =
-            [](cubey::host::WindowedAppContext& context,
-               const FrameTiming& timing) -> std::optional<FrameStatsSample> {
-            const VkExtent2D extent = context.swapchain().extent();
-            return FrameStatsSample{
-                .delta_seconds = timing.delta_seconds,
-                .width = extent.width,
-                .height = extent.height,
-                .triangles = 1,
-            };
+            [this](cubey::host::WindowedAppContext& context,
+                   const FrameTiming& timing) -> std::optional<FrameStatsSample> {
+            return record_frame_stats(context.swapchain().extent(), timing);
         };
         callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
             (void)context;
@@ -226,7 +222,6 @@ class Pyro3DApp {
     }
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
-        (void)context;
         if (!cubey::host::begin_control_panel(app_info_.ui_title)) {
             ImGui::End();
             return;
@@ -394,6 +389,31 @@ class Pyro3DApp {
                                              &pyro_config_.shadow_update_interval, 1U, 8U);
         }
 
+        const std::array<cubey::host::PerformanceCounter, 3> performance_counters{
+            cubey::host::PerformanceCounter{
+                "Grid voxels",
+                static_cast<std::uint64_t>(pyro_config_.grid_width) *
+                    static_cast<std::uint64_t>(pyro_config_.grid_height) *
+                    static_cast<std::uint64_t>(pyro_config_.grid_depth),
+                nullptr},
+            cubey::host::PerformanceCounter{
+                "Shadow voxels",
+                static_cast<std::uint64_t>(pyro_config_.shadow_grid_width) *
+                    static_cast<std::uint64_t>(pyro_config_.shadow_grid_height) *
+                    static_cast<std::uint64_t>(pyro_config_.shadow_grid_depth),
+                nullptr},
+            cubey::host::PerformanceCounter{"Sources", pyro_config_.source_count, nullptr},
+        };
+        cubey::host::draw_performance_ui({
+            .frame_stats = latest_frame_stats_,
+            .latest_fps = latest_fps_,
+            .latest_frame_ms = latest_frame_ms_,
+            .process = process_stats_.sample(),
+            .device_memory_budget = context.device().device_memory_budget(),
+            .counters = performance_counters,
+            .gpu_timings = resources_.latest_timings(),
+        });
+
         if (const cubey::host::ScopedImGuiGroup group{
                 "Diagnostics",
                 {.default_open = false,
@@ -404,9 +424,25 @@ class Pyro3DApp {
                         pyro_config_.grid_depth);
             ImGui::Text("Shadow grid: %u x %u x %u", pyro_config_.shadow_grid_width,
                         pyro_config_.shadow_grid_height, pyro_config_.shadow_grid_depth);
-            cubey::host::draw_gpu_timings(resources_.latest_timings());
         }
         ImGui::End();
+    }
+
+    std::optional<FrameStatsSample> record_frame_stats(VkExtent2D extent,
+                                                       const FrameTiming& timing) {
+        latest_frame_ms_ = timing.delta_seconds * 1000.0;
+        latest_fps_ = timing.delta_seconds > 0.0 ? 1.0 / timing.delta_seconds : 0.0;
+        const FrameStatsSample sample{
+            .delta_seconds = timing.delta_seconds,
+            .width = extent.width,
+            .height = extent.height,
+            .triangles = 1,
+        };
+        if (std::optional<FrameStatsSnapshot> stats = ui_frame_stats_.record_frame(sample);
+            stats.has_value()) {
+            latest_frame_stats_ = stats.value();
+        }
+        return sample;
     }
 
     void reset_sources() {
@@ -716,7 +752,12 @@ class Pyro3DApp {
     Pyro3DFrameState frame_state_;
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;
+    cubey::host::FrameStats ui_frame_stats_{0.25};
+    std::optional<FrameStatsSnapshot> latest_frame_stats_;
+    cubey::host::ProcessResourceStatsSampler process_stats_;
     Pyro3DDebugView debug_view_ = Pyro3DDebugView::Smoke;
+    double latest_fps_ = 0.0;
+    double latest_frame_ms_ = 0.0;
     double last_gpu_timing_print_seconds_ = -1.0;
     bool paused_ = false;
     bool reset_requested_ = true;
