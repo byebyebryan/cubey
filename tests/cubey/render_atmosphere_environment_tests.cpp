@@ -111,6 +111,7 @@ void test_atmosphere_environment_resolves_celestial_time_math() {
     solar_noon.time_hours = 12.0F;
     solar_noon.day_of_year = 80.0F;
     solar_noon.latitude_degrees = 30.0F;
+    solar_noon.azimuth_offset_degrees = 0.0F;
     const cubey::render::AtmosphereEnvironmentSolarPosition position =
         cubey::render::atmosphere_environment_solar_position(solar_noon);
     require_near(position.elevation_degrees, 60.0F, 0.2F,

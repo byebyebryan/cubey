@@ -8,6 +8,14 @@
 
 namespace cubey::render {
 
+inline constexpr float kAtmosphereEnvironmentDefaultTimeHours = 5.5F;
+inline constexpr float kAtmosphereEnvironmentDefaultDayOfYear = 80.0F;
+inline constexpr float kAtmosphereEnvironmentDefaultLatitudeDegrees = 30.0F;
+inline constexpr float kAtmosphereEnvironmentDefaultAzimuthOffsetDegrees = -10.0F;
+inline constexpr float kAtmosphereEnvironmentDefaultTimeSpeedHoursPerSecond = 0.5F;
+inline constexpr float kAtmosphereEnvironmentSunriseViewYawRadians = -1.16F;
+inline constexpr float kAtmosphereEnvironmentSunriseViewPitchRadians = -0.12F;
+
 enum class AtmosphereEnvironmentRenderView : std::uint32_t {
     Final = 0,
     Rayleigh = 1,
@@ -23,10 +31,10 @@ enum class AtmosphereEnvironmentRenderView : std::uint32_t {
 };
 
 struct AtmosphereEnvironmentTimeOfDay {
-    float time_hours = 12.0F;
-    float day_of_year = 80.0F;
-    float latitude_degrees = 30.0F;
-    float azimuth_offset_degrees = 0.0F;
+    float time_hours = kAtmosphereEnvironmentDefaultTimeHours;
+    float day_of_year = kAtmosphereEnvironmentDefaultDayOfYear;
+    float latitude_degrees = kAtmosphereEnvironmentDefaultLatitudeDegrees;
+    float azimuth_offset_degrees = kAtmosphereEnvironmentDefaultAzimuthOffsetDegrees;
 };
 
 struct AtmosphereEnvironmentSolarPosition {

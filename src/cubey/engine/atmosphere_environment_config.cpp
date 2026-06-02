@@ -5,8 +5,6 @@
 namespace cubey {
 namespace {
 
-constexpr float kDefaultTimeSpeedHoursPerSecond = 1.0F;
-
 [[nodiscard]] bool
 atmosphere_options_have_manual_sun(const RunConfig::AtmosphereOptions& atmosphere) {
     return run_config_float_is_set(atmosphere.sun_elevation_degrees) ||
@@ -120,7 +118,7 @@ bool atmosphere_environment_run_config_uses_solar_time(
 float atmosphere_environment_run_config_time_speed(const RunConfig::AtmosphereOptions& atmosphere) {
     return run_config_float_is_set(atmosphere.time_speed_hours_per_second)
                ? atmosphere.time_speed_hours_per_second
-               : kDefaultTimeSpeedHoursPerSecond;
+               : kAtmosphereEnvironmentDefaultTimeSpeedHoursPerSecond;
 }
 
 bool atmosphere_environment_run_config_time_playing(

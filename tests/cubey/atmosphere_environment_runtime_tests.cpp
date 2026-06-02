@@ -38,8 +38,12 @@ void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes() {
     require(default_state.solar_time_enabled,
             "default atmosphere run state should use the solar clock");
     require(default_state.time_playing, "default atmosphere run state should autoplay time");
-    require_near(default_state.time_speed_hours_per_second, 1.0F, 0.0001F,
-                 "default atmosphere time speed should be one simulated hour per second");
+    require_near(default_state.time_speed_hours_per_second, 0.5F, 0.0001F,
+                 "default atmosphere time speed should be half a simulated hour per second");
+    require_near(default_state.environment.time_of_day.time_hours, 5.5F, 0.0001F,
+                 "default atmosphere run state should start just before dawn");
+    require_near(default_state.environment.time_of_day.azimuth_offset_degrees, -10.0F, 0.0001F,
+                 "default atmosphere run state should offset sunrise away from straight-on view");
     require(default_state.auto_exposure_enabled,
             "default atmosphere run state should enable auto exposure");
 
@@ -67,6 +71,7 @@ void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes() {
     solar.time_hours = 12.0F;
     solar.day_of_year = 80.0F;
     solar.latitude_degrees = 30.0F;
+    solar.sun_azimuth_offset_degrees = 0.0F;
     cubey::AtmosphereEnvironmentRunState solar_state =
         cubey::atmosphere_environment_run_state_from_config(solar, defaults);
     require(solar_state.solar_time_enabled,
@@ -118,6 +123,7 @@ void test_atmosphere_environment_run_state_resolves_control_mutations() {
     state.environment.time_of_day.time_hours = 12.0F;
     state.environment.time_of_day.day_of_year = 80.0F;
     state.environment.time_of_day.latitude_degrees = 30.0F;
+    state.environment.time_of_day.azimuth_offset_degrees = 0.0F;
     cubey::atmosphere_environment_resolve_run_state(state);
 
     require_near(state.environment.sun_elevation_degrees, 60.0F, 0.2F,

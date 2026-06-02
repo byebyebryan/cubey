@@ -5,6 +5,9 @@
 
 namespace cubey {
 
+inline constexpr float kAtmosphereEnvironmentDefaultTimeSpeedHoursPerSecond =
+    render::kAtmosphereEnvironmentDefaultTimeSpeedHoursPerSecond;
+
 struct AtmosphereEnvironmentRunDefaults {
     float sun_elevation_degrees = 60.0F;
     float sun_azimuth_degrees = 0.0F;
@@ -17,7 +20,7 @@ struct AtmosphereEnvironmentRunState {
     render::AtmosphereEnvironmentConfig environment{};
     bool solar_time_enabled = true;
     bool time_playing = true;
-    float time_speed_hours_per_second = 1.0F;
+    float time_speed_hours_per_second = kAtmosphereEnvironmentDefaultTimeSpeedHoursPerSecond;
     bool auto_exposure_enabled = true;
     float exposure_bias = 0.0F;
     float resolved_exposure = 0.0F;

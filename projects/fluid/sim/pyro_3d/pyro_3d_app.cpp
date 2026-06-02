@@ -17,6 +17,7 @@
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/atmosphere_background_frame.h>
+#include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/color_space.h>
 #include <cubey/render/environment_lighting.h>
 #include <cubey/render/pass.h>
@@ -50,6 +51,8 @@ using cubey::host::FrameStatsSnapshot;
 
 constexpr float kFireCameraDistance = 2.05F;
 constexpr float kExplosionCameraDistance = 2.18F;
+constexpr float kCameraBaseYaw = cubey::render::kAtmosphereEnvironmentSunriseViewYawRadians;
+constexpr float kCameraBasePitch = cubey::render::kAtmosphereEnvironmentSunriseViewPitchRadians;
 constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 
@@ -525,8 +528,8 @@ class Pyro3DApp {
         const cubey::Transform3D transform = cubey::orbit_camera_transform(cubey::OrbitCameraState{
             .target = kVolumeCenter,
             .distance = orbit_controller_.distance(),
-            .yaw = orbit_controller_.yaw(),
-            .pitch = orbit_controller_.pitch(),
+            .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
+            .pitch = kCameraBasePitch + orbit_controller_.pitch(),
         });
         const cubey::math::Quat rotation = transform.rotation;
         return {

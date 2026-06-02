@@ -1,5 +1,6 @@
 #include "gltf_viewer_app_internal.h"
 
+#include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/scene/scene_builder.h>
 
@@ -10,6 +11,12 @@
 #include <stdexcept>
 
 namespace cubey::projects::gltf_viewer {
+namespace {
+
+constexpr float kCameraBaseYaw = cubey::render::kAtmosphereEnvironmentSunriseViewYawRadians;
+constexpr float kCameraBasePitch = cubey::render::kAtmosphereEnvironmentSunriseViewPitchRadians;
+
+} // namespace
 
 void GltfViewerApp::create_fallback_scene() {
     scene_ = &engine_.create_scene();
@@ -43,6 +50,9 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
                                               cubey::orbit_camera_transform(cubey::OrbitCameraState{
                                                   .target = scene_bounds_.center,
                                                   .distance = orbit_controller_.distance(),
+                                                  .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
+                                                  .pitch =
+                                                      kCameraBasePitch + orbit_controller_.pitch(),
                                               }),
                                               cubey::Camera3D({
                                                   .near_z = std::max(radius * 0.001F, 0.01F),
@@ -123,8 +133,9 @@ void GltfViewerApp::update_camera_transform() {
                                              cubey::orbit_camera_transform(cubey::OrbitCameraState{
                                                  .target = scene_bounds_.center,
                                                  .distance = orbit_controller_.distance(),
-                                                 .yaw = orbit_controller_.yaw(),
-                                                 .pitch = orbit_controller_.pitch(),
+                                                 .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
+                                                 .pitch =
+                                                     kCameraBasePitch + orbit_controller_.pitch(),
                                              }));
     scene().commit(edits);
 }

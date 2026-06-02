@@ -341,6 +341,22 @@ int main() {
                 "run config should initialize ocean terrain field override");
         require_near(from_run_config.exposure, 0.5F, 0.001F,
                      "run config should initialize ocean exposure");
+        const cubey::AtmosphereEnvironmentRunState default_atmosphere_state =
+            cubey::atmosphere_environment_run_state_from_config(
+                cubey::RunConfig{}.atmosphere,
+                {
+                    .sun_elevation_degrees = 20.0F,
+                    .sun_azimuth_degrees = -20.0F,
+                    .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
+                    .reference_geometry_enabled = false,
+                });
+        require_near(default_atmosphere_state.environment.time_of_day.time_hours, 5.5F, 0.001F,
+                     "default ocean atmosphere should start just before dawn");
+        require_near(default_atmosphere_state.environment.time_of_day.azimuth_offset_degrees,
+                     -10.0F, 0.001F,
+                     "default ocean atmosphere should use the shared sunrise orientation offset");
+        require_near(default_atmosphere_state.time_speed_hours_per_second, 0.5F, 0.001F,
+                     "default ocean atmosphere should run at half an hour per second");
         cubey::RunConfig solar_run_config;
         solar_run_config.atmosphere.time_of_day_mode = "solar";
         solar_run_config.atmosphere.time_hours = 0.0F;

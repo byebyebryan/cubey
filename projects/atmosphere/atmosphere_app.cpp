@@ -55,8 +55,8 @@ using cubey::render::LunarAtlas;
 using cubey::render::NightSkyAtlas;
 using cubey::render::NightSkyAtlasConfig;
 
-constexpr float kBaseYaw = 0.0F;
-constexpr float kBasePitch = 0.0F;
+constexpr float kBaseYaw = cubey::render::kAtmosphereEnvironmentSunriseViewYawRadians;
+constexpr float kBasePitch = cubey::render::kAtmosphereEnvironmentSunriseViewPitchRadians;
 constexpr float kDefaultFovyRadians = 65.0F * (std::numbers::pi_v<float> / 180.0F);
 constexpr VkFormat kAtmosphereSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 

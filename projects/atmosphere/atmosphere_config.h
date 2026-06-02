@@ -85,12 +85,13 @@ inline constexpr std::array<NightSkyVisualMode, 2> kNightSkyVisualModes{
 
 struct TimeOfDayConfig {
     SunControlMode mode = SunControlMode::SolarClock;
-    float time_hours = 12.0F;
-    float day_of_year = 80.0F;
-    float latitude_degrees = 30.0F;
-    float azimuth_offset_degrees = 0.0F;
+    float time_hours = cubey::render::kAtmosphereEnvironmentDefaultTimeHours;
+    float day_of_year = cubey::render::kAtmosphereEnvironmentDefaultDayOfYear;
+    float latitude_degrees = cubey::render::kAtmosphereEnvironmentDefaultLatitudeDegrees;
+    float azimuth_offset_degrees = cubey::render::kAtmosphereEnvironmentDefaultAzimuthOffsetDegrees;
     bool playing = true;
-    float speed_hours_per_second = 1.0F;
+    float speed_hours_per_second =
+        cubey::render::kAtmosphereEnvironmentDefaultTimeSpeedHoursPerSecond;
     bool auto_exposure_enabled = true;
     float exposure_bias = 0.0F;
 };

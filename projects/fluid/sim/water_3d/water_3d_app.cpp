@@ -18,6 +18,7 @@
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/atmosphere_background_frame.h>
+#include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/environment_lighting.h>
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/pass.h>
@@ -52,8 +53,8 @@ constexpr float kCameraDistance = 4.0F;
 constexpr float kCameraNearPlane = 0.005F;
 constexpr float kCameraFarPlane = 20.0F;
 constexpr float kCameraMinDistance = 0.55F;
-constexpr float kCameraBaseYaw = -0.45F;
-constexpr float kCameraBasePitch = -0.34F;
+constexpr float kCameraBaseYaw = cubey::render::kAtmosphereEnvironmentSunriseViewYawRadians;
+constexpr float kCameraBasePitch = cubey::render::kAtmosphereEnvironmentSunriseViewPitchRadians;
 constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 

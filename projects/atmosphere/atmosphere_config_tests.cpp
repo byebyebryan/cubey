@@ -228,6 +228,16 @@ int main() {
     require_throws([] { static_cast<void>(night_sky_layer_view_from_name("hydrogen")); },
                    "night sky layer parser should reject unknown layers");
 
+    {
+        const TimeOfDayConfig defaults;
+        require_near(defaults.time_hours, 5.5F, 0.0001F,
+                     "default atmosphere project time should start just before dawn");
+        require_near(defaults.speed_hours_per_second, 0.5F, 0.0001F,
+                     "default atmosphere project time speed should be half an hour per second");
+        require_near(defaults.azimuth_offset_degrees, -10.0F, 0.0001F,
+                     "default atmosphere project view should offset sunrise from straight-on");
+    }
+
     for (const AtmospherePreset preset : kAtmospherePresets) {
         require(atmosphere_preset_from_name(atmosphere_preset_name(preset)) == preset,
                 "atmosphere preset names should round trip");
@@ -284,8 +294,9 @@ int main() {
                 "frame uniforms should pack the observer latitude sine");
     }
     {
-        const AtmosphereConfig moonlit =
-            atmosphere_config_for_preset(AtmospherePreset::MoonlitNight);
+        AtmosphereConfig moonlit = atmosphere_config_for_preset(AtmospherePreset::MoonlitNight);
+        moonlit.time_of_day.azimuth_offset_degrees = 0.0F;
+        resolve_atmosphere_time_of_day(moonlit);
         require(moonlit.sun_elevation_degrees < -30.0F,
                 "moonlit night preset should resolve below astronomical twilight");
         require_near(moonlit.exposure, 2.4F, 0.05F,
@@ -468,6 +479,7 @@ int main() {
         solar_noon.time_hours = 12.0F;
         solar_noon.day_of_year = 80.0F;
         solar_noon.latitude_degrees = 30.0F;
+        solar_noon.azimuth_offset_degrees = 0.0F;
         const SolarPosition position = atmosphere_solar_position(solar_noon);
         require_near(position.elevation_degrees, 60.0F, 0.2F,
                      "solar equinox noon at 30 degrees latitude should resolve near 60 degrees");
@@ -477,6 +489,7 @@ int main() {
     {
         TimeOfDayConfig morning;
         morning.time_hours = 9.0F;
+        morning.azimuth_offset_degrees = 0.0F;
         TimeOfDayConfig afternoon = morning;
         afternoon.time_hours = 15.0F;
         require(atmosphere_solar_position(morning).azimuth_degrees > 0.0F,
@@ -499,6 +512,7 @@ int main() {
     {
         TimeOfDayConfig sunset;
         sunset.time_hours = 17.8F;
+        sunset.azimuth_offset_degrees = 0.0F;
         const SolarPosition position = atmosphere_solar_position(sunset);
         require(position.elevation_degrees > -2.0F && position.elevation_degrees < 5.0F,
                 "solar sunset preset time should resolve near the horizon");
