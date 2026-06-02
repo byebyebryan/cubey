@@ -396,7 +396,7 @@ class OceanApp {
                 camera_preset_requested_ = false;
             }
             if (atmosphere_changed) {
-                resolve_atmosphere_controls();
+                refresh_atmosphere_lighting();
             }
         };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
@@ -494,23 +494,6 @@ class OceanApp {
         if (atmosphere_runtime_.resources_created()) {
             atmosphere_runtime_.set_environment(atmosphere_state_.environment);
         }
-    }
-
-    void resolve_atmosphere_controls() {
-        if (atmosphere_state_.solar_time_enabled) {
-            const cubey::render::AtmosphereEnvironmentSolarPosition solar =
-                cubey::render::atmosphere_environment_solar_position(
-                    atmosphere_state_.environment.time_of_day);
-            atmosphere_state_.environment.sun_elevation_degrees = solar.elevation_degrees;
-            atmosphere_state_.environment.sun_azimuth_degrees = solar.azimuth_degrees;
-        }
-        atmosphere_state_.resolved_exposure =
-            atmosphere_state_.auto_exposure_enabled
-                ? cubey::render::atmosphere_environment_auto_exposure(
-                      atmosphere_state_.environment.sun_elevation_degrees,
-                      atmosphere_state_.exposure_bias)
-                : 0.0F;
-        refresh_atmosphere_lighting();
     }
 
     void update_atmosphere_time(double delta_seconds) {

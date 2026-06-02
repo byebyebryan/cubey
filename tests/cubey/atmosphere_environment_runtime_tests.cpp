@@ -32,6 +32,17 @@ void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes() {
         .reference_geometry_enabled = false,
     };
 
+    cubey::RunConfig::AtmosphereOptions default_options;
+    cubey::AtmosphereEnvironmentRunState default_state =
+        cubey::atmosphere_environment_run_state_from_config(default_options, defaults);
+    require(default_state.solar_time_enabled,
+            "default atmosphere run state should use the solar clock");
+    require(default_state.time_playing, "default atmosphere run state should autoplay time");
+    require_near(default_state.time_speed_hours_per_second, 1.0F, 0.0001F,
+                 "default atmosphere time speed should be one simulated hour per second");
+    require(default_state.auto_exposure_enabled,
+            "default atmosphere run state should enable auto exposure");
+
     cubey::RunConfig::AtmosphereOptions manual;
     manual.sun_elevation_degrees = 4.0F;
     manual.time_hours = 16.0F;
@@ -48,6 +59,8 @@ void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes() {
             "shared atmosphere defaults should preserve caller ground mode");
     require(!manual_state.environment.reference_geometry_enabled,
             "shared atmosphere defaults should preserve caller reference geometry policy");
+    require(manual_state.auto_exposure_enabled,
+            "manual sun options should still default to auto exposure");
 
     cubey::RunConfig::AtmosphereOptions solar;
     solar.time_of_day_mode = "solar";
@@ -89,6 +102,42 @@ void test_atmosphere_environment_run_config_advances_dynamic_time() {
             "paused atmosphere time helper should not advance");
     require_near(state.environment.time_of_day.time_hours, previous_time, 0.0001F,
                  "paused atmosphere time helper should preserve time");
+}
+
+void test_atmosphere_environment_run_state_resolves_control_mutations() {
+    cubey::RunConfig::AtmosphereOptions atmosphere;
+    atmosphere.time_of_day_mode = "manual";
+    atmosphere.sun_elevation_degrees = 10.0F;
+    atmosphere.sun_azimuth_degrees = 15.0F;
+    cubey::AtmosphereEnvironmentRunState state =
+        cubey::atmosphere_environment_run_state_from_config(atmosphere);
+
+    state.solar_time_enabled = true;
+    state.auto_exposure_enabled = true;
+    state.exposure_bias = 0.5F;
+    state.environment.time_of_day.time_hours = 12.0F;
+    state.environment.time_of_day.day_of_year = 80.0F;
+    state.environment.time_of_day.latitude_degrees = 30.0F;
+    cubey::atmosphere_environment_resolve_run_state(state);
+
+    require_near(state.environment.sun_elevation_degrees, 60.0F, 0.2F,
+                 "shared resolver should update sun elevation after solar UI edits");
+    require_near(state.environment.sun_azimuth_degrees, 0.0F, 0.2F,
+                 "shared resolver should update sun azimuth after solar UI edits");
+    require_near(state.resolved_exposure,
+                 cubey::render::atmosphere_environment_auto_exposure(
+                     state.environment.sun_elevation_degrees, state.exposure_bias),
+                 0.0001F, "shared resolver should update auto exposure after UI edits");
+
+    state.solar_time_enabled = false;
+    state.auto_exposure_enabled = false;
+    state.environment.sun_elevation_degrees = -8.0F;
+    cubey::atmosphere_environment_resolve_run_state(state);
+
+    require_near(state.environment.sun_elevation_degrees, -8.0F, 0.0001F,
+                 "shared resolver should preserve manual sun when solar mode is disabled");
+    require_near(state.resolved_exposure, 0.0F, 0.0001F,
+                 "shared resolver should clear resolved exposure when auto exposure is disabled");
 }
 
 void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment() {

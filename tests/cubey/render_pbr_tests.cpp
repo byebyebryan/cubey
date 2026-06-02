@@ -862,8 +862,16 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
     const std::string gltf_scene =
         read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_scene.cpp");
     const std::string ocean_app = read_source_file(source_root / "projects/ocean/ocean_app.cpp");
+    const std::string ocean_ui = read_source_file(source_root / "projects/ocean/ocean_ui.cpp");
+    const std::string atmosphere_ui =
+        read_source_file(source_root / "include/cubey/host/atmosphere_environment_ui.h") +
+        read_source_file(source_root / "src/cubey/host/atmosphere_environment_ui.cpp");
     const std::string pbr_docs = read_source_file(source_root / "docs/architecture/pbr-ibl.md");
 
+    require_contains(atmosphere_ui, "draw_atmosphere_environment_controls",
+                     "shared atmosphere UI should expose reusable environment controls");
+    require_contains(atmosphere_ui, "atmosphere_environment_resolve_run_state",
+                     "shared atmosphere UI should resolve edited run state through engine helpers");
     require_contains(gltf_header, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
                      "glTF viewer should own a shared atmosphere environment runtime");
     require_not_contains(gltf_header, "AtmosphereDiffuseSource",
@@ -872,6 +880,12 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
                      "glTF viewer should resolve atmosphere options from RunConfig");
     require_contains(gltf_app, "atmosphere_runtime_.set_environment",
                      "glTF viewer should feed atmosphere config into the shared runtime");
+    require_contains(gltf_app, "callbacks.draw_ui",
+                     "glTF viewer should expose a windowed control panel");
+    require_contains(gltf_app, "draw_atmosphere_environment_controls",
+                     "glTF viewer should consume the shared atmosphere UI controls");
+    require_contains(gltf_app, "refresh_atmosphere_controls",
+                     "glTF viewer should push atmosphere UI edits into runtime lighting");
     require_contains(
         gltf_app, ".reference_geometry_enabled = false",
         "glTF viewer should disable atmosphere reference geometry for PBR backgrounds");
@@ -893,6 +907,10 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
                      "ocean should derive its sun direction through shared atmosphere state");
     require_contains(ocean_app, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
                      "ocean should own the shared atmosphere runtime for reflections");
+    require_contains(ocean_ui, "draw_atmosphere_environment_controls",
+                     "ocean should consume the shared atmosphere UI controls");
+    require_not_contains(ocean_ui, "void draw_environment_controls",
+                         "ocean should not keep a project-local copy of atmosphere controls");
     require_contains(pbr_docs, "runtime atmosphere reflection probe",
                      "PBR docs should capture the current atmosphere lighting boundary");
 }

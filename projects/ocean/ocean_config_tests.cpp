@@ -355,8 +355,8 @@ int main() {
         manual_run_config.atmosphere.sun_elevation_degrees = 20.0F;
         const cubey::AtmosphereEnvironmentRunState manual_state =
             cubey::atmosphere_environment_run_state_from_config(manual_run_config.atmosphere);
-        require(!manual_state.auto_exposure_enabled,
-                "manual atmosphere run state should default to fixed exposure");
+        require(manual_state.auto_exposure_enabled,
+                "manual atmosphere run state should keep the default auto exposure");
 
         const char* argv[] = {"ocean",
                               "--ocean-map-size",

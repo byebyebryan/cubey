@@ -93,8 +93,6 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
                                           "Manual uses sun angles directly; solar computes them "
                                           "from time, date, and latitude.")) {
             ui.config.time_of_day.mode = selected_mode;
-            ui.config.time_of_day.auto_exposure_enabled =
-                selected_mode == SunControlMode::SolarClock;
         }
         cubey::host::imgui_slider_float("Time", &ui.config.time_of_day.time_hours, 0.0F, 24.0F,
                                         "%.2f h", "Local solar-clock time in hours.");

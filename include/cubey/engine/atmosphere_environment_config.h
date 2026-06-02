@@ -15,23 +15,24 @@ struct AtmosphereEnvironmentRunDefaults {
 
 struct AtmosphereEnvironmentRunState {
     render::AtmosphereEnvironmentConfig environment{};
-    bool solar_time_enabled = false;
-    bool time_playing = false;
-    float time_speed_hours_per_second = 0.0F;
-    bool auto_exposure_enabled = false;
+    bool solar_time_enabled = true;
+    bool time_playing = true;
+    float time_speed_hours_per_second = 1.0F;
+    bool auto_exposure_enabled = true;
     float exposure_bias = 0.0F;
     float resolved_exposure = 0.0F;
 };
 
-[[nodiscard]] bool atmosphere_environment_run_config_uses_solar_time(
-    const RunConfig::AtmosphereOptions& atmosphere);
-[[nodiscard]] float atmosphere_environment_run_config_time_speed(
-    const RunConfig::AtmosphereOptions& atmosphere);
-[[nodiscard]] bool atmosphere_environment_run_config_time_playing(
-    const RunConfig::AtmosphereOptions& atmosphere);
-[[nodiscard]] AtmosphereEnvironmentRunState atmosphere_environment_run_state_from_config(
-    const RunConfig::AtmosphereOptions& atmosphere,
-    const AtmosphereEnvironmentRunDefaults& defaults = {});
+[[nodiscard]] bool
+atmosphere_environment_run_config_uses_solar_time(const RunConfig::AtmosphereOptions& atmosphere);
+[[nodiscard]] float
+atmosphere_environment_run_config_time_speed(const RunConfig::AtmosphereOptions& atmosphere);
+[[nodiscard]] bool
+atmosphere_environment_run_config_time_playing(const RunConfig::AtmosphereOptions& atmosphere);
+[[nodiscard]] AtmosphereEnvironmentRunState
+atmosphere_environment_run_state_from_config(const RunConfig::AtmosphereOptions& atmosphere,
+                                             const AtmosphereEnvironmentRunDefaults& defaults = {});
+void atmosphere_environment_resolve_run_state(AtmosphereEnvironmentRunState& state);
 [[nodiscard]] bool atmosphere_environment_advance_time(AtmosphereEnvironmentRunState& state,
                                                        double delta_seconds);
 

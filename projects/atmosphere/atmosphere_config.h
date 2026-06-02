@@ -90,7 +90,7 @@ struct TimeOfDayConfig {
     float latitude_degrees = 30.0F;
     float azimuth_offset_degrees = 0.0F;
     bool playing = true;
-    float speed_hours_per_second = 0.05F;
+    float speed_hours_per_second = 1.0F;
     bool auto_exposure_enabled = true;
     float exposure_bias = 0.0F;
 };
@@ -363,7 +363,7 @@ atmosphere_environment_moon(const MoonConfig& moon) {
 [[nodiscard]] inline cubey::math::Vec3 atmosphere_direction_from_alt_az(float elevation_degrees,
                                                                         float azimuth_degrees) {
     return cubey::render::atmosphere_environment_direction_from_alt_az(elevation_degrees,
-                                                                      azimuth_degrees);
+                                                                       azimuth_degrees);
 }
 
 [[nodiscard]] inline LunarState atmosphere_lunar_state(const TimeOfDayConfig& time_of_day,
@@ -646,9 +646,6 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     }
     if (run.atmosphere.time_paused == 1) {
         config.time_of_day.playing = false;
-    }
-    if (config.time_of_day.mode == SunControlMode::ManualSun && run.atmosphere.auto_exposure < 0) {
-        config.time_of_day.auto_exposure_enabled = false;
     }
     if (run.atmosphere.auto_exposure >= 0) {
         config.time_of_day.auto_exposure_enabled = run.atmosphere.auto_exposure == 1;

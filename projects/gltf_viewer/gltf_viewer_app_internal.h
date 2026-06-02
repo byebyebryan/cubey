@@ -97,6 +97,8 @@ class GltfViewerApp {
     void create_camera_and_light(cubey::SceneTransaction& setup);
     void update_animation(float delta_seconds);
     [[nodiscard]] bool update_atmosphere_time(double delta_seconds);
+    void draw_ui(cubey::host::WindowedAppContext& context);
+    void refresh_atmosphere_controls();
     void refresh_atmosphere_lighting_scene();
     void update_camera_transform();
     [[nodiscard]] cubey::scene::FrameRenderPlan3D

@@ -1,8 +1,11 @@
 #include "gltf_viewer_app_internal.h"
 
+#include <cubey/host/atmosphere_environment_ui.h>
+#include <cubey/host/imgui_helpers.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/scene/transform_3d.h>
 
+#include <imgui.h>
 #include <vulkan/vulkan.h>
 
 #include <glm/geometric.hpp>
@@ -35,8 +38,7 @@ constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
 [[nodiscard]] float direction_azimuth_degrees(cubey::math::Vec3 direction) {
     const cubey::math::Vec3 normal = glm::normalize(direction);
     return cubey::render::atmosphere_environment_wrap_signed_degrees(
-        cubey::render::atmosphere_environment_radians_to_degrees(
-            std::atan2(normal.x, -normal.z)));
+        cubey::render::atmosphere_environment_radians_to_degrees(std::atan2(normal.x, -normal.z)));
 }
 
 } // namespace
@@ -121,8 +123,7 @@ std::vector<std::uint32_t> fallback_cube_indices() {
 }
 
 GltfViewerApp::GltfViewerApp(RunConfig config)
-    : config_(std::move(config)),
-      debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
+    : config_(std::move(config)), debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
       atmosphere_state_(gltf_viewer_atmosphere_run_state(config_)) {
     atmosphere_runtime_.set_environment(atmosphere_state_.environment);
 }
@@ -134,6 +135,28 @@ bool GltfViewerApp::update_atmosphere_time(double delta_seconds) {
 
     atmosphere_runtime_.set_environment(atmosphere_state_.environment);
     return true;
+}
+
+void GltfViewerApp::refresh_atmosphere_controls() {
+    atmosphere_runtime_.set_environment(atmosphere_state_.environment);
+    refresh_atmosphere_lighting_scene();
+}
+
+void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
+    (void)context;
+    if (!cubey::host::begin_control_panel("glTF Viewer", {.width = 430.0F})) {
+        ImGui::End();
+        return;
+    }
+
+    if (cubey::host::draw_atmosphere_environment_controls(
+            atmosphere_state_, {.default_open = true,
+                                .help = "Shared procedural atmosphere used by the glTF viewer sky, "
+                                        "lighting, PBR environment, and exposure."})) {
+        refresh_atmosphere_controls();
+    }
+
+    ImGui::End();
 }
 
 int GltfViewerApp::run() {
@@ -167,6 +190,7 @@ int GltfViewerApp::run_windowed() {
         orbit_controller_.update_from_input(input, timing.delta_seconds);
         update_camera_transform();
     };
+    callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) { draw_ui(context); };
     callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                     const cubey::host::WindowedRenderFrame& frame) {
         record_viewer_frame(context, frame);

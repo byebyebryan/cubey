@@ -650,8 +650,8 @@ int main() {
                 "run config moon overrides should win over preset defaults");
         require(config.time_of_day.mode == SunControlMode::ManualSun,
                 "manual sun overrides should force manual sun mode");
-        require(!config.time_of_day.auto_exposure_enabled,
-                "manual sun mode should default to fixed exposure");
+        require(config.time_of_day.auto_exposure_enabled,
+                "manual sun mode should keep the default auto exposure");
     }
     {
         cubey::RunConfig run_config;

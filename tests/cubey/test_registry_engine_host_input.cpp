@@ -77,6 +77,7 @@ void test_windowed_app_config_preserves_windowed_host_defaults();
 void test_windowed_host_config_defaults_to_two_frame_slots();
 void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes();
 void test_atmosphere_environment_run_config_advances_dynamic_time();
+void test_atmosphere_environment_run_state_resolves_control_mutations();
 
 namespace cubey::tests {
 
@@ -86,6 +87,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_capture_queue_propagates_encoding_errors),
         CUBEY_TEST(test_atmosphere_environment_run_config_resolves_manual_and_solar_modes),
         CUBEY_TEST(test_atmosphere_environment_run_config_advances_dynamic_time),
+        CUBEY_TEST(test_atmosphere_environment_run_state_resolves_control_mutations),
         CUBEY_TEST(test_atmosphere_environment_runtime_derives_lighting_and_scene_environment),
         CUBEY_TEST(test_atmosphere_environment_runtime_builds_frame_payload),
         CUBEY_TEST(test_atmosphere_environment_runtime_requires_resources_before_bindings),
