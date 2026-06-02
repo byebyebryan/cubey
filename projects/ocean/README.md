@@ -1,10 +1,8 @@
 # Ocean
 
-`ocean` is the active Cubey port of the wave-generation path from
-[`2Retr0/GodotOceanWaves`](https://github.com/2Retr0/GodotOceanWaves/). It
-deliberately starts from the known-good reference core before any of Cubey's
-older experimental macro waves, detail normal pass, foam history pass,
-refraction, or seafloor shading are reintroduced.
+`ocean` is the active Cubey ocean renderer. It is being pulled back toward the
+known-good [`2Retr0/GodotOceanWaves`](https://github.com/2Retr0/GodotOceanWaves/)
+reference core before any of Cubey's preserved experiments are reintroduced.
 
 GodotOceanWaves is MIT licensed; the required notice is kept in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
@@ -62,23 +60,16 @@ texture is bound for terrain depth/shore/slope debug views; enabling
 `--ocean-terrain-fields` only proves a small shoreline foam hook and is not yet
 full bathymetry, seafloor visibility, or surf-zone rendering.
 
-Cascades are ordered from macro to detail for tuning: `0` is broad macro swell,
-`1` is mid-scale macro chop, `2` is the primary reference crest, `3` is the
-secondary reference wave, and `4` is fine normal/foam detail. The macro
-cascades use low displacement, low normal contribution, and low foam by default
-so they can break up tiling without creating broad whitecaps alone. The current
-defaults are biased toward a stormier sea state with accumulated foam driven
-mostly by C2 and C3, with C4 kept secondary and C0/C1 kept from creating broad
-cloudy white sheets. The anti-repeat control keeps a conservative C0/C1 geometry
-blend and adds distance-gated C1-C4 normal/foam anti-tiling for far-field
-whitecaps. Spectral domains are enabled by default for macro and detail bands,
-while C2/C3 keep the full reference spectrum so the primary whitecap carrier
-does not break into disconnected flecks. Foam is stored separately from normal
-data as persistent history, current Jacobian breaking source, determinant, and
-compression diagnostic channels. Final whitecap coverage composes macro, crest,
-and detail roles: C0/C1 are a low-brightness support layer, C2/C3 are the bright
-coherent crests, and C4 only adds gated fine breakup. Compression is currently a
-diagnostic signal only. This is still not a localized wind or weather simulation.
+Cascades are still allocated as five slots because the current shader and
+descriptor ABI expects that layout, but the defaults now behave as a reference
+baseline: `0` and `1` are dormant preserved macro slots, `2` is the primary
+reference crest, `3` is the secondary reference wave, and `4` is fine
+normal/foam detail. Spectral source-domain filtering defaults off so the visible
+cascades use the full reference spectrum; turn it on only when inspecting the
+old macro/detail banding path. Foam is stored separately from normal data as
+persistent history, current Jacobian breaking source, determinant, and
+compression diagnostic channels. Compression is currently a diagnostic signal
+only. This is still not a localized wind or weather simulation.
 
 The default FFT map is `1024`. Smoke tests and fast local checks can use
 `--ocean-map-size 128`.

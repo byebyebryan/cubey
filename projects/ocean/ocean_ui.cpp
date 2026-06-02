@@ -329,7 +329,9 @@ void draw_ocean_ui(OceanUiContext ui) {
         for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
             char label[40]{};
             format_cascade_label(label, sizeof(label), index);
-            const OceanCascadeDomain domain = ocean_cascade_domain(ui.config, index);
+            const OceanCascadeDomain domain = ui.config.spectral_domains_enabled
+                                                 ? ocean_cascade_domain(ui.config, index)
+                                                 : OceanCascadeDomain{};
             if (domain.active) {
                 ImGui::Text("%s: %.0f m / disp %.2f / domain %.2f-%.2f m", label,
                             ui.config.cascades[index].tile_length,

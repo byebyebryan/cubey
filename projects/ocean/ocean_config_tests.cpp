@@ -61,8 +61,8 @@ int main() {
         require(defaults.mesh_lod_levels >= ocean::kOceanMinMeshLodLevels &&
                     defaults.mesh_lod_levels <= ocean::kOceanMaxMeshLodLevels,
                 "default mesh LOD count should be in supported range");
-        require(defaults.spectral_domains_enabled,
-                "ocean should default to spectral source-domain filtering");
+        require(!defaults.spectral_domains_enabled,
+                "active ocean should default to the unfiltered reference spectrum");
         require(ocean::ocean_mesh_vertex_count(defaults) ==
                     defaults.mesh_cells * defaults.mesh_cells * 6U,
                 "ocean vertex count should match generated grid triangles");
@@ -94,14 +94,14 @@ int main() {
                 "ocean should keep three reference-derived cascades");
         require(domain0.active && domain1.active && !domain2.active && !domain3.active &&
                     domain4.active,
-                "default cascade wavelength domains should leave crest carriers unfiltered");
+                "configured cascade wavelength domains should leave crest carriers unfiltered");
         require(domain0.low_k < domain0.high_k && domain1.low_k < domain1.high_k &&
                     domain4.low_k < domain4.high_k,
-                "default cascade domains should have increasing k bounds");
+                "configured cascade domains should have increasing k bounds");
         require(domain0.low_wavelength < domain0.high_wavelength &&
                     domain1.low_wavelength < domain1.high_wavelength &&
                     domain4.low_wavelength < domain4.high_wavelength,
-                "default cascade domains should expose low/high wavelength bounds");
+                "configured cascade domains should expose low/high wavelength bounds");
         require(domain0.high_wavelength > domain1.high_wavelength &&
                     domain1.high_wavelength > domain4.high_wavelength,
                 "active cascade diagnostic domains should run from macro to detail wavelengths");
@@ -141,85 +141,91 @@ int main() {
                          static_cast<float>(defaults.map_size),
                      0.01F, "cascade 4 smallest wavelength should follow map sampling");
         require_near(cascade0.tile_length, 1531.0F, 0.001F,
-                     "cascade 0 should be the largest decorrelated macro swell");
+                     "cascade 0 should keep the preserved macro slot scale");
         require_near(cascade1.tile_length, 421.0F, 0.001F,
-                     "cascade 1 should be the decorrelated mid macro layer");
-        require_near(cascade0.displacement_scale, 0.55F, 0.001F,
-                     "cascade 0 storm macro displacement should be tuned");
-        require_near(cascade1.displacement_scale, 0.95F, 0.001F,
-                     "cascade 1 storm macro displacement should be tuned");
-        require_near(cascade0.wind_speed, 32.0F, 0.001F, "cascade 0 should carry storm swell wind");
-        require_near(cascade1.wind_speed, 30.0F, 0.001F, "cascade 1 should carry storm chop wind");
+                     "cascade 1 should keep the preserved mid macro slot scale");
+        require_near(cascade0.displacement_scale, 0.0F, 0.001F,
+                     "cascade 0 should be visually dormant by default");
+        require_near(cascade1.displacement_scale, 0.0F, 0.001F,
+                     "cascade 1 should be visually dormant by default");
+        require_near(cascade0.normal_scale, 0.0F, 0.001F,
+                     "cascade 0 should not contribute normal detail by default");
+        require_near(cascade1.normal_scale, 0.0F, 0.001F,
+                     "cascade 1 should not contribute normal detail by default");
+        require_near(cascade0.wind_speed, 32.0F, 0.001F,
+                     "cascade 0 should preserve the old macro swell wind for comparison");
+        require_near(cascade1.wind_speed, 30.0F, 0.001F,
+                     "cascade 1 should preserve the old macro chop wind for comparison");
         require(cascade0.tile_length > cascade1.tile_length &&
                     cascade1.tile_length > cascade2.tile_length,
                 "cascades should run from macro scale into crest scale");
-        require(cascade0.displacement_scale < cascade1.displacement_scale &&
-                    cascade1.displacement_scale < cascade2.displacement_scale,
-                "macro cascades should stay lower amplitude than the primary crest");
-        require(cascade0.normal_scale > 0.0F && cascade0.normal_scale < cascade1.normal_scale &&
-                    cascade1.normal_scale < cascade2.normal_scale,
-                "macro cascades should feed lower-amplitude normals than the crest");
+        require(cascade0.displacement_scale == 0.0F && cascade1.displacement_scale == 0.0F &&
+                    cascade2.displacement_scale > 0.0F,
+                "preserved macro slots should stay dormant before the primary crest");
+        require(cascade0.normal_scale == 0.0F && cascade1.normal_scale == 0.0F &&
+                    cascade2.normal_scale > 0.0F,
+                "preserved macro slots should not feed normals before rework");
         require_near(cascade0.whitecap, 0.12F, 0.001F,
                      "cascade 0 macro swell should keep its whitecap threshold");
         require_near(cascade0.foam_amount, 0.0F, 0.001F,
                      "cascade 0 macro swell should not generate foam by default");
         require_near(cascade1.whitecap, 0.28F, 0.001F,
                      "cascade 1 macro chop should feed restrained breaking source");
-        require_near(cascade1.foam_amount, 0.90F, 0.001F,
-                     "cascade 1 macro chop should feed low accumulated foam by default");
+        require_near(cascade1.foam_amount, 0.0F, 0.001F,
+                     "cascade 1 macro chop should be visually dormant by default");
 
         require_near(cascade2.tile_length, 88.0F, 0.001F,
                      "cascade 2 should keep the reference primary crest scale");
-        require_near(cascade2.displacement_scale, 1.35F, 0.001F,
-                     "cascade 2 storm primary crest displacement should be tuned");
-        require_near(cascade2.normal_scale, 1.35F, 0.001F,
-                     "cascade 2 storm primary crest normal should be tuned");
-        require_near(cascade2.wind_speed, 18.0F, 0.001F,
-                     "cascade 2 storm primary crest wind should be tuned");
+        require_near(cascade2.displacement_scale, 1.0F, 0.001F,
+                     "cascade 2 should match the reference primary crest displacement");
+        require_near(cascade2.normal_scale, 1.0F, 0.001F,
+                     "cascade 2 should match the reference primary crest normal");
+        require_near(cascade2.wind_speed, 10.0F, 0.001F,
+                     "cascade 2 should match the reference primary crest wind");
         require_near(cascade2.wind_direction_degrees, 20.0F, 0.001F,
                      "cascade 2 wind direction should match Godot ref primary crest");
-        require_near(cascade2.fetch_length_km, 350.0F, 0.001F,
-                     "cascade 2 storm primary crest fetch should be tuned");
-        require_near(cascade2.spread, 0.14F, 0.001F,
-                     "cascade 2 storm primary crest spread should be tuned");
+        require_near(cascade2.fetch_length_km, 150.0F, 0.001F,
+                     "cascade 2 should match the reference primary crest fetch");
+        require_near(cascade2.spread, 0.2F, 0.001F,
+                     "cascade 2 should match the reference primary crest spread");
         require_near(cascade2.whitecap, 0.50F, 0.001F,
-                     "cascade 2 storm primary crest whitecap should match ref-style breaking");
-        require_near(cascade2.foam_amount, 5.80F, 0.001F,
-                     "cascade 2 storm primary crest foam should drive accumulated whitecaps");
+                     "cascade 2 should match reference primary crest breaking");
+        require_near(cascade2.foam_amount, 8.0F, 0.001F,
+                     "cascade 2 should match reference primary crest foam");
 
         require_near(cascade3.tile_length, 57.0F, 0.001F,
                      "cascade 3 tile length should match Godot ref secondary wave");
-        require_near(cascade3.displacement_scale, 1.08F, 0.001F,
-                     "cascade 3 storm secondary wave displacement should be tuned");
-        require_near(cascade3.normal_scale, 1.35F, 0.001F,
-                     "cascade 3 storm secondary wave normal should be tuned");
-        require_near(cascade3.wind_speed, 16.0F, 0.001F,
-                     "cascade 3 storm secondary wave wind should be tuned");
-        require_near(cascade3.wind_direction_degrees, 17.0F, 0.001F,
-                     "cascade 3 storm secondary wave direction should be tuned");
-        require_near(cascade3.fetch_length_km, 330.0F, 0.001F,
-                     "cascade 3 storm secondary wave fetch should be tuned");
-        require_near(cascade3.spread, 0.25F, 0.001F,
-                     "cascade 3 storm secondary wave spread should be tuned");
-        require_near(cascade3.whitecap, 0.48F, 0.001F,
-                     "cascade 3 storm secondary wave whitecap should match ref-style breaking");
-        require_near(cascade3.foam_amount, 4.80F, 0.001F,
-                     "cascade 3 storm secondary wave foam should support accumulated whitecaps");
+        require_near(cascade3.displacement_scale, 0.75F, 0.001F,
+                     "cascade 3 should match reference secondary wave displacement");
+        require_near(cascade3.normal_scale, 1.0F, 0.001F,
+                     "cascade 3 should match reference secondary wave normal");
+        require_near(cascade3.wind_speed, 5.0F, 0.001F,
+                     "cascade 3 should match reference secondary wave wind");
+        require_near(cascade3.wind_direction_degrees, 15.0F, 0.001F,
+                     "cascade 3 should match reference secondary wave direction");
+        require_near(cascade3.fetch_length_km, 150.0F, 0.001F,
+                     "cascade 3 should match reference secondary wave fetch");
+        require_near(cascade3.spread, 0.4F, 0.001F,
+                     "cascade 3 should match reference secondary wave spread");
+        require_near(cascade3.whitecap, 0.50F, 0.001F,
+                     "cascade 3 should match reference secondary wave breaking");
+        require_near(cascade3.foam_amount, 0.0F, 0.001F,
+                     "cascade 3 should match reference secondary wave foam");
 
         require_near(cascade4.tile_length, 16.0F, 0.001F,
                      "cascade 4 tile length should match Godot ref detail normals");
         require_near(cascade4.displacement_scale, 0.0F, 0.001F,
                      "cascade 4 geometry scale should match Godot ref detail normals");
-        require_near(cascade4.normal_scale, 0.50F, 0.001F,
-                     "cascade 4 storm detail normal should be tuned");
-        require_near(cascade4.wind_speed, 30.0F, 0.001F,
-                     "cascade 4 storm detail wind should be tuned");
-        require_near(cascade4.fetch_length_km, 850.0F, 0.001F,
-                     "cascade 4 storm detail fetch should be tuned");
-        require_near(cascade4.whitecap, 0.44F, 0.001F,
-                     "cascade 4 storm detail whitecap should stay conservative");
-        require_near(cascade4.foam_amount, 2.20F, 0.001F,
-                     "cascade 4 storm detail foam should stay secondary");
+        require_near(cascade4.normal_scale, 0.25F, 0.001F,
+                     "cascade 4 should match reference detail normal");
+        require_near(cascade4.wind_speed, 20.0F, 0.001F,
+                     "cascade 4 should match reference detail wind");
+        require_near(cascade4.fetch_length_km, 550.0F, 0.001F,
+                     "cascade 4 should match reference detail fetch");
+        require_near(cascade4.whitecap, 0.25F, 0.001F,
+                     "cascade 4 should match reference detail whitecap");
+        require_near(cascade4.foam_amount, 3.0F, 0.001F,
+                     "cascade 4 should match reference detail foam");
         require_near(defaults.water_color_r, 0.1F, 0.001F, "water color should match Godot ref");
         require_near(defaults.foam_color_r, 0.73F, 0.001F, "foam color should match Godot ref");
         require_near(defaults.foam_density, 3.15F, 0.001F,

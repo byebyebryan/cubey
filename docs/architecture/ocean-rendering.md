@@ -58,6 +58,14 @@ when they preserve or improve the interactive inspection result. The first bias
 is toward diagnostics that help reason about the wave core, not broad feature
 stacking.
 
+The first reset step is behavioral rather than structural: `projects/ocean`
+still allocates the five-cascade ABI, but the default tuning turns the two
+preserved macro slots off, maps the three visible cascades to the `ocean_ref`
+defaults, and disables spectral source-domain filtering. That keeps the active
+path comparable to the reference without mixing in the larger shader/descriptor
+topology rewrite. The next structural step is to remove the dormant cascade
+slots and reconcile the active descriptor layout with the reference layout.
+
 ## Feature Donor Boundaries
 
 Useful `ocean_legacy` ideas to revisit later:
