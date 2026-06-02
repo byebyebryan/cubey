@@ -143,6 +143,9 @@ void test_run_config_rejects_invalid_capture_options() {
 void test_run_config_descriptors_have_help_text() {
     bool saw_ocean = false;
     bool saw_atmosphere = false;
+    bool saw_profile = false;
+    bool saw_smoke = false;
+    bool saw_water3d = false;
     for (const cubey::ConfigOptionDescriptor& option : cubey::run_config_option_descriptors()) {
         require(!option.path.empty(), "config descriptor path should not be empty");
         require(!option.label.empty(), "config descriptor label should not be empty");
@@ -154,9 +157,21 @@ void test_run_config_descriptors_have_help_text() {
         if (option.path == "atmosphere.time_of_day_mode") {
             saw_atmosphere = true;
         }
+        if (option.path == "profile.output") {
+            saw_profile = true;
+        }
+        if (option.path == "smoke.pressure_solver") {
+            saw_smoke = true;
+        }
+        if (option.path == "water3d.p2g_mode") {
+            saw_water3d = true;
+        }
     }
     require(saw_ocean, "config descriptors should include active ocean controls");
     require(saw_atmosphere, "config descriptors should include atmosphere controls");
+    require(saw_profile, "config descriptors should include profiling controls");
+    require(saw_smoke, "config descriptors should include smoke controls");
+    require(saw_water3d, "config descriptors should include water 3D controls");
 }
 
 void test_run_config_descriptor_cli_names_are_unique() {
@@ -202,6 +217,16 @@ void test_run_config_loads_json_config_file() {
   "height": 360,
   "headless": true,
   "output": "/tmp/cubey-config.png",
+  "grid": {
+    "width": 512,
+    "height": 256,
+    "depth": 64
+  },
+  "profile": {
+    "output": "smoke-profile",
+    "diagnostics": true,
+    "diagnostic_interval": 4
+  },
   "pbr": {
     "environment_source": "atmosphere",
     "exposure": -0.75
@@ -215,6 +240,27 @@ void test_run_config_loads_json_config_file() {
   "terrain": {
     "seed": 12345,
     "water_surface": false
+  },
+  "smoke": {
+    "pressure_solver": "red-black-gauss-seidel",
+    "dye_decay": 0.98,
+    "injector_radius": 0.05
+  },
+  "pyro": {
+    "source_height": 0.15,
+    "source_radius": 0.04,
+    "explosion_interval_seconds": 2.0,
+    "explosion_duration_seconds": 0.25
+  },
+  "water2d": {
+    "transfer": "pic/flip",
+    "hose": true,
+    "drain": false
+  },
+  "water3d": {
+    "transfer": "picflip",
+    "p2g_mode": "active-faces",
+    "whitewater": true
   },
   "atmosphere": {
     "time_of_day_mode": "solar",
@@ -235,6 +281,12 @@ void test_run_config_loads_json_config_file() {
     require(config.headless, "config file should set boolean options");
     require(config.output_path == "/tmp/cubey-config.png",
             "config file should preserve explicit output path");
+    require(config.grid.width == 512 && config.grid.height == 256 && config.grid.depth == 64,
+            "config file should set shared grid dimensions");
+    require(config.profile_output_prefix ==
+                    std::filesystem::path("outputs") / "profiles" / "smoke-profile" &&
+                config.profile_diagnostics && config.profile_diagnostic_interval == 4,
+            "config file should set profiling controls");
     require(config.pbr.environment_source == "atmosphere",
             "config file should set nested PBR options");
     require(config.pbr.exposure == -0.75F && config.pbr.exposure_explicit,
@@ -246,6 +298,19 @@ void test_run_config_loads_json_config_file() {
     require(config.terrain.seed_set && config.terrain.seed == 12345U,
             "config file should mark terrain seed as explicit");
     require(config.terrain.water_surface == 0, "config file should set terrain booleans");
+    require(config.smoke.pressure_solver == "red-black-gauss-seidel" &&
+                config.smoke.dye_decay == 0.98F && config.smoke.injector_radius == 0.05F,
+            "config file should set smoke controls");
+    require(config.pyro.source_height == 0.15F && config.pyro.source_radius == 0.04F &&
+                config.pyro.explosion_interval_seconds == 2.0F &&
+                config.pyro.explosion_duration_seconds == 0.25F,
+            "config file should set pyro controls");
+    require(config.water2d.transfer_mode == "pic/flip" && config.water2d.hose == 1 &&
+                config.water2d.drain == 0,
+            "config file should set water 2D controls");
+    require(config.water3d.transfer_mode == "picflip" &&
+                config.water3d.p2g_mode == "active-faces" && config.water3d.whitewater == 1,
+            "config file should set water 3D controls");
     require(config.atmosphere.time_of_day_mode == "solar" &&
                 config.atmosphere.time_hours == 18.5F && config.atmosphere.moon == 0,
             "config file should set atmosphere controls");
@@ -262,6 +327,9 @@ void test_run_config_cli_and_set_override_config_file() {
   },
   "ocean": {
     "terrain_fields": false
+  },
+  "water3d": {
+    "whitewater": false
   }
 })");
 
@@ -274,10 +342,12 @@ void test_run_config_cli_and_set_override_config_file() {
     std::string set_height = "height=720";
     std::string set_env = "pbr.environment_source=atmosphere";
     std::string set_terrain = "ocean.terrain_fields=true";
-    std::array<char*, 11> argv{program.data(),     width_flag.data(),  width_value.data(),
-                               config_flag.data(), config_path.data(), set_flag.data(),
-                               set_height.data(),  set_flag.data(),    set_env.data(),
-                               set_flag.data(),    set_terrain.data()};
+    std::string set_whitewater = "water3d.whitewater=true";
+    std::array<char*, 13> argv{program.data(),       width_flag.data(),  width_value.data(),
+                               config_flag.data(),   config_path.data(), set_flag.data(),
+                               set_height.data(),    set_flag.data(),    set_env.data(),
+                               set_flag.data(),      set_terrain.data(), set_flag.data(),
+                               set_whitewater.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -286,6 +356,8 @@ void test_run_config_cli_and_set_override_config_file() {
     require(config.pbr.environment_source == "atmosphere",
             "--set should override nested config values");
     require(config.ocean.terrain_fields == 1, "--set should parse bool overrides");
+    require(config.water3d.whitewater == 1,
+            "--set should override descriptor-backed water controls");
 }
 
 void test_run_config_descriptor_cli_and_set_precedence() {
@@ -295,9 +367,12 @@ void test_run_config_descriptor_cli_and_set_precedence() {
     std::string set_flag = "--set";
     std::string set_terrain = "ocean.terrain_fields=false";
     std::string set_auto_exposure = "atmosphere.auto_exposure=true";
-    std::array<char*, 7> argv{program.data(),        terrain_flag.data(), set_flag.data(),
-                              set_terrain.data(),    auto_exposure_flag.data(),
-                              set_flag.data(),       set_auto_exposure.data()};
+    std::string water_wave_flag = "--water3d-wave";
+    std::string set_water_wave = "water3d.wave=false";
+    std::array<char*, 10> argv{program.data(),           terrain_flag.data(),       set_flag.data(),
+                               set_terrain.data(),       auto_exposure_flag.data(), set_flag.data(),
+                               set_auto_exposure.data(), water_wave_flag.data(),    set_flag.data(),
+                               set_water_wave.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -305,6 +380,8 @@ void test_run_config_descriptor_cli_and_set_precedence() {
             "--set should override descriptor-backed positive bool CLI flags");
     require(config.atmosphere.auto_exposure == 1,
             "--set should override descriptor-backed negative bool CLI flags");
+    require(config.water3d.wave == 0,
+            "--set should override newly descriptor-backed project bool CLI flags");
 }
 
 void test_run_config_rejects_invalid_json_config_file() {
@@ -351,6 +428,18 @@ void test_run_config_writes_json_template() {
             "config template should include nested atmosphere options");
     require(text.find("\"ocean\"") != std::string::npos,
             "config template should include nested ocean options");
+    require(text.find("\"profile\"") != std::string::npos,
+            "config template should include profiling options");
+    require(text.find("\"grid\"") != std::string::npos,
+            "config template should include grid options");
+    require(text.find("\"smoke\"") != std::string::npos,
+            "config template should include smoke options");
+    require(text.find("\"pyro\"") != std::string::npos,
+            "config template should include pyro options");
+    require(text.find("\"water2d\"") != std::string::npos,
+            "config template should include water 2D options");
+    require(text.find("\"water3d\"") != std::string::npos,
+            "config template should include water 3D options");
 }
 
 void test_run_config_parses_input_path() {

@@ -50,6 +50,12 @@ constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
     "final", "stellar-emission", "dust-tau", "star-clouds", "hii-emission", "speckles",
 };
+constexpr std::array<std::string_view, 3> kSmokePressureSolvers{"jacobi", "rbgs",
+                                                                "red-black-gauss-seidel"};
+constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip", "picflip",
+                                                              "pic/flip"};
+constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-faces", "tiled",
+                                                           "tiled-faces"};
 
 constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view path,
                                         std::string_view cli_name, std::string_view label,
@@ -71,7 +77,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 68> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 128> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -101,6 +107,28 @@ constexpr std::array<ConfigOptionDescriptor, 68> kRunConfigOptions{
            ConfigOptionType::Bool),
     option(RunConfigOptionId::CaptureMode, "capture", "--capture", "Capture", "Capture",
            "Capture output mode.", ConfigOptionType::Enum, no_range(), enum_choices(kCaptureModes)),
+    option(RunConfigOptionId::GridWidth, "grid.width", "--grid-width", "Width", "Grid",
+           "Project grid width. Zero or null leaves the project default in place.",
+           ConfigOptionType::UInt32, min_range(1.0)),
+    option(RunConfigOptionId::GridHeight, "grid.height", "--grid-height", "Height", "Grid",
+           "Project grid height. Zero or null leaves the project default in place.",
+           ConfigOptionType::UInt32, min_range(1.0)),
+    option(RunConfigOptionId::GridDepth, "grid.depth", "--grid-depth", "Depth", "Grid",
+           "Project grid depth. Zero or null leaves the project default in place.",
+           ConfigOptionType::UInt32, min_range(1.0)),
+    option(RunConfigOptionId::ProfileOutput, "profile.output", "--profile-output", "Profile Output",
+           "Profiling",
+           "Profile output prefix. Relative bare names are written under outputs/profiles.",
+           ConfigOptionType::Path),
+    option(RunConfigOptionId::ProfileWarmupFrames, "profile.warmup_frames",
+           "--profile-warmup-frames", "Warmup Frames", "Profiling",
+           "Frames to skip before profiling output starts.", ConfigOptionType::UInt32),
+    option(RunConfigOptionId::ProfileDiagnostics, "profile.diagnostics", "--profile-diagnostics",
+           "Diagnostics", "Profiling", "Record project diagnostics into profile output.",
+           ConfigOptionType::Bool, no_range(), {}, "--no-profile-diagnostics"),
+    option(RunConfigOptionId::ProfileDiagnosticInterval, "profile.diagnostic_interval",
+           "--profile-diagnostic-interval", "Diagnostic Interval", "Profiling",
+           "Frame interval for profile diagnostics.", ConfigOptionType::UInt32, min_range(1.0)),
     option(RunConfigOptionId::GltfInput, "gltf.input", "--input", "Input", "glTF",
            "glTF or GLB asset path.", ConfigOptionType::Path),
     option(RunConfigOptionId::GltfAnimationIndex, "gltf.animation_index", "--animation-index",
@@ -269,6 +297,153 @@ constexpr std::array<ConfigOptionDescriptor, 68> kRunConfigOptions{
     option(RunConfigOptionId::AtmosphereMoon, "atmosphere.moon", "--moon", "Moon", "Atmosphere",
            "Enable the procedural moon and moonlight.", ConfigOptionType::Bool, no_range(), {},
            "--no-moon"),
+    option(RunConfigOptionId::SmokeInjectors, "smoke.injectors", "--smoke-injectors", "Injectors",
+           "Smoke 2D", "Number of built-in smoke injectors.", ConfigOptionType::UInt32,
+           min_range(1.0)),
+    option(RunConfigOptionId::SmokePressureIterations, "smoke.pressure_iterations",
+           "--smoke-pressure-iterations", "Pressure Iterations", "Smoke 2D",
+           "Pressure projection iteration count.", ConfigOptionType::UInt32, min_range(1.0)),
+    option(RunConfigOptionId::SmokePressureSolver, "smoke.pressure_solver",
+           "--smoke-pressure-solver", "Pressure Solver", "Smoke 2D",
+           "Pressure solver implementation.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kSmokePressureSolvers)),
+    option(RunConfigOptionId::SmokeDyeDecay, "smoke.dye_decay", "--smoke-dye-decay", "Dye Decay",
+           "Smoke 2D", "Per-frame dye retention.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::SmokeVelocityDecay, "smoke.velocity_decay", "--smoke-velocity-decay",
+           "Velocity Decay", "Smoke 2D", "Per-frame velocity retention.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::SmokeInjectorRadius, "smoke.injector_radius",
+           "--smoke-injector-radius", "Injector Radius", "Smoke 2D",
+           "Smoke injector radius in normalized simulation space.", ConfigOptionType::Float,
+           min_range(0.000001)),
+    option(RunConfigOptionId::SmokeInjectorForce, "smoke.injector_force", "--smoke-injector-force",
+           "Injector Force", "Smoke 2D", "Force applied by smoke injectors.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::SmokeInjectorPropulsion, "smoke.injector_propulsion",
+           "--smoke-injector-propulsion", "Injector Propulsion", "Smoke 2D",
+           "Propulsion applied opposite injector motion.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::SmokeInjectorOrbitRadius, "smoke.injector_orbit_radius",
+           "--smoke-injector-orbit-radius", "Orbit Radius", "Smoke 2D",
+           "Base injector orbit radius.", ConfigOptionType::Float, min_range(0.000001)),
+    option(RunConfigOptionId::SmokeInjectorOrbitRadiusSpread, "smoke.injector_orbit_radius_spread",
+           "--smoke-injector-orbit-radius-spread", "Orbit Radius Spread", "Smoke 2D",
+           "Injector orbit radius variation.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::SmokeInjectorOrbitAngularSpeed, "smoke.injector_orbit_angular_speed",
+           "--smoke-injector-orbit-angular-speed", "Orbit Speed", "Smoke 2D",
+           "Base injector angular speed.", ConfigOptionType::Float),
+    option(RunConfigOptionId::SmokeInjectorOrbitAngularSpeedSpread,
+           "smoke.injector_orbit_angular_speed_spread",
+           "--smoke-injector-orbit-angular-speed-spread", "Orbit Speed Spread", "Smoke 2D",
+           "Injector angular speed variation.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::SmokeInjectorOrbitPhaseSpread, "smoke.injector_orbit_phase_spread",
+           "--smoke-injector-orbit-phase-spread", "Orbit Phase Spread", "Smoke 2D",
+           "Injector orbit phase variation.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::SmokeVorticity, "smoke.vorticity", "--smoke-vorticity", "Vorticity",
+           "Smoke 2D", "Vorticity confinement strength.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PyroShadowGridWidth, "pyro.shadow_grid.width", "--shadow-grid-width",
+           "Shadow Width", "Pyro 3D", "Shadow-volume grid width.", ConfigOptionType::UInt32,
+           min_range(1.0)),
+    option(RunConfigOptionId::PyroShadowGridHeight, "pyro.shadow_grid.height",
+           "--shadow-grid-height", "Shadow Height", "Pyro 3D", "Shadow-volume grid height.",
+           ConfigOptionType::UInt32, min_range(1.0)),
+    option(RunConfigOptionId::PyroShadowGridDepth, "pyro.shadow_grid.depth", "--shadow-grid-depth",
+           "Shadow Depth", "Pyro 3D", "Shadow-volume grid depth.", ConfigOptionType::UInt32,
+           min_range(1.0)),
+    option(RunConfigOptionId::PyroShadowSteps, "pyro.shadow_steps", "--shadow-steps",
+           "Shadow Steps", "Pyro 3D", "Raymarch steps for volumetric shadowing.",
+           ConfigOptionType::UInt32, min_range(1.0)),
+    option(RunConfigOptionId::PyroShadowUpdateInterval, "pyro.shadow_update_interval",
+           "--shadow-update-interval", "Shadow Update Interval", "Pyro 3D",
+           "Frame interval for updating the shadow volume.", ConfigOptionType::UInt32,
+           min_range(1.0)),
+    option(RunConfigOptionId::PyroSources, "pyro.sources", "--pyro-sources", "Sources", "Pyro 3D",
+           "Number of pyro source emitters.", ConfigOptionType::UInt32, min_range(1.0)),
+    option(RunConfigOptionId::PyroSourceHeight, "pyro.source_height", "--pyro-source-height",
+           "Source Height", "Pyro 3D", "Source height in normalized volume coordinates.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::PyroSourceRadius, "pyro.source_radius", "--pyro-source-radius",
+           "Source Radius", "Pyro 3D", "Source radius in normalized volume coordinates.",
+           ConfigOptionType::Float, min_range(0.000001)),
+    option(RunConfigOptionId::PyroSourceForce, "pyro.source_force", "--pyro-source-force",
+           "Source Force", "Pyro 3D", "Velocity force injected by pyro sources.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PyroSoot, "pyro.soot", "--pyro-soot", "Soot", "Pyro 3D",
+           "Soot or smoke amount injected by sources.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PyroTemperature, "pyro.temperature", "--pyro-temperature",
+           "Temperature", "Pyro 3D", "Temperature injected by sources.", ConfigOptionType::Float,
+           min_range(0.0)),
+    option(RunConfigOptionId::PyroFuel, "pyro.fuel", "--pyro-fuel", "Fuel", "Pyro 3D",
+           "Fuel injected by sources.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PyroBuoyancy, "pyro.buoyancy", "--pyro-buoyancy", "Buoyancy",
+           "Pyro 3D", "Thermal buoyancy strength.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PyroIgnitionTemperature, "pyro.ignition_temperature",
+           "--pyro-ignition-temperature", "Ignition", "Pyro 3D",
+           "Temperature threshold for combustion.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PyroBurnRate, "pyro.burn_rate", "--pyro-burn-rate", "Burn Rate",
+           "Pyro 3D", "Fuel burn rate.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PyroHeatOutput, "pyro.heat_output", "--pyro-heat-output",
+           "Heat Output", "Pyro 3D", "Heat produced by combustion.", ConfigOptionType::Float,
+           min_range(0.0)),
+    option(RunConfigOptionId::PyroSootYield, "pyro.soot_yield", "--pyro-soot-yield", "Soot Yield",
+           "Pyro 3D", "Soot produced by combustion.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PyroExpansion, "pyro.expansion", "--pyro-expansion", "Expansion",
+           "Pyro 3D", "Combustion expansion force.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PyroFlameCooling, "pyro.flame_cooling", "--pyro-flame-cooling",
+           "Flame Cooling", "Pyro 3D", "Cooling rate for visible flame.", ConfigOptionType::Float,
+           min_range(0.0)),
+    option(RunConfigOptionId::PyroShredding, "pyro.shredding", "--pyro-shredding", "Shredding",
+           "Pyro 3D", "Small-scale flame breakup strength.", ConfigOptionType::Float,
+           min_range(0.0)),
+    option(RunConfigOptionId::PyroTurbulence, "pyro.turbulence", "--pyro-turbulence", "Turbulence",
+           "Pyro 3D", "Source turbulence amount.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PyroObstacleHeight, "pyro.obstacle_height", "--pyro-obstacle-height",
+           "Obstacle Height", "Pyro 3D", "Ball obstacle center height.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::PyroObstacleRadius, "pyro.obstacle_radius", "--pyro-obstacle-radius",
+           "Obstacle Radius", "Pyro 3D", "Ball obstacle radius.", ConfigOptionType::Float,
+           bounded_range(0.0, 0.5)),
+    option(RunConfigOptionId::PyroExplosionInterval, "pyro.explosion_interval_seconds",
+           "--explosion-interval", "Explosion Interval", "Pyro 3D",
+           "Seconds between explosion impulses.", ConfigOptionType::Float, min_range(0.000001)),
+    option(RunConfigOptionId::PyroExplosionDuration, "pyro.explosion_duration_seconds",
+           "--explosion-duration", "Explosion Duration", "Pyro 3D",
+           "Seconds spent in the explosion impulse.", ConfigOptionType::Float, min_range(0.000001)),
+    option(RunConfigOptionId::PyroExplosionBoost, "pyro.explosion_boost", "--explosion-boost",
+           "Explosion Boost", "Pyro 3D", "Impulse multiplier for explosion mode.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::Water2DTransfer, "water2d.transfer", "--water2d-transfer", "Transfer",
+           "Water 2D", "Particle-grid transfer mode.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kWaterTransferModes)),
+    option(RunConfigOptionId::Water2DTransferLimit, "water2d.transfer_limit",
+           "--water2d-transfer-limit", "Transfer Limit", "Water 2D",
+           "Particle samples consumed per grid cell.", ConfigOptionType::UInt32, min_range(1.0)),
+    option(RunConfigOptionId::Water2DHose, "water2d.hose", "--water2d-hose", "Hose", "Water 2D",
+           "Enable hose injection.", ConfigOptionType::Bool, no_range(), {}, "--no-water2d-hose"),
+    option(RunConfigOptionId::Water2DDrain, "water2d.drain", "--water2d-drain", "Drain", "Water 2D",
+           "Enable draining.", ConfigOptionType::Bool, no_range(), {}, "--no-water2d-drain"),
+    option(RunConfigOptionId::Water2DWave, "water2d.wave", "--water2d-wave", "Wave", "Water 2D",
+           "Enable wave forcing.", ConfigOptionType::Bool, no_range(), {}, "--no-water2d-wave"),
+    option(RunConfigOptionId::Water3DTransfer, "water3d.transfer", "--water3d-transfer", "Transfer",
+           "Water 3D", "Particle-grid transfer mode.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kWaterTransferModes)),
+    option(RunConfigOptionId::Water3DTransferLimit, "water3d.transfer_limit",
+           "--water3d-transfer-limit", "Transfer Limit", "Water 3D",
+           "Particle samples consumed per grid cell.", ConfigOptionType::UInt32, min_range(1.0)),
+    option(RunConfigOptionId::Water3DP2GMode, "water3d.p2g_mode", "--water3d-p2g-mode", "P2G Mode",
+           "Water 3D", "Particle-to-grid implementation mode.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kWater3DP2GModes)),
+    option(RunConfigOptionId::Water3DHose, "water3d.hose", "--water3d-hose", "Hose", "Water 3D",
+           "Enable hose injection.", ConfigOptionType::Bool, no_range(), {}, "--no-water3d-hose"),
+    option(RunConfigOptionId::Water3DDrain, "water3d.drain", "--water3d-drain", "Drain", "Water 3D",
+           "Enable draining.", ConfigOptionType::Bool, no_range(), {}, "--no-water3d-drain"),
+    option(RunConfigOptionId::Water3DRain, "water3d.rain", "--water3d-rain", "Rain", "Water 3D",
+           "Enable rain injection.", ConfigOptionType::Bool, no_range(), {}, "--no-water3d-rain"),
+    option(RunConfigOptionId::Water3DWave, "water3d.wave", "--water3d-wave", "Wave", "Water 3D",
+           "Enable wave forcing.", ConfigOptionType::Bool, no_range(), {}, "--no-water3d-wave"),
+    option(RunConfigOptionId::Water3DWhitewater, "water3d.whitewater", "--water3d-whitewater",
+           "Whitewater", "Water 3D", "Enable whitewater particles.", ConfigOptionType::Bool,
+           no_range(), {}, "--no-water3d-whitewater"),
 };
 
 template <typename T>
@@ -319,6 +494,18 @@ int parse_ocean_cascade(std::string_view value, const ConfigOptionDescriptor& op
         return static_cast<int>(value[0] - '0');
     }
     throw std::runtime_error("invalid ocean cascade for " + std::string(option.path));
+}
+
+std::filesystem::path profile_output_prefix(std::string_view value,
+                                            const ConfigOptionDescriptor& option) {
+    std::filesystem::path prefix{std::string(value)};
+    if (prefix.empty()) {
+        throw std::runtime_error(std::string(option.path) + " must not be empty");
+    }
+    if (!prefix.has_parent_path() && !prefix.is_absolute()) {
+        prefix = std::filesystem::path("outputs") / "profiles" / prefix;
+    }
+    return prefix;
 }
 
 std::string json_path_string(std::string_view prefix, std::string_view key) {
@@ -436,6 +623,12 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         }
         return value;
     };
+    const auto optional_uint32 = [](std::uint32_t value) -> nlohmann::json {
+        if (value == 0U) {
+            return nullptr;
+        }
+        return value;
+    };
     const auto optional_bool = [](int value) -> nlohmann::json {
         if (value < 0) {
             return nullptr;
@@ -468,6 +661,22 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.print_frame_stats;
     case RunConfigOptionId::CaptureMode:
         return config.capture_mode == cubey::CaptureMode::Video ? "video" : "png";
+    case RunConfigOptionId::GridWidth:
+        return optional_uint32(config.grid.width);
+    case RunConfigOptionId::GridHeight:
+        return optional_uint32(config.grid.height);
+    case RunConfigOptionId::GridDepth:
+        return optional_uint32(config.grid.depth);
+    case RunConfigOptionId::ProfileOutput:
+        return config.profile_output_prefix.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.profile_output_prefix.string());
+    case RunConfigOptionId::ProfileWarmupFrames:
+        return config.profile_warmup_frames;
+    case RunConfigOptionId::ProfileDiagnostics:
+        return config.profile_diagnostics;
+    case RunConfigOptionId::ProfileDiagnosticInterval:
+        return config.profile_diagnostic_interval;
     case RunConfigOptionId::GltfInput:
         return config.gltf.input_path.string();
     case RunConfigOptionId::GltfAnimationIndex:
@@ -584,6 +793,116 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.atmosphere.moon_size_scale);
     case RunConfigOptionId::AtmosphereMoon:
         return optional_bool(config.atmosphere.moon);
+    case RunConfigOptionId::SmokeInjectors:
+        return optional_uint32(config.smoke.injectors);
+    case RunConfigOptionId::SmokePressureIterations:
+        return optional_uint32(config.smoke.pressure_iterations);
+    case RunConfigOptionId::SmokePressureSolver:
+        return config.smoke.pressure_solver.empty() ? nlohmann::json(nullptr)
+                                                    : nlohmann::json(config.smoke.pressure_solver);
+    case RunConfigOptionId::SmokeDyeDecay:
+        return optional_float(config.smoke.dye_decay);
+    case RunConfigOptionId::SmokeVelocityDecay:
+        return optional_float(config.smoke.velocity_decay);
+    case RunConfigOptionId::SmokeInjectorRadius:
+        return optional_float(config.smoke.injector_radius);
+    case RunConfigOptionId::SmokeInjectorForce:
+        return optional_float(config.smoke.injector_force);
+    case RunConfigOptionId::SmokeInjectorPropulsion:
+        return optional_float(config.smoke.injector_propulsion);
+    case RunConfigOptionId::SmokeInjectorOrbitRadius:
+        return optional_float(config.smoke.injector_orbit_radius);
+    case RunConfigOptionId::SmokeInjectorOrbitRadiusSpread:
+        return optional_float(config.smoke.injector_orbit_radius_spread);
+    case RunConfigOptionId::SmokeInjectorOrbitAngularSpeed:
+        return optional_float(config.smoke.injector_orbit_angular_speed);
+    case RunConfigOptionId::SmokeInjectorOrbitAngularSpeedSpread:
+        return optional_float(config.smoke.injector_orbit_angular_speed_spread);
+    case RunConfigOptionId::SmokeInjectorOrbitPhaseSpread:
+        return optional_float(config.smoke.injector_orbit_phase_spread);
+    case RunConfigOptionId::SmokeVorticity:
+        return optional_float(config.smoke.vorticity);
+    case RunConfigOptionId::PyroShadowGridWidth:
+        return optional_uint32(config.pyro.shadow_grid.width);
+    case RunConfigOptionId::PyroShadowGridHeight:
+        return optional_uint32(config.pyro.shadow_grid.height);
+    case RunConfigOptionId::PyroShadowGridDepth:
+        return optional_uint32(config.pyro.shadow_grid.depth);
+    case RunConfigOptionId::PyroShadowSteps:
+        return optional_uint32(config.pyro.shadow_steps);
+    case RunConfigOptionId::PyroShadowUpdateInterval:
+        return optional_uint32(config.pyro.shadow_update_interval);
+    case RunConfigOptionId::PyroSources:
+        return optional_uint32(config.pyro.sources);
+    case RunConfigOptionId::PyroSourceHeight:
+        return optional_float(config.pyro.source_height);
+    case RunConfigOptionId::PyroSourceRadius:
+        return optional_float(config.pyro.source_radius);
+    case RunConfigOptionId::PyroSourceForce:
+        return optional_float(config.pyro.source_force);
+    case RunConfigOptionId::PyroSoot:
+        return optional_float(config.pyro.soot);
+    case RunConfigOptionId::PyroTemperature:
+        return optional_float(config.pyro.temperature);
+    case RunConfigOptionId::PyroFuel:
+        return optional_float(config.pyro.fuel);
+    case RunConfigOptionId::PyroBuoyancy:
+        return optional_float(config.pyro.buoyancy);
+    case RunConfigOptionId::PyroIgnitionTemperature:
+        return optional_float(config.pyro.ignition_temperature);
+    case RunConfigOptionId::PyroBurnRate:
+        return optional_float(config.pyro.burn_rate);
+    case RunConfigOptionId::PyroHeatOutput:
+        return optional_float(config.pyro.heat_output);
+    case RunConfigOptionId::PyroSootYield:
+        return optional_float(config.pyro.soot_yield);
+    case RunConfigOptionId::PyroExpansion:
+        return optional_float(config.pyro.expansion);
+    case RunConfigOptionId::PyroFlameCooling:
+        return optional_float(config.pyro.flame_cooling);
+    case RunConfigOptionId::PyroShredding:
+        return optional_float(config.pyro.shredding);
+    case RunConfigOptionId::PyroTurbulence:
+        return optional_float(config.pyro.turbulence);
+    case RunConfigOptionId::PyroObstacleHeight:
+        return optional_float(config.pyro.obstacle_height);
+    case RunConfigOptionId::PyroObstacleRadius:
+        return optional_float(config.pyro.obstacle_radius);
+    case RunConfigOptionId::PyroExplosionInterval:
+        return optional_float(config.pyro.explosion_interval_seconds);
+    case RunConfigOptionId::PyroExplosionDuration:
+        return optional_float(config.pyro.explosion_duration_seconds);
+    case RunConfigOptionId::PyroExplosionBoost:
+        return optional_float(config.pyro.explosion_boost);
+    case RunConfigOptionId::Water2DTransfer:
+        return config.water2d.transfer_mode.empty() ? nlohmann::json(nullptr)
+                                                    : nlohmann::json(config.water2d.transfer_mode);
+    case RunConfigOptionId::Water2DTransferLimit:
+        return optional_uint32(config.water2d.transfer_limit);
+    case RunConfigOptionId::Water2DHose:
+        return optional_bool(config.water2d.hose);
+    case RunConfigOptionId::Water2DDrain:
+        return optional_bool(config.water2d.drain);
+    case RunConfigOptionId::Water2DWave:
+        return optional_bool(config.water2d.wave);
+    case RunConfigOptionId::Water3DTransfer:
+        return config.water3d.transfer_mode.empty() ? nlohmann::json(nullptr)
+                                                    : nlohmann::json(config.water3d.transfer_mode);
+    case RunConfigOptionId::Water3DTransferLimit:
+        return optional_uint32(config.water3d.transfer_limit);
+    case RunConfigOptionId::Water3DP2GMode:
+        return config.water3d.p2g_mode.empty() ? nlohmann::json(nullptr)
+                                               : nlohmann::json(config.water3d.p2g_mode);
+    case RunConfigOptionId::Water3DHose:
+        return optional_bool(config.water3d.hose);
+    case RunConfigOptionId::Water3DDrain:
+        return optional_bool(config.water3d.drain);
+    case RunConfigOptionId::Water3DRain:
+        return optional_bool(config.water3d.rain);
+    case RunConfigOptionId::Water3DWave:
+        return optional_bool(config.water3d.wave);
+    case RunConfigOptionId::Water3DWhitewater:
+        return optional_bool(config.water3d.whitewater);
     }
     return nullptr;
 }
@@ -827,12 +1146,12 @@ const ConfigOptionDescriptor* find_run_config_option(std::string_view path) {
 }
 
 const ConfigOptionDescriptor* find_run_config_option_by_cli_name(std::string_view cli_name) {
-    const auto it = std::find_if(
-        kRunConfigOptions.begin(), kRunConfigOptions.end(),
-        [cli_name](const ConfigOptionDescriptor& option) {
-            return option.cli_name == cli_name ||
-                   (!option.negative_cli_name.empty() && option.negative_cli_name == cli_name);
-        });
+    const auto it = std::find_if(kRunConfigOptions.begin(), kRunConfigOptions.end(),
+                                 [cli_name](const ConfigOptionDescriptor& option) {
+                                     return option.cli_name == cli_name ||
+                                            (!option.negative_cli_name.empty() &&
+                                             option.negative_cli_name == cli_name);
+                                 });
     return it == kRunConfigOptions.end() ? nullptr : &*it;
 }
 
@@ -896,6 +1215,33 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::CaptureMode:
         config.capture_mode = value == "video" ? CaptureMode::Video : CaptureMode::Png;
+        break;
+    case RunConfigOptionId::GridWidth:
+        config.grid.width = parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.grid.width, option);
+        break;
+    case RunConfigOptionId::GridHeight:
+        config.grid.height = parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.grid.height, option);
+        break;
+    case RunConfigOptionId::GridDepth:
+        config.grid.depth = parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.grid.depth, option);
+        break;
+    case RunConfigOptionId::ProfileOutput:
+        config.profile_output_prefix = profile_output_prefix(value, option);
+        break;
+    case RunConfigOptionId::ProfileWarmupFrames:
+        config.profile_warmup_frames =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        break;
+    case RunConfigOptionId::ProfileDiagnostics:
+        config.profile_diagnostics = parse_config_bool(value, option);
+        break;
+    case RunConfigOptionId::ProfileDiagnosticInterval:
+        config.profile_diagnostic_interval =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.profile_diagnostic_interval, option);
         break;
     case RunConfigOptionId::GltfInput:
         config.gltf.input_path = std::string(value);
@@ -1098,6 +1444,212 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::AtmosphereMoon:
         config.atmosphere.moon = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::SmokeInjectors:
+        config.smoke.injectors = parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.smoke.injectors, option);
+        break;
+    case RunConfigOptionId::SmokePressureIterations:
+        config.smoke.pressure_iterations =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.smoke.pressure_iterations, option);
+        break;
+    case RunConfigOptionId::SmokePressureSolver:
+        config.smoke.pressure_solver = std::string(value);
+        break;
+    case RunConfigOptionId::SmokeDyeDecay:
+        config.smoke.dye_decay = parse_config_float(value, option);
+        validate_range(config.smoke.dye_decay, option);
+        break;
+    case RunConfigOptionId::SmokeVelocityDecay:
+        config.smoke.velocity_decay = parse_config_float(value, option);
+        validate_range(config.smoke.velocity_decay, option);
+        break;
+    case RunConfigOptionId::SmokeInjectorRadius:
+        config.smoke.injector_radius = parse_config_float(value, option);
+        validate_range(config.smoke.injector_radius, option);
+        break;
+    case RunConfigOptionId::SmokeInjectorForce:
+        config.smoke.injector_force = parse_config_float(value, option);
+        validate_range(config.smoke.injector_force, option);
+        break;
+    case RunConfigOptionId::SmokeInjectorPropulsion:
+        config.smoke.injector_propulsion = parse_config_float(value, option);
+        validate_range(config.smoke.injector_propulsion, option);
+        break;
+    case RunConfigOptionId::SmokeInjectorOrbitRadius:
+        config.smoke.injector_orbit_radius = parse_config_float(value, option);
+        validate_range(config.smoke.injector_orbit_radius, option);
+        break;
+    case RunConfigOptionId::SmokeInjectorOrbitRadiusSpread:
+        config.smoke.injector_orbit_radius_spread = parse_config_float(value, option);
+        validate_range(config.smoke.injector_orbit_radius_spread, option);
+        break;
+    case RunConfigOptionId::SmokeInjectorOrbitAngularSpeed:
+        config.smoke.injector_orbit_angular_speed = parse_config_float(value, option);
+        break;
+    case RunConfigOptionId::SmokeInjectorOrbitAngularSpeedSpread:
+        config.smoke.injector_orbit_angular_speed_spread = parse_config_float(value, option);
+        validate_range(config.smoke.injector_orbit_angular_speed_spread, option);
+        break;
+    case RunConfigOptionId::SmokeInjectorOrbitPhaseSpread:
+        config.smoke.injector_orbit_phase_spread = parse_config_float(value, option);
+        validate_range(config.smoke.injector_orbit_phase_spread, option);
+        break;
+    case RunConfigOptionId::SmokeVorticity:
+        config.smoke.vorticity = parse_config_float(value, option);
+        validate_range(config.smoke.vorticity, option);
+        break;
+    case RunConfigOptionId::PyroShadowGridWidth:
+        config.pyro.shadow_grid.width =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.pyro.shadow_grid.width, option);
+        break;
+    case RunConfigOptionId::PyroShadowGridHeight:
+        config.pyro.shadow_grid.height =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.pyro.shadow_grid.height, option);
+        break;
+    case RunConfigOptionId::PyroShadowGridDepth:
+        config.pyro.shadow_grid.depth =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.pyro.shadow_grid.depth, option);
+        break;
+    case RunConfigOptionId::PyroShadowSteps:
+        config.pyro.shadow_steps = parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.pyro.shadow_steps, option);
+        break;
+    case RunConfigOptionId::PyroShadowUpdateInterval:
+        config.pyro.shadow_update_interval =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.pyro.shadow_update_interval, option);
+        break;
+    case RunConfigOptionId::PyroSources:
+        config.pyro.sources = parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.pyro.sources, option);
+        break;
+    case RunConfigOptionId::PyroSourceHeight:
+        config.pyro.source_height = parse_config_float(value, option);
+        validate_range(config.pyro.source_height, option);
+        break;
+    case RunConfigOptionId::PyroSourceRadius:
+        config.pyro.source_radius = parse_config_float(value, option);
+        validate_range(config.pyro.source_radius, option);
+        break;
+    case RunConfigOptionId::PyroSourceForce:
+        config.pyro.source_force = parse_config_float(value, option);
+        validate_range(config.pyro.source_force, option);
+        break;
+    case RunConfigOptionId::PyroSoot:
+        config.pyro.soot = parse_config_float(value, option);
+        validate_range(config.pyro.soot, option);
+        break;
+    case RunConfigOptionId::PyroTemperature:
+        config.pyro.temperature = parse_config_float(value, option);
+        validate_range(config.pyro.temperature, option);
+        break;
+    case RunConfigOptionId::PyroFuel:
+        config.pyro.fuel = parse_config_float(value, option);
+        validate_range(config.pyro.fuel, option);
+        break;
+    case RunConfigOptionId::PyroBuoyancy:
+        config.pyro.buoyancy = parse_config_float(value, option);
+        validate_range(config.pyro.buoyancy, option);
+        break;
+    case RunConfigOptionId::PyroIgnitionTemperature:
+        config.pyro.ignition_temperature = parse_config_float(value, option);
+        validate_range(config.pyro.ignition_temperature, option);
+        break;
+    case RunConfigOptionId::PyroBurnRate:
+        config.pyro.burn_rate = parse_config_float(value, option);
+        validate_range(config.pyro.burn_rate, option);
+        break;
+    case RunConfigOptionId::PyroHeatOutput:
+        config.pyro.heat_output = parse_config_float(value, option);
+        validate_range(config.pyro.heat_output, option);
+        break;
+    case RunConfigOptionId::PyroSootYield:
+        config.pyro.soot_yield = parse_config_float(value, option);
+        validate_range(config.pyro.soot_yield, option);
+        break;
+    case RunConfigOptionId::PyroExpansion:
+        config.pyro.expansion = parse_config_float(value, option);
+        validate_range(config.pyro.expansion, option);
+        break;
+    case RunConfigOptionId::PyroFlameCooling:
+        config.pyro.flame_cooling = parse_config_float(value, option);
+        validate_range(config.pyro.flame_cooling, option);
+        break;
+    case RunConfigOptionId::PyroShredding:
+        config.pyro.shredding = parse_config_float(value, option);
+        validate_range(config.pyro.shredding, option);
+        break;
+    case RunConfigOptionId::PyroTurbulence:
+        config.pyro.turbulence = parse_config_float(value, option);
+        validate_range(config.pyro.turbulence, option);
+        break;
+    case RunConfigOptionId::PyroObstacleHeight:
+        config.pyro.obstacle_height = parse_config_float(value, option);
+        validate_range(config.pyro.obstacle_height, option);
+        break;
+    case RunConfigOptionId::PyroObstacleRadius:
+        config.pyro.obstacle_radius = parse_config_float(value, option);
+        validate_range(config.pyro.obstacle_radius, option);
+        break;
+    case RunConfigOptionId::PyroExplosionInterval:
+        config.pyro.explosion_interval_seconds = parse_config_float(value, option);
+        validate_range(config.pyro.explosion_interval_seconds, option);
+        break;
+    case RunConfigOptionId::PyroExplosionDuration:
+        config.pyro.explosion_duration_seconds = parse_config_float(value, option);
+        validate_range(config.pyro.explosion_duration_seconds, option);
+        break;
+    case RunConfigOptionId::PyroExplosionBoost:
+        config.pyro.explosion_boost = parse_config_float(value, option);
+        validate_range(config.pyro.explosion_boost, option);
+        break;
+    case RunConfigOptionId::Water2DTransfer:
+        config.water2d.transfer_mode = std::string(value);
+        break;
+    case RunConfigOptionId::Water2DTransferLimit:
+        config.water2d.transfer_limit =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.water2d.transfer_limit, option);
+        break;
+    case RunConfigOptionId::Water2DHose:
+        config.water2d.hose = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::Water2DDrain:
+        config.water2d.drain = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::Water2DWave:
+        config.water2d.wave = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::Water3DTransfer:
+        config.water3d.transfer_mode = std::string(value);
+        break;
+    case RunConfigOptionId::Water3DTransferLimit:
+        config.water3d.transfer_limit =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.water3d.transfer_limit, option);
+        break;
+    case RunConfigOptionId::Water3DP2GMode:
+        config.water3d.p2g_mode = std::string(value);
+        break;
+    case RunConfigOptionId::Water3DHose:
+        config.water3d.hose = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::Water3DDrain:
+        config.water3d.drain = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::Water3DRain:
+        config.water3d.rain = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::Water3DWave:
+        config.water3d.wave = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::Water3DWhitewater:
+        config.water3d.whitewater = parse_config_bool(value, option) ? 1 : 0;
         break;
     }
 }
