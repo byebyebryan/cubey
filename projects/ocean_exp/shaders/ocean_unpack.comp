@@ -1,0 +1,61 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(rgba32f, set = 0, binding = 0) readonly uniform image2D fft_field0_image;
+layout(rgba32f, set = 0, binding = 1) readonly uniform image2D fft_field1_image;
+layout(rgba32f, set = 0, binding = 2) readonly uniform image2D fft_field2_image;
+layout(rgba32f, set = 0, binding = 3) readonly uniform image2D fft_field3_image;
+layout(rgba32f, set = 0, binding = 4) writeonly uniform image2D displacement_image;
+layout(rgba32f, set = 0, binding = 5) writeonly uniform image2D normal_image;
+layout(rgba32f, set = 0, binding = 6) uniform image2D foam_image;
+
+layout(push_constant) uniform UnpackParams {
+    vec4 foam_options;
+    vec4 cascade_options;
+} params;
+
+const uint NUM_SPECTRA = 4U;
+
+void main() {
+    ivec2 id = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 dims = imageSize(displacement_image);
+    if (id.x >= dims.x || id.y >= dims.y) {
+        return;
+    }
+
+    float sign_shift = -2.0 * float((id.x & 1) ^ (id.y & 1)) + 1.0;
+    vec2 field0 = imageLoad(fft_field0_image, id).xy;
+    vec2 field1 = imageLoad(fft_field1_image, id).xy;
+    vec2 field2 = imageLoad(fft_field2_image, id).xy;
+    vec2 field3 = imageLoad(fft_field3_image, id).xy;
+
+    float hx = field0.x * sign_shift;
+    float hy = field0.y * sign_shift;
+    float hz = field1.x * sign_shift;
+    float dhy_dx = field1.y * sign_shift;
+    float dhy_dz = field2.x * sign_shift;
+    float dhx_dx = field2.y * sign_shift;
+    float dhz_dz = field3.x * sign_shift;
+    float dhz_dx = field3.y * sign_shift;
+
+    float whitecap = params.foam_options.x;
+    float foam_grow_rate = params.foam_options.y;
+    float foam_decay_rate = params.foam_options.z;
+    float previous_valid = params.foam_options.w;
+    float jxx = 1.0 + dhx_dx;
+    float jzz = 1.0 + dhz_dz;
+    float jxz = dhz_dx;
+    float jacobian = jxx * jzz - jxz * jxz;
+    float compression = 0.5 * (jxx + jzz) -
+                        0.5 * sqrt(max((jxx - jzz) * (jxx - jzz) + 4.0 * jxz * jxz, 0.0));
+    float jacobian_source = max(0.0, whitecap - jacobian);
+    float current_source = clamp(jacobian_source * foam_grow_rate, 0.0, 1.0);
+    float persistent = previous_valid > 0.5 ? imageLoad(foam_image, id).x : 0.0;
+    persistent = clamp(persistent * exp(-foam_decay_rate) + current_source, 0.0, 1.0);
+
+    vec2 gradient = vec2(dhy_dx, dhy_dz) / (1.0 + abs(vec2(dhx_dx, dhz_dz)));
+    imageStore(displacement_image, id, vec4(hx, hy, hz, 0.0));
+    imageStore(normal_image, id, vec4(gradient, dhx_dx, dhz_dz));
+    imageStore(foam_image, id, vec4(persistent, current_source, jacobian, compression));
+}

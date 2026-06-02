@@ -1,11 +1,12 @@
 # Ocean Adjacent Systems
 
-`projects/ocean` is now the active reference-derived deep-water renderer, with
-`projects/ocean_ref` kept as a known-good wave baseline and
-`projects/ocean_legacy` kept as a feature donor. The next visible quality jump
-still depends on systems that should not be built directly inside the ocean
-project first. Shorelines, shallow water, atmospheric scattering, and clouds
-each have enough policy and tuning surface to deserve standalone project
+`projects/ocean` is the active reference-derived deep-water renderer,
+`projects/ocean_ref` is the known-good wave baseline, `projects/ocean_exp` is a
+temporary preservation copy of the pre-reset active renderer, and
+`projects/ocean_legacy` is the older feature donor. The next visible quality
+jump still depends on systems that should not be built directly inside the
+ocean project first. Shorelines, shallow water, atmospheric scattering, and
+clouds each have enough policy and tuning surface to deserve standalone project
 pressure before they become shared renderer inputs.
 
 This note captures the intended split so parallel work can stay mergeable.

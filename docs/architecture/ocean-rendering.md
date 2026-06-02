@@ -1,21 +1,29 @@
 # Ocean Rendering Direction
 
-Cubey now keeps three ocean lanes with different jobs:
+Cubey now keeps four ocean lanes with different jobs:
 
 - `projects/ocean` is the active renderer. It starts from the known-good
   GodotOceanWaves-derived spectrum/FFT/unpack core and should stay close to
-  that baseline until changes clearly improve it.
+  that baseline until changes clearly improve it. Current work is pulling this
+  project back toward `ocean_ref` after the active path drifted into too many
+  coupled experiments.
 - `projects/ocean_ref` is the frozen reference port. Keep it source-stable so
   active ocean changes can be checked against a working wave-shape guardrail,
   not treated as an oracle. It is intentionally exempt from current active-panel
   UI cleanup unless a bug blocks comparison work.
+- `projects/ocean_exp` is a temporary preservation copy of the pre-reset active
+  ocean renderer. It keeps the macro cascades, atmosphere integration,
+  terrain-field descriptors, expanded foam composition, and debug views
+  available for side-by-side comparison while `projects/ocean` is simplified.
+  It is intentionally exempt from current active-panel UI cleanup because it is
+  not a permanent lane.
 - `projects/ocean_legacy` is the previous Cubey experimental renderer. It is a
   feature donor for macro crests, persistent foam history, refraction, seafloor,
   atmosphere hooks, and shoreline/bathymetry ideas. It is not expected to track
   shared UI/config helper adoption except when a feature is actively ported.
 
 This split keeps wave shape and foam quality grounded in a known-good
-implementation while preserving the older work for selective porting.
+implementation while preserving the experimental work for selective porting.
 
 ## Current Active Shape
 
@@ -24,7 +32,7 @@ project starts from particle-grid liquid simulation, while ocean starts from a
 camera-relative surface renderer and only adds simulation where interaction
 needs it.
 
-The active renderer currently focuses on:
+Before the reset, the active renderer had accumulated:
 
 - a camera-relative clipmap mesh with LOD diagnostics;
 - the GodotOceanWaves-style multi-cascade spectrum, modulation, FFT, and unpack
@@ -41,12 +49,14 @@ The active renderer currently focuses on:
 - a diagnostic terrain-ocean `RGBA32F` field texture bound through the shared
   height/depth/shore/slope contract;
 - active `--ocean-*` CLI controls, while the frozen reference keeps
-  `--ocean-ref-*` controls.
+  `--ocean-ref-*` controls and the temporary snapshot uses the copied
+  `--ocean-*` tuning surface.
 
-The active renderer should not immediately absorb all legacy features. Additions
-should be ported one at a time only when they preserve or improve the
-interactive inspection result. The first bias is toward diagnostics that help
-reason about the wave core, not snapshot comparison tooling.
+The active renderer should be reduced until it matches or beats `ocean_ref` on
+visual quality and performance. Additions should then return one at a time only
+when they preserve or improve the interactive inspection result. The first bias
+is toward diagnostics that help reason about the wave core, not broad feature
+stacking.
 
 ## Feature Donor Boundaries
 

@@ -10,9 +10,9 @@ than the root design and roadmap.
   commits, and transform manager direction.
 - [Fluid simulation direction](fluid-simulation.md): project direction for
   2D/2.5D/3D fluid work.
-- [Ocean rendering](ocean-rendering.md): active/reference/legacy ocean split,
-  reference-derived wave core, feature donor boundaries, and breaking-wave
-  tradeoffs.
+- [Ocean rendering](ocean-rendering.md):
+  active/reference/experimental/legacy ocean split, reference-derived wave
+  core, feature donor boundaries, and breaking-wave tradeoffs.
 - [Ocean adjacent systems](ocean-adjacent-systems.md): atmosphere, clouds,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [glTF assets and PBR](gltf-assets.md): static glTF import, PBR material

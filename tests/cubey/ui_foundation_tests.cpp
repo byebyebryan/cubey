@@ -108,6 +108,9 @@ void test_reference_ocean_ui_exceptions_are_documented() {
         docs, "intentionally exempt from current active-panel",
         "ocean_ref should be documented as a frozen UI cleanup exception");
     cubey::tests::require_contains(
+        docs, "temporary preservation copy",
+        "ocean_exp should be documented as a temporary UI cleanup exception");
+    cubey::tests::require_contains(
         docs, "shared UI/config helper adoption",
         "ocean_legacy should be documented as a donor UI cleanup exception");
 }
