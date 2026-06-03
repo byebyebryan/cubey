@@ -283,6 +283,33 @@ void draw_lod_diagnostics(const OceanConfig& config) {
         ImGui::Text("%.0f", ocean_mesh_level_half_extent(config, level));
     }
     ImGui::EndTable();
+
+    if (!ImGui::BeginTable("Cascade LOD bands", 5,
+                           ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg)) {
+        return;
+    }
+    ImGui::TableSetupColumn("Cascade");
+    ImGui::TableSetupColumn("Tile");
+    ImGui::TableSetupColumn("Shape m");
+    ImGui::TableSetupColumn("Surface m");
+    ImGui::TableSetupColumn("Mesh cell");
+    ImGui::TableHeadersRow();
+    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+        const OceanCascadeConfig& cascade_config = ocean_cascade(config, cascade);
+        const OceanCascadeLodBand lod = ocean_cascade_lod_band(config, cascade);
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("C%u%s", cascade, ocean_cascade_enabled(config, cascade) ? "" : " off");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("%.0f", cascade_config.tile_length);
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Text("%.0f-%.0f", lod.displacement_fade_start, lod.displacement_fade_end);
+        ImGui::TableSetColumnIndex(3);
+        ImGui::Text("%.0f-%.0f", lod.surface_fade_start, lod.surface_fade_end);
+        ImGui::TableSetColumnIndex(4);
+        ImGui::Text("%.1f-%.1f", lod.mesh_cell_full, lod.mesh_cell_zero);
+    }
+    ImGui::EndTable();
 }
 
 } // namespace

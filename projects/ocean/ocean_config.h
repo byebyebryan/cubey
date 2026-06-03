@@ -55,6 +55,12 @@ inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;
 inline constexpr std::uint32_t kOceanMaxMeshLodLevels = 6U;
 inline constexpr float kOceanPi = 3.14159265358979323846F;
 inline constexpr float kOceanCascadeSmallestWaveMultiplier = 4.0F;
+inline constexpr float kOceanCascadeDistanceFadeStartWaves = 10.0F;
+inline constexpr float kOceanCascadeDistanceFadeEndWaves = 34.0F;
+inline constexpr float kOceanCascadeSurfaceFadeStartWaves = 12.0F;
+inline constexpr float kOceanCascadeSurfaceFadeEndWaves = 40.0F;
+inline constexpr float kOceanCascadeMeshFullTileCellDivisor = 8.0F;
+inline constexpr float kOceanCascadeMeshZeroTileCellDivisor = 3.0F;
 
 struct OceanCascadeConfig {
     float tile_length = 88.0F;
@@ -216,6 +222,17 @@ struct OceanCascadeDomain {
     friend bool operator==(const OceanCascadeDomain&, const OceanCascadeDomain&) = default;
 };
 
+struct OceanCascadeLodBand {
+    float displacement_fade_start = 0.0F;
+    float displacement_fade_end = 0.0F;
+    float surface_fade_start = 0.0F;
+    float surface_fade_end = 0.0F;
+    float mesh_cell_full = 0.0F;
+    float mesh_cell_zero = 0.0F;
+
+    friend bool operator==(const OceanCascadeLodBand&, const OceanCascadeLodBand&) = default;
+};
+
 [[nodiscard]] inline const char* ocean_render_view_name(OceanRenderView view) {
     switch (view) {
     case OceanRenderView::Final:
@@ -318,6 +335,24 @@ struct OceanCascadeDomain {
         throw std::runtime_error("ocean cascade index out of range");
     }
     return config.cascade_enabled[cascade];
+}
+
+[[nodiscard]] inline OceanCascadeLodBand ocean_cascade_lod_band(const OceanConfig& config,
+                                                                std::uint32_t cascade) {
+    const float tile_length = ocean_cascade(config, cascade).tile_length;
+    if (tile_length <= 0.0F) {
+        throw std::runtime_error("ocean cascade tile length must be positive");
+    }
+    const float shape_fade = std::max(config.shape_fade_distance_scale, 0.001F);
+    return {
+        .displacement_fade_start =
+            tile_length * kOceanCascadeDistanceFadeStartWaves * shape_fade,
+        .displacement_fade_end = tile_length * kOceanCascadeDistanceFadeEndWaves * shape_fade,
+        .surface_fade_start = tile_length * kOceanCascadeSurfaceFadeStartWaves * shape_fade,
+        .surface_fade_end = tile_length * kOceanCascadeSurfaceFadeEndWaves * shape_fade,
+        .mesh_cell_full = tile_length / kOceanCascadeMeshFullTileCellDivisor,
+        .mesh_cell_zero = tile_length / kOceanCascadeMeshZeroTileCellDivisor,
+    };
 }
 
 [[nodiscard]] inline float ocean_cascade_domain_high_k(const OceanConfig& config,

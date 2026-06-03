@@ -56,6 +56,7 @@ layout(location = 2) in vec2 frag_sample_position;
 layout(location = 3) in vec4 frag_wave;
 layout(location = 4) in float frag_patch_alpha;
 layout(location = 5) noperspective in vec3 frag_barycentric;
+layout(location = 6) in float frag_mesh_cell_size;
 
 layout(location = 0) out vec4 out_color;
 
@@ -85,6 +86,12 @@ const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
 const float OCEAN_ATMOSPHERE_REFLECTION_MAX_LOD = 4.0;
 const float OCEAN_SHAPE_ANTI_REPEAT_WEIGHT = 0.32;
+const float OCEAN_CASCADE_DISTANCE_FADE_START_WAVES = 10.0;
+const float OCEAN_CASCADE_DISTANCE_FADE_END_WAVES = 34.0;
+const float OCEAN_CASCADE_SURFACE_FADE_START_WAVES = 12.0;
+const float OCEAN_CASCADE_SURFACE_FADE_END_WAVES = 40.0;
+const float OCEAN_CASCADE_MESH_FULL_TILE_CELL_DIVISOR = 8.0;
+const float OCEAN_CASCADE_MESH_ZERO_TILE_CELL_DIVISOR = 3.0;
 const int OCEAN_SELF_SHADOW_MAX_STEPS = 24;
 const vec2 OCEAN_REFERENCE_PILLAR_CENTER_XZ = vec2(-24.0, 10.0);
 const vec2 OCEAN_REFERENCE_PILLAR_AXIS_U = vec2(0.70710678, 0.70710678);
@@ -451,12 +458,29 @@ float sample_ocean_displacement_height(uint cascade, vec2 position, float tile_l
     return (primary + secondary * weight) / (1.0 + weight);
 }
 
-float cascade_displacement_lod_weight(uint cascade, float camera_distance) {
+float cascade_distance_lod_weight(uint cascade, float camera_distance, float start_waves,
+                                  float end_waves, float fade_scale) {
     float tile_length = max(cascade_tile_length(cascade), 0.001);
-    float fade_scale = ocean_shape_fade_distance_scale();
-    float start = tile_length * 10.0 * fade_scale;
-    float end = tile_length * 34.0 * fade_scale;
+    float start = tile_length * start_waves * fade_scale;
+    float end = tile_length * end_waves * fade_scale;
     return 1.0 - smoothstep(start, max(end, start + 0.001), camera_distance);
+}
+
+float cascade_mesh_lod_weight(uint cascade, float mesh_cell_size) {
+    float tile_length = max(cascade_tile_length(cascade), 0.001);
+    float full_cell = tile_length / OCEAN_CASCADE_MESH_FULL_TILE_CELL_DIVISOR;
+    float zero_cell = tile_length / OCEAN_CASCADE_MESH_ZERO_TILE_CELL_DIVISOR;
+    return 1.0 - smoothstep(full_cell, max(zero_cell, full_cell + 0.001),
+                            max(mesh_cell_size, 0.001));
+}
+
+float cascade_displacement_lod_weight(uint cascade, float camera_distance, float mesh_cell_size) {
+    float distance_weight =
+        cascade_distance_lod_weight(cascade, camera_distance,
+                                    OCEAN_CASCADE_DISTANCE_FADE_START_WAVES,
+                                    OCEAN_CASCADE_DISTANCE_FADE_END_WAVES,
+                                    ocean_shape_fade_distance_scale());
+    return distance_weight * cascade_mesh_lod_weight(cascade, mesh_cell_size);
 }
 
 float horizon_displacement_weight(float camera_distance) {
@@ -465,7 +489,7 @@ float horizon_displacement_weight(float camera_distance) {
                1.0);
 }
 
-float ocean_surface_height(vec2 position, float camera_distance) {
+float ocean_surface_height(vec2 position, float camera_distance, float mesh_cell_size) {
     float height = 0.0;
     for (uint cascade = 0u; cascade < 5u; ++cascade) {
         if (!ocean_cascade_enabled(cascade)) {
@@ -474,13 +498,14 @@ float ocean_surface_height(vec2 position, float camera_distance) {
         float tile_length = max(cascade_tile_length(cascade), 0.001);
         height += sample_ocean_displacement_height(cascade, position, tile_length) *
                   cascade_displacement_scale(cascade) *
-                  cascade_displacement_lod_weight(cascade, camera_distance) *
+                  cascade_displacement_lod_weight(cascade, camera_distance, mesh_cell_size) *
                   ocean_surface_shape_strength();
     }
     return height * horizon_displacement_weight(camera_distance);
 }
 
-float ocean_wave_self_shadow(vec2 surface_position, float surface_height, vec3 light_dir) {
+float ocean_wave_self_shadow(vec2 surface_position, float surface_height, vec3 light_dir,
+                             float mesh_cell_size) {
     float strength = ocean_self_shadow_strength();
     if (strength <= 0.0 || light_dir.y <= 0.01) {
         return 1.0;
@@ -506,7 +531,7 @@ float ocean_wave_self_shadow(vec2 surface_position, float surface_height, vec3 l
         float ray_distance = max_distance * step_factor;
         vec2 sample_position = surface_position + step_direction * ray_distance;
         float camera_distance = length(sample_position - ocean.camera_time.xz);
-        float sample_height = ocean_surface_height(sample_position, camera_distance);
+        float sample_height = ocean_surface_height(sample_position, camera_distance, mesh_cell_size);
         float ray_height = surface_height + ray_distance * ray_slope + bias;
         float blocker = sample_height - ray_height;
         float softness = mix(0.05, 0.75, step_factor);
@@ -589,11 +614,9 @@ bool ocean_detail_anti_repeat_enabled(float factor) {
 }
 
 float cascade_surface_lod_weight(uint cascade, float dist) {
-    float tile_length = max(cascade_tile_length(cascade), 0.001);
-    float fade_scale = ocean_shape_fade_distance_scale();
-    float start = tile_length * 12.0 * fade_scale;
-    float end = tile_length * 40.0 * fade_scale;
-    return 1.0 - smoothstep(start, max(end, start + 0.001), dist);
+    return cascade_distance_lod_weight(cascade, dist, OCEAN_CASCADE_SURFACE_FADE_START_WAVES,
+                                       OCEAN_CASCADE_SURFACE_FADE_END_WAVES,
+                                       ocean_shape_fade_distance_scale());
 }
 
 vec4 sample_normal_foam_domain(uint cascade, vec2 position, float tile_length,
@@ -776,6 +799,19 @@ vec3 debug_lod_color(float level, float max_level) {
                        : mix(mid_color, far_color, (value - 0.5) * 2.0);
 }
 
+float active_displacement_lod_weight(float dist, float mesh_cell_size) {
+    float weight = 0.0;
+    float active_count = 0.0;
+    for (uint cascade = 0u; cascade < 5u; ++cascade) {
+        if (!ocean_cascade_enabled(cascade) || cascade_displacement_scale(cascade) <= 0.0) {
+            continue;
+        }
+        weight += cascade_displacement_lod_weight(cascade, dist, mesh_cell_size);
+        active_count += 1.0;
+    }
+    return active_count > 0.0 ? weight / active_count : 0.0;
+}
+
 float triangle_wire_factor(vec3 barycentric) {
     vec3 width = max(fwidth(barycentric), vec3(0.0001));
     vec3 edge = smoothstep(width * 0.75, width * 1.75, barycentric);
@@ -810,7 +846,9 @@ void main() {
     float ambient_light = ocean_ambient_light_scale();
     float direct_light = ocean_direct_light_scale();
     float reference_shadow = ocean_reference_pillar_shadow(frag_world_position, sun_dir);
-    float wave_shadow = ocean_wave_self_shadow(frag_sample_position, frag_world_position.y, sun_dir);
+    float wave_shadow =
+        ocean_wave_self_shadow(frag_sample_position, frag_world_position.y, sun_dir,
+                               frag_mesh_cell_size);
     float direct_shadow = min(reference_shadow, wave_shadow);
     float shadowed_direct_light = direct_light * direct_shadow;
     float roughness = clamp(ocean.water_color.w, 0.02, 1.0);
@@ -865,7 +903,9 @@ void main() {
     } else if (view == OCEAN_VIEW_FOAM_DETAIL) {
         color = vec3(foam_data.detail.x);
     } else if (view == OCEAN_VIEW_LOD) {
-        color = debug_lod_color(ocean.debug_options.y, ocean.debug_options.z);
+        float lod_support = active_displacement_lod_weight(dist, frag_mesh_cell_size);
+        color = debug_lod_color(ocean.debug_options.y, ocean.debug_options.z) *
+                mix(0.32, 1.12, lod_support);
     } else if (view == OCEAN_VIEW_SKY_RADIANCE) {
         color = ocean_sky_radiance(reflection_dir);
     } else if (view == OCEAN_VIEW_REFLECTION) {

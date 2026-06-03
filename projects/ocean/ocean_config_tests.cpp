@@ -282,6 +282,23 @@ int main() {
                      "ocean should default normal fade distance unchanged");
         require_near(defaults.foam_fade_distance_scale, 1.0F, 0.001F,
                      "ocean should default foam fade distance unchanged");
+        const ocean::OceanCascadeLodBand cascade0_lod = ocean::ocean_cascade_lod_band(defaults, 0);
+        require_near(cascade0_lod.displacement_fade_start,
+                     defaults.cascades[0].tile_length *
+                         ocean::kOceanCascadeDistanceFadeStartWaves,
+                     0.001F, "ocean should derive cascade displacement fade starts from tile size");
+        require_near(cascade0_lod.displacement_fade_end,
+                     defaults.cascades[0].tile_length * ocean::kOceanCascadeDistanceFadeEndWaves,
+                     0.001F, "ocean should derive cascade displacement fade ends from tile size");
+        require_near(cascade0_lod.surface_fade_start,
+                     defaults.cascades[0].tile_length * ocean::kOceanCascadeSurfaceFadeStartWaves,
+                     0.001F, "ocean should derive cascade surface fade starts from tile size");
+        require_near(cascade0_lod.mesh_cell_full,
+                     defaults.cascades[0].tile_length /
+                         ocean::kOceanCascadeMeshFullTileCellDivisor,
+                     0.001F, "ocean should derive cascade mesh full-support cell size");
+        require(cascade0_lod.mesh_cell_full < cascade0_lod.mesh_cell_zero,
+                "ocean cascade LOD should fade as mesh cells become coarser");
         ocean::validate_ocean_config(defaults);
 
         require(ocean::ocean_render_view_from_name("") == ocean::OceanRenderView::Final,
@@ -545,6 +562,12 @@ int main() {
                          "unpack shader should write persistent and current foam separately");
         require_contains(vertex_shader, "float cascade_displacement_lod_weight",
                          "vertex shader should apply per-cascade displacement LOD weights");
+        require_contains(vertex_shader, "float cascade_distance_lod_weight",
+                         "vertex shader should centralize cascade distance LOD weights");
+        require_contains(vertex_shader, "float cascade_mesh_lod_weight",
+                         "vertex shader should fade displacement by clipmap mesh cell size");
+        require_contains(vertex_shader, "frag_mesh_cell_size",
+                         "vertex shader should pass mesh cell size to fragment diagnostics");
         require_contains(vertex_shader, "float horizon_displacement_weight",
                          "vertex shader should fade displacement only near the horizon");
         require_contains(vertex_shader, "if (!ocean_cascade_enabled(cascade))",
@@ -685,6 +708,10 @@ int main() {
                          "UI should expose optional terrain field influence");
         require_contains(ui_source, "&ui.config.foam_density", "UI should expose foam density");
         require_contains(ui_source, "&ui.config.foam_sharpness", "UI should expose foam sharpness");
+        require_contains(ui_source, "Cascade LOD bands",
+                         "UI should expose cascade LOD transition diagnostics");
+        require_contains(ui_source, "ocean_cascade_lod_band(config, cascade)",
+                         "UI should derive LOD diagnostics from shared config helpers");
         require_contains(ui_source, "ocean_cascade_domain(ui.config, index)",
                          "UI should expose cascade wavelength domain diagnostics");
         require_contains(ui_source, "domain %.2f-%.2f m",
@@ -769,6 +796,12 @@ int main() {
                          "fragment shader should read map size from packed cascade controls");
         require_contains(fragment_shader, "float cascade_surface_lod_weight",
                          "fragment shader should apply per-cascade normal and foam LOD weights");
+        require_contains(fragment_shader, "float cascade_distance_lod_weight",
+                         "fragment shader should share distance LOD logic with displacement");
+        require_contains(fragment_shader, "float cascade_mesh_lod_weight",
+                         "fragment shader should reconstruct mesh-aware displacement LOD");
+        require_contains(fragment_shader, "active_displacement_lod_weight",
+                         "fragment shader should expose active cascade support in LOD debug view");
         require_contains(fragment_shader, "ocean_normal_fade_distance_scale()",
                          "fragment shader should expose reference normal fade distance");
         require_contains(fragment_shader, "float ocean_material_distance_factor(float dist)",

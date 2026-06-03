@@ -29,7 +29,7 @@ needs it.
 
 The active renderer includes:
 
-- a camera-relative clipmap mesh with LOD diagnostics;
+- a camera-relative clipmap mesh with mesh-cell-aware cascade LOD diagnostics;
 - the GodotOceanWaves-style multi-cascade spectrum, modulation, FFT, and unpack
   path;
 - five regular cascade slots, with C0/C1 enabled by default as the
@@ -42,7 +42,8 @@ The active renderer includes:
 - a 50 m sea-level-centered reference pillar in final view, currently for scale
   and as a simple analytic direct-light ocean shadow caster;
 - experimental heightfield ray-marched wave self-shadowing that samples the
-  FFT displacement cascades in the surface fragment shader;
+  FFT displacement cascades in the surface fragment shader and follows the same
+  local cascade distance/cell-size fade used by rendered displacement;
 - the shared atmosphere background path plus runtime sky/reflection probes for
   water fog, fill, and reflection;
 - a diagnostic terrain-ocean `RGBA32F` field texture bound through the shared

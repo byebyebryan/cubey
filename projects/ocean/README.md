@@ -48,8 +48,9 @@ repeat-inspection camera plus mid/high large-scale inspection views, a paused
 single-frame step button, a portable wire overlay, a 50 m sea-level-centered
 size reference pillar in final view with 1 m, 5 m, and 10 m markers plus a
 basic direct-light ocean shadow, experimental heightfield wave self-shadowing,
-feature-isolation controls, and an LOD breakdown table for checking clipmap
-coverage, patch counts, and triangle load while tuning the mesh.
+feature-isolation controls, and LOD breakdown tables for checking clipmap
+coverage, patch counts, triangle load, cascade distance fades, and mesh-cell
+support while tuning the mesh.
 Headless captures can use
 `--ocean-cascade all|0|1|2|3|4`,
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
@@ -81,7 +82,10 @@ weather simulation.
 
 Feature isolation controls expose global shape strength, global foam strength,
 foam history, shape and detail anti-repeat, split atmosphere material influence,
-shape/normal/foam fade distances, and terrain foam strength. The `Active
+shape/normal/foam fade distances, and terrain foam strength. Shape LOD now
+combines distance fade with mesh-cell support, so coarse clipmap rings stop
+carrying displacement detail that the current mesh cannot represent while
+normal/foam detail can continue as shading-only contribution. The `Active
 cascade work` toggles are stronger than contribution sliders: they skip disabled
 cascade spectrum, modulation, FFT, and unpack dispatches, then hide those
 cascades from the surface shader. Use `All slots`, `Core`, and `Cheap` to check

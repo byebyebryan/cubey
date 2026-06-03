@@ -36,10 +36,15 @@ layout(location = 2) out vec2 frag_sample_position;
 layout(location = 3) out vec4 frag_wave;
 layout(location = 4) out float frag_patch_alpha;
 layout(location = 5) noperspective out vec3 frag_barycentric;
+layout(location = 6) out float frag_mesh_cell_size;
 
 const float OCEAN_MESH_TRANSITION_CELLS = 16.0;
 const float OCEAN_MESH_MAX_TRANSITION_RATIO = 0.35;
 const float OCEAN_SHAPE_ANTI_REPEAT_WEIGHT = 0.32;
+const float OCEAN_CASCADE_DISTANCE_FADE_START_WAVES = 10.0;
+const float OCEAN_CASCADE_DISTANCE_FADE_END_WAVES = 34.0;
+const float OCEAN_CASCADE_MESH_FULL_TILE_CELL_DIVISOR = 8.0;
+const float OCEAN_CASCADE_MESH_ZERO_TILE_CELL_DIVISOR = 3.0;
 
 vec2 triangle_corner(uint vertex_in_cell) {
     if (vertex_in_cell == 0u) {
@@ -180,12 +185,29 @@ float ocean_shape_fade_distance_scale() {
     return max(ocean_features.feature_options2.y, 0.001);
 }
 
-float cascade_displacement_lod_weight(uint cascade, float camera_distance) {
+float cascade_distance_lod_weight(uint cascade, float camera_distance, float start_waves,
+                                  float end_waves, float fade_scale) {
     float tile_length = max(cascade_tile_length(cascade), 0.001);
-    float fade_scale = ocean_shape_fade_distance_scale();
-    float start = tile_length * 10.0 * fade_scale;
-    float end = tile_length * 34.0 * fade_scale;
+    float start = tile_length * start_waves * fade_scale;
+    float end = tile_length * end_waves * fade_scale;
     return 1.0 - smoothstep(start, max(end, start + 0.001), camera_distance);
+}
+
+float cascade_mesh_lod_weight(uint cascade, float mesh_cell_size) {
+    float tile_length = max(cascade_tile_length(cascade), 0.001);
+    float full_cell = tile_length / OCEAN_CASCADE_MESH_FULL_TILE_CELL_DIVISOR;
+    float zero_cell = tile_length / OCEAN_CASCADE_MESH_ZERO_TILE_CELL_DIVISOR;
+    return 1.0 - smoothstep(full_cell, max(zero_cell, full_cell + 0.001),
+                            max(mesh_cell_size, 0.001));
+}
+
+float cascade_displacement_lod_weight(uint cascade, float camera_distance, float mesh_cell_size) {
+    float distance_weight =
+        cascade_distance_lod_weight(cascade, camera_distance,
+                                    OCEAN_CASCADE_DISTANCE_FADE_START_WAVES,
+                                    OCEAN_CASCADE_DISTANCE_FADE_END_WAVES,
+                                    ocean_shape_fade_distance_scale());
+    return distance_weight * cascade_mesh_lod_weight(cascade, mesh_cell_size);
 }
 
 float horizon_displacement_weight(float camera_distance) {
@@ -210,12 +232,12 @@ vec3 sample_ocean_displacement(uint cascade, vec2 position, float tile_length) {
 }
 
 void add_displacement(inout vec3 displacement, uint cascade, vec2 position,
-                      float camera_distance) {
+                      float camera_distance, float mesh_cell_size) {
     if (!ocean_cascade_enabled(cascade)) {
         return;
     }
     float tile_length = max(cascade_tile_length(cascade), 0.001);
-    float lod_weight = cascade_displacement_lod_weight(cascade, camera_distance);
+    float lod_weight = cascade_displacement_lod_weight(cascade, camera_distance, mesh_cell_size);
     displacement += sample_ocean_displacement(cascade, position, tile_length) *
                     cascade_displacement_scale(cascade) * lod_weight *
                     ocean_surface_shape_strength();
@@ -245,7 +267,7 @@ void main() {
 
     vec3 displacement = vec3(0.0);
     for (uint cascade = 0u; cascade < 5u; ++cascade) {
-        add_displacement(displacement, cascade, base_position, camera_distance);
+        add_displacement(displacement, cascade, base_position, camera_distance, patch_cell_size);
     }
     displacement *= horizon_displacement_weight(camera_distance);
 
@@ -256,5 +278,6 @@ void main() {
     frag_wave = vec4(displacement.y, 0.0, camera_distance, ocean.foam_color.w);
     frag_patch_alpha = clipmap_patch_alpha(patch_position, patch_cell_size);
     frag_barycentric = triangle_barycentric(vertex_in_cell);
+    frag_mesh_cell_size = patch_cell_size;
     gl_Position = ocean.view_projection * vec4(world_position, 1.0);
 }
