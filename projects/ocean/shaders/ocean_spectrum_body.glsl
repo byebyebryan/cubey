@@ -1,0 +1,136 @@
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(OCEAN_FIELD_FORMAT, set = 0, binding = 0) writeonly uniform image2D spectrum_image;
+
+layout(push_constant) uniform SpectrumParams {
+    vec4 seed_tile;
+    vec4 spectrum_options;
+    vec4 shape_options;
+    vec4 cascade_options;
+} params;
+
+const float PI = 3.141592653589793;
+const float G = 9.81;
+
+vec2 hash(in uvec2 x) {
+    uint h32 = x.y + 374761393U + x.x * 3266489917U;
+    h32 = 2246822519U * (h32 ^ (h32 >> 15));
+    h32 = 3266489917U * (h32 ^ (h32 >> 13));
+    uint n = h32 ^ (h32 >> 16);
+    uvec2 rz = uvec2(n, n * 48271U);
+    return vec2((rz.xy >> 1) & uvec2(0x7FFFFFFFU)) / float(0x7FFFFFFF);
+}
+
+vec2 gaussian(in vec2 x) {
+    float r = sqrt(-2.0 * log(max(x.x, 1e-6)));
+    float theta = 2.0 * PI * x.y;
+    return vec2(r * cos(theta), r * sin(theta));
+}
+
+vec2 conj_complex(in vec2 x) {
+    return vec2(x.x, -x.y);
+}
+
+vec2 dispersion_relation(in float k) {
+    float depth = params.shape_options.x;
+    float a = k * depth;
+    float b = tanh(a);
+    float dispersion = sqrt(G * k * b);
+    float d_dispersion = 0.5 * G * (b + a * (1.0 - b * b)) / max(dispersion, 1e-6);
+    return vec2(dispersion, d_dispersion);
+}
+
+float longuet_higgins_normalization(in float s) {
+    float a = sqrt(s);
+    return (s < 0.4) ? (0.5 / PI) + s * (0.220636 + s * (-0.109 + s * 0.090))
+                     : inversesqrt(PI) * (a * 0.5 + (1.0 / a) * 0.0625);
+}
+
+float longuet_higgins_function(in float s, in float theta) {
+    return longuet_higgins_normalization(s) * pow(abs(cos(theta * 0.5)), 2.0 * s);
+}
+
+float hasselmann_directional_spread(in float w, in float w_p, in float wind_speed,
+                                    in float theta) {
+    float p = w / max(w_p, 1e-6);
+    float s = (w <= w_p) ? 6.97 * pow(abs(p), 4.06)
+                         : 9.77 * pow(abs(p),
+                                      -2.33 - 1.45 * (wind_speed * w_p / G - 1.17));
+    float swell = params.shape_options.y;
+    float s_xi = 16.0 * tanh(w_p / max(w, 1e-6)) * swell * swell;
+    return longuet_higgins_function(s + s_xi, theta - params.spectrum_options.w);
+}
+
+float TMA_spectrum(in float w, in float w_p, in float alpha) {
+    const float beta = 1.25;
+    const float gamma = 3.3;
+    float depth = params.shape_options.x;
+    float sigma = (w <= w_p) ? 0.07 : 0.09;
+    float r = exp(-((w - w_p) * (w - w_p)) / max(2.0 * sigma * sigma * w_p * w_p, 1e-6));
+    float jonswap = (alpha * G * G) / max(pow(w, 5.0), 1e-6) *
+                    exp(-beta * pow(w_p / max(w, 1e-6), 4.0)) * pow(gamma, r);
+
+    float w_h = min(w * sqrt(depth / G), 2.0);
+    float depth_attenuation =
+        (w_h <= 1.0) ? 0.5 * w_h * w_h : 1.0 - 0.5 * (2.0 - w_h) * (2.0 - w_h);
+    return jonswap * depth_attenuation;
+}
+
+float spectral_domain_weight(in float k) {
+    float low_k = params.cascade_options.z;
+    float high_k = params.cascade_options.w;
+    if (high_k <= low_k) {
+        return 1.0;
+    }
+    if (k <= low_k || k >= high_k) {
+        return 0.0;
+    }
+
+    float band = max(high_k - low_k, 1e-6);
+    float feather = band * 0.08;
+    float low_weight = smoothstep(low_k, low_k + feather, k);
+    float high_weight = 1.0 - smoothstep(high_k - feather, high_k, k);
+    return clamp(low_weight * high_weight, 0.0, 1.0);
+}
+
+vec2 get_spectrum_amplitude(in ivec2 id, in ivec2 map_size) {
+    vec2 tile_length = params.seed_tile.zw;
+    vec2 dk = 2.0 * PI / tile_length;
+    vec2 k_vec = (vec2(id) - vec2(map_size) * 0.5) * dk;
+    float k = length(k_vec) + 1e-6;
+    float domain_weight = spectral_domain_weight(k);
+    if (domain_weight <= 0.0) {
+        return vec2(0.0);
+    }
+    float theta = atan(k_vec.x, k_vec.y);
+
+    vec2 dispersion = dispersion_relation(k);
+    float w = dispersion.x;
+    float w_norm = dispersion.y / k * dk.x * dk.y;
+    float spectrum = TMA_spectrum(w, params.spectrum_options.y, params.spectrum_options.x);
+    float spread = params.shape_options.w;
+    float detail = params.shape_options.z;
+    float direction =
+        mix(0.5 / PI,
+            hasselmann_directional_spread(w, params.spectrum_options.y, params.spectrum_options.z,
+                                          theta),
+            1.0 - spread) *
+        exp(-(1.0 - detail) * (1.0 - detail) * k * k);
+    ivec2 seed = ivec2(params.seed_tile.xy);
+    return gaussian(hash(uvec2(id + seed))) *
+           sqrt(max(2.0 * spectrum * direction * w_norm * domain_weight, 0.0));
+}
+
+void main() {
+    ivec2 id0 = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 dims = imageSize(spectrum_image);
+    if (id0.x >= dims.x || id0.y >= dims.y) {
+        return;
+    }
+    ivec2 id1 = ivec2(mod(-id0, dims));
+
+    // Preserve the reference packing: xy = h0(k), zw = conj(h0(-k)).
+    imageStore(spectrum_image, id0,
+               vec4(get_spectrum_amplitude(id0, dims),
+                    conj_complex(get_spectrum_amplitude(id1, dims))));
+}

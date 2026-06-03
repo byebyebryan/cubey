@@ -87,6 +87,13 @@ void Device::wait_idle() const {
     }
 }
 
+bool Device::supports_image_format_features(VkFormat format,
+                                            VkFormatFeatureFlags required) const {
+    VkFormatProperties properties{};
+    vkGetPhysicalDeviceFormatProperties(physical_device_, format, &properties);
+    return (properties.optimalTilingFeatures & required) == required;
+}
+
 DeviceMemoryBudgetInfo Device::device_memory_budget() const {
     DeviceMemoryBudgetInfo info{};
 

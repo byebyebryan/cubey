@@ -66,6 +66,8 @@ class Device {
     bool supports_memory_budget() const {
         return memory_budget_supported_;
     }
+    [[nodiscard]] bool supports_image_format_features(VkFormat format,
+                                                      VkFormatFeatureFlags required) const;
     [[nodiscard]] DeviceMemoryBudgetInfo device_memory_budget() const;
 
     [[nodiscard]] std::uint32_t find_memory_type(std::uint32_t type_bits,

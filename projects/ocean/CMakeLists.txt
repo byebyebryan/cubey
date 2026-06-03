@@ -14,9 +14,13 @@ cubey_add_app_target(
         main.cpp
     SHADERS
         shaders/ocean_spectrum.comp
+        shaders/ocean_spectrum_half.comp
         shaders/ocean_modulate.comp
+        shaders/ocean_modulate_half.comp
         shaders/ocean_fft.comp
+        shaders/ocean_fft_half.comp
         shaders/ocean_unpack.comp
+        shaders/ocean_unpack_half.comp
         shaders/ocean.vert
         shaders/ocean.frag
         shaders/ocean_reference_pillar.vert
@@ -30,6 +34,10 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_spectrum_body.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_modulate_body.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_fft_body.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_unpack_body.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"

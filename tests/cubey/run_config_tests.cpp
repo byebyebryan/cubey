@@ -243,7 +243,7 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--smoke-injectors",    "--smoke-pressure-solver", "--pyro-sources",
         "--pyro-source-radius", "--shadow-grid-width",     "--water2d-transfer",
         "--water2d-hose",       "--water3d-transfer",      "--water3d-p2g-mode",
-        "--water3d-whitewater",
+        "--water3d-whitewater", "--ocean-field-precision",
     };
     for (std::string_view flag : promoted_flags) {
         const std::string explicit_branch = "arg == \"" + std::string(flag) + "\"";
@@ -1055,19 +1055,24 @@ void test_run_config_parses_ocean_controls() {
     std::string program = "cubey";
     std::string map_flag = "--ocean-map-size";
     std::string map_value = "256";
+    std::string precision_flag = "--ocean-field-precision";
+    std::string precision_value = "half";
     std::string cascade_flag = "--ocean-cascade";
     std::string cascade_value = "4";
     std::string terrain_fields_flag = "--ocean-terrain-fields";
     std::string wire_flag = "--ocean-wire-overlay";
     std::string opacity_flag = "--ocean-wire-opacity";
     std::string opacity_value = "0.75";
-    std::array<char*, 9> argv{program.data(),      map_flag.data(),      map_value.data(),
-                              cascade_flag.data(), cascade_value.data(), terrain_fields_flag.data(),
-                              wire_flag.data(),    opacity_flag.data(),  opacity_value.data()};
+    std::array<char*, 11> argv{
+        program.data(),     map_flag.data(),          map_value.data(),      precision_flag.data(),
+        precision_value.data(), cascade_flag.data(),  cascade_value.data(),
+        terrain_fields_flag.data(), wire_flag.data(), opacity_flag.data(),  opacity_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
     require(config.ocean.map_size == 256, "run config should parse ocean map size");
+    require(config.ocean.field_precision == "half",
+            "run config should parse ocean field precision");
     require(config.ocean.cascade == 4, "run config should parse ocean cascade selection");
     require(config.ocean.terrain_fields == 1, "run config should parse ocean terrain field toggle");
     require(config.ocean.wire_overlay, "run config should parse ocean wire overlay");

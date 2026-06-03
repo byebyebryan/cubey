@@ -1,0 +1,74 @@
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(OCEAN_FIELD_FORMAT, set = 0, binding = 0) readonly uniform image2D source_image;
+layout(OCEAN_FIELD_FORMAT, set = 0, binding = 1) writeonly uniform image2D destination_image;
+
+layout(push_constant) uniform FftParams {
+    vec4 fft_options;
+    vec4 pass_options;
+} params;
+
+const float PI = 3.14159265359;
+
+vec2 complex_mul(vec2 lhs, vec2 rhs) {
+    return vec2((lhs.x * rhs.x) - (lhs.y * rhs.y), (lhs.x * rhs.y) + (lhs.y * rhs.x));
+}
+
+int log2_exact(int value) {
+    int result = 0;
+    while (value > 1) {
+        value /= 2;
+        result += 1;
+    }
+    return result;
+}
+
+int bit_reverse(int value, int bits) {
+    int result = 0;
+    for (int bit = 0; bit < bits; ++bit) {
+        result = (result << 1) | (value & 1);
+        value >>= 1;
+    }
+    return result;
+}
+
+vec4 load_packed_complex(ivec2 base_texel, int index, bool horizontal, bool first_pass, int bits) {
+    ivec2 source_texel = horizontal ? ivec2(index, base_texel.y) : ivec2(base_texel.x, index);
+    if (first_pass) {
+        int reversed = bit_reverse(index, bits);
+        source_texel = horizontal ? ivec2(reversed, base_texel.y) : ivec2(base_texel.x, reversed);
+    }
+    return imageLoad(source_image, source_texel);
+}
+
+void main() {
+    ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(destination_image);
+    if (texel.x >= size.x || texel.y >= size.y) {
+        return;
+    }
+
+    int n = int(params.fft_options.x + 0.5);
+    int stage = int(params.fft_options.y + 0.5);
+    bool horizontal = params.fft_options.z > 0.5;
+    bool first_pass = params.fft_options.w > 0.5;
+    int i = horizontal ? texel.x : texel.y;
+    int m = 1 << stage;
+    int half_m = m >> 1;
+    int local = i % m;
+    int pair_index = local % half_m;
+    int block = (i / m) * m;
+    int i0 = block + pair_index;
+    int i1 = i0 + half_m;
+
+    int bits = log2_exact(n);
+    vec4 a = load_packed_complex(texel, i0, horizontal, first_pass, bits);
+    vec4 b = load_packed_complex(texel, i1, horizontal, first_pass, bits);
+    float angle = 2.0 * PI * float(pair_index) / float(m);
+    vec2 twiddle = vec2(cos(angle), sin(angle));
+    vec2 rotated_xy = complex_mul(b.xy, twiddle);
+    vec2 rotated_zw = complex_mul(b.zw, twiddle);
+    vec4 rotated = vec4(rotated_xy, rotated_zw);
+    vec4 value = local < half_m ? (a + rotated) : (a - rotated);
+    imageStore(destination_image, texel, value);
+}

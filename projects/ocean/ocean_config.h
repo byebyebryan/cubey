@@ -35,6 +35,11 @@ enum class OceanRenderView : std::uint32_t {
     TerrainSlope = 20,
 };
 
+enum class OceanFieldPrecision : std::uint32_t {
+    Full = 0,
+    Half = 1,
+};
+
 inline constexpr std::array<OceanRenderView, 21> kOceanRenderViews{
     OceanRenderView::Final,        OceanRenderView::Height,       OceanRenderView::Displacement,
     OceanRenderView::Normal,       OceanRenderView::Foam,         OceanRenderView::FoamSource,
@@ -43,6 +48,10 @@ inline constexpr std::array<OceanRenderView, 21> kOceanRenderViews{
     OceanRenderView::Reflection,   OceanRenderView::DirectLight,  OceanRenderView::AmbientLight,
     OceanRenderView::Exposure,     OceanRenderView::FoamRaw,      OceanRenderView::FoamLit,
     OceanRenderView::TerrainDepth, OceanRenderView::TerrainShore, OceanRenderView::TerrainSlope,
+};
+inline constexpr std::array<OceanFieldPrecision, 2> kOceanFieldPrecisions{
+    OceanFieldPrecision::Full,
+    OceanFieldPrecision::Half,
 };
 
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
@@ -119,6 +128,7 @@ struct OceanConfig {
     float foam_fade_distance_scale = 1.0F;
     bool spectral_domains_enabled = true;
     bool terrain_fields_enabled = false;
+    OceanFieldPrecision field_precision = OceanFieldPrecision::Full;
     std::array<bool, kOceanCascadeCount> cascade_enabled{true, true, false, false, false};
     OceanRenderView render_view = OceanRenderView::Final;
     std::array<OceanCascadeConfig, kOceanCascadeCount> cascades{
@@ -279,6 +289,27 @@ struct OceanCascadeLodBand {
         return "terrain-slope";
     }
     return "final";
+}
+
+[[nodiscard]] inline const char* ocean_field_precision_name(OceanFieldPrecision precision) {
+    switch (precision) {
+    case OceanFieldPrecision::Full:
+        return "full";
+    case OceanFieldPrecision::Half:
+        return "half";
+    }
+    return "full";
+}
+
+[[nodiscard]] inline OceanFieldPrecision
+ocean_field_precision_from_name(std::string_view name) {
+    if (name.empty() || name == "full") {
+        return OceanFieldPrecision::Full;
+    }
+    if (name == "half") {
+        return OceanFieldPrecision::Half;
+    }
+    throw std::runtime_error("unknown ocean field precision: " + std::string(name));
 }
 
 [[nodiscard]] inline OceanRenderView ocean_render_view_from_name(std::string_view name) {
@@ -447,6 +478,7 @@ inline void validate_ocean_config(const OceanConfig& config) {
     if (config.ocean.terrain_fields >= 0) {
         ocean.terrain_fields_enabled = config.ocean.terrain_fields != 0;
     }
+    ocean.field_precision = ocean_field_precision_from_name(config.ocean.field_precision);
     ocean.render_view = ocean_render_view_from_name(config.debug_view);
     ocean.exposure = config.pbr.exposure;
     validate_ocean_config(ocean);

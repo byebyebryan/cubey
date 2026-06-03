@@ -1,5 +1,5 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
-#define OCEAN_FIELD_FORMAT rgba32f
+#define OCEAN_FIELD_FORMAT rgba16f
 #include "ocean_spectrum_body.glsl"

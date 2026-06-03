@@ -419,7 +419,7 @@ ocean_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format) 
 }
 
 [[nodiscard]] bool ocean_resolution_changed(const OceanConfig& lhs, const OceanConfig& rhs) {
-    return lhs.map_size != rhs.map_size;
+    return lhs.map_size != rhs.map_size || lhs.field_precision != rhs.field_precision;
 }
 
 [[nodiscard]] bool ocean_terrain_field_source_changed(const OceanConfig& lhs,

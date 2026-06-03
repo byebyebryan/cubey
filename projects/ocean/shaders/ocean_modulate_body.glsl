@@ -1,0 +1,66 @@
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(OCEAN_FIELD_FORMAT, set = 0, binding = 0) readonly uniform image2D spectrum_image;
+layout(OCEAN_FIELD_FORMAT, set = 0, binding = 1) writeonly uniform image2D fft_field0_image;
+layout(OCEAN_FIELD_FORMAT, set = 0, binding = 2) writeonly uniform image2D fft_field1_image;
+
+layout(push_constant) uniform ModulateParams {
+    vec4 tile_depth_time;
+    vec4 cascade_options;
+} params;
+
+const float PI = 3.141592653589793;
+const float G = 9.81;
+const uint NUM_SPECTRA = 4U;
+
+vec2 exp_complex(in float x) {
+    return vec2(cos(x), sin(x));
+}
+
+vec2 mul_complex(in vec2 a, in vec2 b) {
+    return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+vec2 conj_complex(in vec2 x) {
+    return vec2(x.x, -x.y);
+}
+
+float dispersion_relation(in float k) {
+    return sqrt(G * k * tanh(k * params.tile_depth_time.z));
+}
+
+void main() {
+    ivec2 id = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 dims = imageSize(spectrum_image);
+    if (id.x >= dims.x || id.y >= dims.y) {
+        return;
+    }
+
+    vec2 tile_length = params.tile_depth_time.xy;
+    vec2 k_vec = (vec2(id) - vec2(dims) * 0.5) * 2.0 * PI / tile_length;
+    float k = length(k_vec) + 1e-6;
+    vec2 k_unit = k_vec / k;
+
+    vec4 h0 = imageLoad(spectrum_image, id);
+    float dispersion = dispersion_relation(k) * params.tile_depth_time.w;
+    vec2 modulation = exp_complex(dispersion);
+    vec2 h = mul_complex(h0.xy, modulation) + mul_complex(h0.zw, conj_complex(modulation));
+    vec2 h_inv = vec2(-h.y, h.x);
+
+    vec2 hx = h_inv * k_unit.y;
+    vec2 hy = h;
+    vec2 hz = h_inv * k_unit.x;
+
+    // Keep the reference's swapped k-vector axis usage exactly.
+    vec2 dhy_dx = h_inv * k_vec.y;
+    vec2 dhy_dz = h_inv * k_vec.x;
+    vec2 dhx_dx = -h * k_vec.y * k_unit.y;
+    vec2 dhz_dz = -h * k_vec.x * k_unit.x;
+    vec2 dhz_dx = -h * k_vec.y * k_unit.x;
+
+    imageStore(fft_field0_image, id,
+               vec4(hx.x - hy.y, hx.y + hy.x, hz.x - dhy_dx.y, hz.y + dhy_dx.x));
+    imageStore(fft_field1_image, id,
+               vec4(dhy_dz.x - dhx_dx.y, dhy_dz.y + dhx_dx.x,
+                    dhz_dz.x - dhz_dx.y, dhz_dz.y + dhz_dx.x));
+}

@@ -49,6 +49,7 @@ enum class RunConfigOptionId {
     PbrEnvironmentRotation,
     PbrExposure,
     OceanMapSize,
+    OceanFieldPrecision,
     OceanCascade,
     OceanSpectralDomains,
     OceanTerrainFields,

@@ -499,10 +499,15 @@ int main() {
 
         const std::filesystem::path source_root(CUBEY_OCEAN_SOURCE_DIR);
         const std::string spectrum_shader =
-            read_text_file(source_root / "shaders/ocean_spectrum.comp");
+            read_text_file(source_root / "shaders/ocean_spectrum_body.glsl");
         const std::string modulate_shader =
-            read_text_file(source_root / "shaders/ocean_modulate.comp");
-        const std::string unpack_shader = read_text_file(source_root / "shaders/ocean_unpack.comp");
+            read_text_file(source_root / "shaders/ocean_modulate_body.glsl");
+        const std::string unpack_shader =
+            read_text_file(source_root / "shaders/ocean_unpack_body.glsl");
+        const std::string spectrum_entry =
+            read_text_file(source_root / "shaders/ocean_spectrum.comp");
+        const std::string spectrum_half_entry =
+            read_text_file(source_root / "shaders/ocean_spectrum_half.comp");
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
         const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
         const std::string pillar_vertex_shader =
@@ -520,6 +525,10 @@ int main() {
 
         require_contains(spectrum_shader, "xy = h0(k), zw = conj(h0(-k))",
                          "spectrum shader should document reference h0 packing");
+        require_contains(spectrum_entry, "#define OCEAN_FIELD_FORMAT rgba32f",
+                         "full ocean spectrum entry should use rgba32f storage images");
+        require_contains(spectrum_half_entry, "#define OCEAN_FIELD_FORMAT rgba16f",
+                         "half ocean spectrum entry should use rgba16f storage images");
         require_contains(spectrum_shader, "conj_complex(get_spectrum_amplitude(id1, dims))",
                          "spectrum shader should pack conjugated negative frequency");
         require_contains(spectrum_shader, "float spectral_domain_weight",
@@ -613,6 +622,12 @@ int main() {
                          "app should pack enabled cascades for shader-side isolation");
         require_contains(app_source, "if (!ocean_cascade_enabled(ocean_config_, cascade))",
                          "app should skip disabled cascade compute dispatches");
+        require_contains(app_source, "lhs.field_precision != rhs.field_precision",
+                         "app should recreate ocean GPU resources when field precision changes");
+        require_contains(gpu_resources_source, "VK_FORMAT_R16G16B16A16_SFLOAT",
+                         "GPU resources should allocate half precision ocean field textures");
+        require_contains(gpu_resources_source, "supports_image_format_features",
+                         "GPU resources should validate half precision storage image support");
         require_contains(app_source, "ocean_config_.atmosphere_sky_strength",
                          "app should pass split atmosphere sky material strength");
         require_contains(app_source, "ocean_config_.atmosphere_reflection_strength",
@@ -648,6 +663,10 @@ int main() {
                          "ocean build should compile the reference pillar vertex shader");
         require_contains(cmake_source, "ocean_reference_pillar.frag",
                          "ocean build should compile the reference pillar fragment shader");
+        require_contains(cmake_source, "ocean_spectrum_half.comp",
+                         "ocean build should compile half precision spectrum shader variants");
+        require_contains(cmake_source, "ocean_unpack_body.glsl",
+                         "ocean build should track shared compute shader bodies");
         require_contains(cmake_source, "shaders/cubey/atmosphere/atmosphere.frag",
                          "ocean build should compile the shared atmosphere background shader");
         require_contains(cmake_source, "atmosphere_reflection_prefilter.frag",
@@ -711,6 +730,8 @@ int main() {
                          "UI should expose foam fade tuning");
         require_contains(ui_source, "&ui.config.spectral_domains_enabled",
                          "UI should expose spectral domain filtering");
+        require_contains(ui_source, "ui.config.field_precision",
+                         "UI should expose ocean field precision");
         require_contains(ui_source, "&ui.config.terrain_fields_enabled",
                          "UI should expose optional terrain field influence");
         require_contains(ui_source, "&ui.config.foam_density", "UI should expose foam density");

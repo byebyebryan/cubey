@@ -45,6 +45,7 @@ constexpr ConfigEnumChoices enum_choices(const std::array<std::string_view, Coun
 constexpr std::array<std::string_view, 2> kCaptureModes{"png", "video"};
 constexpr std::array<std::string_view, 2> kPbrEnvironmentSources{"static", "atmosphere"};
 constexpr std::array<std::string_view, 6> kOceanCascades{"all", "0", "1", "2", "3", "4"};
+constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kTimeOfDayModes{"manual", "solar"};
 constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
@@ -77,7 +78,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 128> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 129> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -156,6 +157,10 @@ constexpr std::array<ConfigOptionDescriptor, 128> kRunConfigOptions{
     option(RunConfigOptionId::OceanMapSize, "ocean.map_size", "--ocean-map-size", "Map Size",
            "Ocean", "FFT map size for the active ocean project.", ConfigOptionType::UInt32,
            min_range(1.0)),
+    option(RunConfigOptionId::OceanFieldPrecision, "ocean.field_precision",
+           "--ocean-field-precision", "Field Precision", "Ocean",
+           "Storage precision for ocean FFT wave fields.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kOceanFieldPrecisions)),
     option(RunConfigOptionId::OceanCascade, "ocean.cascade", "--ocean-cascade", "Inspect Cascade",
            "Ocean", "Cascade isolated by ocean debug views.", ConfigOptionType::Enum, no_range(),
            enum_choices(kOceanCascades)),
@@ -698,6 +703,9 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::OceanMapSize:
         return config.ocean.map_size == 0U ? nlohmann::json(nullptr)
                                            : nlohmann::json(config.ocean.map_size);
+    case RunConfigOptionId::OceanFieldPrecision:
+        return config.ocean.field_precision.empty() ? nlohmann::json(nullptr)
+                                                    : nlohmann::json(config.ocean.field_precision);
     case RunConfigOptionId::OceanCascade:
         return config.ocean.cascade < 0 ? nlohmann::json("all")
                                         : nlohmann::json(std::to_string(config.ocean.cascade));
@@ -915,6 +923,7 @@ using JsonAdapter = NlohmannJsonAdapter;
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::OceanOptions& options) {
     adapter.writeField<std::uint32_t>("map_size", options.map_size);
+    adapter.writeField<std::string>("field_precision", options.field_precision);
     adapter.writeField<int>("cascade", options.cascade);
     adapter.writeField<int>("spectral_domains", options.spectral_domains);
     adapter.writeField<int>("terrain_fields", options.terrain_fields);
@@ -925,6 +934,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::OceanOptions& optio
 inline void deserialize(JsonAdapter& adapter, RunConfig::OceanOptions& options) {
     std::string cascade = options.cascade < 0 ? "all" : std::to_string(options.cascade);
     adapter.readField<std::uint32_t>("map_size", options.map_size);
+    adapter.readField<std::string>("field_precision", options.field_precision);
     adapter.readField<std::string>("cascade", cascade);
     adapter.readField<int>("spectral_domains", options.spectral_domains);
     adapter.readField<int>("terrain_fields", options.terrain_fields);
@@ -1276,6 +1286,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::OceanMapSize:
         config.ocean.map_size = parse_number<std::uint32_t>(value, option, "unsigned integer");
+        break;
+    case RunConfigOptionId::OceanFieldPrecision:
+        config.ocean.field_precision = std::string(value);
         break;
     case RunConfigOptionId::OceanCascade:
         config.ocean.cascade = parse_ocean_cascade(value, option);

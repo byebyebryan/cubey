@@ -99,6 +99,7 @@ struct RunConfig {
 
     struct OceanOptions {
         std::uint32_t map_size = 0;
+        std::string field_precision{};
         int cascade = -1;
         int spectral_domains = -1;
         int terrain_fields = -1;

@@ -6,11 +6,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
+#include <string>
 
 namespace cubey::projects::ocean {
 namespace {
 
-constexpr VkFormat kOceanFieldFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 constexpr std::uint32_t kOceanGpuProfilerPassCapacity = 32U;
 constexpr std::uint32_t kOceanSurfaceReflectionBinding = kOceanCascadeCount * 3U;
 constexpr std::uint32_t kOceanSurfaceSkyRadianceBinding = kOceanSurfaceReflectionBinding + 1U;
@@ -29,13 +29,55 @@ constexpr std::uint32_t kOceanSurfaceFeatureUniformBinding =
     return cascade * kOceanSpectrumFieldCount + field;
 }
 
+[[nodiscard]] VkFormat ocean_field_format(OceanFieldPrecision precision) {
+    switch (precision) {
+    case OceanFieldPrecision::Full:
+        return VK_FORMAT_R32G32B32A32_SFLOAT;
+    case OceanFieldPrecision::Half:
+        return VK_FORMAT_R16G16B16A16_SFLOAT;
+    }
+    return VK_FORMAT_R32G32B32A32_SFLOAT;
+}
+
+[[nodiscard]] const char* ocean_precision_shader_suffix(OceanFieldPrecision precision) {
+    switch (precision) {
+    case OceanFieldPrecision::Full:
+        return "";
+    case OceanFieldPrecision::Half:
+        return "_half";
+    }
+    return "";
+}
+
+[[nodiscard]] std::filesystem::path ocean_compute_shader_path(const std::filesystem::path& shader_dir,
+                                                              const char* stem,
+                                                              OceanFieldPrecision precision) {
+    return shader_dir / (std::string(stem) + ocean_precision_shader_suffix(precision) + ".comp.spv");
+}
+
+void validate_ocean_field_format_support(const cubey::vulkan::Device& device,
+                                         OceanFieldPrecision precision) {
+    if (precision != OceanFieldPrecision::Half) {
+        return;
+    }
+    constexpr VkFormatFeatureFlags kRequiredFormatFeatures =
+        VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+    if (!device.supports_shader_storage_image_extended_formats() ||
+        !device.supports_image_format_features(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                               kRequiredFormatFeatures)) {
+        throw std::runtime_error(
+            "ocean half field precision requires sampled rgba16f storage image support");
+    }
+}
+
 [[nodiscard]] cubey::render::Texture2D make_ocean_field_texture(const cubey::vulkan::Device& device,
                                                                 std::uint32_t resolution,
+                                                                VkFormat format,
                                                                 bool sampled) {
     return cubey::render::Texture2D(device,
                                     cubey::render::Texture2DConfig{
                                         .extent = {resolution, resolution},
-                                        .format = kOceanFieldFormat,
+                                        .format = format,
                                         .usage = cubey::render::Texture2DUsage::StorageSampled,
                                         .create_sampler = sampled,
                                         .sampler =
@@ -105,6 +147,7 @@ void OceanGpuResources::create(const cubey::vulkan::Device& device,
     }
 
     resolution_ = config.ocean.map_size;
+    validate_ocean_field_format_support(device, config.ocean.field_precision);
     create_textures(device, config.ocean);
     surface_feature_uniforms_.emplace(device, config.frame_slot_count);
     create_descriptor_sets(device, config.frame_slot_count);
@@ -151,17 +194,24 @@ void OceanGpuResources::reset() {
 
 void OceanGpuResources::create_textures(const cubey::vulkan::Device& device,
                                         const OceanConfig& config) {
+    const VkFormat field_format = ocean_field_format(config.field_precision);
     for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
-        h0_[cascade].emplace(make_ocean_field_texture(device, config.map_size, false));
+        h0_[cascade].emplace(make_ocean_field_texture(device, config.map_size, field_format, false));
         for (std::uint32_t field = 0; field < kOceanSpectrumFieldCount; ++field) {
             const std::uint32_t index = field_texture_index(cascade, field);
-            fields_[index].emplace(make_ocean_field_texture(device, config.map_size, false));
-            ping_[index].emplace(make_ocean_field_texture(device, config.map_size, false));
-            pong_[index].emplace(make_ocean_field_texture(device, config.map_size, false));
+            fields_[index].emplace(
+                make_ocean_field_texture(device, config.map_size, field_format, false));
+            ping_[index].emplace(
+                make_ocean_field_texture(device, config.map_size, field_format, false));
+            pong_[index].emplace(
+                make_ocean_field_texture(device, config.map_size, field_format, false));
         }
-        displacement_[cascade].emplace(make_ocean_field_texture(device, config.map_size, true));
-        normal_[cascade].emplace(make_ocean_field_texture(device, config.map_size, true));
-        foam_[cascade].emplace(make_ocean_field_texture(device, config.map_size, true));
+        displacement_[cascade].emplace(
+            make_ocean_field_texture(device, config.map_size, field_format, true));
+        normal_[cascade].emplace(
+            make_ocean_field_texture(device, config.map_size, field_format, true));
+        foam_[cascade].emplace(
+            make_ocean_field_texture(device, config.map_size, field_format, true));
     }
 }
 
@@ -434,7 +484,9 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
     spectrum_pipeline_.emplace(device,
                                cubey::render::ComputePipelineResourceConfig{
                                    .shader_stage = cubey::render::compute_shader_file(
-                                       shader_path(config.shader_dir, "ocean_spectrum.comp.spv")),
+                                       ocean_compute_shader_path(config.shader_dir,
+                                                                 "ocean_spectrum",
+                                                                 config.ocean.field_precision)),
                                    .descriptor_set_layouts = spectrum_layouts,
                                    .push_constants = {&spectrum_push_constants, 1},
                                });
@@ -443,7 +495,9 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
     modulate_pipeline_.emplace(device,
                                cubey::render::ComputePipelineResourceConfig{
                                    .shader_stage = cubey::render::compute_shader_file(
-                                       shader_path(config.shader_dir, "ocean_modulate.comp.spv")),
+                                       ocean_compute_shader_path(config.shader_dir,
+                                                                 "ocean_modulate",
+                                                                 config.ocean.field_precision)),
                                    .descriptor_set_layouts = modulate_layouts,
                                    .push_constants = {&modulate_push_constants, 1},
                                });
@@ -451,7 +505,8 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
     const std::array fft_layouts{fft_layout_->handle()};
     fft_pipeline_.emplace(device, cubey::render::ComputePipelineResourceConfig{
                                       .shader_stage = cubey::render::compute_shader_file(
-                                          shader_path(config.shader_dir, "ocean_fft.comp.spv")),
+                                          ocean_compute_shader_path(config.shader_dir, "ocean_fft",
+                                                                    config.ocean.field_precision)),
                                       .descriptor_set_layouts = fft_layouts,
                                       .push_constants = {&fft_push_constants, 1},
                                   });
@@ -460,7 +515,8 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
     unpack_pipeline_.emplace(device,
                              cubey::render::ComputePipelineResourceConfig{
                                  .shader_stage = cubey::render::compute_shader_file(
-                                     shader_path(config.shader_dir, "ocean_unpack.comp.spv")),
+                                     ocean_compute_shader_path(config.shader_dir, "ocean_unpack",
+                                                               config.ocean.field_precision)),
                                  .descriptor_set_layouts = unpack_layouts,
                                  .push_constants = {&unpack_push_constants, 1},
                              });
