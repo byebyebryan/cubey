@@ -312,7 +312,7 @@ void draw_ocean_ui(OceanUiContext ui) {
     ImGui::EndDisabled();
     cubey::host::imgui_checkbox(
         "Size pillar", &ui.diagnostics.size_reference_enabled,
-        "Draw the 50 m sea-level-centered scale pillar with 1 m, 5 m, and 10 m markers.");
+        "Draw the 50 m sea-level-centered scale pillar and its basic direct-light ocean shadow.");
 
     if (const cubey::host::ScopedImGuiGroup group{
             "Wave Core", {.help = "Global controls for the FFT wave field and terrain coupling."}};

@@ -1074,8 +1074,8 @@ class OceanApp {
             .fade_options =
                 {
                     ocean_config_.foam_lighting_strength,
-                    0.0F,
-                    0.0F,
+                    diagnostics_.size_reference_enabled ? 1.0F : 0.0F,
+                    0.72F,
                     0.0F,
                 },
             .cascade_options =

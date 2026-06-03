@@ -742,7 +742,7 @@ int main() {
             fragment_shader, "ocean_primary_light_intensity()",
             "fragment shader should scale material lighting by atmosphere light energy");
         require_contains(fragment_shader,
-                         "specular *= direct_light * mix(1.0, 0.35, material_distance)",
+                         "specular *= shadowed_direct_light * mix(1.0, 0.35, material_distance)",
                          "fragment shader should reduce far and foam-covered specular");
         require_contains(fragment_shader,
                          "float ocean_horizon_fog_factor(vec3 view_dir, float dist)",
@@ -861,6 +861,12 @@ int main() {
             "ocean surface shader should sample the shared atmosphere reflection probe");
         require_contains(fragment_shader, "ocean_environment_reflection",
                          "ocean surface shader should isolate atmosphere reflection lookup");
+        require_contains(app_source, "diagnostics_.size_reference_enabled ? 1.0F : 0.0F",
+                         "ocean app should pass reference shadow enable through feature uniforms");
+        require_contains(fragment_shader, "ocean_reference_shadow_enabled",
+                         "ocean surface shader should read reference shadow enable from features");
+        require_contains(fragment_shader, "ocean_reference_shadow_strength",
+                         "ocean surface shader should read reference shadow strength from features");
         require_contains(app_source, "make_ocean_reference_pillar_mesh",
                          "ocean app should build a meter-banded scale reference mesh");
         require_contains(app_source, "kReferencePillarMinYMeters = -25.0F",
@@ -879,6 +885,12 @@ int main() {
                          "ocean scale reference should use flat face normals for basic shading");
         require_contains(app_source, "kReferencePillarHalfWidthMeters = 0.50F",
                          "ocean scale reference should use a 1 m square footprint");
+        require_contains(fragment_shader, "ocean_reference_pillar_shadow",
+                         "ocean surface shader should cast a simple analytic pillar shadow");
+        require_contains(fragment_shader, "ocean_reference_shadow_axis",
+                         "ocean surface shader should use slab tests for the pillar shadow");
+        require_contains(fragment_shader, "shadowed_direct_light",
+                         "ocean surface shader should apply pillar shadow to direct lighting");
         require_contains(app_source, "create_reference_pillar_resources",
                          "ocean app should create reference pillar mesh and pipeline resources");
         require_contains(app_source, "record_reference_pillar_draw",

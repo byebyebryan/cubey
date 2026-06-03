@@ -40,7 +40,7 @@ The active renderer includes:
 - cascade isolation, camera presets, pause/step timing, and mesh diagnostics
   for interactive inspection;
 - a 50 m sea-level-centered reference pillar in final view, currently for scale
-  and later usable as a simple shadow caster;
+  and as a simple analytic direct-light ocean shadow caster;
 - the shared atmosphere background path plus runtime sky/reflection probes for
   water fog, fill, and reflection;
 - a diagnostic terrain-ocean `RGBA32F` field texture bound through the shared
