@@ -429,6 +429,22 @@ bool ocean_cascade_enabled(uint cascade) {
     return feature_enabled && selected_enabled;
 }
 
+float cascade_map_size(uint cascade) {
+    if (cascade == 0u) {
+        return ocean_features.cascade_options.y;
+    }
+    if (cascade == 1u) {
+        return ocean_features.cascade_options.z;
+    }
+    if (cascade == 2u) {
+        return ocean_features.cascade_options.w;
+    }
+    if (cascade == 3u) {
+        return ocean_features.fade_options.w;
+    }
+    return ocean.cascade4_options.w;
+}
+
 vec4 sample_displacement(uint cascade, vec2 uv) {
     if (cascade == 0u) {
         return texture(displacement_cascade0_texture, uv);
@@ -663,7 +679,6 @@ OceanFoamData ocean_foam_data(float dist) {
     data.candidate = vec2(0.0);
     data.detail = vec2(0.0);
 
-    float map_size = ocean.cascade4_options.w;
     float anti_repeat_factor =
         ocean_detail_anti_repeat_strength() *
         smoothstep(OCEAN_FAR_ANTI_REPEAT_START, OCEAN_FAR_ANTI_REPEAT_END, dist);
@@ -672,7 +687,7 @@ OceanFoamData ocean_foam_data(float dist) {
             continue;
         }
         float tile_length = max(cascade_tile_length(cascade), 0.001);
-        float pixels_per_meter = map_size / tile_length;
+        float pixels_per_meter = cascade_map_size(cascade) / tile_length;
         vec4 normal_foam =
             sample_normal_foam_gradient(cascade, frag_sample_position, tile_length,
                                         pixels_per_meter, anti_repeat_factor);

@@ -189,29 +189,38 @@ void OceanGpuResources::reset() {
     ping_ = {};
     fields_ = {};
     h0_ = {};
+    fallback_field_.reset();
+    cascade_allocated_ = {};
+    cascade_resolutions_ = {};
     resolution_ = 0;
 }
 
 void OceanGpuResources::create_textures(const cubey::vulkan::Device& device,
                                         const OceanConfig& config) {
     const VkFormat field_format = ocean_field_format(config.field_precision);
+    fallback_field_.emplace(make_ocean_field_texture(device, 1U, field_format, true));
     for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
-        h0_[cascade].emplace(make_ocean_field_texture(device, config.map_size, field_format, false));
+        cascade_allocated_[cascade] = ocean_cascade_enabled(config, cascade);
+        cascade_resolutions_[cascade] = ocean_cascade_map_size(config, cascade);
+        if (!cascade_allocated_[cascade]) {
+            continue;
+        }
+        const std::uint32_t map_size = cascade_resolutions_[cascade];
+        h0_[cascade].emplace(make_ocean_field_texture(device, map_size, field_format, false));
         for (std::uint32_t field = 0; field < kOceanSpectrumFieldCount; ++field) {
             const std::uint32_t index = field_texture_index(cascade, field);
             fields_[index].emplace(
-                make_ocean_field_texture(device, config.map_size, field_format, false));
+                make_ocean_field_texture(device, map_size, field_format, false));
             ping_[index].emplace(
-                make_ocean_field_texture(device, config.map_size, field_format, false));
+                make_ocean_field_texture(device, map_size, field_format, false));
             pong_[index].emplace(
-                make_ocean_field_texture(device, config.map_size, field_format, false));
+                make_ocean_field_texture(device, map_size, field_format, false));
         }
         displacement_[cascade].emplace(
-            make_ocean_field_texture(device, config.map_size, field_format, true));
+            make_ocean_field_texture(device, map_size, field_format, true));
         normal_[cascade].emplace(
-            make_ocean_field_texture(device, config.map_size, field_format, true));
-        foam_[cascade].emplace(
-            make_ocean_field_texture(device, config.map_size, field_format, true));
+            make_ocean_field_texture(device, map_size, field_format, true));
+        foam_[cascade].emplace(make_ocean_field_texture(device, map_size, field_format, true));
     }
 }
 
@@ -376,6 +385,28 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
 void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) {
     cubey::vulkan::DescriptorWriteBatch writes;
     for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+        const cubey::render::Texture2D& displacement_texture =
+            cascade_allocated(cascade) ? displacement(cascade) : fallback_field();
+        const cubey::render::Texture2D& normal_texture =
+            cascade_allocated(cascade) ? normal(cascade) : fallback_field();
+        const cubey::render::Texture2D& foam_texture =
+            cascade_allocated(cascade) ? foam(cascade) : fallback_field();
+
+        for (VkDescriptorSet surface_set : surface_sets_) {
+            writes.combined_image_sampler(surface_set, cascade,
+                                          displacement_texture.sampler().handle(),
+                                          displacement_texture.view(), VK_IMAGE_LAYOUT_GENERAL);
+            writes.combined_image_sampler(surface_set, cascade + kOceanCascadeCount,
+                                          normal_texture.sampler().handle(), normal_texture.view(),
+                                          VK_IMAGE_LAYOUT_GENERAL);
+            writes.combined_image_sampler(surface_set, cascade + kOceanCascadeCount * 2U,
+                                          foam_texture.sampler().handle(), foam_texture.view(),
+                                          VK_IMAGE_LAYOUT_GENERAL);
+        }
+        if (!cascade_allocated(cascade)) {
+            continue;
+        }
+
         writes.storage_image(spectrum_set(cascade), 0, h0(cascade).view())
             .storage_image(modulate_set(cascade), 0, h0(cascade).view())
             .storage_image(modulate_set(cascade), 1, field(cascade, 0).view())
@@ -385,17 +416,6 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
             .storage_image(unpack_set(cascade), 2, displacement(cascade).view())
             .storage_image(unpack_set(cascade), 3, normal(cascade).view())
             .storage_image(unpack_set(cascade), 4, foam(cascade).view());
-        for (VkDescriptorSet surface_set : surface_sets_) {
-            writes.combined_image_sampler(surface_set, cascade,
-                                          displacement(cascade).sampler().handle(),
-                                          displacement(cascade).view(), VK_IMAGE_LAYOUT_GENERAL);
-            writes.combined_image_sampler(surface_set, cascade + kOceanCascadeCount,
-                                          normal(cascade).sampler().handle(), normal(cascade).view(),
-                                          VK_IMAGE_LAYOUT_GENERAL);
-            writes.combined_image_sampler(surface_set, cascade + kOceanCascadeCount * 2U,
-                                          foam(cascade).sampler().handle(), foam(cascade).view(),
-                                          VK_IMAGE_LAYOUT_GENERAL);
-        }
 
         for (std::uint32_t field_index = 0; field_index < kOceanSpectrumFieldCount; ++field_index) {
             const std::uint32_t base_fft_set =
@@ -633,6 +653,27 @@ const cubey::render::Texture2D& OceanGpuResources::normal(std::uint32_t cascade)
 
 const cubey::render::Texture2D& OceanGpuResources::foam(std::uint32_t cascade) const {
     return texture_at(foam_, cascade, "ocean foam texture");
+}
+
+const cubey::render::Texture2D& OceanGpuResources::fallback_field() const {
+    if (!fallback_field_.has_value()) {
+        throw std::runtime_error("ocean fallback field texture is not initialized");
+    }
+    return fallback_field_.value();
+}
+
+bool OceanGpuResources::cascade_allocated(std::uint32_t cascade) const {
+    if (cascade >= kOceanCascadeCount) {
+        throw std::runtime_error("ocean cascade index out of range");
+    }
+    return cascade_allocated_[cascade];
+}
+
+std::uint32_t OceanGpuResources::cascade_resolution(std::uint32_t cascade) const {
+    if (cascade >= kOceanCascadeCount) {
+        throw std::runtime_error("ocean cascade index out of range");
+    }
+    return cascade_resolutions_[cascade];
 }
 
 const std::vector<cubey::vulkan::GpuPassTiming>& OceanGpuResources::latest_timings() const {

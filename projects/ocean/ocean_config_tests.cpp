@@ -59,7 +59,9 @@ int main() {
 
         const ocean::OceanConfig defaults{};
         require(defaults.map_size == ocean::kOceanDefaultMapSize,
-                "ocean should default to the reference 1024 map size");
+                "ocean should default to the current reference map size");
+        require(defaults.map_size == 512U,
+                "ocean should default to the practical 512 map size");
         require(ocean::ocean_is_supported_map_size(128),
                 "ocean should support 128 maps for smoke tests");
         require(ocean::ocean_is_supported_map_size(256), "ocean should support 256 maps");
@@ -82,7 +84,42 @@ int main() {
         for (std::uint32_t cascade = 0; cascade < ocean::kOceanCascadeCount; ++cascade) {
             require(ocean::ocean_cascade_enabled(defaults, cascade) == expected_enabled[cascade],
                     "ocean should default to the C0/C1 core cascade slots");
+            require(defaults.cascade_map_sizes[cascade] == 0U,
+                    "ocean cascades should inherit the global FFT map size by default");
+            require(ocean::ocean_cascade_map_size(defaults, cascade) == defaults.map_size,
+                    "ocean cascade map size helper should resolve inherited sizes");
+            require(defaults.cascade_update_intervals[cascade] == 1U,
+                    "ocean cascades should update every frame by default");
+            require(ocean::ocean_cascade_update_interval(defaults, cascade) == 1U,
+                    "ocean cascade update helper should clamp to at least one frame");
         }
+        ocean::OceanConfig cascade_policy = defaults;
+        cascade_policy.cascade_map_sizes[1] = 256U;
+        cascade_policy.cascade_update_intervals[1] = 3U;
+        require(ocean::ocean_cascade_map_size(cascade_policy, 1) == 256U,
+                "ocean should allow explicit per-cascade FFT map sizes");
+        require(ocean::ocean_cascade_update_interval(cascade_policy, 1) == 3U,
+                "ocean should allow per-cascade update intervals");
+        ocean::OceanConfig invalid_cascade_size = defaults;
+        invalid_cascade_size.cascade_map_sizes[0] = 192U;
+        bool rejected_invalid_cascade_size = false;
+        try {
+            ocean::validate_ocean_config(invalid_cascade_size);
+        } catch (const std::runtime_error&) {
+            rejected_invalid_cascade_size = true;
+        }
+        require(rejected_invalid_cascade_size,
+                "ocean should reject unsupported per-cascade FFT map sizes");
+        ocean::OceanConfig invalid_cascade_interval = defaults;
+        invalid_cascade_interval.cascade_update_intervals[0] = 0U;
+        bool rejected_invalid_cascade_interval = false;
+        try {
+            ocean::validate_ocean_config(invalid_cascade_interval);
+        } catch (const std::runtime_error&) {
+            rejected_invalid_cascade_interval = true;
+        }
+        require(rejected_invalid_cascade_interval,
+                "ocean should reject zero per-cascade update intervals");
         require(ocean::ocean_mesh_vertex_count(defaults) ==
                     defaults.mesh_cells * defaults.mesh_cells * 6U,
                 "ocean vertex count should match generated grid triangles");
@@ -620,14 +657,24 @@ int main() {
                          "app should pass foam history isolation strength");
         require_contains(app_source, "ocean_enabled_cascade_mask",
                          "app should pack enabled cascades for shader-side isolation");
-        require_contains(app_source, "if (!ocean_cascade_enabled(ocean_config_, cascade))",
+        require_contains(app_source, "bool ocean_should_update_cascade",
+                         "app should centralize per-cascade compute scheduling");
+        require_contains(app_source, "if (!ocean_cascade_enabled(config, cascade))",
                          "app should skip disabled cascade compute dispatches");
+        require_contains(app_source, "ocean_cascade_update_interval(config, cascade)",
+                         "app should honor per-cascade update intervals");
         require_contains(app_source, "lhs.field_precision != rhs.field_precision",
                          "app should recreate ocean GPU resources when field precision changes");
+        require_contains(app_source, "lhs.cascade_map_sizes != rhs.cascade_map_sizes",
+                         "app should recreate ocean GPU resources when cascade map sizes change");
         require_contains(gpu_resources_source, "VK_FORMAT_R16G16B16A16_SFLOAT",
                          "GPU resources should allocate half precision ocean field textures");
         require_contains(gpu_resources_source, "supports_image_format_features",
                          "GPU resources should validate half precision storage image support");
+        require_contains(gpu_resources_source, "fallback_field_",
+                         "GPU resources should keep a fallback field for inactive cascades");
+        require_contains(gpu_resources_source, "if (!cascade_allocated(cascade))",
+                         "GPU resources should skip compute descriptors for inactive cascades");
         require_contains(app_source, "ocean_config_.atmosphere_sky_strength",
                          "app should pass split atmosphere sky material strength");
         require_contains(app_source, "ocean_config_.atmosphere_reflection_strength",
@@ -703,6 +750,12 @@ int main() {
                          "UI should expose a cascade-cost dispatch estimate");
         require_contains(ui_source, "&ui.config.cascade_enabled[index]",
                          "UI should toggle cascade compute and surface contribution");
+        require_contains(ui_source, "Cascade work policy",
+                         "UI should expose per-cascade work policy controls");
+        require_contains(ui_source, "ui.config.cascade_update_intervals[index]",
+                         "UI should expose per-cascade update interval controls");
+        require_contains(ui_source, "&ui.config.cascade_map_sizes[index]",
+                         "UI should expose per-cascade FFT map size controls");
         require_contains(ui_source, "OceanCameraPreset::Mid",
                          "UI should expose a mid-distance camera preset");
         require_contains(ui_source, "OceanCameraPreset::High",
@@ -820,8 +873,10 @@ int main() {
             "fragment shader should combine persistent and current foam with a soft union");
         require_contains(fragment_shader, "OCEAN_FAR_ANTI_REPEAT_START",
                          "fragment shader should distance-gate far anti-repeat");
-        require_contains(fragment_shader, "float map_size = ocean.cascade4_options.w;",
-                         "fragment shader should read map size from packed cascade controls");
+        require_contains(fragment_shader, "float cascade_map_size(uint cascade)",
+                         "fragment shader should resolve per-cascade ocean map sizes");
+        require_contains(fragment_shader, "float pixels_per_meter = cascade_map_size(cascade)",
+                         "fragment shader should use per-cascade ocean map sizes");
         require_contains(fragment_shader, "float cascade_surface_lod_weight",
                          "fragment shader should apply per-cascade normal and foam LOD weights");
         require_contains(fragment_shader, "float cascade_distance_lod_weight",

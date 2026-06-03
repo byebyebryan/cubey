@@ -48,6 +48,44 @@ void draw_map_size_combo(OceanConfig& config) {
                                     "FFT texture resolution for each ocean cascade.");
 }
 
+bool draw_cascade_map_size_combo(const char* label, std::uint32_t* value,
+                                 std::uint32_t inherited_size) {
+    std::array<std::uint32_t, kOceanSupportedMapSizes.size() + 1U> values{};
+    values[0] = 0U;
+    std::copy(kOceanSupportedMapSizes.begin(), kOceanSupportedMapSizes.end(), values.begin() + 1);
+
+    char preview[32]{};
+    if (*value == 0U) {
+        std::snprintf(preview, sizeof(preview), "inherit %u", inherited_size);
+    } else {
+        std::snprintf(preview, sizeof(preview), "%u", *value);
+    }
+
+    bool changed = false;
+    if (ImGui::BeginCombo(label, preview)) {
+        for (const std::uint32_t candidate : values) {
+            char option_label[32]{};
+            if (candidate == 0U) {
+                std::snprintf(option_label, sizeof(option_label), "inherit %u", inherited_size);
+            } else {
+                std::snprintf(option_label, sizeof(option_label), "%u", candidate);
+            }
+            const bool selected = candidate == *value;
+            if (ImGui::Selectable(option_label, selected)) {
+                *value = candidate;
+                changed = true;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    cubey::host::imgui_attach_help(
+        "Optional per-cascade FFT texture resolution. Inherit follows the global map size.");
+    return changed;
+}
+
 [[nodiscard]] std::uint32_t ui_log2_exact(std::uint32_t value) {
     std::uint32_t result = 0;
     while (value > 1U) {
@@ -66,10 +104,16 @@ void draw_map_size_combo(OceanConfig& config) {
 }
 
 [[nodiscard]] std::uint32_t steady_compute_dispatch_count(const OceanConfig& config) {
-    const std::uint32_t active_cascades = active_cascade_count(config);
-    const std::uint32_t fft_dispatches =
-        kOceanSpectrumFieldCount * ui_log2_exact(config.map_size) * 2U;
-    return active_cascades * (1U + fft_dispatches + 1U);
+    std::uint32_t dispatches = 0;
+    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+        if (!ocean_cascade_enabled(config, cascade)) {
+            continue;
+        }
+        const std::uint32_t fft_dispatches =
+            kOceanSpectrumFieldCount * ui_log2_exact(ocean_cascade_map_size(config, cascade)) * 2U;
+        dispatches += 1U + fft_dispatches + 1U;
+    }
+    return dispatches;
 }
 
 void draw_selected_cascade_combo(OceanDiagnosticsConfig& diagnostics) {
@@ -407,6 +451,37 @@ void draw_ocean_ui(OceanUiContext ui) {
                     kOceanCascadeCount);
         ImGui::Text("Steady compute dispatches: %u/frame",
                     steady_compute_dispatch_count(ui.config));
+        if (ImGui::BeginTable("Cascade work policy", 4,
+                              ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg)) {
+            ImGui::TableSetupColumn("Cascade");
+            ImGui::TableSetupColumn("Map");
+            ImGui::TableSetupColumn("Interval");
+            ImGui::TableSetupColumn("Effective");
+            ImGui::TableHeadersRow();
+            for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
+                char id[8]{};
+                std::snprintf(id, sizeof(id), "C%u", index);
+                const cubey::host::ScopedImGuiId row_id(id);
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("C%u", index);
+                ImGui::TableSetColumnIndex(1);
+                draw_cascade_map_size_combo("##map", &ui.config.cascade_map_sizes[index],
+                                            ui.config.map_size);
+                ImGui::TableSetColumnIndex(2);
+                int interval = static_cast<int>(ui.config.cascade_update_intervals[index]);
+                if (cubey::host::imgui_slider_int("##interval", &interval, 1, 8,
+                                                  "Frame interval for recomputing this cascade.")) {
+                    ui.config.cascade_update_intervals[index] =
+                        static_cast<std::uint32_t>(std::clamp(interval, 1, 8));
+                }
+                ImGui::TableSetColumnIndex(3);
+                ImGui::Text("%u / %u frame%s", ocean_cascade_map_size(ui.config, index),
+                            ocean_cascade_update_interval(ui.config, index),
+                            ocean_cascade_update_interval(ui.config, index) == 1U ? "" : "s");
+            }
+            ImGui::EndTable();
+        }
         cubey::host::imgui_slider_float(
             "Shape strength", &ui.config.surface_shape_strength, 0.0F, 1.5F, "%.2f",
             "Global displacement and normal strength for enabled cascade slots.");

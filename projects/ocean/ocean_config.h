@@ -55,7 +55,7 @@ inline constexpr std::array<OceanFieldPrecision, 2> kOceanFieldPrecisions{
 };
 
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
-inline constexpr std::uint32_t kOceanDefaultMapSize = 1024U;
+inline constexpr std::uint32_t kOceanDefaultMapSize = 512U;
 inline constexpr std::uint32_t kOceanCascadeCount = 5U;
 inline constexpr std::uint32_t kOceanSpectrumFieldCount = 2U;
 inline constexpr std::uint32_t kOceanMinMeshCells = 32U;
@@ -130,6 +130,8 @@ struct OceanConfig {
     bool terrain_fields_enabled = false;
     OceanFieldPrecision field_precision = OceanFieldPrecision::Full;
     std::array<bool, kOceanCascadeCount> cascade_enabled{true, true, false, false, false};
+    std::array<std::uint32_t, kOceanCascadeCount> cascade_map_sizes{0U, 0U, 0U, 0U, 0U};
+    std::array<std::uint32_t, kOceanCascadeCount> cascade_update_intervals{1U, 1U, 1U, 1U, 1U};
     OceanRenderView render_view = OceanRenderView::Final;
     std::array<OceanCascadeConfig, kOceanCascadeCount> cascades{
         OceanCascadeConfig{
@@ -368,6 +370,23 @@ ocean_field_precision_from_name(std::string_view name) {
     return config.cascade_enabled[cascade];
 }
 
+[[nodiscard]] inline std::uint32_t ocean_cascade_map_size(const OceanConfig& config,
+                                                          std::uint32_t cascade) {
+    if (cascade >= kOceanCascadeCount) {
+        throw std::runtime_error("ocean cascade index out of range");
+    }
+    const std::uint32_t override_size = config.cascade_map_sizes[cascade];
+    return override_size == 0U ? config.map_size : override_size;
+}
+
+[[nodiscard]] inline std::uint32_t ocean_cascade_update_interval(const OceanConfig& config,
+                                                                 std::uint32_t cascade) {
+    if (cascade >= kOceanCascadeCount) {
+        throw std::runtime_error("ocean cascade index out of range");
+    }
+    return std::max(1U, config.cascade_update_intervals[cascade]);
+}
+
 [[nodiscard]] inline OceanCascadeLodBand ocean_cascade_lod_band(const OceanConfig& config,
                                                                 std::uint32_t cascade) {
     const float tile_length = ocean_cascade(config, cascade).tile_length;
@@ -389,17 +408,18 @@ ocean_field_precision_from_name(std::string_view name) {
 [[nodiscard]] inline float ocean_cascade_domain_high_k(const OceanConfig& config,
                                                        std::uint32_t cascade) {
     const OceanCascadeConfig& cascade_config = ocean_cascade(config, cascade);
-    if (config.map_size == 0U || cascade_config.tile_length <= 0.0F) {
+    const std::uint32_t map_size = ocean_cascade_map_size(config, cascade);
+    if (map_size == 0U || cascade_config.tile_length <= 0.0F) {
         return 0.0F;
     }
-    return 2.0F * kOceanPi * static_cast<float>(config.map_size) /
+    return 2.0F * kOceanPi * static_cast<float>(map_size) /
            (cascade_config.tile_length * kOceanCascadeSmallestWaveMultiplier);
 }
 
 [[nodiscard]] inline OceanCascadeDomain ocean_cascade_domain(const OceanConfig& config,
                                                              std::uint32_t cascade) {
     const OceanCascadeConfig& cascade_config = ocean_cascade(config, cascade);
-    if (config.map_size == 0U || cascade_config.tile_length <= 0.0F) {
+    if (ocean_cascade_map_size(config, cascade) == 0U || cascade_config.tile_length <= 0.0F) {
         return {};
     }
 
@@ -429,8 +449,19 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.mesh_lod_levels > kOceanMaxMeshLodLevels) {
         throw std::runtime_error("ocean mesh LOD levels out of supported range");
     }
-    if (!ocean_is_supported_map_size(config.map_size) || !ocean_is_power_of_two(config.map_size)) {
+    if (!ocean_is_supported_map_size(config.map_size) ||
+        !ocean_is_power_of_two(config.map_size)) {
         throw std::runtime_error("ocean map size must be 128, 256, 512, or 1024");
+    }
+    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+        const std::uint32_t map_size = ocean_cascade_map_size(config, cascade);
+        if (!ocean_is_supported_map_size(map_size) || !ocean_is_power_of_two(map_size)) {
+            throw std::runtime_error(
+                "ocean cascade map size must be inherited, 128, 256, 512, or 1024");
+        }
+        if (config.cascade_update_intervals[cascade] == 0U) {
+            throw std::runtime_error("ocean cascade update interval must be at least one frame");
+        }
     }
     if (config.mesh_extent <= 0.0F || config.depth <= 0.0F) {
         throw std::runtime_error("ocean mesh extent and depth must be positive");

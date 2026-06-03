@@ -94,6 +94,9 @@ class OceanGpuResources {
     [[nodiscard]] const cubey::render::Texture2D& displacement(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& normal(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& foam(std::uint32_t cascade) const;
+    [[nodiscard]] const cubey::render::Texture2D& fallback_field() const;
+    [[nodiscard]] bool cascade_allocated(std::uint32_t cascade) const;
+    [[nodiscard]] std::uint32_t cascade_resolution(std::uint32_t cascade) const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
         return profiler_.has_value() ? &profiler_.value() : nullptr;
     }
@@ -127,6 +130,9 @@ class OceanGpuResources {
     TextureArray displacement_{};
     TextureArray normal_{};
     TextureArray foam_{};
+    std::optional<cubey::render::Texture2D> fallback_field_;
+    std::array<bool, kOceanCascadeCount> cascade_allocated_{};
+    std::array<std::uint32_t, kOceanCascadeCount> cascade_resolutions_{};
 
     std::optional<cubey::vulkan::DescriptorSetLayout> spectrum_layout_;
     std::optional<cubey::vulkan::DescriptorPool> spectrum_pool_;
