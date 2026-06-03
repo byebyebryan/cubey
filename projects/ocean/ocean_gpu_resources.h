@@ -9,6 +9,7 @@
 #include <cubey/render/uniform_buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 
 #include <vulkan/vulkan.h>
 
@@ -93,6 +94,10 @@ class OceanGpuResources {
     [[nodiscard]] const cubey::render::Texture2D& displacement(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& normal(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& foam(std::uint32_t cascade) const;
+    [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
+        return profiler_.has_value() ? &profiler_.value() : nullptr;
+    }
+    [[nodiscard]] const std::vector<cubey::vulkan::GpuPassTiming>& latest_timings() const;
 
   private:
     using TextureArray = std::array<std::optional<cubey::render::Texture2D>, kOceanCascadeCount>;
@@ -150,6 +155,7 @@ class OceanGpuResources {
     std::optional<cubey::render::ComputePipelineResource> fft_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> unpack_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_pipeline_;
+    std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 };
 
 } // namespace cubey::projects::ocean

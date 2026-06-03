@@ -11,6 +11,7 @@ namespace cubey::projects::ocean {
 namespace {
 
 constexpr VkFormat kOceanFieldFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+constexpr std::uint32_t kOceanGpuProfilerPassCapacity = 32U;
 constexpr std::uint32_t kOceanSurfaceReflectionBinding = kOceanCascadeCount * 3U;
 constexpr std::uint32_t kOceanSurfaceSkyRadianceBinding = kOceanSurfaceReflectionBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceTerrainFieldBinding = kOceanSurfaceSkyRadianceBinding + 1U;
@@ -109,9 +110,11 @@ void OceanGpuResources::create(const cubey::vulkan::Device& device,
     create_descriptor_sets(device, config.frame_slot_count);
     update_descriptors(device);
     create_pipelines(device, config);
+    profiler_.emplace(device, config.frame_slot_count, kOceanGpuProfilerPassCapacity);
 }
 
 void OceanGpuResources::reset() {
+    profiler_.reset();
     surface_pipeline_.reset();
     unpack_pipeline_.reset();
     fft_pipeline_.reset();
@@ -598,6 +601,14 @@ const cubey::render::Texture2D& OceanGpuResources::normal(std::uint32_t cascade)
 
 const cubey::render::Texture2D& OceanGpuResources::foam(std::uint32_t cascade) const {
     return texture_at(foam_, cascade, "ocean foam texture");
+}
+
+const std::vector<cubey::vulkan::GpuPassTiming>& OceanGpuResources::latest_timings() const {
+    static const std::vector<cubey::vulkan::GpuPassTiming> kEmptyTimings;
+    if (!profiler_.has_value()) {
+        return kEmptyTimings;
+    }
+    return profiler_->latest_timings();
 }
 
 const cubey::render::Texture2D& OceanGpuResources::texture_at(const TextureArray& textures,
