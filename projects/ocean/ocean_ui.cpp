@@ -310,6 +310,9 @@ void draw_ocean_ui(OceanUiContext ui) {
     cubey::host::imgui_slider_float("Wire opacity", &ui.diagnostics.wire_opacity, 0.05F, 1.0F,
                                     "%.2f", "Opacity used by the wire overlay.");
     ImGui::EndDisabled();
+    cubey::host::imgui_checkbox(
+        "Size pillar", &ui.diagnostics.size_reference_enabled,
+        "Draw the 50 m sea-level-centered scale pillar with 1 m, 5 m, and 10 m markers.");
 
     if (const cubey::host::ScopedImGuiGroup group{
             "Wave Core", {.help = "Global controls for the FFT wave field and terrain coupling."}};

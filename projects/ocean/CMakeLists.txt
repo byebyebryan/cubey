@@ -19,6 +19,8 @@ cubey_add_app_target(
         shaders/ocean_unpack.comp
         shaders/ocean.vert
         shaders/ocean.frag
+        shaders/ocean_reference_pillar.vert
+        shaders/ocean_reference_pillar.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"

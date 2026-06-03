@@ -45,9 +45,10 @@ Useful debug views:
 
 The GUI panel also includes cascade isolation, camera presets including a wide
 repeat-inspection camera plus mid/high large-scale inspection views, a paused
-single-frame step button, a portable wire overlay, feature-isolation controls,
-and an LOD breakdown table for checking clipmap coverage, patch counts, and
-triangle load while tuning the mesh.
+single-frame step button, a portable wire overlay, a 50 m sea-level-centered
+size reference pillar in final view with 1 m, 5 m, and 10 m markers,
+feature-isolation controls, and an LOD breakdown table for checking clipmap
+coverage, patch counts, and triangle load while tuning the mesh.
 Headless captures can use
 `--ocean-cascade all|0|1|2|3|4`,
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,

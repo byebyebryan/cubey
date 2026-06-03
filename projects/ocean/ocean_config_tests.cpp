@@ -233,6 +233,8 @@ int main() {
         require_near(defaults.foam_sharpness, 0.62F, 0.001F,
                      "foam sharpness should default to a whitecap-biased response");
         const ocean::OceanDiagnosticsConfig diagnostics{};
+        require(diagnostics.size_reference_enabled,
+                "ocean diagnostics should default the size reference pillar on");
         require_near(diagnostics.shape_anti_repeat_strength, 1.0F, 0.001F,
                      "ocean diagnostics should default to shape anti-repeat sampling");
         require_near(diagnostics.detail_anti_repeat_strength, 1.0F, 0.001F,
@@ -467,6 +469,10 @@ int main() {
         const std::string unpack_shader = read_text_file(source_root / "shaders/ocean_unpack.comp");
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
         const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
+        const std::string pillar_vertex_shader =
+            read_text_file(source_root / "shaders/ocean_reference_pillar.vert");
+        const std::string pillar_fragment_shader =
+            read_text_file(source_root / "shaders/ocean_reference_pillar.frag");
         const std::string mesh_header = read_text_file(source_root / "ocean_mesh.h");
         const std::string app_source = read_text_file(source_root / "ocean_app.cpp");
         const std::string ui_source = read_text_file(source_root / "ocean_ui.cpp");
@@ -581,6 +587,10 @@ int main() {
                          "app should load the shared PBR post shader");
         require_contains(cmake_source, "forward_pbr_post.frag",
                          "ocean build should compile the shared PBR post fragment shader");
+        require_contains(cmake_source, "ocean_reference_pillar.vert",
+                         "ocean build should compile the reference pillar vertex shader");
+        require_contains(cmake_source, "ocean_reference_pillar.frag",
+                         "ocean build should compile the reference pillar fragment shader");
         require_contains(cmake_source, "shaders/cubey/atmosphere/atmosphere.frag",
                          "ocean build should compile the shared atmosphere background shader");
         require_contains(cmake_source, "atmosphere_reflection_prefilter.frag",
@@ -595,6 +605,10 @@ int main() {
                          "UI should expose shape anti-repeat as a diagnostics control");
         require_contains(ui_source, "&ui.diagnostics.detail_anti_repeat_strength",
                          "UI should expose detail anti-repeat as a diagnostics control");
+        require_contains(ui_source, "&ui.diagnostics.size_reference_enabled",
+                         "UI should expose the size reference pillar toggle");
+        require_contains(ui_source, "50 m sea-level-centered",
+                         "UI should describe the size reference pillar height");
         require_contains(ui_source, "Feature Isolation",
                          "UI should expose feature isolation controls");
         require_contains(ui_source, "&ui.config.surface_shape_strength",
@@ -847,6 +861,38 @@ int main() {
             "ocean surface shader should sample the shared atmosphere reflection probe");
         require_contains(fragment_shader, "ocean_environment_reflection",
                          "ocean surface shader should isolate atmosphere reflection lookup");
+        require_contains(app_source, "make_ocean_reference_pillar_mesh",
+                         "ocean app should build a meter-banded scale reference mesh");
+        require_contains(app_source, "kReferencePillarMinYMeters = -25.0F",
+                         "ocean scale reference should extend 25 m below sea level");
+        require_contains(app_source, "kReferencePillarMaxYMeters = 25.0F",
+                         "ocean scale reference should extend 25 m above sea level");
+        require_contains(app_source, "reference_pillar_marker_color",
+                         "ocean scale reference should prioritize colored meter markers");
+        require_contains(app_source, "reference_pillar_marker_half_height",
+                         "ocean scale reference should keep 5 m and 10 m markers readable");
+        require_contains(app_source, "kReferencePillarMarkerHalfWidthMeters",
+                         "ocean scale reference markers should protrude from the white body");
+        require_contains(app_source, "pillar_position",
+                         "ocean scale reference should rotate the pillar for readable shaded faces");
+        require_contains(app_source, "pillar_u_normal",
+                         "ocean scale reference should use flat face normals for basic shading");
+        require_contains(app_source, "kReferencePillarHalfWidthMeters = 0.50F",
+                         "ocean scale reference should use a 1 m square footprint");
+        require_contains(app_source, "create_reference_pillar_resources",
+                         "ocean app should create reference pillar mesh and pipeline resources");
+        require_contains(app_source, "record_reference_pillar_draw",
+                         "ocean app should draw the scale reference pillar in the scene pass");
+        require_contains(app_source, "render_view_ != OceanRenderView::Final",
+                         "ocean app should keep the pillar out of debug views");
+        require_contains(app_source, "reference_pillar_mesh_",
+                         "ocean app should retain the reference pillar mesh as reusable geometry");
+        require_contains(pillar_vertex_shader, "pillar.view_projection",
+                         "reference pillar vertex shader should use the ocean camera matrix");
+        require_contains(pillar_fragment_shader, "pillar.light_direction",
+                         "reference pillar fragment shader should use atmosphere light direction");
+        require_contains(pillar_fragment_shader, "ambient + diffuse",
+                         "reference pillar fragment shader should use basic ambient plus diffuse shading");
 
         require_not_contains(vertex_shader, "ocean_macro_waves",
                              "ocean vertex shader should not use Cubey macro waves");

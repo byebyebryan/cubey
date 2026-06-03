@@ -15,10 +15,13 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/color_space.h>
 #include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/material_instance.h>
+#include <cubey/render/mesh.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
+#include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/target.h>
 #include <cubey/render/terrain_ocean_fields.h>
@@ -40,6 +43,7 @@
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <numbers>
 #include <optional>
 #include <span>
@@ -70,6 +74,19 @@ constexpr VkFormat kOceanDepthFormat = VK_FORMAT_D32_SFLOAT;
 constexpr float kGravity = 9.81F;
 constexpr float kOceanSunElevationDegrees = 20.0F;
 constexpr float kOceanSunAzimuthDegrees = -20.0F;
+constexpr float kReferencePillarHalfWidthMeters = 0.50F;
+constexpr float kReferencePillarCenterXMeters = -24.0F;
+constexpr float kReferencePillarCenterZMeters = 10.0F;
+constexpr float kReferencePillarAxisUX = 0.70710678F;
+constexpr float kReferencePillarAxisUZ = 0.70710678F;
+constexpr float kReferencePillarAxisVX = -0.70710678F;
+constexpr float kReferencePillarAxisVZ = 0.70710678F;
+constexpr float kReferencePillarMinYMeters = -25.0F;
+constexpr float kReferencePillarMaxYMeters = 25.0F;
+constexpr float kReferencePillarMeterMarkerHalfHeightMeters = 0.055F;
+constexpr float kReferencePillarFiveMeterMarkerHalfHeightMeters = 0.22F;
+constexpr float kReferencePillarTenMeterMarkerHalfHeightMeters = 0.34F;
+constexpr float kReferencePillarMarkerHalfWidthMeters = kReferencePillarHalfWidthMeters + 0.012F;
 
 struct OceanPushConstants {
     cubey::math::Mat4 view_projection;
@@ -114,12 +131,18 @@ struct OceanUnpackPushConstants {
     cubey::math::Vec4 cascade_options;
 };
 
+struct OceanReferencePillarPushConstants {
+    cubey::math::Mat4 view_projection;
+    cubey::math::Vec4 light_direction;
+};
+
 static_assert(sizeof(OceanPushConstants) == sizeof(float) * 64U);
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanTerrainFieldUniforms) == sizeof(float) * 8U);
 static_assert(sizeof(OceanModulatePushConstants) == sizeof(float) * 8U);
 static_assert(sizeof(OceanFftPushConstants) == sizeof(float) * 8U);
 static_assert(sizeof(OceanUnpackPushConstants) == sizeof(float) * 8U);
+static_assert(sizeof(OceanReferencePillarPushConstants) == sizeof(float) * 20U);
 
 enum class OceanRenderTargetMode : std::uint8_t {
     Present,
@@ -139,6 +162,153 @@ struct OceanCameraPresetConfig {
     float yaw = kCameraBaseYaw;
     float pitch = kCameraBasePitch;
 };
+
+[[nodiscard]] cubey::render::PrimitiveVec3 linear_srgb(
+    cubey::render::PrimitiveVec3 srgb_color) {
+    return cubey::render::srgb_to_linear_rgb(srgb_color);
+}
+
+[[nodiscard]] cubey::render::PrimitiveVec3 pillar_position(float local_u, float y,
+                                                           float local_v) {
+    return {
+        kReferencePillarCenterXMeters + local_u * kReferencePillarAxisUX +
+            local_v * kReferencePillarAxisVX,
+        y,
+        kReferencePillarCenterZMeters + local_u * kReferencePillarAxisUZ +
+            local_v * kReferencePillarAxisVZ,
+    };
+}
+
+[[nodiscard]] cubey::render::PrimitiveVec3 pillar_u_normal(float sign) {
+    return {sign * kReferencePillarAxisUX, 0.0F, sign * kReferencePillarAxisUZ};
+}
+
+[[nodiscard]] cubey::render::PrimitiveVec3 pillar_v_normal(float sign) {
+    return {sign * kReferencePillarAxisVX, 0.0F, sign * kReferencePillarAxisVZ};
+}
+
+void append_pillar_quad(
+    cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal>& mesh,
+    cubey::render::PrimitiveVec3 p0, cubey::render::PrimitiveVec3 p1,
+    cubey::render::PrimitiveVec3 p2, cubey::render::PrimitiveVec3 p3,
+    cubey::render::PrimitiveVec3 normal, cubey::render::PrimitiveVec3 color) {
+    if (mesh.vertices.size() > std::numeric_limits<std::uint16_t>::max() - 4U) {
+        throw std::runtime_error("ocean reference pillar mesh exceeds uint16 index range");
+    }
+    const auto base = static_cast<std::uint16_t>(mesh.vertices.size());
+    mesh.vertices.push_back({.position = p0, .color = color, .normal = normal});
+    mesh.vertices.push_back({.position = p1, .color = color, .normal = normal});
+    mesh.vertices.push_back({.position = p2, .color = color, .normal = normal});
+    mesh.vertices.push_back({.position = p3, .color = color, .normal = normal});
+    mesh.indices.insert(mesh.indices.end(),
+                        {base, static_cast<std::uint16_t>(base + 1U),
+                         static_cast<std::uint16_t>(base + 2U), base,
+                         static_cast<std::uint16_t>(base + 2U),
+                         static_cast<std::uint16_t>(base + 3U)});
+}
+
+void append_pillar_band(
+    cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal>& mesh,
+    float half_width, float min_y, float max_y, cubey::render::PrimitiveVec3 color,
+    bool bottom_cap, bool top_cap) {
+    append_pillar_quad(mesh, pillar_position(-half_width, min_y, half_width),
+                       pillar_position(half_width, min_y, half_width),
+                       pillar_position(half_width, max_y, half_width),
+                       pillar_position(-half_width, max_y, half_width), pillar_v_normal(1.0F),
+                       color);
+    append_pillar_quad(mesh, pillar_position(half_width, min_y, -half_width),
+                       pillar_position(-half_width, min_y, -half_width),
+                       pillar_position(-half_width, max_y, -half_width),
+                       pillar_position(half_width, max_y, -half_width), pillar_v_normal(-1.0F),
+                       color);
+    append_pillar_quad(mesh, pillar_position(-half_width, min_y, -half_width),
+                       pillar_position(-half_width, min_y, half_width),
+                       pillar_position(-half_width, max_y, half_width),
+                       pillar_position(-half_width, max_y, -half_width), pillar_u_normal(-1.0F),
+                       color);
+    append_pillar_quad(mesh, pillar_position(half_width, min_y, half_width),
+                       pillar_position(half_width, min_y, -half_width),
+                       pillar_position(half_width, max_y, -half_width),
+                       pillar_position(half_width, max_y, half_width), pillar_u_normal(1.0F),
+                       color);
+    if (bottom_cap) {
+        append_pillar_quad(mesh, pillar_position(-half_width, min_y, -half_width),
+                           pillar_position(half_width, min_y, -half_width),
+                           pillar_position(half_width, min_y, half_width),
+                           pillar_position(-half_width, min_y, half_width),
+                           {0.0F, -1.0F, 0.0F}, color);
+    }
+    if (top_cap) {
+        append_pillar_quad(mesh, pillar_position(-half_width, max_y, half_width),
+                           pillar_position(half_width, max_y, half_width),
+                           pillar_position(half_width, max_y, -half_width),
+                           pillar_position(-half_width, max_y, -half_width),
+                           {0.0F, 1.0F, 0.0F}, color);
+    }
+}
+
+[[nodiscard]] cubey::render::PrimitiveVec3 reference_pillar_marker_color(int meter) {
+    if (meter % 10 == 0) {
+        return linear_srgb({1.0F, 0.08F, 0.05F});
+    }
+    if (meter % 5 == 0) {
+        return linear_srgb({1.0F, 0.78F, 0.10F});
+    }
+    return linear_srgb({0.015F, 0.015F, 0.015F});
+}
+
+[[nodiscard]] float reference_pillar_marker_half_height(int meter) {
+    if (meter % 10 == 0) {
+        return kReferencePillarTenMeterMarkerHalfHeightMeters;
+    }
+    if (meter % 5 == 0) {
+        return kReferencePillarFiveMeterMarkerHalfHeightMeters;
+    }
+    return kReferencePillarMeterMarkerHalfHeightMeters;
+}
+
+[[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal>
+make_ocean_reference_pillar_mesh() {
+    constexpr int min_marker_meter = -25;
+    constexpr int max_marker_meter = 25;
+    constexpr std::uint32_t marker_count =
+        static_cast<std::uint32_t>(max_marker_meter - min_marker_meter + 1);
+    cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal> mesh;
+    mesh.vertices.reserve(24U + marker_count * 16U);
+    mesh.indices.reserve(36U + marker_count * 24U);
+
+    const cubey::render::PrimitiveVec3 body = linear_srgb({0.92F, 0.92F, 0.88F});
+    append_pillar_band(mesh, kReferencePillarHalfWidthMeters, kReferencePillarMinYMeters,
+                       kReferencePillarMaxYMeters, body, true, true);
+
+    for (int marker = min_marker_meter; marker <= max_marker_meter; ++marker) {
+        const float center_y = static_cast<float>(marker);
+        const float half_height = reference_pillar_marker_half_height(marker);
+        const float min_y =
+            std::max(kReferencePillarMinYMeters, center_y - half_height);
+        const float max_y =
+            std::min(kReferencePillarMaxYMeters, center_y + half_height);
+        append_pillar_band(mesh, kReferencePillarMarkerHalfWidthMeters, min_y, max_y,
+                           reference_pillar_marker_color(marker), false, false);
+    }
+    return mesh;
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo ocean_reference_pillar_pass_info() {
+    const VkPushConstantRange push_constant_range{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .offset = 0,
+        .size = sizeof(OceanReferencePillarPushConstants),
+    };
+    return {
+        .label = "ocean.reference_pillar",
+        .push_constants = {push_constant_range},
+        .cull_mode = VK_CULL_MODE_BACK_BIT,
+        .depth_test = true,
+        .depth_write = true,
+        .depth_compare_op = VK_COMPARE_OP_LESS_OR_EQUAL,
+    };
+}
 
 [[nodiscard]] float radians(float degrees) {
     return degrees * (std::numbers::pi_v<float> / 180.0F);
@@ -565,6 +735,7 @@ class OceanApp {
         ocean_gpu_.update_atmosphere_probe_descriptors(device, atmosphere_probe.prefiltered_cube(),
                                                        atmosphere_probe.sky_radiance_cube());
         create_atmosphere_background_frame(device, extent, frame_slot_count);
+        create_reference_pillar_resources(device, gpu, extent);
         hdr_post_frame_.create_materials(device, {
                                                      .frame_slot_count = frame_slot_count,
                                                  });
@@ -686,9 +857,39 @@ class OceanApp {
                     });
     }
 
+    void create_reference_pillar_resources(cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& gpu, VkExtent2D extent) {
+        reference_pillar_pipeline_.reset();
+        reference_pillar_mesh_.reset();
+
+        const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal> mesh =
+            make_ocean_reference_pillar_mesh();
+        reference_pillar_mesh_.emplace(gpu, mesh.mesh_config());
+
+        const cubey::render::VertexInputLayout vertex_layout =
+            cubey::render::vertex_position_color_normal_input_layout();
+        const std::filesystem::path shader_dir = CUBEY_OCEAN_SHADER_DIR;
+        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
+            cubey::render::vertex_shader_file(shader_dir / "ocean_reference_pillar.vert.spv"),
+            cubey::render::fragment_shader_file(shader_dir / "ocean_reference_pillar.frag.spv"),
+        };
+        reference_pillar_pipeline_.emplace(
+            device, cubey::render::GraphicsPipelineFileResourceConfig{
+                        .extent = extent,
+                        .color_format = kOceanSceneColorFormat,
+                        .depth_format = kOceanDepthFormat,
+                        .shader_stage_files = shader_stage_files,
+                        .vertex_bindings = vertex_layout.bindings(),
+                        .vertex_attributes = vertex_layout.attribute_descriptions(),
+                        .material_pass = ocean_reference_pillar_pass_info(),
+                    });
+    }
+
     void destroy_swapchain_resources() {
         graph_executor_.clear();
         hdr_post_frame_.destroy();
+        reference_pillar_pipeline_.reset();
+        reference_pillar_mesh_.reset();
         atmosphere_background_.destroy();
         ocean_gpu_.reset();
         atmosphere_runtime_.destroy();
@@ -887,6 +1088,16 @@ class OceanApp {
         };
     }
 
+    [[nodiscard]] OceanReferencePillarPushConstants
+    reference_pillar_push_constants(VkExtent2D extent) const {
+        const cubey::Transform3D transform = camera_transform();
+        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+        return {
+            .view_projection = camera_.view_projection_matrix(transform, aspect),
+            .light_direction = atmosphere_primary_light_uniform(),
+        };
+    }
+
     [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
     atmosphere_background_uniforms(VkExtent2D extent) const {
         const cubey::Transform3D transform = camera_transform();
@@ -1036,6 +1247,25 @@ class OceanApp {
         }
     }
 
+    void record_reference_pillar_draw(const cubey::vulkan::CommandRecorder& recorder,
+                                      VkExtent2D extent) const {
+        if (!diagnostics_.size_reference_enabled || render_view_ != OceanRenderView::Final) {
+            return;
+        }
+        if (!reference_pillar_pipeline_.has_value() || !reference_pillar_mesh_.has_value()) {
+            throw std::runtime_error("ocean reference pillar resources are not initialized");
+        }
+        const cubey::render::GraphicsPipelineResource& pipeline =
+            reference_pillar_pipeline_.value();
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
+        recorder.push_constants(pipeline.layout(),
+                                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                reference_pillar_push_constants(extent));
+        cubey::render::record_draw_item(recorder.handle(), {
+                                                               .mesh = &reference_pillar_mesh_.value(),
+                                                           });
+    }
+
     [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms() const {
         return cubey::render::hdr_post_uniforms(pipeline_color_format_, display_exposure());
     }
@@ -1094,6 +1324,7 @@ class OceanApp {
                      frame_slot](const cubey::vulkan::CommandRecorder& draw_recorder) {
                         record_atmosphere_background(draw_recorder, target.extent, frame_slot);
                         record_ocean_draw(draw_recorder, target.extent, frame_slot);
+                        record_reference_pillar_draw(draw_recorder, target.extent);
                     });
             });
         graph.add_pass("ocean post", cubey::render::RenderGraphQueueDomain::Graphics)
@@ -1306,6 +1537,8 @@ class OceanApp {
     OceanGpuResources ocean_gpu_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
+    std::optional<cubey::render::Mesh> reference_pillar_mesh_;
+    std::optional<cubey::render::GraphicsPipelineResource> reference_pillar_pipeline_;
     cubey::render::HdrPostFrame hdr_post_frame_;
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
     cubey::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
