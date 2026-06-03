@@ -48,7 +48,7 @@ inline constexpr std::array<OceanRenderView, 21> kOceanRenderViews{
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
 inline constexpr std::uint32_t kOceanDefaultMapSize = 1024U;
 inline constexpr std::uint32_t kOceanCascadeCount = 5U;
-inline constexpr std::uint32_t kOceanSpectrumFieldCount = 4U;
+inline constexpr std::uint32_t kOceanSpectrumFieldCount = 2U;
 inline constexpr std::uint32_t kOceanMinMeshCells = 32U;
 inline constexpr std::uint32_t kOceanMaxMeshCells = 512U;
 inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;

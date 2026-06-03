@@ -198,16 +198,6 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
             .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
             .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
         },
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 3,
-            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-        },
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 4,
-            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-        },
     };
     const cubey::vulkan::DescriptorSetInfo modulate_info =
         descriptor_info(modulate_bindings, kOceanCascadeCount);
@@ -260,16 +250,6 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         },
         cubey::vulkan::DescriptorSetBindingConfig{
             .binding = 4,
-            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-        },
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 5,
-            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-        },
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 6,
             .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
             .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
         },
@@ -350,15 +330,11 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
             .storage_image(modulate_set(cascade), 0, h0(cascade).view())
             .storage_image(modulate_set(cascade), 1, field(cascade, 0).view())
             .storage_image(modulate_set(cascade), 2, field(cascade, 1).view())
-            .storage_image(modulate_set(cascade), 3, field(cascade, 2).view())
-            .storage_image(modulate_set(cascade), 4, field(cascade, 3).view())
             .storage_image(unpack_set(cascade), 0, pong(cascade, 0).view())
             .storage_image(unpack_set(cascade), 1, pong(cascade, 1).view())
-            .storage_image(unpack_set(cascade), 2, pong(cascade, 2).view())
-            .storage_image(unpack_set(cascade), 3, pong(cascade, 3).view())
-            .storage_image(unpack_set(cascade), 4, displacement(cascade).view())
-            .storage_image(unpack_set(cascade), 5, normal(cascade).view())
-            .storage_image(unpack_set(cascade), 6, foam(cascade).view());
+            .storage_image(unpack_set(cascade), 2, displacement(cascade).view())
+            .storage_image(unpack_set(cascade), 3, normal(cascade).view())
+            .storage_image(unpack_set(cascade), 4, foam(cascade).view());
         for (VkDescriptorSet surface_set : surface_sets_) {
             writes.combined_image_sampler(surface_set, cascade,
                                           displacement(cascade).sampler().handle(),

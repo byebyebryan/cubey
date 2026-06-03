@@ -5,8 +5,6 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 layout(rgba32f, set = 0, binding = 0) readonly uniform image2D spectrum_image;
 layout(rgba32f, set = 0, binding = 1) writeonly uniform image2D fft_field0_image;
 layout(rgba32f, set = 0, binding = 2) writeonly uniform image2D fft_field1_image;
-layout(rgba32f, set = 0, binding = 3) writeonly uniform image2D fft_field2_image;
-layout(rgba32f, set = 0, binding = 4) writeonly uniform image2D fft_field3_image;
 
 layout(push_constant) uniform ModulateParams {
     vec4 tile_depth_time;
@@ -62,8 +60,9 @@ void main() {
     vec2 dhz_dz = -h * k_vec.x * k_unit.x;
     vec2 dhz_dx = -h * k_vec.y * k_unit.x;
 
-    imageStore(fft_field0_image, id, vec4(hx.x - hy.y, hx.y + hy.x, 0.0, 0.0));
-    imageStore(fft_field1_image, id, vec4(hz.x - dhy_dx.y, hz.y + dhy_dx.x, 0.0, 0.0));
-    imageStore(fft_field2_image, id, vec4(dhy_dz.x - dhx_dx.y, dhy_dz.y + dhx_dx.x, 0.0, 0.0));
-    imageStore(fft_field3_image, id, vec4(dhz_dz.x - dhz_dx.y, dhz_dz.y + dhz_dx.x, 0.0, 0.0));
+    imageStore(fft_field0_image, id,
+               vec4(hx.x - hy.y, hx.y + hy.x, hz.x - dhy_dx.y, hz.y + dhy_dx.x));
+    imageStore(fft_field1_image, id,
+               vec4(dhy_dz.x - dhx_dx.y, dhy_dz.y + dhx_dx.x,
+                    dhz_dz.x - dhz_dx.y, dhz_dz.y + dhz_dx.x));
 }

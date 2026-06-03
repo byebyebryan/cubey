@@ -4,11 +4,9 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout(rgba32f, set = 0, binding = 0) readonly uniform image2D fft_field0_image;
 layout(rgba32f, set = 0, binding = 1) readonly uniform image2D fft_field1_image;
-layout(rgba32f, set = 0, binding = 2) readonly uniform image2D fft_field2_image;
-layout(rgba32f, set = 0, binding = 3) readonly uniform image2D fft_field3_image;
-layout(rgba32f, set = 0, binding = 4) writeonly uniform image2D displacement_image;
-layout(rgba32f, set = 0, binding = 5) writeonly uniform image2D normal_image;
-layout(rgba32f, set = 0, binding = 6) uniform image2D foam_image;
+layout(rgba32f, set = 0, binding = 2) writeonly uniform image2D displacement_image;
+layout(rgba32f, set = 0, binding = 3) writeonly uniform image2D normal_image;
+layout(rgba32f, set = 0, binding = 4) uniform image2D foam_image;
 
 layout(push_constant) uniform UnpackParams {
     vec4 foam_options;
@@ -25,19 +23,17 @@ void main() {
     }
 
     float sign_shift = -2.0 * float((id.x & 1) ^ (id.y & 1)) + 1.0;
-    vec2 field0 = imageLoad(fft_field0_image, id).xy;
-    vec2 field1 = imageLoad(fft_field1_image, id).xy;
-    vec2 field2 = imageLoad(fft_field2_image, id).xy;
-    vec2 field3 = imageLoad(fft_field3_image, id).xy;
+    vec4 field0 = imageLoad(fft_field0_image, id);
+    vec4 field1 = imageLoad(fft_field1_image, id);
 
     float hx = field0.x * sign_shift;
     float hy = field0.y * sign_shift;
-    float hz = field1.x * sign_shift;
-    float dhy_dx = field1.y * sign_shift;
-    float dhy_dz = field2.x * sign_shift;
-    float dhx_dx = field2.y * sign_shift;
-    float dhz_dz = field3.x * sign_shift;
-    float dhz_dx = field3.y * sign_shift;
+    float hz = field0.z * sign_shift;
+    float dhy_dx = field0.w * sign_shift;
+    float dhy_dz = field1.x * sign_shift;
+    float dhx_dx = field1.y * sign_shift;
+    float dhz_dz = field1.z * sign_shift;
+    float dhz_dx = field1.w * sign_shift;
 
     float whitecap = params.foam_options.x;
     float foam_grow_rate = params.foam_options.y;

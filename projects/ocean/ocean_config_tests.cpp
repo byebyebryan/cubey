@@ -515,6 +515,7 @@ int main() {
         const std::string gpu_resources_source =
             read_text_file(source_root / "ocean_gpu_resources.cpp");
         const std::string gpu_header_source = read_text_file(source_root / "ocean_gpu_resources.h");
+        const std::string config_header = read_text_file(source_root / "ocean_config.h");
         const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
 
         require_contains(spectrum_shader, "xy = h0(k), zw = conj(h0(-k))",
@@ -525,18 +526,20 @@ int main() {
                          "spectrum shader should apply spectral source-domain filtering");
         require_contains(app_source, "ocean_cascade_domain(ocean_config_, cascade_index)",
                          "app should pass per-cascade spectral domain bounds");
+        require_contains(config_header, "kOceanSpectrumFieldCount = 2U",
+                         "ocean should pack the four logical FFT spectra into two storage fields");
         require_contains(modulate_shader, "const uint NUM_SPECTRA = 4U",
-                         "modulate shader should preserve four reference spectra");
+                         "modulate shader should preserve four logical reference spectra");
         require_contains(modulate_shader, "vec2 dhy_dx = h_inv * k_vec.y;",
                          "modulate shader should preserve swapped derivative axis");
         require_contains(modulate_shader, "vec2 dhx_dx = -h * k_vec.y * k_unit.y;",
                          "modulate shader should preserve reference horizontal derivative");
         require_contains(modulate_shader,
-                         "imageStore(fft_field0_image, id, vec4(hx.x - hy.y, hx.y + hy.x",
-                         "modulate shader should preserve layer 0 packing");
+                         "hx.x - hy.y, hx.y + hy.x, hz.x - dhy_dx.y, hz.y + dhy_dx.x",
+                         "modulate shader should preserve packed layer 0/1 values");
         require_contains(modulate_shader,
-                         "imageStore(fft_field3_image, id, vec4(dhz_dz.x - dhz_dx.y",
-                         "modulate shader should preserve layer 3 packing");
+                         "dhz_dz.x - dhz_dx.y, dhz_dz.y + dhz_dx.x",
+                         "modulate shader should preserve packed layer 2/3 values");
         require_contains(unpack_shader,
                          "float sign_shift = -2.0 * float((id.x & 1) ^ (id.y & 1)) + 1.0;",
                          "unpack shader should apply checkerboard ifft shift");
@@ -549,6 +552,10 @@ int main() {
         require_contains(unpack_shader,
                          "persistent = clamp(persistent * exp(-foam_decay_rate) + current_source",
                          "unpack shader should use additive source/history foam accumulation");
+        require_contains(unpack_shader, "float hz = field0.z * sign_shift;",
+                         "unpack shader should split the packed first FFT field");
+        require_contains(unpack_shader, "float dhz_dx = field1.w * sign_shift;",
+                         "unpack shader should split the packed second FFT field");
         require_contains(
             unpack_shader,
             "vec2 gradient = vec2(dhy_dx, dhy_dz) / (1.0 + abs(vec2(dhx_dx, dhz_dz)));",
