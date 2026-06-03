@@ -41,6 +41,8 @@ The active renderer includes:
   for interactive inspection;
 - a 50 m sea-level-centered reference pillar in final view, currently for scale
   and as a simple analytic direct-light ocean shadow caster;
+- experimental heightfield ray-marched wave self-shadowing that samples the
+  FFT displacement cascades in the surface fragment shader;
 - the shared atmosphere background path plus runtime sky/reflection probes for
   water fog, fill, and reflection;
 - a diagnostic terrain-ocean `RGBA32F` field texture bound through the shared

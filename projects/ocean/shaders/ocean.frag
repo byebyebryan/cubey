@@ -3,6 +3,11 @@
 
 #include "cubey/color_space.glsl"
 
+layout(set = 0, binding = 0) uniform sampler2D displacement_cascade0_texture;
+layout(set = 0, binding = 1) uniform sampler2D displacement_cascade1_texture;
+layout(set = 0, binding = 2) uniform sampler2D displacement_cascade2_texture;
+layout(set = 0, binding = 3) uniform sampler2D displacement_cascade3_texture;
+layout(set = 0, binding = 4) uniform sampler2D displacement_cascade4_texture;
 layout(set = 0, binding = 5) uniform sampler2D normal_cascade0_texture;
 layout(set = 0, binding = 6) uniform sampler2D normal_cascade1_texture;
 layout(set = 0, binding = 7) uniform sampler2D normal_cascade2_texture;
@@ -26,6 +31,7 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 material_options;
     vec4 fade_options;
     vec4 cascade_options;
+    vec4 self_shadow_options;
 } ocean_features;
 
 layout(push_constant) uniform OceanParams {
@@ -78,6 +84,8 @@ const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
 const float OCEAN_ATMOSPHERE_REFLECTION_MAX_LOD = 4.0;
+const float OCEAN_SHAPE_ANTI_REPEAT_WEIGHT = 0.32;
+const int OCEAN_SELF_SHADOW_MAX_STEPS = 24;
 const vec2 OCEAN_REFERENCE_PILLAR_CENTER_XZ = vec2(-24.0, 10.0);
 const vec2 OCEAN_REFERENCE_PILLAR_AXIS_U = vec2(0.70710678, 0.70710678);
 const vec2 OCEAN_REFERENCE_PILLAR_AXIS_V = vec2(-0.70710678, 0.70710678);
@@ -166,6 +174,23 @@ bool ocean_reference_shadow_enabled() {
 
 float ocean_reference_shadow_strength() {
     return clamp(ocean_features.fade_options.z, 0.0, 0.95);
+}
+
+float ocean_self_shadow_strength() {
+    return clamp(ocean_features.self_shadow_options.x, 0.0, 1.0);
+}
+
+float ocean_self_shadow_distance() {
+    return max(ocean_features.self_shadow_options.y, 0.001);
+}
+
+float ocean_self_shadow_bias() {
+    return max(ocean_features.self_shadow_options.z, 0.0);
+}
+
+int ocean_self_shadow_steps() {
+    return int(clamp(floor(ocean_features.self_shadow_options.w + 0.5), 1.0,
+                     float(OCEAN_SELF_SHADOW_MAX_STEPS)));
 }
 
 float ocean_normal_fade_distance_scale() {
@@ -344,6 +369,22 @@ float cascade_tile_length(uint cascade) {
     return ocean.cascade4_options.x;
 }
 
+float cascade_displacement_scale(uint cascade) {
+    if (cascade == 0u) {
+        return ocean.displacement_scales.x;
+    }
+    if (cascade == 1u) {
+        return ocean.displacement_scales.y;
+    }
+    if (cascade == 2u) {
+        return ocean.displacement_scales.z;
+    }
+    if (cascade == 3u) {
+        return ocean.displacement_scales.w;
+    }
+    return ocean.cascade4_options.y;
+}
+
 float cascade_normal_scale(uint cascade) {
     if (cascade == 0u) {
         return ocean.normal_scales.x;
@@ -358,6 +399,121 @@ float cascade_normal_scale(uint cascade) {
         return ocean.normal_scales.w;
     }
     return ocean.cascade4_options.z;
+}
+
+float shape_anti_repeat_angle(uint cascade) {
+    return 0.47 + float(cascade) * 1.173;
+}
+
+vec2 shape_anti_repeat_offset(uint cascade) {
+    float slot = float(cascade);
+    return vec2(347.0 + slot * 193.0, -911.0 + slot * 467.0);
+}
+
+bool ocean_shape_anti_repeat_enabled() {
+    return ocean.inspection_options.y > 0.0;
+}
+
+bool ocean_cascade_enabled(uint cascade) {
+    float selected = ocean.inspection_options.x;
+    int mask = int(ocean_features.cascade_options.x + 0.5);
+    bool feature_enabled = (mask & (1 << int(cascade))) != 0;
+    bool selected_enabled = selected < -0.5 || abs(selected - float(cascade)) < 0.5;
+    return feature_enabled && selected_enabled;
+}
+
+vec4 sample_displacement(uint cascade, vec2 uv) {
+    if (cascade == 0u) {
+        return texture(displacement_cascade0_texture, uv);
+    }
+    if (cascade == 1u) {
+        return texture(displacement_cascade1_texture, uv);
+    }
+    if (cascade == 2u) {
+        return texture(displacement_cascade2_texture, uv);
+    }
+    if (cascade == 3u) {
+        return texture(displacement_cascade3_texture, uv);
+    }
+    return texture(displacement_cascade4_texture, uv);
+}
+
+float sample_ocean_displacement_height(uint cascade, vec2 position, float tile_length) {
+    float primary = sample_displacement(cascade, position / tile_length).y;
+    if (!ocean_shape_anti_repeat_enabled()) {
+        return primary;
+    }
+
+    float angle = shape_anti_repeat_angle(cascade);
+    vec2 secondary_position = rotate2(position, angle) + shape_anti_repeat_offset(cascade);
+    float secondary = sample_displacement(cascade, secondary_position / tile_length).y;
+    float weight = OCEAN_SHAPE_ANTI_REPEAT_WEIGHT * clamp(ocean.inspection_options.y, 0.0, 1.0);
+    return (primary + secondary * weight) / (1.0 + weight);
+}
+
+float cascade_displacement_lod_weight(uint cascade, float camera_distance) {
+    float tile_length = max(cascade_tile_length(cascade), 0.001);
+    float fade_scale = ocean_shape_fade_distance_scale();
+    float start = tile_length * 10.0 * fade_scale;
+    float end = tile_length * 34.0 * fade_scale;
+    return 1.0 - smoothstep(start, max(end, start + 0.001), camera_distance);
+}
+
+float horizon_displacement_weight(float camera_distance) {
+    return min(exp(-(camera_distance - 150.0) * 0.007 /
+                   ocean_shape_fade_distance_scale()),
+               1.0);
+}
+
+float ocean_surface_height(vec2 position, float camera_distance) {
+    float height = 0.0;
+    for (uint cascade = 0u; cascade < 5u; ++cascade) {
+        if (!ocean_cascade_enabled(cascade)) {
+            continue;
+        }
+        float tile_length = max(cascade_tile_length(cascade), 0.001);
+        height += sample_ocean_displacement_height(cascade, position, tile_length) *
+                  cascade_displacement_scale(cascade) *
+                  cascade_displacement_lod_weight(cascade, camera_distance) *
+                  ocean_surface_shape_strength();
+    }
+    return height * horizon_displacement_weight(camera_distance);
+}
+
+float ocean_wave_self_shadow(vec2 surface_position, float surface_height, vec3 light_dir) {
+    float strength = ocean_self_shadow_strength();
+    if (strength <= 0.0 || light_dir.y <= 0.01) {
+        return 1.0;
+    }
+
+    float horizontal_light = length(light_dir.xz);
+    if (horizontal_light <= 0.001) {
+        return 1.0;
+    }
+
+    vec2 step_direction = light_dir.xz / horizontal_light;
+    float ray_slope = light_dir.y / horizontal_light;
+    float max_distance = ocean_self_shadow_distance();
+    float bias = ocean_self_shadow_bias();
+    int steps = ocean_self_shadow_steps();
+    float occlusion = 0.0;
+
+    for (int step = 1; step <= OCEAN_SELF_SHADOW_MAX_STEPS; ++step) {
+        if (step > steps) {
+            break;
+        }
+        float step_factor = float(step) / float(steps);
+        float ray_distance = max_distance * step_factor;
+        vec2 sample_position = surface_position + step_direction * ray_distance;
+        float camera_distance = length(sample_position - ocean.camera_time.xz);
+        float sample_height = ocean_surface_height(sample_position, camera_distance);
+        float ray_height = surface_height + ray_distance * ray_slope + bias;
+        float blocker = sample_height - ray_height;
+        float softness = mix(0.05, 0.75, step_factor);
+        occlusion = max(occlusion, smoothstep(0.0, softness, blocker));
+    }
+
+    return 1.0 - strength * occlusion;
 }
 
 vec4 texture_bicubic(in sampler2D source_texture, in vec2 uv) {
@@ -426,14 +582,6 @@ vec4 sample_foam(uint cascade, vec2 uv, float pixels_per_meter) {
     }
     return mix(texture_bicubic(foam_cascade4_texture, uv), texture(foam_cascade4_texture, uv),
                min(1.0, pixels_per_meter * 0.1));
-}
-
-bool ocean_cascade_enabled(uint cascade) {
-    float selected = ocean.inspection_options.x;
-    int mask = int(ocean_features.cascade_options.x + 0.5);
-    bool feature_enabled = (mask & (1 << int(cascade))) != 0;
-    bool selected_enabled = selected < -0.5 || abs(selected - float(cascade)) < 0.5;
-    return feature_enabled && selected_enabled;
 }
 
 bool ocean_detail_anti_repeat_enabled(float factor) {
@@ -662,7 +810,9 @@ void main() {
     float ambient_light = ocean_ambient_light_scale();
     float direct_light = ocean_direct_light_scale();
     float reference_shadow = ocean_reference_pillar_shadow(frag_world_position, sun_dir);
-    float shadowed_direct_light = direct_light * reference_shadow;
+    float wave_shadow = ocean_wave_self_shadow(frag_sample_position, frag_world_position.y, sun_dir);
+    float direct_shadow = min(reference_shadow, wave_shadow);
+    float shadowed_direct_light = direct_light * direct_shadow;
     float roughness = clamp(ocean.water_color.w, 0.02, 1.0);
     roughness = mix(roughness, max(roughness, 0.78), material_distance);
 
@@ -688,7 +838,7 @@ void main() {
                 (1.0 - foam_coverage * 0.82);
     vec3 water = mix(ambient + direct, reflection, clamp(fresnel, 0.0, 0.92));
     water += ocean_primary_light_color() * specular;
-    water = ocean_shaded_foam(water, foam_color, normal, ndotl, reference_shadow, foam_coverage,
+    water = ocean_shaded_foam(water, foam_color, normal, ndotl, direct_shadow, foam_coverage,
                               dist);
 
     float horizon_fog = ocean_horizon_fog_factor(view_dir, dist);
@@ -729,7 +879,7 @@ void main() {
     } else if (view == OCEAN_VIEW_FOAM_RAW) {
         color = vec3(clamp(max(foam_persistent, foam_current), 0.0, 1.0));
     } else if (view == OCEAN_VIEW_FOAM_LIT) {
-        color = ocean_lit_foam_color(foam_color, normal, ndotl, reference_shadow, dist) *
+        color = ocean_lit_foam_color(foam_color, normal, ndotl, direct_shadow, dist) *
                 max(foam_coverage, 0.035);
     } else if (view == OCEAN_VIEW_TERRAIN_DEPTH) {
         color = terrain_depth_color(terrain_fields.y);

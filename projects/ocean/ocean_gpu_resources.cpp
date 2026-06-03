@@ -285,7 +285,7 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         surface_bindings[cascade] = cubey::vulkan::DescriptorSetBindingConfig{
             .binding = cascade,
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
+            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         };
     }
     for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {

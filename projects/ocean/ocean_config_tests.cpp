@@ -40,6 +40,17 @@ void require_not_contains(const std::string& text, const std::string& needle, co
     require(text.find(needle) == std::string::npos, message);
 }
 
+void require_before(const std::string& text,
+                    const std::string& first,
+                    const std::string& second,
+                    const char* message) {
+    const std::size_t first_pos = text.find(first);
+    const std::size_t second_pos = text.find(second);
+    require(first_pos != std::string::npos && second_pos != std::string::npos &&
+                first_pos < second_pos,
+            message);
+}
+
 } // namespace
 
 int main() {
@@ -255,6 +266,14 @@ int main() {
                      "ocean should default atmosphere light contribution on");
         require_near(defaults.foam_lighting_strength, 1.0F, 0.001F,
                      "ocean should default dynamic foam lighting contribution on");
+        require_near(defaults.self_shadow_strength, 0.45F, 0.001F,
+                     "ocean should default experimental wave self-shadowing on");
+        require_near(defaults.self_shadow_distance, 44.0F, 0.001F,
+                     "ocean should default wave self-shadow march reach");
+        require_near(defaults.self_shadow_bias, 0.18F, 0.001F,
+                     "ocean should default wave self-shadow height bias");
+        require(defaults.self_shadow_steps == 8U,
+                "ocean should default wave self-shadow sample count");
         require_near(defaults.terrain_foam_strength, 1.0F, 0.001F,
                      "ocean should default terrain foam contribution on");
         require_near(defaults.shape_fade_distance_scale, 1.0F, 0.001F,
@@ -572,6 +591,14 @@ int main() {
                          "app should pass shape fade distance control");
         require_contains(app_source, "ocean_config_.foam_fade_distance_scale",
                          "app should pass foam fade distance control");
+        require_contains(app_source, "ocean_config_.self_shadow_strength",
+                         "app should pass wave self-shadow strength");
+        require_contains(app_source, "ocean_config_.self_shadow_distance",
+                         "app should pass wave self-shadow march distance");
+        require_contains(app_source, "ocean_config_.self_shadow_bias",
+                         "app should pass wave self-shadow bias");
+        require_contains(app_source, "ocean_config_.self_shadow_steps",
+                         "app should pass wave self-shadow step count");
         require_contains(app_source, "kOceanSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT",
                          "app should define an HDR ocean scene color format");
         require_contains(
@@ -635,6 +662,19 @@ int main() {
                          "UI should expose split reflection probe strength");
         require_contains(ui_source, "&ui.config.foam_lighting_strength",
                          "UI should expose foam lighting isolation");
+        require_contains(ui_source, "&ui.config.self_shadow_strength",
+                         "UI should expose wave self-shadow strength");
+        require_before(ui_source, "const cubey::host::ScopedImGuiId section_id(\"Shading\");",
+                       "&ui.config.self_shadow_strength",
+                       "UI should keep wave self-shadow controls in the shading section");
+        require_before(ui_source, "&ui.config.self_shadow_strength", "&ui.config.foam_density",
+                       "UI should place wave self-shadow controls before foam material controls");
+        require_contains(ui_source, "&ui.config.self_shadow_distance",
+                         "UI should expose wave self-shadow reach");
+        require_contains(ui_source, "&ui.config.self_shadow_bias",
+                         "UI should expose wave self-shadow bias");
+        require_contains(ui_source, "&self_shadow_steps",
+                         "UI should expose wave self-shadow step count");
         require_contains(ui_source, "&ui.config.shape_fade_distance_scale",
                          "UI should expose shape fade tuning");
         require_contains(ui_source, "&ui.config.foam_fade_distance_scale",
@@ -679,6 +719,18 @@ int main() {
                          "fragment shader should centralize atmosphere sky radiance sampling");
         require_contains(fragment_shader, "float ocean_direct_light_scale",
                          "fragment shader should derive direct light from atmosphere intensity");
+        require_contains(fragment_shader, "uniform sampler2D displacement_cascade0_texture",
+                         "fragment shader should sample displacement for self-shadowing");
+        require_contains(fragment_shader, "float ocean_self_shadow_strength",
+                         "fragment shader should expose wave self-shadow strength");
+        require_contains(fragment_shader, "float ocean_surface_height",
+                         "fragment shader should reconstruct the FFT heightfield");
+        require_contains(fragment_shader, "float ocean_wave_self_shadow",
+                         "fragment shader should ray-march wave self-shadowing");
+        require_contains(fragment_shader, "sample_ocean_displacement_height",
+                         "fragment shader should sample cascade displacement heights");
+        require_contains(fragment_shader, "min(reference_shadow, wave_shadow)",
+                         "fragment shader should combine pillar and wave direct shadows");
         require_contains(
             fragment_shader, "float ocean_ambient_light_scale",
             "fragment shader should derive ambient fill from atmosphere sky luminance");
@@ -812,8 +864,13 @@ int main() {
                          "surface descriptors should expose feature-isolation uniforms");
         require_contains(gpu_header_source, "OceanSurfaceFeatureUniforms",
                          "GPU resource header should define packed feature-isolation uniforms");
-        require_contains(gpu_header_source, "sizeof(float) * 20U",
+        require_contains(gpu_header_source, "sizeof(float) * 24U",
                          "GPU resource header should size expanded feature-isolation uniforms");
+        require_contains(gpu_header_source, "self_shadow_options",
+                         "GPU resource header should pack wave self-shadow controls");
+        require_contains(gpu_resources_source,
+                         "VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT",
+                         "surface displacement descriptors should be visible to self-shadowing");
         require_contains(gpu_header_source, "FrameUniformBuffer<OceanSurfaceFeatureUniforms>",
                          "GPU resources should own feature-isolation frame uniforms");
         require_contains(

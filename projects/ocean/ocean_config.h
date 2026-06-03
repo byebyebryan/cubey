@@ -103,6 +103,10 @@ struct OceanConfig {
     float atmosphere_reflection_strength = 1.0F;
     float atmosphere_light_strength = 1.0F;
     float foam_lighting_strength = 1.0F;
+    float self_shadow_strength = 0.45F;
+    float self_shadow_distance = 44.0F;
+    float self_shadow_bias = 0.18F;
+    std::uint32_t self_shadow_steps = 8U;
     float terrain_foam_strength = 1.0F;
     float shape_fade_distance_scale = 1.0F;
     float normal_fade_distance_scale = 1.0F;
@@ -376,6 +380,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.atmosphere_reflection_strength > 1.0F ||
         config.atmosphere_light_strength < 0.0F || config.atmosphere_light_strength > 1.0F ||
         config.foam_lighting_strength < 0.0F || config.foam_lighting_strength > 1.0F ||
+        config.self_shadow_strength < 0.0F || config.self_shadow_strength > 1.0F ||
+        config.self_shadow_distance <= 0.0F || config.self_shadow_bias < 0.0F ||
+        config.self_shadow_steps == 0U || config.self_shadow_steps > 24U ||
         config.terrain_foam_strength < 0.0F || config.shape_fade_distance_scale <= 0.0F ||
         config.normal_fade_distance_scale <= 0.0F || config.foam_fade_distance_scale <= 0.0F) {
         throw std::runtime_error("ocean shading controls are out of range");

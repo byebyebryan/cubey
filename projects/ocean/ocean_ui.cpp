@@ -122,6 +122,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.atmosphere_reflection_strength = 1.0F;
         ui.config.atmosphere_light_strength = 1.0F;
         ui.config.foam_lighting_strength = 1.0F;
+        ui.config.self_shadow_strength = 0.45F;
         ui.config.terrain_foam_strength = 1.0F;
         ui.config.shape_fade_distance_scale = 1.0F;
         ui.config.normal_fade_distance_scale = 1.0F;
@@ -141,6 +142,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.atmosphere_reflection_strength = 1.0F;
         ui.config.atmosphere_light_strength = 1.0F;
         ui.config.foam_lighting_strength = 1.0F;
+        ui.config.self_shadow_strength = 0.35F;
         ui.config.terrain_foam_strength = 0.0F;
         ui.config.shape_fade_distance_scale = 1.0F;
         ui.config.normal_fade_distance_scale = 1.0F;
@@ -160,6 +162,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.atmosphere_reflection_strength = 0.35F;
         ui.config.atmosphere_light_strength = 1.0F;
         ui.config.foam_lighting_strength = 0.55F;
+        ui.config.self_shadow_strength = 0.0F;
         ui.config.terrain_foam_strength = 0.0F;
         ui.config.shape_fade_distance_scale = 0.85F;
         ui.config.normal_fade_distance_scale = 0.80F;
@@ -179,6 +182,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.atmosphere_reflection_strength = 0.0F;
         ui.config.atmosphere_light_strength = 0.0F;
         ui.config.foam_lighting_strength = 0.0F;
+        ui.config.self_shadow_strength = 0.0F;
     }
 }
 
@@ -469,6 +473,22 @@ void draw_ocean_ui(OceanUiContext ui) {
                                         "Microfacet roughness used by ocean shading.");
         cubey::host::imgui_slider_float("Normal strength", &ui.config.normal_strength, 0.0F, 2.0F,
                                         "%.2f", "Final normal-map intensity.");
+        cubey::host::imgui_slider_float(
+            "Wave shadow", &ui.config.self_shadow_strength, 0.0F, 1.0F, "%.2f",
+            "Strength of experimental heightfield ray-marched wave self-shadowing.");
+        cubey::host::imgui_slider_float(
+            "Shadow reach", &ui.config.self_shadow_distance, 4.0F, 160.0F, "%.0f m",
+            "Maximum distance marched through the wave heightfield toward the light.");
+        cubey::host::imgui_slider_float(
+            "Shadow bias", &ui.config.self_shadow_bias, 0.0F, 1.0F, "%.2f m",
+            "Height bias used to reduce self-shadow acne on the current wave surface.");
+        int self_shadow_steps = static_cast<int>(ui.config.self_shadow_steps);
+        if (cubey::host::imgui_slider_int(
+                "Shadow steps", &self_shadow_steps, 1, 24,
+                "Heightfield samples used by experimental wave self-shadowing.")) {
+            ui.config.self_shadow_steps =
+                static_cast<std::uint32_t>(std::clamp(self_shadow_steps, 1, 24));
+        }
         cubey::host::imgui_slider_float("Foam density", &ui.config.foam_density, 0.0F, 4.0F, "%.2f",
                                         "Global density multiplier for rendered foam.");
         cubey::host::imgui_slider_float("Foam sharpness", &ui.config.foam_sharpness, 0.0F, 1.0F,

@@ -1085,6 +1085,13 @@ class OceanApp {
                     0.0F,
                     0.0F,
                 },
+            .self_shadow_options =
+                {
+                    ocean_config_.self_shadow_strength,
+                    ocean_config_.self_shadow_distance,
+                    ocean_config_.self_shadow_bias,
+                    static_cast<float>(ocean_config_.self_shadow_steps),
+                },
         };
     }
 
