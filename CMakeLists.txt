@@ -302,7 +302,6 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
                 "${CMAKE_SOURCE_DIR}/projects/fluid"
                 "${CMAKE_SOURCE_DIR}/projects/gltf_viewer"
                 "${CMAKE_SOURCE_DIR}/projects/ocean"
-                "${CMAKE_SOURCE_DIR}/projects/ocean_exp"
                 "${CMAKE_SOURCE_DIR}/projects/ocean_legacy"
                 "${CMAKE_SOURCE_DIR}/projects/ocean_ref"
                 "${CMAKE_SOURCE_DIR}/projects/pbr_furnace"

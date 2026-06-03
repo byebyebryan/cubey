@@ -82,6 +82,7 @@ struct OceanPushConstants {
     cubey::math::Vec4 tile_lengths;
     cubey::math::Vec4 displacement_scales;
     cubey::math::Vec4 normal_scales;
+    cubey::math::Vec4 cascade4_options;
     cubey::math::Vec4 water_color;
     cubey::math::Vec4 foam_color;
 };
@@ -113,7 +114,7 @@ struct OceanUnpackPushConstants {
     cubey::math::Vec4 cascade_options;
 };
 
-static_assert(sizeof(OceanPushConstants) == sizeof(float) * 60U);
+static_assert(sizeof(OceanPushConstants) == sizeof(float) * 64U);
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanTerrainFieldUniforms) == sizeof(float) * 8U);
 static_assert(sizeof(OceanModulatePushConstants) == sizeof(float) * 8U);
@@ -205,6 +206,10 @@ ocean_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format) 
                 .pitch = kCameraBasePitch};
     case OceanCameraPreset::Low:
         return {.preset = preset, .distance = 180.0F, .yaw = 0.42F, .pitch = -0.08F};
+    case OceanCameraPreset::Mid:
+        return {.preset = preset, .distance = 360.0F, .yaw = 0.32F, .pitch = -0.28F};
+    case OceanCameraPreset::High:
+        return {.preset = preset, .distance = 650.0F, .yaw = 0.24F, .pitch = -0.46F};
     case OceanCameraPreset::Close:
         return {.preset = preset, .distance = 48.0F, .yaw = 0.62F, .pitch = -0.28F};
     case OceanCameraPreset::Overhead:
@@ -225,6 +230,21 @@ ocean_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format) 
 [[nodiscard]] bool ocean_terrain_field_source_changed(const OceanConfig& lhs,
                                                       const OceanConfig& rhs) {
     return lhs.mesh_extent != rhs.mesh_extent || lhs.depth != rhs.depth;
+}
+
+[[nodiscard]] bool ocean_wave_source_changed(const OceanConfig& lhs, const OceanConfig& rhs) {
+    return lhs.depth != rhs.depth || lhs.spectral_domains_enabled != rhs.spectral_domains_enabled ||
+           lhs.cascades != rhs.cascades || lhs.cascade_enabled != rhs.cascade_enabled;
+}
+
+[[nodiscard]] std::uint32_t ocean_enabled_cascade_mask(const OceanConfig& config) {
+    std::uint32_t mask = 0U;
+    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+        if (ocean_cascade_enabled(config, cascade)) {
+            mask |= 1U << cascade;
+        }
+    }
+    return mask;
 }
 
 [[nodiscard]] OceanTerrainFieldUniforms
@@ -708,11 +728,11 @@ class OceanApp {
                                                              terrain_ocean_fields_texture_.value());
             update_terrain_ocean_field_uniform_descriptors(context.device());
         }
-        if (ocean_config_ != gpu_config_.value()) {
+        if (ocean_wave_source_changed(ocean_config_, gpu_config_.value())) {
             spectrum_initialized_ = false;
             foam_initialized_ = false;
-            gpu_config_ = ocean_config_;
         }
+        gpu_config_ = ocean_config_;
     }
 
     void apply_camera_preset(OceanCameraPreset preset) {
@@ -778,7 +798,7 @@ class OceanApp {
             .inspection_options =
                 {
                     static_cast<float>(diagnostics_.selected_cascade),
-                    diagnostics_.anti_repeat_strength,
+                    diagnostics_.shape_anti_repeat_strength,
                     ocean_config_.foam_density,
                     ocean_config_.foam_sharpness,
                 },
@@ -787,21 +807,28 @@ class OceanApp {
                     ocean_config_.cascades[0].tile_length,
                     ocean_config_.cascades[1].tile_length,
                     ocean_config_.cascades[2].tile_length,
-                    static_cast<float>(ocean_config_.map_size),
+                    ocean_config_.cascades[3].tile_length,
                 },
             .displacement_scales =
                 {
                     ocean_config_.cascades[0].displacement_scale,
                     ocean_config_.cascades[1].displacement_scale,
                     ocean_config_.cascades[2].displacement_scale,
-                    0.0F,
+                    ocean_config_.cascades[3].displacement_scale,
                 },
             .normal_scales =
                 {
                     ocean_config_.cascades[0].normal_scale,
                     ocean_config_.cascades[1].normal_scale,
                     ocean_config_.cascades[2].normal_scale,
-                    0.0F,
+                    ocean_config_.cascades[3].normal_scale,
+                },
+            .cascade4_options =
+                {
+                    ocean_config_.cascades[4].tile_length,
+                    ocean_config_.cascades[4].displacement_scale,
+                    ocean_config_.cascades[4].normal_scale,
+                    static_cast<float>(ocean_config_.map_size),
                 },
             .water_color =
                 {
@@ -816,6 +843,46 @@ class OceanApp {
                     ocean_config_.foam_color_g,
                     ocean_config_.foam_color_b,
                     ocean_config_.normal_strength,
+                },
+        };
+    }
+
+    [[nodiscard]] OceanSurfaceFeatureUniforms surface_feature_uniforms() const {
+        return {
+            .feature_options =
+                {
+                    ocean_config_.surface_shape_strength,
+                    ocean_config_.surface_foam_strength,
+                    ocean_config_.foam_history_strength,
+                    diagnostics_.detail_anti_repeat_strength,
+                },
+            .feature_options2 =
+                {
+                    ocean_config_.terrain_foam_strength,
+                    ocean_config_.shape_fade_distance_scale,
+                    ocean_config_.normal_fade_distance_scale,
+                    ocean_config_.foam_fade_distance_scale,
+                },
+            .material_options =
+                {
+                    ocean_config_.atmosphere_material_strength,
+                    ocean_config_.atmosphere_sky_strength,
+                    ocean_config_.atmosphere_reflection_strength,
+                    ocean_config_.atmosphere_light_strength,
+                },
+            .fade_options =
+                {
+                    ocean_config_.foam_lighting_strength,
+                    0.0F,
+                    0.0F,
+                    0.0F,
+                },
+            .cascade_options =
+                {
+                    static_cast<float>(ocean_enabled_cascade_mask(ocean_config_)),
+                    0.0F,
+                    0.0F,
+                    0.0F,
                 },
         };
     }
@@ -959,6 +1026,7 @@ class OceanApp {
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, surface_pipeline.pipeline());
         recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, surface_pipeline.layout(), 0,
                                      ocean_gpu_.surface_set(frame_slot));
+        ocean_gpu_.upload_surface_feature_uniforms(frame_slot, surface_feature_uniforms());
         for (const OceanMeshPatch& patch : patches) {
             const OceanPushConstants constants = surface_push_constants(extent, patch);
             recorder.push_constants(surface_pipeline.layout(),
@@ -1081,6 +1149,9 @@ class OceanApp {
     void record_spectrum_init(const cubey::vulkan::CommandRecorder& recorder) const {
         const cubey::render::ComputeDispatchGroups groups = ocean_dispatch_groups(ocean_config_);
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+            if (!ocean_cascade_enabled(ocean_config_, cascade)) {
+                continue;
+            }
             cubey::render::record_compute_pipeline_dispatch(
                 recorder,
                 cubey::render::compute_pipeline_dispatch_info(
@@ -1092,6 +1163,9 @@ class OceanApp {
     void record_modulate(const cubey::vulkan::CommandRecorder& recorder) const {
         const cubey::render::ComputeDispatchGroups groups = ocean_dispatch_groups(ocean_config_);
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+            if (!ocean_cascade_enabled(ocean_config_, cascade)) {
+                continue;
+            }
             cubey::render::record_compute_pipeline_dispatch(
                 recorder,
                 cubey::render::compute_pipeline_dispatch_info(
@@ -1115,6 +1189,9 @@ class OceanApp {
     void record_fft(const cubey::vulkan::CommandRecorder& recorder) const {
         const std::uint32_t stage_count = log2_exact(ocean_config_.map_size);
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+            if (!ocean_cascade_enabled(ocean_config_, cascade)) {
+                continue;
+            }
             for (std::uint32_t field = 0; field < kOceanSpectrumFieldCount; ++field) {
                 bool source_is_ping = true;
                 for (std::uint32_t stage = 1; stage <= stage_count; ++stage) {
@@ -1137,6 +1214,9 @@ class OceanApp {
     void record_unpack(const cubey::vulkan::CommandRecorder& recorder) {
         const cubey::render::ComputeDispatchGroups groups = ocean_dispatch_groups(ocean_config_);
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+            if (!ocean_cascade_enabled(ocean_config_, cascade)) {
+                continue;
+            }
             cubey::render::record_compute_pipeline_dispatch(
                 recorder,
                 cubey::render::compute_pipeline_dispatch_info(

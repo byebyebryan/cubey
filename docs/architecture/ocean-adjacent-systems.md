@@ -1,8 +1,7 @@
 # Ocean Adjacent Systems
 
 `projects/ocean` is the active reference-derived deep-water renderer,
-`projects/ocean_ref` is the known-good wave baseline, `projects/ocean_exp` is a
-temporary preservation copy of the pre-reset active renderer, and
+`projects/ocean_ref` is the known-good wave baseline, and
 `projects/ocean_legacy` is the older feature donor. The next visible quality
 jump still depends on systems that should not be built directly inside the
 ocean project first. Shorelines, shallow water, atmospheric scattering, and

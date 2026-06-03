@@ -1,29 +1,24 @@
 # Ocean Rendering Direction
 
-Cubey now keeps four ocean lanes with different jobs:
+Cubey now keeps three ocean lanes with different jobs:
 
-- `projects/ocean` is the active renderer. It starts from the known-good
-  GodotOceanWaves-derived spectrum/FFT/unpack core and should stay close to
-  that baseline until changes clearly improve it. Current work is pulling this
-  project back toward `ocean_ref` after the active path drifted into too many
-  coupled experiments.
+- `projects/ocean` is the active renderer. It uses the known-good
+  GodotOceanWaves-derived spectrum/FFT/unpack core as a guardrail while keeping
+  configurable cascade slots, atmosphere integration, terrain-field
+  descriptors, expanded foam diagnostics, and debug views behind explicit
+  feature-isolation controls.
 - `projects/ocean_ref` is the frozen reference port. Keep it source-stable so
   active ocean changes can be checked against a working wave-shape guardrail,
   not treated as an oracle. It is intentionally exempt from current active-panel
   UI cleanup unless a bug blocks comparison work.
-- `projects/ocean_exp` is a temporary preservation copy of the pre-reset active
-  ocean renderer. It keeps the macro cascades, atmosphere integration,
-  terrain-field descriptors, expanded foam composition, and debug views
-  available for side-by-side comparison while `projects/ocean` is simplified.
-  It is intentionally exempt from current active-panel UI cleanup because it is
-  not a permanent lane.
 - `projects/ocean_legacy` is the previous Cubey experimental renderer. It is a
   feature donor for macro crests, persistent foam history, refraction, seafloor,
   atmosphere hooks, and shoreline/bathymetry ideas. It is not expected to track
   shared UI/config helper adoption except when a feature is actively ported.
 
 This split keeps wave shape and foam quality grounded in a known-good
-implementation while preserving the experimental work for selective porting.
+implementation while making experimental contributions directly inspectable in
+the active renderer.
 
 ## Current Active Shape
 
@@ -32,14 +27,14 @@ project starts from particle-grid liquid simulation, while ocean starts from a
 camera-relative surface renderer and only adds simulation where interaction
 needs it.
 
-Before the reset, the active renderer had accumulated:
+The active renderer includes:
 
 - a camera-relative clipmap mesh with LOD diagnostics;
 - the GodotOceanWaves-style multi-cascade spectrum, modulation, FFT, and unpack
   path;
-- five regular cascades ordered from broad macro swell through primary crest to
-  fine normal/foam detail, with storm-biased defaults for stronger long-wave
-  displacement and crest energy;
+- five regular cascade slots, with C0/C1 enabled by default as the
+  reference-derived core pair and C2-C4 kept as opt-in candidates for
+  large-scale breakup or fine detail experiments;
 - displacement, normal, foam, LOD, environment-lighting, and terrain-field
   debug views;
 - cascade isolation, camera presets, pause/step timing, and mesh diagnostics
@@ -49,21 +44,16 @@ Before the reset, the active renderer had accumulated:
 - a diagnostic terrain-ocean `RGBA32F` field texture bound through the shared
   height/depth/shore/slope contract;
 - active `--ocean-*` CLI controls, while the frozen reference keeps
-  `--ocean-ref-*` controls and the temporary snapshot uses the copied
-  `--ocean-*` tuning surface.
+  `--ocean-ref-*` controls.
 
-The active renderer should be reduced until it matches or beats `ocean_ref` on
-visual quality and performance. Additions should then return one at a time only
-when they preserve or improve the interactive inspection result. The first bias
-is toward diagnostics that help reason about the wave core, not broad feature
-stacking.
-
-The reset has now crossed the structural boundary: `projects/ocean_exp` keeps
-the five-cascade pre-reset snapshot, while active `projects/ocean` is back to
-the three-cascade reference ABI. The active path still has Cubey extras around
-the reference core, including atmosphere lighting, terrain-field diagnostics,
-foam history, and expanded debug views, but the regular spectrum/FFT/surface
-sampler cascade count now matches `ocean_ref`.
+The active renderer should now be evaluated feature by feature rather than
+pulled wholesale back to the reference ABI. The GUI's Feature Isolation section
+exposes global shape and foam strength, foam history, shape and detail
+anti-repeat, active cascade-slot work toggles, split atmosphere material
+influence, shape/normal/foam fade controls, and terrain foam controls so each
+addition can be checked against `ocean_ref` for quality and cost. Cascade work
+toggles skip disabled cascade compute dispatches; contribution sliders only
+change surface composition.
 
 ## Feature Donor Boundaries
 

@@ -93,7 +93,7 @@ void test_active_project_ui_raw_combo_exceptions_are_explicit() {
     require(count_occurrences(ocean, "ImGui::BeginCombo") == 1U,
             "active ocean UI should only keep the custom cascade selector raw combo");
     require(count_occurrences(ocean, "ImGui::Selectable") == 2U,
-            "active ocean UI raw selectable use should stay limited to cascade inspection");
+            "active ocean UI raw selectable use should stay limited to five-cascade inspection");
     require(count_occurrences(terrain, "ImGui::BeginCombo") == 1U,
             "terrain UI should only keep the custom grid-preserving preset combo");
     require(count_occurrences(terrain, "ImGui::Selectable") == 1U,
@@ -107,9 +107,6 @@ void test_reference_ocean_ui_exceptions_are_documented() {
     cubey::tests::require_contains(
         docs, "intentionally exempt from current active-panel",
         "ocean_ref should be documented as a frozen UI cleanup exception");
-    cubey::tests::require_contains(
-        docs, "temporary preservation copy",
-        "ocean_exp should be documented as a temporary UI cleanup exception");
     cubey::tests::require_contains(
         docs, "shared UI/config helper adoption",
         "ocean_legacy should be documented as a donor UI cleanup exception");

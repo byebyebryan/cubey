@@ -1,8 +1,9 @@
 # Ocean
 
-`ocean` is the active Cubey ocean renderer. It is being pulled back toward the
-known-good [`2Retr0/GodotOceanWaves`](https://github.com/2Retr0/GodotOceanWaves/)
-reference core before any of Cubey's preserved experiments are reintroduced.
+`ocean` is the active Cubey ocean renderer. It uses the GodotOceanWaves-derived
+spectrum/FFT/unpack core as a guardrail, then layers configurable cascade slots,
+atmosphere integration, terrain-field descriptors, expanded foam diagnostics,
+and debug views behind explicit feature-isolation controls.
 
 GodotOceanWaves is MIT licensed; the required notice is kept in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
@@ -24,8 +25,8 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view foam
 ./build/dev/projects/ocean/ocean --debug-view foam-source
 ./build/dev/projects/ocean/ocean --debug-view foam-history
-./build/dev/projects/ocean/ocean --debug-view foam-macro
-./build/dev/projects/ocean/ocean --debug-view foam-crest
+./build/dev/projects/ocean/ocean --debug-view foam-core
+./build/dev/projects/ocean/ocean --debug-view foam-candidate
 ./build/dev/projects/ocean/ocean --debug-view foam-detail
 ./build/dev/projects/ocean/ocean --debug-view lod
 ./build/dev/projects/ocean/ocean --debug-view sky-radiance
@@ -37,16 +38,18 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view terrain-shore
 ./build/dev/projects/ocean/ocean --debug-view terrain-slope
 ./build/dev/projects/ocean/ocean --debug-view lod --ocean-wire-overlay
-./build/dev/projects/ocean/ocean --debug-view displacement --ocean-cascade 2
+./build/dev/projects/ocean/ocean --debug-view displacement --ocean-cascade 0
 ./build/dev/projects/ocean/ocean --no-ocean-spectral-domains
 ./build/dev/projects/ocean/ocean --ocean-terrain-fields
 ```
 
 The GUI panel also includes cascade isolation, camera presets including a wide
-repeat-inspection camera, a paused single-frame step button, a portable wire
-overlay, and an LOD breakdown table for checking clipmap coverage, patch counts,
-and triangle load while tuning the mesh. Headless captures can use
-`--ocean-cascade all|0|1|2`,
+repeat-inspection camera plus mid/high large-scale inspection views, a paused
+single-frame step button, a portable wire overlay, feature-isolation controls,
+and an LOD breakdown table for checking clipmap coverage, patch counts, and
+triangle load while tuning the mesh.
+Headless captures can use
+`--ocean-cascade all|0|1|2|3|4`,
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
 `--ocean-terrain-fields`, and `--no-ocean-terrain-fields`.
@@ -60,14 +63,27 @@ texture is bound for terrain depth/shore/slope debug views; enabling
 `--ocean-terrain-fields` only proves a small shoreline foam hook and is not yet
 full bathymetry, seafloor visibility, or surf-zone rendering.
 
-Cascades now match the three-slot reference layout: `0` is the primary
-reference crest, `1` is the secondary reference wave, and `2` is fine
-normal/foam detail. Spectral source-domain filtering defaults off so the visible
-cascades use the full reference spectrum; turn it on only when inspecting the
-old detail banding path. Foam is stored separately from normal data as
-persistent history, current Jacobian breaking source, determinant, and
-compression diagnostic channels. Compression is currently a diagnostic signal
-only. This is still not a localized wind or weather simulation.
+Cascades are now treated as regular slots. The default `Core` preset enables
+only C0 and C1, which are the reference-derived wave pair carrying the current
+shape and whitecaps. C2, C3, and C4 stay available as opt-in candidate slots for
+large-scale breakup or fine detail experiments, but they are not part of the
+default cost. Per-slot `Domain min waves` controls decide whether spectral
+domain filtering cuts a slot down to a wavelength band; C0/C1 default to the
+full spectrum so the primary whitecap carrier stays coherent. Foam is stored
+separately from normal data as persistent history, current Jacobian breaking
+source, determinant, and compression diagnostic channels. Final whitecap
+coverage is driven from the total enabled-slot foam signal, while
+`foam-core`/`foam-candidate`/`foam-detail` remain debug buckets. Compression is
+currently a diagnostic signal only. This is still not a localized wind or
+weather simulation.
+
+Feature isolation controls expose global shape strength, global foam strength,
+foam history, shape and detail anti-repeat, split atmosphere material influence,
+shape/normal/foam fade distances, and terrain foam strength. The `Active
+cascade work` toggles are stronger than contribution sliders: they skip disabled
+cascade spectrum, modulation, FFT, and unpack dispatches, then hide those
+cascades from the surface shader. Use `All slots`, `Core`, and `Cheap` to check
+which slots and material additions are worth their GPU cost.
 
 The default FFT map is `1024`. Smoke tests and fast local checks can use
 `--ocean-map-size 128`.

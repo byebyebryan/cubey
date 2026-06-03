@@ -65,10 +65,9 @@ Current projects:
   bursts with explosion-specific timing, boost controls, and shared environment
   lighting.
 - `ocean`: active ocean renderer derived from the GodotOceanWaves
-  spectrum/FFT/unpack core, with camera-relative mesh LOD, foam/debug views,
-  and wire/LOD diagnostics.
-- `ocean_exp`: temporary snapshot of the pre-reset active ocean renderer for
-  side-by-side comparison while `ocean` is pulled back toward `ocean_ref`.
+  spectrum/FFT/unpack core, with configurable cascade slots, atmosphere
+  lighting, terrain-field hooks, foam/debug views, and feature-isolation
+  controls.
 - `ocean_ref`: frozen known-good GodotOceanWaves port kept for visual and
   implementation comparisons.
 - `ocean_legacy`: previous experimental ocean renderer, kept as a feature donor
@@ -118,7 +117,6 @@ Project-local docs:
 - [Fire 3D](projects/fluid/fire_3d/README.md)
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
 - [Ocean](projects/ocean/README.md)
-- [Ocean Exp](projects/ocean_exp/README.md)
 - [Ocean Ref](projects/ocean_ref/README.md)
 - [Ocean Legacy](projects/ocean_legacy/README.md)
 - [Procedural Terrain](projects/procedural_terrain/README.md)
@@ -205,7 +203,6 @@ Useful windowed smokes:
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/atmosphere/atmosphere --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --ocean-map-size 128 --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean_exp/ocean_exp --ocean-map-size 128 --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean_ref/ocean_ref --ocean-ref-map-size 128 --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean_legacy/ocean_legacy --frames 300 --width 1280 --height 720
 ./build/dev/projects/procedural_terrain/procedural_terrain --frames 300 --width 1280 --height 720
@@ -274,15 +271,18 @@ timestamp queries are available.
 `ocean` is a rendering-focused water project rather than a CFD solver. It now
 starts from the GodotOceanWaves-derived spectrum/FFT/unpack path and exposes
 `--ocean-map-size 128|256|512|1024`,
-`--debug-view final|height|displacement|normal|foam|foam-source|foam-history|foam-macro|foam-crest|foam-detail|lod|sky-radiance|reflection|direct-light|ambient-light|exposure|raw-foam|lit-foam|terrain-depth|terrain-shore|terrain-slope`,
+`--debug-view final|height|displacement|normal|foam|foam-source|foam-history|foam-core|foam-candidate|foam-detail|lod|sky-radiance|reflection|direct-light|ambient-light|exposure|raw-foam|lit-foam|terrain-depth|terrain-shore|terrain-slope`,
 and `--ocean-cascade all|0|1|2|3|4` for focused inspection. Use
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
 `--ocean-terrain-fields`, and `--no-ocean-terrain-fields` for captured
-diagnostics.
+diagnostics. The GUI's Feature Isolation section exposes global shape and foam
+strength, foam history, active cascade-slot work toggles, shape/detail
+anti-repeat, split atmosphere material influence, shape/normal/foam fade
+distances, and terrain foam controls for checking which additions help or hurt
+the reference-derived core.
 `ocean_ref` keeps the same wave core under `--ocean-ref-*` options as a frozen
-known-good reference. `ocean_exp` preserves the pre-reset active `ocean`
-experiments for side-by-side inspection while `ocean` is simplified.
+known-good reference.
 `ocean_legacy` keeps the older Cubey experimental renderer with macro waves,
 foam history, refraction, seafloor, and additional debug views for future
 selective porting.
@@ -304,7 +304,6 @@ Useful headless PNG smokes:
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d.png
 ./build/dev/projects/atmosphere/atmosphere --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-atmosphere.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --ocean-map-size 128 --output /tmp/cubey-ocean.png
-./build/dev/projects/ocean_exp/ocean_exp --headless --frames 120 --width 640 --height 360 --ocean-map-size 128 --output /tmp/cubey-ocean-exp.png
 ./build/dev/projects/ocean_ref/ocean_ref --headless --frames 120 --width 640 --height 360 --ocean-ref-map-size 128 --output /tmp/cubey-ocean-ref.png
 ./build/dev/projects/ocean_legacy/ocean_legacy --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean-legacy.png
 ./build/dev/projects/procedural_terrain/procedural_terrain --headless --width 640 --height 360 --output /tmp/cubey-procedural-terrain.png
@@ -322,7 +321,6 @@ Useful headless video captures when FFmpeg/libav support is enabled:
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fire-3d.mp4
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-explosion-3d.mp4
 ./build/dev/projects/ocean/ocean --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --ocean-map-size 128 --output /tmp/cubey-ocean.mp4
-./build/dev/projects/ocean_exp/ocean_exp --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --ocean-map-size 128 --output /tmp/cubey-ocean-exp.mp4
 ./build/dev/projects/ocean_legacy/ocean_legacy --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-ocean-legacy.mp4
 ```
 
@@ -357,7 +355,7 @@ layers are installed.
   Escape closes.
 - `gltf_viewer`: left-drag orbits the camera, `D` cycles PBR debug views,
   Escape closes.
-- `ocean` / `ocean_exp` / `ocean_ref`: left-drag orbits the camera, mouse wheel
+- `ocean` / `ocean_ref`: left-drag orbits the camera, mouse wheel
   zooms, Space pauses/resumes wave time, `R` resets, `D` cycles wave-core debug
   views, Escape closes.
 - `ocean_legacy`: left-drag orbits the camera, mouse wheel zooms, Space

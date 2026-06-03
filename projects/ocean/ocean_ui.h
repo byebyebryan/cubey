@@ -12,16 +12,19 @@ namespace cubey::projects::ocean {
 enum class OceanCameraPreset : std::uint32_t {
     Default = 0,
     Low = 1,
-    Close = 2,
-    Overhead = 3,
-    Wide = 4,
+    Mid = 2,
+    High = 3,
+    Close = 4,
+    Overhead = 5,
+    Wide = 6,
 };
 
 struct OceanDiagnosticsConfig {
     int selected_cascade = -1;
     bool wire_overlay = false;
     float wire_opacity = 0.65F;
-    float anti_repeat_strength = 1.0F;
+    float shape_anti_repeat_strength = 1.0F;
+    float detail_anti_repeat_strength = 1.0F;
 };
 
 struct OceanUiContext {

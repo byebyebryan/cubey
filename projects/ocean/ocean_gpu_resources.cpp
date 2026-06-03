@@ -16,6 +16,8 @@ constexpr std::uint32_t kOceanSurfaceSkyRadianceBinding = kOceanSurfaceReflectio
 constexpr std::uint32_t kOceanSurfaceTerrainFieldBinding = kOceanSurfaceSkyRadianceBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceTerrainFieldUniformBinding =
     kOceanSurfaceTerrainFieldBinding + 1U;
+constexpr std::uint32_t kOceanSurfaceFeatureUniformBinding =
+    kOceanSurfaceTerrainFieldUniformBinding + 1U;
 
 [[nodiscard]] std::filesystem::path shader_path(const std::filesystem::path& shader_dir,
                                                 const char* filename) {
@@ -48,7 +50,7 @@ constexpr std::uint32_t kOceanSurfaceTerrainFieldUniformBinding =
     const VkPushConstantRange push_constant_range{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
-        .size = sizeof(float) * 60U,
+        .size = sizeof(float) * 64U,
     };
     return {
         .label = "ocean.surface",
@@ -103,6 +105,7 @@ void OceanGpuResources::create(const cubey::vulkan::Device& device,
 
     resolution_ = config.ocean.map_size;
     create_textures(device, config.ocean);
+    surface_feature_uniforms_.emplace(device, config.frame_slot_count);
     create_descriptor_sets(device, config.frame_slot_count);
     update_descriptors(device);
     create_pipelines(device, config);
@@ -117,6 +120,7 @@ void OceanGpuResources::reset() {
 
     surface_pool_.reset();
     surface_layout_.reset();
+    surface_feature_uniforms_.reset();
     unpack_pool_.reset();
     unpack_layout_.reset();
     fft_pool_.reset();
@@ -275,7 +279,7 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         set = unpack_pool_->allocate(unpack_layout_->handle());
     }
 
-    std::array<cubey::vulkan::DescriptorSetBindingConfig, kOceanCascadeCount * 3U + 4U>
+    std::array<cubey::vulkan::DescriptorSetBindingConfig, kOceanCascadeCount * 3U + 5U>
         surface_bindings{};
     for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
         surface_bindings[cascade] = cubey::vulkan::DescriptorSetBindingConfig{
@@ -319,6 +323,12 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
             .binding = kOceanSurfaceTerrainFieldUniformBinding,
             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        };
+    surface_bindings[kOceanSurfaceFeatureUniformBinding] =
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = kOceanSurfaceFeatureUniformBinding,
+            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         };
     const cubey::vulkan::DescriptorSetInfo surface_info =
         descriptor_info(surface_bindings, frame_slot_count);
@@ -370,6 +380,16 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
                 .storage_image(fft_sets_[base_fft_set + 2U], 1, ping(cascade, field_index).view());
         }
     }
+    if (!surface_feature_uniforms_.has_value()) {
+        throw std::runtime_error("ocean surface feature uniforms are not initialized");
+    }
+    const std::uint32_t slot_count = surface_feature_uniforms_->slot_count();
+    for (std::uint32_t index = 0; index < slot_count; ++index) {
+        const cubey::render::FrameSlot frame_slot{.index = index, .count = slot_count};
+        writes.uniform_buffer(surface_set(frame_slot), kOceanSurfaceFeatureUniformBinding,
+                              surface_feature_uniforms_->buffer(frame_slot).handle(),
+                              surface_feature_uniforms_->range());
+    }
     writes.update(device);
 }
 
@@ -414,6 +434,14 @@ void OceanGpuResources::update_terrain_ocean_field_uniform_descriptor(
         .uniform_buffer(surface_set(frame_slot), kOceanSurfaceTerrainFieldUniformBinding, buffer,
                         range)
         .update(device);
+}
+
+void OceanGpuResources::upload_surface_feature_uniforms(
+    cubey::render::FrameSlot frame_slot, const OceanSurfaceFeatureUniforms& uniforms) const {
+    if (!surface_feature_uniforms_.has_value()) {
+        throw std::runtime_error("ocean surface feature uniforms are not initialized");
+    }
+    surface_feature_uniforms_->upload(frame_slot, uniforms);
 }
 
 void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,

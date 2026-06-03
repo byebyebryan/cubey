@@ -5,6 +5,7 @@
 #include <cubey/core/run_config.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -61,8 +62,16 @@ int main() {
         require(defaults.mesh_lod_levels >= ocean::kOceanMinMeshLodLevels &&
                     defaults.mesh_lod_levels <= ocean::kOceanMaxMeshLodLevels,
                 "default mesh LOD count should be in supported range");
-        require(!defaults.spectral_domains_enabled,
-                "active ocean should default to the unfiltered reference spectrum");
+        require(defaults.spectral_domains_enabled,
+                "ocean should default to spectral source-domain filtering");
+        require(ocean::kOceanCascadeCount == 5U,
+                "ocean should expose five configurable cascade slots");
+        const std::array<bool, ocean::kOceanCascadeCount> expected_enabled{true, true, false,
+                                                                           false, false};
+        for (std::uint32_t cascade = 0; cascade < ocean::kOceanCascadeCount; ++cascade) {
+            require(ocean::ocean_cascade_enabled(defaults, cascade) == expected_enabled[cascade],
+                    "ocean should default to the C0/C1 core cascade slots");
+        }
         require(ocean::ocean_mesh_vertex_count(defaults) ==
                     defaults.mesh_cells * defaults.mesh_cells * 6U,
                 "ocean vertex count should match generated grid triangles");
@@ -81,87 +90,142 @@ int main() {
         const ocean::OceanCascadeConfig& cascade0 = defaults.cascades[0];
         const ocean::OceanCascadeConfig& cascade1 = defaults.cascades[1];
         const ocean::OceanCascadeConfig& cascade2 = defaults.cascades[2];
+        const ocean::OceanCascadeConfig& cascade3 = defaults.cascades[3];
+        const ocean::OceanCascadeConfig& cascade4 = defaults.cascades[4];
         const ocean::OceanCascadeDomain domain0 = ocean::ocean_cascade_domain(defaults, 0);
         const ocean::OceanCascadeDomain domain1 = ocean::ocean_cascade_domain(defaults, 1);
         const ocean::OceanCascadeDomain domain2 = ocean::ocean_cascade_domain(defaults, 2);
-        require(ocean::kOceanCascadeCount == 3U,
-                "active ocean should use the three-cascade reference ABI");
-        require(!domain0.active && !domain1.active && domain2.active,
-                "configured source domains should only trim the detail cascade");
-        require(domain2.low_k < domain2.high_k,
-                "detail cascade domain should have increasing k bounds");
-        require(domain2.low_wavelength < domain2.high_wavelength,
-                "detail cascade domain should expose low/high wavelength bounds");
-        require_near(ocean::ocean_cascade_min_waves_per_domain(0), 0.0F, 0.001F,
+        const ocean::OceanCascadeDomain domain3 = ocean::ocean_cascade_domain(defaults, 3);
+        const ocean::OceanCascadeDomain domain4 = ocean::ocean_cascade_domain(defaults, 4);
+        require(!domain0.active && !domain1.active && domain2.active && domain3.active &&
+                    domain4.active,
+                "default slot wavelength domains should leave the C0/C1 core unfiltered");
+        require(domain2.low_k < domain2.high_k && domain3.low_k < domain3.high_k &&
+                    domain4.low_k < domain4.high_k,
+                "default cascade domains should have increasing k bounds");
+        require(domain2.low_wavelength < domain2.high_wavelength &&
+                    domain3.low_wavelength < domain3.high_wavelength &&
+                    domain4.low_wavelength < domain4.high_wavelength,
+                "default cascade domains should expose low/high wavelength bounds");
+        require(domain2.high_wavelength > domain3.high_wavelength &&
+                    domain3.high_wavelength > domain4.high_wavelength,
+                "active cascade diagnostic domains should run from large to small wavelengths");
+        require_near(cascade0.domain_min_waves, 0.0F, 0.001F,
                      "cascade 0 should preserve the primary coherent whitecap carrier");
-        require_near(ocean::ocean_cascade_min_waves_per_domain(1), 0.0F, 0.001F,
-                     "cascade 1 should preserve the secondary coherent carrier");
-        require_near(ocean::ocean_cascade_min_waves_per_domain(2), 3.0F, 0.001F,
-                     "cascade 2 should stay detail-biased when domains are enabled");
-        require_near(domain2.high_wavelength,
-                     cascade2.tile_length / ocean::ocean_cascade_min_waves_per_domain(2), 0.01F,
-                     "detail cascade largest wavelength should follow its min waves per domain");
-        require_near(domain2.low_wavelength,
-                     cascade2.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
-                         static_cast<float>(defaults.map_size),
-                     0.01F, "detail cascade smallest wavelength should follow map sampling");
+        require_near(cascade1.domain_min_waves, 0.0F, 0.001F,
+                     "cascade 1 should support but not dominate the crest carrier");
+        require_near(cascade2.domain_min_waves, 3.0F, 0.001F,
+                     "cascade 2 should keep a conservative spectral low cutoff");
+        require_near(cascade3.domain_min_waves, 2.0F, 0.001F,
+                     "cascade 3 should keep more long chop wavelengths");
+        require_near(cascade4.domain_min_waves, 3.0F, 0.001F,
+                     "cascade 4 should stay detail-biased");
         require(!domain0.active && domain0.low_k == 0.0F && domain0.high_k == 0.0F,
                 "cascade 0 should disable spectral filtering for coherent whitecaps");
         require(!domain1.active && domain1.low_k == 0.0F && domain1.high_k == 0.0F,
                 "cascade 1 should disable spectral filtering for coherent whitecaps");
-
+        require_near(domain2.high_wavelength, cascade2.tile_length / cascade2.domain_min_waves,
+                     0.01F,
+                     "cascade 2 largest wavelength should follow its min waves per domain");
+        require_near(domain2.low_wavelength,
+                     cascade2.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
+                         static_cast<float>(defaults.map_size),
+                     0.01F, "cascade 2 smallest wavelength should follow map sampling");
+        require_near(domain3.high_wavelength, cascade3.tile_length / cascade3.domain_min_waves,
+                     0.01F,
+                     "cascade 3 largest wavelength should follow its min waves per domain");
+        require_near(domain3.low_wavelength,
+                     cascade3.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
+                         static_cast<float>(defaults.map_size),
+                     0.01F, "cascade 3 smallest wavelength should follow map sampling");
+        require_near(domain4.high_wavelength, cascade4.tile_length / cascade4.domain_min_waves,
+                     0.01F,
+                     "cascade 4 largest wavelength should follow its min waves per domain");
+        require_near(domain4.low_wavelength,
+                     cascade4.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
+                         static_cast<float>(defaults.map_size),
+                     0.01F, "cascade 4 smallest wavelength should follow map sampling");
         require_near(cascade0.tile_length, 88.0F, 0.001F,
                      "cascade 0 should keep the reference primary crest scale");
-        require_near(cascade0.displacement_scale, 1.0F, 0.001F,
-                     "cascade 0 should match the reference primary crest displacement");
-        require_near(cascade0.normal_scale, 1.0F, 0.001F,
-                     "cascade 0 should match the reference primary crest normal");
-        require_near(cascade0.wind_speed, 10.0F, 0.001F,
-                     "cascade 0 should match the reference primary crest wind");
+        require_near(cascade0.displacement_scale, 1.35F, 0.001F,
+                     "cascade 0 storm primary crest displacement should be tuned");
+        require_near(cascade0.normal_scale, 1.35F, 0.001F,
+                     "cascade 0 storm primary crest normal should be tuned");
+        require_near(cascade0.wind_speed, 18.0F, 0.001F,
+                     "cascade 0 storm primary crest wind should be tuned");
         require_near(cascade0.wind_direction_degrees, 20.0F, 0.001F,
                      "cascade 0 wind direction should match Godot ref primary crest");
-        require_near(cascade0.fetch_length_km, 150.0F, 0.001F,
-                     "cascade 0 should match the reference primary crest fetch");
-        require_near(cascade0.spread, 0.2F, 0.001F,
-                     "cascade 0 should match the reference primary crest spread");
+        require_near(cascade0.fetch_length_km, 350.0F, 0.001F,
+                     "cascade 0 storm primary crest fetch should be tuned");
+        require_near(cascade0.spread, 0.14F, 0.001F,
+                     "cascade 0 storm primary crest spread should be tuned");
         require_near(cascade0.whitecap, 0.50F, 0.001F,
-                     "cascade 0 should match reference primary crest breaking");
-        require_near(cascade0.foam_amount, 8.0F, 0.001F,
-                     "cascade 0 should match reference primary crest foam");
+                     "cascade 0 storm primary crest whitecap should match ref-style breaking");
+        require_near(cascade0.foam_amount, 5.80F, 0.001F,
+                     "cascade 0 storm primary crest foam should drive accumulated whitecaps");
 
         require_near(cascade1.tile_length, 57.0F, 0.001F,
                      "cascade 1 tile length should match Godot ref secondary wave");
-        require_near(cascade1.displacement_scale, 0.75F, 0.001F,
-                     "cascade 1 should match reference secondary wave displacement");
-        require_near(cascade1.normal_scale, 1.0F, 0.001F,
-                     "cascade 1 should match reference secondary wave normal");
-        require_near(cascade1.wind_speed, 5.0F, 0.001F,
-                     "cascade 1 should match reference secondary wave wind");
-        require_near(cascade1.wind_direction_degrees, 15.0F, 0.001F,
-                     "cascade 1 should match reference secondary wave direction");
-        require_near(cascade1.fetch_length_km, 150.0F, 0.001F,
-                     "cascade 1 should match reference secondary wave fetch");
-        require_near(cascade1.spread, 0.4F, 0.001F,
-                     "cascade 1 should match reference secondary wave spread");
-        require_near(cascade1.whitecap, 0.50F, 0.001F,
-                     "cascade 1 should match reference secondary wave breaking");
-        require_near(cascade1.foam_amount, 0.0F, 0.001F,
-                     "cascade 1 should match reference secondary wave foam");
+        require_near(cascade1.displacement_scale, 1.08F, 0.001F,
+                     "cascade 1 storm secondary wave displacement should be tuned");
+        require_near(cascade1.normal_scale, 1.35F, 0.001F,
+                     "cascade 1 storm secondary wave normal should be tuned");
+        require_near(cascade1.wind_speed, 16.0F, 0.001F,
+                     "cascade 1 storm secondary wave wind should be tuned");
+        require_near(cascade1.wind_direction_degrees, 17.0F, 0.001F,
+                     "cascade 1 storm secondary wave direction should be tuned");
+        require_near(cascade1.fetch_length_km, 330.0F, 0.001F,
+                     "cascade 1 storm secondary wave fetch should be tuned");
+        require_near(cascade1.spread, 0.25F, 0.001F,
+                     "cascade 1 storm secondary wave spread should be tuned");
+        require_near(cascade1.whitecap, 0.48F, 0.001F,
+                     "cascade 1 storm secondary wave whitecap should match ref-style breaking");
+        require_near(cascade1.foam_amount, 4.80F, 0.001F,
+                     "cascade 1 storm secondary wave foam should support accumulated whitecaps");
 
-        require_near(cascade2.tile_length, 16.0F, 0.001F,
-                     "cascade 2 tile length should match Godot ref detail normals");
-        require_near(cascade2.displacement_scale, 0.0F, 0.001F,
-                     "cascade 2 geometry scale should match Godot ref detail normals");
-        require_near(cascade2.normal_scale, 0.25F, 0.001F,
-                     "cascade 2 should match reference detail normal");
-        require_near(cascade2.wind_speed, 20.0F, 0.001F,
-                     "cascade 2 should match reference detail wind");
-        require_near(cascade2.fetch_length_km, 550.0F, 0.001F,
-                     "cascade 2 should match reference detail fetch");
-        require_near(cascade2.whitecap, 0.25F, 0.001F,
-                     "cascade 2 should match reference detail whitecap");
-        require_near(cascade2.foam_amount, 3.0F, 0.001F,
-                     "cascade 2 should match reference detail foam");
+        require_near(cascade2.tile_length, 1531.0F, 0.001F,
+                     "cascade 2 should be the largest decorrelated candidate slot");
+        require_near(cascade3.tile_length, 421.0F, 0.001F,
+                     "cascade 3 should be the mid-scale candidate slot");
+        require_near(cascade2.displacement_scale, 0.55F, 0.001F,
+                     "cascade 2 storm displacement should be tuned");
+        require_near(cascade3.displacement_scale, 0.95F, 0.001F,
+                     "cascade 3 storm displacement should be tuned");
+        require_near(cascade2.wind_speed, 32.0F, 0.001F, "cascade 2 should carry storm swell wind");
+        require_near(cascade3.wind_speed, 30.0F, 0.001F, "cascade 3 should carry storm chop wind");
+        require(cascade2.tile_length > cascade3.tile_length &&
+                    cascade3.tile_length > cascade0.tile_length &&
+                    cascade0.tile_length > cascade1.tile_length,
+                "candidate and core slots should retain large-to-small scale separation");
+        require(cascade2.displacement_scale < cascade3.displacement_scale &&
+                    cascade3.displacement_scale < cascade0.displacement_scale,
+                "candidate long-wave slots should stay lower amplitude than the core");
+        require(cascade2.normal_scale > 0.0F && cascade2.normal_scale < cascade3.normal_scale &&
+                    cascade3.normal_scale < cascade0.normal_scale,
+                "candidate long-wave slots should feed lower-amplitude normals than the core");
+        require_near(cascade2.whitecap, 0.12F, 0.001F,
+                     "cascade 2 candidate slot should keep its whitecap threshold");
+        require_near(cascade2.foam_amount, 0.0F, 0.001F,
+                     "cascade 2 candidate slot should not generate foam by default");
+        require_near(cascade3.whitecap, 0.28F, 0.001F,
+                     "cascade 3 candidate slot should feed restrained breaking source");
+        require_near(cascade3.foam_amount, 0.90F, 0.001F,
+                     "cascade 3 candidate slot should feed low accumulated foam by default");
+
+        require_near(cascade4.tile_length, 16.0F, 0.001F,
+                     "cascade 4 tile length should match Godot ref detail normals");
+        require_near(cascade4.displacement_scale, 0.0F, 0.001F,
+                     "cascade 4 geometry scale should match Godot ref detail normals");
+        require_near(cascade4.normal_scale, 0.50F, 0.001F,
+                     "cascade 4 storm detail normal should be tuned");
+        require_near(cascade4.wind_speed, 30.0F, 0.001F,
+                     "cascade 4 storm detail wind should be tuned");
+        require_near(cascade4.fetch_length_km, 850.0F, 0.001F,
+                     "cascade 4 storm detail fetch should be tuned");
+        require_near(cascade4.whitecap, 0.44F, 0.001F,
+                     "cascade 4 storm detail whitecap should stay conservative");
+        require_near(cascade4.foam_amount, 2.20F, 0.001F,
+                     "cascade 4 storm detail foam should stay secondary");
         require_near(defaults.water_color_r, 0.1F, 0.001F, "water color should match Godot ref");
         require_near(defaults.foam_color_r, 0.73F, 0.001F, "foam color should match Godot ref");
         require_near(defaults.foam_density, 3.15F, 0.001F,
@@ -169,8 +233,34 @@ int main() {
         require_near(defaults.foam_sharpness, 0.62F, 0.001F,
                      "foam sharpness should default to a whitecap-biased response");
         const ocean::OceanDiagnosticsConfig diagnostics{};
-        require_near(diagnostics.anti_repeat_strength, 1.0F, 0.001F,
-                     "ocean diagnostics should default to anti-repeat sampling");
+        require_near(diagnostics.shape_anti_repeat_strength, 1.0F, 0.001F,
+                     "ocean diagnostics should default to shape anti-repeat sampling");
+        require_near(diagnostics.detail_anti_repeat_strength, 1.0F, 0.001F,
+                     "ocean diagnostics should default to detail anti-repeat sampling");
+        require_near(defaults.surface_shape_strength, 1.0F, 0.001F,
+                     "ocean should default surface shape contribution on");
+        require_near(defaults.surface_foam_strength, 1.0F, 0.001F,
+                     "ocean should default surface foam contribution on");
+        require_near(defaults.foam_history_strength, 1.0F, 0.001F,
+                     "ocean should default foam history contribution on");
+        require_near(defaults.atmosphere_material_strength, 1.0F, 0.001F,
+                     "ocean should default atmosphere material contribution on");
+        require_near(defaults.atmosphere_sky_strength, 1.0F, 0.001F,
+                     "ocean should default atmosphere sky contribution on");
+        require_near(defaults.atmosphere_reflection_strength, 1.0F, 0.001F,
+                     "ocean should default atmosphere reflection contribution on");
+        require_near(defaults.atmosphere_light_strength, 1.0F, 0.001F,
+                     "ocean should default atmosphere light contribution on");
+        require_near(defaults.foam_lighting_strength, 1.0F, 0.001F,
+                     "ocean should default dynamic foam lighting contribution on");
+        require_near(defaults.terrain_foam_strength, 1.0F, 0.001F,
+                     "ocean should default terrain foam contribution on");
+        require_near(defaults.shape_fade_distance_scale, 1.0F, 0.001F,
+                     "ocean should default shape fade distance unchanged");
+        require_near(defaults.normal_fade_distance_scale, 1.0F, 0.001F,
+                     "ocean should default normal fade distance unchanged");
+        require_near(defaults.foam_fade_distance_scale, 1.0F, 0.001F,
+                     "ocean should default foam fade distance unchanged");
         ocean::validate_ocean_config(defaults);
 
         require(ocean::ocean_render_view_from_name("") == ocean::OceanRenderView::Final,
@@ -190,12 +280,12 @@ int main() {
         require(ocean::ocean_render_view_from_name("foam-history") ==
                     ocean::OceanRenderView::FoamHistory,
                 "foam history debug view should parse");
-        require(ocean::ocean_render_view_from_name("foam-macro") ==
-                    ocean::OceanRenderView::FoamMacro,
-                "foam macro debug view should parse");
-        require(ocean::ocean_render_view_from_name("foam-crest") ==
-                    ocean::OceanRenderView::FoamCrest,
-                "foam crest debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-core") ==
+                    ocean::OceanRenderView::FoamCore,
+                "foam core debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-candidate") ==
+                    ocean::OceanRenderView::FoamCandidate,
+                "foam candidate debug view should parse");
         require(ocean::ocean_render_view_from_name("foam-detail") ==
                     ocean::OceanRenderView::FoamDetail,
                 "foam detail debug view should parse");
@@ -235,12 +325,12 @@ int main() {
                     ocean::OceanRenderView::FoamHistory,
                 "ocean debug view cycle should include the foam history view");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamHistory) ==
-                    ocean::OceanRenderView::FoamMacro,
-                "ocean debug view cycle should include the macro foam view");
-        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamMacro) ==
-                    ocean::OceanRenderView::FoamCrest,
-                "ocean debug view cycle should include the crest foam view");
-        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamCrest) ==
+                    ocean::OceanRenderView::FoamCore,
+                "ocean debug view cycle should include the core foam view");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamCore) ==
+                    ocean::OceanRenderView::FoamCandidate,
+                "ocean debug view cycle should include the candidate foam view");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamCandidate) ==
                     ocean::OceanRenderView::FoamDetail,
                 "ocean debug view cycle should include the detail foam view");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamDetail) ==
@@ -322,7 +412,7 @@ int main() {
                               "--no-ocean-spectral-domains",
                               "--ocean-terrain-fields",
                               "--ocean-cascade",
-                              "2",
+                              "4",
                               "--debug-view",
                               "normal",
                               "--ocean-wire-overlay",
@@ -334,7 +424,7 @@ int main() {
                 "CLI parser should accept --no-ocean-spectral-domains");
         require(parsed.ocean.terrain_fields == 1,
                 "CLI parser should accept --ocean-terrain-fields");
-        require(parsed.ocean.cascade == 2, "CLI parser should accept --ocean-cascade");
+        require(parsed.ocean.cascade == 4, "CLI parser should accept --ocean-cascade");
         require(parsed.debug_view == "normal", "CLI parser should preserve debug view");
         require(parsed.ocean.wire_overlay, "CLI parser should accept ocean wire overlay");
         require_near(parsed.ocean.wire_opacity, 0.8F, 0.001F,
@@ -382,6 +472,7 @@ int main() {
         const std::string ui_source = read_text_file(source_root / "ocean_ui.cpp");
         const std::string gpu_resources_source =
             read_text_file(source_root / "ocean_gpu_resources.cpp");
+        const std::string gpu_header_source = read_text_file(source_root / "ocean_gpu_resources.h");
         const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
 
         require_contains(spectrum_shader, "xy = h0(k), zw = conj(h0(-k))",
@@ -433,14 +524,14 @@ int main() {
                          "vertex shader should fade displacement only near the horizon");
         require_contains(vertex_shader, "if (!ocean_cascade_enabled(cascade))",
                          "vertex shader should gate displacement by inspected cascade");
-        require_contains(vertex_shader, "for (uint cascade = 0u; cascade < 3u; ++cascade)",
+        require_contains(vertex_shader, "for (uint cascade = 0u; cascade < 5u; ++cascade)",
                          "vertex shader should include all regular displacement cascades");
-        require_not_contains(vertex_shader, "displacement_cascade3_texture",
-                             "vertex shader should use the three-cascade reference ABI");
-        require_not_contains(vertex_shader, "cascade4_options",
-                             "vertex shader should not carry the old cascade-4 push constants");
+        require_contains(vertex_shader, "bool ocean_shape_anti_repeat_enabled",
+                         "vertex shader should expose shape anti-repeat for enabled slots");
+        require_not_contains(vertex_shader, "cascade < 2u && ocean.inspection_options.y > 0.0",
+                             "vertex shader should not gate shape anti-repeat to C0/C1");
         require_contains(vertex_shader, "sample_ocean_displacement(cascade, position, tile_length)",
-                         "vertex shader should centralize displacement sampling");
+                         "vertex shader should apply anti-repeat displacement sampling");
         require_contains(mesh_header, "cubey/render/clipmap_grid_2d.h",
                          "ocean clipmap should use the shared render helper");
         require_contains(mesh_header, "clipmap_grid_2d_patches",
@@ -449,8 +540,32 @@ int main() {
                          "ocean clipmap should delegate triangle totals to the shared helper");
         require_contains(mesh_header, "clipmap_grid_2d_total_vertex_count",
                          "ocean clipmap should delegate vertex totals to the shared helper");
-        require_contains(app_source, "diagnostics_.anti_repeat_strength",
-                         "app should pass anti-repeat as diagnostics push data");
+        require_contains(app_source, "diagnostics_.shape_anti_repeat_strength",
+                         "app should pass shape anti-repeat as diagnostics push data");
+        require_contains(app_source, "diagnostics_.detail_anti_repeat_strength",
+                         "app should pass detail anti-repeat as feature uniform data");
+        require_contains(app_source, "surface_feature_uniforms()",
+                         "app should isolate shader feature controls in a frame uniform");
+        require_contains(app_source, "upload_surface_feature_uniforms",
+                         "app should upload shader feature controls before ocean draw");
+        require_contains(app_source, "ocean_config_.surface_shape_strength",
+                         "app should pass surface shape isolation strength");
+        require_contains(app_source, "ocean_config_.surface_foam_strength",
+                         "app should pass surface foam isolation strength");
+        require_contains(app_source, "ocean_config_.foam_history_strength",
+                         "app should pass foam history isolation strength");
+        require_contains(app_source, "ocean_enabled_cascade_mask",
+                         "app should pack enabled cascades for shader-side isolation");
+        require_contains(app_source, "if (!ocean_cascade_enabled(ocean_config_, cascade))",
+                         "app should skip disabled cascade compute dispatches");
+        require_contains(app_source, "ocean_config_.atmosphere_sky_strength",
+                         "app should pass split atmosphere sky material strength");
+        require_contains(app_source, "ocean_config_.atmosphere_reflection_strength",
+                         "app should pass split atmosphere reflection material strength");
+        require_contains(app_source, "ocean_config_.shape_fade_distance_scale",
+                         "app should pass shape fade distance control");
+        require_contains(app_source, "ocean_config_.foam_fade_distance_scale",
+                         "app should pass foam fade distance control");
         require_contains(app_source, "kOceanSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT",
                          "app should define an HDR ocean scene color format");
         require_contains(
@@ -476,8 +591,40 @@ int main() {
                          "app should pass foam sharpness as diagnostics push data");
         require_contains(app_source, "ocean_config_.spectral_domains_enabled",
                          "app should pass spectral domain bounds to spectrum generation");
-        require_contains(ui_source, "&ui.diagnostics.anti_repeat_strength",
-                         "UI should expose anti-repeat as a diagnostics control");
+        require_contains(ui_source, "&ui.diagnostics.shape_anti_repeat_strength",
+                         "UI should expose shape anti-repeat as a diagnostics control");
+        require_contains(ui_source, "&ui.diagnostics.detail_anti_repeat_strength",
+                         "UI should expose detail anti-repeat as a diagnostics control");
+        require_contains(ui_source, "Feature Isolation",
+                         "UI should expose feature isolation controls");
+        require_contains(ui_source, "&ui.config.surface_shape_strength",
+                         "UI should expose surface shape isolation");
+        require_contains(ui_source, "&ui.config.surface_foam_strength",
+                         "UI should expose surface foam isolation");
+        require_contains(ui_source, "&ui.config.foam_history_strength",
+                         "UI should expose foam history isolation");
+        require_contains(ui_source, "Active cascade work",
+                         "UI should expose true cascade work toggles");
+        require_contains(ui_source, "All slots",
+                         "UI should expose a preset that enables every cascade slot");
+        require_contains(ui_source, "Core",
+                         "UI should expose a preset for the default core cascade slots");
+        require_contains(ui_source, "steady_compute_dispatch_count",
+                         "UI should expose a cascade-cost dispatch estimate");
+        require_contains(ui_source, "&ui.config.cascade_enabled[index]",
+                         "UI should toggle cascade compute and surface contribution");
+        require_contains(ui_source, "OceanCameraPreset::Mid",
+                         "UI should expose a mid-distance camera preset");
+        require_contains(ui_source, "OceanCameraPreset::High",
+                         "UI should expose a high-distance camera preset");
+        require_contains(ui_source, "&ui.config.atmosphere_reflection_strength",
+                         "UI should expose split reflection probe strength");
+        require_contains(ui_source, "&ui.config.foam_lighting_strength",
+                         "UI should expose foam lighting isolation");
+        require_contains(ui_source, "&ui.config.shape_fade_distance_scale",
+                         "UI should expose shape fade tuning");
+        require_contains(ui_source, "&ui.config.foam_fade_distance_scale",
+                         "UI should expose foam fade tuning");
         require_contains(ui_source, "&ui.config.spectral_domains_enabled",
                          "UI should expose spectral domain filtering");
         require_contains(ui_source, "&ui.config.terrain_fields_enabled",
@@ -488,8 +635,30 @@ int main() {
                          "UI should expose cascade wavelength domain diagnostics");
         require_contains(ui_source, "domain %.2f-%.2f m",
                          "UI should show cascade diagnostic wavelength bands");
+        require_contains(ui_source, "Domain min waves",
+                         "UI should expose per-slot spectral-domain cutoffs");
         require_contains(fragment_shader, "struct OceanFoamData",
                          "fragment shader should keep foam role diagnostics grouped");
+        require_contains(fragment_shader, "OceanFeatureParams",
+                         "fragment shader should consume feature-isolation uniforms");
+        require_contains(fragment_shader, "vec4 material_options",
+                         "fragment shader should consume split material controls");
+        require_contains(fragment_shader, "vec4 cascade_options",
+                         "fragment shader should consume enabled-cascade controls");
+        require_contains(fragment_shader, "layout(set = 0, binding = 19)",
+                         "fragment shader should bind feature-isolation uniforms after terrain");
+        require_contains(vertex_shader, "float ocean_surface_shape_strength",
+                         "vertex shader should isolate surface shape contribution");
+        require_contains(vertex_shader, "float ocean_shape_fade_distance_scale",
+                         "vertex shader should expose shape fade distance control");
+        require_contains(fragment_shader, "float ocean_detail_anti_repeat_strength",
+                         "fragment shader should isolate far detail anti-repeat contribution");
+        require_contains(fragment_shader, "float ocean_surface_foam_strength",
+                         "fragment shader should isolate surface foam contribution");
+        require_contains(fragment_shader, "float ocean_atmosphere_reflection_strength",
+                         "fragment shader should isolate atmosphere reflection contribution");
+        require_contains(fragment_shader, "float ocean_foam_fade_distance_scale",
+                         "fragment shader should expose foam fade distance control");
         require_contains(fragment_shader, "samplerCube atmosphere_sky_radiance_texture",
                          "fragment shader should sample the atmosphere sky radiance cube");
         require_contains(fragment_shader, "vec3 ocean_sky_radiance",
@@ -503,28 +672,24 @@ int main() {
                          "fragment shader should preserve normal map scale packing");
         require_contains(fragment_shader, "data.total += weighted_foam;",
                          "fragment shader should preserve accumulated foam sampling");
-        require_contains(fragment_shader, "data.crest += weighted_foam;",
-                         "fragment shader should accumulate crest foam diagnostics");
+        require_contains(fragment_shader, "data.core += weighted_foam;",
+                         "fragment shader should accumulate core foam diagnostics");
+        require_contains(fragment_shader, "data.candidate += weighted_foam;",
+                         "fragment shader should accumulate candidate foam diagnostics");
         require_contains(fragment_shader, "data.detail += weighted_foam;",
                          "fragment shader should accumulate detail foam diagnostics");
         require_contains(fragment_shader, "if (!ocean_cascade_enabled(cascade))",
                          "fragment shader should gate normal and foam by inspected cascade");
-        require_contains(fragment_shader, "for (uint cascade = 0u; cascade < 3u; ++cascade)",
+        require_contains(fragment_shader, "for (uint cascade = 0u; cascade < 5u; ++cascade)",
                          "fragment shader should include all regular normal/foam cascades");
-        require_contains(fragment_shader, "cascade >= 1u && factor > 0.0",
-                         "fragment shader should gate far anti-repeat to foamy cascades");
-        require_not_contains(fragment_shader, "normal_cascade3_texture",
-                             "fragment shader should use the three-cascade reference ABI");
-        require_not_contains(fragment_shader, "foam_cascade3_texture",
-                             "fragment shader should use the three-cascade reference ABI");
-        require_not_contains(fragment_shader, "cascade4_options",
-                             "fragment shader should not carry the old cascade-4 push constants");
+        require_contains(fragment_shader, "return factor > 0.0;",
+                         "fragment shader should allow far anti-repeat on any enabled slot");
         require_contains(fragment_shader, "value_noise(position * 0.0011",
                          "fragment shader should use stable world-space noise weights");
         require_contains(fragment_shader, "float foam_breakup_weight",
                          "fragment shader should use distance-gated world-space foam breakup");
-        require_contains(fragment_shader, "cascade != 2u",
-                         "fragment shader should only break up detail foam mechanically");
+        require_not_contains(fragment_shader, "cascade != 4u",
+                             "fragment shader should not mechanically special-case C4 foam");
         require_contains(
             fragment_shader,
             "sample_normal_foam_domain(cascade, position, tile_length, pixels_per_meter",
@@ -534,12 +699,12 @@ int main() {
             "fragment shader should combine persistent and current foam with a soft union");
         require_contains(fragment_shader, "OCEAN_FAR_ANTI_REPEAT_START",
                          "fragment shader should distance-gate far anti-repeat");
-        require_contains(fragment_shader, "float map_size = ocean.tile_lengths.w;",
+        require_contains(fragment_shader, "float map_size = ocean.cascade4_options.w;",
                          "fragment shader should read map size from packed cascade controls");
         require_contains(fragment_shader, "float cascade_surface_lod_weight",
                          "fragment shader should apply per-cascade normal and foam LOD weights");
-        require_contains(fragment_shader, "mix(0.015, ocean.foam_color.w, exp(-dist * 0.0175))",
-                         "fragment shader should preserve reference normal fade");
+        require_contains(fragment_shader, "ocean_normal_fade_distance_scale()",
+                         "fragment shader should expose reference normal fade distance");
         require_contains(fragment_shader, "float ocean_material_distance_factor(float dist)",
                          "fragment shader should distance-filter material response");
         require_contains(fragment_shader,
@@ -553,35 +718,31 @@ int main() {
                          "fragment shader should combine persistent foam and crest core");
         require_contains(fragment_shader, "float ocean_foam_coverage(OceanFoamData foam_data",
                          "fragment shader should derive presentation foam coverage from foam data");
-        require_contains(fragment_shader, "float coherent_crest",
-                         "fragment shader should keep crest foam as the coherent carrier");
-        require_contains(fragment_shader, "float detail_gate",
-                         "fragment shader should gate detail foam by existing support");
-        require_contains(fragment_shader, "vec3 ocean_material_sky_color(vec3 direction)",
-                         "fragment shader should use a reference-style sky curve for water color");
-        require_contains(fragment_shader, "vec3 reflection = ocean_material_sky_color",
-                         "fragment shader should shade water from the reference-style sky");
-        require_contains(fragment_shader, "water = mix(water, foam_color, foam_coverage)",
-                         "fragment shader should mix final whitecaps directly toward foam color");
+        require_contains(fragment_shader, "foam_data.total.x",
+                         "fragment shader should derive final foam coverage from total foam");
+        require_contains(fragment_shader, "float history_mask",
+                         "fragment shader should keep persistent foam as the coverage carrier");
+        require_contains(fragment_shader, "vec3 ocean_shaded_foam(",
+                         "fragment shader should shade foam as a material");
         require_contains(
             fragment_shader, "ocean_primary_light_intensity()",
-            "fragment shader should keep atmosphere light energy available to diagnostics");
+            "fragment shader should scale material lighting by atmosphere light energy");
         require_contains(fragment_shader,
-                         "water += ocean_primary_light_color() * specular",
-                         "fragment shader should keep sun-colored specular on the water");
+                         "specular *= direct_light * mix(1.0, 0.35, material_distance)",
+                         "fragment shader should reduce far and foam-covered specular");
         require_contains(fragment_shader,
-                         "float ocean_horizon_fog_factor(float dist)",
-                         "fragment shader should use reference-style distance horizon haze");
+                         "float ocean_horizon_fog_factor(vec3 view_dir, float dist)",
+                         "fragment shader should use view-angle-aware horizon haze");
         require_contains(fragment_shader, "color = vec3(foam_coverage);",
                          "fragment shader should keep debug foam view as presentation coverage");
         require_contains(fragment_shader, "color = vec3(foam_current);",
                          "fragment shader should expose current foam source debug view");
         require_contains(fragment_shader, "color = vec3(foam_persistent);",
                          "fragment shader should expose accumulated foam history debug view");
-        require_contains(fragment_shader, "color = vec3(foam_data.macro.x);",
-                         "fragment shader should expose macro foam diagnostics");
-        require_contains(fragment_shader, "color = vec3(foam_data.crest.x);",
-                         "fragment shader should expose crest foam diagnostics");
+        require_contains(fragment_shader, "color = vec3(foam_data.core.x);",
+                         "fragment shader should expose core foam diagnostics");
+        require_contains(fragment_shader, "color = vec3(foam_data.candidate.x);",
+                         "fragment shader should expose candidate foam diagnostics");
         require_contains(fragment_shader, "color = vec3(foam_data.detail.x);",
                          "fragment shader should expose detail foam diagnostics");
         require_contains(vertex_shader, "triangle_barycentric(vertex_in_cell)",
@@ -616,7 +777,7 @@ int main() {
                          "fragment shader should isolate lit foam diagnostics");
         require_contains(fragment_shader, "triangle_wire_factor(frag_barycentric)",
                          "fragment shader should expose wire diagnostics");
-        require_contains(gpu_resources_source, ".size = sizeof(float) * 60U",
+        require_contains(gpu_resources_source, ".size = sizeof(float) * 64U",
                          "surface pipeline push constants should match ocean shader layout");
         require_contains(
             gpu_resources_source, "kOceanCascadeCount * 3U",
@@ -633,6 +794,14 @@ int main() {
                          "surface descriptors should expose terrain-ocean fields");
         require_contains(gpu_resources_source, "kOceanSurfaceTerrainFieldUniformBinding",
                          "surface descriptors should expose terrain-ocean metadata uniforms");
+        require_contains(gpu_resources_source, "kOceanSurfaceFeatureUniformBinding",
+                         "surface descriptors should expose feature-isolation uniforms");
+        require_contains(gpu_header_source, "OceanSurfaceFeatureUniforms",
+                         "GPU resource header should define packed feature-isolation uniforms");
+        require_contains(gpu_header_source, "sizeof(float) * 20U",
+                         "GPU resource header should size expanded feature-isolation uniforms");
+        require_contains(gpu_header_source, "FrameUniformBuffer<OceanSurfaceFeatureUniforms>",
+                         "GPU resources should own feature-isolation frame uniforms");
         require_contains(
             gpu_resources_source, "update_atmosphere_probe_descriptors",
             "surface descriptors should update both atmosphere probe bindings together");
@@ -677,7 +846,7 @@ int main() {
             fragment_shader, "samplerCube atmosphere_reflection_texture",
             "ocean surface shader should sample the shared atmosphere reflection probe");
         require_contains(fragment_shader, "ocean_environment_reflection",
-                         "ocean surface shader should isolate atmosphere reflection diagnostics");
+                         "ocean surface shader should isolate atmosphere reflection lookup");
 
         require_not_contains(vertex_shader, "ocean_macro_waves",
                              "ocean vertex shader should not use Cubey macro waves");

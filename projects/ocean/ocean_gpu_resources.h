@@ -2,9 +2,11 @@
 
 #include "ocean_config.h"
 
+#include <cubey/core/math.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/texture.h>
+#include <cubey/render/uniform_buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
 
@@ -28,6 +30,16 @@ struct OceanGpuResourceConfig {
     std::uint32_t frame_slot_count = 1U;
 };
 
+struct OceanSurfaceFeatureUniforms {
+    cubey::math::Vec4 feature_options;
+    cubey::math::Vec4 feature_options2;
+    cubey::math::Vec4 material_options;
+    cubey::math::Vec4 fade_options;
+    cubey::math::Vec4 cascade_options;
+};
+
+static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 20U);
+
 class OceanGpuResources {
   public:
     OceanGpuResources() = default;
@@ -46,6 +58,8 @@ class OceanGpuResources {
     void update_terrain_ocean_field_uniform_descriptor(const cubey::vulkan::Device& device,
                                                        cubey::render::FrameSlot frame_slot,
                                                        VkBuffer buffer, VkDeviceSize range);
+    void upload_surface_feature_uniforms(cubey::render::FrameSlot frame_slot,
+                                         const OceanSurfaceFeatureUniforms& uniforms) const;
 
     [[nodiscard]] bool initialized() const {
         return surface_pipeline_.has_value();
@@ -127,6 +141,8 @@ class OceanGpuResources {
     std::optional<cubey::vulkan::DescriptorSetLayout> surface_layout_;
     std::optional<cubey::vulkan::DescriptorPool> surface_pool_;
     std::vector<VkDescriptorSet> surface_sets_{};
+    std::optional<cubey::render::FrameUniformBuffer<OceanSurfaceFeatureUniforms>>
+        surface_feature_uniforms_;
 
     std::optional<cubey::render::ComputePipelineResource> spectrum_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> modulate_pipeline_;

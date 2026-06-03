@@ -36,7 +36,7 @@ Detailed current foundation notes live under
 - [Fluid simulation direction](architecture/fluid-simulation.md): project
   direction for 2D/2.5D/3D fluid work.
 - [Ocean rendering](architecture/ocean-rendering.md):
-  active/reference/experimental/legacy ocean split, reference-derived wave
+  active/reference/legacy ocean split, reference-derived wave
   core, feature donor boundaries, and breaking-wave tradeoffs.
 - [Ocean adjacent systems](architecture/ocean-adjacent-systems.md): atmosphere,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
@@ -61,7 +61,6 @@ Project-specific design stays beside the project:
 - [Fire 3D](../projects/fluid/fire_3d/README.md)
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [Ocean](../projects/ocean/README.md)
-- [Ocean Exp](../projects/ocean_exp/README.md)
 - [Ocean Ref](../projects/ocean_ref/README.md)
 - [Ocean Legacy](../projects/ocean_legacy/README.md)
 - [Procedural Terrain](../projects/procedural_terrain/README.md)

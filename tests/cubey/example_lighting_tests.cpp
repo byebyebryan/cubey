@@ -98,8 +98,6 @@ void test_render_app_dynamic_rendering_scan_covers_built_projects() {
                      "dynamic-rendering hygiene test should scan the glTF viewer");
     require_contains(cmake, "projects/ocean_ref",
                      "dynamic-rendering hygiene test should scan the ocean reference project");
-    require_contains(cmake, "projects/ocean_exp",
-                     "dynamic-rendering hygiene test should scan the ocean experimental snapshot");
     require_contains(cmake, "projects/ocean_legacy",
                      "dynamic-rendering hygiene test should scan the ocean legacy project");
     require_contains(cmake, "projects/procedural_terrain",
