@@ -104,6 +104,75 @@ void test_planet_surface_can_build_camera_relative_vertices() {
     require(found_near_point, "planet surface should include the near sphere point");
 }
 
+void test_planet_surface_planner_culls_out_of_view_patches() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1000.0F,
+        .patches_per_face = 2,
+        .patch_resolution = 2,
+        .max_lod_level = 0,
+    };
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, 1500.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = true,
+    };
+
+    const cubey::projects::planet::PlanetSurfacePatchPlan plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+
+    require(plan.diagnostics.planned_patch_count == 24U,
+            "planet planner should count all terminal root patches");
+    require(plan.diagnostics.visible_patch_count < plan.diagnostics.planned_patch_count,
+            "planet planner should cull patches outside the camera view");
+    require(plan.diagnostics.culled_horizon_count + plan.diagnostics.culled_view_count > 0U,
+            "planet planner should report cull reasons");
+}
+
+void test_planet_surface_planner_culls_when_camera_looks_away() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1000.0F,
+        .patches_per_face = 2,
+        .patch_resolution = 2,
+        .max_lod_level = 0,
+    };
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, 1500.0},
+        .camera_forward_world = {0.0F, 0.0F, 1.0F},
+        .culling_enabled = true,
+    };
+
+    const cubey::projects::planet::PlanetSurfacePatchPlan plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+
+    require(plan.diagnostics.visible_patch_count == 0U,
+            "planet planner should cull the surface when the camera looks away");
+    require(plan.diagnostics.culled_view_count > 0U,
+            "planet planner should attribute away-facing patches to view culling");
+}
+
+void test_planet_surface_planner_selects_near_lod() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1000.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 2,
+        .max_lod_level = 1,
+        .lod_target_edge_px = 1.0F,
+    };
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, 1500.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = true,
+    };
+
+    const cubey::projects::planet::PlanetSurfacePatchPlan plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+
+    require(plan.diagnostics.max_lod_level == 1U,
+            "planet planner should select higher LOD near the camera");
+    require(plan.diagnostics.patches_by_lod[1] > 0U,
+            "planet planner should report selected near-camera child patches");
+}
+
 } // namespace
 
 int main() {
@@ -112,6 +181,9 @@ int main() {
         test_planet_surface_vertices_stay_on_radius();
         test_planet_surface_lod_subdivides_near_camera_patches();
         test_planet_surface_can_build_camera_relative_vertices();
+        test_planet_surface_planner_culls_out_of_view_patches();
+        test_planet_surface_planner_culls_when_camera_looks_away();
+        test_planet_surface_planner_selects_near_lod();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_surface_tests: %s\n", error.what());

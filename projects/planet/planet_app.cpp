@@ -224,8 +224,13 @@ class PlanetApp {
     void update_input(cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
         orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
         refresh_frame();
-        if (surface_mesh_.has_value() && render_origin_changed()) {
+        if (surface_mesh_.has_value() && surface_plan_changed(context.swapchain().extent())) {
+            surface_rebuild_pending_ = true;
+        }
+        if (surface_mesh_.has_value() && surface_rebuild_pending_ &&
+            !orbit_controller_.dragging()) {
             rebuild_surface_resources(context, context.swapchain().extent());
+            surface_rebuild_pending_ = false;
         }
     }
 
@@ -237,7 +242,11 @@ class PlanetApp {
         ImGui::Text("Altitude: %.0f m", frame_.camera_altitude_m);
         ImGui::Text("Horizon: %.0f m", frame_.horizon_distance_m);
         ImGui::Text("Near / far: %.1f m / %.0f m", frame_.near_plane_m, frame_.far_plane_m);
-        ImGui::Text("Patches: %u", surface_build_.diagnostics.patch_count);
+        ImGui::Text("Patches: %u visible / %u planned",
+                    surface_build_.diagnostics.visible_patch_count,
+                    surface_build_.diagnostics.planned_patch_count);
+        ImGui::Text("Culled: %u horizon / %u view", surface_build_.diagnostics.culled_horizon_count,
+                    surface_build_.diagnostics.culled_view_count);
         ImGui::Text("LOD range: %u - %u", surface_build_.diagnostics.min_lod_level,
                     surface_build_.diagnostics.max_lod_level);
         ImGui::Text("LOD patches: %u / %u / %u / %u", surface_build_.diagnostics.patches_by_lod[0],
@@ -385,21 +394,45 @@ class PlanetApp {
     }
 
     [[nodiscard]] PlanetSurfaceView surface_view(VkExtent2D extent) const {
+        const cubey::Transform3D transform = camera_transform();
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
         return {
             .camera_world_position_m = frame_.camera_world_position_m,
+            .camera_forward_world =
+                glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F}),
             .vertical_fov_radians = camera_.fovy_radians(),
+            .aspect_ratio = aspect,
             .viewport_height_px = static_cast<float>(std::max(extent.height, 1U)),
+            .culling_enabled = true,
         };
     }
 
     void rebuild_surface_data(VkExtent2D extent) {
-        surface_build_ = make_planet_surface_mesh(planet_config_, surface_view(extent), frame_);
+        const PlanetSurfaceView view = surface_view(extent);
+        const PlanetSurfacePatchPlan plan = plan_planet_surface_patches(planet_config_, view);
+        surface_build_ = make_planet_surface_mesh(planet_config_, view, frame_, plan);
         surface_build_render_origin_world_m_ = frame_.render_origin_world_m;
+        surface_build_view_ = view;
     }
 
-    [[nodiscard]] bool render_origin_changed() const {
-        return glm::length(frame_.render_origin_world_m - surface_build_render_origin_world_m_) >
-               1.0;
+    [[nodiscard]] bool surface_plan_changed(VkExtent2D extent) const {
+        const PlanetSurfaceView view = surface_view(extent);
+        const double origin_threshold_m =
+            std::max(static_cast<double>(planet_config_.radius_m) * 0.002, 256.0);
+        if (glm::length(frame_.render_origin_world_m - surface_build_render_origin_world_m_) >
+            origin_threshold_m) {
+            return true;
+        }
+        if (std::abs(view.aspect_ratio - surface_build_view_.aspect_ratio) > 0.005F ||
+            std::abs(view.viewport_height_px - surface_build_view_.viewport_height_px) > 1.0F) {
+            return true;
+        }
+        const float forward_dot =
+            glm::dot(glm::normalize(view.camera_forward_world),
+                     glm::normalize(surface_build_view_.camera_forward_world));
+        return forward_dot < 0.9985F;
     }
 
     [[nodiscard]] cubey::Transform3D camera_render_transform() const {
@@ -502,6 +535,8 @@ class PlanetApp {
     PlanetFrame frame_{};
     PlanetSurfaceBuildResult surface_build_{};
     cubey::math::DVec3 surface_build_render_origin_world_m_{0.0, 0.0, 0.0};
+    PlanetSurfaceView surface_build_view_{};
+    bool surface_rebuild_pending_ = false;
     std::optional<cubey::render::Mesh> surface_mesh_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;

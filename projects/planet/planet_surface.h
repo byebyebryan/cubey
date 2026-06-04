@@ -28,6 +28,10 @@ struct PlanetSurfaceMeshData {
 
 struct PlanetSurfaceDiagnostics {
     std::uint32_t face_count = 6;
+    std::uint32_t planned_patch_count = 0;
+    std::uint32_t visible_patch_count = 0;
+    std::uint32_t culled_horizon_count = 0;
+    std::uint32_t culled_view_count = 0;
     std::uint32_t patch_count = 0;
     std::uint32_t vertex_count = 0;
     std::uint32_t triangle_count = 0;
@@ -43,8 +47,27 @@ struct PlanetSurfaceDiagnostics {
 struct PlanetSurfaceView {
     cubey::math::DVec3 camera_world_position_m{
         0.0, 0.0, kPlanetDefaultRadiusM + kPlanetDefaultCameraAltitudeM};
+    cubey::math::Vec3 camera_forward_world{0.0F, 0.0F, -1.0F};
     float vertical_fov_radians = 1.0471975803375244F;
+    float aspect_ratio = 16.0F / 9.0F;
     float viewport_height_px = 720.0F;
+    bool culling_enabled = false;
+};
+
+struct PlanetSurfacePatch {
+    std::uint32_t face = 0;
+    std::uint32_t level = 0;
+    std::uint32_t patch_index = 0;
+    float u0 = -1.0F;
+    float v0 = -1.0F;
+    float u1 = 1.0F;
+    float v1 = 1.0F;
+    float screen_error_px = 0.0F;
+};
+
+struct PlanetSurfacePatchPlan {
+    std::vector<PlanetSurfacePatch> patches{};
+    PlanetSurfaceDiagnostics diagnostics{};
 };
 
 struct PlanetSurfaceBuildResult {
@@ -52,11 +75,17 @@ struct PlanetSurfaceBuildResult {
     PlanetSurfaceDiagnostics diagnostics{};
 };
 
+[[nodiscard]] PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
+                                                                 PlanetSurfaceView view);
 [[nodiscard]] PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config);
 [[nodiscard]] PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
                                                                 PlanetSurfaceView view);
 [[nodiscard]] PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
                                                                 PlanetSurfaceView view,
                                                                 const PlanetFrame& frame);
+[[nodiscard]] PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
+                                                                PlanetSurfaceView view,
+                                                                const PlanetFrame& frame,
+                                                                const PlanetSurfacePatchPlan& plan);
 
 } // namespace cubey::projects::planet
