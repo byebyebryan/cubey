@@ -33,6 +33,7 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 cascade_options;
     vec4 self_shadow_options;
     vec4 surface_frame_options;
+    vec4 surface_curve_options;
 } ocean_features;
 
 layout(push_constant) uniform OceanParams {
@@ -58,6 +59,8 @@ layout(location = 3) in vec4 frag_wave;
 layout(location = 4) in float frag_patch_alpha;
 layout(location = 5) noperspective in vec3 frag_barycentric;
 layout(location = 6) in float frag_mesh_cell_size;
+layout(location = 7) in vec3 frag_surface_up;
+layout(location = 8) in float frag_surface_curve_drop;
 
 layout(location = 0) out vec4 out_color;
 
@@ -82,6 +85,7 @@ const uint OCEAN_VIEW_FOAM_LIT = 17u;
 const uint OCEAN_VIEW_TERRAIN_DEPTH = 18u;
 const uint OCEAN_VIEW_TERRAIN_SHORE = 19u;
 const uint OCEAN_VIEW_TERRAIN_SLOPE = 20u;
+const uint OCEAN_VIEW_CURVATURE = 21u;
 const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
@@ -236,6 +240,19 @@ float ocean_surface_camera_altitude_m() {
 
 float ocean_surface_horizon_distance_m() {
     return max(ocean_features.surface_frame_options.w, 0.001);
+}
+
+float ocean_surface_curvature_start_m() {
+    return max(ocean_features.surface_curve_options.y, 0.0);
+}
+
+float ocean_surface_curvature_end_m() {
+    return max(ocean_features.surface_curve_options.z,
+               ocean_surface_curvature_start_m() + 0.001);
+}
+
+float ocean_surface_curvature_strength() {
+    return clamp(ocean_features.surface_curve_options.w, 0.0, 1.0);
 }
 
 vec3 ocean_sky_radiance(vec3 direction) {
@@ -850,6 +867,15 @@ vec3 debug_lod_color(float level, float max_level) {
                        : mix(mid_color, far_color, (value - 0.5) * 2.0);
 }
 
+vec3 debug_curvature_color(float drop) {
+    float value = clamp(-drop / max(ocean_surface_camera_altitude_m(), 1.0), 0.0, 1.0);
+    vec3 flat_color = cubey_srgb_to_linear(vec3(0.05, 0.11, 0.18));
+    vec3 mid_color = cubey_srgb_to_linear(vec3(0.10, 0.58, 0.82));
+    vec3 far_color = cubey_srgb_to_linear(vec3(0.92, 0.78, 0.34));
+    return value < 0.5 ? mix(flat_color, mid_color, value * 2.0)
+                       : mix(mid_color, far_color, (value - 0.5) * 2.0);
+}
+
 float active_displacement_lod_weight(float dist, float mesh_cell_size) {
     float weight = 0.0;
     float active_count = 0.0;
@@ -874,7 +900,8 @@ void main() {
     vec3 camera_position = ocean.camera_time.xyz;
     float dist = length(frag_sample_position - camera_position.xz);
     OceanFoamData foam_data = ocean_foam_data(dist);
-    vec3 normal = normalize(vec3(-foam_data.gradient.x, 1.0, -foam_data.gradient.y));
+    vec3 normal = normalize(frag_surface_up + vec3(-foam_data.gradient.x, 0.0,
+                                                   -foam_data.gradient.y));
     float foam_persistent = foam_data.total.x;
     float foam_current = foam_data.total.y;
 
@@ -897,9 +924,9 @@ void main() {
     float ambient_light = ocean_ambient_light_scale();
     float direct_light = ocean_direct_light_scale();
     float reference_shadow = ocean_reference_pillar_shadow(frag_world_position, sun_dir);
-    float wave_shadow =
-        ocean_wave_self_shadow(frag_sample_position, frag_world_position.y, sun_dir,
-                               frag_mesh_cell_size);
+    float wave_shadow = ocean_wave_self_shadow(frag_sample_position,
+                                               ocean_surface_water_datum_y() + frag_displacement.y,
+                                               sun_dir, frag_mesh_cell_size);
     float direct_shadow = min(reference_shadow, wave_shadow);
     float shadowed_direct_light = direct_light * direct_shadow;
     float roughness = clamp(ocean.water_color.w, 0.02, 1.0);
@@ -977,6 +1004,8 @@ void main() {
     } else if (view == OCEAN_VIEW_TERRAIN_SLOPE) {
         color = vec3(clamp(terrain_fields.w / max(terrain_ocean.ranges_flags.z, 0.001), 0.0,
                            1.0));
+    } else if (view == OCEAN_VIEW_CURVATURE) {
+        color = debug_curvature_color(frag_surface_curve_drop);
     }
 
     if (ocean.debug_options.w > 0.0) {

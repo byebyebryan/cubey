@@ -1220,6 +1220,13 @@ class OceanApp {
                     surface_frame.horizon.camera_altitude_m,
                     surface_frame.horizon.horizon_distance_m,
                 },
+            .surface_curve_options =
+                {
+                    surface_frame.surface_mode == OceanSurfaceMode::CurvedFar ? 1.0F : 0.0F,
+                    surface_frame.curvature_start_m,
+                    surface_frame.curvature_end_m,
+                    surface_frame.curvature_strength,
+                },
         };
     }
 

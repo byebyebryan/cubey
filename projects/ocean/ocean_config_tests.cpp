@@ -523,6 +523,9 @@ int main() {
         require(ocean::ocean_render_view_from_name("terrain-slope") ==
                     ocean::OceanRenderView::TerrainSlope,
                 "terrain slope debug view should parse");
+        require(ocean::ocean_render_view_from_name("curvature") ==
+                    ocean::OceanRenderView::Curvature,
+                "curvature debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Foam) ==
                     ocean::OceanRenderView::FoamSource,
                 "ocean debug view cycle should include the foam source view");
@@ -551,8 +554,11 @@ int main() {
                     ocean::OceanRenderView::TerrainDepth,
                 "ocean debug view cycle should include terrain depth after lit foam");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::TerrainSlope) ==
+                    ocean::OceanRenderView::Curvature,
+                "ocean debug view cycle should include curvature after terrain slope");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::Curvature) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap after terrain slope");
+                "ocean debug view cycle should wrap after curvature");
 
         bool rejected = false;
         try {
@@ -832,8 +838,14 @@ int main() {
                          "vertex shader should name the local surface up contract");
         require_contains(vertex_shader, "vec2 ocean_surface_sample_position(vec2 local_xz)",
                          "vertex shader should keep FFT sampling behind a surface contract");
-        require_contains(vertex_shader, "vec3 ocean_flat_surface_world_position",
-                         "vertex shader should isolate flat surface world mapping");
+        require_contains(vertex_shader, "float ocean_surface_drop_y(vec2 local_xz)",
+                         "vertex shader should isolate curved far-surface drop");
+        require_contains(vertex_shader, "vec3 ocean_surface_world_position",
+                         "vertex shader should isolate surface world mapping");
+        require_contains(vertex_shader, "frag_surface_up",
+                         "vertex shader should pass mapped surface up to fragment shading");
+        require_contains(vertex_shader, "frag_surface_curve_drop",
+                         "vertex shader should pass curvature diagnostics to fragment shading");
         require_contains(vertex_shader, "add_displacement(displacement, cascade, base_position",
                          "vertex shader should keep FFT displacement in local XZ space");
         require_contains(vertex_shader, "if (!ocean_cascade_enabled(cascade))",
@@ -1193,6 +1205,12 @@ int main() {
                          "fragment shader should expose raw foam diagnostics");
         require_contains(fragment_shader, "const uint OCEAN_VIEW_TERRAIN_DEPTH = 18u",
                          "fragment shader should expose terrain depth diagnostics");
+        require_contains(fragment_shader, "const uint OCEAN_VIEW_CURVATURE = 21u",
+                         "fragment shader should expose curvature diagnostics");
+        require_contains(fragment_shader, "debug_curvature_color",
+                         "fragment shader should color curved far-surface diagnostics");
+        require_contains(fragment_shader, "frag_surface_up + vec3",
+                         "fragment shader should start normals from mapped surface up");
         require_contains(fragment_shader, "sampler2D terrain_ocean_fields_texture",
                          "fragment shader should sample shared terrain-ocean fields");
         require_contains(fragment_shader, "TerrainOceanFieldParams",
@@ -1230,12 +1248,14 @@ int main() {
                          "surface descriptors should expose feature-isolation uniforms");
         require_contains(gpu_header_source, "OceanSurfaceFeatureUniforms",
                          "GPU resource header should define packed feature-isolation uniforms");
-        require_contains(gpu_header_source, "sizeof(float) * 28U",
+        require_contains(gpu_header_source, "sizeof(float) * 32U",
                          "GPU resource header should size expanded feature-isolation uniforms");
         require_contains(gpu_header_source, "self_shadow_options",
                          "GPU resource header should pack wave self-shadow controls");
         require_contains(gpu_header_source, "surface_frame_options",
                          "GPU resource header should pack ocean surface frame metadata");
+        require_contains(gpu_header_source, "surface_curve_options",
+                         "GPU resource header should pack curved surface metadata");
         require_contains(gpu_resources_source,
                          "VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT",
                          "surface displacement descriptors should be visible to self-shadowing");

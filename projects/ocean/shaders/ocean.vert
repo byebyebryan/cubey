@@ -13,6 +13,7 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 cascade_options;
     vec4 self_shadow_options;
     vec4 surface_frame_options;
+    vec4 surface_curve_options;
 } ocean_features;
 
 layout(push_constant) uniform OceanParams {
@@ -38,6 +39,8 @@ layout(location = 3) out vec4 frag_wave;
 layout(location = 4) out float frag_patch_alpha;
 layout(location = 5) noperspective out vec3 frag_barycentric;
 layout(location = 6) out float frag_mesh_cell_size;
+layout(location = 7) out vec3 frag_surface_up;
+layout(location = 8) out float frag_surface_curve_drop;
 
 const float OCEAN_MESH_TRANSITION_CELLS = 16.0;
 const float OCEAN_MESH_MAX_TRANSITION_RATIO = 0.35;
@@ -221,16 +224,77 @@ float ocean_water_datum_y() {
     return ocean_features.surface_frame_options.x;
 }
 
+float ocean_surface_curvature_strength() {
+    return clamp(ocean_features.surface_curve_options.w, 0.0, 1.0);
+}
+
+float ocean_surface_planet_radius_m() {
+    return max(ocean_features.surface_frame_options.y, 0.001);
+}
+
+float ocean_surface_curvature_start_m() {
+    return max(ocean_features.surface_curve_options.y, 0.0);
+}
+
+float ocean_surface_curvature_end_m() {
+    return max(ocean_features.surface_curve_options.z,
+               ocean_surface_curvature_start_m() + 0.001);
+}
+
+bool ocean_surface_curved_enabled() {
+    return ocean_features.surface_curve_options.x > 0.5 &&
+           ocean_surface_curvature_strength() > 0.0;
+}
+
+vec2 ocean_surface_camera_relative_xz(vec2 local_xz) {
+    return local_xz - ocean.camera_time.xz;
+}
+
+float ocean_surface_camera_distance(vec2 local_xz) {
+    return length(ocean_surface_camera_relative_xz(local_xz));
+}
+
+float ocean_surface_curvature_weight(vec2 local_xz) {
+    if (!ocean_surface_curved_enabled()) {
+        return 0.0;
+    }
+    return smoothstep(ocean_surface_curvature_start_m(), ocean_surface_curvature_end_m(),
+                      ocean_surface_camera_distance(local_xz)) *
+           ocean_surface_curvature_strength();
+}
+
+float ocean_surface_spherical_drop_y(vec2 local_xz) {
+    float radius = ocean_surface_planet_radius_m();
+    float distance = min(ocean_surface_camera_distance(local_xz), radius);
+    return sqrt(max(radius * radius - distance * distance, 0.0)) - radius;
+}
+
+float ocean_surface_drop_y(vec2 local_xz) {
+    return ocean_surface_spherical_drop_y(local_xz) * ocean_surface_curvature_weight(local_xz);
+}
+
 vec3 ocean_surface_up(vec2 local_xz) {
-    return vec3(0.0, 1.0, 0.0);
+    float weight = ocean_surface_curvature_weight(local_xz);
+    if (weight <= 0.0) {
+        return vec3(0.0, 1.0, 0.0);
+    }
+    float radius = ocean_surface_planet_radius_m();
+    vec2 offset = ocean_surface_camera_relative_xz(local_xz);
+    float drop = ocean_surface_spherical_drop_y(local_xz);
+    vec3 sphere_up = normalize(vec3(offset.x, radius + drop, offset.y));
+    return normalize(mix(vec3(0.0, 1.0, 0.0), sphere_up, weight));
 }
 
 vec2 ocean_surface_sample_position(vec2 local_xz) {
     return local_xz;
 }
 
-vec3 ocean_flat_surface_world_position(vec2 local_xz, vec3 displacement) {
-    return vec3(local_xz.x, ocean_water_datum_y(), local_xz.y) + displacement;
+vec3 ocean_surface_world_position(vec2 local_xz, vec3 displacement) {
+    float drop = ocean_surface_drop_y(local_xz);
+    vec3 surface_up = ocean_surface_up(local_xz);
+    vec3 base = vec3(local_xz.x + displacement.x, ocean_water_datum_y() + drop,
+                     local_xz.y + displacement.z);
+    return base + surface_up * displacement.y;
 }
 
 vec3 sample_ocean_displacement(uint cascade, vec2 position, float tile_length) {
@@ -288,7 +352,7 @@ void main() {
     }
     displacement *= horizon_displacement_weight(camera_distance);
 
-    vec3 world_position = ocean_flat_surface_world_position(base_position, displacement);
+    vec3 world_position = ocean_surface_world_position(base_position, displacement);
     frag_world_position = world_position;
     frag_displacement = displacement;
     frag_sample_position = ocean_surface_sample_position(base_position);
@@ -296,5 +360,7 @@ void main() {
     frag_patch_alpha = clipmap_patch_alpha(patch_position, patch_cell_size);
     frag_barycentric = triangle_barycentric(vertex_in_cell);
     frag_mesh_cell_size = patch_cell_size;
+    frag_surface_up = ocean_surface_up(base_position);
+    frag_surface_curve_drop = ocean_surface_drop_y(base_position);
     gl_Position = ocean.view_projection * vec4(world_position, 1.0);
 }
