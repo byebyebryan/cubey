@@ -1,6 +1,7 @@
 #include "ocean_config.h"
 #include "ocean_horizon.h"
 #include "ocean_mesh.h"
+#include "ocean_surface_frame.h"
 #include "ocean_ui.h"
 
 #include <cubey/core/run_config.h>
@@ -189,6 +190,22 @@ int main() {
         require(disabled_horizon_mesh.mesh_extent == defaults.mesh_extent &&
                     disabled_horizon_mesh.mesh_lod_levels == defaults.mesh_lod_levels,
                 "disabled auto horizon mesh should keep manual mesh settings");
+        const ocean::OceanSurfaceFrame surface_frame =
+            ocean::ocean_surface_frame_from_camera(defaults, {0.0F, 20.0F, 0.0F},
+                                                   earth_radius_m);
+        require(surface_frame.flat_surface,
+                "ocean surface frame should keep the T1.5 implementation flat");
+        require_near(surface_frame.local_frame.water_datum_m, 0.0F, 0.001F,
+                     "ocean surface frame should default to the current sea-level datum");
+        require_near(surface_frame.camera_local_position_m.y, 20.0F, 0.001F,
+                     "ocean surface frame should derive local camera height from the frame");
+        require(surface_frame.mesh_config.mesh_extent == effective_horizon_mesh.mesh_extent,
+                "ocean surface frame should own the effective mesh config");
+        require_near(surface_frame.horizon.horizon_distance_m, twenty_meter_horizon, 2.0F,
+                     "ocean surface frame should own horizon diagnostics");
+        require_near(surface_frame.projection_far_plane_m,
+                     ocean::ocean_horizon_projection_far_plane_m(surface_frame.horizon), 0.001F,
+                     "ocean surface frame should own the projection far plane");
 
         const ocean::OceanCascadeConfig& cascade0 = defaults.cascades[0];
         const ocean::OceanCascadeConfig& cascade1 = defaults.cascades[1];
@@ -1171,10 +1188,10 @@ int main() {
                          "ocean app should draw the scale reference pillar in the scene pass");
         require_contains(app_source, "render_view_ != OceanRenderView::Final",
                          "ocean app should keep the pillar out of debug views");
-        require_contains(app_source, "effective_ocean_mesh_config()",
-                         "ocean app should use an effective horizon mesh config");
-        require_contains(app_source, "ocean_horizon_projection_far_plane_m",
-                         "ocean projection should derive far plane from horizon diagnostics");
+        require_contains(app_source, "OceanSurfaceFrame ocean_surface_frame()",
+                         "ocean app should centralize per-frame ocean surface state");
+        require_contains(app_source, "surface_frame.projection_far_plane_m",
+                         "ocean projection should derive far plane from surface frame");
         require_contains(app_source, "reference_pillar_mesh_",
                          "ocean app should retain the reference pillar mesh as reusable geometry");
         require_contains(pillar_vertex_shader, "pillar.view_projection",

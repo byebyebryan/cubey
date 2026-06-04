@@ -616,12 +616,14 @@ void draw_ocean_ui(OceanUiContext ui) {
     }
 
     const std::array<cubey::host::PerformanceCounter, 3> performance_counters{
-        cubey::host::PerformanceCounter{"Mesh patches", ocean_mesh_patch_count(ui.mesh_config),
-                                        nullptr},
-        cubey::host::PerformanceCounter{"LOD levels", ui.mesh_config.mesh_lod_levels, nullptr},
+        cubey::host::PerformanceCounter{
+            "Mesh patches", ocean_mesh_patch_count(ui.surface_frame.mesh_config), nullptr},
+        cubey::host::PerformanceCounter{"LOD levels",
+                                        ui.surface_frame.mesh_config.mesh_lod_levels, nullptr},
         cubey::host::PerformanceCounter{
             "Horizon cover",
-            static_cast<std::uint64_t>(std::max(0.0F, ui.horizon.coverage_ratio) * 100.0F),
+            static_cast<std::uint64_t>(
+                std::max(0.0F, ui.surface_frame.horizon.coverage_ratio) * 100.0F),
             "%"},
     };
     cubey::host::PerformanceUiContext performance = ui.performance;
@@ -653,20 +655,22 @@ void draw_ocean_ui(OceanUiContext ui) {
                             ui.config.cascades[index].displacement_scale);
             }
         }
-        ImGui::Text("Mesh: %u LOD / %u patches / %u tris", ui.mesh_config.mesh_lod_levels,
-                    ocean_mesh_patch_count(ui.mesh_config),
-                    ocean_mesh_total_triangle_count(ui.mesh_config));
-        ImGui::Text("Near cell: %.2f m", ocean_mesh_near_cell_size(ui.mesh_config));
-        ImGui::Text("Far cell: %.2f m", ui.horizon.far_cell_size_m);
-        ImGui::Text("Camera altitude: %.1f m", ui.horizon.camera_altitude_m);
+        ImGui::Text("Mesh: %u LOD / %u patches / %u tris",
+                    ui.surface_frame.mesh_config.mesh_lod_levels,
+                    ocean_mesh_patch_count(ui.surface_frame.mesh_config),
+                    ocean_mesh_total_triangle_count(ui.surface_frame.mesh_config));
+        ImGui::Text("Near cell: %.2f m", ocean_mesh_near_cell_size(ui.surface_frame.mesh_config));
+        ImGui::Text("Far cell: %.2f m", ui.surface_frame.horizon.far_cell_size_m);
+        ImGui::Text("Camera altitude: %.1f m", ui.surface_frame.horizon.camera_altitude_m);
         ImGui::Text("Horizon: %.1f km / required extent %.1f km",
-                    ui.horizon.horizon_distance_m / kOceanMetersPerKilometer,
-                    ui.horizon.required_half_extent_m / kOceanMetersPerKilometer);
+                    ui.surface_frame.horizon.horizon_distance_m / kOceanMetersPerKilometer,
+                    ui.surface_frame.horizon.required_half_extent_m / kOceanMetersPerKilometer);
         ImGui::Text("Mesh extent: %.1f km / coverage %.0f%%",
-                    ui.horizon.mesh_half_extent_m / kOceanMetersPerKilometer,
-                    ui.horizon.coverage_ratio * 100.0F);
-        ImGui::Text("Vertices: %u", ocean_mesh_total_vertex_count(ui.mesh_config));
-        draw_lod_diagnostics(ui.mesh_config);
+                    ui.surface_frame.horizon.mesh_half_extent_m / kOceanMetersPerKilometer,
+                    ui.surface_frame.horizon.coverage_ratio * 100.0F);
+        ImGui::Text("Vertices: %u",
+                    ocean_mesh_total_vertex_count(ui.surface_frame.mesh_config));
+        draw_lod_diagnostics(ui.surface_frame.mesh_config);
     }
 
     ImGui::End();
