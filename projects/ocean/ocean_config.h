@@ -128,7 +128,7 @@ struct OceanConfig {
     float foam_fade_distance_scale = 1.0F;
     bool spectral_domains_enabled = true;
     bool terrain_fields_enabled = false;
-    OceanFieldPrecision field_precision = OceanFieldPrecision::Full;
+    OceanFieldPrecision field_precision = OceanFieldPrecision::Half;
     std::array<bool, kOceanCascadeCount> cascade_enabled{true, true, false, false, false};
     std::array<std::uint32_t, kOceanCascadeCount> cascade_map_sizes{0U, 0U, 0U, 0U, 0U};
     std::array<std::uint32_t, kOceanCascadeCount> cascade_update_intervals{1U, 1U, 1U, 1U, 1U};
@@ -305,11 +305,11 @@ struct OceanCascadeLodBand {
 
 [[nodiscard]] inline OceanFieldPrecision
 ocean_field_precision_from_name(std::string_view name) {
-    if (name.empty() || name == "full") {
-        return OceanFieldPrecision::Full;
-    }
-    if (name == "half") {
+    if (name.empty() || name == "half") {
         return OceanFieldPrecision::Half;
+    }
+    if (name == "full") {
+        return OceanFieldPrecision::Full;
     }
     throw std::runtime_error("unknown ocean field precision: " + std::string(name));
 }

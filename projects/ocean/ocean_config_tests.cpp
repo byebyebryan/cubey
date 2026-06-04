@@ -62,6 +62,12 @@ int main() {
                 "ocean should default to the current reference map size");
         require(defaults.map_size == 512U,
                 "ocean should default to the practical 512 map size");
+        require(defaults.field_precision == ocean::OceanFieldPrecision::Half,
+                "ocean should default to half precision fields");
+        require(ocean::ocean_field_precision_from_name("") == ocean::OceanFieldPrecision::Half,
+                "empty ocean field precision config should resolve to the default half precision");
+        require(ocean::ocean_field_precision_from_name("full") == ocean::OceanFieldPrecision::Full,
+                "ocean should still allow explicit full precision fields");
         require(ocean::ocean_is_supported_map_size(128),
                 "ocean should support 128 maps for smoke tests");
         require(ocean::ocean_is_supported_map_size(256), "ocean should support 256 maps");
@@ -442,6 +448,8 @@ int main() {
         require(from_run_config.render_view == ocean::OceanRenderView::Foam,
                 "run config should initialize ocean debug view");
         require(from_run_config.map_size == 128U, "run config should initialize ocean map size");
+        require(from_run_config.field_precision == ocean::OceanFieldPrecision::Half,
+                "run config should inherit the default ocean field precision");
         require(!from_run_config.spectral_domains_enabled,
                 "run config should initialize ocean spectral domain override");
         require(from_run_config.terrain_fields_enabled,
