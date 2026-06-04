@@ -172,9 +172,9 @@ The active ocean renderer now has a first T1 implementation slice:
   aerial-perspective placeholder:
   `water * transmittance + sky_radiance * inscatter_weight`.
 
-This is still a flat local ocean. Curved far-ocean mapping, true atmospheric
-LUT aerial perspective, terrain/bathymetry streaming, shoreline interaction,
-and planet-scale patching remain deferred.
+This T1 slice established horizon extent and far composition. The active
+renderer has since moved beyond this flat baseline with the T2 curved
+far-surface path described below.
 
 ## Current T1.5 Status
 
@@ -204,17 +204,10 @@ The shader contract now follows this shape:
 - world/render position generation goes through named surface-mapping helpers;
 - atmosphere and ocean agree on camera altitude derived from the same frame.
 
-Still deferred:
+## Current T2 Status
 
-- non-flat surface mapping for curved far vertices;
-- world-frame-aware terrain/bathymetry sampling beyond the diagnostic local
-  field;
-- floating origin or large-world camera state outside the ocean project.
-
-## T2 Curved Far-Surface Plan
-
-T2 should make curvature visible by default while keeping Flat mode as an A/B
-and regression path. The implementation remains a viewer-centered local tangent
+T2 now makes curvature visible by default while keeping Flat mode as an A/B and
+regression path. The implementation remains a viewer-centered local tangent
 patch:
 
 - surface mode is a resolved frame/config choice: `flat` or `curved-far`;
@@ -226,10 +219,19 @@ patch:
   stays local and deterministic;
 - shaders generate world/render positions through surface-mapping helpers, and
   material normals start from the mapped surface up vector.
+- surface-frame uniforms publish both datum/radius/altitude/horizon metadata and
+  curved-surface mode/start/end/strength metadata;
+- the UI and CLI expose surface mode, curvature start/end ratios, curvature
+  strength, and a `curvature` debug view.
 
-This slice intentionally leaves distant-object occlusion, curved terrain and
-bathymetry sampling, floating origin, shoreline interaction, and planet-scale
-patch streaming out of scope.
+Still deferred:
+
+- true curved-horizon occlusion for distant objects;
+- world-frame-aware terrain/bathymetry sampling beyond the diagnostic local
+  field;
+- floating origin or large-world camera state outside the ocean project;
+- shoreline interaction and planet-scale patch streaming;
+- true atmospheric LUT aerial perspective for far-water extinction.
 
 ## Research Decisions
 
@@ -285,9 +287,11 @@ Avoid:
 5. Done as a flat seam: introduce local-frame, surface-frame, datum, projection,
    terrain diagnostic, atmosphere altitude, and shader metadata vocabulary while
    keeping the implementation flat.
-6. Next: add a single-pass curved far-ocean mapping path with Flat/Curved-Far
+6. Done: add a single-pass curved far-ocean mapping path with Flat/Curved-Far
    surface modes, horizon-ratio blend controls, and curvature diagnostics.
-7. Only then evaluate planet-scale terrain/ocean patching and streaming.
+7. Next: evaluate whether far-water atmosphere composition, curved
+   terrain/bathymetry fields, or planet-scale patching should be the next scale
+   boundary.
 
 This keeps the next slice product-visible while leaving a clean path from local
 ocean to curved horizon and later planet scale.

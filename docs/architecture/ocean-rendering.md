@@ -31,24 +31,25 @@ The current renderer is now moving through the T1 horizon-scale path captured
 in [Ocean horizon and planet scale](ocean-horizon-and-planet-scale.md):
 derive effective ocean extent from camera altitude, keep a planet-compatible
 flat surface-mapping seam, route projection/atmosphere/datum metadata through
-an explicit `OceanSurfaceFrame`, and move toward curved far-field rendering
-before attempting full planet-scale terrain/ocean streaming.
+an explicit `OceanSurfaceFrame`, and bend the far field through the default
+`curved-far` surface mode before attempting full planet-scale terrain/ocean
+streaming.
 
 The active renderer includes:
 
 - a camera-relative clipmap mesh with horizon-derived effective extent,
   mesh-cell-aware cascade LOD diagnostics, and explicit horizon coverage
   readouts;
-- a flat local-tangent ocean surface frame that owns the effective mesh,
-  projection far plane, water datum, planet radius, camera altitude, and shader
-  surface metadata for the current frame;
+- a local-tangent ocean surface frame that owns the effective mesh, projection
+  far plane, water datum, planet radius, camera altitude, and flat/curved-far
+  shader surface metadata for the current frame;
 - the GodotOceanWaves-style multi-cascade spectrum, modulation, FFT, and unpack
   path;
 - five regular cascade slots, with C0/C1 enabled by default as the
   reference-derived core pair and C2-C4 kept as opt-in candidates for
   large-scale breakup or fine detail experiments;
-- displacement, normal, foam, LOD, environment-lighting, and terrain-field
-  debug views;
+- displacement, normal, foam, LOD, curvature, environment-lighting, and
+  terrain-field debug views;
 - cascade isolation, camera presets, pause/step timing, and mesh diagnostics
   for interactive inspection;
 - a 50 m sea-level-centered reference pillar in final view, currently for scale
