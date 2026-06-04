@@ -236,38 +236,8 @@ class PlanetApp {
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
         ImGui::TextUnformatted("Planet");
-        ImGui::SeparatorText("Frame");
-        ImGui::Text("Radius: %.0f m", planet_config_.radius_m);
-        ImGui::Text("Atmosphere: %.0f m", planet_config_.atmosphere_height_m);
-        ImGui::Text("Altitude: %.0f m", frame_.camera_altitude_m);
-        ImGui::Text("Horizon: %.0f m", frame_.horizon_distance_m);
-        ImGui::Text("Near / far: %.1f m / %.0f m", frame_.near_plane_m, frame_.far_plane_m);
-        ImGui::Text("Patches: %u visible / %u planned",
-                    surface_build_.diagnostics.visible_patch_count,
-                    surface_build_.diagnostics.planned_patch_count);
-        ImGui::Text("Culled: %u horizon / %u view", surface_build_.diagnostics.culled_horizon_count,
-                    surface_build_.diagnostics.culled_view_count);
-        ImGui::Text("LOD range: %u - %u", surface_build_.diagnostics.min_lod_level,
-                    surface_build_.diagnostics.max_lod_level);
-        ImGui::Text("LOD patches: %u / %u / %u / %u", surface_build_.diagnostics.patches_by_lod[0],
-                    surface_build_.diagnostics.patches_by_lod[1],
-                    surface_build_.diagnostics.patches_by_lod[2],
-                    surface_build_.diagnostics.patches_by_lod[3]);
-        ImGui::Text("Screen error: %.1f px - %.1f px",
-                    surface_build_.diagnostics.min_screen_error_px,
-                    surface_build_.diagnostics.max_screen_error_px);
-        ImGui::Text("Surface vertices: %u", surface_build_.diagnostics.vertex_count);
-        ImGui::Text("Surface triangles: %u", surface_build_.diagnostics.triangle_count);
-        ImGui::Text("Cell edge: %.0f m - %.0f m", surface_build_.diagnostics.min_edge_length_m,
-                    surface_build_.diagnostics.max_edge_length_m);
-        ImGui::Text("Seam edges: %u", surface_build_.diagnostics.seam_edge_count);
-        ImGui::Text("Skirt triangles: %u", surface_build_.diagnostics.skirt_triangle_count);
-        ImGui::Text("Skirt depth: %.0f m - %.0f m", surface_build_.diagnostics.min_skirt_depth_m,
-                    surface_build_.diagnostics.max_skirt_depth_m);
-        ImGui::Text("Origin: %.0f %.0f %.0f", frame_.surface_origin_m.x, frame_.surface_origin_m.y,
-                    frame_.surface_origin_m.z);
-
-        ImGui::SeparatorText("Config");
+        ImGui::SeparatorText("Controls");
+        PlanetConfig config_before_edit = edit_planet_config_;
         ImGui::InputFloat("Radius (m)", &edit_planet_config_.radius_m, 0.0F, 0.0F, "%.0f");
         ImGui::InputFloat("Atmosphere Height (m)", &edit_planet_config_.atmosphere_height_m, 0.0F,
                           0.0F, "%.0f");
@@ -301,24 +271,56 @@ class PlanetApp {
         ImGui::Checkbox("Patch Skirts", &edit_planet_config_.skirts_enabled);
         ImGui::InputFloat("Skirt Depth Scale", &edit_planet_config_.skirt_depth_scale, 0.0F, 0.0F,
                           "%.2f");
-        if (ImGui::Button("Apply Planet Config")) {
-            try {
-                rebuild_planet_resources(context);
-                rebuild_error_.clear();
-            } catch (const std::exception& error) {
-                rebuild_error_ = error.what();
-                edit_planet_config_ = planet_config_;
-            }
+
+        if (edit_planet_config_ != config_before_edit) {
+            planet_config_apply_pending_ = edit_planet_config_ != planet_config_;
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Reset Planet Config")) {
+        if (ImGui::Button("Revert Config")) {
             edit_planet_config_ = planet_config_;
-            orbit_controller_.reset();
+            planet_config_apply_pending_ = false;
             rebuild_error_.clear();
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset Camera")) {
+            orbit_controller_.reset();
+        }
+        maybe_apply_planet_config(context);
         if (!rebuild_error_.empty()) {
             ImGui::Text("Config error: %s", rebuild_error_.c_str());
         }
+
+        ImGui::SeparatorText("Diagnostics");
+        ImGui::Text("Radius: %.0f m", planet_config_.radius_m);
+        ImGui::Text("Atmosphere: %.0f m", planet_config_.atmosphere_height_m);
+        ImGui::Text("Altitude: %.0f m", frame_.camera_altitude_m);
+        ImGui::Text("Horizon: %.0f m", frame_.horizon_distance_m);
+        ImGui::Text("Near / far: %.1f m / %.0f m", frame_.near_plane_m, frame_.far_plane_m);
+        ImGui::Text("Origin: %.0f %.0f %.0f", frame_.surface_origin_m.x, frame_.surface_origin_m.y,
+                    frame_.surface_origin_m.z);
+
+        ImGui::SeparatorText("Surface");
+        ImGui::Text("Patches: %u visible / %u planned",
+                    surface_build_.diagnostics.visible_patch_count,
+                    surface_build_.diagnostics.planned_patch_count);
+        ImGui::Text("Culled: %u horizon / %u view", surface_build_.diagnostics.culled_horizon_count,
+                    surface_build_.diagnostics.culled_view_count);
+        ImGui::Text("LOD range: %u - %u", surface_build_.diagnostics.min_lod_level,
+                    surface_build_.diagnostics.max_lod_level);
+        ImGui::Text("LOD patches: %u / %u / %u / %u", surface_build_.diagnostics.patches_by_lod[0],
+                    surface_build_.diagnostics.patches_by_lod[1],
+                    surface_build_.diagnostics.patches_by_lod[2],
+                    surface_build_.diagnostics.patches_by_lod[3]);
+        ImGui::Text("Screen error: %.1f px - %.1f px",
+                    surface_build_.diagnostics.min_screen_error_px,
+                    surface_build_.diagnostics.max_screen_error_px);
+        ImGui::Text("Surface vertices: %u", surface_build_.diagnostics.vertex_count);
+        ImGui::Text("Surface triangles: %u", surface_build_.diagnostics.triangle_count);
+        ImGui::Text("Cell edge: %.0f m - %.0f m", surface_build_.diagnostics.min_edge_length_m,
+                    surface_build_.diagnostics.max_edge_length_m);
+        ImGui::Text("Seam edges: %u", surface_build_.diagnostics.seam_edge_count);
+        ImGui::Text("Skirt triangles: %u", surface_build_.diagnostics.skirt_triangle_count);
+        ImGui::Text("Skirt depth: %.0f m - %.0f m", surface_build_.diagnostics.min_skirt_depth_m,
+                    surface_build_.diagnostics.max_skirt_depth_m);
 
         cubey::host::draw_performance_ui({
             .frame_stats = latest_frame_stats_,
@@ -364,6 +366,27 @@ class PlanetApp {
         static_cast<void>(context.gpu().drain());
     }
 
+    void maybe_apply_planet_config(cubey::host::WindowedAppContext& context) {
+        if (!planet_config_apply_pending_ || ImGui::IsAnyItemActive()) {
+            return;
+        }
+        if (edit_planet_config_ == planet_config_) {
+            planet_config_apply_pending_ = false;
+            return;
+        }
+        try {
+            rebuild_planet_resources(context);
+            rebuild_error_.clear();
+            planet_config_apply_pending_ = false;
+        } catch (const std::exception& error) {
+            rebuild_error_ = error.what();
+            planet_config_apply_pending_ = false;
+        } catch (...) {
+            rebuild_error_ = "unknown planet rebuild error";
+            planet_config_apply_pending_ = false;
+        }
+    }
+
     void rebuild_surface_resources(cubey::host::WindowedAppContext& context, VkExtent2D extent) {
         cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
                              "vkDeviceWaitIdle planet surface rebuild");
@@ -375,10 +398,11 @@ class PlanetApp {
     }
 
     void refresh_camera_limits_for_planet() {
+        const float current_distance = orbit_controller_.distance();
         const cubey::OrbitControllerConfig orbit_config = planet_orbit_config(planet_config_);
         orbit_controller_.set_distance_limits(orbit_config.min_distance, orbit_config.max_distance);
         orbit_controller_.set_home_distance(orbit_config.distance);
-        orbit_controller_.set_distance(orbit_config.distance);
+        orbit_controller_.set_distance(current_distance);
     }
 
     [[nodiscard]] cubey::Transform3D camera_transform() const {
@@ -449,8 +473,13 @@ class PlanetApp {
 
     [[nodiscard]] cubey::Transform3D camera_render_transform() const {
         cubey::Transform3D transform = camera_transform();
-        transform.translation =
-            planet_frame_world_to_render_m(frame_, frame_.camera_world_position_m);
+        const cubey::math::DVec3 relative_camera =
+            frame_.camera_world_position_m - surface_build_render_origin_world_m_;
+        transform.translation = {
+            static_cast<float>(relative_camera.x),
+            static_cast<float>(relative_camera.y),
+            static_cast<float>(relative_camera.z),
+        };
         return transform;
     }
 
@@ -549,6 +578,7 @@ class PlanetApp {
     cubey::math::DVec3 surface_build_render_origin_world_m_{0.0, 0.0, 0.0};
     PlanetSurfaceView surface_build_view_{};
     bool surface_rebuild_pending_ = false;
+    bool planet_config_apply_pending_ = false;
     std::optional<cubey::render::Mesh> surface_mesh_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;

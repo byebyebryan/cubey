@@ -50,8 +50,7 @@ void draw_seed_control(TerrainConfig& config) {
     int seed = config.seed > static_cast<std::uint64_t>(std::numeric_limits<int>::max())
                    ? std::numeric_limits<int>::max()
                    : static_cast<int>(config.seed);
-    if (cubey::host::imgui_input_int("Seed", &seed, 1, 1000,
-                                     "Deterministic terrain seed.")) {
+    if (cubey::host::imgui_input_int("Seed", &seed, 1, 1000, "Deterministic terrain seed.")) {
         config.seed = static_cast<std::uint64_t>(std::max(seed, 0));
     }
 }
@@ -135,18 +134,17 @@ void draw_terrain_ui(TerrainUiContext ui) {
 
     const bool pending_rebuild = !terrain_rebuild_config_equal(ui.active_config, ui.edit_config);
     ImGui::BeginDisabled(!pending_rebuild);
-    if (cubey::host::imgui_button("Apply Terrain", "Rebuild terrain from the editable settings.")) {
-        ui.rebuild_requested = true;
-    }
-    ImGui::SameLine();
-    if (cubey::host::imgui_button("Discard Edits",
+    if (cubey::host::imgui_button("Revert Terrain",
                                   "Restore editable settings from the active terrain.")) {
         ui.discard_edits_requested = true;
     }
     ImGui::EndDisabled();
+    if (pending_rebuild && !ui.discard_edits_requested && !ImGui::IsAnyItemActive()) {
+        ui.rebuild_requested = true;
+    }
     if (pending_rebuild) {
         ImGui::SameLine();
-        ImGui::TextUnformatted("pending rebuild");
+        ImGui::TextUnformatted("rebuilds when editing stops");
     }
     if (!ui.rebuild_error.empty()) {
         ImGui::TextWrapped("Rebuild failed: %s", ui.rebuild_error.c_str());

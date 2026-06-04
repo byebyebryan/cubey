@@ -36,6 +36,8 @@ struct PlanetConfig {
     bool wire_overlay = false;
     bool skirts_enabled = true;
     float skirt_depth_scale = 0.75F;
+
+    friend bool operator==(const PlanetConfig&, const PlanetConfig&) = default;
 };
 
 [[nodiscard]] PlanetConfig planet_config_from_run_config(const RunConfig& config);
