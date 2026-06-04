@@ -27,6 +27,13 @@ project starts from particle-grid liquid simulation, while ocean starts from a
 camera-relative surface renderer and only adds simulation where interaction
 needs it.
 
+The current renderer still reads as a large local patch in some views. The
+longer-term scale direction is captured in
+[Ocean horizon and planet scale](ocean-horizon-and-planet-scale.md): build a
+true-to-horizon local ocean first, introduce planet-compatible local-frame and
+surface-mapping contracts, then move to curved far-field rendering before
+attempting full planet-scale terrain/ocean streaming.
+
 The active renderer includes:
 
 - a camera-relative clipmap mesh with mesh-cell-aware cascade LOD diagnostics;
