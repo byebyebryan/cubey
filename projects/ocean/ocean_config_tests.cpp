@@ -700,6 +700,16 @@ int main() {
                          "vertex shader should pass mesh cell size to fragment diagnostics");
         require_contains(vertex_shader, "float horizon_displacement_weight",
                          "vertex shader should fade displacement only near the horizon");
+        require_contains(vertex_shader, "float ocean_water_datum_y()",
+                         "vertex shader should name the ocean surface datum");
+        require_contains(vertex_shader, "vec3 ocean_surface_up(vec2 local_xz)",
+                         "vertex shader should name the local surface up contract");
+        require_contains(vertex_shader, "vec2 ocean_surface_sample_position(vec2 local_xz)",
+                         "vertex shader should keep FFT sampling behind a surface contract");
+        require_contains(vertex_shader, "vec3 ocean_flat_surface_world_position",
+                         "vertex shader should isolate flat surface world mapping");
+        require_contains(vertex_shader, "add_displacement(displacement, cascade, base_position",
+                         "vertex shader should keep FFT displacement in local XZ space");
         require_contains(vertex_shader, "if (!ocean_cascade_enabled(cascade))",
                          "vertex shader should gate displacement by inspected cascade");
         require_contains(vertex_shader, "for (uint cascade = 0u; cascade < 5u; ++cascade)",

@@ -216,6 +216,22 @@ float horizon_displacement_weight(float camera_distance) {
                1.0);
 }
 
+float ocean_water_datum_y() {
+    return 0.0;
+}
+
+vec3 ocean_surface_up(vec2 local_xz) {
+    return vec3(0.0, 1.0, 0.0);
+}
+
+vec2 ocean_surface_sample_position(vec2 local_xz) {
+    return local_xz;
+}
+
+vec3 ocean_flat_surface_world_position(vec2 local_xz, vec3 displacement) {
+    return vec3(local_xz.x, ocean_water_datum_y(), local_xz.y) + displacement;
+}
+
 vec3 sample_ocean_displacement(uint cascade, vec2 position, float tile_length) {
     vec3 primary = sample_displacement(cascade, position / tile_length).xyz;
     if (!ocean_shape_anti_repeat_enabled()) {
@@ -271,10 +287,10 @@ void main() {
     }
     displacement *= horizon_displacement_weight(camera_distance);
 
-    vec3 world_position = vec3(base_position.x, 0.0, base_position.y) + displacement;
+    vec3 world_position = ocean_flat_surface_world_position(base_position, displacement);
     frag_world_position = world_position;
     frag_displacement = displacement;
-    frag_sample_position = base_position;
+    frag_sample_position = ocean_surface_sample_position(base_position);
     frag_wave = vec4(displacement.y, 0.0, camera_distance, ocean.foam_color.w);
     frag_patch_alpha = clipmap_patch_alpha(patch_position, patch_cell_size);
     frag_barycentric = triangle_barycentric(vertex_in_cell);
