@@ -66,6 +66,7 @@ Project-specific design stays beside the project:
 - [Ocean](../projects/ocean/README.md)
 - [Ocean Ref](../projects/ocean_ref/README.md)
 - [Ocean Legacy](../projects/ocean_legacy/README.md)
+- [Planet](../projects/planet/README.md)
 - [Procedural Terrain](../projects/procedural_terrain/README.md)
 
 ## Notes
