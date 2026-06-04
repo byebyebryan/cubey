@@ -40,6 +40,11 @@ enum class OceanFieldPrecision : std::uint32_t {
     Half = 1,
 };
 
+enum class OceanSurfaceMode : std::uint32_t {
+    Flat = 0,
+    CurvedFar = 1,
+};
+
 inline constexpr std::array<OceanRenderView, 21> kOceanRenderViews{
     OceanRenderView::Final,        OceanRenderView::Height,       OceanRenderView::Displacement,
     OceanRenderView::Normal,       OceanRenderView::Foam,         OceanRenderView::FoamSource,
@@ -52,6 +57,10 @@ inline constexpr std::array<OceanRenderView, 21> kOceanRenderViews{
 inline constexpr std::array<OceanFieldPrecision, 2> kOceanFieldPrecisions{
     OceanFieldPrecision::Full,
     OceanFieldPrecision::Half,
+};
+inline constexpr std::array<OceanSurfaceMode, 2> kOceanSurfaceModes{
+    OceanSurfaceMode::Flat,
+    OceanSurfaceMode::CurvedFar,
 };
 
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
@@ -99,6 +108,10 @@ struct OceanConfig {
     bool horizon_auto_extent = true;
     float horizon_extent_margin = 1.25F;
     float horizon_target_near_cell_m = 2.0F;
+    OceanSurfaceMode surface_mode = OceanSurfaceMode::CurvedFar;
+    float curvature_start_ratio = 0.25F;
+    float curvature_end_ratio = 0.75F;
+    float curvature_strength = 1.0F;
 
     std::uint32_t map_size = kOceanDefaultMapSize;
     float depth = 20.0F;
@@ -306,6 +319,16 @@ struct OceanCascadeLodBand {
     return "full";
 }
 
+[[nodiscard]] inline const char* ocean_surface_mode_name(OceanSurfaceMode mode) {
+    switch (mode) {
+    case OceanSurfaceMode::Flat:
+        return "flat";
+    case OceanSurfaceMode::CurvedFar:
+        return "curved-far";
+    }
+    return "curved-far";
+}
+
 [[nodiscard]] inline OceanFieldPrecision
 ocean_field_precision_from_name(std::string_view name) {
     if (name.empty() || name == "half") {
@@ -315,6 +338,16 @@ ocean_field_precision_from_name(std::string_view name) {
         return OceanFieldPrecision::Full;
     }
     throw std::runtime_error("unknown ocean field precision: " + std::string(name));
+}
+
+[[nodiscard]] inline OceanSurfaceMode ocean_surface_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "curved-far" || name == "curved") {
+        return OceanSurfaceMode::CurvedFar;
+    }
+    if (name == "flat") {
+        return OceanSurfaceMode::Flat;
+    }
+    throw std::runtime_error("unknown ocean surface mode: " + std::string(name));
 }
 
 [[nodiscard]] inline OceanRenderView ocean_render_view_from_name(std::string_view name) {
@@ -467,8 +500,11 @@ inline void validate_ocean_config(const OceanConfig& config) {
         }
     }
     if (config.mesh_extent <= 0.0F || config.depth <= 0.0F ||
-        config.horizon_extent_margin <= 0.0F || config.horizon_target_near_cell_m <= 0.0F) {
-        throw std::runtime_error("ocean mesh, horizon, and depth controls must be positive");
+        config.horizon_extent_margin <= 0.0F || config.horizon_target_near_cell_m <= 0.0F ||
+        config.curvature_start_ratio < 0.0F || config.curvature_end_ratio <= 0.0F ||
+        config.curvature_strength < 0.0F || config.curvature_strength > 1.0F ||
+        config.curvature_start_ratio >= config.curvature_end_ratio) {
+        throw std::runtime_error("ocean mesh, horizon, curvature, and depth controls are invalid");
     }
     if (config.normal_strength < 0.0F || config.roughness < 0.0F || config.roughness > 1.0F ||
         config.foam_density < 0.0F || config.foam_sharpness < 0.0F ||

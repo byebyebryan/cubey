@@ -89,8 +89,29 @@ int main() {
                      "ocean should default to a conservative horizon margin");
         require_near(defaults.horizon_target_near_cell_m, 2.0F, 0.001F,
                      "ocean should default to a near-field horizon mesh target");
+        require(defaults.surface_mode == ocean::OceanSurfaceMode::CurvedFar,
+                "ocean should default to the curved far-surface mode");
+        require_near(defaults.curvature_start_ratio, 0.25F, 0.001F,
+                     "ocean curvature should start after the near field");
+        require_near(defaults.curvature_end_ratio, 0.75F, 0.001F,
+                     "ocean curvature should finish before the horizon");
+        require_near(defaults.curvature_strength, 1.0F, 0.001F,
+                     "ocean should default far-surface curvature on");
         require(defaults.spectral_domains_enabled,
                 "ocean should default to spectral source-domain filtering");
+        require(std::string(ocean::ocean_surface_mode_name(ocean::OceanSurfaceMode::Flat)) ==
+                    "flat",
+                "ocean should name the flat surface mode");
+        require(std::string(ocean::ocean_surface_mode_name(ocean::OceanSurfaceMode::CurvedFar)) ==
+                    "curved-far",
+                "ocean should name the curved far-surface mode");
+        require(ocean::ocean_surface_mode_from_name("") == ocean::OceanSurfaceMode::CurvedFar,
+                "empty ocean surface mode should resolve to the default curved mode");
+        require(ocean::ocean_surface_mode_from_name("curved") ==
+                    ocean::OceanSurfaceMode::CurvedFar,
+                "ocean should accept curved as a shorthand surface mode");
+        require(ocean::ocean_surface_mode_from_name("flat") == ocean::OceanSurfaceMode::Flat,
+                "ocean should parse the flat surface mode");
         require(ocean::kOceanCascadeCount == 5U,
                 "ocean should expose five configurable cascade slots");
         const std::array<bool, ocean::kOceanCascadeCount> expected_enabled{true, true, false,
@@ -193,8 +214,10 @@ int main() {
         const ocean::OceanSurfaceFrame surface_frame =
             ocean::ocean_surface_frame_from_camera(defaults, {0.0F, 20.0F, 0.0F},
                                                    earth_radius_m);
-        require(surface_frame.flat_surface,
-                "ocean surface frame should keep the T1.5 implementation flat");
+        require(surface_frame.surface_mode == ocean::OceanSurfaceMode::CurvedFar,
+                "ocean surface frame should resolve the default curved far-surface mode");
+        require(!surface_frame.flat_surface,
+                "ocean surface frame should default to curved far-surface mapping");
         require_near(surface_frame.local_frame.water_datum_m, 0.0F, 0.001F,
                      "ocean surface frame should default to the current sea-level datum");
         require_near(surface_frame.camera_local_position_m.y, 20.0F, 0.001F,
@@ -206,6 +229,41 @@ int main() {
         require_near(surface_frame.projection_far_plane_m,
                      ocean::ocean_horizon_projection_far_plane_m(surface_frame.horizon), 0.001F,
                      "ocean surface frame should own the projection far plane");
+        require_near(surface_frame.curvature_start_m, twenty_meter_horizon * 0.25F, 1.0F,
+                     "ocean surface frame should resolve curvature start from horizon distance");
+        require_near(surface_frame.curvature_end_m, twenty_meter_horizon * 0.75F, 1.0F,
+                     "ocean surface frame should resolve curvature end from horizon distance");
+        require_near(surface_frame.curvature_strength, 1.0F, 0.001F,
+                     "ocean surface frame should resolve active curvature strength");
+        require_near(ocean::ocean_spherical_surface_drop_m(0.0F, earth_radius_m), 0.0F, 0.001F,
+                     "spherical ocean surface should meet the local tangent datum at origin");
+        require_near(ocean::ocean_spherical_surface_drop_m(twenty_meter_horizon, earth_radius_m),
+                     -20.0F, 0.01F,
+                     "spherical ocean surface should drop by camera altitude near the horizon");
+        require_near(ocean::ocean_surface_curvature_drop_m(
+                         surface_frame.curvature_start_m, earth_radius_m,
+                         surface_frame.curvature_start_m, surface_frame.curvature_end_m,
+                         surface_frame.curvature_strength),
+                     0.0F, 0.001F,
+                     "curved far-surface blend should keep the near boundary flat");
+        require_near(ocean::ocean_surface_curvature_drop_m(
+                         surface_frame.curvature_end_m, earth_radius_m,
+                         surface_frame.curvature_start_m, surface_frame.curvature_end_m,
+                         surface_frame.curvature_strength),
+                     ocean::ocean_spherical_surface_drop_m(surface_frame.curvature_end_m,
+                                                           earth_radius_m),
+                     0.001F,
+                     "curved far-surface blend should reach full spherical drop at the far boundary");
+        ocean::OceanConfig flat_surface = defaults;
+        flat_surface.surface_mode = ocean::OceanSurfaceMode::Flat;
+        const ocean::OceanSurfaceFrame flat_surface_frame =
+            ocean::ocean_surface_frame_from_camera(flat_surface, {0.0F, 20.0F, 0.0F},
+                                                   earth_radius_m);
+        require(flat_surface_frame.flat_surface &&
+                    flat_surface_frame.surface_mode == ocean::OceanSurfaceMode::Flat,
+                "flat ocean surface frame should disable curvature");
+        require_near(flat_surface_frame.curvature_strength, 0.0F, 0.001F,
+                     "flat ocean surface frame should resolve zero curvature strength");
 
         const ocean::OceanCascadeConfig& cascade0 = defaults.cascades[0];
         const ocean::OceanCascadeConfig& cascade1 = defaults.cascades[1];
@@ -627,6 +685,27 @@ int main() {
             rejected = true;
         }
         require(rejected, "ocean should reject invalid horizon near-cell target");
+
+        ocean::OceanConfig invalid_curvature_order = defaults;
+        invalid_curvature_order.curvature_start_ratio = 0.75F;
+        invalid_curvature_order.curvature_end_ratio = 0.25F;
+        rejected = false;
+        try {
+            ocean::validate_ocean_config(invalid_curvature_order);
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        require(rejected, "ocean should reject inverted curvature blend ratios");
+
+        ocean::OceanConfig invalid_curvature_strength = defaults;
+        invalid_curvature_strength.curvature_strength = 1.5F;
+        rejected = false;
+        try {
+            ocean::validate_ocean_config(invalid_curvature_strength);
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        require(rejected, "ocean should reject invalid curvature strength");
 
         const std::filesystem::path source_root(CUBEY_OCEAN_SOURCE_DIR);
         const std::string spectrum_shader =
