@@ -187,3 +187,35 @@ Before changing the algorithm again, capture measurements that include:
 Do not treat `1024` as a required quality target. Treat it as a current
 maximum-quality brute-force mode. The performance goal is to preserve or recover
 the visible quality of `1024` with a cheaper distribution of work.
+
+## Deferred Optimization Backlog
+
+The recent packed-field, lazy-allocation, and half-precision changes were mostly
+behavior-neutral implementation optimizations. Further high-gain work should be
+classified before implementation so we do not mix invisible optimizations with
+quality/performance policy changes.
+
+Behavior-neutral candidates:
+
+- improve the FFT implementation while preserving the same spectral inputs,
+  outputs, and update cadence;
+- reduce FFT dispatch/barrier overhead or improve memory locality;
+- overlap independent GPU work without skipping recomputation;
+- remove redundant shader math in modulate, unpack, self-shadow, or material
+  stages;
+- clean up descriptor, pipeline, and resource churn if profiling shows CPU-side
+  cost.
+
+Quality/performance policy candidates:
+
+- use mixed per-cascade resolutions such as C0 at `512` and secondary cascades
+  at `256`;
+- update far or secondary cascades every 2+ frames;
+- add procedural/detail normal and foam layers to recover close-up detail
+  outside the FFT path;
+- define named quality presets that set map sizes, cascade masks, precision,
+  update intervals, and expensive feature toggles.
+
+Keep the behavior-neutral path first if the goal is to preserve the current
+look. Treat policy changes as presentation tuning and validate them with side by
+side captures against the current default.
