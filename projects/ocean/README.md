@@ -91,5 +91,14 @@ cascade spectrum, modulation, FFT, and unpack dispatches, then hide those
 cascades from the surface shader. Use `All slots`, `Core`, and `Cheap` to check
 which slots and material additions are worth their GPU cost.
 
-The default FFT map is `1024`. Smoke tests and fast local checks can use
-`--ocean-map-size 128`.
+The default FFT map is `512`, and ocean wave fields default to half precision.
+Use `--ocean-map-size 1024 --ocean-field-precision full` only when comparing
+against a maximum-quality brute-force mode. Smoke tests and fast local checks
+can use `--ocean-map-size 128`.
+
+Performance context for the current spectral FFT path is captured in
+[Ocean performance notes](../../docs/notes/ocean-performance.md). In short,
+`512` plus half precision is the current practical default on slower GPUs,
+disabled cascades no longer allocate or dispatch full wave resources, and
+`256` currently loses too much wave, normal, and foam detail for the primary
+presentation path.

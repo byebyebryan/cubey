@@ -397,7 +397,8 @@ void draw_ocean_ui(OceanUiContext ui) {
         cubey::host::imgui_enum_combo(
             "Field precision", ui.config.field_precision, kOceanFieldPrecisions,
             ocean_field_precision_name,
-            "Storage precision for ocean FFT textures. Half is experimental and opt-in.");
+            "Storage precision for ocean FFT textures. Half is the default practical path; full "
+            "is useful for comparison captures.");
         cubey::host::imgui_checkbox(
             "Spectral domains", &ui.config.spectral_domains_enabled,
             "Limit cascades to wavelength bands so scales blend without duplicating energy.");

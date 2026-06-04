@@ -60,6 +60,15 @@ addition can be checked against `ocean_ref` for quality and cost. Cascade work
 toggles skip disabled cascade compute dispatches; contribution sliders only
 change surface composition.
 
+Performance work should start from the spectral ocean cost model captured in
+[Ocean performance notes](../notes/ocean-performance.md). The current default
+uses a `512` FFT map, half-precision wave fields, packed FFT storage fields,
+and lazy allocation for enabled cascades only. `1024` remains a
+maximum-quality brute-force inspection mode, not the default target. The
+near-term direction is to keep FFT for coherent broad/mid ocean motion while
+recovering close-up detail through cheaper shading, foam, and analytic shape
+paths where possible.
+
 ## Feature Donor Boundaries
 
 Useful `ocean_legacy` ideas to revisit later:

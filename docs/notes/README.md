@@ -16,3 +16,5 @@ the detailed foundation notes under `docs/architecture/`.
   implementation direction.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
   captures and optimization candidates.
+- [Ocean performance notes](ocean-performance.md): current spectral ocean FFT
+  cost model, observed map-size tradeoffs, and optimization guardrails.
