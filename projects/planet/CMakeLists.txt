@@ -37,6 +37,7 @@ if(BUILD_TESTING)
     add_executable(
         cubey_project_planet_surface_tests
         planet_config.cpp
+        planet_frame.cpp
         planet_surface.cpp
         planet_surface_tests.cpp
     )

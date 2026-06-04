@@ -62,7 +62,7 @@ void test_planet_surface_lod_subdivides_near_camera_patches() {
         .debug_view = cubey::projects::planet::PlanetDebugView::LodLevel,
     };
     const cubey::projects::planet::PlanetSurfaceView view{
-        .camera_position_m = {0.0F, 0.0F, 1500.0F},
+        .camera_world_position_m = {0.0, 0.0, 1500.0},
     };
     const cubey::projects::planet::PlanetSurfaceBuildResult result =
         cubey::projects::planet::make_planet_surface_mesh(config, view);
@@ -75,6 +75,35 @@ void test_planet_surface_lod_subdivides_near_camera_patches() {
             "planet LOD should report screen-error range");
 }
 
+void test_planet_surface_can_build_camera_relative_vertices() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 2,
+        .max_lod_level = 0,
+    };
+    const cubey::Transform3D camera{
+        .translation = {0.0F, 0.0F, 1500.0F},
+    };
+    const cubey::projects::planet::PlanetFrame frame =
+        cubey::projects::planet::make_planet_frame(config, camera);
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = frame.camera_world_position_m,
+    };
+    const cubey::projects::planet::PlanetSurfaceBuildResult result =
+        cubey::projects::planet::make_planet_surface_mesh(config, view, frame);
+
+    bool found_near_point = false;
+    for (const cubey::render::VertexPositionColorNormalUv& vertex : result.mesh.vertices) {
+        if (vertex.normal[2] > 0.999F) {
+            found_near_point = true;
+            require(std::abs(vertex.position[2] + 300.0F) < 0.25F,
+                    "surface near camera should be relative to render origin");
+        }
+    }
+    require(found_near_point, "planet surface should include the near sphere point");
+}
+
 } // namespace
 
 int main() {
@@ -82,6 +111,7 @@ int main() {
         test_planet_surface_builds_expected_patch_counts();
         test_planet_surface_vertices_stay_on_radius();
         test_planet_surface_lod_subdivides_near_camera_patches();
+        test_planet_surface_can_build_camera_relative_vertices();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_surface_tests: %s\n", error.what());

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "planet_config.h"
+#include "planet_frame.h"
 
 #include <cubey/core/math.h>
 #include <cubey/render/mesh.h>
@@ -40,8 +41,8 @@ struct PlanetSurfaceDiagnostics {
 };
 
 struct PlanetSurfaceView {
-    cubey::math::Vec3 camera_position_m{0.0F, 0.0F,
-                                        kPlanetDefaultRadiusM + kPlanetDefaultCameraAltitudeM};
+    cubey::math::DVec3 camera_world_position_m{
+        0.0, 0.0, kPlanetDefaultRadiusM + kPlanetDefaultCameraAltitudeM};
     float vertical_fov_radians = 1.0471975803375244F;
     float viewport_height_px = 720.0F;
 };
@@ -54,5 +55,8 @@ struct PlanetSurfaceBuildResult {
 [[nodiscard]] PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config);
 [[nodiscard]] PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
                                                                 PlanetSurfaceView view);
+[[nodiscard]] PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
+                                                                PlanetSurfaceView view,
+                                                                const PlanetFrame& frame);
 
 } // namespace cubey::projects::planet

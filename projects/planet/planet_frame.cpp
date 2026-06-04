@@ -65,6 +65,7 @@ PlanetFrame make_planet_frame(const PlanetConfig& config,
         .near_plane_m = near_plane,
         .far_plane_m = far_plane,
         .camera_world_position_m = camera_world,
+        .render_origin_world_m = camera_world,
         .surface_origin_m = surface_origin,
         .local_frame =
             {
@@ -76,6 +77,24 @@ PlanetFrame make_planet_frame(const PlanetConfig& config,
                 .water_datum_m = 0.0F,
             },
     };
+}
+
+cubey::math::Vec3 planet_frame_world_to_render_m(const PlanetFrame& frame,
+                                                 cubey::math::DVec3 world_position_m) {
+    const cubey::math::DVec3 relative = world_position_m - frame.render_origin_world_m;
+    return {
+        static_cast<float>(relative.x),
+        static_cast<float>(relative.y),
+        static_cast<float>(relative.z),
+    };
+}
+
+cubey::math::DVec3 planet_frame_render_to_world_m(const PlanetFrame& frame,
+                                                  cubey::math::Vec3 render_position_m) {
+    return frame.render_origin_world_m +
+           cubey::math::DVec3{static_cast<double>(render_position_m.x),
+                              static_cast<double>(render_position_m.y),
+                              static_cast<double>(render_position_m.z)};
 }
 
 } // namespace cubey::projects::planet

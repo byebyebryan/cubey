@@ -51,17 +51,18 @@ struct SurfacePatch {
     }
 }
 
-[[nodiscard]] cubey::math::Vec3 sphere_position(const PlanetConfig& config, std::uint32_t face,
-                                                float u, float v) {
-    return glm::normalize(cube_face_point(face, u, v)) * config.radius_m;
+[[nodiscard]] cubey::math::DVec3 sphere_world_position(const PlanetConfig& config,
+                                                       std::uint32_t face, float u, float v) {
+    const cubey::math::Vec3 normal = glm::normalize(cube_face_point(face, u, v));
+    return {
+        static_cast<double>(normal.x) * static_cast<double>(config.radius_m),
+        static_cast<double>(normal.y) * static_cast<double>(config.radius_m),
+        static_cast<double>(normal.z) * static_cast<double>(config.radius_m),
+    };
 }
 
 [[nodiscard]] PrimitiveVec3 to_primitive(cubey::math::Vec3 value) {
     return {value.x, value.y, value.z};
-}
-
-[[nodiscard]] cubey::math::Vec3 from_primitive(PrimitiveVec3 value) {
-    return {value[0], value[1], value[2]};
 }
 
 [[nodiscard]] PrimitiveVec3 final_color(cubey::math::Vec3 normal) {
@@ -118,9 +119,9 @@ struct SurfacePatch {
     return final_color(normal);
 }
 
-void update_edge_range(PlanetSurfaceDiagnostics& diagnostics, cubey::math::Vec3 a,
-                       cubey::math::Vec3 b) {
-    const float length = glm::length(a - b);
+void update_edge_range(PlanetSurfaceDiagnostics& diagnostics, cubey::math::DVec3 a,
+                       cubey::math::DVec3 b) {
+    const float length = static_cast<float>(glm::length(a - b));
     if (diagnostics.min_edge_length_m == 0.0F) {
         diagnostics.min_edge_length_m = length;
     } else {
@@ -142,12 +143,13 @@ void update_screen_error_range(PlanetSurfaceDiagnostics& diagnostics, float valu
                                           const SurfacePatch& patch) {
     const float u_mid = (patch.u0 + patch.u1) * 0.5F;
     const float v_mid = (patch.v0 + patch.v1) * 0.5F;
-    const cubey::math::Vec3 center = sphere_position(config, patch.face, u_mid, v_mid);
-    const cubey::math::Vec3 edge_a = sphere_position(config, patch.face, patch.u0, v_mid);
-    const cubey::math::Vec3 edge_b = sphere_position(config, patch.face, patch.u1, v_mid);
-    const float patch_edge_m = glm::length(edge_b - edge_a);
+    const cubey::math::DVec3 center = sphere_world_position(config, patch.face, u_mid, v_mid);
+    const cubey::math::DVec3 edge_a = sphere_world_position(config, patch.face, patch.u0, v_mid);
+    const cubey::math::DVec3 edge_b = sphere_world_position(config, patch.face, patch.u1, v_mid);
+    const float patch_edge_m = static_cast<float>(glm::length(edge_b - edge_a));
     const float cell_edge_m = patch_edge_m / static_cast<float>(config.patch_resolution);
-    const float distance_m = std::max(glm::length(center - view.camera_position_m), 1.0F);
+    const float distance_m =
+        std::max(static_cast<float>(glm::length(center - view.camera_world_position_m)), 1.0F);
     const float pixel_scale =
         view.viewport_height_px / (2.0F * std::tan(view.vertical_fov_radians * 0.5F));
     return (cell_edge_m / distance_m) * pixel_scale;
@@ -230,8 +232,8 @@ void append_leaf_patches(const PlanetConfig& config, PlanetSurfaceView view, Sur
     return patches;
 }
 
-void append_patch_mesh(const PlanetConfig& config, const SurfacePatch& patch,
-                       PlanetSurfaceBuildResult& result) {
+void append_patch_mesh(const PlanetConfig& config, const PlanetFrame& frame,
+                       const SurfacePatch& patch, PlanetSurfaceBuildResult& result) {
     const std::uint32_t patch_resolution = config.patch_resolution;
     const std::uint32_t vertices_per_side = patch_resolution + 1U;
     const std::uint32_t base_vertex = static_cast<std::uint32_t>(result.mesh.vertices.size());
@@ -243,9 +245,12 @@ void append_patch_mesh(const PlanetConfig& config, const SurfacePatch& patch,
             const float tu = static_cast<float>(x) / static_cast<float>(patch_resolution);
             const float u = patch.u0 + (patch.u1 - patch.u0) * tu;
             const cubey::math::Vec3 normal = glm::normalize(cube_face_point(patch.face, u, v));
-            const cubey::math::Vec3 position = normal * config.radius_m;
+            const cubey::math::DVec3 world_position =
+                sphere_world_position(config, patch.face, u, v);
+            const cubey::math::Vec3 render_position =
+                planet_frame_world_to_render_m(frame, world_position);
             result.mesh.vertices.push_back(VertexPositionColorNormalUv{
-                .position = to_primitive(position),
+                .position = to_primitive(render_position),
                 .color = vertex_color(config, patch, normal),
                 .normal = to_primitive(normal),
                 .uv = PrimitiveVec2{tu, tv},
@@ -266,10 +271,17 @@ void append_patch_mesh(const PlanetConfig& config, const SurfacePatch& patch,
             result.mesh.indices.push_back(i2);
             result.mesh.indices.push_back(i3);
 
-            update_edge_range(result.diagnostics, from_primitive(result.mesh.vertices[i0].position),
-                              from_primitive(result.mesh.vertices[i1].position));
-            update_edge_range(result.diagnostics, from_primitive(result.mesh.vertices[i0].position),
-                              from_primitive(result.mesh.vertices[i2].position));
+            const cubey::math::DVec3 w0 = planet_frame_render_to_world_m(
+                frame, {result.mesh.vertices[i0].position[0], result.mesh.vertices[i0].position[1],
+                        result.mesh.vertices[i0].position[2]});
+            const cubey::math::DVec3 w1 = planet_frame_render_to_world_m(
+                frame, {result.mesh.vertices[i1].position[0], result.mesh.vertices[i1].position[1],
+                        result.mesh.vertices[i1].position[2]});
+            const cubey::math::DVec3 w2 = planet_frame_render_to_world_m(
+                frame, {result.mesh.vertices[i2].position[0], result.mesh.vertices[i2].position[1],
+                        result.mesh.vertices[i2].position[2]});
+            update_edge_range(result.diagnostics, w0, w1);
+            update_edge_range(result.diagnostics, w0, w2);
         }
     }
 }
@@ -280,13 +292,23 @@ PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config) {
     const float camera_distance =
         std::max(config.radius_m + config.camera_altitude_m, config.radius_m * 1.01F);
     const PlanetSurfaceView view{
-        .camera_position_m = {0.0F, 0.0F, camera_distance},
+        .camera_world_position_m = {0.0, 0.0, camera_distance},
     };
     return make_planet_surface_mesh(config, view);
 }
 
 PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
                                                   PlanetSurfaceView view) {
+    PlanetFrame frame{};
+    frame.planet_radius_m = config.radius_m;
+    frame.camera_world_position_m = view.camera_world_position_m;
+    frame.render_origin_world_m = {0.0, 0.0, 0.0};
+    return make_planet_surface_mesh(config, view, frame);
+}
+
+PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
+                                                  PlanetSurfaceView view,
+                                                  const PlanetFrame& frame) {
     validate_planet_config(config);
 
     PlanetSurfaceBuildResult result{};
@@ -300,7 +322,7 @@ PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
             ++result.diagnostics.patches_by_lod[patch.level];
         }
         update_screen_error_range(result.diagnostics, patch.screen_error_px);
-        append_patch_mesh(config, patch, result);
+        append_patch_mesh(config, frame, patch, result);
     }
 
     result.diagnostics.vertex_count = static_cast<std::uint32_t>(result.mesh.vertices.size());

@@ -58,12 +58,31 @@ void test_planet_config_rejects_invalid_radius() {
     throw std::runtime_error("planet config should reject nonpositive radius");
 }
 
+void test_planet_frame_converts_camera_to_render_origin() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 600000.0F,
+        .camera_altitude_m = 240000.0F,
+    };
+    const cubey::Transform3D camera{
+        .translation = {0.0F, 0.0F, config.radius_m + config.camera_altitude_m},
+    };
+    const cubey::projects::planet::PlanetFrame frame =
+        cubey::projects::planet::make_planet_frame(config, camera);
+
+    const cubey::math::Vec3 render_camera = cubey::projects::planet::planet_frame_world_to_render_m(
+        frame, frame.camera_world_position_m);
+    require_near(render_camera.x, 0.0F, 0.0001F, "camera should convert to render-origin x");
+    require_near(render_camera.y, 0.0F, 0.0001F, "camera should convert to render-origin y");
+    require_near(render_camera.z, 0.0F, 0.0001F, "camera should convert to render-origin z");
+}
+
 } // namespace
 
 int main() {
     try {
         test_planet_frame_derives_horizon_and_planes();
         test_planet_config_rejects_invalid_radius();
+        test_planet_frame_converts_camera_to_render_origin();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_frame_tests: %s\n", error.what());
