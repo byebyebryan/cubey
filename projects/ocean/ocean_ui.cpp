@@ -564,6 +564,9 @@ void draw_ocean_ui(OceanUiContext ui) {
                                       ocean_surface_mode_name,
                                       "Flat keeps the old tangent plane; curved-far bends the far field.");
         cubey::host::imgui_slider_float(
+            "Planet scale", &ui.config.planet_radius_scale, 0.02F, 2.0F, "%.2f",
+            "Scale applied to the ocean surface radius. Lower values exaggerate curvature.");
+        cubey::host::imgui_slider_float(
             "Curve start", &ui.config.curvature_start_ratio, 0.0F, 0.95F, "%.2f horizon",
             "Fraction of horizon distance where spherical far-surface drop begins.");
         cubey::host::imgui_slider_float(

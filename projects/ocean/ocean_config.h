@@ -111,6 +111,7 @@ struct OceanConfig {
     float horizon_extent_margin = 1.25F;
     float horizon_target_near_cell_m = 2.0F;
     OceanSurfaceMode surface_mode = OceanSurfaceMode::CurvedFar;
+    float planet_radius_scale = 1.0F;
     float curvature_start_ratio = 0.25F;
     float curvature_end_ratio = 0.75F;
     float curvature_strength = 1.0F;
@@ -505,6 +506,7 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (config.mesh_extent <= 0.0F || config.depth <= 0.0F ||
         config.horizon_extent_margin <= 0.0F || config.horizon_target_near_cell_m <= 0.0F ||
+        config.planet_radius_scale <= 0.0F ||
         config.curvature_start_ratio < 0.0F || config.curvature_end_ratio <= 0.0F ||
         config.curvature_strength < 0.0F || config.curvature_strength > 1.0F ||
         config.curvature_start_ratio >= config.curvature_end_ratio) {
@@ -555,6 +557,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     ocean.field_precision = ocean_field_precision_from_name(config.ocean.field_precision);
     ocean.surface_mode = ocean_surface_mode_from_name(config.ocean.surface_mode);
+    if (run_config_float_is_set(config.ocean.planet_radius_scale)) {
+        ocean.planet_radius_scale = config.ocean.planet_radius_scale;
+    }
     if (run_config_float_is_set(config.ocean.curvature_start_ratio)) {
         ocean.curvature_start_ratio = config.ocean.curvature_start_ratio;
     }

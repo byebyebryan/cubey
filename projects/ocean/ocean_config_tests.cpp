@@ -91,6 +91,8 @@ int main() {
                      "ocean should default to a near-field horizon mesh target");
         require(defaults.surface_mode == ocean::OceanSurfaceMode::CurvedFar,
                 "ocean should default to the curved far-surface mode");
+        require_near(defaults.planet_radius_scale, 1.0F, 0.001F,
+                     "ocean should default to physical atmosphere planet radius scale");
         require_near(defaults.curvature_start_ratio, 0.25F, 0.001F,
                      "ocean curvature should start after the near field");
         require_near(defaults.curvature_end_ratio, 0.75F, 0.001F,
@@ -572,6 +574,7 @@ int main() {
         run_config.debug_view = "foam";
         run_config.ocean.map_size = 128;
         run_config.ocean.surface_mode = "flat";
+        run_config.ocean.planet_radius_scale = 0.25F;
         run_config.ocean.curvature_start_ratio = 0.20F;
         run_config.ocean.curvature_end_ratio = 0.80F;
         run_config.ocean.curvature_strength = 0.35F;
@@ -586,6 +589,8 @@ int main() {
                 "run config should inherit the default ocean field precision");
         require(from_run_config.surface_mode == ocean::OceanSurfaceMode::Flat,
                 "run config should initialize ocean surface mode");
+        require_near(from_run_config.planet_radius_scale, 0.25F, 0.001F,
+                     "run config should initialize ocean planet radius scale");
         require_near(from_run_config.curvature_start_ratio, 0.20F, 0.001F,
                      "run config should initialize ocean curvature start ratio");
         require_near(from_run_config.curvature_end_ratio, 0.80F, 0.001F,
@@ -645,16 +650,20 @@ int main() {
                               "0.8",
                               "--ocean-surface-mode",
                               "flat",
+                              "--ocean-planet-radius-scale",
+                              "0.25",
                               "--ocean-curvature-start-ratio",
                               "0.2",
                               "--ocean-curvature-end-ratio",
                               "0.8",
                               "--ocean-curvature-strength",
                               "0.35"};
-        cubey::RunConfig parsed = cubey::parse_run_config(20, const_cast<char**>(argv));
+        cubey::RunConfig parsed = cubey::parse_run_config(22, const_cast<char**>(argv));
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
         require(parsed.ocean.surface_mode == "flat",
                 "CLI parser should accept --ocean-surface-mode");
+        require_near(parsed.ocean.planet_radius_scale, 0.25F, 0.001F,
+                     "CLI parser should accept --ocean-planet-radius-scale");
         require_near(parsed.ocean.curvature_start_ratio, 0.2F, 0.001F,
                      "CLI parser should accept --ocean-curvature-start-ratio");
         require_near(parsed.ocean.curvature_end_ratio, 0.8F, 0.001F,
@@ -730,6 +739,16 @@ int main() {
             rejected = true;
         }
         require(rejected, "ocean should reject inverted curvature blend ratios");
+
+        ocean::OceanConfig invalid_planet_scale = defaults;
+        invalid_planet_scale.planet_radius_scale = 0.0F;
+        rejected = false;
+        try {
+            ocean::validate_ocean_config(invalid_planet_scale);
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        require(rejected, "ocean should reject invalid planet radius scale");
 
         ocean::OceanConfig invalid_curvature_strength = defaults;
         invalid_curvature_strength.curvature_strength = 1.5F;
@@ -949,6 +968,10 @@ int main() {
                          "app should pass foam sharpness as diagnostics push data");
         require_contains(app_source, "ocean_config_.spectral_domains_enabled",
                          "app should pass spectral domain bounds to spectrum generation");
+        require_contains(app_source, "kCameraMaxDistance = 8000.0F",
+                         "app should allow ocean camera to zoom out for curvature inspection");
+        require_contains(app_source, "ocean_config_.planet_radius_scale",
+                         "app should scale ocean surface radius for curvature inspection");
         require_contains(ui_source, "&ui.diagnostics.shape_anti_repeat_strength",
                          "UI should expose shape anti-repeat as a diagnostics control");
         require_contains(ui_source, "&ui.diagnostics.detail_anti_repeat_strength",
@@ -993,6 +1016,8 @@ int main() {
                          "UI should expose horizon near-cell target control");
         require_contains(ui_source, "ui.config.surface_mode",
                          "UI should expose ocean surface mode");
+        require_contains(ui_source, "&ui.config.planet_radius_scale",
+                         "UI should expose ocean planet radius scale");
         require_contains(ui_source, "&ui.config.curvature_start_ratio",
                          "UI should expose ocean curvature start ratio");
         require_contains(ui_source, "&ui.config.curvature_end_ratio",

@@ -67,7 +67,7 @@ using cubey::host::FrameStatsSnapshot;
 
 constexpr float kCameraDistance = 125.0F;
 constexpr float kCameraMinDistance = 18.0F;
-constexpr float kCameraMaxDistance = 900.0F;
+constexpr float kCameraMaxDistance = 8000.0F;
 constexpr float kCameraBaseYaw = cubey::render::kAtmosphereEnvironmentSunriseViewYawRadians;
 constexpr float kCameraBasePitch = cubey::render::kAtmosphereEnvironmentSunriseViewPitchRadians;
 constexpr float kCameraNearPlane = 0.25F;
@@ -1037,7 +1037,8 @@ class OceanApp {
     }
 
     [[nodiscard]] float planet_radius_m() const {
-        return ocean_planet_radius_m(atmosphere_state_.environment.bottom_radius_km);
+        return ocean_planet_radius_m(atmosphere_state_.environment.bottom_radius_km) *
+               ocean_config_.planet_radius_scale;
     }
 
     [[nodiscard]] OceanSurfaceFrame ocean_surface_frame() const {

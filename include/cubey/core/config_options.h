@@ -51,6 +51,7 @@ enum class RunConfigOptionId {
     OceanMapSize,
     OceanFieldPrecision,
     OceanSurfaceMode,
+    OceanPlanetRadiusScale,
     OceanCurvatureStartRatio,
     OceanCurvatureEndRatio,
     OceanCurvatureStrength,

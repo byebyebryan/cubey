@@ -79,7 +79,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 133> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 134> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -166,6 +166,10 @@ constexpr std::array<ConfigOptionDescriptor, 133> kRunConfigOptions{
            "Surface Mode", "Ocean",
            "Ocean surface mapping mode: flat or curved far field.", ConfigOptionType::Enum,
            no_range(), enum_choices(kOceanSurfaceModes)),
+    option(RunConfigOptionId::OceanPlanetRadiusScale, "ocean.planet_radius_scale",
+           "--ocean-planet-radius-scale", "Planet Radius Scale", "Ocean",
+           "Scale applied to the atmosphere planet radius for ocean surface curvature.",
+           ConfigOptionType::Float, bounded_range(0.01, 10.0)),
     option(RunConfigOptionId::OceanCurvatureStartRatio, "ocean.curvature_start_ratio",
            "--ocean-curvature-start-ratio", "Curvature Start", "Ocean",
            "Fraction of horizon distance where far-surface curvature starts.",
@@ -726,6 +730,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::OceanSurfaceMode:
         return config.ocean.surface_mode.empty() ? nlohmann::json(nullptr)
                                                  : nlohmann::json(config.ocean.surface_mode);
+    case RunConfigOptionId::OceanPlanetRadiusScale:
+        return optional_float(config.ocean.planet_radius_scale);
     case RunConfigOptionId::OceanCurvatureStartRatio:
         return optional_float(config.ocean.curvature_start_ratio);
     case RunConfigOptionId::OceanCurvatureEndRatio:
@@ -954,6 +960,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::OceanOptions& optio
     adapter.writeField<int>("cascade", options.cascade);
     adapter.writeField<int>("spectral_domains", options.spectral_domains);
     adapter.writeField<int>("terrain_fields", options.terrain_fields);
+    adapter.writeField<float>("planet_radius_scale", options.planet_radius_scale);
     adapter.writeField<float>("curvature_start_ratio", options.curvature_start_ratio);
     adapter.writeField<float>("curvature_end_ratio", options.curvature_end_ratio);
     adapter.writeField<float>("curvature_strength", options.curvature_strength);
@@ -969,6 +976,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::OceanOptions& options) 
     adapter.readField<std::string>("cascade", cascade);
     adapter.readField<int>("spectral_domains", options.spectral_domains);
     adapter.readField<int>("terrain_fields", options.terrain_fields);
+    adapter.readField<float>("planet_radius_scale", options.planet_radius_scale);
     adapter.readField<float>("curvature_start_ratio", options.curvature_start_ratio);
     adapter.readField<float>("curvature_end_ratio", options.curvature_end_ratio);
     adapter.readField<float>("curvature_strength", options.curvature_strength);
@@ -1326,6 +1334,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::OceanSurfaceMode:
         config.ocean.surface_mode = std::string(value);
+        break;
+    case RunConfigOptionId::OceanPlanetRadiusScale:
+        config.ocean.planet_radius_scale = parse_config_float(value, option);
+        validate_range(config.ocean.planet_radius_scale, option);
         break;
     case RunConfigOptionId::OceanCurvatureStartRatio:
         config.ocean.curvature_start_ratio = parse_config_float(value, option);

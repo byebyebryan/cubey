@@ -104,6 +104,7 @@ struct RunConfig {
         int cascade = -1;
         int spectral_domains = -1;
         int terrain_fields = -1;
+        float planet_radius_scale = kRunConfigUnsetFloat;
         float curvature_start_ratio = kRunConfigUnsetFloat;
         float curvature_end_ratio = kRunConfigUnsetFloat;
         float curvature_strength = kRunConfigUnsetFloat;
