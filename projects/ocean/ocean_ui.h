@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ocean_config.h"
+#include "ocean_horizon.h"
 
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/host/performance_ui.h>
@@ -31,6 +32,7 @@ struct OceanDiagnosticsConfig {
 struct OceanUiContext {
     OceanConfig& config;
     OceanDiagnosticsConfig& diagnostics;
+    OceanHorizonDiagnostics horizon;
     cubey::AtmosphereEnvironmentRunState& atmosphere;
     cubey::host::PerformanceUiContext performance;
     OceanRenderView& render_view;

@@ -1,4 +1,5 @@
 #include "ocean_config.h"
+#include "ocean_horizon.h"
 #include "ocean_mesh.h"
 #include "ocean_ui.h"
 
@@ -140,6 +141,30 @@ int main() {
         require(ocean::ocean_mesh_total_triangle_count(defaults) >
                     defaults.mesh_cells * defaults.mesh_cells * 2U,
                 "ocean clipmap should add coarser horizon geometry");
+        const float earth_radius_m = ocean::ocean_planet_radius_m(6371.0F);
+        require_near(earth_radius_m, 6371000.0F, 1.0F,
+                     "ocean should convert atmosphere planet radius to meters");
+        const float twenty_meter_horizon =
+            ocean::ocean_horizon_distance_m(earth_radius_m, 20.0F);
+        require_near(twenty_meter_horizon, 15963.0F, 2.0F,
+                     "ocean horizon distance should follow Earth-scale geometry");
+        const ocean::OceanHorizonDiagnostics horizon = ocean::ocean_horizon_diagnostics(
+            defaults, 20.0F, 0.0F, earth_radius_m, 1.25F);
+        require_near(horizon.camera_altitude_m, 20.0F, 0.001F,
+                     "ocean horizon diagnostics should preserve camera altitude");
+        require_near(horizon.required_half_extent_m, twenty_meter_horizon * 1.25F, 3.0F,
+                     "ocean horizon diagnostics should apply the safety margin");
+        require_near(horizon.coverage_ratio,
+                     defaults.mesh_extent / horizon.required_half_extent_m, 0.001F,
+                     "ocean horizon diagnostics should report mesh coverage");
+        require_near(horizon.near_cell_size_m, ocean::ocean_mesh_near_cell_size(defaults),
+                     0.001F,
+                     "ocean horizon diagnostics should include near mesh cell size");
+        require_near(horizon.far_cell_size_m,
+                     ocean::ocean_mesh_level_cell_size(defaults,
+                                                       defaults.mesh_lod_levels - 1U),
+                     0.001F,
+                     "ocean horizon diagnostics should include far mesh cell size");
 
         const ocean::OceanCascadeConfig& cascade0 = defaults.cascades[0];
         const ocean::OceanCascadeConfig& cascade1 = defaults.cascades[1];

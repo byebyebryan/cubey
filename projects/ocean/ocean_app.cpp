@@ -608,6 +608,7 @@ class OceanApp {
             draw_ocean_ui({
                 .config = ocean_config_,
                 .diagnostics = diagnostics_,
+                .horizon = horizon_diagnostics(),
                 .atmosphere = atmosphere_state_,
                 .performance =
                     {
@@ -1030,6 +1031,13 @@ class OceanApp {
             .yaw = camera_base_yaw_ + orbit_controller_.yaw(),
             .pitch = camera_base_pitch_ + orbit_controller_.pitch(),
         });
+    }
+
+    [[nodiscard]] OceanHorizonDiagnostics horizon_diagnostics() const {
+        const cubey::Transform3D transform = camera_transform();
+        return ocean_horizon_diagnostics(
+            ocean_config_, transform.translation.y, 0.0F,
+            ocean_planet_radius_m(atmosphere_state_.environment.bottom_radius_km), 1.0F);
     }
 
     [[nodiscard]] OceanPushConstants surface_push_constants(VkExtent2D extent,
