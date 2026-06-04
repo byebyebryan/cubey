@@ -1159,7 +1159,8 @@ class OceanApp {
         };
     }
 
-    [[nodiscard]] OceanSurfaceFeatureUniforms surface_feature_uniforms() const {
+    [[nodiscard]] OceanSurfaceFeatureUniforms surface_feature_uniforms(
+        const OceanSurfaceFrame& surface_frame) const {
         return {
             .feature_options =
                 {
@@ -1202,6 +1203,13 @@ class OceanApp {
                     ocean_config_.self_shadow_distance,
                     ocean_config_.self_shadow_bias,
                     static_cast<float>(ocean_config_.self_shadow_steps),
+                },
+            .surface_frame_options =
+                {
+                    surface_frame.local_frame.water_datum_m,
+                    surface_frame.local_frame.planet_radius_m,
+                    surface_frame.horizon.camera_altitude_m,
+                    surface_frame.horizon.horizon_distance_m,
                 },
         };
     }
@@ -1357,7 +1365,8 @@ class OceanApp {
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, surface_pipeline.pipeline());
         recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, surface_pipeline.layout(), 0,
                                      ocean_gpu_.surface_set(frame_slot));
-        ocean_gpu_.upload_surface_feature_uniforms(frame_slot, surface_feature_uniforms());
+        ocean_gpu_.upload_surface_feature_uniforms(frame_slot,
+                                                   surface_feature_uniforms(surface_frame));
         for (const OceanMeshPatch& patch : patches) {
             const OceanPushConstants constants =
                 surface_push_constants(extent, surface_frame, patch);

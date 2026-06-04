@@ -32,6 +32,7 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 fade_options;
     vec4 cascade_options;
     vec4 self_shadow_options;
+    vec4 surface_frame_options;
 } ocean_features;
 
 layout(push_constant) uniform OceanParams {
@@ -219,6 +220,22 @@ bool ocean_terrain_fields_enabled() {
 
 float ocean_horizon_fog_strength() {
     return max(ocean.mesh_options.w, 0.0);
+}
+
+float ocean_surface_water_datum_y() {
+    return ocean_features.surface_frame_options.x;
+}
+
+float ocean_surface_planet_radius_m() {
+    return max(ocean_features.surface_frame_options.y, 0.001);
+}
+
+float ocean_surface_camera_altitude_m() {
+    return max(ocean_features.surface_frame_options.z, 0.0);
+}
+
+float ocean_surface_horizon_distance_m() {
+    return max(ocean_features.surface_frame_options.w, 0.001);
 }
 
 vec3 ocean_sky_radiance(vec3 direction) {
@@ -784,11 +801,12 @@ vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float ndotl, fl
 }
 
 float ocean_horizon_extinction_factor(vec3 view_dir, float dist) {
+    float horizon_distance = max(ocean_surface_horizon_distance_m(), ocean.mesh_options.z);
     float distance_extinction =
-        smoothstep(ocean.mesh_options.z * 0.30, ocean.mesh_options.z * 0.95, dist);
+        smoothstep(horizon_distance * 0.30, horizon_distance * 0.95, dist);
     float low_angle = 1.0 - smoothstep(0.035, 0.36, abs(view_dir.y));
     float angle_extinction =
-        low_angle * smoothstep(ocean.mesh_options.z * 0.18, ocean.mesh_options.z * 0.72, dist);
+        low_angle * smoothstep(horizon_distance * 0.18, horizon_distance * 0.72, dist);
     return clamp((distance_extinction * 0.86 + angle_extinction * 0.34) *
                      ocean_horizon_fog_strength(),
                  0.0, 0.96);

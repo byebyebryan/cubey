@@ -38,9 +38,10 @@ struct OceanSurfaceFeatureUniforms {
     cubey::math::Vec4 fade_options;
     cubey::math::Vec4 cascade_options;
     cubey::math::Vec4 self_shadow_options;
+    cubey::math::Vec4 surface_frame_options;
 };
 
-static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 24U);
+static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 28U);
 
 class OceanGpuResources {
   public:

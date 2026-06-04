@@ -12,6 +12,7 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 fade_options;
     vec4 cascade_options;
     vec4 self_shadow_options;
+    vec4 surface_frame_options;
 } ocean_features;
 
 layout(push_constant) uniform OceanParams {
@@ -217,7 +218,7 @@ float horizon_displacement_weight(float camera_distance) {
 }
 
 float ocean_water_datum_y() {
-    return 0.0;
+    return ocean_features.surface_frame_options.x;
 }
 
 vec3 ocean_surface_up(vec2 local_xz) {

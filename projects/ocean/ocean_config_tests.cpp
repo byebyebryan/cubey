@@ -719,6 +719,8 @@ int main() {
                          "vertex shader should fade displacement only near the horizon");
         require_contains(vertex_shader, "float ocean_water_datum_y()",
                          "vertex shader should name the ocean surface datum");
+        require_contains(vertex_shader, "ocean_features.surface_frame_options.x",
+                         "vertex shader should read water datum from surface frame uniforms");
         require_contains(vertex_shader, "vec3 ocean_surface_up(vec2 local_xz)",
                          "vertex shader should name the local surface up contract");
         require_contains(vertex_shader, "vec2 ocean_surface_sample_position(vec2 local_xz)",
@@ -749,7 +751,7 @@ int main() {
                          "app should pass shape anti-repeat as diagnostics push data");
         require_contains(app_source, "diagnostics_.detail_anti_repeat_strength",
                          "app should pass detail anti-repeat as feature uniform data");
-        require_contains(app_source, "surface_feature_uniforms()",
+        require_contains(app_source, "surface_feature_uniforms(surface_frame)",
                          "app should isolate shader feature controls in a frame uniform");
         require_contains(app_source, "upload_surface_feature_uniforms",
                          "app should upload shader feature controls before ocean draw");
@@ -1027,6 +1029,11 @@ int main() {
         require_contains(fragment_shader,
                          "float ocean_horizon_extinction_factor(vec3 view_dir, float dist)",
                          "fragment shader should use view-angle-aware horizon extinction");
+        require_contains(fragment_shader, "float ocean_surface_horizon_distance_m()",
+                         "fragment shader should expose surface-frame horizon distance");
+        require_contains(fragment_shader,
+                         "max(ocean_surface_horizon_distance_m(), ocean.mesh_options.z)",
+                         "fragment shader should derive horizon extinction from frame metadata");
         require_contains(fragment_shader,
                          "OceanAerialPerspective ocean_horizon_aerial_perspective",
                          "fragment shader should isolate horizon aerial perspective lookup");
@@ -1098,10 +1105,12 @@ int main() {
                          "surface descriptors should expose feature-isolation uniforms");
         require_contains(gpu_header_source, "OceanSurfaceFeatureUniforms",
                          "GPU resource header should define packed feature-isolation uniforms");
-        require_contains(gpu_header_source, "sizeof(float) * 24U",
+        require_contains(gpu_header_source, "sizeof(float) * 28U",
                          "GPU resource header should size expanded feature-isolation uniforms");
         require_contains(gpu_header_source, "self_shadow_options",
                          "GPU resource header should pack wave self-shadow controls");
+        require_contains(gpu_header_source, "surface_frame_options",
+                         "GPU resource header should pack ocean surface frame metadata");
         require_contains(gpu_resources_source,
                          "VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT",
                          "surface displacement descriptors should be visible to self-shadowing");
