@@ -2,6 +2,7 @@
 
 #include "planet_config.h"
 #include "planet_frame.h"
+#include "planet_surface.h"
 
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/math.h>
@@ -47,8 +48,6 @@ namespace {
 constexpr const char* kAppName = "planet";
 constexpr const char* kReadyStatus = "rendering planet project";
 
-using PlanetMeshData = cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv>;
-
 struct PlanetPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
     cubey::math::Vec4 light_direction_debug{0.35F, 0.78F, 0.50F, 0.0F};
@@ -76,16 +75,6 @@ static_assert(sizeof(PlanetPushConstants) <= 128U);
     };
 }
 
-[[nodiscard]] PlanetMeshData make_debug_planet_mesh(const PlanetConfig& config) {
-    return cubey::render::make_uv_sphere_position_color_normal_uv_mesh(
-        cubey::render::SphereMeshConfig{
-            .radius = config.radius_m,
-            .latitude_segments = 48,
-            .longitude_segments = 96,
-            .color = {0.12F, 0.32F, 0.64F},
-        });
-}
-
 [[nodiscard]] float planet_home_camera_distance(const PlanetConfig& config) {
     return std::max(config.radius_m + config.camera_altitude_m, config.radius_m * 1.01F);
 }
@@ -104,7 +93,7 @@ class PlanetApp {
     explicit PlanetApp(RunConfig config)
         : config_(std::move(config)), planet_config_(planet_config_from_run_config(config_)),
           edit_planet_config_(planet_config_),
-          surface_mesh_data_(make_debug_planet_mesh(planet_config_)),
+          surface_build_(make_planet_surface_mesh(planet_config_)),
           orbit_controller_(planet_orbit_config(planet_config_)) {}
 
     int run() {
@@ -185,7 +174,7 @@ class PlanetApp {
         if (surface_mesh_.has_value()) {
             return;
         }
-        surface_mesh_.emplace(gpu, surface_mesh_data_.mesh_config());
+        surface_mesh_.emplace(gpu, surface_build_.mesh.mesh_config());
     }
 
     void create_forward_pass(const cubey::vulkan::Device& device, VkExtent2D extent,
@@ -243,7 +232,11 @@ class PlanetApp {
         ImGui::Text("Altitude: %.0f m", frame_.camera_altitude_m);
         ImGui::Text("Horizon: %.0f m", frame_.horizon_distance_m);
         ImGui::Text("Near / far: %.1f m / %.0f m", frame_.near_plane_m, frame_.far_plane_m);
-        ImGui::Text("Surface triangles: %zu", surface_mesh_data_.indices.size() / 3U);
+        ImGui::Text("Patches: %u", surface_build_.diagnostics.patch_count);
+        ImGui::Text("Surface vertices: %u", surface_build_.diagnostics.vertex_count);
+        ImGui::Text("Surface triangles: %u", surface_build_.diagnostics.triangle_count);
+        ImGui::Text("Cell edge: %.0f m - %.0f m", surface_build_.diagnostics.min_edge_length_m,
+                    surface_build_.diagnostics.max_edge_length_m);
         ImGui::Text("Origin: %.0f %.0f %.0f", frame_.surface_origin_m.x, frame_.surface_origin_m.y,
                     frame_.surface_origin_m.z);
 
@@ -253,6 +246,23 @@ class PlanetApp {
                           0.0F, "%.0f");
         ImGui::InputFloat("Camera Altitude (m)", &edit_planet_config_.camera_altitude_m, 0.0F, 0.0F,
                           "%.0f");
+        int patches_per_face = static_cast<int>(edit_planet_config_.patches_per_face);
+        if (ImGui::InputInt("Patches / Face", &patches_per_face)) {
+            edit_planet_config_.patches_per_face =
+                static_cast<std::uint32_t>(std::max(patches_per_face, 0));
+        }
+        int patch_resolution = static_cast<int>(edit_planet_config_.patch_resolution);
+        if (ImGui::InputInt("Patch Resolution", &patch_resolution)) {
+            edit_planet_config_.patch_resolution =
+                static_cast<std::uint32_t>(std::max(patch_resolution, 0));
+        }
+        constexpr const char* kDebugViews[]{"final", "face-id", "patch-id"};
+        int debug_view = static_cast<int>(edit_planet_config_.debug_view);
+        if (ImGui::Combo("Debug View", &debug_view, kDebugViews,
+                         static_cast<int>(std::size(kDebugViews)))) {
+            edit_planet_config_.debug_view = static_cast<PlanetDebugView>(debug_view);
+        }
+        ImGui::Checkbox("Wire Overlay", &edit_planet_config_.wire_overlay);
         if (ImGui::Button("Apply Planet Config")) {
             try {
                 rebuild_planet_resources(context);
@@ -291,7 +301,7 @@ class PlanetApp {
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = static_cast<std::uint32_t>(surface_mesh_data_.indices.size() / 3U),
+            .triangles = surface_build_.diagnostics.triangle_count,
         };
         if (std::optional<cubey::host::FrameStatsSnapshot> stats =
                 ui_frame_stats_.record_frame(sample);
@@ -309,8 +319,8 @@ class PlanetApp {
         surface_mesh_.reset();
 
         planet_config_ = edit_planet_config_;
-        surface_mesh_data_ = make_debug_planet_mesh(planet_config_);
-        surface_mesh_.emplace(context.gpu(), surface_mesh_data_.mesh_config());
+        surface_build_ = make_planet_surface_mesh(planet_config_);
+        surface_mesh_.emplace(context.gpu(), surface_build_.mesh.mesh_config());
         static_cast<void>(context.gpu().drain());
         refresh_camera_limits_for_planet();
         refresh_frame();
@@ -347,7 +357,7 @@ class PlanetApp {
         return {
             .view_projection = camera_.view_projection_matrix(transform, aspect),
             .light_direction_debug = {0.35F, 0.78F, 0.50F, 0.0F},
-            .options = {0.0F, 0.0F, 0.0F, 0.0F},
+            .options = {planet_config_.wire_overlay ? 1.0F : 0.0F, 0.0F, 0.0F, 0.0F},
         };
     }
 
@@ -427,7 +437,7 @@ class PlanetApp {
     PlanetConfig planet_config_{};
     PlanetConfig edit_planet_config_{};
     PlanetFrame frame_{};
-    PlanetMeshData surface_mesh_data_{};
+    PlanetSurfaceBuildResult surface_build_{};
     cubey::OrbitController orbit_controller_;
     cubey::Camera3D camera_{cubey::Camera3DConfig{.near_z = 1.0F, .far_z = 1500000.0F}};
     std::optional<cubey::render::Mesh> surface_mesh_;

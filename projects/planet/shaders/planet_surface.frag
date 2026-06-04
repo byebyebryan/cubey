@@ -19,5 +19,8 @@ void main() {
     float wrap = max(dot(normal, light_dir) * 0.5 + 0.5, 0.0);
     vec3 sky = vec3(0.06, 0.12, 0.22) * pow(wrap, 1.8);
     vec3 color = in_color * (0.14 + 0.86 * ndotl) + sky;
+    float edge = min(min(in_uv.x, in_uv.y), min(1.0 - in_uv.x, 1.0 - in_uv.y));
+    float wire = 1.0 - smoothstep(0.0, 0.015, edge);
+    color = mix(color, vec3(0.92, 0.96, 1.0), wire * pc.options.x);
     out_color = vec4(color, 1.0);
 }
