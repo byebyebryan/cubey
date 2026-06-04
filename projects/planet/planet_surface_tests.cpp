@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdio>
 #include <stdexcept>
+#include <string_view>
 
 namespace {
 
@@ -19,6 +20,7 @@ void test_planet_surface_builds_expected_patch_counts() {
         .patch_resolution = 4,
         .max_lod_level = 0,
         .debug_view = cubey::projects::planet::PlanetDebugView::FaceId,
+        .skirts_enabled = false,
     };
     const cubey::projects::planet::PlanetSurfaceBuildResult result =
         cubey::projects::planet::make_planet_surface_mesh(config);
@@ -38,6 +40,7 @@ void test_planet_surface_vertices_stay_on_radius() {
         .patches_per_face = 1,
         .patch_resolution = 3,
         .max_lod_level = 0,
+        .skirts_enabled = false,
     };
     const cubey::projects::planet::PlanetSurfaceBuildResult result =
         cubey::projects::planet::make_planet_surface_mesh(config);
@@ -60,6 +63,7 @@ void test_planet_surface_lod_subdivides_near_camera_patches() {
         .max_lod_level = 1,
         .lod_target_edge_px = 1.0F,
         .debug_view = cubey::projects::planet::PlanetDebugView::LodLevel,
+        .skirts_enabled = false,
     };
     const cubey::projects::planet::PlanetSurfaceView view{
         .camera_world_position_m = {0.0, 0.0, 1500.0},
@@ -81,6 +85,7 @@ void test_planet_surface_can_build_camera_relative_vertices() {
         .patches_per_face = 1,
         .patch_resolution = 2,
         .max_lod_level = 0,
+        .skirts_enabled = false,
     };
     const cubey::Transform3D camera{
         .translation = {0.0F, 0.0F, 1500.0F},
@@ -173,6 +178,70 @@ void test_planet_surface_planner_selects_near_lod() {
             "planet planner should report selected near-camera child patches");
 }
 
+void test_planet_surface_skirts_add_seam_geometry() {
+    const cubey::projects::planet::PlanetConfig no_skirts{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 2,
+        .max_lod_level = 0,
+        .skirts_enabled = false,
+    };
+    cubey::projects::planet::PlanetConfig with_skirts = no_skirts;
+    with_skirts.skirts_enabled = true;
+    with_skirts.skirt_depth_scale = 0.5F;
+
+    const cubey::projects::planet::PlanetSurfaceBuildResult base =
+        cubey::projects::planet::make_planet_surface_mesh(no_skirts);
+    const cubey::projects::planet::PlanetSurfaceBuildResult skirted =
+        cubey::projects::planet::make_planet_surface_mesh(with_skirts);
+
+    require(skirted.diagnostics.triangle_count > base.diagnostics.triangle_count,
+            "planet skirts should add triangles");
+    require(skirted.diagnostics.vertex_count > base.diagnostics.vertex_count,
+            "planet skirts should add vertices");
+    require(skirted.diagnostics.seam_edge_count == skirted.diagnostics.patch_count * 4U,
+            "planet skirts should report one seam edge per patch side");
+    require(skirted.diagnostics.skirt_triangle_count > 0U,
+            "planet skirts should report skirt triangles");
+    require(skirted.diagnostics.min_skirt_depth_m > 0.0F &&
+                skirted.diagnostics.max_skirt_depth_m >= skirted.diagnostics.min_skirt_depth_m,
+            "planet skirts should report positive skirt depth range");
+}
+
+void test_planet_surface_skirt_vertices_drop_below_radius() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 2,
+        .max_lod_level = 0,
+        .debug_view = cubey::projects::planet::PlanetDebugView::Seams,
+        .skirts_enabled = true,
+    };
+    const cubey::projects::planet::PlanetSurfaceBuildResult result =
+        cubey::projects::planet::make_planet_surface_mesh(config);
+
+    bool found_skirt_vertex = false;
+    for (const cubey::render::VertexPositionColorNormalUv& vertex : result.mesh.vertices) {
+        const float length = std::sqrt(vertex.position[0] * vertex.position[0] +
+                                       vertex.position[1] * vertex.position[1] +
+                                       vertex.position[2] * vertex.position[2]);
+        if (length < config.radius_m - 0.1F) {
+            found_skirt_vertex = true;
+            break;
+        }
+    }
+    require(found_skirt_vertex, "planet skirt vertices should be offset below the surface radius");
+}
+
+void test_planet_surface_seams_debug_view_parses() {
+    require(cubey::projects::planet::planet_debug_view_from_string("seams") ==
+                cubey::projects::planet::PlanetDebugView::Seams,
+            "planet debug view should parse seams");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::Seams)} == "seams",
+            "planet debug view should name seams");
+}
+
 } // namespace
 
 int main() {
@@ -184,6 +253,9 @@ int main() {
         test_planet_surface_planner_culls_out_of_view_patches();
         test_planet_surface_planner_culls_when_camera_looks_away();
         test_planet_surface_planner_selects_near_lod();
+        test_planet_surface_skirts_add_seam_geometry();
+        test_planet_surface_skirt_vertices_drop_below_radius();
+        test_planet_surface_seams_debug_view_parses();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_surface_tests: %s\n", error.what());

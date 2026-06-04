@@ -21,6 +21,7 @@ enum class PlanetDebugView : std::uint8_t {
     PatchId,
     LodLevel,
     ScreenError,
+    Seams,
 };
 
 struct PlanetConfig {
@@ -33,6 +34,8 @@ struct PlanetConfig {
     float lod_target_edge_px = kPlanetDefaultLodTargetEdgePx;
     PlanetDebugView debug_view = PlanetDebugView::Final;
     bool wire_overlay = false;
+    bool skirts_enabled = true;
+    float skirt_depth_scale = 0.75F;
 };
 
 [[nodiscard]] PlanetConfig planet_config_from_run_config(const RunConfig& config);

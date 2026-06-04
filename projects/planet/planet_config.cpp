@@ -39,6 +39,9 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
     if (value == "screen-error" || value == "screen_error") {
         return PlanetDebugView::ScreenError;
     }
+    if (value == "seam" || value == "seams") {
+        return PlanetDebugView::Seams;
+    }
     throw std::runtime_error("unsupported planet debug view: " + std::string(value));
 }
 
@@ -54,6 +57,8 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "lod-level";
     case PlanetDebugView::ScreenError:
         return "screen-error";
+    case PlanetDebugView::Seams:
+        return "seams";
     }
     return "final";
 }
@@ -86,6 +91,9 @@ void validate_planet_config(const PlanetConfig& config) {
     if (config.lod_target_edge_px <= 0.0F) {
         throw std::runtime_error("planet LOD target edge pixels must be positive");
     }
+    if (config.skirt_depth_scale <= 0.0F) {
+        throw std::runtime_error("planet skirt depth scale must be positive");
+    }
     std::uint64_t patch_multiplier = 1;
     for (std::uint32_t level = 0; level < config.max_lod_level; ++level) {
         patch_multiplier *= 4ULL;
@@ -93,8 +101,9 @@ void validate_planet_config(const PlanetConfig& config) {
     const std::uint64_t worst_case_vertices =
         6ULL * static_cast<std::uint64_t>(config.patches_per_face) *
         static_cast<std::uint64_t>(config.patches_per_face) * patch_multiplier *
-        static_cast<std::uint64_t>(config.patch_resolution + 1U) *
-        static_cast<std::uint64_t>(config.patch_resolution + 1U);
+        (static_cast<std::uint64_t>(config.patch_resolution + 1U) *
+             static_cast<std::uint64_t>(config.patch_resolution + 1U) +
+         8ULL * static_cast<std::uint64_t>(config.patch_resolution));
     if (worst_case_vertices > 2000000ULL) {
         throw std::runtime_error("planet surface LOD settings are too dense for CPU debug mesh");
     }

@@ -91,6 +91,22 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     };
 }
 
+[[nodiscard]] PrimitiveVec3 seam_surface_color(cubey::math::Vec3 normal) {
+    const PrimitiveVec3 color = final_color(normal);
+    return {
+        color[0] * 0.28F,
+        color[1] * 0.34F,
+        color[2] * 0.42F,
+    };
+}
+
+[[nodiscard]] PrimitiveVec3 skirt_color(const PlanetConfig& config, cubey::math::Vec3 normal) {
+    if (config.debug_view == PlanetDebugView::Seams) {
+        return {1.0F, 0.82F, 0.22F};
+    }
+    return final_color(normal);
+}
+
 [[nodiscard]] PrimitiveVec3 vertex_color(const PlanetConfig& config,
                                          const PlanetSurfacePatch& patch,
                                          cubey::math::Vec3 normal) {
@@ -105,6 +121,8 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
         return lod_color(patch.level, config.max_lod_level);
     case PlanetDebugView::ScreenError:
         return screen_error_color(patch.screen_error_px, config.lod_target_edge_px);
+    case PlanetDebugView::Seams:
+        return seam_surface_color(normal);
     }
     return final_color(normal);
 }
@@ -330,6 +348,106 @@ void append_leaf_patches(const PlanetConfig& config, PlanetSurfaceView view,
     return plan;
 }
 
+[[nodiscard]] cubey::math::Vec3
+vertex_position(const cubey::render::VertexPositionColorNormalUv& vertex) {
+    return {vertex.position[0], vertex.position[1], vertex.position[2]};
+}
+
+[[nodiscard]] cubey::math::Vec3
+vertex_normal(const cubey::render::VertexPositionColorNormalUv& vertex) {
+    return glm::normalize(cubey::math::Vec3{vertex.normal[0], vertex.normal[1], vertex.normal[2]});
+}
+
+[[nodiscard]] float patch_skirt_depth_m(const PlanetConfig& config,
+                                        const PlanetSurfacePatch& patch) {
+    const float u_mid = (patch.u0 + patch.u1) * 0.5F;
+    const float v_mid = (patch.v0 + patch.v1) * 0.5F;
+    const cubey::math::DVec3 edge_a = sphere_world_position(config, patch.face, patch.u0, v_mid);
+    const cubey::math::DVec3 edge_b = sphere_world_position(config, patch.face, patch.u1, v_mid);
+    const cubey::math::DVec3 edge_c = sphere_world_position(config, patch.face, u_mid, patch.v0);
+    const cubey::math::DVec3 edge_d = sphere_world_position(config, patch.face, u_mid, patch.v1);
+    const float horizontal_cell_m = static_cast<float>(glm::length(edge_b - edge_a)) /
+                                    static_cast<float>(config.patch_resolution);
+    const float vertical_cell_m = static_cast<float>(glm::length(edge_d - edge_c)) /
+                                  static_cast<float>(config.patch_resolution);
+    return std::max(std::min(horizontal_cell_m, vertical_cell_m) * config.skirt_depth_scale,
+                    config.radius_m * 0.00001F);
+}
+
+void update_skirt_depth_range(PlanetSurfaceDiagnostics& diagnostics, float depth_m) {
+    if (diagnostics.skirt_triangle_count == 0U || diagnostics.min_skirt_depth_m == 0.0F) {
+        diagnostics.min_skirt_depth_m = depth_m;
+    } else {
+        diagnostics.min_skirt_depth_m = std::min(diagnostics.min_skirt_depth_m, depth_m);
+    }
+    diagnostics.max_skirt_depth_m = std::max(diagnostics.max_skirt_depth_m, depth_m);
+}
+
+[[nodiscard]] std::uint32_t append_skirt_vertex(const PlanetConfig& config,
+                                                const PlanetFrame& frame,
+                                                PlanetSurfaceBuildResult& result,
+                                                std::uint32_t top_index, float depth_m) {
+    const cubey::render::VertexPositionColorNormalUv& top = result.mesh.vertices[top_index];
+    const cubey::math::Vec3 normal = vertex_normal(top);
+    const cubey::math::DVec3 top_world =
+        planet_frame_render_to_world_m(frame, vertex_position(top));
+    const cubey::math::DVec3 bottom_world =
+        top_world - cubey::math::DVec3{normal.x, normal.y, normal.z} * static_cast<double>(depth_m);
+    const cubey::math::Vec3 bottom_render = planet_frame_world_to_render_m(frame, bottom_world);
+    const std::uint32_t bottom_index = static_cast<std::uint32_t>(result.mesh.vertices.size());
+    result.mesh.vertices.push_back(VertexPositionColorNormalUv{
+        .position = to_primitive(bottom_render),
+        .color = skirt_color(config, normal),
+        .normal = to_primitive(normal),
+        .uv = top.uv,
+    });
+    return bottom_index;
+}
+
+void append_skirt_segment(const PlanetConfig& config, const PlanetFrame& frame,
+                          PlanetSurfaceBuildResult& result, std::uint32_t top0, std::uint32_t top1,
+                          float depth_m) {
+    const std::uint32_t bottom0 = append_skirt_vertex(config, frame, result, top0, depth_m);
+    const std::uint32_t bottom1 = append_skirt_vertex(config, frame, result, top1, depth_m);
+    const auto push_triangle = [&result](std::uint32_t a, std::uint32_t b, std::uint32_t c) {
+        result.mesh.indices.push_back(a);
+        result.mesh.indices.push_back(b);
+        result.mesh.indices.push_back(c);
+    };
+
+    push_triangle(top0, bottom0, top1);
+    push_triangle(top1, bottom0, bottom1);
+    push_triangle(top1, bottom0, top0);
+    push_triangle(bottom1, bottom0, top1);
+    result.diagnostics.skirt_triangle_count += 4U;
+}
+
+void append_patch_skirts(const PlanetConfig& config, const PlanetFrame& frame,
+                         const PlanetSurfacePatch& patch, std::uint32_t base_vertex,
+                         std::uint32_t vertices_per_side, PlanetSurfaceBuildResult& result) {
+    if (!config.skirts_enabled) {
+        return;
+    }
+
+    const float depth_m = patch_skirt_depth_m(config, patch);
+    update_skirt_depth_range(result.diagnostics, depth_m);
+    result.diagnostics.seam_edge_count += 4U;
+
+    const std::uint32_t patch_resolution = config.patch_resolution;
+    for (std::uint32_t x = 0; x < patch_resolution; ++x) {
+        append_skirt_segment(config, frame, result, base_vertex + x, base_vertex + x + 1U, depth_m);
+        const std::uint32_t bottom_row = base_vertex + patch_resolution * vertices_per_side;
+        append_skirt_segment(config, frame, result, bottom_row + x, bottom_row + x + 1U, depth_m);
+    }
+    for (std::uint32_t y = 0; y < patch_resolution; ++y) {
+        append_skirt_segment(config, frame, result, base_vertex + y * vertices_per_side,
+                             base_vertex + (y + 1U) * vertices_per_side, depth_m);
+        append_skirt_segment(
+            config, frame, result, base_vertex + y * vertices_per_side + patch_resolution,
+            base_vertex + (y + 1U) * vertices_per_side + patch_resolution, depth_m);
+    }
+}
+
 void append_patch_mesh(const PlanetConfig& config, const PlanetFrame& frame,
                        const PlanetSurfacePatch& patch, PlanetSurfaceBuildResult& result) {
     const std::uint32_t patch_resolution = config.patch_resolution;
@@ -382,6 +500,8 @@ void append_patch_mesh(const PlanetConfig& config, const PlanetFrame& frame,
             update_edge_range(result.diagnostics, w0, w2);
         }
     }
+
+    append_patch_skirts(config, frame, patch, base_vertex, vertices_per_side, result);
 }
 
 } // namespace

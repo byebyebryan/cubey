@@ -260,6 +260,10 @@ class PlanetApp {
         ImGui::Text("Surface triangles: %u", surface_build_.diagnostics.triangle_count);
         ImGui::Text("Cell edge: %.0f m - %.0f m", surface_build_.diagnostics.min_edge_length_m,
                     surface_build_.diagnostics.max_edge_length_m);
+        ImGui::Text("Seam edges: %u", surface_build_.diagnostics.seam_edge_count);
+        ImGui::Text("Skirt triangles: %u", surface_build_.diagnostics.skirt_triangle_count);
+        ImGui::Text("Skirt depth: %.0f m - %.0f m", surface_build_.diagnostics.min_skirt_depth_m,
+                    surface_build_.diagnostics.max_skirt_depth_m);
         ImGui::Text("Origin: %.0f %.0f %.0f", frame_.surface_origin_m.x, frame_.surface_origin_m.y,
                     frame_.surface_origin_m.z);
 
@@ -286,14 +290,17 @@ class PlanetApp {
         }
         ImGui::InputFloat("LOD Target Edge (px)", &edit_planet_config_.lod_target_edge_px, 0.0F,
                           0.0F, "%.1f");
-        constexpr const char* kDebugViews[]{"final", "face-id", "patch-id", "lod-level",
-                                            "screen-error"};
+        constexpr const char* kDebugViews[]{"final",     "face-id",      "patch-id",
+                                            "lod-level", "screen-error", "seams"};
         int debug_view = static_cast<int>(edit_planet_config_.debug_view);
         if (ImGui::Combo("Debug View", &debug_view, kDebugViews,
                          static_cast<int>(std::size(kDebugViews)))) {
             edit_planet_config_.debug_view = static_cast<PlanetDebugView>(debug_view);
         }
         ImGui::Checkbox("Wire Overlay", &edit_planet_config_.wire_overlay);
+        ImGui::Checkbox("Patch Skirts", &edit_planet_config_.skirts_enabled);
+        ImGui::InputFloat("Skirt Depth Scale", &edit_planet_config_.skirt_depth_scale, 0.0F, 0.0F,
+                          "%.2f");
         if (ImGui::Button("Apply Planet Config")) {
             try {
                 rebuild_planet_resources(context);

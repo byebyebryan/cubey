@@ -58,6 +58,17 @@ void test_planet_config_rejects_invalid_radius() {
     throw std::runtime_error("planet config should reject nonpositive radius");
 }
 
+void test_planet_config_rejects_invalid_skirt_depth() {
+    cubey::projects::planet::PlanetConfig config{};
+    config.skirt_depth_scale = 0.0F;
+    try {
+        cubey::projects::planet::validate_planet_config(config);
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error("planet config should reject nonpositive skirt depth");
+}
+
 void test_planet_frame_converts_camera_to_render_origin() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 600000.0F,
@@ -82,6 +93,7 @@ int main() {
     try {
         test_planet_frame_derives_horizon_and_planes();
         test_planet_config_rejects_invalid_radius();
+        test_planet_config_rejects_invalid_skirt_depth();
         test_planet_frame_converts_camera_to_render_origin();
         return 0;
     } catch (const std::exception& error) {

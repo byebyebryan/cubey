@@ -35,6 +35,8 @@ struct PlanetSurfaceDiagnostics {
     std::uint32_t patch_count = 0;
     std::uint32_t vertex_count = 0;
     std::uint32_t triangle_count = 0;
+    std::uint32_t seam_edge_count = 0;
+    std::uint32_t skirt_triangle_count = 0;
     std::uint32_t min_lod_level = 0;
     std::uint32_t max_lod_level = 0;
     std::array<std::uint32_t, 4> patches_by_lod{};
@@ -42,6 +44,8 @@ struct PlanetSurfaceDiagnostics {
     float max_screen_error_px = 0.0F;
     float min_edge_length_m = 0.0F;
     float max_edge_length_m = 0.0F;
+    float min_skirt_depth_m = 0.0F;
+    float max_skirt_depth_m = 0.0F;
 };
 
 struct PlanetSurfaceView {
