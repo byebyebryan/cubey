@@ -12,11 +12,15 @@ inline constexpr float kPlanetDefaultAtmosphereHeightM = 70000.0F;
 inline constexpr float kPlanetDefaultCameraAltitudeM = 240000.0F;
 inline constexpr std::uint32_t kPlanetDefaultPatchesPerFace = 2;
 inline constexpr std::uint32_t kPlanetDefaultPatchResolution = 16;
+inline constexpr std::uint32_t kPlanetDefaultMaxLodLevel = 1;
+inline constexpr float kPlanetDefaultLodTargetEdgePx = 24.0F;
 
 enum class PlanetDebugView : std::uint8_t {
     Final,
     FaceId,
     PatchId,
+    LodLevel,
+    ScreenError,
 };
 
 struct PlanetConfig {
@@ -25,6 +29,8 @@ struct PlanetConfig {
     float camera_altitude_m = kPlanetDefaultCameraAltitudeM;
     std::uint32_t patches_per_face = kPlanetDefaultPatchesPerFace;
     std::uint32_t patch_resolution = kPlanetDefaultPatchResolution;
+    std::uint32_t max_lod_level = kPlanetDefaultMaxLodLevel;
+    float lod_target_edge_px = kPlanetDefaultLodTargetEdgePx;
     PlanetDebugView debug_view = PlanetDebugView::Final;
     bool wire_overlay = false;
 };

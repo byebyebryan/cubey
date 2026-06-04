@@ -1,6 +1,5 @@
 #include "planet_config.h"
 
-#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -34,6 +33,12 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
     if (value == "patch" || value == "patch-id" || value == "patch_id") {
         return PlanetDebugView::PatchId;
     }
+    if (value == "lod" || value == "lod-level" || value == "lod_level") {
+        return PlanetDebugView::LodLevel;
+    }
+    if (value == "screen-error" || value == "screen_error") {
+        return PlanetDebugView::ScreenError;
+    }
     throw std::runtime_error("unsupported planet debug view: " + std::string(value));
 }
 
@@ -45,6 +50,10 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "face-id";
     case PlanetDebugView::PatchId:
         return "patch-id";
+    case PlanetDebugView::LodLevel:
+        return "lod-level";
+    case PlanetDebugView::ScreenError:
+        return "screen-error";
     }
     return "final";
 }
@@ -65,12 +74,29 @@ void validate_planet_config(const PlanetConfig& config) {
     if (config.patch_resolution == 0U) {
         throw std::runtime_error("planet patch resolution must be positive");
     }
-    const std::uint64_t vertices = 6ULL * static_cast<std::uint64_t>(config.patches_per_face) *
-                                   static_cast<std::uint64_t>(config.patches_per_face) *
-                                   static_cast<std::uint64_t>(config.patch_resolution + 1U) *
-                                   static_cast<std::uint64_t>(config.patch_resolution + 1U);
-    if (vertices > static_cast<std::uint64_t>(std::numeric_limits<std::uint16_t>::max())) {
-        throw std::runtime_error("planet surface exceeds uint16 mesh index limit");
+    if (config.max_lod_level > 3U) {
+        throw std::runtime_error("planet max LOD level must be <= 3");
+    }
+    if (config.patch_resolution > 32U) {
+        throw std::runtime_error("planet patch resolution must be <= 32");
+    }
+    if (config.patches_per_face > 8U) {
+        throw std::runtime_error("planet patches per face must be <= 8");
+    }
+    if (config.lod_target_edge_px <= 0.0F) {
+        throw std::runtime_error("planet LOD target edge pixels must be positive");
+    }
+    std::uint64_t patch_multiplier = 1;
+    for (std::uint32_t level = 0; level < config.max_lod_level; ++level) {
+        patch_multiplier *= 4ULL;
+    }
+    const std::uint64_t worst_case_vertices =
+        6ULL * static_cast<std::uint64_t>(config.patches_per_face) *
+        static_cast<std::uint64_t>(config.patches_per_face) * patch_multiplier *
+        static_cast<std::uint64_t>(config.patch_resolution + 1U) *
+        static_cast<std::uint64_t>(config.patch_resolution + 1U);
+    if (worst_case_vertices > 2000000ULL) {
+        throw std::runtime_error("planet surface LOD settings are too dense for CPU debug mesh");
     }
 }
 

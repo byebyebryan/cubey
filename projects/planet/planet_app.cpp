@@ -233,6 +233,15 @@ class PlanetApp {
         ImGui::Text("Horizon: %.0f m", frame_.horizon_distance_m);
         ImGui::Text("Near / far: %.1f m / %.0f m", frame_.near_plane_m, frame_.far_plane_m);
         ImGui::Text("Patches: %u", surface_build_.diagnostics.patch_count);
+        ImGui::Text("LOD range: %u - %u", surface_build_.diagnostics.min_lod_level,
+                    surface_build_.diagnostics.max_lod_level);
+        ImGui::Text("LOD patches: %u / %u / %u / %u", surface_build_.diagnostics.patches_by_lod[0],
+                    surface_build_.diagnostics.patches_by_lod[1],
+                    surface_build_.diagnostics.patches_by_lod[2],
+                    surface_build_.diagnostics.patches_by_lod[3]);
+        ImGui::Text("Screen error: %.1f px - %.1f px",
+                    surface_build_.diagnostics.min_screen_error_px,
+                    surface_build_.diagnostics.max_screen_error_px);
         ImGui::Text("Surface vertices: %u", surface_build_.diagnostics.vertex_count);
         ImGui::Text("Surface triangles: %u", surface_build_.diagnostics.triangle_count);
         ImGui::Text("Cell edge: %.0f m - %.0f m", surface_build_.diagnostics.min_edge_length_m,
@@ -256,7 +265,15 @@ class PlanetApp {
             edit_planet_config_.patch_resolution =
                 static_cast<std::uint32_t>(std::max(patch_resolution, 0));
         }
-        constexpr const char* kDebugViews[]{"final", "face-id", "patch-id"};
+        int max_lod_level = static_cast<int>(edit_planet_config_.max_lod_level);
+        if (ImGui::InputInt("Max LOD Level", &max_lod_level)) {
+            edit_planet_config_.max_lod_level =
+                static_cast<std::uint32_t>(std::max(max_lod_level, 0));
+        }
+        ImGui::InputFloat("LOD Target Edge (px)", &edit_planet_config_.lod_target_edge_px, 0.0F,
+                          0.0F, "%.1f");
+        constexpr const char* kDebugViews[]{"final", "face-id", "patch-id", "lod-level",
+                                            "screen-error"};
         int debug_view = static_cast<int>(edit_planet_config_.debug_view);
         if (ImGui::Combo("Debug View", &debug_view, kDebugViews,
                          static_cast<int>(std::size(kDebugViews)))) {
