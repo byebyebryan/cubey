@@ -17,6 +17,8 @@ namespace cubey::math {
 using Mat3 = glm::mat3;
 using Mat4 = glm::mat4;
 using Quat = glm::quat;
+using DVec2 = glm::dvec2;
+using DVec3 = glm::dvec3;
 using Vec2 = glm::vec2;
 using Vec3 = glm::vec3;
 using Vec4 = glm::vec4;

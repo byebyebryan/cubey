@@ -47,6 +47,10 @@ void test_color_space_converts_srgb_authored_values_to_linear();
 void test_color_space_converts_hsv_and_hsl_authored_values();
 void test_clipmap_grid_2d_emits_far_to_near_annular_patches();
 void test_clipmap_grid_2d_rejects_invalid_config();
+void test_local_tangent_frame_converts_between_world_and_local_space();
+void test_local_tangent_frame_preserves_camera_relative_precision();
+void test_local_tangent_frame_reports_height_above_water_datum();
+void test_local_tangent_frame_rejects_invalid_basis();
 void test_terrain_ocean_fields_pack_channel_layout_and_ranges();
 void test_terrain_ocean_fields_reject_invalid_contract_data();
 void test_render_graph_allows_imported_texture_read_without_prior_write();
@@ -241,6 +245,10 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_color_space_converts_hsv_and_hsl_authored_values),
         CUBEY_TEST(test_clipmap_grid_2d_emits_far_to_near_annular_patches),
         CUBEY_TEST(test_clipmap_grid_2d_rejects_invalid_config),
+        CUBEY_TEST(test_local_tangent_frame_converts_between_world_and_local_space),
+        CUBEY_TEST(test_local_tangent_frame_preserves_camera_relative_precision),
+        CUBEY_TEST(test_local_tangent_frame_reports_height_above_water_datum),
+        CUBEY_TEST(test_local_tangent_frame_rejects_invalid_basis),
         CUBEY_TEST(test_terrain_ocean_fields_pack_channel_layout_and_ranges),
         CUBEY_TEST(test_terrain_ocean_fields_reject_invalid_contract_data),
         CUBEY_TEST(test_primitive_cube_position_color_mesh_uses_face_colors_and_indices),

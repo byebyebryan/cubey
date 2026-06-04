@@ -53,6 +53,7 @@ add_executable(cubey_core_tests
     render_graph_sync_tests.cpp
     render_graph_tests.cpp
     render_item_tests.cpp
+    render_local_tangent_frame_tests.cpp
     render_mesh_tests.cpp
     render_pass_tests.cpp
     render_pbr_tests.cpp
