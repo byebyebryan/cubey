@@ -102,6 +102,14 @@ Tier 2 is worthwhile for high-altitude views, ships disappearing over the
 horizon, or flight-scale scenes. It should not require rewriting the FFT ocean
 core if the local-frame and surface-mapping boundary is in place.
 
+The first T2 implementation should be a single-pass surface-mapping extension
+of the current clipmap mesh, not a separate planet renderer. The near field
+stays visually flat and continues to sample FFT cascades in local XZ space. The
+far field smoothly bends the base water datum onto an Earth-radius spherical
+surface, with displacement riding on top of that mapped surface. This keeps the
+renderer debuggable while proving the T1.5 frame contract under real curvature
+pressure.
+
 ### Tier 3: Planet Scale
 
 Goal: render and navigate ocean, terrain, atmosphere, and weather at planetary
@@ -203,6 +211,26 @@ Still deferred:
   field;
 - floating origin or large-world camera state outside the ocean project.
 
+## T2 Curved Far-Surface Plan
+
+T2 should make curvature visible by default while keeping Flat mode as an A/B
+and regression path. The implementation remains a viewer-centered local tangent
+patch:
+
+- surface mode is a resolved frame/config choice: `flat` or `curved-far`;
+- curvature starts after the near field and reaches full strength before the
+  horizon, using ratios of the computed horizon distance;
+- spherical drop is measured relative to the local tangent water datum, with
+  the planet center below the local frame by `planet_radius_m`;
+- FFT sample coordinates remain unchanged in local XZ, so the wave compute core
+  stays local and deterministic;
+- shaders generate world/render positions through surface-mapping helpers, and
+  material normals start from the mapped surface up vector.
+
+This slice intentionally leaves distant-object occlusion, curved terrain and
+bathymetry sampling, floating origin, shoreline interaction, and planet-scale
+patch streaming out of scope.
+
 ## Research Decisions
 
 The first horizon-scale implementation should stay with a viewer-centered
@@ -257,8 +285,8 @@ Avoid:
 5. Done as a flat seam: introduce local-frame, surface-frame, datum, projection,
    terrain diagnostic, atmosphere altitude, and shader metadata vocabulary while
    keeping the implementation flat.
-6. Add a curved far-ocean mapping path after the flat horizon renderer is
-   visually stable.
+6. Next: add a single-pass curved far-ocean mapping path with Flat/Curved-Far
+   surface modes, horizon-ratio blend controls, and curvature diagnostics.
 7. Only then evaluate planet-scale terrain/ocean patching and streaming.
 
 This keeps the next slice product-visible while leaving a clean path from local
@@ -269,7 +297,6 @@ ocean to curved horizon and later planet scale.
 - What camera-height range should the ocean project target first: deck/person
   height, ship mast, cinematic drone, or aircraft?
 - Should the first far mesh be clipmap-based, radial/annular, or a hybrid?
-- Should curved far ocean be a separate far pass or a single mesh mapping mode?
 - How much of the atmosphere path needs true aerial perspective before Tier 1
   hides the horizon boundary convincingly?
 - What world-frame convention should terrain, ocean, atmosphere, and future
