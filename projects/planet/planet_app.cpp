@@ -1,5 +1,8 @@
 #include "planet_app.h"
 
+#include "planet_config.h"
+#include "planet_frame.h"
+
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/math.h>
 #include <cubey/host/frame_stats.h>
@@ -17,17 +20,21 @@
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/vk_check.h>
 
 #include <imgui.h>
 #include <vulkan/vulkan.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstdio>
 #include <exception>
 #include <filesystem>
+#include <numbers>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 #ifndef CUBEY_PLANET_SHADER_DIR
@@ -69,24 +76,36 @@ static_assert(sizeof(PlanetPushConstants) <= 128U);
     };
 }
 
-[[nodiscard]] PlanetMeshData make_debug_planet_mesh() {
+[[nodiscard]] PlanetMeshData make_debug_planet_mesh(const PlanetConfig& config) {
     return cubey::render::make_uv_sphere_position_color_normal_uv_mesh(
         cubey::render::SphereMeshConfig{
-            .radius = 1.0F,
+            .radius = config.radius_m,
             .latitude_segments = 48,
             .longitude_segments = 96,
             .color = {0.12F, 0.32F, 0.64F},
         });
 }
 
+[[nodiscard]] float planet_home_camera_distance(const PlanetConfig& config) {
+    return std::max(config.radius_m + config.camera_altitude_m, config.radius_m * 1.01F);
+}
+
+[[nodiscard]] cubey::OrbitControllerConfig planet_orbit_config(const PlanetConfig& config) {
+    const float home_distance = planet_home_camera_distance(config);
+    return {
+        .distance = home_distance,
+        .min_distance = config.radius_m * 1.001F,
+        .max_distance = std::max(home_distance * 8.0F, config.radius_m * 3.0F),
+    };
+}
+
 class PlanetApp {
   public:
     explicit PlanetApp(RunConfig config)
-        : config_(std::move(config)), orbit_controller_(cubey::OrbitControllerConfig{
-                                          .distance = 3.0F,
-                                          .min_distance = 1.35F,
-                                          .max_distance = 18.0F,
-                                      }) {}
+        : config_(std::move(config)), planet_config_(planet_config_from_run_config(config_)),
+          edit_planet_config_(planet_config_),
+          surface_mesh_data_(make_debug_planet_mesh(planet_config_)),
+          orbit_controller_(planet_orbit_config(planet_config_)) {}
 
     int run() {
         if (config_.headless) {
@@ -166,7 +185,6 @@ class PlanetApp {
         if (surface_mesh_.has_value()) {
             return;
         }
-        surface_mesh_data_ = make_debug_planet_mesh();
         surface_mesh_.emplace(gpu, surface_mesh_data_.mesh_config());
     }
 
@@ -210,17 +228,49 @@ class PlanetApp {
     void destroy_all_resources() {
         destroy_swapchain_resources();
         surface_mesh_.reset();
-        surface_mesh_data_ = {};
     }
 
     void update_input(const cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
         orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
+        refresh_frame();
     }
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
         ImGui::TextUnformatted("Planet");
-        ImGui::Text("Surface vertices: %zu", surface_mesh_data_.vertices.size());
+        ImGui::SeparatorText("Frame");
+        ImGui::Text("Radius: %.0f m", planet_config_.radius_m);
+        ImGui::Text("Atmosphere: %.0f m", planet_config_.atmosphere_height_m);
+        ImGui::Text("Altitude: %.0f m", frame_.camera_altitude_m);
+        ImGui::Text("Horizon: %.0f m", frame_.horizon_distance_m);
+        ImGui::Text("Near / far: %.1f m / %.0f m", frame_.near_plane_m, frame_.far_plane_m);
         ImGui::Text("Surface triangles: %zu", surface_mesh_data_.indices.size() / 3U);
+        ImGui::Text("Origin: %.0f %.0f %.0f", frame_.surface_origin_m.x, frame_.surface_origin_m.y,
+                    frame_.surface_origin_m.z);
+
+        ImGui::SeparatorText("Config");
+        ImGui::InputFloat("Radius (m)", &edit_planet_config_.radius_m, 0.0F, 0.0F, "%.0f");
+        ImGui::InputFloat("Atmosphere Height (m)", &edit_planet_config_.atmosphere_height_m, 0.0F,
+                          0.0F, "%.0f");
+        ImGui::InputFloat("Camera Altitude (m)", &edit_planet_config_.camera_altitude_m, 0.0F, 0.0F,
+                          "%.0f");
+        if (ImGui::Button("Apply Planet Config")) {
+            try {
+                rebuild_planet_resources(context);
+                rebuild_error_.clear();
+            } catch (const std::exception& error) {
+                rebuild_error_ = error.what();
+                edit_planet_config_ = planet_config_;
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset Planet Config")) {
+            edit_planet_config_ = planet_config_;
+            orbit_controller_.reset();
+            rebuild_error_.clear();
+        }
+        if (!rebuild_error_.empty()) {
+            ImGui::Text("Config error: %s", rebuild_error_.c_str());
+        }
 
         cubey::host::draw_performance_ui({
             .frame_stats = latest_frame_stats_,
@@ -251,18 +301,51 @@ class PlanetApp {
         return sample;
     }
 
-    [[nodiscard]] PlanetPushConstants push_constants(VkExtent2D extent) const {
-        const float aspect = extent.height == 0U ? 1.0F
-                                                 : static_cast<float>(extent.width) /
-                                                       static_cast<float>(extent.height);
-        const cubey::Transform3D camera_transform = cubey::orbit_camera_transform({
+    void rebuild_planet_resources(cubey::host::WindowedAppContext& context) {
+        validate_planet_config(edit_planet_config_);
+        cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
+                             "vkDeviceWaitIdle planet rebuild");
+        static_cast<void>(context.gpu().drain());
+        surface_mesh_.reset();
+
+        planet_config_ = edit_planet_config_;
+        surface_mesh_data_ = make_debug_planet_mesh(planet_config_);
+        surface_mesh_.emplace(context.gpu(), surface_mesh_data_.mesh_config());
+        static_cast<void>(context.gpu().drain());
+        refresh_camera_limits_for_planet();
+        refresh_frame();
+    }
+
+    void refresh_camera_limits_for_planet() {
+        const cubey::OrbitControllerConfig orbit_config = planet_orbit_config(planet_config_);
+        orbit_controller_.set_distance_limits(orbit_config.min_distance, orbit_config.max_distance);
+        orbit_controller_.set_home_distance(orbit_config.distance);
+        orbit_controller_.set_distance(orbit_config.distance);
+    }
+
+    [[nodiscard]] cubey::Transform3D camera_transform() const {
+        return cubey::orbit_camera_transform({
             .target = {0.0F, 0.0F, 0.0F},
             .distance = orbit_controller_.distance(),
             .yaw = orbit_controller_.yaw() + 0.55F,
             .pitch = orbit_controller_.pitch() + 0.28F,
         });
+    }
+
+    void refresh_frame() {
+        frame_ = make_planet_frame(planet_config_, camera_transform());
+        camera_.set_projection(std::numbers::pi_v<float> / 3.0F, frame_.near_plane_m,
+                               frame_.far_plane_m);
+    }
+
+    [[nodiscard]] PlanetPushConstants push_constants(VkExtent2D extent) {
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
+        refresh_frame();
+        const cubey::Transform3D transform = camera_transform();
         return {
-            .view_projection = camera_.view_projection_matrix(camera_transform, aspect),
+            .view_projection = camera_.view_projection_matrix(transform, aspect),
             .light_direction_debug = {0.35F, 0.78F, 0.50F, 0.0F},
             .options = {0.0F, 0.0F, 0.0F, 0.0F},
         };
@@ -341,15 +424,19 @@ class PlanetApp {
     }
 
     RunConfig config_;
-    cubey::OrbitController orbit_controller_;
-    cubey::Camera3D camera_{cubey::Camera3DConfig{.near_z = 0.02F, .far_z = 64.0F}};
+    PlanetConfig planet_config_{};
+    PlanetConfig edit_planet_config_{};
+    PlanetFrame frame_{};
     PlanetMeshData surface_mesh_data_{};
+    cubey::OrbitController orbit_controller_;
+    cubey::Camera3D camera_{cubey::Camera3DConfig{.near_z = 1.0F, .far_z = 1500000.0F}};
     std::optional<cubey::render::Mesh> surface_mesh_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::host::FrameStats ui_frame_stats_;
     std::optional<cubey::host::FrameStatsSnapshot> latest_frame_stats_;
     cubey::host::ProcessResourceStatsSampler process_stats_;
+    std::string rebuild_error_{};
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
 };

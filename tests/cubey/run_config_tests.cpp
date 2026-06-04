@@ -268,6 +268,9 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "ocean.cascade",
         "ocean.spectral_domains",
         "ocean.terrain_fields",
+        "planet.radius_m",
+        "planet.atmosphere_height_m",
+        "planet.camera_altitude_m",
         "terrain.cell_size",
         "terrain.sea_level",
         "terrain.water_surface",
@@ -1063,10 +1066,12 @@ void test_run_config_parses_ocean_controls() {
     std::string wire_flag = "--ocean-wire-overlay";
     std::string opacity_flag = "--ocean-wire-opacity";
     std::string opacity_value = "0.75";
-    std::array<char*, 11> argv{
-        program.data(),     map_flag.data(),          map_value.data(),      precision_flag.data(),
-        precision_value.data(), cascade_flag.data(),  cascade_value.data(),
-        terrain_fields_flag.data(), wire_flag.data(), opacity_flag.data(),  opacity_value.data()};
+    std::array<char*, 11> argv{program.data(),         map_flag.data(),
+                               map_value.data(),       precision_flag.data(),
+                               precision_value.data(), cascade_flag.data(),
+                               cascade_value.data(),   terrain_fields_flag.data(),
+                               wire_flag.data(),       opacity_flag.data(),
+                               opacity_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -1154,6 +1159,48 @@ void test_run_config_rejects_invalid_ocean_controls() {
     require_throws(
         [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
         "run config should reject unsupported ocean cascade selection");
+}
+
+void test_run_config_parses_planet_controls() {
+    std::string program = "cubey";
+    std::string radius_flag = "--planet-radius-m";
+    std::string radius_value = "600000";
+    std::string atmosphere_flag = "--planet-atmosphere-height-m";
+    std::string atmosphere_value = "70000";
+    std::string altitude_flag = "--planet-camera-altitude-m";
+    std::string altitude_value = "240000";
+    std::array<char*, 7> argv{program.data(),         radius_flag.data(),      radius_value.data(),
+                              atmosphere_flag.data(), atmosphere_value.data(), altitude_flag.data(),
+                              altitude_value.data()};
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.planet.radius_m == 600000.0F, "run config should parse planet radius");
+    require(config.planet.atmosphere_height_m == 70000.0F,
+            "run config should parse planet atmosphere height");
+    require(config.planet.camera_altitude_m == 240000.0F,
+            "run config should parse planet camera altitude");
+}
+
+void test_run_config_rejects_invalid_planet_controls() {
+    std::string program = "cubey";
+    std::string radius_flag = "--planet-radius-m";
+    std::string radius_value = "0";
+    std::array<char*, 3> radius_argv{program.data(), radius_flag.data(), radius_value.data()};
+    require_throws(
+        [&radius_argv]() {
+            cubey::parse_run_config(static_cast<int>(radius_argv.size()), radius_argv.data());
+        },
+        "run config should reject nonpositive planet radius");
+
+    std::string altitude_flag = "--planet-camera-altitude-m";
+    std::string altitude_value = "-1";
+    std::array<char*, 3> altitude_argv{program.data(), altitude_flag.data(), altitude_value.data()};
+    require_throws(
+        [&altitude_argv]() {
+            cubey::parse_run_config(static_cast<int>(altitude_argv.size()), altitude_argv.data());
+        },
+        "run config should reject negative planet camera altitude");
 }
 
 void test_run_config_parses_shadow_volume_controls() {

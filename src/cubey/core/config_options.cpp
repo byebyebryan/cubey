@@ -79,7 +79,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 134> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 137> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -163,9 +163,8 @@ constexpr std::array<ConfigOptionDescriptor, 134> kRunConfigOptions{
            "Storage precision for ocean FFT wave fields.", ConfigOptionType::Enum, no_range(),
            enum_choices(kOceanFieldPrecisions)),
     option(RunConfigOptionId::OceanSurfaceMode, "ocean.surface_mode", "--ocean-surface-mode",
-           "Surface Mode", "Ocean",
-           "Ocean surface mapping mode: flat or curved far field.", ConfigOptionType::Enum,
-           no_range(), enum_choices(kOceanSurfaceModes)),
+           "Surface Mode", "Ocean", "Ocean surface mapping mode: flat or curved far field.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kOceanSurfaceModes)),
     option(RunConfigOptionId::OceanPlanetRadiusScale, "ocean.planet_radius_scale",
            "--ocean-planet-radius-scale", "Planet Radius Scale", "Ocean",
            "Scale applied to the atmosphere planet radius for ocean surface curvature.",
@@ -207,6 +206,16 @@ constexpr std::array<ConfigOptionDescriptor, 134> kRunConfigOptions{
            "--ocean-ref-wire-opacity", "Wire Opacity", "Ocean Ref",
            "Opacity used by the ocean reference wire overlay.", ConfigOptionType::Float,
            bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::PlanetRadius, "planet.radius_m", "--planet-radius-m", "Radius",
+           "Planet", "Planet radius in meters.", ConfigOptionType::Float, min_range(1.0)),
+    option(RunConfigOptionId::PlanetAtmosphereHeight, "planet.atmosphere_height_m",
+           "--planet-atmosphere-height-m", "Atmosphere Height", "Planet",
+           "Atmosphere shell height above the planet surface in meters.", ConfigOptionType::Float,
+           min_range(0.0)),
+    option(RunConfigOptionId::PlanetCameraAltitude, "planet.camera_altitude_m",
+           "--planet-camera-altitude-m", "Camera Altitude", "Planet",
+           "Default camera altitude above the planet surface in meters.", ConfigOptionType::Float,
+           min_range(0.0)),
     option(RunConfigOptionId::TerrainSeed, "terrain.seed", "--terrain-seed", "Seed", "Terrain",
            "Deterministic procedural terrain seed.", ConfigOptionType::UInt64),
     option(RunConfigOptionId::TerrainCellSize, "terrain.cell_size", "--terrain-cell-size",
@@ -756,6 +765,12 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.ocean_ref.wire_overlay;
     case RunConfigOptionId::OceanRefWireOpacity:
         return optional_float(config.ocean_ref.wire_opacity);
+    case RunConfigOptionId::PlanetRadius:
+        return optional_float(config.planet.radius_m);
+    case RunConfigOptionId::PlanetAtmosphereHeight:
+        return optional_float(config.planet.atmosphere_height_m);
+    case RunConfigOptionId::PlanetCameraAltitude:
+        return optional_float(config.planet.camera_altitude_m);
     case RunConfigOptionId::TerrainSeed:
         return config.terrain.seed_set ? nlohmann::json(config.terrain.seed)
                                        : nlohmann::json(nullptr);
@@ -999,6 +1014,18 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::OceanRefOptions& option
     adapter.readField<bool>("wire_overlay", options.wire_overlay);
 }
 
+inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& options) {
+    adapter.writeField<float>("radius_m", options.radius_m);
+    adapter.writeField<float>("atmosphere_height_m", options.atmosphere_height_m);
+    adapter.writeField<float>("camera_altitude_m", options.camera_altitude_m);
+}
+
+inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options) {
+    adapter.readField<float>("radius_m", options.radius_m);
+    adapter.readField<float>("atmosphere_height_m", options.atmosphere_height_m);
+    adapter.readField<float>("camera_altitude_m", options.camera_altitude_m);
+}
+
 inline void serialize(JsonAdapter& adapter, const RunConfig::PbrOptions& options) {
     const std::string environment = options.environment_path.string();
     adapter.writeField<std::string>("environment", environment);
@@ -1146,6 +1173,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig& config) {
     adapter.writeField<RunConfig::PbrOptions>("pbr", config.pbr);
     adapter.writeField<RunConfig::OceanOptions>("ocean", config.ocean);
     adapter.writeField<RunConfig::OceanRefOptions>("ocean_ref", config.ocean_ref);
+    adapter.writeField<RunConfig::PlanetOptions>("planet", config.planet);
     adapter.writeField<RunConfig::TerrainOptions>("terrain", config.terrain);
     adapter.writeField<RunConfig::AtmosphereOptions>("atmosphere", config.atmosphere);
 }
@@ -1169,6 +1197,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig& config) {
     adapter.readField<RunConfig::PbrOptions>("pbr", config.pbr);
     adapter.readField<RunConfig::OceanOptions>("ocean", config.ocean);
     adapter.readField<RunConfig::OceanRefOptions>("ocean_ref", config.ocean_ref);
+    adapter.readField<RunConfig::PlanetOptions>("planet", config.planet);
     adapter.readField<RunConfig::TerrainOptions>("terrain", config.terrain);
     adapter.readField<RunConfig::AtmosphereOptions>("atmosphere", config.atmosphere);
 
@@ -1376,6 +1405,18 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::OceanRefWireOpacity:
         config.ocean_ref.wire_opacity = parse_config_float(value, option);
         validate_range(config.ocean_ref.wire_opacity, option);
+        break;
+    case RunConfigOptionId::PlanetRadius:
+        config.planet.radius_m = parse_config_float(value, option);
+        validate_range(config.planet.radius_m, option);
+        break;
+    case RunConfigOptionId::PlanetAtmosphereHeight:
+        config.planet.atmosphere_height_m = parse_config_float(value, option);
+        validate_range(config.planet.atmosphere_height_m, option);
+        break;
+    case RunConfigOptionId::PlanetCameraAltitude:
+        config.planet.camera_altitude_m = parse_config_float(value, option);
+        validate_range(config.planet.camera_altitude_m, option);
         break;
     case RunConfigOptionId::TerrainSeed:
         config.terrain.seed = parse_number<std::uint64_t>(value, option, "unsigned integer");

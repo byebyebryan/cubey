@@ -12,12 +12,30 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         planet_app.cpp
+        planet_config.cpp
+        planet_frame.cpp
     SHADERS
         ${CUBEY_PLANET_SHADERS}
 )
 
 if(BUILD_TESTING)
-    set(CUBEY_PLANET_HEADLESS_SMOKE_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/planet-headless-smoke.png")
+    add_executable(
+        cubey_project_planet_tests
+        planet_config.cpp
+        planet_frame.cpp
+        planet_frame_tests.cpp
+    )
+    target_link_libraries(
+        cubey_project_planet_tests
+        PRIVATE
+            cubey::cubey
+            cubey_project_warnings
+    )
+    add_test(NAME planet_frame_tests COMMAND cubey_project_planet_tests)
+
+    set(CUBEY_PLANET_HEADLESS_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/planet-headless-smoke.png"
+    )
     cubey_add_png_smoke_test(
         planet_headless_writes_png
         cubey_project_planet

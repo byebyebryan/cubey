@@ -10,6 +10,7 @@ Run it with:
 ```sh
 ./build/dev/projects/planet/planet
 ./build/dev/projects/planet/planet --headless --frames 120 --png outputs/planet.png
+./build/dev/projects/planet/planet --planet-radius-m 600000 --planet-camera-altitude-m 240000
 ```
 
 This project should stay focused on planet-scale contracts first. Ocean scale

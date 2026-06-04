@@ -118,6 +118,12 @@ struct RunConfig {
         bool wire_overlay = false;
     };
 
+    struct PlanetOptions {
+        float radius_m = kRunConfigUnsetFloat;
+        float atmosphere_height_m = kRunConfigUnsetFloat;
+        float camera_altitude_m = kRunConfigUnsetFloat;
+    };
+
     struct PbrOptions {
         std::filesystem::path environment_path{};
         std::string environment_source{};
@@ -189,6 +195,7 @@ struct RunConfig {
     Water3DOptions water3d{};
     OceanOptions ocean{};
     OceanRefOptions ocean_ref{};
+    PlanetOptions planet{};
     PbrOptions pbr{};
     GltfOptions gltf{};
     TerrainOptions terrain{};

@@ -94,6 +94,15 @@ RunConfig parse_run_config(int argc, char** argv) {
         (config.ocean_ref.wire_opacity < 0.0F || config.ocean_ref.wire_opacity > 1.0F)) {
         throw std::runtime_error("ocean_ref wire opacity must be in [0, 1]");
     }
+    if (config.planet.radius_m <= 0.0F) {
+        throw std::runtime_error("planet radius must be positive");
+    }
+    if (config.planet.atmosphere_height_m < 0.0F) {
+        throw std::runtime_error("planet atmosphere height must be nonnegative");
+    }
+    if (config.planet.camera_altitude_m < 0.0F) {
+        throw std::runtime_error("planet camera altitude must be nonnegative");
+    }
     if (config.profile_diagnostics && config.profile_output_prefix.empty()) {
         throw std::runtime_error("profile diagnostics require --profile-output");
     }

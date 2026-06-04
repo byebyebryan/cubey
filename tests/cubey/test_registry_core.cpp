@@ -39,6 +39,8 @@ void test_run_config_parses_water_controls();
 void test_run_config_parses_ocean_controls();
 void test_run_config_parses_terrain_controls();
 void test_run_config_rejects_invalid_ocean_controls();
+void test_run_config_parses_planet_controls();
+void test_run_config_rejects_invalid_planet_controls();
 void test_run_config_parses_shadow_volume_controls();
 void test_run_config_parses_smoke_injector_count();
 void test_run_config_parses_smoke_injector_orbit_controls();
@@ -108,6 +110,8 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_config_parses_ocean_controls),
         CUBEY_TEST(test_run_config_parses_terrain_controls),
         CUBEY_TEST(test_run_config_rejects_invalid_ocean_controls),
+        CUBEY_TEST(test_run_config_parses_planet_controls),
+        CUBEY_TEST(test_run_config_rejects_invalid_planet_controls),
         CUBEY_TEST(test_run_config_parses_shadow_volume_controls),
         CUBEY_TEST(test_run_config_parses_smoke_injector_count),
         CUBEY_TEST(test_run_config_parses_smoke_injector_orbit_controls),
