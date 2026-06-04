@@ -139,6 +139,27 @@ Useful pieces already exist:
 The missing foundation is not primarily wave compute. It is the world-frame,
 surface-mapping, far-mesh, and horizon-composition contract.
 
+## Current T1 Status
+
+The active ocean renderer now has a first T1 implementation slice:
+
+- horizon distance is derived from camera altitude and atmosphere planet radius;
+- the mesh has an automatic horizon mode that expands effective half extent
+  beyond the manual minimum and raises LOD count up to the supported limit;
+- projection far plane is derived from the effective horizon mesh so far
+  patches are not clipped by the old fixed distance;
+- the UI reports camera altitude, horizon distance, required extent, effective
+  mesh extent, near/far cell size, LOD count, patches, and coverage ratio;
+- the vertex shader routes flat `Y = datum` world mapping through named
+  surface-mapping helpers while keeping FFT sampling in local XZ space;
+- the fragment shader composes the far ocean through a named
+  aerial-perspective placeholder:
+  `water * transmittance + sky_radiance * inscatter_weight`.
+
+This is still a flat local ocean. Curved far-ocean mapping, true atmospheric
+LUT aerial perspective, terrain/bathymetry streaming, shoreline interaction,
+and planet-scale patching remain deferred.
+
 ## Research Decisions
 
 The first horizon-scale implementation should stay with a viewer-centered
@@ -183,14 +204,15 @@ Avoid:
 
 ## Suggested Implementation Sequence
 
-1. Add horizon-distance and far-extent diagnostics to `projects/ocean`.
-2. Make the ocean mesh extent derive from camera height plus an explicit safety
-   margin.
-3. Improve far mesh layout so square bounds are not visible in normal viewing
-   conditions.
-4. Add horizon-aware atmosphere/aerial-perspective blending for the far ocean.
-5. Introduce local-frame and surface-mapping vocabulary while keeping the
-   implementation flat.
+1. Done: add horizon-distance and far-extent diagnostics to `projects/ocean`.
+2. Done: make the ocean mesh extent derive from camera height plus an explicit
+   safety margin.
+3. In progress: improve far mesh layout so square bounds are not visible in
+   normal viewing conditions.
+4. Done as a placeholder: add horizon-aware atmosphere/aerial-perspective
+   blending for the far ocean.
+5. Done as a flat seam: introduce local-frame and surface-mapping vocabulary
+   while keeping the implementation flat.
 6. Add a curved far-ocean mapping path after the flat horizon renderer is
    visually stable.
 7. Only then evaluate planet-scale terrain/ocean patching and streaming.

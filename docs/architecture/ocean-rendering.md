@@ -27,16 +27,17 @@ project starts from particle-grid liquid simulation, while ocean starts from a
 camera-relative surface renderer and only adds simulation where interaction
 needs it.
 
-The current renderer still reads as a large local patch in some views. The
-longer-term scale direction is captured in
-[Ocean horizon and planet scale](ocean-horizon-and-planet-scale.md): build a
-true-to-horizon local ocean first, introduce planet-compatible local-frame and
-surface-mapping contracts, then move to curved far-field rendering before
+The current renderer is now moving through the T1 horizon-scale path captured
+in [Ocean horizon and planet scale](ocean-horizon-and-planet-scale.md):
+derive effective ocean extent from camera altitude, keep a planet-compatible
+flat surface-mapping seam, and move toward curved far-field rendering before
 attempting full planet-scale terrain/ocean streaming.
 
 The active renderer includes:
 
-- a camera-relative clipmap mesh with mesh-cell-aware cascade LOD diagnostics;
+- a camera-relative clipmap mesh with horizon-derived effective extent,
+  mesh-cell-aware cascade LOD diagnostics, and explicit horizon coverage
+  readouts;
 - the GodotOceanWaves-style multi-cascade spectrum, modulation, FFT, and unpack
   path;
 - five regular cascade slots, with C0/C1 enabled by default as the
@@ -52,7 +53,7 @@ The active renderer includes:
   FFT displacement cascades in the surface fragment shader and follows the same
   local cascade distance/cell-size fade used by rendered displacement;
 - the shared atmosphere background path plus runtime sky/reflection probes for
-  water fog, fill, and reflection;
+  water aerial-perspective placeholder, fill, and reflection;
 - a diagnostic terrain-ocean `RGBA32F` field texture bound through the shared
   height/depth/shore/slope contract;
 - active `--ocean-*` CLI controls, while the frozen reference keeps
