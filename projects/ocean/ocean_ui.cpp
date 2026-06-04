@@ -54,36 +54,17 @@ bool draw_cascade_map_size_combo(const char* label, std::uint32_t* value,
     values[0] = 0U;
     std::copy(kOceanSupportedMapSizes.begin(), kOceanSupportedMapSizes.end(), values.begin() + 1);
 
-    char preview[32]{};
-    if (*value == 0U) {
-        std::snprintf(preview, sizeof(preview), "inherit %u", inherited_size);
-    } else {
-        std::snprintf(preview, sizeof(preview), "%u", *value);
-    }
-
-    bool changed = false;
-    if (ImGui::BeginCombo(label, preview)) {
-        for (const std::uint32_t candidate : values) {
-            char option_label[32]{};
-            if (candidate == 0U) {
-                std::snprintf(option_label, sizeof(option_label), "inherit %u", inherited_size);
-            } else {
-                std::snprintf(option_label, sizeof(option_label), "%u", candidate);
-            }
-            const bool selected = candidate == *value;
-            if (ImGui::Selectable(option_label, selected)) {
-                *value = candidate;
-                changed = true;
-            }
-            if (selected) {
-                ImGui::SetItemDefaultFocus();
-            }
+    const auto label_fn = [inherited_size](std::uint32_t candidate, char* buffer,
+                                           std::size_t size) {
+        if (candidate == 0U) {
+            std::snprintf(buffer, size, "inherit %u", inherited_size);
+            return;
         }
-        ImGui::EndCombo();
-    }
-    cubey::host::imgui_attach_help(
+        std::snprintf(buffer, size, "%u", candidate);
+    };
+    return cubey::host::imgui_uint32_labeled_combo(
+        label, value, values, label_fn,
         "Optional per-cascade FFT texture resolution. Inherit follows the global map size.");
-    return changed;
 }
 
 [[nodiscard]] std::uint32_t ui_log2_exact(std::uint32_t value) {

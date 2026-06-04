@@ -205,6 +205,32 @@ bool imgui_uint32_combo(const char* label, std::uint32_t* value,
     return changed;
 }
 
+template <std::size_t Count, typename LabelFn>
+bool imgui_uint32_labeled_combo(const char* label, std::uint32_t* value,
+                                const std::array<std::uint32_t, Count>& values,
+                                LabelFn&& label_fn, const char* help = nullptr) {
+    char preview[32]{};
+    label_fn(*value, preview, sizeof(preview));
+    bool changed = false;
+    if (ImGui::BeginCombo(label, preview)) {
+        for (const std::uint32_t candidate : values) {
+            char option_label[32]{};
+            label_fn(candidate, option_label, sizeof(option_label));
+            const bool selected = candidate == *value;
+            if (ImGui::Selectable(option_label, selected)) {
+                *value = candidate;
+                changed = true;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    imgui_attach_help(help);
+    return changed;
+}
+
 template <typename Value, typename NameFn>
 bool imgui_enum_combo(const char* label, Value& value, std::span<const Value> values,
                       NameFn&& name_fn, const char* help = nullptr) {
