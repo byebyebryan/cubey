@@ -32,6 +32,7 @@ struct OceanDiagnosticsConfig {
 struct OceanUiContext {
     OceanConfig& config;
     OceanDiagnosticsConfig& diagnostics;
+    OceanConfig mesh_config;
     OceanHorizonDiagnostics horizon;
     cubey::AtmosphereEnvironmentRunState& atmosphere;
     cubey::host::PerformanceUiContext performance;

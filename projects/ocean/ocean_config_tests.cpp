@@ -82,6 +82,12 @@ int main() {
         require(defaults.mesh_lod_levels >= ocean::kOceanMinMeshLodLevels &&
                     defaults.mesh_lod_levels <= ocean::kOceanMaxMeshLodLevels,
                 "default mesh LOD count should be in supported range");
+        require(defaults.horizon_auto_extent,
+                "ocean should default to horizon-derived mesh extent");
+        require_near(defaults.horizon_extent_margin, 1.25F, 0.001F,
+                     "ocean should default to a conservative horizon margin");
+        require_near(defaults.horizon_target_near_cell_m, 2.0F, 0.001F,
+                     "ocean should default to a near-field horizon mesh target");
         require(defaults.spectral_domains_enabled,
                 "ocean should default to spectral source-domain filtering");
         require(ocean::kOceanCascadeCount == 5U,
@@ -165,6 +171,24 @@ int main() {
                                                        defaults.mesh_lod_levels - 1U),
                      0.001F,
                      "ocean horizon diagnostics should include far mesh cell size");
+        const ocean::OceanConfig effective_horizon_mesh =
+            ocean::ocean_horizon_effective_mesh_config(defaults, 20.0F, 0.0F, earth_radius_m);
+        require(effective_horizon_mesh.mesh_extent > defaults.mesh_extent,
+                "auto horizon mesh should expand beyond the manual minimum when needed");
+        require(effective_horizon_mesh.mesh_lod_levels >= defaults.mesh_lod_levels,
+                "auto horizon mesh should preserve or increase LOD levels");
+        require(ocean::ocean_mesh_near_cell_size(effective_horizon_mesh) <=
+                    defaults.horizon_target_near_cell_m ||
+                effective_horizon_mesh.mesh_lod_levels == ocean::kOceanMaxMeshLodLevels,
+                "auto horizon mesh should target near cell size until max LOD");
+        ocean::OceanConfig manual_horizon_mesh = defaults;
+        manual_horizon_mesh.horizon_auto_extent = false;
+        const ocean::OceanConfig disabled_horizon_mesh =
+            ocean::ocean_horizon_effective_mesh_config(manual_horizon_mesh, 20.0F, 0.0F,
+                                                       earth_radius_m);
+        require(disabled_horizon_mesh.mesh_extent == defaults.mesh_extent &&
+                    disabled_horizon_mesh.mesh_lod_levels == defaults.mesh_lod_levels,
+                "disabled auto horizon mesh should keep manual mesh settings");
 
         const ocean::OceanCascadeConfig& cascade0 = defaults.cascades[0];
         const ocean::OceanCascadeConfig& cascade1 = defaults.cascades[1];
@@ -567,6 +591,26 @@ int main() {
         }
         require(rejected, "ocean should reject invalid cascade dimensions");
 
+        ocean::OceanConfig invalid_horizon_margin = defaults;
+        invalid_horizon_margin.horizon_extent_margin = 0.0F;
+        rejected = false;
+        try {
+            ocean::validate_ocean_config(invalid_horizon_margin);
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        require(rejected, "ocean should reject invalid horizon margin");
+
+        ocean::OceanConfig invalid_horizon_near_cell = defaults;
+        invalid_horizon_near_cell.horizon_target_near_cell_m = 0.0F;
+        rejected = false;
+        try {
+            ocean::validate_ocean_config(invalid_horizon_near_cell);
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        require(rejected, "ocean should reject invalid horizon near-cell target");
+
         const std::filesystem::path source_root(CUBEY_OCEAN_SOURCE_DIR);
         const std::string spectrum_shader =
             read_text_file(source_root / "shaders/ocean_spectrum_body.glsl");
@@ -793,6 +837,12 @@ int main() {
                          "UI should expose a mid-distance camera preset");
         require_contains(ui_source, "OceanCameraPreset::High",
                          "UI should expose a high-distance camera preset");
+        require_contains(ui_source, "&ui.config.horizon_auto_extent",
+                         "UI should expose auto horizon mesh control");
+        require_contains(ui_source, "&ui.config.horizon_extent_margin",
+                         "UI should expose horizon extent margin control");
+        require_contains(ui_source, "&ui.config.horizon_target_near_cell_m",
+                         "UI should expose horizon near-cell target control");
         require_contains(ui_source, "&ui.config.atmosphere_reflection_strength",
                          "UI should expose split reflection probe strength");
         require_contains(ui_source, "&ui.config.foam_lighting_strength",
@@ -1103,6 +1153,10 @@ int main() {
                          "ocean app should draw the scale reference pillar in the scene pass");
         require_contains(app_source, "render_view_ != OceanRenderView::Final",
                          "ocean app should keep the pillar out of debug views");
+        require_contains(app_source, "effective_ocean_mesh_config()",
+                         "ocean app should use an effective horizon mesh config");
+        require_contains(app_source, "ocean_horizon_projection_far_plane_m",
+                         "ocean projection should derive far plane from horizon diagnostics");
         require_contains(app_source, "reference_pillar_mesh_",
                          "ocean app should retain the reference pillar mesh as reusable geometry");
         require_contains(pillar_vertex_shader, "pillar.view_projection",

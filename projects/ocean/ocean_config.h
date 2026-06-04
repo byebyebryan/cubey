@@ -96,6 +96,9 @@ struct OceanConfig {
     std::uint32_t mesh_lod_levels = 5U;
     float mesh_extent = 5600.0F;
     float horizon_fog = 0.50F;
+    bool horizon_auto_extent = true;
+    float horizon_extent_margin = 1.25F;
+    float horizon_target_near_cell_m = 2.0F;
 
     std::uint32_t map_size = kOceanDefaultMapSize;
     float depth = 20.0F;
@@ -463,8 +466,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
             throw std::runtime_error("ocean cascade update interval must be at least one frame");
         }
     }
-    if (config.mesh_extent <= 0.0F || config.depth <= 0.0F) {
-        throw std::runtime_error("ocean mesh extent and depth must be positive");
+    if (config.mesh_extent <= 0.0F || config.depth <= 0.0F ||
+        config.horizon_extent_margin <= 0.0F || config.horizon_target_near_cell_m <= 0.0F) {
+        throw std::runtime_error("ocean mesh, horizon, and depth controls must be positive");
     }
     if (config.normal_strength < 0.0F || config.roughness < 0.0F || config.roughness > 1.0F ||
         config.foam_density < 0.0F || config.foam_sharpness < 0.0F ||

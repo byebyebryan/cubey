@@ -564,8 +564,19 @@ void draw_ocean_ui(OceanUiContext ui) {
                 std::clamp(mesh_lod_levels, static_cast<int>(kOceanMinMeshLodLevels),
                            static_cast<int>(kOceanMaxMeshLodLevels)));
         }
-        cubey::host::imgui_slider_float("Extent", &ui.config.mesh_extent, 400.0F, 9000.0F, "%.0f m",
-                                        "Half extent covered by the ocean mesh.");
+        cubey::host::imgui_slider_float("Extent", &ui.config.mesh_extent, 400.0F, 128000.0F,
+                                        "%.0f m",
+                                        "Minimum half extent covered by the ocean mesh.");
+        cubey::host::imgui_checkbox(
+            "Auto horizon", &ui.config.horizon_auto_extent,
+            "Derive effective mesh extent from camera altitude and planet radius.");
+        cubey::host::imgui_slider_float("Horizon margin", &ui.config.horizon_extent_margin, 1.0F,
+                                        2.0F, "%.2f",
+                                        "Safety multiplier applied to the computed horizon.");
+        cubey::host::imgui_slider_float("Target near cell",
+                                        &ui.config.horizon_target_near_cell_m, 0.5F, 8.0F,
+                                        "%.2f m",
+                                        "Preferred near-field cell size when auto horizon is on.");
         cubey::host::imgui_slider_float("Horizon fog", &ui.config.horizon_fog, 0.0F, 1.0F, "%.2f",
                                         "Distance fade used to soften the horizon.");
     }
@@ -624,8 +635,9 @@ void draw_ocean_ui(OceanUiContext ui) {
     }
 
     const std::array<cubey::host::PerformanceCounter, 3> performance_counters{
-        cubey::host::PerformanceCounter{"Mesh patches", ocean_mesh_patch_count(ui.config), nullptr},
-        cubey::host::PerformanceCounter{"LOD levels", ui.config.mesh_lod_levels, nullptr},
+        cubey::host::PerformanceCounter{"Mesh patches", ocean_mesh_patch_count(ui.mesh_config),
+                                        nullptr},
+        cubey::host::PerformanceCounter{"LOD levels", ui.mesh_config.mesh_lod_levels, nullptr},
         cubey::host::PerformanceCounter{
             "Horizon cover",
             static_cast<std::uint64_t>(std::max(0.0F, ui.horizon.coverage_ratio) * 100.0F),
@@ -660,9 +672,10 @@ void draw_ocean_ui(OceanUiContext ui) {
                             ui.config.cascades[index].displacement_scale);
             }
         }
-        ImGui::Text("Mesh: %u LOD / %u patches / %u tris", ui.config.mesh_lod_levels,
-                    ocean_mesh_patch_count(ui.config), ocean_mesh_total_triangle_count(ui.config));
-        ImGui::Text("Near cell: %.2f m", ocean_mesh_near_cell_size(ui.config));
+        ImGui::Text("Mesh: %u LOD / %u patches / %u tris", ui.mesh_config.mesh_lod_levels,
+                    ocean_mesh_patch_count(ui.mesh_config),
+                    ocean_mesh_total_triangle_count(ui.mesh_config));
+        ImGui::Text("Near cell: %.2f m", ocean_mesh_near_cell_size(ui.mesh_config));
         ImGui::Text("Far cell: %.2f m", ui.horizon.far_cell_size_m);
         ImGui::Text("Camera altitude: %.1f m", ui.horizon.camera_altitude_m);
         ImGui::Text("Horizon: %.1f km / required extent %.1f km",
@@ -671,8 +684,8 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::Text("Mesh extent: %.1f km / coverage %.0f%%",
                     ui.horizon.mesh_half_extent_m / kOceanMetersPerKilometer,
                     ui.horizon.coverage_ratio * 100.0F);
-        ImGui::Text("Vertices: %u", ocean_mesh_total_vertex_count(ui.config));
-        draw_lod_diagnostics(ui.config);
+        ImGui::Text("Vertices: %u", ocean_mesh_total_vertex_count(ui.mesh_config));
+        draw_lod_diagnostics(ui.mesh_config);
     }
 
     ImGui::End();

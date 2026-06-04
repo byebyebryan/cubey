@@ -605,10 +605,12 @@ class OceanApp {
                                   const FrameTiming& timing) { update_windowed(context, timing); };
         callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) {
             bool atmosphere_changed = false;
+            const OceanConfig mesh_config = effective_ocean_mesh_config();
             draw_ocean_ui({
                 .config = ocean_config_,
                 .diagnostics = diagnostics_,
-                .horizon = horizon_diagnostics(),
+                .mesh_config = mesh_config,
+                .horizon = horizon_diagnostics(mesh_config),
                 .atmosphere = atmosphere_state_,
                 .performance =
                     {
@@ -1033,22 +1035,53 @@ class OceanApp {
         });
     }
 
-    [[nodiscard]] OceanHorizonDiagnostics horizon_diagnostics() const {
+    [[nodiscard]] float planet_radius_m() const {
+        return ocean_planet_radius_m(atmosphere_state_.environment.bottom_radius_km);
+    }
+
+    [[nodiscard]] OceanConfig effective_ocean_mesh_config() const {
         const cubey::Transform3D transform = camera_transform();
-        return ocean_horizon_diagnostics(
-            ocean_config_, transform.translation.y, 0.0F,
-            ocean_planet_radius_m(atmosphere_state_.environment.bottom_radius_km), 1.0F);
+        return ocean_horizon_effective_mesh_config(ocean_config_, transform.translation.y, 0.0F,
+                                                   planet_radius_m());
+    }
+
+    [[nodiscard]] OceanHorizonDiagnostics horizon_diagnostics(
+        const OceanConfig& mesh_config) const {
+        const cubey::Transform3D transform = camera_transform();
+        return ocean_horizon_diagnostics(mesh_config, transform.translation.y, 0.0F,
+                                         planet_radius_m(), ocean_config_.horizon_extent_margin);
+    }
+
+    [[nodiscard]] cubey::math::Mat4 ocean_view_projection_matrix(
+        VkExtent2D extent,
+        const cubey::Transform3D& transform,
+        float far_plane_m) const {
+        cubey::Camera3D camera = camera_;
+        camera.set_projection(camera.fovy_radians(), kCameraNearPlane,
+                              std::max(far_plane_m, kCameraFarPlane));
+        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+        return camera.view_projection_matrix(transform, aspect);
+    }
+
+    [[nodiscard]] cubey::math::Mat4 ocean_view_projection_matrix(
+        VkExtent2D extent,
+        const cubey::Transform3D& transform,
+        const OceanHorizonDiagnostics& horizon) const {
+        return ocean_view_projection_matrix(extent, transform,
+                                            ocean_horizon_projection_far_plane_m(horizon));
     }
 
     [[nodiscard]] OceanPushConstants surface_push_constants(VkExtent2D extent,
+                                                            const OceanConfig& mesh_config,
+                                                            const OceanHorizonDiagnostics& horizon,
                                                             const OceanMeshPatch& patch) const {
         const cubey::Transform3D transform = camera_transform();
-        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const cubey::math::Mat4 view_projection = camera_.view_projection_matrix(transform, aspect);
+        const cubey::math::Mat4 view_projection =
+            ocean_view_projection_matrix(extent, transform, horizon);
         const cubey::math::Vec4 sun_direction = atmosphere_primary_light_uniform();
         const float debug_z = render_view_ == OceanRenderView::Exposure
                                   ? display_exposure()
-                                  : static_cast<float>(ocean_config_.mesh_lod_levels - 1U);
+                                  : static_cast<float>(mesh_config.mesh_lod_levels - 1U);
 
         return {
             .view_projection = view_projection,
@@ -1063,7 +1096,7 @@ class OceanApp {
                 {
                     static_cast<float>(patch.cells_x),
                     static_cast<float>(patch.cells_z),
-                    ocean_config_.mesh_extent,
+                    mesh_config.mesh_extent,
                     ocean_config_.horizon_fog,
                 },
             .patch_bounds =
@@ -1325,7 +1358,9 @@ class OceanApp {
 
     void record_ocean_draw(const cubey::vulkan::CommandRecorder& recorder, VkExtent2D extent,
                            cubey::render::FrameSlot frame_slot) const {
-        const OceanMeshPatchList patches = ocean_mesh_clipmap_patches(ocean_config_);
+        const OceanConfig mesh_config = effective_ocean_mesh_config();
+        const OceanHorizonDiagnostics horizon = horizon_diagnostics(mesh_config);
+        const OceanMeshPatchList patches = ocean_mesh_clipmap_patches(mesh_config);
         const cubey::render::GraphicsPipelineResource& surface_pipeline =
             ocean_gpu_.surface_pipeline();
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, surface_pipeline.pipeline());
@@ -1333,7 +1368,8 @@ class OceanApp {
                                      ocean_gpu_.surface_set(frame_slot));
         ocean_gpu_.upload_surface_feature_uniforms(frame_slot, surface_feature_uniforms());
         for (const OceanMeshPatch& patch : patches) {
-            const OceanPushConstants constants = surface_push_constants(extent, patch);
+            const OceanPushConstants constants =
+                surface_push_constants(extent, mesh_config, horizon, patch);
             recorder.push_constants(surface_pipeline.layout(),
                                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                     constants);
