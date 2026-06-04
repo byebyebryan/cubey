@@ -565,6 +565,10 @@ int main() {
         cubey::RunConfig run_config;
         run_config.debug_view = "foam";
         run_config.ocean.map_size = 128;
+        run_config.ocean.surface_mode = "flat";
+        run_config.ocean.curvature_start_ratio = 0.20F;
+        run_config.ocean.curvature_end_ratio = 0.80F;
+        run_config.ocean.curvature_strength = 0.35F;
         run_config.ocean.spectral_domains = 0;
         run_config.ocean.terrain_fields = 1;
         run_config.pbr.exposure = 0.5F;
@@ -574,6 +578,14 @@ int main() {
         require(from_run_config.map_size == 128U, "run config should initialize ocean map size");
         require(from_run_config.field_precision == ocean::OceanFieldPrecision::Half,
                 "run config should inherit the default ocean field precision");
+        require(from_run_config.surface_mode == ocean::OceanSurfaceMode::Flat,
+                "run config should initialize ocean surface mode");
+        require_near(from_run_config.curvature_start_ratio, 0.20F, 0.001F,
+                     "run config should initialize ocean curvature start ratio");
+        require_near(from_run_config.curvature_end_ratio, 0.80F, 0.001F,
+                     "run config should initialize ocean curvature end ratio");
+        require_near(from_run_config.curvature_strength, 0.35F, 0.001F,
+                     "run config should initialize ocean curvature strength");
         require(!from_run_config.spectral_domains_enabled,
                 "run config should initialize ocean spectral domain override");
         require(from_run_config.terrain_fields_enabled,
@@ -624,9 +636,25 @@ int main() {
                               "normal",
                               "--ocean-wire-overlay",
                               "--ocean-wire-opacity",
-                              "0.8"};
-        cubey::RunConfig parsed = cubey::parse_run_config(12, const_cast<char**>(argv));
+                              "0.8",
+                              "--ocean-surface-mode",
+                              "flat",
+                              "--ocean-curvature-start-ratio",
+                              "0.2",
+                              "--ocean-curvature-end-ratio",
+                              "0.8",
+                              "--ocean-curvature-strength",
+                              "0.35"};
+        cubey::RunConfig parsed = cubey::parse_run_config(20, const_cast<char**>(argv));
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
+        require(parsed.ocean.surface_mode == "flat",
+                "CLI parser should accept --ocean-surface-mode");
+        require_near(parsed.ocean.curvature_start_ratio, 0.2F, 0.001F,
+                     "CLI parser should accept --ocean-curvature-start-ratio");
+        require_near(parsed.ocean.curvature_end_ratio, 0.8F, 0.001F,
+                     "CLI parser should accept --ocean-curvature-end-ratio");
+        require_near(parsed.ocean.curvature_strength, 0.35F, 0.001F,
+                     "CLI parser should accept --ocean-curvature-strength");
         require(parsed.ocean.spectral_domains == 0,
                 "CLI parser should accept --no-ocean-spectral-domains");
         require(parsed.ocean.terrain_fields == 1,
@@ -951,6 +979,16 @@ int main() {
                          "UI should expose horizon extent margin control");
         require_contains(ui_source, "&ui.config.horizon_target_near_cell_m",
                          "UI should expose horizon near-cell target control");
+        require_contains(ui_source, "ui.config.surface_mode",
+                         "UI should expose ocean surface mode");
+        require_contains(ui_source, "&ui.config.curvature_start_ratio",
+                         "UI should expose ocean curvature start ratio");
+        require_contains(ui_source, "&ui.config.curvature_end_ratio",
+                         "UI should expose ocean curvature end ratio");
+        require_contains(ui_source, "&ui.config.curvature_strength",
+                         "UI should expose ocean curvature strength");
+        require_contains(ui_source, "Horizon drop",
+                         "UI should expose resolved curvature horizon drop");
         require_contains(ui_source, "&ui.config.atmosphere_reflection_strength",
                          "UI should expose split reflection probe strength");
         require_contains(ui_source, "&ui.config.foam_lighting_strength",

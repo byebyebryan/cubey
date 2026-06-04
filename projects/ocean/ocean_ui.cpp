@@ -560,6 +560,24 @@ void draw_ocean_ui(OceanUiContext ui) {
                                         "Preferred near-field cell size when auto horizon is on.");
         cubey::host::imgui_slider_float("Horizon fog", &ui.config.horizon_fog, 0.0F, 1.0F, "%.2f",
                                         "Distance fade used to soften the horizon.");
+        cubey::host::imgui_enum_combo("Surface mode", ui.config.surface_mode, kOceanSurfaceModes,
+                                      ocean_surface_mode_name,
+                                      "Flat keeps the old tangent plane; curved-far bends the far field.");
+        cubey::host::imgui_slider_float(
+            "Curve start", &ui.config.curvature_start_ratio, 0.0F, 0.95F, "%.2f horizon",
+            "Fraction of horizon distance where spherical far-surface drop begins.");
+        cubey::host::imgui_slider_float(
+            "Curve end", &ui.config.curvature_end_ratio, 0.05F, 1.0F, "%.2f horizon",
+            "Fraction of horizon distance where spherical far-surface drop reaches full strength.");
+        cubey::host::imgui_slider_float("Curve strength", &ui.config.curvature_strength, 0.0F,
+                                        1.0F, "%.2f",
+                                        "Strength of curved far-ocean surface mapping.");
+        if (ui.config.curvature_start_ratio >= ui.config.curvature_end_ratio) {
+            ui.config.curvature_end_ratio =
+                std::min(1.0F, ui.config.curvature_start_ratio + 0.01F);
+            ui.config.curvature_start_ratio =
+                std::min(ui.config.curvature_start_ratio, ui.config.curvature_end_ratio - 0.01F);
+        }
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
@@ -640,8 +658,17 @@ void draw_ocean_ui(OceanUiContext ui) {
                     ui.config.spectral_domains_enabled ? "enabled" : "disabled");
         ImGui::Text("Terrain fields: %s",
                     ui.config.terrain_fields_enabled ? "influence enabled" : "diagnostic only");
-        ImGui::Text("Surface: %s",
-                    ui.surface_frame.flat_surface ? "flat tangent frame" : "curved");
+        ImGui::Text("Surface: %s", ocean_surface_mode_name(ui.surface_frame.surface_mode));
+        ImGui::Text("Curvature: %.1f-%.1f km / strength %.2f",
+                    ui.surface_frame.curvature_start_m / kOceanMetersPerKilometer,
+                    ui.surface_frame.curvature_end_m / kOceanMetersPerKilometer,
+                    ui.surface_frame.curvature_strength);
+        ImGui::Text("Horizon drop: %.1f m",
+                    ocean_surface_curvature_drop_m(ui.surface_frame.horizon.horizon_distance_m,
+                                                   ui.surface_frame.local_frame.planet_radius_m,
+                                                   ui.surface_frame.curvature_start_m,
+                                                   ui.surface_frame.curvature_end_m,
+                                                   ui.surface_frame.curvature_strength));
         ImGui::Text("Datum: %.1f m / planet %.0f km",
                     ui.surface_frame.local_frame.water_datum_m,
                     ui.surface_frame.local_frame.planet_radius_m / kOceanMetersPerKilometer);

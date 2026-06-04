@@ -550,6 +550,16 @@ inline void validate_ocean_config(const OceanConfig& config) {
         ocean.terrain_fields_enabled = config.ocean.terrain_fields != 0;
     }
     ocean.field_precision = ocean_field_precision_from_name(config.ocean.field_precision);
+    ocean.surface_mode = ocean_surface_mode_from_name(config.ocean.surface_mode);
+    if (run_config_float_is_set(config.ocean.curvature_start_ratio)) {
+        ocean.curvature_start_ratio = config.ocean.curvature_start_ratio;
+    }
+    if (run_config_float_is_set(config.ocean.curvature_end_ratio)) {
+        ocean.curvature_end_ratio = config.ocean.curvature_end_ratio;
+    }
+    if (run_config_float_is_set(config.ocean.curvature_strength)) {
+        ocean.curvature_strength = config.ocean.curvature_strength;
+    }
     ocean.render_view = ocean_render_view_from_name(config.debug_view);
     ocean.exposure = config.pbr.exposure;
     validate_ocean_config(ocean);
