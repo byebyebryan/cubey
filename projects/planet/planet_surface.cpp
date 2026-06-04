@@ -248,8 +248,7 @@ struct PatchBounds {
     return (cell_edge_m / distance_m) * pixel_scale;
 }
 
-void record_culled_patch(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
-    ++plan.diagnostics.planned_patch_count;
+void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
     if (horizon_culled) {
         ++plan.diagnostics.culled_horizon_count;
     } else {
@@ -267,65 +266,76 @@ void record_visible_patch(PlanetSurfacePatchPlan& plan, const PlanetSurfacePatch
         ++plan.diagnostics.patches_by_lod[patch.level];
     }
     update_screen_error_range(plan.diagnostics, patch.screen_error_px);
+    if (patch.level == 0U) {
+        ++plan.diagnostics.base_patch_count;
+    } else {
+        ++plan.diagnostics.refined_patch_count;
+    }
     ++plan.diagnostics.visible_patch_count;
     plan.diagnostics.patch_count = plan.diagnostics.visible_patch_count;
     plan.patches.push_back(patch);
 }
 
-void append_leaf_patches(const PlanetConfig& config, PlanetSurfaceView view,
-                         PlanetSurfacePatch patch, PlanetSurfacePatchPlan& plan) {
+void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
+                             PlanetSurfacePatch patch, PlanetSurfacePatchPlan& plan) {
     patch.screen_error_px = patch_screen_error_px(config, view, patch);
+    ++plan.diagnostics.planned_patch_count;
 
-    if (!patch_passes_horizon_cull(config, view, patch)) {
-        record_culled_patch(plan, true);
+    const bool wants_refinement =
+        patch.level < config.max_lod_level && patch.screen_error_px > config.lod_target_edge_px;
+    if (wants_refinement && !patch_passes_horizon_cull(config, view, patch)) {
+        record_refinement_cull(plan, true);
+        record_visible_patch(plan, patch);
         return;
     }
-    if (!patch_passes_view_cull(config, view, patch)) {
-        record_culled_patch(plan, false);
+    if (wants_refinement && !patch_passes_view_cull(config, view, patch)) {
+        record_refinement_cull(plan, false);
+        record_visible_patch(plan, patch);
         return;
     }
 
-    if (patch.level < config.max_lod_level && patch.screen_error_px > config.lod_target_edge_px) {
+    if (wants_refinement) {
         const float um = (patch.u0 + patch.u1) * 0.5F;
         const float vm = (patch.v0 + patch.v1) * 0.5F;
         const std::uint32_t next_level = patch.level + 1U;
         const std::uint32_t child_base = patch.patch_index * 4U;
-        append_leaf_patches(config, view,
-                            PlanetSurfacePatch{.face = patch.face,
-                                               .level = next_level,
-                                               .patch_index = child_base,
-                                               .u0 = patch.u0,
-                                               .v0 = patch.v0,
-                                               .u1 = um,
-                                               .v1 = vm},
-                            plan);
-        append_leaf_patches(config, view,
-                            PlanetSurfacePatch{.face = patch.face,
-                                               .level = next_level,
-                                               .patch_index = child_base + 1U,
-                                               .u0 = um,
-                                               .v0 = patch.v0,
-                                               .u1 = patch.u1,
-                                               .v1 = vm},
-                            plan);
-        append_leaf_patches(config, view,
-                            PlanetSurfacePatch{.face = patch.face,
-                                               .level = next_level,
-                                               .patch_index = child_base + 2U,
-                                               .u0 = patch.u0,
-                                               .v0 = vm,
-                                               .u1 = um,
-                                               .v1 = patch.v1},
-                            plan);
-        append_leaf_patches(config, view,
-                            PlanetSurfacePatch{.face = patch.face,
-                                               .level = next_level,
-                                               .patch_index = child_base + 3U,
-                                               .u0 = um,
-                                               .v0 = vm,
-                                               .u1 = patch.u1,
-                                               .v1 = patch.v1},
-                            plan);
+        ++plan.diagnostics.subdivided_patch_count;
+        append_coverage_patches(config, view,
+                                PlanetSurfacePatch{.face = patch.face,
+                                                   .level = next_level,
+                                                   .patch_index = child_base,
+                                                   .u0 = patch.u0,
+                                                   .v0 = patch.v0,
+                                                   .u1 = um,
+                                                   .v1 = vm},
+                                plan);
+        append_coverage_patches(config, view,
+                                PlanetSurfacePatch{.face = patch.face,
+                                                   .level = next_level,
+                                                   .patch_index = child_base + 1U,
+                                                   .u0 = um,
+                                                   .v0 = patch.v0,
+                                                   .u1 = patch.u1,
+                                                   .v1 = vm},
+                                plan);
+        append_coverage_patches(config, view,
+                                PlanetSurfacePatch{.face = patch.face,
+                                                   .level = next_level,
+                                                   .patch_index = child_base + 2U,
+                                                   .u0 = patch.u0,
+                                                   .v0 = vm,
+                                                   .u1 = um,
+                                                   .v1 = patch.v1},
+                                plan);
+        append_coverage_patches(config, view,
+                                PlanetSurfacePatch{.face = patch.face,
+                                                   .level = next_level,
+                                                   .patch_index = child_base + 3U,
+                                                   .u0 = um,
+                                                   .v0 = vm,
+                                                   .u1 = patch.u1,
+                                                   .v1 = patch.v1},
+                                plan);
         return;
     }
     record_visible_patch(plan, patch);
@@ -341,7 +351,7 @@ void append_leaf_patches(const PlanetConfig& config, PlanetSurfaceView view,
                 const std::uint32_t patch_index =
                     face * config.patches_per_face * config.patches_per_face +
                     py * config.patches_per_face + px;
-                append_leaf_patches(
+                append_coverage_patches(
                     config, view,
                     PlanetSurfacePatch{
                         .face = face,

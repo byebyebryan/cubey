@@ -141,12 +141,13 @@ void test_planet_surface_can_build_camera_relative_vertices() {
     require(found_near_point, "planet surface should include the near sphere point");
 }
 
-void test_planet_surface_planner_culls_out_of_view_patches() {
+void test_planet_surface_planner_refines_visible_patches_with_fallback_coverage() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1000.0F,
         .patches_per_face = 2,
         .patch_resolution = 2,
-        .max_lod_level = 0,
+        .max_lod_level = 1,
+        .lod_target_edge_px = 1.0F,
     };
     const cubey::projects::planet::PlanetSurfaceView view{
         .camera_world_position_m = {0.0, 0.0, 1500.0},
@@ -157,20 +158,28 @@ void test_planet_surface_planner_culls_out_of_view_patches() {
     const cubey::projects::planet::PlanetSurfacePatchPlan plan =
         cubey::projects::planet::plan_planet_surface_patches(config, view);
 
-    require(plan.diagnostics.planned_patch_count == 24U,
-            "planet planner should count all terminal root patches");
-    require(plan.diagnostics.visible_patch_count < plan.diagnostics.planned_patch_count,
-            "planet planner should cull patches outside the camera view");
+    require(plan.diagnostics.visible_patch_count >= 24U,
+            "planet planner should keep coarse fallback coverage while refining");
+    require(
+        plan.diagnostics.planned_patch_count > plan.diagnostics.visible_patch_count,
+        "planet planner should count subdivided parent candidates separately from render leaves");
+    require(plan.diagnostics.base_patch_count > 0U,
+            "planet planner should retain base patches where refinement is not useful or visible");
+    require(plan.diagnostics.refined_patch_count > 0U,
+            "planet planner should select refined child patches near the camera");
+    require(plan.diagnostics.subdivided_patch_count > 0U,
+            "planet planner should report parent patches that hand off to children");
     require(plan.diagnostics.culled_horizon_count + plan.diagnostics.culled_view_count > 0U,
-            "planet planner should report cull reasons");
+            "planet planner should report refinement cull reasons");
 }
 
-void test_planet_surface_planner_culls_when_camera_looks_away() {
+void test_planet_surface_planner_keeps_fallback_when_camera_looks_away() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1000.0F,
         .patches_per_face = 2,
         .patch_resolution = 2,
-        .max_lod_level = 0,
+        .max_lod_level = 1,
+        .lod_target_edge_px = 1.0F,
     };
     const cubey::projects::planet::PlanetSurfaceView view{
         .camera_world_position_m = {0.0, 0.0, 1500.0},
@@ -181,10 +190,14 @@ void test_planet_surface_planner_culls_when_camera_looks_away() {
     const cubey::projects::planet::PlanetSurfacePatchPlan plan =
         cubey::projects::planet::plan_planet_surface_patches(config, view);
 
-    require(plan.diagnostics.visible_patch_count == 0U,
-            "planet planner should cull the surface when the camera looks away");
+    require(plan.diagnostics.visible_patch_count == 24U,
+            "planet planner should keep root fallback coverage when the camera looks away");
+    require(plan.diagnostics.base_patch_count == 24U,
+            "planet planner should render base patches when no refinement is visible");
+    require(plan.diagnostics.refined_patch_count == 0U,
+            "planet planner should not refine patches behind the camera");
     require(plan.diagnostics.culled_view_count > 0U,
-            "planet planner should attribute away-facing patches to view culling");
+            "planet planner should attribute blocked refinement to view culling");
 }
 
 void test_planet_surface_planner_selects_near_lod() {
@@ -283,8 +296,8 @@ int main() {
         test_planet_surface_triangles_are_wound_outward();
         test_planet_surface_lod_subdivides_near_camera_patches();
         test_planet_surface_can_build_camera_relative_vertices();
-        test_planet_surface_planner_culls_out_of_view_patches();
-        test_planet_surface_planner_culls_when_camera_looks_away();
+        test_planet_surface_planner_refines_visible_patches_with_fallback_coverage();
+        test_planet_surface_planner_keeps_fallback_when_camera_looks_away();
         test_planet_surface_planner_selects_near_lod();
         test_planet_surface_skirts_add_seam_geometry();
         test_planet_surface_skirt_vertices_drop_below_radius();

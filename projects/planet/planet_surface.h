@@ -33,6 +33,9 @@ struct PlanetSurfaceDiagnostics {
     std::uint32_t culled_horizon_count = 0;
     std::uint32_t culled_view_count = 0;
     std::uint32_t patch_count = 0;
+    std::uint32_t base_patch_count = 0;
+    std::uint32_t refined_patch_count = 0;
+    std::uint32_t subdivided_patch_count = 0;
     std::uint32_t vertex_count = 0;
     std::uint32_t triangle_count = 0;
     std::uint32_t seam_edge_count = 0;
