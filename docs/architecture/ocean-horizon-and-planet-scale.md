@@ -127,6 +127,12 @@ Useful pieces already exist:
 
 - `projects/ocean` has a camera-relative clipmap mesh and mesh-cell-aware LOD
   diagnostics;
+- `LocalTangentFrame` in `cubey::render` provides shared local-patch frame
+  vocabulary with double-precision world origin, basis axes, planet radius, and
+  water datum;
+- `OceanSurfaceFrame` derives the active ocean mesh config, horizon
+  diagnostics, projection far plane, and surface-frame metadata from the camera
+  each frame;
 - the ocean shader already separates displacement, normal, foam, atmosphere,
   and terrain-field debug paths;
 - `AtmosphereEnvironmentRuntime` provides shared sky, reflection, sun, and
@@ -152,6 +158,8 @@ The active ocean renderer now has a first T1 implementation slice:
   mesh extent, near/far cell size, LOD count, patches, and coverage ratio;
 - the vertex shader routes flat `Y = datum` world mapping through named
   surface-mapping helpers while keeping FFT sampling in local XZ space;
+- surface-frame uniforms publish water datum, planet radius, camera altitude,
+  and horizon distance to the surface shaders;
 - the fragment shader composes the far ocean through a named
   aerial-perspective placeholder:
   `water * transmittance + sky_radiance * inscatter_weight`.
@@ -160,11 +168,10 @@ This is still a flat local ocean. Curved far-ocean mapping, true atmospheric
 LUT aerial perspective, terrain/bathymetry streaming, shoreline interaction,
 and planet-scale patching remain deferred.
 
-## T1.5 Frame Contracts
+## Current T1.5 Status
 
-The next boundary is to make the flat ocean use the same frame vocabulary that
-curved far-ocean and later planet-scale rendering will need. The first contract
-should be small and explicit:
+The flat ocean now uses the first version of the frame vocabulary that curved
+far-ocean and later planet-scale rendering will need:
 
 - `LocalTangentFrame`: shared render-space vocabulary for a local patch of a
   larger world, with double-precision world origin, right/up/forward basis,
@@ -175,17 +182,26 @@ should be small and explicit:
   and metadata sent to shaders.
 
 For T1.5 the basis is still the current world axes and the water datum remains
-`0 m`. The point is not curvature yet; it is to stop passing loose horizon,
-mesh, atmosphere, and water-plane assumptions through unrelated app and shader
-slots.
+`0 m`. The current implementation routes projection, mesh, terrain diagnostic
+sea level, shader surface metadata, and background-atmosphere camera altitude
+through that frame. The point is not curvature yet; it is to stop passing loose
+horizon, mesh, atmosphere, and water-plane assumptions through unrelated app and
+shader slots.
 
-The shader contract should also follow this shape:
+The shader contract now follows this shape:
 
 - push constants stay small and per-patch;
 - per-frame surface metadata belongs in a uniform;
 - FFT sampling remains in local XZ space;
 - world/render position generation goes through named surface-mapping helpers;
 - atmosphere and ocean agree on camera altitude derived from the same frame.
+
+Still deferred:
+
+- non-flat surface mapping for curved far vertices;
+- world-frame-aware terrain/bathymetry sampling beyond the diagnostic local
+  field;
+- floating origin or large-world camera state outside the ocean project.
 
 ## Research Decisions
 
@@ -238,8 +254,9 @@ Avoid:
    normal viewing conditions.
 4. Done as a placeholder: add horizon-aware atmosphere/aerial-perspective
    blending for the far ocean.
-5. Done as a flat seam: introduce local-frame and surface-mapping vocabulary
-   while keeping the implementation flat.
+5. Done as a flat seam: introduce local-frame, surface-frame, datum, projection,
+   terrain diagnostic, atmosphere altitude, and shader metadata vocabulary while
+   keeping the implementation flat.
 6. Add a curved far-ocean mapping path after the flat horizon renderer is
    visually stable.
 7. Only then evaluate planet-scale terrain/ocean patching and streaming.
