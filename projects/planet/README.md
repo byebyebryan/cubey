@@ -17,9 +17,21 @@ Run it with:
 
 Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 `screen-error`, and `seams`. The CPU LOD path is a first diagnostic
-implementation: it plans visible camera-relative cube-sphere patches by
-projected edge size, adds patch skirts for seam coverage, and reports patch,
-LOD, cull, screen-error, edge-length, and skirt ranges in the UI.
+implementation: it plans camera-relative cube-sphere patches by projected edge
+size, adds patch skirts for seam coverage, and reports patch, LOD, refinement
+cull, screen-error, edge-length, and skirt ranges in the UI.
+
+Planet surface LOD is coverage-first. Root patches provide guaranteed coarse
+coverage for every planet domain, and view/horizon culling only stops
+refinement; it does not remove the fallback surface. When a patch refines, it
+hands off its full area to child subtrees, so the renderer never draws a parent
+and child for the same domain at the same time. This keeps camera rotation from
+revealing empty holes while synchronous mesh rebuilds are deferred during
+dragging.
+
+This is not yet a real async streamer. Future streaming should keep the same
+contract: parent patches remain renderable until all child coverage needed for a
+refinement is built and uploaded.
 
 This project should stay focused on planet-scale contracts first. Ocean scale
 work remains in `projects/ocean` until the planet frame, LOD, and world-space
