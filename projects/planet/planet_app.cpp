@@ -299,10 +299,14 @@ class PlanetApp {
                     frame_.surface_origin_m.z);
 
         ImGui::SeparatorText("Surface");
-        ImGui::Text("Patches: %u visible / %u planned",
+        ImGui::Text("Patches: %u rendered / %u planned",
                     surface_build_.diagnostics.visible_patch_count,
                     surface_build_.diagnostics.planned_patch_count);
-        ImGui::Text("Culled: %u horizon / %u view", surface_build_.diagnostics.culled_horizon_count,
+        ImGui::Text("Base / refined: %u / %u", surface_build_.diagnostics.base_patch_count,
+                    surface_build_.diagnostics.refined_patch_count);
+        ImGui::Text("Subdivided parents: %u", surface_build_.diagnostics.subdivided_patch_count);
+        ImGui::Text("Refinement culled: %u horizon / %u view",
+                    surface_build_.diagnostics.culled_horizon_count,
                     surface_build_.diagnostics.culled_view_count);
         ImGui::Text("LOD range: %u - %u", surface_build_.diagnostics.min_lod_level,
                     surface_build_.diagnostics.max_lod_level);
@@ -442,13 +446,8 @@ class PlanetApp {
 
     void rebuild_surface_data(VkExtent2D extent) {
         const PlanetSurfaceView view = surface_view(extent);
-        PlanetSurfacePatchPlan plan = plan_planet_surface_patches(planet_config_, view);
-        PlanetSurfaceView build_view = view;
-        if (plan.patches.empty()) {
-            build_view.culling_enabled = false;
-            plan = plan_planet_surface_patches(planet_config_, build_view);
-        }
-        surface_build_ = make_planet_surface_mesh(planet_config_, build_view, frame_, plan);
+        const PlanetSurfacePatchPlan plan = plan_planet_surface_patches(planet_config_, view);
+        surface_build_ = make_planet_surface_mesh(planet_config_, view, frame_, plan);
         surface_build_render_origin_world_m_ = frame_.render_origin_world_m;
         surface_build_view_ = view;
     }
