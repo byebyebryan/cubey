@@ -1,6 +1,7 @@
 #include "planet_surface.h"
 
 #include <cmath>
+#include <cstddef>
 #include <cstdio>
 #include <stdexcept>
 #include <string_view>
@@ -51,6 +52,37 @@ void test_planet_surface_vertices_stay_on_radius() {
                                        vertex.position[2] * vertex.position[2]);
         require(std::abs(length - config.radius_m) < 0.1F,
                 "planet surface vertices should lie on the sphere radius");
+    }
+}
+
+void test_planet_surface_triangles_are_wound_outward() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 3,
+        .max_lod_level = 0,
+        .skirts_enabled = false,
+    };
+    const cubey::projects::planet::PlanetSurfaceBuildResult result =
+        cubey::projects::planet::make_planet_surface_mesh(config);
+
+    for (std::size_t index = 0; index < result.mesh.indices.size(); index += 3U) {
+        const cubey::render::VertexPositionColorNormalUv& v0 =
+            result.mesh.vertices[result.mesh.indices[index]];
+        const cubey::render::VertexPositionColorNormalUv& v1 =
+            result.mesh.vertices[result.mesh.indices[index + 1U]];
+        const cubey::render::VertexPositionColorNormalUv& v2 =
+            result.mesh.vertices[result.mesh.indices[index + 2U]];
+        const cubey::math::Vec3 p0{v0.position[0], v0.position[1], v0.position[2]};
+        const cubey::math::Vec3 p1{v1.position[0], v1.position[1], v1.position[2]};
+        const cubey::math::Vec3 p2{v2.position[0], v2.position[1], v2.position[2]};
+        const cubey::math::Vec3 n0{v0.normal[0], v0.normal[1], v0.normal[2]};
+        const cubey::math::Vec3 n1{v1.normal[0], v1.normal[1], v1.normal[2]};
+        const cubey::math::Vec3 n2{v2.normal[0], v2.normal[1], v2.normal[2]};
+        const cubey::math::Vec3 triangle_normal = glm::normalize(glm::cross(p1 - p0, p2 - p0));
+        const cubey::math::Vec3 vertex_normal = glm::normalize(n0 + n1 + n2);
+        require(glm::dot(triangle_normal, vertex_normal) > 0.0F,
+                "planet surface triangles should be wound outward for backface culling");
     }
 }
 
@@ -248,6 +280,7 @@ int main() {
     try {
         test_planet_surface_builds_expected_patch_counts();
         test_planet_surface_vertices_stay_on_radius();
+        test_planet_surface_triangles_are_wound_outward();
         test_planet_surface_lod_subdivides_near_camera_patches();
         test_planet_surface_can_build_camera_relative_vertices();
         test_planet_surface_planner_culls_out_of_view_patches();

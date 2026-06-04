@@ -160,6 +160,23 @@ patch_sample_points(const PlanetConfig& config, const PlanetSurfacePatch& patch)
     };
 }
 
+struct PatchBounds {
+    cubey::math::DVec3 center_m{0.0, 0.0, 0.0};
+    double radius_m = 0.0;
+};
+
+[[nodiscard]] PatchBounds patch_bounds(const PlanetConfig& config,
+                                       const PlanetSurfacePatch& patch) {
+    const std::array<cubey::math::DVec3, 5> samples = patch_sample_points(config, patch);
+    PatchBounds bounds{
+        .center_m = samples[0],
+    };
+    for (cubey::math::DVec3 sample : samples) {
+        bounds.radius_m = std::max(bounds.radius_m, glm::length(sample - bounds.center_m));
+    }
+    return bounds;
+}
+
 [[nodiscard]] bool patch_passes_horizon_cull(const PlanetConfig& config, PlanetSurfaceView view,
                                              const PlanetSurfacePatch& patch) {
     if (!view.culling_enabled) {
@@ -173,13 +190,10 @@ patch_sample_points(const PlanetConfig& config, const PlanetSurfacePatch& patch)
     const double radius_m = static_cast<double>(config.radius_m);
     const double horizon_dot_m2 = radius_m * radius_m;
     const double conservative_margin_m2 = horizon_dot_m2 * 0.08;
-    for (cubey::math::DVec3 sample : patch_sample_points(config, patch)) {
-        if (glm::dot(sample, view.camera_world_position_m) >=
-            horizon_dot_m2 - conservative_margin_m2) {
-            return true;
-        }
-    }
-    return false;
+    const PatchBounds bounds = patch_bounds(config, patch);
+    const double max_patch_dot_m2 = glm::dot(bounds.center_m, view.camera_world_position_m) +
+                                    bounds.radius_m * camera_distance_m;
+    return max_patch_dot_m2 >= horizon_dot_m2 - conservative_margin_m2;
 }
 
 [[nodiscard]] cubey::math::Vec3 normalized_camera_forward(PlanetSurfaceView view) {
@@ -200,25 +214,22 @@ patch_sample_points(const PlanetConfig& config, const PlanetSurfacePatch& patch)
     const float diagonal_half_angle =
         std::atan(tan_half_vertical * std::sqrt(1.0F + aspect * aspect));
     const float conservative_margin_radians = 0.22F;
-    const float cos_limit =
-        std::cos(std::min(diagonal_half_angle + conservative_margin_radians, 3.0F));
-
-    for (cubey::math::DVec3 sample : patch_sample_points(config, patch)) {
-        const cubey::math::DVec3 to_sample_d = sample - view.camera_world_position_m;
-        const double distance_m = glm::length(to_sample_d);
-        if (distance_m <= 0.0001) {
-            return true;
-        }
-        const cubey::math::Vec3 to_sample{
-            static_cast<float>(to_sample_d.x / distance_m),
-            static_cast<float>(to_sample_d.y / distance_m),
-            static_cast<float>(to_sample_d.z / distance_m),
-        };
-        if (glm::dot(forward, to_sample) >= cos_limit) {
-            return true;
-        }
+    const PatchBounds bounds = patch_bounds(config, patch);
+    const cubey::math::DVec3 to_center_d = bounds.center_m - view.camera_world_position_m;
+    const double distance_m = glm::length(to_center_d);
+    if (distance_m <= std::max(bounds.radius_m, 0.0001)) {
+        return true;
     }
-    return false;
+    const float angular_radius = static_cast<float>(
+        std::asin(std::clamp(bounds.radius_m / std::max(distance_m, 0.0001), 0.0, 1.0)));
+    const float cos_limit = std::cos(
+        std::min(diagonal_half_angle + conservative_margin_radians + angular_radius, 3.0F));
+    const cubey::math::Vec3 to_center{
+        static_cast<float>(to_center_d.x / distance_m),
+        static_cast<float>(to_center_d.y / distance_m),
+        static_cast<float>(to_center_d.z / distance_m),
+    };
+    return glm::dot(forward, to_center) >= cos_limit;
 }
 
 [[nodiscard]] float patch_screen_error_px(const PlanetConfig& config, PlanetSurfaceView view,
@@ -481,11 +492,11 @@ void append_patch_mesh(const PlanetConfig& config, const PlanetFrame& frame,
             const std::uint32_t i2 = i0 + vertices_per_side;
             const std::uint32_t i3 = i2 + 1U;
             result.mesh.indices.push_back(i0);
-            result.mesh.indices.push_back(i2);
-            result.mesh.indices.push_back(i1);
             result.mesh.indices.push_back(i1);
             result.mesh.indices.push_back(i2);
+            result.mesh.indices.push_back(i1);
             result.mesh.indices.push_back(i3);
+            result.mesh.indices.push_back(i2);
 
             const cubey::math::DVec3 w0 = planet_frame_render_to_world_m(
                 frame, {result.mesh.vertices[i0].position[0], result.mesh.vertices[i0].position[1],

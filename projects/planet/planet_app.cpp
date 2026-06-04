@@ -418,8 +418,13 @@ class PlanetApp {
 
     void rebuild_surface_data(VkExtent2D extent) {
         const PlanetSurfaceView view = surface_view(extent);
-        const PlanetSurfacePatchPlan plan = plan_planet_surface_patches(planet_config_, view);
-        surface_build_ = make_planet_surface_mesh(planet_config_, view, frame_, plan);
+        PlanetSurfacePatchPlan plan = plan_planet_surface_patches(planet_config_, view);
+        PlanetSurfaceView build_view = view;
+        if (plan.patches.empty()) {
+            build_view.culling_enabled = false;
+            plan = plan_planet_surface_patches(planet_config_, build_view);
+        }
+        surface_build_ = make_planet_surface_mesh(planet_config_, build_view, frame_, plan);
         surface_build_render_origin_world_m_ = frame_.render_origin_world_m;
         surface_build_view_ = view;
     }
