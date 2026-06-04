@@ -1005,9 +1005,17 @@ int main() {
         require_contains(fragment_shader,
                          "specular *= shadowed_direct_light * mix(1.0, 0.35, material_distance)",
                          "fragment shader should reduce far and foam-covered specular");
+        require_contains(fragment_shader, "struct OceanAerialPerspective",
+                         "fragment shader should name horizon aerial perspective data");
         require_contains(fragment_shader,
-                         "float ocean_horizon_fog_factor(vec3 view_dir, float dist)",
-                         "fragment shader should use view-angle-aware horizon haze");
+                         "float ocean_horizon_extinction_factor(vec3 view_dir, float dist)",
+                         "fragment shader should use view-angle-aware horizon extinction");
+        require_contains(fragment_shader,
+                         "OceanAerialPerspective ocean_horizon_aerial_perspective",
+                         "fragment shader should isolate horizon aerial perspective lookup");
+        require_contains(fragment_shader,
+                         "water * perspective.transmittance",
+                         "fragment shader should compose water through horizon transmittance");
         require_contains(fragment_shader, "color = vec3(foam_coverage);",
                          "fragment shader should keep debug foam view as presentation coverage");
         require_contains(fragment_shader, "color = vec3(foam_current);",

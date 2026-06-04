@@ -108,6 +108,11 @@ struct OceanFoamData {
     vec2 detail;
 };
 
+struct OceanAerialPerspective {
+    vec3 inscatter;
+    float transmittance;
+};
+
 float ocean_luminance(vec3 color) {
     return dot(max(color, vec3(0.0)), vec3(0.2126, 0.7152, 0.0722));
 }
@@ -778,14 +783,27 @@ vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float ndotl, fl
     return mix(wet_water, foam_lighting, coverage);
 }
 
-float ocean_horizon_fog_factor(vec3 view_dir, float dist) {
-    float distance_fog =
+float ocean_horizon_extinction_factor(vec3 view_dir, float dist) {
+    float distance_extinction =
         smoothstep(ocean.mesh_options.z * 0.30, ocean.mesh_options.z * 0.95, dist);
     float low_angle = 1.0 - smoothstep(0.035, 0.36, abs(view_dir.y));
-    float angle_fog =
+    float angle_extinction =
         low_angle * smoothstep(ocean.mesh_options.z * 0.18, ocean.mesh_options.z * 0.72, dist);
-    return clamp((distance_fog * 0.86 + angle_fog * 0.34) * ocean_horizon_fog_strength(), 0.0,
-                 0.96);
+    return clamp((distance_extinction * 0.86 + angle_extinction * 0.34) *
+                     ocean_horizon_fog_strength(),
+                 0.0, 0.96);
+}
+
+OceanAerialPerspective ocean_horizon_aerial_perspective(vec3 view_dir, float dist) {
+    float extinction = ocean_horizon_extinction_factor(view_dir, dist);
+    vec3 horizon_dir = normalize(vec3(-view_dir.x, 0.055, -view_dir.z));
+    return OceanAerialPerspective(ocean_sky_radiance(horizon_dir), 1.0 - extinction);
+}
+
+vec3 ocean_apply_horizon_aerial_perspective(vec3 water, vec3 view_dir, float dist) {
+    OceanAerialPerspective perspective = ocean_horizon_aerial_perspective(view_dir, dist);
+    return water * perspective.transmittance +
+           perspective.inscatter * (1.0 - perspective.transmittance);
 }
 
 vec3 ocean_environment_reflection(vec3 direction, float roughness) {
@@ -894,9 +912,7 @@ void main() {
     water = ocean_shaded_foam(water, foam_color, normal, ndotl, direct_shadow, foam_coverage,
                               dist);
 
-    float horizon_fog = ocean_horizon_fog_factor(view_dir, dist);
-    vec3 horizon_dir = normalize(vec3(-view_dir.x, 0.055, -view_dir.z));
-    vec3 color = mix(water, ocean_sky_radiance(horizon_dir), horizon_fog);
+    vec3 color = ocean_apply_horizon_aerial_perspective(water, view_dir, dist);
 
     if (view == OCEAN_VIEW_HEIGHT) {
         color = debug_height_color(frag_wave.x);
