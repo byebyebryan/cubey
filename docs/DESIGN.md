@@ -340,7 +340,7 @@ named explicitly and live in either `examples/` or `projects/`:
   work, including `atmosphere`, `smoke_2d`, `water_2d`, `water_3d`,
   `fire_3d`, `explosion_3d`, `fractal_2d`, `gltf_viewer`, `ocean`,
   `ocean_ref`, `ocean_legacy`, `procedural_terrain`, and
-  `pbr_furnace`, plus later candidates such as `marching_cubes` and
+  `pbr_furnace`, plus later candidates such as `planet`, `marching_cubes`, and
   `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.

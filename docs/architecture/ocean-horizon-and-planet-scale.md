@@ -1,29 +1,30 @@
-# Ocean Horizon And Planet Scale Direction
+# Ocean Horizon And Curved-Local Direction
 
 This note captures the product and architecture direction for moving
 `projects/ocean` from a large visible water patch toward horizon-scale and
-eventually planet-scale rendering.
+curved-local rendering. Full planet scale is now treated as a separate
+`projects/planet` direction, not the next responsibility of the ocean project.
 
 The current renderer is good enough as a wave and material testbed, but it still
 reads as a large square surface when viewed from some angles or distances. The
 next product question is not only "make the square bigger"; it is how to make
 the renderer feel continuous to the horizon without making near-term work
-incompatible with later planet-scale goals.
+incompatible with later planet integration.
 
 ## Direction
 
-Do not jump directly to a full planet renderer. Build the next ocean slices as a
-local tangent patch of a future planet:
+Do not turn `projects/ocean` into a full planet renderer. Build ocean as a local
+tangent patch that can later be hosted by `projects/planet`:
 
 - get immediate visual value from horizon-scale local ocean rendering;
 - make coordinate, mesh, atmosphere, and terrain contracts compatible with
-  curved far-field and planet-scale work;
+  curved far-field and later planet handoff;
 - keep wave simulation in local tangent space until a concrete feature needs
   global weather, bathymetry, or streaming;
 - avoid baking an infinite flat `Y = 0` plane into shared renderer contracts.
 
-This makes Tier 1 and Tier 2 natural stepping stones rather than throwaway
-implementations.
+This makes Tier 1 and Tier 2 useful endpoints for ocean, not throwaway
+implementations on the way to a larger planet platform.
 
 ## Product Tiers
 
@@ -110,12 +111,13 @@ surface, with displacement riding on top of that mapped surface. This keeps the
 renderer debuggable while proving the T1.5 frame contract under real curvature
 pressure.
 
-### Tier 3: Planet Scale
+### Planet Project Handoff
 
-Goal: render and navigate ocean, terrain, atmosphere, and weather at planetary
-scale.
+Goal: stop ocean scale work at a clean handoff boundary.
 
-This is a separate product tier, not just a bigger ocean mesh. It likely needs:
+Rendering and navigating ocean, terrain, atmosphere, and weather at planetary
+scale is a separate project tier, not just a bigger ocean mesh. It belongs in
+`projects/planet`, which likely needs:
 
 - a planet coordinate model and floating-origin system;
 - camera-relative rendering throughout the engine;
@@ -126,8 +128,9 @@ This is a separate product tier, not just a bigger ocean mesh. It likely needs:
 - local interaction patches for wakes, boats, shorelines, and surf;
 - strict precision and LOD diagnostics.
 
-Tier 3 should wait until the horizon-scale renderer, atmosphere, and
-terrain/bathymetry contracts have enough pressure to justify the infrastructure.
+That infrastructure should be built in an empty planet-first project with its
+own LOD and precision diagnostics. Ocean should be ported into that project once
+the planet frame is stable enough to host a local water layer.
 
 ## Existing Foundation
 
@@ -150,8 +153,9 @@ Useful pieces already exist:
 - ocean performance work now keeps FFT maps, field precision, and active
   cascade work explicit.
 
-The missing foundation is not primarily wave compute. It is the world-frame,
-surface-mapping, far-mesh, and horizon-composition contract.
+The remaining ocean foundation is not primarily wave compute. It is far-water
+atmosphere composition, curved-local terrain/bathymetry sampling, and a clean
+handoff contract for future planet integration.
 
 ## Current T1 Status
 
@@ -179,7 +183,7 @@ far-surface path described below.
 ## Current T1.5 Status
 
 The flat ocean now uses the first version of the frame vocabulary that curved
-far-ocean and later planet-scale rendering will need:
+far-ocean and later planet integration will need:
 
 - `LocalTangentFrame`: shared render-space vocabulary for a local patch of a
   larger world, with double-precision world origin, right/up/forward basis,
@@ -224,14 +228,19 @@ patch:
 - the UI and CLI expose surface mode, curvature start/end ratios, curvature
   strength, and a `curvature` debug view.
 
-Still deferred:
+Still deferred inside ocean:
 
 - true curved-horizon occlusion for distant objects;
 - world-frame-aware terrain/bathymetry sampling beyond the diagnostic local
   field;
-- floating origin or large-world camera state outside the ocean project;
-- shoreline interaction and planet-scale patch streaming;
+- shoreline interaction and local bathymetry-driven surf inputs;
 - true atmospheric LUT aerial perspective for far-water extinction.
+
+Deferred to `projects/planet`:
+
+- floating origin or large-world camera state outside the ocean project;
+- planet-scale patch LOD and streaming;
+- global weather and terrain/bathymetry/material fields.
 
 ## Research Decisions
 
@@ -248,14 +257,14 @@ clipmap with stable snapping, enough far extent, explicit LOD diagnostics, and
 horizon/aerial-perspective composition is the most direct path from the current
 renderer.
 
-T1 should target deck, ship-mast, and cinematic drone views first. Aircraft and
-space-scale views are diagnostic only until the curved surface mapping and
-planet-scale terrain/ocean patching work exists.
+T1 and T2 should target deck, ship-mast, and cinematic drone views first.
+Aircraft and space-scale views are diagnostic only until `projects/planet` owns
+the surface LOD and world-frame contracts.
 
 ## Design Constraints
 
-Build toward planet scale without paying for full planet infrastructure too
-early:
+Build toward planet compatibility without paying for full planet infrastructure
+inside ocean:
 
 - keep GPU positions camera-relative;
 - keep CPU/world positions ready for double precision or floating origin;
@@ -289,12 +298,12 @@ Avoid:
    keeping the implementation flat.
 6. Done: add a single-pass curved far-ocean mapping path with Flat/Curved-Far
    surface modes, horizon-ratio blend controls, and curvature diagnostics.
-7. Next: evaluate whether far-water atmosphere composition, curved
-   terrain/bathymetry fields, or planet-scale patching should be the next scale
-   boundary.
+7. Next: evaluate far-water atmosphere composition and curved-local
+   terrain/bathymetry fields inside ocean, while planet-scale patching starts in
+   `projects/planet`.
 
-This keeps the next slice product-visible while leaving a clean path from local
-ocean to curved horizon and later planet scale.
+This keeps ocean product-visible while leaving a clean path for `projects/planet`
+to consume it later.
 
 ## Open Questions
 
@@ -303,5 +312,5 @@ ocean to curved horizon and later planet scale.
 - Should the first far mesh be clipmap-based, radial/annular, or a hybrid?
 - How much of the atmosphere path needs true aerial perspective before Tier 1
   hides the horizon boundary convincingly?
-- What world-frame convention should terrain, ocean, atmosphere, and future
-  planet work share?
+- What exact frame contract should `projects/planet` use when it consumes ocean
+  as a local water layer?

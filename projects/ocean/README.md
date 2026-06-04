@@ -5,6 +5,14 @@ spectrum/FFT/unpack core as a guardrail, then layers configurable cascade slots,
 atmosphere integration, terrain-field descriptors, expanded foam diagnostics,
 and debug views behind explicit feature-isolation controls.
 
+Scale-wise, `ocean` is intended to stop at horizon-scale and curved-local
+rendering. That is not a bad endpoint: the project already exercises the water
+renderer, FFT cascade cost model, atmosphere integration, terrain-field
+boundary, LOD diagnostics, and curvature controls. Full planet-scale navigation,
+surface patching, streaming terrain/bathymetry, weather, and clouds belong in a
+future `projects/planet`; ocean should be ported or wrapped there when the
+planet frame and LOD contracts are ready.
+
 GodotOceanWaves is MIT licensed; the required notice is kept in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
@@ -37,6 +45,7 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view terrain-depth
 ./build/dev/projects/ocean/ocean --debug-view terrain-shore
 ./build/dev/projects/ocean/ocean --debug-view terrain-slope
+./build/dev/projects/ocean/ocean --debug-view curvature
 ./build/dev/projects/ocean/ocean --debug-view lod --ocean-wire-overlay
 ./build/dev/projects/ocean/ocean --debug-view displacement --ocean-cascade 0
 ./build/dev/projects/ocean/ocean --no-ocean-spectral-domains
@@ -53,6 +62,11 @@ coverage, patch counts, triangle load, cascade distance fades, and mesh-cell
 support while tuning the mesh.
 Headless captures can use
 `--ocean-cascade all|0|1|2|3|4`,
+`--ocean-surface-mode flat|curved-far`,
+`--ocean-planet-radius-scale 0.01..10.0`,
+`--ocean-curvature-start-ratio 0.0..1.0`,
+`--ocean-curvature-end-ratio 0.0..1.0`,
+`--ocean-curvature-strength 0.0..1.0`,
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
 `--ocean-terrain-fields`, and `--no-ocean-terrain-fields`.

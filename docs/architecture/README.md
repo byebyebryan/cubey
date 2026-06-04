@@ -13,9 +13,11 @@ than the root design and roadmap.
 - [Ocean rendering](ocean-rendering.md):
   active/reference/experimental/legacy ocean split, reference-derived wave
   core, feature donor boundaries, and breaking-wave tradeoffs.
-- [Ocean horizon and planet scale](ocean-horizon-and-planet-scale.md):
-  horizon-scale local ocean, planet-compatible contracts, curved far-field
-  rendering, and eventual planet-scale boundaries.
+- [Ocean horizon and curved-local scale](ocean-horizon-and-planet-scale.md):
+  horizon-scale local ocean, planet-compatible contracts, curved-local
+  rendering, and explicit handoff to planet-scale work.
+- [Planet rendering](planet-rendering.md): empty-planet-first direction,
+  surface LOD, frame/precision contracts, and ocean handoff boundaries.
 - [Ocean adjacent systems](ocean-adjacent-systems.md): atmosphere, clouds,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [glTF assets and PBR](gltf-assets.md): static glTF import, PBR material

@@ -28,12 +28,18 @@ camera-relative surface renderer and only adds simulation where interaction
 needs it.
 
 The current renderer is now moving through the T1 horizon-scale path captured
-in [Ocean horizon and planet scale](ocean-horizon-and-planet-scale.md):
+in [Ocean horizon and curved-local direction](ocean-horizon-and-planet-scale.md):
 derive effective ocean extent from camera altitude, keep a planet-compatible
 flat surface-mapping seam, route projection/atmosphere/datum metadata through
 an explicit `OceanSurfaceFrame`, and bend the far field through the default
-`curved-far` surface mode before attempting full planet-scale terrain/ocean
-streaming.
+`curved-far` surface mode before handing compatible local-ocean contracts to a
+separate planet-scale project.
+
+This is a reasonable scale endpoint for `projects/ocean`. It should remain a
+focused horizon/curved-local water renderer with strong diagnostics, not become
+the owner of global planet coordinates, patch streaming, terrain, weather, or
+clouds. Future planet work should port or wrap the ocean renderer once
+`projects/planet` has its own frame and LOD foundation.
 
 The active renderer includes:
 

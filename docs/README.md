@@ -38,6 +38,9 @@ Detailed current foundation notes live under
 - [Ocean rendering](architecture/ocean-rendering.md):
   active/reference/legacy ocean split, reference-derived wave
   core, feature donor boundaries, and breaking-wave tradeoffs.
+- [Planet rendering](architecture/planet-rendering.md): empty-planet-first
+  direction, surface LOD, frame/precision contracts, and ocean handoff
+  boundaries.
 - [Ocean adjacent systems](architecture/ocean-adjacent-systems.md): atmosphere,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [glTF assets and PBR](architecture/gltf-assets.md): glTF import, PBR material

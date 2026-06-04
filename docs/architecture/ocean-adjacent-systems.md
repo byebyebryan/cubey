@@ -4,9 +4,9 @@
 `projects/ocean_ref` is the known-good wave baseline, and
 `projects/ocean_legacy` is the older feature donor. The next visible quality
 jump still depends on systems that should not be built directly inside the
-ocean project first. Shorelines, shallow water, atmospheric scattering, and
-clouds each have enough policy and tuning surface to deserve standalone project
-pressure before they become shared renderer inputs.
+ocean project first. Shorelines, shallow water, atmospheric scattering, clouds,
+and planet-scale LOD each have enough policy and tuning surface to deserve
+standalone project pressure before they become shared renderer inputs.
 
 This note captures the intended split so parallel work can stay mergeable.
 
@@ -21,10 +21,17 @@ ocean renderer through small data and shader contracts:
   masks, material masks, and terrain/scene depth rendering.
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
   flooding, sources, sinks, and later dynamic shoreline coupling.
+- `projects/planet`: whole-world scale, camera-relative origin, planet surface
+  LOD, precision diagnostics, and eventual composition of atmosphere, terrain,
+  ocean, clouds, and weather.
 
 The active ocean renderer should remain the consumer of these systems, not their
 first owner. That keeps the renderer focused on reference-quality water
 presentation while the supporting systems become inspectable in isolation.
+
+For planet scale, `projects/ocean` should stop at horizon-scale and curved-local
+rendering. `projects/planet` should start empty, prove navigation and LOD on a
+plain surface, then port ocean as one layer when the planet frame is stable.
 
 ## Atmosphere Project
 
@@ -142,6 +149,28 @@ Those fields can later modulate shoreline foam, local current direction, river
 mouths, and surf-zone behavior without requiring the ocean renderer to own the
 solver.
 
+## Planet Project Relationship
+
+`projects/planet` is the right home for scale and LOD work that would otherwise
+distort the ocean renderer. Its first useful scope should be deliberately plain:
+
+- configurable planet radius, including small Kerbal-style scales;
+- camera world position, local tangent frame, horizon, altitude, and far plane;
+- cube-sphere or quadtree surface patches with wireframe and LOD colors;
+- screen-error or distance/altitude-driven patch selection;
+- seam handling through skirts or morph bands;
+- patch counts, triangle counts, cell sizes, screen-error, and precision
+  diagnostics.
+
+Ocean integration target:
+
+- planet supplies radius, datum, local tangent frame, camera-relative origin,
+  atmosphere altitude, and render order;
+- ocean supplies local wave displacement, normals, foam, material response, and
+  optional local wake/disturbance fields;
+- terrain, bathymetry, clouds, and global weather remain planet or adjacent
+  system inputs, not ocean-owned state.
+
 ## Shared Contracts
 
 Before promotion, the projects should agree on a small set of shared assumptions.
@@ -149,6 +178,7 @@ These are more important than exact implementation details:
 
 - world units and coordinate convention;
 - camera-relative origin behavior for large ocean shots;
+- planet radius, datum/sea level, and local tangent frame ownership;
 - linear HDR color, exposure, and tone-map ownership;
 - sun direction, sun color, and sun intensity ownership;
 - depth convention for opaque scene depth, seabed height, water depth, and
@@ -157,8 +187,9 @@ These are more important than exact implementation details:
   cloud, and shallow-water fields;
 - render order: atmosphere background, opaque terrain/scene depth, ocean water,
   then optional cloud or post layers.
-- shared clipmap diagnostics for patch count, triangle/vertex totals, near cell
-  size, and outer extent so terrain and ocean LOD can report the same concepts.
+- shared clipmap or patch-tree diagnostics for patch count, triangle/vertex
+  totals, near cell size, screen error, and outer extent so terrain, ocean, and
+  planet LOD can report the same concepts.
 
 The initial contracts can remain project-local structs and GLSL includes. Promote
 them to shared renderer or shader packages when at least two projects use the
@@ -176,7 +207,10 @@ diagnostic helpers have crossed that threshold and now live in `cubey::render`.
    water and shorelines.
 5. Continue `fluid_25d` toward dynamic terrain water, then feed its fields into
    the same shoreline/bathymetry contract.
-6. Add clouds after clear sky and terrain composition are coherent.
+6. Start `projects/planet` as an empty planet-frame and LOD project before
+   trying to make ocean itself planet-scale.
+7. Add clouds after clear sky, terrain composition, and planet frame ownership
+   are coherent.
 
 This sequence keeps each project independently useful while aiming every slice
 at concrete ocean integration points.
