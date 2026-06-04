@@ -899,6 +899,14 @@ int main() {
                          "UI should expose ocean field precision");
         require_contains(ui_source, "&ui.config.terrain_fields_enabled",
                          "UI should expose optional terrain field influence");
+        require_contains(ui_source, "Surface: %s",
+                         "UI should expose the active ocean surface frame kind");
+        require_contains(ui_source, "ui.surface_frame.local_frame.water_datum_m",
+                         "UI should expose the ocean surface datum");
+        require_contains(ui_source, "ui.surface_frame.local_frame.world_origin_m",
+                         "UI should expose the local tangent frame origin");
+        require_contains(ui_source, "ui.surface_frame.local_frame.up",
+                         "UI should expose the local tangent frame up axis");
         require_contains(ui_source, "&ui.config.foam_density", "UI should expose foam density");
         require_contains(ui_source, "&ui.config.foam_sharpness", "UI should expose foam sharpness");
         require_contains(ui_source, "Cascade LOD bands",
@@ -1127,6 +1135,11 @@ int main() {
                          "ocean app should own the shared atmosphere runtime");
         require_contains(app_source, "make_ocean_diagnostic_terrain_fields",
                          "ocean app should create a diagnostic terrain-ocean field");
+        require_contains(app_source,
+                         "make_ocean_diagnostic_terrain_fields(const OceanConfig& config, float water_datum_m)",
+                         "ocean diagnostic terrain fields should accept the active surface datum");
+        require_contains(app_source, ".sea_level_m = water_datum_m",
+                         "ocean diagnostic terrain fields should publish the active surface datum");
         require_contains(app_source, "create_uploaded_terrain_ocean_field_texture",
                          "ocean app should upload the shared terrain-ocean field texture");
         require_contains(app_source, "FrameUniformBuffer<OceanTerrainFieldUniforms>",
@@ -1137,6 +1150,12 @@ int main() {
                          "ocean app should use shared generated atmosphere atlas textures");
         require_contains(app_source, "record_atmosphere_background",
                          "ocean app should draw the shared atmosphere background");
+        require_contains(app_source, "atmosphere_environment_for_surface_frame",
+                         "ocean app should resolve background atmosphere from the surface frame");
+        require_contains(app_source, "environment.camera_altitude_km",
+                         "ocean app should publish surface-frame camera altitude to atmosphere");
+        require_contains(app_source, "atmosphere_environment_frame_uniforms",
+                         "ocean app should build per-frame atmosphere uniforms without mutating UI config");
         require_contains(app_source, "record_atmosphere_environment_if_needed",
                          "ocean app should update the atmosphere probe before drawing water");
         require_contains(

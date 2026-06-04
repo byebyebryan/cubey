@@ -486,7 +486,7 @@ ocean_terrain_field_uniforms(const cubey::render::TerrainOceanPackedFields& fiel
 }
 
 [[nodiscard]] cubey::render::TerrainOceanPackedFields
-make_ocean_diagnostic_terrain_fields(const OceanConfig& config) {
+make_ocean_diagnostic_terrain_fields(const OceanConfig& config, float water_datum_m) {
     constexpr std::uint32_t field_extent = 129U;
     const float cell_size = (config.mesh_extent * 2.0F) / static_cast<float>(field_extent - 1U);
     cubey::render::TerrainOceanFieldView field_view;
@@ -496,7 +496,7 @@ make_ocean_diagnostic_terrain_fields(const OceanConfig& config) {
         .width = field_extent,
         .height = field_extent,
         .cell_size_m = cell_size,
-        .sea_level_m = 0.0F,
+        .sea_level_m = water_datum_m,
         .origin_x_m = 0.0F,
         .origin_z_m = 0.0F,
     };
@@ -847,7 +847,8 @@ class OceanApp {
     void create_terrain_ocean_field_resources(cubey::vulkan::Device& device,
                                               cubey::vulkan::GpuRuntime& gpu,
                                               std::uint32_t frame_slot_count) {
-        terrain_ocean_fields_ = make_ocean_diagnostic_terrain_fields(ocean_config_);
+        terrain_ocean_fields_ = make_ocean_diagnostic_terrain_fields(
+            ocean_config_, ocean_surface_frame().local_frame.water_datum_m);
         terrain_ocean_fields_texture_.emplace(
             cubey::render::create_uploaded_terrain_ocean_field_texture(device, gpu,
                                                                        terrain_ocean_fields_));
@@ -1045,6 +1046,14 @@ class OceanApp {
                                                planet_radius_m());
     }
 
+    [[nodiscard]] cubey::render::AtmosphereEnvironmentConfig
+    atmosphere_environment_for_surface_frame(const OceanSurfaceFrame& surface_frame) const {
+        cubey::render::AtmosphereEnvironmentConfig environment = atmosphere_state_.environment;
+        environment.camera_altitude_km =
+            surface_frame.horizon.camera_altitude_m / kOceanMetersPerKilometer;
+        return environment;
+    }
+
     [[nodiscard]] cubey::math::Mat4 ocean_view_projection_matrix(
         VkExtent2D extent,
         const cubey::Transform3D& transform,
@@ -1225,17 +1234,18 @@ class OceanApp {
     }
 
     [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
-    atmosphere_background_uniforms(VkExtent2D extent) const {
+    atmosphere_background_uniforms(VkExtent2D extent,
+                                   const OceanSurfaceFrame& surface_frame) const {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         const cubey::render::ViewRayBasis3D view_rays =
             cubey::render::view_ray_basis_3d(transform.rotation, aspect, camera_.fovy_radians());
-        return atmosphere_runtime_
-            .frame({
+        return cubey::render::atmosphere_environment_frame_uniforms(
+            atmosphere_environment_for_surface_frame(surface_frame),
+            cubey::render::AtmosphereEnvironmentFrameUniformInputs{
                 .view_rays = view_rays,
                 .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
-            })
-            .background;
+            });
     }
 
     [[nodiscard]] OceanSpectrumPushConstants
@@ -1347,7 +1357,9 @@ class OceanApp {
     void record_atmosphere_background(const cubey::vulkan::CommandRecorder& recorder,
                                       VkExtent2D extent,
                                       cubey::render::FrameSlot frame_slot) const {
-        atmosphere_background_.upload(frame_slot, atmosphere_background_uniforms(extent));
+        const OceanSurfaceFrame surface_frame = ocean_surface_frame();
+        atmosphere_background_.upload(frame_slot, atmosphere_background_uniforms(extent,
+                                                                                surface_frame));
         cubey::render::record_fullscreen_pipeline_draw(
             recorder, cubey::render::FullscreenPipelineDrawInfo{
                           .pipeline = &atmosphere_background_.pipeline(),

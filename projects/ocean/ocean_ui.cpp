@@ -640,6 +640,18 @@ void draw_ocean_ui(OceanUiContext ui) {
                     ui.config.spectral_domains_enabled ? "enabled" : "disabled");
         ImGui::Text("Terrain fields: %s",
                     ui.config.terrain_fields_enabled ? "influence enabled" : "diagnostic only");
+        ImGui::Text("Surface: %s",
+                    ui.surface_frame.flat_surface ? "flat tangent frame" : "curved");
+        ImGui::Text("Datum: %.1f m / planet %.0f km",
+                    ui.surface_frame.local_frame.water_datum_m,
+                    ui.surface_frame.local_frame.planet_radius_m / kOceanMetersPerKilometer);
+        ImGui::Text("Frame origin: %.1f, %.1f, %.1f km",
+                    ui.surface_frame.local_frame.world_origin_m.x / kOceanMetersPerKilometer,
+                    ui.surface_frame.local_frame.world_origin_m.y / kOceanMetersPerKilometer,
+                    ui.surface_frame.local_frame.world_origin_m.z / kOceanMetersPerKilometer);
+        ImGui::Text("Frame up: %.2f, %.2f, %.2f",
+                    ui.surface_frame.local_frame.up.x, ui.surface_frame.local_frame.up.y,
+                    ui.surface_frame.local_frame.up.z);
         for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
             char label[40]{};
             format_cascade_label(label, sizeof(label), index);
