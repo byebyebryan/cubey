@@ -160,6 +160,33 @@ This is still a flat local ocean. Curved far-ocean mapping, true atmospheric
 LUT aerial perspective, terrain/bathymetry streaming, shoreline interaction,
 and planet-scale patching remain deferred.
 
+## T1.5 Frame Contracts
+
+The next boundary is to make the flat ocean use the same frame vocabulary that
+curved far-ocean and later planet-scale rendering will need. The first contract
+should be small and explicit:
+
+- `LocalTangentFrame`: shared render-space vocabulary for a local patch of a
+  larger world, with double-precision world origin, right/up/forward basis,
+  planet radius, and water datum.
+- `OceanSurfaceFrame`: ocean runtime state derived each frame from
+  `LocalTangentFrame`, camera transform, atmosphere settings, and ocean config.
+  It owns the effective mesh config, horizon diagnostics, projection far plane,
+  and metadata sent to shaders.
+
+For T1.5 the basis is still the current world axes and the water datum remains
+`0 m`. The point is not curvature yet; it is to stop passing loose horizon,
+mesh, atmosphere, and water-plane assumptions through unrelated app and shader
+slots.
+
+The shader contract should also follow this shape:
+
+- push constants stay small and per-patch;
+- per-frame surface metadata belongs in a uniform;
+- FFT sampling remains in local XZ space;
+- world/render position generation goes through named surface-mapping helpers;
+- atmosphere and ocean agree on camera altitude derived from the same frame.
+
 ## Research Decisions
 
 The first horizon-scale implementation should stay with a viewer-centered
