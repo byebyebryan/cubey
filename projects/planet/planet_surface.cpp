@@ -413,8 +413,20 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
     }
 }
 
-void record_visible_patch(const PlanetConfig& config, PlanetSurfacePatchPlan& plan,
-                          const PlanetSurfacePatchInstance& patch) {
+[[nodiscard]] std::uint64_t root_patch_reserve(const PlanetConfig& config) {
+    return static_cast<std::uint64_t>(config.patches_per_face) *
+           static_cast<std::uint64_t>(config.patches_per_face) * 6ULL;
+}
+
+[[nodiscard]] bool can_refine_with_live_budget(const PlanetConfig& config,
+                                               const PlanetSurfacePatchPlan& plan) {
+    return static_cast<std::uint64_t>(plan.selected_patches.size()) + root_patch_reserve(config) +
+               4ULL <
+           kPlanetMaxLivePatchInstances;
+}
+
+[[nodiscard]] bool record_visible_patch(const PlanetConfig& config, PlanetSurfacePatchPlan& plan,
+                                        const PlanetSurfacePatchInstance& patch) {
     plan.diagnostics.min_lod_level = plan.diagnostics.visible_patch_count == 0U
                                          ? patch.id.level
                                          : std::min(plan.diagnostics.min_lod_level, patch.id.level);
@@ -433,10 +445,12 @@ void record_visible_patch(const PlanetConfig& config, PlanetSurfacePatchPlan& pl
     ++plan.diagnostics.visible_patch_count;
     plan.diagnostics.patch_count = plan.diagnostics.visible_patch_count;
     plan.selected_patches.push_back(patch);
+    return plan.selected_patches.size() <= kPlanetMaxLivePatchInstances;
 }
 
-void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
-                             PlanetSurfacePatchInstance patch, PlanetSurfacePatchPlan& plan) {
+[[nodiscard]] bool append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
+                                           PlanetSurfacePatchInstance patch,
+                                           PlanetSurfacePatchPlan& plan) {
     patch.screen_error_px = patch_screen_error_px(config, view, patch);
     ++plan.diagnostics.planned_patch_count;
 
@@ -445,33 +459,48 @@ void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
     if (wants_refinement && !patch_passes_horizon_cull(config, view, patch)) {
         record_refinement_cull(plan, true);
         ++plan.diagnostics.refinement_fallback_patch_count;
-        record_visible_patch(config, plan, patch);
-        return;
+        return record_visible_patch(config, plan, patch);
     }
     if (wants_refinement && !patch_passes_view_cull(config, view, patch)) {
         record_refinement_cull(plan, false);
         ++plan.diagnostics.refinement_fallback_patch_count;
-        record_visible_patch(config, plan, patch);
-        return;
+        return record_visible_patch(config, plan, patch);
+    }
+    if (wants_refinement && !can_refine_with_live_budget(config, plan)) {
+        ++plan.diagnostics.budget_fallback_patch_count;
+        return record_visible_patch(config, plan, patch);
     }
 
     if (wants_refinement) {
+        const std::size_t selected_patch_snapshot = plan.selected_patches.size();
+        const PlanetSurfaceDiagnostics diagnostics_snapshot = plan.diagnostics;
         ++plan.diagnostics.subdivided_patch_count;
-        append_coverage_patches(
-            config, view,
-            PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 0U)}, plan);
-        append_coverage_patches(
-            config, view,
-            PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 1U)}, plan);
-        append_coverage_patches(
-            config, view,
-            PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 2U)}, plan);
-        append_coverage_patches(
-            config, view,
-            PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 3U)}, plan);
-        return;
+        const bool children_fit =
+            append_coverage_patches(
+                config, view,
+                PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 0U)},
+                plan) &&
+            append_coverage_patches(
+                config, view,
+                PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 1U)},
+                plan) &&
+            append_coverage_patches(
+                config, view,
+                PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 2U)},
+                plan) &&
+            append_coverage_patches(
+                config, view,
+                PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 3U)},
+                plan);
+        if (!children_fit) {
+            plan.selected_patches.resize(selected_patch_snapshot);
+            plan.diagnostics = diagnostics_snapshot;
+            ++plan.diagnostics.budget_fallback_patch_count;
+            return record_visible_patch(config, plan, patch);
+        }
+        return true;
     }
-    record_visible_patch(config, plan, patch);
+    return record_visible_patch(config, plan, patch);
 }
 
 [[nodiscard]] PlanetSurfacePatchPlan make_surface_patch_plan(const PlanetConfig& config,
@@ -480,17 +509,20 @@ void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
     for (std::uint32_t face = 0; face < 6U; ++face) {
         for (std::uint32_t py = 0; py < config.patches_per_face; ++py) {
             for (std::uint32_t px = 0; px < config.patches_per_face; ++px) {
-                append_coverage_patches(config, view,
-                                        PlanetSurfacePatchInstance{
-                                            .id =
-                                                {
-                                                    .face = face,
-                                                    .level = 0,
-                                                    .x = px,
-                                                    .y = py,
-                                                },
-                                        },
-                                        plan);
+                if (!append_coverage_patches(config, view,
+                                             PlanetSurfacePatchInstance{
+                                                 .id =
+                                                     {
+                                                         .face = face,
+                                                         .level = 0,
+                                                         .x = px,
+                                                         .y = py,
+                                                     },
+                                             },
+                                             plan)) {
+                    throw std::runtime_error(
+                        "planet live LOD selection exceeded the root patch budget");
+                }
             }
         }
     }
@@ -717,7 +749,7 @@ PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
     validate_planet_config(config);
     PlanetSurfacePatchPlan plan = make_surface_patch_plan(config, view);
     if (plan.selected_patches.size() > kPlanetMaxLivePatchInstances) {
-        throw std::runtime_error("planet live LOD selection exceeds the patch instance budget");
+        throw std::runtime_error("planet live LOD fallback exceeded the patch instance budget");
     }
     return plan;
 }

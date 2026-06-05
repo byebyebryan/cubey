@@ -53,6 +53,7 @@ struct PlanetSurfaceDiagnostics {
     std::uint32_t refined_patch_count = 0;
     std::uint32_t subdivided_patch_count = 0;
     std::uint32_t refinement_fallback_patch_count = 0;
+    std::uint32_t budget_fallback_patch_count = 0;
     std::uint32_t transition_candidate_count = 0;
     std::uint32_t vertex_count = 0;
     std::uint32_t triangle_count = 0;

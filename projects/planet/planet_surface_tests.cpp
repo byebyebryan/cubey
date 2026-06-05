@@ -744,7 +744,7 @@ void test_planet_surface_default_lod_reaches_near_camera_detail() {
             "default planet LOD should stay inside the live patch budget");
 }
 
-void test_planet_surface_planner_rejects_live_patch_budget_overflow() {
+void test_planet_surface_planner_falls_back_at_live_patch_budget() {
     const cubey::projects::planet::PlanetConfig config{
         .patches_per_face = 2,
         .patch_resolution = 1,
@@ -759,12 +759,13 @@ void test_planet_surface_planner_rejects_live_patch_budget_overflow() {
         .culling_enabled = false,
     };
 
-    try {
-        static_cast<void>(cubey::projects::planet::plan_planet_surface_patches(config, view));
-    } catch (const std::exception&) {
-        return;
-    }
-    throw std::runtime_error("planet planner should reject excessive live patch counts");
+    const cubey::projects::planet::PlanetSurfacePatchPlan plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+
+    require(plan.diagnostics.patch_count <= cubey::projects::planet::kPlanetMaxLivePatchInstances,
+            "planet planner should stay inside the live patch budget");
+    require(plan.diagnostics.budget_fallback_patch_count > 0U,
+            "planet planner should record live patch budget fallback");
 }
 
 void test_planet_surface_skirts_add_seam_geometry() {
@@ -932,7 +933,7 @@ int main() {
         test_planet_surface_planner_selects_near_lod();
         test_planet_surface_planner_records_high_lod_diagnostics();
         test_planet_surface_default_lod_reaches_near_camera_detail();
-        test_planet_surface_planner_rejects_live_patch_budget_overflow();
+        test_planet_surface_planner_falls_back_at_live_patch_budget();
         test_planet_surface_skirts_add_seam_geometry();
         test_planet_surface_skirt_vertices_drop_below_radius();
         test_planet_surface_seams_debug_view_parses();
