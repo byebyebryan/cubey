@@ -284,8 +284,8 @@ class PlanetApp {
         }
         int max_lod_level = static_cast<int>(edit_planet_config_.max_lod_level);
         if (ImGui::InputInt("Max LOD Level", &max_lod_level)) {
-            edit_planet_config_.max_lod_level =
-                static_cast<std::uint32_t>(std::max(max_lod_level, 0));
+            edit_planet_config_.max_lod_level = static_cast<std::uint32_t>(
+                std::clamp(max_lod_level, 0, static_cast<int>(kPlanetMaxLiveLodLevel)));
         }
         ImGui::InputFloat("LOD Target Edge (px)", &edit_planet_config_.lod_target_edge_px, 0.0F,
                           0.0F, "%.1f");
