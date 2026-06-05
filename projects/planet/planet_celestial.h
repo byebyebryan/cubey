@@ -74,6 +74,22 @@ struct PlanetCelestialSystem {
     float moon_orbit_angle_rad = 0.0F;
 };
 
+struct PlanetCelestialDiagnostics {
+    float mean_solar_day_hours = kPlanetMeanSolarDayHours;
+    float sidereal_rotation_hours = kPlanetEarthSiderealRotationHours;
+    float tropical_year_days = kPlanetMeanTropicalYearDays;
+    float lunar_sidereal_month_days = kPlanetMoonSiderealOrbitPeriodDays;
+    float lunar_synodic_month_days = 29.53068F;
+    float axial_tilt_rad = 0.0F;
+    float lunar_orbit_inclination_rad = 0.0F;
+    float moon_phase_fraction = 0.0F;
+    cubey::math::Vec3 equator_plane_normal{0.0F, 1.0F, 0.0F};
+    cubey::math::Vec3 ecliptic_plane_normal{0.0F, 1.0F, 0.0F};
+    cubey::math::Vec3 moon_orbit_plane_normal{0.0F, 1.0F, 0.0F};
+    cubey::math::Vec3 sun_direction{0.0F, 1.0F, 0.0F};
+    cubey::math::Vec3 moon_direction{0.0F, 0.0F, 1.0F};
+};
+
 struct PlanetCelestialBodyRenderPlacementInputs {
     cubey::math::Vec3 camera_render_position_m{0.0F, 0.0F, 0.0F};
     float near_plane_m = 1.0F;
@@ -170,9 +186,13 @@ struct PlanetCelestialBodyFramePipelineConfig {
 
 [[nodiscard]] float planet_solar_time_simulation_day(const PlanetSolarTime& time);
 void planet_solar_time_advance(PlanetSolarTime& time, double delta_seconds);
+[[nodiscard]] float planet_celestial_synodic_month_days(const PlanetSolarSystemConfig& solar = {});
 [[nodiscard]] PlanetCelestialSystem
 planet_celestial_system_from_solar_time(const PlanetSolarTime& time,
                                         const PlanetSolarSystemConfig& solar = {});
+[[nodiscard]] PlanetCelestialDiagnostics
+planet_celestial_diagnostics(const PlanetSolarTime& time,
+                             const PlanetSolarSystemConfig& solar = {});
 [[nodiscard]] PlanetCelestialBody planet_celestial_sun_body(const PlanetCelestialSystem& celestial);
 [[nodiscard]] PlanetCelestialBody
 planet_celestial_moon_body(const PlanetCelestialSystem& celestial);

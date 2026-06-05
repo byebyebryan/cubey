@@ -455,6 +455,20 @@ class PlanetApp {
         if (solar_changed) {
             refresh_celestial_state();
         }
+        const PlanetCelestialDiagnostics celestial_diagnostics =
+            planet_celestial_diagnostics(solar_time_, solar_config_);
+        constexpr float kRadiansToDegrees = 180.0F / std::numbers::pi_v<float>;
+        ImGui::Text("Solar / sidereal day: %.2f h / %.4f h",
+                    celestial_diagnostics.mean_solar_day_hours,
+                    celestial_diagnostics.sidereal_rotation_hours);
+        ImGui::Text("Year / lunar sidereal / synodic: %.4f d / %.6f d / %.5f d",
+                    celestial_diagnostics.tropical_year_days,
+                    celestial_diagnostics.lunar_sidereal_month_days,
+                    celestial_diagnostics.lunar_synodic_month_days);
+        ImGui::Text("Axial tilt / moon inclination: %.3f deg / %.3f deg",
+                    celestial_diagnostics.axial_tilt_rad * kRadiansToDegrees,
+                    celestial_diagnostics.lunar_orbit_inclination_rad * kRadiansToDegrees);
+        ImGui::Text("Moon phase: %.3f", celestial_diagnostics.moon_phase_fraction);
 
         ImGui::SeparatorText("Diagnostics");
         ImGui::Text("Radius: %.0f m", planet_config_.radius_m);

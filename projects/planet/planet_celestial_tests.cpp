@@ -1,5 +1,6 @@
 #include "planet_celestial.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <numbers>
@@ -38,6 +39,10 @@ float wrap_unit_delta(float actual, float expected) {
 
 float synodic_month_days(const cubey::projects::planet::PlanetSolarSystemConfig& solar) {
     return 1.0F / ((1.0F / solar.moon_orbit_period_days) - (1.0F / solar.planet_orbit_period_days));
+}
+
+float angle_between(cubey::math::Vec3 a, cubey::math::Vec3 b) {
+    return std::acos(std::clamp(glm::dot(glm::normalize(a), glm::normalize(b)), -1.0F, 1.0F));
 }
 
 void test_default_solar_system_uses_earth_like_reference_periods() {
@@ -116,7 +121,10 @@ void test_solar_time_advance_wraps_hours_and_days() {
 
 void test_moon_phase_uses_synodic_month() {
     const cubey::projects::planet::PlanetSolarSystemConfig solar{};
-    const float synodic_days = synodic_month_days(solar);
+    const float synodic_days = cubey::projects::planet::planet_celestial_synodic_month_days(solar);
+
+    require_near(synodic_days, synodic_month_days(solar), 0.0001F,
+                 "public synodic month helper should match orbit-rate difference");
 
     cubey::projects::planet::PlanetSolarTime start{};
     start.day_of_year = 80.0F;
@@ -153,6 +161,32 @@ void test_moon_phase_uses_synodic_month() {
                  "moon phase should keep signed direction through the waning half");
     require_near(wrap_unit_delta(full_cycle_phase, start_phase), 0.0F, 0.0002F,
                  "moon phase should repeat over the synodic month");
+}
+
+void test_celestial_diagnostics_report_plane_relationships() {
+    cubey::projects::planet::PlanetSolarTime time{};
+    time.day_of_year = 160.0F;
+    time.time_hours = 9.5F;
+    const cubey::projects::planet::PlanetSolarSystemConfig solar{};
+
+    const cubey::projects::planet::PlanetCelestialDiagnostics diagnostics =
+        cubey::projects::planet::planet_celestial_diagnostics(time, solar);
+
+    require_near(diagnostics.sidereal_rotation_hours, 23.9345F, 0.0001F,
+                 "diagnostics should report sidereal spin in hours");
+    require_near(diagnostics.lunar_synodic_month_days, 29.53068F, 0.0005F,
+                 "diagnostics should report derived synodic month");
+    require_near(angle_between(diagnostics.equator_plane_normal, diagnostics.ecliptic_plane_normal),
+                 solar.axial_tilt_rad, 0.0001F,
+                 "ecliptic normal should be tilted from the equator by axial tilt");
+    require_near(
+        angle_between(diagnostics.ecliptic_plane_normal, diagnostics.moon_orbit_plane_normal),
+        solar.moon_orbit_inclination_rad, 0.0001F,
+        "moon orbit normal should be tilted from the ecliptic by lunar inclination");
+    require_vec_near(
+        diagnostics.sun_direction,
+        cubey::projects::planet::planet_celestial_system_from_solar_time(time, solar).sun.direction,
+        "diagnostics should expose modeled sun direction");
 }
 
 void test_celestial_lighting_uses_celestial_direction() {
@@ -322,6 +356,7 @@ int main() {
         test_sidereal_spin_produces_24_hour_solar_day();
         test_solar_time_advance_wraps_hours_and_days();
         test_moon_phase_uses_synodic_month();
+        test_celestial_diagnostics_report_plane_relationships();
         test_celestial_lighting_uses_celestial_direction();
         test_celestial_body_conversion_preserves_moon_state();
         test_celestial_body_render_placement_preserves_apparent_size();

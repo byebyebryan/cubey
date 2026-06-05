@@ -91,6 +91,13 @@ void planet_solar_time_advance(PlanetSolarTime& time, double delta_seconds) {
     }
 }
 
+float planet_celestial_synodic_month_days(const PlanetSolarSystemConfig& solar) {
+    const float lunar_rate = 1.0F / std::max(solar.moon_orbit_period_days, 0.0001F);
+    const float earth_orbit_rate = 1.0F / std::max(solar.planet_orbit_period_days, 0.0001F);
+    const float synodic_rate = std::max(lunar_rate - earth_orbit_rate, 0.0001F);
+    return 1.0F / synodic_rate;
+}
+
 PlanetCelestialSystem
 planet_celestial_system_from_solar_time(const PlanetSolarTime& time,
                                         const PlanetSolarSystemConfig& solar) {
@@ -148,6 +155,41 @@ planet_celestial_system_from_solar_time(const PlanetSolarTime& time,
         .planet_rotation_angle_rad = rotation_angle,
         .planet_orbit_angle_rad = orbit_angle,
         .moon_orbit_angle_rad = moon_orbit_angle,
+    };
+}
+
+PlanetCelestialDiagnostics planet_celestial_diagnostics(const PlanetSolarTime& time,
+                                                        const PlanetSolarSystemConfig& solar) {
+    constexpr float kTwoPi = std::numbers::pi_v<float> * 2.0F;
+    const float simulation_day = planet_solar_time_simulation_day(time);
+    const float rotation_angle =
+        kTwoPi * simulation_day / std::max(solar.planet_rotation_period_days, 0.0001F);
+    const float moon_inclination = std::clamp(solar.moon_orbit_inclination_rad, -1.4F, 1.4F);
+    const cubey::math::Vec3 ecliptic_normal_orbital_frame{0.0F, 1.0F, 0.0F};
+    const cubey::math::Vec3 moon_plane_normal_orbital_frame =
+        normalized_or_up({0.0F, std::cos(moon_inclination), std::sin(moon_inclination)});
+    const cubey::math::Vec3 ecliptic_normal_tilted =
+        normalized_or_up(rotate_x(ecliptic_normal_orbital_frame, solar.axial_tilt_rad));
+    const cubey::math::Vec3 moon_plane_normal_tilted =
+        normalized_or_up(rotate_x(moon_plane_normal_orbital_frame, solar.axial_tilt_rad));
+    const PlanetCelestialSystem celestial = planet_celestial_system_from_solar_time(time, solar);
+
+    return {
+        .mean_solar_day_hours = kPlanetMeanSolarDayHours,
+        .sidereal_rotation_hours = solar.planet_rotation_period_days * kPlanetMeanSolarDayHours,
+        .tropical_year_days = solar.planet_orbit_period_days,
+        .lunar_sidereal_month_days = solar.moon_orbit_period_days,
+        .lunar_synodic_month_days = planet_celestial_synodic_month_days(solar),
+        .axial_tilt_rad = solar.axial_tilt_rad,
+        .lunar_orbit_inclination_rad = moon_inclination,
+        .moon_phase_fraction = celestial.moon.phase_fraction,
+        .equator_plane_normal = {0.0F, 1.0F, 0.0F},
+        .ecliptic_plane_normal =
+            normalized_or_up(rotate_y(ecliptic_normal_tilted, -rotation_angle)),
+        .moon_orbit_plane_normal =
+            normalized_or_up(rotate_y(moon_plane_normal_tilted, -rotation_angle)),
+        .sun_direction = celestial.sun.direction,
+        .moon_direction = celestial.moon.direction,
     };
 }
 
