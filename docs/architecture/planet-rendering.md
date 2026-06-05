@@ -14,7 +14,8 @@ Start `projects/planet` as a visible planet foundation project:
 - local tangent frames derived from the active planet frame;
 - atmosphere altitude, horizon, and projection derived from the same frame;
 - planet surface LOD with wireframe and patch diagnostics;
-- a simple shaded or debug surface before terrain or ocean complexity arrives.
+- shared atmosphere background and surface lighting before ocean complexity
+  arrives.
 
 Ocean should be ported into `planet` when the planet frame and LOD contract are
 stable enough to host it. `projects/ocean` remains the focused local-water
@@ -179,6 +180,20 @@ Current implementation notes:
   skirts, approximate metric cell edge, normalized terrain height, normalized
   terrain slope, and terrain material bands. These are diagnostic tools, not
   final planet visualization.
+- Planet rendering now uses the shared atmosphere model instead of a
+  project-local sky color. Generated moon and night-sky atlas textures feed the
+  background pass, and the same run state resolves solar time, sun direction,
+  primary light intensity, ambient light, camera altitude, and horizon distance.
+  The surface pass receives this through a descriptor-backed frame uniform and
+  applies a first horizon-distance haze. Atmosphere controls are shared with
+  ocean/water/pyro style UIs and default collapsed so the planet LOD controls
+  remain the primary workflow.
+- The planet surface frame has moved out of push constants. Per-frame uniform
+  data now carries view/projection, render origin, radius, terrain options,
+  camera render position, horizon distance, atmosphere light, and haze fields.
+  Patch identity and screen-error remain per-instance data. This keeps room for
+  planet-scale frame contracts without repeatedly repacking the 128-byte push
+  constant budget.
 
 Deferred surface-field work:
 
@@ -197,7 +212,9 @@ Deferred surface-field work:
 4. Add LOD selection, wireframe, and patch diagnostics.
 5. Add seam handling through skirts or morph bands.
 6. Add placeholder terrain/bathymetry/material fields.
-7. Port ocean as a local water layer once the planet frame and LOD contracts are
+7. Keep strengthening atmosphere, LOD, terrain, and diagnostics until they are
+   stable enough to host other layers.
+8. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 
 Non-goals for the first planet pass:

@@ -2,8 +2,9 @@
 
 `planet` is the foundation project for planet-scale rendering experiments. The
 current version is intentionally small: it opens a window or headless capture
-path, renders a cube-sphere debug planet surface, and provides the target
-project boundary for future terrain, atmosphere, and ocean integration.
+path, renders a cube-sphere planet surface with placeholder terrain, draws the
+shared procedural atmosphere behind it, and provides the target project boundary
+for future terrain, ocean, clouds, and streaming integration.
 
 Run it with:
 
@@ -59,6 +60,16 @@ The current material bands are intentionally simple: water, lowland, highland,
 and snow. They make terrain structure easier to inspect and give future
 bathymetry, biome, and ocean-layer work a named handoff point. They are not yet
 streamed material textures, biome masks, or final art direction.
+
+Atmosphere is now part of the planet frame instead of a separate visual spike.
+The project uses the shared atmosphere run state, generated moon/night-sky atlas
+textures, and background renderer. Planet radius, atmosphere height, camera
+altitude, horizon distance, sun direction, and surface lighting are resolved
+from the same frame. The UI exposes the shared atmosphere controls collapsed by
+default plus read-only diagnostics for time, sun position, camera altitude,
+horizon, and generated atlas status. The surface shader receives frame data
+through a descriptor-backed uniform instead of push constants, and blends final
+terrain toward atmosphere-tinted haze near the horizon.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it
