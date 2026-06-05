@@ -146,6 +146,7 @@ struct AtmosphereConfig {
     float sun_azimuth_degrees = 0.0F;
     float camera_altitude_km = 0.15F;
     float exposure = 0.0F;
+    bool render_celestial_content = true;
     bool reference_geometry_enabled = true;
     float reference_grid_km = 1.0F;
     float reference_intensity = 0.72F;

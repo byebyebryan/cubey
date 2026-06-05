@@ -780,6 +780,7 @@ void main() {
         atmosphere.camera_up_tan_half_fovy.xyz * frag_ndc.y * tan_half_fovy);
     vec3 planet_center = vec3(0.0, -atmosphere.radii_ground.x - atmosphere.radii_ground.z, 0.0);
     int debug_view = int(atmosphere.camera_forward_debug_view.w + 0.5);
+    bool render_celestial_content = atmosphere.render_options.y >= 0.5;
 
     if (debug_view == CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE) {
         vec3 color = render_moon_surface_debug();
@@ -796,9 +797,11 @@ void main() {
                                                   atmosphere.radii_ground.y);
     if (atmosphere_hit.y <= 0.0) {
         vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
-        vec3 space_color = sun_disk_luminance(ray_direction, planet_center) +
-                           night_sky_radiance(ray_direction, sun_direction) +
-                           moon_disk_radiance(ray_direction, sun_direction, planet_center);
+        vec3 space_color = render_celestial_content
+            ? sun_disk_luminance(ray_direction, planet_center) +
+                  night_sky_radiance(ray_direction, sun_direction) +
+                  moon_disk_radiance(ray_direction, sun_direction, planet_center)
+            : vec3(0.0);
         out_color = vec4(space_color, 1.0);
         return;
     }
@@ -816,12 +819,13 @@ void main() {
     AtmosphereSample atmosphere_sample = integrate_atmosphere(vec3(0.0), ray_direction, ray_start,
                                                               ray_end, planet_center);
     vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
-    vec3 night_sky = hit_ground
+    vec3 night_sky = (hit_ground || !render_celestial_content)
         ? vec3(0.0)
         : night_sky_radiance(ray_direction, sun_direction) * atmosphere_sample.transmittance;
-    vec3 moon_disk = hit_ground ? vec3(0.0) :
+    vec3 moon_disk = (hit_ground || !render_celestial_content) ? vec3(0.0) :
         moon_disk_radiance(ray_direction, sun_direction, planet_center);
-    vec3 sun_disk = hit_ground ? vec3(0.0) : sun_disk_luminance(ray_direction, planet_center);
+    vec3 sun_disk = (hit_ground || !render_celestial_content) ? vec3(0.0) :
+        sun_disk_luminance(ray_direction, planet_center);
     vec3 color = atmosphere_sample.color + sun_disk + night_sky + moon_disk;
     if (shade_ground) {
         color += ground_radiance(ray_direction, planet_center, ground_t) *

@@ -423,7 +423,7 @@ AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
         .render_options =
             {
                 static_cast<float>(static_cast<std::uint32_t>(config.ground_mode)),
-                0.0F,
+                config.render_celestial_content ? 1.0F : 0.0F,
                 0.0F,
                 0.0F,
             },

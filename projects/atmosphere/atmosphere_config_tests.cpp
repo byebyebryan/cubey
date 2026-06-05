@@ -289,9 +289,23 @@ int main() {
                     static_cast<float>(static_cast<std::uint32_t>(AtmosphereRenderView::Moon)),
                 "frame uniforms should pack the debug render view");
         require(uniforms.moon_options.x == 1.0F, "frame uniforms should pack the moon enable flag");
+        require(uniforms.render_options.y == 1.0F,
+                "frame uniforms should render inline celestial content by default");
         require(uniforms.celestial_options.z ==
                     std::sin(atmosphere_degrees_to_radians(config.time_of_day.latitude_degrees)),
                 "frame uniforms should pack the observer latitude sine");
+    }
+    {
+        AtmosphereConfig config = atmosphere_config_for_preset(AtmospherePreset::Noon);
+        config.render_celestial_content = false;
+        const cubey::render::ViewRayBasis3D view_rays = cubey::render::view_ray_basis_3d(
+            cubey::math::identity_quat(), 1.0F, std::numbers::pi_v<float> * 0.5F);
+        const AtmosphereFrameUniforms uniforms =
+            atmosphere_frame_uniforms(config, {
+                                                  .view_rays = view_rays,
+                                              });
+        require(uniforms.render_options.y == 0.0F,
+                "frame uniforms should expose inline celestial content suppression");
     }
     {
         AtmosphereConfig moonlit = atmosphere_config_for_preset(AtmospherePreset::MoonlitNight);
@@ -897,8 +911,12 @@ int main() {
                      "shared atmosphere shader include should define moon surface view value");
     require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE",
                      "atmosphere shader should include moon surface debug output");
-    require_contains(shader_source, "hit_ground ? vec3(0.0) : sun_disk_luminance",
-                     "atmosphere shader should mask sun disk behind ground");
+    require_contains(shader_source, "(hit_ground || !render_celestial_content) ? vec3(0.0)",
+                     "atmosphere shader should mask sun disk behind ground or disabled content");
+    require_contains(shader_source, "bool render_celestial_content = atmosphere.render_options.y",
+                     "atmosphere shader should expose inline celestial content control");
+    require_contains(shader_source, "!render_celestial_content",
+                     "atmosphere shader should suppress inline celestial content when requested");
     require_contains(shader_source, "render_moon_surface_debug",
                      "atmosphere shader should include an enlarged moon atlas debug view");
     require_contains(shader_source, "ground_reference_geometry",

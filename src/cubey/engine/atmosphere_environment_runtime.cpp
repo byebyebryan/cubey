@@ -55,6 +55,7 @@ bool environment_equal(const render::AtmosphereEnvironmentConfig& lhs,
            lhs.sun_elevation_degrees == rhs.sun_elevation_degrees &&
            lhs.sun_azimuth_degrees == rhs.sun_azimuth_degrees &&
            lhs.camera_altitude_km == rhs.camera_altitude_km && lhs.ground_mode == rhs.ground_mode &&
+           lhs.render_celestial_content == rhs.render_celestial_content &&
            lhs.reference_geometry_enabled == rhs.reference_geometry_enabled &&
            lhs.reference_grid_km == rhs.reference_grid_km &&
            lhs.reference_intensity == rhs.reference_intensity;
