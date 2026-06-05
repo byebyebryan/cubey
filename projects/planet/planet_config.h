@@ -2,6 +2,7 @@
 
 #include <cubey/core/run_config.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 
@@ -17,6 +18,9 @@ inline constexpr float kPlanetDefaultLodTargetEdgePx = 24.0F;
 inline constexpr float kPlanetDefaultTerrainHeightScaleM = 12000.0F;
 inline constexpr float kPlanetDefaultTerrainNoiseScale = 2.5F;
 inline constexpr std::uint32_t kPlanetDefaultTerrainSeed = 1337U;
+inline constexpr std::uint32_t kPlanetMaxLiveLodLevel = 6;
+inline constexpr std::size_t kPlanetDiagnosticLodCapacity = 8;
+inline constexpr std::uint64_t kPlanetCpuMeshVertexCap = 2000000ULL;
 
 enum class PlanetDebugView : std::uint8_t {
     Final,

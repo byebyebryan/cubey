@@ -80,8 +80,8 @@ void validate_planet_config(const PlanetConfig& config) {
     if (config.patch_resolution == 0U) {
         throw std::runtime_error("planet patch resolution must be positive");
     }
-    if (config.max_lod_level > 3U) {
-        throw std::runtime_error("planet max LOD level must be <= 3");
+    if (config.max_lod_level > kPlanetMaxLiveLodLevel) {
+        throw std::runtime_error("planet max LOD level must be <= 6");
     }
     if (config.patch_resolution > 32U) {
         throw std::runtime_error("planet patch resolution must be <= 32");
@@ -100,19 +100,6 @@ void validate_planet_config(const PlanetConfig& config) {
     }
     if (!std::isfinite(config.terrain_noise_scale) || config.terrain_noise_scale <= 0.0F) {
         throw std::runtime_error("planet terrain noise scale must be finite and positive");
-    }
-    std::uint64_t patch_multiplier = 1;
-    for (std::uint32_t level = 0; level < config.max_lod_level; ++level) {
-        patch_multiplier *= 4ULL;
-    }
-    const std::uint64_t worst_case_vertices =
-        6ULL * static_cast<std::uint64_t>(config.patches_per_face) *
-        static_cast<std::uint64_t>(config.patches_per_face) * patch_multiplier *
-        (static_cast<std::uint64_t>(config.patch_resolution + 1U) *
-             static_cast<std::uint64_t>(config.patch_resolution + 1U) +
-         8ULL * static_cast<std::uint64_t>(config.patch_resolution));
-    if (worst_case_vertices > 2000000ULL) {
-        throw std::runtime_error("planet surface LOD settings are too dense for CPU debug mesh");
     }
 }
 

@@ -69,6 +69,23 @@ void test_planet_config_rejects_invalid_skirt_depth() {
     throw std::runtime_error("planet config should reject nonpositive skirt depth");
 }
 
+void test_planet_config_accepts_max_live_lod() {
+    cubey::projects::planet::PlanetConfig config{};
+    config.max_lod_level = cubey::projects::planet::kPlanetMaxLiveLodLevel;
+    cubey::projects::planet::validate_planet_config(config);
+}
+
+void test_planet_config_rejects_lod_above_live_cap() {
+    cubey::projects::planet::PlanetConfig config{};
+    config.max_lod_level = cubey::projects::planet::kPlanetMaxLiveLodLevel + 1U;
+    try {
+        cubey::projects::planet::validate_planet_config(config);
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error("planet config should reject LOD above the live cap");
+}
+
 void test_planet_frame_converts_camera_to_render_origin() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 600000.0F,
@@ -94,6 +111,8 @@ int main() {
         test_planet_frame_derives_horizon_and_planes();
         test_planet_config_rejects_invalid_radius();
         test_planet_config_rejects_invalid_skirt_depth();
+        test_planet_config_accepts_max_live_lod();
+        test_planet_config_rejects_lod_above_live_cap();
         test_planet_frame_converts_camera_to_render_origin();
         return 0;
     } catch (const std::exception& error) {

@@ -690,6 +690,24 @@ void append_patch_mesh(const PlanetConfig& config, const PlanetFrame& frame,
     append_patch_skirts(config, frame, patch, base_vertex, vertices_per_side, result);
 }
 
+void validate_planet_cpu_debug_mesh_config(const PlanetConfig& config) {
+    validate_planet_config(config);
+
+    std::uint64_t patch_multiplier = 1;
+    for (std::uint32_t level = 0; level < config.max_lod_level; ++level) {
+        patch_multiplier *= 4ULL;
+    }
+    const std::uint64_t worst_case_vertices =
+        6ULL * static_cast<std::uint64_t>(config.patches_per_face) *
+        static_cast<std::uint64_t>(config.patches_per_face) * patch_multiplier *
+        (static_cast<std::uint64_t>(config.patch_resolution + 1U) *
+             static_cast<std::uint64_t>(config.patch_resolution + 1U) +
+         8ULL * static_cast<std::uint64_t>(config.patch_resolution));
+    if (worst_case_vertices > kPlanetCpuMeshVertexCap) {
+        throw std::runtime_error("planet surface LOD settings are too dense for CPU debug mesh");
+    }
+}
+
 } // namespace
 
 PlanetSurfacePatchBounds planet_surface_patch_bounds(const PlanetConfig& config,
@@ -824,6 +842,7 @@ make_planet_surface_gpu_patch_instances(const PlanetSurfacePatchPlan& plan) {
 }
 
 PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config) {
+    validate_planet_cpu_debug_mesh_config(config);
     const float camera_distance =
         std::max(config.radius_m + config.camera_altitude_m, config.radius_m * 1.01F);
     const PlanetSurfaceView view{
@@ -834,6 +853,7 @@ PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config) {
 
 PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
                                                   PlanetSurfaceView view) {
+    validate_planet_cpu_debug_mesh_config(config);
     PlanetFrame frame{};
     frame.planet_radius_m = config.radius_m;
     frame.camera_world_position_m = view.camera_world_position_m;
@@ -844,6 +864,7 @@ PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
 PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
                                                   PlanetSurfaceView view,
                                                   const PlanetFrame& frame) {
+    validate_planet_cpu_debug_mesh_config(config);
     const PlanetSurfacePatchPlan plan = plan_planet_surface_patches(config, view);
     return make_planet_surface_mesh(config, view, frame, plan);
 }
@@ -851,7 +872,7 @@ PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
 PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
                                                   PlanetSurfaceView view, const PlanetFrame& frame,
                                                   const PlanetSurfacePatchPlan& plan) {
-    validate_planet_config(config);
+    validate_planet_cpu_debug_mesh_config(config);
     (void)view;
 
     PlanetSurfaceBuildResult result{};

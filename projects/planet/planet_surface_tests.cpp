@@ -399,6 +399,22 @@ void test_planet_surface_gpu_instances_preserve_patch_identity() {
     }
 }
 
+void test_planet_surface_cpu_mesh_rejects_too_dense_live_lod() {
+    cubey::projects::planet::PlanetConfig config{
+        .patches_per_face = 2,
+        .patch_resolution = cubey::projects::planet::kPlanetDefaultPatchResolution,
+        .max_lod_level = cubey::projects::planet::kPlanetMaxLiveLodLevel,
+    };
+    cubey::projects::planet::validate_planet_config(config);
+
+    try {
+        static_cast<void>(cubey::projects::planet::make_planet_surface_mesh(config));
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error("planet CPU debug mesh should reject too-dense live LOD settings");
+}
+
 void test_planet_surface_planner_keeps_fallback_when_camera_looks_away() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1000.0F,
@@ -535,6 +551,7 @@ int main() {
         test_planet_surface_patch_grid_mesh_is_reusable();
         test_planet_surface_patch_grid_mesh_can_include_skirts();
         test_planet_surface_gpu_instances_preserve_patch_identity();
+        test_planet_surface_cpu_mesh_rejects_too_dense_live_lod();
         test_planet_surface_planner_keeps_fallback_when_camera_looks_away();
         test_planet_surface_planner_selects_near_lod();
         test_planet_surface_skirts_add_seam_geometry();
