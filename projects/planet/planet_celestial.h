@@ -66,22 +66,20 @@ struct PlanetSolarSystemConfig {
     float moon_radius_m = 1737400.0F;
 };
 
-struct PlanetCelestialFrameUniforms {
+struct PlanetSkyFrameUniforms {
     cubey::math::Vec4 camera_right_aspect;
     cubey::math::Vec4 camera_up_tan_half_fovy;
     cubey::math::Vec4 camera_forward_enabled;
     cubey::math::Vec4 sun_direction_radius;
     cubey::math::Vec4 sun_color_intensity;
     cubey::math::Vec4 sun_disk_glow;
-    cubey::math::Vec4 moon_direction_radius;
-    cubey::math::Vec4 moon_color_phase;
     cubey::math::Vec4 camera_position_radius;
     cubey::math::Vec4 background_space_limb;
 };
 
-static_assert(sizeof(PlanetCelestialFrameUniforms) == sizeof(float) * 40U);
+static_assert(sizeof(PlanetSkyFrameUniforms) == sizeof(float) * 32U);
 
-struct PlanetCelestialFrameUniformInputs {
+struct PlanetSkyFrameUniformInputs {
     cubey::render::ViewRayBasis3D view_rays{};
     cubey::math::Vec3 camera_position_m{0.0F, 0.0F, 0.0F};
     float planet_radius_m = 1.0F;
@@ -97,11 +95,11 @@ struct PlanetCelestialLighting {
     cubey::math::Vec3 haze_color{0.085F, 0.125F, 0.185F};
 };
 
-struct PlanetCelestialFrameMaterialConfig {
+struct PlanetSkyFrameMaterialConfig {
     std::uint32_t frame_slot_count = 1;
 };
 
-struct PlanetCelestialFramePipelineConfig {
+struct PlanetSkyFramePipelineConfig {
     VkExtent2D extent{};
     VkFormat color_format = VK_FORMAT_UNDEFINED;
     std::span<const cubey::render::ShaderStageFile> shader_stage_files{};
@@ -113,39 +111,39 @@ void planet_solar_time_advance(PlanetSolarTime& time, double delta_seconds);
     const PlanetSolarTime& time, const PlanetSolarSystemConfig& solar = {});
 [[nodiscard]] PlanetCelestialLighting
 planet_celestial_lighting(const PlanetCelestialSystem& celestial);
-[[nodiscard]] PlanetCelestialFrameUniforms planet_celestial_frame_uniforms(
-    const PlanetCelestialSystem& celestial, const PlanetCelestialFrameUniformInputs& inputs);
-[[nodiscard]] cubey::render::MaterialPassInfo planet_celestial_pass_info();
+[[nodiscard]] PlanetSkyFrameUniforms planet_sky_frame_uniforms(
+    const PlanetCelestialSystem& celestial, const PlanetSkyFrameUniformInputs& inputs);
+[[nodiscard]] cubey::render::MaterialPassInfo planet_sky_pass_info();
 
-class PlanetCelestialFrame {
+class PlanetSkyFrame {
   public:
-    PlanetCelestialFrame() = default;
+    PlanetSkyFrame() = default;
 
-    PlanetCelestialFrame(const PlanetCelestialFrame&) = delete;
-    PlanetCelestialFrame& operator=(const PlanetCelestialFrame&) = delete;
-    PlanetCelestialFrame(PlanetCelestialFrame&&) = delete;
-    PlanetCelestialFrame& operator=(PlanetCelestialFrame&&) = delete;
+    PlanetSkyFrame(const PlanetSkyFrame&) = delete;
+    PlanetSkyFrame& operator=(const PlanetSkyFrame&) = delete;
+    PlanetSkyFrame(PlanetSkyFrame&&) = delete;
+    PlanetSkyFrame& operator=(PlanetSkyFrame&&) = delete;
 
     void create_materials(const cubey::vulkan::Device& device,
-                          const PlanetCelestialFrameMaterialConfig& config);
+                          const PlanetSkyFrameMaterialConfig& config);
     void create_pipeline(const cubey::vulkan::Device& device,
-                         const PlanetCelestialFramePipelineConfig& config);
+                         const PlanetSkyFramePipelineConfig& config);
     void destroy_pipeline();
     void destroy();
 
     void upload(cubey::render::FrameSlot frame_slot,
-                const PlanetCelestialFrameUniforms& uniforms) const;
+                const PlanetSkyFrameUniforms& uniforms) const;
     void record_pass(const cubey::vulkan::CommandRecorder& recorder,
                      cubey::render::ColorTargetView target,
                      cubey::render::FrameSlot frame_slot) const;
 
     [[nodiscard]] bool materials_created() const noexcept;
-    [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<PlanetCelestialFrameUniforms>&
+    [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<PlanetSkyFrameUniforms>&
     material() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline() const;
 
   private:
-    std::optional<cubey::render::FrameUniformMaterialInstance<PlanetCelestialFrameUniforms>>
+    std::optional<cubey::render::FrameUniformMaterialInstance<PlanetSkyFrameUniforms>>
         material_;
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_;
 };

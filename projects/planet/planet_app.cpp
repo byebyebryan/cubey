@@ -274,7 +274,7 @@ class PlanetApp {
                         });
         }
         resize_patch_instance_buffer_slots(frame_slot_count);
-        create_celestial_frame_resources_if_needed(device, frame_slot_count);
+        create_sky_frame_resources_if_needed(device, frame_slot_count);
         create_hdr_post_resources_if_needed(device, frame_slot_count);
     }
 
@@ -307,7 +307,7 @@ class PlanetApp {
                         .depth = cubey::render::depth_clear_value(),
                     },
             });
-        create_celestial_frame_pipeline(device, extent, kPlanetSceneColorFormat);
+        create_sky_frame_pipeline(device, extent, kPlanetSceneColorFormat);
         create_hdr_post_pipeline(device, extent, color_format);
         graph_executor_.clear();
         graph_executor_.resize(frame_slot_count);
@@ -316,7 +316,7 @@ class PlanetApp {
     void destroy_swapchain_resources() {
         graph_executor_.clear();
         hdr_post_frame_.destroy_pipeline();
-        celestial_frame_.destroy_pipeline();
+        sky_frame_.destroy_pipeline();
         forward_pass_.reset();
     }
 
@@ -324,7 +324,7 @@ class PlanetApp {
         destroy_swapchain_resources();
         hdr_post_frame_.destroy();
         hdr_post_frame_slot_count_ = 0;
-        celestial_frame_.destroy();
+        sky_frame_.destroy();
         patch_instance_buffers_.clear();
         patch_grid_mesh_.reset();
         surface_frame_material_.reset();
@@ -837,12 +837,12 @@ class PlanetApp {
         }
     }
 
-    [[nodiscard]] PlanetCelestialFrameUniforms celestial_frame_uniforms(VkExtent2D extent) const {
+    [[nodiscard]] PlanetSkyFrameUniforms sky_frame_uniforms(VkExtent2D extent) const {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = extent.height == 0U ? 1.0F
                                                  : static_cast<float>(extent.width) /
                                                        static_cast<float>(extent.height);
-        return planet_celestial_frame_uniforms(
+        return planet_sky_frame_uniforms(
             celestial_system_,
             {
                 .view_rays = cubey::render::view_ray_basis_3d(transform.rotation, aspect,
@@ -854,10 +854,10 @@ class PlanetApp {
             });
     }
 
-    void record_celestial_frame(const cubey::vulkan::CommandRecorder& recorder,
-                                cubey::render::ColorTargetView target,
-                                cubey::render::FrameSlot frame_slot) const {
-        celestial_frame_.record_pass(recorder, target, frame_slot);
+    void record_sky_frame(const cubey::vulkan::CommandRecorder& recorder,
+                          cubey::render::ColorTargetView target,
+                          cubey::render::FrameSlot frame_slot) const {
+        sky_frame_.record_pass(recorder, target, frame_slot);
     }
 
     [[nodiscard]] float display_exposure() const {
@@ -914,10 +914,10 @@ class PlanetApp {
 
         graph.add_pass("planet sky", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(scene_color)
-            .material_pass(planet_celestial_pass_info())
+            .material_pass(planet_sky_pass_info())
             .execute([this, scene_color,
                       frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
-                record_celestial_frame(
+                record_sky_frame(
                     context.recorder(),
                     cubey::render::resolved_color_target_view(context, scene_color), frame_slot);
             });
@@ -980,7 +980,7 @@ class PlanetApp {
                              cubey::render::FrameSlot frame_slot, bool present) {
         const PlanetSurfaceFrameUniforms uniforms = surface_frame_uniforms(color_target.extent);
         surface_frame_material().upload(frame_slot, uniforms);
-        celestial_frame_.upload(frame_slot, celestial_frame_uniforms(color_target.extent));
+        sky_frame_.upload(frame_slot, sky_frame_uniforms(color_target.extent));
         hdr_post_frame_.upload(frame_slot, post_uniforms(color_target.format));
         const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>& instance_buffer =
             ensure_patch_instance_buffer(gpu, frame_slot);
@@ -1060,29 +1060,29 @@ class PlanetApp {
         return forward_pass_.value();
     }
 
-    void create_celestial_frame_resources_if_needed(const cubey::vulkan::Device& device,
-                                                    std::uint32_t frame_slot_count) {
-        if (!celestial_frame_.materials_created() ||
-            celestial_frame_.material().material_instance().set_count() != frame_slot_count) {
-            celestial_frame_.destroy();
-            celestial_frame_.create_materials(device, {
-                                                          .frame_slot_count = frame_slot_count,
-                                                      });
+    void create_sky_frame_resources_if_needed(const cubey::vulkan::Device& device,
+                                              std::uint32_t frame_slot_count) {
+        if (!sky_frame_.materials_created() ||
+            sky_frame_.material().material_instance().set_count() != frame_slot_count) {
+            sky_frame_.destroy();
+            sky_frame_.create_materials(device, {
+                                                     .frame_slot_count = frame_slot_count,
+                                                 });
         }
     }
 
-    void create_celestial_frame_pipeline(const cubey::vulkan::Device& device, VkExtent2D extent,
-                                         VkFormat color_format) {
+    void create_sky_frame_pipeline(const cubey::vulkan::Device& device, VkExtent2D extent,
+                                   VkFormat color_format) {
         const std::array<cubey::render::ShaderStageFile, 2> shaders{
-            cubey::render::vertex_shader_file(shader_path("planet_celestial.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("planet_celestial.frag.spv")),
+            cubey::render::vertex_shader_file(shader_path("planet_sky.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("planet_sky.frag.spv")),
         };
-        celestial_frame_.destroy_pipeline();
-        celestial_frame_.create_pipeline(device, {
-                                                     .extent = extent,
-                                                     .color_format = color_format,
-                                                     .shader_stage_files = shaders,
-                                                 });
+        sky_frame_.destroy_pipeline();
+        sky_frame_.create_pipeline(device, {
+                                               .extent = extent,
+                                               .color_format = color_format,
+                                               .shader_stage_files = shaders,
+                                           });
     }
 
     void create_hdr_post_resources_if_needed(const cubey::vulkan::Device& device,
@@ -1146,7 +1146,7 @@ class PlanetApp {
     std::optional<cubey::render::FrameUniformMaterialInstance<PlanetSurfaceFrameUniforms>>
         surface_frame_material_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
-    PlanetCelestialFrame celestial_frame_{};
+    PlanetSkyFrame sky_frame_{};
     cubey::render::HdrPostFrame hdr_post_frame_{};
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::host::FrameStats ui_frame_stats_;

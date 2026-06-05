@@ -161,10 +161,9 @@ PlanetCelestialLighting planet_celestial_lighting(const PlanetCelestialSystem& c
     };
 }
 
-PlanetCelestialFrameUniforms planet_celestial_frame_uniforms(
-    const PlanetCelestialSystem& celestial, const PlanetCelestialFrameUniformInputs& inputs) {
+PlanetSkyFrameUniforms planet_sky_frame_uniforms(
+    const PlanetCelestialSystem& celestial, const PlanetSkyFrameUniformInputs& inputs) {
     const cubey::math::Vec3 sun_direction = normalized_or_up(celestial.sun.direction);
-    const cubey::math::Vec3 moon_direction = normalized_or_up(celestial.moon.direction);
     return {
         .camera_right_aspect = inputs.view_rays.right_aspect,
         .camera_up_tan_half_fovy = inputs.view_rays.up_tan_half_fovy,
@@ -196,20 +195,6 @@ PlanetCelestialFrameUniforms planet_celestial_frame_uniforms(
                 0.22F,
                 0.035F,
             },
-        .moon_direction_radius =
-            {
-                moon_direction.x,
-                moon_direction.y,
-                moon_direction.z,
-                celestial.moon.visible ? celestial.moon.angular_radius_rad : 0.0F,
-            },
-        .moon_color_phase =
-            {
-                celestial.moon.color.r,
-                celestial.moon.color.g,
-                celestial.moon.color.b,
-                celestial.moon.phase_fraction,
-            },
         .camera_position_radius =
             {
                 inputs.camera_position_m.x,
@@ -227,9 +212,9 @@ PlanetCelestialFrameUniforms planet_celestial_frame_uniforms(
     };
 }
 
-cubey::render::MaterialPassInfo planet_celestial_pass_info() {
+cubey::render::MaterialPassInfo planet_sky_pass_info() {
     return {
-        .label = "planet.celestial",
+        .label = "planet.sky",
         .descriptor_sets =
             {
                 cubey::render::MaterialDescriptorSetLayout{
@@ -248,10 +233,10 @@ cubey::render::MaterialPassInfo planet_celestial_pass_info() {
     };
 }
 
-void PlanetCelestialFrame::create_materials(const cubey::vulkan::Device& device,
-                                            const PlanetCelestialFrameMaterialConfig& config) {
+void PlanetSkyFrame::create_materials(const cubey::vulkan::Device& device,
+                                      const PlanetSkyFrameMaterialConfig& config) {
     material_.emplace(device, cubey::render::FrameUniformMaterialInstanceConfig{
-                                  .material_pass = planet_celestial_pass_info(),
+                                  .material_pass = planet_sky_pass_info(),
                                   .descriptor_set = 0,
                                   .frame_slot_count = config.frame_slot_count,
                                   .uniform_binding =
@@ -259,33 +244,33 @@ void PlanetCelestialFrame::create_materials(const cubey::vulkan::Device& device,
                               });
 }
 
-void PlanetCelestialFrame::create_pipeline(const cubey::vulkan::Device& device,
-                                           const PlanetCelestialFramePipelineConfig& config) {
+void PlanetSkyFrame::create_pipeline(const cubey::vulkan::Device& device,
+                                     const PlanetSkyFramePipelineConfig& config) {
     const std::array descriptor_set_layouts{material().layout()};
     pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                   .extent = config.extent,
                                   .color_format = config.color_format,
                                   .shader_stage_files = config.shader_stage_files,
                                   .descriptor_set_layouts = descriptor_set_layouts,
-                                  .material_pass = planet_celestial_pass_info(),
+                                  .material_pass = planet_sky_pass_info(),
                               });
 }
 
-void PlanetCelestialFrame::destroy_pipeline() {
+void PlanetSkyFrame::destroy_pipeline() {
     pipeline_.reset();
 }
 
-void PlanetCelestialFrame::destroy() {
+void PlanetSkyFrame::destroy() {
     destroy_pipeline();
     material_.reset();
 }
 
-void PlanetCelestialFrame::upload(cubey::render::FrameSlot frame_slot,
-                                  const PlanetCelestialFrameUniforms& uniforms) const {
+void PlanetSkyFrame::upload(cubey::render::FrameSlot frame_slot,
+                            const PlanetSkyFrameUniforms& uniforms) const {
     material().upload(frame_slot, uniforms);
 }
 
-void PlanetCelestialFrame::record_pass(const cubey::vulkan::CommandRecorder& recorder,
+void PlanetSkyFrame::record_pass(const cubey::vulkan::CommandRecorder& recorder,
                                        cubey::render::ColorTargetView target,
                                        cubey::render::FrameSlot frame_slot) const {
     const cubey::render::RenderTargetRenderingInfo rendering(
@@ -306,19 +291,19 @@ void PlanetCelestialFrame::record_pass(const cubey::vulkan::CommandRecorder& rec
     recorder.end_rendering();
 }
 
-bool PlanetCelestialFrame::materials_created() const noexcept {
+bool PlanetSkyFrame::materials_created() const noexcept {
     return material_.has_value();
 }
 
-const cubey::render::FrameUniformMaterialInstance<PlanetCelestialFrameUniforms>&
-PlanetCelestialFrame::material() const {
+const cubey::render::FrameUniformMaterialInstance<PlanetSkyFrameUniforms>&
+PlanetSkyFrame::material() const {
     if (!material_.has_value()) {
         throw std::runtime_error("planet celestial material is not initialized");
     }
     return material_.value();
 }
 
-const cubey::render::GraphicsPipelineResource& PlanetCelestialFrame::pipeline() const {
+const cubey::render::GraphicsPipelineResource& PlanetSkyFrame::pipeline() const {
     if (!pipeline_.has_value()) {
         throw std::runtime_error("planet celestial pipeline is not initialized");
     }

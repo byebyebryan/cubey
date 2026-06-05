@@ -3,15 +3,13 @@
 layout(location = 0) in vec2 frag_ndc;
 layout(location = 0) out vec4 out_color;
 
-layout(set = 0, binding = 0) uniform PlanetCelestialFrame {
+layout(set = 0, binding = 0) uniform PlanetSkyFrame {
     vec4 camera_right_aspect;
     vec4 camera_up_tan_half_fovy;
     vec4 camera_forward_enabled;
     vec4 sun_direction_radius;
     vec4 sun_color_intensity;
     vec4 sun_disk_glow;
-    vec4 moon_direction_radius;
-    vec4 moon_color_phase;
     vec4 camera_position_radius;
     vec4 background_space_limb;
 } celestial;
@@ -94,21 +92,6 @@ void main() {
                      far_halo * celestial.sun_disk_glow.y * celestial.sun_disk_glow.w;
     radiance *= 1.0 - planet_occlusion(ray_direction);
     color += celestial.sun_color_intensity.rgb * celestial.sun_color_intensity.w * radiance;
-
-    vec3 moon_direction = normalize(celestial.moon_direction_radius.xyz);
-    float moon_radius = celestial.moon_direction_radius.w;
-    if (moon_radius > 0.0) {
-        float moon_angle = acos(clamp(dot(ray_direction, moon_direction), -1.0, 1.0));
-        float moon_edge = max(fwidth(moon_angle) * 1.5, moon_radius * 0.08);
-        float moon_disk = 1.0 - smoothstep(moon_radius - moon_edge, moon_radius + moon_edge,
-                                           moon_angle);
-        float phase_light = clamp(1.0 - abs(celestial.moon_color_phase.w - 0.5) * 1.75,
-                                  0.16, 1.0);
-        float moon_lit = clamp(dot(moon_direction, sun_direction) * 0.5 + 0.5, 0.10, 1.0);
-        float moon_occlusion = planet_occlusion(ray_direction);
-        color += celestial.moon_color_phase.rgb * moon_disk * phase_light * moon_lit *
-                 (1.0 - moon_occlusion) * 0.38;
-    }
 
     out_color = vec4(color, 1.0);
 }

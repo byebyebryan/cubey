@@ -73,7 +73,7 @@ void test_celestial_lighting_uses_celestial_direction() {
     require(lighting.ambient_intensity > 0.0F, "planet lighting should include local ambient");
 }
 
-void test_celestial_frame_uniforms_pack_sun_state() {
+void test_sky_frame_uniforms_pack_sun_state() {
     cubey::projects::planet::PlanetCelestialSystem celestial{};
     celestial.sun.direction = glm::normalize(cubey::math::Vec3{0.15F, 0.85F, -0.50F});
     celestial.sun.color = {1.0F, 0.75F, 0.45F};
@@ -84,8 +84,8 @@ void test_celestial_frame_uniforms_pack_sun_state() {
 
     const cubey::render::ViewRayBasis3D view_rays = cubey::render::view_ray_basis_3d(
         cubey::math::identity_quat(), 1.5F, 1.0F);
-    const cubey::projects::planet::PlanetCelestialFrameUniforms uniforms =
-        cubey::projects::planet::planet_celestial_frame_uniforms(
+    const cubey::projects::planet::PlanetSkyFrameUniforms uniforms =
+        cubey::projects::planet::planet_sky_frame_uniforms(
             celestial, {
                            .view_rays = view_rays,
                            .camera_position_m = {0.0F, 0.0F, 10.0F},
@@ -109,18 +109,16 @@ void test_celestial_frame_uniforms_pack_sun_state() {
                  "celestial frame uniforms should pack camera position for occlusion");
     require_near(uniforms.camera_position_radius.w, 4.0F, 0.000001F,
                  "celestial frame uniforms should pack planet radius for occlusion");
-    require_near(uniforms.moon_direction_radius.w, celestial.moon.angular_radius_rad, 0.000001F,
-                 "celestial frame uniforms should pack moon angular radius");
     require_near(uniforms.background_space_limb.w, 5.0F, 0.000001F,
                  "celestial frame uniforms should pack atmosphere limb radius");
 }
 
-void test_celestial_pass_writes_opaque_sky() {
+void test_sky_pass_writes_opaque_sky() {
     const cubey::render::MaterialPassInfo pass =
-        cubey::projects::planet::planet_celestial_pass_info();
-    require(!pass.blend_enable, "celestial pass should write the planet-owned sky");
+        cubey::projects::planet::planet_sky_pass_info();
+    require(!pass.blend_enable, "sky pass should write the planet-owned sky");
     require(!pass.depth_test && !pass.depth_write,
-            "celestial pass should use analytic planet occlusion instead of depth");
+            "sky pass should use analytic planet occlusion instead of depth");
 }
 
 } // namespace
@@ -130,8 +128,8 @@ int main() {
         test_solar_time_drives_planet_rotation_and_moon_orbit();
         test_solar_time_advance_wraps_hours_and_days();
         test_celestial_lighting_uses_celestial_direction();
-        test_celestial_frame_uniforms_pack_sun_state();
-        test_celestial_pass_writes_opaque_sky();
+        test_sky_frame_uniforms_pack_sun_state();
+        test_sky_pass_writes_opaque_sky();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_celestial_tests: %s\n", error.what());
