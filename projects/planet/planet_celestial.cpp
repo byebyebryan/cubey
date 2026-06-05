@@ -63,6 +63,48 @@ enum class PlanetCelestialBinding : std::uint32_t {
     return std::asin(std::clamp(radius_m / std::max(distance_m, 1.0F), -1.0F, 1.0F));
 }
 
+[[nodiscard]] float smoothstep(float edge0, float edge1, float value) {
+    if (edge0 == edge1) {
+        return value < edge0 ? 0.0F : 1.0F;
+    }
+    const float t = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+    return t * t * (3.0F - (2.0F * t));
+}
+
+[[nodiscard]] float moon_atmosphere_visibility_alpha(
+    const PlanetCelestialBody& body, const PlanetCelestialLighting& lighting,
+    const PlanetCelestialBodyAtmosphereInputs& atmosphere) {
+    if (!finite_positive(atmosphere.planet_radius_m) ||
+        atmosphere.atmosphere_outer_radius_m <= atmosphere.planet_radius_m ||
+        glm::dot(atmosphere.camera_position_m, atmosphere.camera_position_m) <= 0.0F) {
+        return 1.0F;
+    }
+
+    const cubey::math::Vec3 camera_up = normalized_or_up(atmosphere.camera_position_m);
+    const float atmosphere_height =
+        std::max(atmosphere.atmosphere_outer_radius_m - atmosphere.planet_radius_m, 1.0F);
+    const float camera_altitude =
+        std::max(glm::length(atmosphere.camera_position_m) - atmosphere.planet_radius_m, 0.0F);
+    const float inside_atmosphere =
+        1.0F - smoothstep(0.75F, 1.20F, camera_altitude / atmosphere_height);
+    if (inside_atmosphere <= 0.0F) {
+        return 1.0F;
+    }
+
+    const cubey::math::Vec3 sun_direction = normalized_or_up(lighting.primary_light_direction);
+    const cubey::math::Vec3 moon_direction = normalized_or_up(body.direction);
+    const float sun_elevation = glm::dot(sun_direction, camera_up);
+    const float moon_elevation = glm::dot(moon_direction, camera_up);
+    const float daylight = smoothstep(-0.06F, 0.25F, sun_elevation);
+    const float above_horizon = smoothstep(-0.03F, 0.10F, moon_elevation);
+    const float separation = std::acos(std::clamp(glm::dot(sun_direction, moon_direction),
+                                                  -1.0F, 1.0F));
+    const float near_sun = 1.0F - smoothstep(0.18F, 1.05F, separation);
+    const float daytime_washout = inside_atmosphere * daylight * above_horizon;
+    const float daytime_alpha = std::clamp(0.28F - near_sun * 0.22F, 0.04F, 0.28F);
+    return std::clamp(1.0F + (daytime_alpha - 1.0F) * daytime_washout, 0.0F, 1.0F);
+}
+
 } // namespace
 
 float planet_solar_time_simulation_day(const PlanetSolarTime& time) {
@@ -343,8 +385,10 @@ cubey::render::MaterialPassInfo planet_sky_pass_info() {
 
 PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
     const PlanetCelestialBody& body, const PlanetCelestialBodyRenderPlacement& placement,
-    const PlanetCelestialLighting& lighting, const cubey::math::Mat4& view_projection) {
+    const PlanetCelestialLighting& lighting, const cubey::math::Mat4& view_projection,
+    const PlanetCelestialBodyAtmosphereInputs& atmosphere) {
     const cubey::math::Vec3 light_direction = normalized_or_up(lighting.primary_light_direction);
+    const float visibility_alpha = moon_atmosphere_visibility_alpha(body, lighting, atmosphere);
     return {
         .view_projection = view_projection,
         .center_radius =
@@ -367,6 +411,13 @@ PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
                 body.color.g,
                 body.color.b,
                 body.phase_fraction,
+            },
+        .visibility_atmosphere =
+            {
+                visibility_alpha,
+                0.0F,
+                0.0F,
+                0.0F,
             },
     };
 }
@@ -392,6 +443,11 @@ cubey::render::MaterialPassInfo planet_celestial_body_pass_info() {
         .cull_mode = VK_CULL_MODE_BACK_BIT,
         .depth_test = true,
         .depth_write = false,
+        .blend_enable = true,
+        .src_color_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
     };
 }
 

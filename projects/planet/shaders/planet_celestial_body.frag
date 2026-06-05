@@ -8,6 +8,7 @@ layout(set = 0, binding = 0) uniform PlanetCelestialBodyFrame {
     vec4 center_radius;
     vec4 light_direction_intensity;
     vec4 color_phase;
+    vec4 visibility_atmosphere;
 } body;
 
 layout(location = 0) out vec4 out_color;
@@ -22,5 +23,6 @@ void main() {
     const float direct = max(dot(normal, light_direction), 0.0);
     const float ambient = 0.045;
     const float lit = ambient + direct * body.light_direction_intensity.w * 0.62;
-    out_color = vec4(in_color * lit, 1.0);
+    const float visibility = clamp(body.visibility_atmosphere.x, 0.0, 1.0);
+    out_color = vec4(in_color * lit * visibility, visibility);
 }

@@ -957,8 +957,18 @@ class PlanetApp {
                       .shell_distance_fraction = kPlanetMoonShellDistanceFraction,
                   });
         return planet_celestial_body_frame_uniforms(
-            moon, placement, celestial_lighting_,
-            camera_.view_projection_matrix(transform, aspect));
+            moon, placement, celestial_lighting_, camera_.view_projection_matrix(transform, aspect),
+            {
+                .camera_position_m =
+                    {
+                        static_cast<float>(frame_.camera_world_position_m.x),
+                        static_cast<float>(frame_.camera_world_position_m.y),
+                        static_cast<float>(frame_.camera_world_position_m.z),
+                    },
+                .planet_radius_m = planet_config_.radius_m,
+                .atmosphere_outer_radius_m =
+                    planet_config_.radius_m + planet_config_.atmosphere_height_m,
+            });
     }
 
     void record_moon_body_frame(const cubey::vulkan::CommandRecorder& recorder,

@@ -10,6 +10,7 @@ layout(set = 0, binding = 0) uniform PlanetCelestialBodyFrame {
     vec4 center_radius;
     vec4 light_direction_intensity;
     vec4 color_phase;
+    vec4 visibility_atmosphere;
 } body;
 
 layout(location = 0) out vec3 out_normal;

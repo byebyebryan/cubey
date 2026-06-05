@@ -145,15 +145,22 @@ struct PlanetCelestialBodyFrameUniforms {
     cubey::math::Vec4 center_radius{0.0F, 0.0F, 0.0F, 0.0F};
     cubey::math::Vec4 light_direction_intensity{0.0F, 1.0F, 0.0F, 1.0F};
     cubey::math::Vec4 color_phase{0.58F, 0.62F, 0.74F, 0.5F};
+    cubey::math::Vec4 visibility_atmosphere{1.0F, 0.0F, 0.0F, 0.0F};
 };
 
-static_assert(sizeof(PlanetCelestialBodyFrameUniforms) == sizeof(float) * 28U);
+static_assert(sizeof(PlanetCelestialBodyFrameUniforms) == sizeof(float) * 32U);
 
 struct PlanetSkyFrameUniformInputs {
     cubey::render::ViewRayBasis3D view_rays{};
     cubey::math::Vec3 camera_position_m{0.0F, 0.0F, 0.0F};
     float planet_radius_m = 1.0F;
     float atmosphere_outer_radius_m = 1.0F;
+};
+
+struct PlanetCelestialBodyAtmosphereInputs {
+    cubey::math::Vec3 camera_position_m{0.0F, 0.0F, 0.0F};
+    float planet_radius_m = 0.0F;
+    float atmosphere_outer_radius_m = 0.0F;
 };
 
 struct PlanetCelestialLighting {
@@ -209,7 +216,8 @@ planet_sky_frame_uniforms(const PlanetCelestialSystem& celestial,
 [[nodiscard]] cubey::render::MaterialPassInfo planet_sky_pass_info();
 [[nodiscard]] PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
     const PlanetCelestialBody& body, const PlanetCelestialBodyRenderPlacement& placement,
-    const PlanetCelestialLighting& lighting, const cubey::math::Mat4& view_projection);
+    const PlanetCelestialLighting& lighting, const cubey::math::Mat4& view_projection,
+    const PlanetCelestialBodyAtmosphereInputs& atmosphere = {});
 [[nodiscard]] cubey::render::MaterialPassInfo planet_celestial_body_pass_info();
 
 class PlanetSkyFrame {

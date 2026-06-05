@@ -100,19 +100,39 @@ vec3 local_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
         }
     }
 
-    float above_horizon = smoothstep(-0.035, 0.075, ray_up);
+    float above_horizon = smoothstep(-0.055, 0.075, ray_up);
     float upper_sky = smoothstep(0.02, 0.68, ray_up);
-    float horizon = exp(-abs(ray_up) / 0.13) * above_horizon;
-    vec3 upper_color = mix(vec3(0.016, 0.023, 0.060), vec3(0.17, 0.25, 0.48), upper_sky);
+    float horizon_shell = exp(-abs(ray_up) / 0.13);
+    float horizon = horizon_shell * above_horizon;
+    float daylight = smoothstep(-0.08, 0.24, sun_elevation);
+    float twilight =
+        (1.0 - smoothstep(0.08, 0.42, abs(sun_elevation))) *
+        smoothstep(-0.28, 0.06, sun_elevation);
+    float atmosphere_visibility = clamp(max(daylight, twilight * 0.72), 0.0, 1.0);
+
+    vec3 night_upper = mix(vec3(0.004, 0.006, 0.018), vec3(0.010, 0.016, 0.036),
+                           clamp(horizon_shell * 0.55 + upper_sky * 0.25, 0.0, 1.0));
+    vec3 day_upper = mix(vec3(0.030, 0.060, 0.130), vec3(0.17, 0.25, 0.48), upper_sky);
+    vec3 upper_color = mix(night_upper, day_upper, daylight);
     vec3 scatter = atmosphere_scatter_color(sun_elevation, toward_sun, horizon);
-    float scatter_weight = clamp(horizon * 0.62 + upper_sky * 0.22, 0.0, 0.78);
+    float scatter_weight =
+        clamp(horizon * 0.62 + upper_sky * 0.22, 0.0, 0.78) * atmosphere_visibility;
     vec3 color = mix(upper_color, scatter, scatter_weight);
 
     float horizon_extinction = smoothstep(0.0, 0.36, horizon);
+    float star_visibility = (1.0 - smoothstep(-0.08, 0.18, sun_elevation));
     vec3 stars =
         vec3(0.75, 0.82, 1.0) * star_field(ray_direction) * 0.30 * above_horizon *
-        (1.0 - horizon_extinction);
-    vec3 below_horizon = vec3(0.006, 0.008, 0.018);
+        (1.0 - horizon_extinction) * star_visibility;
+    float below_horizon_haze = smoothstep(-0.75, -0.04, ray_up) * daylight;
+    vec3 night_below_horizon = vec3(0.006, 0.008, 0.018);
+    vec3 night_horizon_fill = mix(night_below_horizon, vec3(0.010, 0.016, 0.036),
+                                  smoothstep(-0.70, -0.02, ray_up));
+    vec3 day_horizon_fill =
+        atmosphere_scatter_color(sun_elevation, toward_sun, horizon_shell) *
+        (0.68 + 0.22 * toward_sun);
+    vec3 below_horizon =
+        mix(night_horizon_fill, day_horizon_fill, clamp(below_horizon_haze, 0.0, 1.0));
     color = mix(below_horizon, color + stars, above_horizon);
     return color;
 }
