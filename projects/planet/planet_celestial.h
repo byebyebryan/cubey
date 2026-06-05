@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cubey/core/math.h>
-#include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/material.h>
 #include <cubey/render/material_instance.h>
@@ -23,12 +22,48 @@ struct PlanetCelestialSun {
     bool visible = true;
     cubey::math::Vec3 direction{0.0F, 1.0F, 0.0F};
     cubey::math::Vec3 color{1.0F, 0.94F, 0.82F};
-    float intensity = 1.0F;
+    float intensity = 2.25F;
     float angular_radius_rad = 0.004675F;
+    float distance_m = 149597870700.0F;
+    float radius_m = 696340000.0F;
+};
+
+struct PlanetCelestialMoon {
+    bool visible = true;
+    cubey::math::Vec3 direction{0.0F, 0.0F, 1.0F};
+    cubey::math::Vec3 color{0.58F, 0.62F, 0.74F};
+    float intensity = 0.0F;
+    float angular_radius_rad = 0.00452F;
+    float distance_m = 384400000.0F;
+    float radius_m = 1737400.0F;
+    float phase_fraction = 0.5F;
 };
 
 struct PlanetCelestialSystem {
     PlanetCelestialSun sun{};
+    PlanetCelestialMoon moon{};
+    float simulation_day = 0.0F;
+    float planet_rotation_angle_rad = 0.0F;
+    float planet_orbit_angle_rad = 0.0F;
+    float moon_orbit_angle_rad = 0.0F;
+};
+
+struct PlanetSolarTime {
+    float day_of_year = 80.0F;
+    float time_hours = 5.5F;
+    float hours_per_second = 0.5F;
+};
+
+struct PlanetSolarSystemConfig {
+    float axial_tilt_rad = 0.4090928F;
+    float planet_rotation_period_days = 1.0F;
+    float planet_orbit_period_days = 365.2422F;
+    float moon_orbit_period_days = 27.321661F;
+    float equinox_day = 80.0F;
+    float sun_distance_m = 149597870700.0F;
+    float sun_radius_m = 696340000.0F;
+    float moon_distance_m = 384400000.0F;
+    float moon_radius_m = 1737400.0F;
 };
 
 struct PlanetCelestialFrameUniforms {
@@ -38,12 +73,28 @@ struct PlanetCelestialFrameUniforms {
     cubey::math::Vec4 sun_direction_radius;
     cubey::math::Vec4 sun_color_intensity;
     cubey::math::Vec4 sun_disk_glow;
+    cubey::math::Vec4 moon_direction_radius;
+    cubey::math::Vec4 moon_color_phase;
+    cubey::math::Vec4 camera_position_radius;
+    cubey::math::Vec4 background_space_limb;
 };
 
-static_assert(sizeof(PlanetCelestialFrameUniforms) == sizeof(float) * 24U);
+static_assert(sizeof(PlanetCelestialFrameUniforms) == sizeof(float) * 40U);
 
 struct PlanetCelestialFrameUniformInputs {
     cubey::render::ViewRayBasis3D view_rays{};
+    cubey::math::Vec3 camera_position_m{0.0F, 0.0F, 0.0F};
+    float planet_radius_m = 1.0F;
+    float atmosphere_outer_radius_m = 1.0F;
+};
+
+struct PlanetCelestialLighting {
+    cubey::math::Vec3 primary_light_direction{0.0F, 1.0F, 0.0F};
+    cubey::math::Vec3 primary_light_color{1.0F, 0.94F, 0.82F};
+    float primary_light_intensity = 0.9F;
+    cubey::math::Vec3 ambient_color{0.040F, 0.050F, 0.070F};
+    float ambient_intensity = 0.12F;
+    cubey::math::Vec3 haze_color{0.085F, 0.125F, 0.185F};
 };
 
 struct PlanetCelestialFrameMaterialConfig {
@@ -56,14 +107,12 @@ struct PlanetCelestialFramePipelineConfig {
     std::span<const cubey::render::ShaderStageFile> shader_stage_files{};
 };
 
-[[nodiscard]] PlanetCelestialSystem planet_celestial_system_from_atmosphere(
-    const cubey::render::AtmosphereEnvironmentConfig& atmosphere);
-[[nodiscard]] cubey::render::AtmosphereEnvironmentConfig planet_atmosphere_inputs_from_celestial(
-    cubey::render::AtmosphereEnvironmentConfig atmosphere,
-    const PlanetCelestialSystem& celestial);
-[[nodiscard]] cubey::render::AtmosphereEnvironmentLighting planet_celestial_lighting(
-    const cubey::render::AtmosphereEnvironmentConfig& atmosphere,
-    const PlanetCelestialSystem& celestial);
+[[nodiscard]] float planet_solar_time_simulation_day(const PlanetSolarTime& time);
+void planet_solar_time_advance(PlanetSolarTime& time, double delta_seconds);
+[[nodiscard]] PlanetCelestialSystem planet_celestial_system_from_solar_time(
+    const PlanetSolarTime& time, const PlanetSolarSystemConfig& solar = {});
+[[nodiscard]] PlanetCelestialLighting
+planet_celestial_lighting(const PlanetCelestialSystem& celestial);
 [[nodiscard]] PlanetCelestialFrameUniforms planet_celestial_frame_uniforms(
     const PlanetCelestialSystem& celestial, const PlanetCelestialFrameUniformInputs& inputs);
 [[nodiscard]] cubey::render::MaterialPassInfo planet_celestial_pass_info();

@@ -75,26 +75,25 @@ elevation threshold. The bathymetry and shoreline fields are diagnostic
 contracts for future terrain/ocean handoff; they are not yet streamed data,
 seafloor rendering, surf, biome masks, or final art direction.
 
-Atmosphere is now part of the planet frame instead of a separate visual spike.
-The current implementation uses the shared atmosphere run state for scattering
-and sky lighting, but `planet` now owns the sun as an explicit celestial body.
-Planet radius, atmosphere height, camera altitude, horizon distance, sun
-direction, and surface lighting are resolved from the same frame. The shared
-atmosphere background runs with inline celestial disks disabled, then a
-planet-owned celestial pass draws an HDR sun disk/glow before the opaque surface
-pass covers it with actual planet geometry. The UI exposes the shared
-atmosphere controls collapsed by default plus read-only diagnostics for time,
-sun position, camera altitude, horizon, and generated atlas status. The surface
+`planet` now owns its sky and celestial state locally. The shared atmosphere
+background/runtime is no longer used by this project because its demo-oriented
+sun/moon disk and clock assumptions were fighting the planet-viewer contract.
+A project-local solar clock drives planet orbit, planet self-rotation, and moon
+orbit. That state resolves sun and moon directions, physical radii, angular
+radii, direct lighting, ambient lighting, and the planet-owned sky pass.
+
+The current sky pass is intentionally simple: dark space, sparse procedural
+stars, a sun disk/glow, a moon disk, and a local planet limb glow with analytic
+planet occlusion. It is not yet a physically based atmosphere. The surface
 shader receives frame data through a descriptor-backed uniform instead of push
-constants, and blends final terrain toward atmosphere-tinted haze near the
+constants, and blends final terrain toward the local limb/haze color near the
 horizon. The scene renders into a linear HDR scene color target and uses the
 shared fullscreen post pass for exposure, tone mapping, and output encoding
 before writing the swapchain or headless target.
 
-The moon is still rendered by the shared atmosphere demo path outside `planet`.
-The intended planet follow-up is a planet-owned moon sphere lit by the sun, so
-phase, occlusion, and later eclipse behavior belong to the scene/celestial
-layer instead of the atmosphere shader.
+The moon is rendered as a first analytic disk from the same local celestial
+state. A later moon slice should replace that with a body/sphere path so phase,
+terminator shape, occlusion, and eclipse behavior come from geometry.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it

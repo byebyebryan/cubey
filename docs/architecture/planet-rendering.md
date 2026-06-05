@@ -14,10 +14,9 @@ Start `projects/planet` as a visible planet foundation project:
 - local tangent frames derived from the active planet frame;
 - atmosphere altitude, horizon, and projection derived from the same frame;
 - planet surface LOD with wireframe and patch diagnostics;
-- shared atmosphere background and surface lighting before ocean complexity
-  arrives;
-- planet-owned celestial bodies for sun and moon, with atmosphere consuming
-  derived scattering inputs rather than owning those bodies;
+- planet-owned sky/celestial rendering before ocean complexity arrives;
+- planet-owned celestial bodies for sun and moon, with any future atmosphere
+  consuming derived scattering inputs rather than owning those bodies;
 - shared HDR scene color and fullscreen post so planet uses the same display
   path as the PBR/ocean renderers.
 
@@ -102,8 +101,8 @@ Useful pieces already exist and should be reused:
   transition widths, cell sizes, and triangle diagnostics;
 - `cubey::render::TerrainOceanFieldView`: the first height/depth/shore/slope
   field contract used by terrain and ocean;
-- `cubey::engine::AtmosphereEnvironmentRuntime`: shared sky/background,
-  reflection probe, direct light, and environment-lighting bridge;
+- `cubey::engine::AtmosphereEnvironmentRuntime`: useful reference/runtime for
+  ocean and atmosphere demos, but no longer the active planet sky owner;
 - shared HDR post and performance UI contracts.
 
 Do not promote ocean-specific classes wholesale yet. `OceanSurfaceFrame`,
@@ -198,38 +197,37 @@ Current implementation notes:
   and LOD
   transition pressure. These are diagnostic tools, not final planet
   visualization.
-- Planet rendering now uses the shared atmosphere model instead of a
-  project-local sky color. Generated moon and night-sky atlas textures feed the
-  background pass, and the same run state resolves solar time, sun direction,
-  primary light intensity, ambient light, camera altitude, and horizon distance.
-  The surface pass receives this through a descriptor-backed frame uniform and
-  applies a first horizon-distance haze. Atmosphere controls are shared with
-  ocean/water/pyro style UIs and default collapsed so the planet LOD controls
-  remain the primary workflow.
+- Planet rendering has moved away from the shared atmosphere background/runtime
+  for now. The shared path was useful for ocean and atmosphere demos, but its
+  demo-oriented sky clock and inline celestial disks were the wrong source of
+  truth for planet orbit views. `projects/planet` now owns a local solar clock,
+  explicit sun/moon state, local sky pass, local limb glow, and derived surface
+  lighting.
 - The planet surface frame has moved out of push constants. Per-frame uniform
   data now carries view/projection, render origin, radius, terrain options,
   sea-level/bathymetry/shoreline options, camera render position, horizon
-  distance, atmosphere light, and haze fields. Patch identity and screen-error
+  distance, local sky light, and haze fields. Patch identity and screen-error
   remain per-instance data. This keeps room for planet-scale frame contracts
   without repeatedly repacking the 128-byte push constant budget.
-- Planet rendering now writes atmosphere and surface passes into an HDR
-  transient scene color target and then uses the shared post pass for exposure,
-  tone mapping, and output encoding. This aligns planet with the renderer-wide
-  linear HDR contract while keeping ocean integration deferred.
-- Planet now disables inline celestial disks in its shared atmosphere background
-  and draws the sun through a project-owned celestial pass. The sun state is
-  modeled in `projects/planet` first and then feeds atmosphere scattering,
-  surface lighting, and the explicit HDR sun disk/glow.
+- Planet rendering now writes a project-owned sky/celestial pass and the surface
+  pass into an HDR transient scene color target, then uses the shared post pass
+  for exposure, tone mapping, and output encoding. This aligns planet with the
+  renderer-wide linear HDR contract while keeping ocean integration deferred.
+- Planet now models a minimal solar-system state directly: planet orbit around
+  the sun, planet self-rotation, and moon orbit around the planet. The sun and
+  moon are currently rendered by the local sky pass as analytic bodies with
+  planet occlusion; a later slice should promote near bodies to geometry.
 
 ## Celestial Body Pivot
 
-The shared atmosphere path is still valuable, but the planet project should not
-treat it as the authoritative owner of the sun, moon, or other celestial bodies.
-The current background shader can draw a sun disk, moon disk, stars, and Milky
-Way for the standalone atmosphere demo and lightweight scene backgrounds. That
+The shared atmosphere path is still valuable for standalone atmosphere demos,
+ocean-scale backgrounds, and future reference work, but the planet project
+should not treat it as the authoritative owner of the sun, moon, sky clock, or
+other celestial bodies. The current shared background shader can draw a sun
+disk, moon disk, stars, and Milky Way for lightweight scene backgrounds. That
 convenience becomes the wrong abstraction for `projects/planet`: orbit and
-surface views need real occlusion, radius, phase, lighting, diagnostics, and
-eventually eclipses or multiple moons.
+surface views need real occlusion, radius, phase, lighting, diagnostics,
+planetary self-rotation, and eventually eclipses or multiple moons.
 
 The target ownership is:
 
@@ -242,8 +240,9 @@ The target ownership is:
 - the moon is modeled as a spherical body lit by the sun, so phase and
   terminator behavior come from body geometry instead of an atmosphere shader
   approximation;
-- atmosphere consumes derived scattering inputs: planet radius, atmosphere
-  height, camera altitude, sun direction, sun radiance, and sun angular radius;
+- a future planet-scale atmosphere consumes derived scattering inputs: planet
+  radius, atmosphere height, camera altitude, sun direction, sun radiance, and
+  sun angular radius;
 - surface and ocean lighting consume derived direct-light inputs;
 - any environment/probe cache is a derived adapter, not the source of truth for
   body state.
@@ -253,19 +252,18 @@ intermediate struct is needed for renderer plumbing, name it after what it
 carries, such as `AtmosphereScatteringInputs`, `CelestialLightingInputs`, or
 `SkyProbeInputs`.
 
-The render-order contract should move toward:
+The render-order contract for the current local path is:
 
-1. atmosphere scattering background without inline celestial disks;
-2. explicit celestial rendering owned by `projects/planet`, with planet/celestial
-   occlusion rules instead of atmosphere-internal ground masks;
-3. opaque planet surface and terrain/ocean layers;
-4. clouds, aerial-perspective overlays, and post as those systems arrive.
+1. planet-owned sky/celestial pass with dark space, stars, sun/moon disks, and
+   analytic planet occlusion;
+2. opaque planet surface and terrain/ocean layers;
+3. clouds, aerial-perspective overlays, and post as those systems arrive.
 
-For the immediate slice, a distant sun disk/glow rendered as a planet-owned
-background body is enough. The important boundary is that the atmosphere shader
-should stop deciding whether the planet has occluded the sun. A later depth or
-analytic occlusion path can support near moons and eclipses without changing
-the scattering model.
+For the immediate slice, a distant sun disk/glow and analytic moon disk rendered
+as planet-owned background bodies are enough. The important boundary is that no
+shared atmosphere shader decides celestial placement or planet occlusion. A
+later depth or geometry path can support near moons and eclipses without
+changing the solar-system source of truth.
 
 Established engine precedents support this split. Unreal's Sky Atmosphere
 consumes scene Directional Lights marked as atmosphere lights, including
@@ -288,7 +286,7 @@ Deferred surface-field work:
 ## Suggested Sequence
 
 1. Add this design boundary and resync ocean docs.
-2. Add `projects/planet` as an empty-planet viewer with atmosphere background,
+2. Add `projects/planet` as an empty-planet viewer with local sky,
    radius/altitude controls, and frame diagnostics.
 3. Add a debug planet surface with cube-sphere or quadtree patch IDs.
 4. Add LOD selection, wireframe, and patch diagnostics.
@@ -298,9 +296,13 @@ Deferred surface-field work:
    stable enough to host other layers.
 8. Done: move planet sun rendering out of the inline atmosphere disk path and
    into a planet-owned celestial body pass.
-9. Model the moon as a planet-owned body once the sun path and occlusion
-   contract are stable.
-10. Port ocean as a local water layer once the planet frame and LOD contracts are
+9. Done as a first analytic body: model sun/moon state through local solar
+   system time, with planet orbit, self-rotation, and moon orbit.
+10. Replace the analytic moon disk with body/geometry rendering once the current
+   sky pass is stable.
+11. Add a proper planet-scale atmosphere model or adapter only after its
+   scattering contract is explicit.
+12. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 
 Non-goals for the first planet pass:
@@ -308,6 +310,6 @@ Non-goals for the first planet pass:
 - real-world GIS ingestion;
 - full out-of-core streaming;
 - global weather simulation;
-- full N-body or solar-system simulation;
+- full N-body simulation;
 - replacing the current FFT ocean core;
 - moving existing ocean quality work behind planet infrastructure.

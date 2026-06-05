@@ -24,52 +24,53 @@ void require_vec_near(cubey::math::Vec3 actual, cubey::math::Vec3 expected, cons
     require_near(actual.z, expected.z, 0.0001F, message);
 }
 
-void test_celestial_sun_derives_from_atmosphere() {
-    cubey::render::AtmosphereEnvironmentConfig atmosphere{};
-    atmosphere.sun_elevation_degrees = 22.0F;
-    atmosphere.sun_azimuth_degrees = -35.0F;
-    atmosphere.sun_angular_radius = 0.006F;
+void test_solar_time_drives_planet_rotation_and_moon_orbit() {
+    cubey::projects::planet::PlanetSolarTime morning{};
+    morning.day_of_year = 80.0F;
+    morning.time_hours = 6.0F;
+    cubey::projects::planet::PlanetSolarTime evening = morning;
+    evening.time_hours = 18.0F;
 
-    const cubey::projects::planet::PlanetCelestialSystem celestial =
-        cubey::projects::planet::planet_celestial_system_from_atmosphere(atmosphere);
+    const cubey::projects::planet::PlanetCelestialSystem morning_system =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(morning);
+    const cubey::projects::planet::PlanetCelestialSystem evening_system =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(evening);
 
-    require(celestial.sun.visible, "derived sun should be visible by default");
-    require_vec_near(celestial.sun.direction,
-                     cubey::render::atmosphere_environment_sun_direction(atmosphere),
-                     "derived sun should preserve atmosphere direction");
-    require_near(celestial.sun.angular_radius_rad, atmosphere.sun_angular_radius, 0.000001F,
-                 "derived sun should preserve atmosphere angular radius");
-    require(celestial.sun.intensity > 0.0F, "derived sun should carry direct light intensity");
+    require(glm::dot(morning_system.sun.direction, evening_system.sun.direction) < -0.95F,
+            "planet self rotation should move the sun across the planet-fixed sky");
+    require(morning_system.moon.angular_radius_rad > 0.0F,
+            "solar-system model should include moon angular size");
+    require(morning_system.moon.direction != evening_system.moon.direction,
+            "moon orbit should advance with simulation time");
 }
 
-void test_atmosphere_inputs_round_trip_celestial_direction() {
-    cubey::render::AtmosphereEnvironmentConfig atmosphere{};
-    cubey::projects::planet::PlanetCelestialSystem celestial{};
-    celestial.sun.direction = glm::normalize(cubey::math::Vec3{0.30F, 0.40F, -0.85F});
-    celestial.sun.angular_radius_rad = 0.010F;
+void test_solar_time_advance_wraps_hours_and_days() {
+    cubey::projects::planet::PlanetSolarTime time{};
+    time.day_of_year = 365.0F;
+    time.time_hours = 23.5F;
+    time.hours_per_second = 2.0F;
 
-    const cubey::render::AtmosphereEnvironmentConfig resolved =
-        cubey::projects::planet::planet_atmosphere_inputs_from_celestial(atmosphere, celestial);
+    cubey::projects::planet::planet_solar_time_advance(time, 1800.0);
 
-    require_vec_near(cubey::render::atmosphere_environment_sun_direction(resolved),
-                     celestial.sun.direction,
-                     "celestial sun direction should round-trip through atmosphere inputs");
-    require_near(resolved.sun_angular_radius, celestial.sun.angular_radius_rad, 0.000001F,
-                 "celestial sun radius should feed atmosphere inputs");
+    require(time.time_hours >= 0.0F && time.time_hours < 24.0F,
+            "solar clock should wrap local hours");
+    require(time.day_of_year >= 1.0F && time.day_of_year <= 365.2422F,
+            "solar clock should wrap day of year");
 }
 
 void test_celestial_lighting_uses_celestial_direction() {
-    cubey::render::AtmosphereEnvironmentConfig atmosphere{};
     cubey::projects::planet::PlanetCelestialSystem celestial{};
-    celestial.sun.direction = glm::normalize(cubey::math::Vec3{-0.20F, 0.65F, -0.73F});
+    celestial.sun.direction = glm::normalize(cubey::math::Vec3{-0.20F, -0.65F, -0.73F});
+    celestial.sun.intensity = 2.25F;
 
-    const cubey::render::AtmosphereEnvironmentLighting lighting =
-        cubey::projects::planet::planet_celestial_lighting(atmosphere, celestial);
+    const cubey::projects::planet::PlanetCelestialLighting lighting =
+        cubey::projects::planet::planet_celestial_lighting(celestial);
 
-    require_vec_near(lighting.sun_direction, celestial.sun.direction,
-                     "celestial lighting should use modeled sun direction");
     require_vec_near(lighting.primary_light_direction, celestial.sun.direction,
-                     "primary light should follow modeled sun direction");
+                     "celestial lighting should use modeled sun direction");
+    require(lighting.primary_light_intensity > 0.0F,
+            "planet sun intensity should not depend on a global atmosphere horizon");
+    require(lighting.ambient_intensity > 0.0F, "planet lighting should include local ambient");
 }
 
 void test_celestial_frame_uniforms_pack_sun_state() {
@@ -78,6 +79,8 @@ void test_celestial_frame_uniforms_pack_sun_state() {
     celestial.sun.color = {1.0F, 0.75F, 0.45F};
     celestial.sun.intensity = 1.8F;
     celestial.sun.angular_radius_rad = 0.012F;
+    celestial.moon.direction = glm::normalize(cubey::math::Vec3{-0.50F, 0.10F, 0.86F});
+    celestial.moon.angular_radius_rad = 0.008F;
 
     const cubey::render::ViewRayBasis3D view_rays = cubey::render::view_ray_basis_3d(
         cubey::math::identity_quat(), 1.5F, 1.0F);
@@ -85,6 +88,9 @@ void test_celestial_frame_uniforms_pack_sun_state() {
         cubey::projects::planet::planet_celestial_frame_uniforms(
             celestial, {
                            .view_rays = view_rays,
+                           .camera_position_m = {0.0F, 0.0F, 10.0F},
+                           .planet_radius_m = 4.0F,
+                           .atmosphere_outer_radius_m = 5.0F,
                        });
 
     require(uniforms.camera_right_aspect == view_rays.right_aspect,
@@ -99,28 +105,33 @@ void test_celestial_frame_uniforms_pack_sun_state() {
                  "celestial frame uniforms should pack sun angular radius");
     require_near(uniforms.sun_color_intensity.w, celestial.sun.intensity, 0.000001F,
                  "celestial frame uniforms should pack sun intensity");
+    require_near(uniforms.camera_position_radius.z, 10.0F, 0.000001F,
+                 "celestial frame uniforms should pack camera position for occlusion");
+    require_near(uniforms.camera_position_radius.w, 4.0F, 0.000001F,
+                 "celestial frame uniforms should pack planet radius for occlusion");
+    require_near(uniforms.moon_direction_radius.w, celestial.moon.angular_radius_rad, 0.000001F,
+                 "celestial frame uniforms should pack moon angular radius");
+    require_near(uniforms.background_space_limb.w, 5.0F, 0.000001F,
+                 "celestial frame uniforms should pack atmosphere limb radius");
 }
 
-void test_celestial_pass_uses_additive_blend() {
+void test_celestial_pass_writes_opaque_sky() {
     const cubey::render::MaterialPassInfo pass =
         cubey::projects::planet::planet_celestial_pass_info();
-    require(pass.blend_enable, "celestial pass should blend over atmosphere");
-    require(pass.src_color_blend_factor == VK_BLEND_FACTOR_ONE &&
-                pass.dst_color_blend_factor == VK_BLEND_FACTOR_ONE,
-            "celestial pass should add HDR sun radiance");
+    require(!pass.blend_enable, "celestial pass should write the planet-owned sky");
     require(!pass.depth_test && !pass.depth_write,
-            "celestial pass should not own planet depth occlusion");
+            "celestial pass should use analytic planet occlusion instead of depth");
 }
 
 } // namespace
 
 int main() {
     try {
-        test_celestial_sun_derives_from_atmosphere();
-        test_atmosphere_inputs_round_trip_celestial_direction();
+        test_solar_time_drives_planet_rotation_and_moon_orbit();
+        test_solar_time_advance_wraps_hours_and_days();
         test_celestial_lighting_uses_celestial_direction();
         test_celestial_frame_uniforms_pack_sun_state();
-        test_celestial_pass_uses_additive_blend();
+        test_celestial_pass_writes_opaque_sky();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_celestial_tests: %s\n", error.what());

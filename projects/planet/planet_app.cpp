@@ -8,15 +8,11 @@
 
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/math.h>
-#include <cubey/engine/atmosphere_environment_config.h>
-#include <cubey/host/atmosphere_environment_ui.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/performance_ui.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
-#include <cubey/render/atmosphere_background_frame.h>
-#include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/hdr_post_frame.h>
@@ -160,41 +156,13 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 12U);
     return mid * kQuantizeBase + fine;
 }
 
-[[nodiscard]] cubey::AtmosphereEnvironmentRunState
-planet_atmosphere_run_state(const cubey::RunConfig& config, const PlanetConfig& planet_config) {
-    cubey::AtmosphereEnvironmentRunState state =
-        cubey::atmosphere_environment_run_state_from_config(
-            config.atmosphere,
-            cubey::AtmosphereEnvironmentRunDefaults{
-                .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
-                .reference_geometry_enabled = false,
-            });
-    state.environment.bottom_radius_km = planet_config.radius_m * 0.001F;
-    state.environment.top_radius_km =
-        (planet_config.radius_m + planet_config.atmosphere_height_m) * 0.001F;
-    state.environment.camera_altitude_km = planet_config.camera_altitude_m * 0.001F;
-    state.environment.render_celestial_content = false;
-    cubey::atmosphere_environment_resolve_run_state(state);
-    return state;
-}
-
-[[nodiscard]] const char* atmosphere_atlas_status(bool created, bool placeholder) {
-    if (!created) {
-        return "not created";
-    }
-    return placeholder ? "placeholder" : "generated";
-}
-
 class PlanetApp {
   public:
     explicit PlanetApp(RunConfig config)
         : config_(std::move(config)), planet_config_(planet_config_from_run_config(config_)),
           edit_planet_config_(planet_config_),
-          atmosphere_state_(planet_atmosphere_run_state(config_, planet_config_)),
-          celestial_system_(
-              planet_celestial_system_from_atmosphere(atmosphere_state_.environment)),
-          atmosphere_lighting_(planet_celestial_lighting(atmosphere_state_.environment,
-                                                         celestial_system_)),
+          celestial_system_(planet_celestial_system_from_solar_time(solar_time_)),
+          celestial_lighting_(planet_celestial_lighting(celestial_system_)),
           orbit_controller_(planet_orbit_config(planet_config_)) {
         refresh_frame();
         rebuild_surface_data(default_surface_extent());
@@ -306,7 +274,6 @@ class PlanetApp {
                         });
         }
         resize_patch_instance_buffer_slots(frame_slot_count);
-        create_atmosphere_background_resources_if_needed(device, gpu, frame_slot_count);
         create_celestial_frame_resources_if_needed(device, frame_slot_count);
         create_hdr_post_resources_if_needed(device, frame_slot_count);
     }
@@ -340,7 +307,6 @@ class PlanetApp {
                         .depth = cubey::render::depth_clear_value(),
                     },
             });
-        create_atmosphere_background_pipeline(device, extent, kPlanetSceneColorFormat);
         create_celestial_frame_pipeline(device, extent, kPlanetSceneColorFormat);
         create_hdr_post_pipeline(device, extent, color_format);
         graph_executor_.clear();
@@ -351,7 +317,6 @@ class PlanetApp {
         graph_executor_.clear();
         hdr_post_frame_.destroy_pipeline();
         celestial_frame_.destroy_pipeline();
-        atmosphere_background_.destroy_pipeline();
         forward_pass_.reset();
     }
 
@@ -360,15 +325,13 @@ class PlanetApp {
         hdr_post_frame_.destroy();
         hdr_post_frame_slot_count_ = 0;
         celestial_frame_.destroy();
-        atmosphere_background_.destroy();
-        atmosphere_background_atlases_.reset();
         patch_instance_buffers_.clear();
         patch_grid_mesh_.reset();
         surface_frame_material_.reset();
     }
 
     void update_input(cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
-        update_atmosphere_time(timing.delta_seconds);
+        update_solar_time(timing.delta_seconds);
         orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
         update_surface_camera_anchor();
         refresh_frame();
@@ -464,12 +427,15 @@ class PlanetApp {
             ImGui::Text("Config error: %s", rebuild_error_.c_str());
         }
 
-        if (cubey::host::draw_atmosphere_environment_controls(
-                atmosphere_state_, {.label = "Atmosphere",
-                                    .default_open = false,
-                                    .help = "Shared procedural atmosphere driving the planet sky "
-                                            "and surface lighting."})) {
-            sync_atmosphere_environment();
+        ImGui::SeparatorText("Solar System");
+        bool solar_changed = false;
+        solar_changed |=
+            ImGui::SliderFloat("Day", &solar_time_.day_of_year, 1.0F, 365.2422F, "%.1f");
+        solar_changed |= ImGui::SliderFloat("Hour", &solar_time_.time_hours, 0.0F, 24.0F, "%.2f");
+        solar_changed |= ImGui::SliderFloat("Speed (h/s)", &solar_time_.hours_per_second, -12.0F,
+                                            12.0F, "%.2f");
+        if (solar_changed) {
+            refresh_celestial_state();
         }
 
         ImGui::SeparatorText("Diagnostics");
@@ -483,19 +449,16 @@ class PlanetApp {
         ImGui::Text("Near / far: %.1f m / %.0f m", frame_.near_plane_m, frame_.far_plane_m);
         ImGui::Text("Origin: %.0f %.0f %.0f", frame_.surface_origin_m.x, frame_.surface_origin_m.y,
                     frame_.surface_origin_m.z);
-        ImGui::Text("Time: %.2f h, day %.0f", atmosphere_state_.environment.time_of_day.time_hours,
-                    atmosphere_state_.environment.time_of_day.day_of_year);
-        ImGui::Text("Sun: %.1f deg elevation / %.1f deg azimuth",
-                    atmosphere_state_.environment.sun_elevation_degrees,
-                    atmosphere_state_.environment.sun_azimuth_degrees);
-        ImGui::Text(
-            "Atmosphere atlases: moon %s, sky %s",
-            atmosphere_atlas_status(atmosphere_background_atlases_.has_value(),
-                                    atmosphere_background_atlases_.has_value() &&
-                                        atmosphere_background_atlases_->lunar_placeholder),
-            atmosphere_atlas_status(atmosphere_background_atlases_.has_value(),
-                                    atmosphere_background_atlases_.has_value() &&
-                                        atmosphere_background_atlases_->night_sky_placeholder));
+        ImGui::Text("Solar time: %.2f h, day %.1f", solar_time_.time_hours,
+                    solar_time_.day_of_year);
+        ImGui::Text("Sun dir: %.2f %.2f %.2f", celestial_system_.sun.direction.x,
+                    celestial_system_.sun.direction.y, celestial_system_.sun.direction.z);
+        ImGui::Text("Moon dir: %.2f %.2f %.2f", celestial_system_.moon.direction.x,
+                    celestial_system_.moon.direction.y, celestial_system_.moon.direction.z);
+        ImGui::Text("Orbit angles: planet %.2f, rotation %.2f, moon %.2f",
+                    celestial_system_.planet_orbit_angle_rad,
+                    celestial_system_.planet_rotation_angle_rad,
+                    celestial_system_.moon_orbit_angle_rad);
 
         ImGui::SeparatorText("Surface");
         ImGui::Text("Patches: %u rendered / %u planned",
@@ -662,7 +625,6 @@ class PlanetApp {
         frame_ = make_planet_frame(planet_config_, camera_transform());
         camera_.set_projection(std::numbers::pi_v<float> / 3.0F, frame_.near_plane_m,
                                frame_.far_plane_m);
-        sync_atmosphere_environment();
     }
 
     [[nodiscard]] static VkExtent2D default_surface_extent() {
@@ -792,9 +754,9 @@ class PlanetApp {
             .view_projection = camera_.view_projection_matrix(transform, aspect),
             .light_direction_debug =
                 {
-                    atmosphere_lighting_.primary_light_direction.x,
-                    atmosphere_lighting_.primary_light_direction.y,
-                    atmosphere_lighting_.primary_light_direction.z,
+                    celestial_lighting_.primary_light_direction.x,
+                    celestial_lighting_.primary_light_direction.y,
+                    celestial_lighting_.primary_light_direction.z,
                     planet_config_.lod_target_edge_px,
                 },
             .render_origin_radius =
@@ -849,71 +811,30 @@ class PlanetApp {
         };
     }
 
-    [[nodiscard]] const cubey::render::AtmosphereEnvironmentConfig& atmosphere_environment() const {
-        return atmosphere_state_.environment;
-    }
-
     [[nodiscard]] float surface_direct_intensity() const {
-        return std::clamp(atmosphere_lighting_.primary_light_intensity * 0.38F, 0.03F, 0.95F);
+        return std::clamp(celestial_lighting_.primary_light_intensity, 0.03F, 1.20F);
     }
 
     [[nodiscard]] float surface_ambient_intensity() const {
-        const float ambient_peak =
-            std::max({atmosphere_lighting_.ambient_color.r, atmosphere_lighting_.ambient_color.g,
-                      atmosphere_lighting_.ambient_color.b});
-        return std::clamp(ambient_peak * 1.8F + 0.035F, 0.035F, 0.22F);
+        return std::clamp(celestial_lighting_.ambient_intensity, 0.025F, 0.30F);
     }
 
     [[nodiscard]] cubey::math::Vec3 surface_haze_color() const {
-        return glm::clamp(atmosphere_lighting_.ambient_color * 3.2F,
-                          cubey::math::Vec3{0.025F, 0.035F, 0.060F},
-                          cubey::math::Vec3{0.48F, 0.58F, 0.78F});
+        return celestial_lighting_.haze_color;
     }
 
-    void sync_atmosphere_environment() {
-        atmosphere_state_.environment.bottom_radius_km = planet_config_.radius_m * 0.001F;
-        atmosphere_state_.environment.top_radius_km =
-            (planet_config_.radius_m + planet_config_.atmosphere_height_m) * 0.001F;
-        atmosphere_state_.environment.camera_altitude_km = frame_.camera_altitude_m * 0.001F;
-        atmosphere_state_.environment.ground_mode =
-            cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
-        atmosphere_state_.environment.render_celestial_content = false;
-        atmosphere_state_.environment.reference_geometry_enabled = false;
-        cubey::atmosphere_environment_resolve_run_state(atmosphere_state_);
-        celestial_system_ =
-            planet_celestial_system_from_atmosphere(atmosphere_state_.environment);
-        atmosphere_state_.environment =
-            planet_atmosphere_inputs_from_celestial(atmosphere_state_.environment,
-                                                    celestial_system_);
-        atmosphere_lighting_ =
-            planet_celestial_lighting(atmosphere_state_.environment, celestial_system_);
+    void refresh_celestial_state() {
+        celestial_system_ = planet_celestial_system_from_solar_time(solar_time_, solar_config_);
+        celestial_lighting_ = planet_celestial_lighting(celestial_system_);
     }
 
-    void update_atmosphere_time(double delta_seconds) {
-        if (cubey::atmosphere_environment_advance_time(atmosphere_state_, delta_seconds)) {
-            celestial_system_ =
-                planet_celestial_system_from_atmosphere(atmosphere_state_.environment);
-            atmosphere_state_.environment =
-                planet_atmosphere_inputs_from_celestial(atmosphere_state_.environment,
-                                                        celestial_system_);
-            atmosphere_lighting_ =
-                planet_celestial_lighting(atmosphere_state_.environment, celestial_system_);
+    void update_solar_time(double delta_seconds) {
+        const PlanetSolarTime before = solar_time_;
+        planet_solar_time_advance(solar_time_, delta_seconds);
+        if (solar_time_.day_of_year != before.day_of_year ||
+            solar_time_.time_hours != before.time_hours) {
+            refresh_celestial_state();
         }
-    }
-
-    [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
-    atmosphere_background_uniforms(VkExtent2D extent) const {
-        const cubey::Transform3D transform = camera_transform();
-        const float aspect = extent.height == 0U ? 1.0F
-                                                 : static_cast<float>(extent.width) /
-                                                       static_cast<float>(extent.height);
-        return cubey::render::atmosphere_environment_frame_uniforms(
-            atmosphere_environment(),
-            cubey::render::AtmosphereEnvironmentFrameUniformInputs{
-                .view_rays = cubey::render::view_ray_basis_3d(transform.rotation, aspect,
-                                                              camera_.fovy_radians()),
-                .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
-            });
     }
 
     [[nodiscard]] PlanetCelestialFrameUniforms celestial_frame_uniforms(VkExtent2D extent) const {
@@ -926,13 +847,11 @@ class PlanetApp {
             {
                 .view_rays = cubey::render::view_ray_basis_3d(transform.rotation, aspect,
                                                               camera_.fovy_radians()),
+                .camera_position_m = transform.translation,
+                .planet_radius_m = planet_config_.radius_m,
+                .atmosphere_outer_radius_m =
+                    planet_config_.radius_m + planet_config_.atmosphere_height_m,
             });
-    }
-
-    void record_atmosphere_background(const cubey::vulkan::CommandRecorder& recorder,
-                                      cubey::render::ColorTargetView target,
-                                      cubey::render::FrameSlot frame_slot) const {
-        atmosphere_background_.record_pass(recorder, target, frame_slot);
     }
 
     void record_celestial_frame(const cubey::vulkan::CommandRecorder& recorder,
@@ -942,9 +861,6 @@ class PlanetApp {
     }
 
     [[nodiscard]] float display_exposure() const {
-        if (atmosphere_state_.auto_exposure_enabled && !config_.pbr.exposure_explicit) {
-            return atmosphere_state_.resolved_exposure;
-        }
         return config_.pbr.exposure;
     }
 
@@ -996,16 +912,7 @@ class PlanetApp {
             graph.import_depth_target("planet depth", forward_pass().depth_target(),
                                       cubey::render::render_graph_undefined_texture_state());
 
-        graph.add_pass("planet atmosphere", cubey::render::RenderGraphQueueDomain::Graphics)
-            .write_color(scene_color)
-            .material_pass(cubey::render::atmosphere_background_pass_info())
-            .execute([this, scene_color,
-                      frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
-                record_atmosphere_background(
-                    context.recorder(),
-                    cubey::render::resolved_color_target_view(context, scene_color), frame_slot);
-            });
-        graph.add_pass("planet celestial", cubey::render::RenderGraphQueueDomain::Graphics)
+        graph.add_pass("planet sky", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(scene_color)
             .material_pass(planet_celestial_pass_info())
             .execute([this, scene_color,
@@ -1073,8 +980,6 @@ class PlanetApp {
                              cubey::render::FrameSlot frame_slot, bool present) {
         const PlanetSurfaceFrameUniforms uniforms = surface_frame_uniforms(color_target.extent);
         surface_frame_material().upload(frame_slot, uniforms);
-        atmosphere_background_.upload(frame_slot,
-                                      atmosphere_background_uniforms(color_target.extent));
         celestial_frame_.upload(frame_slot, celestial_frame_uniforms(color_target.extent));
         hdr_post_frame_.upload(frame_slot, post_uniforms(color_target.format));
         const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>& instance_buffer =
@@ -1155,45 +1060,6 @@ class PlanetApp {
         return forward_pass_.value();
     }
 
-    void create_atmosphere_background_resources_if_needed(const cubey::vulkan::Device& device,
-                                                          cubey::vulkan::GpuRuntime& gpu,
-                                                          std::uint32_t frame_slot_count) {
-        if (!atmosphere_background_atlases_.has_value()) {
-            atmosphere_background_atlases_.emplace(
-                cubey::render::create_atmosphere_background_generated_textures(
-                    device, gpu,
-                    {
-                        .lunar_extent = 128,
-                        .night_sky_extent = 128,
-                    }));
-        }
-        if (!atmosphere_background_.materials_created() ||
-            atmosphere_background_.material().material_instance().set_count() != frame_slot_count) {
-            atmosphere_background_.destroy();
-            atmosphere_background_.create_materials(
-                device, cubey::render::AtmosphereBackgroundFrameMaterialConfig{
-                            .frame_slot_count = frame_slot_count,
-                            .textures = atmosphere_background_atlases_->bindings(),
-                        });
-        }
-    }
-
-    void create_atmosphere_background_pipeline(const cubey::vulkan::Device& device,
-                                               VkExtent2D extent, VkFormat color_format) {
-        const std::filesystem::path shader_dir = CUBEY_PLANET_SHADER_DIR;
-        const std::array<cubey::render::ShaderStageFile, 2> shaders{
-            cubey::render::vertex_shader_file(shader_dir / "atmosphere.vert.spv"),
-            cubey::render::fragment_shader_file(shader_dir / "atmosphere.frag.spv"),
-        };
-        atmosphere_background_.destroy_pipeline();
-        atmosphere_background_.create_pipeline(
-            device, cubey::render::AtmosphereBackgroundFramePipelineConfig{
-                        .extent = extent,
-                        .color_format = color_format,
-                        .shader_stage_files = shaders,
-                    });
-    }
-
     void create_celestial_frame_resources_if_needed(const cubey::vulkan::Device& device,
                                                     std::uint32_t frame_slot_count) {
         if (!celestial_frame_.materials_created() ||
@@ -1256,9 +1122,10 @@ class PlanetApp {
     RunConfig config_;
     PlanetConfig planet_config_{};
     PlanetConfig edit_planet_config_{};
-    cubey::AtmosphereEnvironmentRunState atmosphere_state_{};
+    PlanetSolarTime solar_time_{};
+    PlanetSolarSystemConfig solar_config_{};
     PlanetCelestialSystem celestial_system_{};
-    cubey::render::AtmosphereEnvironmentLighting atmosphere_lighting_{};
+    PlanetCelestialLighting celestial_lighting_{};
     cubey::OrbitController orbit_controller_;
     cubey::Camera3D camera_{cubey::Camera3DConfig{.near_z = 1.0F, .far_z = 1500000.0F}};
     PlanetFrame frame_{};
@@ -1279,9 +1146,7 @@ class PlanetApp {
     std::optional<cubey::render::FrameUniformMaterialInstance<PlanetSurfaceFrameUniforms>>
         surface_frame_material_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
-    cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
     PlanetCelestialFrame celestial_frame_{};
-    std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
     cubey::render::HdrPostFrame hdr_post_frame_{};
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::host::FrameStats ui_frame_stats_;

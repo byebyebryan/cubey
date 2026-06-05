@@ -4,19 +4,21 @@ This note captures the design pivot triggered by the planet orbit-view sun disk
 artifact. It is scratch context for the next implementation slice; the stable
 architecture belongs in `docs/architecture/planet-rendering.md`.
 
-## Current Cubey Problem
+## Original Cubey Problem
 
-`projects/planet` uses the shared atmosphere background in `SkyOnly` mode, but
-the atmosphere shader still owns sun and moon disk rendering. That means the
-shader has its own idea of ground/planet occlusion, while the planet renderer
-also draws real surface geometry afterward. The result is an ownership conflict:
-the sun can read as a masked hole or partially occluded disk even though the
-planet surface should be the authority for what covers the sky.
+`projects/planet` previously used the shared atmosphere background in `SkyOnly`
+mode, but the atmosphere shader still owned sun and moon disk rendering. That
+meant the shader had its own idea of ground/planet occlusion, while the planet
+renderer also drew real surface geometry afterward. The result was an ownership
+conflict: the sun could read as a masked hole or partially occluded disk even
+though the planet surface should be the authority for what covers the sky.
 
-The tactical shader fix can reduce one branch of that issue, but it does not
-solve the design problem. The atmosphere path is doing too much for planet
-scale: scattering, background, environment lighting, sun disk, moon disk, lunar
-atlas shading, stars, Milky Way, and some ground masking.
+The tactical shader fix reduced one branch of that issue, but it did not solve
+the design problem. The atmosphere path was doing too much for planet scale:
+scattering, background, environment lighting, sun disk, moon disk, lunar atlas
+shading, stars, Milky Way, and some ground masking. The current planet path
+therefore starts from a project-local sky/celestial pass and treats any future
+planet-scale atmosphere as a consumer of resolved solar-system state.
 
 ## External Precedents
 
@@ -77,27 +79,29 @@ from `CelestialSystem`.
 
 ## Render Contract
 
-The intended planet composition is:
+The earlier composition idea was atmosphere first, then explicit celestial
+bodies. The current planet implementation takes a cleaner break: use a
+planet-local sky/celestial pass until a proper planet-scale atmosphere contract
+exists. The intended composition is now:
 
-1. atmosphere scattering background without inline sun/moon disks;
-2. planet-owned celestial rendering for sun/moon/star bodies;
-3. opaque planet terrain/ocean/cloud-shadow receivers;
-4. later cloud layers, aerial perspective over scene depth, and post.
+1. planet-owned sky/celestial rendering for space, stars, sun, moon, and local
+   limb glow;
+2. opaque planet terrain/ocean/cloud-shadow receivers;
+3. later cloud layers, aerial perspective over scene depth, and post.
 
 The immediate sun implementation can be a distant emissive disk and glow drawn
-as a background body. The planet surface can then cover it naturally where it
-renders. A later moon implementation should choose either depth-aware geometry
-or analytic planet/body occlusion in the celestial pass. In both cases, body
-occlusion belongs to the planet/celestial renderer, not the atmosphere
-scattering shader.
+as a background body. The moon can start as an analytic disk from the same
+solar-system state, then move to body geometry when phase, depth, and eclipse
+behavior need more accuracy. In both cases, body occlusion belongs to the
+planet/celestial renderer, not the atmosphere scattering shader.
 
 ## Implementation Implications
 
-- Add a switch or variant that lets atmosphere render scattering without inline
-  sun, moon, star, and Milky Way disks for planet consumers.
+- Do not make `projects/planet` depend on the shared atmosphere background or
+  sky clock while the planet-scale contract is still unsettled.
 - Keep `projects/atmosphere` free to show those disks as demo/debug features.
-- Move planet sun direction and time-of-day ownership toward `CelestialSystem`;
-  atmosphere should receive resolved sun inputs.
+- Move planet sun direction and time ownership into `CelestialSystem`; any
+  future atmosphere adapter should receive resolved sun inputs.
 - Do not add a second vague "environment" owner. Environment/probe structs are
   derived renderer plumbing.
 - Use the existing sun/time UI only as a migration source; the target UI should

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <numbers>
 #include <stdexcept>
 
 namespace cubey::projects::planet {
@@ -25,54 +26,145 @@ enum class PlanetCelestialBinding : std::uint32_t {
     return glm::normalize(direction);
 }
 
-[[nodiscard]] float direction_elevation_degrees(cubey::math::Vec3 direction) {
-    const cubey::math::Vec3 normal = normalized_or_up(direction);
-    return cubey::render::atmosphere_environment_radians_to_degrees(
-        std::asin(std::clamp(normal.y, -1.0F, 1.0F)));
+[[nodiscard]] float wrap_unit(float value) {
+    float wrapped = std::fmod(value, 1.0F);
+    if (wrapped < 0.0F) {
+        wrapped += 1.0F;
+    }
+    return wrapped;
 }
 
-[[nodiscard]] float direction_azimuth_degrees(cubey::math::Vec3 direction) {
-    const cubey::math::Vec3 normal = normalized_or_up(direction);
-    return cubey::render::atmosphere_environment_wrap_signed_degrees(
-        cubey::render::atmosphere_environment_radians_to_degrees(std::atan2(normal.x, -normal.z)));
+[[nodiscard]] cubey::math::Vec3 rotate_y(cubey::math::Vec3 value, float radians) {
+    const float c = std::cos(radians);
+    const float s = std::sin(radians);
+    return {
+        (value.x * c) + (value.z * s),
+        value.y,
+        (-value.x * s) + (value.z * c),
+    };
+}
+
+[[nodiscard]] cubey::math::Vec3 rotate_x(cubey::math::Vec3 value, float radians) {
+    const float c = std::cos(radians);
+    const float s = std::sin(radians);
+    return {
+        value.x,
+        (value.y * c) - (value.z * s),
+        (value.y * s) + (value.z * c),
+    };
+}
+
+[[nodiscard]] float angular_radius(float radius_m, float distance_m) {
+    return std::asin(std::clamp(radius_m / std::max(distance_m, 1.0F), -1.0F, 1.0F));
 }
 
 } // namespace
 
-PlanetCelestialSystem planet_celestial_system_from_atmosphere(
-    const cubey::render::AtmosphereEnvironmentConfig& atmosphere) {
-    const cubey::render::AtmosphereEnvironmentLighting lighting =
-        cubey::render::atmosphere_environment_lighting(atmosphere);
+float planet_solar_time_simulation_day(const PlanetSolarTime& time) {
+    return std::max(time.day_of_year - 1.0F, 0.0F) +
+           std::clamp(time.time_hours, 0.0F, 24.0F) / 24.0F;
+}
+
+void planet_solar_time_advance(PlanetSolarTime& time, double delta_seconds) {
+    if (time.hours_per_second == 0.0F || delta_seconds <= 0.0) {
+        return;
+    }
+    const double advanced_hours =
+        static_cast<double>(time.time_hours) +
+        delta_seconds * static_cast<double>(time.hours_per_second);
+    const double day_offset = std::floor(advanced_hours / 24.0);
+    double wrapped_hours = std::fmod(advanced_hours, 24.0);
+    if (wrapped_hours < 0.0) {
+        wrapped_hours += 24.0;
+    }
+    time.time_hours = static_cast<float>(wrapped_hours);
+    time.day_of_year += static_cast<float>(day_offset);
+    while (time.day_of_year > 365.2422F) {
+        time.day_of_year -= 365.2422F;
+    }
+    while (time.day_of_year < 1.0F) {
+        time.day_of_year += 365.2422F;
+    }
+}
+
+PlanetCelestialSystem planet_celestial_system_from_solar_time(
+    const PlanetSolarTime& time, const PlanetSolarSystemConfig& solar) {
+    constexpr float kTwoPi = std::numbers::pi_v<float> * 2.0F;
+    const float simulation_day = planet_solar_time_simulation_day(time);
+    const float rotation_angle =
+        kTwoPi * simulation_day / std::max(solar.planet_rotation_period_days, 0.0001F);
+    const float orbit_angle =
+        kTwoPi * (simulation_day - solar.equinox_day) /
+        std::max(solar.planet_orbit_period_days, 0.0001F);
+    const float moon_orbit_angle =
+        kTwoPi * simulation_day / std::max(solar.moon_orbit_period_days, 0.0001F);
+
+    const cubey::math::Vec3 sun_in_orbital_frame =
+        normalized_or_up({std::cos(orbit_angle), 0.0F, -std::sin(orbit_angle)});
+    const cubey::math::Vec3 sun_in_tilted_frame =
+        normalized_or_up(rotate_x(sun_in_orbital_frame, solar.axial_tilt_rad));
+    const cubey::math::Vec3 sun_in_planet_frame =
+        normalized_or_up(rotate_y(sun_in_tilted_frame, -rotation_angle));
+
+    const cubey::math::Vec3 moon_orbit_frame = normalized_or_up({
+        std::cos(moon_orbit_angle),
+        std::sin(moon_orbit_angle) * 0.089F,
+        std::sin(moon_orbit_angle),
+    });
+    const cubey::math::Vec3 moon_in_tilted_frame =
+        normalized_or_up(rotate_x(moon_orbit_frame, solar.axial_tilt_rad));
+    const cubey::math::Vec3 moon_in_planet_frame =
+        normalized_or_up(rotate_y(moon_in_tilted_frame, -rotation_angle));
+    const float phase_fraction =
+        wrap_unit(std::acos(std::clamp(glm::dot(-moon_in_planet_frame, sun_in_planet_frame),
+                                       -1.0F, 1.0F)) /
+                  kTwoPi);
+
     return {
         .sun =
             {
                 .visible = true,
-                .direction = normalized_or_up(lighting.sun_direction),
-                .color = lighting.sun_color,
-                .intensity = lighting.sun_intensity,
-                .angular_radius_rad = atmosphere.sun_angular_radius,
+                .direction = sun_in_planet_frame,
+                .color = {1.0F, 0.94F, 0.82F},
+                .intensity = 2.25F,
+                .angular_radius_rad = angular_radius(solar.sun_radius_m, solar.sun_distance_m),
+                .distance_m = solar.sun_distance_m,
+                .radius_m = solar.sun_radius_m,
             },
+        .moon =
+            {
+                .visible = true,
+                .direction = moon_in_planet_frame,
+                .color = {0.58F, 0.62F, 0.74F},
+                .intensity = 0.0F,
+                .angular_radius_rad =
+                    angular_radius(solar.moon_radius_m, solar.moon_distance_m),
+                .distance_m = solar.moon_distance_m,
+                .radius_m = solar.moon_radius_m,
+                .phase_fraction = phase_fraction,
+            },
+        .simulation_day = simulation_day,
+        .planet_rotation_angle_rad = rotation_angle,
+        .planet_orbit_angle_rad = orbit_angle,
+        .moon_orbit_angle_rad = moon_orbit_angle,
     };
 }
 
-cubey::render::AtmosphereEnvironmentConfig planet_atmosphere_inputs_from_celestial(
-    cubey::render::AtmosphereEnvironmentConfig atmosphere,
-    const PlanetCelestialSystem& celestial) {
-    atmosphere.sun_elevation_degrees = direction_elevation_degrees(celestial.sun.direction);
-    atmosphere.sun_azimuth_degrees = direction_azimuth_degrees(celestial.sun.direction);
-    atmosphere.sun_angular_radius = celestial.sun.angular_radius_rad;
-    return atmosphere;
-}
-
-cubey::render::AtmosphereEnvironmentLighting planet_celestial_lighting(
-    const cubey::render::AtmosphereEnvironmentConfig& atmosphere,
-    const PlanetCelestialSystem& celestial) {
-    return cubey::render::atmosphere_environment_lighting(
-        planet_atmosphere_inputs_from_celestial(atmosphere, celestial));
+PlanetCelestialLighting planet_celestial_lighting(const PlanetCelestialSystem& celestial) {
+    return {
+        .primary_light_direction = normalized_or_up(celestial.sun.direction),
+        .primary_light_color = celestial.sun.color,
+        .primary_light_intensity = 0.88F,
+        .ambient_color = {0.040F, 0.050F, 0.070F},
+        .ambient_intensity = 0.12F,
+        .haze_color = {0.085F, 0.125F, 0.185F},
+    };
 }
 
 PlanetCelestialFrameUniforms planet_celestial_frame_uniforms(
     const PlanetCelestialSystem& celestial, const PlanetCelestialFrameUniformInputs& inputs) {
+    const cubey::math::Vec3 sun_direction = normalized_or_up(celestial.sun.direction);
+    const cubey::math::Vec3 moon_direction = normalized_or_up(celestial.moon.direction);
     return {
         .camera_right_aspect = inputs.view_rays.right_aspect,
         .camera_up_tan_half_fovy = inputs.view_rays.up_tan_half_fovy,
@@ -85,9 +177,9 @@ PlanetCelestialFrameUniforms planet_celestial_frame_uniforms(
             },
         .sun_direction_radius =
             {
-                normalized_or_up(celestial.sun.direction).x,
-                normalized_or_up(celestial.sun.direction).y,
-                normalized_or_up(celestial.sun.direction).z,
+                sun_direction.x,
+                sun_direction.y,
+                sun_direction.z,
                 celestial.sun.angular_radius_rad,
             },
         .sun_color_intensity =
@@ -103,6 +195,34 @@ PlanetCelestialFrameUniforms planet_celestial_frame_uniforms(
                 2.8F,
                 0.22F,
                 0.035F,
+            },
+        .moon_direction_radius =
+            {
+                moon_direction.x,
+                moon_direction.y,
+                moon_direction.z,
+                celestial.moon.visible ? celestial.moon.angular_radius_rad : 0.0F,
+            },
+        .moon_color_phase =
+            {
+                celestial.moon.color.r,
+                celestial.moon.color.g,
+                celestial.moon.color.b,
+                celestial.moon.phase_fraction,
+            },
+        .camera_position_radius =
+            {
+                inputs.camera_position_m.x,
+                inputs.camera_position_m.y,
+                inputs.camera_position_m.z,
+                inputs.planet_radius_m,
+            },
+        .background_space_limb =
+            {
+                0.012F,
+                0.022F,
+                0.040F,
+                std::max(inputs.atmosphere_outer_radius_m, inputs.planet_radius_m),
             },
     };
 }
@@ -124,11 +244,7 @@ cubey::render::MaterialPassInfo planet_celestial_pass_info() {
                         },
                 },
             },
-        .blend_enable = true,
-        .src_color_blend_factor = VK_BLEND_FACTOR_ONE,
-        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE,
-        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
-        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
+        .blend_enable = false,
     };
 }
 
@@ -178,7 +294,7 @@ void PlanetCelestialFrame::record_pass(const cubey::vulkan::CommandRecorder& rec
             .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
         },
         cubey::render::RenderTargetAttachmentOps{
-            .color = cubey::vulkan::load_store_attachment_ops(),
+            .color = cubey::vulkan::clear_store_attachment_ops(),
         });
     recorder.begin_rendering(rendering.info());
     recorder.set_viewport_and_scissor(target.extent);
