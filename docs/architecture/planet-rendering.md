@@ -115,6 +115,8 @@ Recommended first approach:
 - start with a cube-sphere or six-face quadtree patch model;
 - draw a neutral planet surface with per-level coloring and wireframe;
 - select patches from screen-space error or a simple distance/altitude metric;
+- identify each surface patch by stable `face/level/x/y` coordinates and derive
+  local bounds from that address;
 - keep each patch rendered from a reusable fixed grid;
 - add skirts or morph bands before adding visual layers;
 - report patch count, visible levels, near/far cell size, triangle count,
@@ -141,6 +143,20 @@ uses the same contract:
 - `PlanetSurfaceMapping`: CPU and shader vocabulary for mapping a patch sample
   to sphere/ellipsoid position, local up, render position, and sample
   coordinates.
+
+Current implementation notes:
+
+- Patch addresses are explicit `face/level/x/y` ids. Selected patch instances
+  carry that id plus screen-error metrics, and the CPU mesh builder derives UV
+  bounds from the id instead of owning LOD addressing.
+- LOD is coverage-first. View and horizon culling stop refinement, but the
+  parent patch remains selected so rotating while rebuilds are deferred does not
+  reveal holes.
+- Skirts are the active transition policy. Morph bands remain a later quality
+  pass once terrain and ocean layers put more pressure on parent/child seams.
+- Placeholder planet terrain is project-local CPU displacement along the sphere
+  normal. It exists to pressure patch identity, normals, LOD diagnostics, and
+  seams before connecting real procedural terrain or ocean data.
 
 ## Suggested Sequence
 
