@@ -73,6 +73,9 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
     if (value == "screen-error" || value == "screen_error") {
         return PlanetDebugView::ScreenError;
     }
+    if (value == "lod-transition" || value == "lod_transition" || value == "transition") {
+        return PlanetDebugView::LodTransition;
+    }
     if (value == "seam" || value == "seams") {
         return PlanetDebugView::Seams;
     }
@@ -103,6 +106,8 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "lod-level";
     case PlanetDebugView::ScreenError:
         return "screen-error";
+    case PlanetDebugView::LodTransition:
+        return "lod-transition";
     case PlanetDebugView::Seams:
         return "seams";
     case PlanetDebugView::CellEdge:

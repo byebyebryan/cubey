@@ -82,6 +82,20 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     };
 }
 
+[[nodiscard]] float lod_transition_pressure(float error_px, float target_px) {
+    const float ratio = error_px / std::max(target_px, 0.0001F);
+    return 1.0F - std::clamp(std::abs(ratio - 1.0F) / 0.25F, 0.0F, 1.0F);
+}
+
+[[nodiscard]] PrimitiveVec3 lod_transition_color(float error_px, float target_px) {
+    const float pressure = lod_transition_pressure(error_px, target_px);
+    return {
+        lerp(0.05F, 0.98F, pressure),
+        lerp(0.10F, 0.72F, pressure),
+        lerp(0.26F, 0.18F, pressure),
+    };
+}
+
 [[nodiscard]] PrimitiveVec3 cell_edge_color(const PlanetConfig& config,
                                             const PlanetSurfacePatchInstance& patch) {
     const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
@@ -182,6 +196,8 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
         return lod_color(patch.id.level, config.max_lod_level);
     case PlanetDebugView::ScreenError:
         return screen_error_color(patch.screen_error_px, config.lod_target_edge_px);
+    case PlanetDebugView::LodTransition:
+        return lod_transition_color(patch.screen_error_px, config.lod_target_edge_px);
     case PlanetDebugView::Seams:
         return seam_surface_color(sample.normal);
     case PlanetDebugView::CellEdge:
@@ -214,6 +230,16 @@ void update_screen_error_range(PlanetSurfaceDiagnostics& diagnostics, float valu
         diagnostics.min_screen_error_px = std::min(diagnostics.min_screen_error_px, value);
     }
     diagnostics.max_screen_error_px = std::max(diagnostics.max_screen_error_px, value);
+}
+
+void update_lod_transition_diagnostics(const PlanetConfig& config,
+                                       PlanetSurfaceDiagnostics& diagnostics, float error_px) {
+    const float pressure = lod_transition_pressure(error_px, config.lod_target_edge_px);
+    diagnostics.max_transition_pressure =
+        std::max(diagnostics.max_transition_pressure, pressure);
+    if (pressure > 0.0F) {
+        ++diagnostics.transition_candidate_count;
+    }
 }
 
 void update_lod_cell_edge_range(PlanetSurfaceDiagnostics& diagnostics, std::uint32_t level,
@@ -375,6 +401,7 @@ void record_visible_patch(const PlanetConfig& config, PlanetSurfacePatchPlan& pl
         ++plan.diagnostics.patches_by_lod[patch.id.level];
     }
     update_screen_error_range(plan.diagnostics, patch.screen_error_px);
+    update_lod_transition_diagnostics(config, plan.diagnostics, patch.screen_error_px);
     update_lod_cell_edge_range(plan.diagnostics, patch.id.level, patch_cell_edge_m(config, patch));
     if (patch.id.level == 0U) {
         ++plan.diagnostics.base_patch_count;

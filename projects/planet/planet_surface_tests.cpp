@@ -801,6 +801,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_from_string("terrain-material") ==
                 cubey::projects::planet::PlanetDebugView::TerrainMaterial,
             "planet debug view should parse terrain-material");
+    require(cubey::projects::planet::planet_debug_view_from_string("lod-transition") ==
+                cubey::projects::planet::PlanetDebugView::LodTransition,
+            "planet debug view should parse lod-transition");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::CellEdge)} == "cell-edge",
             "planet debug view should name cell-edge");
@@ -813,6 +816,33 @@ void test_planet_surface_metric_debug_views_parse() {
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::TerrainMaterial)} == "terrain-material",
             "planet debug view should name terrain-material");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::LodTransition)} == "lod-transition",
+            "planet debug view should name lod-transition");
+}
+
+void test_planet_surface_planner_records_lod_transition_pressure() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1000.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 2,
+        .max_lod_level = 0,
+        .lod_target_edge_px = 12.0F,
+    };
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, 1500.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .viewport_height_px = 10.0F,
+        .culling_enabled = false,
+    };
+
+    const cubey::projects::planet::PlanetSurfacePatchPlan plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+
+    require(plan.diagnostics.transition_candidate_count > 0U,
+            "planet planner should count patches near the LOD transition threshold");
+    require(plan.diagnostics.max_transition_pressure > 0.0F,
+            "planet planner should report positive transition pressure near the threshold");
 }
 
 } // namespace
@@ -849,6 +879,7 @@ int main() {
         test_planet_surface_skirt_vertices_drop_below_radius();
         test_planet_surface_seams_debug_view_parses();
         test_planet_surface_metric_debug_views_parse();
+        test_planet_surface_planner_records_lod_transition_pressure();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_surface_tests: %s\n", error.what());

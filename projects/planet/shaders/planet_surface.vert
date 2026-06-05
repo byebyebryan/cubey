@@ -100,6 +100,13 @@ vec3 screen_error_color() {
     return vec3(0.16 + 0.80 * t, 0.82 - 0.46 * t, 0.24);
 }
 
+vec3 lod_transition_color() {
+    float target = max(surface_frame.light_direction_debug.w, 0.0001);
+    float ratio = in_screen_error_px / target;
+    float pressure = 1.0 - clamp(abs(ratio - 1.0) / 0.25, 0.0, 1.0);
+    return mix(vec3(0.05, 0.10, 0.26), vec3(0.98, 0.72, 0.18), pressure);
+}
+
 vec3 cell_edge_color() {
     float divisions = patches_per_face_option() * exp2(float(in_patch_id.y));
     float patch_width_m = (surface_frame.render_origin_radius.w * 2.0) / max(divisions, 1.0);
@@ -151,22 +158,25 @@ vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m) {
         return screen_error_color();
     }
     if (debug_view == 5) {
+        return lod_transition_color();
+    }
+    if (debug_view == 6) {
         if (in_skirt > 0.5) {
             return vec3(1.0, 0.82, 0.22);
         }
         vec3 color = latitude_color(normal);
         return vec3(color.r * 0.28, color.g * 0.34, color.b * 0.42);
     }
-    if (debug_view == 6) {
+    if (debug_view == 7) {
         return cell_edge_color();
     }
-    if (debug_view == 7) {
+    if (debug_view == 8) {
         return terrain_height_color(height_m);
     }
-    if (debug_view == 8) {
+    if (debug_view == 9) {
         return planet_surface_slope_color(normalized_slope);
     }
-    if (debug_view == 9) {
+    if (debug_view == 10) {
         return planet_surface_material_debug_color(material);
     }
     return final_color(normal, material, normalized_elevation, normalized_slope);

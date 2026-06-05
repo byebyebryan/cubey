@@ -32,6 +32,7 @@ enum class PlanetDebugView : std::uint8_t {
     PatchId,
     LodLevel,
     ScreenError,
+    LodTransition,
     Seams,
     CellEdge,
     TerrainHeight,

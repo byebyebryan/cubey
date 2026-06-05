@@ -53,6 +53,7 @@ struct PlanetSurfaceDiagnostics {
     std::uint32_t refined_patch_count = 0;
     std::uint32_t subdivided_patch_count = 0;
     std::uint32_t refinement_fallback_patch_count = 0;
+    std::uint32_t transition_candidate_count = 0;
     std::uint32_t vertex_count = 0;
     std::uint32_t triangle_count = 0;
     std::uint32_t seam_edge_count = 0;
@@ -62,6 +63,7 @@ struct PlanetSurfaceDiagnostics {
     std::array<std::uint32_t, kPlanetDiagnosticLodCapacity> patches_by_lod{};
     float min_screen_error_px = 0.0F;
     float max_screen_error_px = 0.0F;
+    float max_transition_pressure = 0.0F;
     float min_edge_length_m = 0.0F;
     float max_edge_length_m = 0.0F;
     std::array<float, kPlanetDiagnosticLodCapacity> min_cell_edge_m_by_lod{};
