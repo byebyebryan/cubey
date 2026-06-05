@@ -169,13 +169,24 @@ Current implementation notes:
   pass once terrain and ocean layers put more pressure on parent/child seams.
 - Placeholder planet terrain is project-local shader displacement along the
   sphere normal, with the CPU mesh builder retained for diagnostics and tests.
-  It now has broad, mid-ridge, and fine-detail bands plus patch-cell-scaled
-  normal sampling. It exists to pressure patch identity, normals, LOD
-  diagnostics, and seams before connecting real procedural terrain or ocean
-  data.
+  CPU and shader paths now go through a named project-local surface-field
+  contract: height, world position, normal, normalized elevation, normalized
+  slope, and a simple material band. It now has broad, mid-ridge, and
+  fine-detail bands plus patch-cell-scaled normal sampling. It exists to
+  pressure patch identity, normals, LOD diagnostics, seams, and material
+  vocabulary before connecting real procedural terrain or ocean data.
 - Current debug views cover patch identity, LOD level, screen error, seam
-  skirts, approximate metric cell edge, and normalized terrain height. These are
-  diagnostic tools, not final planet visualization.
+  skirts, approximate metric cell edge, normalized terrain height, normalized
+  terrain slope, and terrain material bands. These are diagnostic tools, not
+  final planet visualization.
+
+Deferred surface-field work:
+
+- bathymetry and sea-level-aware sampling;
+- streamed field tiles and cache residency;
+- material textures, biome masks, and erosion/weathering inputs;
+- shoreline masks and terrain/ocean render ordering;
+- ocean attached as a planet surface layer once these contracts are stable.
 
 ## Suggested Sequence
 
