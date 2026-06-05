@@ -7,6 +7,7 @@
 
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/math.h>
+#include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/performance_ui.h>
@@ -68,10 +69,11 @@ struct PlanetSurfaceFrameUniforms {
     cubey::math::Vec4 surface_options{0.0F, 0.0F, 1.0F, 0.0F};
     cubey::math::Vec4 terrain_options{0.0F, 1.0F, 0.0F, 0.0F};
     cubey::math::Vec4 camera_horizon{0.0F, 0.0F, 0.0F, 0.0F};
-    cubey::math::Vec4 atmosphere_options{0.14F, 0.0F, 0.65F, 1.0F};
+    cubey::math::Vec4 atmosphere_options{0.14F, 0.42F, 0.45F, 1.0F};
+    cubey::math::Vec4 haze_color_direct{0.18F, 0.28F, 0.44F, 0.86F};
 };
 
-static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 10U);
+static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 11U);
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_PLANET_SHADER_DIR) / filename;
@@ -152,11 +154,31 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 10U);
     return mid * kQuantizeBase + fine;
 }
 
+[[nodiscard]] cubey::AtmosphereEnvironmentRunState
+planet_atmosphere_run_state(const cubey::RunConfig& config, const PlanetConfig& planet_config) {
+    cubey::AtmosphereEnvironmentRunState state =
+        cubey::atmosphere_environment_run_state_from_config(
+            config.atmosphere,
+            cubey::AtmosphereEnvironmentRunDefaults{
+                .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
+                .reference_geometry_enabled = false,
+            });
+    state.environment.bottom_radius_km = planet_config.radius_m * 0.001F;
+    state.environment.top_radius_km =
+        (planet_config.radius_m + planet_config.atmosphere_height_m) * 0.001F;
+    state.environment.camera_altitude_km = planet_config.camera_altitude_m * 0.001F;
+    cubey::atmosphere_environment_resolve_run_state(state);
+    return state;
+}
+
 class PlanetApp {
   public:
     explicit PlanetApp(RunConfig config)
         : config_(std::move(config)), planet_config_(planet_config_from_run_config(config_)),
           edit_planet_config_(planet_config_),
+          atmosphere_state_(planet_atmosphere_run_state(config_, planet_config_)),
+          atmosphere_lighting_(
+              cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment)),
           orbit_controller_(planet_orbit_config(planet_config_)) {
         refresh_frame();
         rebuild_surface_data(default_surface_extent());
@@ -316,6 +338,7 @@ class PlanetApp {
     }
 
     void update_input(cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
+        update_atmosphere_time(timing.delta_seconds);
         orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
         update_surface_camera_anchor();
         refresh_frame();
@@ -568,6 +591,7 @@ class PlanetApp {
         frame_ = make_planet_frame(planet_config_, camera_transform());
         camera_.set_projection(std::numbers::pi_v<float> / 3.0F, frame_.near_plane_m,
                                frame_.far_plane_m);
+        sync_atmosphere_environment();
     }
 
     [[nodiscard]] static VkExtent2D default_surface_extent() {
@@ -677,9 +701,18 @@ class PlanetApp {
             planet_config_.terrain_enabled ? planet_config_.terrain_height_scale_m : 0.0F;
         const float skirt_depth = std::max(surface_build_.diagnostics.min_skirt_depth_m,
                                            planet_config_.radius_m * 0.00001F);
+        const float ambient_intensity = surface_ambient_intensity();
+        const float direct_intensity = surface_direct_intensity();
+        const cubey::math::Vec3 haze_color = surface_haze_color();
         return {
             .view_projection = camera_.view_projection_matrix(transform, aspect),
-            .light_direction_debug = {0.35F, 0.78F, 0.50F, planet_config_.lod_target_edge_px},
+            .light_direction_debug =
+                {
+                    atmosphere_lighting_.primary_light_direction.x,
+                    atmosphere_lighting_.primary_light_direction.y,
+                    atmosphere_lighting_.primary_light_direction.z,
+                    planet_config_.lod_target_edge_px,
+                },
             .render_origin_radius =
                 {
                     static_cast<float>(surface_build_render_origin_world_m_.x),
@@ -708,19 +741,62 @@ class PlanetApp {
                     transform.translation.z,
                     frame_.horizon_distance_m,
                 },
-            .atmosphere_options = {0.14F, 0.0F, 0.65F, 1.0F},
+            .atmosphere_options =
+                {
+                    ambient_intensity,
+                    0.42F,
+                    0.45F,
+                    1.0F,
+                },
+            .haze_color_direct =
+                {
+                    haze_color.r,
+                    haze_color.g,
+                    haze_color.b,
+                    direct_intensity,
+                },
         };
     }
 
-    [[nodiscard]] cubey::render::AtmosphereEnvironmentConfig atmosphere_environment() const {
-        cubey::render::AtmosphereEnvironmentConfig environment;
-        environment.bottom_radius_km = planet_config_.radius_m * 0.001F;
-        environment.top_radius_km =
+    [[nodiscard]] const cubey::render::AtmosphereEnvironmentConfig& atmosphere_environment() const {
+        return atmosphere_state_.environment;
+    }
+
+    [[nodiscard]] float surface_direct_intensity() const {
+        return std::clamp(atmosphere_lighting_.primary_light_intensity * 0.38F, 0.03F, 0.95F);
+    }
+
+    [[nodiscard]] float surface_ambient_intensity() const {
+        const float ambient_peak =
+            std::max({atmosphere_lighting_.ambient_color.r, atmosphere_lighting_.ambient_color.g,
+                      atmosphere_lighting_.ambient_color.b});
+        return std::clamp(ambient_peak * 1.8F + 0.035F, 0.035F, 0.22F);
+    }
+
+    [[nodiscard]] cubey::math::Vec3 surface_haze_color() const {
+        return glm::clamp(atmosphere_lighting_.ambient_color * 3.2F,
+                          cubey::math::Vec3{0.025F, 0.035F, 0.060F},
+                          cubey::math::Vec3{0.48F, 0.58F, 0.78F});
+    }
+
+    void sync_atmosphere_environment() {
+        atmosphere_state_.environment.bottom_radius_km = planet_config_.radius_m * 0.001F;
+        atmosphere_state_.environment.top_radius_km =
             (planet_config_.radius_m + planet_config_.atmosphere_height_m) * 0.001F;
-        environment.camera_altitude_km = frame_.camera_altitude_m * 0.001F;
-        environment.ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
-        environment.reference_geometry_enabled = false;
-        return environment;
+        atmosphere_state_.environment.camera_altitude_km = frame_.camera_altitude_m * 0.001F;
+        atmosphere_state_.environment.ground_mode =
+            cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
+        atmosphere_state_.environment.reference_geometry_enabled = false;
+        cubey::atmosphere_environment_resolve_run_state(atmosphere_state_);
+        atmosphere_lighting_ =
+            cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
+    }
+
+    void update_atmosphere_time(double delta_seconds) {
+        if (cubey::atmosphere_environment_advance_time(atmosphere_state_, delta_seconds)) {
+            atmosphere_lighting_ =
+                cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
+        }
     }
 
     [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
@@ -942,6 +1018,8 @@ class PlanetApp {
     RunConfig config_;
     PlanetConfig planet_config_{};
     PlanetConfig edit_planet_config_{};
+    cubey::AtmosphereEnvironmentRunState atmosphere_state_{};
+    cubey::render::AtmosphereEnvironmentLighting atmosphere_lighting_{};
     cubey::OrbitController orbit_controller_;
     cubey::Camera3D camera_{cubey::Camera3DConfig{.near_z = 1.0F, .far_z = 1500000.0F}};
     PlanetFrame frame_{};

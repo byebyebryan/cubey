@@ -14,6 +14,7 @@ layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     vec4 terrain_options;
     vec4 camera_horizon;
     vec4 atmosphere_options;
+    vec4 haze_color_direct;
 } surface_frame;
 
 uint packed_patch_lod_option() {
@@ -43,6 +44,7 @@ int debug_view_option() {
 layout(location = 0) out vec3 out_color;
 layout(location = 1) out vec3 out_normal;
 layout(location = 2) out vec2 out_uv;
+layout(location = 3) out vec3 out_render_position;
 
 #include "planet_surface_field.glsl"
 
@@ -185,5 +187,6 @@ void main() {
     out_color = vertex_color(sphere_normal, normal, height_m);
     out_normal = normal;
     out_uv = in_uv;
+    out_render_position = render_position;
     gl_Position = surface_frame.view_projection * vec4(render_position, 1.0);
 }
