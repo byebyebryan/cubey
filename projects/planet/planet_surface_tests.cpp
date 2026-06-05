@@ -328,6 +328,7 @@ void test_planet_surface_patch_grid_mesh_is_reusable() {
         .patches_per_face = 2,
         .patch_resolution = 5,
         .max_lod_level = 1,
+        .skirts_enabled = false,
     };
 
     const cubey::projects::planet::PlanetPatchGridMeshData grid =
@@ -341,6 +342,25 @@ void test_planet_surface_patch_grid_mesh_is_reusable() {
     require_close(grid.vertices.front().uv[1], 0.0F, "planet patch grid should start at v=0");
     require_close(grid.vertices.back().uv[0], 1.0F, "planet patch grid should end at u=1");
     require_close(grid.vertices.back().uv[1], 1.0F, "planet patch grid should end at v=1");
+}
+
+void test_planet_surface_patch_grid_mesh_can_include_skirts() {
+    const cubey::projects::planet::PlanetConfig config{
+        .patches_per_face = 1,
+        .patch_resolution = 3,
+        .max_lod_level = 0,
+        .skirts_enabled = true,
+    };
+
+    const cubey::projects::planet::PlanetPatchGridMeshData grid =
+        cubey::projects::planet::make_planet_patch_grid_mesh(config);
+
+    require(grid.vertices.size() == 16U + 24U,
+            "planet skirt grid should duplicate bottom vertices for each edge segment");
+    require(grid.indices.size() == (3U * 3U * 6U) + (4U * 3U * 12U),
+            "planet skirt grid should add double-sided skirt triangles around each edge segment");
+    require_close(grid.vertices.back().skirt, 1.0F,
+                  "planet skirt grid should mark duplicated bottom vertices");
 }
 
 void test_planet_surface_gpu_instances_preserve_patch_identity() {
@@ -508,6 +528,7 @@ int main() {
         test_planet_surface_planner_refines_visible_patches_with_fallback_coverage();
         test_planet_surface_mesh_consumes_selected_patch_instances();
         test_planet_surface_patch_grid_mesh_is_reusable();
+        test_planet_surface_patch_grid_mesh_can_include_skirts();
         test_planet_surface_gpu_instances_preserve_patch_identity();
         test_planet_surface_planner_keeps_fallback_when_camera_looks_away();
         test_planet_surface_planner_selects_near_lod();

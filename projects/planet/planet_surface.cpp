@@ -767,6 +767,43 @@ PlanetPatchGridMeshData make_planet_patch_grid_mesh(const PlanetConfig& config) 
         }
     }
 
+    if (config.skirts_enabled) {
+        const auto append_skirt_segment = [&mesh](std::uint32_t top0, std::uint32_t top1) {
+            const std::uint32_t bottom0 = static_cast<std::uint32_t>(mesh.vertices.size());
+            mesh.vertices.push_back(PlanetPatchGridVertex{
+                .uv = mesh.vertices[top0].uv,
+                .skirt = 1.0F,
+            });
+            const std::uint32_t bottom1 = static_cast<std::uint32_t>(mesh.vertices.size());
+            mesh.vertices.push_back(PlanetPatchGridVertex{
+                .uv = mesh.vertices[top1].uv,
+                .skirt = 1.0F,
+            });
+
+            const auto push_triangle = [&mesh](std::uint32_t a, std::uint32_t b,
+                                               std::uint32_t c) {
+                mesh.indices.push_back(a);
+                mesh.indices.push_back(b);
+                mesh.indices.push_back(c);
+            };
+            push_triangle(top0, bottom0, top1);
+            push_triangle(top1, bottom0, bottom1);
+            push_triangle(top1, bottom0, top0);
+            push_triangle(bottom1, bottom0, top1);
+        };
+
+        for (std::uint32_t x = 0; x < resolution; ++x) {
+            append_skirt_segment(x, x + 1U);
+            const std::uint32_t bottom_row = resolution * vertices_per_side;
+            append_skirt_segment(bottom_row + x, bottom_row + x + 1U);
+        }
+        for (std::uint32_t y = 0; y < resolution; ++y) {
+            append_skirt_segment(y * vertices_per_side, (y + 1U) * vertices_per_side);
+            append_skirt_segment(y * vertices_per_side + resolution,
+                                 (y + 1U) * vertices_per_side + resolution);
+        }
+    }
+
     return mesh;
 }
 

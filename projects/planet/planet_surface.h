@@ -28,6 +28,7 @@ struct PlanetSurfaceMeshData {
 
 struct PlanetPatchGridVertex {
     cubey::render::PrimitiveVec2 uv{};
+    float skirt = 0.0F;
 };
 
 struct PlanetPatchGridMeshData {

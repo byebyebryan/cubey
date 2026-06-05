@@ -7,7 +7,9 @@ layout(location = 2) in vec2 in_uv;
 layout(push_constant) uniform PlanetPushConstants {
     mat4 view_projection;
     vec4 light_direction_debug;
-    vec4 options;
+    vec4 render_origin_radius;
+    vec4 surface_options;
+    vec4 terrain_options;
 } pc;
 
 layout(location = 0) out vec4 out_color;
@@ -21,6 +23,6 @@ void main() {
     vec3 color = in_color * (0.14 + 0.86 * ndotl) + sky;
     float edge = min(min(in_uv.x, in_uv.y), min(1.0 - in_uv.x, 1.0 - in_uv.y));
     float wire = 1.0 - smoothstep(0.0, 0.015, edge);
-    color = mix(color, vec3(0.92, 0.96, 1.0), wire * pc.options.x);
+    color = mix(color, vec3(0.92, 0.96, 1.0), wire * pc.surface_options.x);
     out_color = vec4(color, 1.0);
 }
