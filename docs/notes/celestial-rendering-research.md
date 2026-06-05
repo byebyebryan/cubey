@@ -107,6 +107,11 @@ the planet/celestial renderer, not the atmosphere scattering shader.
   derived renderer plumbing.
 - Use the existing sun/time UI only as a migration source; the target UI should
   expose celestial body controls and derived atmosphere diagnostics separately.
+- Treat the current planet clock as a mean Earth-like model, not an ephemeris:
+  24h mean solar UI time, 23.9345h sidereal Earth spin, 365.2422d tropical
+  year, 27.321661d lunar sidereal orbit, and a derived 29.53d synodic phase
+  cycle. This is enough to validate sensible day/year/moon behavior before
+  adding orbital eccentricity or precession.
 
 ## Sources
 
@@ -128,3 +133,11 @@ the planet/celestial renderer, not the atmosphere scattering shader.
   <https://google.github.io/filament/main/filament.html>
 - Filament red ball tutorial, showing `LightType.SUN` setup:
   <https://google.github.io/filament/webgl/tutorial_redball.html>
+- NASA Glenn sidereal-time note:
+  <https://www.grc.nasa.gov/www/K-12/Numbers/Math/Mathematical_Thinking/telling_time_by_the_stars.htm>
+- NASA Earth facts:
+  <https://science.nasa.gov/earth/facts/>
+- NASA Moon facts:
+  <https://science.nasa.gov/moon/facts/>
+- NASA eclipse note on the Moon's orbit:
+  <https://eclipse.gsfc.nasa.gov/SEhelp/moonorbit.html>

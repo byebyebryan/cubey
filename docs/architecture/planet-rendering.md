@@ -218,6 +218,13 @@ Current implementation notes:
   still rendered by the local sky pass as a distant disk/glow, while the moon
   is rendered as a depth-tested sphere on a camera-relative shell that
   preserves apparent angular size.
+- The current solar-system math is deliberately mean and Earth-like rather than
+  ephemeris-driven. `PlanetSolarTime` is a 24h mean solar clock. The default
+  config uses a 23.9345h sidereal planet spin, 365.2422d tropical/seasonal
+  year, 27.321661d lunar sidereal orbit, and a signed synodic phase cycle of
+  about 29.53d. This keeps day/year/moon behavior sensible while leaving
+  eccentricity, equation of time, lunar nodal/apsidal precession, and
+  Earth-Moon barycenter work for later.
 
 ## Celestial Body Pivot
 
@@ -276,6 +283,16 @@ environment option. Filament models sun/moon-style illumination as directional
 lights with physical units. The common pattern is that sky/atmosphere rendering
 consumes light/body state; it should not be the durable owner of planet-scale
 celestial bodies.
+
+Astronomical data references for the current mean model:
+
+- NASA Glenn's sidereal-time note gives the 365.2422d tropical year and derives
+  a 23.9345h sidereal day from the Earth/Sun relative rotation.
+- NASA Earth facts provide the practical Earth distance, 365.25d public orbit
+  summary, and 23.4 degree axial tilt.
+- NASA Moon material gives the Moon's approximate distance/radius and the
+  27.3d orbit/rotation summary; NASA eclipse material gives the more exact
+  27.32166d sidereal lunar month used by the config.
 
 Deferred surface-field work:
 

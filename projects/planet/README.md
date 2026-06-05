@@ -81,6 +81,12 @@ sun/moon disk and clock assumptions were fighting the planet-viewer contract.
 A project-local solar clock drives planet orbit, planet self-rotation, and moon
 orbit. That state resolves sun and moon directions, physical radii, angular
 radii, direct lighting, ambient lighting, and the planet-owned sky pass.
+The clock is a mean Earth-like model: UI time is a 24h mean solar day, internal
+planet spin uses a 23.9345h sidereal rotation, the seasonal year is 365.2422d,
+and the moon uses a 27.321661d sidereal orbit with derived 29.53d phase
+cycling. This is intentionally not a full ephemeris: eccentricity, equation of
+time, lunar apsidal/nodal precession, and true Earth/Moon barycentric motion
+are deferred until the planet project needs that fidelity.
 
 The current sky pass is intentionally simple: dark space, sparse procedural
 stars, a sun disk/glow, and a local planet limb glow with analytic planet
