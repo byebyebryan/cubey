@@ -12,18 +12,22 @@ Run it with:
 ./build/dev/projects/planet/planet --headless --frames 120 --output outputs/planet.png
 ./build/dev/projects/planet/planet --planet-radius-m 600000 --planet-camera-altitude-m 240000
 ./build/dev/projects/planet/planet --debug-view lod-level
+./build/dev/projects/planet/planet --debug-view cell-edge
+./build/dev/projects/planet/planet --debug-view terrain-height
 ./build/dev/projects/planet/planet --debug-view seams
+./build/dev/projects/planet/planet --planet-max-lod-level 5 --planet-lod-target-edge-px 10
 ```
 
 Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
-`screen-error`, and `seams`. The CPU LOD planner selects camera-relative
-cube-sphere patch instances by projected edge size and reports patch, LOD,
-refinement cull, screen-error, edge-length, per-LOD cell-size, and skirt ranges
-in the UI. The live renderer draws those selected patches with one reusable
-GPU patch grid plus per-frame-slot instance buffers carrying `face/level/x/y`
-identity. Live instanced rendering supports up to LOD 6 and defaults to LOD 3;
-the CPU mesh builder has a stricter vertex cap because it materializes every
-selected patch for diagnostics.
+`screen-error`, `seams`, `cell-edge`, and `terrain-height`. The CPU LOD planner
+selects camera-relative cube-sphere patch instances by projected edge size and
+reports patch, LOD, refinement cull, screen-error, edge-length, per-LOD
+cell-size, and skirt ranges in the UI. The live renderer draws those selected
+patches with one reusable GPU patch grid plus per-frame-slot instance buffers
+carrying `face/level/x/y` identity. Live instanced rendering supports up to LOD
+6, defaults to LOD 5 with a 10 px target edge, and rejects selections above the
+live patch-instance budget. The CPU mesh builder has a stricter vertex cap
+because it materializes every selected patch for diagnostics.
 
 Planet surface LOD is coverage-first. Root patches provide guaranteed coarse
 coverage for every planet domain, and view/horizon culling only stops
@@ -39,8 +43,10 @@ construction and creates stable keys for later terrain, bathymetry, cache, or
 streaming work.
 
 The terrain controls are placeholders for contract pressure, not the final
-terrain system. The live renderer now displaces the reusable grid in the vertex
-shader with deterministic fBM terrain and recomputes shader normals. The CPU
+terrain system. The live renderer displaces the reusable grid in the vertex
+shader with deterministic multi-band terrain: broad shape, mid ridges, and fine
+detail. Normals are recomputed from a patch-cell-scaled sample step so higher
+LOD reveals smaller terrain features instead of only smoothing the mesh. The CPU
 mesh builder remains as a diagnostic/test path for the same patch contracts.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU

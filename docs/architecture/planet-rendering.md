@@ -152,9 +152,11 @@ Current implementation notes:
   mapping derive UV bounds from the id instead of owning LOD addressing.
 - Live LOD selection and CPU mesh diagnostics intentionally have different
   limits. The instanced renderer currently accepts LOD 0-6 and defaults to LOD
-  3; the CPU mesh path rejects configurations that would materialize too many
-  vertices. Use the live renderer for interactive LOD pressure and the CPU mesh
-  path for bounded validation.
+  5 with a 10 px target edge; the CPU mesh path rejects configurations that
+  would materialize too many vertices. Live planning also has a fixed patch
+  instance budget so pathological interactive settings fail early. Use the live
+  renderer for interactive LOD pressure and the CPU mesh path for bounded
+  validation.
 - Camera-driven LOD replans no longer rebuild GPU instance buffers immediately
   or wait for the device. The planner marks patch instances dirty, and each
   render frame lazily uploads the current instance list into that frame slot's
@@ -167,8 +169,13 @@ Current implementation notes:
   pass once terrain and ocean layers put more pressure on parent/child seams.
 - Placeholder planet terrain is project-local shader displacement along the
   sphere normal, with the CPU mesh builder retained for diagnostics and tests.
-  It exists to pressure patch identity, normals, LOD diagnostics, and seams
-  before connecting real procedural terrain or ocean data.
+  It now has broad, mid-ridge, and fine-detail bands plus patch-cell-scaled
+  normal sampling. It exists to pressure patch identity, normals, LOD
+  diagnostics, and seams before connecting real procedural terrain or ocean
+  data.
+- Current debug views cover patch identity, LOD level, screen error, seam
+  skirts, approximate metric cell edge, and normalized terrain height. These are
+  diagnostic tools, not final planet visualization.
 
 ## Suggested Sequence
 
