@@ -467,6 +467,33 @@ void test_planet_surface_planner_selects_near_lod() {
             "planet planner should report selected near-camera child patches");
 }
 
+void test_planet_surface_planner_records_high_lod_diagnostics() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1000.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 1,
+        .max_lod_level = 4,
+        .lod_target_edge_px = 0.0001F,
+    };
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, 1500.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = false,
+    };
+
+    const cubey::projects::planet::PlanetSurfacePatchPlan plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+
+    require(plan.diagnostics.max_lod_level == 4U,
+            "planet planner should select the configured high LOD level");
+    require(plan.diagnostics.patches_by_lod[4] > 0U,
+            "planet planner should record patch counts above the old four-level cap");
+    require(plan.diagnostics.min_cell_edge_m_by_lod[4] > 0.0F &&
+                plan.diagnostics.max_cell_edge_m_by_lod[4] >=
+                    plan.diagnostics.min_cell_edge_m_by_lod[4],
+            "planet planner should record high-LOD cell-size diagnostics");
+}
+
 void test_planet_surface_skirts_add_seam_geometry() {
     const cubey::projects::planet::PlanetConfig no_skirts{
         .radius_m = 1200.0F,
@@ -554,6 +581,7 @@ int main() {
         test_planet_surface_cpu_mesh_rejects_too_dense_live_lod();
         test_planet_surface_planner_keeps_fallback_when_camera_looks_away();
         test_planet_surface_planner_selects_near_lod();
+        test_planet_surface_planner_records_high_lod_diagnostics();
         test_planet_surface_skirts_add_seam_geometry();
         test_planet_surface_skirt_vertices_drop_below_radius();
         test_planet_surface_seams_debug_view_parses();

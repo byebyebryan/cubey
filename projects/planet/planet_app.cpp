@@ -351,10 +351,17 @@ class PlanetApp {
                     surface_build_.diagnostics.culled_view_count);
         ImGui::Text("LOD range: %u - %u", surface_build_.diagnostics.min_lod_level,
                     surface_build_.diagnostics.max_lod_level);
-        ImGui::Text("LOD patches: %u / %u / %u / %u", surface_build_.diagnostics.patches_by_lod[0],
-                    surface_build_.diagnostics.patches_by_lod[1],
-                    surface_build_.diagnostics.patches_by_lod[2],
-                    surface_build_.diagnostics.patches_by_lod[3]);
+        for (std::size_t lod_index = 0;
+             lod_index < surface_build_.diagnostics.patches_by_lod.size(); ++lod_index) {
+            const std::uint32_t patch_count = surface_build_.diagnostics.patches_by_lod[lod_index];
+            const float min_cell = surface_build_.diagnostics.min_cell_edge_m_by_lod[lod_index];
+            const float max_cell = surface_build_.diagnostics.max_cell_edge_m_by_lod[lod_index];
+            if (patch_count == 0U && lod_index > surface_build_.diagnostics.max_lod_level) {
+                continue;
+            }
+            ImGui::Text("LOD %zu: %u patches, cell %.0f-%.0f m", lod_index, patch_count,
+                        min_cell, max_cell);
+        }
         ImGui::Text("Screen error: %.1f px - %.1f px",
                     surface_build_.diagnostics.min_screen_error_px,
                     surface_build_.diagnostics.max_screen_error_px);
@@ -362,16 +369,6 @@ class PlanetApp {
         ImGui::Text("Surface triangles: %u", surface_build_.diagnostics.triangle_count);
         ImGui::Text("Cell edge: %.0f m - %.0f m", surface_build_.diagnostics.min_edge_length_m,
                     surface_build_.diagnostics.max_edge_length_m);
-        ImGui::Text("LOD cell 0/1: %.0f-%.0f / %.0f-%.0f m",
-                    surface_build_.diagnostics.min_cell_edge_m_by_lod[0],
-                    surface_build_.diagnostics.max_cell_edge_m_by_lod[0],
-                    surface_build_.diagnostics.min_cell_edge_m_by_lod[1],
-                    surface_build_.diagnostics.max_cell_edge_m_by_lod[1]);
-        ImGui::Text("LOD cell 2/3: %.0f-%.0f / %.0f-%.0f m",
-                    surface_build_.diagnostics.min_cell_edge_m_by_lod[2],
-                    surface_build_.diagnostics.max_cell_edge_m_by_lod[2],
-                    surface_build_.diagnostics.min_cell_edge_m_by_lod[3],
-                    surface_build_.diagnostics.max_cell_edge_m_by_lod[3]);
         ImGui::Text("Seam edges: %u", surface_build_.diagnostics.seam_edge_count);
         ImGui::Text("Skirt triangles: %u", surface_build_.diagnostics.skirt_triangle_count);
         ImGui::Text("Skirt depth: %.0f m - %.0f m", surface_build_.diagnostics.min_skirt_depth_m,

@@ -59,13 +59,13 @@ struct PlanetSurfaceDiagnostics {
     std::uint32_t skirt_triangle_count = 0;
     std::uint32_t min_lod_level = 0;
     std::uint32_t max_lod_level = 0;
-    std::array<std::uint32_t, 4> patches_by_lod{};
+    std::array<std::uint32_t, kPlanetDiagnosticLodCapacity> patches_by_lod{};
     float min_screen_error_px = 0.0F;
     float max_screen_error_px = 0.0F;
     float min_edge_length_m = 0.0F;
     float max_edge_length_m = 0.0F;
-    std::array<float, 4> min_cell_edge_m_by_lod{};
-    std::array<float, 4> max_cell_edge_m_by_lod{};
+    std::array<float, kPlanetDiagnosticLodCapacity> min_cell_edge_m_by_lod{};
+    std::array<float, kPlanetDiagnosticLodCapacity> max_cell_edge_m_by_lod{};
     float min_skirt_depth_m = 0.0F;
     float max_skirt_depth_m = 0.0F;
 };
