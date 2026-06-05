@@ -134,6 +134,20 @@ void validate_planet_config(const PlanetConfig& config) {
     if (!std::isfinite(config.terrain_noise_scale) || config.terrain_noise_scale <= 0.0F) {
         throw std::runtime_error("planet terrain noise scale must be finite and positive");
     }
+    if (!std::isfinite(config.terrain_mid_detail_strength) ||
+        config.terrain_mid_detail_strength < 0.0F) {
+        throw std::runtime_error(
+            "planet terrain mid-detail strength must be finite and nonnegative");
+    }
+    if (!std::isfinite(config.terrain_fine_detail_strength) ||
+        config.terrain_fine_detail_strength < 0.0F) {
+        throw std::runtime_error(
+            "planet terrain fine-detail strength must be finite and nonnegative");
+    }
+    if (!std::isfinite(config.terrain_fine_detail_scale) ||
+        config.terrain_fine_detail_scale <= 0.0F) {
+        throw std::runtime_error("planet terrain fine-detail scale must be finite and positive");
+    }
 }
 
 } // namespace cubey::projects::planet

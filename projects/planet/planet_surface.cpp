@@ -118,9 +118,14 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     const cubey::math::Vec3 p = normal * config.terrain_noise_scale;
     const float broad = fbm(p + cubey::math::Vec3{1.7F, -3.2F, 5.1F}, config.terrain_seed, 4U);
     const float ridge_source =
-        fbm(p * 1.85F + cubey::math::Vec3{-4.0F, 2.4F, 8.5F}, config.terrain_seed + 37U, 4U);
-    const float ridged = 1.0F - std::abs(ridge_source);
-    const float height = (broad * 0.68F + (ridged - 0.48F) * 0.64F) * config.terrain_height_scale_m;
+        fbm(p * 2.35F + cubey::math::Vec3{-4.0F, 2.4F, 8.5F}, config.terrain_seed + 37U, 5U);
+    const float mid =
+        ((1.0F - std::abs(ridge_source)) * 2.0F - 1.0F) * config.terrain_mid_detail_strength;
+    const float fine =
+        fbm(p * config.terrain_fine_detail_scale + cubey::math::Vec3{6.3F, 1.1F, -7.4F},
+            config.terrain_seed + 113U, 3U) *
+        config.terrain_fine_detail_strength;
+    const float height = (broad * 0.58F + mid + fine) * config.terrain_height_scale_m;
     return std::clamp(height, -config.terrain_height_scale_m, config.terrain_height_scale_m);
 }
 

@@ -23,6 +23,7 @@ void main() {
     vec3 color = in_color * (0.14 + 0.86 * ndotl) + sky;
     float edge = min(min(in_uv.x, in_uv.y), min(1.0 - in_uv.x, 1.0 - in_uv.y));
     float wire = 1.0 - smoothstep(0.0, 0.015, edge);
-    color = mix(color, vec3(0.92, 0.96, 1.0), wire * pc.surface_options.x);
+    float wire_enabled = fract(pc.surface_options.x) > 0.1 ? 1.0 : 0.0;
+    color = mix(color, vec3(0.92, 0.96, 1.0), wire * wire_enabled);
     out_color = vec4(color, 1.0);
 }

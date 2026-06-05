@@ -139,6 +139,47 @@ void test_planet_surface_terrain_displaces_within_height_bounds() {
     require(found_displaced_vertex, "planet terrain should visibly displace at least one vertex");
 }
 
+void test_planet_surface_terrain_detail_controls_change_shape() {
+    const cubey::projects::planet::PlanetConfig coarse_config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 8,
+        .max_lod_level = 0,
+        .skirts_enabled = false,
+        .terrain_enabled = true,
+        .terrain_height_scale_m = 80.0F,
+        .terrain_noise_scale = 3.0F,
+        .terrain_seed = 42U,
+        .terrain_mid_detail_strength = 0.0F,
+        .terrain_fine_detail_strength = 0.0F,
+    };
+    cubey::projects::planet::PlanetConfig detailed_config = coarse_config;
+    detailed_config.terrain_mid_detail_strength = 0.75F;
+    detailed_config.terrain_fine_detail_strength = 0.30F;
+    detailed_config.terrain_fine_detail_scale = 10.0F;
+
+    const cubey::projects::planet::PlanetSurfaceBuildResult coarse =
+        cubey::projects::planet::make_planet_surface_mesh(coarse_config);
+    const cubey::projects::planet::PlanetSurfaceBuildResult detailed =
+        cubey::projects::planet::make_planet_surface_mesh(detailed_config);
+
+    require(coarse.mesh.vertices.size() == detailed.mesh.vertices.size(),
+            "terrain detail controls should not change patch topology");
+    bool found_changed_vertex = false;
+    for (std::size_t index = 0; index < coarse.mesh.vertices.size(); ++index) {
+        const cubey::render::VertexPositionColorNormalUv& a = coarse.mesh.vertices[index];
+        const cubey::render::VertexPositionColorNormalUv& b = detailed.mesh.vertices[index];
+        const float delta = std::abs(a.position[0] - b.position[0]) +
+                            std::abs(a.position[1] - b.position[1]) +
+                            std::abs(a.position[2] - b.position[2]);
+        if (delta > 0.25F) {
+            found_changed_vertex = true;
+            break;
+        }
+    }
+    require(found_changed_vertex, "terrain detail controls should affect generated terrain shape");
+}
+
 void test_planet_surface_terrain_normals_are_finite_and_outward() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1200.0F,
@@ -609,6 +650,7 @@ int main() {
         test_planet_surface_builds_expected_patch_counts();
         test_planet_surface_vertices_stay_on_radius();
         test_planet_surface_terrain_displaces_within_height_bounds();
+        test_planet_surface_terrain_detail_controls_change_shape();
         test_planet_surface_terrain_normals_are_finite_and_outward();
         test_planet_surface_triangles_are_wound_outward();
         test_planet_surface_lod_subdivides_near_camera_patches();

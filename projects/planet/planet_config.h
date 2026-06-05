@@ -18,6 +18,9 @@ inline constexpr float kPlanetDefaultLodTargetEdgePx = 10.0F;
 inline constexpr float kPlanetDefaultTerrainHeightScaleM = 12000.0F;
 inline constexpr float kPlanetDefaultTerrainNoiseScale = 2.5F;
 inline constexpr std::uint32_t kPlanetDefaultTerrainSeed = 1337U;
+inline constexpr float kPlanetDefaultTerrainMidDetailStrength = 0.45F;
+inline constexpr float kPlanetDefaultTerrainFineDetailStrength = 0.16F;
+inline constexpr float kPlanetDefaultTerrainFineDetailScale = 12.0F;
 inline constexpr std::uint32_t kPlanetMaxLiveLodLevel = 6;
 inline constexpr std::uint64_t kPlanetMaxLivePatchInstances = 65536ULL;
 inline constexpr std::size_t kPlanetDiagnosticLodCapacity = 8;
@@ -48,6 +51,9 @@ struct PlanetConfig {
     float terrain_height_scale_m = kPlanetDefaultTerrainHeightScaleM;
     float terrain_noise_scale = kPlanetDefaultTerrainNoiseScale;
     std::uint32_t terrain_seed = kPlanetDefaultTerrainSeed;
+    float terrain_mid_detail_strength = kPlanetDefaultTerrainMidDetailStrength;
+    float terrain_fine_detail_strength = kPlanetDefaultTerrainFineDetailStrength;
+    float terrain_fine_detail_scale = kPlanetDefaultTerrainFineDetailScale;
 
     friend bool operator==(const PlanetConfig&, const PlanetConfig&) = default;
 };

@@ -13,6 +13,33 @@ layout(push_constant) uniform PlanetPushConstants {
     vec4 terrain_options;
 } pc;
 
+uint packed_patch_lod_option() {
+    return uint(pc.surface_options.y + 0.5);
+}
+
+float patches_per_face_option() {
+    return float(max(packed_patch_lod_option() / 16U, 1U));
+}
+
+float max_lod_option() {
+    return float(packed_patch_lod_option() & 15U);
+}
+
+float wire_overlay_option() {
+    return fract(pc.surface_options.x) > 0.1 ? 1.0 : 0.0;
+}
+
+int debug_view_option() {
+    return int(floor(pc.surface_options.x));
+}
+
+vec2 terrain_detail_strengths() {
+    float packed = floor(pc.surface_options.z + 0.5);
+    float mid = floor(packed / 4096.0) / 1024.0;
+    float fine = mod(packed, 4096.0) / 1024.0;
+    return vec2(mid, fine);
+}
+
 layout(location = 0) out vec3 out_color;
 layout(location = 1) out vec3 out_normal;
 layout(location = 2) out vec2 out_uv;
@@ -37,7 +64,7 @@ vec3 cube_face_point(uint face, float u, float v) {
 }
 
 vec4 patch_bounds() {
-    float patches_per_face = max(pc.surface_options.z, 1.0);
+    float patches_per_face = patches_per_face_option();
     float level_divisions = exp2(float(in_patch_id.y));
     float divisions = patches_per_face * level_divisions;
     float inv_divisions = 1.0 / divisions;
@@ -112,10 +139,14 @@ float terrain_height_m(vec3 normal) {
 
     uint seed = uint(pc.terrain_options.z + 0.5);
     vec3 p = normal * max(pc.terrain_options.y, 0.0001);
+    vec2 detail_strength = terrain_detail_strengths();
     float broad = fbm(p + vec3(1.7, -3.2, 5.1), seed, 4U);
-    float ridge_source = fbm(p * 1.85 + vec3(-4.0, 2.4, 8.5), seed + 37U, 4U);
-    float ridged = 1.0 - abs(ridge_source);
-    float height = (broad * 0.68 + (ridged - 0.48) * 0.64) * height_scale;
+    float ridge_source = fbm(p * 2.35 + vec3(-4.0, 2.4, 8.5), seed + 37U, 5U);
+    float mid = ((1.0 - abs(ridge_source)) * 2.0 - 1.0) * detail_strength.x;
+    float fine =
+        fbm(p * max(pc.surface_options.w, 0.0001) + vec3(6.3, 1.1, -7.4), seed + 113U, 3U) *
+        detail_strength.y;
+    float height = (broad * 0.58 + mid + fine) * height_scale;
     return clamp(height, -height_scale, height_scale);
 }
 
@@ -177,7 +208,7 @@ vec3 patch_color() {
 }
 
 vec3 lod_color() {
-    float max_lod = max(pc.surface_options.w, 0.0);
+    float max_lod = max(max_lod_option(), 0.0);
     float t = max_lod <= 0.0 ? 0.0 : float(in_patch_id.y) / max_lod;
     return vec3(0.12 + 0.82 * t, 0.55 - 0.28 * t, 0.95 - 0.76 * t);
 }
@@ -213,7 +244,7 @@ vec3 final_color(vec3 normal, float height_m) {
 }
 
 vec3 vertex_color(vec3 normal, float height_m) {
-    int debug_view = int(pc.surface_options.y + 0.5);
+    int debug_view = debug_view_option();
     if (debug_view == 1) {
         return face_color(in_patch_id.x);
     }

@@ -112,6 +112,25 @@ static_assert(sizeof(PlanetPushConstants) <= 128U);
     };
 }
 
+[[nodiscard]] float packed_debug_wire_option(const PlanetConfig& config) {
+    return static_cast<float>(static_cast<int>(config.debug_view)) +
+           (config.wire_overlay ? 0.25F : 0.0F);
+}
+
+[[nodiscard]] float packed_patch_lod_option(const PlanetConfig& config) {
+    return static_cast<float>(config.patches_per_face * 16U + config.max_lod_level);
+}
+
+[[nodiscard]] float packed_terrain_detail_strengths(const PlanetConfig& config) {
+    constexpr float kQuantizeScale = 1024.0F;
+    constexpr float kQuantizeBase = 4096.0F;
+    const float mid = std::clamp(std::round(config.terrain_mid_detail_strength * kQuantizeScale),
+                                 0.0F, kQuantizeBase - 1.0F);
+    const float fine = std::clamp(std::round(config.terrain_fine_detail_strength * kQuantizeScale),
+                                  0.0F, kQuantizeBase - 1.0F);
+    return mid * kQuantizeBase + fine;
+}
+
 class PlanetApp {
   public:
     explicit PlanetApp(RunConfig config)
@@ -308,6 +327,12 @@ class PlanetApp {
                           0.0F, "%.0f");
         ImGui::InputFloat("Terrain Noise Scale", &edit_planet_config_.terrain_noise_scale, 0.0F,
                           0.0F, "%.2f");
+        ImGui::InputFloat("Terrain Mid Detail", &edit_planet_config_.terrain_mid_detail_strength,
+                          0.0F, 0.0F, "%.2f");
+        ImGui::InputFloat("Terrain Fine Detail", &edit_planet_config_.terrain_fine_detail_strength,
+                          0.0F, 0.0F, "%.2f");
+        ImGui::InputFloat("Terrain Fine Scale", &edit_planet_config_.terrain_fine_detail_scale,
+                          0.0F, 0.0F, "%.2f");
         int terrain_seed = static_cast<int>(edit_planet_config_.terrain_seed);
         if (ImGui::InputInt("Terrain Seed", &terrain_seed)) {
             edit_planet_config_.terrain_seed =
@@ -574,7 +599,6 @@ class PlanetApp {
                                                        static_cast<float>(extent.height);
         refresh_frame();
         const cubey::Transform3D transform = camera_render_transform();
-        const float debug_view = static_cast<float>(static_cast<int>(planet_config_.debug_view));
         const float terrain_height =
             planet_config_.terrain_enabled ? planet_config_.terrain_height_scale_m : 0.0F;
         const float skirt_depth = std::max(surface_build_.diagnostics.min_skirt_depth_m,
@@ -591,10 +615,10 @@ class PlanetApp {
                 },
             .surface_options =
                 {
-                    planet_config_.wire_overlay ? 1.0F : 0.0F,
-                    debug_view,
-                    static_cast<float>(planet_config_.patches_per_face),
-                    static_cast<float>(planet_config_.max_lod_level),
+                    packed_debug_wire_option(planet_config_),
+                    packed_patch_lod_option(planet_config_),
+                    packed_terrain_detail_strengths(planet_config_),
+                    planet_config_.terrain_fine_detail_scale,
                 },
             .terrain_options =
                 {
