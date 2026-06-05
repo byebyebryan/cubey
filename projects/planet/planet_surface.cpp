@@ -113,7 +113,7 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
 }
 
 [[nodiscard]] PrimitiveVec3 vertex_color(const PlanetConfig& config,
-                                         const PlanetSurfacePatch& patch,
+                                         const PlanetSurfacePatchInstance& patch,
                                          cubey::math::Vec3 normal) {
     switch (config.debug_view) {
     case PlanetDebugView::Final:
@@ -153,7 +153,7 @@ void update_screen_error_range(PlanetSurfaceDiagnostics& diagnostics, float valu
 }
 
 [[nodiscard]] std::array<cubey::math::DVec3, 5>
-patch_sample_points(const PlanetConfig& config, const PlanetSurfacePatch& patch) {
+patch_sample_points(const PlanetConfig& config, const PlanetSurfacePatchInstance& patch) {
     const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
     const float u_mid = (bounds.u0 + bounds.u1) * 0.5F;
     const float v_mid = (bounds.v0 + bounds.v1) * 0.5F;
@@ -172,7 +172,7 @@ struct PatchBounds {
 };
 
 [[nodiscard]] PatchBounds patch_bounds(const PlanetConfig& config,
-                                       const PlanetSurfacePatch& patch) {
+                                       const PlanetSurfacePatchInstance& patch) {
     const std::array<cubey::math::DVec3, 5> samples = patch_sample_points(config, patch);
     PatchBounds bounds{
         .center_m = samples[0],
@@ -184,7 +184,7 @@ struct PatchBounds {
 }
 
 [[nodiscard]] bool patch_passes_horizon_cull(const PlanetConfig& config, PlanetSurfaceView view,
-                                             const PlanetSurfacePatch& patch) {
+                                             const PlanetSurfacePatchInstance& patch) {
     if (!view.culling_enabled) {
         return true;
     }
@@ -210,7 +210,7 @@ struct PatchBounds {
 }
 
 [[nodiscard]] bool patch_passes_view_cull(const PlanetConfig& config, PlanetSurfaceView view,
-                                          const PlanetSurfacePatch& patch) {
+                                          const PlanetSurfacePatchInstance& patch) {
     if (!view.culling_enabled) {
         return true;
     }
@@ -239,7 +239,7 @@ struct PatchBounds {
 }
 
 [[nodiscard]] float patch_screen_error_px(const PlanetConfig& config, PlanetSurfaceView view,
-                                          const PlanetSurfacePatch& patch) {
+                                          const PlanetSurfacePatchInstance& patch) {
     const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
     const float u_mid = (bounds.u0 + bounds.u1) * 0.5F;
     const float v_mid = (bounds.v0 + bounds.v1) * 0.5F;
@@ -265,7 +265,7 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
     }
 }
 
-void record_visible_patch(PlanetSurfacePatchPlan& plan, const PlanetSurfacePatch& patch) {
+void record_visible_patch(PlanetSurfacePatchPlan& plan, const PlanetSurfacePatchInstance& patch) {
     ++plan.diagnostics.planned_patch_count;
     plan.diagnostics.min_lod_level = plan.diagnostics.visible_patch_count == 0U
                                          ? patch.id.level
@@ -282,11 +282,11 @@ void record_visible_patch(PlanetSurfacePatchPlan& plan, const PlanetSurfacePatch
     }
     ++plan.diagnostics.visible_patch_count;
     plan.diagnostics.patch_count = plan.diagnostics.visible_patch_count;
-    plan.patches.push_back(patch);
+    plan.selected_patches.push_back(patch);
 }
 
 void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
-                             PlanetSurfacePatch patch, PlanetSurfacePatchPlan& plan) {
+                             PlanetSurfacePatchInstance patch, PlanetSurfacePatchPlan& plan) {
     patch.screen_error_px = patch_screen_error_px(config, view, patch);
     ++plan.diagnostics.planned_patch_count;
 
@@ -306,17 +306,17 @@ void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
     if (wants_refinement) {
         ++plan.diagnostics.subdivided_patch_count;
         append_coverage_patches(
-            config, view, PlanetSurfacePatch{.id = planet_surface_child_patch_id(patch.id, 0U)},
-            plan);
+            config, view,
+            PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 0U)}, plan);
         append_coverage_patches(
-            config, view, PlanetSurfacePatch{.id = planet_surface_child_patch_id(patch.id, 1U)},
-            plan);
+            config, view,
+            PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 1U)}, plan);
         append_coverage_patches(
-            config, view, PlanetSurfacePatch{.id = planet_surface_child_patch_id(patch.id, 2U)},
-            plan);
+            config, view,
+            PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 2U)}, plan);
         append_coverage_patches(
-            config, view, PlanetSurfacePatch{.id = planet_surface_child_patch_id(patch.id, 3U)},
-            plan);
+            config, view,
+            PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 3U)}, plan);
         return;
     }
     record_visible_patch(plan, patch);
@@ -329,7 +329,7 @@ void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
         for (std::uint32_t py = 0; py < config.patches_per_face; ++py) {
             for (std::uint32_t px = 0; px < config.patches_per_face; ++px) {
                 append_coverage_patches(config, view,
-                                        PlanetSurfacePatch{
+                                        PlanetSurfacePatchInstance{
                                             .id =
                                                 {
                                                     .face = face,
@@ -356,7 +356,7 @@ vertex_normal(const cubey::render::VertexPositionColorNormalUv& vertex) {
 }
 
 [[nodiscard]] float patch_skirt_depth_m(const PlanetConfig& config,
-                                        const PlanetSurfacePatch& patch) {
+                                        const PlanetSurfacePatchInstance& patch) {
     const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
     const float u_mid = (bounds.u0 + bounds.u1) * 0.5F;
     const float v_mid = (bounds.v0 + bounds.v1) * 0.5F;
@@ -425,7 +425,7 @@ void append_skirt_segment(const PlanetConfig& config, const PlanetFrame& frame,
 }
 
 void append_patch_skirts(const PlanetConfig& config, const PlanetFrame& frame,
-                         const PlanetSurfacePatch& patch, std::uint32_t base_vertex,
+                         const PlanetSurfacePatchInstance& patch, std::uint32_t base_vertex,
                          std::uint32_t vertices_per_side, PlanetSurfaceBuildResult& result) {
     if (!config.skirts_enabled) {
         return;
@@ -451,7 +451,7 @@ void append_patch_skirts(const PlanetConfig& config, const PlanetFrame& frame,
 }
 
 void append_patch_mesh(const PlanetConfig& config, const PlanetFrame& frame,
-                       const PlanetSurfacePatch& patch, PlanetSurfaceBuildResult& result) {
+                       const PlanetSurfacePatchInstance& patch, PlanetSurfaceBuildResult& result) {
     const std::uint32_t patch_resolution = config.patch_resolution;
     const std::uint32_t vertices_per_side = patch_resolution + 1U;
     const std::uint32_t base_vertex = static_cast<std::uint32_t>(result.mesh.vertices.size());
@@ -583,13 +583,13 @@ PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
 
     PlanetSurfaceBuildResult result{};
     result.diagnostics = plan.diagnostics;
-    for (const PlanetSurfacePatch& patch : plan.patches) {
+    for (const PlanetSurfacePatchInstance& patch : plan.selected_patches) {
         append_patch_mesh(config, frame, patch, result);
     }
 
     result.diagnostics.vertex_count = static_cast<std::uint32_t>(result.mesh.vertices.size());
     result.diagnostics.triangle_count = static_cast<std::uint32_t>(result.mesh.indices.size() / 3U);
-    if (plan.patches.empty()) {
+    if (plan.selected_patches.empty()) {
         result.diagnostics.min_lod_level = 0;
     }
     return result;

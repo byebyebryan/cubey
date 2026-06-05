@@ -225,6 +225,35 @@ void test_planet_surface_planner_refines_visible_patches_with_fallback_coverage(
             "planet planner should report refinement cull reasons");
 }
 
+void test_planet_surface_mesh_consumes_selected_patch_instances() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1000.0F,
+        .patches_per_face = 2,
+        .patch_resolution = 2,
+        .max_lod_level = 1,
+        .lod_target_edge_px = 1.0F,
+        .skirts_enabled = false,
+    };
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, 1500.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = true,
+    };
+    const cubey::projects::planet::PlanetSurfacePatchPlan plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+    const cubey::projects::planet::PlanetSurfaceBuildResult result =
+        cubey::projects::planet::make_planet_surface_mesh(config, view, {}, plan);
+
+    require(plan.selected_patches.size() == plan.diagnostics.patch_count,
+            "planet planner selected patch list should match patch diagnostics");
+    require(result.diagnostics.patch_count == plan.diagnostics.patch_count,
+            "planet mesh build should consume the selected planner patch instances");
+    require(result.diagnostics.vertex_count == plan.diagnostics.patch_count *
+                                                   (config.patch_resolution + 1U) *
+                                                   (config.patch_resolution + 1U),
+            "planet mesh build should emit one grid for each selected patch instance");
+}
+
 void test_planet_surface_planner_keeps_fallback_when_camera_looks_away() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1000.0F,
@@ -351,6 +380,7 @@ int main() {
         test_planet_surface_lod_subdivides_near_camera_patches();
         test_planet_surface_can_build_camera_relative_vertices();
         test_planet_surface_planner_refines_visible_patches_with_fallback_coverage();
+        test_planet_surface_mesh_consumes_selected_patch_instances();
         test_planet_surface_planner_keeps_fallback_when_camera_looks_away();
         test_planet_surface_planner_selects_near_lod();
         test_planet_surface_skirts_add_seam_geometry();

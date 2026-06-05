@@ -77,13 +77,13 @@ struct PlanetSurfacePatchBounds {
     float v1 = 1.0F;
 };
 
-struct PlanetSurfacePatch {
+struct PlanetSurfacePatchInstance {
     PlanetSurfacePatchId id{};
     float screen_error_px = 0.0F;
 };
 
 struct PlanetSurfacePatchPlan {
-    std::vector<PlanetSurfacePatch> patches{};
+    std::vector<PlanetSurfacePatchInstance> selected_patches{};
     PlanetSurfaceDiagnostics diagnostics{};
 };
 
