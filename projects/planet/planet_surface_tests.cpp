@@ -95,6 +95,7 @@ void test_planet_surface_vertices_stay_on_radius() {
         .patch_resolution = 3,
         .max_lod_level = 0,
         .skirts_enabled = false,
+        .terrain_enabled = false,
     };
     const cubey::projects::planet::PlanetSurfaceBuildResult result =
         cubey::projects::planet::make_planet_surface_mesh(config);
@@ -173,6 +174,7 @@ void test_planet_surface_triangles_are_wound_outward() {
         .patch_resolution = 3,
         .max_lod_level = 0,
         .skirts_enabled = false,
+        .terrain_enabled = false,
     };
     const cubey::projects::planet::PlanetSurfaceBuildResult result =
         cubey::projects::planet::make_planet_surface_mesh(config);
@@ -229,6 +231,7 @@ void test_planet_surface_can_build_camera_relative_vertices() {
         .patch_resolution = 2,
         .max_lod_level = 0,
         .skirts_enabled = false,
+        .terrain_enabled = false,
     };
     const cubey::Transform3D camera{
         .translation = {0.0F, 0.0F, 1500.0F},
@@ -455,6 +458,7 @@ void test_planet_surface_skirts_add_seam_geometry() {
         .patch_resolution = 2,
         .max_lod_level = 0,
         .skirts_enabled = false,
+        .terrain_enabled = false,
     };
     cubey::projects::planet::PlanetConfig with_skirts = no_skirts;
     with_skirts.skirts_enabled = true;
@@ -486,6 +490,7 @@ void test_planet_surface_skirt_vertices_drop_below_radius() {
         .max_lod_level = 0,
         .debug_view = cubey::projects::planet::PlanetDebugView::Seams,
         .skirts_enabled = true,
+        .terrain_enabled = false,
     };
     const cubey::projects::planet::PlanetSurfaceBuildResult result =
         cubey::projects::planet::make_planet_surface_mesh(config);

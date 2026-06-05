@@ -278,7 +278,7 @@ class PlanetApp {
                 static_cast<std::uint32_t>(std::max(patches_per_face, 0));
         }
         int patch_resolution = static_cast<int>(edit_planet_config_.patch_resolution);
-        if (ImGui::InputInt("Patch Resolution", &patch_resolution)) {
+        if (ImGui::InputInt("Patch Grid Resolution", &patch_resolution)) {
             edit_planet_config_.patch_resolution =
                 static_cast<std::uint32_t>(std::max(patch_resolution, 0));
         }
