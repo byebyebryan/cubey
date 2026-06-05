@@ -492,11 +492,18 @@ class PlanetApp {
         ImGui::Text("Patches: %u rendered / %u planned",
                     surface_build_.diagnostics.visible_patch_count,
                     surface_build_.diagnostics.planned_patch_count);
+        ImGui::Text("Patch budget: %u / %llu", surface_build_.diagnostics.patch_count,
+                    static_cast<unsigned long long>(kPlanetMaxLivePatchInstances));
         ImGui::Text("Base / refined: %u / %u", surface_build_.diagnostics.base_patch_count,
                     surface_build_.diagnostics.refined_patch_count);
         ImGui::Text("Subdivided parents: %u", surface_build_.diagnostics.subdivided_patch_count);
         ImGui::Text("Fallback parents: %u",
                     surface_build_.diagnostics.refinement_fallback_patch_count);
+        ImGui::Text("Budget fallback parents: %u",
+                    surface_build_.diagnostics.budget_fallback_patch_count);
+        ImGui::Text("Hysteresis delayed: %u splits / %u merges",
+                    surface_build_.diagnostics.hysteresis_delayed_split_count,
+                    surface_build_.diagnostics.hysteresis_delayed_merge_count);
         ImGui::Text("Refinement culled: %u horizon / %u view",
                     surface_build_.diagnostics.culled_horizon_count,
                     surface_build_.diagnostics.culled_view_count);
