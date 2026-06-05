@@ -1,6 +1,7 @@
 #include "planet_app.h"
 
 #include "planet_camera.h"
+#include "planet_celestial.h"
 #include "planet_config.h"
 #include "planet_frame.h"
 #include "planet_surface.h"
@@ -189,8 +190,10 @@ class PlanetApp {
         : config_(std::move(config)), planet_config_(planet_config_from_run_config(config_)),
           edit_planet_config_(planet_config_),
           atmosphere_state_(planet_atmosphere_run_state(config_, planet_config_)),
-          atmosphere_lighting_(
-              cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment)),
+          celestial_system_(
+              planet_celestial_system_from_atmosphere(atmosphere_state_.environment)),
+          atmosphere_lighting_(planet_celestial_lighting(atmosphere_state_.environment,
+                                                         celestial_system_)),
           orbit_controller_(planet_orbit_config(planet_config_)) {
         refresh_frame();
         rebuild_surface_data(default_surface_extent());
@@ -871,14 +874,24 @@ class PlanetApp {
             cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
         atmosphere_state_.environment.reference_geometry_enabled = false;
         cubey::atmosphere_environment_resolve_run_state(atmosphere_state_);
+        celestial_system_ =
+            planet_celestial_system_from_atmosphere(atmosphere_state_.environment);
+        atmosphere_state_.environment =
+            planet_atmosphere_inputs_from_celestial(atmosphere_state_.environment,
+                                                    celestial_system_);
         atmosphere_lighting_ =
-            cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
+            planet_celestial_lighting(atmosphere_state_.environment, celestial_system_);
     }
 
     void update_atmosphere_time(double delta_seconds) {
         if (cubey::atmosphere_environment_advance_time(atmosphere_state_, delta_seconds)) {
+            celestial_system_ =
+                planet_celestial_system_from_atmosphere(atmosphere_state_.environment);
+            atmosphere_state_.environment =
+                planet_atmosphere_inputs_from_celestial(atmosphere_state_.environment,
+                                                        celestial_system_);
             atmosphere_lighting_ =
-                cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
+                planet_celestial_lighting(atmosphere_state_.environment, celestial_system_);
         }
     }
 
@@ -1184,6 +1197,7 @@ class PlanetApp {
     PlanetConfig planet_config_{};
     PlanetConfig edit_planet_config_{};
     cubey::AtmosphereEnvironmentRunState atmosphere_state_{};
+    PlanetCelestialSystem celestial_system_{};
     cubey::render::AtmosphereEnvironmentLighting atmosphere_lighting_{};
     cubey::OrbitController orbit_controller_;
     cubey::Camera3D camera_{cubey::Camera3DConfig{.near_z = 1.0F, .far_z = 1500000.0F}};

@@ -17,6 +17,7 @@ cubey_add_app_target(
         main.cpp
         planet_app.cpp
         planet_camera.cpp
+        planet_celestial.cpp
         planet_config.cpp
         planet_frame.cpp
         planet_surface.cpp
@@ -48,6 +49,19 @@ if(BUILD_TESTING)
             cubey_project_warnings
     )
     add_test(NAME planet_frame_tests COMMAND cubey_project_planet_tests)
+
+    add_executable(
+        cubey_project_planet_celestial_tests
+        planet_celestial.cpp
+        planet_celestial_tests.cpp
+    )
+    target_link_libraries(
+        cubey_project_planet_celestial_tests
+        PRIVATE
+            cubey::cubey
+            cubey_project_warnings
+    )
+    add_test(NAME planet_celestial_tests COMMAND cubey_project_planet_celestial_tests)
 
     add_executable(
         cubey_project_planet_surface_tests
