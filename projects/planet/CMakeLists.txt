@@ -19,6 +19,10 @@ cubey_add_app_target(
         planet_surface_field.cpp
     SHADERS
         ${CUBEY_PLANET_SHADERS}
+    SHADER_INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+    SHADER_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_surface_field.glsl"
 )
 
 if(BUILD_TESTING)
