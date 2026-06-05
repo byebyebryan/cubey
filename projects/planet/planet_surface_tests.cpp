@@ -14,6 +14,58 @@ void require(bool condition, const char* message) {
     }
 }
 
+void require_close(float actual, float expected, const char* message) {
+    require(std::abs(actual - expected) < 0.0001F, message);
+}
+
+void test_planet_surface_patch_id_derives_root_bounds() {
+    const cubey::projects::planet::PlanetConfig config{
+        .patches_per_face = 2,
+        .max_lod_level = 2,
+    };
+
+    const cubey::projects::planet::PlanetSurfacePatchBounds bounds =
+        cubey::projects::planet::planet_surface_patch_bounds(
+            config, cubey::projects::planet::PlanetSurfacePatchId{
+                        .face = 3,
+                        .level = 0,
+                        .x = 1,
+                        .y = 0,
+                    });
+
+    require_close(bounds.u0, 0.0F, "root patch x should derive u0 from patch id");
+    require_close(bounds.v0, -1.0F, "root patch y should derive v0 from patch id");
+    require_close(bounds.u1, 1.0F, "root patch x should derive u1 from patch id");
+    require_close(bounds.v1, 0.0F, "root patch y should derive v1 from patch id");
+}
+
+void test_planet_surface_child_id_derives_parent_quadrants() {
+    const cubey::projects::planet::PlanetConfig config{
+        .patches_per_face = 2,
+        .max_lod_level = 2,
+    };
+    const cubey::projects::planet::PlanetSurfacePatchId parent{
+        .face = 4,
+        .level = 0,
+        .x = 1,
+        .y = 0,
+    };
+
+    const cubey::projects::planet::PlanetSurfacePatchId child =
+        cubey::projects::planet::planet_surface_child_patch_id(parent, 2U);
+    require(child.face == parent.face, "child patch should keep parent face");
+    require(child.level == 1U, "child patch should increment level");
+    require(child.x == 2U, "child patch should double parent x plus child x offset");
+    require(child.y == 1U, "child patch should double parent y plus child y offset");
+
+    const cubey::projects::planet::PlanetSurfacePatchBounds bounds =
+        cubey::projects::planet::planet_surface_patch_bounds(config, child);
+    require_close(bounds.u0, 0.0F, "child quadrant should derive u0 from child id");
+    require_close(bounds.v0, -0.5F, "child quadrant should derive v0 from child id");
+    require_close(bounds.u1, 0.5F, "child quadrant should derive u1 from child id");
+    require_close(bounds.v1, 0.0F, "child quadrant should derive v1 from child id");
+}
+
 void test_planet_surface_builds_expected_patch_counts() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 600000.0F,
@@ -291,6 +343,8 @@ void test_planet_surface_seams_debug_view_parses() {
 
 int main() {
     try {
+        test_planet_surface_patch_id_derives_root_bounds();
+        test_planet_surface_child_id_derives_parent_quadrants();
         test_planet_surface_builds_expected_patch_counts();
         test_planet_surface_vertices_stay_on_radius();
         test_planet_surface_triangles_are_wound_outward();

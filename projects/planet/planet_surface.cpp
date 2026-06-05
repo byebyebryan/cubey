@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <stdexcept>
 #include <vector>
 
 namespace cubey::projects::planet {
@@ -63,8 +64,12 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     };
 }
 
-[[nodiscard]] PrimitiveVec3 patch_color(std::uint32_t patch_index) {
-    const float band = static_cast<float>((patch_index * 37U) % 97U) / 96.0F;
+[[nodiscard]] PrimitiveVec3 patch_color(PlanetSurfacePatchId id) {
+    std::uint32_t hash = id.face * 73856093U;
+    hash ^= id.level * 19349663U;
+    hash ^= id.x * 83492791U;
+    hash ^= id.y * 2654435761U;
+    const float band = static_cast<float>(hash % 97U) / 96.0F;
     return {
         0.18F + 0.58F * band,
         0.78F - 0.42F * band,
@@ -114,11 +119,11 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     case PlanetDebugView::Final:
         return final_color(normal);
     case PlanetDebugView::FaceId:
-        return kFaceColors[patch.face];
+        return kFaceColors[patch.id.face];
     case PlanetDebugView::PatchId:
-        return patch_color(patch.patch_index);
+        return patch_color(patch.id);
     case PlanetDebugView::LodLevel:
-        return lod_color(patch.level, config.max_lod_level);
+        return lod_color(patch.id.level, config.max_lod_level);
     case PlanetDebugView::ScreenError:
         return screen_error_color(patch.screen_error_px, config.lod_target_edge_px);
     case PlanetDebugView::Seams:
@@ -149,14 +154,15 @@ void update_screen_error_range(PlanetSurfaceDiagnostics& diagnostics, float valu
 
 [[nodiscard]] std::array<cubey::math::DVec3, 5>
 patch_sample_points(const PlanetConfig& config, const PlanetSurfacePatch& patch) {
-    const float u_mid = (patch.u0 + patch.u1) * 0.5F;
-    const float v_mid = (patch.v0 + patch.v1) * 0.5F;
+    const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
+    const float u_mid = (bounds.u0 + bounds.u1) * 0.5F;
+    const float v_mid = (bounds.v0 + bounds.v1) * 0.5F;
     return {
-        sphere_world_position(config, patch.face, u_mid, v_mid),
-        sphere_world_position(config, patch.face, patch.u0, patch.v0),
-        sphere_world_position(config, patch.face, patch.u1, patch.v0),
-        sphere_world_position(config, patch.face, patch.u0, patch.v1),
-        sphere_world_position(config, patch.face, patch.u1, patch.v1),
+        sphere_world_position(config, patch.id.face, u_mid, v_mid),
+        sphere_world_position(config, patch.id.face, bounds.u0, bounds.v0),
+        sphere_world_position(config, patch.id.face, bounds.u1, bounds.v0),
+        sphere_world_position(config, patch.id.face, bounds.u0, bounds.v1),
+        sphere_world_position(config, patch.id.face, bounds.u1, bounds.v1),
     };
 }
 
@@ -234,11 +240,14 @@ struct PatchBounds {
 
 [[nodiscard]] float patch_screen_error_px(const PlanetConfig& config, PlanetSurfaceView view,
                                           const PlanetSurfacePatch& patch) {
-    const float u_mid = (patch.u0 + patch.u1) * 0.5F;
-    const float v_mid = (patch.v0 + patch.v1) * 0.5F;
-    const cubey::math::DVec3 center = sphere_world_position(config, patch.face, u_mid, v_mid);
-    const cubey::math::DVec3 edge_a = sphere_world_position(config, patch.face, patch.u0, v_mid);
-    const cubey::math::DVec3 edge_b = sphere_world_position(config, patch.face, patch.u1, v_mid);
+    const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
+    const float u_mid = (bounds.u0 + bounds.u1) * 0.5F;
+    const float v_mid = (bounds.v0 + bounds.v1) * 0.5F;
+    const cubey::math::DVec3 center = sphere_world_position(config, patch.id.face, u_mid, v_mid);
+    const cubey::math::DVec3 edge_a =
+        sphere_world_position(config, patch.id.face, bounds.u0, v_mid);
+    const cubey::math::DVec3 edge_b =
+        sphere_world_position(config, patch.id.face, bounds.u1, v_mid);
     const float patch_edge_m = static_cast<float>(glm::length(edge_b - edge_a));
     const float cell_edge_m = patch_edge_m / static_cast<float>(config.patch_resolution);
     const float distance_m =
@@ -259,14 +268,14 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
 void record_visible_patch(PlanetSurfacePatchPlan& plan, const PlanetSurfacePatch& patch) {
     ++plan.diagnostics.planned_patch_count;
     plan.diagnostics.min_lod_level = plan.diagnostics.visible_patch_count == 0U
-                                         ? patch.level
-                                         : std::min(plan.diagnostics.min_lod_level, patch.level);
-    plan.diagnostics.max_lod_level = std::max(plan.diagnostics.max_lod_level, patch.level);
-    if (patch.level < plan.diagnostics.patches_by_lod.size()) {
-        ++plan.diagnostics.patches_by_lod[patch.level];
+                                         ? patch.id.level
+                                         : std::min(plan.diagnostics.min_lod_level, patch.id.level);
+    plan.diagnostics.max_lod_level = std::max(plan.diagnostics.max_lod_level, patch.id.level);
+    if (patch.id.level < plan.diagnostics.patches_by_lod.size()) {
+        ++plan.diagnostics.patches_by_lod[patch.id.level];
     }
     update_screen_error_range(plan.diagnostics, patch.screen_error_px);
-    if (patch.level == 0U) {
+    if (patch.id.level == 0U) {
         ++plan.diagnostics.base_patch_count;
     } else {
         ++plan.diagnostics.refined_patch_count;
@@ -282,7 +291,7 @@ void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
     ++plan.diagnostics.planned_patch_count;
 
     const bool wants_refinement =
-        patch.level < config.max_lod_level && patch.screen_error_px > config.lod_target_edge_px;
+        patch.id.level < config.max_lod_level && patch.screen_error_px > config.lod_target_edge_px;
     if (wants_refinement && !patch_passes_horizon_cull(config, view, patch)) {
         record_refinement_cull(plan, true);
         record_visible_patch(plan, patch);
@@ -295,47 +304,19 @@ void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
     }
 
     if (wants_refinement) {
-        const float um = (patch.u0 + patch.u1) * 0.5F;
-        const float vm = (patch.v0 + patch.v1) * 0.5F;
-        const std::uint32_t next_level = patch.level + 1U;
-        const std::uint32_t child_base = patch.patch_index * 4U;
         ++plan.diagnostics.subdivided_patch_count;
-        append_coverage_patches(config, view,
-                                PlanetSurfacePatch{.face = patch.face,
-                                                   .level = next_level,
-                                                   .patch_index = child_base,
-                                                   .u0 = patch.u0,
-                                                   .v0 = patch.v0,
-                                                   .u1 = um,
-                                                   .v1 = vm},
-                                plan);
-        append_coverage_patches(config, view,
-                                PlanetSurfacePatch{.face = patch.face,
-                                                   .level = next_level,
-                                                   .patch_index = child_base + 1U,
-                                                   .u0 = um,
-                                                   .v0 = patch.v0,
-                                                   .u1 = patch.u1,
-                                                   .v1 = vm},
-                                plan);
-        append_coverage_patches(config, view,
-                                PlanetSurfacePatch{.face = patch.face,
-                                                   .level = next_level,
-                                                   .patch_index = child_base + 2U,
-                                                   .u0 = patch.u0,
-                                                   .v0 = vm,
-                                                   .u1 = um,
-                                                   .v1 = patch.v1},
-                                plan);
-        append_coverage_patches(config, view,
-                                PlanetSurfacePatch{.face = patch.face,
-                                                   .level = next_level,
-                                                   .patch_index = child_base + 3U,
-                                                   .u0 = um,
-                                                   .v0 = vm,
-                                                   .u1 = patch.u1,
-                                                   .v1 = patch.v1},
-                                plan);
+        append_coverage_patches(
+            config, view, PlanetSurfacePatch{.id = planet_surface_child_patch_id(patch.id, 0U)},
+            plan);
+        append_coverage_patches(
+            config, view, PlanetSurfacePatch{.id = planet_surface_child_patch_id(patch.id, 1U)},
+            plan);
+        append_coverage_patches(
+            config, view, PlanetSurfacePatch{.id = planet_surface_child_patch_id(patch.id, 2U)},
+            plan);
+        append_coverage_patches(
+            config, view, PlanetSurfacePatch{.id = planet_surface_child_patch_id(patch.id, 3U)},
+            plan);
         return;
     }
     record_visible_patch(plan, patch);
@@ -344,25 +325,20 @@ void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
 [[nodiscard]] PlanetSurfacePatchPlan make_surface_patch_plan(const PlanetConfig& config,
                                                              PlanetSurfaceView view) {
     PlanetSurfacePatchPlan plan{};
-    const float inv_patch_count = 1.0F / static_cast<float>(config.patches_per_face);
     for (std::uint32_t face = 0; face < 6U; ++face) {
         for (std::uint32_t py = 0; py < config.patches_per_face; ++py) {
             for (std::uint32_t px = 0; px < config.patches_per_face; ++px) {
-                const std::uint32_t patch_index =
-                    face * config.patches_per_face * config.patches_per_face +
-                    py * config.patches_per_face + px;
-                append_coverage_patches(
-                    config, view,
-                    PlanetSurfacePatch{
-                        .face = face,
-                        .level = 0,
-                        .patch_index = patch_index,
-                        .u0 = -1.0F + 2.0F * static_cast<float>(px) * inv_patch_count,
-                        .v0 = -1.0F + 2.0F * static_cast<float>(py) * inv_patch_count,
-                        .u1 = -1.0F + 2.0F * static_cast<float>(px + 1U) * inv_patch_count,
-                        .v1 = -1.0F + 2.0F * static_cast<float>(py + 1U) * inv_patch_count,
-                    },
-                    plan);
+                append_coverage_patches(config, view,
+                                        PlanetSurfacePatch{
+                                            .id =
+                                                {
+                                                    .face = face,
+                                                    .level = 0,
+                                                    .x = px,
+                                                    .y = py,
+                                                },
+                                        },
+                                        plan);
             }
         }
     }
@@ -381,12 +357,17 @@ vertex_normal(const cubey::render::VertexPositionColorNormalUv& vertex) {
 
 [[nodiscard]] float patch_skirt_depth_m(const PlanetConfig& config,
                                         const PlanetSurfacePatch& patch) {
-    const float u_mid = (patch.u0 + patch.u1) * 0.5F;
-    const float v_mid = (patch.v0 + patch.v1) * 0.5F;
-    const cubey::math::DVec3 edge_a = sphere_world_position(config, patch.face, patch.u0, v_mid);
-    const cubey::math::DVec3 edge_b = sphere_world_position(config, patch.face, patch.u1, v_mid);
-    const cubey::math::DVec3 edge_c = sphere_world_position(config, patch.face, u_mid, patch.v0);
-    const cubey::math::DVec3 edge_d = sphere_world_position(config, patch.face, u_mid, patch.v1);
+    const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
+    const float u_mid = (bounds.u0 + bounds.u1) * 0.5F;
+    const float v_mid = (bounds.v0 + bounds.v1) * 0.5F;
+    const cubey::math::DVec3 edge_a =
+        sphere_world_position(config, patch.id.face, bounds.u0, v_mid);
+    const cubey::math::DVec3 edge_b =
+        sphere_world_position(config, patch.id.face, bounds.u1, v_mid);
+    const cubey::math::DVec3 edge_c =
+        sphere_world_position(config, patch.id.face, u_mid, bounds.v0);
+    const cubey::math::DVec3 edge_d =
+        sphere_world_position(config, patch.id.face, u_mid, bounds.v1);
     const float horizontal_cell_m = static_cast<float>(glm::length(edge_b - edge_a)) /
                                     static_cast<float>(config.patch_resolution);
     const float vertical_cell_m = static_cast<float>(glm::length(edge_d - edge_c)) /
@@ -474,16 +455,17 @@ void append_patch_mesh(const PlanetConfig& config, const PlanetFrame& frame,
     const std::uint32_t patch_resolution = config.patch_resolution;
     const std::uint32_t vertices_per_side = patch_resolution + 1U;
     const std::uint32_t base_vertex = static_cast<std::uint32_t>(result.mesh.vertices.size());
+    const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
 
     for (std::uint32_t y = 0; y <= patch_resolution; ++y) {
         const float tv = static_cast<float>(y) / static_cast<float>(patch_resolution);
-        const float v = patch.v0 + (patch.v1 - patch.v0) * tv;
+        const float v = bounds.v0 + (bounds.v1 - bounds.v0) * tv;
         for (std::uint32_t x = 0; x <= patch_resolution; ++x) {
             const float tu = static_cast<float>(x) / static_cast<float>(patch_resolution);
-            const float u = patch.u0 + (patch.u1 - patch.u0) * tu;
-            const cubey::math::Vec3 normal = glm::normalize(cube_face_point(patch.face, u, v));
+            const float u = bounds.u0 + (bounds.u1 - bounds.u0) * tu;
+            const cubey::math::Vec3 normal = glm::normalize(cube_face_point(patch.id.face, u, v));
             const cubey::math::DVec3 world_position =
-                sphere_world_position(config, patch.face, u, v);
+                sphere_world_position(config, patch.id.face, u, v);
             const cubey::math::Vec3 render_position =
                 planet_frame_world_to_render_m(frame, world_position);
             result.mesh.vertices.push_back(VertexPositionColorNormalUv{
@@ -526,6 +508,41 @@ void append_patch_mesh(const PlanetConfig& config, const PlanetFrame& frame,
 }
 
 } // namespace
+
+PlanetSurfacePatchBounds planet_surface_patch_bounds(const PlanetConfig& config,
+                                                     PlanetSurfacePatchId id) {
+    validate_planet_config(config);
+    if (id.face >= 6U) {
+        throw std::runtime_error("planet surface patch face must be < 6");
+    }
+    if (id.level > config.max_lod_level) {
+        throw std::runtime_error("planet surface patch level exceeds max LOD");
+    }
+    const std::uint32_t divisions_per_face = config.patches_per_face << id.level;
+    if (id.x >= divisions_per_face || id.y >= divisions_per_face) {
+        throw std::runtime_error("planet surface patch coordinates exceed level divisions");
+    }
+    const float inv_divisions = 1.0F / static_cast<float>(divisions_per_face);
+    return {
+        .u0 = -1.0F + 2.0F * static_cast<float>(id.x) * inv_divisions,
+        .v0 = -1.0F + 2.0F * static_cast<float>(id.y) * inv_divisions,
+        .u1 = -1.0F + 2.0F * static_cast<float>(id.x + 1U) * inv_divisions,
+        .v1 = -1.0F + 2.0F * static_cast<float>(id.y + 1U) * inv_divisions,
+    };
+}
+
+PlanetSurfacePatchId planet_surface_child_patch_id(PlanetSurfacePatchId id,
+                                                   std::uint32_t child_index) {
+    if (child_index >= 4U) {
+        throw std::runtime_error("planet surface child patch index must be < 4");
+    }
+    return {
+        .face = id.face,
+        .level = id.level + 1U,
+        .x = id.x * 2U + (child_index & 1U),
+        .y = id.y * 2U + (child_index >> 1U),
+    };
+}
 
 PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
                                                    PlanetSurfaceView view) {

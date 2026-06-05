@@ -61,14 +61,24 @@ struct PlanetSurfaceView {
     bool culling_enabled = false;
 };
 
-struct PlanetSurfacePatch {
+struct PlanetSurfacePatchId {
     std::uint32_t face = 0;
     std::uint32_t level = 0;
-    std::uint32_t patch_index = 0;
+    std::uint32_t x = 0;
+    std::uint32_t y = 0;
+
+    friend bool operator==(const PlanetSurfacePatchId&, const PlanetSurfacePatchId&) = default;
+};
+
+struct PlanetSurfacePatchBounds {
     float u0 = -1.0F;
     float v0 = -1.0F;
     float u1 = 1.0F;
     float v1 = 1.0F;
+};
+
+struct PlanetSurfacePatch {
+    PlanetSurfacePatchId id{};
     float screen_error_px = 0.0F;
 };
 
@@ -82,6 +92,10 @@ struct PlanetSurfaceBuildResult {
     PlanetSurfaceDiagnostics diagnostics{};
 };
 
+[[nodiscard]] PlanetSurfacePatchBounds planet_surface_patch_bounds(const PlanetConfig& config,
+                                                                   PlanetSurfacePatchId id);
+[[nodiscard]] PlanetSurfacePatchId planet_surface_child_patch_id(PlanetSurfacePatchId id,
+                                                                 std::uint32_t child_index);
 [[nodiscard]] PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
                                                                  PlanetSurfaceView view);
 [[nodiscard]] PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config);
