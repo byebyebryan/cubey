@@ -12,6 +12,8 @@
 #include <cubey/host/performance_ui.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/render/atmosphere_background_frame.h>
+#include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/instance_buffer.h>
@@ -22,6 +24,7 @@
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>
+#include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
@@ -260,6 +263,7 @@ class PlanetApp {
                         });
         }
         resize_patch_instance_buffer_slots(frame_slot_count);
+        create_atmosphere_background_resources_if_needed(device, gpu, frame_slot_count);
     }
 
     void create_forward_pass(const cubey::vulkan::Device& device, VkExtent2D extent,
@@ -291,17 +295,21 @@ class PlanetApp {
                         .depth = cubey::render::depth_clear_value(),
                     },
             });
+        create_atmosphere_background_pipeline(device, extent, color_format);
         graph_executor_.clear();
         graph_executor_.resize(frame_slot_count);
     }
 
     void destroy_swapchain_resources() {
         graph_executor_.clear();
+        atmosphere_background_.destroy_pipeline();
         forward_pass_.reset();
     }
 
     void destroy_all_resources() {
         destroy_swapchain_resources();
+        atmosphere_background_.destroy();
+        atmosphere_background_atlases_.reset();
         patch_instance_buffers_.clear();
         patch_grid_mesh_.reset();
         surface_frame_material_.reset();
@@ -704,12 +712,62 @@ class PlanetApp {
         };
     }
 
+    [[nodiscard]] cubey::render::AtmosphereEnvironmentConfig atmosphere_environment() const {
+        cubey::render::AtmosphereEnvironmentConfig environment;
+        environment.bottom_radius_km = planet_config_.radius_m * 0.001F;
+        environment.top_radius_km =
+            (planet_config_.radius_m + planet_config_.atmosphere_height_m) * 0.001F;
+        environment.camera_altitude_km = frame_.camera_altitude_m * 0.001F;
+        environment.ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
+        environment.reference_geometry_enabled = false;
+        return environment;
+    }
+
+    [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
+    atmosphere_background_uniforms(VkExtent2D extent) const {
+        const cubey::Transform3D transform = camera_transform();
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
+        return cubey::render::atmosphere_environment_frame_uniforms(
+            atmosphere_environment(),
+            cubey::render::AtmosphereEnvironmentFrameUniformInputs{
+                .view_rays = cubey::render::view_ray_basis_3d(transform.rotation, aspect,
+                                                              camera_.fovy_radians()),
+                .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
+            });
+    }
+
+    void record_atmosphere_background(const cubey::vulkan::CommandRecorder& recorder,
+                                      cubey::render::ColorTargetView target,
+                                      cubey::render::FrameSlot frame_slot) const {
+        atmosphere_background_.record_pass(recorder, target, frame_slot);
+    }
+
+    template <typename RecordCallback>
+    void record_planet_surface_pass(const cubey::vulkan::CommandRecorder& recorder,
+                                    const cubey::render::RenderTargetView& target,
+                                    RecordCallback&& record_callback) const {
+        const cubey::render::RenderTargetRenderingInfo rendering(
+            target, forward_pass().clear_values(),
+            cubey::render::RenderTargetAttachmentOps{
+                .color = cubey::vulkan::load_store_attachment_ops(),
+                .depth = cubey::vulkan::clear_discard_attachment_ops(),
+            });
+        recorder.begin_rendering(rendering.info());
+        recorder.set_viewport_and_scissor(target.color.extent);
+        std::forward<RecordCallback>(record_callback)(recorder);
+        recorder.end_rendering();
+    }
+
     void record_planet_frame(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
                              VkCommandBuffer command_buffer,
                              cubey::render::ColorTargetView color_target,
                              cubey::render::FrameSlot frame_slot, bool present) {
         const PlanetSurfaceFrameUniforms uniforms = surface_frame_uniforms(color_target.extent);
         surface_frame_material().upload(frame_slot, uniforms);
+        atmosphere_background_.upload(frame_slot,
+                                      atmosphere_background_uniforms(color_target.extent));
         const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>& instance_buffer =
             ensure_patch_instance_buffer(gpu, frame_slot);
         const VkDescriptorSet frame_set = surface_frame_material().set(frame_slot);
@@ -740,6 +798,15 @@ class PlanetApp {
             graph.import_depth_target("planet depth", forward_pass().depth_target(),
                                       cubey::render::render_graph_undefined_texture_state());
 
+        graph.add_pass("planet atmosphere", cubey::render::RenderGraphQueueDomain::Graphics)
+            .write_color(backbuffer)
+            .material_pass(cubey::render::atmosphere_background_pass_info())
+            .execute([this, backbuffer,
+                      frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                record_atmosphere_background(
+                    context.recorder(),
+                    cubey::render::resolved_color_target_view(context, backbuffer), frame_slot);
+            });
         graph.add_pass("planet surface", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(backbuffer)
             .write_depth(depth)
@@ -750,10 +817,9 @@ class PlanetApp {
                     cubey::render::resolved_color_target_view(context, backbuffer);
                 const cubey::render::DepthTargetView resolved_depth =
                     cubey::render::resolved_depth_target_view(context, depth);
-                cubey::render::record_render_target_pass(
+                record_planet_surface_pass(
                     context.recorder(),
-                    cubey::render::render_target_view(resolved_color, resolved_depth),
-                    forward_pass().clear_values(), record);
+                    cubey::render::render_target_view(resolved_color, resolved_depth), record);
             });
 
         const cubey::render::CompiledRenderGraph frame_graph = graph.compile();
@@ -826,6 +892,45 @@ class PlanetApp {
         return forward_pass_.value();
     }
 
+    void create_atmosphere_background_resources_if_needed(const cubey::vulkan::Device& device,
+                                                          cubey::vulkan::GpuRuntime& gpu,
+                                                          std::uint32_t frame_slot_count) {
+        if (!atmosphere_background_atlases_.has_value()) {
+            atmosphere_background_atlases_.emplace(
+                cubey::render::create_atmosphere_background_generated_textures(
+                    device, gpu,
+                    {
+                        .lunar_extent = 128,
+                        .night_sky_extent = 128,
+                    }));
+        }
+        if (!atmosphere_background_.materials_created() ||
+            atmosphere_background_.material().material_instance().set_count() != frame_slot_count) {
+            atmosphere_background_.destroy();
+            atmosphere_background_.create_materials(
+                device, cubey::render::AtmosphereBackgroundFrameMaterialConfig{
+                            .frame_slot_count = frame_slot_count,
+                            .textures = atmosphere_background_atlases_->bindings(),
+                        });
+        }
+    }
+
+    void create_atmosphere_background_pipeline(const cubey::vulkan::Device& device,
+                                               VkExtent2D extent, VkFormat color_format) {
+        const std::filesystem::path shader_dir = CUBEY_PLANET_SHADER_DIR;
+        const std::array<cubey::render::ShaderStageFile, 2> shaders{
+            cubey::render::vertex_shader_file(shader_dir / "atmosphere.vert.spv"),
+            cubey::render::fragment_shader_file(shader_dir / "atmosphere.frag.spv"),
+        };
+        atmosphere_background_.destroy_pipeline();
+        atmosphere_background_.create_pipeline(
+            device, cubey::render::AtmosphereBackgroundFramePipelineConfig{
+                        .extent = extent,
+                        .color_format = color_format,
+                        .shader_stage_files = shaders,
+                    });
+    }
+
     [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<PlanetSurfaceFrameUniforms>&
     surface_frame_material() const {
         if (!surface_frame_material_.has_value()) {
@@ -856,6 +961,8 @@ class PlanetApp {
     std::optional<cubey::render::FrameUniformMaterialInstance<PlanetSurfaceFrameUniforms>>
         surface_frame_material_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
+    cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
+    std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::host::FrameStats ui_frame_stats_;
     std::optional<cubey::host::FrameStatsSnapshot> latest_frame_stats_;
