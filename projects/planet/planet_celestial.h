@@ -92,6 +92,8 @@ struct PlanetCelestialDiagnostics {
 
 struct PlanetCelestialBodyRenderPlacementInputs {
     cubey::math::Vec3 camera_render_position_m{0.0F, 0.0F, 0.0F};
+    cubey::math::DVec3 camera_world_position_m{0.0, 0.0, 0.0};
+    cubey::math::DVec3 planet_center_world_position_m{0.0, 0.0, 0.0};
     float near_plane_m = 1.0F;
     float far_plane_m = 1000.0F;
     float angular_radius_scale = 1.0F;

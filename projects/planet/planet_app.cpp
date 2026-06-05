@@ -60,7 +60,7 @@ constexpr const char* kReadyStatus = "rendering planet project";
 constexpr float kPlanetCameraBaseYaw = 0.55F;
 constexpr float kPlanetCameraBasePitch = 0.28F;
 constexpr float kPlanetMoonAngularRadiusScale = 4.0F;
-constexpr float kPlanetMoonShellDistanceFraction = 0.58F;
+constexpr float kPlanetMoonShellDistanceFraction = 0.88F;
 constexpr std::uint32_t kPlanetSurfaceFrameUniformBinding = 0;
 constexpr VkFormat kPlanetSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
@@ -944,6 +944,8 @@ class PlanetApp {
         const PlanetCelestialBodyRenderPlacement placement = planet_celestial_body_render_placement(
             moon, {
                       .camera_render_position_m = transform.translation,
+                      .camera_world_position_m = frame_.camera_world_position_m,
+                      .planet_center_world_position_m = {0.0, 0.0, 0.0},
                       .near_plane_m = frame_.near_plane_m,
                       .far_plane_m = frame_.far_plane_m,
                       .angular_radius_scale = kPlanetMoonAngularRadiusScale,
@@ -982,7 +984,7 @@ class PlanetApp {
             target, forward_pass().clear_values(),
             cubey::render::RenderTargetAttachmentOps{
                 .color = cubey::vulkan::load_store_attachment_ops(),
-                .depth = cubey::vulkan::clear_discard_attachment_ops(),
+                .depth = cubey::vulkan::clear_store_attachment_ops(),
             });
         recorder.begin_rendering(rendering.info());
         recorder.set_viewport_and_scissor(target.color.extent);

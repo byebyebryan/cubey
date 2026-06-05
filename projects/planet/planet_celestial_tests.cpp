@@ -230,6 +230,7 @@ void test_celestial_body_render_placement_preserves_apparent_size() {
     cubey::projects::planet::PlanetCelestialBody moon{};
     moon.direction = glm::normalize(cubey::math::Vec3{0.0F, 0.25F, -1.0F});
     moon.angular_radius_rad = 0.004F;
+    moon.distance_m = 1000.0F;
 
     const cubey::projects::planet::PlanetCelestialBodyRenderPlacement placement =
         cubey::projects::planet::planet_celestial_body_render_placement(
@@ -250,6 +251,30 @@ void test_celestial_body_render_placement_preserves_apparent_size() {
     require_vec_near(
         glm::normalize(placement.center_render_m - cubey::math::Vec3{10.0F, 20.0F, 30.0F}),
         moon.direction, "render placement should keep the body on its celestial ray");
+}
+
+void test_celestial_body_render_placement_uses_topocentric_ray() {
+    cubey::projects::planet::PlanetCelestialBody moon{};
+    moon.direction = {1.0F, 0.0F, 0.0F};
+    moon.angular_radius_rad = 0.004F;
+    moon.distance_m = 100.0F;
+
+    const cubey::projects::planet::PlanetCelestialBodyRenderPlacement placement =
+        cubey::projects::planet::planet_celestial_body_render_placement(
+            moon, {
+                      .camera_render_position_m = {0.0F, 0.0F, 0.0F},
+                      .camera_world_position_m = {0.0, 0.0, 10.0},
+                      .planet_center_world_position_m = {0.0, 0.0, 0.0},
+                      .near_plane_m = 1.0F,
+                      .far_plane_m = 1000.0F,
+                      .angular_radius_scale = 1.0F,
+                      .shell_distance_fraction = 0.5F,
+                  });
+
+    const cubey::math::Vec3 expected_direction =
+        glm::normalize(cubey::math::Vec3{100.0F, 0.0F, -10.0F});
+    require_vec_near(glm::normalize(placement.center_render_m), expected_direction,
+                     "render placement should use the camera-to-physical-body ray");
 }
 
 void test_sky_frame_uniforms_pack_sun_state() {
@@ -360,6 +385,7 @@ int main() {
         test_celestial_lighting_uses_celestial_direction();
         test_celestial_body_conversion_preserves_moon_state();
         test_celestial_body_render_placement_preserves_apparent_size();
+        test_celestial_body_render_placement_uses_topocentric_ray();
         test_sky_frame_uniforms_pack_sun_state();
         test_sky_pass_writes_opaque_sky();
         test_celestial_body_frame_uniforms_pack_render_placement();

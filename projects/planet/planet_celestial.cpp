@@ -234,11 +234,24 @@ planet_celestial_body_render_placement(const PlanetCelestialBody& body,
     const float render_radius = std::tan(scaled_angular_radius) * shell_distance;
     const bool visible =
         body.visible && finite_positive(body.angular_radius_rad) && finite_positive(render_radius);
+    const cubey::math::Vec3 body_direction = normalized_or_up(body.direction);
+    const cubey::math::DVec3 body_center_world =
+        inputs.planet_center_world_position_m +
+        cubey::math::DVec3{static_cast<double>(body_direction.x),
+                           static_cast<double>(body_direction.y),
+                           static_cast<double>(body_direction.z)} *
+            static_cast<double>(std::max(body.distance_m, 1.0F));
+    const cubey::math::DVec3 camera_to_body = body_center_world - inputs.camera_world_position_m;
+    cubey::math::Vec3 render_direction = body_direction;
+    if (glm::length(camera_to_body) > 0.000001) {
+        render_direction = normalized_or_up({static_cast<float>(camera_to_body.x),
+                                             static_cast<float>(camera_to_body.y),
+                                             static_cast<float>(camera_to_body.z)});
+    }
 
     return {
         .visible = visible,
-        .center_render_m =
-            inputs.camera_render_position_m + normalized_or_up(body.direction) * shell_distance,
+        .center_render_m = inputs.camera_render_position_m + render_direction * shell_distance,
         .radius_render_m = visible ? render_radius : 0.0F,
         .shell_distance_m = shell_distance,
         .angular_radius_rad = scaled_angular_radius,
