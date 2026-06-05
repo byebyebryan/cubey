@@ -18,14 +18,20 @@ void validate_config(const GlfwWindowConfig& config) {
 
 Key to_key(int key) {
     switch (key) {
+    case GLFW_KEY_A:
+        return Key::A;
     case GLFW_KEY_D:
         return Key::D;
     case GLFW_KEY_ESCAPE:
         return Key::Escape;
     case GLFW_KEY_R:
         return Key::R;
+    case GLFW_KEY_S:
+        return Key::S;
     case GLFW_KEY_SPACE:
         return Key::Space;
+    case GLFW_KEY_W:
+        return Key::W;
     default:
         return Key::Unknown;
     }

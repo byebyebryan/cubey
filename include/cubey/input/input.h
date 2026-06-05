@@ -7,10 +7,13 @@ namespace cubey::input {
 
 enum class Key {
     Unknown,
+    A,
     D,
     Escape,
     R,
+    S,
     Space,
+    W,
 };
 
 enum class KeyAction {
@@ -96,7 +99,7 @@ class InputFrame {
   private:
     friend class InputState;
 
-    static constexpr std::size_t kKeyCount = 4;
+    static constexpr std::size_t kKeyCount = 7;
     static constexpr std::size_t kMouseButtonCount = 3;
 
     std::array<bool, kKeyCount> keys_down_{};

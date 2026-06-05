@@ -9,14 +9,20 @@ namespace {
 
 [[nodiscard]] std::optional<std::size_t> key_index(Key key) {
     switch (key) {
-    case Key::D:
+    case Key::A:
         return 0U;
-    case Key::Escape:
+    case Key::D:
         return 1U;
-    case Key::R:
+    case Key::Escape:
         return 2U;
-    case Key::Space:
+    case Key::R:
         return 3U;
+    case Key::S:
+        return 4U;
+    case Key::Space:
+        return 5U;
+    case Key::W:
+        return 6U;
     case Key::Unknown:
         return std::nullopt;
     }

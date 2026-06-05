@@ -25,6 +25,7 @@ void test_input_state_accumulates_cursor_and_scroll_per_frame();
 void test_filtered_input_frame_masks_captured_ui_channels();
 void test_input_state_ignores_unknown_inputs();
 void test_input_state_tracks_key_and_button_edges();
+void test_input_state_tracks_wasd_keys();
 void test_orbit_controller_tracks_rotation_drag_pause_and_reset();
 void test_orbit_controller_updates_from_input_snapshot();
 void test_orbit_controller_scroll_zoom_clamps_distance();
@@ -141,6 +142,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_headless_capture_frame_helpers_select_png_or_video_timing),
         CUBEY_TEST(test_host_frame_stats_publish_window_title_metrics),
         CUBEY_TEST(test_input_state_tracks_key_and_button_edges),
+        CUBEY_TEST(test_input_state_tracks_wasd_keys),
         CUBEY_TEST(test_input_state_accumulates_cursor_and_scroll_per_frame),
         CUBEY_TEST(test_input_state_ignores_unknown_inputs),
         CUBEY_TEST(test_filtered_input_frame_masks_captured_ui_channels),

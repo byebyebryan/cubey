@@ -153,8 +153,7 @@ void test_planet_config_applies_run_config_surface_options() {
     require_near(config.terrain_noise_scale, 4.25F, 0.0001F,
                  "planet config should apply terrain noise");
     require(config.terrain_seed == 42U, "planet config should apply terrain seed");
-    require_near(config.sea_level_m, -250.0F, 0.0001F,
-                 "planet config should apply sea level");
+    require_near(config.sea_level_m, -250.0F, 0.0001F, "planet config should apply sea level");
     require_near(config.bathymetry_depth_scale_m, 3200.0F, 0.0001F,
                  "planet config should apply bathymetry depth scale");
     require_near(config.shoreline_width_m, 450.0F, 0.0001F,
@@ -175,11 +174,8 @@ void test_planet_camera_min_altitude_tracks_terrain_clearance() {
 
 void test_planet_camera_keeps_orbit_view_at_high_altitude() {
     const cubey::projects::planet::PlanetConfig config{};
-    const cubey::projects::planet::PlanetCameraState state{
-        .distance_m = config.radius_m + config.camera_altitude_m,
-        .yaw_radians = 0.35F,
-        .pitch_radians = 0.15F,
-    };
+    const cubey::projects::planet::PlanetCameraState state =
+        cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
 
     const cubey::Transform3D transform =
         cubey::projects::planet::make_planet_camera_transform(config, state);
@@ -187,7 +183,8 @@ void test_planet_camera_keeps_orbit_view_at_high_altitude() {
     const cubey::math::Vec3 forward =
         glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
 
-    require(cubey::projects::planet::planet_surface_camera_blend(config, state.distance_m) == 0.0F,
+    require(cubey::projects::planet::planet_surface_camera_blend(
+                config, cubey::projects::planet::planet_camera_distance_m(state)) == 0.0F,
             "planet camera should stay in orbit mode at high altitude");
     require(glm::dot(forward, -up) > 0.95F,
             "high-altitude planet camera should keep looking toward planet center");
@@ -197,11 +194,10 @@ void test_planet_camera_transitions_to_surface_view_near_ground() {
     const cubey::projects::planet::PlanetConfig config{};
     const float distance =
         config.radius_m + cubey::projects::planet::planet_camera_min_altitude_m(config);
-    const cubey::projects::planet::PlanetCameraState state{
-        .distance_m = distance,
-        .yaw_radians = 0.35F,
-        .pitch_radians = 0.15F,
-    };
+    cubey::projects::planet::PlanetCameraState state =
+        cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
+    cubey::projects::planet::planet_camera_set_distance(state, config, distance);
+    cubey::projects::planet::planet_camera_reset_surface_view(state, config);
 
     const cubey::Transform3D transform =
         cubey::projects::planet::make_planet_camera_transform(config, state);
@@ -209,7 +205,8 @@ void test_planet_camera_transitions_to_surface_view_near_ground() {
     const cubey::math::Vec3 forward =
         glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
 
-    require(cubey::projects::planet::planet_surface_camera_blend(config, state.distance_m) == 1.0F,
+    require(cubey::projects::planet::planet_surface_camera_blend(
+                config, cubey::projects::planet::planet_camera_distance_m(state)) == 1.0F,
             "planet camera should fully transition near the minimum altitude");
     require(glm::dot(forward, -up) < 0.45F,
             "surface planet camera should stop looking straight down at planet center");
@@ -221,22 +218,12 @@ void test_planet_surface_camera_drag_rotates_view_without_moving_anchor() {
     const cubey::projects::planet::PlanetConfig config{};
     const float distance =
         config.radius_m + cubey::projects::planet::planet_camera_min_altitude_m(config);
-    const cubey::projects::planet::PlanetCameraState anchored_state{
-        .distance_m = distance,
-        .yaw_radians = 0.35F,
-        .pitch_radians = 0.15F,
-        .surface_anchor_yaw_radians = 0.35F,
-        .surface_anchor_pitch_radians = 0.15F,
-        .surface_anchor_active = true,
-    };
-    const cubey::projects::planet::PlanetCameraState dragged_state{
-        .distance_m = distance,
-        .yaw_radians = 0.75F,
-        .pitch_radians = 0.42F,
-        .surface_anchor_yaw_radians = 0.35F,
-        .surface_anchor_pitch_radians = 0.15F,
-        .surface_anchor_active = true,
-    };
+    cubey::projects::planet::PlanetCameraState anchored_state =
+        cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
+    cubey::projects::planet::planet_camera_set_distance(anchored_state, config, distance);
+    cubey::projects::planet::planet_camera_reset_surface_view(anchored_state, config);
+    cubey::projects::planet::PlanetCameraState dragged_state = anchored_state;
+    cubey::projects::planet::planet_camera_surface_look_drag(dragged_state, config, 120.0, -90.0);
 
     const cubey::Transform3D anchored =
         cubey::projects::planet::make_planet_camera_transform(config, anchored_state);
@@ -257,30 +244,14 @@ void test_planet_surface_camera_vertical_drag_direction() {
     const cubey::projects::planet::PlanetConfig config{};
     const float distance =
         config.radius_m + cubey::projects::planet::planet_camera_min_altitude_m(config);
-    const cubey::projects::planet::PlanetCameraState anchored_state{
-        .distance_m = distance,
-        .yaw_radians = 0.35F,
-        .pitch_radians = 0.15F,
-        .surface_anchor_yaw_radians = 0.35F,
-        .surface_anchor_pitch_radians = 0.15F,
-        .surface_anchor_active = true,
-    };
-    const cubey::projects::planet::PlanetCameraState drag_up_state{
-        .distance_m = distance,
-        .yaw_radians = anchored_state.yaw_radians,
-        .pitch_radians = 0.42F,
-        .surface_anchor_yaw_radians = anchored_state.surface_anchor_yaw_radians,
-        .surface_anchor_pitch_radians = anchored_state.surface_anchor_pitch_radians,
-        .surface_anchor_active = true,
-    };
-    const cubey::projects::planet::PlanetCameraState drag_down_state{
-        .distance_m = distance,
-        .yaw_radians = anchored_state.yaw_radians,
-        .pitch_radians = -0.12F,
-        .surface_anchor_yaw_radians = anchored_state.surface_anchor_yaw_radians,
-        .surface_anchor_pitch_radians = anchored_state.surface_anchor_pitch_radians,
-        .surface_anchor_active = true,
-    };
+    cubey::projects::planet::PlanetCameraState anchored_state =
+        cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
+    cubey::projects::planet::planet_camera_set_distance(anchored_state, config, distance);
+    cubey::projects::planet::planet_camera_reset_surface_view(anchored_state, config);
+    cubey::projects::planet::PlanetCameraState drag_up_state = anchored_state;
+    cubey::projects::planet::planet_camera_surface_look_drag(drag_up_state, config, 0.0, -45.0);
+    cubey::projects::planet::PlanetCameraState drag_down_state = anchored_state;
+    cubey::projects::planet::planet_camera_surface_look_drag(drag_down_state, config, 0.0, 45.0);
 
     const cubey::Transform3D anchored =
         cubey::projects::planet::make_planet_camera_transform(config, anchored_state);
@@ -300,6 +271,26 @@ void test_planet_surface_camera_vertical_drag_direction() {
             "surface camera mouse-up drag should raise the local view");
     require(glm::dot(drag_down_forward, up) < glm::dot(anchored_forward, up),
             "surface camera mouse-down drag should lower the local view");
+}
+
+void test_planet_surface_camera_move_stays_on_surface_shell() {
+    const cubey::projects::planet::PlanetConfig config{};
+    const float distance =
+        config.radius_m + cubey::projects::planet::planet_camera_min_altitude_m(config);
+    cubey::projects::planet::PlanetCameraState state =
+        cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
+    cubey::projects::planet::planet_camera_set_distance(state, config, distance);
+    cubey::projects::planet::planet_camera_reset_surface_view(state, config);
+    const cubey::math::Vec3 before_position = state.position_m;
+
+    const bool moved =
+        cubey::projects::planet::planet_camera_surface_move(state, config, 1.0F, 0.0F, 1.0);
+
+    require(moved, "surface camera movement should move while near the surface");
+    require_near(cubey::projects::planet::planet_camera_distance_m(state), distance, 1.0F,
+                 "surface camera movement should preserve altitude");
+    require(glm::dot(glm::normalize(before_position), glm::normalize(state.position_m)) < 0.99999F,
+            "surface camera movement should advance along the planet tangent");
 }
 
 void test_planet_frame_converts_camera_to_render_origin() {
@@ -338,6 +329,7 @@ int main() {
         test_planet_camera_transitions_to_surface_view_near_ground();
         test_planet_surface_camera_drag_rotates_view_without_moving_anchor();
         test_planet_surface_camera_vertical_drag_direction();
+        test_planet_surface_camera_move_stays_on_surface_shell();
         test_planet_frame_converts_camera_to_render_origin();
         return 0;
     } catch (const std::exception& error) {

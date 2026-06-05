@@ -12,7 +12,6 @@
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/performance_ui.h>
 #include <cubey/host/windowed_app.h>
-#include <cubey/input/orbit_controller.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/hdr_post_frame.h>
@@ -129,20 +128,6 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 17U);
     return layout;
 }
 
-[[nodiscard]] float planet_home_camera_distance(const PlanetConfig& config) {
-    return std::max(config.radius_m + config.camera_altitude_m, config.radius_m * 1.01F);
-}
-
-[[nodiscard]] cubey::OrbitControllerConfig planet_orbit_config(const PlanetConfig& config) {
-    const float home_distance = planet_home_camera_distance(config);
-    const float min_distance = config.radius_m + planet_camera_min_altitude_m(config);
-    return {
-        .distance = home_distance,
-        .min_distance = min_distance,
-        .max_distance = std::max(home_distance * 8.0F, config.radius_m * 3.0F),
-    };
-}
-
 [[nodiscard]] float packed_debug_wire_option(const PlanetConfig& config) {
     return static_cast<float>(static_cast<int>(config.debug_view)) +
            (config.wire_overlay ? 0.25F : 0.0F);
@@ -170,7 +155,8 @@ class PlanetApp {
           edit_planet_config_(planet_config_),
           celestial_system_(planet_celestial_system_from_solar_time(solar_time_)),
           celestial_lighting_(planet_celestial_lighting(celestial_system_)),
-          orbit_controller_(planet_orbit_config(planet_config_)) {
+          camera_state_(planet_camera_home_state(planet_config_, kPlanetCameraBaseYaw,
+                                                 kPlanetCameraBasePitch)) {
         refresh_frame();
         rebuild_surface_data(default_surface_extent());
     }
@@ -355,17 +341,63 @@ class PlanetApp {
 
     void update_input(cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
         update_solar_time(timing.delta_seconds);
-        orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
-        update_surface_camera_anchor();
+        update_camera_input(context.filtered_input(), timing.delta_seconds);
         refresh_frame();
         if (patch_grid_mesh_.has_value() && surface_plan_changed(context.swapchain().extent())) {
             surface_rebuild_pending_ = true;
         }
-        if (patch_grid_mesh_.has_value() && surface_rebuild_pending_ &&
-            !orbit_controller_.dragging()) {
+        if (patch_grid_mesh_.has_value() && surface_rebuild_pending_ && !camera_interacting_) {
             rebuild_surface_resources(context.swapchain().extent());
             surface_rebuild_pending_ = false;
         }
+    }
+
+    void update_camera_input(const cubey::input::FilteredInputFrame& input, double delta_seconds) {
+        camera_interacting_ = false;
+        if (input.key_pressed(cubey::input::Key::R)) {
+            reset_camera();
+            camera_interacting_ = true;
+        }
+
+        const double scroll_y = input.scroll_delta().y;
+        if (scroll_y != 0.0) {
+            planet_camera_zoom_by_scroll(camera_state_, planet_config_, scroll_y);
+            camera_interacting_ = true;
+        }
+
+        const float surface_blend =
+            planet_surface_camera_blend(planet_config_, planet_camera_distance_m(camera_state_));
+        if (input.mouse_button_down(cubey::input::MouseButton::Right) && surface_blend >= 0.20F) {
+            const cubey::input::PointerDelta delta =
+                input.mouse_button_delta(cubey::input::MouseButton::Right);
+            planet_camera_surface_look_drag(camera_state_, planet_config_, delta.x, delta.y);
+            camera_interacting_ = true;
+        } else if (input.mouse_button_down(cubey::input::MouseButton::Left) &&
+                   surface_blend < 0.85F) {
+            const cubey::input::PointerDelta delta =
+                input.mouse_button_delta(cubey::input::MouseButton::Left);
+            planet_camera_orbit_drag(camera_state_, planet_config_, delta.x, delta.y);
+            camera_interacting_ = true;
+        }
+
+        float forward = 0.0F;
+        float right = 0.0F;
+        if (input.key_down(cubey::input::Key::W)) {
+            forward += 1.0F;
+        }
+        if (input.key_down(cubey::input::Key::S)) {
+            forward -= 1.0F;
+        }
+        if (input.key_down(cubey::input::Key::D)) {
+            right += 1.0F;
+        }
+        if (input.key_down(cubey::input::Key::A)) {
+            right -= 1.0F;
+        }
+        camera_interacting_ = planet_camera_surface_move(camera_state_, planet_config_, forward,
+                                                         right, delta_seconds) ||
+                              camera_interacting_;
+        planet_camera_update_surface_mode(camera_state_, planet_config_);
     }
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
@@ -443,8 +475,7 @@ class PlanetApp {
         }
         ImGui::SameLine();
         if (ImGui::Button("Reset Camera")) {
-            orbit_controller_.reset();
-            clear_surface_camera_anchor();
+            reset_camera();
         }
         maybe_apply_planet_config(context);
         if (!rebuild_error_.empty()) {
@@ -480,9 +511,10 @@ class PlanetApp {
         ImGui::Text("Radius: %.0f m", planet_config_.radius_m);
         ImGui::Text("Atmosphere: %.0f m", planet_config_.atmosphere_height_m);
         ImGui::Text("Altitude: %.0f m", frame_.camera_altitude_m);
-        ImGui::Text("Surface camera: %.0f%%",
-                    planet_surface_camera_blend(planet_config_, orbit_controller_.distance()) *
-                        100.0F);
+        ImGui::Text(
+            "Surface camera: %.0f%%",
+            planet_surface_camera_blend(planet_config_, planet_camera_distance_m(camera_state_)) *
+                100.0F);
         ImGui::Text("Horizon: %.0f m", frame_.horizon_distance_m);
         ImGui::Text("Near / far: %.1f m / %.0f m", frame_.near_plane_m, frame_.far_plane_m);
         ImGui::Text("Origin: %.0f %.0f %.0f", frame_.surface_origin_m.x, frame_.surface_origin_m.y,
@@ -584,7 +616,6 @@ class PlanetApp {
         previous_selected_patch_ids_.clear();
 
         planet_config_ = edit_planet_config_;
-        clear_surface_camera_anchor();
         refresh_camera_limits_for_planet();
         refresh_frame();
         rebuild_surface_data(context.swapchain().extent());
@@ -619,44 +650,18 @@ class PlanetApp {
     }
 
     void refresh_camera_limits_for_planet() {
-        const float current_distance = orbit_controller_.distance();
-        const cubey::OrbitControllerConfig orbit_config = planet_orbit_config(planet_config_);
-        orbit_controller_.set_distance_limits(orbit_config.min_distance, orbit_config.max_distance);
-        orbit_controller_.set_home_distance(orbit_config.distance);
-        orbit_controller_.set_distance(current_distance);
+        planet_camera_set_distance(camera_state_, planet_config_,
+                                   planet_camera_distance_m(camera_state_));
+        planet_camera_update_surface_mode(camera_state_, planet_config_);
     }
 
-    void update_surface_camera_anchor() {
-        const float blend =
-            planet_surface_camera_blend(planet_config_, orbit_controller_.distance());
-        if (blend >= 0.35F && !surface_camera_anchor_active_) {
-            surface_camera_anchor_yaw_radians_ = orbit_controller_.yaw() + kPlanetCameraBaseYaw;
-            surface_camera_anchor_pitch_radians_ =
-                orbit_controller_.pitch() + kPlanetCameraBasePitch;
-            surface_camera_anchor_active_ = true;
-        }
-        if (blend <= 0.10F) {
-            surface_camera_anchor_active_ = false;
-        }
-    }
-
-    void clear_surface_camera_anchor() {
-        surface_camera_anchor_active_ = false;
-        surface_camera_anchor_yaw_radians_ = orbit_controller_.yaw() + kPlanetCameraBaseYaw;
-        surface_camera_anchor_pitch_radians_ = orbit_controller_.pitch() + kPlanetCameraBasePitch;
+    void reset_camera() {
+        camera_state_ =
+            planet_camera_home_state(planet_config_, kPlanetCameraBaseYaw, kPlanetCameraBasePitch);
     }
 
     [[nodiscard]] cubey::Transform3D camera_transform() const {
-        return make_planet_camera_transform(
-            planet_config_,
-            {
-                .distance_m = orbit_controller_.distance(),
-                .yaw_radians = orbit_controller_.yaw() + kPlanetCameraBaseYaw,
-                .pitch_radians = orbit_controller_.pitch() + kPlanetCameraBasePitch,
-                .surface_anchor_yaw_radians = surface_camera_anchor_yaw_radians_,
-                .surface_anchor_pitch_radians = surface_camera_anchor_pitch_radians_,
-                .surface_anchor_active = surface_camera_anchor_active_,
-            });
+        return make_planet_camera_transform(planet_config_, camera_state_);
     }
 
     void refresh_frame() {
@@ -1275,7 +1280,7 @@ class PlanetApp {
     PlanetSolarSystemConfig solar_config_{};
     PlanetCelestialSystem celestial_system_{};
     PlanetCelestialLighting celestial_lighting_{};
-    cubey::OrbitController orbit_controller_;
+    PlanetCameraState camera_state_{};
     cubey::Camera3D camera_{cubey::Camera3DConfig{.near_z = 1.0F, .far_z = 1500000.0F}};
     PlanetFrame frame_{};
     PlanetSurfaceBuildResult surface_build_{};
@@ -1285,10 +1290,8 @@ class PlanetApp {
     cubey::math::DVec3 surface_build_render_origin_world_m_{0.0, 0.0, 0.0};
     PlanetSurfaceView surface_build_view_{};
     bool surface_rebuild_pending_ = false;
+    bool camera_interacting_ = false;
     bool planet_config_apply_pending_ = false;
-    bool surface_camera_anchor_active_ = false;
-    float surface_camera_anchor_yaw_radians_ = kPlanetCameraBaseYaw;
-    float surface_camera_anchor_pitch_radians_ = kPlanetCameraBasePitch;
     std::optional<cubey::render::Mesh> patch_grid_mesh_;
     std::optional<cubey::render::Mesh> moon_mesh_;
     std::vector<PatchInstanceBufferSlot> patch_instance_buffers_{};
