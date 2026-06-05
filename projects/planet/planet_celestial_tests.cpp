@@ -102,14 +102,13 @@ void test_celestial_body_render_placement_preserves_apparent_size() {
 
     const cubey::projects::planet::PlanetCelestialBodyRenderPlacement placement =
         cubey::projects::planet::planet_celestial_body_render_placement(
-            moon,
-            {
-                .camera_render_position_m = {10.0F, 20.0F, 30.0F},
-                .near_plane_m = 1.0F,
-                .far_plane_m = 1000.0F,
-                .angular_radius_scale = 4.0F,
-                .shell_distance_fraction = 0.5F,
-            });
+            moon, {
+                      .camera_render_position_m = {10.0F, 20.0F, 30.0F},
+                      .near_plane_m = 1.0F,
+                      .far_plane_m = 1000.0F,
+                      .angular_radius_scale = 4.0F,
+                      .shell_distance_fraction = 0.5F,
+                  });
 
     require(placement.visible, "visible celestial body should produce visible placement");
     require_near(placement.shell_distance_m, 500.0F, 0.001F,
@@ -117,10 +116,9 @@ void test_celestial_body_render_placement_preserves_apparent_size() {
     require_near(placement.radius_render_m / placement.shell_distance_m,
                  std::tan(moon.angular_radius_rad * 4.0F), 0.000001F,
                  "render placement radius should preserve scaled angular size");
-    require_vec_near(glm::normalize(placement.center_render_m - cubey::math::Vec3{10.0F, 20.0F,
-                                                                                  30.0F}),
-                     moon.direction,
-                     "render placement should keep the body on its celestial ray");
+    require_vec_near(
+        glm::normalize(placement.center_render_m - cubey::math::Vec3{10.0F, 20.0F, 30.0F}),
+        moon.direction, "render placement should keep the body on its celestial ray");
 }
 
 void test_sky_frame_uniforms_pack_sun_state() {
@@ -132,8 +130,8 @@ void test_sky_frame_uniforms_pack_sun_state() {
     celestial.moon.direction = glm::normalize(cubey::math::Vec3{-0.50F, 0.10F, 0.86F});
     celestial.moon.angular_radius_rad = 0.008F;
 
-    const cubey::render::ViewRayBasis3D view_rays = cubey::render::view_ray_basis_3d(
-        cubey::math::identity_quat(), 1.5F, 1.0F);
+    const cubey::render::ViewRayBasis3D view_rays =
+        cubey::render::view_ray_basis_3d(cubey::math::identity_quat(), 1.5F, 1.0F);
     const cubey::projects::planet::PlanetSkyFrameUniforms uniforms =
         cubey::projects::planet::planet_sky_frame_uniforms(
             celestial, {
@@ -149,8 +147,7 @@ void test_sky_frame_uniforms_pack_sun_state() {
             "celestial frame uniforms should pack sun visibility");
     require_vec_near({uniforms.sun_direction_radius.x, uniforms.sun_direction_radius.y,
                       uniforms.sun_direction_radius.z},
-                     celestial.sun.direction,
-                     "celestial frame uniforms should pack sun direction");
+                     celestial.sun.direction, "celestial frame uniforms should pack sun direction");
     require_near(uniforms.sun_direction_radius.w, celestial.sun.angular_radius_rad, 0.000001F,
                  "celestial frame uniforms should pack sun angular radius");
     require_near(uniforms.sun_color_intensity.w, celestial.sun.intensity, 0.000001F,
@@ -164,11 +161,59 @@ void test_sky_frame_uniforms_pack_sun_state() {
 }
 
 void test_sky_pass_writes_opaque_sky() {
-    const cubey::render::MaterialPassInfo pass =
-        cubey::projects::planet::planet_sky_pass_info();
+    const cubey::render::MaterialPassInfo pass = cubey::projects::planet::planet_sky_pass_info();
     require(!pass.blend_enable, "sky pass should write the planet-owned sky");
     require(!pass.depth_test && !pass.depth_write,
             "sky pass should use analytic planet occlusion instead of depth");
+}
+
+void test_celestial_body_frame_uniforms_pack_render_placement() {
+    cubey::projects::planet::PlanetCelestialBody moon{};
+    moon.direction = glm::normalize(cubey::math::Vec3{0.0F, 0.0F, 1.0F});
+    moon.color = {0.50F, 0.60F, 0.70F};
+    moon.phase_fraction = 0.25F;
+
+    cubey::projects::planet::PlanetCelestialBodyRenderPlacement placement{};
+    placement.visible = true;
+    placement.center_render_m = {10.0F, 20.0F, 30.0F};
+    placement.radius_render_m = 4.0F;
+
+    cubey::projects::planet::PlanetCelestialLighting lighting{};
+    lighting.primary_light_direction = glm::normalize(cubey::math::Vec3{1.0F, 2.0F, 3.0F});
+    lighting.primary_light_intensity = 0.75F;
+
+    const cubey::projects::planet::PlanetCelestialBodyFrameUniforms uniforms =
+        cubey::projects::planet::planet_celestial_body_frame_uniforms(moon, placement, lighting,
+                                                                      cubey::math::Mat4{1.0F});
+
+    require_near(uniforms.center_radius.x, placement.center_render_m.x, 0.000001F,
+                 "body frame uniforms should pack render center x");
+    require_near(uniforms.center_radius.y, placement.center_render_m.y, 0.000001F,
+                 "body frame uniforms should pack render center y");
+    require_near(uniforms.center_radius.z, placement.center_render_m.z, 0.000001F,
+                 "body frame uniforms should pack render center z");
+    require_near(uniforms.center_radius.w, placement.radius_render_m, 0.000001F,
+                 "body frame uniforms should pack render radius");
+    require_vec_near({uniforms.light_direction_intensity.x, uniforms.light_direction_intensity.y,
+                      uniforms.light_direction_intensity.z},
+                     lighting.primary_light_direction,
+                     "body frame uniforms should pack normalized light direction");
+    require_near(uniforms.light_direction_intensity.w, lighting.primary_light_intensity, 0.000001F,
+                 "body frame uniforms should pack light intensity");
+    require_near(uniforms.color_phase.x, moon.color.x, 0.000001F,
+                 "body frame uniforms should pack body color");
+    require_near(uniforms.color_phase.w, moon.phase_fraction, 0.000001F,
+                 "body frame uniforms should pack body phase");
+}
+
+void test_celestial_body_pass_uses_depth_test_without_depth_write() {
+    const cubey::render::MaterialPassInfo pass =
+        cubey::projects::planet::planet_celestial_body_pass_info();
+
+    require(pass.cull_mode == VK_CULL_MODE_BACK_BIT, "body pass should cull back faces");
+    require(pass.depth_test, "body pass should depth-test against planet geometry");
+    require(!pass.depth_write, "body pass should not overwrite scene depth");
+    require(!pass.blend_enable, "body pass should remain opaque");
 }
 
 } // namespace
@@ -182,6 +227,8 @@ int main() {
         test_celestial_body_render_placement_preserves_apparent_size();
         test_sky_frame_uniforms_pack_sun_state();
         test_sky_pass_writes_opaque_sky();
+        test_celestial_body_frame_uniforms_pack_render_placement();
+        test_celestial_body_pass_uses_depth_test_without_depth_write();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_celestial_tests: %s\n", error.what());

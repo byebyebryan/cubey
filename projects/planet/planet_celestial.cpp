@@ -1,6 +1,7 @@
 #include "planet_celestial.h"
 
 #include <cubey/render/pass.h>
+#include <cubey/render/primitive_mesh.h>
 
 #include <algorithm>
 #include <array>
@@ -73,9 +74,8 @@ void planet_solar_time_advance(PlanetSolarTime& time, double delta_seconds) {
     if (time.hours_per_second == 0.0F || delta_seconds <= 0.0) {
         return;
     }
-    const double advanced_hours =
-        static_cast<double>(time.time_hours) +
-        delta_seconds * static_cast<double>(time.hours_per_second);
+    const double advanced_hours = static_cast<double>(time.time_hours) +
+                                  delta_seconds * static_cast<double>(time.hours_per_second);
     const double day_offset = std::floor(advanced_hours / 24.0);
     double wrapped_hours = std::fmod(advanced_hours, 24.0);
     if (wrapped_hours < 0.0) {
@@ -91,15 +91,15 @@ void planet_solar_time_advance(PlanetSolarTime& time, double delta_seconds) {
     }
 }
 
-PlanetCelestialSystem planet_celestial_system_from_solar_time(
-    const PlanetSolarTime& time, const PlanetSolarSystemConfig& solar) {
+PlanetCelestialSystem
+planet_celestial_system_from_solar_time(const PlanetSolarTime& time,
+                                        const PlanetSolarSystemConfig& solar) {
     constexpr float kTwoPi = std::numbers::pi_v<float> * 2.0F;
     const float simulation_day = planet_solar_time_simulation_day(time);
     const float rotation_angle =
         kTwoPi * simulation_day / std::max(solar.planet_rotation_period_days, 0.0001F);
-    const float orbit_angle =
-        kTwoPi * (simulation_day - solar.equinox_day) /
-        std::max(solar.planet_orbit_period_days, 0.0001F);
+    const float orbit_angle = kTwoPi * (simulation_day - solar.equinox_day) /
+                              std::max(solar.planet_orbit_period_days, 0.0001F);
     const float moon_orbit_angle =
         kTwoPi * simulation_day / std::max(solar.moon_orbit_period_days, 0.0001F);
 
@@ -119,10 +119,9 @@ PlanetCelestialSystem planet_celestial_system_from_solar_time(
         normalized_or_up(rotate_x(moon_orbit_frame, solar.axial_tilt_rad));
     const cubey::math::Vec3 moon_in_planet_frame =
         normalized_or_up(rotate_y(moon_in_tilted_frame, -rotation_angle));
-    const float phase_fraction =
-        wrap_unit(std::acos(std::clamp(glm::dot(-moon_in_planet_frame, sun_in_planet_frame),
-                                       -1.0F, 1.0F)) /
-                  kTwoPi);
+    const float phase_fraction = wrap_unit(
+        std::acos(std::clamp(glm::dot(-moon_in_planet_frame, sun_in_planet_frame), -1.0F, 1.0F)) /
+        kTwoPi);
 
     return {
         .sun =
@@ -141,8 +140,7 @@ PlanetCelestialSystem planet_celestial_system_from_solar_time(
                 .direction = moon_in_planet_frame,
                 .color = {0.58F, 0.62F, 0.74F},
                 .intensity = 0.0F,
-                .angular_radius_rad =
-                    angular_radius(solar.moon_radius_m, solar.moon_distance_m),
+                .angular_radius_rad = angular_radius(solar.moon_radius_m, solar.moon_distance_m),
                 .distance_m = solar.moon_distance_m,
                 .radius_m = solar.moon_radius_m,
                 .phase_fraction = phase_fraction,
@@ -182,16 +180,16 @@ PlanetCelestialBody planet_celestial_moon_body(const PlanetCelestialSystem& cele
     };
 }
 
-PlanetCelestialBodyRenderPlacement planet_celestial_body_render_placement(
-    const PlanetCelestialBody& body, const PlanetCelestialBodyRenderPlacementInputs& inputs) {
+PlanetCelestialBodyRenderPlacement
+planet_celestial_body_render_placement(const PlanetCelestialBody& body,
+                                       const PlanetCelestialBodyRenderPlacementInputs& inputs) {
     const float near_plane = std::max(inputs.near_plane_m, 0.001F);
     const float far_plane = std::max(inputs.far_plane_m, near_plane + 1.0F);
     const float shell_distance =
         std::clamp(far_plane * std::clamp(inputs.shell_distance_fraction, 0.10F, 0.90F),
                    near_plane * 4.0F, far_plane * 0.90F);
-    const float scaled_angular_radius =
-        std::clamp(body.angular_radius_rad * std::max(inputs.angular_radius_scale, 0.0F),
-                   0.00001F, 0.35F);
+    const float scaled_angular_radius = std::clamp(
+        body.angular_radius_rad * std::max(inputs.angular_radius_scale, 0.0F), 0.00001F, 0.35F);
     const float render_radius = std::tan(scaled_angular_radius) * shell_distance;
     const bool visible =
         body.visible && finite_positive(body.angular_radius_rad) && finite_positive(render_radius);
@@ -217,8 +215,8 @@ PlanetCelestialLighting planet_celestial_lighting(const PlanetCelestialSystem& c
     };
 }
 
-PlanetSkyFrameUniforms planet_sky_frame_uniforms(
-    const PlanetCelestialSystem& celestial, const PlanetSkyFrameUniformInputs& inputs) {
+PlanetSkyFrameUniforms planet_sky_frame_uniforms(const PlanetCelestialSystem& celestial,
+                                                 const PlanetSkyFrameUniformInputs& inputs) {
     const cubey::math::Vec3 sun_direction = normalized_or_up(celestial.sun.direction);
     return {
         .camera_right_aspect = inputs.view_rays.right_aspect,
@@ -289,14 +287,67 @@ cubey::render::MaterialPassInfo planet_sky_pass_info() {
     };
 }
 
+PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
+    const PlanetCelestialBody& body, const PlanetCelestialBodyRenderPlacement& placement,
+    const PlanetCelestialLighting& lighting, const cubey::math::Mat4& view_projection) {
+    const cubey::math::Vec3 light_direction = normalized_or_up(lighting.primary_light_direction);
+    return {
+        .view_projection = view_projection,
+        .center_radius =
+            {
+                placement.center_render_m.x,
+                placement.center_render_m.y,
+                placement.center_render_m.z,
+                placement.visible ? placement.radius_render_m : 0.0F,
+            },
+        .light_direction_intensity =
+            {
+                light_direction.x,
+                light_direction.y,
+                light_direction.z,
+                lighting.primary_light_intensity,
+            },
+        .color_phase =
+            {
+                body.color.r,
+                body.color.g,
+                body.color.b,
+                body.phase_fraction,
+            },
+    };
+}
+
+cubey::render::MaterialPassInfo planet_celestial_body_pass_info() {
+    return {
+        .label = "planet.celestial_body",
+        .descriptor_sets =
+            {
+                cubey::render::MaterialDescriptorSetLayout{
+                    .set = 0,
+                    .bindings =
+                        {
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = binding(PlanetCelestialBinding::FrameUniforms),
+                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags =
+                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                        },
+                },
+            },
+        .cull_mode = VK_CULL_MODE_BACK_BIT,
+        .depth_test = true,
+        .depth_write = false,
+    };
+}
+
 void PlanetSkyFrame::create_materials(const cubey::vulkan::Device& device,
                                       const PlanetSkyFrameMaterialConfig& config) {
     material_.emplace(device, cubey::render::FrameUniformMaterialInstanceConfig{
                                   .material_pass = planet_sky_pass_info(),
                                   .descriptor_set = 0,
                                   .frame_slot_count = config.frame_slot_count,
-                                  .uniform_binding =
-                                      binding(PlanetCelestialBinding::FrameUniforms),
+                                  .uniform_binding = binding(PlanetCelestialBinding::FrameUniforms),
                               });
 }
 
@@ -327,8 +378,8 @@ void PlanetSkyFrame::upload(cubey::render::FrameSlot frame_slot,
 }
 
 void PlanetSkyFrame::record_pass(const cubey::vulkan::CommandRecorder& recorder,
-                                       cubey::render::ColorTargetView target,
-                                       cubey::render::FrameSlot frame_slot) const {
+                                 cubey::render::ColorTargetView target,
+                                 cubey::render::FrameSlot frame_slot) const {
     const cubey::render::RenderTargetRenderingInfo rendering(
         cubey::render::render_target_view(target),
         cubey::render::RenderClearValues{
@@ -339,11 +390,11 @@ void PlanetSkyFrame::record_pass(const cubey::vulkan::CommandRecorder& recorder,
         });
     recorder.begin_rendering(rendering.info());
     recorder.set_viewport_and_scissor(target.extent);
-    cubey::render::record_fullscreen_pipeline_draw(recorder, {
-                                                                 .pipeline = &pipeline(),
-                                                                 .descriptor_set =
-                                                                     material().set(frame_slot),
-                                                             });
+    cubey::render::record_fullscreen_pipeline_draw(recorder,
+                                                   {
+                                                       .pipeline = &pipeline(),
+                                                       .descriptor_set = material().set(frame_slot),
+                                                   });
     recorder.end_rendering();
 }
 
@@ -362,6 +413,87 @@ PlanetSkyFrame::material() const {
 const cubey::render::GraphicsPipelineResource& PlanetSkyFrame::pipeline() const {
     if (!pipeline_.has_value()) {
         throw std::runtime_error("planet celestial pipeline is not initialized");
+    }
+    return pipeline_.value();
+}
+
+void PlanetCelestialBodyFrame::create_materials(
+    const cubey::vulkan::Device& device, const PlanetCelestialBodyFrameMaterialConfig& config) {
+    material_.emplace(device, cubey::render::FrameUniformMaterialInstanceConfig{
+                                  .material_pass = planet_celestial_body_pass_info(),
+                                  .descriptor_set = 0,
+                                  .frame_slot_count = config.frame_slot_count,
+                                  .uniform_binding = binding(PlanetCelestialBinding::FrameUniforms),
+                              });
+}
+
+void PlanetCelestialBodyFrame::create_pipeline(
+    const cubey::vulkan::Device& device, const PlanetCelestialBodyFramePipelineConfig& config) {
+    const cubey::render::VertexInputLayout vertex_input =
+        cubey::render::vertex_position_color_normal_uv_input_layout();
+    const std::array descriptor_set_layouts{material().layout()};
+    pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                  .extent = config.extent,
+                                  .color_format = config.color_format,
+                                  .depth_format = config.depth_format,
+                                  .shader_stage_files = config.shader_stage_files,
+                                  .vertex_bindings = vertex_input.bindings(),
+                                  .vertex_attributes = vertex_input.attribute_descriptions(),
+                                  .descriptor_set_layouts = descriptor_set_layouts,
+                                  .material_pass = planet_celestial_body_pass_info(),
+                              });
+}
+
+void PlanetCelestialBodyFrame::destroy_pipeline() {
+    pipeline_.reset();
+}
+
+void PlanetCelestialBodyFrame::destroy() {
+    destroy_pipeline();
+    material_.reset();
+}
+
+void PlanetCelestialBodyFrame::upload(cubey::render::FrameSlot frame_slot,
+                                      const PlanetCelestialBodyFrameUniforms& uniforms) const {
+    material().upload(frame_slot, uniforms);
+}
+
+void PlanetCelestialBodyFrame::record_pass(const cubey::vulkan::CommandRecorder& recorder,
+                                           const cubey::render::RenderTargetView& target,
+                                           cubey::render::FrameSlot frame_slot,
+                                           const cubey::render::Mesh& mesh) const {
+    const cubey::render::RenderTargetRenderingInfo rendering(
+        target, cubey::render::RenderClearValues{},
+        cubey::render::RenderTargetAttachmentOps{
+            .color = cubey::vulkan::load_store_attachment_ops(),
+            .depth = cubey::vulkan::load_store_attachment_ops(),
+        });
+    recorder.begin_rendering(rendering.info());
+    recorder.set_viewport_and_scissor(target.color.extent);
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().layout(), 0,
+                                 material().set(frame_slot));
+    cubey::render::record_draw_item(recorder.handle(), {
+                                                           .mesh = &mesh,
+                                                       });
+    recorder.end_rendering();
+}
+
+bool PlanetCelestialBodyFrame::materials_created() const noexcept {
+    return material_.has_value();
+}
+
+const cubey::render::FrameUniformMaterialInstance<PlanetCelestialBodyFrameUniforms>&
+PlanetCelestialBodyFrame::material() const {
+    if (!material_.has_value()) {
+        throw std::runtime_error("planet celestial body material is not initialized");
+    }
+    return material_.value();
+}
+
+const cubey::render::GraphicsPipelineResource& PlanetCelestialBodyFrame::pipeline() const {
+    if (!pipeline_.has_value()) {
+        throw std::runtime_error("planet celestial body pipeline is not initialized");
     }
     return pipeline_.value();
 }

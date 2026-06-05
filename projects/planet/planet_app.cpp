@@ -59,6 +59,8 @@ constexpr const char* kAppName = "planet";
 constexpr const char* kReadyStatus = "rendering planet project";
 constexpr float kPlanetCameraBaseYaw = 0.55F;
 constexpr float kPlanetCameraBasePitch = 0.28F;
+constexpr float kPlanetMoonAngularRadiusScale = 4.0F;
+constexpr float kPlanetMoonShellDistanceFraction = 0.58F;
 constexpr std::uint32_t kPlanetSurfaceFrameUniformBinding = 0;
 constexpr VkFormat kPlanetSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
@@ -262,6 +264,16 @@ class PlanetApp {
         if (!patch_grid_mesh_.has_value()) {
             patch_grid_mesh_.emplace(gpu, patch_grid_.mesh_config());
         }
+        if (!moon_mesh_.has_value()) {
+            const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv>
+                moon_mesh = cubey::render::make_uv_sphere_position_color_normal_uv_mesh({
+                    .radius = 1.0F,
+                    .latitude_segments = 32,
+                    .longitude_segments = 64,
+                    .color = {0.58F, 0.62F, 0.74F},
+                });
+            moon_mesh_.emplace(gpu, moon_mesh.mesh_config());
+        }
         if (!surface_frame_material_.has_value() ||
             surface_frame_material_->material().set_count() != frame_slot_count) {
             surface_frame_material_.reset();
@@ -275,6 +287,7 @@ class PlanetApp {
         }
         resize_patch_instance_buffer_slots(frame_slot_count);
         create_sky_frame_resources_if_needed(device, frame_slot_count);
+        create_celestial_body_frame_resources_if_needed(device, frame_slot_count);
         create_hdr_post_resources_if_needed(device, frame_slot_count);
     }
 
@@ -308,6 +321,8 @@ class PlanetApp {
                     },
             });
         create_sky_frame_pipeline(device, extent, kPlanetSceneColorFormat);
+        create_celestial_body_frame_pipeline(device, extent, kPlanetSceneColorFormat,
+                                             forward_pass().depth_target().format);
         create_hdr_post_pipeline(device, extent, color_format);
         graph_executor_.clear();
         graph_executor_.resize(frame_slot_count);
@@ -316,6 +331,7 @@ class PlanetApp {
     void destroy_swapchain_resources() {
         graph_executor_.clear();
         hdr_post_frame_.destroy_pipeline();
+        celestial_body_frame_.destroy_pipeline();
         sky_frame_.destroy_pipeline();
         forward_pass_.reset();
     }
@@ -324,8 +340,10 @@ class PlanetApp {
         destroy_swapchain_resources();
         hdr_post_frame_.destroy();
         hdr_post_frame_slot_count_ = 0;
+        celestial_body_frame_.destroy();
         sky_frame_.destroy();
         patch_instance_buffers_.clear();
+        moon_mesh_.reset();
         patch_grid_mesh_.reset();
         surface_frame_material_.reset();
     }
@@ -373,11 +391,11 @@ class PlanetApp {
                           0.0F, "%.1f");
         ImGui::InputFloat("LOD Hysteresis", &edit_planet_config_.lod_hysteresis, 0.0F, 0.0F,
                           "%.2f");
-        constexpr const char* kDebugViews[]{
-            "final",       "face-id",        "patch-id",      "lod-level",
-            "screen-error", "lod-transition", "seams",         "cell-edge",
-            "terrain-height", "terrain-slope", "terrain-material", "bathymetry", "shoreline",
-            "wireframe"};
+        constexpr const char* kDebugViews[]{"final",         "face-id",          "patch-id",
+                                            "lod-level",     "screen-error",     "lod-transition",
+                                            "seams",         "cell-edge",        "terrain-height",
+                                            "terrain-slope", "terrain-material", "bathymetry",
+                                            "shoreline",     "wireframe"};
         int debug_view = static_cast<int>(edit_planet_config_.debug_view);
         if (ImGui::Combo("Debug View", &debug_view, kDebugViews,
                          static_cast<int>(std::size(kDebugViews)))) {
@@ -406,8 +424,8 @@ class PlanetApp {
         ImGui::InputFloat("Sea Level (m)", &edit_planet_config_.sea_level_m, 0.0F, 0.0F, "%.0f");
         ImGui::InputFloat("Bathymetry Depth (m)", &edit_planet_config_.bathymetry_depth_scale_m,
                           0.0F, 0.0F, "%.0f");
-        ImGui::InputFloat("Shoreline Width (m)", &edit_planet_config_.shoreline_width_m, 0.0F,
-                          0.0F, "%.0f");
+        ImGui::InputFloat("Shoreline Width (m)", &edit_planet_config_.shoreline_width_m, 0.0F, 0.0F,
+                          "%.0f");
 
         if (edit_planet_config_ != config_before_edit) {
             planet_config_apply_pending_ = edit_planet_config_ != planet_config_;
@@ -432,8 +450,8 @@ class PlanetApp {
         solar_changed |=
             ImGui::SliderFloat("Day", &solar_time_.day_of_year, 1.0F, 365.2422F, "%.1f");
         solar_changed |= ImGui::SliderFloat("Hour", &solar_time_.time_hours, 0.0F, 24.0F, "%.2f");
-        solar_changed |= ImGui::SliderFloat("Speed (h/s)", &solar_time_.hours_per_second, -12.0F,
-                                            12.0F, "%.2f");
+        solar_changed |=
+            ImGui::SliderFloat("Speed (h/s)", &solar_time_.hours_per_second, -12.0F, 12.0F, "%.2f");
         if (solar_changed) {
             refresh_celestial_state();
         }
@@ -843,21 +861,46 @@ class PlanetApp {
                                                  : static_cast<float>(extent.width) /
                                                        static_cast<float>(extent.height);
         return planet_sky_frame_uniforms(
-            celestial_system_,
-            {
-                .view_rays = cubey::render::view_ray_basis_3d(transform.rotation, aspect,
-                                                              camera_.fovy_radians()),
-                .camera_position_m = transform.translation,
-                .planet_radius_m = planet_config_.radius_m,
-                .atmosphere_outer_radius_m =
-                    planet_config_.radius_m + planet_config_.atmosphere_height_m,
-            });
+            celestial_system_, {
+                                   .view_rays = cubey::render::view_ray_basis_3d(
+                                       transform.rotation, aspect, camera_.fovy_radians()),
+                                   .camera_position_m = transform.translation,
+                                   .planet_radius_m = planet_config_.radius_m,
+                                   .atmosphere_outer_radius_m =
+                                       planet_config_.radius_m + planet_config_.atmosphere_height_m,
+                               });
     }
 
     void record_sky_frame(const cubey::vulkan::CommandRecorder& recorder,
                           cubey::render::ColorTargetView target,
                           cubey::render::FrameSlot frame_slot) const {
         sky_frame_.record_pass(recorder, target, frame_slot);
+    }
+
+    [[nodiscard]] PlanetCelestialBodyFrameUniforms
+    moon_body_frame_uniforms(VkExtent2D extent) const {
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
+        const cubey::Transform3D transform = camera_render_transform();
+        const PlanetCelestialBody moon = planet_celestial_moon_body(celestial_system_);
+        const PlanetCelestialBodyRenderPlacement placement = planet_celestial_body_render_placement(
+            moon, {
+                      .camera_render_position_m = transform.translation,
+                      .near_plane_m = frame_.near_plane_m,
+                      .far_plane_m = frame_.far_plane_m,
+                      .angular_radius_scale = kPlanetMoonAngularRadiusScale,
+                      .shell_distance_fraction = kPlanetMoonShellDistanceFraction,
+                  });
+        return planet_celestial_body_frame_uniforms(
+            moon, placement, celestial_lighting_,
+            camera_.view_projection_matrix(transform, aspect));
+    }
+
+    void record_moon_body_frame(const cubey::vulkan::CommandRecorder& recorder,
+                                const cubey::render::RenderTargetView& target,
+                                cubey::render::FrameSlot frame_slot) const {
+        celestial_body_frame_.record_pass(recorder, target, frame_slot, moon_mesh());
     }
 
     [[nodiscard]] float display_exposure() const {
@@ -890,11 +933,10 @@ class PlanetApp {
         recorder.end_rendering();
     }
 
-    [[nodiscard]] PlanetFrameGraph
-    build_frame_graph(cubey::render::ColorTargetView color_target,
-                      cubey::render::FrameSlot frame_slot, bool present,
-                      const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>&
-                          instance_buffer) {
+    [[nodiscard]] PlanetFrameGraph build_frame_graph(
+        cubey::render::ColorTargetView color_target, cubey::render::FrameSlot frame_slot,
+        bool present,
+        const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>& instance_buffer) {
         const VkDescriptorSet frame_set = surface_frame_material().set(frame_slot);
         cubey::render::RenderGraphBuilder graph;
         const cubey::render::RenderGraphTextureState initial_state =
@@ -917,9 +959,9 @@ class PlanetApp {
             .material_pass(planet_sky_pass_info())
             .execute([this, scene_color,
                       frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
-                record_sky_frame(
-                    context.recorder(),
-                    cubey::render::resolved_color_target_view(context, scene_color), frame_slot);
+                record_sky_frame(context.recorder(),
+                                 cubey::render::resolved_color_target_view(context, scene_color),
+                                 frame_slot);
             });
         graph.add_pass("planet surface", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(scene_color)
@@ -932,10 +974,10 @@ class PlanetApp {
                 const cubey::render::DepthTargetView resolved_depth =
                     cubey::render::resolved_depth_target_view(context, depth);
                 record_planet_surface_pass(
-                    context.recorder(), cubey::render::render_target_view(resolved_color,
-                                                                          resolved_depth),
-                    [this, frame_set, &instance_buffer](
-                        const cubey::vulkan::CommandRecorder& pass_recorder) {
+                    context.recorder(),
+                    cubey::render::render_target_view(resolved_color, resolved_depth),
+                    [this, frame_set,
+                     &instance_buffer](const cubey::vulkan::CommandRecorder& pass_recorder) {
                         pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                     forward_pass().pipeline().pipeline());
                         pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -943,12 +985,25 @@ class PlanetApp {
                                                           frame_set);
                         instance_buffer.bind(pass_recorder, 1);
                         cubey::render::record_draw_item(
-                            pass_recorder.handle(),
-                            cubey::render::DrawItem{
-                                .mesh = &patch_grid_mesh(),
-                                .instance_count = instance_buffer.count(),
-                            });
+                            pass_recorder.handle(), cubey::render::DrawItem{
+                                                        .mesh = &patch_grid_mesh(),
+                                                        .instance_count = instance_buffer.count(),
+                                                    });
                     });
+            });
+        graph.add_pass("planet moon", cubey::render::RenderGraphQueueDomain::Graphics)
+            .write_color(scene_color)
+            .write_depth(depth)
+            .material_pass(planet_celestial_body_pass_info())
+            .execute([this, scene_color, depth,
+                      frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                const cubey::render::ColorTargetView resolved_color =
+                    cubey::render::resolved_color_target_view(context, scene_color);
+                const cubey::render::DepthTargetView resolved_depth =
+                    cubey::render::resolved_depth_target_view(context, depth);
+                record_moon_body_frame(
+                    context.recorder(),
+                    cubey::render::render_target_view(resolved_color, resolved_depth), frame_slot);
             });
         graph.add_pass("planet post", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(scene_color)
@@ -981,6 +1036,7 @@ class PlanetApp {
         const PlanetSurfaceFrameUniforms uniforms = surface_frame_uniforms(color_target.extent);
         surface_frame_material().upload(frame_slot, uniforms);
         sky_frame_.upload(frame_slot, sky_frame_uniforms(color_target.extent));
+        celestial_body_frame_.upload(frame_slot, moon_body_frame_uniforms(color_target.extent));
         hdr_post_frame_.upload(frame_slot, post_uniforms(color_target.format));
         const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>& instance_buffer =
             ensure_patch_instance_buffer(gpu, frame_slot);
@@ -1009,6 +1065,13 @@ class PlanetApp {
             throw std::runtime_error("planet patch grid mesh is not initialized");
         }
         return patch_grid_mesh_.value();
+    }
+
+    [[nodiscard]] const cubey::render::Mesh& moon_mesh() const {
+        if (!moon_mesh_.has_value()) {
+            throw std::runtime_error("planet moon mesh is not initialized");
+        }
+        return moon_mesh_.value();
     }
 
     void resize_patch_instance_buffer_slots(std::uint32_t frame_slot_count) {
@@ -1066,8 +1129,8 @@ class PlanetApp {
             sky_frame_.material().material_instance().set_count() != frame_slot_count) {
             sky_frame_.destroy();
             sky_frame_.create_materials(device, {
-                                                     .frame_slot_count = frame_slot_count,
-                                                 });
+                                                    .frame_slot_count = frame_slot_count,
+                                                });
         }
     }
 
@@ -1083,6 +1146,33 @@ class PlanetApp {
                                                .color_format = color_format,
                                                .shader_stage_files = shaders,
                                            });
+    }
+
+    void create_celestial_body_frame_resources_if_needed(const cubey::vulkan::Device& device,
+                                                         std::uint32_t frame_slot_count) {
+        if (!celestial_body_frame_.materials_created() ||
+            celestial_body_frame_.material().material_instance().set_count() != frame_slot_count) {
+            celestial_body_frame_.destroy();
+            celestial_body_frame_.create_materials(device, {
+                                                               .frame_slot_count = frame_slot_count,
+                                                           });
+        }
+    }
+
+    void create_celestial_body_frame_pipeline(const cubey::vulkan::Device& device,
+                                              VkExtent2D extent, VkFormat color_format,
+                                              VkFormat depth_format) {
+        const std::array<cubey::render::ShaderStageFile, 2> shaders{
+            cubey::render::vertex_shader_file(shader_path("planet_celestial_body.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("planet_celestial_body.frag.spv")),
+        };
+        celestial_body_frame_.destroy_pipeline();
+        celestial_body_frame_.create_pipeline(device, {
+                                                          .extent = extent,
+                                                          .color_format = color_format,
+                                                          .depth_format = depth_format,
+                                                          .shader_stage_files = shaders,
+                                                      });
     }
 
     void create_hdr_post_resources_if_needed(const cubey::vulkan::Device& device,
@@ -1141,12 +1231,14 @@ class PlanetApp {
     float surface_camera_anchor_yaw_radians_ = kPlanetCameraBaseYaw;
     float surface_camera_anchor_pitch_radians_ = kPlanetCameraBasePitch;
     std::optional<cubey::render::Mesh> patch_grid_mesh_;
+    std::optional<cubey::render::Mesh> moon_mesh_;
     std::vector<PatchInstanceBufferSlot> patch_instance_buffers_{};
     std::uint64_t patch_instance_generation_ = 0;
     std::optional<cubey::render::FrameUniformMaterialInstance<PlanetSurfaceFrameUniforms>>
         surface_frame_material_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
     PlanetSkyFrame sky_frame_{};
+    PlanetCelestialBodyFrame celestial_body_frame_{};
     cubey::render::HdrPostFrame hdr_post_frame_{};
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::host::FrameStats ui_frame_stats_;
