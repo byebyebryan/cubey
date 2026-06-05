@@ -748,7 +748,11 @@ PlanetSurfacePatchId planet_surface_child_patch_id(PlanetSurfacePatchId id,
 PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
                                                    PlanetSurfaceView view) {
     validate_planet_config(config);
-    return make_surface_patch_plan(config, view);
+    PlanetSurfacePatchPlan plan = make_surface_patch_plan(config, view);
+    if (plan.selected_patches.size() > kPlanetMaxLivePatchInstances) {
+        throw std::runtime_error("planet live LOD selection exceeds the patch instance budget");
+    }
+    return plan;
 }
 
 PlanetPatchGridMeshData make_planet_patch_grid_mesh(const PlanetConfig& config) {
@@ -798,8 +802,7 @@ PlanetPatchGridMeshData make_planet_patch_grid_mesh(const PlanetConfig& config) 
                 .skirt = 1.0F,
             });
 
-            const auto push_triangle = [&mesh](std::uint32_t a, std::uint32_t b,
-                                               std::uint32_t c) {
+            const auto push_triangle = [&mesh](std::uint32_t a, std::uint32_t b, std::uint32_t c) {
                 mesh.indices.push_back(a);
                 mesh.indices.push_back(b);
                 mesh.indices.push_back(c);

@@ -494,6 +494,46 @@ void test_planet_surface_planner_records_high_lod_diagnostics() {
             "planet planner should record high-LOD cell-size diagnostics");
 }
 
+void test_planet_surface_default_lod_reaches_near_camera_detail() {
+    const cubey::projects::planet::PlanetConfig config{};
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, config.radius_m + 50000.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = false,
+    };
+
+    const cubey::projects::planet::PlanetSurfacePatchPlan plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+
+    require(plan.diagnostics.max_lod_level >= 4U,
+            "default planet LOD should reach higher levels near the camera");
+    require(plan.diagnostics.patch_count <= cubey::projects::planet::kPlanetMaxLivePatchInstances,
+            "default planet LOD should stay inside the live patch budget");
+}
+
+void test_planet_surface_planner_rejects_live_patch_budget_overflow() {
+    const cubey::projects::planet::PlanetConfig config{
+        .patches_per_face = 2,
+        .patch_resolution = 1,
+        .max_lod_level = cubey::projects::planet::kPlanetMaxLiveLodLevel,
+        .lod_target_edge_px = 0.0001F,
+        .skirts_enabled = false,
+        .terrain_enabled = false,
+    };
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, config.radius_m + 50000.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = false,
+    };
+
+    try {
+        static_cast<void>(cubey::projects::planet::plan_planet_surface_patches(config, view));
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error("planet planner should reject excessive live patch counts");
+}
+
 void test_planet_surface_skirts_add_seam_geometry() {
     const cubey::projects::planet::PlanetConfig no_skirts{
         .radius_m = 1200.0F,
@@ -582,6 +622,8 @@ int main() {
         test_planet_surface_planner_keeps_fallback_when_camera_looks_away();
         test_planet_surface_planner_selects_near_lod();
         test_planet_surface_planner_records_high_lod_diagnostics();
+        test_planet_surface_default_lod_reaches_near_camera_detail();
+        test_planet_surface_planner_rejects_live_patch_budget_overflow();
         test_planet_surface_skirts_add_seam_geometry();
         test_planet_surface_skirt_vertices_drop_below_radius();
         test_planet_surface_seams_debug_view_parses();

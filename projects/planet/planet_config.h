@@ -13,12 +13,13 @@ inline constexpr float kPlanetDefaultAtmosphereHeightM = 70000.0F;
 inline constexpr float kPlanetDefaultCameraAltitudeM = 240000.0F;
 inline constexpr std::uint32_t kPlanetDefaultPatchesPerFace = 2;
 inline constexpr std::uint32_t kPlanetDefaultPatchResolution = 32;
-inline constexpr std::uint32_t kPlanetDefaultMaxLodLevel = 3;
-inline constexpr float kPlanetDefaultLodTargetEdgePx = 24.0F;
+inline constexpr std::uint32_t kPlanetDefaultMaxLodLevel = 5;
+inline constexpr float kPlanetDefaultLodTargetEdgePx = 10.0F;
 inline constexpr float kPlanetDefaultTerrainHeightScaleM = 12000.0F;
 inline constexpr float kPlanetDefaultTerrainNoiseScale = 2.5F;
 inline constexpr std::uint32_t kPlanetDefaultTerrainSeed = 1337U;
 inline constexpr std::uint32_t kPlanetMaxLiveLodLevel = 6;
+inline constexpr std::uint64_t kPlanetMaxLivePatchInstances = 65536ULL;
 inline constexpr std::size_t kPlanetDiagnosticLodCapacity = 8;
 inline constexpr std::uint64_t kPlanetCpuMeshVertexCap = 2000000ULL;
 
