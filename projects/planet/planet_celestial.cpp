@@ -83,11 +83,11 @@ void planet_solar_time_advance(PlanetSolarTime& time, double delta_seconds) {
     }
     time.time_hours = static_cast<float>(wrapped_hours);
     time.day_of_year += static_cast<float>(day_offset);
-    while (time.day_of_year > 365.2422F) {
-        time.day_of_year -= 365.2422F;
+    while (time.day_of_year > kPlanetMeanTropicalYearDays) {
+        time.day_of_year -= kPlanetMeanTropicalYearDays;
     }
     while (time.day_of_year < 1.0F) {
-        time.day_of_year += 365.2422F;
+        time.day_of_year += kPlanetMeanTropicalYearDays;
     }
 }
 
@@ -110,18 +110,17 @@ planet_celestial_system_from_solar_time(const PlanetSolarTime& time,
     const cubey::math::Vec3 sun_in_planet_frame =
         normalized_or_up(rotate_y(sun_in_tilted_frame, -rotation_angle));
 
+    const float moon_inclination = std::clamp(solar.moon_orbit_inclination_rad, -1.4F, 1.4F);
     const cubey::math::Vec3 moon_orbit_frame = normalized_or_up({
         std::cos(moon_orbit_angle),
-        std::sin(moon_orbit_angle) * 0.089F,
-        std::sin(moon_orbit_angle),
+        std::sin(moon_orbit_angle) * std::sin(moon_inclination),
+        -std::sin(moon_orbit_angle) * std::cos(moon_inclination),
     });
     const cubey::math::Vec3 moon_in_tilted_frame =
         normalized_or_up(rotate_x(moon_orbit_frame, solar.axial_tilt_rad));
     const cubey::math::Vec3 moon_in_planet_frame =
         normalized_or_up(rotate_y(moon_in_tilted_frame, -rotation_angle));
-    const float phase_fraction = wrap_unit(
-        std::acos(std::clamp(glm::dot(-moon_in_planet_frame, sun_in_planet_frame), -1.0F, 1.0F)) /
-        kTwoPi);
+    const float phase_fraction = wrap_unit((moon_orbit_angle - orbit_angle) / kTwoPi);
 
     return {
         .sun =

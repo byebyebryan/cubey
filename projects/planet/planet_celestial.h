@@ -19,6 +19,14 @@
 
 namespace cubey::projects::planet {
 
+inline constexpr float kPlanetMeanSolarDayHours = 24.0F;
+inline constexpr float kPlanetMeanTropicalYearDays = 365.2422F;
+inline constexpr float kPlanetEarthSiderealRotationHours = 23.9345F;
+inline constexpr float kPlanetEarthSiderealRotationPeriodDays =
+    kPlanetEarthSiderealRotationHours / kPlanetMeanSolarDayHours;
+inline constexpr float kPlanetMoonSiderealOrbitPeriodDays = 27.321661F;
+inline constexpr float kPlanetMoonOrbitInclinationRad = 0.08979719F;
+
 enum class PlanetCelestialBodyType : std::uint8_t {
     Sun,
     Moon,
@@ -90,9 +98,10 @@ struct PlanetSolarTime {
 
 struct PlanetSolarSystemConfig {
     float axial_tilt_rad = 0.4090928F;
-    float planet_rotation_period_days = 1.0F;
-    float planet_orbit_period_days = 365.2422F;
-    float moon_orbit_period_days = 27.321661F;
+    float planet_rotation_period_days = kPlanetEarthSiderealRotationPeriodDays;
+    float planet_orbit_period_days = kPlanetMeanTropicalYearDays;
+    float moon_orbit_period_days = kPlanetMoonSiderealOrbitPeriodDays;
+    float moon_orbit_inclination_rad = kPlanetMoonOrbitInclinationRad;
     float equinox_day = 80.0F;
     float sun_distance_m = 149597870700.0F;
     float sun_radius_m = 696340000.0F;

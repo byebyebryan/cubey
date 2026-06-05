@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <numbers>
 #include <stdexcept>
 
 namespace {
@@ -24,6 +25,35 @@ void require_vec_near(cubey::math::Vec3 actual, cubey::math::Vec3 expected, cons
     require_near(actual.z, expected.z, 0.0001F, message);
 }
 
+float wrap_unit_delta(float actual, float expected) {
+    float delta = std::fmod(actual - expected, 1.0F);
+    if (delta < -0.5F) {
+        delta += 1.0F;
+    }
+    if (delta > 0.5F) {
+        delta -= 1.0F;
+    }
+    return delta;
+}
+
+float synodic_month_days(const cubey::projects::planet::PlanetSolarSystemConfig& solar) {
+    return 1.0F / ((1.0F / solar.moon_orbit_period_days) - (1.0F / solar.planet_orbit_period_days));
+}
+
+void test_default_solar_system_uses_earth_like_reference_periods() {
+    const cubey::projects::planet::PlanetSolarSystemConfig solar{};
+
+    require_near(solar.planet_rotation_period_days *
+                     cubey::projects::planet::kPlanetMeanSolarDayHours,
+                 23.9345F, 0.0001F, "default Earth spin should use a sidereal rotation period");
+    require_near(solar.planet_orbit_period_days, 365.2422F, 0.0001F,
+                 "default Earth orbit should use the tropical year for seasons");
+    require_near(solar.moon_orbit_period_days, 27.321661F, 0.00001F,
+                 "default moon orbit should use the sidereal lunar month");
+    require_near(solar.moon_orbit_inclination_rad * 180.0F / std::numbers::pi_v<float>, 5.145F,
+                 0.001F, "default moon orbit should include lunar inclination");
+}
+
 void test_solar_time_drives_planet_rotation_and_moon_orbit() {
     cubey::projects::planet::PlanetSolarTime morning{};
     morning.day_of_year = 80.0F;
@@ -44,6 +74,32 @@ void test_solar_time_drives_planet_rotation_and_moon_orbit() {
             "moon orbit should advance with simulation time");
 }
 
+void test_sidereal_spin_produces_24_hour_solar_day() {
+    cubey::projects::planet::PlanetSolarTime today{};
+    today.day_of_year = 80.0F;
+    today.time_hours = 12.0F;
+    cubey::projects::planet::PlanetSolarTime tomorrow = today;
+    tomorrow.day_of_year += 1.0F;
+
+    const cubey::projects::planet::PlanetCelestialSystem today_system =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(today);
+    const cubey::projects::planet::PlanetCelestialSystem tomorrow_system =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(tomorrow);
+
+    require(glm::dot(today_system.sun.direction, tomorrow_system.sun.direction) > 0.99995F,
+            "same mean solar time on adjacent days should keep the sun at nearly the same hour "
+            "angle");
+
+    constexpr float kTwoPi = std::numbers::pi_v<float> * 2.0F;
+    const float today_solar_angle =
+        (today_system.planet_rotation_angle_rad - today_system.planet_orbit_angle_rad) / kTwoPi;
+    const float tomorrow_solar_angle =
+        (tomorrow_system.planet_rotation_angle_rad - tomorrow_system.planet_orbit_angle_rad) /
+        kTwoPi;
+    require_near(wrap_unit_delta(tomorrow_solar_angle, today_solar_angle), 0.0F, 0.0002F,
+                 "sidereal spin minus orbital motion should advance by one solar day");
+}
+
 void test_solar_time_advance_wraps_hours_and_days() {
     cubey::projects::planet::PlanetSolarTime time{};
     time.day_of_year = 365.0F;
@@ -56,6 +112,47 @@ void test_solar_time_advance_wraps_hours_and_days() {
             "solar clock should wrap local hours");
     require(time.day_of_year >= 1.0F && time.day_of_year <= 365.2422F,
             "solar clock should wrap day of year");
+}
+
+void test_moon_phase_uses_synodic_month() {
+    const cubey::projects::planet::PlanetSolarSystemConfig solar{};
+    const float synodic_days = synodic_month_days(solar);
+
+    cubey::projects::planet::PlanetSolarTime start{};
+    start.day_of_year = 80.0F;
+    start.time_hours = 12.0F;
+
+    cubey::projects::planet::PlanetSolarTime quarter = start;
+    quarter.day_of_year += synodic_days * 0.25F;
+    cubey::projects::planet::PlanetSolarTime half = start;
+    half.day_of_year += synodic_days * 0.5F;
+    cubey::projects::planet::PlanetSolarTime three_quarter = start;
+    three_quarter.day_of_year += synodic_days * 0.75F;
+    cubey::projects::planet::PlanetSolarTime full_cycle = start;
+    full_cycle.day_of_year += synodic_days;
+
+    const float start_phase =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(start).moon.phase_fraction;
+    const float quarter_phase =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(quarter)
+            .moon.phase_fraction;
+    const float half_phase =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(half).moon.phase_fraction;
+    const float three_quarter_phase =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(three_quarter)
+            .moon.phase_fraction;
+    const float full_cycle_phase =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(full_cycle)
+            .moon.phase_fraction;
+
+    require_near(wrap_unit_delta(quarter_phase, start_phase + 0.25F), 0.0F, 0.0002F,
+                 "moon phase should advance by a quarter over a quarter synodic month");
+    require_near(wrap_unit_delta(half_phase, start_phase + 0.5F), 0.0F, 0.0002F,
+                 "moon phase should advance by a half over a half synodic month");
+    require_near(wrap_unit_delta(three_quarter_phase, start_phase + 0.75F), 0.0F, 0.0002F,
+                 "moon phase should keep signed direction through the waning half");
+    require_near(wrap_unit_delta(full_cycle_phase, start_phase), 0.0F, 0.0002F,
+                 "moon phase should repeat over the synodic month");
 }
 
 void test_celestial_lighting_uses_celestial_direction() {
@@ -220,8 +317,11 @@ void test_celestial_body_pass_uses_depth_test_without_depth_write() {
 
 int main() {
     try {
+        test_default_solar_system_uses_earth_like_reference_periods();
         test_solar_time_drives_planet_rotation_and_moon_orbit();
+        test_sidereal_spin_produces_24_hour_solar_day();
         test_solar_time_advance_wraps_hours_and_days();
+        test_moon_phase_uses_synodic_month();
         test_celestial_lighting_uses_celestial_direction();
         test_celestial_body_conversion_preserves_moon_state();
         test_celestial_body_render_placement_preserves_apparent_size();
