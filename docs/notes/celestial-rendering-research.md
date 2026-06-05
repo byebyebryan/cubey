@@ -84,16 +84,17 @@ bodies. The current planet implementation takes a cleaner break: use a
 planet-local sky/celestial pass until a proper planet-scale atmosphere contract
 exists. The intended composition is now:
 
-1. planet-owned sky/celestial rendering for space, stars, sun, moon, and local
-   limb glow;
+1. planet-owned sky rendering for space, stars, sun disk/glow, and local limb
+   glow;
 2. opaque planet terrain/ocean/cloud-shadow receivers;
-3. later cloud layers, aerial perspective over scene depth, and post.
+3. explicit celestial body geometry, starting with a depth-tested moon sphere;
+4. later cloud layers, aerial perspective over scene depth, and post.
 
-The immediate sun implementation can be a distant emissive disk and glow drawn
-as a background body. The moon can start as an analytic disk from the same
-solar-system state, then move to body geometry when phase, depth, and eclipse
-behavior need more accuracy. In both cases, body occlusion belongs to the
-planet/celestial renderer, not the atmosphere scattering shader.
+The immediate sun implementation can remain a distant emissive disk and glow
+drawn as a background body. The moon has moved to body geometry: a sphere placed
+on the moon ray at a camera-relative shell distance, scaled to preserve apparent
+angular size, and lit by the modeled sun direction. Body occlusion belongs to
+the planet/celestial renderer, not the atmosphere scattering shader.
 
 ## Implementation Implications
 

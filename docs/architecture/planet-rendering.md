@@ -214,9 +214,10 @@ Current implementation notes:
   for exposure, tone mapping, and output encoding. This aligns planet with the
   renderer-wide linear HDR contract while keeping ocean integration deferred.
 - Planet now models a minimal solar-system state directly: planet orbit around
-  the sun, planet self-rotation, and moon orbit around the planet. The sun and
-  moon are currently rendered by the local sky pass as analytic bodies with
-  planet occlusion; a later slice should promote near bodies to geometry.
+  the sun, planet self-rotation, and moon orbit around the planet. The sun is
+  still rendered by the local sky pass as a distant disk/glow, while the moon
+  is rendered as a depth-tested sphere on a camera-relative shell that
+  preserves apparent angular size.
 
 ## Celestial Body Pivot
 
@@ -254,16 +255,17 @@ carries, such as `AtmosphereScatteringInputs`, `CelestialLightingInputs`, or
 
 The render-order contract for the current local path is:
 
-1. planet-owned sky/celestial pass with dark space, stars, sun/moon disks, and
-   analytic planet occlusion;
+1. planet-owned sky pass with dark space, stars, sun disk/glow, and analytic
+   planet limb/occlusion;
 2. opaque planet surface and terrain/ocean layers;
-3. clouds, aerial-perspective overlays, and post as those systems arrive.
+3. explicit celestial body geometry, starting with a depth-tested moon sphere;
+4. clouds, aerial-perspective overlays, and post as those systems arrive.
 
-For the immediate slice, a distant sun disk/glow and analytic moon disk rendered
-as planet-owned background bodies are enough. The important boundary is that no
-shared atmosphere shader decides celestial placement or planet occlusion. A
-later depth or geometry path can support near moons and eclipses without
-changing the solar-system source of truth.
+For the immediate slice, a distant sun disk/glow in the sky pass plus a
+depth-tested moon sphere is enough. The important boundary is that no shared
+atmosphere shader decides celestial placement or planet occlusion. Later work
+can move the sun to body-backed rendering or add eclipses without changing the
+solar-system source of truth.
 
 Established engine precedents support this split. Unreal's Sky Atmosphere
 consumes scene Directional Lights marked as atmosphere lights, including
@@ -298,8 +300,7 @@ Deferred surface-field work:
    into a planet-owned celestial body pass.
 9. Done as a first analytic body: model sun/moon state through local solar
    system time, with planet orbit, self-rotation, and moon orbit.
-10. Replace the analytic moon disk with body/geometry rendering once the current
-   sky pass is stable.
+10. Done: replace the analytic moon disk with body/geometry rendering.
 11. Add a proper planet-scale atmosphere model or adapter only after its
    scattering contract is explicit.
 12. Port ocean as a local water layer once the planet frame and LOD contracts are

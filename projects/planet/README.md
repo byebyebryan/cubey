@@ -3,7 +3,7 @@
 `planet` is the foundation project for planet-scale rendering experiments. The
 current version is intentionally small: it opens a window or headless capture
 path, renders a cube-sphere planet surface with placeholder terrain, draws the
-shared procedural atmosphere behind it, and provides the target project boundary
+project-owned local sky behind it, and provides the target project boundary
 for future terrain, ocean, clouds, celestial bodies, and streaming integration.
 
 Run it with:
@@ -83,17 +83,17 @@ orbit. That state resolves sun and moon directions, physical radii, angular
 radii, direct lighting, ambient lighting, and the planet-owned sky pass.
 
 The current sky pass is intentionally simple: dark space, sparse procedural
-stars, a sun disk/glow, a moon disk, and a local planet limb glow with analytic
-planet occlusion. It is not yet a physically based atmosphere. The surface
-shader receives frame data through a descriptor-backed uniform instead of push
-constants, and blends final terrain toward the local limb/haze color near the
-horizon. The scene renders into a linear HDR scene color target and uses the
-shared fullscreen post pass for exposure, tone mapping, and output encoding
-before writing the swapchain or headless target.
-
-The moon is rendered as a first analytic disk from the same local celestial
-state. A later moon slice should replace that with a body/sphere path so phase,
-terminator shape, occlusion, and eclipse behavior come from geometry.
+stars, a sun disk/glow, and a local planet limb glow with analytic planet
+occlusion. It is not yet a physically based atmosphere. The moon is now a
+depth-tested sphere rendered from the same local celestial state on a
+camera-relative shell that preserves its apparent angular size. Phase and
+terminator shape therefore come from body lighting against the modeled sun
+direction instead of a sky-disk mask. The surface shader receives frame data
+through a descriptor-backed uniform instead of push constants, and blends final
+terrain toward the local limb/haze color near the horizon. The scene renders
+into a linear HDR scene color target and uses the shared fullscreen post pass
+for exposure, tone mapping, and output encoding before writing the swapchain or
+headless target.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it

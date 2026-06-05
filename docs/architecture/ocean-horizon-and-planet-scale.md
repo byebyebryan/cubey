@@ -298,8 +298,9 @@ Avoid:
    keeping the implementation flat.
 6. Done: add a single-pass curved far-ocean mapping path with Flat/Curved-Far
    surface modes, horizon-ratio blend controls, and curvature diagnostics.
-7. Next: evaluate far-water atmosphere composition and curved-local
-   terrain/bathymetry fields inside ocean, while planet-scale patching starts in
+7. Done enough for now: ocean has reached the horizon-scale/curved-local
+   endpoint and should remain a water renderer/testbed while planet-scale
+   patching, celestial ownership, and future streaming continue in
    `projects/planet`.
 
 This keeps ocean product-visible while leaving a clean path for `projects/planet`
