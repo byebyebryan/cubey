@@ -81,7 +81,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 151> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 152> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -233,6 +233,10 @@ constexpr std::array<ConfigOptionDescriptor, 151> kRunConfigOptions{
            "--planet-lod-target-edge-px", "LOD Target Edge", "Planet",
            "Target projected planet surface cell edge length in pixels.", ConfigOptionType::Float,
            min_range(0.000001)),
+    option(RunConfigOptionId::PlanetLodHysteresis, "planet.lod_hysteresis",
+           "--planet-lod-hysteresis", "LOD Hysteresis", "Planet",
+           "Relative planet LOD split and merge deadband.", ConfigOptionType::Float,
+           bounded_range(0.0, 0.95)),
     option(RunConfigOptionId::PlanetWireOverlay, "planet.wire_overlay", "--planet-wire-overlay",
            "Wire Overlay", "Planet", "Draw planet patch wire overlay.", ConfigOptionType::Bool,
            no_range(), {}, "--no-planet-wire-overlay"),
@@ -830,6 +834,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
                                                : nlohmann::json(nullptr);
     case RunConfigOptionId::PlanetLodTargetEdge:
         return optional_float(config.planet.lod_target_edge_px);
+    case RunConfigOptionId::PlanetLodHysteresis:
+        return optional_float(config.planet.lod_hysteresis);
     case RunConfigOptionId::PlanetWireOverlay:
         return optional_bool(config.planet.wire_overlay);
     case RunConfigOptionId::PlanetSkirts:
@@ -1102,6 +1108,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<std::uint32_t>("patch_resolution", options.patch_resolution);
     adapter.writeField<std::uint32_t>("max_lod_level", options.max_lod_level);
     adapter.writeField<float>("lod_target_edge_px", options.lod_target_edge_px);
+    adapter.writeField<float>("lod_hysteresis", options.lod_hysteresis);
     adapter.writeField<int>("wire_overlay", options.wire_overlay);
     adapter.writeField<int>("skirts_enabled", options.skirts_enabled);
     adapter.writeField<float>("skirt_depth_scale", options.skirt_depth_scale);
@@ -1122,6 +1129,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<std::uint32_t>("patch_resolution", options.patch_resolution);
     adapter.readField<std::uint32_t>("max_lod_level", options.max_lod_level);
     adapter.readField<float>("lod_target_edge_px", options.lod_target_edge_px);
+    adapter.readField<float>("lod_hysteresis", options.lod_hysteresis);
     adapter.readField<int>("wire_overlay", options.wire_overlay);
     adapter.readField<int>("skirts_enabled", options.skirts_enabled);
     adapter.readField<float>("skirt_depth_scale", options.skirt_depth_scale);
@@ -1545,6 +1553,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::PlanetLodTargetEdge:
         config.planet.lod_target_edge_px = parse_config_float(value, option);
         validate_range(config.planet.lod_target_edge_px, option);
+        break;
+    case RunConfigOptionId::PlanetLodHysteresis:
+        config.planet.lod_hysteresis = parse_config_float(value, option);
+        validate_range(config.planet.lod_hysteresis, option);
         break;
     case RunConfigOptionId::PlanetWireOverlay:
         config.planet.wire_overlay = parse_config_bool(value, option) ? 1 : 0;

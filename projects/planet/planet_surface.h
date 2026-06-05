@@ -54,6 +54,8 @@ struct PlanetSurfaceDiagnostics {
     std::uint32_t subdivided_patch_count = 0;
     std::uint32_t refinement_fallback_patch_count = 0;
     std::uint32_t budget_fallback_patch_count = 0;
+    std::uint32_t hysteresis_delayed_split_count = 0;
+    std::uint32_t hysteresis_delayed_merge_count = 0;
     std::uint32_t transition_candidate_count = 0;
     std::uint32_t vertex_count = 0;
     std::uint32_t triangle_count = 0;
@@ -90,6 +92,10 @@ struct PlanetSurfacePatchId {
     std::uint32_t y = 0;
 
     friend bool operator==(const PlanetSurfacePatchId&, const PlanetSurfacePatchId&) = default;
+};
+
+struct PlanetSurfacePatchSelectionHints {
+    std::span<const PlanetSurfacePatchId> previous_selected_patches{};
 };
 
 struct PlanetSurfacePatchBounds {
@@ -130,7 +136,9 @@ make_planet_surface_gpu_patch_instances(const PlanetSurfacePatchPlan& plan);
 [[nodiscard]] PlanetSurfacePatchId planet_surface_child_patch_id(PlanetSurfacePatchId id,
                                                                  std::uint32_t child_index);
 [[nodiscard]] PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
-                                                                 PlanetSurfaceView view);
+                                                                 PlanetSurfaceView view,
+                                                                 PlanetSurfacePatchSelectionHints
+                                                                     hints = {});
 [[nodiscard]] PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config);
 [[nodiscard]] PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config,
                                                                 PlanetSurfaceView view);

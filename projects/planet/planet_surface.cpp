@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdint>
 #include <stdexcept>
+#include <unordered_set>
 #include <vector>
 
 namespace cubey::projects::planet {
@@ -22,6 +23,52 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     PrimitiveVec3{0.95F, 0.22F, 0.18F}, PrimitiveVec3{0.18F, 0.45F, 0.95F},
     PrimitiveVec3{0.20F, 0.78F, 0.36F}, PrimitiveVec3{0.96F, 0.70F, 0.18F},
     PrimitiveVec3{0.58F, 0.30F, 0.92F}, PrimitiveVec3{0.15F, 0.78F, 0.78F},
+};
+
+struct PlanetSurfacePatchIdHash {
+    [[nodiscard]] std::size_t operator()(PlanetSurfacePatchId id) const noexcept {
+        std::uint64_t hash = id.face * 73856093ULL;
+        hash ^= id.level * 19349663ULL;
+        hash ^= id.x * 83492791ULL;
+        hash ^= id.y * 2654435761ULL;
+        return static_cast<std::size_t>(hash);
+    }
+};
+
+[[nodiscard]] PlanetSurfacePatchId parent_patch_id(PlanetSurfacePatchId id) {
+    return {
+        .face = id.face,
+        .level = id.level - 1U,
+        .x = id.x >> 1U,
+        .y = id.y >> 1U,
+    };
+}
+
+class PlanetPatchSelectionLookup {
+  public:
+    explicit PlanetPatchSelectionLookup(std::span<const PlanetSurfacePatchId> previous_selection) {
+        selected_.reserve(previous_selection.size());
+        refined_ancestors_.reserve(previous_selection.size());
+        for (PlanetSurfacePatchId id : previous_selection) {
+            selected_.insert(id);
+            while (id.level > 0U) {
+                id = parent_patch_id(id);
+                refined_ancestors_.insert(id);
+            }
+        }
+    }
+
+    [[nodiscard]] bool was_selected(PlanetSurfacePatchId id) const {
+        return selected_.contains(id);
+    }
+
+    [[nodiscard]] bool was_refined(PlanetSurfacePatchId id) const {
+        return refined_ancestors_.contains(id);
+    }
+
+  private:
+    std::unordered_set<PlanetSurfacePatchId, PlanetSurfacePatchIdHash> selected_;
+    std::unordered_set<PlanetSurfacePatchId, PlanetSurfacePatchIdHash> refined_ancestors_;
 };
 
 [[nodiscard]] float lerp(float a, float b, float t) {
@@ -413,6 +460,18 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
     }
 }
 
+[[nodiscard]] float lod_refinement_threshold_px(const PlanetConfig& config,
+                                                const PlanetPatchSelectionLookup& lookup,
+                                                PlanetSurfacePatchId id) {
+    if (lookup.was_refined(id)) {
+        return config.lod_target_edge_px * (1.0F - config.lod_hysteresis);
+    }
+    if (lookup.was_selected(id)) {
+        return config.lod_target_edge_px * (1.0F + config.lod_hysteresis);
+    }
+    return config.lod_target_edge_px;
+}
+
 [[nodiscard]] std::uint64_t root_patch_reserve(const PlanetConfig& config) {
     return static_cast<std::uint64_t>(config.patches_per_face) *
            static_cast<std::uint64_t>(config.patches_per_face) * 6ULL;
@@ -449,13 +508,23 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
 }
 
 [[nodiscard]] bool append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
+                                           const PlanetPatchSelectionLookup& lookup,
                                            PlanetSurfacePatchInstance patch,
                                            PlanetSurfacePatchPlan& plan) {
     patch.screen_error_px = patch_screen_error_px(config, view, patch);
     ++plan.diagnostics.planned_patch_count;
 
-    const bool wants_refinement =
+    const bool raw_wants_refinement =
         patch.id.level < config.max_lod_level && patch.screen_error_px > config.lod_target_edge_px;
+    const float refinement_threshold_px = lod_refinement_threshold_px(config, lookup, patch.id);
+    const bool wants_refinement =
+        patch.id.level < config.max_lod_level && patch.screen_error_px > refinement_threshold_px;
+    if (raw_wants_refinement && !wants_refinement) {
+        ++plan.diagnostics.hysteresis_delayed_split_count;
+    } else if (!raw_wants_refinement && wants_refinement) {
+        ++plan.diagnostics.hysteresis_delayed_merge_count;
+    }
+
     if (wants_refinement && !patch_passes_horizon_cull(config, view, patch)) {
         record_refinement_cull(plan, true);
         ++plan.diagnostics.refinement_fallback_patch_count;
@@ -477,19 +546,19 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
         ++plan.diagnostics.subdivided_patch_count;
         const bool children_fit =
             append_coverage_patches(
-                config, view,
+                config, view, lookup,
                 PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 0U)},
                 plan) &&
             append_coverage_patches(
-                config, view,
+                config, view, lookup,
                 PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 1U)},
                 plan) &&
             append_coverage_patches(
-                config, view,
+                config, view, lookup,
                 PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 2U)},
                 plan) &&
             append_coverage_patches(
-                config, view,
+                config, view, lookup,
                 PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 3U)},
                 plan);
         if (!children_fit) {
@@ -503,13 +572,16 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
     return record_visible_patch(config, plan, patch);
 }
 
-[[nodiscard]] PlanetSurfacePatchPlan make_surface_patch_plan(const PlanetConfig& config,
-                                                             PlanetSurfaceView view) {
+[[nodiscard]] PlanetSurfacePatchPlan
+make_surface_patch_plan(const PlanetConfig& config, PlanetSurfaceView view,
+                        PlanetSurfacePatchSelectionHints hints) {
     PlanetSurfacePatchPlan plan{};
+    const PlanetPatchSelectionLookup lookup{hints.previous_selected_patches};
     for (std::uint32_t face = 0; face < 6U; ++face) {
         for (std::uint32_t py = 0; py < config.patches_per_face; ++py) {
             for (std::uint32_t px = 0; px < config.patches_per_face; ++px) {
                 if (!append_coverage_patches(config, view,
+                                             lookup,
                                              PlanetSurfacePatchInstance{
                                                  .id =
                                                      {
@@ -745,9 +817,10 @@ PlanetSurfacePatchId planet_surface_child_patch_id(PlanetSurfacePatchId id,
 }
 
 PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
-                                                   PlanetSurfaceView view) {
+                                                   PlanetSurfaceView view,
+                                                   PlanetSurfacePatchSelectionHints hints) {
     validate_planet_config(config);
-    PlanetSurfacePatchPlan plan = make_surface_patch_plan(config, view);
+    PlanetSurfacePatchPlan plan = make_surface_patch_plan(config, view, hints);
     if (plan.selected_patches.size() > kPlanetMaxLivePatchInstances) {
         throw std::runtime_error("planet live LOD fallback exceeded the patch instance budget");
     }

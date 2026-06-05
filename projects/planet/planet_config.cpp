@@ -29,6 +29,9 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     if (run_config_float_is_set(config.planet.lod_target_edge_px)) {
         planet.lod_target_edge_px = config.planet.lod_target_edge_px;
     }
+    if (run_config_float_is_set(config.planet.lod_hysteresis)) {
+        planet.lod_hysteresis = config.planet.lod_hysteresis;
+    }
     if (config.planet.wire_overlay >= 0) {
         planet.wire_overlay = config.planet.wire_overlay != 0;
     }
@@ -168,6 +171,10 @@ void validate_planet_config(const PlanetConfig& config) {
     }
     if (config.lod_target_edge_px <= 0.0F) {
         throw std::runtime_error("planet LOD target edge pixels must be positive");
+    }
+    if (!std::isfinite(config.lod_hysteresis) || config.lod_hysteresis < 0.0F ||
+        config.lod_hysteresis >= 1.0F) {
+        throw std::runtime_error("planet LOD hysteresis must be finite and in [0, 1)");
     }
     if (config.skirt_depth_scale <= 0.0F) {
         throw std::runtime_error("planet skirt depth scale must be positive");

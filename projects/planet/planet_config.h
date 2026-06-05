@@ -15,6 +15,7 @@ inline constexpr std::uint32_t kPlanetDefaultPatchesPerFace = 2;
 inline constexpr std::uint32_t kPlanetDefaultPatchResolution = 32;
 inline constexpr std::uint32_t kPlanetDefaultMaxLodLevel = 6;
 inline constexpr float kPlanetDefaultLodTargetEdgePx = 10.0F;
+inline constexpr float kPlanetDefaultLodHysteresis = 0.15F;
 inline constexpr float kPlanetDefaultTerrainHeightScaleM = 12000.0F;
 inline constexpr float kPlanetDefaultTerrainNoiseScale = 2.5F;
 inline constexpr std::uint32_t kPlanetDefaultTerrainSeed = 1337U;
@@ -54,6 +55,7 @@ struct PlanetConfig {
     std::uint32_t patch_resolution = kPlanetDefaultPatchResolution;
     std::uint32_t max_lod_level = kPlanetDefaultMaxLodLevel;
     float lod_target_edge_px = kPlanetDefaultLodTargetEdgePx;
+    float lod_hysteresis = kPlanetDefaultLodHysteresis;
     PlanetDebugView debug_view = PlanetDebugView::Final;
     bool wire_overlay = false;
     bool skirts_enabled = true;

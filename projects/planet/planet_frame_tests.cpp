@@ -104,6 +104,17 @@ void test_planet_config_rejects_patch_resolution_above_cap() {
     throw std::runtime_error("planet config should reject patch resolution above the live cap");
 }
 
+void test_planet_config_rejects_invalid_lod_hysteresis() {
+    cubey::projects::planet::PlanetConfig config{};
+    config.lod_hysteresis = 1.0F;
+    try {
+        cubey::projects::planet::validate_planet_config(config);
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error("planet config should reject invalid LOD hysteresis");
+}
+
 void test_planet_config_applies_run_config_surface_options() {
     cubey::RunConfig run_config{};
     run_config.planet.patches_per_face = 4U;
@@ -111,6 +122,7 @@ void test_planet_config_applies_run_config_surface_options() {
     run_config.planet.max_lod_level = 5U;
     run_config.planet.max_lod_level_set = true;
     run_config.planet.lod_target_edge_px = 9.5F;
+    run_config.planet.lod_hysteresis = 0.25F;
     run_config.planet.wire_overlay = 1;
     run_config.planet.skirts_enabled = 0;
     run_config.planet.skirt_depth_scale = 0.45F;
@@ -129,6 +141,8 @@ void test_planet_config_applies_run_config_surface_options() {
     require(config.patch_resolution == 16U, "planet config should apply patch resolution");
     require(config.max_lod_level == 5U, "planet config should apply max LOD level");
     require_near(config.lod_target_edge_px, 9.5F, 0.0001F, "planet config should apply LOD target");
+    require_near(config.lod_hysteresis, 0.25F, 0.0001F,
+                 "planet config should apply LOD hysteresis");
     require(config.wire_overlay, "planet config should apply wire overlay");
     require(!config.skirts_enabled, "planet config should apply skirts toggle");
     require_near(config.skirt_depth_scale, 0.45F, 0.0001F,
@@ -317,6 +331,7 @@ int main() {
         test_planet_config_accepts_max_patch_resolution();
         test_planet_config_rejects_lod_above_live_cap();
         test_planet_config_rejects_patch_resolution_above_cap();
+        test_planet_config_rejects_invalid_lod_hysteresis();
         test_planet_config_applies_run_config_surface_options();
         test_planet_camera_min_altitude_tracks_terrain_clearance();
         test_planet_camera_keeps_orbit_view_at_high_altitude();

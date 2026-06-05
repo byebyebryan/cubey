@@ -400,6 +400,8 @@ class PlanetApp {
         }
         ImGui::InputFloat("LOD Target Edge (px)", &edit_planet_config_.lod_target_edge_px, 0.0F,
                           0.0F, "%.1f");
+        ImGui::InputFloat("LOD Hysteresis", &edit_planet_config_.lod_hysteresis, 0.0F, 0.0F,
+                          "%.2f");
         constexpr const char* kDebugViews[]{
             "final",       "face-id",        "patch-id",      "lod-level",
             "screen-error", "lod-transition", "seams",         "cell-edge",
@@ -562,6 +564,7 @@ class PlanetApp {
         static_cast<void>(context.gpu().drain());
         patch_instance_buffers_.clear();
         patch_grid_mesh_.reset();
+        previous_selected_patch_ids_.clear();
 
         planet_config_ = edit_planet_config_;
         clear_surface_camera_anchor();
@@ -704,13 +707,26 @@ class PlanetApp {
 
     void rebuild_surface_data(VkExtent2D extent) {
         const PlanetSurfaceView view = surface_view(extent);
-        const PlanetSurfacePatchPlan plan = plan_planet_surface_patches(planet_config_, view);
+        const PlanetSurfacePatchPlan plan = plan_planet_surface_patches(
+            planet_config_, view,
+            PlanetSurfacePatchSelectionHints{
+                .previous_selected_patches = previous_selected_patch_ids_,
+            });
         patch_grid_ = make_planet_patch_grid_mesh(planet_config_);
         patch_instances_ = make_planet_surface_gpu_patch_instances(plan);
+        refresh_previous_selected_patch_ids(plan);
         mark_patch_instance_buffers_stale();
         refresh_render_diagnostics(plan);
         surface_build_render_origin_world_m_ = frame_.render_origin_world_m;
         surface_build_view_ = view;
+    }
+
+    void refresh_previous_selected_patch_ids(const PlanetSurfacePatchPlan& plan) {
+        previous_selected_patch_ids_.clear();
+        previous_selected_patch_ids_.reserve(plan.selected_patches.size());
+        for (const PlanetSurfacePatchInstance& patch : plan.selected_patches) {
+            previous_selected_patch_ids_.push_back(patch.id);
+        }
     }
 
     [[nodiscard]] bool surface_plan_changed(VkExtent2D extent) const {
@@ -1167,6 +1183,7 @@ class PlanetApp {
     PlanetSurfaceBuildResult surface_build_{};
     PlanetPatchGridMeshData patch_grid_{};
     std::vector<PlanetSurfaceGpuPatchInstance> patch_instances_{};
+    std::vector<PlanetSurfacePatchId> previous_selected_patch_ids_{};
     cubey::math::DVec3 surface_build_render_origin_world_m_{0.0, 0.0, 0.0};
     PlanetSurfaceView surface_build_view_{};
     bool surface_rebuild_pending_ = false;

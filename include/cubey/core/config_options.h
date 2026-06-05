@@ -70,6 +70,7 @@ enum class RunConfigOptionId {
     PlanetPatchResolution,
     PlanetMaxLodLevel,
     PlanetLodTargetEdge,
+    PlanetLodHysteresis,
     PlanetWireOverlay,
     PlanetSkirts,
     PlanetSkirtDepthScale,

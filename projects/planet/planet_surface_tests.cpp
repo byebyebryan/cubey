@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <stdexcept>
 #include <string_view>
@@ -744,6 +745,97 @@ void test_planet_surface_default_lod_reaches_near_camera_detail() {
             "default planet LOD should stay inside the live patch budget");
 }
 
+void test_planet_surface_hysteresis_delays_split() {
+    const cubey::projects::planet::PlanetConfig root_config{
+        .patches_per_face = 1,
+        .patch_resolution = 1,
+        .max_lod_level = 0,
+        .skirts_enabled = false,
+        .terrain_enabled = false,
+    };
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, root_config.radius_m + 50000.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = false,
+    };
+    const cubey::projects::planet::PlanetSurfacePatchPlan root_plan =
+        cubey::projects::planet::plan_planet_surface_patches(root_config, view);
+    std::vector<cubey::projects::planet::PlanetSurfacePatchId> previous_roots{};
+    previous_roots.reserve(root_plan.selected_patches.size());
+    for (const cubey::projects::planet::PlanetSurfacePatchInstance& patch :
+         root_plan.selected_patches) {
+        previous_roots.push_back(patch.id);
+    }
+
+    cubey::projects::planet::PlanetConfig config = root_config;
+    config.max_lod_level = 1;
+    config.lod_hysteresis = 0.20F;
+    config.lod_target_edge_px = root_plan.diagnostics.max_screen_error_px / 1.05F;
+
+    const cubey::projects::planet::PlanetSurfacePatchPlan raw_plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+    const cubey::projects::planet::PlanetSurfacePatchPlan stable_plan =
+        cubey::projects::planet::plan_planet_surface_patches(
+            config, view,
+            cubey::projects::planet::PlanetSurfacePatchSelectionHints{
+                .previous_selected_patches = previous_roots,
+            });
+
+    require(raw_plan.diagnostics.max_lod_level == 1U,
+            "raw planet LOD should split just above the target");
+    require(stable_plan.diagnostics.max_lod_level == 0U,
+            "planet LOD hysteresis should keep previous parent patches stable");
+    require(stable_plan.diagnostics.hysteresis_delayed_split_count > 0U,
+            "planet LOD hysteresis should record delayed splits");
+}
+
+void test_planet_surface_hysteresis_delays_merge() {
+    const cubey::projects::planet::PlanetConfig root_config{
+        .patches_per_face = 1,
+        .patch_resolution = 1,
+        .max_lod_level = 0,
+        .skirts_enabled = false,
+        .terrain_enabled = false,
+    };
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, root_config.radius_m + 50000.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = false,
+    };
+    const cubey::projects::planet::PlanetSurfacePatchPlan root_plan =
+        cubey::projects::planet::plan_planet_surface_patches(root_config, view);
+    std::vector<cubey::projects::planet::PlanetSurfacePatchId> previous_children{};
+    previous_children.reserve(root_plan.selected_patches.size() * 4U);
+    for (const cubey::projects::planet::PlanetSurfacePatchInstance& patch :
+         root_plan.selected_patches) {
+        for (std::uint32_t child = 0; child < 4U; ++child) {
+            previous_children.push_back(
+                cubey::projects::planet::planet_surface_child_patch_id(patch.id, child));
+        }
+    }
+
+    cubey::projects::planet::PlanetConfig config = root_config;
+    config.max_lod_level = 1;
+    config.lod_hysteresis = 0.20F;
+    config.lod_target_edge_px = root_plan.diagnostics.max_screen_error_px / 0.95F;
+
+    const cubey::projects::planet::PlanetSurfacePatchPlan raw_plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+    const cubey::projects::planet::PlanetSurfacePatchPlan stable_plan =
+        cubey::projects::planet::plan_planet_surface_patches(
+            config, view,
+            cubey::projects::planet::PlanetSurfacePatchSelectionHints{
+                .previous_selected_patches = previous_children,
+            });
+
+    require(raw_plan.diagnostics.max_lod_level == 0U,
+            "raw planet LOD should merge just below the target");
+    require(stable_plan.diagnostics.max_lod_level == 1U,
+            "planet LOD hysteresis should keep previous child patches stable");
+    require(stable_plan.diagnostics.hysteresis_delayed_merge_count > 0U,
+            "planet LOD hysteresis should record delayed merges");
+}
+
 void test_planet_surface_planner_falls_back_at_live_patch_budget() {
     const cubey::projects::planet::PlanetConfig config{
         .patches_per_face = 2,
@@ -933,6 +1025,8 @@ int main() {
         test_planet_surface_planner_selects_near_lod();
         test_planet_surface_planner_records_high_lod_diagnostics();
         test_planet_surface_default_lod_reaches_near_camera_detail();
+        test_planet_surface_hysteresis_delays_split();
+        test_planet_surface_hysteresis_delays_merge();
         test_planet_surface_planner_falls_back_at_live_patch_budget();
         test_planet_surface_skirts_add_seam_geometry();
         test_planet_surface_skirt_vertices_drop_below_radius();

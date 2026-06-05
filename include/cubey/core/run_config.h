@@ -127,6 +127,7 @@ struct RunConfig {
         std::uint32_t max_lod_level = 0;
         bool max_lod_level_set = false;
         float lod_target_edge_px = kRunConfigUnsetFloat;
+        float lod_hysteresis = kRunConfigUnsetFloat;
         int wire_overlay = -1;
         int skirts_enabled = -1;
         float skirt_depth_scale = kRunConfigUnsetFloat;

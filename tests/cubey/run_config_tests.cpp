@@ -244,6 +244,7 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--pyro-source-radius", "--shadow-grid-width",     "--water2d-transfer",
         "--water2d-hose",       "--water3d-transfer",      "--water3d-p2g-mode",
         "--water3d-whitewater", "--ocean-field-precision", "--planet-max-lod-level",
+        "--planet-lod-hysteresis",
     };
     for (std::string_view flag : promoted_flags) {
         const std::string explicit_branch = "arg == \"" + std::string(flag) + "\"";
@@ -275,6 +276,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "planet.patch_resolution",
         "planet.max_lod_level",
         "planet.lod_target_edge_px",
+        "planet.lod_hysteresis",
         "planet.wire_overlay",
         "planet.skirts_enabled",
         "planet.skirt_depth_scale",
@@ -1201,6 +1203,8 @@ void test_run_config_parses_planet_controls() {
     std::string max_lod_value = "7";
     std::string lod_target_flag = "--planet-lod-target-edge-px";
     std::string lod_target_value = "9.5";
+    std::string lod_hysteresis_flag = "--planet-lod-hysteresis";
+    std::string lod_hysteresis_value = "0.25";
     std::string wire_flag = "--planet-wire-overlay";
     std::string skirts_flag = "--no-planet-skirts";
     std::string skirt_depth_flag = "--planet-skirt-depth-scale";
@@ -1212,7 +1216,7 @@ void test_run_config_parses_planet_controls() {
     std::string terrain_noise_value = "4.25";
     std::string terrain_seed_flag = "--planet-terrain-seed";
     std::string terrain_seed_value = "42";
-    std::array<char*, 26> argv{program.data(),
+    std::array<char*, 28> argv{program.data(),
                                radius_flag.data(),
                                radius_value.data(),
                                atmosphere_flag.data(),
@@ -1227,6 +1231,8 @@ void test_run_config_parses_planet_controls() {
                                max_lod_value.data(),
                                lod_target_flag.data(),
                                lod_target_value.data(),
+                               lod_hysteresis_flag.data(),
+                               lod_hysteresis_value.data(),
                                wire_flag.data(),
                                skirts_flag.data(),
                                skirt_depth_flag.data(),
@@ -1253,6 +1259,8 @@ void test_run_config_parses_planet_controls() {
     require(config.planet.max_lod_level_set && config.planet.max_lod_level == 7U,
             "run config should parse planet max LOD level");
     require(config.planet.lod_target_edge_px == 9.5F, "run config should parse planet LOD target");
+    require(config.planet.lod_hysteresis == 0.25F,
+            "run config should parse planet LOD hysteresis");
     require(config.planet.wire_overlay == 1, "run config should parse planet wire overlay");
     require(config.planet.skirts_enabled == 0, "run config should parse planet skirts toggle");
     require(config.planet.skirt_depth_scale == 0.45F,
@@ -1305,6 +1313,17 @@ void test_run_config_rejects_invalid_planet_controls() {
                                     patch_resolution_argv.data());
         },
         "run config should reject oversized planet patch resolution");
+
+    std::string lod_hysteresis_flag = "--planet-lod-hysteresis";
+    std::string lod_hysteresis_value = "1";
+    std::array<char*, 3> lod_hysteresis_argv{program.data(), lod_hysteresis_flag.data(),
+                                             lod_hysteresis_value.data()};
+    require_throws(
+        [&lod_hysteresis_argv]() {
+            cubey::parse_run_config(static_cast<int>(lod_hysteresis_argv.size()),
+                                    lod_hysteresis_argv.data());
+        },
+        "run config should reject invalid planet LOD hysteresis");
 }
 
 void test_run_config_parses_shadow_volume_controls() {
