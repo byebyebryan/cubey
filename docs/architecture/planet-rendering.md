@@ -216,6 +216,10 @@ Current implementation notes:
   transient scene color target and then uses the shared post pass for exposure,
   tone mapping, and output encoding. This aligns planet with the renderer-wide
   linear HDR contract while keeping ocean integration deferred.
+- Planet now disables inline celestial disks in its shared atmosphere background
+  and draws the sun through a project-owned celestial pass. The sun state is
+  modeled in `projects/planet` first and then feeds atmosphere scattering,
+  surface lighting, and the explicit HDR sun disk/glow.
 
 ## Celestial Body Pivot
 
@@ -292,8 +296,8 @@ Deferred surface-field work:
 6. Add placeholder terrain/bathymetry/material fields.
 7. Keep strengthening atmosphere, LOD, terrain, and diagnostics until they are
    stable enough to host other layers.
-8. Move planet sun rendering out of the inline atmosphere disk path and into a
-   planet-owned celestial body pass.
+8. Done: move planet sun rendering out of the inline atmosphere disk path and
+   into a planet-owned celestial body pass.
 9. Model the moon as a planet-owned body once the sun path and occlusion
    contract are stable.
 10. Port ocean as a local water layer once the planet frame and LOD contracts are
