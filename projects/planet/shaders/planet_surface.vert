@@ -6,16 +6,18 @@ layout(location = 1) in float in_skirt;
 layout(location = 2) in uvec4 in_patch_id;
 layout(location = 3) in float in_screen_error_px;
 
-layout(push_constant) uniform PlanetPushConstants {
+layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     mat4 view_projection;
     vec4 light_direction_debug;
     vec4 render_origin_radius;
     vec4 surface_options;
     vec4 terrain_options;
-} pc;
+    vec4 camera_horizon;
+    vec4 atmosphere_options;
+} surface_frame;
 
 uint packed_patch_lod_option() {
-    return uint(pc.surface_options.y + 0.5);
+    return uint(surface_frame.surface_options.y + 0.5);
 }
 
 float patches_per_face_option() {
@@ -31,11 +33,11 @@ float max_lod_option() {
 }
 
 float wire_overlay_option() {
-    return fract(pc.surface_options.x) > 0.1 ? 1.0 : 0.0;
+    return fract(surface_frame.surface_options.x) > 0.1 ? 1.0 : 0.0;
 }
 
 int debug_view_option() {
-    return int(floor(pc.surface_options.x));
+    return int(floor(surface_frame.surface_options.x));
 }
 
 layout(location = 0) out vec3 out_color;
@@ -91,21 +93,21 @@ vec3 lod_color() {
 }
 
 vec3 screen_error_color() {
-    float target = max(pc.light_direction_debug.w, 0.0001);
+    float target = max(surface_frame.light_direction_debug.w, 0.0001);
     float t = clamp(in_screen_error_px / target, 0.0, 2.0) * 0.5;
     return vec3(0.16 + 0.80 * t, 0.82 - 0.46 * t, 0.24);
 }
 
 vec3 cell_edge_color() {
     float divisions = patches_per_face_option() * exp2(float(in_patch_id.y));
-    float patch_width_m = (pc.render_origin_radius.w * 2.0) / max(divisions, 1.0);
+    float patch_width_m = (surface_frame.render_origin_radius.w * 2.0) / max(divisions, 1.0);
     float cell_edge_m = max(patch_width_m / patch_resolution_option(), 1.0);
-    float detail = clamp(log2(max(pc.render_origin_radius.w, 1.0) / cell_edge_m) / 16.0, 0.0, 1.0);
+    float detail = clamp(log2(max(surface_frame.render_origin_radius.w, 1.0) / cell_edge_m) / 16.0, 0.0, 1.0);
     return mix(vec3(0.95, 0.42, 0.14), vec3(0.12, 0.78, 0.95), detail);
 }
 
 vec3 terrain_height_color(float height_m) {
-    float height_scale = max(pc.terrain_options.x, 1.0);
+    float height_scale = max(surface_frame.terrain_options.x, 1.0);
     float t = clamp(height_m / height_scale, -1.0, 1.0) * 0.5 + 0.5;
     if (t < 0.5) {
         float blend = t * 2.0;
@@ -122,7 +124,7 @@ vec3 latitude_color(vec3 normal) {
 }
 
 vec3 final_color(vec3 normal, uint material, float normalized_elevation, float normalized_slope) {
-    float height_scale = pc.terrain_options.x;
+    float height_scale = surface_frame.terrain_options.x;
     if (height_scale > 0.0) {
         return planet_surface_material_color(material, normalized_elevation, normalized_slope);
     }
@@ -176,12 +178,12 @@ void main() {
     float height_m = planet_surface_terrain_height_m(sphere_normal);
     vec3 normal =
         planet_surface_terrain_normal(in_patch_id.x, u, v, in_patch_id.y, sphere_normal);
-    vec3 world_position = sphere_normal * (pc.render_origin_radius.w + height_m);
-    world_position -= normal * pc.terrain_options.w * in_skirt;
-    vec3 render_position = world_position - pc.render_origin_radius.xyz;
+    vec3 world_position = sphere_normal * (surface_frame.render_origin_radius.w + height_m);
+    world_position -= normal * surface_frame.terrain_options.w * in_skirt;
+    vec3 render_position = world_position - surface_frame.render_origin_radius.xyz;
 
     out_color = vertex_color(sphere_normal, normal, height_m);
     out_normal = normal;
     out_uv = in_uv;
-    gl_Position = pc.view_projection * vec4(render_position, 1.0);
+    gl_Position = surface_frame.view_projection * vec4(render_position, 1.0);
 }

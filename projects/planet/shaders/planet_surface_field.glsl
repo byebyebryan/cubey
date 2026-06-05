@@ -80,26 +80,26 @@ float planet_surface_fbm(vec3 p, uint seed, uint octaves) {
 }
 
 vec2 planet_surface_terrain_detail_strengths() {
-    float packed = floor(pc.surface_options.z + 0.5);
+    float packed = floor(surface_frame.surface_options.z + 0.5);
     float mid = floor(packed / 4096.0) / 1024.0;
     float fine = mod(packed, 4096.0) / 1024.0;
     return vec2(mid, fine);
 }
 
 float planet_surface_terrain_height_m(vec3 sphere_normal) {
-    float height_scale = pc.terrain_options.x;
+    float height_scale = surface_frame.terrain_options.x;
     if (height_scale <= 0.0) {
         return 0.0;
     }
 
-    uint seed = uint(pc.terrain_options.z + 0.5);
-    vec3 p = sphere_normal * max(pc.terrain_options.y, 0.0001);
+    uint seed = uint(surface_frame.terrain_options.z + 0.5);
+    vec3 p = sphere_normal * max(surface_frame.terrain_options.y, 0.0001);
     vec2 detail_strength = planet_surface_terrain_detail_strengths();
     float broad = planet_surface_fbm(p + vec3(1.7, -3.2, 5.1), seed, 4U);
     float ridge_source =
         planet_surface_fbm(p * 2.35 + vec3(-4.0, 2.4, 8.5), seed + 37U, 5U);
     float mid = ((1.0 - abs(ridge_source)) * 2.0 - 1.0) * detail_strength.x;
-    float fine = planet_surface_fbm(p * max(pc.surface_options.w, 0.0001) +
+    float fine = planet_surface_fbm(p * max(surface_frame.surface_options.w, 0.0001) +
                                         vec3(6.3, 1.1, -7.4),
                                     seed + 113U, 3U) *
                  detail_strength.y;
@@ -109,13 +109,13 @@ float planet_surface_terrain_height_m(vec3 sphere_normal) {
 
 vec3 planet_surface_terrain_world_position(uint face, float u, float v) {
     vec3 sphere_normal = normalize(planet_surface_cube_face_point(face, u, v));
-    float radius = pc.render_origin_radius.w + planet_surface_terrain_height_m(sphere_normal);
+    float radius = surface_frame.render_origin_radius.w + planet_surface_terrain_height_m(sphere_normal);
     return sphere_normal * radius;
 }
 
 vec3 planet_surface_terrain_normal(uint face, float u, float v, uint patch_level,
                                    vec3 sphere_normal) {
-    if (pc.terrain_options.x <= 0.0) {
+    if (surface_frame.terrain_options.x <= 0.0) {
         return sphere_normal;
     }
 
@@ -143,7 +143,7 @@ vec3 planet_surface_terrain_normal(uint face, float u, float v, uint patch_level
 }
 
 float planet_surface_normalized_elevation(float height_m) {
-    float height_scale = max(pc.terrain_options.x, 1.0);
+    float height_scale = max(surface_frame.terrain_options.x, 1.0);
     return clamp(height_m / height_scale, -1.0, 1.0);
 }
 

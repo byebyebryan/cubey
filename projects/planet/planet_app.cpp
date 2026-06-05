@@ -16,6 +16,7 @@
 #include <cubey/render/frame_data.h>
 #include <cubey/render/instance_buffer.h>
 #include <cubey/render/material.h>
+#include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
@@ -55,30 +56,42 @@ constexpr const char* kAppName = "planet";
 constexpr const char* kReadyStatus = "rendering planet project";
 constexpr float kPlanetCameraBaseYaw = 0.55F;
 constexpr float kPlanetCameraBasePitch = 0.28F;
+constexpr std::uint32_t kPlanetSurfaceFrameUniformBinding = 0;
 
-struct PlanetPushConstants {
+struct PlanetSurfaceFrameUniforms {
     cubey::math::Mat4 view_projection{1.0F};
     cubey::math::Vec4 light_direction_debug{0.35F, 0.78F, 0.50F, 0.0F};
     cubey::math::Vec4 render_origin_radius{0.0F, 0.0F, 0.0F, kPlanetDefaultRadiusM};
     cubey::math::Vec4 surface_options{0.0F, 0.0F, 1.0F, 0.0F};
     cubey::math::Vec4 terrain_options{0.0F, 1.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 camera_horizon{0.0F, 0.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 atmosphere_options{0.14F, 0.0F, 0.65F, 1.0F};
 };
 
-static_assert(sizeof(PlanetPushConstants) <= 128U);
+static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 10U);
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_PLANET_SHADER_DIR) / filename;
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo planet_pass_info() {
-    const VkPushConstantRange push_constant_range{
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        .offset = 0,
-        .size = sizeof(PlanetPushConstants),
-    };
     return cubey::render::MaterialPassInfo{
         .label = "planet.forward",
-        .push_constants = {push_constant_range},
+        .descriptor_sets =
+            {
+                cubey::render::MaterialDescriptorSetLayout{
+                    .set = 0,
+                    .bindings =
+                        {
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = kPlanetSurfaceFrameUniformBinding,
+                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags =
+                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                        },
+                },
+            },
         .cull_mode = VK_CULL_MODE_BACK_BIT,
         .depth_test = true,
         .depth_write = true,
@@ -162,7 +175,8 @@ class PlanetApp {
     int run_windowed() {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
-            create_global_resources_if_needed(context.gpu(), context.frame_slot_count());
+            create_global_resources_if_needed(context.device(), context.gpu(),
+                                              context.frame_slot_count());
         };
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             create_forward_pass(context.device(), context.swapchain().extent(),
@@ -209,7 +223,8 @@ class PlanetApp {
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             create_global_resources_if_needed(
-                context.gpu(), cubey::host::headless_capture_frame_slot_count(config_));
+                context.device(), context.gpu(),
+                cubey::host::headless_capture_frame_slot_count(config_));
             create_forward_pass(context.device(), context.render_target().extent,
                                 context.render_target().format,
                                 cubey::host::headless_capture_frame_slot_count(config_));
@@ -227,10 +242,22 @@ class PlanetApp {
         return host.run();
     }
 
-    void create_global_resources_if_needed(cubey::vulkan::GpuRuntime& gpu,
+    void create_global_resources_if_needed(const cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& gpu,
                                            std::uint32_t frame_slot_count) {
         if (!patch_grid_mesh_.has_value()) {
             patch_grid_mesh_.emplace(gpu, patch_grid_.mesh_config());
+        }
+        if (!surface_frame_material_.has_value() ||
+            surface_frame_material_->material().set_count() != frame_slot_count) {
+            surface_frame_material_.reset();
+            surface_frame_material_.emplace(
+                device, cubey::render::FrameUniformMaterialInstanceConfig{
+                            .material_pass = planet_pass_info(),
+                            .descriptor_set = 0,
+                            .frame_slot_count = frame_slot_count,
+                            .uniform_binding = kPlanetSurfaceFrameUniformBinding,
+                        });
         }
         resize_patch_instance_buffer_slots(frame_slot_count);
     }
@@ -242,6 +269,7 @@ class PlanetApp {
             cubey::render::fragment_shader_file(shader_path("planet_surface.frag.spv")),
         };
         const cubey::render::VertexInputLayout vertex_input = planet_surface_vertex_input_layout();
+        const std::array descriptor_set_layouts{surface_frame_material().layout()};
         forward_pass_.emplace(
             device,
             cubey::render::GraphicsPipelineTargetInfo{
@@ -254,6 +282,7 @@ class PlanetApp {
                         .shader_stage_files = shader_stage_files,
                         .vertex_bindings = vertex_input.bindings(),
                         .vertex_attributes = vertex_input.attribute_descriptions(),
+                        .descriptor_set_layouts = descriptor_set_layouts,
                         .material_pass = planet_pass_info(),
                     },
                 .clear =
@@ -275,6 +304,7 @@ class PlanetApp {
         destroy_swapchain_resources();
         patch_instance_buffers_.clear();
         patch_grid_mesh_.reset();
+        surface_frame_material_.reset();
     }
 
     void update_input(cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
@@ -629,7 +659,7 @@ class PlanetApp {
         return transform;
     }
 
-    [[nodiscard]] PlanetPushConstants push_constants(VkExtent2D extent) {
+    [[nodiscard]] PlanetSurfaceFrameUniforms surface_frame_uniforms(VkExtent2D extent) {
         const float aspect = extent.height == 0U ? 1.0F
                                                  : static_cast<float>(extent.width) /
                                                        static_cast<float>(extent.height);
@@ -663,6 +693,14 @@ class PlanetApp {
                     static_cast<float>(planet_config_.terrain_seed),
                     skirt_depth,
                 },
+            .camera_horizon =
+                {
+                    transform.translation.x,
+                    transform.translation.y,
+                    transform.translation.z,
+                    frame_.horizon_distance_m,
+                },
+            .atmosphere_options = {0.14F, 0.0F, 0.65F, 1.0F},
         };
     }
 
@@ -670,16 +708,17 @@ class PlanetApp {
                              VkCommandBuffer command_buffer,
                              cubey::render::ColorTargetView color_target,
                              cubey::render::FrameSlot frame_slot, bool present) {
-        const PlanetPushConstants constants = push_constants(color_target.extent);
+        const PlanetSurfaceFrameUniforms uniforms = surface_frame_uniforms(color_target.extent);
+        surface_frame_material().upload(frame_slot, uniforms);
         const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>& instance_buffer =
             ensure_patch_instance_buffer(gpu, frame_slot);
-        const auto record = [this, &constants, &instance_buffer](
+        const VkDescriptorSet frame_set = surface_frame_material().set(frame_slot);
+        const auto record = [this, frame_set, &instance_buffer](
                                 const cubey::vulkan::CommandRecorder& pass_recorder) {
             pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
                                         forward_pass().pipeline().pipeline());
-            pass_recorder.push_constants(forward_pass().pipeline().layout(),
-                                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                                         0, constants);
+            pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                              forward_pass().pipeline().layout(), 0, frame_set);
             instance_buffer.bind(pass_recorder, 1);
             cubey::render::record_draw_item(pass_recorder.handle(),
                                             cubey::render::DrawItem{
@@ -787,6 +826,14 @@ class PlanetApp {
         return forward_pass_.value();
     }
 
+    [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<PlanetSurfaceFrameUniforms>&
+    surface_frame_material() const {
+        if (!surface_frame_material_.has_value()) {
+            throw std::runtime_error("planet surface frame material is not initialized");
+        }
+        return surface_frame_material_.value();
+    }
+
     RunConfig config_;
     PlanetConfig planet_config_{};
     PlanetConfig edit_planet_config_{};
@@ -806,6 +853,8 @@ class PlanetApp {
     std::optional<cubey::render::Mesh> patch_grid_mesh_;
     std::vector<PatchInstanceBufferSlot> patch_instance_buffers_{};
     std::uint64_t patch_instance_generation_ = 0;
+    std::optional<cubey::render::FrameUniformMaterialInstance<PlanetSurfaceFrameUniforms>>
+        surface_frame_material_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::host::FrameStats ui_frame_stats_;
