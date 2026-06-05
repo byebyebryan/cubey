@@ -12,6 +12,7 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         planet_app.cpp
+        planet_camera.cpp
         planet_config.cpp
         planet_frame.cpp
         planet_surface.cpp
@@ -22,6 +23,7 @@ cubey_add_app_target(
 if(BUILD_TESTING)
     add_executable(
         cubey_project_planet_tests
+        planet_camera.cpp
         planet_config.cpp
         planet_frame.cpp
         planet_frame_tests.cpp
