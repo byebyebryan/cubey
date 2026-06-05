@@ -18,6 +18,7 @@
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/frame_data.h>
+#include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/instance_buffer.h>
 #include <cubey/render/material.h>
 #include <cubey/render/material_instance.h>
@@ -62,6 +63,7 @@ constexpr const char* kReadyStatus = "rendering planet project";
 constexpr float kPlanetCameraBaseYaw = 0.55F;
 constexpr float kPlanetCameraBasePitch = 0.28F;
 constexpr std::uint32_t kPlanetSurfaceFrameUniformBinding = 0;
+constexpr VkFormat kPlanetSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
 struct PlanetSurfaceFrameUniforms {
     cubey::math::Mat4 view_projection{1.0F};
@@ -205,6 +207,11 @@ class PlanetApp {
         std::uint64_t generation = 0;
     };
 
+    struct PlanetFrameGraph {
+        cubey::render::CompiledRenderGraph graph{};
+        cubey::render::RenderGraphTextureHandle scene_color{};
+    };
+
     int run_windowed() {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
@@ -294,6 +301,7 @@ class PlanetApp {
         }
         resize_patch_instance_buffer_slots(frame_slot_count);
         create_atmosphere_background_resources_if_needed(device, gpu, frame_slot_count);
+        create_hdr_post_resources_if_needed(device, frame_slot_count);
     }
 
     void create_forward_pass(const cubey::vulkan::Device& device, VkExtent2D extent,
@@ -308,7 +316,7 @@ class PlanetApp {
             device,
             cubey::render::GraphicsPipelineTargetInfo{
                 .extent = extent,
-                .color_format = color_format,
+                .color_format = kPlanetSceneColorFormat,
             },
             cubey::render::ForwardScenePass3DConfig{
                 .pipeline =
@@ -325,19 +333,23 @@ class PlanetApp {
                         .depth = cubey::render::depth_clear_value(),
                     },
             });
-        create_atmosphere_background_pipeline(device, extent, color_format);
+        create_atmosphere_background_pipeline(device, extent, kPlanetSceneColorFormat);
+        create_hdr_post_pipeline(device, extent, color_format);
         graph_executor_.clear();
         graph_executor_.resize(frame_slot_count);
     }
 
     void destroy_swapchain_resources() {
         graph_executor_.clear();
+        hdr_post_frame_.destroy_pipeline();
         atmosphere_background_.destroy_pipeline();
         forward_pass_.reset();
     }
 
     void destroy_all_resources() {
         destroy_swapchain_resources();
+        hdr_post_frame_.destroy();
+        hdr_post_frame_slot_count_ = 0;
         atmosphere_background_.destroy();
         atmosphere_background_atlases_.reset();
         patch_instance_buffers_.clear();
@@ -849,6 +861,23 @@ class PlanetApp {
         atmosphere_background_.record_pass(recorder, target, frame_slot);
     }
 
+    [[nodiscard]] float display_exposure() const {
+        if (atmosphere_state_.auto_exposure_enabled && !config_.pbr.exposure_explicit) {
+            return atmosphere_state_.resolved_exposure;
+        }
+        return config_.pbr.exposure;
+    }
+
+    [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms(VkFormat color_format) const {
+        return cubey::render::hdr_post_uniforms(color_format, display_exposure());
+    }
+
+    void record_post_pass(const cubey::vulkan::CommandRecorder& recorder,
+                          cubey::render::ColorTargetView target,
+                          cubey::render::FrameSlot frame_slot) const {
+        hdr_post_frame_.record_pass(recorder, target, frame_slot);
+    }
+
     template <typename RecordCallback>
     void record_planet_surface_pass(const cubey::vulkan::CommandRecorder& recorder,
                                     const cubey::render::RenderTargetView& target,
@@ -865,31 +894,12 @@ class PlanetApp {
         recorder.end_rendering();
     }
 
-    void record_planet_frame(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-                             VkCommandBuffer command_buffer,
-                             cubey::render::ColorTargetView color_target,
-                             cubey::render::FrameSlot frame_slot, bool present) {
-        const PlanetSurfaceFrameUniforms uniforms = surface_frame_uniforms(color_target.extent);
-        surface_frame_material().upload(frame_slot, uniforms);
-        atmosphere_background_.upload(frame_slot,
-                                      atmosphere_background_uniforms(color_target.extent));
-        const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>& instance_buffer =
-            ensure_patch_instance_buffer(gpu, frame_slot);
+    [[nodiscard]] PlanetFrameGraph
+    build_frame_graph(cubey::render::ColorTargetView color_target,
+                      cubey::render::FrameSlot frame_slot, bool present,
+                      const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>&
+                          instance_buffer) {
         const VkDescriptorSet frame_set = surface_frame_material().set(frame_slot);
-        const auto record = [this, frame_set, &instance_buffer](
-                                const cubey::vulkan::CommandRecorder& pass_recorder) {
-            pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        forward_pass().pipeline().pipeline());
-            pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                              forward_pass().pipeline().layout(), 0, frame_set);
-            instance_buffer.bind(pass_recorder, 1);
-            cubey::render::record_draw_item(pass_recorder.handle(),
-                                            cubey::render::DrawItem{
-                                                .mesh = &patch_grid_mesh(),
-                                                .instance_count = instance_buffer.count(),
-                                            });
-        };
-
         cubey::render::RenderGraphBuilder graph;
         const cubey::render::RenderGraphTextureState initial_state =
             present ? cubey::render::render_graph_undefined_texture_state()
@@ -899,35 +909,88 @@ class PlanetApp {
                     : cubey::render::render_graph_color_attachment_texture_state();
         const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
             "planet backbuffer", color_target, initial_state, final_state);
+        const cubey::render::RenderGraphTextureHandle scene_color =
+            graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
+                "planet scene color", color_target.extent, kPlanetSceneColorFormat));
         const cubey::render::RenderGraphTextureHandle depth =
             graph.import_depth_target("planet depth", forward_pass().depth_target(),
                                       cubey::render::render_graph_undefined_texture_state());
 
         graph.add_pass("planet atmosphere", cubey::render::RenderGraphQueueDomain::Graphics)
-            .write_color(backbuffer)
+            .write_color(scene_color)
             .material_pass(cubey::render::atmosphere_background_pass_info())
-            .execute([this, backbuffer,
+            .execute([this, scene_color,
                       frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
                 record_atmosphere_background(
                     context.recorder(),
-                    cubey::render::resolved_color_target_view(context, backbuffer), frame_slot);
+                    cubey::render::resolved_color_target_view(context, scene_color), frame_slot);
             });
         graph.add_pass("planet surface", cubey::render::RenderGraphQueueDomain::Graphics)
-            .write_color(backbuffer)
+            .write_color(scene_color)
             .write_depth(depth)
             .material_pass(planet_pass_info())
-            .execute([this, backbuffer, depth,
-                      record](const cubey::render::RenderGraphExecutionContext& context) {
+            .execute([this, scene_color, depth, frame_set,
+                      &instance_buffer](const cubey::render::RenderGraphExecutionContext& context) {
                 const cubey::render::ColorTargetView resolved_color =
-                    cubey::render::resolved_color_target_view(context, backbuffer);
+                    cubey::render::resolved_color_target_view(context, scene_color);
                 const cubey::render::DepthTargetView resolved_depth =
                     cubey::render::resolved_depth_target_view(context, depth);
                 record_planet_surface_pass(
-                    context.recorder(),
-                    cubey::render::render_target_view(resolved_color, resolved_depth), record);
+                    context.recorder(), cubey::render::render_target_view(resolved_color,
+                                                                          resolved_depth),
+                    [this, frame_set, &instance_buffer](
+                        const cubey::vulkan::CommandRecorder& pass_recorder) {
+                        pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                    forward_pass().pipeline().pipeline());
+                        pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                          forward_pass().pipeline().layout(), 0,
+                                                          frame_set);
+                        instance_buffer.bind(pass_recorder, 1);
+                        cubey::render::record_draw_item(
+                            pass_recorder.handle(),
+                            cubey::render::DrawItem{
+                                .mesh = &patch_grid_mesh(),
+                                .instance_count = instance_buffer.count(),
+                            });
+                    });
+            });
+        graph.add_pass("planet post", cubey::render::RenderGraphQueueDomain::Graphics)
+            .read_texture(scene_color)
+            .write_color(backbuffer)
+            .material_pass(cubey::render::pbr_post_pass_info())
+            .execute([this, color_target,
+                      frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                record_post_pass(context.recorder(), color_target, frame_slot);
             });
 
-        const cubey::render::CompiledRenderGraph frame_graph = graph.compile();
+        return {
+            .graph = graph.compile(),
+            .scene_color = scene_color,
+        };
+    }
+
+    void update_post_descriptor(const cubey::vulkan::Device& device,
+                                cubey::render::FrameSlot frame_slot,
+                                const cubey::render::CompiledRenderGraph& graph,
+                                const cubey::render::RenderGraphResourceSet& resources,
+                                cubey::render::RenderGraphTextureHandle scene_color) const {
+        hdr_post_frame_.update_scene_color_descriptor(device, frame_slot, graph, resources,
+                                                      scene_color);
+    }
+
+    void record_planet_frame(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                             VkCommandBuffer command_buffer,
+                             cubey::render::ColorTargetView color_target,
+                             cubey::render::FrameSlot frame_slot, bool present) {
+        const PlanetSurfaceFrameUniforms uniforms = surface_frame_uniforms(color_target.extent);
+        surface_frame_material().upload(frame_slot, uniforms);
+        atmosphere_background_.upload(frame_slot,
+                                      atmosphere_background_uniforms(color_target.extent));
+        hdr_post_frame_.upload(frame_slot, post_uniforms(color_target.format));
+        const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>& instance_buffer =
+            ensure_patch_instance_buffer(gpu, frame_slot);
+        const PlanetFrameGraph frame_graph =
+            build_frame_graph(color_target, frame_slot, present, instance_buffer);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &device,
@@ -938,7 +1001,12 @@ class PlanetApp {
                     present ? cubey::render::RenderGraphCommandBufferMode::BeginAndEnd
                             : cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
             },
-            frame_graph);
+            frame_graph.graph,
+            [this, &device, frame_slot,
+             &frame_graph](const cubey::render::RenderGraphResourceSet& resources) {
+                update_post_descriptor(device, frame_slot, frame_graph.graph, resources,
+                                       frame_graph.scene_color);
+            });
     }
 
     [[nodiscard]] const cubey::render::Mesh& patch_grid_mesh() const {
@@ -1036,6 +1104,32 @@ class PlanetApp {
                     });
     }
 
+    void create_hdr_post_resources_if_needed(const cubey::vulkan::Device& device,
+                                             std::uint32_t frame_slot_count) {
+        if (hdr_post_frame_slot_count_ == frame_slot_count) {
+            return;
+        }
+        hdr_post_frame_.destroy();
+        hdr_post_frame_.create_materials(device, {
+                                                     .frame_slot_count = frame_slot_count,
+                                                 });
+        hdr_post_frame_slot_count_ = frame_slot_count;
+    }
+
+    void create_hdr_post_pipeline(const cubey::vulkan::Device& device, VkExtent2D extent,
+                                  VkFormat color_format) {
+        const std::array<cubey::render::ShaderStageFile, 2> shaders{
+            cubey::render::vertex_shader_file(shader_path("forward_pbr_post.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("forward_pbr_post.frag.spv")),
+        };
+        hdr_post_frame_.destroy_pipeline();
+        hdr_post_frame_.create_pipeline(device, {
+                                                    .extent = extent,
+                                                    .color_format = color_format,
+                                                    .shader_stage_files = shaders,
+                                                });
+    }
+
     [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<PlanetSurfaceFrameUniforms>&
     surface_frame_material() const {
         if (!surface_frame_material_.has_value()) {
@@ -1070,11 +1164,13 @@ class PlanetApp {
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
+    cubey::render::HdrPostFrame hdr_post_frame_{};
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::host::FrameStats ui_frame_stats_;
     std::optional<cubey::host::FrameStatsSnapshot> latest_frame_stats_;
     cubey::host::ProcessResourceStatsSampler process_stats_;
     std::string rebuild_error_{};
+    std::uint32_t hdr_post_frame_slot_count_ = 0;
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
 };
