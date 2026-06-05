@@ -122,6 +122,19 @@ struct RunConfig {
         float radius_m = kRunConfigUnsetFloat;
         float atmosphere_height_m = kRunConfigUnsetFloat;
         float camera_altitude_m = kRunConfigUnsetFloat;
+        std::uint32_t patches_per_face = 0;
+        std::uint32_t patch_resolution = 0;
+        std::uint32_t max_lod_level = 0;
+        bool max_lod_level_set = false;
+        float lod_target_edge_px = kRunConfigUnsetFloat;
+        int wire_overlay = -1;
+        int skirts_enabled = -1;
+        float skirt_depth_scale = kRunConfigUnsetFloat;
+        int terrain_enabled = -1;
+        float terrain_height_scale_m = kRunConfigUnsetFloat;
+        float terrain_noise_scale = kRunConfigUnsetFloat;
+        std::uint32_t terrain_seed = 0;
+        bool terrain_seed_set = false;
     };
 
     struct PbrOptions {

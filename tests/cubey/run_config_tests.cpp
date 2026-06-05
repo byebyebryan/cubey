@@ -243,7 +243,7 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--smoke-injectors",    "--smoke-pressure-solver", "--pyro-sources",
         "--pyro-source-radius", "--shadow-grid-width",     "--water2d-transfer",
         "--water2d-hose",       "--water3d-transfer",      "--water3d-p2g-mode",
-        "--water3d-whitewater", "--ocean-field-precision",
+        "--water3d-whitewater", "--ocean-field-precision", "--planet-max-lod-level",
     };
     for (std::string_view flag : promoted_flags) {
         const std::string explicit_branch = "arg == \"" + std::string(flag) + "\"";
@@ -271,6 +271,17 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "planet.radius_m",
         "planet.atmosphere_height_m",
         "planet.camera_altitude_m",
+        "planet.patches_per_face",
+        "planet.patch_resolution",
+        "planet.max_lod_level",
+        "planet.lod_target_edge_px",
+        "planet.wire_overlay",
+        "planet.skirts_enabled",
+        "planet.skirt_depth_scale",
+        "planet.terrain_enabled",
+        "planet.terrain_height_scale_m",
+        "planet.terrain_noise_scale",
+        "planet.terrain_seed",
         "terrain.cell_size",
         "terrain.sea_level",
         "terrain.water_surface",
@@ -318,11 +329,24 @@ void test_run_config_descriptors_cover_project_control_paths() {
 
 void test_run_config_toggle_descriptors_have_negative_aliases() {
     constexpr std::array toggles{
-        "validation",           "profile.diagnostics",   "ocean.spectral_domains",
-        "ocean.terrain_fields", "terrain.water_surface", "atmosphere.auto_exposure",
-        "atmosphere.moon",      "water2d.hose",          "water2d.drain",
-        "water2d.wave",         "water3d.hose",          "water3d.drain",
-        "water3d.rain",         "water3d.wave",          "water3d.whitewater",
+        "validation",
+        "profile.diagnostics",
+        "ocean.spectral_domains",
+        "ocean.terrain_fields",
+        "terrain.water_surface",
+        "atmosphere.auto_exposure",
+        "atmosphere.moon",
+        "planet.wire_overlay",
+        "planet.skirts_enabled",
+        "planet.terrain_enabled",
+        "water2d.hose",
+        "water2d.drain",
+        "water2d.wave",
+        "water3d.hose",
+        "water3d.drain",
+        "water3d.rain",
+        "water3d.wave",
+        "water3d.whitewater",
     };
 
     for (std::string_view path : toggles) {
@@ -1169,9 +1193,51 @@ void test_run_config_parses_planet_controls() {
     std::string atmosphere_value = "70000";
     std::string altitude_flag = "--planet-camera-altitude-m";
     std::string altitude_value = "240000";
-    std::array<char*, 7> argv{program.data(),         radius_flag.data(),      radius_value.data(),
-                              atmosphere_flag.data(), atmosphere_value.data(), altitude_flag.data(),
-                              altitude_value.data()};
+    std::string patches_flag = "--planet-patches-per-face";
+    std::string patches_value = "4";
+    std::string patch_resolution_flag = "--planet-patch-resolution";
+    std::string patch_resolution_value = "16";
+    std::string max_lod_flag = "--planet-max-lod-level";
+    std::string max_lod_value = "5";
+    std::string lod_target_flag = "--planet-lod-target-edge-px";
+    std::string lod_target_value = "9.5";
+    std::string wire_flag = "--planet-wire-overlay";
+    std::string skirts_flag = "--no-planet-skirts";
+    std::string skirt_depth_flag = "--planet-skirt-depth-scale";
+    std::string skirt_depth_value = "0.45";
+    std::string terrain_flag = "--no-planet-terrain";
+    std::string terrain_height_flag = "--planet-terrain-height-scale-m";
+    std::string terrain_height_value = "9000";
+    std::string terrain_noise_flag = "--planet-terrain-noise-scale";
+    std::string terrain_noise_value = "4.25";
+    std::string terrain_seed_flag = "--planet-terrain-seed";
+    std::string terrain_seed_value = "42";
+    std::array<char*, 26> argv{program.data(),
+                               radius_flag.data(),
+                               radius_value.data(),
+                               atmosphere_flag.data(),
+                               atmosphere_value.data(),
+                               altitude_flag.data(),
+                               altitude_value.data(),
+                               patches_flag.data(),
+                               patches_value.data(),
+                               patch_resolution_flag.data(),
+                               patch_resolution_value.data(),
+                               max_lod_flag.data(),
+                               max_lod_value.data(),
+                               lod_target_flag.data(),
+                               lod_target_value.data(),
+                               wire_flag.data(),
+                               skirts_flag.data(),
+                               skirt_depth_flag.data(),
+                               skirt_depth_value.data(),
+                               terrain_flag.data(),
+                               terrain_height_flag.data(),
+                               terrain_height_value.data(),
+                               terrain_noise_flag.data(),
+                               terrain_noise_value.data(),
+                               terrain_seed_flag.data(),
+                               terrain_seed_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -1180,6 +1246,24 @@ void test_run_config_parses_planet_controls() {
             "run config should parse planet atmosphere height");
     require(config.planet.camera_altitude_m == 240000.0F,
             "run config should parse planet camera altitude");
+    require(config.planet.patches_per_face == 4U,
+            "run config should parse planet patches per face");
+    require(config.planet.patch_resolution == 16U,
+            "run config should parse planet patch resolution");
+    require(config.planet.max_lod_level_set && config.planet.max_lod_level == 5U,
+            "run config should parse planet max LOD level");
+    require(config.planet.lod_target_edge_px == 9.5F, "run config should parse planet LOD target");
+    require(config.planet.wire_overlay == 1, "run config should parse planet wire overlay");
+    require(config.planet.skirts_enabled == 0, "run config should parse planet skirts toggle");
+    require(config.planet.skirt_depth_scale == 0.45F,
+            "run config should parse planet skirt depth scale");
+    require(config.planet.terrain_enabled == 0, "run config should parse planet terrain toggle");
+    require(config.planet.terrain_height_scale_m == 9000.0F,
+            "run config should parse planet terrain height scale");
+    require(config.planet.terrain_noise_scale == 4.25F,
+            "run config should parse planet terrain noise scale");
+    require(config.planet.terrain_seed_set && config.planet.terrain_seed == 42U,
+            "run config should parse planet terrain seed");
 }
 
 void test_run_config_rejects_invalid_planet_controls() {
@@ -1201,6 +1285,26 @@ void test_run_config_rejects_invalid_planet_controls() {
             cubey::parse_run_config(static_cast<int>(altitude_argv.size()), altitude_argv.data());
         },
         "run config should reject negative planet camera altitude");
+
+    std::string max_lod_flag = "--planet-max-lod-level";
+    std::string max_lod_value = "7";
+    std::array<char*, 3> max_lod_argv{program.data(), max_lod_flag.data(), max_lod_value.data()};
+    require_throws(
+        [&max_lod_argv]() {
+            cubey::parse_run_config(static_cast<int>(max_lod_argv.size()), max_lod_argv.data());
+        },
+        "run config should reject planet max LOD above live cap");
+
+    std::string patch_resolution_flag = "--planet-patch-resolution";
+    std::string patch_resolution_value = "33";
+    std::array<char*, 3> patch_resolution_argv{program.data(), patch_resolution_flag.data(),
+                                               patch_resolution_value.data()};
+    require_throws(
+        [&patch_resolution_argv]() {
+            cubey::parse_run_config(static_cast<int>(patch_resolution_argv.size()),
+                                    patch_resolution_argv.data());
+        },
+        "run config should reject oversized planet patch resolution");
 }
 
 void test_run_config_parses_shadow_volume_controls() {

@@ -17,6 +17,39 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     if (run_config_float_is_set(config.planet.camera_altitude_m)) {
         planet.camera_altitude_m = config.planet.camera_altitude_m;
     }
+    if (config.planet.patches_per_face != 0U) {
+        planet.patches_per_face = config.planet.patches_per_face;
+    }
+    if (config.planet.patch_resolution != 0U) {
+        planet.patch_resolution = config.planet.patch_resolution;
+    }
+    if (config.planet.max_lod_level_set) {
+        planet.max_lod_level = config.planet.max_lod_level;
+    }
+    if (run_config_float_is_set(config.planet.lod_target_edge_px)) {
+        planet.lod_target_edge_px = config.planet.lod_target_edge_px;
+    }
+    if (config.planet.wire_overlay >= 0) {
+        planet.wire_overlay = config.planet.wire_overlay != 0;
+    }
+    if (config.planet.skirts_enabled >= 0) {
+        planet.skirts_enabled = config.planet.skirts_enabled != 0;
+    }
+    if (run_config_float_is_set(config.planet.skirt_depth_scale)) {
+        planet.skirt_depth_scale = config.planet.skirt_depth_scale;
+    }
+    if (config.planet.terrain_enabled >= 0) {
+        planet.terrain_enabled = config.planet.terrain_enabled != 0;
+    }
+    if (run_config_float_is_set(config.planet.terrain_height_scale_m)) {
+        planet.terrain_height_scale_m = config.planet.terrain_height_scale_m;
+    }
+    if (run_config_float_is_set(config.planet.terrain_noise_scale)) {
+        planet.terrain_noise_scale = config.planet.terrain_noise_scale;
+    }
+    if (config.planet.terrain_seed_set) {
+        planet.terrain_seed = config.planet.terrain_seed;
+    }
     if (!config.debug_view.empty()) {
         planet.debug_view = planet_debug_view_from_string(config.debug_view);
     }

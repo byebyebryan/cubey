@@ -86,6 +86,40 @@ void test_planet_config_rejects_lod_above_live_cap() {
     throw std::runtime_error("planet config should reject LOD above the live cap");
 }
 
+void test_planet_config_applies_run_config_surface_options() {
+    cubey::RunConfig run_config{};
+    run_config.planet.patches_per_face = 4U;
+    run_config.planet.patch_resolution = 16U;
+    run_config.planet.max_lod_level = 5U;
+    run_config.planet.max_lod_level_set = true;
+    run_config.planet.lod_target_edge_px = 9.5F;
+    run_config.planet.wire_overlay = 1;
+    run_config.planet.skirts_enabled = 0;
+    run_config.planet.skirt_depth_scale = 0.45F;
+    run_config.planet.terrain_enabled = 0;
+    run_config.planet.terrain_height_scale_m = 9000.0F;
+    run_config.planet.terrain_noise_scale = 4.25F;
+    run_config.planet.terrain_seed = 42U;
+    run_config.planet.terrain_seed_set = true;
+
+    const cubey::projects::planet::PlanetConfig config =
+        cubey::projects::planet::planet_config_from_run_config(run_config);
+    require(config.patches_per_face == 4U, "planet config should apply patches per face");
+    require(config.patch_resolution == 16U, "planet config should apply patch resolution");
+    require(config.max_lod_level == 5U, "planet config should apply max LOD level");
+    require_near(config.lod_target_edge_px, 9.5F, 0.0001F, "planet config should apply LOD target");
+    require(config.wire_overlay, "planet config should apply wire overlay");
+    require(!config.skirts_enabled, "planet config should apply skirts toggle");
+    require_near(config.skirt_depth_scale, 0.45F, 0.0001F,
+                 "planet config should apply skirt depth");
+    require(!config.terrain_enabled, "planet config should apply terrain toggle");
+    require_near(config.terrain_height_scale_m, 9000.0F, 0.0001F,
+                 "planet config should apply terrain height");
+    require_near(config.terrain_noise_scale, 4.25F, 0.0001F,
+                 "planet config should apply terrain noise");
+    require(config.terrain_seed == 42U, "planet config should apply terrain seed");
+}
+
 void test_planet_frame_converts_camera_to_render_origin() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 600000.0F,
@@ -113,6 +147,7 @@ int main() {
         test_planet_config_rejects_invalid_skirt_depth();
         test_planet_config_accepts_max_live_lod();
         test_planet_config_rejects_lod_above_live_cap();
+        test_planet_config_applies_run_config_surface_options();
         test_planet_frame_converts_camera_to_render_origin();
         return 0;
     } catch (const std::exception& error) {

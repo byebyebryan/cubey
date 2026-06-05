@@ -79,7 +79,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 137> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 148> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -216,6 +216,43 @@ constexpr std::array<ConfigOptionDescriptor, 137> kRunConfigOptions{
            "--planet-camera-altitude-m", "Camera Altitude", "Planet",
            "Default camera altitude above the planet surface in meters.", ConfigOptionType::Float,
            min_range(0.0)),
+    option(RunConfigOptionId::PlanetPatchesPerFace, "planet.patches_per_face",
+           "--planet-patches-per-face", "Patches / Face", "Planet",
+           "Root patch count per cube-sphere face.", ConfigOptionType::UInt32,
+           bounded_range(1.0, 8.0)),
+    option(RunConfigOptionId::PlanetPatchResolution, "planet.patch_resolution",
+           "--planet-patch-resolution", "Patch Resolution", "Planet",
+           "Reusable grid resolution per planet surface patch.", ConfigOptionType::UInt32,
+           bounded_range(1.0, 32.0)),
+    option(RunConfigOptionId::PlanetMaxLodLevel, "planet.max_lod_level", "--planet-max-lod-level",
+           "Max LOD", "Planet", "Maximum live planet surface LOD level.", ConfigOptionType::UInt32,
+           bounded_range(0.0, 6.0)),
+    option(RunConfigOptionId::PlanetLodTargetEdge, "planet.lod_target_edge_px",
+           "--planet-lod-target-edge-px", "LOD Target Edge", "Planet",
+           "Target projected planet surface cell edge length in pixels.", ConfigOptionType::Float,
+           min_range(0.000001)),
+    option(RunConfigOptionId::PlanetWireOverlay, "planet.wire_overlay", "--planet-wire-overlay",
+           "Wire Overlay", "Planet", "Draw planet patch wire overlay.", ConfigOptionType::Bool,
+           no_range(), {}, "--no-planet-wire-overlay"),
+    option(RunConfigOptionId::PlanetSkirts, "planet.skirts_enabled", "--planet-skirts",
+           "Patch Skirts", "Planet", "Enable planet patch skirt geometry.", ConfigOptionType::Bool,
+           no_range(), {}, "--no-planet-skirts"),
+    option(RunConfigOptionId::PlanetSkirtDepthScale, "planet.skirt_depth_scale",
+           "--planet-skirt-depth-scale", "Skirt Depth", "Planet",
+           "Planet patch skirt depth relative to selected cell edge length.",
+           ConfigOptionType::Float, min_range(0.000001)),
+    option(RunConfigOptionId::PlanetTerrain, "planet.terrain_enabled", "--planet-terrain",
+           "Terrain", "Planet", "Enable placeholder planet terrain displacement.",
+           ConfigOptionType::Bool, no_range(), {}, "--no-planet-terrain"),
+    option(RunConfigOptionId::PlanetTerrainHeightScale, "planet.terrain_height_scale_m",
+           "--planet-terrain-height-scale-m", "Terrain Height", "Planet",
+           "Placeholder terrain height scale in meters.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PlanetTerrainNoiseScale, "planet.terrain_noise_scale",
+           "--planet-terrain-noise-scale", "Terrain Noise", "Planet",
+           "Placeholder terrain procedural noise scale.", ConfigOptionType::Float,
+           min_range(0.000001)),
+    option(RunConfigOptionId::PlanetTerrainSeed, "planet.terrain_seed", "--planet-terrain-seed",
+           "Terrain Seed", "Planet", "Placeholder planet terrain seed.", ConfigOptionType::UInt32),
     option(RunConfigOptionId::TerrainSeed, "terrain.seed", "--terrain-seed", "Seed", "Terrain",
            "Deterministic procedural terrain seed.", ConfigOptionType::UInt64),
     option(RunConfigOptionId::TerrainCellSize, "terrain.cell_size", "--terrain-cell-size",
@@ -771,6 +808,30 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.planet.atmosphere_height_m);
     case RunConfigOptionId::PlanetCameraAltitude:
         return optional_float(config.planet.camera_altitude_m);
+    case RunConfigOptionId::PlanetPatchesPerFace:
+        return optional_uint32(config.planet.patches_per_face);
+    case RunConfigOptionId::PlanetPatchResolution:
+        return optional_uint32(config.planet.patch_resolution);
+    case RunConfigOptionId::PlanetMaxLodLevel:
+        return config.planet.max_lod_level_set ? nlohmann::json(config.planet.max_lod_level)
+                                               : nlohmann::json(nullptr);
+    case RunConfigOptionId::PlanetLodTargetEdge:
+        return optional_float(config.planet.lod_target_edge_px);
+    case RunConfigOptionId::PlanetWireOverlay:
+        return optional_bool(config.planet.wire_overlay);
+    case RunConfigOptionId::PlanetSkirts:
+        return optional_bool(config.planet.skirts_enabled);
+    case RunConfigOptionId::PlanetSkirtDepthScale:
+        return optional_float(config.planet.skirt_depth_scale);
+    case RunConfigOptionId::PlanetTerrain:
+        return optional_bool(config.planet.terrain_enabled);
+    case RunConfigOptionId::PlanetTerrainHeightScale:
+        return optional_float(config.planet.terrain_height_scale_m);
+    case RunConfigOptionId::PlanetTerrainNoiseScale:
+        return optional_float(config.planet.terrain_noise_scale);
+    case RunConfigOptionId::PlanetTerrainSeed:
+        return config.planet.terrain_seed_set ? nlohmann::json(config.planet.terrain_seed)
+                                              : nlohmann::json(nullptr);
     case RunConfigOptionId::TerrainSeed:
         return config.terrain.seed_set ? nlohmann::json(config.terrain.seed)
                                        : nlohmann::json(nullptr);
@@ -1018,12 +1079,34 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<float>("radius_m", options.radius_m);
     adapter.writeField<float>("atmosphere_height_m", options.atmosphere_height_m);
     adapter.writeField<float>("camera_altitude_m", options.camera_altitude_m);
+    adapter.writeField<std::uint32_t>("patches_per_face", options.patches_per_face);
+    adapter.writeField<std::uint32_t>("patch_resolution", options.patch_resolution);
+    adapter.writeField<std::uint32_t>("max_lod_level", options.max_lod_level);
+    adapter.writeField<float>("lod_target_edge_px", options.lod_target_edge_px);
+    adapter.writeField<int>("wire_overlay", options.wire_overlay);
+    adapter.writeField<int>("skirts_enabled", options.skirts_enabled);
+    adapter.writeField<float>("skirt_depth_scale", options.skirt_depth_scale);
+    adapter.writeField<int>("terrain_enabled", options.terrain_enabled);
+    adapter.writeField<float>("terrain_height_scale_m", options.terrain_height_scale_m);
+    adapter.writeField<float>("terrain_noise_scale", options.terrain_noise_scale);
+    adapter.writeField<std::uint32_t>("terrain_seed", options.terrain_seed);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options) {
     adapter.readField<float>("radius_m", options.radius_m);
     adapter.readField<float>("atmosphere_height_m", options.atmosphere_height_m);
     adapter.readField<float>("camera_altitude_m", options.camera_altitude_m);
+    adapter.readField<std::uint32_t>("patches_per_face", options.patches_per_face);
+    adapter.readField<std::uint32_t>("patch_resolution", options.patch_resolution);
+    adapter.readField<std::uint32_t>("max_lod_level", options.max_lod_level);
+    adapter.readField<float>("lod_target_edge_px", options.lod_target_edge_px);
+    adapter.readField<int>("wire_overlay", options.wire_overlay);
+    adapter.readField<int>("skirts_enabled", options.skirts_enabled);
+    adapter.readField<float>("skirt_depth_scale", options.skirt_depth_scale);
+    adapter.readField<int>("terrain_enabled", options.terrain_enabled);
+    adapter.readField<float>("terrain_height_scale_m", options.terrain_height_scale_m);
+    adapter.readField<float>("terrain_noise_scale", options.terrain_noise_scale);
+    adapter.readField<std::uint32_t>("terrain_seed", options.terrain_seed);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::PbrOptions& options) {
@@ -1417,6 +1500,51 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::PlanetCameraAltitude:
         config.planet.camera_altitude_m = parse_config_float(value, option);
         validate_range(config.planet.camera_altitude_m, option);
+        break;
+    case RunConfigOptionId::PlanetPatchesPerFace:
+        config.planet.patches_per_face =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.planet.patches_per_face, option);
+        break;
+    case RunConfigOptionId::PlanetPatchResolution:
+        config.planet.patch_resolution =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.planet.patch_resolution, option);
+        break;
+    case RunConfigOptionId::PlanetMaxLodLevel:
+        config.planet.max_lod_level =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.planet.max_lod_level, option);
+        config.planet.max_lod_level_set = true;
+        break;
+    case RunConfigOptionId::PlanetLodTargetEdge:
+        config.planet.lod_target_edge_px = parse_config_float(value, option);
+        validate_range(config.planet.lod_target_edge_px, option);
+        break;
+    case RunConfigOptionId::PlanetWireOverlay:
+        config.planet.wire_overlay = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::PlanetSkirts:
+        config.planet.skirts_enabled = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::PlanetSkirtDepthScale:
+        config.planet.skirt_depth_scale = parse_config_float(value, option);
+        validate_range(config.planet.skirt_depth_scale, option);
+        break;
+    case RunConfigOptionId::PlanetTerrain:
+        config.planet.terrain_enabled = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::PlanetTerrainHeightScale:
+        config.planet.terrain_height_scale_m = parse_config_float(value, option);
+        validate_range(config.planet.terrain_height_scale_m, option);
+        break;
+    case RunConfigOptionId::PlanetTerrainNoiseScale:
+        config.planet.terrain_noise_scale = parse_config_float(value, option);
+        validate_range(config.planet.terrain_noise_scale, option);
+        break;
+    case RunConfigOptionId::PlanetTerrainSeed:
+        config.planet.terrain_seed = parse_number<std::uint32_t>(value, option, "unsigned integer");
+        config.planet.terrain_seed_set = true;
         break;
     case RunConfigOptionId::TerrainSeed:
         config.terrain.seed = parse_number<std::uint64_t>(value, option, "unsigned integer");
