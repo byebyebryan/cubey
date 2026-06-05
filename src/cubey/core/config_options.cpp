@@ -58,6 +58,8 @@ constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip"
                                                               "pic/flip"};
 constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-faces", "tiled",
                                                            "tiled-faces"};
+constexpr double kPlanetMaxPatchResolution = 64.0;
+constexpr double kPlanetMaxLiveLodLevel = 7.0;
 
 constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view path,
                                         std::string_view cli_name, std::string_view label,
@@ -223,10 +225,10 @@ constexpr std::array<ConfigOptionDescriptor, 151> kRunConfigOptions{
     option(RunConfigOptionId::PlanetPatchResolution, "planet.patch_resolution",
            "--planet-patch-resolution", "Patch Resolution", "Planet",
            "Reusable grid resolution per planet surface patch.", ConfigOptionType::UInt32,
-           bounded_range(1.0, 32.0)),
+           bounded_range(1.0, kPlanetMaxPatchResolution)),
     option(RunConfigOptionId::PlanetMaxLodLevel, "planet.max_lod_level", "--planet-max-lod-level",
            "Max LOD", "Planet", "Maximum live planet surface LOD level.", ConfigOptionType::UInt32,
-           bounded_range(0.0, 6.0)),
+           bounded_range(0.0, kPlanetMaxLiveLodLevel)),
     option(RunConfigOptionId::PlanetLodTargetEdge, "planet.lod_target_edge_px",
            "--planet-lod-target-edge-px", "LOD Target Edge", "Planet",
            "Target projected planet surface cell edge length in pixels.", ConfigOptionType::Float,

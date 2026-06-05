@@ -390,8 +390,8 @@ class PlanetApp {
         }
         int patch_resolution = static_cast<int>(edit_planet_config_.patch_resolution);
         if (ImGui::InputInt("Patch Grid Resolution", &patch_resolution)) {
-            edit_planet_config_.patch_resolution =
-                static_cast<std::uint32_t>(std::max(patch_resolution, 0));
+            edit_planet_config_.patch_resolution = static_cast<std::uint32_t>(
+                std::clamp(patch_resolution, 0, static_cast<int>(kPlanetMaxPatchResolution)));
         }
         int max_lod_level = static_cast<int>(edit_planet_config_.max_lod_level);
         if (ImGui::InputInt("Max LOD Level", &max_lod_level)) {

@@ -158,10 +158,10 @@ void validate_planet_config(const PlanetConfig& config) {
         throw std::runtime_error("planet patch resolution must be positive");
     }
     if (config.max_lod_level > kPlanetMaxLiveLodLevel) {
-        throw std::runtime_error("planet max LOD level must be <= 6");
+        throw std::runtime_error("planet max LOD level must be <= 7");
     }
-    if (config.patch_resolution > 32U) {
-        throw std::runtime_error("planet patch resolution must be <= 32");
+    if (config.patch_resolution > kPlanetMaxPatchResolution) {
+        throw std::runtime_error("planet patch resolution must be <= 64");
     }
     if (config.patches_per_face > 8U) {
         throw std::runtime_error("planet patches per face must be <= 8");

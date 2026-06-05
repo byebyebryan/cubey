@@ -76,6 +76,12 @@ void test_planet_config_accepts_max_live_lod() {
     cubey::projects::planet::validate_planet_config(config);
 }
 
+void test_planet_config_accepts_max_patch_resolution() {
+    cubey::projects::planet::PlanetConfig config{};
+    config.patch_resolution = cubey::projects::planet::kPlanetMaxPatchResolution;
+    cubey::projects::planet::validate_planet_config(config);
+}
+
 void test_planet_config_rejects_lod_above_live_cap() {
     cubey::projects::planet::PlanetConfig config{};
     config.max_lod_level = cubey::projects::planet::kPlanetMaxLiveLodLevel + 1U;
@@ -85,6 +91,17 @@ void test_planet_config_rejects_lod_above_live_cap() {
         return;
     }
     throw std::runtime_error("planet config should reject LOD above the live cap");
+}
+
+void test_planet_config_rejects_patch_resolution_above_cap() {
+    cubey::projects::planet::PlanetConfig config{};
+    config.patch_resolution = cubey::projects::planet::kPlanetMaxPatchResolution + 1U;
+    try {
+        cubey::projects::planet::validate_planet_config(config);
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error("planet config should reject patch resolution above the live cap");
 }
 
 void test_planet_config_applies_run_config_surface_options() {
@@ -297,7 +314,9 @@ int main() {
         test_planet_config_rejects_invalid_radius();
         test_planet_config_rejects_invalid_skirt_depth();
         test_planet_config_accepts_max_live_lod();
+        test_planet_config_accepts_max_patch_resolution();
         test_planet_config_rejects_lod_above_live_cap();
+        test_planet_config_rejects_patch_resolution_above_cap();
         test_planet_config_applies_run_config_surface_options();
         test_planet_camera_min_altitude_tracks_terrain_clearance();
         test_planet_camera_keeps_orbit_view_at_high_altitude();
