@@ -21,6 +21,7 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view bathymetry
 ./build/dev/projects/planet/planet --debug-view shoreline
 ./build/dev/projects/planet/planet --debug-view wireframe
+./build/dev/projects/planet/planet --debug-view celestial-planes
 ./build/dev/projects/planet/planet --debug-view seams
 ./build/dev/projects/planet/planet --planet-max-lod-level 7 --planet-lod-target-edge-px 8
 ./build/dev/projects/planet/planet --planet-max-lod-level 9 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
@@ -29,7 +30,10 @@ Run it with:
 
 Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 `screen-error`, `lod-transition`, `seams`, `cell-edge`, `terrain-height`,
-`terrain-slope`, `terrain-material`, `bathymetry`, `shoreline`, and `wireframe`.
+`terrain-slope`, `terrain-material`, `bathymetry`, `shoreline`, `wireframe`,
+and `celestial-planes`.
+`celestial-planes` colors the equator, ecliptic, and lunar orbit great circles
+plus sub-solar/sub-lunar markers for validating the mean celestial model.
 The CPU LOD planner selects camera-relative cube-sphere patch instances by
 projected edge size and reports patch, LOD, refinement cull, screen-error,
 transition pressure, edge-length, per-LOD cell-size, budget fallback,

@@ -112,6 +112,9 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
     if (value == "wireframe" || value == "wire" || value == "mesh") {
         return PlanetDebugView::Wireframe;
     }
+    if (value == "celestial-planes" || value == "celestial_planes" || value == "celestial") {
+        return PlanetDebugView::CelestialPlanes;
+    }
     throw std::runtime_error("unsupported planet debug view: " + std::string(value));
 }
 
@@ -145,6 +148,8 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "shoreline";
     case PlanetDebugView::Wireframe:
         return "wireframe";
+    case PlanetDebugView::CelestialPlanes:
+        return "celestial-planes";
     }
     return "final";
 }
@@ -209,8 +214,7 @@ void validate_planet_config(const PlanetConfig& config) {
     }
     if (!std::isfinite(config.bathymetry_depth_scale_m) ||
         config.bathymetry_depth_scale_m <= 0.0F) {
-        throw std::runtime_error(
-            "planet bathymetry depth scale must be finite and positive");
+        throw std::runtime_error("planet bathymetry depth scale must be finite and positive");
     }
     if (!std::isfinite(config.shoreline_width_m) || config.shoreline_width_m <= 0.0F) {
         throw std::runtime_error("planet shoreline width must be finite and positive");

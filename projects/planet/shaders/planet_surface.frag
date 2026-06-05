@@ -4,6 +4,7 @@ layout(location = 0) in vec3 in_color;
 layout(location = 1) in vec3 in_normal;
 layout(location = 2) in vec2 in_uv;
 layout(location = 3) in vec3 in_render_position;
+layout(location = 4) in vec3 in_sphere_normal;
 
 layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     mat4 view_projection;
@@ -15,6 +16,11 @@ layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     vec4 camera_horizon;
     vec4 atmosphere_options;
     vec4 haze_color_direct;
+    vec4 celestial_equator_plane;
+    vec4 celestial_ecliptic_plane;
+    vec4 celestial_moon_orbit_plane;
+    vec4 celestial_sun_direction;
+    vec4 celestial_moon_direction;
 } surface_frame;
 
 layout(location = 0) out vec4 out_color;
@@ -45,6 +51,37 @@ float grid_wire_alpha(vec2 uv) {
     return max(axis_wire, diagonal_wire);
 }
 
+float celestial_plane_band(vec3 sphere_normal, vec3 plane_normal, float width) {
+    float distance_to_plane = abs(dot(sphere_normal, normalize(plane_normal)));
+    float edge_width = max(fwidth(distance_to_plane) * 2.0, 0.0015);
+    return 1.0 - smoothstep(width, width + edge_width, distance_to_plane);
+}
+
+float celestial_direction_marker(vec3 sphere_normal, vec3 direction, float radius) {
+    float alignment = dot(sphere_normal, normalize(direction));
+    float edge_width = max(fwidth(alignment) * 2.0, 0.0015);
+    return smoothstep(cos(radius) - edge_width, cos(radius), alignment);
+}
+
+vec3 celestial_planes_color() {
+    vec3 sphere_normal = normalize(in_sphere_normal);
+    float equator = celestial_plane_band(sphere_normal, surface_frame.celestial_equator_plane.xyz, 0.010);
+    float ecliptic = celestial_plane_band(sphere_normal, surface_frame.celestial_ecliptic_plane.xyz, 0.010);
+    float moon_orbit = celestial_plane_band(sphere_normal, surface_frame.celestial_moon_orbit_plane.xyz, 0.010);
+    float sun_marker = celestial_direction_marker(sphere_normal, surface_frame.celestial_sun_direction.xyz, 0.050);
+    float moon_marker = celestial_direction_marker(sphere_normal, surface_frame.celestial_moon_direction.xyz, 0.045);
+
+    vec3 base = vec3(0.018, 0.030, 0.052);
+    base = mix(base, vec3(0.18, 0.42, 0.72), clamp(sphere_normal.y * 0.5 + 0.5, 0.0, 1.0) * 0.32);
+    vec3 color = base;
+    color = mix(color, vec3(0.30, 0.78, 1.00), equator * 0.88);
+    color = mix(color, vec3(1.00, 0.70, 0.24), ecliptic * 0.92);
+    color = mix(color, vec3(0.82, 0.52, 1.00), moon_orbit * 0.90);
+    color = mix(color, vec3(1.00, 0.96, 0.42), sun_marker);
+    color = mix(color, vec3(0.70, 0.82, 1.00), moon_marker);
+    return color;
+}
+
 void main() {
     if (debug_view_option() == 13) {
         float patch_edge = min(min(in_uv.x, in_uv.y), min(1.0 - in_uv.x, 1.0 - in_uv.y));
@@ -54,6 +91,10 @@ void main() {
         vec3 line = mix(vec3(0.42, 0.56, 0.68), vec3(0.88, 0.66, 0.24), patch_wire);
         float wire_opacity = mix(0.45, 0.70, patch_wire);
         out_color = vec4(mix(base, line, mesh_wire * wire_opacity), 1.0);
+        return;
+    }
+    if (debug_view_option() == 14) {
+        out_color = vec4(celestial_planes_color(), 1.0);
         return;
     }
 

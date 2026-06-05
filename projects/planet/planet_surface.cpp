@@ -279,6 +279,8 @@ class PlanetPatchSelectionLookup {
         return shoreline_color(sample.shoreline_mask);
     case PlanetDebugView::Wireframe:
         return lod_color(patch.id.level, config.max_lod_level);
+    case PlanetDebugView::CelestialPlanes:
+        return latitude_color(sample.sphere_normal);
     }
     return final_color(config, sample);
 }
@@ -306,8 +308,7 @@ void update_screen_error_range(PlanetSurfaceDiagnostics& diagnostics, float valu
 void update_lod_transition_diagnostics(const PlanetConfig& config,
                                        PlanetSurfaceDiagnostics& diagnostics, float error_px) {
     const float pressure = lod_transition_pressure(error_px, config.lod_target_edge_px);
-    diagnostics.max_transition_pressure =
-        std::max(diagnostics.max_transition_pressure, pressure);
+    diagnostics.max_transition_pressure = std::max(diagnostics.max_transition_pressure, pressure);
     if (pressure > 0.0F) {
         ++diagnostics.transition_candidate_count;
     }
@@ -584,8 +585,7 @@ make_surface_patch_plan(const PlanetConfig& config, PlanetSurfaceView view,
     for (std::uint32_t face = 0; face < 6U; ++face) {
         for (std::uint32_t py = 0; py < config.patches_per_face; ++py) {
             for (std::uint32_t px = 0; px < config.patches_per_face; ++px) {
-                if (!append_coverage_patches(config, view,
-                                             lookup,
+                if (!append_coverage_patches(config, view, lookup,
                                              PlanetSurfacePatchInstance{
                                                  .id =
                                                      {

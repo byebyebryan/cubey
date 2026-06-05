@@ -16,6 +16,11 @@ layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     vec4 camera_horizon;
     vec4 atmosphere_options;
     vec4 haze_color_direct;
+    vec4 celestial_equator_plane;
+    vec4 celestial_ecliptic_plane;
+    vec4 celestial_moon_orbit_plane;
+    vec4 celestial_sun_direction;
+    vec4 celestial_moon_direction;
 } surface_frame;
 
 uint packed_patch_lod_option() {
@@ -46,6 +51,7 @@ layout(location = 0) out vec3 out_color;
 layout(location = 1) out vec3 out_normal;
 layout(location = 2) out vec2 out_uv;
 layout(location = 3) out vec3 out_render_position;
+layout(location = 4) out vec3 out_sphere_normal;
 
 #include "planet_surface_field.glsl"
 
@@ -220,5 +226,6 @@ void main() {
     out_normal = normal;
     out_uv = in_uv;
     out_render_position = render_position;
+    out_sphere_normal = sphere_normal;
     gl_Position = surface_frame.view_projection * vec4(render_position, 1.0);
 }

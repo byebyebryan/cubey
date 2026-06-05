@@ -75,9 +75,14 @@ struct PlanetSurfaceFrameUniforms {
     cubey::math::Vec4 camera_horizon{0.0F, 0.0F, 0.0F, 0.0F};
     cubey::math::Vec4 atmosphere_options{0.14F, 0.42F, 0.45F, 1.0F};
     cubey::math::Vec4 haze_color_direct{0.18F, 0.28F, 0.44F, 0.86F};
+    cubey::math::Vec4 celestial_equator_plane{0.0F, 1.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 celestial_ecliptic_plane{0.0F, 1.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 celestial_moon_orbit_plane{0.0F, 1.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 celestial_sun_direction{0.0F, 1.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 celestial_moon_direction{0.0F, 0.0F, 1.0F, 0.0F};
 };
 
-static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 12U);
+static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 17U);
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_PLANET_SHADER_DIR) / filename;
@@ -391,11 +396,12 @@ class PlanetApp {
                           0.0F, "%.1f");
         ImGui::InputFloat("LOD Hysteresis", &edit_planet_config_.lod_hysteresis, 0.0F, 0.0F,
                           "%.2f");
-        constexpr const char* kDebugViews[]{"final",         "face-id",          "patch-id",
-                                            "lod-level",     "screen-error",     "lod-transition",
-                                            "seams",         "cell-edge",        "terrain-height",
-                                            "terrain-slope", "terrain-material", "bathymetry",
-                                            "shoreline",     "wireframe"};
+        constexpr const char* kDebugViews[]{
+            "final",         "face-id",          "patch-id",
+            "lod-level",     "screen-error",     "lod-transition",
+            "seams",         "cell-edge",        "terrain-height",
+            "terrain-slope", "terrain-material", "bathymetry",
+            "shoreline",     "wireframe",        "celestial-planes"};
         int debug_view = static_cast<int>(edit_planet_config_.debug_view);
         if (ImGui::Combo("Debug View", &debug_view, kDebugViews,
                          static_cast<int>(std::size(kDebugViews)))) {
@@ -782,6 +788,8 @@ class PlanetApp {
         const float ambient_intensity = surface_ambient_intensity();
         const float direct_intensity = surface_direct_intensity();
         const cubey::math::Vec3 haze_color = surface_haze_color();
+        const PlanetCelestialDiagnostics celestial_diagnostics =
+            planet_celestial_diagnostics(solar_time_, solar_config_);
         return {
             .view_projection = camera_.view_projection_matrix(transform, aspect),
             .light_direction_debug =
@@ -839,6 +847,41 @@ class PlanetApp {
                     haze_color.g,
                     haze_color.b,
                     direct_intensity,
+                },
+            .celestial_equator_plane =
+                {
+                    celestial_diagnostics.equator_plane_normal.x,
+                    celestial_diagnostics.equator_plane_normal.y,
+                    celestial_diagnostics.equator_plane_normal.z,
+                    0.0F,
+                },
+            .celestial_ecliptic_plane =
+                {
+                    celestial_diagnostics.ecliptic_plane_normal.x,
+                    celestial_diagnostics.ecliptic_plane_normal.y,
+                    celestial_diagnostics.ecliptic_plane_normal.z,
+                    0.0F,
+                },
+            .celestial_moon_orbit_plane =
+                {
+                    celestial_diagnostics.moon_orbit_plane_normal.x,
+                    celestial_diagnostics.moon_orbit_plane_normal.y,
+                    celestial_diagnostics.moon_orbit_plane_normal.z,
+                    0.0F,
+                },
+            .celestial_sun_direction =
+                {
+                    celestial_diagnostics.sun_direction.x,
+                    celestial_diagnostics.sun_direction.y,
+                    celestial_diagnostics.sun_direction.z,
+                    0.0F,
+                },
+            .celestial_moon_direction =
+                {
+                    celestial_diagnostics.moon_direction.x,
+                    celestial_diagnostics.moon_direction.y,
+                    celestial_diagnostics.moon_direction.z,
+                    celestial_diagnostics.moon_phase_fraction,
                 },
         };
     }

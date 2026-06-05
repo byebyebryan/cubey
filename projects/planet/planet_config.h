@@ -46,6 +46,7 @@ enum class PlanetDebugView : std::uint8_t {
     Bathymetry,
     Shoreline,
     Wireframe,
+    CelestialPlanes,
 };
 
 struct PlanetConfig {
