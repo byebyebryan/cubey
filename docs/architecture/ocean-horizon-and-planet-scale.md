@@ -76,8 +76,8 @@ Contracts to introduce before changing visual behavior too much:
 - an ocean surface mapping abstraction with a flat implementation first;
 - explicit water datum and up direction instead of an implicit global plane;
 - terrain/bathymetry sampling coordinates that are world-frame aware;
-- atmosphere inputs that include planet radius, camera altitude, and sun
-  direction;
+- atmosphere inputs that include planet radius, camera altitude, and
+  celestial-derived sun direction/radiance;
 - debug readouts that report local frame origin, render origin, camera altitude,
   and far extent.
 

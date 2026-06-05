@@ -16,6 +16,8 @@ Start `projects/planet` as a visible planet foundation project:
 - planet surface LOD with wireframe and patch diagnostics;
 - shared atmosphere background and surface lighting before ocean complexity
   arrives;
+- planet-owned celestial bodies for sun and moon, with atmosphere consuming
+  derived scattering inputs rather than owning those bodies;
 - shared HDR scene color and fullscreen post so planet uses the same display
   path as the PBR/ocean renderers.
 
@@ -50,12 +52,12 @@ renderer and as a future donor.
 
 The planet project should consume ocean through a narrow contract:
 
-- planet supplies local tangent frame, radius, datum, altitude, sun/atmosphere,
-  and render origin;
+- planet supplies local tangent frame, radius, datum, altitude, celestial body
+  state, atmosphere inputs, and render origin;
 - ocean supplies local wave displacement, normals, foam, material response, and
   optional local interaction data;
 - planet owns global terrain, bathymetry, shoreline streaming, weather fields,
-  and cross-layer render order.
+  celestial bodies, and cross-layer render order.
 
 This keeps ocean from becoming a hidden planet platform while still preserving
 the ocean work for later integration.
@@ -215,6 +217,62 @@ Current implementation notes:
   tone mapping, and output encoding. This aligns planet with the renderer-wide
   linear HDR contract while keeping ocean integration deferred.
 
+## Celestial Body Pivot
+
+The shared atmosphere path is still valuable, but the planet project should not
+treat it as the authoritative owner of the sun, moon, or other celestial bodies.
+The current background shader can draw a sun disk, moon disk, stars, and Milky
+Way for the standalone atmosphere demo and lightweight scene backgrounds. That
+convenience becomes the wrong abstraction for `projects/planet`: orbit and
+surface views need real occlusion, radius, phase, lighting, diagnostics, and
+eventually eclipses or multiple moons.
+
+The target ownership is:
+
+- `projects/planet` owns a project-local `CelestialSystem`;
+- celestial bodies own position/orbit state, physical radius, apparent angular
+  radius, emission or albedo, texture/atlas references, sky participation, and
+  debug labels;
+- the sun is modeled first as a distant emissive body that produces a direction,
+  angular radius, radiance/illuminance, and visible disk/glow;
+- the moon is modeled as a spherical body lit by the sun, so phase and
+  terminator behavior come from body geometry instead of an atmosphere shader
+  approximation;
+- atmosphere consumes derived scattering inputs: planet radius, atmosphere
+  height, camera altitude, sun direction, sun radiance, and sun angular radius;
+- surface and ocean lighting consume derived direct-light inputs;
+- any environment/probe cache is a derived adapter, not the source of truth for
+  body state.
+
+This intentionally avoids adding another vague environment owner. If a small
+intermediate struct is needed for renderer plumbing, name it after what it
+carries, such as `AtmosphereScatteringInputs`, `CelestialLightingInputs`, or
+`SkyProbeInputs`.
+
+The render-order contract should move toward:
+
+1. atmosphere scattering background without inline celestial disks;
+2. explicit celestial rendering owned by `projects/planet`, with planet/celestial
+   occlusion rules instead of atmosphere-internal ground masks;
+3. opaque planet surface and terrain/ocean layers;
+4. clouds, aerial-perspective overlays, and post as those systems arrive.
+
+For the immediate slice, a distant sun disk/glow rendered as a planet-owned
+background body is enough. The important boundary is that the atmosphere shader
+should stop deciding whether the planet has occluded the sun. A later depth or
+analytic occlusion path can support near moons and eclipses without changing
+the scattering model.
+
+Established engine precedents support this split. Unreal's Sky Atmosphere
+consumes scene Directional Lights marked as atmosphere lights, including
+separate sun and moon indices. Godot's sky materials derive sun direction,
+energy, and color from `DirectionalLight3D` nodes. Unity HDRP's physically based
+sky consumes a Directional Light and treats sun-in-probe baking as a sky
+environment option. Filament models sun/moon-style illumination as directional
+lights with physical units. The common pattern is that sky/atmosphere rendering
+consumes light/body state; it should not be the durable owner of planet-scale
+celestial bodies.
+
 Deferred surface-field work:
 
 - streamed field tiles and cache residency;
@@ -234,7 +292,11 @@ Deferred surface-field work:
 6. Add placeholder terrain/bathymetry/material fields.
 7. Keep strengthening atmosphere, LOD, terrain, and diagnostics until they are
    stable enough to host other layers.
-8. Port ocean as a local water layer once the planet frame and LOD contracts are
+8. Move planet sun rendering out of the inline atmosphere disk path and into a
+   planet-owned celestial body pass.
+9. Model the moon as a planet-owned body once the sun path and occlusion
+   contract are stable.
+10. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 
 Non-goals for the first planet pass:
@@ -242,5 +304,6 @@ Non-goals for the first planet pass:
 - real-world GIS ingestion;
 - full out-of-core streaming;
 - global weather simulation;
+- full N-body or solar-system simulation;
 - replacing the current FFT ocean core;
 - moving existing ocean quality work behind planet infrastructure.

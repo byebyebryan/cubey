@@ -14,6 +14,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Atmosphere rendering research](atmosphere-rendering-research.md): early
   notes on clear-sky scattering approaches and the first `projects/atmosphere`
   implementation direction.
+- [Celestial rendering research](celestial-rendering-research.md): current
+  planet-scale pivot from atmosphere-owned sun/moon disks to planet-owned
+  celestial bodies with atmosphere as a consumer.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
   captures and optimization candidates.
 - [Ocean performance notes](ocean-performance.md): current spectral ocean FFT

@@ -18,9 +18,12 @@ resolved on the CPU from local solar time, day of year, and latitude, with manua
 sun direction still available for art/debug work.
 
 Night rendering includes procedural foreground stars, a moon disk with a
-generated lunar atlas, and a procedural Milky Way atlas. The Milky Way generator
-is tuned in local layers for stellar emission, dust lanes, star clouds, H II
-regions, and speckles instead of consuming a source panorama.
+generated lunar atlas, and a procedural Milky Way atlas. These are demo/debug
+features of the atmosphere project and lightweight background conveniences for
+non-planet scenes, not the intended ownership model for planet-scale celestial
+bodies. The Milky Way generator is tuned in local layers for stellar emission,
+dust lanes, star clouds, H II regions, and speckles instead of consuming a
+source panorama.
 
 Windowed runs create the lunar and night-sky atlases in background jobs and show
 placeholder textures until uploads complete. Headless runs generate the same

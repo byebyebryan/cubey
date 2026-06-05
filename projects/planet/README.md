@@ -4,7 +4,7 @@
 current version is intentionally small: it opens a window or headless capture
 path, renders a cube-sphere planet surface with placeholder terrain, draws the
 shared procedural atmosphere behind it, and provides the target project boundary
-for future terrain, ocean, clouds, and streaming integration.
+for future terrain, ocean, clouds, celestial bodies, and streaming integration.
 
 Run it with:
 
@@ -76,17 +76,26 @@ contracts for future terrain/ocean handoff; they are not yet streamed data,
 seafloor rendering, surf, biome masks, or final art direction.
 
 Atmosphere is now part of the planet frame instead of a separate visual spike.
-The project uses the shared atmosphere run state, generated moon/night-sky atlas
-textures, and background renderer. Planet radius, atmosphere height, camera
-altitude, horizon distance, sun direction, and surface lighting are resolved
-from the same frame. The UI exposes the shared atmosphere controls collapsed by
-default plus read-only diagnostics for time, sun position, camera altitude,
-horizon, and generated atlas status. The surface shader receives frame data
-through a descriptor-backed uniform instead of push constants, and blends final
-terrain toward atmosphere-tinted haze near the horizon. The scene renders into
-a linear HDR scene color target and uses the shared fullscreen post pass for
-exposure, tone mapping, and output encoding before writing the swapchain or
-headless target.
+The current implementation uses the shared atmosphere run state, generated
+moon/night-sky atlas textures, and background renderer. Planet radius,
+atmosphere height, camera altitude, horizon distance, sun direction, and surface
+lighting are resolved from the same frame. The UI exposes the shared atmosphere
+controls collapsed by default plus read-only diagnostics for time, sun position,
+camera altitude, horizon, and generated atlas status. The surface shader
+receives frame data through a descriptor-backed uniform instead of push
+constants, and blends final terrain toward atmosphere-tinted haze near the
+horizon. The scene renders into a linear HDR scene color target and uses the
+shared fullscreen post pass for exposure, tone mapping, and output encoding
+before writing the swapchain or headless target.
+
+The next design pivot is to move sun and moon ownership out of the shared
+atmosphere model for the planet project. The atmosphere demo may keep inline
+sun/moon disks as debug and lightweight-background conveniences, but `planet`
+should model celestial bodies directly. The sun should become a planet-owned
+distant emissive body that feeds atmosphere scattering and surface lighting.
+The moon should become a planet-owned sphere lit by the sun, so phase,
+occlusion, and later eclipse behavior belong to the scene/celestial layer
+instead of the atmosphere shader.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it

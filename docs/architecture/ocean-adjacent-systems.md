@@ -15,8 +15,8 @@ This note captures the intended split so parallel work can stay mergeable.
 Build adjacent systems as separate projects first, then integrate them into the
 ocean renderer through small data and shader contracts:
 
-- `projects/atmosphere`: clear-sky scattering, sun disk, horizon aerial
-  perspective, and later procedural clouds.
+- `projects/atmosphere`: clear-sky scattering, atmosphere debug disks, horizon
+  aerial perspective, and later procedural clouds.
 - `projects/procedural_terrain`: heightfield terrain, bathymetry, shoreline
   masks, material masks, and terrain/scene depth rendering.
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
@@ -48,7 +48,7 @@ renderers.
 First useful scope:
 
 - deterministic clear-sky atmospheric scattering;
-- sun direction, sun radiance, and sun disk controls;
+- sun direction, sun radiance, and debug sun disk controls;
 - sky color lookup for view direction;
 - approximate transmittance and aerial perspective along a view ray;
 - headless PNG and MP4 captures for clear visual comparison.
@@ -165,7 +165,7 @@ distort the ocean renderer. Its first useful scope should be deliberately plain:
 Ocean integration target:
 
 - planet supplies radius, datum, local tangent frame, camera-relative origin,
-  atmosphere altitude, and render order;
+  atmosphere altitude, celestial body state, and render order;
 - ocean supplies local wave displacement, normals, foam, material response, and
   optional local wake/disturbance fields;
 - terrain, bathymetry, clouds, and global weather remain planet or adjacent
@@ -180,13 +180,14 @@ These are more important than exact implementation details:
 - camera-relative origin behavior for large ocean shots;
 - planet radius, datum/sea level, and local tangent frame ownership;
 - linear HDR color, exposure, and tone-map ownership;
-- sun direction, sun color, and sun intensity ownership;
+- celestial body ownership, with derived sun direction, sun color/radiance, and
+  sun intensity fed into atmosphere and surface lighting;
 - depth convention for opaque scene depth, seabed height, water depth, and
   bathymetry;
 - texture channel layouts for shoreline, bathymetry, terrain material, weather,
   cloud, and shallow-water fields;
-- render order: atmosphere background, opaque terrain/scene depth, ocean water,
-  then optional cloud or post layers.
+- render order: atmosphere background, explicit celestial bodies where needed,
+  opaque terrain/scene depth, ocean water, then optional cloud or post layers.
 - shared clipmap or patch-tree diagnostics for patch count, triangle/vertex
   totals, near cell size, screen error, and outer extent so terrain, ocean, and
   planet LOD can report the same concepts.
