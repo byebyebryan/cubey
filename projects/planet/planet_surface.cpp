@@ -152,6 +152,21 @@ void update_screen_error_range(PlanetSurfaceDiagnostics& diagnostics, float valu
     diagnostics.max_screen_error_px = std::max(diagnostics.max_screen_error_px, value);
 }
 
+void update_lod_cell_edge_range(PlanetSurfaceDiagnostics& diagnostics, std::uint32_t level,
+                                float value) {
+    if (level >= diagnostics.min_cell_edge_m_by_lod.size()) {
+        return;
+    }
+    if (diagnostics.min_cell_edge_m_by_lod[level] == 0.0F) {
+        diagnostics.min_cell_edge_m_by_lod[level] = value;
+    } else {
+        diagnostics.min_cell_edge_m_by_lod[level] =
+            std::min(diagnostics.min_cell_edge_m_by_lod[level], value);
+    }
+    diagnostics.max_cell_edge_m_by_lod[level] =
+        std::max(diagnostics.max_cell_edge_m_by_lod[level], value);
+}
+
 [[nodiscard]] std::array<cubey::math::DVec3, 5>
 patch_sample_points(const PlanetConfig& config, const PlanetSurfacePatchInstance& patch) {
     const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
@@ -257,6 +272,26 @@ struct PatchBounds {
     return (cell_edge_m / distance_m) * pixel_scale;
 }
 
+[[nodiscard]] float patch_cell_edge_m(const PlanetConfig& config,
+                                      const PlanetSurfacePatchInstance& patch) {
+    const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
+    const float u_mid = (bounds.u0 + bounds.u1) * 0.5F;
+    const float v_mid = (bounds.v0 + bounds.v1) * 0.5F;
+    const cubey::math::DVec3 edge_a =
+        sphere_world_position(config, patch.id.face, bounds.u0, v_mid);
+    const cubey::math::DVec3 edge_b =
+        sphere_world_position(config, patch.id.face, bounds.u1, v_mid);
+    const cubey::math::DVec3 edge_c =
+        sphere_world_position(config, patch.id.face, u_mid, bounds.v0);
+    const cubey::math::DVec3 edge_d =
+        sphere_world_position(config, patch.id.face, u_mid, bounds.v1);
+    const float horizontal_cell_m = static_cast<float>(glm::length(edge_b - edge_a)) /
+                                    static_cast<float>(config.patch_resolution);
+    const float vertical_cell_m = static_cast<float>(glm::length(edge_d - edge_c)) /
+                                  static_cast<float>(config.patch_resolution);
+    return std::max(horizontal_cell_m, vertical_cell_m);
+}
+
 void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
     if (horizon_culled) {
         ++plan.diagnostics.culled_horizon_count;
@@ -265,8 +300,8 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
     }
 }
 
-void record_visible_patch(PlanetSurfacePatchPlan& plan, const PlanetSurfacePatchInstance& patch) {
-    ++plan.diagnostics.planned_patch_count;
+void record_visible_patch(const PlanetConfig& config, PlanetSurfacePatchPlan& plan,
+                          const PlanetSurfacePatchInstance& patch) {
     plan.diagnostics.min_lod_level = plan.diagnostics.visible_patch_count == 0U
                                          ? patch.id.level
                                          : std::min(plan.diagnostics.min_lod_level, patch.id.level);
@@ -275,6 +310,7 @@ void record_visible_patch(PlanetSurfacePatchPlan& plan, const PlanetSurfacePatch
         ++plan.diagnostics.patches_by_lod[patch.id.level];
     }
     update_screen_error_range(plan.diagnostics, patch.screen_error_px);
+    update_lod_cell_edge_range(plan.diagnostics, patch.id.level, patch_cell_edge_m(config, patch));
     if (patch.id.level == 0U) {
         ++plan.diagnostics.base_patch_count;
     } else {
@@ -294,12 +330,14 @@ void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
         patch.id.level < config.max_lod_level && patch.screen_error_px > config.lod_target_edge_px;
     if (wants_refinement && !patch_passes_horizon_cull(config, view, patch)) {
         record_refinement_cull(plan, true);
-        record_visible_patch(plan, patch);
+        ++plan.diagnostics.refinement_fallback_patch_count;
+        record_visible_patch(config, plan, patch);
         return;
     }
     if (wants_refinement && !patch_passes_view_cull(config, view, patch)) {
         record_refinement_cull(plan, false);
-        record_visible_patch(plan, patch);
+        ++plan.diagnostics.refinement_fallback_patch_count;
+        record_visible_patch(config, plan, patch);
         return;
     }
 
@@ -319,7 +357,7 @@ void append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
             PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 3U)}, plan);
         return;
     }
-    record_visible_patch(plan, patch);
+    record_visible_patch(config, plan, patch);
 }
 
 [[nodiscard]] PlanetSurfacePatchPlan make_surface_patch_plan(const PlanetConfig& config,

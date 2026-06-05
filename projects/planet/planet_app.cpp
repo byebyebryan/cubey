@@ -305,6 +305,8 @@ class PlanetApp {
         ImGui::Text("Base / refined: %u / %u", surface_build_.diagnostics.base_patch_count,
                     surface_build_.diagnostics.refined_patch_count);
         ImGui::Text("Subdivided parents: %u", surface_build_.diagnostics.subdivided_patch_count);
+        ImGui::Text("Fallback parents: %u",
+                    surface_build_.diagnostics.refinement_fallback_patch_count);
         ImGui::Text("Refinement culled: %u horizon / %u view",
                     surface_build_.diagnostics.culled_horizon_count,
                     surface_build_.diagnostics.culled_view_count);
@@ -321,6 +323,16 @@ class PlanetApp {
         ImGui::Text("Surface triangles: %u", surface_build_.diagnostics.triangle_count);
         ImGui::Text("Cell edge: %.0f m - %.0f m", surface_build_.diagnostics.min_edge_length_m,
                     surface_build_.diagnostics.max_edge_length_m);
+        ImGui::Text("LOD cell 0/1: %.0f-%.0f / %.0f-%.0f m",
+                    surface_build_.diagnostics.min_cell_edge_m_by_lod[0],
+                    surface_build_.diagnostics.max_cell_edge_m_by_lod[0],
+                    surface_build_.diagnostics.min_cell_edge_m_by_lod[1],
+                    surface_build_.diagnostics.max_cell_edge_m_by_lod[1]);
+        ImGui::Text("LOD cell 2/3: %.0f-%.0f / %.0f-%.0f m",
+                    surface_build_.diagnostics.min_cell_edge_m_by_lod[2],
+                    surface_build_.diagnostics.max_cell_edge_m_by_lod[2],
+                    surface_build_.diagnostics.min_cell_edge_m_by_lod[3],
+                    surface_build_.diagnostics.max_cell_edge_m_by_lod[3]);
         ImGui::Text("Seam edges: %u", surface_build_.diagnostics.seam_edge_count);
         ImGui::Text("Skirt triangles: %u", surface_build_.diagnostics.skirt_triangle_count);
         ImGui::Text("Skirt depth: %.0f m - %.0f m", surface_build_.diagnostics.min_skirt_depth_m,

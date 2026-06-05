@@ -223,6 +223,16 @@ void test_planet_surface_planner_refines_visible_patches_with_fallback_coverage(
             "planet planner should report parent patches that hand off to children");
     require(plan.diagnostics.culled_horizon_count + plan.diagnostics.culled_view_count > 0U,
             "planet planner should report refinement cull reasons");
+    require(plan.diagnostics.refinement_fallback_patch_count > 0U,
+            "planet planner should report parent patches selected as refinement fallback");
+    require(plan.diagnostics.min_cell_edge_m_by_lod[0] > 0.0F &&
+                plan.diagnostics.max_cell_edge_m_by_lod[0] >=
+                    plan.diagnostics.min_cell_edge_m_by_lod[0],
+            "planet planner should report selected level-zero cell edge range");
+    require(plan.diagnostics.min_cell_edge_m_by_lod[1] > 0.0F &&
+                plan.diagnostics.max_cell_edge_m_by_lod[1] >=
+                    plan.diagnostics.min_cell_edge_m_by_lod[1],
+            "planet planner should report selected level-one cell edge range");
 }
 
 void test_planet_surface_mesh_consumes_selected_patch_instances() {
@@ -277,6 +287,8 @@ void test_planet_surface_planner_keeps_fallback_when_camera_looks_away() {
             "planet planner should render base patches when no refinement is visible");
     require(plan.diagnostics.refined_patch_count == 0U,
             "planet planner should not refine patches behind the camera");
+    require(plan.diagnostics.refinement_fallback_patch_count == 24U,
+            "planet planner should report root patches selected as refinement fallback");
     require(plan.diagnostics.culled_view_count > 0U,
             "planet planner should attribute blocked refinement to view culling");
 }
