@@ -733,6 +733,59 @@ PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
     return make_surface_patch_plan(config, view);
 }
 
+PlanetPatchGridMeshData make_planet_patch_grid_mesh(const PlanetConfig& config) {
+    validate_planet_config(config);
+
+    PlanetPatchGridMeshData mesh;
+    const std::uint32_t resolution = config.patch_resolution;
+    const std::uint32_t vertices_per_side = resolution + 1U;
+    mesh.vertices.reserve(static_cast<std::size_t>(vertices_per_side) * vertices_per_side);
+    mesh.indices.reserve(static_cast<std::size_t>(resolution) * resolution * 6U);
+
+    for (std::uint32_t y = 0; y <= resolution; ++y) {
+        const float v = static_cast<float>(y) / static_cast<float>(resolution);
+        for (std::uint32_t x = 0; x <= resolution; ++x) {
+            const float u = static_cast<float>(x) / static_cast<float>(resolution);
+            mesh.vertices.push_back(PlanetPatchGridVertex{
+                .uv = PrimitiveVec2{u, v},
+            });
+        }
+    }
+
+    for (std::uint32_t y = 0; y < resolution; ++y) {
+        for (std::uint32_t x = 0; x < resolution; ++x) {
+            const std::uint32_t i0 = y * vertices_per_side + x;
+            const std::uint32_t i1 = i0 + 1U;
+            const std::uint32_t i2 = i0 + vertices_per_side;
+            const std::uint32_t i3 = i2 + 1U;
+            mesh.indices.push_back(i0);
+            mesh.indices.push_back(i1);
+            mesh.indices.push_back(i2);
+            mesh.indices.push_back(i1);
+            mesh.indices.push_back(i3);
+            mesh.indices.push_back(i2);
+        }
+    }
+
+    return mesh;
+}
+
+std::vector<PlanetSurfaceGpuPatchInstance>
+make_planet_surface_gpu_patch_instances(const PlanetSurfacePatchPlan& plan) {
+    std::vector<PlanetSurfaceGpuPatchInstance> instances;
+    instances.reserve(plan.selected_patches.size());
+    for (const PlanetSurfacePatchInstance& patch : plan.selected_patches) {
+        instances.push_back({
+            .face = patch.id.face,
+            .level = patch.id.level,
+            .x = patch.id.x,
+            .y = patch.id.y,
+            .screen_error_px = patch.screen_error_px,
+        });
+    }
+    return instances;
+}
+
 PlanetSurfaceBuildResult make_planet_surface_mesh(const PlanetConfig& config) {
     const float camera_distance =
         std::max(config.radius_m + config.camera_altitude_m, config.radius_m * 1.01F);

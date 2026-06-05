@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <string_view>
+#include <vector>
 
 namespace {
 
@@ -322,6 +323,59 @@ void test_planet_surface_mesh_consumes_selected_patch_instances() {
             "planet mesh build should emit one grid for each selected patch instance");
 }
 
+void test_planet_surface_patch_grid_mesh_is_reusable() {
+    const cubey::projects::planet::PlanetConfig config{
+        .patches_per_face = 2,
+        .patch_resolution = 5,
+        .max_lod_level = 1,
+    };
+
+    const cubey::projects::planet::PlanetPatchGridMeshData grid =
+        cubey::projects::planet::make_planet_patch_grid_mesh(config);
+
+    require(grid.vertices.size() == 36U,
+            "planet patch grid should emit one reusable vertex grid per resolution");
+    require(grid.indices.size() == 5U * 5U * 6U,
+            "planet patch grid should emit two triangles per grid cell");
+    require_close(grid.vertices.front().uv[0], 0.0F, "planet patch grid should start at u=0");
+    require_close(grid.vertices.front().uv[1], 0.0F, "planet patch grid should start at v=0");
+    require_close(grid.vertices.back().uv[0], 1.0F, "planet patch grid should end at u=1");
+    require_close(grid.vertices.back().uv[1], 1.0F, "planet patch grid should end at v=1");
+}
+
+void test_planet_surface_gpu_instances_preserve_patch_identity() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1000.0F,
+        .patches_per_face = 2,
+        .patch_resolution = 2,
+        .max_lod_level = 1,
+        .lod_target_edge_px = 1.0F,
+    };
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, 1500.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = true,
+    };
+    const cubey::projects::planet::PlanetSurfacePatchPlan plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+    const std::vector<cubey::projects::planet::PlanetSurfaceGpuPatchInstance> instances =
+        cubey::projects::planet::make_planet_surface_gpu_patch_instances(plan);
+
+    require(instances.size() == plan.selected_patches.size(),
+            "planet GPU instance list should match selected patch count");
+    for (std::size_t index = 0; index < instances.size(); ++index) {
+        const cubey::projects::planet::PlanetSurfacePatchInstance& patch =
+            plan.selected_patches[index];
+        const cubey::projects::planet::PlanetSurfaceGpuPatchInstance& instance = instances[index];
+        require(instance.face == patch.id.face, "planet GPU instance should keep patch face");
+        require(instance.level == patch.id.level, "planet GPU instance should keep patch level");
+        require(instance.x == patch.id.x, "planet GPU instance should keep patch x");
+        require(instance.y == patch.id.y, "planet GPU instance should keep patch y");
+        require_close(instance.screen_error_px, patch.screen_error_px,
+                      "planet GPU instance should keep screen-error diagnostic");
+    }
+}
+
 void test_planet_surface_planner_keeps_fallback_when_camera_looks_away() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1000.0F,
@@ -453,6 +507,8 @@ int main() {
         test_planet_surface_can_build_camera_relative_vertices();
         test_planet_surface_planner_refines_visible_patches_with_fallback_coverage();
         test_planet_surface_mesh_consumes_selected_patch_instances();
+        test_planet_surface_patch_grid_mesh_is_reusable();
+        test_planet_surface_gpu_instances_preserve_patch_identity();
         test_planet_surface_planner_keeps_fallback_when_camera_looks_away();
         test_planet_surface_planner_selects_near_lod();
         test_planet_surface_skirts_add_seam_geometry();

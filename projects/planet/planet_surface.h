@@ -26,6 +26,21 @@ struct PlanetSurfaceMeshData {
     }
 };
 
+struct PlanetPatchGridVertex {
+    cubey::render::PrimitiveVec2 uv{};
+};
+
+struct PlanetPatchGridMeshData {
+    std::vector<PlanetPatchGridVertex> vertices{};
+    std::vector<std::uint32_t> indices{};
+
+    [[nodiscard]] cubey::render::MeshConfig mesh_config() const {
+        return cubey::render::indexed_mesh_config(
+            std::span<const PlanetPatchGridVertex>{vertices.data(), vertices.size()},
+            std::span<const std::uint32_t>{indices.data(), indices.size()});
+    }
+};
+
 struct PlanetSurfaceDiagnostics {
     std::uint32_t face_count = 6;
     std::uint32_t planned_patch_count = 0;
@@ -90,11 +105,22 @@ struct PlanetSurfacePatchPlan {
     PlanetSurfaceDiagnostics diagnostics{};
 };
 
+struct PlanetSurfaceGpuPatchInstance {
+    std::uint32_t face = 0;
+    std::uint32_t level = 0;
+    std::uint32_t x = 0;
+    std::uint32_t y = 0;
+    float screen_error_px = 0.0F;
+};
+
 struct PlanetSurfaceBuildResult {
     PlanetSurfaceMeshData mesh{};
     PlanetSurfaceDiagnostics diagnostics{};
 };
 
+[[nodiscard]] PlanetPatchGridMeshData make_planet_patch_grid_mesh(const PlanetConfig& config);
+[[nodiscard]] std::vector<PlanetSurfaceGpuPatchInstance>
+make_planet_surface_gpu_patch_instances(const PlanetSurfacePatchPlan& plan);
 [[nodiscard]] PlanetSurfacePatchBounds planet_surface_patch_bounds(const PlanetConfig& config,
                                                                    PlanetSurfacePatchId id);
 [[nodiscard]] PlanetSurfacePatchId planet_surface_child_patch_id(PlanetSurfacePatchId id,
