@@ -32,38 +32,22 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     return {value.x, value.y, value.z};
 }
 
-[[nodiscard]] PrimitiveVec3 final_color(const PlanetConfig& config, cubey::math::Vec3 normal,
-                                        float height_m) {
-    if (config.terrain_enabled && config.terrain_height_scale_m > 0.0F) {
-        const float t =
-            std::clamp(height_m / std::max(config.terrain_height_scale_m, 1.0F), -1.0F, 1.0F);
-        if (t < -0.15F) {
-            return {0.035F, 0.105F, 0.190F};
-        }
-        if (t < 0.22F) {
-            const float blend = (t + 0.15F) / 0.37F;
-            return {
-                lerp(0.070F, 0.120F, blend),
-                lerp(0.170F, 0.280F, blend),
-                lerp(0.130F, 0.100F, blend),
-            };
-        }
-        if (t < 0.62F) {
-            const float blend = (t - 0.22F) / 0.40F;
-            return {
-                lerp(0.130F, 0.360F, blend),
-                lerp(0.260F, 0.310F, blend),
-                lerp(0.110F, 0.230F, blend),
-            };
-        }
-        return {0.66F, 0.70F, 0.76F};
-    }
+[[nodiscard]] PrimitiveVec3 latitude_color(cubey::math::Vec3 normal) {
     const float latitude = normal.y * 0.5F + 0.5F;
     return {
         0.035F + 0.030F * latitude,
         0.100F + 0.070F * latitude,
         0.230F + 0.200F * latitude,
     };
+}
+
+[[nodiscard]] PrimitiveVec3 final_color(const PlanetConfig& config,
+                                        const PlanetSurfaceSample& sample) {
+    if (config.terrain_enabled && config.terrain_height_scale_m > 0.0F) {
+        return to_primitive(planet_surface_material_color(
+            sample.material, sample.normalized_elevation, sample.normalized_slope));
+    }
+    return latitude_color(sample.normal);
 }
 
 [[nodiscard]] PrimitiveVec3 patch_color(PlanetSurfacePatchId id) {
@@ -145,8 +129,31 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     };
 }
 
+[[nodiscard]] PrimitiveVec3 terrain_slope_color(float normalized_slope) {
+    const float t = std::clamp(normalized_slope, 0.0F, 1.0F);
+    return {
+        lerp(0.08F, 0.95F, t),
+        lerp(0.25F, 0.66F, t),
+        lerp(0.42F, 0.14F, t),
+    };
+}
+
+[[nodiscard]] PrimitiveVec3 terrain_material_debug_color(PlanetSurfaceMaterial material) {
+    switch (material) {
+    case PlanetSurfaceMaterial::Water:
+        return {0.04F, 0.18F, 0.72F};
+    case PlanetSurfaceMaterial::Lowland:
+        return {0.14F, 0.62F, 0.22F};
+    case PlanetSurfaceMaterial::Highland:
+        return {0.62F, 0.48F, 0.28F};
+    case PlanetSurfaceMaterial::Snow:
+        return {0.88F, 0.92F, 0.96F};
+    }
+    return {0.14F, 0.62F, 0.22F};
+}
+
 [[nodiscard]] PrimitiveVec3 seam_surface_color(cubey::math::Vec3 normal) {
-    const PrimitiveVec3 color = final_color(PlanetConfig{}, normal, 0.0F);
+    const PrimitiveVec3 color = latitude_color(normal);
     return {
         color[0] * 0.28F,
         color[1] * 0.34F,
@@ -158,15 +165,15 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     if (config.debug_view == PlanetDebugView::Seams) {
         return {1.0F, 0.82F, 0.22F};
     }
-    return final_color(config, normal, 0.0F);
+    return latitude_color(normal);
 }
 
 [[nodiscard]] PrimitiveVec3 vertex_color(const PlanetConfig& config,
                                          const PlanetSurfacePatchInstance& patch,
-                                         cubey::math::Vec3 normal, float height_m) {
+                                         const PlanetSurfaceSample& sample) {
     switch (config.debug_view) {
     case PlanetDebugView::Final:
-        return final_color(config, normal, height_m);
+        return final_color(config, sample);
     case PlanetDebugView::FaceId:
         return kFaceColors[patch.id.face];
     case PlanetDebugView::PatchId:
@@ -176,13 +183,17 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     case PlanetDebugView::ScreenError:
         return screen_error_color(patch.screen_error_px, config.lod_target_edge_px);
     case PlanetDebugView::Seams:
-        return seam_surface_color(normal);
+        return seam_surface_color(sample.normal);
     case PlanetDebugView::CellEdge:
         return cell_edge_color(config, patch);
     case PlanetDebugView::TerrainHeight:
-        return terrain_height_color(config, height_m);
+        return terrain_height_color(config, sample.height_m);
+    case PlanetDebugView::TerrainSlope:
+        return terrain_slope_color(sample.normalized_slope);
+    case PlanetDebugView::TerrainMaterial:
+        return terrain_material_debug_color(sample.material);
     }
-    return final_color(config, normal, height_m);
+    return final_color(config, sample);
 }
 
 void update_edge_range(PlanetSurfaceDiagnostics& diagnostics, cubey::math::DVec3 a,
@@ -560,7 +571,7 @@ void append_patch_mesh(const PlanetConfig& config, const PlanetFrame& frame,
                 planet_frame_world_to_render_m(frame, sample.world_position_m);
             result.mesh.vertices.push_back(VertexPositionColorNormalUv{
                 .position = to_primitive(render_position),
-                .color = vertex_color(config, patch, sample.normal, sample.height_m),
+                .color = vertex_color(config, patch, sample),
                 .normal = to_primitive(sample.normal),
                 .uv = PrimitiveVec2{tu, tv},
             });

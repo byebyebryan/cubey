@@ -262,6 +262,33 @@ void test_planet_surface_field_reports_bounded_height_normal_and_slope() {
             "planet surface field normal should be normalized");
     require(glm::dot(sample.sphere_normal, sample.normal) > 0.25F,
             "planet surface field normal should remain outward-facing");
+    require(sample.material == cubey::projects::planet::planet_surface_material(
+                                   sample.normalized_elevation, sample.normalized_slope),
+            "planet surface field sample should carry its classified material");
+}
+
+void test_planet_surface_field_classifies_material_bands() {
+    require(cubey::projects::planet::planet_surface_material(-0.20F, 0.0F) ==
+                cubey::projects::planet::PlanetSurfaceMaterial::Water,
+            "planet surface material should classify below-water elevation");
+    require(cubey::projects::planet::planet_surface_material(0.0F, 0.05F) ==
+                cubey::projects::planet::PlanetSurfaceMaterial::Lowland,
+            "planet surface material should classify low gentle terrain");
+    require(cubey::projects::planet::planet_surface_material(0.30F, 0.05F) ==
+                cubey::projects::planet::PlanetSurfaceMaterial::Highland,
+            "planet surface material should classify higher terrain");
+    require(cubey::projects::planet::planet_surface_material(0.70F, 0.05F) ==
+                cubey::projects::planet::PlanetSurfaceMaterial::Snow,
+            "planet surface material should classify high snow terrain");
+
+    const cubey::math::Vec3 water = cubey::projects::planet::planet_surface_material_color(
+        cubey::projects::planet::PlanetSurfaceMaterial::Water, -0.2F, 0.0F);
+    const cubey::math::Vec3 highland = cubey::projects::planet::planet_surface_material_color(
+        cubey::projects::planet::PlanetSurfaceMaterial::Highland, 0.4F, 0.5F);
+    require(water.z > water.x && water.z > water.y,
+            "planet water material should be blue-dominant");
+    require(highland.x > water.x && highland.y > water.y,
+            "planet highland material should be brighter than water");
 }
 
 void test_planet_surface_terrain_normals_are_finite_and_outward() {
@@ -768,12 +795,24 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_from_string("terrain-height") ==
                 cubey::projects::planet::PlanetDebugView::TerrainHeight,
             "planet debug view should parse terrain-height");
+    require(cubey::projects::planet::planet_debug_view_from_string("terrain-slope") ==
+                cubey::projects::planet::PlanetDebugView::TerrainSlope,
+            "planet debug view should parse terrain-slope");
+    require(cubey::projects::planet::planet_debug_view_from_string("terrain-material") ==
+                cubey::projects::planet::PlanetDebugView::TerrainMaterial,
+            "planet debug view should parse terrain-material");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::CellEdge)} == "cell-edge",
             "planet debug view should name cell-edge");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::TerrainHeight)} == "terrain-height",
             "planet debug view should name terrain-height");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::TerrainSlope)} == "terrain-slope",
+            "planet debug view should name terrain-slope");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::TerrainMaterial)} == "terrain-material",
+            "planet debug view should name terrain-material");
 }
 
 } // namespace
@@ -789,6 +828,7 @@ int main() {
         test_planet_surface_field_disabled_terrain_returns_sphere_sample();
         test_planet_surface_field_is_deterministic_for_seed();
         test_planet_surface_field_reports_bounded_height_normal_and_slope();
+        test_planet_surface_field_classifies_material_bands();
         test_planet_surface_terrain_normals_are_finite_and_outward();
         test_planet_surface_refined_terrain_normals_are_finite_and_outward();
         test_planet_surface_triangles_are_wound_outward();

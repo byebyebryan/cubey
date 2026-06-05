@@ -317,9 +317,9 @@ class PlanetApp {
         }
         ImGui::InputFloat("LOD Target Edge (px)", &edit_planet_config_.lod_target_edge_px, 0.0F,
                           0.0F, "%.1f");
-        constexpr const char* kDebugViews[]{"final",     "face-id",       "patch-id",
-                                            "lod-level", "screen-error",  "seams",
-                                            "cell-edge", "terrain-height"};
+        constexpr const char* kDebugViews[]{
+            "final", "face-id",   "patch-id",       "lod-level",     "screen-error",
+            "seams", "cell-edge", "terrain-height", "terrain-slope", "terrain-material"};
         int debug_view = static_cast<int>(edit_planet_config_.debug_view);
         if (ImGui::Combo("Debug View", &debug_view, kDebugViews,
                          static_cast<int>(std::size(kDebugViews)))) {

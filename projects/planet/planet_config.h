@@ -35,6 +35,8 @@ enum class PlanetDebugView : std::uint8_t {
     Seams,
     CellEdge,
     TerrainHeight,
+    TerrainSlope,
+    TerrainMaterial,
 };
 
 struct PlanetConfig {

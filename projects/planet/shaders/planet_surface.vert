@@ -115,32 +115,25 @@ vec3 terrain_height_color(float height_m) {
     return mix(vec3(0.08, 0.42, 0.20), vec3(0.92, 0.88, 0.74), blend);
 }
 
-vec3 final_color(vec3 normal, float height_m) {
-    float height_scale = pc.terrain_options.x;
-    if (height_scale > 0.0) {
-        float t = clamp(height_m / max(height_scale, 1.0), -1.0, 1.0);
-        if (t < -0.15) {
-            return vec3(0.035, 0.105, 0.190);
-        }
-        if (t < 0.22) {
-            float blend = (t + 0.15) / 0.37;
-            return vec3(mix(0.070, 0.120, blend), mix(0.170, 0.280, blend),
-                        mix(0.130, 0.100, blend));
-        }
-        if (t < 0.62) {
-            float blend = (t - 0.22) / 0.40;
-            return vec3(mix(0.130, 0.360, blend), mix(0.260, 0.310, blend),
-                        mix(0.110, 0.230, blend));
-        }
-        return vec3(0.66, 0.70, 0.76);
-    }
+vec3 latitude_color(vec3 normal) {
     float latitude = normal.y * 0.5 + 0.5;
     return vec3(0.035 + 0.030 * latitude, 0.100 + 0.070 * latitude,
                 0.230 + 0.200 * latitude);
 }
 
-vec3 vertex_color(vec3 normal, float height_m) {
+vec3 final_color(vec3 normal, uint material, float normalized_elevation, float normalized_slope) {
+    float height_scale = pc.terrain_options.x;
+    if (height_scale > 0.0) {
+        return planet_surface_material_color(material, normalized_elevation, normalized_slope);
+    }
+    return latitude_color(normal);
+}
+
+vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m) {
     int debug_view = debug_view_option();
+    float normalized_elevation = planet_surface_normalized_elevation(height_m);
+    float normalized_slope = planet_surface_normalized_slope(sphere_normal, normal);
+    uint material = planet_surface_material_id(normalized_elevation, normalized_slope);
     if (debug_view == 1) {
         return face_color(in_patch_id.x);
     }
@@ -157,7 +150,7 @@ vec3 vertex_color(vec3 normal, float height_m) {
         if (in_skirt > 0.5) {
             return vec3(1.0, 0.82, 0.22);
         }
-        vec3 color = final_color(normal, height_m);
+        vec3 color = latitude_color(normal);
         return vec3(color.r * 0.28, color.g * 0.34, color.b * 0.42);
     }
     if (debug_view == 6) {
@@ -166,7 +159,13 @@ vec3 vertex_color(vec3 normal, float height_m) {
     if (debug_view == 7) {
         return terrain_height_color(height_m);
     }
-    return final_color(normal, height_m);
+    if (debug_view == 8) {
+        return planet_surface_slope_color(normalized_slope);
+    }
+    if (debug_view == 9) {
+        return planet_surface_material_debug_color(material);
+    }
+    return final_color(normal, material, normalized_elevation, normalized_slope);
 }
 
 void main() {
@@ -181,7 +180,7 @@ void main() {
     world_position -= normal * pc.terrain_options.w * in_skirt;
     vec3 render_position = world_position - pc.render_origin_radius.xyz;
 
-    out_color = vertex_color(normal, height_m);
+    out_color = vertex_color(sphere_normal, normal, height_m);
     out_normal = normal;
     out_uv = in_uv;
     gl_Position = pc.view_projection * vec4(render_position, 1.0);

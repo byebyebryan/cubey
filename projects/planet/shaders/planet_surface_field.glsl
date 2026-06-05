@@ -141,3 +141,66 @@ vec3 planet_surface_terrain_normal(uint face, float u, float v, uint patch_level
     }
     return normalize(normal);
 }
+
+float planet_surface_normalized_elevation(float height_m) {
+    float height_scale = max(pc.terrain_options.x, 1.0);
+    return clamp(height_m / height_scale, -1.0, 1.0);
+}
+
+float planet_surface_normalized_slope(vec3 sphere_normal, vec3 normal) {
+    float dot_up = clamp(dot(normalize(sphere_normal), normalize(normal)), 0.0, 1.0);
+    return clamp(acos(dot_up) * 0.6366197723675813, 0.0, 1.0);
+}
+
+uint planet_surface_material_id(float normalized_elevation, float normalized_slope) {
+    if (normalized_elevation < -0.15) {
+        return 0U;
+    }
+    if (normalized_elevation > 0.66 ||
+        (normalized_elevation > 0.45 && normalized_slope < 0.22)) {
+        return 3U;
+    }
+    if (normalized_elevation > 0.22 || normalized_slope > 0.30) {
+        return 2U;
+    }
+    return 1U;
+}
+
+vec3 planet_surface_material_color(uint material, float normalized_elevation,
+                                   float normalized_slope) {
+    float elevation = clamp(normalized_elevation, -1.0, 1.0);
+    float slope = clamp(normalized_slope, 0.0, 1.0);
+    if (material == 0U) {
+        return vec3(0.035, 0.105, 0.190);
+    }
+    if (material == 1U) {
+        float blend = clamp((elevation + 0.15) / 0.37, 0.0, 1.0);
+        return vec3(mix(0.070, 0.145, blend), mix(0.170, 0.310, blend),
+                    mix(0.130, 0.105, blend));
+    }
+    if (material == 2U) {
+        float height_blend = clamp((elevation - 0.22) / 0.44, 0.0, 1.0);
+        float rock_blend = max(height_blend, slope);
+        return vec3(mix(0.170, 0.460, rock_blend), mix(0.235, 0.395, rock_blend),
+                    mix(0.130, 0.310, rock_blend));
+    }
+    return vec3(0.66, 0.70, 0.76);
+}
+
+vec3 planet_surface_material_debug_color(uint material) {
+    if (material == 0U) {
+        return vec3(0.04, 0.18, 0.72);
+    }
+    if (material == 1U) {
+        return vec3(0.14, 0.62, 0.22);
+    }
+    if (material == 2U) {
+        return vec3(0.62, 0.48, 0.28);
+    }
+    return vec3(0.88, 0.92, 0.96);
+}
+
+vec3 planet_surface_slope_color(float normalized_slope) {
+    float t = clamp(normalized_slope, 0.0, 1.0);
+    return vec3(mix(0.08, 0.95, t), mix(0.25, 0.66, t), mix(0.42, 0.14, t));
+}

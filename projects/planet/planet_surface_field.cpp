@@ -182,6 +182,51 @@ float planet_surface_terrain_height_m(const PlanetConfig& config, cubey::math::V
     return std::clamp(height, -config.terrain_height_scale_m, config.terrain_height_scale_m);
 }
 
+PlanetSurfaceMaterial planet_surface_material(float normalized_elevation, float normalized_slope) {
+    if (normalized_elevation < -0.15F) {
+        return PlanetSurfaceMaterial::Water;
+    }
+    if (normalized_elevation > 0.66F ||
+        (normalized_elevation > 0.45F && normalized_slope < 0.22F)) {
+        return PlanetSurfaceMaterial::Snow;
+    }
+    if (normalized_elevation > 0.22F || normalized_slope > 0.30F) {
+        return PlanetSurfaceMaterial::Highland;
+    }
+    return PlanetSurfaceMaterial::Lowland;
+}
+
+cubey::math::Vec3 planet_surface_material_color(PlanetSurfaceMaterial material,
+                                                float normalized_elevation,
+                                                float normalized_slope) {
+    const float elevation = std::clamp(normalized_elevation, -1.0F, 1.0F);
+    const float slope = std::clamp(normalized_slope, 0.0F, 1.0F);
+    switch (material) {
+    case PlanetSurfaceMaterial::Water:
+        return {0.035F, 0.105F, 0.190F};
+    case PlanetSurfaceMaterial::Lowland: {
+        const float blend = std::clamp((elevation + 0.15F) / 0.37F, 0.0F, 1.0F);
+        return {
+            lerp(0.070F, 0.145F, blend),
+            lerp(0.170F, 0.310F, blend),
+            lerp(0.130F, 0.105F, blend),
+        };
+    }
+    case PlanetSurfaceMaterial::Highland: {
+        const float height_blend = std::clamp((elevation - 0.22F) / 0.44F, 0.0F, 1.0F);
+        const float rock_blend = std::max(height_blend, slope);
+        return {
+            lerp(0.170F, 0.460F, rock_blend),
+            lerp(0.235F, 0.395F, rock_blend),
+            lerp(0.130F, 0.310F, rock_blend),
+        };
+    }
+    case PlanetSurfaceMaterial::Snow:
+        return {0.66F, 0.70F, 0.76F};
+    }
+    return {0.12F, 0.28F, 0.10F};
+}
+
 PlanetSurfaceSample planet_surface_sample_field(const PlanetConfig& config, PlanetSurfacePatchId id,
                                                 float u, float v) {
     const cubey::math::Vec3 sphere_normal =
@@ -198,13 +243,15 @@ PlanetSurfaceSample planet_surface_sample_field(const PlanetConfig& config, Plan
         config.terrain_height_scale_m > 0.0F
             ? std::clamp(height_m / config.terrain_height_scale_m, -1.0F, 1.0F)
             : 0.0F;
+    const float slope = normalized_slope(sphere_normal, normal);
     return {
         .sphere_normal = sphere_normal,
         .normal = normal,
         .world_position_m = world_position_m,
         .height_m = height_m,
         .normalized_elevation = normalized_elevation,
-        .normalized_slope = normalized_slope(sphere_normal, normal),
+        .normalized_slope = slope,
+        .material = planet_surface_material(normalized_elevation, slope),
     };
 }
 

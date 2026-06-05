@@ -9,6 +9,13 @@
 
 namespace cubey::projects::planet {
 
+enum class PlanetSurfaceMaterial : std::uint8_t {
+    Water,
+    Lowland,
+    Highland,
+    Snow,
+};
+
 struct PlanetSurfaceSample {
     cubey::math::Vec3 sphere_normal{0.0F, 1.0F, 0.0F};
     cubey::math::Vec3 normal{0.0F, 1.0F, 0.0F};
@@ -16,6 +23,7 @@ struct PlanetSurfaceSample {
     float height_m = 0.0F;
     float normalized_elevation = 0.0F;
     float normalized_slope = 0.0F;
+    PlanetSurfaceMaterial material = PlanetSurfaceMaterial::Lowland;
 };
 
 [[nodiscard]] cubey::math::Vec3 planet_surface_cube_face_point(std::uint32_t face, float u,
@@ -27,5 +35,10 @@ struct PlanetSurfaceSample {
                                                     cubey::math::Vec3 sphere_normal);
 [[nodiscard]] PlanetSurfaceSample
 planet_surface_sample_field(const PlanetConfig& config, PlanetSurfacePatchId id, float u, float v);
+[[nodiscard]] PlanetSurfaceMaterial planet_surface_material(float normalized_elevation,
+                                                            float normalized_slope);
+[[nodiscard]] cubey::math::Vec3 planet_surface_material_color(PlanetSurfaceMaterial material,
+                                                              float normalized_elevation,
+                                                              float normalized_slope);
 
 } // namespace cubey::projects::planet
