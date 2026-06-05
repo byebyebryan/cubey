@@ -8,6 +8,7 @@
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/math.h>
 #include <cubey/engine/atmosphere_environment_config.h>
+#include <cubey/host/atmosphere_environment_ui.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/performance_ui.h>
@@ -169,6 +170,13 @@ planet_atmosphere_run_state(const cubey::RunConfig& config, const PlanetConfig& 
     state.environment.camera_altitude_km = planet_config.camera_altitude_m * 0.001F;
     cubey::atmosphere_environment_resolve_run_state(state);
     return state;
+}
+
+[[nodiscard]] const char* atmosphere_atlas_status(bool created, bool placeholder) {
+    if (!created) {
+        return "not created";
+    }
+    return placeholder ? "placeholder" : "generated";
 }
 
 class PlanetApp {
@@ -425,6 +433,14 @@ class PlanetApp {
             ImGui::Text("Config error: %s", rebuild_error_.c_str());
         }
 
+        if (cubey::host::draw_atmosphere_environment_controls(
+                atmosphere_state_, {.label = "Atmosphere",
+                                    .default_open = false,
+                                    .help = "Shared procedural atmosphere driving the planet sky "
+                                            "and surface lighting."})) {
+            sync_atmosphere_environment();
+        }
+
         ImGui::SeparatorText("Diagnostics");
         ImGui::Text("Radius: %.0f m", planet_config_.radius_m);
         ImGui::Text("Atmosphere: %.0f m", planet_config_.atmosphere_height_m);
@@ -436,6 +452,19 @@ class PlanetApp {
         ImGui::Text("Near / far: %.1f m / %.0f m", frame_.near_plane_m, frame_.far_plane_m);
         ImGui::Text("Origin: %.0f %.0f %.0f", frame_.surface_origin_m.x, frame_.surface_origin_m.y,
                     frame_.surface_origin_m.z);
+        ImGui::Text("Time: %.2f h, day %.0f", atmosphere_state_.environment.time_of_day.time_hours,
+                    atmosphere_state_.environment.time_of_day.day_of_year);
+        ImGui::Text("Sun: %.1f deg elevation / %.1f deg azimuth",
+                    atmosphere_state_.environment.sun_elevation_degrees,
+                    atmosphere_state_.environment.sun_azimuth_degrees);
+        ImGui::Text(
+            "Atmosphere atlases: moon %s, sky %s",
+            atmosphere_atlas_status(atmosphere_background_atlases_.has_value(),
+                                    atmosphere_background_atlases_.has_value() &&
+                                        atmosphere_background_atlases_->lunar_placeholder),
+            atmosphere_atlas_status(atmosphere_background_atlases_.has_value(),
+                                    atmosphere_background_atlases_.has_value() &&
+                                        atmosphere_background_atlases_->night_sky_placeholder));
 
         ImGui::SeparatorText("Surface");
         ImGui::Text("Patches: %u rendered / %u planned",
