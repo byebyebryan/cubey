@@ -155,12 +155,13 @@ Current implementation notes:
   instances through one reusable patch grid, and both CPU diagnostics and shader
   mapping derive UV bounds from the id instead of owning LOD addressing.
 - Live LOD selection and CPU mesh diagnostics intentionally have different
-  limits. The instanced renderer currently accepts LOD 0-6 and defaults to LOD
-  5 with a 10 px target edge; the CPU mesh path rejects configurations that
-  would materialize too many vertices. Live planning also has a fixed patch
-  instance budget so pathological interactive settings fail early. Use the live
-  renderer for interactive LOD pressure and the CPU mesh path for bounded
-  validation.
+  limits. The instanced renderer currently accepts LOD 0-7, patch resolutions
+  up to 64, and defaults to LOD 6 with a 32x32 reusable grid and a 10 px target
+  edge. The CPU mesh path still rejects configurations that would materialize
+  too many vertices. Live planning has a fixed patch instance budget and falls
+  back to coarser parent coverage when aggressive interactive settings would
+  exceed it. Use the live renderer for interactive LOD pressure and the CPU mesh
+  path for bounded validation.
 - Camera-driven LOD replans no longer rebuild GPU instance buffers immediately
   or wait for the device. The planner marks patch instances dirty, and each
   render frame lazily uploads the current instance list into that frame slot's
@@ -169,10 +170,15 @@ Current implementation notes:
 - LOD is coverage-first. View and horizon culling stop refinement, but the
   parent patch remains selected so rotating while rebuilds are deferred does not
   reveal holes.
-- Skirts are the active transition policy. Morph bands remain a later quality
-  pass once terrain and ocean layers put more pressure on parent/child seams.
-  The `lod-transition` debug view and transition-pressure diagnostics make the
-  threshold pressure visible before adding a morph implementation.
+- Skirts plus selection hysteresis are the active transition policy. The planner
+  consumes the previous selected patch ids and applies a split/merge deadband so
+  parent patches do not immediately split, and refined child coverage does not
+  immediately merge, at the exact screen-error threshold. Morph bands remain a
+  later quality pass once terrain and ocean layers put more pressure on
+  parent/child seams. The `lod-transition` debug view, transition-pressure
+  diagnostics, budget fallback counters, and hysteresis delayed split/merge
+  counters make the threshold pressure visible before adding a morph
+  implementation.
 - Placeholder planet terrain is project-local shader displacement along the
   sphere normal, with the CPU mesh builder retained for diagnostics and tests.
   CPU and shader paths now go through a named project-local surface-field
