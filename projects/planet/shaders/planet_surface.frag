@@ -63,6 +63,24 @@ float celestial_direction_marker(vec3 sphere_normal, vec3 direction, float radiu
     return smoothstep(cos(radius) - edge_width, cos(radius), alignment);
 }
 
+vec3 surface_haze_color(vec3 haze_color, vec3 sphere_normal, vec3 light_dir, vec3 view_dir,
+                        float distance_haze) {
+    vec3 up = normalize(sphere_normal);
+    float sun_elevation = dot(up, light_dir);
+    vec3 sun_tangent = light_dir - up * sun_elevation;
+    vec3 view_tangent = view_dir - up * dot(view_dir, up);
+    float toward_sun = 0.0;
+    if (length(sun_tangent) > 0.0001 && length(view_tangent) > 0.0001) {
+        toward_sun = pow(max(dot(normalize(view_tangent), normalize(sun_tangent)), 0.0), 2.0);
+    }
+    float terminator = exp(-abs(sun_elevation) / 0.30);
+    float low_sun = smoothstep(-0.24, 0.10, sun_elevation) *
+                    (1.0 - smoothstep(0.22, 0.62, sun_elevation));
+    float warm = terminator * low_sun * toward_sun * smoothstep(0.32, 0.92, distance_haze);
+    vec3 twilight = mix(haze_color, vec3(1.0, 0.40, 0.15), 0.42);
+    return mix(haze_color, twilight, clamp(warm, 0.0, 1.0));
+}
+
 vec3 celestial_planes_color() {
     vec3 sphere_normal = normalize(in_sphere_normal);
     float equator = celestial_plane_band(sphere_normal, surface_frame.celestial_equator_plane.xyz, 0.010);
@@ -116,9 +134,17 @@ void main() {
     float haze_strength = clamp(surface_frame.atmosphere_options.y, 0.0, 1.0);
     float haze_start = clamp(surface_frame.atmosphere_options.z, 0.0, 1.0);
     float haze_end = clamp(max(surface_frame.atmosphere_options.w, haze_start + 0.001), 0.0, 1.5);
-    float haze = smoothstep(horizon_distance * haze_start, horizon_distance * haze_end,
-                            view_distance) * haze_strength;
+    float distance_ratio = view_distance / horizon_distance;
+    float band_haze = smoothstep(haze_start, haze_end, distance_ratio);
+    float optical_haze =
+        1.0 - exp(-max(distance_ratio - haze_start * 0.35, 0.0) / max(haze_end * 0.42, 0.05));
+    float horizon_graze = pow(clamp(distance_ratio, 0.0, 1.35), 1.45);
+    float haze = clamp(max(band_haze * 0.58, optical_haze * 0.72) + horizon_graze * 0.10, 0.0, 1.0) *
+                 haze_strength;
     float final_view = floor(surface_frame.surface_options.x) < 0.5 ? 1.0 : 0.0;
-    color = mix(color, haze_color, haze * final_view);
+    vec3 view_dir = normalize(in_render_position - surface_frame.camera_horizon.xyz);
+    vec3 final_haze_color =
+        surface_haze_color(haze_color, normalize(in_sphere_normal), light_dir, view_dir, haze);
+    color = mix(color, final_haze_color, haze * final_view);
     out_color = vec4(color, 1.0);
 }
