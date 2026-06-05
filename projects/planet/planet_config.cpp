@@ -109,6 +109,9 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
     if (value == "shoreline" || value == "shore") {
         return PlanetDebugView::Shoreline;
     }
+    if (value == "wireframe" || value == "wire" || value == "mesh") {
+        return PlanetDebugView::Wireframe;
+    }
     throw std::runtime_error("unsupported planet debug view: " + std::string(value));
 }
 
@@ -140,6 +143,8 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "bathymetry";
     case PlanetDebugView::Shoreline:
         return "shoreline";
+    case PlanetDebugView::Wireframe:
+        return "wireframe";
     }
     return "final";
 }
@@ -161,10 +166,10 @@ void validate_planet_config(const PlanetConfig& config) {
         throw std::runtime_error("planet patch resolution must be positive");
     }
     if (config.max_lod_level > kPlanetMaxLiveLodLevel) {
-        throw std::runtime_error("planet max LOD level must be <= 7");
+        throw std::runtime_error("planet max LOD level must be <= 9");
     }
     if (config.patch_resolution > kPlanetMaxPatchResolution) {
-        throw std::runtime_error("planet patch resolution must be <= 64");
+        throw std::runtime_error("planet patch resolution must be <= 128");
     }
     if (config.patches_per_face > 8U) {
         throw std::runtime_error("planet patches per face must be <= 8");

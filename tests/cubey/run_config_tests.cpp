@@ -1198,9 +1198,9 @@ void test_run_config_parses_planet_controls() {
     std::string patches_flag = "--planet-patches-per-face";
     std::string patches_value = "4";
     std::string patch_resolution_flag = "--planet-patch-resolution";
-    std::string patch_resolution_value = "64";
+    std::string patch_resolution_value = "128";
     std::string max_lod_flag = "--planet-max-lod-level";
-    std::string max_lod_value = "7";
+    std::string max_lod_value = "9";
     std::string lod_target_flag = "--planet-lod-target-edge-px";
     std::string lod_target_value = "9.5";
     std::string lod_hysteresis_flag = "--planet-lod-hysteresis";
@@ -1254,9 +1254,9 @@ void test_run_config_parses_planet_controls() {
             "run config should parse planet camera altitude");
     require(config.planet.patches_per_face == 4U,
             "run config should parse planet patches per face");
-    require(config.planet.patch_resolution == 64U,
+    require(config.planet.patch_resolution == 128U,
             "run config should parse planet patch resolution");
-    require(config.planet.max_lod_level_set && config.planet.max_lod_level == 7U,
+    require(config.planet.max_lod_level_set && config.planet.max_lod_level == 9U,
             "run config should parse planet max LOD level");
     require(config.planet.lod_target_edge_px == 9.5F, "run config should parse planet LOD target");
     require(config.planet.lod_hysteresis == 0.25F,
@@ -1295,7 +1295,7 @@ void test_run_config_rejects_invalid_planet_controls() {
         "run config should reject negative planet camera altitude");
 
     std::string max_lod_flag = "--planet-max-lod-level";
-    std::string max_lod_value = "8";
+    std::string max_lod_value = "10";
     std::array<char*, 3> max_lod_argv{program.data(), max_lod_flag.data(), max_lod_value.data()};
     require_throws(
         [&max_lod_argv]() {
@@ -1304,7 +1304,7 @@ void test_run_config_rejects_invalid_planet_controls() {
         "run config should reject planet max LOD above live cap");
 
     std::string patch_resolution_flag = "--planet-patch-resolution";
-    std::string patch_resolution_value = "65";
+    std::string patch_resolution_value = "129";
     std::array<char*, 3> patch_resolution_argv{program.data(), patch_resolution_flag.data(),
                                                patch_resolution_value.data()};
     require_throws(

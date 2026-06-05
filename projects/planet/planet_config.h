@@ -12,9 +12,9 @@ inline constexpr float kPlanetDefaultRadiusM = 600000.0F;
 inline constexpr float kPlanetDefaultAtmosphereHeightM = 70000.0F;
 inline constexpr float kPlanetDefaultCameraAltitudeM = 240000.0F;
 inline constexpr std::uint32_t kPlanetDefaultPatchesPerFace = 2;
-inline constexpr std::uint32_t kPlanetDefaultPatchResolution = 32;
-inline constexpr std::uint32_t kPlanetDefaultMaxLodLevel = 6;
-inline constexpr float kPlanetDefaultLodTargetEdgePx = 10.0F;
+inline constexpr std::uint32_t kPlanetDefaultPatchResolution = 64;
+inline constexpr std::uint32_t kPlanetDefaultMaxLodLevel = 7;
+inline constexpr float kPlanetDefaultLodTargetEdgePx = 8.0F;
 inline constexpr float kPlanetDefaultLodHysteresis = 0.15F;
 inline constexpr float kPlanetDefaultTerrainHeightScaleM = 12000.0F;
 inline constexpr float kPlanetDefaultTerrainNoiseScale = 2.5F;
@@ -25,10 +25,10 @@ inline constexpr float kPlanetDefaultTerrainFineDetailScale = 12.0F;
 inline constexpr float kPlanetDefaultSeaLevelM = 0.0F;
 inline constexpr float kPlanetDefaultBathymetryDepthScaleM = 8000.0F;
 inline constexpr float kPlanetDefaultShorelineWidthM = 1500.0F;
-inline constexpr std::uint32_t kPlanetMaxPatchResolution = 64;
-inline constexpr std::uint32_t kPlanetMaxLiveLodLevel = 7;
+inline constexpr std::uint32_t kPlanetMaxPatchResolution = 128;
+inline constexpr std::uint32_t kPlanetMaxLiveLodLevel = 9;
 inline constexpr std::uint64_t kPlanetMaxLivePatchInstances = 65536ULL;
-inline constexpr std::size_t kPlanetDiagnosticLodCapacity = 8;
+inline constexpr std::size_t kPlanetDiagnosticLodCapacity = 10;
 inline constexpr std::uint64_t kPlanetCpuMeshVertexCap = 2000000ULL;
 
 enum class PlanetDebugView : std::uint8_t {
@@ -45,6 +45,7 @@ enum class PlanetDebugView : std::uint8_t {
     TerrainMaterial,
     Bathymetry,
     Shoreline,
+    Wireframe,
 };
 
 struct PlanetConfig {

@@ -20,25 +20,27 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view lod-transition
 ./build/dev/projects/planet/planet --debug-view bathymetry
 ./build/dev/projects/planet/planet --debug-view shoreline
+./build/dev/projects/planet/planet --debug-view wireframe
 ./build/dev/projects/planet/planet --debug-view seams
-./build/dev/projects/planet/planet --planet-max-lod-level 6 --planet-lod-target-edge-px 10
-./build/dev/projects/planet/planet --planet-max-lod-level 7 --planet-patch-resolution 64 --planet-lod-target-edge-px 8
+./build/dev/projects/planet/planet --planet-max-lod-level 7 --planet-lod-target-edge-px 8
+./build/dev/projects/planet/planet --planet-max-lod-level 9 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
 ./build/dev/projects/planet/planet --planet-sea-level-m 0 --planet-shoreline-width-m 1500
 ```
 
 Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 `screen-error`, `lod-transition`, `seams`, `cell-edge`, `terrain-height`,
-`terrain-slope`, `terrain-material`, `bathymetry`, and `shoreline`. The CPU LOD
-planner selects camera-relative cube-sphere patch instances by projected edge
-size and reports patch, LOD, refinement cull, screen-error, transition pressure,
-edge-length, per-LOD cell-size, budget fallback, hysteresis, and skirt ranges in
-the UI. The live renderer draws those selected patches with one reusable GPU
+`terrain-slope`, `terrain-material`, `bathymetry`, `shoreline`, and `wireframe`.
+The CPU LOD planner selects camera-relative cube-sphere patch instances by
+projected edge size and reports patch, LOD, refinement cull, screen-error,
+transition pressure, edge-length, per-LOD cell-size, budget fallback,
+hysteresis, and skirt ranges in the UI. The live renderer draws those selected
+patches with one reusable GPU
 patch grid plus per-frame-slot instance buffers carrying `face/level/x/y`
-identity. Live instanced rendering supports up to LOD 7 and patch resolution 64,
-defaults to LOD 6, patch resolution 32, and a 10 px target edge, and falls back
-to coarser patch coverage when interactive settings would exceed the live
-patch-instance budget. The CPU mesh builder has a stricter vertex cap because it
-materializes every selected patch for diagnostics.
+identity. Live instanced rendering supports up to LOD 9 and patch resolution
+128, defaults to LOD 7, patch resolution 64, and an 8 px target edge, and falls
+back to coarser patch coverage when interactive settings would exceed the live
+patch-instance budget. The CPU mesh builder has a stricter vertex cap because
+it materializes every selected patch for diagnostics.
 
 Planet surface LOD is coverage-first. Root patches provide guaranteed coarse
 coverage for every planet domain, and view/horizon culling only stops

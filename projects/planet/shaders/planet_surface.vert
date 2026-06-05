@@ -198,6 +198,9 @@ vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m) {
     if (debug_view == 12) {
         return shoreline_color(planet_surface_shoreline_mask(height_m));
     }
+    if (debug_view == 13) {
+        return lod_color();
+    }
     return final_color(normal, material, normalized_elevation, normalized_slope);
 }
 

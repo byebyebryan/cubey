@@ -155,8 +155,8 @@ Current implementation notes:
   instances through one reusable patch grid, and both CPU diagnostics and shader
   mapping derive UV bounds from the id instead of owning LOD addressing.
 - Live LOD selection and CPU mesh diagnostics intentionally have different
-  limits. The instanced renderer currently accepts LOD 0-7, patch resolutions
-  up to 64, and defaults to LOD 6 with a 32x32 reusable grid and a 10 px target
+  limits. The instanced renderer currently accepts LOD 0-9, patch resolutions
+  up to 128, and defaults to LOD 7 with a 64x64 reusable grid and an 8 px target
   edge. The CPU mesh path still rejects configurations that would materialize
   too many vertices. Live planning has a fixed patch instance budget and falls
   back to coarser parent coverage when aggressive interactive settings would
@@ -192,7 +192,8 @@ Current implementation notes:
   terrain or ocean data.
 - Current debug views cover patch identity, LOD level, screen error, seam
   skirts, approximate metric cell edge, normalized terrain height, normalized
-  terrain slope, terrain material bands, bathymetry, shoreline, and LOD
+  terrain slope, terrain material bands, bathymetry, shoreline, wireframe grid,
+  and LOD
   transition pressure. These are diagnostic tools, not final planet
   visualization.
 - Planet rendering now uses the shared atmosphere model instead of a

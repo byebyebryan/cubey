@@ -58,8 +58,8 @@ constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip"
                                                               "pic/flip"};
 constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-faces", "tiled",
                                                            "tiled-faces"};
-constexpr double kPlanetMaxPatchResolution = 64.0;
-constexpr double kPlanetMaxLiveLodLevel = 7.0;
+constexpr double kPlanetMaxPatchResolution = 128.0;
+constexpr double kPlanetMaxLiveLodLevel = 9.0;
 
 constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view path,
                                         std::string_view cli_name, std::string_view label,

@@ -277,6 +277,8 @@ class PlanetPatchSelectionLookup {
         return bathymetry_color(sample.normalized_bathymetry);
     case PlanetDebugView::Shoreline:
         return shoreline_color(sample.shoreline_mask);
+    case PlanetDebugView::Wireframe:
+        return lod_color(patch.id.level, config.max_lod_level);
     }
     return final_color(config, sample);
 }
@@ -479,8 +481,10 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
 
 [[nodiscard]] bool can_refine_with_live_budget(const PlanetConfig& config,
                                                const PlanetSurfacePatchPlan& plan) {
+    const std::uint64_t fallback_depth_reserve =
+        4ULL * (static_cast<std::uint64_t>(config.max_lod_level) + 1ULL);
     return static_cast<std::uint64_t>(plan.selected_patches.size()) + root_patch_reserve(config) +
-               4ULL <
+               fallback_depth_reserve + 4ULL <
            kPlanetMaxLivePatchInstances;
 }
 

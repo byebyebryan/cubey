@@ -405,7 +405,8 @@ class PlanetApp {
         constexpr const char* kDebugViews[]{
             "final",       "face-id",        "patch-id",      "lod-level",
             "screen-error", "lod-transition", "seams",         "cell-edge",
-            "terrain-height", "terrain-slope", "terrain-material", "bathymetry", "shoreline"};
+            "terrain-height", "terrain-slope", "terrain-material", "bathymetry", "shoreline",
+            "wireframe"};
         int debug_view = static_cast<int>(edit_planet_config_.debug_view);
         if (ImGui::Combo("Debug View", &debug_view, kDebugViews,
                          static_cast<int>(std::size(kDebugViews)))) {

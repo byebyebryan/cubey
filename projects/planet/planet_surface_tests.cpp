@@ -948,6 +948,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_from_string("shoreline") ==
                 cubey::projects::planet::PlanetDebugView::Shoreline,
             "planet debug view should parse shoreline");
+    require(cubey::projects::planet::planet_debug_view_from_string("wireframe") ==
+                cubey::projects::planet::PlanetDebugView::Wireframe,
+            "planet debug view should parse wireframe");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::CellEdge)} == "cell-edge",
             "planet debug view should name cell-edge");
@@ -969,6 +972,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::Shoreline)} == "shoreline",
             "planet debug view should name shoreline");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::Wireframe)} == "wireframe",
+            "planet debug view should name wireframe");
 }
 
 void test_planet_surface_planner_records_lod_transition_pressure() {
