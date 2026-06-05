@@ -20,15 +20,17 @@ Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 cube-sphere patch instances by projected edge size and reports patch, LOD,
 refinement cull, screen-error, edge-length, per-LOD cell-size, and skirt ranges
 in the UI. The live renderer draws those selected patches with one reusable
-GPU patch grid plus an instance buffer carrying `face/level/x/y` identity.
+GPU patch grid plus per-frame-slot instance buffers carrying `face/level/x/y`
+identity. Live instanced rendering supports up to LOD 6 and defaults to LOD 3;
+the CPU mesh builder has a stricter vertex cap because it materializes every
+selected patch for diagnostics.
 
 Planet surface LOD is coverage-first. Root patches provide guaranteed coarse
 coverage for every planet domain, and view/horizon culling only stops
 refinement; it does not remove the fallback surface. When a patch refines, it
 hands off its full area to child subtrees, so the renderer never draws a parent
 and child for the same domain at the same time. This keeps camera rotation from
-revealing empty holes while synchronous mesh rebuilds are deferred during
-dragging.
+revealing empty holes while patch replans are deferred during dragging.
 
 Patch identity is explicit: each selected surface instance has a `face/level/x/y`
 address, and UV bounds are derived from that address plus the root
@@ -41,9 +43,13 @@ terrain system. The live renderer now displaces the reusable grid in the vertex
 shader with deterministic fBM terrain and recomputes shader normals. The CPU
 mesh builder remains as a diagnostic/test path for the same patch contracts.
 
-This is not yet a real async streamer. Future streaming should keep the same
-contract: parent patches remain renderable until all child coverage needed for a
-refinement is built and uploaded.
+This is not yet a real async streamer. Camera-driven patch replans refresh CPU
+patch data and lazily upload each frame slot's instance buffer the next time it
+is rendered, so ordinary navigation no longer blocks on `vkDeviceWaitIdle`.
+Full configuration rebuilds still synchronize because patch grid topology can
+change. Future streaming should keep the same contract: parent patches remain
+renderable until all child coverage needed for a refinement is built and
+uploaded.
 
 This project should stay focused on planet-scale contracts first. Ocean scale
 work remains in `projects/ocean` until the planet frame, LOD, and world-space

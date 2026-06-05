@@ -147,9 +147,19 @@ uses the same contract:
 Current implementation notes:
 
 - Patch addresses are explicit `face/level/x/y` ids. Selected patch instances
-  carry that id plus screen-error metrics. The live renderer now draws those
+  carry that id plus screen-error metrics. The live renderer draws those
   instances through one reusable patch grid, and both CPU diagnostics and shader
   mapping derive UV bounds from the id instead of owning LOD addressing.
+- Live LOD selection and CPU mesh diagnostics intentionally have different
+  limits. The instanced renderer currently accepts LOD 0-6 and defaults to LOD
+  3; the CPU mesh path rejects configurations that would materialize too many
+  vertices. Use the live renderer for interactive LOD pressure and the CPU mesh
+  path for bounded validation.
+- Camera-driven LOD replans no longer rebuild GPU instance buffers immediately
+  or wait for the device. The planner marks patch instances dirty, and each
+  render frame lazily uploads the current instance list into that frame slot's
+  buffer when its generation is stale. Full config rebuilds still drain and
+  recreate resources because the reusable patch grid itself can change.
 - LOD is coverage-first. View and horizon culling stop refinement, but the
   parent patch remains selected so rotating while rebuilds are deferred does not
   reveal holes.
