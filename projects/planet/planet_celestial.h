@@ -18,6 +18,11 @@
 
 namespace cubey::projects::planet {
 
+enum class PlanetCelestialBodyType : std::uint8_t {
+    Sun,
+    Moon,
+};
+
 struct PlanetCelestialSun {
     bool visible = true;
     cubey::math::Vec3 direction{0.0F, 1.0F, 0.0F};
@@ -39,6 +44,18 @@ struct PlanetCelestialMoon {
     float phase_fraction = 0.5F;
 };
 
+struct PlanetCelestialBody {
+    PlanetCelestialBodyType type = PlanetCelestialBodyType::Moon;
+    bool visible = true;
+    cubey::math::Vec3 direction{0.0F, 0.0F, 1.0F};
+    cubey::math::Vec3 color{1.0F, 1.0F, 1.0F};
+    float intensity = 1.0F;
+    float angular_radius_rad = 0.00452F;
+    float distance_m = 1.0F;
+    float radius_m = 1.0F;
+    float phase_fraction = 0.5F;
+};
+
 struct PlanetCelestialSystem {
     PlanetCelestialSun sun{};
     PlanetCelestialMoon moon{};
@@ -46,6 +63,22 @@ struct PlanetCelestialSystem {
     float planet_rotation_angle_rad = 0.0F;
     float planet_orbit_angle_rad = 0.0F;
     float moon_orbit_angle_rad = 0.0F;
+};
+
+struct PlanetCelestialBodyRenderPlacementInputs {
+    cubey::math::Vec3 camera_render_position_m{0.0F, 0.0F, 0.0F};
+    float near_plane_m = 1.0F;
+    float far_plane_m = 1000.0F;
+    float angular_radius_scale = 1.0F;
+    float shell_distance_fraction = 0.58F;
+};
+
+struct PlanetCelestialBodyRenderPlacement {
+    bool visible = false;
+    cubey::math::Vec3 center_render_m{0.0F, 0.0F, 0.0F};
+    float radius_render_m = 0.0F;
+    float shell_distance_m = 0.0F;
+    float angular_radius_rad = 0.0F;
 };
 
 struct PlanetSolarTime {
@@ -109,6 +142,12 @@ struct PlanetSkyFramePipelineConfig {
 void planet_solar_time_advance(PlanetSolarTime& time, double delta_seconds);
 [[nodiscard]] PlanetCelestialSystem planet_celestial_system_from_solar_time(
     const PlanetSolarTime& time, const PlanetSolarSystemConfig& solar = {});
+[[nodiscard]] PlanetCelestialBody
+planet_celestial_sun_body(const PlanetCelestialSystem& celestial);
+[[nodiscard]] PlanetCelestialBody
+planet_celestial_moon_body(const PlanetCelestialSystem& celestial);
+[[nodiscard]] PlanetCelestialBodyRenderPlacement planet_celestial_body_render_placement(
+    const PlanetCelestialBody& body, const PlanetCelestialBodyRenderPlacementInputs& inputs);
 [[nodiscard]] PlanetCelestialLighting
 planet_celestial_lighting(const PlanetCelestialSystem& celestial);
 [[nodiscard]] PlanetSkyFrameUniforms planet_sky_frame_uniforms(

@@ -26,6 +26,10 @@ enum class PlanetCelestialBinding : std::uint32_t {
     return glm::normalize(direction);
 }
 
+[[nodiscard]] bool finite_positive(float value) {
+    return std::isfinite(value) && value > 0.0F;
+}
+
 [[nodiscard]] float wrap_unit(float value) {
     float wrapped = std::fmod(value, 1.0F);
     if (wrapped < 0.0F) {
@@ -147,6 +151,58 @@ PlanetCelestialSystem planet_celestial_system_from_solar_time(
         .planet_rotation_angle_rad = rotation_angle,
         .planet_orbit_angle_rad = orbit_angle,
         .moon_orbit_angle_rad = moon_orbit_angle,
+    };
+}
+
+PlanetCelestialBody planet_celestial_sun_body(const PlanetCelestialSystem& celestial) {
+    return {
+        .type = PlanetCelestialBodyType::Sun,
+        .visible = celestial.sun.visible,
+        .direction = normalized_or_up(celestial.sun.direction),
+        .color = celestial.sun.color,
+        .intensity = celestial.sun.intensity,
+        .angular_radius_rad = celestial.sun.angular_radius_rad,
+        .distance_m = celestial.sun.distance_m,
+        .radius_m = celestial.sun.radius_m,
+        .phase_fraction = 1.0F,
+    };
+}
+
+PlanetCelestialBody planet_celestial_moon_body(const PlanetCelestialSystem& celestial) {
+    return {
+        .type = PlanetCelestialBodyType::Moon,
+        .visible = celestial.moon.visible,
+        .direction = normalized_or_up(celestial.moon.direction),
+        .color = celestial.moon.color,
+        .intensity = celestial.moon.intensity,
+        .angular_radius_rad = celestial.moon.angular_radius_rad,
+        .distance_m = celestial.moon.distance_m,
+        .radius_m = celestial.moon.radius_m,
+        .phase_fraction = celestial.moon.phase_fraction,
+    };
+}
+
+PlanetCelestialBodyRenderPlacement planet_celestial_body_render_placement(
+    const PlanetCelestialBody& body, const PlanetCelestialBodyRenderPlacementInputs& inputs) {
+    const float near_plane = std::max(inputs.near_plane_m, 0.001F);
+    const float far_plane = std::max(inputs.far_plane_m, near_plane + 1.0F);
+    const float shell_distance =
+        std::clamp(far_plane * std::clamp(inputs.shell_distance_fraction, 0.10F, 0.90F),
+                   near_plane * 4.0F, far_plane * 0.90F);
+    const float scaled_angular_radius =
+        std::clamp(body.angular_radius_rad * std::max(inputs.angular_radius_scale, 0.0F),
+                   0.00001F, 0.35F);
+    const float render_radius = std::tan(scaled_angular_radius) * shell_distance;
+    const bool visible =
+        body.visible && finite_positive(body.angular_radius_rad) && finite_positive(render_radius);
+
+    return {
+        .visible = visible,
+        .center_render_m =
+            inputs.camera_render_position_m + normalized_or_up(body.direction) * shell_distance,
+        .radius_render_m = visible ? render_radius : 0.0F,
+        .shell_distance_m = shell_distance,
+        .angular_radius_rad = scaled_angular_radius,
     };
 }
 

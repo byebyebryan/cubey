@@ -73,6 +73,56 @@ void test_celestial_lighting_uses_celestial_direction() {
     require(lighting.ambient_intensity > 0.0F, "planet lighting should include local ambient");
 }
 
+void test_celestial_body_conversion_preserves_moon_state() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    celestial.moon.direction = glm::normalize(cubey::math::Vec3{0.20F, 0.30F, 0.93F});
+    celestial.moon.color = {0.50F, 0.60F, 0.70F};
+    celestial.moon.angular_radius_rad = 0.006F;
+    celestial.moon.distance_m = 12.0F;
+    celestial.moon.radius_m = 0.25F;
+    celestial.moon.phase_fraction = 0.33F;
+
+    const cubey::projects::planet::PlanetCelestialBody moon =
+        cubey::projects::planet::planet_celestial_moon_body(celestial);
+
+    require(moon.type == cubey::projects::planet::PlanetCelestialBodyType::Moon,
+            "moon body conversion should tag the body type");
+    require_vec_near(moon.direction, celestial.moon.direction,
+                     "moon body conversion should preserve direction");
+    require_near(moon.angular_radius_rad, celestial.moon.angular_radius_rad, 0.000001F,
+                 "moon body conversion should preserve angular radius");
+    require_near(moon.phase_fraction, celestial.moon.phase_fraction, 0.000001F,
+                 "moon body conversion should preserve phase");
+}
+
+void test_celestial_body_render_placement_preserves_apparent_size() {
+    cubey::projects::planet::PlanetCelestialBody moon{};
+    moon.direction = glm::normalize(cubey::math::Vec3{0.0F, 0.25F, -1.0F});
+    moon.angular_radius_rad = 0.004F;
+
+    const cubey::projects::planet::PlanetCelestialBodyRenderPlacement placement =
+        cubey::projects::planet::planet_celestial_body_render_placement(
+            moon,
+            {
+                .camera_render_position_m = {10.0F, 20.0F, 30.0F},
+                .near_plane_m = 1.0F,
+                .far_plane_m = 1000.0F,
+                .angular_radius_scale = 4.0F,
+                .shell_distance_fraction = 0.5F,
+            });
+
+    require(placement.visible, "visible celestial body should produce visible placement");
+    require_near(placement.shell_distance_m, 500.0F, 0.001F,
+                 "render placement should use configured shell fraction");
+    require_near(placement.radius_render_m / placement.shell_distance_m,
+                 std::tan(moon.angular_radius_rad * 4.0F), 0.000001F,
+                 "render placement radius should preserve scaled angular size");
+    require_vec_near(glm::normalize(placement.center_render_m - cubey::math::Vec3{10.0F, 20.0F,
+                                                                                  30.0F}),
+                     moon.direction,
+                     "render placement should keep the body on its celestial ray");
+}
+
 void test_sky_frame_uniforms_pack_sun_state() {
     cubey::projects::planet::PlanetCelestialSystem celestial{};
     celestial.sun.direction = glm::normalize(cubey::math::Vec3{0.15F, 0.85F, -0.50F});
@@ -128,6 +178,8 @@ int main() {
         test_solar_time_drives_planet_rotation_and_moon_orbit();
         test_solar_time_advance_wraps_hours_and_days();
         test_celestial_lighting_uses_celestial_direction();
+        test_celestial_body_conversion_preserves_moon_state();
+        test_celestial_body_render_placement_preserves_apparent_size();
         test_sky_frame_uniforms_pack_sun_state();
         test_sky_pass_writes_opaque_sky();
         return 0;
