@@ -147,16 +147,18 @@ uses the same contract:
 Current implementation notes:
 
 - Patch addresses are explicit `face/level/x/y` ids. Selected patch instances
-  carry that id plus screen-error metrics, and the CPU mesh builder derives UV
-  bounds from the id instead of owning LOD addressing.
+  carry that id plus screen-error metrics. The live renderer now draws those
+  instances through one reusable patch grid, and both CPU diagnostics and shader
+  mapping derive UV bounds from the id instead of owning LOD addressing.
 - LOD is coverage-first. View and horizon culling stop refinement, but the
   parent patch remains selected so rotating while rebuilds are deferred does not
   reveal holes.
 - Skirts are the active transition policy. Morph bands remain a later quality
   pass once terrain and ocean layers put more pressure on parent/child seams.
-- Placeholder planet terrain is project-local CPU displacement along the sphere
-  normal. It exists to pressure patch identity, normals, LOD diagnostics, and
-  seams before connecting real procedural terrain or ocean data.
+- Placeholder planet terrain is project-local shader displacement along the
+  sphere normal, with the CPU mesh builder retained for diagnostics and tests.
+  It exists to pressure patch identity, normals, LOD diagnostics, and seams
+  before connecting real procedural terrain or ocean data.
 
 ## Suggested Sequence
 
