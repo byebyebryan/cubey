@@ -15,7 +15,9 @@ Start `projects/planet` as a visible planet foundation project:
 - atmosphere altitude, horizon, and projection derived from the same frame;
 - planet surface LOD with wireframe and patch diagnostics;
 - shared atmosphere background and surface lighting before ocean complexity
-  arrives.
+  arrives;
+- shared HDR scene color and fullscreen post so planet uses the same display
+  path as the PBR/ocean renderers.
 
 Ocean should be ported into `planet` when the planet frame and LOD contract are
 stable enough to host it. `projects/ocean` remains the focused local-water
@@ -140,7 +142,8 @@ uses the same contract:
 - `PlanetSurfacePatch`: face id, quadtree coordinates, level, local bounds,
   geometric error, bounding volume, and render-grid parameters.
 - `PlanetLodDiagnostics`: selected patch counts, visible levels, screen-error
-  ranges, cell-size ranges, triangle totals, and seam/morph status.
+  ranges, transition pressure, cell-size ranges, triangle totals, and seam/morph
+  status.
 - `PlanetSurfaceMapping`: CPU and shader vocabulary for mapping a patch sample
   to sphere/ellipsoid position, local up, render position, and sample
   coordinates.
@@ -168,18 +171,24 @@ Current implementation notes:
   reveal holes.
 - Skirts are the active transition policy. Morph bands remain a later quality
   pass once terrain and ocean layers put more pressure on parent/child seams.
+  The `lod-transition` debug view and transition-pressure diagnostics make the
+  threshold pressure visible before adding a morph implementation.
 - Placeholder planet terrain is project-local shader displacement along the
   sphere normal, with the CPU mesh builder retained for diagnostics and tests.
   CPU and shader paths now go through a named project-local surface-field
-  contract: height, world position, normal, normalized elevation, normalized
-  slope, and a simple material band. It now has broad, mid-ridge, and
-  fine-detail bands plus patch-cell-scaled normal sampling. It exists to
-  pressure patch identity, normals, LOD diagnostics, seams, and material
-  vocabulary before connecting real procedural terrain or ocean data.
+  contract: height, world position, normal, height above sea level, water depth,
+  normalized bathymetry, shoreline mask, normalized elevation, normalized slope,
+  and a simple material band. It now has broad, mid-ridge, and fine-detail bands
+  plus patch-cell-scaled normal sampling. Water classification is based on
+  explicit sea level; bathymetry and shoreline are diagnostic fields, not yet a
+  separate ocean layer. This exists to pressure patch identity, normals, LOD
+  diagnostics, seams, and material vocabulary before connecting real procedural
+  terrain or ocean data.
 - Current debug views cover patch identity, LOD level, screen error, seam
   skirts, approximate metric cell edge, normalized terrain height, normalized
-  terrain slope, and terrain material bands. These are diagnostic tools, not
-  final planet visualization.
+  terrain slope, terrain material bands, bathymetry, shoreline, and LOD
+  transition pressure. These are diagnostic tools, not final planet
+  visualization.
 - Planet rendering now uses the shared atmosphere model instead of a
   project-local sky color. Generated moon and night-sky atlas textures feed the
   background pass, and the same run state resolves solar time, sun direction,
@@ -190,17 +199,21 @@ Current implementation notes:
   remain the primary workflow.
 - The planet surface frame has moved out of push constants. Per-frame uniform
   data now carries view/projection, render origin, radius, terrain options,
-  camera render position, horizon distance, atmosphere light, and haze fields.
-  Patch identity and screen-error remain per-instance data. This keeps room for
-  planet-scale frame contracts without repeatedly repacking the 128-byte push
-  constant budget.
+  sea-level/bathymetry/shoreline options, camera render position, horizon
+  distance, atmosphere light, and haze fields. Patch identity and screen-error
+  remain per-instance data. This keeps room for planet-scale frame contracts
+  without repeatedly repacking the 128-byte push constant budget.
+- Planet rendering now writes atmosphere and surface passes into an HDR
+  transient scene color target and then uses the shared post pass for exposure,
+  tone mapping, and output encoding. This aligns planet with the renderer-wide
+  linear HDR contract while keeping ocean integration deferred.
 
 Deferred surface-field work:
 
-- bathymetry and sea-level-aware sampling;
 - streamed field tiles and cache residency;
 - material textures, biome masks, and erosion/weathering inputs;
-- shoreline masks and terrain/ocean render ordering;
+- real bathymetry sources, shoreline interaction, and terrain/ocean render
+  ordering;
 - ocean attached as a planet surface layer once these contracts are stable.
 
 ## Suggested Sequence

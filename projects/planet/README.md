@@ -17,16 +17,21 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view terrain-height
 ./build/dev/projects/planet/planet --debug-view terrain-slope
 ./build/dev/projects/planet/planet --debug-view terrain-material
+./build/dev/projects/planet/planet --debug-view lod-transition
+./build/dev/projects/planet/planet --debug-view bathymetry
+./build/dev/projects/planet/planet --debug-view shoreline
 ./build/dev/projects/planet/planet --debug-view seams
 ./build/dev/projects/planet/planet --planet-max-lod-level 5 --planet-lod-target-edge-px 10
+./build/dev/projects/planet/planet --planet-sea-level-m 0 --planet-shoreline-width-m 1500
 ```
 
 Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
-`screen-error`, `seams`, `cell-edge`, `terrain-height`, `terrain-slope`, and
-`terrain-material`. The CPU LOD planner selects camera-relative cube-sphere
-patch instances by projected edge size and reports patch, LOD, refinement cull,
-screen-error, edge-length, per-LOD
-cell-size, and skirt ranges in the UI. The live renderer draws those selected
+`screen-error`, `lod-transition`, `seams`, `cell-edge`, `terrain-height`,
+`terrain-slope`, `terrain-material`, `bathymetry`, and `shoreline`. The CPU LOD
+planner selects camera-relative cube-sphere patch instances by projected edge
+size and reports patch, LOD, refinement cull, screen-error, transition pressure,
+edge-length, per-LOD cell-size, and skirt ranges in the UI. The live renderer
+draws those selected
 patches with one reusable GPU patch grid plus per-frame-slot instance buffers
 carrying `face/level/x/y` identity. Live instanced rendering supports up to LOD
 6, defaults to LOD 5 with a 10 px target edge, and rejects selections above the
@@ -49,17 +54,19 @@ streaming work.
 The terrain controls are placeholders for contract pressure, not the final
 terrain system. Terrain now goes through a project-local surface-field contract:
 CPU and shader paths sample deterministic height, world position, normal,
-normalized elevation, normalized slope, and a simple elevation/slope material
-band. The live renderer displaces the reusable grid in the vertex shader with
-deterministic multi-band terrain: broad shape, mid ridges, and fine detail.
-Normals are recomputed from a patch-cell-scaled sample step so higher LOD
-reveals smaller terrain features instead of only smoothing the mesh. The CPU
-mesh builder remains as a diagnostic/test path for the same patch contracts.
+height above sea level, water depth, normalized bathymetry, shoreline mask,
+normalized elevation, normalized slope, and a simple material band. The live
+renderer displaces the reusable grid in the vertex shader with deterministic
+multi-band terrain: broad shape, mid ridges, and fine detail. Normals are
+recomputed from a patch-cell-scaled sample step so higher LOD reveals smaller
+terrain features instead of only smoothing the mesh. The CPU mesh builder
+remains as a diagnostic/test path for the same patch contracts.
 
 The current material bands are intentionally simple: water, lowland, highland,
-and snow. They make terrain structure easier to inspect and give future
-bathymetry, biome, and ocean-layer work a named handoff point. They are not yet
-streamed material textures, biome masks, or final art direction.
+and snow. Water is classified from explicit sea level rather than a normalized
+elevation threshold. The bathymetry and shoreline fields are diagnostic
+contracts for future terrain/ocean handoff; they are not yet streamed data,
+seafloor rendering, surf, biome masks, or final art direction.
 
 Atmosphere is now part of the planet frame instead of a separate visual spike.
 The project uses the shared atmosphere run state, generated moon/night-sky atlas
@@ -69,7 +76,10 @@ from the same frame. The UI exposes the shared atmosphere controls collapsed by
 default plus read-only diagnostics for time, sun position, camera altitude,
 horizon, and generated atlas status. The surface shader receives frame data
 through a descriptor-backed uniform instead of push constants, and blends final
-terrain toward atmosphere-tinted haze near the horizon.
+terrain toward atmosphere-tinted haze near the horizon. The scene renders into
+a linear HDR scene color target and uses the shared fullscreen post pass for
+exposure, tone mapping, and output encoding before writing the swapchain or
+headless target.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it
