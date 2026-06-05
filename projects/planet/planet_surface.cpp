@@ -51,11 +51,153 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     };
 }
 
+[[nodiscard]] float lerp(float a, float b, float t) {
+    return a + (b - a) * t;
+}
+
+[[nodiscard]] float smootherstep(float value) {
+    const float x = std::clamp(value, 0.0F, 1.0F);
+    return x * x * x * (x * (x * 6.0F - 15.0F) + 10.0F);
+}
+
+[[nodiscard]] std::uint32_t hash_u32(std::int32_t x, std::int32_t y, std::int32_t z,
+                                     std::uint32_t seed) {
+    std::uint32_t value = seed;
+    value ^= static_cast<std::uint32_t>(x) * 0x9e3779b9U;
+    value ^= static_cast<std::uint32_t>(y) * 0x85ebca6bU;
+    value ^= static_cast<std::uint32_t>(z) * 0xc2b2ae35U;
+    value ^= value >> 16U;
+    value *= 0x7feb352dU;
+    value ^= value >> 15U;
+    value *= 0x846ca68bU;
+    value ^= value >> 16U;
+    return value;
+}
+
+[[nodiscard]] float hash01(std::int32_t x, std::int32_t y, std::int32_t z, std::uint32_t seed) {
+    constexpr float kInv24Bit = 1.0F / 16777215.0F;
+    return static_cast<float>(hash_u32(x, y, z, seed) >> 8U) * kInv24Bit;
+}
+
+[[nodiscard]] float value_noise(cubey::math::Vec3 p, std::uint32_t seed) {
+    const auto x0 = static_cast<std::int32_t>(std::floor(p.x));
+    const auto y0 = static_cast<std::int32_t>(std::floor(p.y));
+    const auto z0 = static_cast<std::int32_t>(std::floor(p.z));
+    const float tx = smootherstep(p.x - static_cast<float>(x0));
+    const float ty = smootherstep(p.y - static_cast<float>(y0));
+    const float tz = smootherstep(p.z - static_cast<float>(z0));
+
+    const auto lattice = [seed](std::int32_t x, std::int32_t y, std::int32_t z) {
+        return hash01(x, y, z, seed) * 2.0F - 1.0F;
+    };
+    const float x00 = lerp(lattice(x0, y0, z0), lattice(x0 + 1, y0, z0), tx);
+    const float x10 = lerp(lattice(x0, y0 + 1, z0), lattice(x0 + 1, y0 + 1, z0), tx);
+    const float x01 = lerp(lattice(x0, y0, z0 + 1), lattice(x0 + 1, y0, z0 + 1), tx);
+    const float x11 = lerp(lattice(x0, y0 + 1, z0 + 1), lattice(x0 + 1, y0 + 1, z0 + 1), tx);
+    return lerp(lerp(x00, x10, ty), lerp(x01, x11, ty), tz);
+}
+
+[[nodiscard]] float fbm(cubey::math::Vec3 p, std::uint32_t seed, std::uint32_t octaves) {
+    float amplitude = 0.5F;
+    float frequency = 1.0F;
+    float sum = 0.0F;
+    float weight = 0.0F;
+    for (std::uint32_t octave = 0; octave < octaves; ++octave) {
+        sum += value_noise(p * frequency, seed + octave * 1013U) * amplitude;
+        weight += amplitude;
+        frequency *= 2.03F;
+        amplitude *= 0.5F;
+    }
+    return weight > 0.0F ? sum / weight : 0.0F;
+}
+
+[[nodiscard]] float terrain_height_m(const PlanetConfig& config, cubey::math::Vec3 normal) {
+    if (!config.terrain_enabled || config.terrain_height_scale_m <= 0.0F) {
+        return 0.0F;
+    }
+    const cubey::math::Vec3 p = normal * config.terrain_noise_scale;
+    const float broad = fbm(p + cubey::math::Vec3{1.7F, -3.2F, 5.1F}, config.terrain_seed, 4U);
+    const float ridge_source =
+        fbm(p * 1.85F + cubey::math::Vec3{-4.0F, 2.4F, 8.5F}, config.terrain_seed + 37U, 4U);
+    const float ridged = 1.0F - std::abs(ridge_source);
+    const float height = (broad * 0.68F + (ridged - 0.48F) * 0.64F) * config.terrain_height_scale_m;
+    return std::clamp(height, -config.terrain_height_scale_m, config.terrain_height_scale_m);
+}
+
+[[nodiscard]] cubey::math::DVec3 terrain_world_position(const PlanetConfig& config,
+                                                        std::uint32_t face, float u, float v) {
+    const cubey::math::Vec3 normal = glm::normalize(cube_face_point(face, u, v));
+    const double radius = static_cast<double>(config.radius_m) +
+                          static_cast<double>(terrain_height_m(config, normal));
+    return {
+        static_cast<double>(normal.x) * radius,
+        static_cast<double>(normal.y) * radius,
+        static_cast<double>(normal.z) * radius,
+    };
+}
+
+[[nodiscard]] cubey::math::Vec3 terrain_normal(const PlanetConfig& config, std::uint32_t face,
+                                               float u, float v) {
+    const cubey::math::Vec3 base_normal = glm::normalize(cube_face_point(face, u, v));
+    if (!config.terrain_enabled || config.terrain_height_scale_m <= 0.0F) {
+        return base_normal;
+    }
+
+    constexpr float kNormalStep = 0.0015F;
+    const float u0 = std::clamp(u - kNormalStep, -1.0F, 1.0F);
+    const float u1 = std::clamp(u + kNormalStep, -1.0F, 1.0F);
+    const float v0 = std::clamp(v - kNormalStep, -1.0F, 1.0F);
+    const float v1 = std::clamp(v + kNormalStep, -1.0F, 1.0F);
+    const cubey::math::DVec3 tangent_u =
+        terrain_world_position(config, face, u1, v) - terrain_world_position(config, face, u0, v);
+    const cubey::math::DVec3 tangent_v =
+        terrain_world_position(config, face, u, v1) - terrain_world_position(config, face, u, v0);
+    cubey::math::DVec3 normal_d = glm::cross(tangent_u, tangent_v);
+    if (glm::length(normal_d) <= 0.0000001) {
+        return base_normal;
+    }
+    normal_d = glm::normalize(normal_d);
+    cubey::math::Vec3 normal{
+        static_cast<float>(normal_d.x),
+        static_cast<float>(normal_d.y),
+        static_cast<float>(normal_d.z),
+    };
+    if (glm::dot(normal, base_normal) < 0.0F) {
+        normal = -normal;
+    }
+    return glm::normalize(normal);
+}
+
 [[nodiscard]] PrimitiveVec3 to_primitive(cubey::math::Vec3 value) {
     return {value.x, value.y, value.z};
 }
 
-[[nodiscard]] PrimitiveVec3 final_color(cubey::math::Vec3 normal) {
+[[nodiscard]] PrimitiveVec3 final_color(const PlanetConfig& config, cubey::math::Vec3 normal,
+                                        float height_m) {
+    if (config.terrain_enabled && config.terrain_height_scale_m > 0.0F) {
+        const float t =
+            std::clamp(height_m / std::max(config.terrain_height_scale_m, 1.0F), -1.0F, 1.0F);
+        if (t < -0.15F) {
+            return {0.035F, 0.105F, 0.190F};
+        }
+        if (t < 0.22F) {
+            const float blend = (t + 0.15F) / 0.37F;
+            return {
+                lerp(0.070F, 0.120F, blend),
+                lerp(0.170F, 0.280F, blend),
+                lerp(0.130F, 0.100F, blend),
+            };
+        }
+        if (t < 0.62F) {
+            const float blend = (t - 0.22F) / 0.40F;
+            return {
+                lerp(0.130F, 0.360F, blend),
+                lerp(0.260F, 0.310F, blend),
+                lerp(0.110F, 0.230F, blend),
+            };
+        }
+        return {0.66F, 0.70F, 0.76F};
+    }
     const float latitude = normal.y * 0.5F + 0.5F;
     return {
         0.035F + 0.030F * latitude,
@@ -97,7 +239,7 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
 }
 
 [[nodiscard]] PrimitiveVec3 seam_surface_color(cubey::math::Vec3 normal) {
-    const PrimitiveVec3 color = final_color(normal);
+    const PrimitiveVec3 color = final_color(PlanetConfig{}, normal, 0.0F);
     return {
         color[0] * 0.28F,
         color[1] * 0.34F,
@@ -109,15 +251,15 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     if (config.debug_view == PlanetDebugView::Seams) {
         return {1.0F, 0.82F, 0.22F};
     }
-    return final_color(normal);
+    return final_color(config, normal, 0.0F);
 }
 
 [[nodiscard]] PrimitiveVec3 vertex_color(const PlanetConfig& config,
                                          const PlanetSurfacePatchInstance& patch,
-                                         cubey::math::Vec3 normal) {
+                                         cubey::math::Vec3 normal, float height_m) {
     switch (config.debug_view) {
     case PlanetDebugView::Final:
-        return final_color(normal);
+        return final_color(config, normal, height_m);
     case PlanetDebugView::FaceId:
         return kFaceColors[patch.id.face];
     case PlanetDebugView::PatchId:
@@ -129,7 +271,7 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     case PlanetDebugView::Seams:
         return seam_surface_color(normal);
     }
-    return final_color(normal);
+    return final_color(config, normal, height_m);
 }
 
 void update_edge_range(PlanetSurfaceDiagnostics& diagnostics, cubey::math::DVec3 a,
@@ -501,14 +643,17 @@ void append_patch_mesh(const PlanetConfig& config, const PlanetFrame& frame,
         for (std::uint32_t x = 0; x <= patch_resolution; ++x) {
             const float tu = static_cast<float>(x) / static_cast<float>(patch_resolution);
             const float u = bounds.u0 + (bounds.u1 - bounds.u0) * tu;
-            const cubey::math::Vec3 normal = glm::normalize(cube_face_point(patch.id.face, u, v));
+            const cubey::math::Vec3 sphere_normal =
+                glm::normalize(cube_face_point(patch.id.face, u, v));
+            const cubey::math::Vec3 normal = terrain_normal(config, patch.id.face, u, v);
+            const float height_m = terrain_height_m(config, sphere_normal);
             const cubey::math::DVec3 world_position =
-                sphere_world_position(config, patch.id.face, u, v);
+                terrain_world_position(config, patch.id.face, u, v);
             const cubey::math::Vec3 render_position =
                 planet_frame_world_to_render_m(frame, world_position);
             result.mesh.vertices.push_back(VertexPositionColorNormalUv{
                 .position = to_primitive(render_position),
-                .color = vertex_color(config, patch, normal),
+                .color = vertex_color(config, patch, normal, height_m),
                 .normal = to_primitive(normal),
                 .uv = PrimitiveVec2{tu, tv},
             });

@@ -1,5 +1,6 @@
 #include "planet_config.h"
 
+#include <cmath>
 #include <stdexcept>
 #include <string>
 
@@ -93,6 +94,12 @@ void validate_planet_config(const PlanetConfig& config) {
     }
     if (config.skirt_depth_scale <= 0.0F) {
         throw std::runtime_error("planet skirt depth scale must be positive");
+    }
+    if (!std::isfinite(config.terrain_height_scale_m) || config.terrain_height_scale_m < 0.0F) {
+        throw std::runtime_error("planet terrain height scale must be finite and nonnegative");
+    }
+    if (!std::isfinite(config.terrain_noise_scale) || config.terrain_noise_scale <= 0.0F) {
+        throw std::runtime_error("planet terrain noise scale must be finite and positive");
     }
     std::uint64_t patch_multiplier = 1;
     for (std::uint32_t level = 0; level < config.max_lod_level; ++level) {

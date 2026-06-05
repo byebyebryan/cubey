@@ -271,6 +271,16 @@ class PlanetApp {
         ImGui::Checkbox("Patch Skirts", &edit_planet_config_.skirts_enabled);
         ImGui::InputFloat("Skirt Depth Scale", &edit_planet_config_.skirt_depth_scale, 0.0F, 0.0F,
                           "%.2f");
+        ImGui::Checkbox("Terrain", &edit_planet_config_.terrain_enabled);
+        ImGui::InputFloat("Terrain Height (m)", &edit_planet_config_.terrain_height_scale_m, 0.0F,
+                          0.0F, "%.0f");
+        ImGui::InputFloat("Terrain Noise Scale", &edit_planet_config_.terrain_noise_scale, 0.0F,
+                          0.0F, "%.2f");
+        int terrain_seed = static_cast<int>(edit_planet_config_.terrain_seed);
+        if (ImGui::InputInt("Terrain Seed", &terrain_seed)) {
+            edit_planet_config_.terrain_seed =
+                static_cast<std::uint32_t>(std::max(terrain_seed, 0));
+        }
 
         if (edit_planet_config_ != config_before_edit) {
             planet_config_apply_pending_ = edit_planet_config_ != planet_config_;

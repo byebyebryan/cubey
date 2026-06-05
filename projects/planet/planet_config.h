@@ -14,6 +14,9 @@ inline constexpr std::uint32_t kPlanetDefaultPatchesPerFace = 2;
 inline constexpr std::uint32_t kPlanetDefaultPatchResolution = 16;
 inline constexpr std::uint32_t kPlanetDefaultMaxLodLevel = 1;
 inline constexpr float kPlanetDefaultLodTargetEdgePx = 24.0F;
+inline constexpr float kPlanetDefaultTerrainHeightScaleM = 12000.0F;
+inline constexpr float kPlanetDefaultTerrainNoiseScale = 2.5F;
+inline constexpr std::uint32_t kPlanetDefaultTerrainSeed = 1337U;
 
 enum class PlanetDebugView : std::uint8_t {
     Final,
@@ -36,6 +39,10 @@ struct PlanetConfig {
     bool wire_overlay = false;
     bool skirts_enabled = true;
     float skirt_depth_scale = 0.75F;
+    bool terrain_enabled = false;
+    float terrain_height_scale_m = kPlanetDefaultTerrainHeightScaleM;
+    float terrain_noise_scale = kPlanetDefaultTerrainNoiseScale;
+    std::uint32_t terrain_seed = kPlanetDefaultTerrainSeed;
 
     friend bool operator==(const PlanetConfig&, const PlanetConfig&) = default;
 };

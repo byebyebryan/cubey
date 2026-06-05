@@ -107,6 +107,64 @@ void test_planet_surface_vertices_stay_on_radius() {
     }
 }
 
+void test_planet_surface_terrain_displaces_within_height_bounds() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 8,
+        .max_lod_level = 0,
+        .skirts_enabled = false,
+        .terrain_enabled = true,
+        .terrain_height_scale_m = 80.0F,
+        .terrain_noise_scale = 3.0F,
+        .terrain_seed = 42U,
+    };
+    const cubey::projects::planet::PlanetSurfaceBuildResult result =
+        cubey::projects::planet::make_planet_surface_mesh(config);
+
+    bool found_displaced_vertex = false;
+    for (const cubey::render::VertexPositionColorNormalUv& vertex : result.mesh.vertices) {
+        const float radius = std::sqrt(vertex.position[0] * vertex.position[0] +
+                                       vertex.position[1] * vertex.position[1] +
+                                       vertex.position[2] * vertex.position[2]);
+        require(radius >= config.radius_m - config.terrain_height_scale_m - 0.1F &&
+                    radius <= config.radius_m + config.terrain_height_scale_m + 0.1F,
+                "planet terrain vertices should stay within configured height bounds");
+        if (std::abs(radius - config.radius_m) > 0.5F) {
+            found_displaced_vertex = true;
+        }
+    }
+    require(found_displaced_vertex, "planet terrain should visibly displace at least one vertex");
+}
+
+void test_planet_surface_terrain_normals_are_finite_and_outward() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 8,
+        .max_lod_level = 0,
+        .skirts_enabled = false,
+        .terrain_enabled = true,
+        .terrain_height_scale_m = 60.0F,
+        .terrain_noise_scale = 2.5F,
+        .terrain_seed = 99U,
+    };
+    const cubey::projects::planet::PlanetSurfaceBuildResult result =
+        cubey::projects::planet::make_planet_surface_mesh(config);
+
+    for (const cubey::render::VertexPositionColorNormalUv& vertex : result.mesh.vertices) {
+        const cubey::math::Vec3 position{vertex.position[0], vertex.position[1],
+                                         vertex.position[2]};
+        const cubey::math::Vec3 normal{vertex.normal[0], vertex.normal[1], vertex.normal[2]};
+        require(std::isfinite(normal.x) && std::isfinite(normal.y) && std::isfinite(normal.z),
+                "planet terrain normals should be finite");
+        require(glm::length(normal) > 0.99F && glm::length(normal) < 1.01F,
+                "planet terrain normals should be normalized");
+        require(glm::dot(glm::normalize(position), normal) > 0.25F,
+                "planet terrain normals should remain roughly outward-facing");
+    }
+}
+
 void test_planet_surface_triangles_are_wound_outward() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1200.0F,
@@ -388,6 +446,8 @@ int main() {
         test_planet_surface_child_id_derives_parent_quadrants();
         test_planet_surface_builds_expected_patch_counts();
         test_planet_surface_vertices_stay_on_radius();
+        test_planet_surface_terrain_displaces_within_height_bounds();
+        test_planet_surface_terrain_normals_are_finite_and_outward();
         test_planet_surface_triangles_are_wound_outward();
         test_planet_surface_lod_subdivides_near_camera_patches();
         test_planet_surface_can_build_camera_relative_vertices();
