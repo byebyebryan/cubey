@@ -1,4 +1,5 @@
 #include "planet_surface.h"
+#include "planet_surface_field.h"
 
 #include <cmath>
 #include <cstddef>
@@ -178,6 +179,89 @@ void test_planet_surface_terrain_detail_controls_change_shape() {
         }
     }
     require(found_changed_vertex, "terrain detail controls should affect generated terrain shape");
+}
+
+void test_planet_surface_field_disabled_terrain_returns_sphere_sample() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 4,
+        .max_lod_level = 0,
+        .terrain_enabled = false,
+    };
+    const cubey::projects::planet::PlanetSurfaceSample sample =
+        cubey::projects::planet::planet_surface_sample_field(
+            config, cubey::projects::planet::PlanetSurfacePatchId{.face = 4}, 0.25F, -0.5F);
+
+    require_close(sample.height_m, 0.0F, "disabled terrain field should have zero height");
+    require_close(sample.normalized_elevation, 0.0F,
+                  "disabled terrain field should have zero normalized elevation");
+    require_close(sample.normalized_slope, 0.0F,
+                  "disabled terrain field should have zero normalized slope");
+    require(glm::length(sample.normal - sample.sphere_normal) < 0.0001F,
+            "disabled terrain field normal should match sphere normal");
+    require(std::abs(static_cast<float>(glm::length(sample.world_position_m)) - config.radius_m) <
+                0.1F,
+            "disabled terrain field position should stay on planet radius");
+}
+
+void test_planet_surface_field_is_deterministic_for_seed() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 4,
+        .max_lod_level = 0,
+        .terrain_enabled = true,
+        .terrain_height_scale_m = 80.0F,
+        .terrain_noise_scale = 3.0F,
+        .terrain_seed = 42U,
+    };
+    const cubey::projects::planet::PlanetSurfacePatchId id{.face = 4};
+
+    const cubey::projects::planet::PlanetSurfaceSample a =
+        cubey::projects::planet::planet_surface_sample_field(config, id, 0.25F, -0.5F);
+    const cubey::projects::planet::PlanetSurfaceSample b =
+        cubey::projects::planet::planet_surface_sample_field(config, id, 0.25F, -0.5F);
+    cubey::projects::planet::PlanetConfig changed_seed = config;
+    changed_seed.terrain_seed = 43U;
+    const cubey::projects::planet::PlanetSurfaceSample c =
+        cubey::projects::planet::planet_surface_sample_field(changed_seed, id, 0.25F, -0.5F);
+
+    require_close(a.height_m, b.height_m,
+                  "planet surface field should be deterministic for the same seed");
+    require(std::abs(a.height_m - c.height_m) > 0.0001F,
+            "planet surface field should respond to seed changes");
+}
+
+void test_planet_surface_field_reports_bounded_height_normal_and_slope() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 8,
+        .max_lod_level = 0,
+        .terrain_enabled = true,
+        .terrain_height_scale_m = 80.0F,
+        .terrain_noise_scale = 3.0F,
+        .terrain_seed = 42U,
+    };
+    const cubey::projects::planet::PlanetSurfacePatchId id{.face = 2};
+    const cubey::projects::planet::PlanetSurfaceSample sample =
+        cubey::projects::planet::planet_surface_sample_field(config, id, -0.25F, 0.5F);
+
+    require(sample.height_m >= -config.terrain_height_scale_m &&
+                sample.height_m <= config.terrain_height_scale_m,
+            "planet surface field height should stay in configured bounds");
+    require(sample.normalized_elevation >= -1.0F && sample.normalized_elevation <= 1.0F,
+            "planet surface field normalized elevation should stay in range");
+    require(sample.normalized_slope >= 0.0F && sample.normalized_slope <= 1.0F,
+            "planet surface field normalized slope should stay in range");
+    require(std::isfinite(sample.normal.x) && std::isfinite(sample.normal.y) &&
+                std::isfinite(sample.normal.z),
+            "planet surface field normal should be finite");
+    require(glm::length(sample.normal) > 0.99F && glm::length(sample.normal) < 1.01F,
+            "planet surface field normal should be normalized");
+    require(glm::dot(sample.sphere_normal, sample.normal) > 0.25F,
+            "planet surface field normal should remain outward-facing");
 }
 
 void test_planet_surface_terrain_normals_are_finite_and_outward() {
@@ -702,6 +786,9 @@ int main() {
         test_planet_surface_vertices_stay_on_radius();
         test_planet_surface_terrain_displaces_within_height_bounds();
         test_planet_surface_terrain_detail_controls_change_shape();
+        test_planet_surface_field_disabled_terrain_returns_sphere_sample();
+        test_planet_surface_field_is_deterministic_for_seed();
+        test_planet_surface_field_reports_bounded_height_normal_and_slope();
         test_planet_surface_terrain_normals_are_finite_and_outward();
         test_planet_surface_refined_terrain_normals_are_finite_and_outward();
         test_planet_surface_triangles_are_wound_outward();

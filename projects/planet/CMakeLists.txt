@@ -16,6 +16,7 @@ cubey_add_app_target(
         planet_config.cpp
         planet_frame.cpp
         planet_surface.cpp
+        planet_surface_field.cpp
     SHADERS
         ${CUBEY_PLANET_SHADERS}
 )
@@ -41,6 +42,7 @@ if(BUILD_TESTING)
         planet_config.cpp
         planet_frame.cpp
         planet_surface.cpp
+        planet_surface_field.cpp
         planet_surface_tests.cpp
     )
     target_link_libraries(
