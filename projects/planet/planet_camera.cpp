@@ -109,7 +109,7 @@ cubey::Transform3D make_planet_camera_transform(const PlanetConfig& config,
     const cubey::Transform3D anchor_transform =
         planet_orbit_transform(state.distance_m, anchor_yaw, anchor_pitch);
     const cubey::math::Quat surface_rotation = surface_camera_rotation(
-        anchor_transform, state.yaw_radians - anchor_yaw, state.pitch_radians - anchor_pitch);
+        anchor_transform, state.yaw_radians - anchor_yaw, anchor_pitch - state.pitch_radians);
     return {
         .translation =
             orbit_transform.translation * (1.0F - blend) + anchor_transform.translation * blend,
