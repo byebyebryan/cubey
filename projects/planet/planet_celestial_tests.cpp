@@ -72,6 +72,46 @@ void test_celestial_lighting_uses_celestial_direction() {
                      "primary light should follow modeled sun direction");
 }
 
+void test_celestial_frame_uniforms_pack_sun_state() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    celestial.sun.direction = glm::normalize(cubey::math::Vec3{0.15F, 0.85F, -0.50F});
+    celestial.sun.color = {1.0F, 0.75F, 0.45F};
+    celestial.sun.intensity = 1.8F;
+    celestial.sun.angular_radius_rad = 0.012F;
+
+    const cubey::render::ViewRayBasis3D view_rays = cubey::render::view_ray_basis_3d(
+        cubey::math::identity_quat(), 1.5F, 1.0F);
+    const cubey::projects::planet::PlanetCelestialFrameUniforms uniforms =
+        cubey::projects::planet::planet_celestial_frame_uniforms(
+            celestial, {
+                           .view_rays = view_rays,
+                       });
+
+    require(uniforms.camera_right_aspect == view_rays.right_aspect,
+            "celestial frame uniforms should pack view right/aspect");
+    require(uniforms.camera_forward_enabled.w == 1.0F,
+            "celestial frame uniforms should pack sun visibility");
+    require_vec_near({uniforms.sun_direction_radius.x, uniforms.sun_direction_radius.y,
+                      uniforms.sun_direction_radius.z},
+                     celestial.sun.direction,
+                     "celestial frame uniforms should pack sun direction");
+    require_near(uniforms.sun_direction_radius.w, celestial.sun.angular_radius_rad, 0.000001F,
+                 "celestial frame uniforms should pack sun angular radius");
+    require_near(uniforms.sun_color_intensity.w, celestial.sun.intensity, 0.000001F,
+                 "celestial frame uniforms should pack sun intensity");
+}
+
+void test_celestial_pass_uses_additive_blend() {
+    const cubey::render::MaterialPassInfo pass =
+        cubey::projects::planet::planet_celestial_pass_info();
+    require(pass.blend_enable, "celestial pass should blend over atmosphere");
+    require(pass.src_color_blend_factor == VK_BLEND_FACTOR_ONE &&
+                pass.dst_color_blend_factor == VK_BLEND_FACTOR_ONE,
+            "celestial pass should add HDR sun radiance");
+    require(!pass.depth_test && !pass.depth_write,
+            "celestial pass should not own planet depth occlusion");
+}
+
 } // namespace
 
 int main() {
@@ -79,6 +119,8 @@ int main() {
         test_celestial_sun_derives_from_atmosphere();
         test_atmosphere_inputs_round_trip_celestial_direction();
         test_celestial_lighting_uses_celestial_direction();
+        test_celestial_frame_uniforms_pack_sun_state();
+        test_celestial_pass_uses_additive_blend();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_celestial_tests: %s\n", error.what());
