@@ -33,6 +33,8 @@ enum class PlanetDebugView : std::uint8_t {
     LodLevel,
     ScreenError,
     Seams,
+    CellEdge,
+    TerrainHeight,
 };
 
 struct PlanetConfig {

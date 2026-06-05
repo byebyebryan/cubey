@@ -677,6 +677,21 @@ void test_planet_surface_seams_debug_view_parses() {
             "planet debug view should name seams");
 }
 
+void test_planet_surface_metric_debug_views_parse() {
+    require(cubey::projects::planet::planet_debug_view_from_string("cell-edge") ==
+                cubey::projects::planet::PlanetDebugView::CellEdge,
+            "planet debug view should parse cell-edge");
+    require(cubey::projects::planet::planet_debug_view_from_string("terrain-height") ==
+                cubey::projects::planet::PlanetDebugView::TerrainHeight,
+            "planet debug view should parse terrain-height");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::CellEdge)} == "cell-edge",
+            "planet debug view should name cell-edge");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::TerrainHeight)} == "terrain-height",
+            "planet debug view should name terrain-height");
+}
+
 } // namespace
 
 int main() {
@@ -706,6 +721,7 @@ int main() {
         test_planet_surface_skirts_add_seam_geometry();
         test_planet_surface_skirt_vertices_drop_below_radius();
         test_planet_surface_seams_debug_view_parses();
+        test_planet_surface_metric_debug_views_parse();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_surface_tests: %s\n", error.what());

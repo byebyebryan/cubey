@@ -226,6 +226,25 @@ vec3 screen_error_color() {
     return vec3(0.16 + 0.80 * t, 0.82 - 0.46 * t, 0.24);
 }
 
+vec3 cell_edge_color() {
+    float divisions = patches_per_face_option() * exp2(float(in_patch_id.y));
+    float patch_width_m = (pc.render_origin_radius.w * 2.0) / max(divisions, 1.0);
+    float cell_edge_m = max(patch_width_m / patch_resolution_option(), 1.0);
+    float detail = clamp(log2(max(pc.render_origin_radius.w, 1.0) / cell_edge_m) / 16.0, 0.0, 1.0);
+    return mix(vec3(0.95, 0.42, 0.14), vec3(0.12, 0.78, 0.95), detail);
+}
+
+vec3 terrain_height_color(float height_m) {
+    float height_scale = max(pc.terrain_options.x, 1.0);
+    float t = clamp(height_m / height_scale, -1.0, 1.0) * 0.5 + 0.5;
+    if (t < 0.5) {
+        float blend = t * 2.0;
+        return mix(vec3(0.04, 0.12, 0.36), vec3(0.08, 0.42, 0.20), blend);
+    }
+    float blend = (t - 0.5) * 2.0;
+    return mix(vec3(0.08, 0.42, 0.20), vec3(0.92, 0.88, 0.74), blend);
+}
+
 vec3 final_color(vec3 normal, float height_m) {
     float height_scale = pc.terrain_options.x;
     if (height_scale > 0.0) {
@@ -270,6 +289,12 @@ vec3 vertex_color(vec3 normal, float height_m) {
         }
         vec3 color = final_color(normal, height_m);
         return vec3(color.r * 0.28, color.g * 0.34, color.b * 0.42);
+    }
+    if (debug_view == 6) {
+        return cell_edge_color();
+    }
+    if (debug_view == 7) {
+        return terrain_height_color(height_m);
     }
     return final_color(normal, height_m);
 }

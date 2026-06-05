@@ -76,6 +76,12 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
     if (value == "seam" || value == "seams") {
         return PlanetDebugView::Seams;
     }
+    if (value == "cell-edge" || value == "cell_edge" || value == "cell") {
+        return PlanetDebugView::CellEdge;
+    }
+    if (value == "terrain-height" || value == "terrain_height" || value == "height") {
+        return PlanetDebugView::TerrainHeight;
+    }
     throw std::runtime_error("unsupported planet debug view: " + std::string(value));
 }
 
@@ -93,6 +99,10 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "screen-error";
     case PlanetDebugView::Seams:
         return "seams";
+    case PlanetDebugView::CellEdge:
+        return "cell-edge";
+    case PlanetDebugView::TerrainHeight:
+        return "terrain-height";
     }
     return "final";
 }

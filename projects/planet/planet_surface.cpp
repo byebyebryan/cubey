@@ -253,6 +253,53 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     };
 }
 
+[[nodiscard]] PrimitiveVec3 cell_edge_color(const PlanetConfig& config,
+                                            const PlanetSurfacePatchInstance& patch) {
+    const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
+    const float u_mid = (bounds.u0 + bounds.u1) * 0.5F;
+    const float v_mid = (bounds.v0 + bounds.v1) * 0.5F;
+    const cubey::math::DVec3 edge_a =
+        sphere_world_position(config, patch.id.face, bounds.u0, v_mid);
+    const cubey::math::DVec3 edge_b =
+        sphere_world_position(config, patch.id.face, bounds.u1, v_mid);
+    const cubey::math::DVec3 edge_c =
+        sphere_world_position(config, patch.id.face, u_mid, bounds.v0);
+    const cubey::math::DVec3 edge_d =
+        sphere_world_position(config, patch.id.face, u_mid, bounds.v1);
+    const float horizontal_cell_m = static_cast<float>(glm::length(edge_b - edge_a)) /
+                                    static_cast<float>(config.patch_resolution);
+    const float vertical_cell_m = static_cast<float>(glm::length(edge_d - edge_c)) /
+                                  static_cast<float>(config.patch_resolution);
+    const float cell_edge_m = std::max(std::max(horizontal_cell_m, vertical_cell_m), 1.0F);
+    const float detail =
+        std::clamp(std::log2(std::max(config.radius_m, 1.0F) / cell_edge_m) / 16.0F, 0.0F, 1.0F);
+    return {
+        lerp(0.95F, 0.12F, detail),
+        lerp(0.42F, 0.78F, detail),
+        lerp(0.14F, 0.95F, detail),
+    };
+}
+
+[[nodiscard]] PrimitiveVec3 terrain_height_color(const PlanetConfig& config, float height_m) {
+    const float t =
+        std::clamp(height_m / std::max(config.terrain_height_scale_m, 1.0F), -1.0F, 1.0F) * 0.5F +
+        0.5F;
+    if (t < 0.5F) {
+        const float blend = t * 2.0F;
+        return {
+            lerp(0.04F, 0.08F, blend),
+            lerp(0.12F, 0.42F, blend),
+            lerp(0.36F, 0.20F, blend),
+        };
+    }
+    const float blend = (t - 0.5F) * 2.0F;
+    return {
+        lerp(0.08F, 0.92F, blend),
+        lerp(0.42F, 0.88F, blend),
+        lerp(0.20F, 0.74F, blend),
+    };
+}
+
 [[nodiscard]] PrimitiveVec3 seam_surface_color(cubey::math::Vec3 normal) {
     const PrimitiveVec3 color = final_color(PlanetConfig{}, normal, 0.0F);
     return {
@@ -285,6 +332,10 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
         return screen_error_color(patch.screen_error_px, config.lod_target_edge_px);
     case PlanetDebugView::Seams:
         return seam_surface_color(normal);
+    case PlanetDebugView::CellEdge:
+        return cell_edge_color(config, patch);
+    case PlanetDebugView::TerrainHeight:
+        return terrain_height_color(config, height_m);
     }
     return final_color(config, normal, height_m);
 }
