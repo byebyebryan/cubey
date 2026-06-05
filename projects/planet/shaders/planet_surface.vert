@@ -18,7 +18,11 @@ uint packed_patch_lod_option() {
 }
 
 float patches_per_face_option() {
-    return float(max(packed_patch_lod_option() / 16U, 1U));
+    return float(max((packed_patch_lod_option() / 16U) & 15U, 1U));
+}
+
+float patch_resolution_option() {
+    return float(max(packed_patch_lod_option() / 256U, 1U));
 }
 
 float max_lod_option() {
@@ -161,7 +165,10 @@ vec3 terrain_normal(uint face, float u, float v, vec3 base_normal) {
         return base_normal;
     }
 
-    const float normal_step = 0.0015;
+    float divisions = patches_per_face_option() * exp2(float(in_patch_id.y));
+    float patch_width_uv = 2.0 / max(divisions, 1.0);
+    float cell_width_uv = patch_width_uv / patch_resolution_option();
+    float normal_step = clamp(cell_width_uv * 0.5, 0.00005, 0.02);
     float u0 = clamp(u - normal_step, -1.0, 1.0);
     float u1 = clamp(u + normal_step, -1.0, 1.0);
     float v0 = clamp(v - normal_step, -1.0, 1.0);

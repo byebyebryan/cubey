@@ -208,6 +208,42 @@ void test_planet_surface_terrain_normals_are_finite_and_outward() {
     }
 }
 
+void test_planet_surface_refined_terrain_normals_are_finite_and_outward() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 4,
+        .max_lod_level = 3,
+        .lod_target_edge_px = 0.0001F,
+        .skirts_enabled = false,
+        .terrain_enabled = true,
+        .terrain_height_scale_m = 60.0F,
+        .terrain_noise_scale = 2.5F,
+        .terrain_seed = 99U,
+    };
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, 1800.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = false,
+    };
+    const cubey::projects::planet::PlanetSurfaceBuildResult result =
+        cubey::projects::planet::make_planet_surface_mesh(config, view);
+
+    require(result.diagnostics.max_lod_level == 3U,
+            "refined terrain normal test should exercise high-LOD patches");
+    for (const cubey::render::VertexPositionColorNormalUv& vertex : result.mesh.vertices) {
+        const cubey::math::Vec3 position{vertex.position[0], vertex.position[1],
+                                         vertex.position[2]};
+        const cubey::math::Vec3 normal{vertex.normal[0], vertex.normal[1], vertex.normal[2]};
+        require(std::isfinite(normal.x) && std::isfinite(normal.y) && std::isfinite(normal.z),
+                "refined planet terrain normals should be finite");
+        require(glm::length(normal) > 0.99F && glm::length(normal) < 1.01F,
+                "refined planet terrain normals should be normalized");
+        require(glm::dot(glm::normalize(position), normal) > 0.25F,
+                "refined planet terrain normals should remain roughly outward-facing");
+    }
+}
+
 void test_planet_surface_triangles_are_wound_outward() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1200.0F,
@@ -652,6 +688,7 @@ int main() {
         test_planet_surface_terrain_displaces_within_height_bounds();
         test_planet_surface_terrain_detail_controls_change_shape();
         test_planet_surface_terrain_normals_are_finite_and_outward();
+        test_planet_surface_refined_terrain_normals_are_finite_and_outward();
         test_planet_surface_triangles_are_wound_outward();
         test_planet_surface_lod_subdivides_near_camera_patches();
         test_planet_surface_can_build_camera_relative_vertices();

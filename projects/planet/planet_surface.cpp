@@ -141,14 +141,24 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     };
 }
 
-[[nodiscard]] cubey::math::Vec3 terrain_normal(const PlanetConfig& config, std::uint32_t face,
-                                               float u, float v) {
+[[nodiscard]] float terrain_normal_step_uv(const PlanetConfig& config,
+                                           const PlanetSurfacePatchId& id) {
+    const float divisions =
+        static_cast<float>(config.patches_per_face) * std::exp2(static_cast<float>(id.level));
+    const float patch_width_uv = 2.0F / std::max(divisions, 1.0F);
+    const float cell_width_uv = patch_width_uv / static_cast<float>(config.patch_resolution);
+    return std::clamp(cell_width_uv * 0.5F, 0.00005F, 0.02F);
+}
+
+[[nodiscard]] cubey::math::Vec3 terrain_normal(const PlanetConfig& config,
+                                               const PlanetSurfacePatchId& id, float u, float v) {
+    const std::uint32_t face = id.face;
     const cubey::math::Vec3 base_normal = glm::normalize(cube_face_point(face, u, v));
     if (!config.terrain_enabled || config.terrain_height_scale_m <= 0.0F) {
         return base_normal;
     }
 
-    constexpr float kNormalStep = 0.0015F;
+    const float kNormalStep = terrain_normal_step_uv(config, id);
     const float u0 = std::clamp(u - kNormalStep, -1.0F, 1.0F);
     const float u1 = std::clamp(u + kNormalStep, -1.0F, 1.0F);
     const float v0 = std::clamp(v - kNormalStep, -1.0F, 1.0F);
@@ -650,7 +660,7 @@ void append_patch_mesh(const PlanetConfig& config, const PlanetFrame& frame,
             const float u = bounds.u0 + (bounds.u1 - bounds.u0) * tu;
             const cubey::math::Vec3 sphere_normal =
                 glm::normalize(cube_face_point(patch.id.face, u, v));
-            const cubey::math::Vec3 normal = terrain_normal(config, patch.id.face, u, v);
+            const cubey::math::Vec3 normal = terrain_normal(config, patch.id, u, v);
             const float height_m = terrain_height_m(config, sphere_normal);
             const cubey::math::DVec3 world_position =
                 terrain_world_position(config, patch.id.face, u, v);

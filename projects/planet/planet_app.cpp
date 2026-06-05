@@ -118,7 +118,8 @@ static_assert(sizeof(PlanetPushConstants) <= 128U);
 }
 
 [[nodiscard]] float packed_patch_lod_option(const PlanetConfig& config) {
-    return static_cast<float>(config.patches_per_face * 16U + config.max_lod_level);
+    return static_cast<float>(config.patch_resolution * 256U + config.patches_per_face * 16U +
+                              config.max_lod_level);
 }
 
 [[nodiscard]] float packed_terrain_detail_strengths(const PlanetConfig& config) {
