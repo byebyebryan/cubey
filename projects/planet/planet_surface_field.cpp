@@ -182,8 +182,30 @@ float planet_surface_terrain_height_m(const PlanetConfig& config, cubey::math::V
     return std::clamp(height, -config.terrain_height_scale_m, config.terrain_height_scale_m);
 }
 
-PlanetSurfaceMaterial planet_surface_material(float normalized_elevation, float normalized_slope) {
-    if (normalized_elevation < -0.15F) {
+float planet_surface_height_above_sea_m(const PlanetConfig& config, float height_m) {
+    return height_m - config.sea_level_m;
+}
+
+float planet_surface_water_depth_m(const PlanetConfig& config, float height_m) {
+    return std::max(-planet_surface_height_above_sea_m(config, height_m), 0.0F);
+}
+
+float planet_surface_normalized_bathymetry(const PlanetConfig& config, float height_m) {
+    return std::clamp(planet_surface_water_depth_m(config, height_m) /
+                          std::max(config.bathymetry_depth_scale_m, 0.0001F),
+                      0.0F, 1.0F);
+}
+
+float planet_surface_shoreline_mask(const PlanetConfig& config, float height_m) {
+    const float distance_m = std::abs(planet_surface_height_above_sea_m(config, height_m));
+    return 1.0F - std::clamp(distance_m / std::max(config.shoreline_width_m, 0.0001F), 0.0F,
+                             1.0F);
+}
+
+PlanetSurfaceMaterial planet_surface_material(float height_above_sea_m,
+                                              float normalized_elevation,
+                                              float normalized_slope) {
+    if (height_above_sea_m <= 0.0F) {
         return PlanetSurfaceMaterial::Water;
     }
     if (normalized_elevation > 0.66F ||
@@ -243,15 +265,23 @@ PlanetSurfaceSample planet_surface_sample_field(const PlanetConfig& config, Plan
         config.terrain_height_scale_m > 0.0F
             ? std::clamp(height_m / config.terrain_height_scale_m, -1.0F, 1.0F)
             : 0.0F;
+    const float height_above_sea = planet_surface_height_above_sea_m(config, height_m);
+    const float water_depth = planet_surface_water_depth_m(config, height_m);
+    const float normalized_bathymetry = planet_surface_normalized_bathymetry(config, height_m);
+    const float shoreline_mask = planet_surface_shoreline_mask(config, height_m);
     const float slope = normalized_slope(sphere_normal, normal);
     return {
         .sphere_normal = sphere_normal,
         .normal = normal,
         .world_position_m = world_position_m,
         .height_m = height_m,
+        .height_above_sea_m = height_above_sea,
+        .water_depth_m = water_depth,
+        .normalized_bathymetry = normalized_bathymetry,
+        .shoreline_mask = shoreline_mask,
         .normalized_elevation = normalized_elevation,
         .normalized_slope = slope,
-        .material = planet_surface_material(normalized_elevation, slope),
+        .material = planet_surface_material(height_above_sea, normalized_elevation, slope),
     };
 }
 

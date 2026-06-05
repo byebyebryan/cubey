@@ -21,6 +21,9 @@ inline constexpr std::uint32_t kPlanetDefaultTerrainSeed = 1337U;
 inline constexpr float kPlanetDefaultTerrainMidDetailStrength = 0.45F;
 inline constexpr float kPlanetDefaultTerrainFineDetailStrength = 0.16F;
 inline constexpr float kPlanetDefaultTerrainFineDetailScale = 12.0F;
+inline constexpr float kPlanetDefaultSeaLevelM = 0.0F;
+inline constexpr float kPlanetDefaultBathymetryDepthScaleM = 8000.0F;
+inline constexpr float kPlanetDefaultShorelineWidthM = 1500.0F;
 inline constexpr std::uint32_t kPlanetMaxLiveLodLevel = 6;
 inline constexpr std::uint64_t kPlanetMaxLivePatchInstances = 65536ULL;
 inline constexpr std::size_t kPlanetDiagnosticLodCapacity = 8;
@@ -38,6 +41,8 @@ enum class PlanetDebugView : std::uint8_t {
     TerrainHeight,
     TerrainSlope,
     TerrainMaterial,
+    Bathymetry,
+    Shoreline,
 };
 
 struct PlanetConfig {
@@ -59,6 +64,9 @@ struct PlanetConfig {
     float terrain_mid_detail_strength = kPlanetDefaultTerrainMidDetailStrength;
     float terrain_fine_detail_strength = kPlanetDefaultTerrainFineDetailStrength;
     float terrain_fine_detail_scale = kPlanetDefaultTerrainFineDetailScale;
+    float sea_level_m = kPlanetDefaultSeaLevelM;
+    float bathymetry_depth_scale_m = kPlanetDefaultBathymetryDepthScaleM;
+    float shoreline_width_m = kPlanetDefaultShorelineWidthM;
 
     friend bool operator==(const PlanetConfig&, const PlanetConfig&) = default;
 };

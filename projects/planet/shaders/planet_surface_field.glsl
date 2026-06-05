@@ -147,13 +147,33 @@ float planet_surface_normalized_elevation(float height_m) {
     return clamp(height_m / height_scale, -1.0, 1.0);
 }
 
+float planet_surface_height_above_sea_m(float height_m) {
+    return height_m - surface_frame.field_options.x;
+}
+
+float planet_surface_water_depth_m(float height_m) {
+    return max(-planet_surface_height_above_sea_m(height_m), 0.0);
+}
+
+float planet_surface_normalized_bathymetry(float height_m) {
+    float depth_scale = max(surface_frame.field_options.y, 0.0001);
+    return clamp(planet_surface_water_depth_m(height_m) / depth_scale, 0.0, 1.0);
+}
+
+float planet_surface_shoreline_mask(float height_m) {
+    float shoreline_width = max(surface_frame.field_options.z, 0.0001);
+    return 1.0 - clamp(abs(planet_surface_height_above_sea_m(height_m)) / shoreline_width, 0.0,
+                       1.0);
+}
+
 float planet_surface_normalized_slope(vec3 sphere_normal, vec3 normal) {
     float dot_up = clamp(dot(normalize(sphere_normal), normalize(normal)), 0.0, 1.0);
     return clamp(acos(dot_up) * 0.6366197723675813, 0.0, 1.0);
 }
 
-uint planet_surface_material_id(float normalized_elevation, float normalized_slope) {
-    if (normalized_elevation < -0.15) {
+uint planet_surface_material_id(float height_above_sea_m, float normalized_elevation,
+                                float normalized_slope) {
+    if (height_above_sea_m <= 0.0) {
         return 0U;
     }
     if (normalized_elevation > 0.66 ||

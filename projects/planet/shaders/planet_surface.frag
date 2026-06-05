@@ -11,6 +11,7 @@ layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     vec4 render_origin_radius;
     vec4 surface_options;
     vec4 terrain_options;
+    vec4 field_options;
     vec4 camera_horizon;
     vec4 atmosphere_options;
     vec4 haze_color_direct;

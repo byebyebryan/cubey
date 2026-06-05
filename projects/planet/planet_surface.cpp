@@ -152,6 +152,24 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     };
 }
 
+[[nodiscard]] PrimitiveVec3 bathymetry_color(float normalized_bathymetry) {
+    const float t = std::clamp(normalized_bathymetry, 0.0F, 1.0F);
+    return {
+        lerp(0.04F, 0.01F, t),
+        lerp(0.28F, 0.06F, t),
+        lerp(0.44F, 0.88F, t),
+    };
+}
+
+[[nodiscard]] PrimitiveVec3 shoreline_color(float shoreline_mask) {
+    const float t = std::clamp(shoreline_mask, 0.0F, 1.0F);
+    return {
+        lerp(0.03F, 0.95F, t),
+        lerp(0.12F, 0.82F, t),
+        lerp(0.20F, 0.32F, t),
+    };
+}
+
 [[nodiscard]] PrimitiveVec3 terrain_material_debug_color(PlanetSurfaceMaterial material) {
     switch (material) {
     case PlanetSurfaceMaterial::Water:
@@ -208,6 +226,10 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
         return terrain_slope_color(sample.normalized_slope);
     case PlanetDebugView::TerrainMaterial:
         return terrain_material_debug_color(sample.material);
+    case PlanetDebugView::Bathymetry:
+        return bathymetry_color(sample.normalized_bathymetry);
+    case PlanetDebugView::Shoreline:
+        return shoreline_color(sample.shoreline_mask);
     }
     return final_color(config, sample);
 }

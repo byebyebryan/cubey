@@ -50,6 +50,15 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     if (config.planet.terrain_seed_set) {
         planet.terrain_seed = config.planet.terrain_seed;
     }
+    if (run_config_float_is_set(config.planet.sea_level_m)) {
+        planet.sea_level_m = config.planet.sea_level_m;
+    }
+    if (run_config_float_is_set(config.planet.bathymetry_depth_scale_m)) {
+        planet.bathymetry_depth_scale_m = config.planet.bathymetry_depth_scale_m;
+    }
+    if (run_config_float_is_set(config.planet.shoreline_width_m)) {
+        planet.shoreline_width_m = config.planet.shoreline_width_m;
+    }
     if (!config.debug_view.empty()) {
         planet.debug_view = planet_debug_view_from_string(config.debug_view);
     }
@@ -91,6 +100,12 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
     if (value == "terrain-material" || value == "terrain_material" || value == "material") {
         return PlanetDebugView::TerrainMaterial;
     }
+    if (value == "bathymetry" || value == "water-depth" || value == "water_depth") {
+        return PlanetDebugView::Bathymetry;
+    }
+    if (value == "shoreline" || value == "shore") {
+        return PlanetDebugView::Shoreline;
+    }
     throw std::runtime_error("unsupported planet debug view: " + std::string(value));
 }
 
@@ -118,6 +133,10 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "terrain-slope";
     case PlanetDebugView::TerrainMaterial:
         return "terrain-material";
+    case PlanetDebugView::Bathymetry:
+        return "bathymetry";
+    case PlanetDebugView::Shoreline:
+        return "shoreline";
     }
     return "final";
 }
@@ -172,6 +191,17 @@ void validate_planet_config(const PlanetConfig& config) {
     if (!std::isfinite(config.terrain_fine_detail_scale) ||
         config.terrain_fine_detail_scale <= 0.0F) {
         throw std::runtime_error("planet terrain fine-detail scale must be finite and positive");
+    }
+    if (!std::isfinite(config.sea_level_m)) {
+        throw std::runtime_error("planet sea level must be finite");
+    }
+    if (!std::isfinite(config.bathymetry_depth_scale_m) ||
+        config.bathymetry_depth_scale_m <= 0.0F) {
+        throw std::runtime_error(
+            "planet bathymetry depth scale must be finite and positive");
+    }
+    if (!std::isfinite(config.shoreline_width_m) || config.shoreline_width_m <= 0.0F) {
+        throw std::runtime_error("planet shoreline width must be finite and positive");
     }
 }
 

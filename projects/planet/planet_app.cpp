@@ -71,12 +71,14 @@ struct PlanetSurfaceFrameUniforms {
     cubey::math::Vec4 render_origin_radius{0.0F, 0.0F, 0.0F, kPlanetDefaultRadiusM};
     cubey::math::Vec4 surface_options{0.0F, 0.0F, 1.0F, 0.0F};
     cubey::math::Vec4 terrain_options{0.0F, 1.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 field_options{0.0F, kPlanetDefaultBathymetryDepthScaleM,
+                                    kPlanetDefaultShorelineWidthM, 0.0F};
     cubey::math::Vec4 camera_horizon{0.0F, 0.0F, 0.0F, 0.0F};
     cubey::math::Vec4 atmosphere_options{0.14F, 0.42F, 0.45F, 1.0F};
     cubey::math::Vec4 haze_color_direct{0.18F, 0.28F, 0.44F, 0.86F};
 };
 
-static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 11U);
+static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 12U);
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_PLANET_SHADER_DIR) / filename;
@@ -401,7 +403,7 @@ class PlanetApp {
         constexpr const char* kDebugViews[]{
             "final",       "face-id",        "patch-id",      "lod-level",
             "screen-error", "lod-transition", "seams",         "cell-edge",
-            "terrain-height", "terrain-slope", "terrain-material"};
+            "terrain-height", "terrain-slope", "terrain-material", "bathymetry", "shoreline"};
         int debug_view = static_cast<int>(edit_planet_config_.debug_view);
         if (ImGui::Combo("Debug View", &debug_view, kDebugViews,
                          static_cast<int>(std::size(kDebugViews)))) {
@@ -427,6 +429,11 @@ class PlanetApp {
             edit_planet_config_.terrain_seed =
                 static_cast<std::uint32_t>(std::max(terrain_seed, 0));
         }
+        ImGui::InputFloat("Sea Level (m)", &edit_planet_config_.sea_level_m, 0.0F, 0.0F, "%.0f");
+        ImGui::InputFloat("Bathymetry Depth (m)", &edit_planet_config_.bathymetry_depth_scale_m,
+                          0.0F, 0.0F, "%.0f");
+        ImGui::InputFloat("Shoreline Width (m)", &edit_planet_config_.shoreline_width_m, 0.0F,
+                          0.0F, "%.0f");
 
         if (edit_planet_config_ != config_before_edit) {
             planet_config_apply_pending_ = edit_planet_config_ != planet_config_;
@@ -778,6 +785,13 @@ class PlanetApp {
                     planet_config_.terrain_noise_scale,
                     static_cast<float>(planet_config_.terrain_seed),
                     skirt_depth,
+                },
+            .field_options =
+                {
+                    planet_config_.sea_level_m,
+                    planet_config_.bathymetry_depth_scale_m,
+                    planet_config_.shoreline_width_m,
+                    0.0F,
                 },
             .camera_horizon =
                 {

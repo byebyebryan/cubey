@@ -102,6 +102,9 @@ void test_planet_config_applies_run_config_surface_options() {
     run_config.planet.terrain_noise_scale = 4.25F;
     run_config.planet.terrain_seed = 42U;
     run_config.planet.terrain_seed_set = true;
+    run_config.planet.sea_level_m = -250.0F;
+    run_config.planet.bathymetry_depth_scale_m = 3200.0F;
+    run_config.planet.shoreline_width_m = 450.0F;
 
     const cubey::projects::planet::PlanetConfig config =
         cubey::projects::planet::planet_config_from_run_config(run_config);
@@ -119,6 +122,12 @@ void test_planet_config_applies_run_config_surface_options() {
     require_near(config.terrain_noise_scale, 4.25F, 0.0001F,
                  "planet config should apply terrain noise");
     require(config.terrain_seed == 42U, "planet config should apply terrain seed");
+    require_near(config.sea_level_m, -250.0F, 0.0001F,
+                 "planet config should apply sea level");
+    require_near(config.bathymetry_depth_scale_m, 3200.0F, 0.0001F,
+                 "planet config should apply bathymetry depth scale");
+    require_near(config.shoreline_width_m, 450.0F, 0.0001F,
+                 "planet config should apply shoreline width");
 }
 
 void test_planet_camera_min_altitude_tracks_terrain_clearance() {

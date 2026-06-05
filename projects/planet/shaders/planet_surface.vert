@@ -12,6 +12,7 @@ layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     vec4 render_origin_radius;
     vec4 surface_options;
     vec4 terrain_options;
+    vec4 field_options;
     vec4 camera_horizon;
     vec4 atmosphere_options;
     vec4 haze_color_direct;
@@ -126,6 +127,16 @@ vec3 terrain_height_color(float height_m) {
     return mix(vec3(0.08, 0.42, 0.20), vec3(0.92, 0.88, 0.74), blend);
 }
 
+vec3 bathymetry_color(float normalized_bathymetry) {
+    float t = clamp(normalized_bathymetry, 0.0, 1.0);
+    return mix(vec3(0.04, 0.28, 0.44), vec3(0.01, 0.06, 0.88), t);
+}
+
+vec3 shoreline_color(float shoreline_mask) {
+    float t = clamp(shoreline_mask, 0.0, 1.0);
+    return mix(vec3(0.03, 0.12, 0.20), vec3(0.95, 0.82, 0.32), t);
+}
+
 vec3 latitude_color(vec3 normal) {
     float latitude = normal.y * 0.5 + 0.5;
     return vec3(0.035 + 0.030 * latitude, 0.100 + 0.070 * latitude,
@@ -144,7 +155,9 @@ vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m) {
     int debug_view = debug_view_option();
     float normalized_elevation = planet_surface_normalized_elevation(height_m);
     float normalized_slope = planet_surface_normalized_slope(sphere_normal, normal);
-    uint material = planet_surface_material_id(normalized_elevation, normalized_slope);
+    float height_above_sea_m = planet_surface_height_above_sea_m(height_m);
+    uint material =
+        planet_surface_material_id(height_above_sea_m, normalized_elevation, normalized_slope);
     if (debug_view == 1) {
         return face_color(in_patch_id.x);
     }
@@ -178,6 +191,12 @@ vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m) {
     }
     if (debug_view == 10) {
         return planet_surface_material_debug_color(material);
+    }
+    if (debug_view == 11) {
+        return bathymetry_color(planet_surface_normalized_bathymetry(height_m));
+    }
+    if (debug_view == 12) {
+        return shoreline_color(planet_surface_shoreline_mask(height_m));
     }
     return final_color(normal, material, normalized_elevation, normalized_slope);
 }

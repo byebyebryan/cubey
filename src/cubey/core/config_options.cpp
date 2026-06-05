@@ -79,7 +79,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 148> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 151> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -253,6 +253,17 @@ constexpr std::array<ConfigOptionDescriptor, 148> kRunConfigOptions{
            min_range(0.000001)),
     option(RunConfigOptionId::PlanetTerrainSeed, "planet.terrain_seed", "--planet-terrain-seed",
            "Terrain Seed", "Planet", "Placeholder planet terrain seed.", ConfigOptionType::UInt32),
+    option(RunConfigOptionId::PlanetSeaLevel, "planet.sea_level_m", "--planet-sea-level-m",
+           "Sea Level", "Planet", "Planet terrain waterline elevation in meters.",
+           ConfigOptionType::Float),
+    option(RunConfigOptionId::PlanetBathymetryDepthScale, "planet.bathymetry_depth_scale_m",
+           "--planet-bathymetry-depth-scale-m", "Bathymetry Depth", "Planet",
+           "Depth in meters that maps to full bathymetry debug intensity.",
+           ConfigOptionType::Float, min_range(0.000001)),
+    option(RunConfigOptionId::PlanetShorelineWidth, "planet.shoreline_width_m",
+           "--planet-shoreline-width-m", "Shoreline Width", "Planet",
+           "Height band around sea level used by shoreline debug masks.",
+           ConfigOptionType::Float, min_range(0.000001)),
     option(RunConfigOptionId::TerrainSeed, "terrain.seed", "--terrain-seed", "Seed", "Terrain",
            "Deterministic procedural terrain seed.", ConfigOptionType::UInt64),
     option(RunConfigOptionId::TerrainCellSize, "terrain.cell_size", "--terrain-cell-size",
@@ -832,6 +843,12 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::PlanetTerrainSeed:
         return config.planet.terrain_seed_set ? nlohmann::json(config.planet.terrain_seed)
                                               : nlohmann::json(nullptr);
+    case RunConfigOptionId::PlanetSeaLevel:
+        return optional_float(config.planet.sea_level_m);
+    case RunConfigOptionId::PlanetBathymetryDepthScale:
+        return optional_float(config.planet.bathymetry_depth_scale_m);
+    case RunConfigOptionId::PlanetShorelineWidth:
+        return optional_float(config.planet.shoreline_width_m);
     case RunConfigOptionId::TerrainSeed:
         return config.terrain.seed_set ? nlohmann::json(config.terrain.seed)
                                        : nlohmann::json(nullptr);
@@ -1090,6 +1107,9 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<float>("terrain_height_scale_m", options.terrain_height_scale_m);
     adapter.writeField<float>("terrain_noise_scale", options.terrain_noise_scale);
     adapter.writeField<std::uint32_t>("terrain_seed", options.terrain_seed);
+    adapter.writeField<float>("sea_level_m", options.sea_level_m);
+    adapter.writeField<float>("bathymetry_depth_scale_m", options.bathymetry_depth_scale_m);
+    adapter.writeField<float>("shoreline_width_m", options.shoreline_width_m);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options) {
@@ -1107,6 +1127,9 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<float>("terrain_height_scale_m", options.terrain_height_scale_m);
     adapter.readField<float>("terrain_noise_scale", options.terrain_noise_scale);
     adapter.readField<std::uint32_t>("terrain_seed", options.terrain_seed);
+    adapter.readField<float>("sea_level_m", options.sea_level_m);
+    adapter.readField<float>("bathymetry_depth_scale_m", options.bathymetry_depth_scale_m);
+    adapter.readField<float>("shoreline_width_m", options.shoreline_width_m);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::PbrOptions& options) {
@@ -1545,6 +1568,18 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::PlanetTerrainSeed:
         config.planet.terrain_seed = parse_number<std::uint32_t>(value, option, "unsigned integer");
         config.planet.terrain_seed_set = true;
+        break;
+    case RunConfigOptionId::PlanetSeaLevel:
+        config.planet.sea_level_m = parse_config_float(value, option);
+        validate_range(config.planet.sea_level_m, option);
+        break;
+    case RunConfigOptionId::PlanetBathymetryDepthScale:
+        config.planet.bathymetry_depth_scale_m = parse_config_float(value, option);
+        validate_range(config.planet.bathymetry_depth_scale_m, option);
+        break;
+    case RunConfigOptionId::PlanetShorelineWidth:
+        config.planet.shoreline_width_m = parse_config_float(value, option);
+        validate_range(config.planet.shoreline_width_m, option);
         break;
     case RunConfigOptionId::TerrainSeed:
         config.terrain.seed = parse_number<std::uint64_t>(value, option, "unsigned integer");

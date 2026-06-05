@@ -255,6 +255,13 @@ void test_planet_surface_field_reports_bounded_height_normal_and_slope() {
             "planet surface field normalized elevation should stay in range");
     require(sample.normalized_slope >= 0.0F && sample.normalized_slope <= 1.0F,
             "planet surface field normalized slope should stay in range");
+    require_close(sample.height_above_sea_m, sample.height_m - config.sea_level_m,
+                  "planet surface field should report height above sea level");
+    require(sample.water_depth_m >= 0.0F, "planet surface field water depth should be nonnegative");
+    require(sample.normalized_bathymetry >= 0.0F && sample.normalized_bathymetry <= 1.0F,
+            "planet surface field normalized bathymetry should stay in range");
+    require(sample.shoreline_mask >= 0.0F && sample.shoreline_mask <= 1.0F,
+            "planet surface field shoreline mask should stay in range");
     require(std::isfinite(sample.normal.x) && std::isfinite(sample.normal.y) &&
                 std::isfinite(sample.normal.z),
             "planet surface field normal should be finite");
@@ -263,21 +270,22 @@ void test_planet_surface_field_reports_bounded_height_normal_and_slope() {
     require(glm::dot(sample.sphere_normal, sample.normal) > 0.25F,
             "planet surface field normal should remain outward-facing");
     require(sample.material == cubey::projects::planet::planet_surface_material(
-                                   sample.normalized_elevation, sample.normalized_slope),
+                                   sample.height_above_sea_m, sample.normalized_elevation,
+                                   sample.normalized_slope),
             "planet surface field sample should carry its classified material");
 }
 
 void test_planet_surface_field_classifies_material_bands() {
-    require(cubey::projects::planet::planet_surface_material(-0.20F, 0.0F) ==
+    require(cubey::projects::planet::planet_surface_material(-1.0F, 0.20F, 0.0F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::Water,
-            "planet surface material should classify below-water elevation");
-    require(cubey::projects::planet::planet_surface_material(0.0F, 0.05F) ==
+            "planet surface material should classify below-sea terrain");
+    require(cubey::projects::planet::planet_surface_material(1.0F, 0.0F, 0.05F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::Lowland,
             "planet surface material should classify low gentle terrain");
-    require(cubey::projects::planet::planet_surface_material(0.30F, 0.05F) ==
+    require(cubey::projects::planet::planet_surface_material(1.0F, 0.30F, 0.05F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::Highland,
             "planet surface material should classify higher terrain");
-    require(cubey::projects::planet::planet_surface_material(0.70F, 0.05F) ==
+    require(cubey::projects::planet::planet_surface_material(1.0F, 0.70F, 0.05F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::Snow,
             "planet surface material should classify high snow terrain");
 
@@ -289,6 +297,43 @@ void test_planet_surface_field_classifies_material_bands() {
             "planet water material should be blue-dominant");
     require(highland.x > water.x && highland.y > water.y,
             "planet highland material should be brighter than water");
+}
+
+void test_planet_surface_field_reports_sea_level_and_bathymetry() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 4,
+        .max_lod_level = 0,
+        .terrain_enabled = true,
+        .terrain_height_scale_m = 80.0F,
+        .sea_level_m = 20.0F,
+        .bathymetry_depth_scale_m = 40.0F,
+        .shoreline_width_m = 10.0F,
+    };
+
+    require_close(cubey::projects::planet::planet_surface_height_above_sea_m(config, -10.0F),
+                  -30.0F, "planet field should measure height relative to sea level");
+    require_close(cubey::projects::planet::planet_surface_water_depth_m(config, -10.0F), 30.0F,
+                  "planet field should report positive water depth below sea level");
+    require_close(cubey::projects::planet::planet_surface_water_depth_m(config, 30.0F), 0.0F,
+                  "planet field should report zero water depth above sea level");
+    require_close(cubey::projects::planet::planet_surface_normalized_bathymetry(config, -20.0F),
+                  1.0F, "planet field should clamp full bathymetry at configured depth scale");
+    require(cubey::projects::planet::planet_surface_shoreline_mask(config, 20.0F) > 0.99F,
+            "planet field should mark exact sea level as shoreline");
+    require_close(cubey::projects::planet::planet_surface_shoreline_mask(config, 35.0F), 0.0F,
+                  "planet field should fade shoreline mask outside configured width");
+
+    const cubey::projects::planet::PlanetSurfaceSample sample =
+        cubey::projects::planet::planet_surface_sample_field(
+            config, cubey::projects::planet::PlanetSurfacePatchId{.face = 4}, 0.0F, 0.0F);
+    require(sample.water_depth_m >= 0.0F,
+            "planet surface sample should expose nonnegative water depth");
+    require(sample.normalized_bathymetry >= 0.0F && sample.normalized_bathymetry <= 1.0F,
+            "planet surface sample should expose clamped normalized bathymetry");
+    require(sample.shoreline_mask >= 0.0F && sample.shoreline_mask <= 1.0F,
+            "planet surface sample should expose clamped shoreline mask");
 }
 
 void test_planet_surface_terrain_normals_are_finite_and_outward() {
@@ -804,6 +849,12 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_from_string("lod-transition") ==
                 cubey::projects::planet::PlanetDebugView::LodTransition,
             "planet debug view should parse lod-transition");
+    require(cubey::projects::planet::planet_debug_view_from_string("bathymetry") ==
+                cubey::projects::planet::PlanetDebugView::Bathymetry,
+            "planet debug view should parse bathymetry");
+    require(cubey::projects::planet::planet_debug_view_from_string("shoreline") ==
+                cubey::projects::planet::PlanetDebugView::Shoreline,
+            "planet debug view should parse shoreline");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::CellEdge)} == "cell-edge",
             "planet debug view should name cell-edge");
@@ -819,6 +870,12 @@ void test_planet_surface_metric_debug_views_parse() {
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::LodTransition)} == "lod-transition",
             "planet debug view should name lod-transition");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::Bathymetry)} == "bathymetry",
+            "planet debug view should name bathymetry");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::Shoreline)} == "shoreline",
+            "planet debug view should name shoreline");
 }
 
 void test_planet_surface_planner_records_lod_transition_pressure() {
@@ -859,6 +916,7 @@ int main() {
         test_planet_surface_field_is_deterministic_for_seed();
         test_planet_surface_field_reports_bounded_height_normal_and_slope();
         test_planet_surface_field_classifies_material_bands();
+        test_planet_surface_field_reports_sea_level_and_bathymetry();
         test_planet_surface_terrain_normals_are_finite_and_outward();
         test_planet_surface_refined_terrain_normals_are_finite_and_outward();
         test_planet_surface_triangles_are_wound_outward();
