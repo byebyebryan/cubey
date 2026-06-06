@@ -112,4 +112,8 @@ These captures pressure the current procedural terrain and sea-level contracts:
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view terrain-slope --output outputs/planet-debug-terrain-slope.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view bathymetry --output outputs/planet-debug-bathymetry.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view shoreline --output outputs/planet-debug-shoreline.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view land-mask --output outputs/planet-debug-land-mask.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view moisture --output outputs/planet-debug-moisture.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view temperature --output outputs/planet-debug-temperature.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view roughness --output outputs/planet-debug-roughness.png
 ```

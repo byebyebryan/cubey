@@ -20,6 +20,10 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view lod-transition
 ./build/dev/projects/planet/planet --debug-view bathymetry
 ./build/dev/projects/planet/planet --debug-view shoreline
+./build/dev/projects/planet/planet --debug-view land-mask
+./build/dev/projects/planet/planet --debug-view moisture
+./build/dev/projects/planet/planet --debug-view temperature
+./build/dev/projects/planet/planet --debug-view roughness
 ./build/dev/projects/planet/planet --debug-view wireframe
 ./build/dev/projects/planet/planet --debug-view celestial-planes
 ./build/dev/projects/planet/planet --debug-view seams
@@ -47,8 +51,8 @@ The broader manual capture matrix is tracked in
 
 Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 `screen-error`, `lod-transition`, `seams`, `cell-edge`, `terrain-height`,
-`terrain-slope`, `terrain-material`, `bathymetry`, `shoreline`, `wireframe`,
-and `celestial-planes`.
+`terrain-slope`, `terrain-material`, `bathymetry`, `shoreline`, `land-mask`,
+`moisture`, `temperature`, `roughness`, `wireframe`, and `celestial-planes`.
 `celestial-planes` colors the equator, ecliptic, and lunar orbit great circles
 plus sub-solar/sub-lunar markers for validating the mean celestial model.
 Windowed controls are applied live where possible. Left drag orbits the planet,
@@ -105,6 +109,12 @@ and snow. Water is classified from explicit sea level rather than a normalized
 elevation threshold. The bathymetry and shoreline fields are diagnostic
 contracts for future terrain/ocean handoff; they are not yet streamed data,
 seafloor rendering, surf, biome masks, or final art direction.
+
+Surface tile payload summaries now include terrain height ranges, sea-level
+height ranges, water depth, shoreline mask, land/water/shoreline coverage,
+moisture, temperature, roughness, and material counts. The procedural generator
+revision is derived from terrain-relevant config rather than only the seed, so
+future cache invalidation has a stable boundary.
 
 The terrain v2 direction is documented in
 [`docs/notes/planet-terrain-field-v2.md`](../../docs/notes/planet-terrain-field-v2.md).

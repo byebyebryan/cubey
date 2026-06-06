@@ -201,9 +201,9 @@ Current implementation notes:
   layers.
 - Current debug views cover patch identity, LOD level, screen error, seam
   skirts, approximate metric cell edge, normalized terrain height, normalized
-  terrain slope, terrain material bands, bathymetry, shoreline, wireframe grid,
-  and LOD
-  transition pressure. These are diagnostic tools, not final planet
+  terrain slope, terrain material bands, bathymetry, shoreline, land mask,
+  moisture, temperature, roughness, wireframe grid, LOD transition pressure,
+  and celestial-plane validation. These are diagnostic tools, not final planet
   visualization.
 - Planet rendering has moved away from the shared atmosphere background/runtime
   for now. The shared path was useful for ocean and atmosphere demos, but its
@@ -255,6 +255,10 @@ The latest planet foundation pass closed several previously loose contracts:
   `PlanetSurfaceTileSource` make the current procedural surface provider look
   like a tile source. That is deliberately small, but it gives later terrain,
   bathymetry, biome, and cache work a stable `face/level/x/y` payload boundary.
+  Payload summaries now include coverage, material-count, climate, roughness,
+  height, slope, water-depth, and shoreline ranges, and their generator revision
+  hashes terrain-relevant config so future cache invalidation is not tied only
+  to the seed.
 - LOD diagnostics now report neighbor mismatch pressure, boundary edges, and
   maximum neighbor delta. Selected patch instances also carry an edge transition
   mask so shader sampling can treat borders against coarser neighbors
@@ -283,8 +287,8 @@ The latest planet foundation pass closed several previously loose contracts:
   and cover orbit, surface, dawn/day/night, atmosphere comparison, LOD/seam
   diagnostics, celestial-plane checks, and surface-field debug views. A small
   CTest-backed subset now runs as headless PNG smoke coverage so baseline
-  planet views, moon/daylight, and wireframe LOD cannot silently regress to
-  empty output.
+  planet views, moon/daylight, wireframe LOD, and one terrain-field diagnostic
+  cannot silently regress to empty output.
 
 ## Celestial Body Pivot
 

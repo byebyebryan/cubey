@@ -39,7 +39,8 @@ surface layers arrive:
   camera-relative height math agree;
 - expose every terrain detail parameter through `RunConfig` and docs;
 - add an explicit surface tile payload contract, even while the only provider
-  is procedural;
+  is procedural, then expand its summaries with coverage, climate, roughness,
+  material-count, and terrain-relevant revision data;
 - make LOD transition pressure and neighbor deltas inspectable, then add the
   first neighbor-aware edge transition behavior;
 - move planet camera position math to double precision and keep float
@@ -84,8 +85,8 @@ indefinitely.
 The latest follow-up batch is complete:
 
 - added CTest-backed headless PNG smoke coverage for baseline headless output,
-  surface dawn/day/night, orbit lit/terminator, daytime moon, and wireframe
-  LOD;
+  surface dawn/day/night, orbit lit/terminator, daytime moon, wireframe LOD, and
+  one terrain-field diagnostic;
 - replaced the orbit exposure proxy with a view-aware visible-light estimate so
   rotating an orbit view does not cause abrupt brightness jumps;
 - unified daytime moon atmosphere visibility around a sky-visibility term while
@@ -95,6 +96,9 @@ The latest follow-up batch is complete:
 - extracted `PlanetSurfaceRuntime` from `PlanetApp` so surface planning,
   diagnostics, hysteresis history, render-origin checks, and instance-buffer
   upload freshness have an explicit boundary.
+- added terrain-field debug views for land mask, moisture, temperature, and
+  roughness so material/ocean-adjacent fields are visible without changing the
+  final renderer.
 
 The remaining near-term work should move back to feature slices or targeted
 hardening. It still should not port ocean, add real GIS data, build an

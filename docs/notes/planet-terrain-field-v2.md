@@ -31,10 +31,11 @@ handoff, weather/cloud masks, and cache residency diagnostics.
 ## Implementation Shape
 
 `PlanetSurfaceSample` remains the point-sample contract. `PlanetSurfaceTileKey`
-and `PlanetSurfaceTilePayload` remain the patch payload boundary. V2 should
-expand payload summaries with coverage and range data instead of adding a new
-manager. A later streaming system can replace the procedural source behind the
-same key/payload vocabulary.
+and `PlanetSurfaceTilePayload` remain the patch payload boundary. V2 expands
+payload summaries with coverage, range, material-count, climate, roughness, and
+terrain-relevant revision data instead of adding a new manager. A later
+streaming system can replace the procedural source behind the same key/payload
+vocabulary.
 
 CPU and shader terrain logic should stay mirrored with matching helper names.
 That duplication is deliberate for now: the CPU path gives deterministic tests
@@ -43,7 +44,7 @@ interactive resolution. Divergence between those two paths should be treated as 
 bug unless a later GPU terrain source makes the CPU path diagnostic-only.
 
 The procedural shaping should use named layers rather than a single opaque noise
-stack:
+stack. The current procedural source follows this shape:
 
 - ocean basin / continent mask;
 - lowland breakup;
