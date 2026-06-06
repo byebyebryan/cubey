@@ -131,6 +131,7 @@ struct PlanetSurfaceGpuPatchInstance {
     std::uint32_t level = 0;
     std::uint32_t x = 0;
     std::uint32_t y = 0;
+    std::uint32_t edge_transition_mask = 0;
     float screen_error_px = 0.0F;
 };
 
@@ -141,7 +142,8 @@ struct PlanetSurfaceBuildResult {
 
 [[nodiscard]] PlanetPatchGridMeshData make_planet_patch_grid_mesh(const PlanetConfig& config);
 [[nodiscard]] std::vector<PlanetSurfaceGpuPatchInstance>
-make_planet_surface_gpu_patch_instances(const PlanetSurfacePatchPlan& plan);
+make_planet_surface_gpu_patch_instances(const PlanetConfig& config,
+                                        const PlanetSurfacePatchPlan& plan);
 [[nodiscard]] PlanetSurfacePatchBounds planet_surface_patch_bounds(const PlanetConfig& config,
                                                                    PlanetSurfacePatchId id);
 [[nodiscard]] PlanetSurfacePatchId planet_surface_child_patch_id(PlanetSurfacePatchId id,

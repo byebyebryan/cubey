@@ -427,6 +427,7 @@ struct NeighborEdgeProbe {
     bool boundary = false;
     bool found_neighbor = false;
     std::uint32_t max_delta = 0;
+    std::uint32_t max_coarser_delta = 0;
 };
 
 [[nodiscard]] NeighborEdgeProbe analyze_neighbor_edge(const PlanetConfig& config,
@@ -462,8 +463,24 @@ struct NeighborEdgeProbe {
         const std::uint32_t delta = id.level > neighbor->level ? id.level - neighbor->level
                                                                : neighbor->level - id.level;
         probe.max_delta = std::max(probe.max_delta, delta);
+        if (id.level > neighbor->level) {
+            probe.max_coarser_delta = std::max(probe.max_coarser_delta, id.level - neighbor->level);
+        }
     }
     return probe;
+}
+
+[[nodiscard]] std::uint32_t edge_transition_mask(const PlanetConfig& config,
+                                                 const PlanetPatchSelectionSet& set,
+                                                 PlanetSurfacePatchId id) {
+    std::uint32_t mask = 0;
+    for (std::uint32_t edge = 0; edge < 4U; ++edge) {
+        const NeighborEdgeProbe probe = analyze_neighbor_edge(config, set, id, edge);
+        if (probe.max_coarser_delta > 0U) {
+            mask |= 1U << edge;
+        }
+    }
+    return mask;
 }
 
 void update_neighbor_lod_diagnostics(PlanetSurfaceDiagnostics& diagnostics,
@@ -1048,15 +1065,18 @@ PlanetPatchGridMeshData make_planet_patch_grid_mesh(const PlanetConfig& config) 
 }
 
 std::vector<PlanetSurfaceGpuPatchInstance>
-make_planet_surface_gpu_patch_instances(const PlanetSurfacePatchPlan& plan) {
+make_planet_surface_gpu_patch_instances(const PlanetConfig& config,
+                                        const PlanetSurfacePatchPlan& plan) {
     std::vector<PlanetSurfaceGpuPatchInstance> instances;
     instances.reserve(plan.selected_patches.size());
+    const PlanetPatchSelectionSet set{plan.selected_patches};
     for (const PlanetSurfacePatchInstance& patch : plan.selected_patches) {
         instances.push_back({
             .face = patch.id.face,
             .level = patch.id.level,
             .x = patch.id.x,
             .y = patch.id.y,
+            .edge_transition_mask = edge_transition_mask(config, set, patch.id),
             .screen_error_px = patch.screen_error_px,
         });
     }

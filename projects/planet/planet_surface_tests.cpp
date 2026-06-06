@@ -724,7 +724,7 @@ void test_planet_surface_gpu_instances_preserve_patch_identity() {
     const cubey::projects::planet::PlanetSurfacePatchPlan plan =
         cubey::projects::planet::plan_planet_surface_patches(config, view);
     const std::vector<cubey::projects::planet::PlanetSurfaceGpuPatchInstance> instances =
-        cubey::projects::planet::make_planet_surface_gpu_patch_instances(plan);
+        cubey::projects::planet::make_planet_surface_gpu_patch_instances(config, plan);
 
     require(instances.size() == plan.selected_patches.size(),
             "planet GPU instance list should match selected patch count");
@@ -739,6 +739,49 @@ void test_planet_surface_gpu_instances_preserve_patch_identity() {
         require_close(instance.screen_error_px, patch.screen_error_px,
                       "planet GPU instance should keep screen-error diagnostic");
     }
+}
+
+void test_planet_surface_gpu_instances_mark_coarser_neighbor_edges() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1000.0F,
+        .patches_per_face = 2,
+        .patch_resolution = 4,
+        .max_lod_level = 1,
+    };
+    cubey::projects::planet::PlanetSurfacePatchPlan plan{};
+    plan.selected_patches = {
+        cubey::projects::planet::PlanetSurfacePatchInstance{
+            .id = {.face = 0, .level = 1, .x = 0, .y = 0},
+        },
+        cubey::projects::planet::PlanetSurfacePatchInstance{
+            .id = {.face = 0, .level = 1, .x = 1, .y = 0},
+        },
+        cubey::projects::planet::PlanetSurfacePatchInstance{
+            .id = {.face = 0, .level = 1, .x = 0, .y = 1},
+        },
+        cubey::projects::planet::PlanetSurfacePatchInstance{
+            .id = {.face = 0, .level = 1, .x = 1, .y = 1},
+        },
+        cubey::projects::planet::PlanetSurfacePatchInstance{
+            .id = {.face = 0, .level = 0, .x = 1, .y = 0},
+        },
+    };
+
+    const std::vector<cubey::projects::planet::PlanetSurfaceGpuPatchInstance> instances =
+        cubey::projects::planet::make_planet_surface_gpu_patch_instances(config, plan);
+
+    bool found_transition_edge = false;
+    for (const cubey::projects::planet::PlanetSurfaceGpuPatchInstance& instance : instances) {
+        if (instance.level == 1U && instance.edge_transition_mask != 0U) {
+            found_transition_edge = true;
+        }
+        if (instance.level == 0U) {
+            require(instance.edge_transition_mask == 0U,
+                    "coarser planet GPU instances should not snap toward finer neighbors");
+        }
+    }
+    require(found_transition_edge,
+            "finer planet GPU instances should mark edges against coarser neighbors");
 }
 
 void test_planet_surface_cpu_mesh_rejects_too_dense_live_lod() {
@@ -1143,6 +1186,7 @@ int main() {
         test_planet_surface_patch_grid_mesh_is_reusable();
         test_planet_surface_patch_grid_mesh_can_include_skirts();
         test_planet_surface_gpu_instances_preserve_patch_identity();
+        test_planet_surface_gpu_instances_mark_coarser_neighbor_edges();
         test_planet_surface_cpu_mesh_rejects_too_dense_live_lod();
         test_planet_surface_planner_keeps_fallback_when_camera_looks_away();
         test_planet_surface_planner_selects_near_lod();

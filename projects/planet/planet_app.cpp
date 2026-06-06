@@ -125,6 +125,8 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 17U);
         2, 1, VK_FORMAT_R32G32B32A32_UINT, offsetof(PlanetSurfaceGpuPatchInstance, face)));
     layout.attributes.push_back(cubey::render::vertex_input_attribute(
         3, 1, VK_FORMAT_R32_SFLOAT, offsetof(PlanetSurfaceGpuPatchInstance, screen_error_px)));
+    layout.attributes.push_back(cubey::render::vertex_input_attribute(
+        4, 1, VK_FORMAT_R32_UINT, offsetof(PlanetSurfaceGpuPatchInstance, edge_transition_mask)));
     return layout;
 }
 
@@ -738,7 +740,7 @@ class PlanetApp {
                 .previous_selected_patches = previous_selected_patch_ids_,
             });
         patch_grid_ = make_planet_patch_grid_mesh(planet_config_);
-        patch_instances_ = make_planet_surface_gpu_patch_instances(plan);
+        patch_instances_ = make_planet_surface_gpu_patch_instances(planet_config_, plan);
         refresh_previous_selected_patch_ids(plan);
         mark_patch_instance_buffers_stale();
         refresh_render_diagnostics(plan);

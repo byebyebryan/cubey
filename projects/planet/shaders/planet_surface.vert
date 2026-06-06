@@ -5,6 +5,7 @@ layout(location = 0) in vec2 in_uv;
 layout(location = 1) in float in_skirt;
 layout(location = 2) in uvec4 in_patch_id;
 layout(location = 3) in float in_screen_error_px;
+layout(location = 4) in uint in_edge_transition_mask;
 
 layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     mat4 view_projection;
@@ -65,6 +66,33 @@ vec4 patch_bounds() {
     float u1 = -1.0 + 2.0 * float(in_patch_id.z + 1U) * inv_divisions;
     float v1 = -1.0 + 2.0 * float(in_patch_id.w + 1U) * inv_divisions;
     return vec4(u0, v0, u1, v1);
+}
+
+bool edge_transition_enabled(uint edge_bit) {
+    return (in_edge_transition_mask & (1U << edge_bit)) != 0U;
+}
+
+float coarser_edge_coord(float value) {
+    float coarse_cells = max(patch_resolution_option() * 0.5, 1.0);
+    return clamp(floor(value * coarse_cells + 0.5) / coarse_cells, 0.0, 1.0);
+}
+
+vec2 edge_transition_uv(vec2 uv) {
+    float edge_epsilon = 0.5 / max(patch_resolution_option(), 1.0);
+    vec2 transitioned = uv;
+    if (edge_transition_enabled(0U) && uv.x <= edge_epsilon) {
+        transitioned.y = coarser_edge_coord(transitioned.y);
+    }
+    if (edge_transition_enabled(1U) && uv.x >= 1.0 - edge_epsilon) {
+        transitioned.y = coarser_edge_coord(transitioned.y);
+    }
+    if (edge_transition_enabled(2U) && uv.y <= edge_epsilon) {
+        transitioned.x = coarser_edge_coord(transitioned.x);
+    }
+    if (edge_transition_enabled(3U) && uv.y >= 1.0 - edge_epsilon) {
+        transitioned.x = coarser_edge_coord(transitioned.x);
+    }
+    return transitioned;
 }
 
 vec3 face_color(uint face) {
@@ -212,8 +240,9 @@ vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m) {
 
 void main() {
     vec4 bounds = patch_bounds();
-    float u = mix(bounds.x, bounds.z, in_uv.x);
-    float v = mix(bounds.y, bounds.w, in_uv.y);
+    vec2 sample_uv = edge_transition_uv(in_uv);
+    float u = mix(bounds.x, bounds.z, sample_uv.x);
+    float v = mix(bounds.y, bounds.w, sample_uv.y);
     vec3 sphere_normal = normalize(planet_surface_cube_face_point(in_patch_id.x, u, v));
     float height_m = planet_surface_terrain_height_m(sphere_normal);
     vec3 normal =
