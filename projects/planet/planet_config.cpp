@@ -294,7 +294,7 @@ void validate_planet_config(const PlanetConfig& config) {
         throw std::runtime_error("planet patch resolution must be positive");
     }
     if (config.max_lod_level > kPlanetMaxLiveLodLevel) {
-        throw std::runtime_error("planet max LOD level must be <= 9");
+        throw std::runtime_error("planet max LOD level exceeds live cap");
     }
     if (config.patch_resolution > kPlanetMaxPatchResolution) {
         throw std::runtime_error("planet patch resolution must be <= 128");
@@ -308,6 +308,18 @@ void validate_planet_config(const PlanetConfig& config) {
     if (!std::isfinite(config.lod_hysteresis) || config.lod_hysteresis < 0.0F ||
         config.lod_hysteresis >= 1.0F) {
         throw std::runtime_error("planet LOD hysteresis must be finite and in [0, 1)");
+    }
+    if (config.local_detail_lod_levels == 0U ||
+        config.local_detail_lod_levels > kPlanetMaxLocalDetailLodLevels) {
+        throw std::runtime_error("planet local detail LOD levels out of supported range");
+    }
+    if (config.local_detail_cells_per_axis == 0U ||
+        config.local_detail_cells_per_axis > kPlanetMaxLocalDetailCellsPerAxis) {
+        throw std::runtime_error("planet local detail cells per axis out of supported range");
+    }
+    if (!std::isfinite(config.local_detail_outer_half_extent_m) ||
+        config.local_detail_outer_half_extent_m <= 0.0F) {
+        throw std::runtime_error("planet local detail outer extent must be finite and positive");
     }
     if (config.skirt_depth_scale <= 0.0F) {
         throw std::runtime_error("planet skirt depth scale must be positive");

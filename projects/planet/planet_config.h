@@ -40,6 +40,11 @@ inline constexpr std::uint32_t kPlanetMaxLiveLodLevel = 12;
 inline constexpr std::uint64_t kPlanetMaxLivePatchInstances = 65536ULL;
 inline constexpr std::size_t kPlanetDiagnosticLodCapacity = 16;
 inline constexpr std::uint64_t kPlanetCpuMeshVertexCap = 2000000ULL;
+inline constexpr std::uint32_t kPlanetDefaultLocalDetailLodLevels = 6;
+inline constexpr std::uint32_t kPlanetDefaultLocalDetailCellsPerAxis = 128;
+inline constexpr float kPlanetDefaultLocalDetailOuterHalfExtentM = 8192.0F;
+inline constexpr std::uint32_t kPlanetMaxLocalDetailLodLevels = 8;
+inline constexpr std::uint32_t kPlanetMaxLocalDetailCellsPerAxis = 512;
 
 enum class PlanetDebugView : std::uint8_t {
     Final,
@@ -89,6 +94,9 @@ struct PlanetConfig {
     std::uint32_t max_lod_level = kPlanetDefaultMaxLodLevel;
     float lod_target_edge_px = kPlanetDefaultLodTargetEdgePx;
     float lod_hysteresis = kPlanetDefaultLodHysteresis;
+    std::uint32_t local_detail_lod_levels = kPlanetDefaultLocalDetailLodLevels;
+    std::uint32_t local_detail_cells_per_axis = kPlanetDefaultLocalDetailCellsPerAxis;
+    float local_detail_outer_half_extent_m = kPlanetDefaultLocalDetailOuterHalfExtentM;
     PlanetDebugView debug_view = PlanetDebugView::Final;
     bool wire_overlay = false;
     bool skirts_enabled = true;

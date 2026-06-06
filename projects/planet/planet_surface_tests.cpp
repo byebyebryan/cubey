@@ -1,6 +1,7 @@
 #include "planet_surface.h"
 #include "planet_surface_field.h"
 #include "planet_surface_runtime.h"
+#include "planet_local_detail.h"
 
 #include <cmath>
 #include <cstddef>
@@ -983,6 +984,54 @@ void test_planet_surface_earthlike_lod_reaches_meter_scale_budget() {
             "earthlike planet LOD should expose sub-100m selected cells near the camera");
 }
 
+void test_planet_local_detail_plan_reports_viewer_centered_clipmap() {
+    const cubey::projects::planet::PlanetConfig config{};
+    const cubey::projects::planet::PlanetFrame frame =
+        cubey::projects::planet::make_planet_frame(
+            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 50000.0});
+
+    const cubey::projects::planet::PlanetLocalDetailPlan plan =
+        cubey::projects::planet::plan_planet_local_detail(config, frame);
+
+    require(plan.diagnostics.lod_levels == config.local_detail_lod_levels,
+            "planet local detail should report configured clipmap levels");
+    require(plan.diagnostics.patch_count ==
+                cubey::render::clipmap_grid_2d_patch_count(config.local_detail_lod_levels),
+            "planet local detail should use the shared clipmap patch count");
+    require(std::abs(plan.diagnostics.near_cell_size - 4.0F) < 0.0001F,
+            "planet local detail defaults should expose a four-meter near cell");
+    require(plan.diagnostics.total_triangles > 0U,
+            "planet local detail should report a positive triangle budget");
+    require(glm::length(plan.local_frame.world_origin_m - frame.local_frame.world_origin_m) < 0.001,
+            "planet local detail should stay anchored to the planet local tangent frame");
+}
+
+void test_planet_local_detail_density_is_independent_of_planet_radius() {
+    const cubey::projects::planet::PlanetConfig earth_config{};
+    cubey::projects::planet::PlanetConfig mini_config =
+        cubey::projects::planet::planet_config_for_scale_preset(
+            cubey::projects::planet::PlanetScalePreset::Mini);
+    const cubey::projects::planet::PlanetFrame earth_frame =
+        cubey::projects::planet::make_planet_frame(
+            earth_config,
+            cubey::math::DVec3{0.0, 0.0, earth_config.radius_m + 50000.0});
+    const cubey::projects::planet::PlanetFrame mini_frame =
+        cubey::projects::planet::make_planet_frame(
+            mini_config, cubey::math::DVec3{0.0, 0.0, mini_config.radius_m + 50000.0});
+
+    const cubey::projects::planet::PlanetLocalDetailPlan earth_plan =
+        cubey::projects::planet::plan_planet_local_detail(earth_config, earth_frame);
+    const cubey::projects::planet::PlanetLocalDetailPlan mini_plan =
+        cubey::projects::planet::plan_planet_local_detail(mini_config, mini_frame);
+
+    require(std::abs(earth_plan.diagnostics.near_cell_size -
+                     mini_plan.diagnostics.near_cell_size) < 0.0001F,
+            "planet local detail near cell should not change with planet radius");
+    require(std::abs(earth_plan.diagnostics.outer_half_extent -
+                     mini_plan.diagnostics.outer_half_extent) < 0.0001F,
+            "planet local detail extent should not change with planet radius");
+}
+
 void test_planet_surface_hysteresis_delays_split() {
     const cubey::projects::planet::PlanetConfig root_config{
         .patches_per_face = 1,
@@ -1385,6 +1434,8 @@ int main() {
         test_planet_surface_planner_records_high_lod_diagnostics();
         test_planet_surface_default_lod_reaches_near_camera_detail();
         test_planet_surface_earthlike_lod_reaches_meter_scale_budget();
+        test_planet_local_detail_plan_reports_viewer_centered_clipmap();
+        test_planet_local_detail_density_is_independent_of_planet_radius();
         test_planet_surface_hysteresis_delays_split();
         test_planet_surface_hysteresis_delays_merge();
         test_planet_surface_planner_falls_back_at_live_patch_budget();
