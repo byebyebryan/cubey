@@ -31,6 +31,22 @@ function(cubey_add_png_smoke_test name target output_path)
     )
 endfunction()
 
+function(cubey_add_png_stats_test smoke_name output_path min_mean_luma min_luma_range)
+    set(stats_name "${smoke_name}_stats")
+    add_test(
+        NAME "${stats_name}"
+        COMMAND
+            /bin/sh -c
+            "output=$1; verifier=$2; min_mean=$3; min_range=$4; if ! test -s \"$output\"; then printf 'png_stats: skipped %s because no PNG was written\\n' \"$output\"; exit 0; fi; \"$verifier\" \"$output\" \"$min_mean\" \"$min_range\""
+            "${stats_name}"
+            "${output_path}"
+            "$<TARGET_FILE:cubey_png_stats>"
+            "${min_mean_luma}"
+            "${min_luma_range}"
+    )
+    set_tests_properties("${stats_name}" PROPERTIES TIMEOUT 10 DEPENDS "${smoke_name}")
+endfunction()
+
 function(cubey_add_video_smoke_test name target output_path)
     add_test(
         NAME "${name}"

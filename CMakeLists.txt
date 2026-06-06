@@ -191,6 +191,20 @@ if (NOT DEFINED BUILD_TESTING)
 endif()
 include(CTest)
 
+if (BUILD_TESTING)
+    add_executable(cubey_png_stats
+        tests/tools/png_stats.cpp
+    )
+    target_link_libraries(
+        cubey_png_stats
+        PRIVATE
+            cubey_external_stb_image
+            cubey_project_options
+            cubey_project_warnings
+    )
+    set_target_properties(cubey_png_stats PROPERTIES CXX_CLANG_TIDY "")
+endif()
+
 add_subdirectory(src/cubey)
 
 if (CUBEY_BUILD_EXAMPLES AND NOT CUBEY_BUILD_HOST)

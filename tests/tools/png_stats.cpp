@@ -5,7 +5,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
-#include <cstdlib>
 #include <filesystem>
 #include <limits>
 #include <stdexcept>
@@ -87,8 +86,9 @@ int main(int argc, char** argv) {
         stbi_image_free(image.pixels);
 
         const double luma_range = stats.max_luma - stats.min_luma;
-        std::printf("png_stats: %s mean=%.6f min=%.6f max=%.6f range=%.6f\n", path.string().c_str(),
-                    stats.mean_luma, stats.min_luma, stats.max_luma, luma_range);
+        std::printf("png_stats: %s mean=%.6f min=%.6f max=%.6f range=%.6f\n",
+                    path.string().c_str(), stats.mean_luma, stats.min_luma, stats.max_luma,
+                    luma_range);
         if (stats.mean_luma < static_cast<double>(min_mean_luma) ||
             luma_range < static_cast<double>(min_luma_range)) {
             std::fprintf(stderr, "PNG stats below thresholds: mean >= %.6f, range >= %.6f\n",
