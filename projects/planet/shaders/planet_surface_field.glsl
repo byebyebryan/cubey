@@ -292,6 +292,27 @@ vec3 planet_surface_material_debug_color(uint material) {
     return vec3(0.88, 0.92, 0.96);
 }
 
+float planet_surface_material_roughness(uint material, float normalized_slope, float moisture) {
+    float slope = clamp(normalized_slope, 0.0, 1.0);
+    float wet = clamp(moisture, 0.0, 1.0);
+    if (material == 0U) {
+        return 0.25;
+    }
+    if (material == 1U) {
+        return 0.34;
+    }
+    if (material == 2U) {
+        return 0.78;
+    }
+    if (material == 3U) {
+        return clamp(0.74 - wet * 0.18 + slope * 0.10, 0.45, 0.85);
+    }
+    if (material == 4U) {
+        return clamp(0.76 + slope * 0.16, 0.62, 0.95);
+    }
+    return 0.58;
+}
+
 vec3 planet_surface_slope_color(float normalized_slope) {
     float t = clamp(normalized_slope, 0.0, 1.0);
     return vec3(mix(0.08, 0.95, t), mix(0.25, 0.66, t), mix(0.42, 0.14, t));

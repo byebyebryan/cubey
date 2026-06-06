@@ -8,6 +8,8 @@ layout(location = 1) in vec3 in_normal;
 layout(location = 2) in vec2 in_uv;
 layout(location = 3) in vec3 in_render_position;
 layout(location = 4) in vec3 in_sphere_normal;
+layout(location = 5) in vec4 in_surface_field;
+layout(location = 6) in vec4 in_climate_field;
 
 layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     mat4 view_projection;
@@ -36,9 +38,15 @@ float patch_resolution_option() {
     return float(max(packed_patch_lod_option() / 256U, 1U));
 }
 
+float patches_per_face_option() {
+    return float(max((packed_patch_lod_option() / 16U) & 15U, 1U));
+}
+
 int debug_view_option() {
     return int(floor(surface_frame.surface_options.x));
 }
+
+#include "planet_surface_field.glsl"
 
 float grid_wire_alpha(vec2 uv) {
     vec2 grid_uv = uv * patch_resolution_option();
@@ -105,6 +113,45 @@ vec3 celestial_planes_color() {
     return color;
 }
 
+uint fragment_material_id() {
+    float height_above_sea_m = in_surface_field.x;
+    float normalized_elevation = in_surface_field.y;
+    float normalized_slope = in_surface_field.z;
+    float shoreline_mask = in_surface_field.w;
+    float water_depth_m = in_climate_field.x * max(surface_frame.field_options.y, 0.0001);
+    float moisture = in_climate_field.y;
+    float temperature = in_climate_field.z;
+    return planet_surface_material_id(height_above_sea_m, water_depth_m, shoreline_mask,
+                                      normalized_elevation, normalized_slope, moisture,
+                                      temperature);
+}
+
+vec3 fragment_material_albedo(uint material) {
+    float normalized_elevation = in_surface_field.y;
+    float normalized_slope = in_surface_field.z;
+    float shoreline_mask = clamp(in_surface_field.w, 0.0, 1.0);
+    float normalized_bathymetry = clamp(in_climate_field.x, 0.0, 1.0);
+    float moisture = clamp(in_climate_field.y, 0.0, 1.0);
+    float temperature = clamp(in_climate_field.z, 0.0, 1.0);
+    vec3 base = planet_surface_material_color(material, normalized_elevation, normalized_slope,
+                                              moisture, temperature);
+    if (material == 0U || material == 1U) {
+        vec3 shallow = vec3(0.055, 0.245, 0.300);
+        return mix(base, shallow, (1.0 - normalized_bathymetry) * 0.36);
+    }
+    if (material == 2U) {
+        return mix(base, vec3(0.72, 0.62, 0.38), shoreline_mask * 0.40);
+    }
+    if (material == 3U) {
+        vec3 warm_dry = vec3(0.34, 0.30, 0.16);
+        return mix(base, warm_dry, (1.0 - moisture) * temperature * 0.20);
+    }
+    if (material == 4U) {
+        return mix(base, vec3(0.56, 0.52, 0.46), normalized_slope * 0.22);
+    }
+    return base;
+}
+
 void main() {
     if (debug_view_option() == 13) {
         float patch_edge = min(min(in_uv.x, in_uv.y), min(1.0 - in_uv.x, 1.0 - in_uv.y));
@@ -123,13 +170,28 @@ void main() {
 
     vec3 normal = normalize(in_normal);
     vec3 light_dir = normalize(surface_frame.light_direction_debug.xyz);
+    float final_view = floor(surface_frame.surface_options.x) < 0.5 ? 1.0 : 0.0;
+    uint material = fragment_material_id();
+    vec3 albedo = final_view > 0.5 ? fragment_material_albedo(material) : in_color;
     float ndotl = max(dot(normal, light_dir), 0.0);
     float wrap = max(dot(normal, light_dir) * 0.5 + 0.5, 0.0);
     vec3 haze_color = surface_frame.haze_color_direct.rgb;
     float direct_intensity = max(surface_frame.haze_color_direct.w, 0.0);
     float ambient_intensity = max(surface_frame.atmosphere_options.x, 0.0);
     vec3 sky = haze_color * pow(wrap, 1.8) * 0.18;
-    vec3 color = in_color * (haze_color * ambient_intensity + direct_intensity * ndotl) + sky;
+    vec3 color = albedo * (haze_color * ambient_intensity + direct_intensity * ndotl) + sky;
+    vec3 to_camera = normalize(surface_frame.camera_horizon.xyz - in_render_position);
+    vec3 half_vector = normalize(light_dir + to_camera);
+    float roughness = clamp(in_climate_field.w, 0.05, 0.98);
+    float specular_power = mix(96.0, 14.0, roughness);
+    float specular = pow(max(dot(normal, half_vector), 0.0), specular_power) *
+                     (1.0 - roughness);
+    float water_specular = material <= 1U ? 1.0 : 0.0;
+    float land_specular = material == 2U ? 0.16 : 0.05;
+    color += haze_color * direct_intensity * specular *
+             mix(land_specular, 0.42 + pow(1.0 - max(dot(normal, to_camera), 0.0), 5.0) * 0.28,
+                 water_specular) *
+             final_view;
     float edge = min(min(in_uv.x, in_uv.y), min(1.0 - in_uv.x, 1.0 - in_uv.y));
     float wire = 1.0 - smoothstep(0.0, 0.015, edge);
     float wire_enabled = fract(surface_frame.surface_options.x) > 0.1 ? 1.0 : 0.0;
@@ -146,7 +208,6 @@ void main() {
     float horizon_graze = pow(clamp(distance_ratio, 0.0, 1.35), 1.45);
     float haze = clamp(max(band_haze * 0.58, optical_haze * 0.72) + horizon_graze * 0.10, 0.0, 1.0) *
                  haze_strength;
-    float final_view = floor(surface_frame.surface_options.x) < 0.5 ? 1.0 : 0.0;
     vec3 view_dir = normalize(in_render_position - surface_frame.camera_horizon.xyz);
     vec3 final_haze_color =
         surface_haze_color(haze_color, normalize(in_sphere_normal), light_dir, view_dir, haze);

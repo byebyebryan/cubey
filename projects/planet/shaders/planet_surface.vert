@@ -53,6 +53,8 @@ layout(location = 1) out vec3 out_normal;
 layout(location = 2) out vec2 out_uv;
 layout(location = 3) out vec3 out_render_position;
 layout(location = 4) out vec3 out_sphere_normal;
+layout(location = 5) out vec4 out_surface_field;
+layout(location = 6) out vec4 out_climate_field;
 
 #include "planet_surface_field.glsl"
 
@@ -187,18 +189,9 @@ vec3 final_color(vec3 normal, uint material, float normalized_elevation, float n
     return latitude_color(normal);
 }
 
-vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m) {
+vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m, uint material,
+                  float normalized_elevation, float normalized_slope, float shoreline_mask) {
     int debug_view = debug_view_option();
-    float normalized_elevation = planet_surface_normalized_elevation(height_m);
-    float normalized_slope = planet_surface_normalized_slope(sphere_normal, normal);
-    float height_above_sea_m = planet_surface_height_above_sea_m(height_m);
-    float water_depth_m = planet_surface_water_depth_m(height_m);
-    float shoreline_mask = planet_surface_shoreline_mask(height_m);
-    float moisture = planet_surface_moisture(sphere_normal, shoreline_mask, normalized_elevation);
-    float temperature = planet_surface_temperature(sphere_normal, normalized_elevation);
-    uint material =
-        planet_surface_material_id(height_above_sea_m, water_depth_m, shoreline_mask,
-                                   normalized_elevation, normalized_slope, moisture, temperature);
     if (debug_view == 1) {
         return face_color(in_patch_id.x);
     }
@@ -242,8 +235,7 @@ vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m) {
     if (debug_view == 13) {
         return lod_color();
     }
-    return final_color(normal, material, normalized_elevation, normalized_slope, moisture,
-                       temperature);
+    return final_color(normal, material, normalized_elevation, normalized_slope, 0.5, 0.5);
 }
 
 void main() {
@@ -255,14 +247,30 @@ void main() {
     float height_m = planet_surface_terrain_height_m(sphere_normal);
     vec3 normal =
         planet_surface_terrain_normal(in_patch_id.x, u, v, in_patch_id.y, sphere_normal);
+    float normalized_elevation = planet_surface_normalized_elevation(height_m);
+    float normalized_slope = planet_surface_normalized_slope(sphere_normal, normal);
+    float height_above_sea_m = planet_surface_height_above_sea_m(height_m);
+    float water_depth_m = planet_surface_water_depth_m(height_m);
+    float normalized_bathymetry = planet_surface_normalized_bathymetry(height_m);
+    float shoreline_mask = planet_surface_shoreline_mask(height_m);
+    float moisture = planet_surface_moisture(sphere_normal, shoreline_mask, normalized_elevation);
+    float temperature = planet_surface_temperature(sphere_normal, normalized_elevation);
+    uint material =
+        planet_surface_material_id(height_above_sea_m, water_depth_m, shoreline_mask,
+                                   normalized_elevation, normalized_slope, moisture, temperature);
+    float roughness = planet_surface_material_roughness(material, normalized_slope, moisture);
     vec3 world_position = sphere_normal * (surface_frame.render_origin_radius.w + height_m);
     world_position -= normal * surface_frame.terrain_options.w * in_skirt;
     vec3 render_position = world_position - surface_frame.render_origin_radius.xyz;
 
-    out_color = vertex_color(sphere_normal, normal, height_m);
+    out_color = vertex_color(sphere_normal, normal, height_m, material, normalized_elevation,
+                             normalized_slope, shoreline_mask);
     out_normal = normal;
     out_uv = in_uv;
     out_render_position = render_position;
     out_sphere_normal = sphere_normal;
+    out_surface_field = vec4(height_above_sea_m, normalized_elevation, normalized_slope,
+                             shoreline_mask);
+    out_climate_field = vec4(normalized_bathymetry, moisture, temperature, roughness);
     gl_Position = surface_frame.view_projection * vec4(render_position, 1.0);
 }
