@@ -164,6 +164,7 @@ class PlanetApp {
     explicit PlanetApp(RunConfig config)
         : config_(std::move(config)), planet_config_(planet_config_from_run_config(config_)),
           edit_planet_config_(planet_config_), solar_time_(planet_solar_time_from_run_config(config_)),
+          exposure_config_(planet_exposure_config_from_run_config(config_)),
           celestial_system_(planet_celestial_system_from_solar_time(solar_time_)),
           celestial_lighting_(planet_celestial_lighting(celestial_system_)),
           camera_state_(planet_camera_initial_state_from_run_config(
@@ -527,6 +528,24 @@ class PlanetApp {
         ImGui::Text("Moon illum / light: %.3f / %.3f",
                     celestial_lighting_.moon_light_intensity / kPlanetFullMoonLightIntensity,
                     celestial_lighting_.moon_light_intensity);
+
+        ImGui::SeparatorText("Exposure");
+        ImGui::Checkbox("Auto Exposure", &exposure_config_.auto_exposure_enabled);
+        if (exposure_config_.auto_exposure_enabled) {
+            ImGui::SliderFloat("Daylight Exposure", &exposure_config_.daylight_exposure, -4.0F,
+                               1.0F, "%.2f");
+            ImGui::SliderFloat("Twilight Exposure", &exposure_config_.twilight_exposure, -3.0F,
+                               3.0F, "%.2f");
+            ImGui::SliderFloat("Night Exposure", &exposure_config_.night_exposure, -1.0F, 4.0F,
+                               "%.2f");
+        } else {
+            ImGui::SliderFloat("Manual Exposure", &exposure_config_.manual_exposure, -4.0F, 4.0F,
+                               "%.2f");
+        }
+        ImGui::Text("Sun elevation / exposure: %.1f deg / %.2f",
+                    planet_celestial_sun_elevation_degrees(celestial_system_,
+                                                           frame_.camera_world_position_m),
+                    display_exposure());
 
         ImGui::SeparatorText("Diagnostics");
         ImGui::Text("Radius: %.0f m", planet_config_.radius_m);
@@ -1051,7 +1070,8 @@ class PlanetApp {
     }
 
     [[nodiscard]] float display_exposure() const {
-        return config_.pbr.exposure;
+        return planet_celestial_display_exposure(celestial_system_, frame_.camera_world_position_m,
+                                                 exposure_config_);
     }
 
     [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms(VkFormat color_format) const {
@@ -1360,6 +1380,7 @@ class PlanetApp {
     PlanetConfig planet_config_{};
     PlanetConfig edit_planet_config_{};
     PlanetSolarTime solar_time_{};
+    PlanetExposureConfig exposure_config_{};
     PlanetSolarSystemConfig solar_config_{};
     PlanetCelestialSystem celestial_system_{};
     PlanetCelestialLighting celestial_lighting_{};

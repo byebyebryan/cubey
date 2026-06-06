@@ -311,6 +311,86 @@ void test_celestial_lighting_scales_moonlight_by_phase() {
                  0.0001F, "quarter moon should be roughly half the full-moon light");
 }
 
+void test_celestial_display_exposure_uses_local_sun_elevation() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    celestial.sun.direction = {0.0F, 1.0F, 0.0F};
+    const cubey::projects::planet::PlanetExposureConfig exposure{};
+    const cubey::math::DVec3 camera_position{0.0, 1.0, 0.0};
+
+    const float daylight_exposure =
+        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
+                                                                   exposure);
+
+    celestial.sun.direction = {0.0F, -1.0F, 0.0F};
+    const float night_exposure =
+        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
+                                                                   exposure);
+
+    require(daylight_exposure < -2.0F,
+            "planet auto exposure should darken bright daylight relative to fixed exposure");
+    require(night_exposure > 2.0F,
+            "planet auto exposure should brighten full night enough for inspection");
+    require(night_exposure > daylight_exposure,
+            "planet auto exposure should brighten night relative to daylight");
+}
+
+void test_celestial_auto_exposure_interpolates_day_twilight_and_night() {
+    cubey::projects::planet::PlanetExposureConfig exposure{};
+    exposure.daylight_exposure = -3.0F;
+    exposure.twilight_exposure = -0.5F;
+    exposure.night_exposure = 2.5F;
+
+    require_near(cubey::projects::planet::planet_celestial_auto_exposure(80.0F, exposure),
+                 -3.0F, 0.000001F, "high sun should use daylight exposure");
+    const float horizon_exposure =
+        cubey::projects::planet::planet_celestial_auto_exposure(0.0F, exposure);
+    require(horizon_exposure < exposure.twilight_exposure,
+            "horizon twilight should already lean toward daylight instead of over-brightening");
+    require(horizon_exposure > exposure.daylight_exposure,
+            "horizon twilight should remain between daylight and twilight exposure");
+    require_near(cubey::projects::planet::planet_celestial_auto_exposure(-60.0F, exposure),
+                 2.5F, 0.000001F, "deep night should use night exposure");
+}
+
+void test_celestial_display_exposure_respects_overrides() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    celestial.sun.direction = {0.0F, 1.0F, 0.0F};
+    const cubey::math::DVec3 camera_position{0.0, 1.0, 0.0};
+
+    cubey::RunConfig explicit_exposure{};
+    explicit_exposure.pbr.exposure = -0.25F;
+    explicit_exposure.pbr.exposure_explicit = true;
+    const cubey::projects::planet::PlanetExposureConfig explicit_config =
+        cubey::projects::planet::planet_exposure_config_from_run_config(explicit_exposure);
+    require_near(cubey::projects::planet::planet_celestial_display_exposure(
+                     celestial, camera_position, explicit_config),
+                 -0.25F, 0.000001F, "explicit PBR exposure should override planet auto exposure");
+
+    cubey::RunConfig disabled_auto{};
+    disabled_auto.pbr.exposure = 0.35F;
+    disabled_auto.atmosphere.auto_exposure = 0;
+    const cubey::projects::planet::PlanetExposureConfig disabled_config =
+        cubey::projects::planet::planet_exposure_config_from_run_config(disabled_auto);
+    require_near(cubey::projects::planet::planet_celestial_display_exposure(
+                     celestial, camera_position, disabled_config),
+                 0.35F, 0.000001F, "--no-auto-exposure should keep fixed PBR exposure");
+
+    cubey::RunConfig biased{};
+    biased.atmosphere.exposure_bias = 0.5F;
+    const cubey::projects::planet::PlanetExposureConfig default_config =
+        cubey::projects::planet::planet_exposure_config_from_run_config(cubey::RunConfig{});
+    const cubey::projects::planet::PlanetExposureConfig biased_config =
+        cubey::projects::planet::planet_exposure_config_from_run_config(biased);
+    const float default_exposure =
+        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
+                                                                   default_config);
+    const float biased_exposure =
+        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
+                                                                   biased_config);
+    require_near(biased_exposure, default_exposure + 0.5F, 0.000001F,
+                 "planet exposure bias should offset automatic exposure");
+}
+
 void test_planet_atmosphere_inputs_follow_celestial_state() {
     cubey::projects::planet::PlanetCelestialSystem celestial{};
     celestial.sun.direction = glm::normalize(cubey::math::Vec3{0.35F, 0.55F, -0.76F});
@@ -649,6 +729,9 @@ int main() {
         test_celestial_diagnostics_report_plane_relationships();
         test_celestial_lighting_uses_celestial_direction();
         test_celestial_lighting_scales_moonlight_by_phase();
+        test_celestial_display_exposure_uses_local_sun_elevation();
+        test_celestial_auto_exposure_interpolates_day_twilight_and_night();
+        test_celestial_display_exposure_respects_overrides();
         test_planet_atmosphere_inputs_follow_celestial_state();
         test_planet_atmosphere_environment_config_round_trips_sun_direction();
         test_celestial_body_conversion_preserves_moon_state();

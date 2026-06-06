@@ -32,6 +32,17 @@ inline constexpr float kPlanetMoonSiderealOrbitPeriodDays = 27.321661F;
 inline constexpr float kPlanetMoonOrbitInclinationRad = 0.08979719F;
 inline constexpr float kPlanetDefaultMoonOrbitPhaseOffsetCycles = 0.5980231F;
 inline constexpr float kPlanetFullMoonLightIntensity = 0.055F;
+inline constexpr float kPlanetDefaultDaylightExposure = -2.35F;
+inline constexpr float kPlanetDefaultTwilightExposure = -1.55F;
+inline constexpr float kPlanetDefaultNightExposure = 2.80F;
+
+struct PlanetExposureConfig {
+    bool auto_exposure_enabled = true;
+    float manual_exposure = 0.0F;
+    float daylight_exposure = kPlanetDefaultDaylightExposure;
+    float twilight_exposure = kPlanetDefaultTwilightExposure;
+    float night_exposure = kPlanetDefaultNightExposure;
+};
 
 enum class PlanetCelestialBodyType : std::uint8_t {
     Sun,
@@ -121,6 +132,7 @@ struct PlanetSolarTime {
 };
 
 [[nodiscard]] PlanetSolarTime planet_solar_time_from_run_config(const RunConfig& config);
+[[nodiscard]] PlanetExposureConfig planet_exposure_config_from_run_config(const RunConfig& config);
 
 struct PlanetSolarSystemConfig {
     float axial_tilt_rad = 0.4090928F;
@@ -246,6 +258,16 @@ planet_celestial_body_render_placement(const PlanetCelestialBody& body,
                                        const PlanetCelestialBodyRenderPlacementInputs& inputs);
 [[nodiscard]] PlanetCelestialLighting
 planet_celestial_lighting(const PlanetCelestialSystem& celestial);
+[[nodiscard]] float
+planet_celestial_sun_elevation_degrees(const PlanetCelestialSystem& celestial,
+                                       cubey::math::DVec3 camera_world_position_m);
+[[nodiscard]] float
+planet_celestial_auto_exposure(float sun_elevation_degrees,
+                               const PlanetExposureConfig& exposure);
+[[nodiscard]] float
+planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
+                                  cubey::math::DVec3 camera_world_position_m,
+                                  const PlanetExposureConfig& exposure);
 [[nodiscard]] PlanetAtmosphereInputs
 planet_atmosphere_inputs(const PlanetCelestialSystem& celestial,
                          const PlanetCelestialLighting& lighting,

@@ -134,6 +134,24 @@ PlanetSolarTime planet_solar_time_from_run_config(const RunConfig& config) {
     return time;
 }
 
+PlanetExposureConfig planet_exposure_config_from_run_config(const RunConfig& config) {
+    PlanetExposureConfig exposure{};
+    exposure.manual_exposure = config.pbr.exposure;
+    exposure.auto_exposure_enabled = config.atmosphere.auto_exposure < 0 ||
+                                     config.atmosphere.auto_exposure == 1;
+    if (config.pbr.exposure_explicit) {
+        exposure.auto_exposure_enabled = false;
+    }
+
+    const float bias = run_config_float_is_set(config.atmosphere.exposure_bias)
+                           ? config.atmosphere.exposure_bias
+                           : 0.0F;
+    exposure.daylight_exposure += bias;
+    exposure.twilight_exposure += bias;
+    exposure.night_exposure += bias;
+    return exposure;
+}
+
 void planet_solar_time_advance(PlanetSolarTime& time, double delta_seconds) {
     if (time.hours_per_second == 0.0F || delta_seconds <= 0.0) {
         return;
@@ -337,6 +355,46 @@ PlanetCelestialLighting planet_celestial_lighting(const PlanetCelestialSystem& c
         .ambient_intensity = 0.12F,
         .haze_color = {0.085F, 0.125F, 0.185F},
     };
+}
+
+float planet_celestial_sun_elevation_degrees(const PlanetCelestialSystem& celestial,
+                                             cubey::math::DVec3 camera_world_position_m) {
+    constexpr float kRadiansToDegrees = 180.0F / std::numbers::pi_v<float>;
+    if (glm::length(camera_world_position_m) <= 0.000001) {
+        return 90.0F;
+    }
+    const cubey::math::DVec3 camera_up_d = glm::normalize(camera_world_position_m);
+    const cubey::math::Vec3 camera_up{
+        static_cast<float>(camera_up_d.x),
+        static_cast<float>(camera_up_d.y),
+        static_cast<float>(camera_up_d.z),
+    };
+    const float sun_elevation =
+        std::asin(std::clamp(glm::dot(normalized_or_up(celestial.sun.direction), camera_up),
+                             -1.0F, 1.0F));
+    return sun_elevation * kRadiansToDegrees;
+}
+
+float planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
+                                        cubey::math::DVec3 camera_world_position_m,
+                                        const PlanetExposureConfig& exposure) {
+    if (!exposure.auto_exposure_enabled) {
+        return exposure.manual_exposure;
+    }
+
+    return planet_celestial_auto_exposure(
+        planet_celestial_sun_elevation_degrees(celestial, camera_world_position_m), exposure);
+}
+
+float planet_celestial_auto_exposure(float sun_elevation_degrees,
+                                     const PlanetExposureConfig& exposure) {
+    const float night_to_twilight = smoothstep(-18.0F, -6.0F, sun_elevation_degrees);
+    const float twilight_to_day = smoothstep(-4.0F, 18.0F, sun_elevation_degrees);
+    const float night_twilight_exposure =
+        std::lerp(exposure.night_exposure, exposure.twilight_exposure, night_to_twilight);
+    return std::clamp(
+        std::lerp(night_twilight_exposure, exposure.daylight_exposure, twilight_to_day), -4.0F,
+        4.0F);
 }
 
 PlanetAtmosphereInputs planet_atmosphere_inputs(const PlanetCelestialSystem& celestial,

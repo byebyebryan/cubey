@@ -125,9 +125,11 @@ terrain receives a small phase-scaled secondary moonlight term. True
 node-aware lunar eclipses remain deferred. The surface shader receives frame
 data through a descriptor-backed uniform instead of push constants, and
 composes final terrain through atmosphere before post. The scene renders into a
-linear HDR scene color target and uses the shared fullscreen post pass for
-exposure, tone mapping, and output encoding before writing the swapchain or
-headless target.
+linear HDR scene color target and uses the shared fullscreen post pass for tone
+mapping and output encoding before writing the swapchain or headless target.
+Unless `--exposure` is set explicitly or `--no-auto-exposure` is used, planet
+resolves display exposure from the local sun elevation with separately tunable
+daylight, twilight, and night exposure controls in the UI.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it
