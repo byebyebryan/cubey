@@ -5,6 +5,7 @@
 
 #include <cubey/core/math.h>
 
+#include <array>
 #include <cstdint>
 #include <limits>
 
@@ -55,11 +56,21 @@ struct PlanetSurfaceTileSummary {
     float max_height_m = std::numeric_limits<float>::lowest();
     float min_height_above_sea_m = std::numeric_limits<float>::max();
     float max_height_above_sea_m = std::numeric_limits<float>::lowest();
+    float min_moisture = std::numeric_limits<float>::max();
+    float max_moisture = std::numeric_limits<float>::lowest();
+    float min_temperature = std::numeric_limits<float>::max();
+    float max_temperature = std::numeric_limits<float>::lowest();
+    float min_roughness = std::numeric_limits<float>::max();
+    float max_roughness = std::numeric_limits<float>::lowest();
     float max_water_depth_m = 0.0F;
     float max_shoreline_mask = 0.0F;
+    float land_coverage = 0.0F;
+    float water_coverage = 0.0F;
+    float shoreline_coverage = 0.0F;
     float max_normalized_slope = 0.0F;
     std::uint32_t sample_count = 0;
     std::uint32_t material_mask = 0;
+    std::array<std::uint32_t, 6> material_counts{};
 };
 
 struct PlanetSurfaceTilePayload {

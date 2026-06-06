@@ -1,6 +1,7 @@
 #include "planet_surface_field.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <cstdint>
 
@@ -196,6 +197,56 @@ namespace {
         return 0.58F;
     }
     return 0.7F;
+}
+
+[[nodiscard]] std::uint32_t hash_combine_u32(std::uint32_t hash, std::uint32_t value) {
+    hash ^= value + 0x9e3779b9U + (hash << 6U) + (hash >> 2U);
+    hash ^= hash >> 16U;
+    hash *= 0x7feb352dU;
+    hash ^= hash >> 15U;
+    hash *= 0x846ca68bU;
+    hash ^= hash >> 16U;
+    return hash;
+}
+
+[[nodiscard]] std::uint32_t hash_float(std::uint32_t hash, float value) {
+    return hash_combine_u32(hash, std::bit_cast<std::uint32_t>(value));
+}
+
+[[nodiscard]] std::uint32_t terrain_generator_revision(const PlanetConfig& config) {
+    std::uint32_t hash = 0x62706c6dU;
+    hash = hash_combine_u32(hash, config.terrain_enabled ? 1U : 0U);
+    hash = hash_float(hash, config.terrain_height_scale_m);
+    hash = hash_float(hash, config.terrain_noise_scale);
+    hash = hash_combine_u32(hash, config.terrain_seed);
+    hash = hash_float(hash, config.terrain_mid_detail_strength);
+    hash = hash_float(hash, config.terrain_fine_detail_strength);
+    hash = hash_float(hash, config.terrain_fine_detail_scale);
+    hash = hash_float(hash, config.sea_level_m);
+    hash = hash_float(hash, config.bathymetry_depth_scale_m);
+    hash = hash_float(hash, config.shoreline_width_m);
+    return hash != 0U ? hash : 1U;
+}
+
+void finalize_summary_coverage(PlanetSurfaceTileSummary& summary) {
+    if (summary.sample_count == 0U) {
+        summary.min_height_m = 0.0F;
+        summary.max_height_m = 0.0F;
+        summary.min_height_above_sea_m = 0.0F;
+        summary.max_height_above_sea_m = 0.0F;
+        summary.min_moisture = 0.0F;
+        summary.max_moisture = 0.0F;
+        summary.min_temperature = 0.0F;
+        summary.max_temperature = 0.0F;
+        summary.min_roughness = 0.0F;
+        summary.max_roughness = 0.0F;
+        return;
+    }
+    const float inv_sample_count = 1.0F / static_cast<float>(summary.sample_count);
+    summary.land_coverage = std::clamp(summary.land_coverage * inv_sample_count, 0.0F, 1.0F);
+    summary.water_coverage = std::clamp(summary.water_coverage * inv_sample_count, 0.0F, 1.0F);
+    summary.shoreline_coverage =
+        std::clamp(summary.shoreline_coverage * inv_sample_count, 0.0F, 1.0F);
 }
 
 } // namespace
@@ -440,23 +491,36 @@ PlanetSurfaceTilePayload make_planet_surface_tile_payload(const PlanetConfig& co
                 std::min(summary.min_height_above_sea_m, sample.height_above_sea_m);
             summary.max_height_above_sea_m =
                 std::max(summary.max_height_above_sea_m, sample.height_above_sea_m);
+            summary.min_moisture = std::min(summary.min_moisture, sample.moisture);
+            summary.max_moisture = std::max(summary.max_moisture, sample.moisture);
+            summary.min_temperature = std::min(summary.min_temperature, sample.temperature);
+            summary.max_temperature = std::max(summary.max_temperature, sample.temperature);
+            summary.min_roughness = std::min(summary.min_roughness, sample.roughness);
+            summary.max_roughness = std::max(summary.max_roughness, sample.roughness);
             summary.max_water_depth_m =
                 std::max(summary.max_water_depth_m, sample.water_depth_m);
             summary.max_shoreline_mask =
                 std::max(summary.max_shoreline_mask, sample.shoreline_mask);
+            summary.land_coverage += sample.land_mask;
+            summary.water_coverage += 1.0F - sample.land_mask;
+            summary.shoreline_coverage += sample.shoreline_mask;
             summary.max_normalized_slope =
                 std::max(summary.max_normalized_slope, sample.normalized_slope);
-            summary.material_mask |=
-                1U << static_cast<std::uint32_t>(sample.material);
+            const std::uint32_t material_index = static_cast<std::uint32_t>(sample.material);
+            summary.material_mask |= 1U << material_index;
+            if (material_index < summary.material_counts.size()) {
+                ++summary.material_counts[material_index];
+            }
             ++summary.sample_count;
         }
     }
+    finalize_summary_coverage(summary);
 
     return {
         .key = key,
         .bounds = bounds,
         .source = PlanetSurfaceTileSource::Procedural,
-        .generator_revision = config.terrain_seed,
+        .generator_revision = terrain_generator_revision(config),
         .summary = summary,
     };
 }

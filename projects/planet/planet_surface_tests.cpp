@@ -411,8 +411,10 @@ void test_planet_surface_tile_payload_is_deterministic_and_bounded() {
     require(first.key == key, "planet surface tile payload should retain its key");
     require(first.source == cubey::projects::planet::PlanetSurfaceTileSource::Procedural,
             "planet surface tile payload should report the procedural source");
-    require(first.generator_revision == config.terrain_seed,
-            "planet surface tile payload should expose the procedural generator revision");
+    require(first.generator_revision == second.generator_revision,
+            "planet surface tile payload revision should be deterministic");
+    require(first.generator_revision != 0U,
+            "planet surface tile payload should expose a nonzero generator revision");
     require(first.summary.sample_count == 16U,
             "planet surface tile payload should sample a square grid including edges");
     require(first.summary.min_height_m <= first.summary.max_height_m,
@@ -425,15 +427,47 @@ void test_planet_surface_tile_payload_is_deterministic_and_bounded() {
             "planet surface tile payload should report nonnegative water depth");
     require(first.summary.max_shoreline_mask >= 0.0F && first.summary.max_shoreline_mask <= 1.0F,
             "planet surface tile payload should report bounded shoreline masks");
+    require(first.summary.land_coverage >= 0.0F && first.summary.land_coverage <= 1.0F,
+            "planet surface tile payload should report bounded land coverage");
+    require(first.summary.water_coverage >= 0.0F && first.summary.water_coverage <= 1.0F,
+            "planet surface tile payload should report bounded water coverage");
+    require(first.summary.shoreline_coverage >= 0.0F &&
+                first.summary.shoreline_coverage <= 1.0F,
+            "planet surface tile payload should report bounded shoreline coverage");
     require(first.summary.max_normalized_slope >= 0.0F &&
                 first.summary.max_normalized_slope <= 1.0F,
             "planet surface tile payload should report bounded slope");
+    require(first.summary.min_moisture >= 0.0F && first.summary.min_moisture <= 1.0F &&
+                first.summary.max_moisture >= first.summary.min_moisture &&
+                first.summary.max_moisture <= 1.0F,
+            "planet surface tile payload should report bounded moisture");
+    require(first.summary.min_temperature >= 0.0F && first.summary.min_temperature <= 1.0F &&
+                first.summary.max_temperature >= first.summary.min_temperature &&
+                first.summary.max_temperature <= 1.0F,
+            "planet surface tile payload should report bounded temperature");
+    require(first.summary.min_roughness >= 0.0F && first.summary.min_roughness <= 1.0F &&
+                first.summary.max_roughness >= first.summary.min_roughness &&
+                first.summary.max_roughness <= 1.0F,
+            "planet surface tile payload should report bounded roughness");
     require(first.summary.material_mask != 0U,
             "planet surface tile payload should report at least one material");
+    std::uint32_t material_count_total = 0U;
+    for (std::uint32_t count : first.summary.material_counts) {
+        material_count_total += count;
+    }
+    require(material_count_total == first.summary.sample_count,
+            "planet surface tile payload should count every sampled material");
     require_close(first.summary.min_height_m, second.summary.min_height_m,
                   "planet surface tile payload should be deterministic");
     require_close(first.summary.max_height_m, second.summary.max_height_m,
                   "planet surface tile payload should be deterministic");
+
+    cubey::projects::planet::PlanetConfig changed_config = config;
+    changed_config.terrain_fine_detail_strength = 0.41F;
+    const cubey::projects::planet::PlanetSurfaceTilePayload changed =
+        cubey::projects::planet::make_planet_surface_tile_payload(changed_config, key, 3U);
+    require(changed.generator_revision != first.generator_revision,
+            "planet surface tile payload revision should change with terrain config");
 }
 
 void test_planet_surface_lod_neighbor_diagnostics_detect_mixed_edges() {
