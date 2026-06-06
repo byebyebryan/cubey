@@ -44,8 +44,8 @@ surface layers arrive:
   camera;
 - define planet atmosphere inputs as derived data from the planet celestial
   model;
-- add an opt-in physical-atmosphere preview path without replacing the current
-  analytic sky by default;
+- add planet atmosphere inputs and a physical-atmosphere path, later promoted
+  from preview to default;
 - improve moon material/phase/eclipse behavior through body rendering rather
   than sky-disk approximations;
 - document repeatable visual captures for orbit, surface, dawn, day, night,
@@ -70,9 +70,10 @@ This batch landed as a sequence of small commits:
 The important implementation result is that planet now has explicit contracts
 for surface field payloads, neighbor LOD diagnostics, edge transition masks,
 double-precision camera state, dynamic-versus-topology config updates,
-planet-derived atmosphere inputs, an opt-in physical-atmosphere preview mode,
-and upgraded moon body shading. The broad batch is complete; future work should
-move back to feature slices rather than extending this checkpoint indefinitely.
+planet-derived atmosphere inputs, a physical-atmosphere mode that later became
+the default, and upgraded moon body shading. The broad batch is complete; future
+work should move back to feature slices rather than extending this checkpoint
+indefinitely.
 
 ## Deferred
 

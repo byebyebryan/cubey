@@ -28,8 +28,8 @@ without changing the planet-facing contract.
   bands or detached red/orange halos;
 - low sun visibly warms the horizon and attenuates direct surface light;
 - stars fade in daylight and remain visible at night/high altitude;
-- the old analytic path remains available as a debug fallback while the new
-  physical path becomes the default once verified.
+- the old analytic path remains available as a debug fallback while the
+  physical path is the default.
 
 ## Deferred
 

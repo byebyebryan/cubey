@@ -83,7 +83,7 @@ struct PlanetConfig {
     float sea_level_m = kPlanetDefaultSeaLevelM;
     float bathymetry_depth_scale_m = kPlanetDefaultBathymetryDepthScaleM;
     float shoreline_width_m = kPlanetDefaultShorelineWidthM;
-    PlanetAtmosphereMode atmosphere_mode = PlanetAtmosphereMode::Analytic;
+    PlanetAtmosphereMode atmosphere_mode = PlanetAtmosphereMode::Physical;
 
     friend bool operator==(const PlanetConfig&, const PlanetConfig&) = default;
 };

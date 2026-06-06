@@ -84,7 +84,7 @@ struct PlanetSurfaceFrameUniforms {
     cubey::math::Vec4 atmosphere_radius_mode{
         kPlanetDefaultRadiusM + kPlanetDefaultAtmosphereHeightM,
         kPlanetDefaultAtmosphereHeightM,
-        static_cast<float>(static_cast<std::uint32_t>(PlanetAtmosphereMode::Analytic)),
+        static_cast<float>(static_cast<std::uint32_t>(PlanetAtmosphereMode::Physical)),
         0.004675F};
     cubey::math::Vec4 sun_color_intensity{1.0F, 0.94F, 0.82F, 0.88F};
 };

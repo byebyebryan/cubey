@@ -23,7 +23,7 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view wireframe
 ./build/dev/projects/planet/planet --debug-view celestial-planes
 ./build/dev/projects/planet/planet --debug-view seams
-./build/dev/projects/planet/planet --planet-atmosphere-mode physical-preview
+./build/dev/projects/planet/planet --planet-atmosphere-mode physical
 ./build/dev/projects/planet/planet --planet-max-lod-level 7 --planet-lod-target-edge-px 8
 ./build/dev/projects/planet/planet --planet-max-lod-level 9 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
 ./build/dev/projects/planet/planet --planet-terrain-mid-detail-strength 0.45 --planet-terrain-fine-detail-strength 0.16 --planet-terrain-fine-detail-scale 12
@@ -108,21 +108,21 @@ cycling. This is intentionally not a full ephemeris: eccentricity, equation of
 time, lunar apsidal/nodal precession, and true Earth/Moon barycentric motion
 are deferred until the planet project needs that fidelity.
 
-The current sky pass is intentionally simple: dark space, sparse procedural
-stars, a sun disk/glow, and a local planet limb glow with analytic planet
-occlusion. The default remains the project-local analytic path; the
-`physical-preview` atmosphere mode is an opt-in comparison path, not a final
-physical scattering model. The moon is now a depth-tested sphere rendered from
-the same local celestial state on a camera-relative shell that preserves its
-apparent angular size. Phase and terminator shape therefore come from body
-lighting against the modeled sun direction instead of a sky-disk mask, with
-procedural surface variation, lower-atmosphere daytime washout, and a first
-planet-shadow/eclipse factor packed through the body uniform. The surface
+The current sky pass renders dark space, sparse procedural stars, a sun
+disk/glow, and a local planet limb. The default `physical` atmosphere mode uses
+a small project-local single-scattering model with Rayleigh/Mie vocabulary, sun
+transmittance, and surface aerial perspective. The older `analytic` mode
+remains selectable for comparison and debugging. The moon is now a depth-tested
+sphere rendered from the same local celestial state on a camera-relative shell
+that preserves its apparent angular size. Phase and terminator shape therefore
+come from body lighting against the modeled sun direction instead of a sky-disk
+mask, with procedural surface variation, lower-atmosphere daytime washout, and a
+first planet-shadow/eclipse factor packed through the body uniform. The surface
 shader receives frame data through a descriptor-backed uniform instead of push
-constants, and blends final terrain toward the local limb/haze color near the
-horizon. The scene renders into a linear HDR scene color target and uses the
-shared fullscreen post pass for exposure, tone mapping, and output encoding
-before writing the swapchain or headless target.
+constants, and composes final terrain through atmosphere before post. The scene
+renders into a linear HDR scene color target and uses the shared fullscreen post
+pass for exposure, tone mapping, and output encoding before writing the
+swapchain or headless target.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it

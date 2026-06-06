@@ -163,7 +163,7 @@ struct PlanetSkyFrameUniformInputs {
     cubey::math::Vec3 camera_position_m{0.0F, 0.0F, 0.0F};
     float planet_radius_m = 1.0F;
     float atmosphere_outer_radius_m = 1.0F;
-    PlanetAtmosphereMode atmosphere_mode = PlanetAtmosphereMode::Analytic;
+    PlanetAtmosphereMode atmosphere_mode = PlanetAtmosphereMode::Physical;
 };
 
 struct PlanetCelestialBodyAtmosphereInputs {

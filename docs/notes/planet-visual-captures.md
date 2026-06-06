@@ -22,14 +22,13 @@ Use the mean solar clock controls to keep captures deterministic:
 
 ## Atmosphere Comparison
 
-The default `analytic` mode is the stable project-local sky. The
-`physical-preview` mode is an opt-in comparison path for developing a more
-physical atmosphere without replacing the default.
+The default `physical` mode is the stable project-local atmosphere path. Keep
+`analytic` captures around as a comparison/debug fallback.
 
 ```sh
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 5.5 --planet-camera-mode surface --planet-atmosphere-mode analytic --output outputs/planet-atmo-analytic-dawn.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 5.5 --planet-camera-mode surface --planet-atmosphere-mode physical-preview --output outputs/planet-atmo-physical-preview-dawn.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --planet-atmosphere-mode physical-preview --output outputs/planet-atmo-physical-preview-backlit.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 5.5 --planet-camera-mode surface --planet-atmosphere-mode physical --output outputs/planet-atmo-physical-dawn.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --planet-atmosphere-mode physical --output outputs/planet-atmo-physical-backlit.png
 ```
 
 ## Surface Showcase

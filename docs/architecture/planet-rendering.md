@@ -262,8 +262,7 @@ The latest planet foundation pass closed several previously loose contracts:
 - `PlanetAtmosphereInputs` is derived from the planet-owned celestial model and
   can be adapted into the shared atmosphere runtime for future comparisons. The
   active planet renderer keeps a project-local atmosphere shader path; `analytic`
-  is the fallback/debug mode and `physical` is the intended default once the v1
-  scattering pass is verified.
+  is the fallback/debug mode and `physical` is the default v1 scattering path.
 - Moon rendering remains explicit body geometry. The body pass now receives
   camera-relative shading inputs, applies procedural lunar albedo variation,
   fades the moon through the lower daytime atmosphere, and packs a first
@@ -372,9 +371,9 @@ back into this architecture note.
 10. Done: replace the analytic moon disk with body/geometry rendering.
 11. Done as a first consistency pass: add shared project-local atmosphere terms
    for the planet sky and surface haze, plus fixed headless capture controls.
-12. In progress: replace the analytic default with a small project-local
+12. Done as a v1 path: replace the analytic default with a small project-local
    single-scattering and aerial-perspective model; keep full atmosphere LUTs
-   deferred until the contract is visually stable.
+   deferred until the contract needs them.
 13. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 
