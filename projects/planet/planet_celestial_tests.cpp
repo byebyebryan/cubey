@@ -226,6 +226,56 @@ void test_celestial_lighting_uses_celestial_direction() {
     require(lighting.ambient_intensity > 0.0F, "planet lighting should include local ambient");
 }
 
+void test_planet_atmosphere_inputs_follow_celestial_state() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    celestial.sun.direction = glm::normalize(cubey::math::Vec3{0.35F, 0.55F, -0.76F});
+    celestial.sun.angular_radius_rad = 0.006F;
+    celestial.moon.direction = glm::normalize(cubey::math::Vec3{-0.20F, 0.30F, 0.93F});
+    celestial.moon.phase_fraction = 0.25F;
+    const cubey::projects::planet::PlanetCelestialLighting lighting =
+        cubey::projects::planet::planet_celestial_lighting(celestial);
+
+    const cubey::projects::planet::PlanetAtmosphereInputs inputs =
+        cubey::projects::planet::planet_atmosphere_inputs(
+            celestial, lighting, cubey::math::DVec3{0.0, 610000.0, 0.0}, 600000.0F, 670000.0F);
+
+    require_vec_near(inputs.sun_direction, celestial.sun.direction,
+                     "planet atmosphere inputs should expose modeled sun direction");
+    require_vec_near(inputs.moon_direction, celestial.moon.direction,
+                     "planet atmosphere inputs should expose modeled moon direction");
+    require_near(inputs.camera_altitude_m, 10000.0F, 0.01F,
+                 "planet atmosphere inputs should derive camera altitude");
+    require_near(inputs.sun_angular_radius_rad, celestial.sun.angular_radius_rad, 0.000001F,
+                 "planet atmosphere inputs should preserve sun angular radius");
+    require_near(inputs.moon_phase_fraction, 0.25F, 0.000001F,
+                 "planet atmosphere inputs should preserve moon phase");
+}
+
+void test_planet_atmosphere_environment_config_round_trips_sun_direction() {
+    cubey::projects::planet::PlanetAtmosphereInputs inputs{};
+    inputs.planet_radius_m = 600000.0F;
+    inputs.atmosphere_outer_radius_m = 670000.0F;
+    inputs.camera_altitude_m = 1200.0F;
+    inputs.sun_direction = glm::normalize(cubey::math::Vec3{0.42F, 0.35F, -0.84F});
+    inputs.sun_angular_radius_rad = 0.006F;
+
+    const cubey::render::AtmosphereEnvironmentConfig config =
+        cubey::projects::planet::planet_atmosphere_environment_config(inputs);
+    const cubey::math::Vec3 shared_direction =
+        cubey::render::atmosphere_environment_sun_direction(config);
+
+    require_near(config.bottom_radius_km, 600.0F, 0.0001F,
+                 "planet atmosphere adapter should convert planet radius to kilometers");
+    require_near(config.top_radius_km, 670.0F, 0.0001F,
+                 "planet atmosphere adapter should convert atmosphere radius to kilometers");
+    require_near(config.camera_altitude_km, 1.2F, 0.0001F,
+                 "planet atmosphere adapter should convert camera altitude to kilometers");
+    require(glm::dot(shared_direction, inputs.sun_direction) > 0.9999F,
+            "planet atmosphere adapter should preserve sun direction through shared config");
+    require(!config.render_celestial_content,
+            "planet atmosphere adapter should not let shared atmosphere own celestial rendering");
+}
+
 void test_celestial_body_conversion_preserves_moon_state() {
     cubey::projects::planet::PlanetCelestialSystem celestial{};
     celestial.moon.direction = glm::normalize(cubey::math::Vec3{0.20F, 0.30F, 0.93F});
@@ -453,6 +503,8 @@ int main() {
         test_moon_phase_uses_synodic_month();
         test_celestial_diagnostics_report_plane_relationships();
         test_celestial_lighting_uses_celestial_direction();
+        test_planet_atmosphere_inputs_follow_celestial_state();
+        test_planet_atmosphere_environment_config_round_trips_sun_direction();
         test_celestial_body_conversion_preserves_moon_state();
         test_celestial_body_render_placement_preserves_apparent_size();
         test_celestial_body_render_placement_uses_topocentric_ray();

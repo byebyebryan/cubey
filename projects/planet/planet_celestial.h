@@ -1,7 +1,10 @@
 #pragma once
 
+#include "planet_config.h"
+
 #include <cubey/core/run_config.h>
 #include <cubey/core/math.h>
+#include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/material.h>
 #include <cubey/render/material_instance.h>
@@ -175,6 +178,21 @@ struct PlanetCelestialLighting {
     cubey::math::Vec3 haze_color{0.085F, 0.125F, 0.185F};
 };
 
+struct PlanetAtmosphereInputs {
+    cubey::math::Vec3 camera_position_m{0.0F, 0.0F, 0.0F};
+    float camera_radius_m = 0.0F;
+    float camera_altitude_m = 0.0F;
+    float planet_radius_m = kPlanetDefaultRadiusM;
+    float atmosphere_outer_radius_m = kPlanetDefaultRadiusM + kPlanetDefaultAtmosphereHeightM;
+    cubey::math::Vec3 sun_direction{0.0F, 1.0F, 0.0F};
+    cubey::math::Vec3 sun_color{1.0F, 0.94F, 0.82F};
+    float sun_intensity = 1.0F;
+    float sun_angular_radius_rad = 0.004675F;
+    cubey::math::Vec3 moon_direction{0.0F, 0.0F, 1.0F};
+    float moon_phase_fraction = 0.5F;
+    float moon_angular_radius_rad = 0.00452F;
+};
+
 struct PlanetSkyFrameMaterialConfig {
     std::uint32_t frame_slot_count = 1;
 };
@@ -213,6 +231,13 @@ planet_celestial_body_render_placement(const PlanetCelestialBody& body,
                                        const PlanetCelestialBodyRenderPlacementInputs& inputs);
 [[nodiscard]] PlanetCelestialLighting
 planet_celestial_lighting(const PlanetCelestialSystem& celestial);
+[[nodiscard]] PlanetAtmosphereInputs
+planet_atmosphere_inputs(const PlanetCelestialSystem& celestial,
+                         const PlanetCelestialLighting& lighting,
+                         cubey::math::DVec3 camera_world_position_m, float planet_radius_m,
+                         float atmosphere_outer_radius_m);
+[[nodiscard]] cubey::render::AtmosphereEnvironmentConfig
+planet_atmosphere_environment_config(const PlanetAtmosphereInputs& inputs);
 [[nodiscard]] PlanetSkyFrameUniforms
 planet_sky_frame_uniforms(const PlanetCelestialSystem& celestial,
                           const PlanetSkyFrameUniformInputs& inputs);
