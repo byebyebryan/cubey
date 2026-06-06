@@ -8,7 +8,8 @@
 namespace cubey::projects::planet {
 
 struct PlanetCameraState {
-    cubey::math::Vec3 position_m{0.0F, 0.0F, kPlanetDefaultRadiusM + kPlanetDefaultCameraAltitudeM};
+    cubey::math::DVec3 position_m{0.0, 0.0,
+                                  kPlanetDefaultRadiusM + kPlanetDefaultCameraAltitudeM};
     cubey::math::Quat surface_rotation{cubey::math::identity_quat()};
     bool surface_rotation_active = false;
 };
@@ -19,6 +20,7 @@ struct PlanetCameraState {
 [[nodiscard]] float planet_camera_min_distance_m(const PlanetConfig& config);
 [[nodiscard]] float planet_camera_max_distance_m(const PlanetConfig& config);
 [[nodiscard]] float planet_camera_distance_m(const PlanetCameraState& state);
+[[nodiscard]] cubey::math::Vec3 planet_camera_position_float_m(const PlanetCameraState& state);
 [[nodiscard]] PlanetCameraState planet_camera_home_state(const PlanetConfig& config,
                                                          float base_yaw_radians,
                                                          float base_pitch_radians);

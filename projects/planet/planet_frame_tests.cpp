@@ -318,7 +318,7 @@ void test_planet_surface_camera_move_stays_on_surface_shell() {
         cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
     cubey::projects::planet::planet_camera_set_distance(state, config, distance);
     cubey::projects::planet::planet_camera_reset_surface_view(state, config);
-    const cubey::math::Vec3 before_position = state.position_m;
+    const cubey::math::DVec3 before_position = state.position_m;
 
     const bool moved =
         cubey::projects::planet::planet_camera_surface_move(state, config, 1.0F, 0.0F, 1.0);
@@ -328,6 +328,26 @@ void test_planet_surface_camera_move_stays_on_surface_shell() {
                  "surface camera movement should preserve altitude");
     require(glm::dot(glm::normalize(before_position), glm::normalize(state.position_m)) < 0.99999F,
             "surface camera movement should advance along the planet tangent");
+}
+
+void test_planet_camera_keeps_double_precision_position_state() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 6000000.0F,
+        .camera_altitude_m = 2400000.0F,
+    };
+    cubey::projects::planet::PlanetCameraState state =
+        cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
+    const cubey::math::DVec3 before = state.position_m;
+
+    cubey::projects::planet::planet_camera_set_distance(
+        state, config, cubey::projects::planet::planet_camera_distance_m(state));
+
+    require(std::isfinite(state.position_m.x) && std::isfinite(state.position_m.y) &&
+                std::isfinite(state.position_m.z),
+            "planet camera double position should stay finite");
+    require(glm::length(state.position_m) > static_cast<double>(config.radius_m),
+            "planet camera double position should remain above the planet radius");
+    require(glm::length(before) > 0.0, "planet camera double position should initialize");
 }
 
 void test_planet_frame_converts_camera_to_render_origin() {
@@ -368,6 +388,7 @@ int main() {
         test_planet_surface_camera_drag_rotates_view_without_moving_anchor();
         test_planet_surface_camera_vertical_drag_direction();
         test_planet_surface_camera_move_stays_on_surface_shell();
+        test_planet_camera_keeps_double_precision_position_state();
         test_planet_frame_converts_camera_to_render_origin();
         return 0;
     } catch (const std::exception& error) {

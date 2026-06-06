@@ -24,6 +24,8 @@ struct PlanetFrame {
 
 [[nodiscard]] PlanetFrame make_planet_frame(const PlanetConfig& config,
                                             const cubey::Transform3D& camera_transform);
+[[nodiscard]] PlanetFrame make_planet_frame(const PlanetConfig& config,
+                                            cubey::math::DVec3 camera_position_m);
 [[nodiscard]] cubey::math::Vec3 planet_frame_world_to_render_m(const PlanetFrame& frame,
                                                                cubey::math::DVec3 world_position_m);
 [[nodiscard]] cubey::math::DVec3

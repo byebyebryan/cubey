@@ -671,7 +671,7 @@ class PlanetApp {
     }
 
     void refresh_frame() {
-        frame_ = make_planet_frame(planet_config_, camera_transform());
+        frame_ = make_planet_frame(planet_config_, camera_state_.position_m);
         camera_.set_projection(std::numbers::pi_v<float> / 3.0F, frame_.near_plane_m,
                                frame_.far_plane_m);
     }
