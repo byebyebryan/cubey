@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "planet_atmosphere.glsl"
 
 layout(location = 0) in vec3 in_color;
 layout(location = 1) in vec3 in_normal;
@@ -66,19 +69,21 @@ float celestial_direction_marker(vec3 sphere_normal, vec3 direction, float radiu
 vec3 surface_haze_color(vec3 haze_color, vec3 sphere_normal, vec3 light_dir, vec3 view_dir,
                         float distance_haze) {
     vec3 up = normalize(sphere_normal);
-    float sun_elevation = dot(up, light_dir);
-    vec3 sun_tangent = light_dir - up * sun_elevation;
-    vec3 view_tangent = view_dir - up * dot(view_dir, up);
-    float toward_sun = 0.0;
-    if (length(sun_tangent) > 0.0001 && length(view_tangent) > 0.0001) {
-        toward_sun = pow(max(dot(normalize(view_tangent), normalize(sun_tangent)), 0.0), 2.0);
-    }
-    float terminator = exp(-abs(sun_elevation) / 0.30);
-    float low_sun = smoothstep(-0.24, 0.10, sun_elevation) *
-                    (1.0 - smoothstep(0.22, 0.62, sun_elevation));
-    float warm = terminator * low_sun * toward_sun * smoothstep(0.32, 0.92, distance_haze);
-    vec3 twilight = mix(haze_color, vec3(1.0, 0.40, 0.15), 0.42);
-    return mix(haze_color, twilight, clamp(warm, 0.0, 1.0));
+    PlanetAtmosphereTerms terms =
+        planet_atmosphere_terms(normalize(view_dir), up, normalize(light_dir));
+    float distance_horizon = smoothstep(0.32, 0.92, distance_haze);
+    float horizon = max(terms.horizon, distance_horizon);
+    vec3 scatter =
+        planet_atmosphere_scatter_color(terms.sun_elevation, terms.toward_sun, horizon);
+    float daylight_visibility = smoothstep(-0.10, 0.22, terms.sun_elevation);
+    float twilight_visibility = terms.twilight * (0.55 + 0.45 * terms.toward_sun);
+    float scatter_weight =
+        clamp(distance_horizon * max(daylight_visibility * 0.22, twilight_visibility * 0.70),
+              0.0, 0.72);
+    vec3 night_haze = mix(vec3(0.006, 0.009, 0.020), haze_color * 0.42,
+                          clamp(daylight_visibility, 0.0, 1.0));
+    vec3 lit_haze = mix(haze_color, scatter, scatter_weight);
+    return mix(night_haze, lit_haze, max(daylight_visibility, terms.twilight * 0.78));
 }
 
 vec3 celestial_planes_color() {
