@@ -39,6 +39,11 @@ enum class PlanetCelestialBinding : std::uint32_t {
     return wrapped;
 }
 
+[[nodiscard]] float moon_illumination_fraction(float phase_fraction) {
+    constexpr float kTwoPi = std::numbers::pi_v<float> * 2.0F;
+    return std::clamp(0.5F - 0.5F * std::cos(wrap_unit(phase_fraction) * kTwoPi), 0.0F, 1.0F);
+}
+
 [[nodiscard]] cubey::math::Vec3 rotate_y(cubey::math::Vec3 value, float radians) {
     const float c = std::cos(radians);
     const float s = std::sin(radians);
@@ -349,11 +354,15 @@ planet_celestial_body_render_placement(const PlanetCelestialBody& body,
 }
 
 PlanetCelestialLighting planet_celestial_lighting(const PlanetCelestialSystem& celestial) {
+    const float moon_illumination = moon_illumination_fraction(celestial.moon.phase_fraction);
     return {
         .primary_light_direction = normalized_or_up(celestial.sun.direction),
         .primary_light_color = celestial.sun.color,
         .primary_light_intensity = 0.88F,
         .primary_light_angular_radius_rad = celestial.sun.angular_radius_rad,
+        .moon_light_direction = normalized_or_up(celestial.moon.direction),
+        .moon_light_color = {0.56F, 0.64F, 0.86F},
+        .moon_light_intensity = kPlanetFullMoonLightIntensity * moon_illumination,
         .ambient_color = {0.040F, 0.050F, 0.070F},
         .ambient_intensity = 0.12F,
         .haze_color = {0.085F, 0.125F, 0.185F},

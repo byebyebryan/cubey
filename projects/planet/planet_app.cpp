@@ -87,9 +87,10 @@ struct PlanetSurfaceFrameUniforms {
         static_cast<float>(static_cast<std::uint32_t>(PlanetAtmosphereMode::Physical)),
         0.004675F};
     cubey::math::Vec4 sun_color_intensity{1.0F, 0.94F, 0.82F, 0.88F};
+    cubey::math::Vec4 moon_color_intensity{0.56F, 0.64F, 0.86F, 0.0F};
 };
 
-static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 20U);
+static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 21U);
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_PLANET_SHADER_DIR) / filename;
@@ -523,6 +524,9 @@ class PlanetApp {
                     celestial_diagnostics.axial_tilt_rad * kRadiansToDegrees,
                     celestial_diagnostics.lunar_orbit_inclination_rad * kRadiansToDegrees);
         ImGui::Text("Moon phase: %.3f", celestial_diagnostics.moon_phase_fraction);
+        ImGui::Text("Moon illum / light: %.3f / %.3f",
+                    celestial_lighting_.moon_light_intensity / kPlanetFullMoonLightIntensity,
+                    celestial_lighting_.moon_light_intensity);
 
         ImGui::SeparatorText("Diagnostics");
         ImGui::Text("Radius: %.0f m", planet_config_.radius_m);
@@ -944,6 +948,13 @@ class PlanetApp {
                     celestial_lighting_.primary_light_color.g,
                     celestial_lighting_.primary_light_color.b,
                     celestial_lighting_.primary_light_intensity,
+                },
+            .moon_color_intensity =
+                {
+                    celestial_lighting_.moon_light_color.r,
+                    celestial_lighting_.moon_light_color.g,
+                    celestial_lighting_.moon_light_color.b,
+                    celestial_lighting_.moon_light_intensity,
                 },
         };
     }

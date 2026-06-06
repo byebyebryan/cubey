@@ -234,6 +234,8 @@ void test_celestial_lighting_uses_celestial_direction() {
     cubey::projects::planet::PlanetCelestialSystem celestial{};
     celestial.sun.direction = glm::normalize(cubey::math::Vec3{-0.20F, -0.65F, -0.73F});
     celestial.sun.intensity = 2.25F;
+    celestial.moon.direction = glm::normalize(cubey::math::Vec3{0.12F, 0.34F, 0.93F});
+    celestial.moon.phase_fraction = 0.5F;
 
     const cubey::projects::planet::PlanetCelestialLighting lighting =
         cubey::projects::planet::planet_celestial_lighting(celestial);
@@ -242,7 +244,36 @@ void test_celestial_lighting_uses_celestial_direction() {
                      "celestial lighting should use modeled sun direction");
     require(lighting.primary_light_intensity > 0.0F,
             "planet sun intensity should not depend on a global atmosphere horizon");
+    require_vec_near(lighting.moon_light_direction, celestial.moon.direction,
+                     "celestial lighting should expose modeled moonlight direction");
+    require(lighting.moon_light_intensity > 0.0F,
+            "full moon should contribute a small secondary light");
     require(lighting.ambient_intensity > 0.0F, "planet lighting should include local ambient");
+}
+
+void test_celestial_lighting_scales_moonlight_by_phase() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    celestial.moon.direction = glm::normalize(cubey::math::Vec3{0.10F, 0.30F, 0.95F});
+    celestial.moon.phase_fraction = 0.0F;
+    const cubey::projects::planet::PlanetCelestialLighting new_moon =
+        cubey::projects::planet::planet_celestial_lighting(celestial);
+
+    celestial.moon.phase_fraction = 0.25F;
+    const cubey::projects::planet::PlanetCelestialLighting quarter_moon =
+        cubey::projects::planet::planet_celestial_lighting(celestial);
+
+    celestial.moon.phase_fraction = 0.5F;
+    const cubey::projects::planet::PlanetCelestialLighting full_moon =
+        cubey::projects::planet::planet_celestial_lighting(celestial);
+
+    require_near(new_moon.moon_light_intensity, 0.0F, 0.000001F,
+                 "new moon should not add secondary moonlight");
+    require(quarter_moon.moon_light_intensity > new_moon.moon_light_intensity,
+            "quarter moon should be brighter than new moon");
+    require(full_moon.moon_light_intensity > quarter_moon.moon_light_intensity,
+            "full moon should be brighter than quarter moon");
+    require_near(quarter_moon.moon_light_intensity, full_moon.moon_light_intensity * 0.5F,
+                 0.0001F, "quarter moon should be roughly half the full-moon light");
 }
 
 void test_planet_atmosphere_inputs_follow_celestial_state() {
@@ -581,6 +612,7 @@ int main() {
         test_default_lunar_epoch_starts_away_from_sun();
         test_celestial_diagnostics_report_plane_relationships();
         test_celestial_lighting_uses_celestial_direction();
+        test_celestial_lighting_scales_moonlight_by_phase();
         test_planet_atmosphere_inputs_follow_celestial_state();
         test_planet_atmosphere_environment_config_round_trips_sun_direction();
         test_celestial_body_conversion_preserves_moon_state();

@@ -29,6 +29,7 @@ layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     vec4 camera_world_radius;
     vec4 atmosphere_radius_mode;
     vec4 sun_color_intensity;
+    vec4 moon_color_intensity;
 } surface_frame;
 
 layout(location = 0) out vec4 out_color;
@@ -231,9 +232,15 @@ void main() {
     vec3 direct_light =
         surface_physical_direct_light(world_position, in_sphere_normal, light_dir,
                                       direct_intensity, haze_color * direct_intensity);
+    vec3 moon_dir = normalize(surface_frame.celestial_moon_direction.xyz);
+    float moon_ndotl = max(dot(normal, moon_dir), 0.0);
+    float night_side =
+        1.0 - smoothstep(-0.08, 0.20, dot(normalize(in_sphere_normal), light_dir));
+    vec3 moon_light = surface_frame.moon_color_intensity.rgb *
+                      max(surface_frame.moon_color_intensity.w, 0.0) * moon_ndotl * night_side;
     vec3 ambient_light = haze_color * ambient_intensity;
     vec3 sky = ambient_light * pow(wrap, 1.8) * 0.18;
-    vec3 color = albedo * (ambient_light + direct_light * ndotl) + sky;
+    vec3 color = albedo * (ambient_light + direct_light * ndotl + moon_light) + sky;
     vec3 to_camera = normalize(surface_frame.camera_horizon.xyz - in_render_position);
     vec3 half_vector = normalize(light_dir + to_camera);
     float roughness = clamp(in_climate_field.w, 0.05, 0.98);
@@ -244,6 +251,13 @@ void main() {
     float land_specular = material == 2U ? 0.16 : 0.05;
     color += direct_light * specular *
              mix(land_specular, 0.42 + pow(1.0 - max(dot(normal, to_camera), 0.0), 5.0) * 0.28,
+                 water_specular) *
+             final_view;
+    vec3 moon_half_vector = normalize(moon_dir + to_camera);
+    float moon_specular = pow(max(dot(normal, moon_half_vector), 0.0), specular_power) *
+                          (1.0 - roughness);
+    color += moon_light * moon_specular *
+             mix(land_specular, 0.18 + pow(1.0 - max(dot(normal, to_camera), 0.0), 5.0) * 0.16,
                  water_specular) *
              final_view;
     float edge = min(min(in_uv.x, in_uv.y), min(1.0 - in_uv.x, 1.0 - in_uv.y));

@@ -31,6 +31,7 @@ inline constexpr float kPlanetEarthSiderealRotationPeriodDays =
 inline constexpr float kPlanetMoonSiderealOrbitPeriodDays = 27.321661F;
 inline constexpr float kPlanetMoonOrbitInclinationRad = 0.08979719F;
 inline constexpr float kPlanetDefaultMoonOrbitPhaseOffsetCycles = 0.5980231F;
+inline constexpr float kPlanetFullMoonLightIntensity = 0.055F;
 
 enum class PlanetCelestialBodyType : std::uint8_t {
     Sun,
@@ -179,6 +180,9 @@ struct PlanetCelestialLighting {
     cubey::math::Vec3 primary_light_color{1.0F, 0.94F, 0.82F};
     float primary_light_intensity = 0.9F;
     float primary_light_angular_radius_rad = 0.004675F;
+    cubey::math::Vec3 moon_light_direction{0.0F, 0.0F, 1.0F};
+    cubey::math::Vec3 moon_light_color{0.56F, 0.64F, 0.86F};
+    float moon_light_intensity = 0.0F;
     cubey::math::Vec3 ambient_color{0.040F, 0.050F, 0.070F};
     float ambient_intensity = 0.12F;
     cubey::math::Vec3 haze_color{0.085F, 0.125F, 0.185F};
