@@ -141,18 +141,23 @@ namespace {
                                            cubey::math::Vec3 sphere_normal) {
     const cubey::math::Vec3 p = sphere_normal * config.terrain_noise_scale;
     const float continent =
-        fbm(p * 0.68F + cubey::math::Vec3{2.3F, -1.7F, 4.1F}, config.terrain_seed + 211U, 5U);
+        fbm(p * 0.52F + cubey::math::Vec3{2.3F, -1.7F, 4.1F}, config.terrain_seed + 211U, 5U);
     const float breakup =
-        fbm(p * 1.55F + cubey::math::Vec3{-3.8F, 5.0F, 0.9F}, config.terrain_seed + 547U, 4U);
-    return smootherstep((continent + breakup * 0.32F + 0.18F + 0.20F) / 0.54F);
+        fbm(p * 1.48F + cubey::math::Vec3{-3.8F, 5.0F, 0.9F}, config.terrain_seed + 547U, 4U);
+    const float shelf =
+        fbm(p * 3.05F + cubey::math::Vec3{5.1F, 2.8F, -1.6F}, config.terrain_seed + 659U, 3U);
+    const float shape = continent * 0.78F + breakup * 0.25F + shelf * 0.08F;
+    return smootherstep((shape + 0.18F) / 0.46F);
 }
 
 [[nodiscard]] float terrain_mountain_belt(const PlanetConfig& config,
                                           cubey::math::Vec3 sphere_normal) {
     const cubey::math::Vec3 p = sphere_normal * config.terrain_noise_scale;
     const float belt =
-        fbm(p * 1.18F + cubey::math::Vec3{-6.5F, 1.2F, 3.7F}, config.terrain_seed + 811U, 5U);
-    return smootherstep((belt + 0.18F) / 0.62F);
+        fbm(p * 1.08F + cubey::math::Vec3{-6.5F, 1.2F, 3.7F}, config.terrain_seed + 811U, 5U);
+    const float fold =
+        fbm(p * 2.35F + cubey::math::Vec3{3.2F, 6.4F, -5.7F}, config.terrain_seed + 919U, 4U);
+    return smootherstep((belt * 0.72F + fold * 0.24F + 0.08F) / 0.44F);
 }
 
 [[nodiscard]] float terrain_land_mask(float height_above_sea_m, float height_scale_m) {
@@ -166,8 +171,8 @@ namespace {
     const float latitude = std::abs(sphere_normal.y);
     const float weather =
         fbm(p * 1.35F + cubey::math::Vec3{8.1F, -2.2F, 1.4F}, config.terrain_seed + 1409U, 3U);
-    return clamp01(1.0F - latitude * 1.18F -
-                   std::max(normalized_elevation, 0.0F) * 0.45F + weather * 0.10F);
+    const float highland_cooling = std::max(normalized_elevation, 0.0F) * 0.48F;
+    return clamp01(1.0F - latitude * 1.12F - highland_cooling + weather * 0.12F);
 }
 
 [[nodiscard]] float terrain_moisture(const PlanetConfig& config,
@@ -176,8 +181,9 @@ namespace {
     const cubey::math::Vec3 p = sphere_normal * config.terrain_noise_scale;
     const float weather =
         fbm(p * 2.05F + cubey::math::Vec3{-1.5F, 7.6F, -4.2F}, config.terrain_seed + 1613U, 4U);
-    return clamp01((weather * 0.5F + 0.5F) * 0.82F + shoreline_mask * 0.22F -
-                   std::max(normalized_elevation, 0.0F) * 0.16F);
+    const float latitude_rain = 1.0F - std::abs(sphere_normal.y) * 0.35F;
+    return clamp01((weather * 0.5F + 0.5F) * 0.76F + shoreline_mask * 0.24F +
+                   latitude_rain * 0.08F - std::max(normalized_elevation, 0.0F) * 0.18F);
 }
 
 [[nodiscard]] float terrain_roughness(PlanetSurfaceMaterial material, float normalized_slope,
@@ -293,21 +299,25 @@ float planet_surface_terrain_height_m(const PlanetConfig& config, cubey::math::V
     const float lowland =
         fbm(p * 2.15F + cubey::math::Vec3{0.4F, 3.2F, -2.0F}, config.terrain_seed + 19U, 4U);
     const float ridge_source =
-        fbm(p * 3.35F + cubey::math::Vec3{-4.0F, 2.4F, 8.5F}, config.terrain_seed + 37U, 5U);
-    const float ridges = std::pow(std::max(1.0F - std::abs(ridge_source), 0.0F), 2.2F);
-    const float ocean_floor =
-        -0.54F + broad * 0.10F +
-        fbm(p * 1.25F + cubey::math::Vec3{5.7F, 0.3F, -6.1F}, config.terrain_seed + 73U, 3U) *
-            0.08F;
-    const float land_base = (continent_mask - 0.46F) * 0.70F + lowland * 0.13F;
+        fbm(p * 4.10F + cubey::math::Vec3{-4.0F, 2.4F, 8.5F}, config.terrain_seed + 37U, 5U);
+    const float ridges = std::pow(std::max(1.0F - std::abs(ridge_source), 0.0F), 3.1F);
+    const float basin =
+        fbm(p * 1.18F + cubey::math::Vec3{5.7F, 0.3F, -6.1F}, config.terrain_seed + 73U, 4U);
+    const float shelf = smootherstep((continent_mask - 0.05F) / 0.46F);
+    const float ocean_floor = lerp(-0.72F + broad * 0.08F + basin * 0.07F,
+                                   -0.18F + broad * 0.10F + basin * 0.04F, shelf);
+    const float land_base =
+        (continent_mask - 0.38F) * 0.76F + broad * 0.08F + lowland * 0.14F;
+    const float relief_gate = smootherstep((continent_mask - 0.24F) / 0.54F);
     const float mountains =
-        ridges * mountain_belt * continent_mask * config.terrain_mid_detail_strength * 0.88F;
+        ridges * mountain_belt * relief_gate * config.terrain_mid_detail_strength * 1.05F;
     const float fine =
         fbm(p * config.terrain_fine_detail_scale + cubey::math::Vec3{6.3F, 1.1F, -7.4F},
             config.terrain_seed + 113U, 3U) *
-        config.terrain_fine_detail_strength * (0.22F + continent_mask * 0.78F);
+        config.terrain_fine_detail_strength * (0.12F + relief_gate * 0.88F) *
+        (0.45F + mountain_belt * 0.55F);
     const float height =
-        (lerp(ocean_floor, land_base, continent_mask) + mountains + fine * 0.34F) *
+        (lerp(ocean_floor, land_base, continent_mask) + mountains + fine * 0.30F) *
         config.terrain_height_scale_m;
     return std::clamp(height, -config.terrain_height_scale_m, config.terrain_height_scale_m);
 }
