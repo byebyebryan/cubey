@@ -568,6 +568,10 @@ class PlanetApp {
         ImGui::Text("LOD transition: %u candidates, %.0f%% max pressure",
                     surface_build_.diagnostics.transition_candidate_count,
                     surface_build_.diagnostics.max_transition_pressure * 100.0F);
+        ImGui::Text("LOD neighbors: %u edges, %u mismatched, max delta %u",
+                    surface_build_.diagnostics.lod_neighbor_edge_count,
+                    surface_build_.diagnostics.lod_neighbor_mismatch_edge_count,
+                    surface_build_.diagnostics.max_lod_neighbor_delta);
         ImGui::Text("Surface vertices: %u", surface_build_.diagnostics.vertex_count);
         ImGui::Text("Surface triangles: %u", surface_build_.diagnostics.triangle_count);
         ImGui::Text("Cell edge: %.0f m - %.0f m", surface_build_.diagnostics.min_edge_length_m,

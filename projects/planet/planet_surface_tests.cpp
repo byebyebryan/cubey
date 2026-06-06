@@ -407,6 +407,44 @@ void test_planet_surface_tile_payload_is_deterministic_and_bounded() {
                   "planet surface tile payload should be deterministic");
 }
 
+void test_planet_surface_lod_neighbor_diagnostics_detect_mixed_edges() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 2,
+        .patch_resolution = 4,
+        .max_lod_level = 1,
+    };
+    const std::vector<cubey::projects::planet::PlanetSurfacePatchInstance> patches{
+        cubey::projects::planet::PlanetSurfacePatchInstance{
+            .id = {.face = 0, .level = 1, .x = 0, .y = 0},
+        },
+        cubey::projects::planet::PlanetSurfacePatchInstance{
+            .id = {.face = 0, .level = 1, .x = 1, .y = 0},
+        },
+        cubey::projects::planet::PlanetSurfacePatchInstance{
+            .id = {.face = 0, .level = 1, .x = 0, .y = 1},
+        },
+        cubey::projects::planet::PlanetSurfacePatchInstance{
+            .id = {.face = 0, .level = 1, .x = 1, .y = 1},
+        },
+        cubey::projects::planet::PlanetSurfacePatchInstance{
+            .id = {.face = 0, .level = 0, .x = 1, .y = 0},
+        },
+    };
+
+    const cubey::projects::planet::PlanetSurfaceLodNeighborDiagnostics diagnostics =
+        cubey::projects::planet::analyze_planet_surface_lod_neighbors(config, patches);
+
+    require(diagnostics.edge_count > 0U,
+            "planet LOD neighbor diagnostics should find interior edges");
+    require(diagnostics.boundary_edge_count > 0U,
+            "planet LOD neighbor diagnostics should count face-boundary edges");
+    require(diagnostics.mismatch_edge_count > 0U,
+            "planet LOD neighbor diagnostics should find mixed LOD edges");
+    require(diagnostics.max_lod_delta == 1U,
+            "planet LOD neighbor diagnostics should report the max neighbor LOD delta");
+}
+
 void test_planet_surface_terrain_normals_are_finite_and_outward() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1200.0F,
@@ -1094,6 +1132,7 @@ int main() {
         test_planet_surface_field_reports_sea_level_and_bathymetry();
         test_planet_surface_tile_key_round_trips_patch_identity();
         test_planet_surface_tile_payload_is_deterministic_and_bounded();
+        test_planet_surface_lod_neighbor_diagnostics_detect_mixed_edges();
         test_planet_surface_terrain_normals_are_finite_and_outward();
         test_planet_surface_refined_terrain_normals_are_finite_and_outward();
         test_planet_surface_triangles_are_wound_outward();

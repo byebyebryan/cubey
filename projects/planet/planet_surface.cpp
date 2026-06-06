@@ -8,6 +8,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
 #include <unordered_set>
 #include <vector>
@@ -348,6 +349,30 @@ struct PatchBounds {
     double radius_m = 0.0;
 };
 
+struct PatchGridSpan {
+    std::uint32_t x0 = 0;
+    std::uint32_t y0 = 0;
+    std::uint32_t x1 = 0;
+    std::uint32_t y1 = 0;
+};
+
+[[nodiscard]] std::uint32_t max_lod_grid_divisions(const PlanetConfig& config) {
+    return config.patches_per_face << config.max_lod_level;
+}
+
+[[nodiscard]] PatchGridSpan patch_grid_span(const PlanetConfig& config,
+                                            PlanetSurfacePatchId id) {
+    const std::uint32_t total_divisions = max_lod_grid_divisions(config);
+    const std::uint32_t patch_divisions = config.patches_per_face << id.level;
+    const std::uint32_t scale = total_divisions / patch_divisions;
+    return {
+        .x0 = id.x * scale,
+        .y0 = id.y * scale,
+        .x1 = (id.x + 1U) * scale,
+        .y1 = (id.y + 1U) * scale,
+    };
+}
+
 [[nodiscard]] PatchBounds patch_bounds(const PlanetConfig& config,
                                        const PlanetSurfacePatchInstance& patch) {
     const std::array<cubey::math::DVec3, 5> samples = patch_sample_points(config, patch);
@@ -358,6 +383,95 @@ struct PatchBounds {
         bounds.radius_m = std::max(bounds.radius_m, glm::length(sample - bounds.center_m));
     }
     return bounds;
+}
+
+class PlanetPatchSelectionSet {
+  public:
+    explicit PlanetPatchSelectionSet(std::span<const PlanetSurfacePatchInstance> patches) {
+        selected_.reserve(patches.size());
+        for (const PlanetSurfacePatchInstance& patch : patches) {
+            selected_.insert(patch.id);
+        }
+    }
+
+    [[nodiscard]] bool contains(PlanetSurfacePatchId id) const {
+        return selected_.contains(id);
+    }
+
+  private:
+    std::unordered_set<PlanetSurfacePatchId, PlanetSurfacePatchIdHash> selected_;
+};
+
+[[nodiscard]] std::optional<PlanetSurfacePatchId>
+find_selected_patch_covering_cell(const PlanetConfig& config, const PlanetPatchSelectionSet& set,
+                                  std::uint32_t face, std::uint32_t cell_x,
+                                  std::uint32_t cell_y) {
+    const std::uint32_t total_divisions = max_lod_grid_divisions(config);
+    for (int level = static_cast<int>(config.max_lod_level); level >= 0; --level) {
+        const auto level_u32 = static_cast<std::uint32_t>(level);
+        const std::uint32_t divisions = config.patches_per_face << level_u32;
+        const PlanetSurfacePatchId id{
+            .face = face,
+            .level = level_u32,
+            .x = std::min((cell_x * divisions) / total_divisions, divisions - 1U),
+            .y = std::min((cell_y * divisions) / total_divisions, divisions - 1U),
+        };
+        if (set.contains(id)) {
+            return id;
+        }
+    }
+    return std::nullopt;
+}
+
+struct NeighborEdgeProbe {
+    bool boundary = false;
+    bool found_neighbor = false;
+    std::uint32_t max_delta = 0;
+};
+
+[[nodiscard]] NeighborEdgeProbe analyze_neighbor_edge(const PlanetConfig& config,
+                                                      const PlanetPatchSelectionSet& set,
+                                                      PlanetSurfacePatchId id,
+                                                      std::uint32_t edge_index) {
+    const std::uint32_t total_divisions = max_lod_grid_divisions(config);
+    const PatchGridSpan span = patch_grid_span(config, id);
+    const bool left = edge_index == 0U;
+    const bool right = edge_index == 1U;
+    const bool bottom = edge_index == 2U;
+    const bool top = edge_index == 3U;
+    if ((left && span.x0 == 0U) || (right && span.x1 >= total_divisions) ||
+        (bottom && span.y0 == 0U) || (top && span.y1 >= total_divisions)) {
+        return {.boundary = true};
+    }
+
+    NeighborEdgeProbe probe{};
+    const std::uint32_t edge_length = (left || right) ? (span.y1 - span.y0) : (span.x1 - span.x0);
+    for (std::uint32_t sample = 1U; sample <= 3U; ++sample) {
+        const std::uint32_t along =
+            ((left || right) ? span.y0 : span.x0) + (edge_length * sample) / 4U;
+        const std::uint32_t cell_x =
+            left ? span.x0 - 1U : right ? span.x1 : std::min(along, total_divisions - 1U);
+        const std::uint32_t cell_y =
+            bottom ? span.y0 - 1U : top ? span.y1 : std::min(along, total_divisions - 1U);
+        const std::optional<PlanetSurfacePatchId> neighbor =
+            find_selected_patch_covering_cell(config, set, id.face, cell_x, cell_y);
+        if (!neighbor.has_value()) {
+            continue;
+        }
+        probe.found_neighbor = true;
+        const std::uint32_t delta = id.level > neighbor->level ? id.level - neighbor->level
+                                                               : neighbor->level - id.level;
+        probe.max_delta = std::max(probe.max_delta, delta);
+    }
+    return probe;
+}
+
+void update_neighbor_lod_diagnostics(PlanetSurfaceDiagnostics& diagnostics,
+                                     PlanetSurfaceLodNeighborDiagnostics neighbor_diagnostics) {
+    diagnostics.lod_neighbor_edge_count = neighbor_diagnostics.edge_count;
+    diagnostics.lod_neighbor_boundary_edge_count = neighbor_diagnostics.boundary_edge_count;
+    diagnostics.lod_neighbor_mismatch_edge_count = neighbor_diagnostics.mismatch_edge_count;
+    diagnostics.max_lod_neighbor_delta = neighbor_diagnostics.max_lod_delta;
 }
 
 [[nodiscard]] bool patch_passes_horizon_cull(const PlanetConfig& config, PlanetSurfaceView view,
@@ -820,6 +934,32 @@ PlanetSurfacePatchId planet_surface_child_patch_id(PlanetSurfacePatchId id,
     };
 }
 
+PlanetSurfaceLodNeighborDiagnostics
+analyze_planet_surface_lod_neighbors(const PlanetConfig& config,
+                                     std::span<const PlanetSurfacePatchInstance> patches) {
+    validate_planet_config(config);
+    PlanetSurfaceLodNeighborDiagnostics diagnostics{};
+    const PlanetPatchSelectionSet set{patches};
+    for (const PlanetSurfacePatchInstance& patch : patches) {
+        for (std::uint32_t edge = 0; edge < 4U; ++edge) {
+            const NeighborEdgeProbe probe = analyze_neighbor_edge(config, set, patch.id, edge);
+            if (probe.boundary) {
+                ++diagnostics.boundary_edge_count;
+                continue;
+            }
+            if (!probe.found_neighbor) {
+                continue;
+            }
+            ++diagnostics.edge_count;
+            diagnostics.max_lod_delta = std::max(diagnostics.max_lod_delta, probe.max_delta);
+            if (probe.max_delta > 0U) {
+                ++diagnostics.mismatch_edge_count;
+            }
+        }
+    }
+    return diagnostics;
+}
+
 PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
                                                    PlanetSurfaceView view,
                                                    PlanetSurfacePatchSelectionHints hints) {
@@ -828,6 +968,9 @@ PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
     if (plan.selected_patches.size() > kPlanetMaxLivePatchInstances) {
         throw std::runtime_error("planet live LOD fallback exceeded the patch instance budget");
     }
+    update_neighbor_lod_diagnostics(
+        plan.diagnostics,
+        analyze_planet_surface_lod_neighbors(config, plan.selected_patches));
     return plan;
 }
 

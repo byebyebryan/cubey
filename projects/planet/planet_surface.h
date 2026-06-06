@@ -57,6 +57,10 @@ struct PlanetSurfaceDiagnostics {
     std::uint32_t hysteresis_delayed_split_count = 0;
     std::uint32_t hysteresis_delayed_merge_count = 0;
     std::uint32_t transition_candidate_count = 0;
+    std::uint32_t lod_neighbor_edge_count = 0;
+    std::uint32_t lod_neighbor_boundary_edge_count = 0;
+    std::uint32_t lod_neighbor_mismatch_edge_count = 0;
+    std::uint32_t max_lod_neighbor_delta = 0;
     std::uint32_t vertex_count = 0;
     std::uint32_t triangle_count = 0;
     std::uint32_t seam_edge_count = 0;
@@ -115,6 +119,13 @@ struct PlanetSurfacePatchPlan {
     PlanetSurfaceDiagnostics diagnostics{};
 };
 
+struct PlanetSurfaceLodNeighborDiagnostics {
+    std::uint32_t edge_count = 0;
+    std::uint32_t boundary_edge_count = 0;
+    std::uint32_t mismatch_edge_count = 0;
+    std::uint32_t max_lod_delta = 0;
+};
+
 struct PlanetSurfaceGpuPatchInstance {
     std::uint32_t face = 0;
     std::uint32_t level = 0;
@@ -135,6 +146,9 @@ make_planet_surface_gpu_patch_instances(const PlanetSurfacePatchPlan& plan);
                                                                    PlanetSurfacePatchId id);
 [[nodiscard]] PlanetSurfacePatchId planet_surface_child_patch_id(PlanetSurfacePatchId id,
                                                                  std::uint32_t child_index);
+[[nodiscard]] PlanetSurfaceLodNeighborDiagnostics
+analyze_planet_surface_lod_neighbors(const PlanetConfig& config,
+                                     std::span<const PlanetSurfacePatchInstance> patches);
 [[nodiscard]] PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
                                                                  PlanetSurfaceView view,
                                                                  PlanetSurfacePatchSelectionHints
