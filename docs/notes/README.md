@@ -19,6 +19,8 @@ the detailed foundation notes under `docs/architecture/`.
   celestial bodies with atmosphere as a consumer.
 - [Planet gap closure checkpoint](planet-gap-closure.md): current planet
   project state, missing foundation gaps, and the intended split-commit batch.
+- [Planet surface quality pass](planet-surface-quality.md): procedural terrain,
+  material, LOD, and capture goals for the next planet surface batch.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
