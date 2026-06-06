@@ -314,6 +314,11 @@ Deferred surface-field work:
 
 ## Suggested Sequence
 
+The current near-term gap-closure batch is tracked in
+[`docs/notes/planet-gap-closure.md`](../notes/planet-gap-closure.md). Keep
+temporary implementation checkpoints there and promote only stable contracts
+back into this architecture note.
+
 1. Add this design boundary and resync ocean docs.
 2. Add `projects/planet` as an empty-planet viewer with local sky,
    radius/altitude controls, and frame diagnostics.

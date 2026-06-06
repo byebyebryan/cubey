@@ -17,6 +17,8 @@ the detailed foundation notes under `docs/architecture/`.
 - [Celestial rendering research](celestial-rendering-research.md): current
   planet-scale pivot from atmosphere-owned sun/moon disks to planet-owned
   celestial bodies with atmosphere as a consumer.
+- [Planet gap closure checkpoint](planet-gap-closure.md): current planet
+  project state, missing foundation gaps, and the intended split-commit batch.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
   captures and optimization candidates.
 - [Ocean performance notes](ocean-performance.md): current spectral ocean FFT
