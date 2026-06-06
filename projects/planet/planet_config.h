@@ -8,9 +8,15 @@
 
 namespace cubey::projects::planet {
 
-inline constexpr float kPlanetDefaultRadiusM = 600000.0F;
-inline constexpr float kPlanetDefaultAtmosphereHeightM = 70000.0F;
-inline constexpr float kPlanetDefaultCameraAltitudeM = 240000.0F;
+inline constexpr float kPlanetEarthlikeRadiusM = 6371000.0F;
+inline constexpr float kPlanetEarthlikeAtmosphereHeightM = 100000.0F;
+inline constexpr float kPlanetEarthlikeCameraAltitudeM = 2400000.0F;
+inline constexpr float kPlanetMiniRadiusM = 600000.0F;
+inline constexpr float kPlanetMiniAtmosphereHeightM = 70000.0F;
+inline constexpr float kPlanetMiniCameraAltitudeM = 240000.0F;
+inline constexpr float kPlanetDefaultRadiusM = kPlanetEarthlikeRadiusM;
+inline constexpr float kPlanetDefaultAtmosphereHeightM = kPlanetEarthlikeAtmosphereHeightM;
+inline constexpr float kPlanetDefaultCameraAltitudeM = kPlanetEarthlikeCameraAltitudeM;
 inline constexpr std::uint32_t kPlanetDefaultPatchesPerFace = 2;
 inline constexpr std::uint32_t kPlanetDefaultPatchResolution = 64;
 inline constexpr std::uint32_t kPlanetDefaultMaxLodLevel = 8;
@@ -57,6 +63,11 @@ enum class PlanetDebugView : std::uint8_t {
     CelestialPlanes,
 };
 
+enum class PlanetScalePreset : std::uint8_t {
+    Earthlike,
+    Mini,
+};
+
 enum class PlanetConfigChangeKind : std::uint8_t {
     None,
     Dynamic,
@@ -69,6 +80,7 @@ enum class PlanetAtmosphereMode : std::uint8_t {
 };
 
 struct PlanetConfig {
+    PlanetScalePreset scale_preset = PlanetScalePreset::Earthlike;
     float radius_m = kPlanetDefaultRadiusM;
     float atmosphere_height_m = kPlanetDefaultAtmosphereHeightM;
     float camera_altitude_m = kPlanetDefaultCameraAltitudeM;
@@ -100,9 +112,13 @@ struct PlanetConfig {
     friend bool operator==(const PlanetConfig&, const PlanetConfig&) = default;
 };
 
+[[nodiscard]] PlanetConfig planet_config_for_scale_preset(PlanetScalePreset preset);
+void apply_planet_scale_preset(PlanetConfig& config, PlanetScalePreset preset);
 [[nodiscard]] PlanetConfig planet_config_from_run_config(const RunConfig& config);
 [[nodiscard]] PlanetConfigChangeKind planet_config_change_kind(const PlanetConfig& current,
                                                                const PlanetConfig& next);
+[[nodiscard]] PlanetScalePreset planet_scale_preset_from_string(std::string_view value);
+[[nodiscard]] const char* planet_scale_preset_name(PlanetScalePreset preset);
 [[nodiscard]] PlanetDebugView planet_debug_view_from_string(std::string_view value);
 [[nodiscard]] const char* planet_debug_view_name(PlanetDebugView view);
 [[nodiscard]] PlanetAtmosphereMode planet_atmosphere_mode_from_string(std::string_view value);

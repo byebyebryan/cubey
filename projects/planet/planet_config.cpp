@@ -6,8 +6,34 @@
 
 namespace cubey::projects::planet {
 
+PlanetConfig planet_config_for_scale_preset(PlanetScalePreset preset) {
+    PlanetConfig config{};
+    apply_planet_scale_preset(config, preset);
+    return config;
+}
+
+void apply_planet_scale_preset(PlanetConfig& config, PlanetScalePreset preset) {
+    config.scale_preset = preset;
+    switch (preset) {
+    case PlanetScalePreset::Earthlike:
+        config.radius_m = kPlanetEarthlikeRadiusM;
+        config.atmosphere_height_m = kPlanetEarthlikeAtmosphereHeightM;
+        config.camera_altitude_m = kPlanetEarthlikeCameraAltitudeM;
+        break;
+    case PlanetScalePreset::Mini:
+        config.radius_m = kPlanetMiniRadiusM;
+        config.atmosphere_height_m = kPlanetMiniAtmosphereHeightM;
+        config.camera_altitude_m = kPlanetMiniCameraAltitudeM;
+        break;
+    }
+}
+
 PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     PlanetConfig planet{};
+    if (!config.planet.scale_preset.empty()) {
+        apply_planet_scale_preset(
+            planet, planet_scale_preset_from_string(config.planet.scale_preset));
+    }
     if (run_config_float_is_set(config.planet.radius_m)) {
         planet.radius_m = config.planet.radius_m;
     }
@@ -103,6 +129,26 @@ PlanetConfigChangeKind planet_config_change_kind(const PlanetConfig& current,
         return PlanetConfigChangeKind::SurfaceTopology;
     }
     return PlanetConfigChangeKind::Dynamic;
+}
+
+PlanetScalePreset planet_scale_preset_from_string(std::string_view value) {
+    if (value.empty() || value == "earthlike" || value == "earth-like" || value == "earth") {
+        return PlanetScalePreset::Earthlike;
+    }
+    if (value == "mini" || value == "debug") {
+        return PlanetScalePreset::Mini;
+    }
+    throw std::runtime_error("unknown planet scale preset: " + std::string(value));
+}
+
+const char* planet_scale_preset_name(PlanetScalePreset preset) {
+    switch (preset) {
+    case PlanetScalePreset::Earthlike:
+        return "earthlike";
+    case PlanetScalePreset::Mini:
+        return "mini";
+    }
+    return "earthlike";
 }
 
 PlanetDebugView planet_debug_view_from_string(std::string_view value) {

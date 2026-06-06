@@ -120,6 +120,44 @@ void test_planet_config_rejects_invalid_atmosphere_haze() {
                                   "planet config should reject invalid atmosphere aerial strength");
 }
 
+void test_planet_config_defaults_to_earthlike_scale() {
+    const cubey::projects::planet::PlanetConfig config{};
+    require(config.scale_preset == cubey::projects::planet::PlanetScalePreset::Earthlike,
+            "planet config should default to the earthlike scale preset");
+    require_near(config.radius_m, cubey::projects::planet::kPlanetEarthlikeRadiusM, 1.0F,
+                 "planet config should default to earthlike radius");
+    require_near(config.atmosphere_height_m,
+                 cubey::projects::planet::kPlanetEarthlikeAtmosphereHeightM, 1.0F,
+                 "planet config should default to earthlike atmosphere height");
+    require_near(config.camera_altitude_m,
+                 cubey::projects::planet::kPlanetEarthlikeCameraAltitudeM, 1.0F,
+                 "planet config should default to earthlike camera altitude");
+}
+
+void test_planet_config_applies_scale_preset_before_numeric_overrides() {
+    cubey::RunConfig run_config{};
+    run_config.planet.scale_preset = "mini";
+
+    cubey::projects::planet::PlanetConfig config =
+        cubey::projects::planet::planet_config_from_run_config(run_config);
+    require(config.scale_preset == cubey::projects::planet::PlanetScalePreset::Mini,
+            "planet config should record the mini scale preset");
+    require_near(config.radius_m, cubey::projects::planet::kPlanetMiniRadiusM, 1.0F,
+                 "planet config should apply mini radius");
+    require_near(config.atmosphere_height_m,
+                 cubey::projects::planet::kPlanetMiniAtmosphereHeightM, 1.0F,
+                 "planet config should apply mini atmosphere height");
+    require_near(config.camera_altitude_m, cubey::projects::planet::kPlanetMiniCameraAltitudeM,
+                 1.0F, "planet config should apply mini camera altitude");
+
+    run_config.planet.radius_m = 123456.0F;
+    config = cubey::projects::planet::planet_config_from_run_config(run_config);
+    require(config.scale_preset == cubey::projects::planet::PlanetScalePreset::Mini,
+            "numeric overrides should not erase the selected scale preset");
+    require_near(config.radius_m, 123456.0F, 0.1F,
+                 "numeric radius should override scale preset radius");
+}
+
 void test_planet_config_applies_run_config_surface_options() {
     cubey::RunConfig run_config{};
     run_config.planet.patches_per_face = 4U;
@@ -475,6 +513,8 @@ int main() {
         test_planet_config_rejects_patch_resolution_above_cap();
         test_planet_config_rejects_invalid_lod_hysteresis();
         test_planet_config_rejects_invalid_atmosphere_haze();
+        test_planet_config_defaults_to_earthlike_scale();
+        test_planet_config_applies_scale_preset_before_numeric_overrides();
         test_planet_config_applies_run_config_surface_options();
         test_planet_config_change_kind_separates_dynamic_and_topology();
         test_planet_camera_min_altitude_tracks_terrain_clearance();

@@ -1203,6 +1203,8 @@ void test_run_config_rejects_invalid_ocean_controls() {
 
 void test_run_config_parses_planet_controls() {
     std::string program = "cubey";
+    std::string scale_flag = "--planet-scale-preset";
+    std::string scale_value = "mini";
     std::string radius_flag = "--planet-radius-m";
     std::string radius_value = "600000";
     std::string atmosphere_flag = "--planet-atmosphere-height-m";
@@ -1247,7 +1249,9 @@ void test_run_config_parses_planet_controls() {
     std::string camera_mode_value = "surface";
     std::string atmosphere_mode_flag = "--planet-atmosphere-mode";
     std::string atmosphere_mode_value = "physical";
-    std::array<char*, 45> argv{program.data(),
+    std::array<char*, 47> argv{program.data(),
+                               scale_flag.data(),
+                               scale_value.data(),
                                radius_flag.data(),
                                radius_value.data(),
                                atmosphere_flag.data(),
@@ -1295,6 +1299,8 @@ void test_run_config_parses_planet_controls() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.planet.scale_preset == "mini",
+            "run config should parse planet scale preset");
     require(config.planet.radius_m == 600000.0F, "run config should parse planet radius");
     require(config.planet.atmosphere_height_m == 70000.0F,
             "run config should parse planet atmosphere height");
@@ -1397,6 +1403,17 @@ void test_run_config_rejects_invalid_planet_controls() {
                                     camera_mode_argv.data());
         },
         "run config should reject invalid planet camera mode");
+
+    std::string scale_preset_flag = "--planet-scale-preset";
+    std::string scale_preset_value = "tiny";
+    std::array<char*, 3> scale_preset_argv{program.data(), scale_preset_flag.data(),
+                                           scale_preset_value.data()};
+    require_throws(
+        [&scale_preset_argv]() {
+            cubey::parse_run_config(static_cast<int>(scale_preset_argv.size()),
+                                    scale_preset_argv.data());
+        },
+        "run config should reject invalid planet scale preset");
 }
 
 void test_run_config_parses_shadow_volume_controls() {

@@ -26,6 +26,11 @@ constexpr std::array<PlanetDebugView, 19> kDebugViews{
     PlanetDebugView::CelestialPlanes,
 };
 
+constexpr std::array<PlanetScalePreset, 2> kScalePresets{
+    PlanetScalePreset::Earthlike,
+    PlanetScalePreset::Mini,
+};
+
 constexpr std::array<PlanetAtmosphereMode, 2> kAtmosphereModes{
     PlanetAtmosphereMode::Analytic,
     PlanetAtmosphereMode::Physical,
@@ -49,6 +54,12 @@ void draw_panel_actions(PlanetUiContext& ui) {
 void draw_planet_controls(PlanetUiContext& ui) {
     if (const cubey::host::ScopedImGuiGroup group{"Planet"}; group) {
         const cubey::host::ScopedImGuiId section_id("Planet");
+        PlanetScalePreset preset = ui.edit_config.scale_preset;
+        if (cubey::host::imgui_enum_combo("Scale Preset", preset, kScalePresets,
+                                          planet_scale_preset_name,
+                                          "Applies scale-sensitive planet defaults.")) {
+            apply_planet_scale_preset(ui.edit_config, preset);
+        }
         ImGui::InputFloat("Radius (m)", &ui.edit_config.radius_m, 0.0F, 0.0F, "%.0f");
         ImGui::InputFloat("Camera Altitude (m)", &ui.edit_config.camera_altitude_m, 0.0F, 0.0F,
                           "%.0f");

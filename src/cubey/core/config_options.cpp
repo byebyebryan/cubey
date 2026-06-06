@@ -47,6 +47,7 @@ constexpr std::array<std::string_view, 2> kPbrEnvironmentSources{"static", "atmo
 constexpr std::array<std::string_view, 6> kOceanCascades{"all", "0", "1", "2", "3", "4"};
 constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
+constexpr std::array<std::string_view, 2> kPlanetScalePresets{"earthlike", "mini"};
 constexpr std::array<std::string_view, 2> kPlanetCameraModes{"orbit", "surface"};
 constexpr std::array<std::string_view, 3> kPlanetAtmosphereModes{
     "analytic", "physical", "physical-preview"};
@@ -84,7 +85,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 165> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 166> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -211,6 +212,9 @@ constexpr std::array<ConfigOptionDescriptor, 165> kRunConfigOptions{
            "--ocean-ref-wire-opacity", "Wire Opacity", "Ocean Ref",
            "Opacity used by the ocean reference wire overlay.", ConfigOptionType::Float,
            bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::PlanetScalePreset, "planet.scale_preset", "--planet-scale-preset",
+           "Scale Preset", "Planet", "Planet scale defaults: earthlike or mini.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kPlanetScalePresets)),
     option(RunConfigOptionId::PlanetRadius, "planet.radius_m", "--planet-radius-m", "Radius",
            "Planet", "Planet radius in meters.", ConfigOptionType::Float, min_range(1.0)),
     option(RunConfigOptionId::PlanetAtmosphereHeight, "planet.atmosphere_height_m",
@@ -869,6 +873,9 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.ocean_ref.wire_overlay;
     case RunConfigOptionId::OceanRefWireOpacity:
         return optional_float(config.ocean_ref.wire_opacity);
+    case RunConfigOptionId::PlanetScalePreset:
+        return config.planet.scale_preset.empty() ? nlohmann::json(nullptr)
+                                                  : nlohmann::json(config.planet.scale_preset);
     case RunConfigOptionId::PlanetRadius:
         return optional_float(config.planet.radius_m);
     case RunConfigOptionId::PlanetAtmosphereHeight:
@@ -1179,6 +1186,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::OceanRefOptions& option
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& options) {
+    adapter.writeField<std::string>("scale_preset", options.scale_preset);
     adapter.writeField<float>("radius_m", options.radius_m);
     adapter.writeField<float>("atmosphere_height_m", options.atmosphere_height_m);
     adapter.writeField<float>("camera_altitude_m", options.camera_altitude_m);
@@ -1210,6 +1218,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options) {
+    adapter.readField<std::string>("scale_preset", options.scale_preset);
     adapter.readField<float>("radius_m", options.radius_m);
     adapter.readField<float>("atmosphere_height_m", options.atmosphere_height_m);
     adapter.readField<float>("camera_altitude_m", options.camera_altitude_m);
@@ -1619,6 +1628,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::OceanRefWireOpacity:
         config.ocean_ref.wire_opacity = parse_config_float(value, option);
         validate_range(config.ocean_ref.wire_opacity, option);
+        break;
+    case RunConfigOptionId::PlanetScalePreset:
+        config.planet.scale_preset = std::string(value);
         break;
     case RunConfigOptionId::PlanetRadius:
         config.planet.radius_m = parse_config_float(value, option);

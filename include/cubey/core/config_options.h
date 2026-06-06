@@ -63,6 +63,7 @@ enum class RunConfigOptionId {
     OceanRefMapSize,
     OceanRefWireOverlay,
     OceanRefWireOpacity,
+    PlanetScalePreset,
     PlanetRadius,
     PlanetAtmosphereHeight,
     PlanetCameraAltitude,

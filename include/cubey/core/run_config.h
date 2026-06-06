@@ -119,6 +119,7 @@ struct RunConfig {
     };
 
     struct PlanetOptions {
+        std::string scale_preset{};
         float radius_m = kRunConfigUnsetFloat;
         float atmosphere_height_m = kRunConfigUnsetFloat;
         float camera_altitude_m = kRunConfigUnsetFloat;
