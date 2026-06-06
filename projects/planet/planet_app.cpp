@@ -615,7 +615,7 @@ class PlanetApp {
     void rebuild_planet_resources(cubey::host::WindowedAppContext& context) {
         validate_planet_config(edit_planet_config_);
         cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
-                             "vkDeviceWaitIdle planet rebuild");
+                             "vkDeviceWaitIdle planet topology rebuild");
         static_cast<void>(context.gpu().drain());
         patch_instance_buffers_.clear();
         patch_grid_mesh_.reset();
@@ -630,16 +630,30 @@ class PlanetApp {
         static_cast<void>(context.gpu().drain());
     }
 
+    void apply_dynamic_planet_config(VkExtent2D extent) {
+        validate_planet_config(edit_planet_config_);
+        planet_config_ = edit_planet_config_;
+        refresh_camera_limits_for_planet();
+        refresh_frame();
+        rebuild_surface_data(extent);
+    }
+
     void maybe_apply_planet_config(cubey::host::WindowedAppContext& context) {
         if (!planet_config_apply_pending_ || ImGui::IsAnyItemActive()) {
             return;
         }
-        if (edit_planet_config_ == planet_config_) {
+        const PlanetConfigChangeKind change_kind =
+            planet_config_change_kind(planet_config_, edit_planet_config_);
+        if (change_kind == PlanetConfigChangeKind::None) {
             planet_config_apply_pending_ = false;
             return;
         }
         try {
-            rebuild_planet_resources(context);
+            if (change_kind == PlanetConfigChangeKind::SurfaceTopology) {
+                rebuild_planet_resources(context);
+            } else {
+                apply_dynamic_planet_config(context.swapchain().extent());
+            }
             rebuild_error_.clear();
             planet_config_apply_pending_ = false;
         } catch (const std::exception& error) {

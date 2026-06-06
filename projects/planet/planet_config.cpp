@@ -78,6 +78,18 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     return planet;
 }
 
+PlanetConfigChangeKind planet_config_change_kind(const PlanetConfig& current,
+                                                 const PlanetConfig& next) {
+    if (current == next) {
+        return PlanetConfigChangeKind::None;
+    }
+    if (current.patch_resolution != next.patch_resolution ||
+        current.skirts_enabled != next.skirts_enabled) {
+        return PlanetConfigChangeKind::SurfaceTopology;
+    }
+    return PlanetConfigChangeKind::Dynamic;
+}
+
 PlanetDebugView planet_debug_view_from_string(std::string_view value) {
     if (value.empty() || value == "final") {
         return PlanetDebugView::Final;

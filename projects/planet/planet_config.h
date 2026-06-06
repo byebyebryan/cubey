@@ -49,6 +49,12 @@ enum class PlanetDebugView : std::uint8_t {
     CelestialPlanes,
 };
 
+enum class PlanetConfigChangeKind : std::uint8_t {
+    None,
+    Dynamic,
+    SurfaceTopology,
+};
+
 struct PlanetConfig {
     float radius_m = kPlanetDefaultRadiusM;
     float atmosphere_height_m = kPlanetDefaultAtmosphereHeightM;
@@ -77,6 +83,8 @@ struct PlanetConfig {
 };
 
 [[nodiscard]] PlanetConfig planet_config_from_run_config(const RunConfig& config);
+[[nodiscard]] PlanetConfigChangeKind planet_config_change_kind(const PlanetConfig& current,
+                                                               const PlanetConfig& next);
 [[nodiscard]] PlanetDebugView planet_debug_view_from_string(std::string_view value);
 [[nodiscard]] const char* planet_debug_view_name(PlanetDebugView view);
 void validate_planet_config(const PlanetConfig& config);

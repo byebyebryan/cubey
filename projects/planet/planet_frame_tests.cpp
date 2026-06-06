@@ -172,6 +172,29 @@ void test_planet_config_applies_run_config_surface_options() {
                  "planet config should apply shoreline width");
 }
 
+void test_planet_config_change_kind_separates_dynamic_and_topology() {
+    cubey::projects::planet::PlanetConfig current{};
+    cubey::projects::planet::PlanetConfig dynamic = current;
+    dynamic.radius_m += 1000.0F;
+    dynamic.max_lod_level += 1U;
+    dynamic.terrain_seed += 1U;
+    require(cubey::projects::planet::planet_config_change_kind(current, dynamic) ==
+                cubey::projects::planet::PlanetConfigChangeKind::Dynamic,
+            "planet config should classify radius, LOD, and terrain edits as dynamic");
+
+    cubey::projects::planet::PlanetConfig topology = current;
+    topology.patch_resolution *= 2U;
+    require(cubey::projects::planet::planet_config_change_kind(current, topology) ==
+                cubey::projects::planet::PlanetConfigChangeKind::SurfaceTopology,
+            "planet config should classify patch grid resolution edits as topology");
+
+    topology = current;
+    topology.skirts_enabled = !topology.skirts_enabled;
+    require(cubey::projects::planet::planet_config_change_kind(current, topology) ==
+                cubey::projects::planet::PlanetConfigChangeKind::SurfaceTopology,
+            "planet config should classify skirt topology edits as topology");
+}
+
 void test_planet_camera_min_altitude_tracks_terrain_clearance() {
     cubey::projects::planet::PlanetConfig config{
         .radius_m = 600000.0F,
@@ -381,6 +404,7 @@ int main() {
         test_planet_config_rejects_patch_resolution_above_cap();
         test_planet_config_rejects_invalid_lod_hysteresis();
         test_planet_config_applies_run_config_surface_options();
+        test_planet_config_change_kind_separates_dynamic_and_topology();
         test_planet_camera_min_altitude_tracks_terrain_clearance();
         test_planet_camera_keeps_orbit_view_at_high_altitude();
         test_planet_camera_transitions_to_surface_view_near_ground();
