@@ -596,7 +596,11 @@ cubey::render::MaterialPassInfo planet_celestial_body_pass_info() {
         .cull_mode = VK_CULL_MODE_BACK_BIT,
         .depth_test = true,
         .depth_write = false,
-        .blend_enable = false,
+        .blend_enable = true,
+        .src_color_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
+        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
     };
 }
 

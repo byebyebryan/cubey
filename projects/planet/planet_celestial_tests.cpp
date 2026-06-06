@@ -710,8 +710,16 @@ void test_celestial_body_pass_uses_depth_test_without_depth_write() {
     require(pass.cull_mode == VK_CULL_MODE_BACK_BIT, "body pass should cull back faces");
     require(pass.depth_test, "body pass should depth-test against planet geometry");
     require(!pass.depth_write, "body pass should not overwrite scene depth");
-    require(!pass.blend_enable,
-            "body pass should render the moon as opaque geometry, not a transparent sky sprite");
+    require(pass.blend_enable,
+            "body pass should blend the moon so unlit phases disappear into the sky");
+    require(pass.src_color_blend_factor == VK_BLEND_FACTOR_ONE,
+            "body pass should use premultiplied source color");
+    require(pass.dst_color_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            "body pass should preserve the sky behind low-alpha moon phases");
+    require(pass.src_alpha_blend_factor == VK_BLEND_FACTOR_ONE,
+            "body pass should use premultiplied source alpha");
+    require(pass.dst_alpha_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            "body pass should keep destination alpha consistent with source-over blending");
 }
 
 } // namespace
