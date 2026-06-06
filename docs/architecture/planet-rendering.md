@@ -202,7 +202,9 @@ Current implementation notes:
   demo-oriented sky clock and inline celestial disks were the wrong source of
   truth for planet orbit views. `projects/planet` now owns a local solar clock,
   explicit sun/moon state, local sky pass, local limb glow, and derived surface
-  lighting.
+  lighting. Repeatable headless captures can pin the local solar day, hour,
+  clock pause state, and startup camera mode through descriptor-backed
+  `RunConfig` options.
 - The planet surface frame has moved out of push constants. Per-frame uniform
   data now carries view/projection, render origin, radius, terrain options,
   sea-level/bathymetry/shoreline options, camera render position, horizon
@@ -213,6 +215,14 @@ Current implementation notes:
   pass into an HDR transient scene color target, then uses the shared post pass
   for exposure, tone mapping, and output encoding. This aligns planet with the
   renderer-wide linear HDR contract while keeping ocean integration deferred.
+- The current atmosphere shader path is deliberately local and analytic. Sky
+  background and surface-distance haze share the project-local
+  `planet_atmosphere.glsl` terms for sun elevation, view direction, horizon
+  shell, daylight, twilight, star visibility, and toward-sun weighting. This is
+  not yet a physical scattering model; it is a naming and consistency boundary
+  so surface view, orbit view, moon visibility, and future ocean/cloud layers
+  can consume the same planet-owned solar inputs instead of inventing separate
+  haze formulas.
 - Planet now models a minimal solar-system state directly: planet orbit around
   the sun, planet self-rotation, and moon orbit around the planet. The sun is
   still rendered by the local sky pass as a distant disk/glow, while the moon
@@ -318,9 +328,11 @@ Deferred surface-field work:
 9. Done as a first analytic body: model sun/moon state through local solar
    system time, with planet orbit, self-rotation, and moon orbit.
 10. Done: replace the analytic moon disk with body/geometry rendering.
-11. Add a proper planet-scale atmosphere model or adapter only after its
+11. Done as a first consistency pass: add shared project-local atmosphere terms
+   for the planet sky and surface haze, plus fixed headless capture controls.
+12. Add a proper planet-scale atmosphere model or adapter only after its
    scattering contract is explicit.
-12. Port ocean as a local water layer once the planet frame and LOD contracts are
+13. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 
 Non-goals for the first planet pass:

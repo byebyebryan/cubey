@@ -103,6 +103,13 @@ the planet/celestial renderer, not the atmosphere scattering shader.
 - Keep `projects/atmosphere` free to show those disks as demo/debug features.
 - Move planet sun direction and time ownership into `CelestialSystem`; any
   future atmosphere adapter should receive resolved sun inputs.
+- Keep repeatable capture control outside the shader path. `RunConfig` can pin
+  solar day/hour, pause the clock, and choose the initial orbit/surface camera
+  mode for headless comparisons.
+- Use one project-local atmosphere vocabulary before adding a full scattering
+  model. The first implementation shares analytic terms for sun elevation,
+  horizon shell, daylight, twilight, star visibility, and toward-sun weighting
+  between the sky background and surface haze.
 - Do not add a second vague "environment" owner. Environment/probe structs are
   derived renderer plumbing.
 - Use the existing sun/time UI only as a migration source; the target UI should
