@@ -106,7 +106,7 @@ vec3 local_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
     return color;
 }
 
-vec3 physical_preview_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
+vec3 physical_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
     vec3 camera_position = celestial.camera_position_radius.xyz;
     vec3 camera_up = normalize(camera_position);
     float planet_radius = celestial.camera_position_radius.w;
@@ -117,32 +117,29 @@ vec3 physical_preview_atmosphere_background(vec3 ray_direction, vec3 sun_directi
         1.0 - smoothstep(0.85, 1.25, camera_altitude / atmosphere_height);
 
     float ray_up = dot(ray_direction, camera_up);
-    float above_horizon = smoothstep(-0.02, 0.06, ray_up);
     float sun_elevation = dot(sun_direction, camera_up);
+    float above_horizon = smoothstep(-0.10, 0.035, ray_up);
     float daylight = smoothstep(-0.08, 0.24, sun_elevation);
     float twilight = exp(-abs(sun_elevation) / 0.16) * smoothstep(-0.22, 0.08, sun_elevation);
-    float mu = clamp(dot(ray_direction, sun_direction), -1.0, 1.0);
-    float rayleigh_phase = 0.75 * (1.0 + mu * mu);
-    float mie_phase = pow(max(mu, 0.0), 24.0);
-    float horizon_depth = exp(-max(ray_up, 0.0) / 0.12) * above_horizon;
-    float zenith_depth = smoothstep(0.06, 0.95, ray_up) * above_horizon * 0.22;
-    float optical_depth = clamp(horizon_depth + zenith_depth, 0.0, 1.0);
+    float horizon_shell = exp(-abs(ray_up) / 0.14);
 
-    vec3 rayleigh = vec3(0.13, 0.26, 0.55) * rayleigh_phase;
-    vec3 mie = celestial.sun_color_intensity.rgb * mie_phase * 0.16;
-    vec3 day_scatter = (rayleigh + mie) * optical_depth * max(daylight, twilight * 0.72);
+    PlanetAtmosphereScatterSample scatter = planet_atmosphere_integrate_ray(
+        camera_position, ray_direction, -1.0, planet_radius, atmosphere_radius, sun_direction,
+        celestial.sun_color_intensity.rgb, celestial.sun_color_intensity.w);
     vec3 night = vec3(0.003, 0.005, 0.016);
-    vec3 twilight_warm = vec3(0.82, 0.34, 0.16) * horizon_depth * twilight * 0.35;
+    vec3 twilight_warm = vec3(0.92, 0.36, 0.15) * horizon_shell * twilight * 0.08;
     vec3 stars = vec3(0.75, 0.82, 1.0) * star_field(ray_direction) * 0.28 *
                  (1.0 - max(daylight, twilight)) * above_horizon;
-    vec3 sky = night + day_scatter + twilight_warm + stars;
-    vec3 below = mix(vec3(0.006, 0.008, 0.018), vec3(0.16, 0.20, 0.28), daylight);
+    vec3 sky = night + scatter.radiance + twilight_warm + stars;
+    vec3 below = mix(vec3(0.006, 0.008, 0.018),
+                     scatter.radiance * 0.35 + vec3(0.035, 0.050, 0.075) * daylight,
+                     max(daylight, twilight * 0.65));
     sky = mix(below, sky, above_horizon);
     return mix(local_atmosphere_background(ray_direction, sun_direction), sky,
                clamp(inside_atmosphere, 0.0, 1.0));
 }
 
-bool physical_preview_enabled() {
+bool physical_enabled() {
     return celestial.atmosphere_mode_options.x > 0.5;
 }
 
@@ -156,8 +153,8 @@ vec3 space_background(vec3 ray_direction, vec3 sun_direction) {
     float local_sky = 1.0 - smoothstep(atmosphere_height * 0.70,
                                        atmosphere_height * 1.12, camera_altitude);
     if (local_sky >= 0.999) {
-        return physical_preview_enabled()
-                   ? physical_preview_atmosphere_background(ray_direction, sun_direction)
+        return physical_enabled()
+                   ? physical_atmosphere_background(ray_direction, sun_direction)
                    : local_atmosphere_background(ray_direction, sun_direction);
     }
     float solid_planet = sphere_occlusion(ray_direction, planet_radius * 0.998);
@@ -184,8 +181,8 @@ vec3 space_background(vec3 ray_direction, vec3 sun_direction) {
     if (local_sky <= 0.001) {
         return space_sky;
     }
-    vec3 local_sky_color = physical_preview_enabled()
-                               ? physical_preview_atmosphere_background(ray_direction, sun_direction)
+    vec3 local_sky_color = physical_enabled()
+                               ? physical_atmosphere_background(ray_direction, sun_direction)
                                : local_atmosphere_background(ray_direction, sun_direction);
     return mix(space_sky, local_sky_color, local_sky);
 }
