@@ -285,4 +285,65 @@ PlanetSurfaceSample planet_surface_sample_field(const PlanetConfig& config, Plan
     };
 }
 
+PlanetSurfaceTileKey planet_surface_tile_key_from_patch_id(PlanetSurfacePatchId id) {
+    return {
+        .face = id.face,
+        .level = id.level,
+        .x = id.x,
+        .y = id.y,
+    };
+}
+
+PlanetSurfacePatchId planet_surface_patch_id_from_tile_key(PlanetSurfaceTileKey key) {
+    return {
+        .face = key.face,
+        .level = key.level,
+        .x = key.x,
+        .y = key.y,
+    };
+}
+
+PlanetSurfaceTilePayload make_planet_surface_tile_payload(const PlanetConfig& config,
+                                                          PlanetSurfaceTileKey key,
+                                                          std::uint32_t sample_resolution) {
+    validate_planet_config(config);
+    const std::uint32_t resolution = std::max(sample_resolution, 1U);
+    const PlanetSurfacePatchId patch_id = planet_surface_patch_id_from_tile_key(key);
+    const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch_id);
+    PlanetSurfaceTileSummary summary{};
+
+    for (std::uint32_t y = 0; y <= resolution; ++y) {
+        const float ty = static_cast<float>(y) / static_cast<float>(resolution);
+        const float v = bounds.v0 + (bounds.v1 - bounds.v0) * ty;
+        for (std::uint32_t x = 0; x <= resolution; ++x) {
+            const float tx = static_cast<float>(x) / static_cast<float>(resolution);
+            const float u = bounds.u0 + (bounds.u1 - bounds.u0) * tx;
+            const PlanetSurfaceSample sample = planet_surface_sample_field(config, patch_id, u, v);
+            summary.min_height_m = std::min(summary.min_height_m, sample.height_m);
+            summary.max_height_m = std::max(summary.max_height_m, sample.height_m);
+            summary.min_height_above_sea_m =
+                std::min(summary.min_height_above_sea_m, sample.height_above_sea_m);
+            summary.max_height_above_sea_m =
+                std::max(summary.max_height_above_sea_m, sample.height_above_sea_m);
+            summary.max_water_depth_m =
+                std::max(summary.max_water_depth_m, sample.water_depth_m);
+            summary.max_shoreline_mask =
+                std::max(summary.max_shoreline_mask, sample.shoreline_mask);
+            summary.max_normalized_slope =
+                std::max(summary.max_normalized_slope, sample.normalized_slope);
+            summary.material_mask |=
+                1U << static_cast<std::uint32_t>(sample.material);
+            ++summary.sample_count;
+        }
+    }
+
+    return {
+        .key = key,
+        .bounds = bounds,
+        .source = PlanetSurfaceTileSource::Procedural,
+        .generator_revision = config.terrain_seed,
+        .summary = summary,
+    };
+}
+
 } // namespace cubey::projects::planet

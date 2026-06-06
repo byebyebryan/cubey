@@ -337,6 +337,76 @@ void test_planet_surface_field_reports_sea_level_and_bathymetry() {
             "planet surface sample should expose clamped shoreline mask");
 }
 
+void test_planet_surface_tile_key_round_trips_patch_identity() {
+    const cubey::projects::planet::PlanetSurfacePatchId patch_id{
+        .face = 5,
+        .level = 3,
+        .x = 4,
+        .y = 7,
+    };
+
+    const cubey::projects::planet::PlanetSurfaceTileKey key =
+        cubey::projects::planet::planet_surface_tile_key_from_patch_id(patch_id);
+    const cubey::projects::planet::PlanetSurfacePatchId round_trip =
+        cubey::projects::planet::planet_surface_patch_id_from_tile_key(key);
+
+    require(round_trip == patch_id, "planet surface tile keys should preserve patch identity");
+}
+
+void test_planet_surface_tile_payload_is_deterministic_and_bounded() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 2,
+        .patch_resolution = 4,
+        .max_lod_level = 2,
+        .terrain_enabled = true,
+        .terrain_height_scale_m = 80.0F,
+        .terrain_noise_scale = 3.0F,
+        .terrain_seed = 77U,
+        .sea_level_m = -12.0F,
+        .bathymetry_depth_scale_m = 100.0F,
+        .shoreline_width_m = 20.0F,
+    };
+    const cubey::projects::planet::PlanetSurfaceTileKey key{
+        .face = 2,
+        .level = 1,
+        .x = 1,
+        .y = 0,
+    };
+
+    const cubey::projects::planet::PlanetSurfaceTilePayload first =
+        cubey::projects::planet::make_planet_surface_tile_payload(config, key, 3U);
+    const cubey::projects::planet::PlanetSurfaceTilePayload second =
+        cubey::projects::planet::make_planet_surface_tile_payload(config, key, 3U);
+
+    require(first.key == key, "planet surface tile payload should retain its key");
+    require(first.source == cubey::projects::planet::PlanetSurfaceTileSource::Procedural,
+            "planet surface tile payload should report the procedural source");
+    require(first.generator_revision == config.terrain_seed,
+            "planet surface tile payload should expose the procedural generator revision");
+    require(first.summary.sample_count == 16U,
+            "planet surface tile payload should sample a square grid including edges");
+    require(first.summary.min_height_m <= first.summary.max_height_m,
+            "planet surface tile payload should report ordered height bounds");
+    require(first.summary.min_height_m >= -config.terrain_height_scale_m - 0.001F,
+            "planet surface tile payload should respect minimum terrain height");
+    require(first.summary.max_height_m <= config.terrain_height_scale_m + 0.001F,
+            "planet surface tile payload should respect maximum terrain height");
+    require(first.summary.max_water_depth_m >= 0.0F,
+            "planet surface tile payload should report nonnegative water depth");
+    require(first.summary.max_shoreline_mask >= 0.0F && first.summary.max_shoreline_mask <= 1.0F,
+            "planet surface tile payload should report bounded shoreline masks");
+    require(first.summary.max_normalized_slope >= 0.0F &&
+                first.summary.max_normalized_slope <= 1.0F,
+            "planet surface tile payload should report bounded slope");
+    require(first.summary.material_mask != 0U,
+            "planet surface tile payload should report at least one material");
+    require_close(first.summary.min_height_m, second.summary.min_height_m,
+                  "planet surface tile payload should be deterministic");
+    require_close(first.summary.max_height_m, second.summary.max_height_m,
+                  "planet surface tile payload should be deterministic");
+}
+
 void test_planet_surface_terrain_normals_are_finite_and_outward() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1200.0F,
@@ -1022,6 +1092,8 @@ int main() {
         test_planet_surface_field_reports_bounded_height_normal_and_slope();
         test_planet_surface_field_classifies_material_bands();
         test_planet_surface_field_reports_sea_level_and_bathymetry();
+        test_planet_surface_tile_key_round_trips_patch_identity();
+        test_planet_surface_tile_payload_is_deterministic_and_bounded();
         test_planet_surface_terrain_normals_are_finite_and_outward();
         test_planet_surface_refined_terrain_normals_are_finite_and_outward();
         test_planet_surface_triangles_are_wound_outward();
