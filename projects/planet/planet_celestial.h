@@ -262,12 +262,23 @@ planet_celestial_lighting(const PlanetCelestialSystem& celestial);
 planet_celestial_sun_elevation_degrees(const PlanetCelestialSystem& celestial,
                                        cubey::math::DVec3 camera_world_position_m);
 [[nodiscard]] float
+planet_celestial_visible_disk_light_fraction(const PlanetCelestialSystem& celestial,
+                                             cubey::math::DVec3 camera_world_position_m);
+[[nodiscard]] float
 planet_celestial_auto_exposure(float sun_elevation_degrees,
                                const PlanetExposureConfig& exposure);
+[[nodiscard]] float
+planet_celestial_orbit_auto_exposure(float visible_disk_light_fraction,
+                                     const PlanetExposureConfig& exposure);
 [[nodiscard]] float
 planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
                                   cubey::math::DVec3 camera_world_position_m,
                                   const PlanetExposureConfig& exposure);
+[[nodiscard]] float
+planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
+                                  cubey::math::DVec3 camera_world_position_m,
+                                  const PlanetExposureConfig& exposure,
+                                  float surface_reference_weight);
 [[nodiscard]] PlanetAtmosphereInputs
 planet_atmosphere_inputs(const PlanetCelestialSystem& celestial,
                          const PlanetCelestialLighting& lighting,

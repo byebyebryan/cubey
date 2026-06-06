@@ -128,8 +128,10 @@ composes final terrain through atmosphere before post. The scene renders into a
 linear HDR scene color target and uses the shared fullscreen post pass for tone
 mapping and output encoding before writing the swapchain or headless target.
 Unless `--exposure` is set explicitly or `--no-auto-exposure` is used, planet
-resolves display exposure from the local sun elevation with separately tunable
-daylight, twilight, and night exposure controls in the UI.
+resolves display exposure from the visible disk light fraction in orbit mode,
+the local sun elevation in surface mode, and blends between those references
+through the camera transition. Daylight, twilight, and night exposure targets
+remain separately tunable in the UI.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it

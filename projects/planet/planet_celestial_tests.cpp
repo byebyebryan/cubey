@@ -352,6 +352,68 @@ void test_celestial_auto_exposure_interpolates_day_twilight_and_night() {
                  2.5F, 0.000001F, "deep night should use night exposure");
 }
 
+void test_celestial_orbit_exposure_uses_visible_disk_light_fraction() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    celestial.sun.direction = {0.0F, 1.0F, 0.0F};
+
+    require_near(cubey::projects::planet::planet_celestial_visible_disk_light_fraction(
+                     celestial, {0.0, 1.0, 0.0}),
+                 1.0F, 0.000001F, "sun-facing orbit view should see a fully lit disk");
+    require_near(cubey::projects::planet::planet_celestial_visible_disk_light_fraction(
+                     celestial, {1.0, 0.0, 0.0}),
+                 0.5F, 0.000001F, "side-on orbit view should see a half-lit disk");
+    require_near(cubey::projects::planet::planet_celestial_visible_disk_light_fraction(
+                     celestial, {0.0, -1.0, 0.0}),
+                 0.0F, 0.000001F, "anti-sun orbit view should see a dark disk");
+}
+
+void test_celestial_orbit_auto_exposure_compresses_surface_day_night_range() {
+    cubey::projects::planet::PlanetExposureConfig exposure{};
+    exposure.daylight_exposure = -3.0F;
+    exposure.twilight_exposure = -1.0F;
+    exposure.night_exposure = 3.0F;
+
+    const float orbit_day =
+        cubey::projects::planet::planet_celestial_orbit_auto_exposure(1.0F, exposure);
+    const float orbit_half =
+        cubey::projects::planet::planet_celestial_orbit_auto_exposure(0.5F, exposure);
+    const float orbit_night =
+        cubey::projects::planet::planet_celestial_orbit_auto_exposure(0.0F, exposure);
+    const float surface_day =
+        cubey::projects::planet::planet_celestial_auto_exposure(80.0F, exposure);
+    const float surface_night =
+        cubey::projects::planet::planet_celestial_auto_exposure(-80.0F, exposure);
+
+    require(orbit_day < orbit_half, "lit orbit disk should use darker exposure than half phase");
+    require(orbit_half < orbit_night, "half-lit orbit disk should be darker than dark phase");
+    require((orbit_night - orbit_day) < (surface_night - surface_day),
+            "orbit exposure should avoid the full surface day-night exposure swing");
+    require(orbit_night < surface_night,
+            "dark orbit view should not brighten as aggressively as surface night");
+}
+
+void test_celestial_display_exposure_blends_orbit_and_surface_references() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    celestial.sun.direction = {0.0F, -1.0F, 0.0F};
+    const cubey::projects::planet::PlanetExposureConfig exposure{};
+    const cubey::math::DVec3 camera_position{0.0, 1.0, 0.0};
+
+    const float orbit_exposure =
+        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
+                                                                   exposure, 0.0F);
+    const float surface_exposure =
+        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
+                                                                   exposure, 1.0F);
+    const float blended_exposure =
+        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
+                                                                   exposure, 0.5F);
+
+    require(orbit_exposure < surface_exposure,
+            "orbit exposure should be less aggressive than surface night exposure");
+    require(blended_exposure > orbit_exposure && blended_exposure < surface_exposure,
+            "transition camera exposure should blend orbit and surface references");
+}
+
 void test_celestial_display_exposure_respects_overrides() {
     cubey::projects::planet::PlanetCelestialSystem celestial{};
     celestial.sun.direction = {0.0F, 1.0F, 0.0F};
@@ -739,6 +801,9 @@ int main() {
         test_celestial_lighting_scales_moonlight_by_phase();
         test_celestial_display_exposure_uses_local_sun_elevation();
         test_celestial_auto_exposure_interpolates_day_twilight_and_night();
+        test_celestial_orbit_exposure_uses_visible_disk_light_fraction();
+        test_celestial_orbit_auto_exposure_compresses_surface_day_night_range();
+        test_celestial_display_exposure_blends_orbit_and_surface_references();
         test_celestial_display_exposure_respects_overrides();
         test_planet_atmosphere_inputs_follow_celestial_state();
         test_planet_atmosphere_environment_config_round_trips_sun_direction();

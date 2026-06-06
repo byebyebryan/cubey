@@ -375,6 +375,22 @@ float planet_celestial_sun_elevation_degrees(const PlanetCelestialSystem& celest
     return sun_elevation * kRadiansToDegrees;
 }
 
+float planet_celestial_visible_disk_light_fraction(
+    const PlanetCelestialSystem& celestial, cubey::math::DVec3 camera_world_position_m) {
+    if (glm::length(camera_world_position_m) <= 0.000001) {
+        return 1.0F;
+    }
+    const cubey::math::DVec3 camera_up_d = glm::normalize(camera_world_position_m);
+    const cubey::math::Vec3 camera_up{
+        static_cast<float>(camera_up_d.x),
+        static_cast<float>(camera_up_d.y),
+        static_cast<float>(camera_up_d.z),
+    };
+    const float phase_alignment =
+        glm::dot(normalized_or_up(celestial.sun.direction), normalized_or_up(camera_up));
+    return std::clamp((phase_alignment * 0.5F) + 0.5F, 0.0F, 1.0F);
+}
+
 float planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
                                         cubey::math::DVec3 camera_world_position_m,
                                         const PlanetExposureConfig& exposure) {
@@ -386,6 +402,23 @@ float planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
         planet_celestial_sun_elevation_degrees(celestial, camera_world_position_m), exposure);
 }
 
+float planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
+                                        cubey::math::DVec3 camera_world_position_m,
+                                        const PlanetExposureConfig& exposure,
+                                        float surface_reference_weight) {
+    if (!exposure.auto_exposure_enabled) {
+        return exposure.manual_exposure;
+    }
+
+    const float surface_weight = std::clamp(surface_reference_weight, 0.0F, 1.0F);
+    const float orbit_exposure = planet_celestial_orbit_auto_exposure(
+        planet_celestial_visible_disk_light_fraction(celestial, camera_world_position_m),
+        exposure);
+    const float surface_exposure = planet_celestial_auto_exposure(
+        planet_celestial_sun_elevation_degrees(celestial, camera_world_position_m), exposure);
+    return std::lerp(orbit_exposure, surface_exposure, surface_weight);
+}
+
 float planet_celestial_auto_exposure(float sun_elevation_degrees,
                                      const PlanetExposureConfig& exposure) {
     const float night_to_twilight = smoothstep(-18.0F, -6.0F, sun_elevation_degrees);
@@ -395,6 +428,18 @@ float planet_celestial_auto_exposure(float sun_elevation_degrees,
     return std::clamp(
         std::lerp(night_twilight_exposure, exposure.daylight_exposure, twilight_to_day), -4.0F,
         4.0F);
+}
+
+float planet_celestial_orbit_auto_exposure(float visible_disk_light_fraction,
+                                           const PlanetExposureConfig& exposure) {
+    const float light_fraction = std::clamp(visible_disk_light_fraction, 0.0F, 1.0F);
+    const float phase_blend = smoothstep(0.08F, 0.92F, light_fraction);
+    const float orbit_day_exposure =
+        std::lerp(exposure.daylight_exposure, exposure.twilight_exposure, 0.15F);
+    const float orbit_night_exposure =
+        std::lerp(exposure.twilight_exposure, exposure.night_exposure, 0.40F);
+    return std::clamp(std::lerp(orbit_night_exposure, orbit_day_exposure, phase_blend), -4.0F,
+                      4.0F);
 }
 
 PlanetAtmosphereInputs planet_atmosphere_inputs(const PlanetCelestialSystem& celestial,

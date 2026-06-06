@@ -542,9 +542,12 @@ class PlanetApp {
             ImGui::SliderFloat("Manual Exposure", &exposure_config_.manual_exposure, -4.0F, 4.0F,
                                "%.2f");
         }
-        ImGui::Text("Sun elevation / exposure: %.1f deg / %.2f",
+        ImGui::Text("Sun elevation: %.1f deg",
                     planet_celestial_sun_elevation_degrees(celestial_system_,
-                                                           frame_.camera_world_position_m),
+                                                           frame_.camera_world_position_m));
+        ImGui::Text("Orbit light / exposure: %.2f / %.2f",
+                    planet_celestial_visible_disk_light_fraction(celestial_system_,
+                                                                 frame_.camera_world_position_m),
                     display_exposure());
 
         ImGui::SeparatorText("Diagnostics");
@@ -1071,7 +1074,12 @@ class PlanetApp {
 
     [[nodiscard]] float display_exposure() const {
         return planet_celestial_display_exposure(celestial_system_, frame_.camera_world_position_m,
-                                                 exposure_config_);
+                                                 exposure_config_,
+                                                 exposure_surface_reference_weight());
+    }
+
+    [[nodiscard]] float exposure_surface_reference_weight() const {
+        return planet_surface_camera_blend(planet_config_, planet_camera_distance_m(camera_state_));
     }
 
     [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms(VkFormat color_format) const {
