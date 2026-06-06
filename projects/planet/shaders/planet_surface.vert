@@ -176,6 +176,26 @@ vec3 shoreline_color(float shoreline_mask) {
     return mix(vec3(0.03, 0.12, 0.20), vec3(0.95, 0.82, 0.32), t);
 }
 
+vec3 land_mask_color(float land_mask) {
+    float t = clamp(land_mask, 0.0, 1.0);
+    return mix(vec3(0.02, 0.10, 0.30), vec3(0.20, 0.62, 0.14), t);
+}
+
+vec3 moisture_color(float moisture) {
+    float t = clamp(moisture, 0.0, 1.0);
+    return mix(vec3(0.56, 0.42, 0.18), vec3(0.04, 0.46, 0.72), t);
+}
+
+vec3 temperature_color(float temperature) {
+    float t = clamp(temperature, 0.0, 1.0);
+    return mix(vec3(0.08, 0.24, 0.82), vec3(0.95, 0.44, 0.10), t);
+}
+
+vec3 roughness_color(float roughness) {
+    float t = clamp(roughness, 0.0, 1.0);
+    return mix(vec3(0.08, 0.09, 0.12), vec3(0.90, 0.90, 0.96), t);
+}
+
 vec3 latitude_color(vec3 normal) {
     float latitude = normal.y * 0.5 + 0.5;
     return vec3(0.035 + 0.030 * latitude, 0.100 + 0.070 * latitude,
@@ -193,7 +213,8 @@ vec3 final_color(vec3 normal, uint material, float normalized_elevation, float n
 }
 
 vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m, uint material,
-                  float normalized_elevation, float normalized_slope, float shoreline_mask) {
+                  float normalized_elevation, float normalized_slope, float shoreline_mask,
+                  float land_mask, float moisture, float temperature, float roughness) {
     int debug_view = debug_view_option();
     if (debug_view == 1) {
         return face_color(in_patch_id.x);
@@ -236,6 +257,18 @@ vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m, uint material
         return shoreline_color(shoreline_mask);
     }
     if (debug_view == 13) {
+        return land_mask_color(land_mask);
+    }
+    if (debug_view == 14) {
+        return moisture_color(moisture);
+    }
+    if (debug_view == 15) {
+        return temperature_color(temperature);
+    }
+    if (debug_view == 16) {
+        return roughness_color(roughness);
+    }
+    if (debug_view == 17) {
         return lod_color();
     }
     return final_color(normal, material, normalized_elevation, normalized_slope, 0.5, 0.5);
@@ -256,6 +289,7 @@ void main() {
     float water_depth_m = planet_surface_water_depth_m(height_m);
     float normalized_bathymetry = planet_surface_normalized_bathymetry(height_m);
     float shoreline_mask = planet_surface_shoreline_mask(height_m);
+    float land_mask = planet_surface_land_mask(height_above_sea_m);
     float moisture = planet_surface_moisture(sphere_normal, shoreline_mask, normalized_elevation);
     float temperature = planet_surface_temperature(sphere_normal, normalized_elevation);
     uint material =
@@ -267,7 +301,8 @@ void main() {
     vec3 render_position = world_position - surface_frame.render_origin_radius.xyz;
 
     out_color = vertex_color(sphere_normal, normal, height_m, material, normalized_elevation,
-                             normalized_slope, shoreline_mask);
+                             normalized_slope, shoreline_mask, land_mask, moisture, temperature,
+                             roughness);
     out_normal = normal;
     out_uv = in_uv;
     out_render_position = render_position;

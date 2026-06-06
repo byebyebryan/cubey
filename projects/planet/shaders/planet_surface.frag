@@ -205,7 +205,7 @@ vec3 fragment_material_albedo(uint material) {
 }
 
 void main() {
-    if (debug_view_option() == 13) {
+    if (debug_view_option() == 17) {
         float patch_edge = min(min(in_uv.x, in_uv.y), min(1.0 - in_uv.x, 1.0 - in_uv.y));
         float patch_wire = 1.0 - smoothstep(0.0, 0.01, patch_edge);
         float mesh_wire = max(grid_wire_alpha(in_uv), patch_wire);
@@ -215,7 +215,7 @@ void main() {
         out_color = vec4(mix(base, line, mesh_wire * wire_opacity), 1.0);
         return;
     }
-    if (debug_view_option() == 14) {
+    if (debug_view_option() == 18) {
         out_color = vec4(celestial_planes_color(), 1.0);
         return;
     }

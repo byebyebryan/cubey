@@ -188,4 +188,12 @@ if(BUILD_TESTING)
         --debug-view
         wireframe
     )
+    cubey_add_planet_visual_smoke(
+        planet_surface_field_writes_png
+        planet-surface-field.png
+        --planet-camera-mode
+        orbit
+        --debug-view
+        moisture
+    )
 endif()

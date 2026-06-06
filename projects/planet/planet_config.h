@@ -49,6 +49,10 @@ enum class PlanetDebugView : std::uint8_t {
     TerrainMaterial,
     Bathymetry,
     Shoreline,
+    LandMask,
+    Moisture,
+    Temperature,
+    Roughness,
     Wireframe,
     CelestialPlanes,
 };

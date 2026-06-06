@@ -1162,6 +1162,18 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_from_string("shoreline") ==
                 cubey::projects::planet::PlanetDebugView::Shoreline,
             "planet debug view should parse shoreline");
+    require(cubey::projects::planet::planet_debug_view_from_string("land-mask") ==
+                cubey::projects::planet::PlanetDebugView::LandMask,
+            "planet debug view should parse land-mask");
+    require(cubey::projects::planet::planet_debug_view_from_string("moisture") ==
+                cubey::projects::planet::PlanetDebugView::Moisture,
+            "planet debug view should parse moisture");
+    require(cubey::projects::planet::planet_debug_view_from_string("temperature") ==
+                cubey::projects::planet::PlanetDebugView::Temperature,
+            "planet debug view should parse temperature");
+    require(cubey::projects::planet::planet_debug_view_from_string("roughness") ==
+                cubey::projects::planet::PlanetDebugView::Roughness,
+            "planet debug view should parse roughness");
     require(cubey::projects::planet::planet_debug_view_from_string("wireframe") ==
                 cubey::projects::planet::PlanetDebugView::Wireframe,
             "planet debug view should parse wireframe");
@@ -1189,6 +1201,18 @@ void test_planet_surface_metric_debug_views_parse() {
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::Shoreline)} == "shoreline",
             "planet debug view should name shoreline");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::LandMask)} == "land-mask",
+            "planet debug view should name land-mask");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::Moisture)} == "moisture",
+            "planet debug view should name moisture");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::Temperature)} == "temperature",
+            "planet debug view should name temperature");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::Roughness)} == "roughness",
+            "planet debug view should name roughness");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::Wireframe)} == "wireframe",
             "planet debug view should name wireframe");

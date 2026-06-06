@@ -13,14 +13,16 @@
 namespace cubey::projects::planet {
 namespace {
 
-constexpr std::array<PlanetDebugView, 15> kDebugViews{
+constexpr std::array<PlanetDebugView, 19> kDebugViews{
     PlanetDebugView::Final,           PlanetDebugView::FaceId,
     PlanetDebugView::PatchId,         PlanetDebugView::LodLevel,
     PlanetDebugView::ScreenError,     PlanetDebugView::LodTransition,
     PlanetDebugView::Seams,           PlanetDebugView::CellEdge,
     PlanetDebugView::TerrainHeight,   PlanetDebugView::TerrainSlope,
     PlanetDebugView::TerrainMaterial, PlanetDebugView::Bathymetry,
-    PlanetDebugView::Shoreline,       PlanetDebugView::Wireframe,
+    PlanetDebugView::Shoreline,       PlanetDebugView::LandMask,
+    PlanetDebugView::Moisture,        PlanetDebugView::Temperature,
+    PlanetDebugView::Roughness,       PlanetDebugView::Wireframe,
     PlanetDebugView::CelestialPlanes,
 };
 

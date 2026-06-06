@@ -145,6 +145,19 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
     if (value == "shoreline" || value == "shore") {
         return PlanetDebugView::Shoreline;
     }
+    if (value == "land-mask" || value == "land_mask" || value == "land") {
+        return PlanetDebugView::LandMask;
+    }
+    if (value == "moisture" || value == "terrain-moisture" || value == "terrain_moisture") {
+        return PlanetDebugView::Moisture;
+    }
+    if (value == "temperature" || value == "terrain-temperature" ||
+        value == "terrain_temperature") {
+        return PlanetDebugView::Temperature;
+    }
+    if (value == "roughness" || value == "terrain-roughness" || value == "terrain_roughness") {
+        return PlanetDebugView::Roughness;
+    }
     if (value == "wireframe" || value == "wire" || value == "mesh") {
         return PlanetDebugView::Wireframe;
     }
@@ -182,6 +195,14 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "bathymetry";
     case PlanetDebugView::Shoreline:
         return "shoreline";
+    case PlanetDebugView::LandMask:
+        return "land-mask";
+    case PlanetDebugView::Moisture:
+        return "moisture";
+    case PlanetDebugView::Temperature:
+        return "temperature";
+    case PlanetDebugView::Roughness:
+        return "roughness";
     case PlanetDebugView::Wireframe:
         return "wireframe";
     case PlanetDebugView::CelestialPlanes:

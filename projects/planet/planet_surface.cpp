@@ -219,6 +219,42 @@ class PlanetPatchSelectionLookup {
     };
 }
 
+[[nodiscard]] PrimitiveVec3 land_mask_color(float land_mask) {
+    const float t = std::clamp(land_mask, 0.0F, 1.0F);
+    return {
+        lerp(0.02F, 0.20F, t),
+        lerp(0.10F, 0.62F, t),
+        lerp(0.30F, 0.14F, t),
+    };
+}
+
+[[nodiscard]] PrimitiveVec3 moisture_color(float moisture) {
+    const float t = std::clamp(moisture, 0.0F, 1.0F);
+    return {
+        lerp(0.56F, 0.04F, t),
+        lerp(0.42F, 0.46F, t),
+        lerp(0.18F, 0.72F, t),
+    };
+}
+
+[[nodiscard]] PrimitiveVec3 temperature_color(float temperature) {
+    const float t = std::clamp(temperature, 0.0F, 1.0F);
+    return {
+        lerp(0.08F, 0.95F, t),
+        lerp(0.24F, 0.44F, t),
+        lerp(0.82F, 0.10F, t),
+    };
+}
+
+[[nodiscard]] PrimitiveVec3 roughness_color(float roughness) {
+    const float t = std::clamp(roughness, 0.0F, 1.0F);
+    return {
+        lerp(0.08F, 0.90F, t),
+        lerp(0.09F, 0.90F, t),
+        lerp(0.12F, 0.96F, t),
+    };
+}
+
 [[nodiscard]] PrimitiveVec3 terrain_material_debug_color(PlanetSurfaceMaterial material) {
     switch (material) {
     case PlanetSurfaceMaterial::DeepWater:
@@ -283,6 +319,14 @@ class PlanetPatchSelectionLookup {
         return bathymetry_color(sample.normalized_bathymetry);
     case PlanetDebugView::Shoreline:
         return shoreline_color(sample.shoreline_mask);
+    case PlanetDebugView::LandMask:
+        return land_mask_color(sample.land_mask);
+    case PlanetDebugView::Moisture:
+        return moisture_color(sample.moisture);
+    case PlanetDebugView::Temperature:
+        return temperature_color(sample.temperature);
+    case PlanetDebugView::Roughness:
+        return roughness_color(sample.roughness);
     case PlanetDebugView::Wireframe:
         return lod_color(patch.id.level, config.max_lod_level);
     case PlanetDebugView::CelestialPlanes:
