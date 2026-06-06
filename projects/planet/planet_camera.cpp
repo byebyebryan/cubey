@@ -12,6 +12,7 @@ constexpr float kDragRadiansPerPixel = 0.01F;
 constexpr float kSurfaceLookRadiansPerPixel = 0.006F;
 constexpr float kSurfaceMinForwardUpDot = -0.94F;
 constexpr float kSurfaceMaxForwardUpDot = 0.82F;
+constexpr float kOrbitPoleDeadbandRadians = 0.10F;
 constexpr float kZoomBase = 0.86F;
 
 [[nodiscard]] cubey::math::Vec3 normalize_or(cubey::math::Vec3 value, cubey::math::Vec3 fallback) {
@@ -91,18 +92,54 @@ constexpr float kZoomBase = 0.86F;
     return x * x * x * (x * (x * 6.0F - 15.0F) + 10.0F);
 }
 
+[[nodiscard]] float orbit_max_latitude_radians() {
+    return (std::numbers::pi_v<float> * 0.5F) - kOrbitPoleDeadbandRadians;
+}
+
+[[nodiscard]] float orbit_yaw_from_direction(cubey::math::Vec3 direction) {
+    direction = normalize_or(direction, cubey::math::Vec3{0.0F, 0.0F, 1.0F});
+    if (std::sqrt((direction.x * direction.x) + (direction.z * direction.z)) <= 0.000001F) {
+        return 0.0F;
+    }
+    return std::atan2(direction.x, direction.z);
+}
+
+[[nodiscard]] float orbit_latitude_from_direction(cubey::math::Vec3 direction) {
+    direction = normalize_or(direction, cubey::math::Vec3{0.0F, 0.0F, 1.0F});
+    return std::asin(std::clamp(direction.y, -1.0F, 1.0F));
+}
+
+[[nodiscard]] cubey::math::Vec3 orbit_direction_from_yaw_latitude(float yaw_radians,
+                                                                  float latitude_radians) {
+    const float latitude =
+        std::clamp(latitude_radians, -orbit_max_latitude_radians(), orbit_max_latitude_radians());
+    const float horizontal = std::cos(latitude);
+    return normalize_or(cubey::math::Vec3{std::sin(yaw_radians) * horizontal, std::sin(latitude),
+                                          std::cos(yaw_radians) * horizontal},
+                        cubey::math::Vec3{0.0F, 0.0F, 1.0F});
+}
+
+[[nodiscard]] cubey::math::Vec3 clamped_orbit_direction(cubey::math::Vec3 direction) {
+    direction = normalize_or(direction, cubey::math::Vec3{0.0F, 0.0F, 1.0F});
+    return orbit_direction_from_yaw_latitude(orbit_yaw_from_direction(direction),
+                                             orbit_latitude_from_direction(direction));
+}
+
 [[nodiscard]] float clamped_distance(const PlanetConfig& config, float distance_m) {
     return std::clamp(distance_m, planet_camera_min_distance_m(config),
                       planet_camera_max_distance_m(config));
 }
 
 [[nodiscard]] cubey::math::Quat orbit_rotation_for_position(cubey::math::Vec3 position_m) {
-    const cubey::math::Vec3 up = normalize_or(position_m, cubey::math::Vec3{0.0F, 1.0F, 0.0F});
-    cubey::math::Vec3 up_hint{0.0F, 1.0F, 0.0F};
-    if (std::abs(glm::dot(up, up_hint)) > 0.96F) {
-        up_hint = {0.0F, 0.0F, 1.0F};
-    }
-    return look_rotation(-up, up_hint);
+    const cubey::math::Vec3 up = clamped_orbit_direction(position_m);
+    const float yaw = orbit_yaw_from_direction(up);
+    const cubey::math::Vec3 forward = -up;
+    const cubey::math::Vec3 right =
+        normalize_or(cubey::math::Vec3{std::cos(yaw), 0.0F, -std::sin(yaw)},
+                     cubey::math::Vec3{1.0F, 0.0F, 0.0F});
+    const cubey::math::Vec3 camera_up =
+        normalize_or(glm::cross(right, forward), cubey::math::Vec3{0.0F, 1.0F, 0.0F});
+    return glm::normalize(glm::quat_cast(cubey::math::Mat3{right, camera_up, -forward}));
 }
 
 [[nodiscard]] cubey::math::Quat orbit_rotation_for_position(cubey::math::DVec3 position_m) {
@@ -247,15 +284,14 @@ void planet_camera_orbit_drag(PlanetCameraState& state, const PlanetConfig& conf
         return;
     }
 
-    const cubey::math::Quat yaw = cubey::math::angle_axis_quat(
-        -static_cast<float>(delta_x_px) * kDragRadiansPerPixel, {0.0F, 1.0F, 0.0F});
     const double distance = glm::length(state.position_m);
-    cubey::math::Vec3 position = yaw * position_direction(state.position_m, {0.0F, 0.0F, 1.0F});
-    const cubey::math::Vec3 right =
-        orbit_rotation_for_position(position) * cubey::math::Vec3{1.0F, 0.0F, 0.0F};
-    const cubey::math::Quat pitch =
-        cubey::math::angle_axis_quat(-static_cast<float>(delta_y_px) * kDragRadiansPerPixel, right);
-    position = pitch * position;
+    const cubey::math::Vec3 direction =
+        position_direction(state.position_m, {0.0F, 0.0F, 1.0F});
+    const float yaw = orbit_yaw_from_direction(direction) -
+                      (static_cast<float>(delta_x_px) * kDragRadiansPerPixel);
+    const float latitude = orbit_latitude_from_direction(direction) +
+                           (static_cast<float>(delta_y_px) * kDragRadiansPerPixel);
+    const cubey::math::Vec3 position = orbit_direction_from_yaw_latitude(yaw, latitude);
     state.position_m = clamped_position(config, to_double(position) * distance);
     state.surface_rotation_active = false;
 }

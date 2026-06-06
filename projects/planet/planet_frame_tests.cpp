@@ -235,6 +235,52 @@ void test_planet_camera_keeps_orbit_view_at_high_altitude() {
             "high-altitude planet camera should keep looking toward planet center");
 }
 
+void test_planet_orbit_camera_drag_clamps_before_poles() {
+    const cubey::projects::planet::PlanetConfig config{};
+    cubey::projects::planet::PlanetCameraState state =
+        cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
+
+    cubey::projects::planet::planet_camera_orbit_drag(state, config, 0.0, 10000.0);
+    const cubey::math::DVec3 north_direction = glm::normalize(state.position_m);
+
+    require(north_direction.y > 0.98,
+            "large upward orbit drag should approach the north pole");
+    require(north_direction.y < 0.999,
+            "large upward orbit drag should stop before the north pole singularity");
+
+    cubey::projects::planet::planet_camera_orbit_drag(state, config, 0.0, -20000.0);
+    const cubey::math::DVec3 south_direction = glm::normalize(state.position_m);
+
+    require(south_direction.y < -0.98,
+            "large downward orbit drag should approach the south pole");
+    require(south_direction.y > -0.999,
+            "large downward orbit drag should stop before the south pole singularity");
+}
+
+void test_planet_orbit_camera_horizontal_drag_stays_stable_near_poles() {
+    const cubey::projects::planet::PlanetConfig config{};
+    cubey::projects::planet::PlanetCameraState state =
+        cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
+    cubey::projects::planet::planet_camera_orbit_drag(state, config, 0.0, 10000.0);
+
+    const double before_y = glm::normalize(state.position_m).y;
+    cubey::projects::planet::planet_camera_orbit_drag(state, config, 120.0, 0.0);
+    const cubey::math::DVec3 after_direction = glm::normalize(state.position_m);
+    const cubey::Transform3D transform =
+        cubey::projects::planet::make_planet_camera_transform(config, state);
+    const cubey::math::Vec3 forward =
+        glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
+    const cubey::math::Vec3 up = glm::normalize(transform.translation);
+
+    require_near(static_cast<float>(after_direction.y), static_cast<float>(before_y), 0.0001F,
+                 "horizontal orbit drag near the pole should preserve clamped latitude");
+    require(std::isfinite(transform.translation.x) && std::isfinite(transform.translation.y) &&
+                std::isfinite(transform.translation.z),
+            "orbit camera transform should remain finite near the pole clamp");
+    require(glm::dot(forward, -up) > 0.95F,
+            "orbit camera should keep looking toward the planet near the pole clamp");
+}
+
 void test_planet_camera_transitions_to_surface_view_near_ground() {
     const cubey::projects::planet::PlanetConfig config{};
     const float distance =
@@ -417,6 +463,8 @@ int main() {
         test_planet_config_change_kind_separates_dynamic_and_topology();
         test_planet_camera_min_altitude_tracks_terrain_clearance();
         test_planet_camera_keeps_orbit_view_at_high_altitude();
+        test_planet_orbit_camera_drag_clamps_before_poles();
+        test_planet_orbit_camera_horizontal_drag_stays_stable_near_poles();
         test_planet_camera_transitions_to_surface_view_near_ground();
         test_planet_camera_initial_state_applies_run_config_mode();
         test_planet_surface_camera_drag_rotates_view_without_moving_anchor();
