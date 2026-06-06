@@ -1363,7 +1363,7 @@ void test_run_config_rejects_invalid_planet_controls() {
         "run config should reject negative planet camera altitude");
 
     std::string max_lod_flag = "--planet-max-lod-level";
-    std::string max_lod_value = "10";
+    std::string max_lod_value = "13";
     std::array<char*, 3> max_lod_argv{program.data(), max_lod_flag.data(), max_lod_value.data()};
     require_throws(
         [&max_lod_argv]() {

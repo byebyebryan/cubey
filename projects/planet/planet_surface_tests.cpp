@@ -959,6 +959,30 @@ void test_planet_surface_default_lod_reaches_near_camera_detail() {
             "default planet LOD should stay inside the live patch budget");
 }
 
+void test_planet_surface_earthlike_lod_reaches_meter_scale_budget() {
+    cubey::projects::planet::PlanetConfig config{};
+    config.lod_target_edge_px = 1.0F;
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, config.radius_m + 50000.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = true,
+    };
+
+    const cubey::projects::planet::PlanetSurfacePatchPlan plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, view);
+
+    require(plan.diagnostics.patch_count > 0U,
+            "earthlike planet LOD should select visible coverage");
+    require(plan.diagnostics.patch_count <= cubey::projects::planet::kPlanetMaxLivePatchInstances,
+            "earthlike planet LOD should stay inside the live patch budget");
+    require(plan.diagnostics.max_lod_level >= 10U,
+            "earthlike planet LOD should reach deeper levels near the camera");
+    const std::uint32_t selected_max_lod = plan.diagnostics.max_lod_level;
+    require(plan.diagnostics.min_cell_edge_m_by_lod[selected_max_lod] > 0.0F &&
+                plan.diagnostics.min_cell_edge_m_by_lod[selected_max_lod] < 80.0F,
+            "earthlike planet LOD should expose sub-100m selected cells near the camera");
+}
+
 void test_planet_surface_hysteresis_delays_split() {
     const cubey::projects::planet::PlanetConfig root_config{
         .patches_per_face = 1,
@@ -1360,6 +1384,7 @@ int main() {
         test_planet_surface_planner_selects_near_lod();
         test_planet_surface_planner_records_high_lod_diagnostics();
         test_planet_surface_default_lod_reaches_near_camera_detail();
+        test_planet_surface_earthlike_lod_reaches_meter_scale_budget();
         test_planet_surface_hysteresis_delays_split();
         test_planet_surface_hysteresis_delays_merge();
         test_planet_surface_planner_falls_back_at_live_patch_budget();
