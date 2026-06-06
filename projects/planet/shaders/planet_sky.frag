@@ -118,7 +118,7 @@ vec3 physical_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
 
     float ray_up = dot(ray_direction, camera_up);
     float sun_elevation = dot(sun_direction, camera_up);
-    float above_horizon = smoothstep(-0.10, 0.035, ray_up);
+    float above_horizon = smoothstep(-0.34, 0.035, ray_up);
     float daylight = smoothstep(-0.08, 0.24, sun_elevation);
     float twilight = exp(-abs(sun_elevation) / 0.16) * smoothstep(-0.22, 0.08, sun_elevation);
     float horizon_shell = exp(-abs(ray_up) / 0.14);
@@ -132,7 +132,8 @@ vec3 physical_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
                  (1.0 - max(daylight, twilight)) * above_horizon;
     vec3 sky = night + scatter.radiance + twilight_warm + stars;
     vec3 below = mix(vec3(0.006, 0.008, 0.018),
-                     scatter.radiance * 0.35 + vec3(0.035, 0.050, 0.075) * daylight,
+                     scatter.radiance * (0.45 + 0.28 * horizon_shell) +
+                         vec3(0.050, 0.070, 0.100) * daylight,
                      max(daylight, twilight * 0.65));
     sky = mix(below, sky, above_horizon);
     return mix(local_atmosphere_background(ray_direction, sun_direction), sky,

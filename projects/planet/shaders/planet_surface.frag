@@ -97,6 +97,52 @@ vec3 surface_haze_color(vec3 haze_color, vec3 sphere_normal, vec3 light_dir, vec
     return mix(night_haze, lit_haze, max(daylight_visibility, terms.twilight * 0.78));
 }
 
+bool physical_surface_atmosphere_enabled() {
+    return surface_frame.atmosphere_radius_mode.z > 0.5;
+}
+
+float surface_atmosphere_radius_m() {
+    float planet_radius = surface_frame.render_origin_radius.w;
+    return max(surface_frame.atmosphere_radius_mode.x, planet_radius * 1.001);
+}
+
+vec3 surface_world_position() {
+    return surface_frame.render_origin_radius.xyz + in_render_position;
+}
+
+vec3 surface_physical_direct_light(vec3 world_position, vec3 sphere_normal, vec3 light_dir,
+                                   float direct_intensity, vec3 fallback_light) {
+    if (!physical_surface_atmosphere_enabled()) {
+        return fallback_light;
+    }
+    float planet_radius = surface_frame.render_origin_radius.w;
+    float atmosphere_radius = surface_atmosphere_radius_m();
+    vec3 sample_position =
+        world_position + normalize(sphere_normal) * max(planet_radius * 0.00002, 8.0);
+    vec3 transmittance =
+        planet_atmosphere_sun_transmittance(sample_position, light_dir, planet_radius,
+                                            atmosphere_radius);
+    return surface_frame.sun_color_intensity.rgb * direct_intensity * transmittance;
+}
+
+vec3 surface_apply_physical_aerial_perspective(vec3 color, vec3 world_position, vec3 light_dir,
+                                               float view_distance) {
+    float planet_radius = surface_frame.render_origin_radius.w;
+    float atmosphere_radius = surface_atmosphere_radius_m();
+    vec3 camera_position = surface_frame.camera_world_radius.xyz;
+    vec3 view_ray = world_position - camera_position;
+    float ray_length = length(view_ray);
+    if (ray_length <= 0.001) {
+        return color;
+    }
+
+    PlanetAtmosphereScatterSample aerial = planet_atmosphere_integrate_ray(
+        camera_position, view_ray / ray_length, min(view_distance, ray_length), planet_radius,
+        atmosphere_radius, light_dir, surface_frame.sun_color_intensity.rgb,
+        surface_frame.sun_color_intensity.w);
+    return color * aerial.transmittance + aerial.radiance * 0.85;
+}
+
 vec3 celestial_planes_color() {
     vec3 sphere_normal = normalize(in_sphere_normal);
     float equator = celestial_plane_band(sphere_normal, surface_frame.celestial_equator_plane.xyz, 0.010);
@@ -176,13 +222,18 @@ void main() {
     float final_view = floor(surface_frame.surface_options.x) < 0.5 ? 1.0 : 0.0;
     uint material = fragment_material_id();
     vec3 albedo = final_view > 0.5 ? fragment_material_albedo(material) : in_color;
+    vec3 world_position = surface_world_position();
     float ndotl = max(dot(normal, light_dir), 0.0);
     float wrap = max(dot(normal, light_dir) * 0.5 + 0.5, 0.0);
     vec3 haze_color = surface_frame.haze_color_direct.rgb;
     float direct_intensity = max(surface_frame.haze_color_direct.w, 0.0);
     float ambient_intensity = max(surface_frame.atmosphere_options.x, 0.0);
-    vec3 sky = haze_color * pow(wrap, 1.8) * 0.18;
-    vec3 color = albedo * (haze_color * ambient_intensity + direct_intensity * ndotl) + sky;
+    vec3 direct_light =
+        surface_physical_direct_light(world_position, in_sphere_normal, light_dir,
+                                      direct_intensity, haze_color * direct_intensity);
+    vec3 ambient_light = haze_color * ambient_intensity;
+    vec3 sky = ambient_light * pow(wrap, 1.8) * 0.18;
+    vec3 color = albedo * (ambient_light + direct_light * ndotl) + sky;
     vec3 to_camera = normalize(surface_frame.camera_horizon.xyz - in_render_position);
     vec3 half_vector = normalize(light_dir + to_camera);
     float roughness = clamp(in_climate_field.w, 0.05, 0.98);
@@ -191,7 +242,7 @@ void main() {
                      (1.0 - roughness);
     float water_specular = material <= 1U ? 1.0 : 0.0;
     float land_specular = material == 2U ? 0.16 : 0.05;
-    color += haze_color * direct_intensity * specular *
+    color += direct_light * specular *
              mix(land_specular, 0.42 + pow(1.0 - max(dot(normal, to_camera), 0.0), 5.0) * 0.28,
                  water_specular) *
              final_view;
@@ -212,8 +263,13 @@ void main() {
     float haze = clamp(max(band_haze * 0.58, optical_haze * 0.72) + horizon_graze * 0.10, 0.0, 1.0) *
                  haze_strength;
     vec3 view_dir = normalize(in_render_position - surface_frame.camera_horizon.xyz);
-    vec3 final_haze_color =
-        surface_haze_color(haze_color, normalize(in_sphere_normal), light_dir, view_dir, haze);
-    color = mix(color, final_haze_color, haze * final_view);
+    if (physical_surface_atmosphere_enabled() && final_view > 0.5) {
+        color = surface_apply_physical_aerial_perspective(color, world_position, light_dir,
+                                                          view_distance);
+    } else {
+        vec3 final_haze_color =
+            surface_haze_color(haze_color, normalize(in_sphere_normal), light_dir, view_dir, haze);
+        color = mix(color, final_haze_color, haze * final_view);
+    }
     out_color = vec4(color, 1.0);
 }
