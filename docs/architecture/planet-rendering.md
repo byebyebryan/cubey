@@ -157,7 +157,7 @@ Current implementation notes:
   mapping derive UV bounds from the id instead of owning LOD addressing.
 - Live LOD selection and CPU mesh diagnostics intentionally have different
   limits. The instanced renderer currently accepts LOD 0-9, patch resolutions
-  up to 128, and defaults to LOD 7 with a 64x64 reusable grid and an 8 px target
+  up to 128, and defaults to LOD 8 with a 64x64 reusable grid and a 6 px target
   edge. The CPU mesh path still rejects configurations that would materialize
   too many vertices. Live planning has a fixed patch instance budget and falls
   back to coarser parent coverage when aggressive interactive settings would

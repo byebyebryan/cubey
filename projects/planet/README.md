@@ -57,7 +57,7 @@ hysteresis, and skirt ranges in the UI. The live renderer draws those selected
 patches with one reusable GPU
 patch grid plus per-frame-slot instance buffers carrying `face/level/x/y`
 identity. Live instanced rendering supports up to LOD 9 and patch resolution
-128, defaults to LOD 7, patch resolution 64, and an 8 px target edge, and falls
+128, defaults to LOD 8, patch resolution 64, and a 6 px target edge, and falls
 back to coarser patch coverage when interactive settings would exceed the live
 patch-instance budget. The CPU mesh builder has a stricter vertex cap because
 it materializes every selected patch for diagnostics.
