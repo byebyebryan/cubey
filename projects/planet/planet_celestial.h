@@ -44,6 +44,11 @@ struct PlanetExposureConfig {
     float night_exposure = kPlanetDefaultNightExposure;
 };
 
+struct PlanetExposureView {
+    cubey::render::ViewRayBasis3D view_rays{};
+    float planet_radius_m = kPlanetDefaultRadiusM;
+};
+
 enum class PlanetCelestialBodyType : std::uint8_t {
     Sun,
     Moon,
@@ -265,6 +270,10 @@ planet_celestial_sun_elevation_degrees(const PlanetCelestialSystem& celestial,
 planet_celestial_visible_disk_light_fraction(const PlanetCelestialSystem& celestial,
                                              cubey::math::DVec3 camera_world_position_m);
 [[nodiscard]] float
+planet_celestial_view_light_fraction(const PlanetCelestialSystem& celestial,
+                                     cubey::math::DVec3 camera_world_position_m,
+                                     const PlanetExposureView& view);
+[[nodiscard]] float
 planet_celestial_auto_exposure(float sun_elevation_degrees,
                                const PlanetExposureConfig& exposure);
 [[nodiscard]] float
@@ -279,6 +288,12 @@ planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
                                   cubey::math::DVec3 camera_world_position_m,
                                   const PlanetExposureConfig& exposure,
                                   float surface_reference_weight);
+[[nodiscard]] float
+planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
+                                  cubey::math::DVec3 camera_world_position_m,
+                                  const PlanetExposureConfig& exposure,
+                                  float surface_reference_weight,
+                                  const PlanetExposureView& view);
 [[nodiscard]] PlanetAtmosphereInputs
 planet_atmosphere_inputs(const PlanetCelestialSystem& celestial,
                          const PlanetCelestialLighting& lighting,

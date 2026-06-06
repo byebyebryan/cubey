@@ -76,6 +76,55 @@ enum class PlanetCelestialBinding : std::uint32_t {
     return t * t * (3.0F - (2.0F * t));
 }
 
+[[nodiscard]] cubey::math::DVec3 to_double(cubey::math::Vec3 value) {
+    return {static_cast<double>(value.x), static_cast<double>(value.y),
+            static_cast<double>(value.z)};
+}
+
+[[nodiscard]] cubey::math::Vec3 to_float(cubey::math::DVec3 value) {
+    return {static_cast<float>(value.x), static_cast<float>(value.y),
+            static_cast<float>(value.z)};
+}
+
+[[nodiscard]] bool ray_sphere_surface_normal(cubey::math::DVec3 origin,
+                                             cubey::math::Vec3 direction,
+                                             double radius_m,
+                                             cubey::math::Vec3& normal) {
+    if (radius_m <= 0.0 || glm::length(direction) <= 0.000001F) {
+        return false;
+    }
+    const cubey::math::DVec3 ray = glm::normalize(to_double(direction));
+    const double b = glm::dot(origin, ray);
+    const double c = glm::dot(origin, origin) - (radius_m * radius_m);
+    const double discriminant = (b * b) - c;
+    if (discriminant < 0.0) {
+        return false;
+    }
+
+    const double root = std::sqrt(discriminant);
+    double t = -b - root;
+    if (t < 0.0) {
+        t = -b + root;
+    }
+    if (t < 0.0) {
+        return false;
+    }
+
+    const cubey::math::DVec3 hit = origin + ray * t;
+    if (glm::length(hit) <= 0.000001) {
+        return false;
+    }
+    normal = normalized_or_up(to_float(glm::normalize(hit)));
+    return true;
+}
+
+[[nodiscard]] float sky_direction_light_fraction(const PlanetCelestialSystem& celestial,
+                                                 const cubey::render::ViewRayBasis3D& view_rays) {
+    const cubey::math::Vec3 forward = normalized_or_up(cubey::math::Vec3{view_rays.forward});
+    const float sun_alignment = glm::dot(forward, normalized_or_up(celestial.sun.direction));
+    return std::clamp((sun_alignment * 0.5F) + 0.5F, 0.0F, 1.0F);
+}
+
 [[nodiscard]] float moon_atmosphere_washout_factor(
     const PlanetCelestialBody& body, const PlanetCelestialLighting& lighting,
     const PlanetCelestialBodyAtmosphereInputs& atmosphere) {
@@ -391,6 +440,45 @@ float planet_celestial_visible_disk_light_fraction(
     return std::clamp((phase_alignment * 0.5F) + 0.5F, 0.0F, 1.0F);
 }
 
+float planet_celestial_view_light_fraction(const PlanetCelestialSystem& celestial,
+                                           cubey::math::DVec3 camera_world_position_m,
+                                           const PlanetExposureView& view) {
+    if (glm::length(camera_world_position_m) <= 0.000001 ||
+        !finite_positive(view.planet_radius_m)) {
+        return planet_celestial_visible_disk_light_fraction(celestial, camera_world_position_m);
+    }
+
+    constexpr std::array<float, 5> kSamples{-0.80F, -0.40F, 0.0F, 0.40F, 0.80F};
+    const cubey::math::Vec3 sun_direction = normalized_or_up(celestial.sun.direction);
+    float accumulated_lit = 0.0F;
+    std::uint32_t sample_count = 0;
+    std::uint32_t hit_count = 0;
+    for (float y : kSamples) {
+        for (float x : kSamples) {
+            ++sample_count;
+            cubey::math::Vec3 normal{};
+            if (!ray_sphere_surface_normal(camera_world_position_m,
+                                           cubey::render::view_ray_direction(view.view_rays,
+                                                                             {x, y}),
+                                           static_cast<double>(view.planet_radius_m), normal)) {
+                continue;
+            }
+            ++hit_count;
+            accumulated_lit += std::max(glm::dot(normal, sun_direction), 0.0F);
+        }
+    }
+
+    if (hit_count == 0U || sample_count == 0U) {
+        return sky_direction_light_fraction(celestial, view.view_rays);
+    }
+
+    // A fully lit sphere averages well below 1.0 over visible surface normals; remap that
+    // geometric average back into the exposure fraction used by the orbit exposure curve.
+    constexpr float kFullDiskMeanLuma = 0.65F;
+    const float view_lit = accumulated_lit / static_cast<float>(sample_count);
+    return std::clamp(view_lit / kFullDiskMeanLuma, 0.0F, 1.0F);
+}
+
 float planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
                                         cubey::math::DVec3 camera_world_position_m,
                                         const PlanetExposureConfig& exposure) {
@@ -414,6 +502,23 @@ float planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
     const float orbit_exposure = planet_celestial_orbit_auto_exposure(
         planet_celestial_visible_disk_light_fraction(celestial, camera_world_position_m),
         exposure);
+    const float surface_exposure = planet_celestial_auto_exposure(
+        planet_celestial_sun_elevation_degrees(celestial, camera_world_position_m), exposure);
+    return std::lerp(orbit_exposure, surface_exposure, surface_weight);
+}
+
+float planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
+                                        cubey::math::DVec3 camera_world_position_m,
+                                        const PlanetExposureConfig& exposure,
+                                        float surface_reference_weight,
+                                        const PlanetExposureView& view) {
+    if (!exposure.auto_exposure_enabled) {
+        return exposure.manual_exposure;
+    }
+
+    const float surface_weight = std::clamp(surface_reference_weight, 0.0F, 1.0F);
+    const float orbit_exposure = planet_celestial_orbit_auto_exposure(
+        planet_celestial_view_light_fraction(celestial, camera_world_position_m, view), exposure);
     const float surface_exposure = planet_celestial_auto_exposure(
         planet_celestial_sun_elevation_degrees(celestial, camera_world_position_m), exposure);
     return std::lerp(orbit_exposure, surface_exposure, surface_weight);

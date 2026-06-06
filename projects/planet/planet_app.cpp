@@ -545,10 +545,9 @@ class PlanetApp {
         ImGui::Text("Sun elevation: %.1f deg",
                     planet_celestial_sun_elevation_degrees(celestial_system_,
                                                            frame_.camera_world_position_m));
-        ImGui::Text("Orbit light / exposure: %.2f / %.2f",
-                    planet_celestial_visible_disk_light_fraction(celestial_system_,
-                                                                 frame_.camera_world_position_m),
-                    display_exposure());
+        const VkExtent2D ui_extent = context.swapchain().extent();
+        ImGui::Text("Orbit light / exposure: %.2f / %.2f", view_light_fraction(ui_extent),
+                    display_exposure(ui_extent));
 
         ImGui::SeparatorText("Diagnostics");
         ImGui::Text("Radius: %.0f m", planet_config_.radius_m);
@@ -1072,18 +1071,37 @@ class PlanetApp {
         celestial_body_frame_.record_pass(recorder, target, frame_slot, moon_mesh());
     }
 
-    [[nodiscard]] float display_exposure() const {
+    [[nodiscard]] PlanetExposureView exposure_view(VkExtent2D extent) const {
+        const cubey::Transform3D transform = camera_transform();
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
+        return {
+            .view_rays =
+                cubey::render::view_ray_basis_3d(transform.rotation, aspect, camera_.fovy_radians()),
+            .planet_radius_m = planet_config_.radius_m,
+        };
+    }
+
+    [[nodiscard]] float view_light_fraction(VkExtent2D extent) const {
+        return planet_celestial_view_light_fraction(celestial_system_, frame_.camera_world_position_m,
+                                                   exposure_view(extent));
+    }
+
+    [[nodiscard]] float display_exposure(VkExtent2D extent) const {
         return planet_celestial_display_exposure(celestial_system_, frame_.camera_world_position_m,
                                                  exposure_config_,
-                                                 exposure_surface_reference_weight());
+                                                 exposure_surface_reference_weight(),
+                                                 exposure_view(extent));
     }
 
     [[nodiscard]] float exposure_surface_reference_weight() const {
         return planet_surface_camera_blend(planet_config_, planet_camera_distance_m(camera_state_));
     }
 
-    [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms(VkFormat color_format) const {
-        return cubey::render::hdr_post_uniforms(color_format, display_exposure());
+    [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms(VkFormat color_format,
+                                                               VkExtent2D extent) const {
+        return cubey::render::hdr_post_uniforms(color_format, display_exposure(extent));
     }
 
     void record_post_pass(const cubey::vulkan::CommandRecorder& recorder,
@@ -1212,7 +1230,7 @@ class PlanetApp {
         surface_frame_material().upload(frame_slot, uniforms);
         sky_frame_.upload(frame_slot, sky_frame_uniforms(color_target.extent));
         celestial_body_frame_.upload(frame_slot, moon_body_frame_uniforms(color_target.extent));
-        hdr_post_frame_.upload(frame_slot, post_uniforms(color_target.format));
+        hdr_post_frame_.upload(frame_slot, post_uniforms(color_target.format, color_target.extent));
         const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>& instance_buffer =
             ensure_patch_instance_buffer(gpu, frame_slot);
         const PlanetFrameGraph frame_graph =

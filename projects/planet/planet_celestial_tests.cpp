@@ -45,6 +45,14 @@ float angle_between(cubey::math::Vec3 a, cubey::math::Vec3 b) {
     return std::acos(std::clamp(glm::dot(glm::normalize(a), glm::normalize(b)), -1.0F, 1.0F));
 }
 
+cubey::projects::planet::PlanetExposureView exposure_view(cubey::math::Quat rotation) {
+    return {
+        .view_rays = cubey::render::view_ray_basis_3d(rotation, 1.0F,
+                                                       std::numbers::pi_v<float> / 3.0F),
+        .planet_radius_m = 1.0F,
+    };
+}
+
 void test_default_solar_system_uses_earth_like_reference_periods() {
     const cubey::projects::planet::PlanetSolarSystemConfig solar{};
 
@@ -365,6 +373,53 @@ void test_celestial_orbit_exposure_uses_visible_disk_light_fraction() {
     require_near(cubey::projects::planet::planet_celestial_visible_disk_light_fraction(
                      celestial, {0.0, -1.0, 0.0}),
                  0.0F, 0.000001F, "anti-sun orbit view should see a dark disk");
+}
+
+void test_celestial_view_light_fraction_samples_visible_planet() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    const cubey::math::DVec3 camera_position{0.0, 0.0, 2.0};
+    const cubey::projects::planet::PlanetExposureView view =
+        exposure_view(cubey::math::identity_quat());
+
+    celestial.sun.direction = {0.0F, 0.0F, 1.0F};
+    const float lit =
+        cubey::projects::planet::planet_celestial_view_light_fraction(celestial, camera_position,
+                                                                      view);
+
+    celestial.sun.direction = {1.0F, 0.0F, 0.0F};
+    const float side =
+        cubey::projects::planet::planet_celestial_view_light_fraction(celestial, camera_position,
+                                                                      view);
+
+    celestial.sun.direction = {0.0F, 0.0F, -1.0F};
+    const float dark =
+        cubey::projects::planet::planet_celestial_view_light_fraction(celestial, camera_position,
+                                                                      view);
+
+    require(lit > 0.75F, "centered lit orbit view should estimate a bright planet disk");
+    require(side > 0.10F && side < lit,
+            "side-lit orbit view should estimate less light than a lit disk");
+    require(dark < 0.05F, "backlit orbit view should estimate a dark planet disk");
+}
+
+void test_celestial_view_light_fraction_uses_camera_view_direction() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    celestial.sun.direction = {0.0F, 0.0F, 1.0F};
+    const cubey::math::DVec3 camera_position{0.0, 0.0, 2.0};
+    const cubey::projects::planet::PlanetExposureView centered =
+        exposure_view(cubey::math::identity_quat());
+    const cubey::projects::planet::PlanetExposureView off_center =
+        exposure_view(cubey::math::angle_axis_quat(0.95F, {0.0F, 1.0F, 0.0F}));
+
+    const float centered_light =
+        cubey::projects::planet::planet_celestial_view_light_fraction(celestial, camera_position,
+                                                                      centered);
+    const float off_center_light =
+        cubey::projects::planet::planet_celestial_view_light_fraction(celestial, camera_position,
+                                                                      off_center);
+
+    require(off_center_light < centered_light,
+            "orbit light fraction should account for where the camera is looking");
 }
 
 void test_celestial_orbit_auto_exposure_compresses_surface_day_night_range() {
@@ -802,6 +857,8 @@ int main() {
         test_celestial_display_exposure_uses_local_sun_elevation();
         test_celestial_auto_exposure_interpolates_day_twilight_and_night();
         test_celestial_orbit_exposure_uses_visible_disk_light_fraction();
+        test_celestial_view_light_fraction_samples_visible_planet();
+        test_celestial_view_light_fraction_uses_camera_view_direction();
         test_celestial_orbit_auto_exposure_compresses_surface_day_night_range();
         test_celestial_display_exposure_blends_orbit_and_surface_references();
         test_celestial_display_exposure_respects_overrides();
