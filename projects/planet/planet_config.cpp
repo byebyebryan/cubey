@@ -58,6 +58,16 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     if (run_config_float_is_set(config.planet.lod_hysteresis)) {
         planet.lod_hysteresis = config.planet.lod_hysteresis;
     }
+    if (config.planet.local_detail_lod_levels != 0U) {
+        planet.local_detail_lod_levels = config.planet.local_detail_lod_levels;
+    }
+    if (config.planet.local_detail_cells_per_axis != 0U) {
+        planet.local_detail_cells_per_axis = config.planet.local_detail_cells_per_axis;
+    }
+    if (run_config_float_is_set(config.planet.local_detail_outer_half_extent_m)) {
+        planet.local_detail_outer_half_extent_m =
+            config.planet.local_detail_outer_half_extent_m;
+    }
     if (config.planet.wire_overlay >= 0) {
         planet.wire_overlay = config.planet.wire_overlay != 0;
     }

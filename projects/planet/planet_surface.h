@@ -148,6 +148,8 @@ make_planet_surface_gpu_patch_instances(const PlanetConfig& config,
                                                                    PlanetSurfacePatchId id);
 [[nodiscard]] PlanetSurfacePatchId planet_surface_child_patch_id(PlanetSurfacePatchId id,
                                                                  std::uint32_t child_index);
+[[nodiscard]] float planet_surface_nominal_cell_edge_m(const PlanetConfig& config,
+                                                       std::uint32_t lod_level);
 [[nodiscard]] PlanetSurfaceLodNeighborDiagnostics
 analyze_planet_surface_lod_neighbors(const PlanetConfig& config,
                                      std::span<const PlanetSurfacePatchInstance> patches);

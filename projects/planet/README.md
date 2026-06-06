@@ -11,7 +11,8 @@ Run it with:
 ```sh
 ./build/dev/projects/planet/planet
 ./build/dev/projects/planet/planet --headless --frames 120 --output outputs/planet.png
-./build/dev/projects/planet/planet --planet-radius-m 600000 --planet-camera-altitude-m 240000
+./build/dev/projects/planet/planet --planet-scale-preset earthlike
+./build/dev/projects/planet/planet --planet-scale-preset mini
 ./build/dev/projects/planet/planet --debug-view lod-level
 ./build/dev/projects/planet/planet --debug-view cell-edge
 ./build/dev/projects/planet/planet --debug-view terrain-height
@@ -30,7 +31,8 @@ Run it with:
 ./build/dev/projects/planet/planet --planet-atmosphere-mode physical
 ./build/dev/projects/planet/planet --planet-atmosphere-haze-strength 0.18 --planet-atmosphere-aerial-strength 0.35
 ./build/dev/projects/planet/planet --planet-max-lod-level 7 --planet-lod-target-edge-px 8
-./build/dev/projects/planet/planet --planet-max-lod-level 9 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
+./build/dev/projects/planet/planet --planet-max-lod-level 12 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
+./build/dev/projects/planet/planet --planet-local-detail-lod-levels 6 --planet-local-detail-cells 128 --planet-local-detail-outer-extent-m 8192
 ./build/dev/projects/planet/planet --planet-terrain-mid-detail-strength 0.45 --planet-terrain-fine-detail-strength 0.16 --planet-terrain-fine-detail-scale 12
 ./build/dev/projects/planet/planet --planet-sea-level-m 0 --planet-shoreline-width-m 1500
 ```
@@ -67,8 +69,8 @@ transition pressure, edge-length, per-LOD cell-size, budget fallback,
 hysteresis, and skirt ranges in the UI. The live renderer draws those selected
 patches with one reusable GPU
 patch grid plus per-frame-slot instance buffers carrying `face/level/x/y`
-identity. Live instanced rendering supports up to LOD 9 and patch resolution
-128, defaults to LOD 8, patch resolution 64, and a 6 px target edge, and falls
+identity. Live instanced rendering supports up to LOD 12 and patch resolution
+128, defaults to LOD 12, patch resolution 64, and a 6 px target edge, and falls
 back to coarser patch coverage when interactive settings would exceed the live
 patch-instance budget. The CPU mesh builder has a stricter vertex cap because
 it materializes every selected patch for diagnostics.
@@ -82,7 +84,11 @@ but scale-sensitive work should be checked against the Earth-like preset. The
 global cube-sphere patch tree is responsible for coverage and stable
 `face/level/x/y` identity. Meter-scale terrain detail and future ocean waves are
 expected to come through a viewer-centered local-detail clipmap rather than by
-forcing the global patch tree to carry every wave or interaction feature.
+forcing the global patch tree to carry every wave or interaction feature. The
+current local-detail plan is diagnostic-only: it is centered on
+`PlanetFrame.local_frame`, defaults to six clipmap levels, 128 cells per axis,
+an 8192 m outer half extent, and a 4 m near cell, and reports its own patch,
+vertex, and triangle budget in the UI.
 
 Planet surface LOD is coverage-first. Root patches provide guaranteed coarse
 coverage for every planet domain, and view/horizon culling only stops

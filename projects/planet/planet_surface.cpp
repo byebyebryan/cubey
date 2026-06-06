@@ -1000,6 +1000,21 @@ PlanetSurfacePatchId planet_surface_child_patch_id(PlanetSurfacePatchId id,
     };
 }
 
+float planet_surface_nominal_cell_edge_m(const PlanetConfig& config, std::uint32_t lod_level) {
+    validate_planet_config(config);
+    if (lod_level > config.max_lod_level || lod_level > kPlanetMaxLiveLodLevel) {
+        throw std::runtime_error("planet nominal cell edge LOD is out of range");
+    }
+    return patch_cell_edge_m(config, PlanetSurfacePatchInstance{
+                                         .id = PlanetSurfacePatchId{
+                                             .face = 0,
+                                             .level = lod_level,
+                                             .x = 0,
+                                             .y = 0,
+                                         },
+                                     });
+}
+
 PlanetSurfaceLodNeighborDiagnostics
 analyze_planet_surface_lod_neighbors(const PlanetConfig& config,
                                      std::span<const PlanetSurfacePatchInstance> patches) {

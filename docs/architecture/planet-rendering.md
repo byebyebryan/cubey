@@ -190,8 +190,8 @@ Current implementation notes:
   instances through one reusable patch grid, and both CPU diagnostics and shader
   mapping derive UV bounds from the id instead of owning LOD addressing.
 - Live LOD selection and CPU mesh diagnostics intentionally have different
-  limits. The instanced renderer currently accepts LOD 0-9, patch resolutions
-  up to 128, and defaults to LOD 8 with a 64x64 reusable grid and a 6 px target
+  limits. The instanced renderer currently accepts LOD 0-12, patch resolutions
+  up to 128, and defaults to LOD 12 with a 64x64 reusable grid and a 6 px target
   edge. The CPU mesh path still rejects configurations that would materialize
   too many vertices. Live planning has a fixed patch instance budget and falls
   back to coarser parent coverage when aggressive interactive settings would
@@ -204,6 +204,11 @@ Current implementation notes:
   lazily uploads the current instance list into that frame slot's buffer when
   its generation is stale. Full config rebuilds still drain and recreate
   resources because the reusable patch grid itself can change.
+- A project-local local-detail clipmap plan now exists beside the global patch
+  tree. It wraps `cubey::render::ClipmapGrid2D`, is anchored to
+  `PlanetFrame.local_frame`, defaults to a 4 m near cell over an 8192 m outer
+  half extent, and is diagnostic-only until terrain detail or ocean waves start
+  consuming it.
 - LOD is coverage-first. View and horizon culling stop refinement, but the
   parent patch remains selected so rotating while rebuilds are deferred does not
   reveal holes.

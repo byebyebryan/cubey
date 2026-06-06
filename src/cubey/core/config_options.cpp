@@ -64,6 +64,8 @@ constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-fac
                                                            "tiled-faces"};
 constexpr double kPlanetMaxPatchResolution = 128.0;
 constexpr double kPlanetMaxLiveLodLevel = 12.0;
+constexpr double kPlanetMaxLocalDetailLodLevels = 8.0;
+constexpr double kPlanetMaxLocalDetailCellsPerAxis = 512.0;
 
 constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view path,
                                         std::string_view cli_name, std::string_view label,
@@ -85,7 +87,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 166> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 169> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -244,6 +246,19 @@ constexpr std::array<ConfigOptionDescriptor, 166> kRunConfigOptions{
            "--planet-lod-hysteresis", "LOD Hysteresis", "Planet",
            "Relative planet LOD split and merge deadband.", ConfigOptionType::Float,
            bounded_range(0.0, 0.95)),
+    option(RunConfigOptionId::PlanetLocalDetailLodLevels, "planet.local_detail_lod_levels",
+           "--planet-local-detail-lod-levels", "Local Detail LODs", "Planet",
+           "Viewer-centered local detail clipmap LOD levels.", ConfigOptionType::UInt32,
+           bounded_range(1.0, kPlanetMaxLocalDetailLodLevels)),
+    option(RunConfigOptionId::PlanetLocalDetailCells, "planet.local_detail_cells_per_axis",
+           "--planet-local-detail-cells", "Local Detail Cells", "Planet",
+           "Cell count per local-detail clipmap axis.", ConfigOptionType::UInt32,
+           bounded_range(1.0, kPlanetMaxLocalDetailCellsPerAxis)),
+    option(RunConfigOptionId::PlanetLocalDetailOuterExtent,
+           "planet.local_detail_outer_half_extent_m", "--planet-local-detail-outer-extent-m",
+           "Local Detail Extent", "Planet",
+           "Outer half extent in meters for the viewer-centered local detail clipmap.",
+           ConfigOptionType::Float, min_range(1.0)),
     option(RunConfigOptionId::PlanetWireOverlay, "planet.wire_overlay", "--planet-wire-overlay",
            "Wire Overlay", "Planet", "Draw planet patch wire overlay.", ConfigOptionType::Bool,
            no_range(), {}, "--no-planet-wire-overlay"),
@@ -893,6 +908,12 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.planet.lod_target_edge_px);
     case RunConfigOptionId::PlanetLodHysteresis:
         return optional_float(config.planet.lod_hysteresis);
+    case RunConfigOptionId::PlanetLocalDetailLodLevels:
+        return optional_uint32(config.planet.local_detail_lod_levels);
+    case RunConfigOptionId::PlanetLocalDetailCells:
+        return optional_uint32(config.planet.local_detail_cells_per_axis);
+    case RunConfigOptionId::PlanetLocalDetailOuterExtent:
+        return optional_float(config.planet.local_detail_outer_half_extent_m);
     case RunConfigOptionId::PlanetWireOverlay:
         return optional_bool(config.planet.wire_overlay);
     case RunConfigOptionId::PlanetSkirts:
@@ -1195,6 +1216,11 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<std::uint32_t>("max_lod_level", options.max_lod_level);
     adapter.writeField<float>("lod_target_edge_px", options.lod_target_edge_px);
     adapter.writeField<float>("lod_hysteresis", options.lod_hysteresis);
+    adapter.writeField<std::uint32_t>("local_detail_lod_levels", options.local_detail_lod_levels);
+    adapter.writeField<std::uint32_t>("local_detail_cells_per_axis",
+                                      options.local_detail_cells_per_axis);
+    adapter.writeField<float>("local_detail_outer_half_extent_m",
+                              options.local_detail_outer_half_extent_m);
     adapter.writeField<int>("wire_overlay", options.wire_overlay);
     adapter.writeField<int>("skirts_enabled", options.skirts_enabled);
     adapter.writeField<float>("skirt_depth_scale", options.skirt_depth_scale);
@@ -1227,6 +1253,12 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<std::uint32_t>("max_lod_level", options.max_lod_level);
     adapter.readField<float>("lod_target_edge_px", options.lod_target_edge_px);
     adapter.readField<float>("lod_hysteresis", options.lod_hysteresis);
+    adapter.readField<std::uint32_t>("local_detail_lod_levels",
+                                     options.local_detail_lod_levels);
+    adapter.readField<std::uint32_t>("local_detail_cells_per_axis",
+                                     options.local_detail_cells_per_axis);
+    adapter.readField<float>("local_detail_outer_half_extent_m",
+                             options.local_detail_outer_half_extent_m);
     adapter.readField<int>("wire_overlay", options.wire_overlay);
     adapter.readField<int>("skirts_enabled", options.skirts_enabled);
     adapter.readField<float>("skirt_depth_scale", options.skirt_depth_scale);
@@ -1667,6 +1699,20 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::PlanetLodHysteresis:
         config.planet.lod_hysteresis = parse_config_float(value, option);
         validate_range(config.planet.lod_hysteresis, option);
+        break;
+    case RunConfigOptionId::PlanetLocalDetailLodLevels:
+        config.planet.local_detail_lod_levels =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.planet.local_detail_lod_levels, option);
+        break;
+    case RunConfigOptionId::PlanetLocalDetailCells:
+        config.planet.local_detail_cells_per_axis =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.planet.local_detail_cells_per_axis, option);
+        break;
+    case RunConfigOptionId::PlanetLocalDetailOuterExtent:
+        config.planet.local_detail_outer_half_extent_m = parse_config_float(value, option);
+        validate_range(config.planet.local_detail_outer_half_extent_m, option);
         break;
     case RunConfigOptionId::PlanetWireOverlay:
         config.planet.wire_overlay = parse_config_bool(value, option) ? 1 : 0;

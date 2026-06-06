@@ -1,5 +1,7 @@
 #include "planet_ui.h"
 
+#include "planet_local_detail.h"
+
 #include <cubey/host/imgui_helpers.h>
 
 #include <imgui.h>
@@ -116,6 +118,25 @@ void draw_surface_controls(PlanetUiContext& ui) {
     }
 }
 
+void draw_local_detail_controls(PlanetUiContext& ui) {
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Local Detail", {.default_open = false}}; group) {
+        const cubey::host::ScopedImGuiId section_id("LocalDetail");
+        int lod_levels = static_cast<int>(ui.edit_config.local_detail_lod_levels);
+        if (ImGui::InputInt("LOD Levels", &lod_levels)) {
+            ui.edit_config.local_detail_lod_levels = static_cast<std::uint32_t>(
+                std::clamp(lod_levels, 1, static_cast<int>(kPlanetMaxLocalDetailLodLevels)));
+        }
+        int cells = static_cast<int>(ui.edit_config.local_detail_cells_per_axis);
+        if (ImGui::InputInt("Cells / Axis", &cells)) {
+            ui.edit_config.local_detail_cells_per_axis = static_cast<std::uint32_t>(
+                std::clamp(cells, 1, static_cast<int>(kPlanetMaxLocalDetailCellsPerAxis)));
+        }
+        ImGui::InputFloat("Outer Extent (m)", &ui.edit_config.local_detail_outer_half_extent_m,
+                          0.0F, 0.0F, "%.0f");
+    }
+}
+
 void draw_atmosphere_controls(PlanetUiContext& ui) {
     if (const cubey::host::ScopedImGuiGroup group{
             "Atmosphere", {.default_open = false}}; group) {
@@ -198,8 +219,18 @@ void draw_diagnostics(PlanetUiContext& ui) {
     if (const cubey::host::ScopedImGuiGroup group{
             "Diagnostics", {.default_open = false}}; group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
+        const float radius = std::max(ui.active_config.radius_m, 1.0F);
+        const float finest_global_cell =
+            planet_surface_nominal_cell_edge_m(ui.active_config, ui.active_config.max_lod_level);
+        const PlanetLocalDetailPlan local_detail =
+            plan_planet_local_detail(ui.active_config, ui.frame);
+        ImGui::Text("Scale preset: %s", planet_scale_preset_name(ui.active_config.scale_preset));
         ImGui::Text("Radius: %.0f m", ui.active_config.radius_m);
         ImGui::Text("Atmosphere: %.0f m", ui.active_config.atmosphere_height_m);
+        ImGui::Text("Atmosphere / radius: %.2f%%",
+                    (ui.active_config.atmosphere_height_m / radius) * 100.0F);
+        ImGui::Text("Terrain / radius: %.3f%%",
+                    (ui.active_config.terrain_height_scale_m / radius) * 100.0F);
         ImGui::Text("Altitude: %.0f m", ui.frame.camera_altitude_m);
         ImGui::Text(
             "Surface camera: %.0f%%",
@@ -257,12 +288,23 @@ void draw_diagnostics(PlanetUiContext& ui) {
                     surface.max_lod_neighbor_delta);
         ImGui::Text("Surface vertices: %u", surface.vertex_count);
         ImGui::Text("Surface triangles: %u", surface.triangle_count);
+        ImGui::Text("Configured finest cell: %.1f m", finest_global_cell);
         ImGui::Text("Cell edge: %.0f m - %.0f m", surface.min_edge_length_m,
                     surface.max_edge_length_m);
         ImGui::Text("Seam edges: %u", surface.seam_edge_count);
         ImGui::Text("Skirt triangles: %u", surface.skirt_triangle_count);
         ImGui::Text("Skirt depth: %.0f m - %.0f m", surface.min_skirt_depth_m,
                     surface.max_skirt_depth_m);
+
+        ImGui::SeparatorText("Local Detail");
+        ImGui::Text("Levels / patches: %u / %u", local_detail.diagnostics.lod_levels,
+                    local_detail.diagnostics.patch_count);
+        ImGui::Text("Near cell / outer extent: %.1f m / %.0f m",
+                    local_detail.diagnostics.near_cell_size,
+                    local_detail.diagnostics.outer_half_extent);
+        ImGui::Text("Vertices / triangles: %u / %u",
+                    local_detail.diagnostics.total_vertices,
+                    local_detail.diagnostics.total_triangles);
     }
 }
 
@@ -282,6 +324,7 @@ void draw_planet_ui(PlanetUiContext ui) {
     const PlanetConfig config_before_edit = ui.edit_config;
     draw_planet_controls(ui);
     draw_surface_controls(ui);
+    draw_local_detail_controls(ui);
     draw_atmosphere_controls(ui);
     if (ui.edit_config != config_before_edit) {
         ui.config_apply_pending = ui.edit_config != ui.active_config;

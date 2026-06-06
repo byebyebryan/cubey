@@ -1221,6 +1221,12 @@ void test_run_config_parses_planet_controls() {
     std::string lod_target_value = "9.5";
     std::string lod_hysteresis_flag = "--planet-lod-hysteresis";
     std::string lod_hysteresis_value = "0.25";
+    std::string local_detail_lods_flag = "--planet-local-detail-lod-levels";
+    std::string local_detail_lods_value = "5";
+    std::string local_detail_cells_flag = "--planet-local-detail-cells";
+    std::string local_detail_cells_value = "96";
+    std::string local_detail_extent_flag = "--planet-local-detail-outer-extent-m";
+    std::string local_detail_extent_value = "4096";
     std::string wire_flag = "--planet-wire-overlay";
     std::string skirts_flag = "--no-planet-skirts";
     std::string skirt_depth_flag = "--planet-skirt-depth-scale";
@@ -1249,7 +1255,7 @@ void test_run_config_parses_planet_controls() {
     std::string camera_mode_value = "surface";
     std::string atmosphere_mode_flag = "--planet-atmosphere-mode";
     std::string atmosphere_mode_value = "physical";
-    std::array<char*, 47> argv{program.data(),
+    std::array<char*, 53> argv{program.data(),
                                scale_flag.data(),
                                scale_value.data(),
                                radius_flag.data(),
@@ -1268,6 +1274,12 @@ void test_run_config_parses_planet_controls() {
                                lod_target_value.data(),
                                lod_hysteresis_flag.data(),
                                lod_hysteresis_value.data(),
+                               local_detail_lods_flag.data(),
+                               local_detail_lods_value.data(),
+                               local_detail_cells_flag.data(),
+                               local_detail_cells_value.data(),
+                               local_detail_extent_flag.data(),
+                               local_detail_extent_value.data(),
                                wire_flag.data(),
                                skirts_flag.data(),
                                skirt_depth_flag.data(),
@@ -1315,6 +1327,12 @@ void test_run_config_parses_planet_controls() {
     require(config.planet.lod_target_edge_px == 9.5F, "run config should parse planet LOD target");
     require(config.planet.lod_hysteresis == 0.25F,
             "run config should parse planet LOD hysteresis");
+    require(config.planet.local_detail_lod_levels == 5U,
+            "run config should parse planet local detail LOD levels");
+    require(config.planet.local_detail_cells_per_axis == 96U,
+            "run config should parse planet local detail cells");
+    require(config.planet.local_detail_outer_half_extent_m == 4096.0F,
+            "run config should parse planet local detail extent");
     require(config.planet.wire_overlay == 1, "run config should parse planet wire overlay");
     require(config.planet.skirts_enabled == 0, "run config should parse planet skirts toggle");
     require(config.planet.skirt_depth_scale == 0.45F,

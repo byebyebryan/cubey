@@ -104,6 +104,21 @@ void test_planet_config_rejects_invalid_lod_hysteresis() {
     require_invalid_planet_config(config, "planet config should reject invalid LOD hysteresis");
 }
 
+void test_planet_config_rejects_invalid_local_detail_settings() {
+    cubey::projects::planet::PlanetConfig config{};
+    config.local_detail_lod_levels = 0U;
+    require_invalid_planet_config(config, "planet config should reject zero local-detail LOD levels");
+
+    config = {};
+    config.local_detail_cells_per_axis = cubey::projects::planet::kPlanetMaxLocalDetailCellsPerAxis + 1U;
+    require_invalid_planet_config(config,
+                                  "planet config should reject oversized local-detail cells");
+
+    config = {};
+    config.local_detail_outer_half_extent_m = 0.0F;
+    require_invalid_planet_config(config, "planet config should reject zero local-detail extent");
+}
+
 void test_planet_config_rejects_invalid_atmosphere_haze() {
     cubey::projects::planet::PlanetConfig config{};
     config.atmosphere_haze_strength = 1.1F;
@@ -166,6 +181,9 @@ void test_planet_config_applies_run_config_surface_options() {
     run_config.planet.max_lod_level_set = true;
     run_config.planet.lod_target_edge_px = 9.5F;
     run_config.planet.lod_hysteresis = 0.25F;
+    run_config.planet.local_detail_lod_levels = 5U;
+    run_config.planet.local_detail_cells_per_axis = 96U;
+    run_config.planet.local_detail_outer_half_extent_m = 4096.0F;
     run_config.planet.wire_overlay = 1;
     run_config.planet.skirts_enabled = 0;
     run_config.planet.skirt_depth_scale = 0.45F;
@@ -194,6 +212,12 @@ void test_planet_config_applies_run_config_surface_options() {
     require_near(config.lod_target_edge_px, 9.5F, 0.0001F, "planet config should apply LOD target");
     require_near(config.lod_hysteresis, 0.25F, 0.0001F,
                  "planet config should apply LOD hysteresis");
+    require(config.local_detail_lod_levels == 5U,
+            "planet config should apply local detail LOD levels");
+    require(config.local_detail_cells_per_axis == 96U,
+            "planet config should apply local detail cells");
+    require_near(config.local_detail_outer_half_extent_m, 4096.0F, 0.0001F,
+                 "planet config should apply local detail extent");
     require(config.wire_overlay, "planet config should apply wire overlay");
     require(!config.skirts_enabled, "planet config should apply skirts toggle");
     require_near(config.skirt_depth_scale, 0.45F, 0.0001F,
@@ -512,6 +536,7 @@ int main() {
         test_planet_config_rejects_lod_above_live_cap();
         test_planet_config_rejects_patch_resolution_above_cap();
         test_planet_config_rejects_invalid_lod_hysteresis();
+        test_planet_config_rejects_invalid_local_detail_settings();
         test_planet_config_rejects_invalid_atmosphere_haze();
         test_planet_config_defaults_to_earthlike_scale();
         test_planet_config_applies_scale_preset_before_numeric_overrides();
