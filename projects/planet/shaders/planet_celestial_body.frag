@@ -39,23 +39,24 @@ void main() {
     const vec3 view_direction = normalize(body.camera_position_options.xyz - in_render_position);
     const float ndotl = dot(normal, light_direction);
     const float ndotv = abs(dot(normal, view_direction));
-    const float washout = clamp(body.visibility_atmosphere.x, 0.0, 1.0);
-    const float terminator_width = max(fwidth(ndotl) * 2.5, mix(0.075, 0.135, washout));
+    const float sky_visibility = clamp(body.visibility_atmosphere.x, 0.0, 1.0);
+    const float body_transmittance = mix(1.0, 0.28, sky_visibility);
+    const float terminator_width = max(fwidth(ndotl) * 2.5, mix(0.075, 0.135, sky_visibility));
     const float direct = smoothstep(-terminator_width, terminator_width, ndotl);
     const float limb = smoothstep(0.02, 0.34, ndotv);
     const float eclipse_shadow = clamp(body.visibility_atmosphere.y, 0.0, 1.0);
     const float limb_strength = clamp(body.visibility_atmosphere.z, 0.0, 1.0);
     const float detail_strength = clamp(body.camera_position_options.w, 0.0, 1.0);
     const vec3 albedo = in_color * (1.0 + moon_surface_detail(normal) * detail_strength);
-    const float ambient = mix(0.040, 0.004, washout);
+    const float ambient = 0.030 * (1.0 - sky_visibility);
     const float lit =
         (ambient + direct * body.light_direction_intensity.w * 0.66) *
         mix(1.0, 0.12, eclipse_shadow);
     const float limb_shade = mix(1.0, mix(0.72, 1.0, limb), limb_strength);
-    vec3 shaded = albedo * lit * limb_shade * mix(1.35, 1.75, washout);
-    const float unlit_alpha = mix(0.040, 0.0, washout);
-    const float lit_alpha = mix(0.96, 0.30, washout);
-    const float limb_width = max(fwidth(ndotv) * 3.0, mix(0.055, 0.105, washout));
+    vec3 shaded = albedo * lit * limb_shade * mix(1.25, 1.05, sky_visibility);
+    const float unlit_alpha = 0.035 * (1.0 - sky_visibility);
+    const float lit_alpha = 0.96 * body_transmittance;
+    const float limb_width = max(fwidth(ndotv) * 3.0, mix(0.055, 0.105, sky_visibility));
     const float limb_alpha = smoothstep(0.0, limb_width, ndotv);
     const float alpha = clamp(mix(unlit_alpha, lit_alpha, direct) * limb_alpha, 0.0, 1.0);
     out_color = vec4(shaded * alpha, alpha);

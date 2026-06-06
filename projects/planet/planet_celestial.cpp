@@ -125,7 +125,7 @@ enum class PlanetCelestialBinding : std::uint32_t {
     return std::clamp((sun_alignment * 0.5F) + 0.5F, 0.0F, 1.0F);
 }
 
-[[nodiscard]] float moon_atmosphere_washout_factor(
+[[nodiscard]] float moon_atmosphere_sky_visibility_factor(
     const PlanetCelestialBody& body, const PlanetCelestialLighting& lighting,
     const PlanetCelestialBodyAtmosphereInputs& atmosphere) {
     if (!finite_positive(atmosphere.planet_radius_m) ||
@@ -154,9 +154,9 @@ enum class PlanetCelestialBinding : std::uint32_t {
     const float separation = std::acos(std::clamp(glm::dot(sun_direction, moon_direction),
                                                   -1.0F, 1.0F));
     const float near_sun = 1.0F - smoothstep(0.18F, 1.05F, separation);
-    const float daytime_washout = inside_atmosphere * daylight * above_horizon *
-                                  (0.70F + near_sun * 0.25F);
-    return std::clamp(daytime_washout, 0.0F, 0.95F);
+    const float sky_visibility = inside_atmosphere * daylight * above_horizon *
+                                 (0.70F + near_sun * 0.25F);
+    return std::clamp(sky_visibility, 0.0F, 0.95F);
 }
 
 } // namespace
@@ -683,8 +683,8 @@ PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
     const PlanetCelestialLighting& lighting, const cubey::math::Mat4& view_projection,
     const PlanetCelestialBodyFrameInputs& inputs) {
     const cubey::math::Vec3 light_direction = normalized_or_up(lighting.primary_light_direction);
-    const float washout_factor =
-        moon_atmosphere_washout_factor(body, lighting, inputs.atmosphere);
+    const float sky_visibility =
+        moon_atmosphere_sky_visibility_factor(body, lighting, inputs.atmosphere);
     return {
         .view_projection = view_projection,
         .center_radius =
@@ -717,7 +717,7 @@ PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
             },
         .visibility_atmosphere =
             {
-                washout_factor,
+                sky_visibility,
                 0.0F,
                 0.32F,
                 0.0F,

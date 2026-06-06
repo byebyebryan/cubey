@@ -726,7 +726,7 @@ void test_celestial_body_frame_uniforms_pack_render_placement() {
     require_near(uniforms.color_phase.w, moon.phase_fraction, 0.000001F,
                  "body frame uniforms should pack body phase");
     require_near(uniforms.visibility_atmosphere.x, 0.0F, 0.000001F,
-                 "body frame uniforms should default to no atmospheric washout");
+                 "body frame uniforms should default to no atmospheric sky visibility");
 }
 
 void test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere() {
@@ -758,9 +758,9 @@ void test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere() {
             });
 
     require(surface_uniforms.visibility_atmosphere.x > 0.60F,
-            "daytime moon should receive strong contrast washout in the lower atmosphere");
+            "daytime moon should receive strong sky visibility in the lower atmosphere");
     require(surface_uniforms.visibility_atmosphere.x < 0.98F,
-            "daytime moon washout should keep some body contrast for shader tuning");
+            "daytime moon sky visibility should keep some body contrast for shader tuning");
 
     cubey::projects::planet::PlanetCelestialBodyAtmosphereInputs space_atmosphere =
         surface_atmosphere;
