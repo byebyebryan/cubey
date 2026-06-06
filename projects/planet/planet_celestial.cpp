@@ -105,6 +105,36 @@ enum class PlanetCelestialBinding : std::uint32_t {
     return std::clamp(1.0F + (daytime_alpha - 1.0F) * daytime_washout, 0.0F, 1.0F);
 }
 
+[[nodiscard]] float moon_eclipse_shadow_fraction(const PlanetCelestialBody& body,
+                                                 const PlanetCelestialLighting& lighting,
+                                                 float planet_radius_m) {
+    if (body.type != PlanetCelestialBodyType::Moon || !finite_positive(planet_radius_m) ||
+        !finite_positive(body.distance_m)) {
+        return 0.0F;
+    }
+
+    const cubey::math::Vec3 moon_direction = normalized_or_up(body.direction);
+    const cubey::math::Vec3 anti_sun_direction =
+        -normalized_or_up(lighting.primary_light_direction);
+    const float separation = std::acos(
+        std::clamp(glm::dot(moon_direction, anti_sun_direction), -1.0F, 1.0F));
+    const float planet_angular_radius =
+        angular_radius(planet_radius_m, std::max(body.distance_m, planet_radius_m + 1.0F));
+    const float sun_angular_radius = std::max(lighting.primary_light_angular_radius_rad, 0.0001F);
+    const float moon_angular_radius = std::max(body.angular_radius_rad, 0.0001F);
+    const float full_shadow_radius = std::max(planet_angular_radius - sun_angular_radius, 0.0F);
+    const float partial_shadow_radius =
+        std::max(full_shadow_radius + 0.0001F,
+                 planet_angular_radius + sun_angular_radius + moon_angular_radius);
+    const float centered_shadow =
+        1.0F - smoothstep(full_shadow_radius, partial_shadow_radius, separation);
+    const float area_cap = std::clamp((planet_angular_radius * planet_angular_radius) /
+                                          (sun_angular_radius * sun_angular_radius),
+                                      0.0F, 1.0F);
+    const float max_shadow = 0.15F + area_cap * 0.78F;
+    return std::clamp(centered_shadow * max_shadow, 0.0F, 0.93F);
+}
+
 } // namespace
 
 float planet_solar_time_simulation_day(const PlanetSolarTime& time) {
@@ -322,6 +352,7 @@ PlanetCelestialLighting planet_celestial_lighting(const PlanetCelestialSystem& c
         .primary_light_direction = normalized_or_up(celestial.sun.direction),
         .primary_light_color = celestial.sun.color,
         .primary_light_intensity = 0.88F,
+        .primary_light_angular_radius_rad = celestial.sun.angular_radius_rad,
         .ambient_color = {0.040F, 0.050F, 0.070F},
         .ambient_intensity = 0.12F,
         .haze_color = {0.085F, 0.125F, 0.185F},
@@ -462,9 +493,12 @@ cubey::render::MaterialPassInfo planet_sky_pass_info() {
 PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
     const PlanetCelestialBody& body, const PlanetCelestialBodyRenderPlacement& placement,
     const PlanetCelestialLighting& lighting, const cubey::math::Mat4& view_projection,
-    const PlanetCelestialBodyAtmosphereInputs& atmosphere) {
+    const PlanetCelestialBodyFrameInputs& inputs) {
     const cubey::math::Vec3 light_direction = normalized_or_up(lighting.primary_light_direction);
-    const float visibility_alpha = moon_atmosphere_visibility_alpha(body, lighting, atmosphere);
+    const float visibility_alpha =
+        moon_atmosphere_visibility_alpha(body, lighting, inputs.atmosphere);
+    const float eclipse_shadow =
+        moon_eclipse_shadow_fraction(body, lighting, inputs.atmosphere.planet_radius_m);
     return {
         .view_projection = view_projection,
         .center_radius =
@@ -473,6 +507,13 @@ PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
                 placement.center_render_m.y,
                 placement.center_render_m.z,
                 placement.visible ? placement.radius_render_m : 0.0F,
+            },
+        .camera_position_options =
+            {
+                inputs.camera_render_position_m.x,
+                inputs.camera_render_position_m.y,
+                inputs.camera_render_position_m.z,
+                0.42F,
             },
         .light_direction_intensity =
             {
@@ -491,8 +532,8 @@ PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
         .visibility_atmosphere =
             {
                 visibility_alpha,
-                0.0F,
-                0.0F,
+                eclipse_shadow,
+                0.32F,
                 0.0F,
             },
     };

@@ -987,15 +987,19 @@ class PlanetApp {
         return planet_celestial_body_frame_uniforms(
             moon, placement, celestial_lighting_, camera_.view_projection_matrix(transform, aspect),
             {
-                .camera_position_m =
+                .camera_render_position_m = transform.translation,
+                .atmosphere =
                     {
-                        static_cast<float>(frame_.camera_world_position_m.x),
-                        static_cast<float>(frame_.camera_world_position_m.y),
-                        static_cast<float>(frame_.camera_world_position_m.z),
+                        .camera_position_m =
+                            {
+                                static_cast<float>(frame_.camera_world_position_m.x),
+                                static_cast<float>(frame_.camera_world_position_m.y),
+                                static_cast<float>(frame_.camera_world_position_m.z),
+                            },
+                        .planet_radius_m = planet_config_.radius_m,
+                        .atmosphere_outer_radius_m =
+                            planet_config_.radius_m + planet_config_.atmosphere_height_m,
                     },
-                .planet_radius_m = planet_config_.radius_m,
-                .atmosphere_outer_radius_m =
-                    planet_config_.radius_m + planet_config_.atmosphere_height_m,
             });
     }
 

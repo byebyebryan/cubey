@@ -415,8 +415,11 @@ void test_celestial_body_frame_uniforms_pack_render_placement() {
     lighting.primary_light_intensity = 0.75F;
 
     const cubey::projects::planet::PlanetCelestialBodyFrameUniforms uniforms =
-        cubey::projects::planet::planet_celestial_body_frame_uniforms(moon, placement, lighting,
-                                                                      cubey::math::Mat4{1.0F});
+        cubey::projects::planet::planet_celestial_body_frame_uniforms(
+            moon, placement, lighting, cubey::math::Mat4{1.0F},
+            {
+                .camera_render_position_m = {1.0F, 2.0F, 3.0F},
+            });
 
     require_near(uniforms.center_radius.x, placement.center_render_m.x, 0.000001F,
                  "body frame uniforms should pack render center x");
@@ -426,6 +429,10 @@ void test_celestial_body_frame_uniforms_pack_render_placement() {
                  "body frame uniforms should pack render center z");
     require_near(uniforms.center_radius.w, placement.radius_render_m, 0.000001F,
                  "body frame uniforms should pack render radius");
+    require_near(uniforms.camera_position_options.x, 1.0F, 0.000001F,
+                 "body frame uniforms should pack render camera position");
+    require(uniforms.camera_position_options.w > 0.0F,
+            "body frame uniforms should enable procedural body detail");
     require_vec_near({uniforms.light_direction_intensity.x, uniforms.light_direction_intensity.y,
                       uniforms.light_direction_intensity.z},
                      lighting.primary_light_direction,
@@ -463,7 +470,10 @@ void test_celestial_body_frame_fades_daytime_moon_in_atmosphere() {
     };
     const cubey::projects::planet::PlanetCelestialBodyFrameUniforms surface_uniforms =
         cubey::projects::planet::planet_celestial_body_frame_uniforms(
-            moon, placement, lighting, cubey::math::Mat4{1.0F}, surface_atmosphere);
+            moon, placement, lighting, cubey::math::Mat4{1.0F},
+            {
+                .atmosphere = surface_atmosphere,
+            });
 
     require(surface_uniforms.visibility_atmosphere.x < 0.35F,
             "daytime moon should fade when viewed through the lower atmosphere");
@@ -475,10 +485,57 @@ void test_celestial_body_frame_fades_daytime_moon_in_atmosphere() {
     space_atmosphere.camera_position_m = {0.0F, planet_radius + (atmosphere_height * 2.0F), 0.0F};
     const cubey::projects::planet::PlanetCelestialBodyFrameUniforms space_uniforms =
         cubey::projects::planet::planet_celestial_body_frame_uniforms(
-            moon, placement, lighting, cubey::math::Mat4{1.0F}, space_atmosphere);
+            moon, placement, lighting, cubey::math::Mat4{1.0F},
+            {
+                .atmosphere = space_atmosphere,
+            });
 
     require_near(space_uniforms.visibility_atmosphere.x, 1.0F, 0.000001F,
                  "moon should keep full contrast above the atmosphere");
+}
+
+void test_celestial_body_frame_packs_planet_shadow_eclipse() {
+    cubey::projects::planet::PlanetCelestialBody moon{};
+    moon.type = cubey::projects::planet::PlanetCelestialBodyType::Moon;
+    moon.direction = {0.0F, 0.0F, 1.0F};
+    moon.angular_radius_rad = 0.004F;
+    moon.distance_m = 1000.0F;
+
+    cubey::projects::planet::PlanetCelestialBodyRenderPlacement placement{};
+    placement.visible = true;
+    placement.center_render_m = {0.0F, 0.0F, 100.0F};
+    placement.radius_render_m = 1.0F;
+
+    cubey::projects::planet::PlanetCelestialLighting lighting{};
+    lighting.primary_light_direction = {0.0F, 0.0F, -1.0F};
+    lighting.primary_light_angular_radius_rad = 0.01F;
+
+    const cubey::projects::planet::PlanetCelestialBodyFrameUniforms centered_shadow =
+        cubey::projects::planet::planet_celestial_body_frame_uniforms(
+            moon, placement, lighting, cubey::math::Mat4{1.0F},
+            {
+                .atmosphere =
+                    {
+                        .planet_radius_m = 600.0F,
+                    },
+            });
+
+    require(centered_shadow.visibility_atmosphere.y > 0.85F,
+            "moon opposite the sun should receive a strong planet shadow");
+
+    moon.direction = {1.0F, 0.0F, 0.0F};
+    const cubey::projects::planet::PlanetCelestialBodyFrameUniforms off_shadow =
+        cubey::projects::planet::planet_celestial_body_frame_uniforms(
+            moon, placement, lighting, cubey::math::Mat4{1.0F},
+            {
+                .atmosphere =
+                    {
+                        .planet_radius_m = 600.0F,
+                    },
+            });
+
+    require_near(off_shadow.visibility_atmosphere.y, 0.0F, 0.000001F,
+                 "moon away from the anti-sun line should not receive planet shadow");
 }
 
 void test_celestial_body_pass_uses_depth_test_without_depth_write() {
@@ -516,6 +573,7 @@ int main() {
         test_sky_pass_writes_opaque_sky();
         test_celestial_body_frame_uniforms_pack_render_placement();
         test_celestial_body_frame_fades_daytime_moon_in_atmosphere();
+        test_celestial_body_frame_packs_planet_shadow_eclipse();
         test_celestial_body_pass_uses_depth_test_without_depth_write();
         return 0;
     } catch (const std::exception& error) {
