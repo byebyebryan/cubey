@@ -71,13 +71,13 @@ enum class PlanetCelestialBinding : std::uint32_t {
     return t * t * (3.0F - (2.0F * t));
 }
 
-[[nodiscard]] float moon_atmosphere_visibility_alpha(
+[[nodiscard]] float moon_atmosphere_washout_factor(
     const PlanetCelestialBody& body, const PlanetCelestialLighting& lighting,
     const PlanetCelestialBodyAtmosphereInputs& atmosphere) {
     if (!finite_positive(atmosphere.planet_radius_m) ||
         atmosphere.atmosphere_outer_radius_m <= atmosphere.planet_radius_m ||
         glm::dot(atmosphere.camera_position_m, atmosphere.camera_position_m) <= 0.0F) {
-        return 1.0F;
+        return 0.0F;
     }
 
     const cubey::math::Vec3 camera_up = normalized_or_up(atmosphere.camera_position_m);
@@ -88,7 +88,7 @@ enum class PlanetCelestialBinding : std::uint32_t {
     const float inside_atmosphere =
         1.0F - smoothstep(0.75F, 1.20F, camera_altitude / atmosphere_height);
     if (inside_atmosphere <= 0.0F) {
-        return 1.0F;
+        return 0.0F;
     }
 
     const cubey::math::Vec3 sun_direction = normalized_or_up(lighting.primary_light_direction);
@@ -100,9 +100,9 @@ enum class PlanetCelestialBinding : std::uint32_t {
     const float separation = std::acos(std::clamp(glm::dot(sun_direction, moon_direction),
                                                   -1.0F, 1.0F));
     const float near_sun = 1.0F - smoothstep(0.18F, 1.05F, separation);
-    const float daytime_washout = inside_atmosphere * daylight * above_horizon;
-    const float daytime_alpha = std::clamp(0.28F - near_sun * 0.22F, 0.04F, 0.28F);
-    return std::clamp(1.0F + (daytime_alpha - 1.0F) * daytime_washout, 0.0F, 1.0F);
+    const float daytime_washout = inside_atmosphere * daylight * above_horizon *
+                                  (0.70F + near_sun * 0.25F);
+    return std::clamp(daytime_washout, 0.0F, 0.95F);
 }
 
 [[nodiscard]] float moon_eclipse_shadow_fraction(const PlanetCelestialBody& body,
@@ -496,8 +496,8 @@ PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
     const PlanetCelestialLighting& lighting, const cubey::math::Mat4& view_projection,
     const PlanetCelestialBodyFrameInputs& inputs) {
     const cubey::math::Vec3 light_direction = normalized_or_up(lighting.primary_light_direction);
-    const float visibility_alpha =
-        moon_atmosphere_visibility_alpha(body, lighting, inputs.atmosphere);
+    const float washout_factor =
+        moon_atmosphere_washout_factor(body, lighting, inputs.atmosphere);
     const float eclipse_shadow =
         moon_eclipse_shadow_fraction(body, lighting, inputs.atmosphere.planet_radius_m);
     return {
@@ -532,7 +532,7 @@ PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
             },
         .visibility_atmosphere =
             {
-                visibility_alpha,
+                washout_factor,
                 eclipse_shadow,
                 0.32F,
                 0.0F,
@@ -561,11 +561,7 @@ cubey::render::MaterialPassInfo planet_celestial_body_pass_info() {
         .cull_mode = VK_CULL_MODE_BACK_BIT,
         .depth_test = true,
         .depth_write = false,
-        .blend_enable = true,
-        .src_color_blend_factor = VK_BLEND_FACTOR_ONE,
-        .dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-        .src_alpha_blend_factor = VK_BLEND_FACTOR_ONE,
-        .dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .blend_enable = false,
     };
 }
 

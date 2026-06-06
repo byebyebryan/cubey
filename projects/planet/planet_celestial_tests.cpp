@@ -462,11 +462,11 @@ void test_celestial_body_frame_uniforms_pack_render_placement() {
                  "body frame uniforms should pack body color");
     require_near(uniforms.color_phase.w, moon.phase_fraction, 0.000001F,
                  "body frame uniforms should pack body phase");
-    require_near(uniforms.visibility_atmosphere.x, 1.0F, 0.000001F,
-                 "body frame uniforms should default to full visibility without atmosphere inputs");
+    require_near(uniforms.visibility_atmosphere.x, 0.0F, 0.000001F,
+                 "body frame uniforms should default to no atmospheric washout");
 }
 
-void test_celestial_body_frame_fades_daytime_moon_in_atmosphere() {
+void test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere() {
     cubey::projects::planet::PlanetCelestialBody moon{};
     moon.direction = glm::normalize(cubey::math::Vec3{1.0F, 1.0F, 0.0F});
     moon.color = {0.50F, 0.60F, 0.70F};
@@ -494,10 +494,10 @@ void test_celestial_body_frame_fades_daytime_moon_in_atmosphere() {
                 .atmosphere = surface_atmosphere,
             });
 
-    require(surface_uniforms.visibility_atmosphere.x < 0.35F,
-            "daytime moon should fade when viewed through the lower atmosphere");
-    require(surface_uniforms.visibility_atmosphere.x > 0.02F,
-            "daytime moon should remain faintly visible instead of popping off");
+    require(surface_uniforms.visibility_atmosphere.x > 0.60F,
+            "daytime moon should receive strong contrast washout in the lower atmosphere");
+    require(surface_uniforms.visibility_atmosphere.x < 0.98F,
+            "daytime moon washout should keep some body contrast for shader tuning");
 
     cubey::projects::planet::PlanetCelestialBodyAtmosphereInputs space_atmosphere =
         surface_atmosphere;
@@ -509,7 +509,7 @@ void test_celestial_body_frame_fades_daytime_moon_in_atmosphere() {
                 .atmosphere = space_atmosphere,
             });
 
-    require_near(space_uniforms.visibility_atmosphere.x, 1.0F, 0.000001F,
+    require_near(space_uniforms.visibility_atmosphere.x, 0.0F, 0.000001F,
                  "moon should keep full contrast above the atmosphere");
 }
 
@@ -564,11 +564,8 @@ void test_celestial_body_pass_uses_depth_test_without_depth_write() {
     require(pass.cull_mode == VK_CULL_MODE_BACK_BIT, "body pass should cull back faces");
     require(pass.depth_test, "body pass should depth-test against planet geometry");
     require(!pass.depth_write, "body pass should not overwrite scene depth");
-    require(pass.blend_enable, "body pass should alpha blend atmospheric moon washout");
-    require(pass.src_color_blend_factor == VK_BLEND_FACTOR_ONE,
-            "body pass should use premultiplied alpha color blending");
-    require(pass.dst_color_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-            "body pass should blend over the sky color");
+    require(!pass.blend_enable,
+            "body pass should render the moon as opaque geometry, not a transparent sky sprite");
 }
 
 } // namespace
@@ -592,7 +589,7 @@ int main() {
         test_sky_frame_uniforms_pack_sun_state();
         test_sky_pass_writes_opaque_sky();
         test_celestial_body_frame_uniforms_pack_render_placement();
-        test_celestial_body_frame_fades_daytime_moon_in_atmosphere();
+        test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere();
         test_celestial_body_frame_packs_planet_shadow_eclipse();
         test_celestial_body_pass_uses_depth_test_without_depth_write();
         return 0;

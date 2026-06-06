@@ -38,16 +38,20 @@ void main() {
     const vec3 light_direction = normalize(body.light_direction_intensity.xyz);
     const vec3 view_direction = normalize(body.camera_position_options.xyz - in_render_position);
     const float direct = smoothstep(-0.035, 0.055, dot(normal, light_direction));
-    const float limb = mix(1.0, smoothstep(0.02, 0.34, dot(normal, view_direction)),
-                           clamp(body.visibility_atmosphere.z, 0.0, 1.0));
+    const float limb = smoothstep(0.02, 0.34, dot(normal, view_direction));
     const float eclipse_shadow = clamp(body.visibility_atmosphere.y, 0.0, 1.0);
+    const float limb_strength = clamp(body.visibility_atmosphere.z, 0.0, 1.0);
     const float detail_strength = clamp(body.camera_position_options.w, 0.0, 1.0);
     const vec3 albedo = in_color * (1.0 + moon_surface_detail(normal) * detail_strength);
     const float ambient = 0.040;
     const float lit =
         (ambient + direct * body.light_direction_intensity.w * 0.66) *
         mix(1.0, 0.12, eclipse_shadow);
-    const float visibility = clamp(body.visibility_atmosphere.x, 0.0, 1.0);
-    const float alpha = visibility * limb;
-    out_color = vec4(albedo * lit * alpha, alpha);
+    const float limb_shade = mix(1.0, mix(0.72, 1.0, limb), limb_strength);
+    const float washout = clamp(body.visibility_atmosphere.x, 0.0, 1.0);
+    vec3 shaded = albedo * lit * limb_shade;
+    const vec3 sky_wash = vec3(0.42, 0.54, 0.72) *
+                          (0.38 + body.light_direction_intensity.w * 0.10);
+    const vec3 low_contrast = mix(sky_wash, shaded, 0.18);
+    out_color = vec4(mix(shaded, low_contrast, washout), 1.0);
 }
