@@ -82,7 +82,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 157> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 160> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -257,6 +257,18 @@ constexpr std::array<ConfigOptionDescriptor, 157> kRunConfigOptions{
     option(RunConfigOptionId::PlanetTerrainNoiseScale, "planet.terrain_noise_scale",
            "--planet-terrain-noise-scale", "Terrain Noise", "Planet",
            "Placeholder terrain procedural noise scale.", ConfigOptionType::Float,
+           min_range(0.000001)),
+    option(RunConfigOptionId::PlanetTerrainMidDetailStrength,
+           "planet.terrain_mid_detail_strength", "--planet-terrain-mid-detail-strength",
+           "Terrain Mid Detail", "Planet", "Placeholder terrain mid-scale ridge strength.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PlanetTerrainFineDetailStrength,
+           "planet.terrain_fine_detail_strength", "--planet-terrain-fine-detail-strength",
+           "Terrain Fine Detail", "Planet", "Placeholder terrain fine detail strength.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PlanetTerrainFineDetailScale, "planet.terrain_fine_detail_scale",
+           "--planet-terrain-fine-detail-scale", "Terrain Fine Scale", "Planet",
+           "Frequency scale used by placeholder terrain fine detail.", ConfigOptionType::Float,
            min_range(0.000001)),
     option(RunConfigOptionId::PlanetTerrainSeed, "planet.terrain_seed", "--planet-terrain-seed",
            "Terrain Seed", "Planet", "Placeholder planet terrain seed.", ConfigOptionType::UInt32),
@@ -863,6 +875,12 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.planet.terrain_height_scale_m);
     case RunConfigOptionId::PlanetTerrainNoiseScale:
         return optional_float(config.planet.terrain_noise_scale);
+    case RunConfigOptionId::PlanetTerrainMidDetailStrength:
+        return optional_float(config.planet.terrain_mid_detail_strength);
+    case RunConfigOptionId::PlanetTerrainFineDetailStrength:
+        return optional_float(config.planet.terrain_fine_detail_strength);
+    case RunConfigOptionId::PlanetTerrainFineDetailScale:
+        return optional_float(config.planet.terrain_fine_detail_scale);
     case RunConfigOptionId::PlanetTerrainSeed:
         return config.planet.terrain_seed_set ? nlohmann::json(config.planet.terrain_seed)
                                               : nlohmann::json(nullptr);
@@ -1614,6 +1632,18 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::PlanetTerrainNoiseScale:
         config.planet.terrain_noise_scale = parse_config_float(value, option);
         validate_range(config.planet.terrain_noise_scale, option);
+        break;
+    case RunConfigOptionId::PlanetTerrainMidDetailStrength:
+        config.planet.terrain_mid_detail_strength = parse_config_float(value, option);
+        validate_range(config.planet.terrain_mid_detail_strength, option);
+        break;
+    case RunConfigOptionId::PlanetTerrainFineDetailStrength:
+        config.planet.terrain_fine_detail_strength = parse_config_float(value, option);
+        validate_range(config.planet.terrain_fine_detail_strength, option);
+        break;
+    case RunConfigOptionId::PlanetTerrainFineDetailScale:
+        config.planet.terrain_fine_detail_scale = parse_config_float(value, option);
+        validate_range(config.planet.terrain_fine_detail_scale, option);
         break;
     case RunConfigOptionId::PlanetTerrainSeed:
         config.planet.terrain_seed = parse_number<std::uint32_t>(value, option, "unsigned integer");

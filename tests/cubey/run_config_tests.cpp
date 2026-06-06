@@ -283,6 +283,9 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "planet.terrain_enabled",
         "planet.terrain_height_scale_m",
         "planet.terrain_noise_scale",
+        "planet.terrain_mid_detail_strength",
+        "planet.terrain_fine_detail_strength",
+        "planet.terrain_fine_detail_scale",
         "planet.terrain_seed",
         "planet.day_of_year",
         "planet.time_hours",
@@ -1219,6 +1222,12 @@ void test_run_config_parses_planet_controls() {
     std::string terrain_height_value = "9000";
     std::string terrain_noise_flag = "--planet-terrain-noise-scale";
     std::string terrain_noise_value = "4.25";
+    std::string terrain_mid_detail_flag = "--planet-terrain-mid-detail-strength";
+    std::string terrain_mid_detail_value = "0.75";
+    std::string terrain_fine_detail_flag = "--planet-terrain-fine-detail-strength";
+    std::string terrain_fine_detail_value = "0.2";
+    std::string terrain_fine_scale_flag = "--planet-terrain-fine-detail-scale";
+    std::string terrain_fine_scale_value = "18";
     std::string terrain_seed_flag = "--planet-terrain-seed";
     std::string terrain_seed_value = "42";
     std::string day_flag = "--planet-day-of-year";
@@ -1230,7 +1239,7 @@ void test_run_config_parses_planet_controls() {
     std::string pause_flag = "--planet-pause-time";
     std::string camera_mode_flag = "--planet-camera-mode";
     std::string camera_mode_value = "surface";
-    std::array<char*, 37> argv{program.data(),
+    std::array<char*, 43> argv{program.data(),
                                radius_flag.data(),
                                radius_value.data(),
                                atmosphere_flag.data(),
@@ -1256,6 +1265,12 @@ void test_run_config_parses_planet_controls() {
                                terrain_height_value.data(),
                                terrain_noise_flag.data(),
                                terrain_noise_value.data(),
+                               terrain_mid_detail_flag.data(),
+                               terrain_mid_detail_value.data(),
+                               terrain_fine_detail_flag.data(),
+                               terrain_fine_detail_value.data(),
+                               terrain_fine_scale_flag.data(),
+                               terrain_fine_scale_value.data(),
                                terrain_seed_flag.data(),
                                terrain_seed_value.data(),
                                day_flag.data(),
@@ -1293,6 +1308,12 @@ void test_run_config_parses_planet_controls() {
             "run config should parse planet terrain height scale");
     require(config.planet.terrain_noise_scale == 4.25F,
             "run config should parse planet terrain noise scale");
+    require(config.planet.terrain_mid_detail_strength == 0.75F,
+            "run config should parse planet terrain mid detail strength");
+    require(config.planet.terrain_fine_detail_strength == 0.2F,
+            "run config should parse planet terrain fine detail strength");
+    require(config.planet.terrain_fine_detail_scale == 18.0F,
+            "run config should parse planet terrain fine detail scale");
     require(config.planet.terrain_seed_set && config.planet.terrain_seed == 42U,
             "run config should parse planet terrain seed");
     require(config.planet.day_of_year == 81.0F, "run config should parse planet day of year");

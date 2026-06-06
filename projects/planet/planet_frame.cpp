@@ -74,7 +74,7 @@ PlanetFrame make_planet_frame(const PlanetConfig& config,
                 .up = up,
                 .forward = forward,
                 .planet_radius_m = config.radius_m,
-                .water_datum_m = 0.0F,
+                .water_datum_m = config.sea_level_m,
             },
     };
 }

@@ -27,6 +27,7 @@ void test_planet_frame_derives_horizon_and_planes() {
         .radius_m = 600000.0F,
         .atmosphere_height_m = 70000.0F,
         .camera_altitude_m = 240000.0F,
+        .sea_level_m = -125.0F,
     };
     const cubey::Transform3D camera{
         .translation = {0.0F, 0.0F, config.radius_m + config.camera_altitude_m},
@@ -46,6 +47,8 @@ void test_planet_frame_derives_horizon_and_planes() {
             "planet frame should derive valid clip planes");
     require_near(frame.far_plane_m, camera_radius + config.radius_m + config.atmosphere_height_m,
                  1.0F, "planet frame should include the atmosphere shell in far plane");
+    require_near(frame.local_frame.water_datum_m, config.sea_level_m, 0.0001F,
+                 "planet frame should carry sea level into the local tangent datum");
 }
 
 void test_planet_config_rejects_invalid_radius() {
@@ -129,6 +132,9 @@ void test_planet_config_applies_run_config_surface_options() {
     run_config.planet.terrain_enabled = 0;
     run_config.planet.terrain_height_scale_m = 9000.0F;
     run_config.planet.terrain_noise_scale = 4.25F;
+    run_config.planet.terrain_mid_detail_strength = 0.75F;
+    run_config.planet.terrain_fine_detail_strength = 0.2F;
+    run_config.planet.terrain_fine_detail_scale = 18.0F;
     run_config.planet.terrain_seed = 42U;
     run_config.planet.terrain_seed_set = true;
     run_config.planet.sea_level_m = -250.0F;
@@ -152,6 +158,12 @@ void test_planet_config_applies_run_config_surface_options() {
                  "planet config should apply terrain height");
     require_near(config.terrain_noise_scale, 4.25F, 0.0001F,
                  "planet config should apply terrain noise");
+    require_near(config.terrain_mid_detail_strength, 0.75F, 0.0001F,
+                 "planet config should apply terrain mid detail strength");
+    require_near(config.terrain_fine_detail_strength, 0.2F, 0.0001F,
+                 "planet config should apply terrain fine detail strength");
+    require_near(config.terrain_fine_detail_scale, 18.0F, 0.0001F,
+                 "planet config should apply terrain fine detail scale");
     require(config.terrain_seed == 42U, "planet config should apply terrain seed");
     require_near(config.sea_level_m, -250.0F, 0.0001F, "planet config should apply sea level");
     require_near(config.bathymetry_depth_scale_m, 3200.0F, 0.0001F,

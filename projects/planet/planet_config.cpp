@@ -50,6 +50,15 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     if (run_config_float_is_set(config.planet.terrain_noise_scale)) {
         planet.terrain_noise_scale = config.planet.terrain_noise_scale;
     }
+    if (run_config_float_is_set(config.planet.terrain_mid_detail_strength)) {
+        planet.terrain_mid_detail_strength = config.planet.terrain_mid_detail_strength;
+    }
+    if (run_config_float_is_set(config.planet.terrain_fine_detail_strength)) {
+        planet.terrain_fine_detail_strength = config.planet.terrain_fine_detail_strength;
+    }
+    if (run_config_float_is_set(config.planet.terrain_fine_detail_scale)) {
+        planet.terrain_fine_detail_scale = config.planet.terrain_fine_detail_scale;
+    }
     if (config.planet.terrain_seed_set) {
         planet.terrain_seed = config.planet.terrain_seed;
     }

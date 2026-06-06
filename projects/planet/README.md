@@ -25,6 +25,7 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view seams
 ./build/dev/projects/planet/planet --planet-max-lod-level 7 --planet-lod-target-edge-px 8
 ./build/dev/projects/planet/planet --planet-max-lod-level 9 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
+./build/dev/projects/planet/planet --planet-terrain-mid-detail-strength 0.45 --planet-terrain-fine-detail-strength 0.16 --planet-terrain-fine-detail-scale 12
 ./build/dev/projects/planet/planet --planet-sea-level-m 0 --planet-shoreline-width-m 1500
 ```
 

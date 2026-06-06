@@ -134,6 +134,9 @@ struct RunConfig {
         int terrain_enabled = -1;
         float terrain_height_scale_m = kRunConfigUnsetFloat;
         float terrain_noise_scale = kRunConfigUnsetFloat;
+        float terrain_mid_detail_strength = kRunConfigUnsetFloat;
+        float terrain_fine_detail_strength = kRunConfigUnsetFloat;
+        float terrain_fine_detail_scale = kRunConfigUnsetFloat;
         std::uint32_t terrain_seed = 0;
         float sea_level_m = kRunConfigUnsetFloat;
         float bathymetry_depth_scale_m = kRunConfigUnsetFloat;
