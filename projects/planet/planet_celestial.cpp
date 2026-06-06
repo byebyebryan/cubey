@@ -110,36 +110,6 @@ enum class PlanetCelestialBinding : std::uint32_t {
     return std::clamp(daytime_washout, 0.0F, 0.95F);
 }
 
-[[nodiscard]] float moon_eclipse_shadow_fraction(const PlanetCelestialBody& body,
-                                                 const PlanetCelestialLighting& lighting,
-                                                 float planet_radius_m) {
-    if (body.type != PlanetCelestialBodyType::Moon || !finite_positive(planet_radius_m) ||
-        !finite_positive(body.distance_m)) {
-        return 0.0F;
-    }
-
-    const cubey::math::Vec3 moon_direction = normalized_or_up(body.direction);
-    const cubey::math::Vec3 anti_sun_direction =
-        -normalized_or_up(lighting.primary_light_direction);
-    const float separation = std::acos(
-        std::clamp(glm::dot(moon_direction, anti_sun_direction), -1.0F, 1.0F));
-    const float planet_angular_radius =
-        angular_radius(planet_radius_m, std::max(body.distance_m, planet_radius_m + 1.0F));
-    const float sun_angular_radius = std::max(lighting.primary_light_angular_radius_rad, 0.0001F);
-    const float moon_angular_radius = std::max(body.angular_radius_rad, 0.0001F);
-    const float full_shadow_radius = std::max(planet_angular_radius - sun_angular_radius, 0.0F);
-    const float partial_shadow_radius =
-        std::max(full_shadow_radius + 0.0001F,
-                 planet_angular_radius + sun_angular_radius + moon_angular_radius);
-    const float centered_shadow =
-        1.0F - smoothstep(full_shadow_radius, partial_shadow_radius, separation);
-    const float area_cap = std::clamp((planet_angular_radius * planet_angular_radius) /
-                                          (sun_angular_radius * sun_angular_radius),
-                                      0.0F, 1.0F);
-    const float max_shadow = 0.15F + area_cap * 0.78F;
-    return std::clamp(centered_shadow * max_shadow, 0.0F, 0.93F);
-}
-
 } // namespace
 
 float planet_solar_time_simulation_day(const PlanetSolarTime& time) {
@@ -507,8 +477,6 @@ PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
     const cubey::math::Vec3 light_direction = normalized_or_up(lighting.primary_light_direction);
     const float washout_factor =
         moon_atmosphere_washout_factor(body, lighting, inputs.atmosphere);
-    const float eclipse_shadow =
-        moon_eclipse_shadow_fraction(body, lighting, inputs.atmosphere.planet_radius_m);
     return {
         .view_projection = view_projection,
         .center_radius =
@@ -542,7 +510,7 @@ PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
         .visibility_atmosphere =
             {
                 washout_factor,
-                eclipse_shadow,
+                0.0F,
                 0.32F,
                 0.0F,
             },

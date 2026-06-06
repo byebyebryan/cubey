@@ -204,6 +204,41 @@ void test_default_lunar_epoch_starts_away_from_sun() {
                  "default lunar epoch should start near full moon at the spring dawn preset");
 }
 
+void test_moon_phase_matches_sun_moon_separation_for_coplanar_orbits() {
+    cubey::projects::planet::PlanetSolarSystemConfig solar{};
+    solar.axial_tilt_rad = 0.0F;
+    solar.moon_orbit_inclination_rad = 0.0F;
+    solar.moon_orbit_phase_offset_cycles = 0.0F;
+    solar.equinox_day = 0.0F;
+    const float synodic_days =
+        cubey::projects::planet::planet_celestial_synodic_month_days(solar);
+
+    cubey::projects::planet::PlanetSolarTime new_time{};
+    new_time.day_of_year = 1.0F;
+    new_time.time_hours = 0.0F;
+    const cubey::projects::planet::PlanetCelestialSystem new_moon =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(new_time, solar);
+
+    cubey::projects::planet::PlanetSolarTime quarter_time = new_time;
+    quarter_time.day_of_year += synodic_days * 0.25F;
+    const cubey::projects::planet::PlanetCelestialSystem quarter_moon =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(quarter_time, solar);
+
+    cubey::projects::planet::PlanetSolarTime full_time = new_time;
+    full_time.day_of_year += synodic_days * 0.5F;
+    const cubey::projects::planet::PlanetCelestialSystem full_moon =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(full_time, solar);
+
+    require_near(angle_between(new_moon.sun.direction, new_moon.moon.direction), 0.0F, 0.0002F,
+                 "new moon should align with the sun in the coplanar mean model");
+    require_near(angle_between(quarter_moon.sun.direction, quarter_moon.moon.direction),
+                 std::numbers::pi_v<float> * 0.5F, 0.0005F,
+                 "quarter moon should sit about ninety degrees from the sun");
+    require_near(angle_between(full_moon.sun.direction, full_moon.moon.direction),
+                 std::numbers::pi_v<float>, 0.0005F,
+                 "full moon should sit opposite the sun");
+}
+
 void test_celestial_diagnostics_report_plane_relationships() {
     cubey::projects::planet::PlanetSolarTime time{};
     time.day_of_year = 160.0F;
@@ -544,7 +579,7 @@ void test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere() {
                  "moon should keep full contrast above the atmosphere");
 }
 
-void test_celestial_body_frame_packs_planet_shadow_eclipse() {
+void test_celestial_body_frame_defers_planet_shadow_eclipse() {
     cubey::projects::planet::PlanetCelestialBody moon{};
     moon.type = cubey::projects::planet::PlanetCelestialBodyType::Moon;
     moon.direction = {0.0F, 0.0F, 1.0F};
@@ -570,8 +605,8 @@ void test_celestial_body_frame_packs_planet_shadow_eclipse() {
                     },
             });
 
-    require(centered_shadow.visibility_atmosphere.y > 0.85F,
-            "moon opposite the sun should receive a strong planet shadow");
+    require_near(centered_shadow.visibility_atmosphere.y, 0.0F, 0.000001F,
+                 "full moon should not imply an eclipse without node-aware shadow geometry");
 
     moon.direction = {1.0F, 0.0F, 0.0F};
     const cubey::projects::planet::PlanetCelestialBodyFrameUniforms off_shadow =
@@ -610,6 +645,7 @@ int main() {
         test_solar_time_advance_wraps_hours_and_days();
         test_moon_phase_uses_synodic_month();
         test_default_lunar_epoch_starts_away_from_sun();
+        test_moon_phase_matches_sun_moon_separation_for_coplanar_orbits();
         test_celestial_diagnostics_report_plane_relationships();
         test_celestial_lighting_uses_celestial_direction();
         test_celestial_lighting_scales_moonlight_by_phase();
@@ -622,7 +658,7 @@ int main() {
         test_sky_pass_writes_opaque_sky();
         test_celestial_body_frame_uniforms_pack_render_placement();
         test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere();
-        test_celestial_body_frame_packs_planet_shadow_eclipse();
+        test_celestial_body_frame_defers_planet_shadow_eclipse();
         test_celestial_body_pass_uses_depth_test_without_depth_write();
         return 0;
     } catch (const std::exception& error) {
