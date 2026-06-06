@@ -215,14 +215,13 @@ Current implementation notes:
   pass into an HDR transient scene color target, then uses the shared post pass
   for exposure, tone mapping, and output encoding. This aligns planet with the
   renderer-wide linear HDR contract while keeping ocean integration deferred.
-- The current atmosphere shader path is deliberately local and analytic. Sky
-  background and surface-distance haze share the project-local
-  `planet_atmosphere.glsl` terms for sun elevation, view direction, horizon
-  shell, daylight, twilight, star visibility, and toward-sun weighting. This is
-  not yet a physical scattering model; it is a naming and consistency boundary
-  so surface view, orbit view, moon visibility, and future ocean/cloud layers
-  can consume the same planet-owned solar inputs instead of inventing separate
-  haze formulas.
+- The current atmosphere shader path is deliberately planet-local. The old
+  analytic mode remains a debug fallback, while the next stable path is a
+  direct single-scattering model with spherical atmosphere intersections,
+  Rayleigh/Mie vocabulary, sun transmittance, and surface aerial perspective.
+  Sky background and surface haze should consume the same project-local
+  `planet_atmosphere.glsl` helpers so surface view, orbit view, moon
+  visibility, and future ocean/cloud layers do not invent separate formulas.
 - Planet now models a minimal solar-system state directly: planet orbit around
   the sun, planet self-rotation, and moon orbit around the planet. The sun is
   still rendered by the local sky pass as a distant disk/glow, while the moon
@@ -262,8 +261,9 @@ The latest planet foundation pass closed several previously loose contracts:
   still rebuild the reusable grid and synchronize explicitly.
 - `PlanetAtmosphereInputs` is derived from the planet-owned celestial model and
   can be adapted into the shared atmosphere runtime for future comparisons. The
-  active planet renderer keeps the local analytic sky as the default and offers
-  `physical-preview` as an opt-in shader path for atmosphere experiments.
+  active planet renderer keeps a project-local atmosphere shader path; `analytic`
+  is the fallback/debug mode and `physical` is the intended default once the v1
+  scattering pass is verified.
 - Moon rendering remains explicit body geometry. The body pass now receives
   camera-relative shading inputs, applies procedural lunar albedo variation,
   fades the moon through the lower daytime atmosphere, and packs a first
@@ -372,8 +372,9 @@ back into this architecture note.
 10. Done: replace the analytic moon disk with body/geometry rendering.
 11. Done as a first consistency pass: add shared project-local atmosphere terms
    for the planet sky and surface haze, plus fixed headless capture controls.
-12. Add a proper planet-scale atmosphere model or adapter only after its
-   scattering contract is explicit.
+12. In progress: replace the analytic default with a small project-local
+   single-scattering and aerial-perspective model; keep full atmosphere LUTs
+   deferred until the contract is visually stable.
 13. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 
