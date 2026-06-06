@@ -157,6 +157,30 @@ PlanetCameraState planet_camera_home_state(const PlanetConfig& config, float bas
     return state;
 }
 
+PlanetCameraState planet_camera_initial_state_from_run_config(const PlanetConfig& config,
+                                                              const RunConfig& run_config,
+                                                              float base_yaw_radians,
+                                                              float base_pitch_radians) {
+    PlanetCameraState state = planet_camera_home_state(config, base_yaw_radians, base_pitch_radians);
+    if (run_config.planet.camera_mode.empty() || run_config.planet.camera_mode == "orbit") {
+        return state;
+    }
+    if (run_config.planet.camera_mode == "surface") {
+        const float requested_altitude =
+            run_config_float_is_set(run_config.planet.camera_altitude_m)
+                ? run_config.planet.camera_altitude_m
+                : config.camera_altitude_m;
+        const float surface_altitude =
+            std::min(requested_altitude,
+                     std::max(planet_camera_min_altitude_m(config) * 1.6F,
+                              config.radius_m * 0.025F));
+        planet_camera_set_distance(state, config, config.radius_m + surface_altitude);
+        planet_camera_reset_surface_view(state, config);
+        return state;
+    }
+    return state;
+}
+
 void planet_camera_set_distance(PlanetCameraState& state, const PlanetConfig& config,
                                 float distance_m) {
     state.position_m = normalize_or(state.position_m, cubey::math::Vec3{0.0F, 0.0F, 1.0F}) *

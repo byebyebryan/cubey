@@ -152,11 +152,11 @@ class PlanetApp {
   public:
     explicit PlanetApp(RunConfig config)
         : config_(std::move(config)), planet_config_(planet_config_from_run_config(config_)),
-          edit_planet_config_(planet_config_),
+          edit_planet_config_(planet_config_), solar_time_(planet_solar_time_from_run_config(config_)),
           celestial_system_(planet_celestial_system_from_solar_time(solar_time_)),
           celestial_lighting_(planet_celestial_lighting(celestial_system_)),
-          camera_state_(planet_camera_home_state(planet_config_, kPlanetCameraBaseYaw,
-                                                 kPlanetCameraBasePitch)) {
+          camera_state_(planet_camera_initial_state_from_run_config(
+              planet_config_, config_, kPlanetCameraBaseYaw, kPlanetCameraBasePitch)) {
         refresh_frame();
         rebuild_surface_data(default_surface_extent());
     }

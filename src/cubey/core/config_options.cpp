@@ -47,6 +47,7 @@ constexpr std::array<std::string_view, 2> kPbrEnvironmentSources{"static", "atmo
 constexpr std::array<std::string_view, 6> kOceanCascades{"all", "0", "1", "2", "3", "4"};
 constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
+constexpr std::array<std::string_view, 2> kPlanetCameraModes{"orbit", "surface"};
 constexpr std::array<std::string_view, 2> kTimeOfDayModes{"manual", "solar"};
 constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
@@ -81,7 +82,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 152> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 157> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -270,6 +271,20 @@ constexpr std::array<ConfigOptionDescriptor, 152> kRunConfigOptions{
            "--planet-shoreline-width-m", "Shoreline Width", "Planet",
            "Height band around sea level used by shoreline debug masks.",
            ConfigOptionType::Float, min_range(0.000001)),
+    option(RunConfigOptionId::PlanetDayOfYear, "planet.day_of_year", "--planet-day-of-year",
+           "Day Of Year", "Planet", "Initial planet solar-clock day of year.",
+           ConfigOptionType::Float, bounded_range(1.0, 365.2422)),
+    option(RunConfigOptionId::PlanetTimeHours, "planet.time_hours", "--planet-time-hours",
+           "Time Hours", "Planet", "Initial planet mean solar-clock time in hours.",
+           ConfigOptionType::Float, bounded_range(0.0, 24.0)),
+    option(RunConfigOptionId::PlanetTimeSpeed, "planet.time_speed_hours_per_second",
+           "--planet-time-speed-hours-per-second", "Time Speed", "Planet",
+           "Simulated planet hours advanced per real second.", ConfigOptionType::Float),
+    option(RunConfigOptionId::PlanetTimePaused, "planet.time_paused", "--planet-pause-time",
+           "Pause Time", "Planet", "Start planet solar time paused.", ConfigOptionType::Bool),
+    option(RunConfigOptionId::PlanetCameraMode, "planet.camera_mode", "--planet-camera-mode",
+           "Camera Mode", "Planet", "Initial planet camera mode.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kPlanetCameraModes)),
     option(RunConfigOptionId::TerrainSeed, "terrain.seed", "--terrain-seed", "Seed", "Terrain",
            "Deterministic procedural terrain seed.", ConfigOptionType::UInt64),
     option(RunConfigOptionId::TerrainCellSize, "terrain.cell_size", "--terrain-cell-size",
@@ -857,6 +872,17 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.planet.bathymetry_depth_scale_m);
     case RunConfigOptionId::PlanetShorelineWidth:
         return optional_float(config.planet.shoreline_width_m);
+    case RunConfigOptionId::PlanetDayOfYear:
+        return optional_float(config.planet.day_of_year);
+    case RunConfigOptionId::PlanetTimeHours:
+        return optional_float(config.planet.time_hours);
+    case RunConfigOptionId::PlanetTimeSpeed:
+        return optional_float(config.planet.time_speed_hours_per_second);
+    case RunConfigOptionId::PlanetTimePaused:
+        return optional_bool(config.planet.time_paused);
+    case RunConfigOptionId::PlanetCameraMode:
+        return config.planet.camera_mode.empty() ? nlohmann::json(nullptr)
+                                                 : nlohmann::json(config.planet.camera_mode);
     case RunConfigOptionId::TerrainSeed:
         return config.terrain.seed_set ? nlohmann::json(config.terrain.seed)
                                        : nlohmann::json(nullptr);
@@ -1119,6 +1145,11 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<float>("sea_level_m", options.sea_level_m);
     adapter.writeField<float>("bathymetry_depth_scale_m", options.bathymetry_depth_scale_m);
     adapter.writeField<float>("shoreline_width_m", options.shoreline_width_m);
+    adapter.writeField<float>("day_of_year", options.day_of_year);
+    adapter.writeField<float>("time_hours", options.time_hours);
+    adapter.writeField<float>("time_speed_hours_per_second", options.time_speed_hours_per_second);
+    adapter.writeField<int>("time_paused", options.time_paused);
+    adapter.writeField<std::string>("camera_mode", options.camera_mode);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options) {
@@ -1140,6 +1171,11 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<float>("sea_level_m", options.sea_level_m);
     adapter.readField<float>("bathymetry_depth_scale_m", options.bathymetry_depth_scale_m);
     adapter.readField<float>("shoreline_width_m", options.shoreline_width_m);
+    adapter.readField<float>("day_of_year", options.day_of_year);
+    adapter.readField<float>("time_hours", options.time_hours);
+    adapter.readField<float>("time_speed_hours_per_second", options.time_speed_hours_per_second);
+    adapter.readField<int>("time_paused", options.time_paused);
+    adapter.readField<std::string>("camera_mode", options.camera_mode);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::PbrOptions& options) {
@@ -1594,6 +1630,24 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::PlanetShorelineWidth:
         config.planet.shoreline_width_m = parse_config_float(value, option);
         validate_range(config.planet.shoreline_width_m, option);
+        break;
+    case RunConfigOptionId::PlanetDayOfYear:
+        config.planet.day_of_year = parse_config_float(value, option);
+        validate_range(config.planet.day_of_year, option);
+        break;
+    case RunConfigOptionId::PlanetTimeHours:
+        config.planet.time_hours = parse_config_float(value, option);
+        validate_range(config.planet.time_hours, option);
+        break;
+    case RunConfigOptionId::PlanetTimeSpeed:
+        config.planet.time_speed_hours_per_second = parse_config_float(value, option);
+        validate_range(config.planet.time_speed_hours_per_second, option);
+        break;
+    case RunConfigOptionId::PlanetTimePaused:
+        config.planet.time_paused = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::PlanetCameraMode:
+        config.planet.camera_mode = std::string(value);
         break;
     case RunConfigOptionId::TerrainSeed:
         config.terrain.seed = parse_number<std::uint64_t>(value, option, "unsigned integer");

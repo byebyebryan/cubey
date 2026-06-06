@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/core/run_config.h>
 #include <cubey/core/math.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/material.h>
@@ -113,6 +114,8 @@ struct PlanetSolarTime {
     float time_hours = 5.5F;
     float hours_per_second = 0.5F;
 };
+
+[[nodiscard]] PlanetSolarTime planet_solar_time_from_run_config(const RunConfig& config);
 
 struct PlanetSolarSystemConfig {
     float axial_tilt_rad = 0.4090928F;

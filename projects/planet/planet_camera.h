@@ -2,6 +2,7 @@
 
 #include "planet_config.h"
 
+#include <cubey/core/run_config.h>
 #include <cubey/scene/transform_3d.h>
 
 namespace cubey::projects::planet {
@@ -21,6 +22,9 @@ struct PlanetCameraState {
 [[nodiscard]] PlanetCameraState planet_camera_home_state(const PlanetConfig& config,
                                                          float base_yaw_radians,
                                                          float base_pitch_radians);
+[[nodiscard]] PlanetCameraState planet_camera_initial_state_from_run_config(
+    const PlanetConfig& config, const RunConfig& run_config, float base_yaw_radians,
+    float base_pitch_radians);
 void planet_camera_set_distance(PlanetCameraState& state, const PlanetConfig& config,
                                 float distance_m);
 void planet_camera_zoom_by_scroll(PlanetCameraState& state, const PlanetConfig& config,

@@ -244,7 +244,7 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--pyro-source-radius", "--shadow-grid-width",     "--water2d-transfer",
         "--water2d-hose",       "--water3d-transfer",      "--water3d-p2g-mode",
         "--water3d-whitewater", "--ocean-field-precision", "--planet-max-lod-level",
-        "--planet-lod-hysteresis",
+        "--planet-lod-hysteresis", "--planet-time-hours", "--planet-camera-mode",
     };
     for (std::string_view flag : promoted_flags) {
         const std::string explicit_branch = "arg == \"" + std::string(flag) + "\"";
@@ -284,6 +284,11 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "planet.terrain_height_scale_m",
         "planet.terrain_noise_scale",
         "planet.terrain_seed",
+        "planet.day_of_year",
+        "planet.time_hours",
+        "planet.time_speed_hours_per_second",
+        "planet.time_paused",
+        "planet.camera_mode",
         "terrain.cell_size",
         "terrain.sea_level",
         "terrain.water_surface",
@@ -1216,7 +1221,16 @@ void test_run_config_parses_planet_controls() {
     std::string terrain_noise_value = "4.25";
     std::string terrain_seed_flag = "--planet-terrain-seed";
     std::string terrain_seed_value = "42";
-    std::array<char*, 28> argv{program.data(),
+    std::string day_flag = "--planet-day-of-year";
+    std::string day_value = "81";
+    std::string time_flag = "--planet-time-hours";
+    std::string time_value = "15.25";
+    std::string speed_flag = "--planet-time-speed-hours-per-second";
+    std::string speed_value = "0.75";
+    std::string pause_flag = "--planet-pause-time";
+    std::string camera_mode_flag = "--planet-camera-mode";
+    std::string camera_mode_value = "surface";
+    std::array<char*, 37> argv{program.data(),
                                radius_flag.data(),
                                radius_value.data(),
                                atmosphere_flag.data(),
@@ -1243,7 +1257,16 @@ void test_run_config_parses_planet_controls() {
                                terrain_noise_flag.data(),
                                terrain_noise_value.data(),
                                terrain_seed_flag.data(),
-                               terrain_seed_value.data()};
+                               terrain_seed_value.data(),
+                               day_flag.data(),
+                               day_value.data(),
+                               time_flag.data(),
+                               time_value.data(),
+                               speed_flag.data(),
+                               speed_value.data(),
+                               pause_flag.data(),
+                               camera_mode_flag.data(),
+                               camera_mode_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -1272,6 +1295,12 @@ void test_run_config_parses_planet_controls() {
             "run config should parse planet terrain noise scale");
     require(config.planet.terrain_seed_set && config.planet.terrain_seed == 42U,
             "run config should parse planet terrain seed");
+    require(config.planet.day_of_year == 81.0F, "run config should parse planet day of year");
+    require(config.planet.time_hours == 15.25F, "run config should parse planet time hours");
+    require(config.planet.time_speed_hours_per_second == 0.75F,
+            "run config should parse planet time speed");
+    require(config.planet.time_paused == 1, "run config should parse planet time pause");
+    require(config.planet.camera_mode == "surface", "run config should parse planet camera mode");
 }
 
 void test_run_config_rejects_invalid_planet_controls() {
@@ -1324,6 +1353,17 @@ void test_run_config_rejects_invalid_planet_controls() {
                                     lod_hysteresis_argv.data());
         },
         "run config should reject invalid planet LOD hysteresis");
+
+    std::string camera_mode_flag = "--planet-camera-mode";
+    std::string camera_mode_value = "sideways";
+    std::array<char*, 3> camera_mode_argv{program.data(), camera_mode_flag.data(),
+                                          camera_mode_value.data()};
+    require_throws(
+        [&camera_mode_argv]() {
+            cubey::parse_run_config(static_cast<int>(camera_mode_argv.size()),
+                                    camera_mode_argv.data());
+        },
+        "run config should reject invalid planet camera mode");
 }
 
 void test_run_config_parses_shadow_volume_controls() {

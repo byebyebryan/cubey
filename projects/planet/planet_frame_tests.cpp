@@ -214,6 +214,31 @@ void test_planet_camera_transitions_to_surface_view_near_ground() {
             "surface planet camera should keep a slight downward pitch toward terrain");
 }
 
+void test_planet_camera_initial_state_applies_run_config_mode() {
+    cubey::projects::planet::PlanetConfig config{};
+    cubey::RunConfig run_config{};
+    run_config.planet.camera_mode = "surface";
+    run_config.planet.camera_altitude_m = 240000.0F;
+
+    const cubey::projects::planet::PlanetCameraState surface_state =
+        cubey::projects::planet::planet_camera_initial_state_from_run_config(config, run_config,
+                                                                             0.35F, 0.15F);
+
+    require(cubey::projects::planet::planet_surface_camera_blend(
+                config, cubey::projects::planet::planet_camera_distance_m(surface_state)) == 1.0F,
+            "surface camera mode should force an initial surface-range camera");
+    require(surface_state.surface_rotation_active,
+            "surface camera mode should activate surface rotation immediately");
+
+    run_config.planet.camera_mode = "orbit";
+    const cubey::projects::planet::PlanetCameraState orbit_state =
+        cubey::projects::planet::planet_camera_initial_state_from_run_config(config, run_config,
+                                                                             0.35F, 0.15F);
+    require(cubey::projects::planet::planet_surface_camera_blend(
+                config, cubey::projects::planet::planet_camera_distance_m(orbit_state)) == 0.0F,
+            "orbit camera mode should preserve the high-altitude home camera");
+}
+
 void test_planet_surface_camera_drag_rotates_view_without_moving_anchor() {
     const cubey::projects::planet::PlanetConfig config{};
     const float distance =
@@ -327,6 +352,7 @@ int main() {
         test_planet_camera_min_altitude_tracks_terrain_clearance();
         test_planet_camera_keeps_orbit_view_at_high_altitude();
         test_planet_camera_transitions_to_surface_view_near_ground();
+        test_planet_camera_initial_state_applies_run_config_mode();
         test_planet_surface_camera_drag_rotates_view_without_moving_anchor();
         test_planet_surface_camera_vertical_drag_direction();
         test_planet_surface_camera_move_stays_on_surface_shell();

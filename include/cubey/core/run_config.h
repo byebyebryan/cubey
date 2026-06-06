@@ -138,6 +138,11 @@ struct RunConfig {
         float sea_level_m = kRunConfigUnsetFloat;
         float bathymetry_depth_scale_m = kRunConfigUnsetFloat;
         float shoreline_width_m = kRunConfigUnsetFloat;
+        float day_of_year = kRunConfigUnsetFloat;
+        float time_hours = kRunConfigUnsetFloat;
+        float time_speed_hours_per_second = kRunConfigUnsetFloat;
+        int time_paused = -1;
+        std::string camera_mode{};
         bool terrain_seed_set = false;
     };
 

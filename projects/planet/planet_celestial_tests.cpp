@@ -59,6 +59,28 @@ void test_default_solar_system_uses_earth_like_reference_periods() {
                  0.001F, "default moon orbit should include lunar inclination");
 }
 
+void test_solar_time_applies_run_config() {
+    cubey::RunConfig run_config{};
+    run_config.planet.day_of_year = 81.0F;
+    run_config.planet.time_hours = 15.25F;
+    run_config.planet.time_speed_hours_per_second = 0.75F;
+
+    cubey::projects::planet::PlanetSolarTime time =
+        cubey::projects::planet::planet_solar_time_from_run_config(run_config);
+
+    require_near(time.day_of_year, 81.0F, 0.0001F,
+                 "planet solar time should apply run config day");
+    require_near(time.time_hours, 15.25F, 0.0001F,
+                 "planet solar time should apply run config hour");
+    require_near(time.hours_per_second, 0.75F, 0.0001F,
+                 "planet solar time should apply run config speed");
+
+    run_config.planet.time_paused = 1;
+    time = cubey::projects::planet::planet_solar_time_from_run_config(run_config);
+    require_near(time.hours_per_second, 0.0F, 0.0001F,
+                 "planet pause flag should override configured time speed");
+}
+
 void test_solar_time_drives_planet_rotation_and_moon_orbit() {
     cubey::projects::planet::PlanetSolarTime morning{};
     morning.day_of_year = 80.0F;
@@ -424,6 +446,7 @@ void test_celestial_body_pass_uses_depth_test_without_depth_write() {
 int main() {
     try {
         test_default_solar_system_uses_earth_like_reference_periods();
+        test_solar_time_applies_run_config();
         test_solar_time_drives_planet_rotation_and_moon_orbit();
         test_sidereal_spin_produces_24_hour_solar_day();
         test_solar_time_advance_wraps_hours_and_days();

@@ -112,6 +112,23 @@ float planet_solar_time_simulation_day(const PlanetSolarTime& time) {
            std::clamp(time.time_hours, 0.0F, 24.0F) / 24.0F;
 }
 
+PlanetSolarTime planet_solar_time_from_run_config(const RunConfig& config) {
+    PlanetSolarTime time{};
+    if (run_config_float_is_set(config.planet.day_of_year)) {
+        time.day_of_year = config.planet.day_of_year;
+    }
+    if (run_config_float_is_set(config.planet.time_hours)) {
+        time.time_hours = config.planet.time_hours;
+    }
+    if (run_config_float_is_set(config.planet.time_speed_hours_per_second)) {
+        time.hours_per_second = config.planet.time_speed_hours_per_second;
+    }
+    if (config.planet.time_paused >= 0 && config.planet.time_paused != 0) {
+        time.hours_per_second = 0.0F;
+    }
+    return time;
+}
+
 void planet_solar_time_advance(PlanetSolarTime& time, double delta_seconds) {
     if (time.hours_per_second == 0.0F || delta_seconds <= 0.0) {
         return;
