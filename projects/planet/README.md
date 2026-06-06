@@ -28,6 +28,17 @@ Run it with:
 ./build/dev/projects/planet/planet --planet-sea-level-m 0 --planet-shoreline-width-m 1500
 ```
 
+For repeatable atmosphere and celestial-body captures, keep the solar clock
+paused and pin both time and camera mode:
+
+```sh
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 5.5 --planet-camera-mode surface --output outputs/planet-surface-dawn.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 12.0 --planet-camera-mode surface --output outputs/planet-surface-day.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 0.0 --planet-camera-mode surface --output outputs/planet-surface-night.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 5.5 --planet-camera-mode orbit --output outputs/planet-orbit-dawn.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --output outputs/planet-orbit-backlit.png
+```
+
 Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 `screen-error`, `lod-transition`, `seams`, `cell-edge`, `terrain-height`,
 `terrain-slope`, `terrain-material`, `bathymetry`, `shoreline`, `wireframe`,
