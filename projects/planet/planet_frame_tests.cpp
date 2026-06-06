@@ -140,6 +140,7 @@ void test_planet_config_applies_run_config_surface_options() {
     run_config.planet.sea_level_m = -250.0F;
     run_config.planet.bathymetry_depth_scale_m = 3200.0F;
     run_config.planet.shoreline_width_m = 450.0F;
+    run_config.planet.atmosphere_mode = "physical-preview";
 
     const cubey::projects::planet::PlanetConfig config =
         cubey::projects::planet::planet_config_from_run_config(run_config);
@@ -170,6 +171,9 @@ void test_planet_config_applies_run_config_surface_options() {
                  "planet config should apply bathymetry depth scale");
     require_near(config.shoreline_width_m, 450.0F, 0.0001F,
                  "planet config should apply shoreline width");
+    require(config.atmosphere_mode ==
+                cubey::projects::planet::PlanetAtmosphereMode::PhysicalPreview,
+            "planet config should apply atmosphere mode");
 }
 
 void test_planet_config_change_kind_separates_dynamic_and_topology() {

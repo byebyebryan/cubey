@@ -367,6 +367,8 @@ void test_sky_frame_uniforms_pack_sun_state() {
                            .camera_position_m = {0.0F, 0.0F, 10.0F},
                            .planet_radius_m = 4.0F,
                            .atmosphere_outer_radius_m = 5.0F,
+                           .atmosphere_mode =
+                               cubey::projects::planet::PlanetAtmosphereMode::PhysicalPreview,
                        });
 
     require(uniforms.camera_right_aspect == view_rays.right_aspect,
@@ -386,6 +388,8 @@ void test_sky_frame_uniforms_pack_sun_state() {
                  "celestial frame uniforms should pack planet radius for occlusion");
     require_near(uniforms.background_space_limb.w, 5.0F, 0.000001F,
                  "celestial frame uniforms should pack atmosphere limb radius");
+    require_near(uniforms.atmosphere_mode_options.x, 1.0F, 0.000001F,
+                 "celestial frame uniforms should pack atmosphere preview mode");
 }
 
 void test_sky_pass_writes_opaque_sky() {

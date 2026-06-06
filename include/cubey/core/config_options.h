@@ -89,6 +89,7 @@ enum class RunConfigOptionId {
     PlanetTimeSpeed,
     PlanetTimePaused,
     PlanetCameraMode,
+    PlanetAtmosphereMode,
     TerrainSeed,
     TerrainCellSize,
     TerrainSeaLevel,

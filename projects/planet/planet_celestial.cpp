@@ -428,6 +428,13 @@ PlanetSkyFrameUniforms planet_sky_frame_uniforms(const PlanetCelestialSystem& ce
                 0.040F,
                 std::max(inputs.atmosphere_outer_radius_m, inputs.planet_radius_m),
             },
+        .atmosphere_mode_options =
+            {
+                static_cast<float>(static_cast<std::uint32_t>(inputs.atmosphere_mode)),
+                0.0F,
+                0.0F,
+                0.0F,
+            },
     };
 }
 

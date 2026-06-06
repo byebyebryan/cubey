@@ -441,6 +441,13 @@ class PlanetApp {
                          static_cast<int>(std::size(kDebugViews)))) {
             edit_planet_config_.debug_view = static_cast<PlanetDebugView>(debug_view);
         }
+        constexpr const char* kAtmosphereModes[]{"analytic", "physical-preview"};
+        int atmosphere_mode = static_cast<int>(edit_planet_config_.atmosphere_mode);
+        if (ImGui::Combo("Atmosphere Mode", &atmosphere_mode, kAtmosphereModes,
+                         static_cast<int>(std::size(kAtmosphereModes)))) {
+            edit_planet_config_.atmosphere_mode =
+                static_cast<PlanetAtmosphereMode>(atmosphere_mode);
+        }
         ImGui::Checkbox("Wire Overlay", &edit_planet_config_.wire_overlay);
         ImGui::Checkbox("Patch Skirts", &edit_planet_config_.skirts_enabled);
         ImGui::InputFloat("Skirt Depth Scale", &edit_planet_config_.skirt_depth_scale, 0.0F, 0.0F,
@@ -950,6 +957,7 @@ class PlanetApp {
                                    .planet_radius_m = planet_config_.radius_m,
                                    .atmosphere_outer_radius_m =
                                        planet_config_.radius_m + planet_config_.atmosphere_height_m,
+                                   .atmosphere_mode = planet_config_.atmosphere_mode,
                                });
     }
 

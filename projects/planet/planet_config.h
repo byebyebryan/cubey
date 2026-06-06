@@ -55,6 +55,11 @@ enum class PlanetConfigChangeKind : std::uint8_t {
     SurfaceTopology,
 };
 
+enum class PlanetAtmosphereMode : std::uint8_t {
+    Analytic,
+    PhysicalPreview,
+};
+
 struct PlanetConfig {
     float radius_m = kPlanetDefaultRadiusM;
     float atmosphere_height_m = kPlanetDefaultAtmosphereHeightM;
@@ -78,6 +83,7 @@ struct PlanetConfig {
     float sea_level_m = kPlanetDefaultSeaLevelM;
     float bathymetry_depth_scale_m = kPlanetDefaultBathymetryDepthScaleM;
     float shoreline_width_m = kPlanetDefaultShorelineWidthM;
+    PlanetAtmosphereMode atmosphere_mode = PlanetAtmosphereMode::Analytic;
 
     friend bool operator==(const PlanetConfig&, const PlanetConfig&) = default;
 };
@@ -87,6 +93,8 @@ struct PlanetConfig {
                                                                const PlanetConfig& next);
 [[nodiscard]] PlanetDebugView planet_debug_view_from_string(std::string_view value);
 [[nodiscard]] const char* planet_debug_view_name(PlanetDebugView view);
+[[nodiscard]] PlanetAtmosphereMode planet_atmosphere_mode_from_string(std::string_view value);
+[[nodiscard]] const char* planet_atmosphere_mode_name(PlanetAtmosphereMode mode);
 void validate_planet_config(const PlanetConfig& config);
 
 } // namespace cubey::projects::planet

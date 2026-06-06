@@ -146,6 +146,7 @@ struct RunConfig {
         float time_speed_hours_per_second = kRunConfigUnsetFloat;
         int time_paused = -1;
         std::string camera_mode{};
+        std::string atmosphere_mode{};
         bool terrain_seed_set = false;
     };
 

@@ -71,6 +71,9 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     if (run_config_float_is_set(config.planet.shoreline_width_m)) {
         planet.shoreline_width_m = config.planet.shoreline_width_m;
     }
+    if (!config.planet.atmosphere_mode.empty()) {
+        planet.atmosphere_mode = planet_atmosphere_mode_from_string(config.planet.atmosphere_mode);
+    }
     if (!config.debug_view.empty()) {
         planet.debug_view = planet_debug_view_from_string(config.debug_view);
     }
@@ -173,6 +176,26 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "celestial-planes";
     }
     return "final";
+}
+
+PlanetAtmosphereMode planet_atmosphere_mode_from_string(std::string_view value) {
+    if (value.empty() || value == "analytic") {
+        return PlanetAtmosphereMode::Analytic;
+    }
+    if (value == "physical-preview" || value == "physical_preview" || value == "physical") {
+        return PlanetAtmosphereMode::PhysicalPreview;
+    }
+    throw std::runtime_error("unsupported planet atmosphere mode: " + std::string(value));
+}
+
+const char* planet_atmosphere_mode_name(PlanetAtmosphereMode mode) {
+    switch (mode) {
+    case PlanetAtmosphereMode::Analytic:
+        return "analytic";
+    case PlanetAtmosphereMode::PhysicalPreview:
+        return "physical-preview";
+    }
+    return "analytic";
 }
 
 void validate_planet_config(const PlanetConfig& config) {

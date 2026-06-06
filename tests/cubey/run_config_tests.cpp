@@ -292,6 +292,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "planet.time_speed_hours_per_second",
         "planet.time_paused",
         "planet.camera_mode",
+        "planet.atmosphere_mode",
         "terrain.cell_size",
         "terrain.sea_level",
         "terrain.water_surface",
@@ -1239,7 +1240,9 @@ void test_run_config_parses_planet_controls() {
     std::string pause_flag = "--planet-pause-time";
     std::string camera_mode_flag = "--planet-camera-mode";
     std::string camera_mode_value = "surface";
-    std::array<char*, 43> argv{program.data(),
+    std::string atmosphere_mode_flag = "--planet-atmosphere-mode";
+    std::string atmosphere_mode_value = "physical-preview";
+    std::array<char*, 45> argv{program.data(),
                                radius_flag.data(),
                                radius_value.data(),
                                atmosphere_flag.data(),
@@ -1281,7 +1284,9 @@ void test_run_config_parses_planet_controls() {
                                speed_value.data(),
                                pause_flag.data(),
                                camera_mode_flag.data(),
-                               camera_mode_value.data()};
+                               camera_mode_value.data(),
+                               atmosphere_mode_flag.data(),
+                               atmosphere_mode_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -1322,6 +1327,8 @@ void test_run_config_parses_planet_controls() {
             "run config should parse planet time speed");
     require(config.planet.time_paused == 1, "run config should parse planet time pause");
     require(config.planet.camera_mode == "surface", "run config should parse planet camera mode");
+    require(config.planet.atmosphere_mode == "physical-preview",
+            "run config should parse planet atmosphere mode");
 }
 
 void test_run_config_rejects_invalid_planet_controls() {

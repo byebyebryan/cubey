@@ -48,6 +48,7 @@ constexpr std::array<std::string_view, 6> kOceanCascades{"all", "0", "1", "2", "
 constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
 constexpr std::array<std::string_view, 2> kPlanetCameraModes{"orbit", "surface"};
+constexpr std::array<std::string_view, 2> kPlanetAtmosphereModes{"analytic", "physical-preview"};
 constexpr std::array<std::string_view, 2> kTimeOfDayModes{"manual", "solar"};
 constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
@@ -82,7 +83,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 160> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 161> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -297,6 +298,10 @@ constexpr std::array<ConfigOptionDescriptor, 160> kRunConfigOptions{
     option(RunConfigOptionId::PlanetCameraMode, "planet.camera_mode", "--planet-camera-mode",
            "Camera Mode", "Planet", "Initial planet camera mode.", ConfigOptionType::Enum,
            no_range(), enum_choices(kPlanetCameraModes)),
+    option(RunConfigOptionId::PlanetAtmosphereMode, "planet.atmosphere_mode",
+           "--planet-atmosphere-mode", "Atmosphere Mode", "Planet",
+           "Planet sky atmosphere mode.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kPlanetAtmosphereModes)),
     option(RunConfigOptionId::TerrainSeed, "terrain.seed", "--terrain-seed", "Seed", "Terrain",
            "Deterministic procedural terrain seed.", ConfigOptionType::UInt64),
     option(RunConfigOptionId::TerrainCellSize, "terrain.cell_size", "--terrain-cell-size",
@@ -901,6 +906,9 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::PlanetCameraMode:
         return config.planet.camera_mode.empty() ? nlohmann::json(nullptr)
                                                  : nlohmann::json(config.planet.camera_mode);
+    case RunConfigOptionId::PlanetAtmosphereMode:
+        return config.planet.atmosphere_mode.empty() ? nlohmann::json(nullptr)
+                                                     : nlohmann::json(config.planet.atmosphere_mode);
     case RunConfigOptionId::TerrainSeed:
         return config.terrain.seed_set ? nlohmann::json(config.terrain.seed)
                                        : nlohmann::json(nullptr);
@@ -1678,6 +1686,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::PlanetCameraMode:
         config.planet.camera_mode = std::string(value);
+        break;
+    case RunConfigOptionId::PlanetAtmosphereMode:
+        config.planet.atmosphere_mode = std::string(value);
         break;
     case RunConfigOptionId::TerrainSeed:
         config.terrain.seed = parse_number<std::uint64_t>(value, option, "unsigned integer");

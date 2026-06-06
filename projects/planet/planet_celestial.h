@@ -142,9 +142,10 @@ struct PlanetSkyFrameUniforms {
     cubey::math::Vec4 sun_disk_glow;
     cubey::math::Vec4 camera_position_radius;
     cubey::math::Vec4 background_space_limb;
+    cubey::math::Vec4 atmosphere_mode_options;
 };
 
-static_assert(sizeof(PlanetSkyFrameUniforms) == sizeof(float) * 32U);
+static_assert(sizeof(PlanetSkyFrameUniforms) == sizeof(float) * 36U);
 
 struct PlanetCelestialBodyFrameUniforms {
     cubey::math::Mat4 view_projection{1.0F};
@@ -161,6 +162,7 @@ struct PlanetSkyFrameUniformInputs {
     cubey::math::Vec3 camera_position_m{0.0F, 0.0F, 0.0F};
     float planet_radius_m = 1.0F;
     float atmosphere_outer_radius_m = 1.0F;
+    PlanetAtmosphereMode atmosphere_mode = PlanetAtmosphereMode::Analytic;
 };
 
 struct PlanetCelestialBodyAtmosphereInputs {
