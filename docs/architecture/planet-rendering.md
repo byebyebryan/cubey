@@ -104,6 +104,9 @@ Useful pieces already exist and should be reused:
 - `cubey::engine::AtmosphereEnvironmentRuntime`: useful reference/runtime for
   ocean and atmosphere demos, but no longer the active planet sky owner;
 - shared HDR post and performance UI contracts.
+- project-local `PlanetUi` and `PlanetSurfaceRuntime` boundaries that keep
+  control-panel layout, surface LOD planning, hysteresis history, diagnostics,
+  render-origin validity, and instance-buffer upload state out of the app shell.
 
 Do not promote ocean-specific classes wholesale yet. `OceanSurfaceFrame`,
 `OceanHorizonDiagnostics`, and ocean shader surface mapping contain useful
@@ -164,10 +167,12 @@ Current implementation notes:
   exceed it. Use the live renderer for interactive LOD pressure and the CPU mesh
   path for bounded validation.
 - Camera-driven LOD replans no longer rebuild GPU instance buffers immediately
-  or wait for the device. The planner marks patch instances dirty, and each
-  render frame lazily uploads the current instance list into that frame slot's
-  buffer when its generation is stale. Full config rebuilds still drain and
-  recreate resources because the reusable patch grid itself can change.
+  or wait for the device. `PlanetSurfaceRuntime` owns the current patch plan,
+  previous-selection hysteresis history, diagnostics, render-origin validity
+  checks, and per-frame-slot instance-buffer generations. Each render frame
+  lazily uploads the current instance list into that frame slot's buffer when
+  its generation is stale. Full config rebuilds still drain and recreate
+  resources because the reusable patch grid itself can change.
 - LOD is coverage-first. View and horizon culling stop refinement, but the
   parent patch remains selected so rotating while rebuilds are deferred does not
   reveal holes.
@@ -273,7 +278,10 @@ The latest planet foundation pass closed several previously loose contracts:
 - Repeatable visual capture recipes live in
   [`docs/notes/planet-visual-captures.md`](../notes/planet-visual-captures.md)
   and cover orbit, surface, dawn/day/night, atmosphere comparison, LOD/seam
-  diagnostics, celestial-plane checks, and surface-field debug views.
+  diagnostics, celestial-plane checks, and surface-field debug views. A small
+  CTest-backed subset now runs as headless PNG smoke coverage so baseline
+  planet views, moon/daylight, and wireframe LOD cannot silently regress to
+  empty output.
 
 ## Celestial Body Pivot
 
@@ -398,8 +406,9 @@ back into this architecture note.
 13. Done: replace moon alpha fading with opaque body rendering, daytime
    contrast washout, phase-scaled secondary moonlight, and deferred eclipse
    shadowing.
-14. Next: add visual regression smoke coverage and tighten the exposure/moon
-   atmosphere contract before adding larger features.
+14. Done: add visual smoke coverage, view-aware orbit exposure, unified moon
+   atmosphere visibility, and smaller `PlanetUi` / `PlanetSurfaceRuntime`
+   project boundaries.
 15. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 

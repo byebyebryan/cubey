@@ -53,7 +53,9 @@ plus sub-solar/sub-lunar markers for validating the mean celestial model.
 Windowed controls are applied live where possible. Left drag orbits the planet,
 right drag looks around in surface mode, scroll changes camera distance, and
 WASD moves the surface camera. Orbit dragging clamps just short of the poles to
-avoid north/south direction flips.
+avoid north/south direction flips. The control panel is split into a
+project-local UI adapter (`PlanetUi`) so runtime state, surface planning, and
+ImGui layout do not keep growing in the app shell.
 The CPU LOD planner selects camera-relative cube-sphere patch instances by
 projected edge size and reports patch, LOD, refinement cull, screen-error,
 transition pressure, edge-length, per-LOD cell-size, budget fallback,
@@ -65,6 +67,9 @@ identity. Live instanced rendering supports up to LOD 9 and patch resolution
 back to coarser patch coverage when interactive settings would exceed the live
 patch-instance budget. The CPU mesh builder has a stricter vertex cap because
 it materializes every selected patch for diagnostics.
+The live surface path is now mediated by `PlanetSurfaceRuntime`, which owns the
+current patch plan, previous-selection hysteresis history, render-origin
+validity checks, diagnostics, and lazy per-frame instance-buffer uploads.
 
 Planet surface LOD is coverage-first. Root patches provide guaranteed coarse
 coverage for every planet domain, and view/horizon culling only stops
@@ -145,6 +150,12 @@ Full configuration rebuilds still synchronize because patch grid topology can
 change. Future streaming should keep the same contract: parent patches remain
 renderable until all child coverage needed for a refinement is built and
 uploaded.
+
+The test suite includes planet headless PNG smoke coverage for baseline
+headless output, surface dawn/day/night, orbit lit/terminator, daytime moon,
+and wireframe LOD views. These tests are intentionally coarse image-stat checks,
+not golden-image comparisons, but they keep the main visual paths from silently
+going black or empty.
 
 This project should stay focused on planet-scale contracts first. Ocean scale
 work remains in `projects/ocean` until the planet frame, LOD, and world-space

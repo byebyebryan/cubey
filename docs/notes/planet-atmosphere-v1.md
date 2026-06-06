@@ -33,10 +33,10 @@ without changing the planet-facing contract.
 
 ## Current Limits
 
-- orbit exposure still uses an analytic light-fraction proxy rather than
-  rendered scene luminance;
-- moon/day-sky visibility still needs a more coherent atmosphere transmittance
-  model;
+- orbit exposure now uses a view-aware analytic light-fraction proxy, but it is
+  still not rendered scene luminance or histogram exposure;
+- moon/day-sky visibility has a coherent v1 sky-visibility term, but not a
+  full physical lunar transmittance or eclipse model;
 - visual validation is mostly manual capture recipes plus broad PNG smoke
   checks.
 

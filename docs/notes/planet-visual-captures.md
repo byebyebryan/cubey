@@ -7,6 +7,11 @@ behavior after renderer or camera changes.
 
 All commands write under `outputs/`, which is intentionally ignored by git.
 
+A small automated subset of this matrix is wired into CTest as headless PNG
+smoke coverage. Those checks validate that key planet views produce non-empty
+images with visible variation; this document remains the broader manual capture
+matrix for visual comparison and tuning.
+
 ## Baseline Views
 
 Use the mean solar clock controls to keep captures deterministic:

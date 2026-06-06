@@ -20,11 +20,15 @@ The important current contracts are:
 
 - stable surface patch addresses in `face/level/x/y` form;
 - reusable patch-grid geometry with per-frame patch instance uploads;
+- `PlanetSurfaceRuntime` ownership of live patch planning, previous-selection
+  hysteresis history, render-origin validity checks, diagnostics, and instance
+  buffer freshness;
 - CPU and shader terrain sampling behind a project-local surface-field
   vocabulary;
 - camera-relative rendering against a planet-scale local tangent frame;
 - planet-owned solar clock, sun direction, moon direction, and body visibility;
-- shared HDR post, performance UI, and headless capture path.
+- shared HDR post, performance UI, headless capture path, and project-local
+  `PlanetUi` control-panel adapter.
 
 ## Gaps Closed
 
@@ -77,8 +81,22 @@ indefinitely.
 
 ## Current Follow-Up
 
-The next foundation batch should add visual smoke coverage, tighten the orbit
-exposure proxy, unify moon atmosphere visibility, and split `PlanetApp` into
-smaller runtime/UI boundaries. It still should not port ocean, add real GIS
-data, build an out-of-core streamer, add clouds, or introduce a full ephemeris.
-Those are later planet-product features once this foundation is less fluid.
+The latest follow-up batch is complete:
+
+- added CTest-backed headless PNG smoke coverage for baseline headless output,
+  surface dawn/day/night, orbit lit/terminator, daytime moon, and wireframe
+  LOD;
+- replaced the orbit exposure proxy with a view-aware visible-light estimate so
+  rotating an orbit view does not cause abrupt brightness jumps;
+- unified daytime moon atmosphere visibility around a sky-visibility term while
+  keeping the moon opaque and depth-tested;
+- extracted `PlanetUi` from `PlanetApp` so ImGui control layout is no longer
+  mixed into the app runtime;
+- extracted `PlanetSurfaceRuntime` from `PlanetApp` so surface planning,
+  diagnostics, hysteresis history, render-origin checks, and instance-buffer
+  upload freshness have an explicit boundary.
+
+The remaining near-term work should move back to feature slices or targeted
+hardening. It still should not port ocean, add real GIS data, build an
+out-of-core streamer, add clouds, or introduce a full ephemeris until the
+planet frame, LOD, and surface-field contracts need that extra pressure.
