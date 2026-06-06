@@ -53,7 +53,7 @@ surface layers arrive:
 
 ## Commit Boundaries
 
-Keep this as a large batch of small commits:
+This batch landed as a sequence of small commits:
 
 1. docs checkpoint;
 2. surface config parity and sea-level datum;
@@ -67,9 +67,12 @@ Keep this as a large batch of small commits:
 10. moon rendering upgrade;
 11. visual capture recipes and final doc sync.
 
-These pieces are mostly independent, but several touch `planet_app`,
-`planet_frame`, and shared config parsing. Land them in this order to keep each
-diff reviewable and to avoid hiding behavior changes inside scaffolding commits.
+The important implementation result is that planet now has explicit contracts
+for surface field payloads, neighbor LOD diagnostics, edge transition masks,
+double-precision camera state, dynamic-versus-topology config updates,
+planet-derived atmosphere inputs, an opt-in physical-atmosphere preview mode,
+and upgraded moon body shading. The broad batch is complete; future work should
+move back to feature slices rather than extending this checkpoint indefinitely.
 
 ## Deferred
 

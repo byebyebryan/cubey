@@ -41,6 +41,9 @@ paused and pin both time and camera mode:
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --output outputs/planet-orbit-backlit.png
 ```
 
+The broader manual capture matrix is tracked in
+[`docs/notes/planet-visual-captures.md`](../../docs/notes/planet-visual-captures.md).
+
 Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 `screen-error`, `lod-transition`, `seams`, `cell-edge`, `terrain-height`,
 `terrain-slope`, `terrain-material`, `bathymetry`, `shoreline`, `wireframe`,
@@ -107,16 +110,19 @@ are deferred until the planet project needs that fidelity.
 
 The current sky pass is intentionally simple: dark space, sparse procedural
 stars, a sun disk/glow, and a local planet limb glow with analytic planet
-occlusion. It is not yet a physically based atmosphere. The moon is now a
-depth-tested sphere rendered from the same local celestial state on a
-camera-relative shell that preserves its apparent angular size. Phase and
-terminator shape therefore come from body lighting against the modeled sun
-direction instead of a sky-disk mask. The surface shader receives frame data
-through a descriptor-backed uniform instead of push constants, and blends final
-terrain toward the local limb/haze color near the horizon. The scene renders
-into a linear HDR scene color target and uses the shared fullscreen post pass
-for exposure, tone mapping, and output encoding before writing the swapchain or
-headless target.
+occlusion. The default remains the project-local analytic path; the
+`physical-preview` atmosphere mode is an opt-in comparison path, not a final
+physical scattering model. The moon is now a depth-tested sphere rendered from
+the same local celestial state on a camera-relative shell that preserves its
+apparent angular size. Phase and terminator shape therefore come from body
+lighting against the modeled sun direction instead of a sky-disk mask, with
+procedural surface variation, lower-atmosphere daytime washout, and a first
+planet-shadow/eclipse factor packed through the body uniform. The surface
+shader receives frame data through a descriptor-backed uniform instead of push
+constants, and blends final terrain toward the local limb/haze color near the
+horizon. The scene renders into a linear HDR scene color target and uses the
+shared fullscreen post pass for exposure, tone mapping, and output encoding
+before writing the swapchain or headless target.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it

@@ -236,6 +236,43 @@ Current implementation notes:
   eccentricity, equation of time, lunar nodal/apsidal precession, and
   Earth-Moon barycenter work for later.
 
+## Current Gap-Closure Status
+
+The latest planet foundation pass closed several previously loose contracts:
+
+- `PlanetConfig` and descriptor-backed `RunConfig` now expose the live terrain
+  detail controls, atmosphere mode, sea level, bathymetry depth, and shoreline
+  width. The local tangent frame uses sea level as its datum so terrain, camera
+  height, and future ocean handoff use the same vertical reference.
+- `PlanetSurfaceTileKey`, `PlanetSurfaceTilePayload`, and
+  `PlanetSurfaceTileSource` make the current procedural surface provider look
+  like a tile source. That is deliberately small, but it gives later terrain,
+  bathymetry, biome, and cache work a stable `face/level/x/y` payload boundary.
+- LOD diagnostics now report neighbor mismatch pressure, boundary edges, and
+  maximum neighbor delta. Selected patch instances also carry an edge transition
+  mask so shader sampling can treat borders against coarser neighbors
+  differently from ordinary patch interiors.
+- Camera state stores planet-scale position in double precision. Conversion to
+  float happens at render-frame/upload boundaries, which keeps interactive
+  navigation and future streaming decisions from depending on truncated GPU
+  coordinates.
+- Config application distinguishes dynamic replans from topology rebuilds.
+  Dynamic changes update config, frame data, and patch instances without
+  resetting the camera or waiting for the device. Patch-grid topology changes
+  still rebuild the reusable grid and synchronize explicitly.
+- `PlanetAtmosphereInputs` is derived from the planet-owned celestial model and
+  can be adapted into the shared atmosphere runtime for future comparisons. The
+  active planet renderer keeps the local analytic sky as the default and offers
+  `physical-preview` as an opt-in shader path for atmosphere experiments.
+- Moon rendering remains explicit body geometry. The body pass now receives
+  camera-relative shading inputs, applies procedural lunar albedo variation,
+  fades the moon through the lower daytime atmosphere, and packs a first
+  planet-shadow/eclipse factor for future refinement.
+- Repeatable visual capture recipes live in
+  [`docs/notes/planet-visual-captures.md`](../notes/planet-visual-captures.md)
+  and cover orbit, surface, dawn/day/night, atmosphere comparison, LOD/seam
+  diagnostics, celestial-plane checks, and surface-field debug views.
+
 ## Celestial Body Pivot
 
 The shared atmosphere path is still valuable for standalone atmosphere demos,
