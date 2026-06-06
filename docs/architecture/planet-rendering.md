@@ -189,13 +189,16 @@ Current implementation notes:
   sphere normal, with the CPU mesh builder retained for diagnostics and tests.
   CPU and shader paths now go through a named project-local surface-field
   contract: height, world position, normal, height above sea level, water depth,
-  normalized bathymetry, shoreline mask, normalized elevation, normalized slope,
-  and a simple material band. It now has broad, mid-ridge, and fine-detail bands
-  plus patch-cell-scaled normal sampling. Water classification is based on
-  explicit sea level; bathymetry and shoreline are diagnostic fields, not yet a
-  separate ocean layer. This exists to pressure patch identity, normals, LOD
-  diagnostics, seams, and material vocabulary before connecting real procedural
-  terrain or ocean data.
+  normalized bathymetry, shoreline mask, land mask, normalized elevation,
+  normalized slope, moisture, temperature, roughness, and a simple material
+  band. It now has broad, mid-ridge, and fine-detail bands plus
+  patch-cell-scaled normal sampling. Water classification is based on explicit
+  sea level; bathymetry and shoreline are diagnostic fields, not yet a separate
+  ocean layer. The next terrain pass is tracked in
+  [`planet-terrain-field-v2.md`](../notes/planet-terrain-field-v2.md): keep the
+  source procedural and project-local, but make tile payload summaries and field
+  diagnostics credible enough for later ocean, biome, cache, and streaming
+  layers.
 - Current debug views cover patch identity, LOD level, screen error, seam
   skirts, approximate metric cell edge, normalized terrain height, normalized
   terrain slope, terrain material bands, bathymetry, shoreline, wireframe grid,

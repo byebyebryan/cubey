@@ -91,19 +91,26 @@ streaming work.
 The terrain controls are placeholders for contract pressure, not the final
 terrain system. Terrain now goes through a project-local surface-field contract:
 CPU and shader paths sample deterministic height, world position, normal,
-height above sea level, water depth, normalized bathymetry, shoreline mask,
-normalized elevation, normalized slope, and a simple material band. The live
-renderer displaces the reusable grid in the vertex shader with deterministic
-multi-band terrain: broad shape, mid ridges, and fine detail. Normals are
-recomputed from a patch-cell-scaled sample step so higher LOD reveals smaller
-terrain features instead of only smoothing the mesh. The CPU mesh builder
-remains as a diagnostic/test path for the same patch contracts.
+height above sea level, water depth, normalized bathymetry, shoreline mask, land
+mask, normalized elevation, normalized slope, moisture, temperature, roughness,
+and a simple material band. The live renderer displaces the reusable grid in the
+vertex shader with deterministic multi-band terrain: broad shape, mid ridges,
+and fine detail. Normals are recomputed from a patch-cell-scaled sample step so
+higher LOD reveals smaller terrain features instead of only smoothing the mesh.
+The CPU mesh builder and tile payload path remain as diagnostic/test paths for
+the same patch contracts.
 
 The current material bands are intentionally simple: water, lowland, highland,
 and snow. Water is classified from explicit sea level rather than a normalized
 elevation threshold. The bathymetry and shoreline fields are diagnostic
 contracts for future terrain/ocean handoff; they are not yet streamed data,
 seafloor rendering, surf, biome masks, or final art direction.
+
+The terrain v2 direction is documented in
+[`docs/notes/planet-terrain-field-v2.md`](../../docs/notes/planet-terrain-field-v2.md).
+It keeps the source procedural and project-local while making the sample and
+tile summary vocabulary explicit enough for later ocean, biome, cache, and
+streaming work.
 
 `planet` now owns its sky and celestial state locally. The shared atmosphere
 background/runtime is no longer used by this project because its demo-oriented
