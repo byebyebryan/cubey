@@ -264,9 +264,11 @@ The latest planet foundation pass closed several previously loose contracts:
   active planet renderer keeps a project-local atmosphere shader path; `analytic`
   is the fallback/debug mode and `physical` is the default v1 scattering path.
 - Moon rendering remains explicit body geometry. The body pass now receives
-  camera-relative shading inputs, applies procedural lunar albedo variation,
-  fades the moon through the lower daytime atmosphere, and packs a first
-  planet-shadow/eclipse factor for future refinement.
+  camera-relative shading inputs, applies procedural lunar albedo variation, and
+  treats the moon as an opaque depth-tested body. Daytime atmosphere lowers moon
+  contrast through sky washout instead of alpha transparency, and night-side
+  terrain receives a small phase-scaled moonlight contribution. True
+  node-aware lunar eclipses are deferred.
 - Repeatable visual capture recipes live in
   [`docs/notes/planet-visual-captures.md`](../notes/planet-visual-captures.md)
   and cover orbit, surface, dawn/day/night, atmosphere comparison, LOD/seam
@@ -294,6 +296,13 @@ The target ownership is:
 - the moon is modeled as a spherical body lit by the sun, so phase and
   terminator behavior come from body geometry instead of an atmosphere shader
   approximation;
+- moon phase remains a derived synodic diagnostic and lighting input; render
+  phase should stay geometric unless a future impostor path needs a disk mask;
+- lower-atmosphere daytime moon visibility should be contrast washout, not
+  transparent blending of a sky sprite;
+- moonlight is a secondary directional light derived from lunar phase and
+  albedo, useful for night-side terrain even when its v1 intensity is
+  demo-scaled rather than physically exposed;
 - a future planet-scale atmosphere consumes derived scattering inputs: planet
   radius, atmosphere height, camera altitude, sun direction, sun radiance, and
   sun angular radius;
@@ -311,14 +320,15 @@ The render-order contract for the current local path is:
 1. planet-owned sky pass with dark space, stars, sun disk/glow, and analytic
    planet limb/occlusion;
 2. opaque planet surface and terrain/ocean layers;
-3. explicit celestial body geometry, starting with a depth-tested moon sphere;
+3. explicit celestial body geometry, starting with an opaque depth-tested moon
+   sphere;
 4. clouds, aerial-perspective overlays, and post as those systems arrive.
 
-For the immediate slice, a distant sun disk/glow in the sky pass plus a
+For the immediate slice, a distant sun disk/glow in the sky pass plus an opaque
 depth-tested moon sphere is enough. The important boundary is that no shared
-atmosphere shader decides celestial placement or planet occlusion. Later work
-can move the sun to body-backed rendering or add eclipses without changing the
-solar-system source of truth.
+atmosphere shader decides celestial placement, planet occlusion, moon phase, or
+moonlight. Later work can move the sun to body-backed rendering or add
+node-aware eclipses without changing the solar-system source of truth.
 
 Established engine precedents support this split. Unreal's Sky Atmosphere
 consumes scene Directional Lights marked as atmosphere lights, including
@@ -329,6 +339,15 @@ environment option. Filament models sun/moon-style illumination as directional
 lights with physical units. The common pattern is that sky/atmosphere rendering
 consumes light/body state; it should not be the durable owner of planet-scale
 celestial bodies.
+
+Reference API/docs:
+
+- Unreal Sky Atmosphere:
+  <https://dev.epicgames.com/documentation/unreal-engine/sky-atmosphere-component-in-unreal-engine>
+- Unreal Directional Lights:
+  <https://dev.epicgames.com/documentation/unreal-engine/directional-lights-in-unreal-engine>
+- Godot Sky Shaders:
+  <https://docs.godotengine.org/en/latest/tutorials/shaders/shader_reference/sky_shader.html>
 
 Astronomical data references for the current mean model:
 
@@ -374,7 +393,9 @@ back into this architecture note.
 12. Done as a v1 path: replace the analytic default with a small project-local
    single-scattering and aerial-perspective model; keep full atmosphere LUTs
    deferred until the contract needs them.
-13. Port ocean as a local water layer once the planet frame and LOD contracts are
+13. Replace moon alpha fading with opaque body rendering, daytime contrast
+   washout, and phase-scaled secondary moonlight.
+14. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 
 Non-goals for the first planet pass:

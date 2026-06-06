@@ -115,17 +115,19 @@ The current sky pass renders dark space, sparse procedural stars, a sun
 disk/glow, and a local planet limb. The default `physical` atmosphere mode uses
 a small project-local single-scattering model with Rayleigh/Mie vocabulary, sun
 transmittance, and surface aerial perspective. The older `analytic` mode
-remains selectable for comparison and debugging. The moon is now a depth-tested
-sphere rendered from the same local celestial state on a camera-relative shell
-that preserves its apparent angular size. Phase and terminator shape therefore
-come from body lighting against the modeled sun direction instead of a sky-disk
-mask, with procedural surface variation, lower-atmosphere daytime washout, and a
-first planet-shadow/eclipse factor packed through the body uniform. The surface
-shader receives frame data through a descriptor-backed uniform instead of push
-constants, and composes final terrain through atmosphere before post. The scene
-renders into a linear HDR scene color target and uses the shared fullscreen post
-pass for exposure, tone mapping, and output encoding before writing the
-swapchain or headless target.
+remains selectable for comparison and debugging. The moon is now an opaque,
+depth-tested sphere rendered from the same local celestial state on a
+camera-relative shell that preserves its apparent angular size. Phase and
+terminator shape therefore come from body lighting against the modeled sun
+direction instead of a sky-disk mask. The atmosphere can wash out the moon's
+contrast in daylight, but it does not make the moon transparent; night-side
+terrain receives a small phase-scaled secondary moonlight term. True
+node-aware lunar eclipses remain deferred. The surface shader receives frame
+data through a descriptor-backed uniform instead of push constants, and
+composes final terrain through atmosphere before post. The scene renders into a
+linear HDR scene color target and uses the shared fullscreen post pass for
+exposure, tone mapping, and output encoding before writing the swapchain or
+headless target.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it

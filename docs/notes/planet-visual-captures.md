@@ -74,12 +74,15 @@ controls, or moon rendering.
 ```sh
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 5.5 --debug-view celestial-planes --output outputs/planet-celestial-planes.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 88 --planet-time-hours 18.13 --planet-camera-mode orbit --output outputs/planet-moon-occlusion-check.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 0.0 --planet-camera-mode surface --output outputs/planet-moonlight-night.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 87.4 --planet-time-hours 12.0 --planet-camera-mode surface --output outputs/planet-day-moon-washout.png
 ```
 
 For moon occlusion, the important checks are visual rather than exact-clock
 goldens: the depth-tested moon should disappear continuously behind the planet,
-not pop based on center-only tests, and daytime moon visibility should wash out
-through the lower atmosphere rather than remaining full contrast.
+not pop based on center-only tests. Daytime moon visibility should wash out by
+losing contrast against the local sky instead of becoming transparent, and full
+moon nights should show a small secondary moonlight response on terrain.
 
 ## Surface Field Checks
 
