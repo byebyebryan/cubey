@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "planet_atmosphere.glsl"
 
 layout(location = 0) in vec2 frag_ndc;
 layout(location = 0) out vec4 out_color;
@@ -44,17 +47,6 @@ float star_field(vec3 ray_direction) {
     return star * sparkle;
 }
 
-vec3 atmosphere_scatter_color(float sun_elevation, float toward_sun, float horizon) {
-    vec3 day_haze = mix(vec3(0.055, 0.105, 0.205), vec3(0.20, 0.36, 0.68),
-                        clamp(sun_elevation * 1.2 + 0.35, 0.0, 1.0));
-    vec3 twilight = vec3(1.00, 0.42, 0.15);
-    float twilight_window =
-        (1.0 - smoothstep(0.10, 0.52, abs(sun_elevation))) *
-        smoothstep(-0.28, 0.06, sun_elevation);
-    float warm = twilight_window * horizon * (0.32 + 0.68 * toward_sun);
-    return mix(day_haze, twilight, clamp(warm, 0.0, 1.0));
-}
-
 vec3 atmosphere_view_haze(vec3 ray_direction, vec3 sun_direction) {
     vec3 camera_position = celestial.camera_position_radius.xyz;
     float planet_radius = celestial.camera_position_radius.w;
@@ -75,65 +67,41 @@ vec3 atmosphere_view_haze(vec3 ray_direction, vec3 sun_direction) {
     float upper_sky = smoothstep(0.02, 0.65, ray_up) * above_ground;
     float optical_depth = clamp(horizon * 0.82 + upper_sky * 0.30, 0.0, 1.0);
 
-    float sun_elevation = dot(sun_direction, camera_up);
-    vec3 sun_tangent = sun_direction - camera_up * sun_elevation;
-    float sun_tangent_len = length(sun_tangent);
-    float toward_sun = 0.0;
-    if (sun_tangent_len > 0.0001) {
-        toward_sun = pow(max(dot(ray_direction, sun_tangent / sun_tangent_len), 0.0), 2.0);
-    }
-    vec3 scatter = atmosphere_scatter_color(sun_elevation, toward_sun, horizon);
+    PlanetAtmosphereTerms terms = planet_atmosphere_terms(ray_direction, camera_up, sun_direction);
+    vec3 scatter = planet_atmosphere_scatter_color(terms.sun_elevation, terms.toward_sun, horizon);
     return scatter * optical_depth * inside_atmosphere * 0.72;
 }
 
 vec3 local_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
     vec3 camera_position = celestial.camera_position_radius.xyz;
     vec3 camera_up = normalize(camera_position);
-    float ray_up = dot(ray_direction, camera_up);
-    float sun_elevation = dot(sun_direction, camera_up);
-    vec3 sun_tangent = sun_direction - camera_up * sun_elevation;
-    float toward_sun = 0.0;
-    if (length(sun_tangent) > 0.0001) {
-        vec3 view_tangent = ray_direction - camera_up * ray_up;
-        if (length(view_tangent) > 0.0001) {
-            toward_sun = pow(max(dot(normalize(view_tangent), normalize(sun_tangent)), 0.0), 2.0);
-        }
-    }
-
-    float above_horizon = smoothstep(-0.055, 0.075, ray_up);
-    float upper_sky = smoothstep(0.02, 0.68, ray_up);
-    float horizon_shell = exp(-abs(ray_up) / 0.13);
-    float horizon = horizon_shell * above_horizon;
-    float daylight = smoothstep(-0.08, 0.24, sun_elevation);
-    float twilight =
-        (1.0 - smoothstep(0.08, 0.42, abs(sun_elevation))) *
-        smoothstep(-0.28, 0.06, sun_elevation);
-    float atmosphere_visibility = clamp(max(daylight, twilight * 0.72), 0.0, 1.0);
+    PlanetAtmosphereTerms terms = planet_atmosphere_terms(ray_direction, camera_up, sun_direction);
 
     vec3 night_upper = mix(vec3(0.004, 0.006, 0.018), vec3(0.010, 0.016, 0.036),
-                           clamp(horizon_shell * 0.55 + upper_sky * 0.25, 0.0, 1.0));
-    vec3 day_upper = mix(vec3(0.030, 0.060, 0.130), vec3(0.17, 0.25, 0.48), upper_sky);
-    vec3 upper_color = mix(night_upper, day_upper, daylight);
-    vec3 scatter = atmosphere_scatter_color(sun_elevation, toward_sun, horizon);
+                           clamp(terms.horizon_shell * 0.55 + terms.upper_sky * 0.25, 0.0, 1.0));
+    vec3 day_upper = mix(vec3(0.030, 0.060, 0.130), vec3(0.17, 0.25, 0.48), terms.upper_sky);
+    vec3 upper_color = mix(night_upper, day_upper, terms.daylight);
+    vec3 scatter = planet_atmosphere_scatter_color(terms);
     float scatter_weight =
-        clamp(horizon * 0.62 + upper_sky * 0.22, 0.0, 0.78) * atmosphere_visibility;
+        clamp(terms.horizon * 0.62 + terms.upper_sky * 0.22, 0.0, 0.78) *
+        terms.atmosphere_visibility;
     vec3 color = mix(upper_color, scatter, scatter_weight);
 
-    float horizon_extinction = smoothstep(0.0, 0.36, horizon);
-    float star_visibility = (1.0 - smoothstep(-0.08, 0.18, sun_elevation));
+    float horizon_extinction = smoothstep(0.0, 0.36, terms.horizon);
     vec3 stars =
-        vec3(0.75, 0.82, 1.0) * star_field(ray_direction) * 0.30 * above_horizon *
-        (1.0 - horizon_extinction) * star_visibility;
-    float below_horizon_haze = smoothstep(-0.75, -0.04, ray_up) * daylight;
+        vec3(0.75, 0.82, 1.0) * star_field(ray_direction) * 0.30 * terms.above_horizon *
+        (1.0 - horizon_extinction) * terms.star_visibility;
+    float below_horizon_haze = smoothstep(-0.75, -0.04, terms.ray_up) * terms.daylight;
     vec3 night_below_horizon = vec3(0.006, 0.008, 0.018);
     vec3 night_horizon_fill = mix(night_below_horizon, vec3(0.010, 0.016, 0.036),
-                                  smoothstep(-0.70, -0.02, ray_up));
+                                  smoothstep(-0.70, -0.02, terms.ray_up));
     vec3 day_horizon_fill =
-        atmosphere_scatter_color(sun_elevation, toward_sun, horizon_shell) *
-        (0.68 + 0.22 * toward_sun);
+        planet_atmosphere_scatter_color(
+            terms.sun_elevation, terms.toward_sun, terms.horizon_shell) *
+        (0.68 + 0.22 * terms.toward_sun);
     vec3 below_horizon =
         mix(night_horizon_fill, day_horizon_fill, clamp(below_horizon_haze, 0.0, 1.0));
-    color = mix(below_horizon, color + stars, above_horizon);
+    color = mix(below_horizon, color + stars, terms.above_horizon);
     return color;
 }
 
