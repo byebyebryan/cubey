@@ -27,6 +27,8 @@ without changing the planet-facing contract.
 - surface day, dawn, night, and orbit limb views do not show abrupt black/blue
   bands or detached red/orange halos;
 - low sun visibly warms the horizon and attenuates direct surface light;
+- surface haze and physical aerial perspective are live-tunable without
+  rebuilding planet topology;
 - stars fade in daylight and remain visible at night/high altitude;
 - the old analytic path remains available as a debug fallback while the
   physical path is the default.
@@ -46,4 +48,5 @@ without changing the planet-facing contract.
   LUTs;
 - clouds, cloud shadows, volumetric weather, and ocean composition;
 - physical unit calibration beyond stable HDR-friendly defaults;
-- user-facing Rayleigh/Mie tuning sliders before the model has settled.
+- user-facing Rayleigh/Mie density/scale-height sliders before the model has
+  settled.

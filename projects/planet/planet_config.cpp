@@ -71,6 +71,18 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     if (run_config_float_is_set(config.planet.shoreline_width_m)) {
         planet.shoreline_width_m = config.planet.shoreline_width_m;
     }
+    if (run_config_float_is_set(config.planet.atmosphere_haze_strength)) {
+        planet.atmosphere_haze_strength = config.planet.atmosphere_haze_strength;
+    }
+    if (run_config_float_is_set(config.planet.atmosphere_haze_start)) {
+        planet.atmosphere_haze_start = config.planet.atmosphere_haze_start;
+    }
+    if (run_config_float_is_set(config.planet.atmosphere_haze_end)) {
+        planet.atmosphere_haze_end = config.planet.atmosphere_haze_end;
+    }
+    if (run_config_float_is_set(config.planet.atmosphere_aerial_strength)) {
+        planet.atmosphere_aerial_strength = config.planet.atmosphere_aerial_strength;
+    }
     if (!config.planet.atmosphere_mode.empty()) {
         planet.atmosphere_mode = planet_atmosphere_mode_from_string(config.planet.atmosphere_mode);
     }
@@ -262,6 +274,25 @@ void validate_planet_config(const PlanetConfig& config) {
     }
     if (!std::isfinite(config.shoreline_width_m) || config.shoreline_width_m <= 0.0F) {
         throw std::runtime_error("planet shoreline width must be finite and positive");
+    }
+    if (!std::isfinite(config.atmosphere_haze_strength) ||
+        config.atmosphere_haze_strength < 0.0F || config.atmosphere_haze_strength > 1.0F) {
+        throw std::runtime_error("planet atmosphere haze strength must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.atmosphere_haze_start) ||
+        config.atmosphere_haze_start < 0.0F || config.atmosphere_haze_start > 1.0F) {
+        throw std::runtime_error("planet atmosphere haze start must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.atmosphere_haze_end) ||
+        config.atmosphere_haze_end < config.atmosphere_haze_start ||
+        config.atmosphere_haze_end > 1.5F) {
+        throw std::runtime_error(
+            "planet atmosphere haze end must be finite, >= start, and <= 1.5");
+    }
+    if (!std::isfinite(config.atmosphere_aerial_strength) ||
+        config.atmosphere_aerial_strength < 0.0F ||
+        config.atmosphere_aerial_strength > 1.0F) {
+        throw std::runtime_error("planet atmosphere aerial strength must be finite and in [0, 1]");
     }
 }
 

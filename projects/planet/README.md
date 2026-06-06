@@ -24,6 +24,7 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view celestial-planes
 ./build/dev/projects/planet/planet --debug-view seams
 ./build/dev/projects/planet/planet --planet-atmosphere-mode physical
+./build/dev/projects/planet/planet --planet-atmosphere-haze-strength 0.18 --planet-atmosphere-aerial-strength 0.35
 ./build/dev/projects/planet/planet --planet-max-lod-level 7 --planet-lod-target-edge-px 8
 ./build/dev/projects/planet/planet --planet-max-lod-level 9 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
 ./build/dev/projects/planet/planet --planet-terrain-mid-detail-strength 0.45 --planet-terrain-fine-detail-strength 0.16 --planet-terrain-fine-detail-scale 12
@@ -142,6 +143,11 @@ the local sun elevation in surface mode, and blends between those references
 through the camera transition. This is a stable v1 proxy, not a true
 view-luminance histogram. Daylight, twilight, and night exposure targets remain
 separately tunable in the UI.
+Surface haze is intentionally exposed as live planet config: `Surface Haze`,
+`Haze Start`, and `Haze End` tune the analytic distance-haze fallback, while
+`Aerial Strength` blends the physical aerial perspective path. These are
+art-direction controls over the current v1 atmosphere approximation, not full
+Rayleigh/Mie density or LUT parameters.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it

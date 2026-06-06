@@ -141,6 +141,10 @@ struct RunConfig {
         float sea_level_m = kRunConfigUnsetFloat;
         float bathymetry_depth_scale_m = kRunConfigUnsetFloat;
         float shoreline_width_m = kRunConfigUnsetFloat;
+        float atmosphere_haze_strength = kRunConfigUnsetFloat;
+        float atmosphere_haze_start = kRunConfigUnsetFloat;
+        float atmosphere_haze_end = kRunConfigUnsetFloat;
+        float atmosphere_aerial_strength = kRunConfigUnsetFloat;
         float day_of_year = kRunConfigUnsetFloat;
         float time_hours = kRunConfigUnsetFloat;
         float time_speed_hours_per_second = kRunConfigUnsetFloat;

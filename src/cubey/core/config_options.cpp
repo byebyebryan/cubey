@@ -84,7 +84,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 161> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 165> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -285,6 +285,23 @@ constexpr std::array<ConfigOptionDescriptor, 161> kRunConfigOptions{
            "--planet-shoreline-width-m", "Shoreline Width", "Planet",
            "Height band around sea level used by shoreline debug masks.",
            ConfigOptionType::Float, min_range(0.000001)),
+    option(RunConfigOptionId::PlanetAtmosphereHazeStrength, "planet.atmosphere_haze_strength",
+           "--planet-atmosphere-haze-strength", "Surface Haze", "Planet",
+           "Strength of distance haze used by the planet surface atmosphere.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::PlanetAtmosphereHazeStart, "planet.atmosphere_haze_start",
+           "--planet-atmosphere-haze-start", "Haze Start", "Planet",
+           "Fraction of horizon distance where analytic planet surface haze starts.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::PlanetAtmosphereHazeEnd, "planet.atmosphere_haze_end",
+           "--planet-atmosphere-haze-end", "Haze End", "Planet",
+           "Fraction of horizon distance where analytic planet surface haze reaches full strength.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.5)),
+    option(RunConfigOptionId::PlanetAtmosphereAerialStrength,
+           "planet.atmosphere_aerial_strength", "--planet-atmosphere-aerial-strength",
+           "Aerial Strength", "Planet",
+           "Blend strength for physical planet surface aerial perspective.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::PlanetDayOfYear, "planet.day_of_year", "--planet-day-of-year",
            "Day Of Year", "Planet", "Initial planet solar-clock day of year.",
            ConfigOptionType::Float, bounded_range(1.0, 365.2422)),
@@ -896,6 +913,14 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.planet.bathymetry_depth_scale_m);
     case RunConfigOptionId::PlanetShorelineWidth:
         return optional_float(config.planet.shoreline_width_m);
+    case RunConfigOptionId::PlanetAtmosphereHazeStrength:
+        return optional_float(config.planet.atmosphere_haze_strength);
+    case RunConfigOptionId::PlanetAtmosphereHazeStart:
+        return optional_float(config.planet.atmosphere_haze_start);
+    case RunConfigOptionId::PlanetAtmosphereHazeEnd:
+        return optional_float(config.planet.atmosphere_haze_end);
+    case RunConfigOptionId::PlanetAtmosphereAerialStrength:
+        return optional_float(config.planet.atmosphere_aerial_strength);
     case RunConfigOptionId::PlanetDayOfYear:
         return optional_float(config.planet.day_of_year);
     case RunConfigOptionId::PlanetTimeHours:
@@ -1172,6 +1197,10 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<float>("sea_level_m", options.sea_level_m);
     adapter.writeField<float>("bathymetry_depth_scale_m", options.bathymetry_depth_scale_m);
     adapter.writeField<float>("shoreline_width_m", options.shoreline_width_m);
+    adapter.writeField<float>("atmosphere_haze_strength", options.atmosphere_haze_strength);
+    adapter.writeField<float>("atmosphere_haze_start", options.atmosphere_haze_start);
+    adapter.writeField<float>("atmosphere_haze_end", options.atmosphere_haze_end);
+    adapter.writeField<float>("atmosphere_aerial_strength", options.atmosphere_aerial_strength);
     adapter.writeField<float>("day_of_year", options.day_of_year);
     adapter.writeField<float>("time_hours", options.time_hours);
     adapter.writeField<float>("time_speed_hours_per_second", options.time_speed_hours_per_second);
@@ -1199,6 +1228,10 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<float>("sea_level_m", options.sea_level_m);
     adapter.readField<float>("bathymetry_depth_scale_m", options.bathymetry_depth_scale_m);
     adapter.readField<float>("shoreline_width_m", options.shoreline_width_m);
+    adapter.readField<float>("atmosphere_haze_strength", options.atmosphere_haze_strength);
+    adapter.readField<float>("atmosphere_haze_start", options.atmosphere_haze_start);
+    adapter.readField<float>("atmosphere_haze_end", options.atmosphere_haze_end);
+    adapter.readField<float>("atmosphere_aerial_strength", options.atmosphere_aerial_strength);
     adapter.readField<float>("day_of_year", options.day_of_year);
     adapter.readField<float>("time_hours", options.time_hours);
     adapter.readField<float>("time_speed_hours_per_second", options.time_speed_hours_per_second);
@@ -1671,6 +1704,22 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::PlanetShorelineWidth:
         config.planet.shoreline_width_m = parse_config_float(value, option);
         validate_range(config.planet.shoreline_width_m, option);
+        break;
+    case RunConfigOptionId::PlanetAtmosphereHazeStrength:
+        config.planet.atmosphere_haze_strength = parse_config_float(value, option);
+        validate_range(config.planet.atmosphere_haze_strength, option);
+        break;
+    case RunConfigOptionId::PlanetAtmosphereHazeStart:
+        config.planet.atmosphere_haze_start = parse_config_float(value, option);
+        validate_range(config.planet.atmosphere_haze_start, option);
+        break;
+    case RunConfigOptionId::PlanetAtmosphereHazeEnd:
+        config.planet.atmosphere_haze_end = parse_config_float(value, option);
+        validate_range(config.planet.atmosphere_haze_end, option);
+        break;
+    case RunConfigOptionId::PlanetAtmosphereAerialStrength:
+        config.planet.atmosphere_aerial_strength = parse_config_float(value, option);
+        validate_range(config.planet.atmosphere_aerial_strength, option);
         break;
     case RunConfigOptionId::PlanetDayOfYear:
         config.planet.day_of_year = parse_config_float(value, option);

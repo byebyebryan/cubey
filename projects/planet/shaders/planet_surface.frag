@@ -141,7 +141,9 @@ vec3 surface_apply_physical_aerial_perspective(vec3 color, vec3 world_position, 
         camera_position, view_ray / ray_length, min(view_distance, ray_length), planet_radius,
         atmosphere_radius, light_dir, surface_frame.sun_color_intensity.rgb,
         surface_frame.sun_color_intensity.w);
-    return color * aerial.transmittance + aerial.radiance * 0.85;
+    vec3 aerial_color = color * aerial.transmittance + aerial.radiance * 0.85;
+    float aerial_strength = clamp(surface_frame.atmosphere_radius_mode.y, 0.0, 1.0);
+    return mix(color, aerial_color, aerial_strength);
 }
 
 vec3 celestial_planes_color() {

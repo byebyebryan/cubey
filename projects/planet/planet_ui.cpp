@@ -29,6 +29,21 @@ constexpr std::array<PlanetAtmosphereMode, 2> kAtmosphereModes{
     PlanetAtmosphereMode::Physical,
 };
 
+void draw_panel_actions(PlanetUiContext& ui) {
+    if (ImGui::Button("Revert Config")) {
+        ui.edit_config = ui.active_config;
+        ui.config_apply_pending = false;
+        ui.rebuild_error.clear();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Reset Camera") && ui.reset_camera) {
+        ui.reset_camera();
+    }
+    if (!ui.rebuild_error.empty()) {
+        ImGui::Text("Config error: %s", ui.rebuild_error.c_str());
+    }
+}
+
 void draw_planet_controls(PlanetUiContext& ui) {
     if (const cubey::host::ScopedImGuiGroup group{"Planet"}; group) {
         const cubey::host::ScopedImGuiId section_id("Planet");
@@ -96,6 +111,14 @@ void draw_atmosphere_controls(PlanetUiContext& ui) {
                           0.0F, "%.0f");
         cubey::host::imgui_enum_combo("Atmosphere Mode", ui.edit_config.atmosphere_mode,
                                       kAtmosphereModes, planet_atmosphere_mode_name);
+        ImGui::SliderFloat("Surface Haze", &ui.edit_config.atmosphere_haze_strength, 0.0F,
+                           1.0F, "%.2f");
+        ImGui::SliderFloat("Haze Start", &ui.edit_config.atmosphere_haze_start, 0.0F, 1.0F,
+                           "%.2f");
+        ImGui::SliderFloat("Haze End", &ui.edit_config.atmosphere_haze_end,
+                           ui.edit_config.atmosphere_haze_start, 1.5F, "%.2f");
+        ImGui::SliderFloat("Aerial Strength", &ui.edit_config.atmosphere_aerial_strength, 0.0F,
+                           1.0F, "%.2f");
     }
 }
 
@@ -238,28 +261,17 @@ void draw_planet_ui(PlanetUiContext ui) {
         return;
     }
 
+    if (ui.maybe_apply_config) {
+        ui.maybe_apply_config();
+    }
+    draw_panel_actions(ui);
+
     const PlanetConfig config_before_edit = ui.edit_config;
     draw_planet_controls(ui);
     draw_surface_controls(ui);
     draw_atmosphere_controls(ui);
     if (ui.edit_config != config_before_edit) {
         ui.config_apply_pending = ui.edit_config != ui.active_config;
-    }
-
-    if (ImGui::Button("Revert Config")) {
-        ui.edit_config = ui.active_config;
-        ui.config_apply_pending = false;
-        ui.rebuild_error.clear();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Reset Camera") && ui.reset_camera) {
-        ui.reset_camera();
-    }
-    if (ui.maybe_apply_config) {
-        ui.maybe_apply_config();
-    }
-    if (!ui.rebuild_error.empty()) {
-        ImGui::Text("Config error: %s", ui.rebuild_error.c_str());
     }
 
     draw_celestial_controls(ui);

@@ -22,6 +22,16 @@ void require_near(float actual, float expected, float tolerance, const char* mes
     }
 }
 
+void require_invalid_planet_config(cubey::projects::planet::PlanetConfig config,
+                                   const char* message) {
+    try {
+        cubey::projects::planet::validate_planet_config(config);
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
 void test_planet_frame_derives_horizon_and_planes() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 600000.0F,
@@ -54,23 +64,13 @@ void test_planet_frame_derives_horizon_and_planes() {
 void test_planet_config_rejects_invalid_radius() {
     cubey::projects::planet::PlanetConfig config{};
     config.radius_m = 0.0F;
-    try {
-        cubey::projects::planet::validate_planet_config(config);
-    } catch (const std::exception&) {
-        return;
-    }
-    throw std::runtime_error("planet config should reject nonpositive radius");
+    require_invalid_planet_config(config, "planet config should reject nonpositive radius");
 }
 
 void test_planet_config_rejects_invalid_skirt_depth() {
     cubey::projects::planet::PlanetConfig config{};
     config.skirt_depth_scale = 0.0F;
-    try {
-        cubey::projects::planet::validate_planet_config(config);
-    } catch (const std::exception&) {
-        return;
-    }
-    throw std::runtime_error("planet config should reject nonpositive skirt depth");
+    require_invalid_planet_config(config, "planet config should reject nonpositive skirt depth");
 }
 
 void test_planet_config_accepts_max_live_lod() {
@@ -88,34 +88,36 @@ void test_planet_config_accepts_max_patch_resolution() {
 void test_planet_config_rejects_lod_above_live_cap() {
     cubey::projects::planet::PlanetConfig config{};
     config.max_lod_level = cubey::projects::planet::kPlanetMaxLiveLodLevel + 1U;
-    try {
-        cubey::projects::planet::validate_planet_config(config);
-    } catch (const std::exception&) {
-        return;
-    }
-    throw std::runtime_error("planet config should reject LOD above the live cap");
+    require_invalid_planet_config(config, "planet config should reject LOD above the live cap");
 }
 
 void test_planet_config_rejects_patch_resolution_above_cap() {
     cubey::projects::planet::PlanetConfig config{};
     config.patch_resolution = cubey::projects::planet::kPlanetMaxPatchResolution + 1U;
-    try {
-        cubey::projects::planet::validate_planet_config(config);
-    } catch (const std::exception&) {
-        return;
-    }
-    throw std::runtime_error("planet config should reject patch resolution above the live cap");
+    require_invalid_planet_config(config,
+                                  "planet config should reject patch resolution above the live cap");
 }
 
 void test_planet_config_rejects_invalid_lod_hysteresis() {
     cubey::projects::planet::PlanetConfig config{};
     config.lod_hysteresis = 1.0F;
-    try {
-        cubey::projects::planet::validate_planet_config(config);
-    } catch (const std::exception&) {
-        return;
-    }
-    throw std::runtime_error("planet config should reject invalid LOD hysteresis");
+    require_invalid_planet_config(config, "planet config should reject invalid LOD hysteresis");
+}
+
+void test_planet_config_rejects_invalid_atmosphere_haze() {
+    cubey::projects::planet::PlanetConfig config{};
+    config.atmosphere_haze_strength = 1.1F;
+    require_invalid_planet_config(config,
+                                  "planet config should reject invalid atmosphere haze strength");
+
+    config = {};
+    config.atmosphere_haze_end = config.atmosphere_haze_start - 0.01F;
+    require_invalid_planet_config(config, "planet config should reject invalid atmosphere haze end");
+
+    config = {};
+    config.atmosphere_aerial_strength = -0.01F;
+    require_invalid_planet_config(config,
+                                  "planet config should reject invalid atmosphere aerial strength");
 }
 
 void test_planet_config_applies_run_config_surface_options() {
@@ -140,6 +142,10 @@ void test_planet_config_applies_run_config_surface_options() {
     run_config.planet.sea_level_m = -250.0F;
     run_config.planet.bathymetry_depth_scale_m = 3200.0F;
     run_config.planet.shoreline_width_m = 450.0F;
+    run_config.planet.atmosphere_haze_strength = 0.35F;
+    run_config.planet.atmosphere_haze_start = 0.25F;
+    run_config.planet.atmosphere_haze_end = 0.85F;
+    run_config.planet.atmosphere_aerial_strength = 0.50F;
     run_config.planet.atmosphere_mode = "physical";
 
     const cubey::projects::planet::PlanetConfig config =
@@ -171,6 +177,14 @@ void test_planet_config_applies_run_config_surface_options() {
                  "planet config should apply bathymetry depth scale");
     require_near(config.shoreline_width_m, 450.0F, 0.0001F,
                  "planet config should apply shoreline width");
+    require_near(config.atmosphere_haze_strength, 0.35F, 0.0001F,
+                 "planet config should apply atmosphere haze strength");
+    require_near(config.atmosphere_haze_start, 0.25F, 0.0001F,
+                 "planet config should apply atmosphere haze start");
+    require_near(config.atmosphere_haze_end, 0.85F, 0.0001F,
+                 "planet config should apply atmosphere haze end");
+    require_near(config.atmosphere_aerial_strength, 0.50F, 0.0001F,
+                 "planet config should apply atmosphere aerial strength");
     require(config.atmosphere_mode ==
                 cubey::projects::planet::PlanetAtmosphereMode::Physical,
             "planet config should apply atmosphere mode");
@@ -188,9 +202,10 @@ void test_planet_config_change_kind_separates_dynamic_and_topology() {
     dynamic.radius_m += 1000.0F;
     dynamic.max_lod_level += 1U;
     dynamic.terrain_seed += 1U;
+    dynamic.atmosphere_haze_strength *= 0.5F;
     require(cubey::projects::planet::planet_config_change_kind(current, dynamic) ==
                 cubey::projects::planet::PlanetConfigChangeKind::Dynamic,
-            "planet config should classify radius, LOD, and terrain edits as dynamic");
+            "planet config should classify radius, LOD, terrain, and atmosphere edits as dynamic");
 
     cubey::projects::planet::PlanetConfig topology = current;
     topology.patch_resolution *= 2U;
@@ -459,6 +474,7 @@ int main() {
         test_planet_config_rejects_lod_above_live_cap();
         test_planet_config_rejects_patch_resolution_above_cap();
         test_planet_config_rejects_invalid_lod_hysteresis();
+        test_planet_config_rejects_invalid_atmosphere_haze();
         test_planet_config_applies_run_config_surface_options();
         test_planet_config_change_kind_separates_dynamic_and_topology();
         test_planet_camera_min_altitude_tracks_terrain_clearance();

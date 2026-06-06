@@ -635,9 +635,9 @@ class PlanetApp {
             .atmosphere_options =
                 {
                     ambient_intensity,
-                    0.42F,
-                    0.45F,
-                    1.0F,
+                    planet_config_.atmosphere_haze_strength,
+                    planet_config_.atmosphere_haze_start,
+                    planet_config_.atmosphere_haze_end,
                 },
             .haze_color_direct =
                 {
@@ -691,7 +691,7 @@ class PlanetApp {
             .atmosphere_radius_mode =
                 {
                     frame_.atmosphere_outer_radius_m,
-                    std::max(frame_.atmosphere_outer_radius_m - frame_.planet_radius_m, 0.0F),
+                    planet_config_.atmosphere_aerial_strength,
                     static_cast<float>(static_cast<std::uint32_t>(
                         planet_config_.atmosphere_mode)),
                     celestial_lighting_.primary_light_angular_radius_rad,

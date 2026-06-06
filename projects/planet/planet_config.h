@@ -25,6 +25,10 @@ inline constexpr float kPlanetDefaultTerrainFineDetailScale = 12.0F;
 inline constexpr float kPlanetDefaultSeaLevelM = 0.0F;
 inline constexpr float kPlanetDefaultBathymetryDepthScaleM = 8000.0F;
 inline constexpr float kPlanetDefaultShorelineWidthM = 1500.0F;
+inline constexpr float kPlanetDefaultAtmosphereHazeStrength = 0.26F;
+inline constexpr float kPlanetDefaultAtmosphereHazeStart = 0.55F;
+inline constexpr float kPlanetDefaultAtmosphereHazeEnd = 1.10F;
+inline constexpr float kPlanetDefaultAtmosphereAerialStrength = 0.45F;
 inline constexpr std::uint32_t kPlanetMaxPatchResolution = 128;
 inline constexpr std::uint32_t kPlanetMaxLiveLodLevel = 9;
 inline constexpr std::uint64_t kPlanetMaxLivePatchInstances = 65536ULL;
@@ -83,6 +87,10 @@ struct PlanetConfig {
     float sea_level_m = kPlanetDefaultSeaLevelM;
     float bathymetry_depth_scale_m = kPlanetDefaultBathymetryDepthScaleM;
     float shoreline_width_m = kPlanetDefaultShorelineWidthM;
+    float atmosphere_haze_strength = kPlanetDefaultAtmosphereHazeStrength;
+    float atmosphere_haze_start = kPlanetDefaultAtmosphereHazeStart;
+    float atmosphere_haze_end = kPlanetDefaultAtmosphereHazeEnd;
+    float atmosphere_aerial_strength = kPlanetDefaultAtmosphereAerialStrength;
     PlanetAtmosphereMode atmosphere_mode = PlanetAtmosphereMode::Physical;
 
     friend bool operator==(const PlanetConfig&, const PlanetConfig&) = default;
