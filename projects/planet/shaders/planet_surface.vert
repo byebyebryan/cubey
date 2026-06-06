@@ -22,6 +22,9 @@ layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     vec4 celestial_moon_orbit_plane;
     vec4 celestial_sun_direction;
     vec4 celestial_moon_direction;
+    vec4 camera_world_radius;
+    vec4 atmosphere_radius_mode;
+    vec4 sun_color_intensity;
 } surface_frame;
 
 uint packed_patch_lod_option() {

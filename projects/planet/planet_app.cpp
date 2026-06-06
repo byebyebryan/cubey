@@ -79,9 +79,17 @@ struct PlanetSurfaceFrameUniforms {
     cubey::math::Vec4 celestial_moon_orbit_plane{0.0F, 1.0F, 0.0F, 0.0F};
     cubey::math::Vec4 celestial_sun_direction{0.0F, 1.0F, 0.0F, 0.0F};
     cubey::math::Vec4 celestial_moon_direction{0.0F, 0.0F, 1.0F, 0.0F};
+    cubey::math::Vec4 camera_world_radius{0.0F, 0.0F, 0.0F,
+                                          kPlanetDefaultRadiusM + kPlanetDefaultCameraAltitudeM};
+    cubey::math::Vec4 atmosphere_radius_mode{
+        kPlanetDefaultRadiusM + kPlanetDefaultAtmosphereHeightM,
+        kPlanetDefaultAtmosphereHeightM,
+        static_cast<float>(static_cast<std::uint32_t>(PlanetAtmosphereMode::Analytic)),
+        0.004675F};
+    cubey::math::Vec4 sun_color_intensity{1.0F, 0.94F, 0.82F, 0.88F};
 };
 
-static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 17U);
+static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 20U);
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_PLANET_SHADER_DIR) / filename;
@@ -914,6 +922,28 @@ class PlanetApp {
                     celestial_diagnostics.moon_direction.y,
                     celestial_diagnostics.moon_direction.z,
                     celestial_diagnostics.moon_phase_fraction,
+                },
+            .camera_world_radius =
+                {
+                    static_cast<float>(frame_.camera_world_position_m.x),
+                    static_cast<float>(frame_.camera_world_position_m.y),
+                    static_cast<float>(frame_.camera_world_position_m.z),
+                    frame_.camera_radius_m,
+                },
+            .atmosphere_radius_mode =
+                {
+                    frame_.atmosphere_outer_radius_m,
+                    std::max(frame_.atmosphere_outer_radius_m - frame_.planet_radius_m, 0.0F),
+                    static_cast<float>(static_cast<std::uint32_t>(
+                        planet_config_.atmosphere_mode)),
+                    celestial_lighting_.primary_light_angular_radius_rad,
+                },
+            .sun_color_intensity =
+                {
+                    celestial_lighting_.primary_light_color.r,
+                    celestial_lighting_.primary_light_color.g,
+                    celestial_lighting_.primary_light_color.b,
+                    celestial_lighting_.primary_light_intensity,
                 },
         };
     }
