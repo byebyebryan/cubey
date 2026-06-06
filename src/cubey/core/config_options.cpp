@@ -48,7 +48,8 @@ constexpr std::array<std::string_view, 6> kOceanCascades{"all", "0", "1", "2", "
 constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
 constexpr std::array<std::string_view, 2> kPlanetCameraModes{"orbit", "surface"};
-constexpr std::array<std::string_view, 2> kPlanetAtmosphereModes{"analytic", "physical-preview"};
+constexpr std::array<std::string_view, 3> kPlanetAtmosphereModes{
+    "analytic", "physical", "physical-preview"};
 constexpr std::array<std::string_view, 2> kTimeOfDayModes{"manual", "solar"};
 constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
@@ -1176,6 +1177,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<float>("time_speed_hours_per_second", options.time_speed_hours_per_second);
     adapter.writeField<int>("time_paused", options.time_paused);
     adapter.writeField<std::string>("camera_mode", options.camera_mode);
+    adapter.writeField<std::string>("atmosphere_mode", options.atmosphere_mode);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options) {
@@ -1202,6 +1204,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<float>("time_speed_hours_per_second", options.time_speed_hours_per_second);
     adapter.readField<int>("time_paused", options.time_paused);
     adapter.readField<std::string>("camera_mode", options.camera_mode);
+    adapter.readField<std::string>("atmosphere_mode", options.atmosphere_mode);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::PbrOptions& options) {

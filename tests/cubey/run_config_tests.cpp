@@ -399,6 +399,9 @@ void test_run_config_loads_json_config_file() {
     "spectral_domains": false,
     "terrain_fields": true
   },
+  "planet": {
+    "atmosphere_mode": "physical"
+  },
   "terrain": {
     "seed": 12345,
     "water_surface": false
@@ -457,6 +460,8 @@ void test_run_config_loads_json_config_file() {
             "config file should set ocean controls");
     require(config.ocean.spectral_domains == 0 && config.ocean.terrain_fields == 1,
             "config file should set ocean tri-state booleans");
+    require(config.planet.atmosphere_mode == "physical",
+            "config file should set planet atmosphere mode");
     require(config.terrain.seed_set && config.terrain.seed == 12345U,
             "config file should mark terrain seed as explicit");
     require(config.terrain.water_surface == 0, "config file should set terrain booleans");
@@ -1241,7 +1246,7 @@ void test_run_config_parses_planet_controls() {
     std::string camera_mode_flag = "--planet-camera-mode";
     std::string camera_mode_value = "surface";
     std::string atmosphere_mode_flag = "--planet-atmosphere-mode";
-    std::string atmosphere_mode_value = "physical-preview";
+    std::string atmosphere_mode_value = "physical";
     std::array<char*, 45> argv{program.data(),
                                radius_flag.data(),
                                radius_value.data(),
@@ -1327,7 +1332,7 @@ void test_run_config_parses_planet_controls() {
             "run config should parse planet time speed");
     require(config.planet.time_paused == 1, "run config should parse planet time pause");
     require(config.planet.camera_mode == "surface", "run config should parse planet camera mode");
-    require(config.planet.atmosphere_mode == "physical-preview",
+    require(config.planet.atmosphere_mode == "physical",
             "run config should parse planet atmosphere mode");
 }
 

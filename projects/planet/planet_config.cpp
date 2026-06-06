@@ -182,8 +182,8 @@ PlanetAtmosphereMode planet_atmosphere_mode_from_string(std::string_view value) 
     if (value.empty() || value == "analytic") {
         return PlanetAtmosphereMode::Analytic;
     }
-    if (value == "physical-preview" || value == "physical_preview" || value == "physical") {
-        return PlanetAtmosphereMode::PhysicalPreview;
+    if (value == "physical" || value == "physical-preview" || value == "physical_preview") {
+        return PlanetAtmosphereMode::Physical;
     }
     throw std::runtime_error("unsupported planet atmosphere mode: " + std::string(value));
 }
@@ -192,8 +192,8 @@ const char* planet_atmosphere_mode_name(PlanetAtmosphereMode mode) {
     switch (mode) {
     case PlanetAtmosphereMode::Analytic:
         return "analytic";
-    case PlanetAtmosphereMode::PhysicalPreview:
-        return "physical-preview";
+    case PlanetAtmosphereMode::Physical:
+        return "physical";
     }
     return "analytic";
 }

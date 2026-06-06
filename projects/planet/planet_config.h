@@ -57,7 +57,7 @@ enum class PlanetConfigChangeKind : std::uint8_t {
 
 enum class PlanetAtmosphereMode : std::uint8_t {
     Analytic,
-    PhysicalPreview,
+    Physical,
 };
 
 struct PlanetConfig {

@@ -441,7 +441,7 @@ class PlanetApp {
                          static_cast<int>(std::size(kDebugViews)))) {
             edit_planet_config_.debug_view = static_cast<PlanetDebugView>(debug_view);
         }
-        constexpr const char* kAtmosphereModes[]{"analytic", "physical-preview"};
+        constexpr const char* kAtmosphereModes[]{"analytic", "physical"};
         int atmosphere_mode = static_cast<int>(edit_planet_config_.atmosphere_mode);
         if (ImGui::Combo("Atmosphere Mode", &atmosphere_mode, kAtmosphereModes,
                          static_cast<int>(std::size(kAtmosphereModes)))) {

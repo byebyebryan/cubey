@@ -368,7 +368,7 @@ void test_sky_frame_uniforms_pack_sun_state() {
                            .planet_radius_m = 4.0F,
                            .atmosphere_outer_radius_m = 5.0F,
                            .atmosphere_mode =
-                               cubey::projects::planet::PlanetAtmosphereMode::PhysicalPreview,
+                               cubey::projects::planet::PlanetAtmosphereMode::Physical,
                        });
 
     require(uniforms.camera_right_aspect == view_rays.right_aspect,
