@@ -24,6 +24,7 @@ cubey_add_app_target(
         planet_frame.cpp
         planet_surface.cpp
         planet_surface_field.cpp
+        planet_ui.cpp
     SHADERS
         ${CUBEY_PLANET_SHADERS}
     SHADER_INCLUDE_DIRS

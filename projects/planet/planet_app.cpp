@@ -5,12 +5,12 @@
 #include "planet_config.h"
 #include "planet_frame.h"
 #include "planet_surface.h"
+#include "planet_ui.h"
 
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/math.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
-#include <cubey/host/performance_ui.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/frame_data.h>
@@ -413,223 +413,36 @@ class PlanetApp {
     }
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
-        ImGui::TextUnformatted("Planet");
-        ImGui::SeparatorText("Controls");
-        PlanetConfig config_before_edit = edit_planet_config_;
-        ImGui::InputFloat("Radius (m)", &edit_planet_config_.radius_m, 0.0F, 0.0F, "%.0f");
-        ImGui::InputFloat("Atmosphere Height (m)", &edit_planet_config_.atmosphere_height_m, 0.0F,
-                          0.0F, "%.0f");
-        ImGui::InputFloat("Camera Altitude (m)", &edit_planet_config_.camera_altitude_m, 0.0F, 0.0F,
-                          "%.0f");
-        int patches_per_face = static_cast<int>(edit_planet_config_.patches_per_face);
-        if (ImGui::InputInt("Patches / Face", &patches_per_face)) {
-            edit_planet_config_.patches_per_face =
-                static_cast<std::uint32_t>(std::max(patches_per_face, 0));
-        }
-        int patch_resolution = static_cast<int>(edit_planet_config_.patch_resolution);
-        if (ImGui::InputInt("Patch Grid Resolution", &patch_resolution)) {
-            edit_planet_config_.patch_resolution = static_cast<std::uint32_t>(
-                std::clamp(patch_resolution, 0, static_cast<int>(kPlanetMaxPatchResolution)));
-        }
-        int max_lod_level = static_cast<int>(edit_planet_config_.max_lod_level);
-        if (ImGui::InputInt("Max LOD Level", &max_lod_level)) {
-            edit_planet_config_.max_lod_level = static_cast<std::uint32_t>(
-                std::clamp(max_lod_level, 0, static_cast<int>(kPlanetMaxLiveLodLevel)));
-        }
-        ImGui::InputFloat("LOD Target Edge (px)", &edit_planet_config_.lod_target_edge_px, 0.0F,
-                          0.0F, "%.1f");
-        ImGui::InputFloat("LOD Hysteresis", &edit_planet_config_.lod_hysteresis, 0.0F, 0.0F,
-                          "%.2f");
-        constexpr const char* kDebugViews[]{
-            "final",         "face-id",          "patch-id",
-            "lod-level",     "screen-error",     "lod-transition",
-            "seams",         "cell-edge",        "terrain-height",
-            "terrain-slope", "terrain-material", "bathymetry",
-            "shoreline",     "wireframe",        "celestial-planes"};
-        int debug_view = static_cast<int>(edit_planet_config_.debug_view);
-        if (ImGui::Combo("Debug View", &debug_view, kDebugViews,
-                         static_cast<int>(std::size(kDebugViews)))) {
-            edit_planet_config_.debug_view = static_cast<PlanetDebugView>(debug_view);
-        }
-        constexpr const char* kAtmosphereModes[]{"analytic", "physical"};
-        int atmosphere_mode = static_cast<int>(edit_planet_config_.atmosphere_mode);
-        if (ImGui::Combo("Atmosphere Mode", &atmosphere_mode, kAtmosphereModes,
-                         static_cast<int>(std::size(kAtmosphereModes)))) {
-            edit_planet_config_.atmosphere_mode =
-                static_cast<PlanetAtmosphereMode>(atmosphere_mode);
-        }
-        ImGui::Checkbox("Wire Overlay", &edit_planet_config_.wire_overlay);
-        ImGui::Checkbox("Patch Skirts", &edit_planet_config_.skirts_enabled);
-        ImGui::InputFloat("Skirt Depth Scale", &edit_planet_config_.skirt_depth_scale, 0.0F, 0.0F,
-                          "%.2f");
-        ImGui::Checkbox("Terrain", &edit_planet_config_.terrain_enabled);
-        ImGui::InputFloat("Terrain Height (m)", &edit_planet_config_.terrain_height_scale_m, 0.0F,
-                          0.0F, "%.0f");
-        ImGui::InputFloat("Terrain Noise Scale", &edit_planet_config_.terrain_noise_scale, 0.0F,
-                          0.0F, "%.2f");
-        ImGui::InputFloat("Terrain Mid Detail", &edit_planet_config_.terrain_mid_detail_strength,
-                          0.0F, 0.0F, "%.2f");
-        ImGui::InputFloat("Terrain Fine Detail", &edit_planet_config_.terrain_fine_detail_strength,
-                          0.0F, 0.0F, "%.2f");
-        ImGui::InputFloat("Terrain Fine Scale", &edit_planet_config_.terrain_fine_detail_scale,
-                          0.0F, 0.0F, "%.2f");
-        int terrain_seed = static_cast<int>(edit_planet_config_.terrain_seed);
-        if (ImGui::InputInt("Terrain Seed", &terrain_seed)) {
-            edit_planet_config_.terrain_seed =
-                static_cast<std::uint32_t>(std::max(terrain_seed, 0));
-        }
-        ImGui::InputFloat("Sea Level (m)", &edit_planet_config_.sea_level_m, 0.0F, 0.0F, "%.0f");
-        ImGui::InputFloat("Bathymetry Depth (m)", &edit_planet_config_.bathymetry_depth_scale_m,
-                          0.0F, 0.0F, "%.0f");
-        ImGui::InputFloat("Shoreline Width (m)", &edit_planet_config_.shoreline_width_m, 0.0F, 0.0F,
-                          "%.0f");
-
-        if (edit_planet_config_ != config_before_edit) {
-            planet_config_apply_pending_ = edit_planet_config_ != planet_config_;
-        }
-        if (ImGui::Button("Revert Config")) {
-            edit_planet_config_ = planet_config_;
-            planet_config_apply_pending_ = false;
-            rebuild_error_.clear();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Reset Camera")) {
-            reset_camera();
-        }
-        maybe_apply_planet_config(context);
-        if (!rebuild_error_.empty()) {
-            ImGui::Text("Config error: %s", rebuild_error_.c_str());
-        }
-
-        ImGui::SeparatorText("Solar System");
-        bool solar_changed = false;
-        solar_changed |=
-            ImGui::SliderFloat("Day", &solar_time_.day_of_year, 1.0F, 365.2422F, "%.1f");
-        solar_changed |= ImGui::SliderFloat("Hour", &solar_time_.time_hours, 0.0F, 24.0F, "%.2f");
-        solar_changed |=
-            ImGui::SliderFloat("Speed (h/s)", &solar_time_.hours_per_second, -12.0F, 12.0F, "%.2f");
-        if (solar_changed) {
-            refresh_celestial_state();
-        }
-        const PlanetCelestialDiagnostics celestial_diagnostics =
-            planet_celestial_diagnostics(solar_time_, solar_config_);
-        constexpr float kRadiansToDegrees = 180.0F / std::numbers::pi_v<float>;
-        ImGui::Text("Solar / sidereal day: %.2f h / %.4f h",
-                    celestial_diagnostics.mean_solar_day_hours,
-                    celestial_diagnostics.sidereal_rotation_hours);
-        ImGui::Text("Year / lunar sidereal / synodic: %.4f d / %.6f d / %.5f d",
-                    celestial_diagnostics.tropical_year_days,
-                    celestial_diagnostics.lunar_sidereal_month_days,
-                    celestial_diagnostics.lunar_synodic_month_days);
-        ImGui::Text("Axial tilt / moon inclination: %.3f deg / %.3f deg",
-                    celestial_diagnostics.axial_tilt_rad * kRadiansToDegrees,
-                    celestial_diagnostics.lunar_orbit_inclination_rad * kRadiansToDegrees);
-        ImGui::Text("Moon phase: %.3f", celestial_diagnostics.moon_phase_fraction);
-        ImGui::Text("Moon illum / light: %.3f / %.3f",
-                    celestial_lighting_.moon_light_intensity / kPlanetFullMoonLightIntensity,
-                    celestial_lighting_.moon_light_intensity);
-
-        ImGui::SeparatorText("Exposure");
-        ImGui::Checkbox("Auto Exposure", &exposure_config_.auto_exposure_enabled);
-        if (exposure_config_.auto_exposure_enabled) {
-            ImGui::SliderFloat("Daylight Exposure", &exposure_config_.daylight_exposure, -4.0F,
-                               1.0F, "%.2f");
-            ImGui::SliderFloat("Twilight Exposure", &exposure_config_.twilight_exposure, -3.0F,
-                               3.0F, "%.2f");
-            ImGui::SliderFloat("Night Exposure", &exposure_config_.night_exposure, -1.0F, 4.0F,
-                               "%.2f");
-        } else {
-            ImGui::SliderFloat("Manual Exposure", &exposure_config_.manual_exposure, -4.0F, 4.0F,
-                               "%.2f");
-        }
-        ImGui::Text("Sun elevation: %.1f deg",
-                    planet_celestial_sun_elevation_degrees(celestial_system_,
-                                                           frame_.camera_world_position_m));
         const VkExtent2D ui_extent = context.swapchain().extent();
-        ImGui::Text("Orbit light / exposure: %.2f / %.2f", view_light_fraction(ui_extent),
-                    display_exposure(ui_extent));
-
-        ImGui::SeparatorText("Diagnostics");
-        ImGui::Text("Radius: %.0f m", planet_config_.radius_m);
-        ImGui::Text("Atmosphere: %.0f m", planet_config_.atmosphere_height_m);
-        ImGui::Text("Altitude: %.0f m", frame_.camera_altitude_m);
-        ImGui::Text(
-            "Surface camera: %.0f%%",
-            planet_surface_camera_blend(planet_config_, planet_camera_distance_m(camera_state_)) *
-                100.0F);
-        ImGui::Text("Horizon: %.0f m", frame_.horizon_distance_m);
-        ImGui::Text("Near / far: %.1f m / %.0f m", frame_.near_plane_m, frame_.far_plane_m);
-        ImGui::Text("Origin: %.0f %.0f %.0f", frame_.surface_origin_m.x, frame_.surface_origin_m.y,
-                    frame_.surface_origin_m.z);
-        ImGui::Text("Solar time: %.2f h, day %.1f", solar_time_.time_hours,
-                    solar_time_.day_of_year);
-        ImGui::Text("Sun dir: %.2f %.2f %.2f", celestial_system_.sun.direction.x,
-                    celestial_system_.sun.direction.y, celestial_system_.sun.direction.z);
-        ImGui::Text("Moon dir: %.2f %.2f %.2f", celestial_system_.moon.direction.x,
-                    celestial_system_.moon.direction.y, celestial_system_.moon.direction.z);
-        ImGui::Text("Orbit angles: planet %.2f, rotation %.2f, moon %.2f",
-                    celestial_system_.planet_orbit_angle_rad,
-                    celestial_system_.planet_rotation_angle_rad,
-                    celestial_system_.moon_orbit_angle_rad);
-
-        ImGui::SeparatorText("Surface");
-        ImGui::Text("Patches: %u rendered / %u planned",
-                    surface_build_.diagnostics.visible_patch_count,
-                    surface_build_.diagnostics.planned_patch_count);
-        ImGui::Text("Patch budget: %u / %llu", surface_build_.diagnostics.patch_count,
-                    static_cast<unsigned long long>(kPlanetMaxLivePatchInstances));
-        ImGui::Text("Base / refined: %u / %u", surface_build_.diagnostics.base_patch_count,
-                    surface_build_.diagnostics.refined_patch_count);
-        ImGui::Text("Subdivided parents: %u", surface_build_.diagnostics.subdivided_patch_count);
-        ImGui::Text("Fallback parents: %u",
-                    surface_build_.diagnostics.refinement_fallback_patch_count);
-        ImGui::Text("Budget fallback parents: %u",
-                    surface_build_.diagnostics.budget_fallback_patch_count);
-        ImGui::Text("Hysteresis delayed: %u splits / %u merges",
-                    surface_build_.diagnostics.hysteresis_delayed_split_count,
-                    surface_build_.diagnostics.hysteresis_delayed_merge_count);
-        ImGui::Text("Refinement culled: %u horizon / %u view",
-                    surface_build_.diagnostics.culled_horizon_count,
-                    surface_build_.diagnostics.culled_view_count);
-        ImGui::Text("LOD range: %u - %u", surface_build_.diagnostics.min_lod_level,
-                    surface_build_.diagnostics.max_lod_level);
-        for (std::size_t lod_index = 0;
-             lod_index < surface_build_.diagnostics.patches_by_lod.size(); ++lod_index) {
-            const std::uint32_t patch_count = surface_build_.diagnostics.patches_by_lod[lod_index];
-            const float min_cell = surface_build_.diagnostics.min_cell_edge_m_by_lod[lod_index];
-            const float max_cell = surface_build_.diagnostics.max_cell_edge_m_by_lod[lod_index];
-            if (patch_count == 0U && lod_index > surface_build_.diagnostics.max_lod_level) {
-                continue;
-            }
-            ImGui::Text("LOD %zu: %u patches, cell %.0f-%.0f m", lod_index, patch_count, min_cell,
-                        max_cell);
-        }
-        ImGui::Text("Screen error: %.1f px - %.1f px",
-                    surface_build_.diagnostics.min_screen_error_px,
-                    surface_build_.diagnostics.max_screen_error_px);
-        ImGui::Text("LOD transition: %u candidates, %.0f%% max pressure",
-                    surface_build_.diagnostics.transition_candidate_count,
-                    surface_build_.diagnostics.max_transition_pressure * 100.0F);
-        ImGui::Text("LOD neighbors: %u edges, %u mismatched, max delta %u",
-                    surface_build_.diagnostics.lod_neighbor_edge_count,
-                    surface_build_.diagnostics.lod_neighbor_mismatch_edge_count,
-                    surface_build_.diagnostics.max_lod_neighbor_delta);
-        ImGui::Text("Surface vertices: %u", surface_build_.diagnostics.vertex_count);
-        ImGui::Text("Surface triangles: %u", surface_build_.diagnostics.triangle_count);
-        ImGui::Text("Cell edge: %.0f m - %.0f m", surface_build_.diagnostics.min_edge_length_m,
-                    surface_build_.diagnostics.max_edge_length_m);
-        ImGui::Text("Seam edges: %u", surface_build_.diagnostics.seam_edge_count);
-        ImGui::Text("Skirt triangles: %u", surface_build_.diagnostics.skirt_triangle_count);
-        ImGui::Text("Skirt depth: %.0f m - %.0f m", surface_build_.diagnostics.min_skirt_depth_m,
-                    surface_build_.diagnostics.max_skirt_depth_m);
-
-        cubey::host::draw_performance_ui({
+        cubey::host::PerformanceUiContext performance{
             .frame_stats = latest_frame_stats_,
             .latest_fps = latest_fps_,
             .latest_frame_ms = latest_frame_ms_,
             .process = process_stats_.sample(),
             .device_memory_budget = context.device().device_memory_budget(),
             .config = {.default_open = false},
+        };
+
+        draw_planet_ui(PlanetUiContext{
+            .edit_config = edit_planet_config_,
+            .active_config = planet_config_,
+            .config_apply_pending = planet_config_apply_pending_,
+            .rebuild_error = rebuild_error_,
+            .solar_time = solar_time_,
+            .solar_config = solar_config_,
+            .celestial_system = celestial_system_,
+            .celestial_lighting = celestial_lighting_,
+            .frame = frame_,
+            .camera_state = camera_state_,
+            .exposure_config = exposure_config_,
+            .surface_diagnostics = surface_build_.diagnostics,
+            .performance = performance,
+            .extent = ui_extent,
+            .reset_camera = [this]() { reset_camera(); },
+            .maybe_apply_config = [this, &context]() { maybe_apply_planet_config(context); },
+            .refresh_celestial_state = [this]() { refresh_celestial_state(); },
+            .view_light_fraction = [this](VkExtent2D extent) { return view_light_fraction(extent); },
+            .display_exposure = [this](VkExtent2D extent) { return display_exposure(extent); },
         });
     }
 
