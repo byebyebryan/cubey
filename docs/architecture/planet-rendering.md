@@ -267,8 +267,9 @@ The latest planet foundation pass closed several previously loose contracts:
   camera-relative shading inputs, applies procedural lunar albedo variation, and
   treats the moon as an opaque depth-tested body. Daytime atmosphere lowers moon
   contrast through sky washout instead of alpha transparency, and night-side
-  terrain receives a small phase-scaled moonlight contribution. True
-  node-aware lunar eclipses are deferred.
+  terrain receives a small phase-scaled moonlight contribution. The eclipse
+  shadow channel is intentionally zeroed until true node-aware lunar eclipses
+  are modeled.
 - Repeatable visual capture recipes live in
   [`docs/notes/planet-visual-captures.md`](../notes/planet-visual-captures.md)
   and cover orbit, surface, dawn/day/night, atmosphere comparison, LOD/seam
@@ -393,8 +394,9 @@ back into this architecture note.
 12. Done as a v1 path: replace the analytic default with a small project-local
    single-scattering and aerial-perspective model; keep full atmosphere LUTs
    deferred until the contract needs them.
-13. Replace moon alpha fading with opaque body rendering, daytime contrast
-   washout, and phase-scaled secondary moonlight.
+13. Done: replace moon alpha fading with opaque body rendering, daytime
+   contrast washout, phase-scaled secondary moonlight, and deferred eclipse
+   shadowing.
 14. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 
