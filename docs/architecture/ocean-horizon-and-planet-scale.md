@@ -242,6 +242,18 @@ Deferred to `projects/planet`:
 - planet-scale patch LOD and streaming;
 - global weather and terrain/bathymetry/material fields.
 
+The ocean project should stop at the current local horizon-scale/curved-local
+boundary until `projects/planet` provides a stronger host. Planet-scale ocean is
+not a bigger square FFT mesh; it is a local water layer attached to a planet
+frame. The future handoff should be:
+
+- planet owns the Earth-like radius, local tangent frame, render origin, sea
+  datum, bathymetry, shoreline SDF, and global tile identity;
+- ocean owns local wave displacement, normals, foam, material response, and
+  interaction textures;
+- a viewer-centered local detail clipmap bridges the two so mesh density and FFT
+  wave bands can be chosen independently of global cube-sphere tile depth.
+
 ## Research Decisions
 
 The first horizon-scale implementation should stay with a viewer-centered
@@ -302,6 +314,9 @@ Avoid:
    endpoint and should remain a water renderer/testbed while planet-scale
    patching, celestial ownership, and future streaming continue in
    `projects/planet`.
+8. Next in `projects/planet`: make Earth-like scale the default, keep mini scale
+   as an explicit debug preset, and add local-detail clipmap diagnostics before
+   porting any ocean waves.
 
 This keeps ocean product-visible while leaving a clean path for `projects/planet`
 to consume it later.

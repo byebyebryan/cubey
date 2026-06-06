@@ -24,6 +24,32 @@ Ocean should be ported into `planet` when the planet frame and LOD contract are
 stable enough to host it. `projects/ocean` remains the focused local-water
 renderer and should not own full planet terrain, weather, or streaming.
 
+## Scale Policy
+
+The default planet should exercise Earth-like scale, not the earlier mini-planet
+debug scale. The mini scale remains useful for fast visual debugging, but it
+cannot be the main product signal if future ocean, terrain, atmosphere, and
+surface navigation are expected to share one world frame.
+
+Earth-like scale also makes the LOD boundary explicit:
+
+- the cube-sphere quadtree owns global coverage, silhouette, horizon culling,
+  base terrain/bathymetry/material identity, and stable `face/level/x/y`
+  addresses;
+- viewer-centered local detail owns meter-scale terrain detail, ocean wave
+  geometry, normals, foam, wakes, and shoreline interaction masks;
+- increasing global quadtree depth is useful for terrain coverage, but it is not
+  the mechanism for FFT wave detail or boat-scale interaction;
+- ocean should eventually consume the planet local tangent frame, sea datum,
+  bathymetry, shoreline fields, and local detail clipmap instead of becoming a
+  planet-scale global tile system.
+
+This means the next planet-scale work should harden Earth-like defaults and add
+a local-detail planning contract before any ocean port. That contract should make
+near cell size, outer extent, level count, and triangle budget visible so ocean
+can later choose FFT/wave cascades against the mesh that will actually sample
+them.
+
 ## Why Empty Planet First
 
 Planet scale is a world problem before it is an ocean problem. The hard
@@ -133,6 +159,11 @@ Geometry clipmaps can remain useful for local viewer-centered data and for ocean
 surface payloads. Planet terrain itself should get a more general patch tree
 because terrain, bathymetry, cloud shadows, and streamed material fields need a
 stable global address.
+
+The global patch tree and the local detail clipmap therefore coexist. The patch
+tree answers "which part of the planet is visible and what stable world data
+does it reference?" The local clipmap answers "what meter-scale surface data is
+needed around the viewer right now?"
 
 ## First Contracts
 

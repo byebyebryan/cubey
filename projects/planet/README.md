@@ -76,6 +76,14 @@ The live surface path is now mediated by `PlanetSurfaceRuntime`, which owns the
 current patch plan, previous-selection hysteresis history, render-origin
 validity checks, diagnostics, and lazy per-frame instance-buffer uploads.
 
+The default target scale is Earth-like. A smaller mini-planet preset remains a
+debug option for quickly inspecting curvature, LOD colors, and celestial motion,
+but scale-sensitive work should be checked against the Earth-like preset. The
+global cube-sphere patch tree is responsible for coverage and stable
+`face/level/x/y` identity. Meter-scale terrain detail and future ocean waves are
+expected to come through a viewer-centered local-detail clipmap rather than by
+forcing the global patch tree to carry every wave or interaction feature.
+
 Planet surface LOD is coverage-first. Root patches provide guaranteed coarse
 coverage for every planet domain, and view/horizon culling only stops
 refinement; it does not remove the fallback surface. When a patch refines, it
