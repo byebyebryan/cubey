@@ -93,7 +93,8 @@ class PlanetPatchSelectionLookup {
                                         const PlanetSurfaceSample& sample) {
     if (config.terrain_enabled && config.terrain_height_scale_m > 0.0F) {
         return to_primitive(planet_surface_material_color(
-            sample.material, sample.normalized_elevation, sample.normalized_slope));
+            sample.material, sample.normalized_elevation, sample.normalized_slope,
+            sample.moisture, sample.temperature));
     }
     return latitude_color(sample.normal);
 }
@@ -220,8 +221,12 @@ class PlanetPatchSelectionLookup {
 
 [[nodiscard]] PrimitiveVec3 terrain_material_debug_color(PlanetSurfaceMaterial material) {
     switch (material) {
-    case PlanetSurfaceMaterial::Water:
-        return {0.04F, 0.18F, 0.72F};
+    case PlanetSurfaceMaterial::DeepWater:
+        return {0.02F, 0.08F, 0.46F};
+    case PlanetSurfaceMaterial::ShallowWater:
+        return {0.05F, 0.30F, 0.66F};
+    case PlanetSurfaceMaterial::Beach:
+        return {0.86F, 0.70F, 0.34F};
     case PlanetSurfaceMaterial::Lowland:
         return {0.14F, 0.62F, 0.22F};
     case PlanetSurfaceMaterial::Highland:

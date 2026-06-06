@@ -132,6 +132,72 @@ namespace {
     return std::clamp(std::acos(dot_up) * kInvHalfPi, 0.0F, 1.0F);
 }
 
+[[nodiscard]] float clamp01(float value) {
+    return std::clamp(value, 0.0F, 1.0F);
+}
+
+[[nodiscard]] float terrain_continent_mask(const PlanetConfig& config,
+                                           cubey::math::Vec3 sphere_normal) {
+    const cubey::math::Vec3 p = sphere_normal * config.terrain_noise_scale;
+    const float continent =
+        fbm(p * 0.68F + cubey::math::Vec3{2.3F, -1.7F, 4.1F}, config.terrain_seed + 211U, 5U);
+    const float breakup =
+        fbm(p * 1.55F + cubey::math::Vec3{-3.8F, 5.0F, 0.9F}, config.terrain_seed + 547U, 4U);
+    return smootherstep((continent + breakup * 0.32F + 0.18F + 0.20F) / 0.54F);
+}
+
+[[nodiscard]] float terrain_mountain_belt(const PlanetConfig& config,
+                                          cubey::math::Vec3 sphere_normal) {
+    const cubey::math::Vec3 p = sphere_normal * config.terrain_noise_scale;
+    const float belt =
+        fbm(p * 1.18F + cubey::math::Vec3{-6.5F, 1.2F, 3.7F}, config.terrain_seed + 811U, 5U);
+    return smootherstep((belt + 0.18F) / 0.62F);
+}
+
+[[nodiscard]] float terrain_land_mask(float height_above_sea_m, float height_scale_m) {
+    return smootherstep((height_above_sea_m / std::max(height_scale_m, 1.0F) + 0.04F) / 0.13F);
+}
+
+[[nodiscard]] float terrain_temperature(const PlanetConfig& config,
+                                        cubey::math::Vec3 sphere_normal,
+                                        float normalized_elevation) {
+    const cubey::math::Vec3 p = sphere_normal * config.terrain_noise_scale;
+    const float latitude = std::abs(sphere_normal.y);
+    const float weather =
+        fbm(p * 1.35F + cubey::math::Vec3{8.1F, -2.2F, 1.4F}, config.terrain_seed + 1409U, 3U);
+    return clamp01(1.0F - latitude * 1.18F -
+                   std::max(normalized_elevation, 0.0F) * 0.45F + weather * 0.10F);
+}
+
+[[nodiscard]] float terrain_moisture(const PlanetConfig& config,
+                                     cubey::math::Vec3 sphere_normal, float shoreline_mask,
+                                     float normalized_elevation) {
+    const cubey::math::Vec3 p = sphere_normal * config.terrain_noise_scale;
+    const float weather =
+        fbm(p * 2.05F + cubey::math::Vec3{-1.5F, 7.6F, -4.2F}, config.terrain_seed + 1613U, 4U);
+    return clamp01((weather * 0.5F + 0.5F) * 0.82F + shoreline_mask * 0.22F -
+                   std::max(normalized_elevation, 0.0F) * 0.16F);
+}
+
+[[nodiscard]] float terrain_roughness(PlanetSurfaceMaterial material, float normalized_slope,
+                                      float moisture) {
+    switch (material) {
+    case PlanetSurfaceMaterial::DeepWater:
+        return 0.25F;
+    case PlanetSurfaceMaterial::ShallowWater:
+        return 0.34F;
+    case PlanetSurfaceMaterial::Beach:
+        return 0.78F;
+    case PlanetSurfaceMaterial::Lowland:
+        return std::clamp(0.74F - moisture * 0.18F + normalized_slope * 0.10F, 0.45F, 0.85F);
+    case PlanetSurfaceMaterial::Highland:
+        return std::clamp(0.76F + normalized_slope * 0.16F, 0.62F, 0.95F);
+    case PlanetSurfaceMaterial::Snow:
+        return 0.58F;
+    }
+    return 0.7F;
+}
+
 } // namespace
 
 cubey::math::Vec3 planet_surface_cube_face_point(std::uint32_t face, float u, float v) {
@@ -169,16 +235,29 @@ float planet_surface_terrain_height_m(const PlanetConfig& config, cubey::math::V
         return 0.0F;
     }
     const cubey::math::Vec3 p = sphere_normal * config.terrain_noise_scale;
-    const float broad = fbm(p + cubey::math::Vec3{1.7F, -3.2F, 5.1F}, config.terrain_seed, 4U);
+    const float continent_mask = terrain_continent_mask(config, sphere_normal);
+    const float mountain_belt = terrain_mountain_belt(config, sphere_normal);
+    const float broad =
+        fbm(p + cubey::math::Vec3{1.7F, -3.2F, 5.1F}, config.terrain_seed, 4U);
+    const float lowland =
+        fbm(p * 2.15F + cubey::math::Vec3{0.4F, 3.2F, -2.0F}, config.terrain_seed + 19U, 4U);
     const float ridge_source =
-        fbm(p * 2.35F + cubey::math::Vec3{-4.0F, 2.4F, 8.5F}, config.terrain_seed + 37U, 5U);
-    const float mid =
-        ((1.0F - std::abs(ridge_source)) * 2.0F - 1.0F) * config.terrain_mid_detail_strength;
+        fbm(p * 3.35F + cubey::math::Vec3{-4.0F, 2.4F, 8.5F}, config.terrain_seed + 37U, 5U);
+    const float ridges = std::pow(std::max(1.0F - std::abs(ridge_source), 0.0F), 2.2F);
+    const float ocean_floor =
+        -0.54F + broad * 0.10F +
+        fbm(p * 1.25F + cubey::math::Vec3{5.7F, 0.3F, -6.1F}, config.terrain_seed + 73U, 3U) *
+            0.08F;
+    const float land_base = (continent_mask - 0.46F) * 0.70F + lowland * 0.13F;
+    const float mountains =
+        ridges * mountain_belt * continent_mask * config.terrain_mid_detail_strength * 0.88F;
     const float fine =
         fbm(p * config.terrain_fine_detail_scale + cubey::math::Vec3{6.3F, 1.1F, -7.4F},
             config.terrain_seed + 113U, 3U) *
-        config.terrain_fine_detail_strength;
-    const float height = (broad * 0.58F + mid + fine) * config.terrain_height_scale_m;
+        config.terrain_fine_detail_strength * (0.22F + continent_mask * 0.78F);
+    const float height =
+        (lerp(ocean_floor, land_base, continent_mask) + mountains + fine * 0.34F) *
+        config.terrain_height_scale_m;
     return std::clamp(height, -config.terrain_height_scale_m, config.terrain_height_scale_m);
 }
 
@@ -203,13 +282,20 @@ float planet_surface_shoreline_mask(const PlanetConfig& config, float height_m) 
 }
 
 PlanetSurfaceMaterial planet_surface_material(float height_above_sea_m,
+                                              float water_depth_m, float shoreline_mask,
                                               float normalized_elevation,
-                                              float normalized_slope) {
+                                              float normalized_slope, float moisture,
+                                              float temperature) {
     if (height_above_sea_m <= 0.0F) {
-        return PlanetSurfaceMaterial::Water;
+        return water_depth_m > 1200.0F ? PlanetSurfaceMaterial::DeepWater
+                                       : PlanetSurfaceMaterial::ShallowWater;
     }
-    if (normalized_elevation > 0.66F ||
-        (normalized_elevation > 0.45F && normalized_slope < 0.22F)) {
+    if (shoreline_mask > 0.32F && normalized_slope < 0.24F) {
+        return PlanetSurfaceMaterial::Beach;
+    }
+    if (normalized_elevation > 0.68F ||
+        (normalized_elevation > 0.42F && temperature < 0.30F + moisture * 0.08F &&
+         normalized_slope < 0.30F)) {
         return PlanetSurfaceMaterial::Snow;
     }
     if (normalized_elevation > 0.22F || normalized_slope > 0.30F) {
@@ -220,31 +306,49 @@ PlanetSurfaceMaterial planet_surface_material(float height_above_sea_m,
 
 cubey::math::Vec3 planet_surface_material_color(PlanetSurfaceMaterial material,
                                                 float normalized_elevation,
-                                                float normalized_slope) {
+                                                float normalized_slope, float moisture,
+                                                float temperature) {
     const float elevation = std::clamp(normalized_elevation, -1.0F, 1.0F);
     const float slope = std::clamp(normalized_slope, 0.0F, 1.0F);
+    const float wet = std::clamp(moisture, 0.0F, 1.0F);
+    const float warm = std::clamp(temperature, 0.0F, 1.0F);
     switch (material) {
-    case PlanetSurfaceMaterial::Water:
-        return {0.035F, 0.105F, 0.190F};
+    case PlanetSurfaceMaterial::DeepWater:
+        return {0.018F, 0.070F, 0.165F};
+    case PlanetSurfaceMaterial::ShallowWater:
+        return {0.040F, 0.180F, 0.260F};
+    case PlanetSurfaceMaterial::Beach:
+        return {0.520F, 0.455F, 0.285F};
     case PlanetSurfaceMaterial::Lowland: {
-        const float blend = std::clamp((elevation + 0.15F) / 0.37F, 0.0F, 1.0F);
+        const float blend = std::clamp((elevation + 0.08F) / 0.32F, 0.0F, 1.0F);
+        const cubey::math::Vec3 dry{
+            lerp(0.225F, 0.340F, blend),
+            lerp(0.245F, 0.300F, blend),
+            lerp(0.135F, 0.145F, blend),
+        };
+        const cubey::math::Vec3 green{
+            lerp(0.070F, 0.120F, blend),
+            lerp(0.220F, 0.360F, blend),
+            lerp(0.115F, 0.105F, blend),
+        };
+        const float green_mix = std::clamp(wet * (0.45F + warm * 0.55F), 0.0F, 1.0F);
         return {
-            lerp(0.070F, 0.145F, blend),
-            lerp(0.170F, 0.310F, blend),
-            lerp(0.130F, 0.105F, blend),
+            lerp(dry.r, green.r, green_mix),
+            lerp(dry.g, green.g, green_mix),
+            lerp(dry.b, green.b, green_mix),
         };
     }
     case PlanetSurfaceMaterial::Highland: {
         const float height_blend = std::clamp((elevation - 0.22F) / 0.44F, 0.0F, 1.0F);
         const float rock_blend = std::max(height_blend, slope);
         return {
-            lerp(0.170F, 0.460F, rock_blend),
-            lerp(0.235F, 0.395F, rock_blend),
-            lerp(0.130F, 0.310F, rock_blend),
+            lerp(0.205F, 0.515F, rock_blend),
+            lerp(0.205F, 0.470F, rock_blend),
+            lerp(0.185F, 0.400F, rock_blend),
         };
     }
     case PlanetSurfaceMaterial::Snow:
-        return {0.66F, 0.70F, 0.76F};
+        return {0.680F, 0.720F, 0.780F};
     }
     return {0.12F, 0.28F, 0.10F};
 }
@@ -270,6 +374,13 @@ PlanetSurfaceSample planet_surface_sample_field(const PlanetConfig& config, Plan
     const float normalized_bathymetry = planet_surface_normalized_bathymetry(config, height_m);
     const float shoreline_mask = planet_surface_shoreline_mask(config, height_m);
     const float slope = normalized_slope(sphere_normal, normal);
+    const float land_mask = terrain_land_mask(height_above_sea, config.terrain_height_scale_m);
+    const float temperature = terrain_temperature(config, sphere_normal, normalized_elevation);
+    const float moisture =
+        terrain_moisture(config, sphere_normal, shoreline_mask, normalized_elevation);
+    const PlanetSurfaceMaterial material =
+        planet_surface_material(height_above_sea, water_depth, shoreline_mask,
+                                normalized_elevation, slope, moisture, temperature);
     return {
         .sphere_normal = sphere_normal,
         .normal = normal,
@@ -281,7 +392,11 @@ PlanetSurfaceSample planet_surface_sample_field(const PlanetConfig& config, Plan
         .shoreline_mask = shoreline_mask,
         .normalized_elevation = normalized_elevation,
         .normalized_slope = slope,
-        .material = planet_surface_material(height_above_sea, normalized_elevation, slope),
+        .land_mask = land_mask,
+        .moisture = moisture,
+        .temperature = temperature,
+        .roughness = terrain_roughness(material, slope, moisture),
+        .material = material,
     };
 }
 

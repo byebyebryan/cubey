@@ -263,6 +263,14 @@ void test_planet_surface_field_reports_bounded_height_normal_and_slope() {
             "planet surface field normalized bathymetry should stay in range");
     require(sample.shoreline_mask >= 0.0F && sample.shoreline_mask <= 1.0F,
             "planet surface field shoreline mask should stay in range");
+    require(sample.land_mask >= 0.0F && sample.land_mask <= 1.0F,
+            "planet surface field land mask should stay in range");
+    require(sample.moisture >= 0.0F && sample.moisture <= 1.0F,
+            "planet surface field moisture should stay in range");
+    require(sample.temperature >= 0.0F && sample.temperature <= 1.0F,
+            "planet surface field temperature should stay in range");
+    require(sample.roughness >= 0.0F && sample.roughness <= 1.0F,
+            "planet surface field roughness should stay in range");
     require(std::isfinite(sample.normal.x) && std::isfinite(sample.normal.y) &&
                 std::isfinite(sample.normal.z),
             "planet surface field normal should be finite");
@@ -271,31 +279,51 @@ void test_planet_surface_field_reports_bounded_height_normal_and_slope() {
     require(glm::dot(sample.sphere_normal, sample.normal) > 0.25F,
             "planet surface field normal should remain outward-facing");
     require(sample.material == cubey::projects::planet::planet_surface_material(
-                                   sample.height_above_sea_m, sample.normalized_elevation,
-                                   sample.normalized_slope),
+                                   sample.height_above_sea_m, sample.water_depth_m,
+                                   sample.shoreline_mask, sample.normalized_elevation,
+                                   sample.normalized_slope, sample.moisture, sample.temperature),
             "planet surface field sample should carry its classified material");
 }
 
 void test_planet_surface_field_classifies_material_bands() {
-    require(cubey::projects::planet::planet_surface_material(-1.0F, 0.20F, 0.0F) ==
-                cubey::projects::planet::PlanetSurfaceMaterial::Water,
-            "planet surface material should classify below-sea terrain");
-    require(cubey::projects::planet::planet_surface_material(1.0F, 0.0F, 0.05F) ==
+    require(cubey::projects::planet::planet_surface_material(-2000.0F, 2000.0F, 0.0F,
+                                                             -0.60F, 0.0F, 0.3F, 0.5F) ==
+                cubey::projects::planet::PlanetSurfaceMaterial::DeepWater,
+            "planet surface material should classify deep water");
+    require(cubey::projects::planet::planet_surface_material(-20.0F, 20.0F, 0.2F, -0.05F,
+                                                             0.0F, 0.5F, 0.7F) ==
+                cubey::projects::planet::PlanetSurfaceMaterial::ShallowWater,
+            "planet surface material should classify shallow water");
+    require(cubey::projects::planet::planet_surface_material(20.0F, 0.0F, 0.8F, 0.0F,
+                                                             0.05F, 0.5F, 0.8F) ==
+                cubey::projects::planet::PlanetSurfaceMaterial::Beach,
+            "planet surface material should classify gentle shoreline terrain as beach");
+    require(cubey::projects::planet::planet_surface_material(100.0F, 0.0F, 0.0F, 0.0F,
+                                                             0.05F, 0.6F, 0.7F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::Lowland,
             "planet surface material should classify low gentle terrain");
-    require(cubey::projects::planet::planet_surface_material(1.0F, 0.30F, 0.05F) ==
+    require(cubey::projects::planet::planet_surface_material(100.0F, 0.0F, 0.0F, 0.30F,
+                                                             0.05F, 0.4F, 0.6F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::Highland,
             "planet surface material should classify higher terrain");
-    require(cubey::projects::planet::planet_surface_material(1.0F, 0.70F, 0.05F) ==
+    require(cubey::projects::planet::planet_surface_material(100.0F, 0.0F, 0.0F, 0.70F,
+                                                             0.05F, 0.4F, 0.3F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::Snow,
             "planet surface material should classify high snow terrain");
 
-    const cubey::math::Vec3 water = cubey::projects::planet::planet_surface_material_color(
-        cubey::projects::planet::PlanetSurfaceMaterial::Water, -0.2F, 0.0F);
+    const cubey::math::Vec3 water =
+        cubey::projects::planet::planet_surface_material_color(
+            cubey::projects::planet::PlanetSurfaceMaterial::DeepWater, -0.2F, 0.0F, 0.0F,
+            0.5F);
+    const cubey::math::Vec3 beach =
+        cubey::projects::planet::planet_surface_material_color(
+            cubey::projects::planet::PlanetSurfaceMaterial::Beach, 0.0F, 0.0F, 0.3F, 0.8F);
     const cubey::math::Vec3 highland = cubey::projects::planet::planet_surface_material_color(
-        cubey::projects::planet::PlanetSurfaceMaterial::Highland, 0.4F, 0.5F);
+        cubey::projects::planet::PlanetSurfaceMaterial::Highland, 0.4F, 0.5F, 0.3F, 0.5F);
     require(water.z > water.x && water.z > water.y,
             "planet water material should be blue-dominant");
+    require(beach.x > beach.z && beach.y > beach.z,
+            "planet beach material should be sand-colored");
     require(highland.x > water.x && highland.y > water.y,
             "planet highland material should be brighter than water");
 }

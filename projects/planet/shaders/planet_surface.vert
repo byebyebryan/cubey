@@ -177,10 +177,12 @@ vec3 latitude_color(vec3 normal) {
                 0.230 + 0.200 * latitude);
 }
 
-vec3 final_color(vec3 normal, uint material, float normalized_elevation, float normalized_slope) {
+vec3 final_color(vec3 normal, uint material, float normalized_elevation, float normalized_slope,
+                 float moisture, float temperature) {
     float height_scale = surface_frame.terrain_options.x;
     if (height_scale > 0.0) {
-        return planet_surface_material_color(material, normalized_elevation, normalized_slope);
+        return planet_surface_material_color(material, normalized_elevation, normalized_slope,
+                                             moisture, temperature);
     }
     return latitude_color(normal);
 }
@@ -190,8 +192,13 @@ vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m) {
     float normalized_elevation = planet_surface_normalized_elevation(height_m);
     float normalized_slope = planet_surface_normalized_slope(sphere_normal, normal);
     float height_above_sea_m = planet_surface_height_above_sea_m(height_m);
+    float water_depth_m = planet_surface_water_depth_m(height_m);
+    float shoreline_mask = planet_surface_shoreline_mask(height_m);
+    float moisture = planet_surface_moisture(sphere_normal, shoreline_mask, normalized_elevation);
+    float temperature = planet_surface_temperature(sphere_normal, normalized_elevation);
     uint material =
-        planet_surface_material_id(height_above_sea_m, normalized_elevation, normalized_slope);
+        planet_surface_material_id(height_above_sea_m, water_depth_m, shoreline_mask,
+                                   normalized_elevation, normalized_slope, moisture, temperature);
     if (debug_view == 1) {
         return face_color(in_patch_id.x);
     }
@@ -230,12 +237,13 @@ vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m) {
         return bathymetry_color(planet_surface_normalized_bathymetry(height_m));
     }
     if (debug_view == 12) {
-        return shoreline_color(planet_surface_shoreline_mask(height_m));
+        return shoreline_color(shoreline_mask);
     }
     if (debug_view == 13) {
         return lod_color();
     }
-    return final_color(normal, material, normalized_elevation, normalized_slope);
+    return final_color(normal, material, normalized_elevation, normalized_slope, moisture,
+                       temperature);
 }
 
 void main() {

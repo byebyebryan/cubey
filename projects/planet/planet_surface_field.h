@@ -11,7 +11,9 @@
 namespace cubey::projects::planet {
 
 enum class PlanetSurfaceMaterial : std::uint8_t {
-    Water,
+    DeepWater,
+    ShallowWater,
+    Beach,
     Lowland,
     Highland,
     Snow,
@@ -28,6 +30,10 @@ struct PlanetSurfaceSample {
     float shoreline_mask = 0.0F;
     float normalized_elevation = 0.0F;
     float normalized_slope = 0.0F;
+    float land_mask = 0.0F;
+    float moisture = 0.0F;
+    float temperature = 0.0F;
+    float roughness = 0.5F;
     PlanetSurfaceMaterial material = PlanetSurfaceMaterial::Lowland;
 };
 
@@ -86,10 +92,14 @@ planet_surface_patch_id_from_tile_key(PlanetSurfaceTileKey key);
 make_planet_surface_tile_payload(const PlanetConfig& config, PlanetSurfaceTileKey key,
                                  std::uint32_t sample_resolution = 4);
 [[nodiscard]] PlanetSurfaceMaterial planet_surface_material(float height_above_sea_m,
+                                                            float water_depth_m,
+                                                            float shoreline_mask,
                                                             float normalized_elevation,
-                                                            float normalized_slope);
+                                                            float normalized_slope,
+                                                            float moisture, float temperature);
 [[nodiscard]] cubey::math::Vec3 planet_surface_material_color(PlanetSurfaceMaterial material,
                                                               float normalized_elevation,
-                                                              float normalized_slope);
+                                                              float normalized_slope,
+                                                              float moisture, float temperature);
 
 } // namespace cubey::projects::planet
