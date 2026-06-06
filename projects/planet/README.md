@@ -104,9 +104,12 @@ radii, direct lighting, ambient lighting, and the planet-owned sky pass.
 The clock is a mean Earth-like model: UI time is a 24h mean solar day, internal
 planet spin uses a 23.9345h sidereal rotation, the seasonal year is 365.2422d,
 and the moon uses a 27.321661d sidereal orbit with derived 29.53d phase
-cycling. This is intentionally not a full ephemeris: eccentricity, equation of
-time, lunar apsidal/nodal precession, and true Earth/Moon barycentric motion
-are deferred until the planet project needs that fidelity.
+cycling. The lunar orbit has an explicit phase epoch offset because the demo
+`day_of_year` clock is seasonal, not a dated real ephemeris; the default starts
+the spring dawn preset near full moon instead of keeping the moon close to the
+sun in daylight. Eccentricity, equation of time, lunar apsidal/nodal precession,
+and true Earth/Moon barycentric motion are deferred until the planet project
+needs that fidelity.
 
 The current sky pass renders dark space, sparse procedural stars, a sun
 disk/glow, and a local planet limb. The default `physical` atmosphere mode uses

@@ -197,7 +197,8 @@ planet_celestial_system_from_solar_time(const PlanetSolarTime& time,
     const float orbit_angle = kTwoPi * (simulation_day - solar.equinox_day) /
                               std::max(solar.planet_orbit_period_days, 0.0001F);
     const float moon_orbit_angle =
-        kTwoPi * simulation_day / std::max(solar.moon_orbit_period_days, 0.0001F);
+        kTwoPi * (simulation_day / std::max(solar.moon_orbit_period_days, 0.0001F) +
+                  solar.moon_orbit_phase_offset_cycles);
 
     const cubey::math::Vec3 sun_in_orbital_frame =
         normalized_or_up({std::cos(orbit_angle), 0.0F, -std::sin(orbit_angle)});

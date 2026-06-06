@@ -57,6 +57,8 @@ void test_default_solar_system_uses_earth_like_reference_periods() {
                  "default moon orbit should use the sidereal lunar month");
     require_near(solar.moon_orbit_inclination_rad * 180.0F / std::numbers::pi_v<float>, 5.145F,
                  0.001F, "default moon orbit should include lunar inclination");
+    require_near(solar.moon_orbit_phase_offset_cycles, 0.5980231F, 0.000001F,
+                 "default moon phase epoch should keep the demo from starting near new moon");
 }
 
 void test_solar_time_applies_run_config() {
@@ -183,6 +185,23 @@ void test_moon_phase_uses_synodic_month() {
                  "moon phase should keep signed direction through the waning half");
     require_near(wrap_unit_delta(full_cycle_phase, start_phase), 0.0F, 0.0002F,
                  "moon phase should repeat over the synodic month");
+}
+
+void test_default_lunar_epoch_starts_away_from_sun() {
+    cubey::projects::planet::PlanetSolarTime time{};
+    time.day_of_year = 80.0F;
+    time.time_hours = 5.5F;
+
+    const cubey::projects::planet::PlanetCelestialSystem celestial =
+        cubey::projects::planet::planet_celestial_system_from_solar_time(time);
+    const float separation_degrees =
+        angle_between(celestial.sun.direction, celestial.moon.direction) * 180.0F /
+        std::numbers::pi_v<float>;
+
+    require(separation_degrees > 150.0F,
+            "default lunar epoch should not place the moon near the sun in the demo view");
+    require_near(celestial.moon.phase_fraction, 0.5F, 0.0002F,
+                 "default lunar epoch should start near full moon at the spring dawn preset");
 }
 
 void test_celestial_diagnostics_report_plane_relationships() {
@@ -562,6 +581,7 @@ int main() {
         test_sidereal_spin_produces_24_hour_solar_day();
         test_solar_time_advance_wraps_hours_and_days();
         test_moon_phase_uses_synodic_month();
+        test_default_lunar_epoch_starts_away_from_sun();
         test_celestial_diagnostics_report_plane_relationships();
         test_celestial_lighting_uses_celestial_direction();
         test_planet_atmosphere_inputs_follow_celestial_state();

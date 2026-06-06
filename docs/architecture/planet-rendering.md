@@ -230,10 +230,10 @@ Current implementation notes:
 - The current solar-system math is deliberately mean and Earth-like rather than
   ephemeris-driven. `PlanetSolarTime` is a 24h mean solar clock. The default
   config uses a 23.9345h sidereal planet spin, 365.2422d tropical/seasonal
-  year, 27.321661d lunar sidereal orbit, and a signed synodic phase cycle of
-  about 29.53d. This keeps day/year/moon behavior sensible while leaving
-  eccentricity, equation of time, lunar nodal/apsidal precession, and
-  Earth-Moon barycenter work for later.
+  year, 27.321661d lunar sidereal orbit, an explicit lunar phase epoch offset,
+  and a signed synodic phase cycle of about 29.53d. This keeps day/year/moon
+  behavior sensible while leaving eccentricity, equation of time, lunar
+  nodal/apsidal precession, and Earth-Moon barycenter work for later.
 
 ## Current Gap-Closure Status
 
