@@ -32,6 +32,28 @@ physical atmosphere without replacing the default.
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --planet-atmosphere-mode physical-preview --output outputs/planet-atmo-physical-preview-backlit.png
 ```
 
+## Surface Showcase
+
+Use these when tuning procedural terrain or material response. They intentionally
+exercise the default LOD profile, shoreline materials, mountain belts, and final
+surface shading rather than only diagnostic colors.
+
+```sh
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 12.0 --planet-camera-mode orbit --output outputs/planet-showcase-orbit-day.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 5.5 --planet-camera-mode surface --output outputs/planet-showcase-surface-sunrise.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-camera-mode surface --planet-sea-level-m 1500 --planet-shoreline-width-m 2800 --output outputs/planet-showcase-coastline.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-camera-mode surface --planet-terrain-height-scale-m 18000 --planet-terrain-mid-detail-strength 0.85 --planet-terrain-fine-detail-strength 0.18 --output outputs/planet-showcase-mountains.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view terrain-material --output outputs/planet-showcase-material-debug.png
+```
+
+For LOD comparisons, keep the camera/time fixed and vary only LOD parameters:
+
+```sh
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-camera-mode surface --planet-max-lod-level 7 --planet-lod-target-edge-px 8 --output outputs/planet-lod-previous-default.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-camera-mode surface --planet-max-lod-level 8 --planet-lod-target-edge-px 6 --output outputs/planet-lod-current-default.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-camera-mode surface --planet-max-lod-level 9 --planet-patch-resolution 128 --planet-lod-target-edge-px 5 --output outputs/planet-lod-stress.png
+```
+
 ## LOD And Seam Diagnostics
 
 Use these after changing surface planning, terrain scale, patch resolution, or
@@ -62,7 +84,7 @@ through the lower atmosphere rather than remaining full contrast.
 
 ## Surface Field Checks
 
-These captures pressure the current placeholder terrain and sea-level contracts:
+These captures pressure the current procedural terrain and sea-level contracts:
 
 ```sh
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view terrain-height --output outputs/planet-debug-terrain-height.png
