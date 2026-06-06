@@ -1,5 +1,6 @@
 #include "planet_surface.h"
 #include "planet_surface_field.h"
+#include "planet_surface_runtime.h"
 
 #include <cmath>
 #include <cstddef>
@@ -1186,6 +1187,87 @@ void test_planet_surface_planner_records_lod_transition_pressure() {
             "planet planner should report positive transition pressure near the threshold");
 }
 
+void test_planet_surface_runtime_rebuilds_render_plan() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 600000.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 4,
+        .max_lod_level = 1,
+        .skirts_enabled = true,
+        .terrain_enabled = false,
+    };
+    const cubey::projects::planet::PlanetFrame frame =
+        cubey::projects::planet::make_planet_frame(
+            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 50000.0F});
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = frame.camera_world_position_m,
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .viewport_height_px = 720.0F,
+        .culling_enabled = false,
+    };
+
+    cubey::projects::planet::PlanetSurfaceRuntime runtime;
+    runtime.rebuild(config, frame, view);
+
+    const cubey::projects::planet::PlanetSurfaceDiagnostics& diagnostics =
+        runtime.diagnostics();
+    require(runtime.instance_count() == diagnostics.patch_count,
+            "planet surface runtime should upload one instance per planned patch");
+    require(diagnostics.patch_count > 0U, "planet surface runtime should keep planned patches");
+    require(diagnostics.vertex_count ==
+                runtime.patch_grid().vertices.size() * runtime.instance_count(),
+            "planet surface runtime diagnostics should include instanced grid vertices");
+    require(diagnostics.triangle_count ==
+                (runtime.patch_grid().indices.size() / 3U) * runtime.instance_count(),
+            "planet surface runtime diagnostics should include instanced grid triangles");
+    require(diagnostics.skirt_triangle_count > 0U,
+            "planet surface runtime diagnostics should preserve skirt totals");
+    require(glm::length(runtime.render_origin_world_m() - frame.render_origin_world_m) < 0.001,
+            "planet surface runtime should remember the build render origin");
+}
+
+void test_planet_surface_runtime_detects_plan_changes() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 600000.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 4,
+        .max_lod_level = 1,
+        .terrain_enabled = false,
+    };
+    const cubey::projects::planet::PlanetFrame frame =
+        cubey::projects::planet::make_planet_frame(
+            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 50000.0F});
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = frame.camera_world_position_m,
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .aspect_ratio = 16.0F / 9.0F,
+        .viewport_height_px = 720.0F,
+        .culling_enabled = true,
+    };
+
+    cubey::projects::planet::PlanetSurfaceRuntime runtime;
+    require(runtime.plan_changed(config, frame, view),
+            "planet surface runtime should request an initial plan");
+    runtime.rebuild(config, frame, view);
+    require(!runtime.plan_changed(config, frame, view),
+            "planet surface runtime should keep the current plan for the same view");
+
+    cubey::projects::planet::PlanetSurfaceView resized_view = view;
+    resized_view.aspect_ratio = 4.0F / 3.0F;
+    require(runtime.plan_changed(config, frame, resized_view),
+            "planet surface runtime should detect viewport aspect changes");
+
+    cubey::projects::planet::PlanetSurfaceView rotated_view = view;
+    rotated_view.camera_forward_world = {0.2F, 0.0F, -0.98F};
+    require(runtime.plan_changed(config, frame, rotated_view),
+            "planet surface runtime should detect large camera rotation changes");
+
+    cubey::projects::planet::PlanetFrame shifted_frame = frame;
+    shifted_frame.render_origin_world_m.x += static_cast<double>(config.radius_m) * 0.01;
+    require(runtime.plan_changed(config, shifted_frame, view),
+            "planet surface runtime should detect render origin movement");
+}
+
 } // namespace
 
 int main() {
@@ -1228,6 +1310,8 @@ int main() {
         test_planet_surface_seams_debug_view_parses();
         test_planet_surface_metric_debug_views_parse();
         test_planet_surface_planner_records_lod_transition_pressure();
+        test_planet_surface_runtime_rebuilds_render_plan();
+        test_planet_surface_runtime_detects_plan_changes();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_surface_tests: %s\n", error.what());

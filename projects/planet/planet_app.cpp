@@ -5,6 +5,7 @@
 #include "planet_config.h"
 #include "planet_frame.h"
 #include "planet_surface.h"
+#include "planet_surface_runtime.h"
 #include "planet_ui.h"
 
 #include <cubey/core/frame_clock.h>
@@ -170,7 +171,7 @@ class PlanetApp {
           camera_state_(planet_camera_initial_state_from_run_config(
               planet_config_, config_, kPlanetCameraBaseYaw, kPlanetCameraBasePitch)) {
         refresh_frame();
-        rebuild_surface_data(default_surface_extent());
+        surface_runtime_.rebuild(planet_config_, frame_, surface_view(default_surface_extent()));
     }
 
     int run() {
@@ -181,11 +182,6 @@ class PlanetApp {
     }
 
   private:
-    struct PatchInstanceBufferSlot {
-        std::optional<cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>> buffer{};
-        std::uint64_t generation = 0;
-    };
-
     struct PlanetFrameGraph {
         cubey::render::CompiledRenderGraph graph{};
         cubey::render::RenderGraphTextureHandle scene_color{};
@@ -265,7 +261,7 @@ class PlanetApp {
                                            cubey::vulkan::GpuRuntime& gpu,
                                            std::uint32_t frame_slot_count) {
         if (!patch_grid_mesh_.has_value()) {
-            patch_grid_mesh_.emplace(gpu, patch_grid_.mesh_config());
+            patch_grid_mesh_.emplace(gpu, surface_runtime_.patch_grid().mesh_config());
         }
         if (!moon_mesh_.has_value()) {
             const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv>
@@ -288,7 +284,7 @@ class PlanetApp {
                             .uniform_binding = kPlanetSurfaceFrameUniformBinding,
                         });
         }
-        resize_patch_instance_buffer_slots(frame_slot_count);
+        surface_runtime_.resize_frame_slots(frame_slot_count);
         create_sky_frame_resources_if_needed(device, frame_slot_count);
         create_celestial_body_frame_resources_if_needed(device, frame_slot_count);
         create_hdr_post_resources_if_needed(device, frame_slot_count);
@@ -345,7 +341,7 @@ class PlanetApp {
         hdr_post_frame_slot_count_ = 0;
         celestial_body_frame_.destroy();
         sky_frame_.destroy();
-        patch_instance_buffers_.clear();
+        surface_runtime_.clear_gpu_buffers();
         moon_mesh_.reset();
         patch_grid_mesh_.reset();
         surface_frame_material_.reset();
@@ -355,7 +351,9 @@ class PlanetApp {
         update_solar_time(timing.delta_seconds);
         update_camera_input(context.filtered_input(), timing.delta_seconds);
         refresh_frame();
-        if (patch_grid_mesh_.has_value() && surface_plan_changed(context.swapchain().extent())) {
+        if (patch_grid_mesh_.has_value() &&
+            surface_runtime_.plan_changed(planet_config_, frame_,
+                                          surface_view(context.swapchain().extent()))) {
             surface_rebuild_pending_ = true;
         }
         if (patch_grid_mesh_.has_value() && surface_rebuild_pending_ && !camera_interacting_) {
@@ -435,7 +433,7 @@ class PlanetApp {
             .frame = frame_,
             .camera_state = camera_state_,
             .exposure_config = exposure_config_,
-            .surface_diagnostics = surface_build_.diagnostics,
+            .surface_diagnostics = surface_runtime_.diagnostics(),
             .performance = performance,
             .extent = ui_extent,
             .reset_camera = [this]() { reset_camera(); },
@@ -455,7 +453,7 @@ class PlanetApp {
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = surface_build_.diagnostics.triangle_count,
+            .triangles = surface_runtime_.diagnostics().triangle_count,
         };
         if (std::optional<cubey::host::FrameStatsSnapshot> stats =
                 ui_frame_stats_.record_frame(sample);
@@ -470,16 +468,16 @@ class PlanetApp {
         cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
                              "vkDeviceWaitIdle planet topology rebuild");
         static_cast<void>(context.gpu().drain());
-        patch_instance_buffers_.clear();
+        surface_runtime_.clear_gpu_buffers();
         patch_grid_mesh_.reset();
-        previous_selected_patch_ids_.clear();
+        surface_runtime_.clear_selection_history();
 
         planet_config_ = edit_planet_config_;
         refresh_camera_limits_for_planet();
         refresh_frame();
-        rebuild_surface_data(context.swapchain().extent());
-        patch_grid_mesh_.emplace(context.gpu(), patch_grid_.mesh_config());
-        resize_patch_instance_buffer_slots(context.frame_slot_count());
+        surface_runtime_.rebuild(planet_config_, frame_, surface_view(context.swapchain().extent()));
+        patch_grid_mesh_.emplace(context.gpu(), surface_runtime_.patch_grid().mesh_config());
+        surface_runtime_.resize_frame_slots(context.frame_slot_count());
         static_cast<void>(context.gpu().drain());
     }
 
@@ -488,7 +486,7 @@ class PlanetApp {
         planet_config_ = edit_planet_config_;
         refresh_camera_limits_for_planet();
         refresh_frame();
-        rebuild_surface_data(extent);
+        surface_runtime_.rebuild(planet_config_, frame_, surface_view(extent));
     }
 
     void maybe_apply_planet_config(cubey::host::WindowedAppContext& context) {
@@ -519,7 +517,7 @@ class PlanetApp {
     }
 
     void rebuild_surface_resources(VkExtent2D extent) {
-        rebuild_surface_data(extent);
+        surface_runtime_.rebuild(planet_config_, frame_, surface_view(extent));
     }
 
     void refresh_camera_limits_for_planet() {
@@ -563,88 +561,10 @@ class PlanetApp {
         };
     }
 
-    void refresh_render_diagnostics(const PlanetSurfacePatchPlan& plan) {
-        surface_build_ = {};
-        surface_build_.diagnostics = plan.diagnostics;
-        surface_build_.diagnostics.vertex_count =
-            static_cast<std::uint32_t>(patch_grid_.vertices.size() * patch_instances_.size());
-        surface_build_.diagnostics.triangle_count =
-            static_cast<std::uint32_t>((patch_grid_.indices.size() / 3U) * patch_instances_.size());
-
-        for (std::size_t index = 0;
-             index < surface_build_.diagnostics.min_cell_edge_m_by_lod.size(); ++index) {
-            const float min_edge = surface_build_.diagnostics.min_cell_edge_m_by_lod[index];
-            const float max_edge = surface_build_.diagnostics.max_cell_edge_m_by_lod[index];
-            if (min_edge > 0.0F && (surface_build_.diagnostics.min_edge_length_m == 0.0F ||
-                                    min_edge < surface_build_.diagnostics.min_edge_length_m)) {
-                surface_build_.diagnostics.min_edge_length_m = min_edge;
-            }
-            surface_build_.diagnostics.max_edge_length_m =
-                std::max(surface_build_.diagnostics.max_edge_length_m, max_edge);
-        }
-
-        if (planet_config_.skirts_enabled && surface_build_.diagnostics.patch_count > 0U) {
-            surface_build_.diagnostics.seam_edge_count =
-                surface_build_.diagnostics.patch_count * 4U;
-            surface_build_.diagnostics.skirt_triangle_count =
-                surface_build_.diagnostics.patch_count * planet_config_.patch_resolution * 16U;
-            const float min_cell = surface_build_.diagnostics.min_edge_length_m > 0.0F
-                                       ? surface_build_.diagnostics.min_edge_length_m
-                                       : planet_config_.radius_m * 0.00001F;
-            const float max_cell = std::max(surface_build_.diagnostics.max_edge_length_m, min_cell);
-            surface_build_.diagnostics.min_skirt_depth_m = std::max(
-                min_cell * planet_config_.skirt_depth_scale, planet_config_.radius_m * 0.00001F);
-            surface_build_.diagnostics.max_skirt_depth_m = std::max(
-                max_cell * planet_config_.skirt_depth_scale, planet_config_.radius_m * 0.00001F);
-        }
-    }
-
-    void rebuild_surface_data(VkExtent2D extent) {
-        const PlanetSurfaceView view = surface_view(extent);
-        const PlanetSurfacePatchPlan plan = plan_planet_surface_patches(
-            planet_config_, view,
-            PlanetSurfacePatchSelectionHints{
-                .previous_selected_patches = previous_selected_patch_ids_,
-            });
-        patch_grid_ = make_planet_patch_grid_mesh(planet_config_);
-        patch_instances_ = make_planet_surface_gpu_patch_instances(planet_config_, plan);
-        refresh_previous_selected_patch_ids(plan);
-        mark_patch_instance_buffers_stale();
-        refresh_render_diagnostics(plan);
-        surface_build_render_origin_world_m_ = frame_.render_origin_world_m;
-        surface_build_view_ = view;
-    }
-
-    void refresh_previous_selected_patch_ids(const PlanetSurfacePatchPlan& plan) {
-        previous_selected_patch_ids_.clear();
-        previous_selected_patch_ids_.reserve(plan.selected_patches.size());
-        for (const PlanetSurfacePatchInstance& patch : plan.selected_patches) {
-            previous_selected_patch_ids_.push_back(patch.id);
-        }
-    }
-
-    [[nodiscard]] bool surface_plan_changed(VkExtent2D extent) const {
-        const PlanetSurfaceView view = surface_view(extent);
-        const double origin_threshold_m =
-            std::max(static_cast<double>(planet_config_.radius_m) * 0.002, 256.0);
-        if (glm::length(frame_.render_origin_world_m - surface_build_render_origin_world_m_) >
-            origin_threshold_m) {
-            return true;
-        }
-        if (std::abs(view.aspect_ratio - surface_build_view_.aspect_ratio) > 0.005F ||
-            std::abs(view.viewport_height_px - surface_build_view_.viewport_height_px) > 1.0F) {
-            return true;
-        }
-        const float forward_dot =
-            glm::dot(glm::normalize(view.camera_forward_world),
-                     glm::normalize(surface_build_view_.camera_forward_world));
-        return forward_dot < 0.9985F;
-    }
-
     [[nodiscard]] cubey::Transform3D camera_render_transform() const {
         cubey::Transform3D transform = camera_transform();
         const cubey::math::DVec3 relative_camera =
-            frame_.camera_world_position_m - surface_build_render_origin_world_m_;
+            frame_.camera_world_position_m - surface_runtime_.render_origin_world_m();
         transform.translation = {
             static_cast<float>(relative_camera.x),
             static_cast<float>(relative_camera.y),
@@ -661,7 +581,7 @@ class PlanetApp {
         const cubey::Transform3D transform = camera_render_transform();
         const float terrain_height =
             planet_config_.terrain_enabled ? planet_config_.terrain_height_scale_m : 0.0F;
-        const float skirt_depth = std::max(surface_build_.diagnostics.min_skirt_depth_m,
+        const float skirt_depth = std::max(surface_runtime_.diagnostics().min_skirt_depth_m,
                                            planet_config_.radius_m * 0.00001F);
         const float ambient_intensity = surface_ambient_intensity();
         const float direct_intensity = surface_direct_intensity();
@@ -679,9 +599,9 @@ class PlanetApp {
                 },
             .render_origin_radius =
                 {
-                    static_cast<float>(surface_build_render_origin_world_m_.x),
-                    static_cast<float>(surface_build_render_origin_world_m_.y),
-                    static_cast<float>(surface_build_render_origin_world_m_.z),
+                    static_cast<float>(surface_runtime_.render_origin_world_m().x),
+                    static_cast<float>(surface_runtime_.render_origin_world_m().y),
+                    static_cast<float>(surface_runtime_.render_origin_world_m().z),
                     planet_config_.radius_m,
                 },
             .surface_options =
@@ -1045,7 +965,7 @@ class PlanetApp {
         celestial_body_frame_.upload(frame_slot, moon_body_frame_uniforms(color_target.extent));
         hdr_post_frame_.upload(frame_slot, post_uniforms(color_target.format, color_target.extent));
         const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>& instance_buffer =
-            ensure_patch_instance_buffer(gpu, frame_slot);
+            surface_runtime_.ensure_instance_buffer(gpu, frame_slot);
         const PlanetFrameGraph frame_graph =
             build_frame_graph(color_target, frame_slot, present, instance_buffer);
         graph_executor_.record(
@@ -1078,48 +998,6 @@ class PlanetApp {
             throw std::runtime_error("planet moon mesh is not initialized");
         }
         return moon_mesh_.value();
-    }
-
-    void resize_patch_instance_buffer_slots(std::uint32_t frame_slot_count) {
-        if (frame_slot_count == 0U) {
-            throw std::runtime_error(
-                "planet patch instance buffers require at least one frame slot");
-        }
-        if (patch_instance_buffers_.size() == frame_slot_count) {
-            return;
-        }
-        patch_instance_buffers_.clear();
-        patch_instance_buffers_.resize(frame_slot_count);
-    }
-
-    void mark_patch_instance_buffers_stale() {
-        ++patch_instance_generation_;
-        if (patch_instance_generation_ != 0U) {
-            return;
-        }
-        patch_instance_generation_ = 1U;
-        for (PatchInstanceBufferSlot& slot : patch_instance_buffers_) {
-            slot.generation = 0U;
-        }
-    }
-
-    [[nodiscard]] const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>&
-    ensure_patch_instance_buffer(cubey::vulkan::GpuRuntime& gpu,
-                                 cubey::render::FrameSlot frame_slot) {
-        cubey::render::validate_frame_slot(frame_slot);
-        if (frame_slot.count != patch_instance_buffers_.size()) {
-            throw std::runtime_error("planet patch instance buffer frame slot count mismatch");
-        }
-        if (patch_instances_.empty()) {
-            throw std::runtime_error("planet patch instance upload requires non-empty patches");
-        }
-        PatchInstanceBufferSlot& slot = patch_instance_buffers_.at(frame_slot.index);
-        if (!slot.buffer.has_value() || slot.generation != patch_instance_generation_) {
-            slot.buffer.emplace(gpu,
-                                std::span<const PlanetSurfaceGpuPatchInstance>{patch_instances_});
-            slot.generation = patch_instance_generation_;
-        }
-        return slot.buffer.value();
     }
 
     [[nodiscard]] const cubey::render::ForwardScenePass3D& forward_pass() const {
@@ -1226,19 +1104,12 @@ class PlanetApp {
     PlanetCameraState camera_state_{};
     cubey::Camera3D camera_{cubey::Camera3DConfig{.near_z = 1.0F, .far_z = 1500000.0F}};
     PlanetFrame frame_{};
-    PlanetSurfaceBuildResult surface_build_{};
-    PlanetPatchGridMeshData patch_grid_{};
-    std::vector<PlanetSurfaceGpuPatchInstance> patch_instances_{};
-    std::vector<PlanetSurfacePatchId> previous_selected_patch_ids_{};
-    cubey::math::DVec3 surface_build_render_origin_world_m_{0.0, 0.0, 0.0};
-    PlanetSurfaceView surface_build_view_{};
+    PlanetSurfaceRuntime surface_runtime_{};
     bool surface_rebuild_pending_ = false;
     bool camera_interacting_ = false;
     bool planet_config_apply_pending_ = false;
     std::optional<cubey::render::Mesh> patch_grid_mesh_;
     std::optional<cubey::render::Mesh> moon_mesh_;
-    std::vector<PatchInstanceBufferSlot> patch_instance_buffers_{};
-    std::uint64_t patch_instance_generation_ = 0;
     std::optional<cubey::render::FrameUniformMaterialInstance<PlanetSurfaceFrameUniforms>>
         surface_frame_material_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
