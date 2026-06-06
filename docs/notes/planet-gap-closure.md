@@ -1,9 +1,9 @@
 # Planet Gap Closure Checkpoint
 
-This note captures the current planet-project context before the next broad
-foundation pass. The goal is to keep the architecture doc focused on durable
-direction while this file records the near-term batch, known gaps, and commit
-boundaries.
+This note captures the completed broad planet foundation pass. The goal is to
+keep the architecture doc focused on durable direction while this file records
+the checkpoint, known gaps, and commit boundaries that got the project to its
+current state.
 
 ## Current State
 
@@ -26,9 +26,9 @@ The important current contracts are:
 - planet-owned solar clock, sun direction, moon direction, and body visibility;
 - shared HDR post, performance UI, and headless capture path.
 
-## Gaps To Close
+## Gaps Closed
 
-The next batch should close the highest-leverage missing boundaries before new
+The completed batch closed the highest-leverage missing boundaries before new
 surface layers arrive:
 
 - wire sea level into the local tangent frame datum so terrain, ocean, and
@@ -75,9 +75,10 @@ the default, and upgraded moon body shading. The broad batch is complete; future
 work should move back to feature slices rather than extending this checkpoint
 indefinitely.
 
-## Deferred
+## Current Follow-Up
 
-This batch should not port ocean, add real GIS data, build an out-of-core
-streamer, replace the current sky outright, add clouds, or introduce a full
-ephemeris. Those are later planet-product features once this foundation is
-less fluid.
+The next foundation batch should add visual smoke coverage, tighten the orbit
+exposure proxy, unify moon atmosphere visibility, and split `PlanetApp` into
+smaller runtime/UI boundaries. It still should not port ocean, add real GIS
+data, build an out-of-core streamer, add clouds, or introduce a full ephemeris.
+Those are later planet-product features once this foundation is less fluid.

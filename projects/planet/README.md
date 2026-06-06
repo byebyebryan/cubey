@@ -1,10 +1,10 @@
 # Planet
 
 `planet` is the foundation project for planet-scale rendering experiments. The
-current version is intentionally small: it opens a window or headless capture
-path, renders a cube-sphere planet surface with placeholder terrain, draws the
-project-owned local sky behind it, and provides the target project boundary
-for future terrain, ocean, clouds, celestial bodies, and streaming integration.
+current version opens a window or headless capture path, renders a cube-sphere
+planet surface with placeholder terrain, owns the local sky/celestial state, and
+provides the target project boundary for future terrain, ocean, clouds, and
+streaming integration.
 
 Run it with:
 
@@ -50,6 +50,10 @@ Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 and `celestial-planes`.
 `celestial-planes` colors the equator, ecliptic, and lunar orbit great circles
 plus sub-solar/sub-lunar markers for validating the mean celestial model.
+Windowed controls are applied live where possible. Left drag orbits the planet,
+right drag looks around in surface mode, scroll changes camera distance, and
+WASD moves the surface camera. Orbit dragging clamps just short of the poles to
+avoid north/south direction flips.
 The CPU LOD planner selects camera-relative cube-sphere patch instances by
 projected edge size and reports patch, LOD, refinement cull, screen-error,
 transition pressure, edge-length, per-LOD cell-size, budget fallback,
@@ -130,8 +134,9 @@ mapping and output encoding before writing the swapchain or headless target.
 Unless `--exposure` is set explicitly or `--no-auto-exposure` is used, planet
 resolves display exposure from the visible disk light fraction in orbit mode,
 the local sun elevation in surface mode, and blends between those references
-through the camera transition. Daylight, twilight, and night exposure targets
-remain separately tunable in the UI.
+through the camera transition. This is a stable v1 proxy, not a true
+view-luminance histogram. Daylight, twilight, and night exposure targets remain
+separately tunable in the UI.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it

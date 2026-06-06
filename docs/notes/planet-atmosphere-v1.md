@@ -1,9 +1,9 @@
 # Planet Atmosphere V1
 
-This note captures the immediate planet-atmosphere slice before shader work
-continues. The goal is to replace the current project-local analytic sky and
-distance haze with a small planet-scale scattering model that can support
-surface, orbit, dawn/night, and later clouds or ocean without changing
+This note started as the immediate planet-atmosphere plan and now serves as the
+checkpoint for the landed v1. The project-local analytic sky and distance haze
+have been replaced as the default by a small planet-scale scattering model that
+supports surface, orbit, dawn/night, and later clouds or ocean without changing
 celestial ownership again.
 
 ## Direction
@@ -13,7 +13,7 @@ camera frame, planet radius, and atmosphere radius. Atmosphere rendering
 consumes those values; it does not own sun/moon placement, phase, occlusion, or
 time of day.
 
-The first implementation target is direct single scattering with explicit
+The landed implementation is direct single scattering with explicit
 spherical atmosphere intersections, Rayleigh and Mie phase terms, approximate
 optical depth, sun transmittance, and aerial perspective for surface geometry.
 This is intentionally smaller than a Bruneton/Hillaire LUT stack, but it should
@@ -30,6 +30,15 @@ without changing the planet-facing contract.
 - stars fade in daylight and remain visible at night/high altitude;
 - the old analytic path remains available as a debug fallback while the
   physical path is the default.
+
+## Current Limits
+
+- orbit exposure still uses an analytic light-fraction proxy rather than
+  rendered scene luminance;
+- moon/day-sky visibility still needs a more coherent atmosphere transmittance
+  model;
+- visual validation is mostly manual capture recipes plus broad PNG smoke
+  checks.
 
 ## Deferred
 

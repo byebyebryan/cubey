@@ -208,8 +208,8 @@ diagnostic helpers have crossed that threshold and now live in `cubey::render`.
    water and shorelines.
 5. Continue `fluid_25d` toward dynamic terrain water, then feed its fields into
    the same shoreline/bathymetry contract.
-6. Start `projects/planet` as an empty planet-frame and LOD project before
-   trying to make ocean itself planet-scale.
+6. Continue `projects/planet` as the planet-frame, LOD, local sky, and
+   celestial owner before trying to make ocean itself planet-scale.
 7. Add clouds after clear sky, terrain composition, and planet frame ownership
    are coherent.
 

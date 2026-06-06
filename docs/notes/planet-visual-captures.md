@@ -84,6 +84,20 @@ not pop based on center-only tests. Daytime moon visibility should wash out by
 losing contrast against the local sky instead of becoming transparent, and full
 moon nights should show a small secondary moonlight response on terrain.
 
+## Exposure And Camera Regressions
+
+Use these after changing post exposure, solar time, camera transition, or orbit
+controls. The goal is to catch sudden brightness jumps and pole-control flips,
+not to match exact pixels.
+
+```sh
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 12.0 --planet-camera-mode orbit --output outputs/planet-exposure-orbit-lit.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --output outputs/planet-exposure-orbit-terminator.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 0.0 --planet-camera-mode orbit --output outputs/planet-exposure-orbit-night.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 87.4 --planet-time-hours 12.0 --planet-camera-mode surface --output outputs/planet-exposure-day-moon.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-camera-mode surface --debug-view wireframe --output outputs/planet-camera-surface-wire.png
+```
+
 ## Surface Field Checks
 
 These captures pressure the current procedural terrain and sea-level contracts:

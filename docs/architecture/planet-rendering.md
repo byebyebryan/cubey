@@ -15,7 +15,7 @@ Start `projects/planet` as a visible planet foundation project:
 - atmosphere altitude, horizon, and projection derived from the same frame;
 - planet surface LOD with wireframe and patch diagnostics;
 - planet-owned sky/celestial rendering before ocean complexity arrives;
-- planet-owned celestial bodies for sun and moon, with any future atmosphere
+- planet-owned celestial state for sun and moon, with any future atmosphere
   consuming derived scattering inputs rather than owning those bodies;
 - shared HDR scene color and fullscreen post so planet uses the same display
   path as the PBR/ocean renderers.
@@ -384,8 +384,9 @@ back into this architecture note.
 6. Add placeholder terrain/bathymetry/material fields.
 7. Keep strengthening atmosphere, LOD, terrain, and diagnostics until they are
    stable enough to host other layers.
-8. Done: move planet sun rendering out of the inline atmosphere disk path and
-   into a planet-owned celestial body pass.
+8. Done: move sun ownership out of the shared atmosphere background path. The
+   active renderer still draws the sun as a planet-owned distant sky disk/glow;
+   the moon is the explicit body-geometry pass.
 9. Done as a first analytic body: model sun/moon state through local solar
    system time, with planet orbit, self-rotation, and moon orbit.
 10. Done: replace the analytic moon disk with body/geometry rendering.
@@ -397,7 +398,9 @@ back into this architecture note.
 13. Done: replace moon alpha fading with opaque body rendering, daytime
    contrast washout, phase-scaled secondary moonlight, and deferred eclipse
    shadowing.
-14. Port ocean as a local water layer once the planet frame and LOD contracts are
+14. Next: add visual regression smoke coverage and tighten the exposure/moon
+   atmosphere contract before adding larger features.
+15. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 
 Non-goals for the first planet pass:
