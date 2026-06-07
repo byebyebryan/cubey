@@ -207,15 +207,20 @@ Current implementation notes:
 - A project-local local-detail clipmap now exists beside the global patch tree.
   It wraps `cubey::render::ClipmapGrid2D`, is anchored to
   `PlanetFrame.local_frame`, defaults to a 4 m near cell over an 8192 m outer
-  half extent, and is the v1 near-field terrain detail layer. The current live
-  renderer keeps it in explicit diagnostic views (`local-detail-wireframe`,
-  `local-detail-blend`, and `local-detail-height`) rather than final view. The
-  first final-view attempt exposed hard opaque clipmap rings, so the production
-  integration remains blocked on a real local/global handoff policy: geometry
-  morphing, alpha/fade support, or another ownership strategy that does not
-  show rectangular clipmap footprints. It is still procedural and project-local:
-  no terrain streaming, ocean port, texture cache, or compute terrain generation
-  is part of this first consumer.
+  half extent, and is the v1 near-field terrain detail layer. Its runtime plan
+  is altitude-aware: levels whose projected cell size is subpixel are skipped,
+  medium-altitude views start from a coarser center patch plus outer rings, and
+  orbit-scale views allocate no local-detail mesh. The current live renderer
+  keeps it primarily in explicit diagnostic views (`local-detail-wireframe`,
+  `local-detail-blend`, and `local-detail-height`). Final-view integration is
+  available only behind the explicit `planet.local_detail_final_enabled` /
+  `--planet-local-detail-final` opt-in and is gated to close-range views where
+  the finest local-detail level is active. The first final-view attempt exposed
+  hard opaque clipmap rings, so the production integration remains blocked on a
+  real local/global handoff policy: geometry morphing, alpha/fade support, or
+  another ownership strategy that does not show rectangular clipmap footprints.
+  It is still procedural and project-local: no terrain streaming, ocean port,
+  texture cache, or compute terrain generation is part of this first consumer.
 - LOD is coverage-first. View and horizon culling stop refinement, but the
   parent patch remains selected so rotating while rebuilds are deferred does not
   reveal holes.

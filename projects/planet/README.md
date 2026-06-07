@@ -37,6 +37,7 @@ Run it with:
 ./build/dev/projects/planet/planet --planet-max-lod-level 12 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
 ./build/dev/projects/planet/planet --planet-local-detail-lod-levels 6 --planet-local-detail-cells 128 --planet-local-detail-outer-extent-m 8192
 ./build/dev/projects/planet/planet --planet-local-detail-height-m 220 --planet-local-detail-scale-m 180
+./build/dev/projects/planet/planet --planet-local-detail-final
 ./build/dev/projects/planet/planet --no-planet-local-detail
 ./build/dev/projects/planet/planet --planet-terrain-mid-detail-strength 0.45 --planet-terrain-fine-detail-strength 0.16 --planet-terrain-fine-detail-scale 12
 ./build/dev/projects/planet/planet --planet-sea-level-m 0 --planet-shoreline-width-m 1500
@@ -93,10 +94,16 @@ expected to come through a viewer-centered local-detail clipmap rather than by
 forcing the global patch tree to carry every wave or interaction feature. The
 local-detail layer is centered on `PlanetFrame.local_frame`, defaults to six
 clipmap levels, 128 cells per axis, an 8192 m outer half extent, and a 4 m near
-cell. In v1 it renders as a diagnostic path rather than as part of the final
-surface, and reports its own patch, vertex, triangle, cell-size, and blend
-diagnostics in the UI. Final-view integration is deferred until the local/global
-handoff has a proper blend or morph policy instead of hard opaque clipmap rings.
+cell. Runtime planning selects only the levels whose cell size is large enough
+to matter in the current view; orbit-scale cameras allocate no local-detail
+mesh, mid-altitude views start from a coarser center patch, and close surface
+views can activate the full fine range. In v1 it renders primarily as a
+diagnostic path and reports active level range, patch, vertex, triangle,
+cell-size, projected-cell, and blend diagnostics in the UI. Final-view
+integration exists behind `--planet-local-detail-final` / `Final Integration`
+and is still experimental: it is gated to close-range views where the finest
+local-detail level is active, while the production handoff remains blocked on a
+proper blend or morph policy instead of hard opaque clipmap rings.
 `local-detail-wireframe` shows the near-field clipmap ownership, `local-detail-blend`
 shows the active ownership/cutout mask, and `local-detail-height` isolates the
 added detail displacement.
