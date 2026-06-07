@@ -298,6 +298,11 @@ const char* planet_debug_view_name(PlanetDebugView view) {
     return "final";
 }
 
+bool planet_debug_view_is_local_detail(PlanetDebugView view) {
+    return view == PlanetDebugView::LocalDetailWireframe ||
+           view == PlanetDebugView::LocalDetailBlend || view == PlanetDebugView::LocalDetailHeight;
+}
+
 PlanetAtmosphereMode planet_atmosphere_mode_from_string(std::string_view value) {
     if (value.empty() || value == "analytic") {
         return PlanetAtmosphereMode::Analytic;

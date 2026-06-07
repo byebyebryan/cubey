@@ -162,12 +162,6 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 26U);
     return layout;
 }
 
-[[nodiscard]] bool planet_local_detail_surface_view_enabled(const PlanetConfig& config) {
-    return config.debug_view == PlanetDebugView::LocalDetailWireframe ||
-           config.debug_view == PlanetDebugView::LocalDetailBlend ||
-           config.debug_view == PlanetDebugView::LocalDetailHeight;
-}
-
 [[nodiscard]] float planet_app_smoothstep(float edge0, float edge1, float value) {
     const float t = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
     return t * t * (3.0F - 2.0F * t);
@@ -438,10 +432,9 @@ class PlanetApp {
             camera_interacting_ = true;
         }
 
-        const float surface_blend =
-            planet_surface_camera_blend_from_clearance(
-                planet_config_,
-                planet_camera_surface_clearance_m(planet_config_, camera_state_.position_m));
+        const float surface_blend = planet_surface_camera_blend_from_clearance(
+            planet_config_,
+            planet_camera_surface_clearance_m(planet_config_, camera_state_.position_m));
         if (input.mouse_button_down(cubey::input::MouseButton::Right) && surface_blend >= 0.20F) {
             const cubey::input::PointerDelta delta =
                 input.mouse_button_delta(cubey::input::MouseButton::Right);
@@ -860,7 +853,7 @@ class PlanetApp {
 
     [[nodiscard]] float local_detail_surface_weight() const {
         if (!planet_config_.local_detail_enabled ||
-            !planet_local_detail_surface_view_enabled(planet_config_)) {
+            !planet_debug_view_is_local_detail(planet_config_.debug_view)) {
             return 0.0F;
         }
         const PlanetLocalDetailDiagnostics& diagnostics = local_detail_runtime_.diagnostics();

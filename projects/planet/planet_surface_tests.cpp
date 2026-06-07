@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <limits>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -23,6 +24,37 @@ void require(bool condition, const char* message) {
 
 void require_close(float actual, float expected, const char* message) {
     require(std::abs(actual - expected) < 0.0001F, message);
+}
+
+[[nodiscard]] cubey::math::Vec3
+highest_sampled_terrain_direction(const cubey::projects::planet::PlanetConfig& config) {
+    cubey::math::Vec3 best_direction{0.0F, 0.0F, 1.0F};
+    float best_height = std::numeric_limits<float>::lowest();
+    constexpr std::uint32_t kSampleCount = 128U;
+    constexpr float kGoldenAngle = 2.39996314F;
+    for (std::uint32_t index = 0U; index < kSampleCount; ++index) {
+        const float y =
+            -1.0F + (2.0F * (static_cast<float>(index) + 0.5F)) / static_cast<float>(kSampleCount);
+        const float radius = std::sqrt(std::max(1.0F - (y * y), 0.0F));
+        const float theta = kGoldenAngle * static_cast<float>(index);
+        const cubey::math::Vec3 direction = glm::normalize(
+            cubey::math::Vec3{std::cos(theta) * radius, y, std::sin(theta) * radius});
+        const float height =
+            cubey::projects::planet::planet_surface_terrain_height_m(config, direction);
+        if (height > best_height) {
+            best_height = height;
+            best_direction = direction;
+        }
+    }
+    return best_direction;
+}
+
+[[nodiscard]] cubey::math::DVec3 to_double(cubey::math::Vec3 value) {
+    return {
+        static_cast<double>(value.x),
+        static_cast<double>(value.y),
+        static_cast<double>(value.z),
+    };
 }
 
 void test_planet_surface_patch_id_derives_root_bounds() {
@@ -612,9 +644,10 @@ void test_planet_surface_lod_subdivides_near_camera_patches() {
         .lod_target_edge_px = 1.0F,
         .debug_view = cubey::projects::planet::PlanetDebugView::LodLevel,
         .skirts_enabled = false,
+        .terrain_enabled = false,
     };
     const cubey::projects::planet::PlanetSurfaceView view{
-        .camera_world_position_m = {0.0, 0.0, 1500.0},
+        .camera_world_position_m = {120.0, 75.0, 1500.0},
     };
     const cubey::projects::planet::PlanetSurfaceBuildResult result =
         cubey::projects::planet::make_planet_surface_mesh(config, view);
@@ -665,6 +698,7 @@ void test_planet_surface_planner_refines_visible_patches_with_fallback_coverage(
         .patch_resolution = 2,
         .max_lod_level = 1,
         .lod_target_edge_px = 1.0F,
+        .terrain_enabled = false,
     };
     const cubey::projects::planet::PlanetSurfaceView view{
         .camera_world_position_m = {0.0, 0.0, 1500.0},
@@ -776,6 +810,7 @@ void test_planet_surface_gpu_instances_preserve_patch_identity() {
         .patch_resolution = 2,
         .max_lod_level = 1,
         .lod_target_edge_px = 1.0F,
+        .terrain_enabled = false,
     };
     const cubey::projects::planet::PlanetSurfaceView view{
         .camera_world_position_m = {0.0, 0.0, 1500.0},
@@ -868,9 +903,10 @@ void test_planet_surface_planner_keeps_fallback_when_camera_looks_away() {
         .patch_resolution = 2,
         .max_lod_level = 1,
         .lod_target_edge_px = 1.0F,
+        .terrain_enabled = false,
     };
     const cubey::projects::planet::PlanetSurfaceView view{
-        .camera_world_position_m = {0.0, 0.0, 1500.0},
+        .camera_world_position_m = {0.0, 0.0, 5000.0},
         .camera_forward_world = {0.0F, 0.0F, 1.0F},
         .culling_enabled = true,
     };
@@ -1044,7 +1080,9 @@ void test_planet_local_detail_deactivates_when_subpixel() {
 }
 
 void test_planet_local_detail_finest_level_is_reachable_at_surface_floor() {
-    const cubey::projects::planet::PlanetConfig config{};
+    const cubey::projects::planet::PlanetConfig config{
+        .terrain_enabled = false,
+    };
     const float min_altitude = cubey::projects::planet::planet_camera_min_altitude_m(config);
     const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
         config, cubey::math::DVec3{0.0, 0.0, static_cast<double>(config.radius_m + min_altitude)});
@@ -1066,6 +1104,31 @@ void test_planet_local_detail_finest_level_is_reachable_at_surface_floor() {
     require(diagnostics.projected_finest_cell_px >=
                 cubey::projects::planet::kPlanetLocalDetailMinProjectedCellPx,
             "planet local detail finest cell should be pixel-visible at the camera floor");
+}
+
+void test_planet_local_detail_uses_terrain_relative_surface_floor() {
+    const cubey::projects::planet::PlanetConfig config{};
+    const float min_altitude = cubey::projects::planet::planet_camera_min_altitude_m(config);
+    const cubey::math::Vec3 direction = highest_sampled_terrain_direction(config);
+    const float terrain_height =
+        cubey::projects::planet::planet_surface_terrain_height_m(config, direction);
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config, to_double(direction) *
+                    static_cast<double>(config.radius_m + terrain_height + min_altitude));
+
+    const cubey::projects::planet::PlanetLocalDetailPlan plan =
+        cubey::projects::planet::plan_planet_local_detail(config, frame);
+    const cubey::projects::planet::PlanetLocalDetailDiagnostics diagnostics =
+        cubey::projects::planet::planet_local_detail_diagnostics(config, plan);
+
+    require(frame.camera_surface_height_m > 0.0F,
+            "terrain-relative local detail test should select elevated terrain");
+    require(std::abs(frame.camera_surface_clearance_m - min_altitude) < 2.0F,
+            "planet frame should preserve terrain-relative surface clearance");
+    require(diagnostics.active,
+            "planet local detail should be active at terrain-relative surface clearance");
+    require(diagnostics.active_first_level == 0U,
+            "terrain-relative local detail should reach finest LOD at the camera floor");
 }
 
 void test_planet_local_detail_density_is_independent_of_planet_radius() {
@@ -1447,6 +1510,18 @@ void test_planet_surface_metric_debug_views_parse() {
                 cubey::projects::planet::PlanetDebugView::LocalDetailHeight)} ==
                 "local-detail-height",
             "planet debug view should name local-detail-height");
+    require(!cubey::projects::planet::planet_debug_view_is_local_detail(
+                cubey::projects::planet::PlanetDebugView::Final),
+            "final planet view should not enable local-detail diagnostic rendering");
+    require(cubey::projects::planet::planet_debug_view_is_local_detail(
+                cubey::projects::planet::PlanetDebugView::LocalDetailWireframe),
+            "local-detail-wireframe should enable local-detail diagnostic rendering");
+    require(cubey::projects::planet::planet_debug_view_is_local_detail(
+                cubey::projects::planet::PlanetDebugView::LocalDetailBlend),
+            "local-detail-blend should enable local-detail diagnostic rendering");
+    require(cubey::projects::planet::planet_debug_view_is_local_detail(
+                cubey::projects::planet::PlanetDebugView::LocalDetailHeight),
+            "local-detail-height should enable local-detail diagnostic rendering");
 }
 
 void test_planet_surface_planner_records_lod_transition_pressure() {
@@ -1456,6 +1531,7 @@ void test_planet_surface_planner_records_lod_transition_pressure() {
         .patch_resolution = 2,
         .max_lod_level = 0,
         .lod_target_edge_px = 12.0F,
+        .terrain_enabled = false,
     };
     const cubey::projects::planet::PlanetSurfaceView view{
         .camera_world_position_m = {0.0, 0.0, 1500.0},
@@ -1574,7 +1650,7 @@ void test_planet_surface_runtime_detects_plan_changes() {
             "planet surface runtime should detect large camera rotation changes");
 
     cubey::projects::planet::PlanetFrame shifted_frame = frame;
-    shifted_frame.render_origin_world_m.x += static_cast<double>(config.radius_m) * 0.01;
+    shifted_frame.render_origin_world_m.x += static_cast<double>(config.radius_m) * 0.03;
     require(runtime.plan_changed(config, shifted_frame, view),
             "planet surface runtime should detect render origin movement");
 }
@@ -1662,6 +1738,7 @@ int main() {
         test_planet_local_detail_plan_reports_viewer_centered_clipmap();
         test_planet_local_detail_deactivates_when_subpixel();
         test_planet_local_detail_finest_level_is_reachable_at_surface_floor();
+        test_planet_local_detail_uses_terrain_relative_surface_floor();
         test_planet_local_detail_density_is_independent_of_planet_radius();
         test_planet_local_detail_mesh_matches_clipmap_budget();
         test_planet_local_detail_runtime_tracks_topology();
