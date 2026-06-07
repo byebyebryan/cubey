@@ -61,6 +61,7 @@ struct PlanetSurfaceDiagnostics {
     std::uint32_t lod_neighbor_boundary_edge_count = 0;
     std::uint32_t lod_neighbor_mismatch_edge_count = 0;
     std::uint32_t max_lod_neighbor_delta = 0;
+    std::uint32_t lod_neighbor_repaired_split_count = 0;
     std::uint32_t vertex_count = 0;
     std::uint32_t triangle_count = 0;
     std::uint32_t seam_edge_count = 0;

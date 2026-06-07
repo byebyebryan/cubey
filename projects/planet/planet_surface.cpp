@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <stdexcept>
@@ -411,6 +412,9 @@ struct PatchGridSpan {
     std::uint32_t y1 = 0;
 };
 
+[[nodiscard]] float patch_cell_edge_m(const PlanetConfig& config,
+                                      const PlanetSurfacePatchInstance& patch);
+
 [[nodiscard]] std::uint32_t max_lod_grid_divisions(const PlanetConfig& config) {
     return config.patches_per_face << config.max_lod_level;
 }
@@ -483,6 +487,7 @@ struct NeighborEdgeProbe {
     bool found_neighbor = false;
     std::uint32_t max_delta = 0;
     std::uint32_t max_coarser_delta = 0;
+    std::uint32_t max_finer_delta = 0;
 };
 
 [[nodiscard]] NeighborEdgeProbe analyze_neighbor_edge(const PlanetConfig& config,
@@ -520,6 +525,8 @@ struct NeighborEdgeProbe {
         probe.max_delta = std::max(probe.max_delta, delta);
         if (id.level > neighbor->level) {
             probe.max_coarser_delta = std::max(probe.max_coarser_delta, id.level - neighbor->level);
+        } else if (neighbor->level > id.level) {
+            probe.max_finer_delta = std::max(probe.max_finer_delta, neighbor->level - id.level);
         }
     }
     return probe;
@@ -544,6 +551,50 @@ void update_neighbor_lod_diagnostics(PlanetSurfaceDiagnostics& diagnostics,
     diagnostics.lod_neighbor_boundary_edge_count = neighbor_diagnostics.boundary_edge_count;
     diagnostics.lod_neighbor_mismatch_edge_count = neighbor_diagnostics.mismatch_edge_count;
     diagnostics.max_lod_neighbor_delta = neighbor_diagnostics.max_lod_delta;
+}
+
+void reset_selected_patch_diagnostics(PlanetSurfaceDiagnostics& diagnostics) {
+    diagnostics.visible_patch_count = 0;
+    diagnostics.patch_count = 0;
+    diagnostics.base_patch_count = 0;
+    diagnostics.refined_patch_count = 0;
+    diagnostics.transition_candidate_count = 0;
+    diagnostics.min_lod_level = 0;
+    diagnostics.max_lod_level = 0;
+    diagnostics.patches_by_lod.fill(0U);
+    diagnostics.min_screen_error_px = 0.0F;
+    diagnostics.max_screen_error_px = 0.0F;
+    diagnostics.max_transition_pressure = 0.0F;
+    diagnostics.min_cell_edge_m_by_lod.fill(0.0F);
+    diagnostics.max_cell_edge_m_by_lod.fill(0.0F);
+}
+
+void record_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurfaceDiagnostics& diagnostics,
+                                       const PlanetSurfacePatchInstance& patch) {
+    diagnostics.min_lod_level = diagnostics.visible_patch_count == 0U
+                                    ? patch.id.level
+                                    : std::min(diagnostics.min_lod_level, patch.id.level);
+    diagnostics.max_lod_level = std::max(diagnostics.max_lod_level, patch.id.level);
+    if (patch.id.level < diagnostics.patches_by_lod.size()) {
+        ++diagnostics.patches_by_lod[patch.id.level];
+    }
+    update_screen_error_range(diagnostics, patch.screen_error_px);
+    update_lod_transition_diagnostics(config, diagnostics, patch.screen_error_px);
+    update_lod_cell_edge_range(diagnostics, patch.id.level, patch_cell_edge_m(config, patch));
+    if (patch.id.level == 0U) {
+        ++diagnostics.base_patch_count;
+    } else {
+        ++diagnostics.refined_patch_count;
+    }
+    ++diagnostics.visible_patch_count;
+    diagnostics.patch_count = diagnostics.visible_patch_count;
+}
+
+void refresh_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurfacePatchPlan& plan) {
+    reset_selected_patch_diagnostics(plan.diagnostics);
+    for (const PlanetSurfacePatchInstance& patch : plan.selected_patches) {
+        record_selected_patch_diagnostics(config, plan.diagnostics, patch);
+    }
 }
 
 [[nodiscard]] bool patch_passes_horizon_cull(const PlanetConfig& config, PlanetSurfaceView view,
@@ -677,23 +728,7 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
 
 [[nodiscard]] bool record_visible_patch(const PlanetConfig& config, PlanetSurfacePatchPlan& plan,
                                         const PlanetSurfacePatchInstance& patch) {
-    plan.diagnostics.min_lod_level = plan.diagnostics.visible_patch_count == 0U
-                                         ? patch.id.level
-                                         : std::min(plan.diagnostics.min_lod_level, patch.id.level);
-    plan.diagnostics.max_lod_level = std::max(plan.diagnostics.max_lod_level, patch.id.level);
-    if (patch.id.level < plan.diagnostics.patches_by_lod.size()) {
-        ++plan.diagnostics.patches_by_lod[patch.id.level];
-    }
-    update_screen_error_range(plan.diagnostics, patch.screen_error_px);
-    update_lod_transition_diagnostics(config, plan.diagnostics, patch.screen_error_px);
-    update_lod_cell_edge_range(plan.diagnostics, patch.id.level, patch_cell_edge_m(config, patch));
-    if (patch.id.level == 0U) {
-        ++plan.diagnostics.base_patch_count;
-    } else {
-        ++plan.diagnostics.refined_patch_count;
-    }
-    ++plan.diagnostics.visible_patch_count;
-    plan.diagnostics.patch_count = plan.diagnostics.visible_patch_count;
+    record_selected_patch_diagnostics(config, plan.diagnostics, patch);
     plan.selected_patches.push_back(patch);
     return plan.selected_patches.size() <= kPlanetMaxLivePatchInstances;
 }
@@ -789,6 +824,111 @@ make_surface_patch_plan(const PlanetConfig& config, PlanetSurfaceView view,
         }
     }
     return plan;
+}
+
+[[nodiscard]] PlanetSurfacePatchInstance patch_instance_for_id(const PlanetConfig& config,
+                                                               PlanetSurfaceView view,
+                                                               PlanetSurfacePatchId id) {
+    PlanetSurfacePatchInstance patch{.id = id};
+    patch.screen_error_px = patch_screen_error_px(config, view, patch);
+    return patch;
+}
+
+void replace_patch_with_children(const PlanetConfig& config, PlanetSurfaceView view,
+                                 PlanetSurfacePatchPlan& plan, std::size_t patch_index) {
+    const PlanetSurfacePatchId parent = plan.selected_patches.at(patch_index).id;
+    std::array<PlanetSurfacePatchInstance, 4> children{};
+    for (std::uint32_t child = 0; child < children.size(); ++child) {
+        children[child] =
+            patch_instance_for_id(config, view, planet_surface_child_patch_id(parent, child));
+    }
+    plan.selected_patches[patch_index] = children[0];
+    plan.selected_patches.insert(plan.selected_patches.begin() + static_cast<std::ptrdiff_t>(patch_index) +
+                                     1,
+                                 children.begin() + 1, children.end());
+    ++plan.diagnostics.lod_neighbor_repaired_split_count;
+}
+
+enum class NeighborRepairStep : std::uint8_t {
+    Done,
+    Split,
+    NeedsBudget,
+};
+
+[[nodiscard]] NeighborRepairStep repair_neighbor_lod_once(const PlanetConfig& config,
+                                                          PlanetSurfaceView view,
+                                                          PlanetSurfacePatchPlan& plan) {
+    const PlanetPatchSelectionSet set{plan.selected_patches};
+    for (std::size_t index = 0; index < plan.selected_patches.size(); ++index) {
+        const PlanetSurfacePatchId id = plan.selected_patches[index].id;
+        if (id.level >= config.max_lod_level) {
+            continue;
+        }
+        for (std::uint32_t edge = 0; edge < 4U; ++edge) {
+            const NeighborEdgeProbe probe = analyze_neighbor_edge(config, set, id, edge);
+            if (probe.max_finer_delta <= 1U) {
+                continue;
+            }
+            if (plan.selected_patches.size() + 3U > kPlanetMaxLivePatchInstances) {
+                return NeighborRepairStep::NeedsBudget;
+            }
+            replace_patch_with_children(config, view, plan, index);
+            return NeighborRepairStep::Split;
+        }
+    }
+    return NeighborRepairStep::Done;
+}
+
+[[nodiscard]] bool coarsen_selected_patches_once(const PlanetConfig& config, PlanetSurfaceView view,
+                                                 PlanetSurfacePatchPlan& plan) {
+    std::vector<PlanetSurfacePatchInstance> coarsened;
+    coarsened.reserve(plan.selected_patches.size());
+    std::unordered_set<PlanetSurfacePatchId, PlanetSurfacePatchIdHash> seen;
+    seen.reserve(plan.selected_patches.size());
+    bool changed = false;
+    for (const PlanetSurfacePatchInstance& patch : plan.selected_patches) {
+        PlanetSurfacePatchId id = patch.id;
+        if (id.level > 0U) {
+            id = parent_patch_id(id);
+            changed = true;
+        }
+        if (seen.insert(id).second) {
+            coarsened.push_back(patch_instance_for_id(config, view, id));
+        }
+    }
+    if (!changed) {
+        return false;
+    }
+    plan.selected_patches = std::move(coarsened);
+    ++plan.diagnostics.budget_fallback_patch_count;
+    return true;
+}
+
+void repair_neighbor_lod_transitions(const PlanetConfig& config, PlanetSurfaceView view,
+                                     PlanetSurfacePatchPlan& plan) {
+    const std::size_t iteration_limit =
+        std::max<std::size_t>(1U, plan.selected_patches.size() * (config.max_lod_level + 1U));
+    for (std::size_t iteration = 0; iteration < iteration_limit; ++iteration) {
+        const NeighborRepairStep step = repair_neighbor_lod_once(config, view, plan);
+        if (step == NeighborRepairStep::Done) {
+            refresh_selected_patch_diagnostics(config, plan);
+            update_neighbor_lod_diagnostics(
+                plan.diagnostics,
+                analyze_planet_surface_lod_neighbors(config, plan.selected_patches));
+            return;
+        }
+        if (step == NeighborRepairStep::NeedsBudget &&
+            !coarsen_selected_patches_once(config, view, plan)) {
+            break;
+        }
+    }
+
+    refresh_selected_patch_diagnostics(config, plan);
+    update_neighbor_lod_diagnostics(
+        plan.diagnostics, analyze_planet_surface_lod_neighbors(config, plan.selected_patches));
+    if (plan.diagnostics.max_lod_neighbor_delta > 1U) {
+        throw std::runtime_error("planet LOD neighbor repair could not enforce single-step deltas");
+    }
 }
 
 [[nodiscard]] cubey::math::Vec3
@@ -1055,9 +1195,7 @@ PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
     if (plan.selected_patches.size() > kPlanetMaxLivePatchInstances) {
         throw std::runtime_error("planet live LOD fallback exceeded the patch instance budget");
     }
-    update_neighbor_lod_diagnostics(
-        plan.diagnostics,
-        analyze_planet_surface_lod_neighbors(config, plan.selected_patches));
+    repair_neighbor_lod_transitions(config, view, plan);
     return plan;
 }
 

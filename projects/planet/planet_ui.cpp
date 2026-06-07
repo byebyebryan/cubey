@@ -333,6 +333,7 @@ void draw_diagnostics(PlanetUiContext& ui) {
         ImGui::Text("LOD neighbors: %u edges, %u mismatched, max delta %u",
                     surface.lod_neighbor_edge_count, surface.lod_neighbor_mismatch_edge_count,
                     surface.max_lod_neighbor_delta);
+        ImGui::Text("LOD repair splits: %u", surface.lod_neighbor_repaired_split_count);
         ImGui::Text("Surface vertices: %u", surface.vertex_count);
         ImGui::Text("Surface triangles: %u", surface.triangle_count);
         ImGui::Text("Configured finest cell: %.1f m", finest_global_cell);
