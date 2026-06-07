@@ -419,6 +419,10 @@ struct PatchGridSpan {
     return config.patches_per_face << config.max_lod_level;
 }
 
+[[nodiscard]] float terrain_displacement_bound_m(const PlanetConfig& config) {
+    return config.terrain_enabled ? std::max(config.terrain_height_scale_m, 0.0F) : 0.0F;
+}
+
 [[nodiscard]] PatchGridSpan patch_grid_span(const PlanetConfig& config,
                                             PlanetSurfacePatchId id) {
     const std::uint32_t total_divisions = max_lod_grid_divisions(config);
@@ -441,6 +445,7 @@ struct PatchGridSpan {
     for (cubey::math::DVec3 sample : samples) {
         bounds.radius_m = std::max(bounds.radius_m, glm::length(sample - bounds.center_m));
     }
+    bounds.radius_m += static_cast<double>(terrain_displacement_bound_m(config));
     return bounds;
 }
 
@@ -665,8 +670,11 @@ void refresh_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurfac
         planet_surface_sphere_world_position_m(config, patch.id.face, bounds.u1, v_mid);
     const float patch_edge_m = static_cast<float>(glm::length(edge_b - edge_a));
     const float cell_edge_m = patch_edge_m / static_cast<float>(config.patch_resolution);
+    const float displacement_bound_m = terrain_displacement_bound_m(config);
     const float distance_m =
-        std::max(static_cast<float>(glm::length(center - view.camera_world_position_m)), 1.0F);
+        std::max(static_cast<float>(glm::length(center - view.camera_world_position_m)) -
+                     displacement_bound_m,
+                 1.0F);
     const float pixel_scale =
         view.viewport_height_px / (2.0F * std::tan(view.vertical_fov_radians * 0.5F));
     return (cell_edge_m / distance_m) * pixel_scale;

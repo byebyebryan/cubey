@@ -1473,6 +1473,34 @@ void test_planet_surface_planner_records_lod_transition_pressure() {
             "planet planner should report positive transition pressure near the threshold");
 }
 
+void test_planet_surface_screen_error_accounts_for_terrain_displacement() {
+    cubey::projects::planet::PlanetConfig flat_config{
+        .radius_m = 1000.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 4,
+        .max_lod_level = 0,
+        .terrain_enabled = false,
+    };
+    cubey::projects::planet::PlanetConfig terrain_config = flat_config;
+    terrain_config.terrain_enabled = true;
+    terrain_config.terrain_height_scale_m = 400.0F;
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = {0.0, 0.0, 1500.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .viewport_height_px = 720.0F,
+        .culling_enabled = false,
+    };
+
+    const cubey::projects::planet::PlanetSurfacePatchPlan flat_plan =
+        cubey::projects::planet::plan_planet_surface_patches(flat_config, view);
+    const cubey::projects::planet::PlanetSurfacePatchPlan terrain_plan =
+        cubey::projects::planet::plan_planet_surface_patches(terrain_config, view);
+
+    require(terrain_plan.diagnostics.max_screen_error_px >
+                flat_plan.diagnostics.max_screen_error_px,
+            "planet screen error should use the nearest possible displaced terrain bound");
+}
+
 void test_planet_surface_runtime_rebuilds_render_plan() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 600000.0F,
@@ -1646,6 +1674,7 @@ int main() {
         test_planet_surface_seams_debug_view_parses();
         test_planet_surface_metric_debug_views_parse();
         test_planet_surface_planner_records_lod_transition_pressure();
+        test_planet_surface_screen_error_accounts_for_terrain_displacement();
         test_planet_surface_runtime_rebuilds_render_plan();
         test_planet_surface_runtime_detects_plan_changes();
         test_planet_surface_runtime_detects_surface_scale_changes();
