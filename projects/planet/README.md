@@ -2,9 +2,9 @@
 
 `planet` is the foundation project for planet-scale rendering experiments. The
 current version opens a window or headless capture path, renders a cube-sphere
-planet surface with placeholder terrain, owns the local sky/celestial state, and
-provides the target project boundary for future terrain, ocean, clouds, and
-streaming integration.
+planet surface through a procedural terrain-field contract, owns the local
+sky/celestial state, and provides the target project boundary for future
+terrain, ocean, clouds, and streaming integration.
 
 Run it with:
 
@@ -55,6 +55,19 @@ paused and pin both time and camera mode:
 
 The broader manual capture matrix is tracked in
 [`docs/notes/planet-visual-captures.md`](../../docs/notes/planet-visual-captures.md).
+
+## Status
+
+| Area | State |
+| --- | --- |
+| Planet frame/camera | Done as v1: double-precision camera position, camera-relative GPU rendering, datum height, terrain height, and terrain-relative clearance are explicit. |
+| Surface LOD | Done as v1: coverage-first cube-sphere patches, live instance-buffer uploads, hysteresis, single-step neighbor repair, terrain-aware screen-error bounds, and wire/debug diagnostics. |
+| Terrain field | Active procedural contract: CPU/shader sampling share height, normal, water depth, shoreline, material, climate, roughness, and tile-summary vocabulary. It is not final art direction or streamed data. |
+| Local detail clipmap | Diagnostic-only: useful for near-field planning and debug views, but not integrated into final terrain until local/global handoff, persistent topology, and blending/morph policy are solved. |
+| Sky/celestial/atmosphere | Done as v1: planet-owned mean solar clock, sun/moon directions, depth-tested moon body geometry, project-local atmosphere, HDR post, and view-aware exposure. Full LUT/transmittance atmosphere and true ephemeris remain deferred. |
+| Streaming/cache | Deferred: current patch replans and lazy uploads are not an out-of-core streamer. Parent coverage remains renderable while future child/tile data is prepared. |
+| Ocean integration | Deferred: `projects/ocean` stays local-water focused until planet frame, LOD, terrain, and local-detail contracts are ready to host it as one surface layer. |
+| Config ownership | Deferred cleanup: planet still consumes shared `RunConfig`; a project-owned CLI/config facade should be extracted when the next project repeats this pressure. |
 
 Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 `screen-error`, `lod-transition`, `seams`, `cell-edge`, `terrain-height`,
@@ -121,8 +134,8 @@ address, and UV bounds are derived from that address plus the root
 construction and creates stable keys for later terrain, bathymetry, cache, or
 streaming work.
 
-The terrain controls are placeholders for contract pressure, not the final
-terrain system. Terrain now goes through a project-local surface-field contract:
+The terrain controls are procedural contract pressure, not the final terrain
+system or final art direction. Terrain now goes through a project-local surface-field contract:
 CPU and shader paths sample deterministic height, world position, normal,
 height above sea level, water depth, normalized bathymetry, shoreline mask, land
 mask, normalized elevation, normalized slope, moisture, temperature, roughness,

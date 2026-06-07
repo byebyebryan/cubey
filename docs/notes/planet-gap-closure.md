@@ -99,6 +99,21 @@ The latest follow-up batch is complete:
 - added terrain-field debug views for land mask, moisture, temperature, and
   roughness so material/ocean-adjacent fields are visible without changing the
   final renderer.
+- made camera height semantics explicit: datum altitude, sampled terrain height,
+  and terrain-relative clearance are separate frame values, and near-plane /
+  local-detail decisions use clearance where appropriate.
+- replanned surface LOD from view scale by tracking clearance and near-surface
+  tangent movement, so surface navigation does not reuse orbit-scale patch
+  plans too long.
+- added single-step neighbor LOD repair and terrain-displacement screen-error
+  bounds, so the selected surface has tighter seam behavior and terrain-aware
+  refinement pressure.
+- clarified local detail as diagnostic-only for now. The debug views remain
+  useful for ownership, blend, and height inspection, but final-view integration
+  is blocked on a deliberate local/global handoff policy.
+- aligned moon/atmosphere docs with the actual body pass: depth-tested moon
+  geometry with premultiplied phase/daylight visibility, not a shared sky-owned
+  moon sprite.
 
 The remaining near-term work should move back to feature slices or targeted
 hardening. It still should not port ocean, add real GIS data, build an

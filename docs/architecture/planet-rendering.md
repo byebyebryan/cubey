@@ -337,6 +337,19 @@ The latest planet foundation pass closed several previously loose contracts:
   planet views, moon/daylight, wireframe LOD, and one terrain-field diagnostic
   cannot silently regress to empty output.
 
+Current alignment by area:
+
+| Area | Status |
+| --- | --- |
+| Frame and camera | Done as v1. Camera state is double precision, render origin is camera-relative, and frame data distinguishes datum altitude, sampled terrain height, and terrain-relative clearance. |
+| Global surface LOD | Done as v1. The planner is coverage-first, keeps fallback parents available, uses hysteresis, repairs selected neighbor deltas to a single LOD step, and accounts for terrain displacement in screen-error bounds. |
+| Procedural terrain field | Active contract, not just a visual placeholder. CPU tests, tile summaries, shader displacement, material bands, water depth, shoreline, climate, and roughness use the same project-local vocabulary. |
+| Local detail clipmap | Diagnostic-only. It is useful for near-field density and ownership inspection, but final-view integration is deferred until local/global handoff, persistent clipmap topology, and blend/morph policy are explicit. |
+| Celestial and atmosphere | Done as v1. The planet project owns mean solar time, sun/moon state, project-local sky/atmosphere, view-aware exposure, and moon body rendering. Atmosphere LUTs, physical transmittance assets, eclipses, and real ephemeris are deferred. |
+| Streaming and resource residency | Deferred. Current runtime replans CPU patch lists and lazily uploads instance buffers, but it is not an out-of-core tile streamer or async residency manager. |
+| Planet/ocean integration | Deferred. Ocean should port in as a local water layer once the planet frame, terrain field, sea datum, local detail clipmap, and render order are stable enough. |
+| Project config facade | Deferred. Planet still routes through shared `RunConfig`; extracting project-owned CLI/config ownership is worthwhile once another project repeats the same option pressure. |
+
 ## Celestial Body Pivot
 
 The shared atmosphere path is still valuable for standalone atmosphere demos,
