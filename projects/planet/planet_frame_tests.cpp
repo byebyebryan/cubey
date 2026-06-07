@@ -335,6 +335,47 @@ void test_planet_camera_keeps_orbit_view_at_high_altitude() {
             "high-altitude planet camera should keep looking toward planet center");
 }
 
+void test_planet_camera_zoom_scales_altitude_not_planet_radius() {
+    const cubey::projects::planet::PlanetConfig config{};
+    cubey::projects::planet::PlanetCameraState state =
+        cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
+
+    cubey::projects::planet::planet_camera_zoom_by_scroll(state, config, 1.0);
+
+    const float altitude =
+        cubey::projects::planet::planet_camera_distance_m(state) - config.radius_m;
+    require_near(altitude, config.camera_altitude_m * 0.86F, 1.0F,
+                 "planet scroll zoom should scale altitude above the surface");
+    require(cubey::projects::planet::planet_surface_camera_blend(
+                config, cubey::projects::planet::planet_camera_distance_m(state)) == 0.0F,
+            "one planet scroll step from home should not jump into surface transition");
+}
+
+void test_planet_camera_surface_blend_does_not_auto_spin_heading() {
+    const cubey::projects::planet::PlanetConfig config{};
+    cubey::projects::planet::PlanetCameraState state =
+        cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
+    cubey::projects::planet::planet_camera_set_distance(state, config,
+                                                        config.radius_m +
+                                                            (config.radius_m * 0.20F));
+
+    const cubey::Transform3D before =
+        cubey::projects::planet::make_planet_camera_transform(config, state);
+    cubey::projects::planet::planet_camera_update_surface_mode(state, config);
+    const cubey::Transform3D after =
+        cubey::projects::planet::make_planet_camera_transform(config, state);
+
+    const cubey::math::Vec3 before_forward =
+        glm::normalize(before.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
+    const cubey::math::Vec3 after_forward =
+        glm::normalize(after.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
+
+    require(glm::dot(before_forward, after_forward) > 0.9999F,
+            "planet surface-mode update should not change camera heading by itself");
+    require(!state.surface_rotation_active,
+            "planet surface-mode update should not activate a new arbitrary surface rotation");
+}
+
 void test_planet_orbit_camera_drag_clamps_before_poles() {
     const cubey::projects::planet::PlanetConfig config{};
     cubey::projects::planet::PlanetCameraState state =
@@ -567,6 +608,8 @@ int main() {
         test_planet_config_change_kind_separates_dynamic_and_topology();
         test_planet_camera_min_altitude_tracks_terrain_clearance();
         test_planet_camera_keeps_orbit_view_at_high_altitude();
+        test_planet_camera_zoom_scales_altitude_not_planet_radius();
+        test_planet_camera_surface_blend_does_not_auto_spin_heading();
         test_planet_orbit_camera_drag_clamps_before_poles();
         test_planet_orbit_camera_horizontal_drag_stays_stable_near_poles();
         test_planet_camera_transitions_to_surface_view_near_ground();

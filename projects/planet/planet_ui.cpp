@@ -39,6 +39,11 @@ constexpr std::array<PlanetAtmosphereMode, 2> kAtmosphereModes{
     PlanetAtmosphereMode::Physical,
 };
 
+[[nodiscard]] bool is_local_detail_debug_view(PlanetDebugView view) {
+    return view == PlanetDebugView::LocalDetailWireframe ||
+           view == PlanetDebugView::LocalDetailBlend || view == PlanetDebugView::LocalDetailHeight;
+}
+
 void draw_panel_actions(PlanetUiContext& ui) {
     if (ImGui::Button("Revert Config")) {
         ui.edit_config = ui.active_config;
@@ -123,7 +128,13 @@ void draw_local_detail_controls(PlanetUiContext& ui) {
     if (const cubey::host::ScopedImGuiGroup group{
             "Local Detail", {.default_open = false}}; group) {
         const cubey::host::ScopedImGuiId section_id("LocalDetail");
-        ImGui::Checkbox("Enabled", &ui.edit_config.local_detail_enabled);
+        ImGui::Checkbox("Diagnostic Enabled", &ui.edit_config.local_detail_enabled);
+        ImGui::Text("Final View: deferred");
+        ImGui::Text("Debug Render: %s",
+                    (ui.edit_config.local_detail_enabled &&
+                     is_local_detail_debug_view(ui.edit_config.debug_view))
+                        ? "active"
+                        : "inactive");
         int lod_levels = static_cast<int>(ui.edit_config.local_detail_lod_levels);
         if (ImGui::InputInt("LOD Levels", &lod_levels)) {
             ui.edit_config.local_detail_lod_levels = static_cast<std::uint32_t>(

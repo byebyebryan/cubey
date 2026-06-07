@@ -146,15 +146,30 @@ constexpr float kZoomBase = 0.86F;
     return orbit_rotation_for_position(position_direction(position_m, {0.0F, 1.0F, 0.0F}));
 }
 
-[[nodiscard]] cubey::math::Quat surface_camera_rotation_for_position(cubey::math::Vec3 position_m) {
+[[nodiscard]] cubey::math::Quat surface_camera_rotation_for_position(
+    cubey::math::Vec3 position_m, cubey::math::Vec3 heading_hint) {
     const cubey::math::Vec3 up = normalize_or(position_m, cubey::math::Vec3{0.0F, 1.0F, 0.0F});
-    const cubey::math::Vec3 right = tangent_right_from_up(up);
     cubey::math::Vec3 tangent_forward =
-        normalize_or(glm::cross(up, right), cubey::math::Vec3{0.0F, 0.0F, -1.0F});
+        normalize_or(heading_hint - up * glm::dot(heading_hint, up),
+                     glm::cross(up, tangent_right_from_up(up)));
     const float surface_pitch = std::atan(kSurfaceLookDownSlope);
     const cubey::math::Vec3 forward = normalize_or(
         tangent_forward * std::cos(surface_pitch) - up * std::sin(surface_pitch), tangent_forward);
     return look_rotation(forward, up);
+}
+
+[[nodiscard]] cubey::math::Quat
+surface_camera_rotation_for_position(cubey::math::Vec3 position_m,
+                                     cubey::math::Quat reference_rotation) {
+    const cubey::math::Vec3 reference_up =
+        normalize_or(reference_rotation * cubey::math::Vec3{0.0F, 1.0F, 0.0F},
+                     cubey::math::Vec3{0.0F, 1.0F, 0.0F});
+    return surface_camera_rotation_for_position(position_m, reference_up);
+}
+
+[[nodiscard]] cubey::math::Quat surface_camera_rotation_for_position(cubey::math::Vec3 position_m) {
+    const cubey::math::Vec3 up = normalize_or(position_m, cubey::math::Vec3{0.0F, 1.0F, 0.0F});
+    return surface_camera_rotation_for_position(position_m, glm::cross(up, tangent_right_from_up(up)));
 }
 
 [[nodiscard]] cubey::math::Quat
@@ -275,7 +290,9 @@ void planet_camera_zoom_by_scroll(PlanetCameraState& state, const PlanetConfig& 
         return;
     }
     const float factor = std::pow(kZoomBase, static_cast<float>(scroll_y));
-    planet_camera_set_distance(state, config, planet_camera_distance_m(state) * factor);
+    const float current_distance = planet_camera_distance_m(state);
+    const float current_altitude = std::max(current_distance - config.radius_m, 0.0F);
+    planet_camera_set_distance(state, config, config.radius_m + (current_altitude * factor));
 }
 
 void planet_camera_orbit_drag(PlanetCameraState& state, const PlanetConfig& config,
@@ -302,7 +319,7 @@ void planet_camera_surface_look_drag(PlanetCameraState& state, const PlanetConfi
         return;
     }
     if (!state.surface_rotation_active) {
-        state.surface_rotation = surface_camera_rotation_for_position(state.position_m);
+        state.surface_rotation = make_planet_camera_transform(config, state).rotation;
         state.surface_rotation_active = true;
     }
 
@@ -333,7 +350,7 @@ bool planet_camera_surface_move(PlanetCameraState& state, const PlanetConfig& co
         return false;
     }
     if (!state.surface_rotation_active) {
-        state.surface_rotation = surface_camera_rotation_for_position(state.position_m);
+        state.surface_rotation = make_planet_camera_transform(config, state).rotation;
         state.surface_rotation_active = true;
     }
 
@@ -374,10 +391,6 @@ bool planet_camera_surface_move(PlanetCameraState& state, const PlanetConfig& co
 
 void planet_camera_update_surface_mode(PlanetCameraState& state, const PlanetConfig& config) {
     const float blend = planet_surface_camera_blend(config, planet_camera_distance_m(state));
-    if (blend >= 0.35F && !state.surface_rotation_active) {
-        state.surface_rotation = surface_camera_rotation_for_position(state.position_m);
-        state.surface_rotation_active = true;
-    }
     if (blend <= 0.10F) {
         state.surface_rotation_active = false;
     }
@@ -404,8 +417,9 @@ cubey::Transform3D make_planet_camera_transform(const PlanetConfig& config,
     }
 
     const cubey::math::Quat surface_rotation =
-        state.surface_rotation_active ? state.surface_rotation
-                                      : surface_camera_rotation_for_position(state.position_m);
+        state.surface_rotation_active
+            ? state.surface_rotation
+            : surface_camera_rotation_for_position(state.position_m, orbit_transform.rotation);
     return {
         .translation = orbit_transform.translation,
         .rotation = glm::normalize(glm::slerp(orbit_transform.rotation, surface_rotation, blend)),

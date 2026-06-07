@@ -207,13 +207,15 @@ Current implementation notes:
 - A project-local local-detail clipmap now exists beside the global patch tree.
   It wraps `cubey::render::ClipmapGrid2D`, is anchored to
   `PlanetFrame.local_frame`, defaults to a 4 m near cell over an 8192 m outer
-  half extent, and is the v1 near-field terrain detail layer. The live renderer
-  cuts the global surface under the local footprint, renders the local mesh with
-  extra procedural displacement, and exposes `local-detail-wireframe`,
-  `local-detail-blend`, and `local-detail-height` views for clipmap ownership
-  and displacement inspection. It is still procedural and project-local: no
-  terrain streaming, ocean port, texture cache, or compute terrain generation is
-  part of this first consumer.
+  half extent, and is the v1 near-field terrain detail layer. The current live
+  renderer keeps it in explicit diagnostic views (`local-detail-wireframe`,
+  `local-detail-blend`, and `local-detail-height`) rather than final view. The
+  first final-view attempt exposed hard opaque clipmap rings, so the production
+  integration remains blocked on a real local/global handoff policy: geometry
+  morphing, alpha/fade support, or another ownership strategy that does not
+  show rectangular clipmap footprints. It is still procedural and project-local:
+  no terrain streaming, ocean port, texture cache, or compute terrain generation
+  is part of this first consumer.
 - LOD is coverage-first. View and horizon culling stop refinement, but the
   parent patch remains selected so rotating while rebuilds are deferred does not
   reveal holes.

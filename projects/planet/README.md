@@ -93,8 +93,10 @@ expected to come through a viewer-centered local-detail clipmap rather than by
 forcing the global patch tree to carry every wave or interaction feature. The
 local-detail layer is centered on `PlanetFrame.local_frame`, defaults to six
 clipmap levels, 128 cells per axis, an 8192 m outer half extent, and a 4 m near
-cell. In v1 it renders near-field procedural terrain detail and reports its own
-patch, vertex, triangle, cell-size, and blend diagnostics in the UI.
+cell. In v1 it renders as a diagnostic path rather than as part of the final
+surface, and reports its own patch, vertex, triangle, cell-size, and blend
+diagnostics in the UI. Final-view integration is deferred until the local/global
+handoff has a proper blend or morph policy instead of hard opaque clipmap rings.
 `local-detail-wireframe` shows the near-field clipmap ownership, `local-detail-blend`
 shows the active ownership/cutout mask, and `local-detail-height` isolates the
 added detail displacement.

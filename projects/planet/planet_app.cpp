@@ -166,10 +166,7 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 26U);
 }
 
 [[nodiscard]] bool planet_local_detail_surface_view_enabled(const PlanetConfig& config) {
-    return config.debug_view == PlanetDebugView::Final ||
-           (config.debug_view >= PlanetDebugView::TerrainHeight &&
-            config.debug_view <= PlanetDebugView::Roughness) ||
-           config.debug_view == PlanetDebugView::LocalDetailWireframe ||
+    return config.debug_view == PlanetDebugView::LocalDetailWireframe ||
            config.debug_view == PlanetDebugView::LocalDetailBlend ||
            config.debug_view == PlanetDebugView::LocalDetailHeight;
 }
