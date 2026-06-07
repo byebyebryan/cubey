@@ -1,18 +1,18 @@
-# Planet Terrain Field V2
+# Planet Terrain Detail Batch
 
-The next planet slice should strengthen the procedural terrain and surface-field
-contract before ocean is ported into `projects/planet`. The current surface is
-useful enough for camera, LOD, atmosphere, and celestial validation, but it still
-needs clearer terrain data products so later ocean, biome, cache, and streaming
-layers do not have to reinterpret placeholder shader math.
+This note tracks the next long terrain-focused planet batch before ocean is
+ported into `projects/planet`. The field vocabulary and first tile payload
+boundary already exist; the remaining pressure is making surface view read as a
+credible large-scale terrain system and turning the local detail clipmap from a
+diagnostic path into a final-view participant with clear ownership rules.
 
 ## Direction
 
-Keep the v2 terrain source project-local and procedural. This is still not a GIS
+Keep the terrain source project-local and procedural. This is still not a GIS
 ingestion layer, out-of-core streamer, erosion simulation, or final art pass.
 The goal is to make the same `face/level/x/y` patch identity produce stable
-sample data and tile summaries that look like the boundary a real terrain source
-will eventually implement.
+sample data, credible material fields, and tile summaries that look like the
+boundary a real terrain source will eventually implement.
 
 The field vocabulary should stay explicit:
 
@@ -28,14 +28,13 @@ These names intentionally follow established terrain/globe/rendering terms. They
 are also the minimum data needed by future terrain materials, shoreline/ocean
 handoff, weather/cloud masks, and cache residency diagnostics.
 
-## Implementation Shape
+## Current Shape
 
 `PlanetSurfaceSample` remains the point-sample contract. `PlanetSurfaceTileKey`
-and `PlanetSurfaceTilePayload` remain the patch payload boundary. V2 expands
-payload summaries with coverage, range, material-count, climate, roughness, and
-terrain-relevant revision data instead of adding a new manager. A later
-streaming system can replace the procedural source behind the same key/payload
-vocabulary.
+and `PlanetSurfaceTilePayload` remain the patch payload boundary. Payload
+summaries now include coverage, range, material-count, climate, roughness, and
+terrain-relevant revision data instead of a new manager. A later streaming
+system can replace the procedural source behind the same key/payload vocabulary.
 
 CPU and shader terrain logic should stay mirrored with matching helper names.
 That duplication is deliberate for now: the CPU path gives deterministic tests
@@ -53,6 +52,30 @@ stack. The current procedural source follows this shape:
 - moisture and temperature fields;
 - material classification from sea level, elevation, slope, moisture, and
   temperature.
+
+The global patch tree and local detail clipmap are intentionally separate:
+
+- global patches own cube-sphere coverage, LOD identity, terrain/bathymetry
+  sampling, and fallback coverage;
+- local detail owns viewer-centered meter-scale geometry and should only be
+  active when the camera is low enough that those triangles are visible;
+- final rendering should not expose rectangular clipmap footprints, hard cutout
+  edges, or duplicated terrain ownership.
+
+## Long Batch Acceptance
+
+The batch is considered useful when:
+
+- surface view has stronger macro landforms and less noisy displaced-patch
+  character;
+- terrain materials visibly derive from elevation, slope, moisture,
+  temperature, shoreline, and water depth;
+- local detail final-view integration is either credible or explicitly disabled
+  outside diagnostic views, with tests explaining why;
+- LOD diagnostics report enough near-cell, active-level, and tile-summary data
+  to explain terrain scale at the camera;
+- docs and README clearly state what is now active, what remains deferred, and
+  why ocean is still parked.
 
 ## Deferred
 
