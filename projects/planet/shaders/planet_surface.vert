@@ -25,6 +25,12 @@ layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     vec4 camera_world_radius;
     vec4 atmosphere_radius_mode;
     vec4 sun_color_intensity;
+    vec4 moon_color_intensity;
+    vec4 local_origin_options;
+    vec4 local_right_outer;
+    vec4 local_up_height;
+    vec4 local_forward_scale;
+    vec4 local_detail_options;
 } surface_frame;
 
 uint packed_patch_lod_option() {
@@ -58,6 +64,7 @@ layout(location = 3) out vec3 out_render_position;
 layout(location = 4) out vec3 out_sphere_normal;
 layout(location = 5) out vec4 out_surface_field;
 layout(location = 6) out vec4 out_climate_field;
+layout(location = 7) out vec4 out_local_detail;
 
 #include "planet_surface_field.glsl"
 
@@ -310,5 +317,6 @@ void main() {
     out_surface_field = vec4(height_above_sea_m, normalized_elevation, normalized_slope,
                              shoreline_mask);
     out_climate_field = vec4(normalized_bathymetry, moisture, temperature, roughness);
+    out_local_detail = vec4(0.0, 0.0, -1.0, 0.0);
     gl_Position = surface_frame.view_projection * vec4(render_position, 1.0);
 }

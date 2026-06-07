@@ -10,6 +10,7 @@ layout(location = 3) in vec3 in_render_position;
 layout(location = 4) in vec3 in_sphere_normal;
 layout(location = 5) in vec4 in_surface_field;
 layout(location = 6) in vec4 in_climate_field;
+layout(location = 7) in vec4 in_local_detail;
 
 layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     mat4 view_projection;
@@ -30,6 +31,11 @@ layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     vec4 atmosphere_radius_mode;
     vec4 sun_color_intensity;
     vec4 moon_color_intensity;
+    vec4 local_origin_options;
+    vec4 local_right_outer;
+    vec4 local_up_height;
+    vec4 local_forward_scale;
+    vec4 local_detail_options;
 } surface_frame;
 
 layout(location = 0) out vec4 out_color;
@@ -51,6 +57,56 @@ int debug_view_option() {
 }
 
 #include "planet_surface_field.glsl"
+
+bool local_detail_surface_debug_enabled() {
+    int debug_view = debug_view_option();
+    return debug_view == 0 || (debug_view >= 8 && debug_view <= 16);
+}
+
+bool local_detail_is_local_draw() {
+    return in_local_detail.z >= -0.5;
+}
+
+vec2 local_detail_world_xz(vec3 world_position) {
+    vec3 relative = world_position - surface_frame.local_origin_options.xyz;
+    return vec2(dot(relative, normalize(surface_frame.local_right_outer.xyz)),
+                dot(relative, normalize(surface_frame.local_forward_scale.xyz)));
+}
+
+float local_detail_level_half_extent(float level) {
+    float lod_levels = max(surface_frame.local_detail_options.x, 1.0);
+    float exponent = max((lod_levels - 1.0) - level, 0.0);
+    return surface_frame.local_right_outer.w / exp2(exponent);
+}
+
+float local_detail_patch_ownership(vec2 local_xz, float level, float blend) {
+    float active_weight = surface_frame.local_origin_options.w;
+    if (active_weight <= 0.0 || !local_detail_surface_debug_enabled()) {
+        return 0.0;
+    }
+    float half_extent = local_detail_level_half_extent(level);
+    float radial = max(abs(local_xz.x), abs(local_xz.y));
+    if (radial > half_extent) {
+        return 0.0;
+    }
+    if (level > 0.5) {
+        float inner = local_detail_level_half_extent(level - 1.0);
+        if (radial < inner) {
+            return 0.0;
+        }
+    }
+    return clamp(active_weight * blend, 0.0, 1.0);
+}
+
+bool local_detail_global_cutout(vec3 world_position) {
+    if (surface_frame.local_origin_options.w <= 0.0 || local_detail_is_local_draw() ||
+        !local_detail_surface_debug_enabled()) {
+        return false;
+    }
+    vec2 local_xz = local_detail_world_xz(world_position);
+    float radial = max(abs(local_xz.x), abs(local_xz.y));
+    return radial < surface_frame.local_right_outer.w * 0.998;
+}
 
 float grid_wire_alpha(vec2 uv) {
     vec2 grid_uv = uv * patch_resolution_option();
@@ -205,6 +261,16 @@ vec3 fragment_material_albedo(uint material) {
 }
 
 void main() {
+    vec3 world_position = surface_world_position();
+    if (local_detail_global_cutout(world_position)) {
+        discard;
+    }
+    if (local_detail_is_local_draw() &&
+        local_detail_patch_ownership(in_local_detail.xy, in_local_detail.z,
+                                     in_local_detail.w) <= 0.001) {
+        discard;
+    }
+
     if (debug_view_option() == 17) {
         float patch_edge = min(min(in_uv.x, in_uv.y), min(1.0 - in_uv.x, 1.0 - in_uv.y));
         float patch_wire = 1.0 - smoothstep(0.0, 0.01, patch_edge);
@@ -225,7 +291,6 @@ void main() {
     float final_view = floor(surface_frame.surface_options.x) < 0.5 ? 1.0 : 0.0;
     uint material = fragment_material_id();
     vec3 albedo = final_view > 0.5 ? fragment_material_albedo(material) : in_color;
-    vec3 world_position = surface_world_position();
     float ndotl = max(dot(normal, light_dir), 0.0);
     float wrap = max(dot(normal, light_dir) * 0.5 + 0.5, 0.0);
     vec3 haze_color = surface_frame.haze_color_direct.rgb;

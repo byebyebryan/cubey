@@ -4,6 +4,7 @@
 #include "planet_celestial.h"
 #include "planet_config.h"
 #include "planet_frame.h"
+#include "planet_local_detail_runtime.h"
 #include "planet_surface.h"
 #include "planet_surface_runtime.h"
 #include "planet_ui.h"
@@ -89,9 +90,17 @@ struct PlanetSurfaceFrameUniforms {
         0.004675F};
     cubey::math::Vec4 sun_color_intensity{1.0F, 0.94F, 0.82F, 0.88F};
     cubey::math::Vec4 moon_color_intensity{0.56F, 0.64F, 0.86F, 0.0F};
+    cubey::math::Vec4 local_origin_options{0.0F, 0.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 local_right_outer{1.0F, 0.0F, 0.0F,
+                                        kPlanetDefaultLocalDetailOuterHalfExtentM};
+    cubey::math::Vec4 local_up_height{0.0F, 1.0F, 0.0F,
+                                      kPlanetDefaultLocalDetailHeightStrengthM};
+    cubey::math::Vec4 local_forward_scale{0.0F, 0.0F, 1.0F, kPlanetDefaultLocalDetailScaleM};
+    cubey::math::Vec4 local_detail_options{
+        static_cast<float>(kPlanetDefaultLocalDetailLodLevels), 0.0F, 0.0F, 0.0F};
 };
 
-static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 21U);
+static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 26U);
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_PLANET_SHADER_DIR) / filename;
@@ -140,6 +149,33 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 21U);
     return layout;
 }
 
+[[nodiscard]] cubey::render::VertexInputLayout planet_local_detail_vertex_input_layout() {
+    cubey::render::VertexInputLayout layout;
+    layout.vertex_bindings.push_back(cubey::render::vertex_input_binding(
+        0, static_cast<std::uint32_t>(sizeof(PlanetLocalDetailVertex)),
+        VK_VERTEX_INPUT_RATE_VERTEX));
+    layout.attributes.push_back(cubey::render::vertex_input_attribute(
+        0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(PlanetLocalDetailVertex, local_xz_m)));
+    layout.attributes.push_back(cubey::render::vertex_input_attribute(
+        1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(PlanetLocalDetailVertex, patch_uv)));
+    layout.attributes.push_back(cubey::render::vertex_input_attribute(
+        2, 0, VK_FORMAT_R32_SFLOAT, offsetof(PlanetLocalDetailVertex, level)));
+    layout.attributes.push_back(cubey::render::vertex_input_attribute(
+        3, 0, VK_FORMAT_R32_SFLOAT, offsetof(PlanetLocalDetailVertex, blend)));
+    return layout;
+}
+
+[[nodiscard]] bool planet_local_detail_surface_view_enabled(const PlanetConfig& config) {
+    return config.debug_view == PlanetDebugView::Final ||
+           (config.debug_view >= PlanetDebugView::TerrainHeight &&
+            config.debug_view <= PlanetDebugView::Roughness);
+}
+
+[[nodiscard]] float planet_app_smoothstep(float edge0, float edge1, float value) {
+    const float t = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+    return t * t * (3.0F - 2.0F * t);
+}
+
 [[nodiscard]] float packed_debug_wire_option(const PlanetConfig& config) {
     return static_cast<float>(static_cast<int>(config.debug_view)) +
            (config.wire_overlay ? 0.25F : 0.0F);
@@ -172,6 +208,7 @@ class PlanetApp {
               planet_config_, config_, kPlanetCameraBaseYaw, kPlanetCameraBasePitch)) {
         refresh_frame();
         surface_runtime_.rebuild(planet_config_, frame_, surface_view(default_surface_extent()));
+        local_detail_runtime_.rebuild(planet_config_, frame_);
     }
 
     int run() {
@@ -263,6 +300,9 @@ class PlanetApp {
         if (!patch_grid_mesh_.has_value()) {
             patch_grid_mesh_.emplace(gpu, surface_runtime_.patch_grid().mesh_config());
         }
+        if (!local_detail_mesh_.has_value()) {
+            local_detail_mesh_.emplace(gpu, local_detail_runtime_.mesh().mesh_config());
+        }
         if (!moon_mesh_.has_value()) {
             const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv>
                 moon_mesh = cubey::render::make_uv_sphere_position_color_normal_uv_mesh({
@@ -319,6 +359,23 @@ class PlanetApp {
                         .depth = cubey::render::depth_clear_value(),
                     },
             });
+        const std::array<cubey::render::ShaderStageFile, 2> local_detail_shaders{
+            cubey::render::vertex_shader_file(shader_path("planet_local_detail.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("planet_surface.frag.spv")),
+        };
+        const cubey::render::VertexInputLayout local_detail_vertex_input =
+            planet_local_detail_vertex_input_layout();
+        local_detail_pipeline_.emplace(
+            device, cubey::render::GraphicsPipelineFileResourceConfig{
+                        .extent = extent,
+                        .color_format = kPlanetSceneColorFormat,
+                        .depth_format = forward_pass().depth_target().format,
+                        .shader_stage_files = local_detail_shaders,
+                        .vertex_bindings = local_detail_vertex_input.bindings(),
+                        .vertex_attributes = local_detail_vertex_input.attribute_descriptions(),
+                        .descriptor_set_layouts = descriptor_set_layouts,
+                        .material_pass = planet_pass_info(),
+                    });
         create_sky_frame_pipeline(device, extent, kPlanetSceneColorFormat);
         create_celestial_body_frame_pipeline(device, extent, kPlanetSceneColorFormat,
                                              forward_pass().depth_target().format);
@@ -332,6 +389,7 @@ class PlanetApp {
         hdr_post_frame_.destroy_pipeline();
         celestial_body_frame_.destroy_pipeline();
         sky_frame_.destroy_pipeline();
+        local_detail_pipeline_.reset();
         forward_pass_.reset();
     }
 
@@ -343,6 +401,7 @@ class PlanetApp {
         sky_frame_.destroy();
         surface_runtime_.clear_gpu_buffers();
         moon_mesh_.reset();
+        local_detail_mesh_.reset();
         patch_grid_mesh_.reset();
         surface_frame_material_.reset();
     }
@@ -453,7 +512,10 @@ class PlanetApp {
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = surface_runtime_.diagnostics().triangle_count,
+            .triangles = surface_runtime_.diagnostics().triangle_count +
+                         (local_detail_draw_enabled()
+                              ? local_detail_runtime_.diagnostics().triangle_count
+                              : 0U),
         };
         if (std::optional<cubey::host::FrameStatsSnapshot> stats =
                 ui_frame_stats_.record_frame(sample);
@@ -470,13 +532,16 @@ class PlanetApp {
         static_cast<void>(context.gpu().drain());
         surface_runtime_.clear_gpu_buffers();
         patch_grid_mesh_.reset();
+        local_detail_mesh_.reset();
         surface_runtime_.clear_selection_history();
 
         planet_config_ = edit_planet_config_;
         refresh_camera_limits_for_planet();
         refresh_frame();
         surface_runtime_.rebuild(planet_config_, frame_, surface_view(context.swapchain().extent()));
+        local_detail_runtime_.rebuild(planet_config_, frame_);
         patch_grid_mesh_.emplace(context.gpu(), surface_runtime_.patch_grid().mesh_config());
+        local_detail_mesh_.emplace(context.gpu(), local_detail_runtime_.mesh().mesh_config());
         surface_runtime_.resize_frame_slots(context.frame_slot_count());
         static_cast<void>(context.gpu().drain());
     }
@@ -587,6 +652,13 @@ class PlanetApp {
         const float ambient_intensity = surface_ambient_intensity();
         const float direct_intensity = surface_direct_intensity();
         const cubey::math::Vec3 haze_color = surface_haze_color();
+        const cubey::render::ClipmapGrid2DConfig local_detail_grid =
+            planet_local_detail_clipmap_config(planet_config_);
+        const float local_detail_active = local_detail_surface_weight();
+        const float local_detail_near_half_extent =
+            cubey::render::clipmap_grid_2d_near_half_extent(local_detail_grid);
+        const float local_detail_near_cell_size =
+            cubey::render::clipmap_grid_2d_near_cell_size(local_detail_grid);
         const PlanetCelestialDiagnostics celestial_diagnostics =
             planet_celestial_diagnostics(solar_time_, solar_config_);
         return {
@@ -711,7 +783,54 @@ class PlanetApp {
                     celestial_lighting_.moon_light_color.b,
                     celestial_lighting_.moon_light_intensity,
                 },
+            .local_origin_options =
+                {
+                    static_cast<float>(frame_.local_frame.world_origin_m.x),
+                    static_cast<float>(frame_.local_frame.world_origin_m.y),
+                    static_cast<float>(frame_.local_frame.world_origin_m.z),
+                    local_detail_active,
+                },
+            .local_right_outer =
+                {
+                    frame_.local_frame.right.x,
+                    frame_.local_frame.right.y,
+                    frame_.local_frame.right.z,
+                    planet_config_.local_detail_outer_half_extent_m,
+                },
+            .local_up_height =
+                {
+                    frame_.local_frame.up.x,
+                    frame_.local_frame.up.y,
+                    frame_.local_frame.up.z,
+                    planet_config_.local_detail_height_strength_m,
+                },
+            .local_forward_scale =
+                {
+                    frame_.local_frame.forward.x,
+                    frame_.local_frame.forward.y,
+                    frame_.local_frame.forward.z,
+                    planet_config_.local_detail_scale_m,
+                },
+            .local_detail_options =
+                {
+                    static_cast<float>(planet_config_.local_detail_lod_levels),
+                    local_detail_near_half_extent,
+                    local_detail_near_cell_size,
+                    0.0F,
+                },
         };
+    }
+
+    [[nodiscard]] float local_detail_surface_weight() const {
+        if (!planet_config_.local_detail_enabled ||
+            !planet_local_detail_surface_view_enabled(planet_config_)) {
+            return 0.0F;
+        }
+        return planet_app_smoothstep(0.20F, 0.65F, exposure_surface_reference_weight());
+    }
+
+    [[nodiscard]] bool local_detail_draw_enabled() const {
+        return local_detail_surface_weight() > 0.001F;
     }
 
     [[nodiscard]] float surface_direct_intensity() const {
@@ -916,6 +1035,18 @@ class PlanetApp {
                                                         .mesh = &patch_grid_mesh(),
                                                         .instance_count = instance_buffer.count(),
                                                     });
+                        if (local_detail_draw_enabled()) {
+                            pass_recorder.bind_pipeline(
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                local_detail_pipeline().pipeline());
+                            pass_recorder.bind_descriptor_set(
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                local_detail_pipeline().layout(), 0, frame_set);
+                            cubey::render::record_draw_item(
+                                pass_recorder.handle(), cubey::render::DrawItem{
+                                                            .mesh = &local_detail_mesh(),
+                                                        });
+                        }
                     });
             });
         graph.add_pass("planet moon", cubey::render::RenderGraphQueueDomain::Graphics)
@@ -994,6 +1125,13 @@ class PlanetApp {
         return patch_grid_mesh_.value();
     }
 
+    [[nodiscard]] const cubey::render::Mesh& local_detail_mesh() const {
+        if (!local_detail_mesh_.has_value()) {
+            throw std::runtime_error("planet local detail mesh is not initialized");
+        }
+        return local_detail_mesh_.value();
+    }
+
     [[nodiscard]] const cubey::render::Mesh& moon_mesh() const {
         if (!moon_mesh_.has_value()) {
             throw std::runtime_error("planet moon mesh is not initialized");
@@ -1006,6 +1144,13 @@ class PlanetApp {
             throw std::runtime_error("planet forward pass is not initialized");
         }
         return forward_pass_.value();
+    }
+
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& local_detail_pipeline() const {
+        if (!local_detail_pipeline_.has_value()) {
+            throw std::runtime_error("planet local detail pipeline is not initialized");
+        }
+        return local_detail_pipeline_.value();
     }
 
     void create_sky_frame_resources_if_needed(const cubey::vulkan::Device& device,
@@ -1106,14 +1251,17 @@ class PlanetApp {
     cubey::Camera3D camera_{cubey::Camera3DConfig{.near_z = 1.0F, .far_z = 1500000.0F}};
     PlanetFrame frame_{};
     PlanetSurfaceRuntime surface_runtime_{};
+    PlanetLocalDetailRuntime local_detail_runtime_{};
     bool surface_rebuild_pending_ = false;
     bool camera_interacting_ = false;
     bool planet_config_apply_pending_ = false;
     std::optional<cubey::render::Mesh> patch_grid_mesh_;
+    std::optional<cubey::render::Mesh> local_detail_mesh_;
     std::optional<cubey::render::Mesh> moon_mesh_;
     std::optional<cubey::render::FrameUniformMaterialInstance<PlanetSurfaceFrameUniforms>>
         surface_frame_material_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
+    std::optional<cubey::render::GraphicsPipelineResource> local_detail_pipeline_;
     PlanetSkyFrame sky_frame_{};
     PlanetCelestialBodyFrame celestial_body_frame_{};
     cubey::render::HdrPostFrame hdr_post_frame_{};

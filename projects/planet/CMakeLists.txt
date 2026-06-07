@@ -5,6 +5,7 @@ set(CUBEY_PLANET_SHADERS
     shaders/planet_celestial_body.frag
     shaders/planet_surface.vert
     shaders/planet_surface.frag
+    shaders/planet_local_detail.vert
     "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
 )
