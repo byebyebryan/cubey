@@ -207,9 +207,13 @@ Current implementation notes:
 - A project-local local-detail clipmap now exists beside the global patch tree.
   It wraps `cubey::render::ClipmapGrid2D`, is anchored to
   `PlanetFrame.local_frame`, defaults to a 4 m near cell over an 8192 m outer
-  half extent, and is the v1 near-field terrain detail layer. It is still
-  procedural and project-local: no terrain streaming, ocean port, texture
-  cache, or compute terrain generation is part of this first consumer.
+  half extent, and is the v1 near-field terrain detail layer. The live renderer
+  cuts the global surface under the local footprint, renders the local mesh with
+  extra procedural displacement, and exposes `local-detail-wireframe`,
+  `local-detail-blend`, and `local-detail-height` views for clipmap ownership
+  and displacement inspection. It is still procedural and project-local: no
+  terrain streaming, ocean port, texture cache, or compute terrain generation is
+  part of this first consumer.
 - LOD is coverage-first. View and horizon culling stop refinement, but the
   parent patch remains selected so rotating while rebuilds are deferred does not
   reveal holes.
@@ -240,8 +244,8 @@ Current implementation notes:
   skirts, approximate metric cell edge, normalized terrain height, normalized
   terrain slope, terrain material bands, bathymetry, shoreline, land mask,
   moisture, temperature, roughness, wireframe grid, LOD transition pressure,
-  and celestial-plane validation. These are diagnostic tools, not final planet
-  visualization.
+  celestial-plane validation, and local-detail clipmap ownership/displacement.
+  These are diagnostic tools, not final planet visualization.
 - Planet rendering has moved away from the shared atmosphere background/runtime
   for now. The shared path was useful for ocean and atmosphere demos, but its
   demo-oriented sky clock and inline celestial disks were the wrong source of

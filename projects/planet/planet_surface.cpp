@@ -331,6 +331,12 @@ class PlanetPatchSelectionLookup {
         return lod_color(patch.id.level, config.max_lod_level);
     case PlanetDebugView::CelestialPlanes:
         return latitude_color(sample.sphere_normal);
+    case PlanetDebugView::LocalDetailWireframe:
+        return {0.26F, 0.42F, 0.58F};
+    case PlanetDebugView::LocalDetailBlend:
+        return {0.22F, 0.58F, 0.80F};
+    case PlanetDebugView::LocalDetailHeight:
+        return terrain_height_color(config, sample.height_m);
     }
     return final_color(config, sample);
 }

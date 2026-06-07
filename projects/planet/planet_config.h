@@ -68,6 +68,9 @@ enum class PlanetDebugView : std::uint8_t {
     Roughness,
     Wireframe,
     CelestialPlanes,
+    LocalDetailWireframe,
+    LocalDetailBlend,
+    LocalDetailHeight,
 };
 
 enum class PlanetScalePreset : std::uint8_t {

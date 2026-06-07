@@ -234,6 +234,18 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
     if (value == "celestial-planes" || value == "celestial_planes" || value == "celestial") {
         return PlanetDebugView::CelestialPlanes;
     }
+    if (value == "local-detail-wireframe" || value == "local_detail_wireframe" ||
+        value == "local-wireframe" || value == "local_wireframe") {
+        return PlanetDebugView::LocalDetailWireframe;
+    }
+    if (value == "local-detail-blend" || value == "local_detail_blend" ||
+        value == "local-blend" || value == "local_blend") {
+        return PlanetDebugView::LocalDetailBlend;
+    }
+    if (value == "local-detail-height" || value == "local_detail_height" ||
+        value == "local-height" || value == "local_height") {
+        return PlanetDebugView::LocalDetailHeight;
+    }
     throw std::runtime_error("unsupported planet debug view: " + std::string(value));
 }
 
@@ -277,6 +289,12 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "wireframe";
     case PlanetDebugView::CelestialPlanes:
         return "celestial-planes";
+    case PlanetDebugView::LocalDetailWireframe:
+        return "local-detail-wireframe";
+    case PlanetDebugView::LocalDetailBlend:
+        return "local-detail-blend";
+    case PlanetDebugView::LocalDetailHeight:
+        return "local-detail-height";
     }
     return "final";
 }

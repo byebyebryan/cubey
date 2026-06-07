@@ -194,6 +194,34 @@ if(BUILD_TESTING)
         wireframe
     )
     cubey_add_planet_visual_smoke(
+        planet_local_detail_wireframe_writes_png
+        planet-local-detail-wireframe.png
+        --planet-camera-mode
+        surface
+        --planet-camera-altitude-m
+        2000
+        --planet-local-detail-lod-levels
+        4
+        --planet-local-detail-cells
+        16
+        --debug-view
+        local-detail-wireframe
+    )
+    cubey_add_planet_visual_smoke(
+        planet_local_detail_blend_writes_png
+        planet-local-detail-blend.png
+        --planet-camera-mode
+        surface
+        --planet-camera-altitude-m
+        2000
+        --planet-local-detail-lod-levels
+        4
+        --planet-local-detail-cells
+        16
+        --debug-view
+        local-detail-blend
+    )
+    cubey_add_planet_visual_smoke(
         planet_surface_field_writes_png
         planet-surface-field.png
         --planet-camera-mode

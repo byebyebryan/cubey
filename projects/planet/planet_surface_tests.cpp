@@ -1305,6 +1305,15 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_from_string("celestial-planes") ==
                 cubey::projects::planet::PlanetDebugView::CelestialPlanes,
             "planet debug view should parse celestial-planes");
+    require(cubey::projects::planet::planet_debug_view_from_string("local-detail-wireframe") ==
+                cubey::projects::planet::PlanetDebugView::LocalDetailWireframe,
+            "planet debug view should parse local-detail-wireframe");
+    require(cubey::projects::planet::planet_debug_view_from_string("local-detail-blend") ==
+                cubey::projects::planet::PlanetDebugView::LocalDetailBlend,
+            "planet debug view should parse local-detail-blend");
+    require(cubey::projects::planet::planet_debug_view_from_string("local-detail-height") ==
+                cubey::projects::planet::PlanetDebugView::LocalDetailHeight,
+            "planet debug view should parse local-detail-height");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::CellEdge)} == "cell-edge",
             "planet debug view should name cell-edge");
@@ -1344,6 +1353,18 @@ void test_planet_surface_metric_debug_views_parse() {
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::CelestialPlanes)} == "celestial-planes",
             "planet debug view should name celestial-planes");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::LocalDetailWireframe)} ==
+                "local-detail-wireframe",
+            "planet debug view should name local-detail-wireframe");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::LocalDetailBlend)} ==
+                "local-detail-blend",
+            "planet debug view should name local-detail-blend");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::LocalDetailHeight)} ==
+                "local-detail-height",
+            "planet debug view should name local-detail-height");
 }
 
 void test_planet_surface_planner_records_lod_transition_pressure() {

@@ -65,6 +65,7 @@ layout(location = 4) out vec3 out_sphere_normal;
 layout(location = 5) out vec4 out_surface_field;
 layout(location = 6) out vec4 out_climate_field;
 layout(location = 7) out vec4 out_local_detail;
+layout(location = 8) out float out_local_detail_delta;
 
 #include "planet_surface_field.glsl"
 
@@ -318,5 +319,6 @@ void main() {
                              shoreline_mask);
     out_climate_field = vec4(normalized_bathymetry, moisture, temperature, roughness);
     out_local_detail = vec4(0.0, 0.0, -1.0, 0.0);
+    out_local_detail_delta = 0.0;
     gl_Position = surface_frame.view_projection * vec4(render_position, 1.0);
 }

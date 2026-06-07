@@ -27,12 +27,17 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view roughness
 ./build/dev/projects/planet/planet --debug-view wireframe
 ./build/dev/projects/planet/planet --debug-view celestial-planes
+./build/dev/projects/planet/planet --debug-view local-detail-wireframe
+./build/dev/projects/planet/planet --debug-view local-detail-blend
+./build/dev/projects/planet/planet --debug-view local-detail-height
 ./build/dev/projects/planet/planet --debug-view seams
 ./build/dev/projects/planet/planet --planet-atmosphere-mode physical
 ./build/dev/projects/planet/planet --planet-atmosphere-haze-strength 0.18 --planet-atmosphere-aerial-strength 0.35
 ./build/dev/projects/planet/planet --planet-max-lod-level 7 --planet-lod-target-edge-px 8
 ./build/dev/projects/planet/planet --planet-max-lod-level 12 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
 ./build/dev/projects/planet/planet --planet-local-detail-lod-levels 6 --planet-local-detail-cells 128 --planet-local-detail-outer-extent-m 8192
+./build/dev/projects/planet/planet --planet-local-detail-height-m 220 --planet-local-detail-scale-m 180
+./build/dev/projects/planet/planet --no-planet-local-detail
 ./build/dev/projects/planet/planet --planet-terrain-mid-detail-strength 0.45 --planet-terrain-fine-detail-strength 0.16 --planet-terrain-fine-detail-scale 12
 ./build/dev/projects/planet/planet --planet-sea-level-m 0 --planet-shoreline-width-m 1500
 ```
@@ -54,7 +59,8 @@ The broader manual capture matrix is tracked in
 Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 `screen-error`, `lod-transition`, `seams`, `cell-edge`, `terrain-height`,
 `terrain-slope`, `terrain-material`, `bathymetry`, `shoreline`, `land-mask`,
-`moisture`, `temperature`, `roughness`, `wireframe`, and `celestial-planes`.
+`moisture`, `temperature`, `roughness`, `wireframe`, `celestial-planes`,
+`local-detail-wireframe`, `local-detail-blend`, and `local-detail-height`.
 `celestial-planes` colors the equator, ecliptic, and lunar orbit great circles
 plus sub-solar/sub-lunar markers for validating the mean celestial model.
 Windowed controls are applied live where possible. Left drag orbits the planet,
@@ -89,6 +95,9 @@ local-detail layer is centered on `PlanetFrame.local_frame`, defaults to six
 clipmap levels, 128 cells per axis, an 8192 m outer half extent, and a 4 m near
 cell. In v1 it renders near-field procedural terrain detail and reports its own
 patch, vertex, triangle, cell-size, and blend diagnostics in the UI.
+`local-detail-wireframe` shows the near-field clipmap ownership, `local-detail-blend`
+shows the active ownership/cutout mask, and `local-detail-height` isolates the
+added detail displacement.
 
 Planet surface LOD is coverage-first. Root patches provide guaranteed coarse
 coverage for every planet domain, and view/horizon culling only stops

@@ -40,6 +40,7 @@ layout(location = 4) out vec3 out_sphere_normal;
 layout(location = 5) out vec4 out_surface_field;
 layout(location = 6) out vec4 out_climate_field;
 layout(location = 7) out vec4 out_local_detail;
+layout(location = 8) out float out_local_detail_delta;
 
 uint packed_patch_lod_option() {
     return uint(surface_frame.surface_options.y + 0.5);
@@ -206,5 +207,6 @@ void main() {
                              shoreline_mask);
     out_climate_field = vec4(normalized_bathymetry, moisture, temperature, roughness);
     out_local_detail = vec4(in_local_xz_m, in_level, in_blend);
+    out_local_detail_delta = detail_height_m / max(surface_frame.local_up_height.w, 1.0);
     gl_Position = surface_frame.view_projection * vec4(render_position, 1.0);
 }

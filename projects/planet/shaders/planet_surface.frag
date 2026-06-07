@@ -11,6 +11,7 @@ layout(location = 4) in vec3 in_sphere_normal;
 layout(location = 5) in vec4 in_surface_field;
 layout(location = 6) in vec4 in_climate_field;
 layout(location = 7) in vec4 in_local_detail;
+layout(location = 8) in float in_local_detail_delta;
 
 layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     mat4 view_projection;
@@ -60,7 +61,8 @@ int debug_view_option() {
 
 bool local_detail_surface_debug_enabled() {
     int debug_view = debug_view_option();
-    return debug_view == 0 || (debug_view >= 8 && debug_view <= 16);
+    return debug_view == 0 || (debug_view >= 8 && debug_view <= 16) ||
+           (debug_view >= 19 && debug_view <= 21);
 }
 
 bool local_detail_is_local_draw() {
@@ -260,6 +262,57 @@ vec3 fragment_material_albedo(uint material) {
     return base;
 }
 
+vec3 local_detail_debug_base() {
+    if (local_detail_is_local_draw()) {
+        float level = clamp(in_local_detail.z / max(surface_frame.local_detail_options.x - 1.0,
+                                                    1.0), 0.0, 1.0);
+        return mix(vec3(0.04, 0.24, 0.42), vec3(0.46, 0.24, 0.05), level);
+    }
+    return in_color * 0.08;
+}
+
+float local_detail_grid_wire_alpha(vec2 local_xz, float level) {
+    float near_cell_size = max(surface_frame.local_detail_options.z, 0.0001);
+    float cell_size = near_cell_size * exp2(max(level, 0.0));
+    vec2 grid_uv = local_xz / cell_size;
+    vec2 cell_fraction = fract(grid_uv);
+    vec2 cell_edge_distance = min(cell_fraction, 1.0 - cell_fraction);
+    float distance_to_line = min(cell_edge_distance.x, cell_edge_distance.y);
+    float width = max(max(fwidth(grid_uv.x), fwidth(grid_uv.y)) * 1.15, 0.012);
+    float axis_wire = 1.0 - smoothstep(width, width * 2.0, distance_to_line);
+    float distance_to_diagonal = abs(cell_fraction.x + cell_fraction.y - 1.0) * 0.70710678;
+    float diagonal_wire = 1.0 - smoothstep(width, width * 2.0, distance_to_diagonal);
+    return max(axis_wire, diagonal_wire * 0.80);
+}
+
+vec4 local_detail_debug_color() {
+    int debug_view = debug_view_option();
+    if (debug_view == 19) {
+        float mesh_wire = local_detail_is_local_draw()
+                              ? local_detail_grid_wire_alpha(in_local_detail.xy,
+                                                             in_local_detail.z)
+                              : grid_wire_alpha(in_uv) * 0.18;
+        vec3 base = local_detail_debug_base();
+        vec3 line = local_detail_is_local_draw() ? vec3(0.72, 0.84, 0.96)
+                                                 : vec3(0.22, 0.30, 0.38);
+        return vec4(mix(base, line, mesh_wire * 0.72), 1.0);
+    }
+    if (debug_view == 20) {
+        float ownership = local_detail_is_local_draw()
+                              ? local_detail_patch_ownership(in_local_detail.xy, in_local_detail.z,
+                                                             in_local_detail.w)
+                              : 0.0;
+        vec3 color = mix(vec3(0.08, 0.10, 0.18), vec3(0.15, 0.78, 0.96), ownership);
+        color = mix(color, vec3(1.00, 0.72, 0.22), smoothstep(0.86, 1.0, ownership));
+        return vec4(color, 1.0);
+    }
+    float height = local_detail_is_local_draw() ? abs(in_local_detail_delta) : 0.0;
+    vec3 color = mix(vec3(0.07, 0.09, 0.13), vec3(0.96, 0.42, 0.18),
+                     smoothstep(0.02, 0.75, height));
+    color = mix(color, vec3(1.0, 0.92, 0.46), smoothstep(0.75, 1.25, height));
+    return vec4(color, 1.0);
+}
+
 void main() {
     vec3 world_position = surface_world_position();
     if (local_detail_global_cutout(world_position)) {
@@ -283,6 +336,10 @@ void main() {
     }
     if (debug_view_option() == 18) {
         out_color = vec4(celestial_planes_color(), 1.0);
+        return;
+    }
+    if (debug_view_option() >= 19 && debug_view_option() <= 21) {
+        out_color = local_detail_debug_color();
         return;
     }
 
