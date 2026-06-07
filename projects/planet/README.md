@@ -171,13 +171,14 @@ The current sky pass renders dark space, sparse procedural stars, a sun
 disk/glow, and a local planet limb. The default `physical` atmosphere mode uses
 a small project-local single-scattering model with Rayleigh/Mie vocabulary, sun
 transmittance, and surface aerial perspective. The older `analytic` mode
-remains selectable for comparison and debugging. The moon is now an opaque,
+remains selectable for comparison and debugging. The moon is now a
 depth-tested sphere rendered from the same local celestial state on a
 camera-relative shell that preserves its apparent angular size. Phase and
 terminator shape therefore come from body lighting against the modeled sun
-direction instead of a sky-disk mask. The atmosphere can wash out the moon's
-contrast in daylight, but it does not make the moon transparent; night-side
-terrain receives a small phase-scaled secondary moonlight term. True
+direction instead of a sky-disk mask. The body pass uses premultiplied blending
+for phase coverage and daylight sky washout, but placement and planet
+occlusion remain geometric/depth-tested rather than sky-sprite ownership.
+Night-side terrain receives a small phase-scaled secondary moonlight term. True
 node-aware lunar eclipses remain deferred. The surface shader receives frame
 data through a descriptor-backed uniform instead of push constants, and
 composes final terrain through atmosphere before post. The scene renders into a
