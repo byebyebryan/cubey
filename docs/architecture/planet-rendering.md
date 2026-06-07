@@ -204,11 +204,12 @@ Current implementation notes:
   lazily uploads the current instance list into that frame slot's buffer when
   its generation is stale. Full config rebuilds still drain and recreate
   resources because the reusable patch grid itself can change.
-- A project-local local-detail clipmap plan now exists beside the global patch
-  tree. It wraps `cubey::render::ClipmapGrid2D`, is anchored to
+- A project-local local-detail clipmap now exists beside the global patch tree.
+  It wraps `cubey::render::ClipmapGrid2D`, is anchored to
   `PlanetFrame.local_frame`, defaults to a 4 m near cell over an 8192 m outer
-  half extent, and is diagnostic-only until terrain detail or ocean waves start
-  consuming it.
+  half extent, and is the v1 near-field terrain detail layer. It is still
+  procedural and project-local: no terrain streaming, ocean port, texture
+  cache, or compute terrain generation is part of this first consumer.
 - LOD is coverage-first. View and horizon culling stop refinement, but the
   parent patch remains selected so rotating while rebuilds are deferred does not
   reveal holes.

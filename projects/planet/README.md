@@ -85,10 +85,10 @@ global cube-sphere patch tree is responsible for coverage and stable
 `face/level/x/y` identity. Meter-scale terrain detail and future ocean waves are
 expected to come through a viewer-centered local-detail clipmap rather than by
 forcing the global patch tree to carry every wave or interaction feature. The
-current local-detail plan is diagnostic-only: it is centered on
-`PlanetFrame.local_frame`, defaults to six clipmap levels, 128 cells per axis,
-an 8192 m outer half extent, and a 4 m near cell, and reports its own patch,
-vertex, and triangle budget in the UI.
+local-detail layer is centered on `PlanetFrame.local_frame`, defaults to six
+clipmap levels, 128 cells per axis, an 8192 m outer half extent, and a 4 m near
+cell. In v1 it renders near-field procedural terrain detail and reports its own
+patch, vertex, triangle, cell-size, and blend diagnostics in the UI.
 
 Planet surface LOD is coverage-first. Root patches provide guaranteed coarse
 coverage for every planet domain, and view/horizon culling only stops
@@ -196,4 +196,7 @@ going black or empty.
 
 This project should stay focused on planet-scale contracts first. Ocean scale
 work remains in `projects/ocean` until the planet frame, LOD, and world-space
-contracts are stable enough to port it cleanly.
+contracts are stable enough to port it cleanly. The local-detail terrain pass is
+the first consumer of the planet-local clipmap; future ocean, wake, shoreline,
+and interaction data should attach to the same local frame instead of creating a
+second planet-scale mesh system.
