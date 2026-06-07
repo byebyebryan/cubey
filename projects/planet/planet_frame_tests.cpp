@@ -1,11 +1,14 @@
 #include "planet_camera.h"
 #include "planet_config.h"
 #include "planet_frame.h"
+#include "planet_surface_field.h"
 
 #include <cubey/scene/transform_3d.h>
 
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
+#include <limits>
 #include <stdexcept>
 
 namespace {
@@ -20,6 +23,37 @@ void require_near(float actual, float expected, float tolerance, const char* mes
     if (std::abs(actual - expected) > tolerance) {
         throw std::runtime_error(message);
     }
+}
+
+[[nodiscard]] cubey::math::Vec3
+highest_sampled_terrain_direction(const cubey::projects::planet::PlanetConfig& config) {
+    cubey::math::Vec3 best_direction{0.0F, 0.0F, 1.0F};
+    float best_height = std::numeric_limits<float>::lowest();
+    constexpr std::uint32_t kSampleCount = 128U;
+    constexpr float kGoldenAngle = 2.39996314F;
+    for (std::uint32_t index = 0U; index < kSampleCount; ++index) {
+        const float y =
+            -1.0F + (2.0F * (static_cast<float>(index) + 0.5F)) / static_cast<float>(kSampleCount);
+        const float radius = std::sqrt(std::max(1.0F - (y * y), 0.0F));
+        const float theta = kGoldenAngle * static_cast<float>(index);
+        const cubey::math::Vec3 direction = glm::normalize(
+            cubey::math::Vec3{std::cos(theta) * radius, y, std::sin(theta) * radius});
+        const float height =
+            cubey::projects::planet::planet_surface_terrain_height_m(config, direction);
+        if (height > best_height) {
+            best_height = height;
+            best_direction = direction;
+        }
+    }
+    return best_direction;
+}
+
+[[nodiscard]] cubey::math::DVec3 to_double(cubey::math::Vec3 value) {
+    return {
+        static_cast<double>(value.x),
+        static_cast<double>(value.y),
+        static_cast<double>(value.z),
+    };
 }
 
 void require_invalid_planet_config(cubey::projects::planet::PlanetConfig config,
@@ -332,6 +366,49 @@ void test_planet_frame_preserves_close_surface_altitude() {
                  "planet frame should preserve close surface camera altitude");
 }
 
+void test_planet_camera_clamps_to_sampled_terrain_surface() {
+    const cubey::projects::planet::PlanetConfig config{};
+    const cubey::math::Vec3 direction = highest_sampled_terrain_direction(config);
+    const float surface_height =
+        cubey::projects::planet::planet_surface_terrain_height_m(config, direction);
+    require(surface_height > cubey::projects::planet::planet_camera_min_altitude_m(config),
+            "terrain clamp test should pick a terrain point above the datum floor");
+
+    cubey::projects::planet::PlanetCameraState state{
+        .position_m = to_double(direction) * static_cast<double>(config.radius_m),
+    };
+    cubey::projects::planet::planet_camera_set_distance(
+        state, config,
+        config.radius_m + cubey::projects::planet::planet_camera_min_altitude_m(config));
+
+    const float clearance =
+        cubey::projects::planet::planet_camera_surface_clearance_m(config, state.position_m);
+    require_near(clearance, cubey::projects::planet::planet_camera_min_altitude_m(config), 1.0F,
+                 "planet camera should clamp to clearance above sampled terrain, not datum");
+    require(cubey::projects::planet::planet_camera_distance_m(state) >
+                config.radius_m + surface_height,
+            "planet camera should stay outside terrain geometry");
+}
+
+void test_planet_camera_zoom_scales_surface_clearance() {
+    const cubey::projects::planet::PlanetConfig config{};
+    const cubey::math::Vec3 direction = highest_sampled_terrain_direction(config);
+    const float surface_height =
+        cubey::projects::planet::planet_surface_terrain_height_m(config, direction);
+    constexpr float starting_clearance = 1000.0F;
+    cubey::projects::planet::PlanetCameraState state{
+        .position_m = to_double(direction) *
+                      static_cast<double>(config.radius_m + surface_height + starting_clearance),
+    };
+
+    cubey::projects::planet::planet_camera_zoom_by_scroll(state, config, 1.0);
+
+    require_near(
+        cubey::projects::planet::planet_camera_surface_clearance_m(config, state.position_m),
+        starting_clearance * 0.86F, 2.0F,
+        "planet camera zoom should scale clearance above terrain surface");
+}
+
 void test_planet_camera_keeps_orbit_view_at_high_altitude() {
     const cubey::projects::planet::PlanetConfig config{};
     const cubey::projects::planet::PlanetCameraState state =
@@ -354,13 +431,15 @@ void test_planet_camera_zoom_scales_altitude_not_planet_radius() {
     const cubey::projects::planet::PlanetConfig config{};
     cubey::projects::planet::PlanetCameraState state =
         cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
+    const float before_clearance =
+        cubey::projects::planet::planet_camera_surface_clearance_m(config, state.position_m);
 
     cubey::projects::planet::planet_camera_zoom_by_scroll(state, config, 1.0);
 
-    const float altitude =
-        cubey::projects::planet::planet_camera_distance_m(state) - config.radius_m;
-    require_near(altitude, config.camera_altitude_m * 0.86F, 1.0F,
-                 "planet scroll zoom should scale altitude above the surface");
+    const float after_clearance =
+        cubey::projects::planet::planet_camera_surface_clearance_m(config, state.position_m);
+    require_near(after_clearance, before_clearance * 0.86F, 1.0F,
+                 "planet scroll zoom should scale clearance above the terrain surface");
     require(cubey::projects::planet::planet_surface_camera_blend(
                 config, cubey::projects::planet::planet_camera_distance_m(state)) == 0.0F,
             "one planet scroll step from home should not jump into surface transition");
@@ -551,13 +630,17 @@ void test_planet_surface_camera_move_stays_on_surface_shell() {
     cubey::projects::planet::planet_camera_set_distance(state, config, distance);
     cubey::projects::planet::planet_camera_reset_surface_view(state, config);
     const cubey::math::DVec3 before_position = state.position_m;
+    const float before_clearance =
+        cubey::projects::planet::planet_camera_surface_clearance_m(config, state.position_m);
 
     const bool moved =
         cubey::projects::planet::planet_camera_surface_move(state, config, 1.0F, 0.0F, 1.0);
 
     require(moved, "surface camera movement should move while near the surface");
-    require_near(cubey::projects::planet::planet_camera_distance_m(state), distance, 1.0F,
-                 "surface camera movement should preserve altitude");
+    require_near(
+        cubey::projects::planet::planet_camera_surface_clearance_m(config, state.position_m),
+        before_clearance, 2.0F,
+        "surface camera movement should preserve terrain-relative clearance");
     require(glm::length(state.position_m - before_position) > 100.0,
             "surface camera movement should advance along the planet tangent");
 }
@@ -620,6 +703,8 @@ int main() {
         test_planet_config_change_kind_separates_dynamic_and_topology();
         test_planet_camera_min_altitude_allows_close_surface_inspection();
         test_planet_frame_preserves_close_surface_altitude();
+        test_planet_camera_clamps_to_sampled_terrain_surface();
+        test_planet_camera_zoom_scales_surface_clearance();
         test_planet_camera_keeps_orbit_view_at_high_altitude();
         test_planet_camera_zoom_scales_altitude_not_planet_radius();
         test_planet_camera_surface_blend_does_not_auto_spin_heading();

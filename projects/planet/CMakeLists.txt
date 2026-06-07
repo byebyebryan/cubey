@@ -47,6 +47,8 @@ if(BUILD_TESTING)
         planet_camera.cpp
         planet_config.cpp
         planet_frame.cpp
+        planet_surface.cpp
+        planet_surface_field.cpp
         planet_frame_tests.cpp
     )
     target_link_libraries(

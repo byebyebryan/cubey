@@ -109,6 +109,8 @@ void draw_planet_controls(PlanetUiContext& ui) {
         ImGui::Checkbox("Wire Overlay", &ui.edit_config.wire_overlay);
         const CameraLocationReadout camera_location = camera_location_readout(ui.frame);
         ImGui::Text("Camera Height: %.0f m", ui.frame.camera_altitude_m);
+        ImGui::Text("Surface Clearance: %.0f m", planet_camera_surface_clearance_m(
+                                                     ui.active_config, ui.camera_state.position_m));
         ImGui::Text("Lat / Lon: %.3f / %.3f deg", camera_location.latitude_degrees,
                     camera_location.longitude_degrees);
     }
@@ -278,6 +280,8 @@ void draw_diagnostics(PlanetUiContext& ui) {
         ImGui::Text("Terrain / radius: %.3f%%",
                     (ui.active_config.terrain_height_scale_m / radius) * 100.0F);
         ImGui::Text("Altitude: %.0f m", ui.frame.camera_altitude_m);
+        ImGui::Text("Surface clearance: %.0f m", planet_camera_surface_clearance_m(
+                                                     ui.active_config, ui.camera_state.position_m));
         ImGui::Text("Surface camera: %.0f%%",
                     planet_surface_camera_blend(ui.active_config,
                                                 planet_camera_distance_m(ui.camera_state)) *

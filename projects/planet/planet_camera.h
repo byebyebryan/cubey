@@ -8,13 +8,16 @@
 namespace cubey::projects::planet {
 
 struct PlanetCameraState {
-    cubey::math::DVec3 position_m{0.0, 0.0,
-                                  kPlanetDefaultRadiusM + kPlanetDefaultCameraAltitudeM};
+    cubey::math::DVec3 position_m{0.0, 0.0, kPlanetDefaultRadiusM + kPlanetDefaultCameraAltitudeM};
     cubey::math::Quat surface_rotation{cubey::math::identity_quat()};
     bool surface_rotation_active = false;
 };
 
 [[nodiscard]] float planet_camera_min_altitude_m(const PlanetConfig& config);
+[[nodiscard]] float planet_camera_surface_height_m(const PlanetConfig& config,
+                                                   cubey::math::DVec3 position_m);
+[[nodiscard]] float planet_camera_surface_clearance_m(const PlanetConfig& config,
+                                                      cubey::math::DVec3 position_m);
 [[nodiscard]] float planet_surface_camera_blend(const PlanetConfig& config, float distance_m);
 [[nodiscard]] float planet_camera_home_distance_m(const PlanetConfig& config);
 [[nodiscard]] float planet_camera_min_distance_m(const PlanetConfig& config);
@@ -24,9 +27,9 @@ struct PlanetCameraState {
 [[nodiscard]] PlanetCameraState planet_camera_home_state(const PlanetConfig& config,
                                                          float base_yaw_radians,
                                                          float base_pitch_radians);
-[[nodiscard]] PlanetCameraState planet_camera_initial_state_from_run_config(
-    const PlanetConfig& config, const RunConfig& run_config, float base_yaw_radians,
-    float base_pitch_radians);
+[[nodiscard]] PlanetCameraState
+planet_camera_initial_state_from_run_config(const PlanetConfig& config, const RunConfig& run_config,
+                                            float base_yaw_radians, float base_pitch_radians);
 void planet_camera_set_distance(PlanetCameraState& state, const PlanetConfig& config,
                                 float distance_m);
 void planet_camera_zoom_by_scroll(PlanetCameraState& state, const PlanetConfig& config,
