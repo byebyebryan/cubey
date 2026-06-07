@@ -4,6 +4,7 @@
 #include "planet_celestial.h"
 #include "planet_config.h"
 #include "planet_frame.h"
+#include "planet_local_detail.h"
 #include "planet_surface.h"
 
 #include <cubey/host/performance_ui.h>
@@ -28,6 +29,7 @@ struct PlanetUiContext {
     const PlanetCameraState& camera_state;
     PlanetExposureConfig& exposure_config;
     const PlanetSurfaceDiagnostics& surface_diagnostics;
+    const PlanetLocalDetailDiagnostics& local_detail_diagnostics;
     cubey::host::PerformanceUiContext performance;
     VkExtent2D extent{};
     std::function<void()> reset_camera;

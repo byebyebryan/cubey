@@ -1,8 +1,8 @@
+#include "planet_local_detail.h"
+#include "planet_local_detail_runtime.h"
 #include "planet_surface.h"
 #include "planet_surface_field.h"
 #include "planet_surface_runtime.h"
-#include "planet_local_detail.h"
-#include "planet_local_detail_runtime.h"
 
 #include <cmath>
 #include <cstddef>
@@ -289,44 +289,40 @@ void test_planet_surface_field_reports_bounded_height_normal_and_slope() {
 }
 
 void test_planet_surface_field_classifies_material_bands() {
-    require(cubey::projects::planet::planet_surface_material(-2000.0F, 2000.0F, 0.0F,
-                                                             -0.60F, 0.0F, 0.3F, 0.5F) ==
+    require(cubey::projects::planet::planet_surface_material(-2000.0F, 2000.0F, 0.0F, -0.60F, 0.0F,
+                                                             0.3F, 0.5F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::DeepWater,
             "planet surface material should classify deep water");
-    require(cubey::projects::planet::planet_surface_material(-20.0F, 20.0F, 0.2F, -0.05F,
-                                                             0.0F, 0.5F, 0.7F) ==
+    require(cubey::projects::planet::planet_surface_material(-20.0F, 20.0F, 0.2F, -0.05F, 0.0F,
+                                                             0.5F, 0.7F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::ShallowWater,
             "planet surface material should classify shallow water");
-    require(cubey::projects::planet::planet_surface_material(20.0F, 0.0F, 0.8F, 0.0F,
-                                                             0.05F, 0.5F, 0.8F) ==
+    require(cubey::projects::planet::planet_surface_material(20.0F, 0.0F, 0.8F, 0.0F, 0.05F, 0.5F,
+                                                             0.8F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::Beach,
             "planet surface material should classify gentle shoreline terrain as beach");
-    require(cubey::projects::planet::planet_surface_material(100.0F, 0.0F, 0.0F, 0.0F,
-                                                             0.05F, 0.6F, 0.7F) ==
+    require(cubey::projects::planet::planet_surface_material(100.0F, 0.0F, 0.0F, 0.0F, 0.05F, 0.6F,
+                                                             0.7F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::Lowland,
             "planet surface material should classify low gentle terrain");
-    require(cubey::projects::planet::planet_surface_material(100.0F, 0.0F, 0.0F, 0.30F,
-                                                             0.05F, 0.4F, 0.6F) ==
+    require(cubey::projects::planet::planet_surface_material(100.0F, 0.0F, 0.0F, 0.30F, 0.05F, 0.4F,
+                                                             0.6F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::Highland,
             "planet surface material should classify higher terrain");
-    require(cubey::projects::planet::planet_surface_material(100.0F, 0.0F, 0.0F, 0.70F,
-                                                             0.05F, 0.4F, 0.3F) ==
+    require(cubey::projects::planet::planet_surface_material(100.0F, 0.0F, 0.0F, 0.70F, 0.05F, 0.4F,
+                                                             0.3F) ==
                 cubey::projects::planet::PlanetSurfaceMaterial::Snow,
             "planet surface material should classify high snow terrain");
 
-    const cubey::math::Vec3 water =
-        cubey::projects::planet::planet_surface_material_color(
-            cubey::projects::planet::PlanetSurfaceMaterial::DeepWater, -0.2F, 0.0F, 0.0F,
-            0.5F);
-    const cubey::math::Vec3 beach =
-        cubey::projects::planet::planet_surface_material_color(
-            cubey::projects::planet::PlanetSurfaceMaterial::Beach, 0.0F, 0.0F, 0.3F, 0.8F);
+    const cubey::math::Vec3 water = cubey::projects::planet::planet_surface_material_color(
+        cubey::projects::planet::PlanetSurfaceMaterial::DeepWater, -0.2F, 0.0F, 0.0F, 0.5F);
+    const cubey::math::Vec3 beach = cubey::projects::planet::planet_surface_material_color(
+        cubey::projects::planet::PlanetSurfaceMaterial::Beach, 0.0F, 0.0F, 0.3F, 0.8F);
     const cubey::math::Vec3 highland = cubey::projects::planet::planet_surface_material_color(
         cubey::projects::planet::PlanetSurfaceMaterial::Highland, 0.4F, 0.5F, 0.3F, 0.5F);
     require(water.z > water.x && water.z > water.y,
             "planet water material should be blue-dominant");
-    require(beach.x > beach.z && beach.y > beach.z,
-            "planet beach material should be sand-colored");
+    require(beach.x > beach.z && beach.y > beach.z, "planet beach material should be sand-colored");
     require(highland.x > water.x && highland.y > water.y,
             "planet highland material should be brighter than water");
 }
@@ -433,8 +429,7 @@ void test_planet_surface_tile_payload_is_deterministic_and_bounded() {
             "planet surface tile payload should report bounded land coverage");
     require(first.summary.water_coverage >= 0.0F && first.summary.water_coverage <= 1.0F,
             "planet surface tile payload should report bounded water coverage");
-    require(first.summary.shoreline_coverage >= 0.0F &&
-                first.summary.shoreline_coverage <= 1.0F,
+    require(first.summary.shoreline_coverage >= 0.0F && first.summary.shoreline_coverage <= 1.0F,
             "planet surface tile payload should report bounded shoreline coverage");
     require(first.summary.max_normalized_slope >= 0.0F &&
                 first.summary.max_normalized_slope <= 1.0F,
@@ -987,9 +982,8 @@ void test_planet_surface_earthlike_lod_reaches_meter_scale_budget() {
 
 void test_planet_local_detail_plan_reports_viewer_centered_clipmap() {
     const cubey::projects::planet::PlanetConfig config{};
-    const cubey::projects::planet::PlanetFrame frame =
-        cubey::projects::planet::make_planet_frame(
-            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 50000.0});
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 50000.0});
 
     const cubey::projects::planet::PlanetLocalDetailPlan plan =
         cubey::projects::planet::plan_planet_local_detail(config, frame);
@@ -997,20 +991,50 @@ void test_planet_local_detail_plan_reports_viewer_centered_clipmap() {
         cubey::projects::planet::planet_local_detail_diagnostics(config, plan);
 
     require(diagnostics.enabled, "planet local detail should default to enabled");
+    require(diagnostics.active,
+            "planet local detail should be active once coarse cells are visible");
     require(diagnostics.lod_levels == config.local_detail_lod_levels,
             "planet local detail should report configured clipmap levels");
-    require(diagnostics.patch_count ==
+    require(diagnostics.patch_count <
                 cubey::render::clipmap_grid_2d_patch_count(config.local_detail_lod_levels),
-            "planet local detail should use the shared clipmap patch count");
+            "planet local detail should skip subpixel fine levels at mid altitude");
+    require(diagnostics.active_first_level > 0U,
+            "planet local detail should start at a coarser center level at mid altitude");
+    require(diagnostics.active_level_count ==
+                config.local_detail_lod_levels - diagnostics.active_first_level,
+            "planet local detail should keep a contiguous active level range");
     require(std::abs(diagnostics.near_cell_size - 4.0F) < 0.0001F,
             "planet local detail defaults should expose a four-meter near cell");
     require(diagnostics.triangle_count > 0U,
             "planet local detail should report a positive triangle budget");
-    require(std::abs(diagnostics.max_detail_delta_m -
-                     config.local_detail_height_strength_m) < 0.0001F,
+    require(std::abs(diagnostics.max_detail_delta_m - config.local_detail_height_strength_m) <
+                0.0001F,
             "planet local detail should expose configured detail height");
     require(glm::length(plan.local_frame.world_origin_m - frame.local_frame.world_origin_m) < 0.001,
             "planet local detail should stay anchored to the planet local tangent frame");
+}
+
+void test_planet_local_detail_deactivates_when_subpixel() {
+    const cubey::projects::planet::PlanetConfig config{};
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 2400000.0});
+    const cubey::projects::planet::PlanetLocalDetailPlan plan =
+        cubey::projects::planet::plan_planet_local_detail(
+            config, frame,
+            cubey::projects::planet::PlanetLocalDetailView{
+                .camera_altitude_m = 2400000.0F,
+                .vertical_fov_radians = 1.04719758F,
+                .viewport_height_px = 720.0F,
+            });
+    const cubey::projects::planet::PlanetLocalDetailDiagnostics diagnostics =
+        cubey::projects::planet::planet_local_detail_diagnostics(config, plan);
+
+    require(!diagnostics.active,
+            "planet local detail should deactivate when even the coarsest level is subpixel");
+    require(diagnostics.patch_count == 0U,
+            "inactive planet local detail should not allocate diagnostic patches");
+    require(diagnostics.triangle_count == 0U,
+            "inactive planet local detail should not allocate diagnostic triangles");
 }
 
 void test_planet_local_detail_density_is_independent_of_planet_radius() {
@@ -1020,8 +1044,7 @@ void test_planet_local_detail_density_is_independent_of_planet_radius() {
             cubey::projects::planet::PlanetScalePreset::Mini);
     const cubey::projects::planet::PlanetFrame earth_frame =
         cubey::projects::planet::make_planet_frame(
-            earth_config,
-            cubey::math::DVec3{0.0, 0.0, earth_config.radius_m + 50000.0});
+            earth_config, cubey::math::DVec3{0.0, 0.0, earth_config.radius_m + 50000.0});
     const cubey::projects::planet::PlanetFrame mini_frame =
         cubey::projects::planet::make_planet_frame(
             mini_config, cubey::math::DVec3{0.0, 0.0, mini_config.radius_m + 50000.0});
@@ -1035,19 +1058,17 @@ void test_planet_local_detail_density_is_independent_of_planet_radius() {
     const cubey::projects::planet::PlanetLocalDetailDiagnostics mini_diagnostics =
         cubey::projects::planet::planet_local_detail_diagnostics(mini_config, mini_plan);
 
-    require(std::abs(earth_diagnostics.near_cell_size -
-                     mini_diagnostics.near_cell_size) < 0.0001F,
+    require(std::abs(earth_diagnostics.near_cell_size - mini_diagnostics.near_cell_size) < 0.0001F,
             "planet local detail near cell should not change with planet radius");
-    require(std::abs(earth_diagnostics.outer_half_extent -
-                     mini_diagnostics.outer_half_extent) < 0.0001F,
+    require(std::abs(earth_diagnostics.outer_half_extent - mini_diagnostics.outer_half_extent) <
+                0.0001F,
             "planet local detail extent should not change with planet radius");
 }
 
 void test_planet_local_detail_mesh_matches_clipmap_budget() {
     const cubey::projects::planet::PlanetConfig config{};
-    const cubey::projects::planet::PlanetFrame frame =
-        cubey::projects::planet::make_planet_frame(
-            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 250.0});
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 250.0});
 
     const cubey::projects::planet::PlanetLocalDetailBuildResult build =
         cubey::projects::planet::make_planet_local_detail_mesh(config, frame);
@@ -1068,9 +1089,8 @@ void test_planet_local_detail_mesh_matches_clipmap_budget() {
 
 void test_planet_local_detail_runtime_tracks_topology() {
     cubey::projects::planet::PlanetConfig config{};
-    const cubey::projects::planet::PlanetFrame frame =
-        cubey::projects::planet::make_planet_frame(
-            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 250.0});
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 250.0});
     cubey::projects::planet::PlanetLocalDetailRuntime runtime{};
 
     require(runtime.topology_changed(config),
@@ -1078,6 +1098,13 @@ void test_planet_local_detail_runtime_tracks_topology() {
     runtime.rebuild(config, frame);
     require(!runtime.topology_changed(config),
             "planet local detail runtime should accept matching topology");
+    require(runtime.topology_changed(config,
+                                     cubey::projects::planet::PlanetLocalDetailView{
+                                         .camera_altitude_m = 2400000.0F,
+                                         .vertical_fov_radians = 1.04719758F,
+                                         .viewport_height_px = 720.0F,
+                                     }),
+            "planet local detail runtime should detect active level range changes");
 
     config.local_detail_cells_per_axis *= 2U;
     require(runtime.topology_changed(config),
@@ -1400,9 +1427,8 @@ void test_planet_surface_runtime_rebuilds_render_plan() {
         .skirts_enabled = true,
         .terrain_enabled = false,
     };
-    const cubey::projects::planet::PlanetFrame frame =
-        cubey::projects::planet::make_planet_frame(
-            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 50000.0F});
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 50000.0F});
     const cubey::projects::planet::PlanetSurfaceView view{
         .camera_world_position_m = frame.camera_world_position_m,
         .camera_forward_world = {0.0F, 0.0F, -1.0F},
@@ -1413,8 +1439,7 @@ void test_planet_surface_runtime_rebuilds_render_plan() {
     cubey::projects::planet::PlanetSurfaceRuntime runtime;
     runtime.rebuild(config, frame, view);
 
-    const cubey::projects::planet::PlanetSurfaceDiagnostics& diagnostics =
-        runtime.diagnostics();
+    const cubey::projects::planet::PlanetSurfaceDiagnostics& diagnostics = runtime.diagnostics();
     require(runtime.instance_count() == diagnostics.patch_count,
             "planet surface runtime should upload one instance per planned patch");
     require(diagnostics.patch_count > 0U, "planet surface runtime should keep planned patches");
@@ -1438,9 +1463,8 @@ void test_planet_surface_runtime_detects_plan_changes() {
         .max_lod_level = 1,
         .terrain_enabled = false,
     };
-    const cubey::projects::planet::PlanetFrame frame =
-        cubey::projects::planet::make_planet_frame(
-            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 50000.0F});
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 50000.0F});
     const cubey::projects::planet::PlanetSurfaceView view{
         .camera_world_position_m = frame.camera_world_position_m,
         .camera_forward_world = {0.0F, 0.0F, -1.0F},
@@ -1508,6 +1532,7 @@ int main() {
         test_planet_surface_default_lod_reaches_near_camera_detail();
         test_planet_surface_earthlike_lod_reaches_meter_scale_budget();
         test_planet_local_detail_plan_reports_viewer_centered_clipmap();
+        test_planet_local_detail_deactivates_when_subpixel();
         test_planet_local_detail_density_is_independent_of_planet_radius();
         test_planet_local_detail_mesh_matches_clipmap_budget();
         test_planet_local_detail_runtime_tracks_topology();

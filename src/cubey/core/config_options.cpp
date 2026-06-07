@@ -49,8 +49,8 @@ constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
 constexpr std::array<std::string_view, 2> kPlanetScalePresets{"earthlike", "mini"};
 constexpr std::array<std::string_view, 2> kPlanetCameraModes{"orbit", "surface"};
-constexpr std::array<std::string_view, 3> kPlanetAtmosphereModes{
-    "analytic", "physical", "physical-preview"};
+constexpr std::array<std::string_view, 3> kPlanetAtmosphereModes{"analytic", "physical",
+                                                                 "physical-preview"};
 constexpr std::array<std::string_view, 2> kTimeOfDayModes{"manual", "solar"};
 constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
@@ -87,7 +87,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 172> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 173> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -261,11 +261,14 @@ constexpr std::array<ConfigOptionDescriptor, 172> kRunConfigOptions{
            ConfigOptionType::Float, min_range(1.0)),
     option(RunConfigOptionId::PlanetLocalDetail, "planet.local_detail_enabled",
            "--planet-local-detail", "Local Detail", "Planet",
-           "Enable viewer-centered near-field terrain detail.", ConfigOptionType::Bool,
-           no_range(), {}, "--no-planet-local-detail"),
-    option(RunConfigOptionId::PlanetLocalDetailHeight,
-           "planet.local_detail_height_strength_m", "--planet-local-detail-height-m",
-           "Local Detail Height", "Planet",
+           "Enable viewer-centered near-field terrain detail.", ConfigOptionType::Bool, no_range(),
+           {}, "--no-planet-local-detail"),
+    option(RunConfigOptionId::PlanetLocalDetailFinal, "planet.local_detail_final_enabled",
+           "--planet-local-detail-final", "Local Detail Final", "Planet",
+           "Enable experimental local detail integration in the final planet view.",
+           ConfigOptionType::Bool, no_range(), {}, "--no-planet-local-detail-final"),
+    option(RunConfigOptionId::PlanetLocalDetailHeight, "planet.local_detail_height_strength_m",
+           "--planet-local-detail-height-m", "Local Detail Height", "Planet",
            "Maximum near-field local terrain detail height in meters.", ConfigOptionType::Float,
            min_range(0.0)),
     option(RunConfigOptionId::PlanetLocalDetailScale, "planet.local_detail_scale_m",
@@ -292,10 +295,10 @@ constexpr std::array<ConfigOptionDescriptor, 172> kRunConfigOptions{
            "--planet-terrain-noise-scale", "Terrain Noise", "Planet",
            "Placeholder terrain procedural noise scale.", ConfigOptionType::Float,
            min_range(0.000001)),
-    option(RunConfigOptionId::PlanetTerrainMidDetailStrength,
-           "planet.terrain_mid_detail_strength", "--planet-terrain-mid-detail-strength",
-           "Terrain Mid Detail", "Planet", "Placeholder terrain mid-scale ridge strength.",
-           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::PlanetTerrainMidDetailStrength, "planet.terrain_mid_detail_strength",
+           "--planet-terrain-mid-detail-strength", "Terrain Mid Detail", "Planet",
+           "Placeholder terrain mid-scale ridge strength.", ConfigOptionType::Float,
+           min_range(0.0)),
     option(RunConfigOptionId::PlanetTerrainFineDetailStrength,
            "planet.terrain_fine_detail_strength", "--planet-terrain-fine-detail-strength",
            "Terrain Fine Detail", "Planet", "Placeholder terrain fine detail strength.",
@@ -311,12 +314,12 @@ constexpr std::array<ConfigOptionDescriptor, 172> kRunConfigOptions{
            ConfigOptionType::Float),
     option(RunConfigOptionId::PlanetBathymetryDepthScale, "planet.bathymetry_depth_scale_m",
            "--planet-bathymetry-depth-scale-m", "Bathymetry Depth", "Planet",
-           "Depth in meters that maps to full bathymetry debug intensity.",
-           ConfigOptionType::Float, min_range(0.000001)),
+           "Depth in meters that maps to full bathymetry debug intensity.", ConfigOptionType::Float,
+           min_range(0.000001)),
     option(RunConfigOptionId::PlanetShorelineWidth, "planet.shoreline_width_m",
            "--planet-shoreline-width-m", "Shoreline Width", "Planet",
-           "Height band around sea level used by shoreline debug masks.",
-           ConfigOptionType::Float, min_range(0.000001)),
+           "Height band around sea level used by shoreline debug masks.", ConfigOptionType::Float,
+           min_range(0.000001)),
     option(RunConfigOptionId::PlanetAtmosphereHazeStrength, "planet.atmosphere_haze_strength",
            "--planet-atmosphere-haze-strength", "Surface Haze", "Planet",
            "Strength of distance haze used by the planet surface atmosphere.",
@@ -329,9 +332,8 @@ constexpr std::array<ConfigOptionDescriptor, 172> kRunConfigOptions{
            "--planet-atmosphere-haze-end", "Haze End", "Planet",
            "Fraction of horizon distance where analytic planet surface haze reaches full strength.",
            ConfigOptionType::Float, bounded_range(0.0, 1.5)),
-    option(RunConfigOptionId::PlanetAtmosphereAerialStrength,
-           "planet.atmosphere_aerial_strength", "--planet-atmosphere-aerial-strength",
-           "Aerial Strength", "Planet",
+    option(RunConfigOptionId::PlanetAtmosphereAerialStrength, "planet.atmosphere_aerial_strength",
+           "--planet-atmosphere-aerial-strength", "Aerial Strength", "Planet",
            "Blend strength for physical planet surface aerial perspective.",
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::PlanetDayOfYear, "planet.day_of_year", "--planet-day-of-year",
@@ -349,9 +351,8 @@ constexpr std::array<ConfigOptionDescriptor, 172> kRunConfigOptions{
            "Camera Mode", "Planet", "Initial planet camera mode.", ConfigOptionType::Enum,
            no_range(), enum_choices(kPlanetCameraModes)),
     option(RunConfigOptionId::PlanetAtmosphereMode, "planet.atmosphere_mode",
-           "--planet-atmosphere-mode", "Atmosphere Mode", "Planet",
-           "Planet sky atmosphere mode.", ConfigOptionType::Enum, no_range(),
-           enum_choices(kPlanetAtmosphereModes)),
+           "--planet-atmosphere-mode", "Atmosphere Mode", "Planet", "Planet sky atmosphere mode.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kPlanetAtmosphereModes)),
     option(RunConfigOptionId::TerrainSeed, "terrain.seed", "--terrain-seed", "Seed", "Terrain",
            "Deterministic procedural terrain seed.", ConfigOptionType::UInt64),
     option(RunConfigOptionId::TerrainCellSize, "terrain.cell_size", "--terrain-cell-size",
@@ -929,6 +930,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.planet.local_detail_outer_half_extent_m);
     case RunConfigOptionId::PlanetLocalDetail:
         return optional_bool(config.planet.local_detail_enabled);
+    case RunConfigOptionId::PlanetLocalDetailFinal:
+        return optional_bool(config.planet.local_detail_final_enabled);
     case RunConfigOptionId::PlanetLocalDetailHeight:
         return optional_float(config.planet.local_detail_height_strength_m);
     case RunConfigOptionId::PlanetLocalDetailScale:
@@ -980,8 +983,9 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.planet.camera_mode.empty() ? nlohmann::json(nullptr)
                                                  : nlohmann::json(config.planet.camera_mode);
     case RunConfigOptionId::PlanetAtmosphereMode:
-        return config.planet.atmosphere_mode.empty() ? nlohmann::json(nullptr)
-                                                     : nlohmann::json(config.planet.atmosphere_mode);
+        return config.planet.atmosphere_mode.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.planet.atmosphere_mode);
     case RunConfigOptionId::TerrainSeed:
         return config.terrain.seed_set ? nlohmann::json(config.terrain.seed)
                                        : nlohmann::json(nullptr);
@@ -1241,6 +1245,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<float>("local_detail_outer_half_extent_m",
                               options.local_detail_outer_half_extent_m);
     adapter.writeField<int>("local_detail_enabled", options.local_detail_enabled);
+    adapter.writeField<int>("local_detail_final_enabled", options.local_detail_final_enabled);
     adapter.writeField<float>("local_detail_height_strength_m",
                               options.local_detail_height_strength_m);
     adapter.writeField<float>("local_detail_scale_m", options.local_detail_scale_m);
@@ -1276,13 +1281,13 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<std::uint32_t>("max_lod_level", options.max_lod_level);
     adapter.readField<float>("lod_target_edge_px", options.lod_target_edge_px);
     adapter.readField<float>("lod_hysteresis", options.lod_hysteresis);
-    adapter.readField<std::uint32_t>("local_detail_lod_levels",
-                                     options.local_detail_lod_levels);
+    adapter.readField<std::uint32_t>("local_detail_lod_levels", options.local_detail_lod_levels);
     adapter.readField<std::uint32_t>("local_detail_cells_per_axis",
                                      options.local_detail_cells_per_axis);
     adapter.readField<float>("local_detail_outer_half_extent_m",
                              options.local_detail_outer_half_extent_m);
     adapter.readField<int>("local_detail_enabled", options.local_detail_enabled);
+    adapter.readField<int>("local_detail_final_enabled", options.local_detail_final_enabled);
     adapter.readField<float>("local_detail_height_strength_m",
                              options.local_detail_height_strength_m);
     adapter.readField<float>("local_detail_scale_m", options.local_detail_scale_m);
@@ -1743,6 +1748,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::PlanetLocalDetail:
         config.planet.local_detail_enabled = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::PlanetLocalDetailFinal:
+        config.planet.local_detail_final_enabled = parse_config_bool(value, option) ? 1 : 0;
         break;
     case RunConfigOptionId::PlanetLocalDetailHeight:
         config.planet.local_detail_height_strength_m = parse_config_float(value, option);

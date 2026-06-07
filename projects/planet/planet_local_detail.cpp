@@ -24,6 +24,95 @@ namespace {
     return 1.0F - smoothstep(fade_start, outer, radial);
 }
 
+[[nodiscard]] PlanetLocalDetailView sanitize_view(PlanetLocalDetailView view) {
+    if (!std::isfinite(view.camera_altitude_m) || view.camera_altitude_m < 1.0F) {
+        view.camera_altitude_m = 1.0F;
+    }
+    if (!std::isfinite(view.vertical_fov_radians) || view.vertical_fov_radians <= 0.001F) {
+        view.vertical_fov_radians = 1.04719758F;
+    }
+    if (!std::isfinite(view.viewport_height_px) || view.viewport_height_px < 1.0F) {
+        view.viewport_height_px = 1.0F;
+    }
+    view.vertical_fov_radians = std::clamp(view.vertical_fov_radians, 0.01F, 3.05F);
+    return view;
+}
+
+void append_center_patch(PlanetLocalDetailPatchList& patches,
+                         const cubey::render::ClipmapGrid2DConfig& grid, std::uint32_t level) {
+    const float outer = cubey::render::clipmap_grid_2d_level_half_extent(grid, level);
+    const float cell_size = cubey::render::clipmap_grid_2d_level_cell_size(grid, level);
+    cubey::render::clipmap_grid_2d_add_patch(patches, level,
+                                             cubey::render::ClipmapGrid2DBounds{
+                                                 .min_x = -outer,
+                                                 .max_x = outer,
+                                                 .min_z = -outer,
+                                                 .max_z = outer,
+                                             },
+                                             cell_size);
+}
+
+void append_ring_patches(PlanetLocalDetailPatchList& patches,
+                         const cubey::render::ClipmapGrid2DConfig& grid, std::uint32_t level) {
+    const float outer = cubey::render::clipmap_grid_2d_level_half_extent(grid, level);
+    const float inner = cubey::render::clipmap_grid_2d_level_half_extent(grid, level - 1U);
+    const float cell_size = cubey::render::clipmap_grid_2d_level_cell_size(grid, level);
+    const float overlap = cubey::render::clipmap_grid_2d_transition_width(
+        cell_size, inner, grid.transition_cells, grid.max_transition_ratio);
+    cubey::render::clipmap_grid_2d_add_patch(patches, level,
+                                             cubey::render::ClipmapGrid2DBounds{
+                                                 .min_x = -outer,
+                                                 .max_x = outer,
+                                                 .min_z = inner - overlap,
+                                                 .max_z = outer,
+                                             },
+                                             cell_size);
+    cubey::render::clipmap_grid_2d_add_patch(patches, level,
+                                             cubey::render::ClipmapGrid2DBounds{
+                                                 .min_x = -outer,
+                                                 .max_x = outer,
+                                                 .min_z = -outer,
+                                                 .max_z = -inner + overlap,
+                                             },
+                                             cell_size);
+    cubey::render::clipmap_grid_2d_add_patch(patches, level,
+                                             cubey::render::ClipmapGrid2DBounds{
+                                                 .min_x = -outer,
+                                                 .max_x = -inner + overlap,
+                                                 .min_z = -inner,
+                                                 .max_z = inner,
+                                             },
+                                             cell_size);
+    cubey::render::clipmap_grid_2d_add_patch(patches, level,
+                                             cubey::render::ClipmapGrid2DBounds{
+                                                 .min_x = inner - overlap,
+                                                 .max_x = outer,
+                                                 .min_z = -inner,
+                                                 .max_z = inner,
+                                             },
+                                             cell_size);
+}
+
+[[nodiscard]] PlanetLocalDetailPatchList
+active_local_detail_patches(const cubey::render::ClipmapGrid2DConfig& grid,
+                            const PlanetLocalDetailActiveRange& active_range) {
+    PlanetLocalDetailPatchList patches{};
+    if (!active_range.active || active_range.level_count == 0U) {
+        return patches;
+    }
+    const std::uint32_t first = active_range.first_level;
+    const std::uint32_t last = first + active_range.level_count - 1U;
+    for (std::uint32_t offset = 0U; offset < active_range.level_count; ++offset) {
+        const std::uint32_t level = last - offset;
+        if (level == first) {
+            append_center_patch(patches, grid, level);
+        } else {
+            append_ring_patches(patches, grid, level);
+        }
+    }
+    return patches;
+}
+
 void append_vertex(PlanetLocalDetailMeshData& mesh, const PlanetConfig& config,
                    const cubey::render::ClipmapGrid2DPatch& patch, float u, float v) {
     const float x = std::lerp(patch.bounds.min_x, patch.bounds.max_x, u);
@@ -39,8 +128,7 @@ void append_vertex(PlanetLocalDetailMeshData& mesh, const PlanetConfig& config,
 }
 
 void append_cell(PlanetLocalDetailMeshData& mesh, const PlanetConfig& config,
-                 const cubey::render::ClipmapGrid2DPatch& patch, std::uint32_t x,
-                 std::uint32_t z) {
+                 const cubey::render::ClipmapGrid2DPatch& patch, std::uint32_t x, std::uint32_t z) {
     const float u0 = static_cast<float>(x) / static_cast<float>(patch.cells_x);
     const float u1 = static_cast<float>(x + 1U) / static_cast<float>(patch.cells_x);
     const float v0 = static_cast<float>(z) / static_cast<float>(patch.cells_z);
@@ -55,28 +143,124 @@ void append_cell(PlanetLocalDetailMeshData& mesh, const PlanetConfig& config,
 
 } // namespace
 
-PlanetLocalDetailDiagnostics planet_local_detail_diagnostics(
-    const PlanetConfig& config, const PlanetLocalDetailPlan& plan) {
+PlanetLocalDetailView default_planet_local_detail_view(const PlanetFrame& frame) {
+    return sanitize_view(PlanetLocalDetailView{
+        .camera_altitude_m = std::max(frame.camera_altitude_m, 250.0F),
+        .vertical_fov_radians = 1.04719758F,
+        .viewport_height_px = 720.0F,
+    });
+}
+
+PlanetLocalDetailActiveRange
+planet_local_detail_active_range(const PlanetConfig& config,
+                                 const cubey::render::ClipmapGrid2DConfig& grid,
+                                 PlanetLocalDetailView view) {
+    validate_planet_config(config);
+    cubey::render::validate_clipmap_grid_2d_config(grid);
+    view = sanitize_view(view);
+    const float meters_per_pixel =
+        (2.0F * view.camera_altitude_m * std::tan(view.vertical_fov_radians * 0.5F)) /
+        view.viewport_height_px;
+    const float safe_meters_per_pixel = std::max(meters_per_pixel, 0.0001F);
+    const std::uint32_t last_level = grid.lod_levels - 1U;
+    const float coarsest_cell = cubey::render::clipmap_grid_2d_level_cell_size(grid, last_level);
+
+    if (!config.local_detail_enabled) {
+        return {
+            .active = false,
+            .first_level = 0U,
+            .level_count = 0U,
+            .meters_per_pixel = safe_meters_per_pixel,
+            .finest_active_cell_size = 0.0F,
+            .coarsest_active_cell_size = coarsest_cell,
+            .projected_finest_cell_px = 0.0F,
+        };
+    }
+
+    for (std::uint32_t level = 0U; level < grid.lod_levels; ++level) {
+        const float cell_size = cubey::render::clipmap_grid_2d_level_cell_size(grid, level);
+        const float projected_cell_px = cell_size / safe_meters_per_pixel;
+        if (projected_cell_px >= kPlanetLocalDetailMinProjectedCellPx) {
+            return {
+                .active = true,
+                .first_level = level,
+                .level_count = grid.lod_levels - level,
+                .meters_per_pixel = safe_meters_per_pixel,
+                .finest_active_cell_size = cell_size,
+                .coarsest_active_cell_size = coarsest_cell,
+                .projected_finest_cell_px = projected_cell_px,
+            };
+        }
+    }
+
+    return {
+        .active = false,
+        .first_level = grid.lod_levels,
+        .level_count = 0U,
+        .meters_per_pixel = safe_meters_per_pixel,
+        .finest_active_cell_size = 0.0F,
+        .coarsest_active_cell_size = coarsest_cell,
+        .projected_finest_cell_px = coarsest_cell / safe_meters_per_pixel,
+    };
+}
+
+PlanetLocalDetailPlan plan_planet_local_detail(const PlanetConfig& config,
+                                               const PlanetFrame& frame) {
+    return plan_planet_local_detail(config, frame, default_planet_local_detail_view(frame));
+}
+
+PlanetLocalDetailPlan plan_planet_local_detail(const PlanetConfig& config, const PlanetFrame& frame,
+                                               PlanetLocalDetailView view) {
+    const cubey::render::ClipmapGrid2DConfig grid = planet_local_detail_clipmap_config(config);
+    cubey::render::validate_local_tangent_frame(frame.local_frame);
+    view = sanitize_view(view);
+    const PlanetLocalDetailActiveRange active_range =
+        planet_local_detail_active_range(config, grid, view);
+    PlanetLocalDetailPatchList patches = active_local_detail_patches(grid, active_range);
+    return {
+        .local_frame = frame.local_frame,
+        .grid = grid,
+        .view = view,
+        .active_range = active_range,
+        .patches = patches,
+        .clipmap_diagnostics = cubey::render::clipmap_grid_2d_diagnostics(grid, patches),
+    };
+}
+
+PlanetLocalDetailDiagnostics planet_local_detail_diagnostics(const PlanetConfig& config,
+                                                             const PlanetLocalDetailPlan& plan) {
     validate_planet_config(config);
     const cubey::render::ClipmapGrid2DDiagnostics clipmap = plan.clipmap_diagnostics;
     return {
         .enabled = config.local_detail_enabled,
+        .active = plan.active_range.active,
         .lod_levels = clipmap.lod_levels,
+        .active_first_level = plan.active_range.first_level,
+        .active_level_count = plan.active_range.level_count,
         .patch_count = clipmap.patch_count,
         .vertex_count = clipmap.total_vertices,
         .triangle_count = clipmap.total_triangles,
         .near_cell_size = clipmap.near_cell_size,
         .outer_half_extent = clipmap.outer_half_extent,
-        .max_detail_delta_m = config.local_detail_enabled
-                                  ? config.local_detail_height_strength_m
-                                  : 0.0F,
+        .meters_per_pixel = plan.active_range.meters_per_pixel,
+        .finest_active_cell_size = plan.active_range.finest_active_cell_size,
+        .coarsest_active_cell_size = plan.active_range.coarsest_active_cell_size,
+        .projected_finest_cell_px = plan.active_range.projected_finest_cell_px,
+        .max_detail_delta_m =
+            config.local_detail_enabled ? config.local_detail_height_strength_m : 0.0F,
         .detail_scale_m = config.local_detail_scale_m,
     };
 }
 
 PlanetLocalDetailBuildResult make_planet_local_detail_mesh(const PlanetConfig& config,
                                                            const PlanetFrame& frame) {
-    const PlanetLocalDetailPlan plan = plan_planet_local_detail(config, frame);
+    return make_planet_local_detail_mesh(config, frame, default_planet_local_detail_view(frame));
+}
+
+PlanetLocalDetailBuildResult make_planet_local_detail_mesh(const PlanetConfig& config,
+                                                           const PlanetFrame& frame,
+                                                           PlanetLocalDetailView view) {
+    const PlanetLocalDetailPlan plan = plan_planet_local_detail(config, frame, view);
     PlanetLocalDetailMeshData mesh{};
     mesh.vertices.reserve(plan.clipmap_diagnostics.total_vertices);
     mesh.indices.reserve(plan.clipmap_diagnostics.total_vertices);

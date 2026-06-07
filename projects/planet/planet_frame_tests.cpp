@@ -94,8 +94,8 @@ void test_planet_config_rejects_lod_above_live_cap() {
 void test_planet_config_rejects_patch_resolution_above_cap() {
     cubey::projects::planet::PlanetConfig config{};
     config.patch_resolution = cubey::projects::planet::kPlanetMaxPatchResolution + 1U;
-    require_invalid_planet_config(config,
-                                  "planet config should reject patch resolution above the live cap");
+    require_invalid_planet_config(
+        config, "planet config should reject patch resolution above the live cap");
 }
 
 void test_planet_config_rejects_invalid_lod_hysteresis() {
@@ -107,10 +107,12 @@ void test_planet_config_rejects_invalid_lod_hysteresis() {
 void test_planet_config_rejects_invalid_local_detail_settings() {
     cubey::projects::planet::PlanetConfig config{};
     config.local_detail_lod_levels = 0U;
-    require_invalid_planet_config(config, "planet config should reject zero local-detail LOD levels");
+    require_invalid_planet_config(config,
+                                  "planet config should reject zero local-detail LOD levels");
 
     config = {};
-    config.local_detail_cells_per_axis = cubey::projects::planet::kPlanetMaxLocalDetailCellsPerAxis + 1U;
+    config.local_detail_cells_per_axis =
+        cubey::projects::planet::kPlanetMaxLocalDetailCellsPerAxis + 1U;
     require_invalid_planet_config(config,
                                   "planet config should reject oversized local-detail cells");
 
@@ -120,7 +122,8 @@ void test_planet_config_rejects_invalid_local_detail_settings() {
 
     config = {};
     config.local_detail_height_strength_m = -1.0F;
-    require_invalid_planet_config(config, "planet config should reject negative local-detail height");
+    require_invalid_planet_config(config,
+                                  "planet config should reject negative local-detail height");
 
     config = {};
     config.local_detail_scale_m = 0.0F;
@@ -135,7 +138,8 @@ void test_planet_config_rejects_invalid_atmosphere_haze() {
 
     config = {};
     config.atmosphere_haze_end = config.atmosphere_haze_start - 0.01F;
-    require_invalid_planet_config(config, "planet config should reject invalid atmosphere haze end");
+    require_invalid_planet_config(config,
+                                  "planet config should reject invalid atmosphere haze end");
 
     config = {};
     config.atmosphere_aerial_strength = -0.01F;
@@ -152,9 +156,8 @@ void test_planet_config_defaults_to_earthlike_scale() {
     require_near(config.atmosphere_height_m,
                  cubey::projects::planet::kPlanetEarthlikeAtmosphereHeightM, 1.0F,
                  "planet config should default to earthlike atmosphere height");
-    require_near(config.camera_altitude_m,
-                 cubey::projects::planet::kPlanetEarthlikeCameraAltitudeM, 1.0F,
-                 "planet config should default to earthlike camera altitude");
+    require_near(config.camera_altitude_m, cubey::projects::planet::kPlanetEarthlikeCameraAltitudeM,
+                 1.0F, "planet config should default to earthlike camera altitude");
 }
 
 void test_planet_config_applies_scale_preset_before_numeric_overrides() {
@@ -167,9 +170,8 @@ void test_planet_config_applies_scale_preset_before_numeric_overrides() {
             "planet config should record the mini scale preset");
     require_near(config.radius_m, cubey::projects::planet::kPlanetMiniRadiusM, 1.0F,
                  "planet config should apply mini radius");
-    require_near(config.atmosphere_height_m,
-                 cubey::projects::planet::kPlanetMiniAtmosphereHeightM, 1.0F,
-                 "planet config should apply mini atmosphere height");
+    require_near(config.atmosphere_height_m, cubey::projects::planet::kPlanetMiniAtmosphereHeightM,
+                 1.0F, "planet config should apply mini atmosphere height");
     require_near(config.camera_altitude_m, cubey::projects::planet::kPlanetMiniCameraAltitudeM,
                  1.0F, "planet config should apply mini camera altitude");
 
@@ -193,6 +195,7 @@ void test_planet_config_applies_run_config_surface_options() {
     run_config.planet.local_detail_cells_per_axis = 96U;
     run_config.planet.local_detail_outer_half_extent_m = 4096.0F;
     run_config.planet.local_detail_enabled = 0;
+    run_config.planet.local_detail_final_enabled = 1;
     run_config.planet.local_detail_height_strength_m = 220.0F;
     run_config.planet.local_detail_scale_m = 180.0F;
     run_config.planet.wire_overlay = 1;
@@ -230,6 +233,8 @@ void test_planet_config_applies_run_config_surface_options() {
     require_near(config.local_detail_outer_half_extent_m, 4096.0F, 0.0001F,
                  "planet config should apply local detail extent");
     require(!config.local_detail_enabled, "planet config should apply local detail toggle");
+    require(config.local_detail_final_enabled,
+            "planet config should apply local detail final toggle");
     require_near(config.local_detail_height_strength_m, 220.0F, 0.0001F,
                  "planet config should apply local detail height");
     require_near(config.local_detail_scale_m, 180.0F, 0.0001F,
@@ -263,8 +268,7 @@ void test_planet_config_applies_run_config_surface_options() {
                  "planet config should apply atmosphere haze end");
     require_near(config.atmosphere_aerial_strength, 0.50F, 0.0001F,
                  "planet config should apply atmosphere aerial strength");
-    require(config.atmosphere_mode ==
-                cubey::projects::planet::PlanetAtmosphereMode::Physical,
+    require(config.atmosphere_mode == cubey::projects::planet::PlanetAtmosphereMode::Physical,
             "planet config should apply atmosphere mode");
 
     run_config.planet.atmosphere_mode = "physical-preview";
@@ -284,7 +288,8 @@ void test_planet_config_change_kind_separates_dynamic_and_topology() {
     dynamic.atmosphere_haze_strength *= 0.5F;
     require(cubey::projects::planet::planet_config_change_kind(current, dynamic) ==
                 cubey::projects::planet::PlanetConfigChangeKind::Dynamic,
-            "planet config should classify radius, LOD, terrain detail, and atmosphere edits as dynamic");
+            "planet config should classify radius, LOD, terrain detail, and atmosphere edits as "
+            "dynamic");
 
     cubey::projects::planet::PlanetConfig topology = current;
     topology.patch_resolution *= 2U;
@@ -355,9 +360,8 @@ void test_planet_camera_surface_blend_does_not_auto_spin_heading() {
     const cubey::projects::planet::PlanetConfig config{};
     cubey::projects::planet::PlanetCameraState state =
         cubey::projects::planet::planet_camera_home_state(config, 0.35F, 0.15F);
-    cubey::projects::planet::planet_camera_set_distance(state, config,
-                                                        config.radius_m +
-                                                            (config.radius_m * 0.20F));
+    cubey::projects::planet::planet_camera_set_distance(
+        state, config, config.radius_m + (config.radius_m * 0.20F));
 
     const cubey::Transform3D before =
         cubey::projects::planet::make_planet_camera_transform(config, state);
@@ -384,16 +388,14 @@ void test_planet_orbit_camera_drag_clamps_before_poles() {
     cubey::projects::planet::planet_camera_orbit_drag(state, config, 0.0, 10000.0);
     const cubey::math::DVec3 north_direction = glm::normalize(state.position_m);
 
-    require(north_direction.y > 0.98,
-            "large upward orbit drag should approach the north pole");
+    require(north_direction.y > 0.98, "large upward orbit drag should approach the north pole");
     require(north_direction.y < 0.999,
             "large upward orbit drag should stop before the north pole singularity");
 
     cubey::projects::planet::planet_camera_orbit_drag(state, config, 0.0, -20000.0);
     const cubey::math::DVec3 south_direction = glm::normalize(state.position_m);
 
-    require(south_direction.y < -0.98,
-            "large downward orbit drag should approach the south pole");
+    require(south_direction.y < -0.98, "large downward orbit drag should approach the south pole");
     require(south_direction.y > -0.999,
             "large downward orbit drag should stop before the south pole singularity");
 }

@@ -76,6 +76,7 @@ enum class RunConfigOptionId {
     PlanetLocalDetailCells,
     PlanetLocalDetailOuterExtent,
     PlanetLocalDetail,
+    PlanetLocalDetailFinal,
     PlanetLocalDetailHeight,
     PlanetLocalDetailScale,
     PlanetWireOverlay,

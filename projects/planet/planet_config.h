@@ -104,6 +104,7 @@ struct PlanetConfig {
     std::uint32_t local_detail_cells_per_axis = kPlanetDefaultLocalDetailCellsPerAxis;
     float local_detail_outer_half_extent_m = kPlanetDefaultLocalDetailOuterHalfExtentM;
     bool local_detail_enabled = true;
+    bool local_detail_final_enabled = false;
     float local_detail_height_strength_m = kPlanetDefaultLocalDetailHeightStrengthM;
     float local_detail_scale_m = kPlanetDefaultLocalDetailScaleM;
     PlanetDebugView debug_view = PlanetDebugView::Final;

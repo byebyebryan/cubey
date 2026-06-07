@@ -16,17 +16,28 @@ namespace cubey::projects::planet {
 namespace {
 
 constexpr std::array<PlanetDebugView, 22> kDebugViews{
-    PlanetDebugView::Final,           PlanetDebugView::FaceId,
-    PlanetDebugView::PatchId,         PlanetDebugView::LodLevel,
-    PlanetDebugView::ScreenError,     PlanetDebugView::LodTransition,
-    PlanetDebugView::Seams,           PlanetDebugView::CellEdge,
-    PlanetDebugView::TerrainHeight,   PlanetDebugView::TerrainSlope,
-    PlanetDebugView::TerrainMaterial, PlanetDebugView::Bathymetry,
-    PlanetDebugView::Shoreline,       PlanetDebugView::LandMask,
-    PlanetDebugView::Moisture,        PlanetDebugView::Temperature,
-    PlanetDebugView::Roughness,       PlanetDebugView::Wireframe,
-    PlanetDebugView::CelestialPlanes, PlanetDebugView::LocalDetailWireframe,
-    PlanetDebugView::LocalDetailBlend, PlanetDebugView::LocalDetailHeight,
+    PlanetDebugView::Final,
+    PlanetDebugView::FaceId,
+    PlanetDebugView::PatchId,
+    PlanetDebugView::LodLevel,
+    PlanetDebugView::ScreenError,
+    PlanetDebugView::LodTransition,
+    PlanetDebugView::Seams,
+    PlanetDebugView::CellEdge,
+    PlanetDebugView::TerrainHeight,
+    PlanetDebugView::TerrainSlope,
+    PlanetDebugView::TerrainMaterial,
+    PlanetDebugView::Bathymetry,
+    PlanetDebugView::Shoreline,
+    PlanetDebugView::LandMask,
+    PlanetDebugView::Moisture,
+    PlanetDebugView::Temperature,
+    PlanetDebugView::Roughness,
+    PlanetDebugView::Wireframe,
+    PlanetDebugView::CelestialPlanes,
+    PlanetDebugView::LocalDetailWireframe,
+    PlanetDebugView::LocalDetailBlend,
+    PlanetDebugView::LocalDetailHeight,
 };
 
 constexpr std::array<PlanetScalePreset, 2> kScalePresets{
@@ -95,21 +106,21 @@ void draw_surface_controls(PlanetUiContext& ui) {
             ui.edit_config.max_lod_level = static_cast<std::uint32_t>(
                 std::clamp(max_lod_level, 0, static_cast<int>(kPlanetMaxLiveLodLevel)));
         }
-        ImGui::InputFloat("LOD Target Edge (px)", &ui.edit_config.lod_target_edge_px, 0.0F,
-                          0.0F, "%.1f");
+        ImGui::InputFloat("LOD Target Edge (px)", &ui.edit_config.lod_target_edge_px, 0.0F, 0.0F,
+                          "%.1f");
         ImGui::InputFloat("LOD Hysteresis", &ui.edit_config.lod_hysteresis, 0.0F, 0.0F, "%.2f");
         ImGui::Checkbox("Patch Skirts", &ui.edit_config.skirts_enabled);
         ImGui::InputFloat("Skirt Depth Scale", &ui.edit_config.skirt_depth_scale, 0.0F, 0.0F,
                           "%.2f");
         ImGui::Checkbox("Terrain", &ui.edit_config.terrain_enabled);
-        ImGui::InputFloat("Terrain Height (m)", &ui.edit_config.terrain_height_scale_m, 0.0F,
-                          0.0F, "%.0f");
+        ImGui::InputFloat("Terrain Height (m)", &ui.edit_config.terrain_height_scale_m, 0.0F, 0.0F,
+                          "%.0f");
         ImGui::InputFloat("Terrain Noise Scale", &ui.edit_config.terrain_noise_scale, 0.0F, 0.0F,
                           "%.2f");
-        ImGui::InputFloat("Terrain Mid Detail", &ui.edit_config.terrain_mid_detail_strength,
-                          0.0F, 0.0F, "%.2f");
-        ImGui::InputFloat("Terrain Fine Detail", &ui.edit_config.terrain_fine_detail_strength,
-                          0.0F, 0.0F, "%.2f");
+        ImGui::InputFloat("Terrain Mid Detail", &ui.edit_config.terrain_mid_detail_strength, 0.0F,
+                          0.0F, "%.2f");
+        ImGui::InputFloat("Terrain Fine Detail", &ui.edit_config.terrain_fine_detail_strength, 0.0F,
+                          0.0F, "%.2f");
         ImGui::InputFloat("Terrain Fine Scale", &ui.edit_config.terrain_fine_detail_scale, 0.0F,
                           0.0F, "%.2f");
         int terrain_seed = static_cast<int>(ui.edit_config.terrain_seed);
@@ -125,16 +136,14 @@ void draw_surface_controls(PlanetUiContext& ui) {
 }
 
 void draw_local_detail_controls(PlanetUiContext& ui) {
-    if (const cubey::host::ScopedImGuiGroup group{
-            "Local Detail", {.default_open = false}}; group) {
+    if (const cubey::host::ScopedImGuiGroup group{"Local Detail", {.default_open = false}}; group) {
         const cubey::host::ScopedImGuiId section_id("LocalDetail");
         ImGui::Checkbox("Diagnostic Enabled", &ui.edit_config.local_detail_enabled);
-        ImGui::Text("Final View: deferred");
-        ImGui::Text("Debug Render: %s",
-                    (ui.edit_config.local_detail_enabled &&
-                     is_local_detail_debug_view(ui.edit_config.debug_view))
-                        ? "active"
-                        : "inactive");
+        ImGui::Checkbox("Final Integration", &ui.edit_config.local_detail_final_enabled);
+        ImGui::Text("Debug Render: %s", (ui.edit_config.local_detail_enabled &&
+                                         is_local_detail_debug_view(ui.edit_config.debug_view))
+                                            ? "active"
+                                            : "inactive");
         int lod_levels = static_cast<int>(ui.edit_config.local_detail_lod_levels);
         if (ImGui::InputInt("LOD Levels", &lod_levels)) {
             ui.edit_config.local_detail_lod_levels = static_cast<std::uint32_t>(
@@ -147,26 +156,23 @@ void draw_local_detail_controls(PlanetUiContext& ui) {
         }
         ImGui::InputFloat("Outer Extent (m)", &ui.edit_config.local_detail_outer_half_extent_m,
                           0.0F, 0.0F, "%.0f");
-        ImGui::InputFloat("Height Strength (m)",
-                          &ui.edit_config.local_detail_height_strength_m, 0.0F, 0.0F,
+        ImGui::InputFloat("Height Strength (m)", &ui.edit_config.local_detail_height_strength_m,
+                          0.0F, 0.0F, "%.0f");
+        ImGui::InputFloat("Detail Scale (m)", &ui.edit_config.local_detail_scale_m, 0.0F, 0.0F,
                           "%.0f");
-        ImGui::InputFloat("Detail Scale (m)", &ui.edit_config.local_detail_scale_m, 0.0F,
-                          0.0F, "%.0f");
     }
 }
 
 void draw_atmosphere_controls(PlanetUiContext& ui) {
-    if (const cubey::host::ScopedImGuiGroup group{
-            "Atmosphere", {.default_open = false}}; group) {
+    if (const cubey::host::ScopedImGuiGroup group{"Atmosphere", {.default_open = false}}; group) {
         const cubey::host::ScopedImGuiId section_id("Atmosphere");
-        ImGui::InputFloat("Atmosphere Height (m)", &ui.edit_config.atmosphere_height_m, 0.0F,
-                          0.0F, "%.0f");
+        ImGui::InputFloat("Atmosphere Height (m)", &ui.edit_config.atmosphere_height_m, 0.0F, 0.0F,
+                          "%.0f");
         cubey::host::imgui_enum_combo("Atmosphere Mode", ui.edit_config.atmosphere_mode,
                                       kAtmosphereModes, planet_atmosphere_mode_name);
-        ImGui::SliderFloat("Surface Haze", &ui.edit_config.atmosphere_haze_strength, 0.0F,
-                           1.0F, "%.2f");
-        ImGui::SliderFloat("Haze Start", &ui.edit_config.atmosphere_haze_start, 0.0F, 1.0F,
+        ImGui::SliderFloat("Surface Haze", &ui.edit_config.atmosphere_haze_strength, 0.0F, 1.0F,
                            "%.2f");
+        ImGui::SliderFloat("Haze Start", &ui.edit_config.atmosphere_haze_start, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Haze End", &ui.edit_config.atmosphere_haze_end,
                            ui.edit_config.atmosphere_haze_start, 1.5F, "%.2f");
         ImGui::SliderFloat("Aerial Strength", &ui.edit_config.atmosphere_aerial_strength, 0.0F,
@@ -178,12 +184,11 @@ void draw_celestial_controls(PlanetUiContext& ui) {
     if (const cubey::host::ScopedImGuiGroup group{"Celestial"}; group) {
         const cubey::host::ScopedImGuiId section_id("Celestial");
         bool solar_changed = false;
-        solar_changed |= ImGui::SliderFloat("Day", &ui.solar_time.day_of_year, 1.0F, 365.2422F,
-                                            "%.1f");
         solar_changed |=
-            ImGui::SliderFloat("Hour", &ui.solar_time.time_hours, 0.0F, 24.0F, "%.2f");
-        solar_changed |= ImGui::SliderFloat("Speed (h/s)", &ui.solar_time.hours_per_second,
-                                            -12.0F, 12.0F, "%.2f");
+            ImGui::SliderFloat("Day", &ui.solar_time.day_of_year, 1.0F, 365.2422F, "%.1f");
+        solar_changed |= ImGui::SliderFloat("Hour", &ui.solar_time.time_hours, 0.0F, 24.0F, "%.2f");
+        solar_changed |= ImGui::SliderFloat("Speed (h/s)", &ui.solar_time.hours_per_second, -12.0F,
+                                            12.0F, "%.2f");
         if (solar_changed && ui.refresh_celestial_state) {
             ui.refresh_celestial_state();
         }
@@ -220,8 +225,8 @@ void draw_exposure_controls(PlanetUiContext& ui) {
             ImGui::SliderFloat("Night Exposure", &ui.exposure_config.night_exposure, -1.0F, 4.0F,
                                "%.2f");
         } else {
-            ImGui::SliderFloat("Manual Exposure", &ui.exposure_config.manual_exposure, -4.0F,
-                               4.0F, "%.2f");
+            ImGui::SliderFloat("Manual Exposure", &ui.exposure_config.manual_exposure, -4.0F, 4.0F,
+                               "%.2f");
         }
         ImGui::Text("Sun elevation: %.1f deg",
                     planet_celestial_sun_elevation_degrees(ui.celestial_system,
@@ -234,16 +239,12 @@ void draw_exposure_controls(PlanetUiContext& ui) {
 }
 
 void draw_diagnostics(PlanetUiContext& ui) {
-    if (const cubey::host::ScopedImGuiGroup group{
-            "Diagnostics", {.default_open = false}}; group) {
+    if (const cubey::host::ScopedImGuiGroup group{"Diagnostics", {.default_open = false}}; group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
         const float radius = std::max(ui.active_config.radius_m, 1.0F);
         const float finest_global_cell =
             planet_surface_nominal_cell_edge_m(ui.active_config, ui.active_config.max_lod_level);
-        const PlanetLocalDetailPlan local_detail =
-            plan_planet_local_detail(ui.active_config, ui.frame);
-        const PlanetLocalDetailDiagnostics local_detail_diagnostics =
-            planet_local_detail_diagnostics(ui.active_config, local_detail);
+        const PlanetLocalDetailDiagnostics local_detail_diagnostics = ui.local_detail_diagnostics;
         ImGui::Text("Scale preset: %s", planet_scale_preset_name(ui.active_config.scale_preset));
         ImGui::Text("Radius: %.0f m", ui.active_config.radius_m);
         ImGui::Text("Atmosphere: %.0f m", ui.active_config.atmosphere_height_m);
@@ -252,11 +253,10 @@ void draw_diagnostics(PlanetUiContext& ui) {
         ImGui::Text("Terrain / radius: %.3f%%",
                     (ui.active_config.terrain_height_scale_m / radius) * 100.0F);
         ImGui::Text("Altitude: %.0f m", ui.frame.camera_altitude_m);
-        ImGui::Text(
-            "Surface camera: %.0f%%",
-            planet_surface_camera_blend(ui.active_config,
-                                        planet_camera_distance_m(ui.camera_state)) *
-                100.0F);
+        ImGui::Text("Surface camera: %.0f%%",
+                    planet_surface_camera_blend(ui.active_config,
+                                                planet_camera_distance_m(ui.camera_state)) *
+                        100.0F);
         ImGui::Text("Horizon: %.0f m", ui.frame.horizon_distance_m);
         ImGui::Text("Near / far: %.1f m / %.0f m", ui.frame.near_plane_m, ui.frame.far_plane_m);
         ImGui::Text("Origin: %.0f %.0f %.0f", ui.frame.surface_origin_m.x,
@@ -284,8 +284,7 @@ void draw_diagnostics(PlanetUiContext& ui) {
         ImGui::Text("Fallback parents: %u", surface.refinement_fallback_patch_count);
         ImGui::Text("Budget fallback parents: %u", surface.budget_fallback_patch_count);
         ImGui::Text("Hysteresis delayed: %u splits / %u merges",
-                    surface.hysteresis_delayed_split_count,
-                    surface.hysteresis_delayed_merge_count);
+                    surface.hysteresis_delayed_split_count, surface.hysteresis_delayed_merge_count);
         ImGui::Text("Refinement culled: %u horizon / %u view", surface.culled_horizon_count,
                     surface.culled_view_count);
         ImGui::Text("LOD range: %u - %u", surface.min_lod_level, surface.max_lod_level);
@@ -318,13 +317,20 @@ void draw_diagnostics(PlanetUiContext& ui) {
 
         ImGui::SeparatorText("Local Detail");
         ImGui::Text("Enabled: %s", local_detail_diagnostics.enabled ? "yes" : "no");
-        ImGui::Text("Levels / patches: %u / %u", local_detail_diagnostics.lod_levels,
-                    local_detail_diagnostics.patch_count);
+        ImGui::Text("Active: %s", local_detail_diagnostics.active ? "yes" : "no");
+        ImGui::Text("Levels: %u configured, first active %u, count %u",
+                    local_detail_diagnostics.lod_levels,
+                    local_detail_diagnostics.active_first_level,
+                    local_detail_diagnostics.active_level_count);
+        ImGui::Text("Patches: %u", local_detail_diagnostics.patch_count);
         ImGui::Text("Near cell / outer extent: %.1f m / %.0f m",
                     local_detail_diagnostics.near_cell_size,
                     local_detail_diagnostics.outer_half_extent);
-        ImGui::Text("Vertices / triangles: %u / %u",
-                    local_detail_diagnostics.vertex_count,
+        ImGui::Text("View scale: %.1f m/px, finest active %.1f m (%.2f px)",
+                    local_detail_diagnostics.meters_per_pixel,
+                    local_detail_diagnostics.finest_active_cell_size,
+                    local_detail_diagnostics.projected_finest_cell_px);
+        ImGui::Text("Vertices / triangles: %u / %u", local_detail_diagnostics.vertex_count,
                     local_detail_diagnostics.triangle_count);
         ImGui::Text("Detail height / scale: %.0f m / %.0f m",
                     local_detail_diagnostics.max_detail_delta_m,

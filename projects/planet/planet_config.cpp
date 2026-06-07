@@ -31,8 +31,8 @@ void apply_planet_scale_preset(PlanetConfig& config, PlanetScalePreset preset) {
 PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     PlanetConfig planet{};
     if (!config.planet.scale_preset.empty()) {
-        apply_planet_scale_preset(
-            planet, planet_scale_preset_from_string(config.planet.scale_preset));
+        apply_planet_scale_preset(planet,
+                                  planet_scale_preset_from_string(config.planet.scale_preset));
     }
     if (run_config_float_is_set(config.planet.radius_m)) {
         planet.radius_m = config.planet.radius_m;
@@ -65,11 +65,13 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
         planet.local_detail_cells_per_axis = config.planet.local_detail_cells_per_axis;
     }
     if (run_config_float_is_set(config.planet.local_detail_outer_half_extent_m)) {
-        planet.local_detail_outer_half_extent_m =
-            config.planet.local_detail_outer_half_extent_m;
+        planet.local_detail_outer_half_extent_m = config.planet.local_detail_outer_half_extent_m;
     }
     if (config.planet.local_detail_enabled >= 0) {
         planet.local_detail_enabled = config.planet.local_detail_enabled != 0;
+    }
+    if (config.planet.local_detail_final_enabled >= 0) {
+        planet.local_detail_final_enabled = config.planet.local_detail_final_enabled != 0;
     }
     if (run_config_float_is_set(config.planet.local_detail_height_strength_m)) {
         planet.local_detail_height_strength_m = config.planet.local_detail_height_strength_m;
@@ -238,8 +240,8 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
         value == "local-wireframe" || value == "local_wireframe") {
         return PlanetDebugView::LocalDetailWireframe;
     }
-    if (value == "local-detail-blend" || value == "local_detail_blend" ||
-        value == "local-blend" || value == "local_blend") {
+    if (value == "local-detail-blend" || value == "local_detail_blend" || value == "local-blend" ||
+        value == "local_blend") {
         return PlanetDebugView::LocalDetailBlend;
     }
     if (value == "local-detail-height" || value == "local_detail_height" ||
@@ -404,23 +406,21 @@ void validate_planet_config(const PlanetConfig& config) {
     if (!std::isfinite(config.shoreline_width_m) || config.shoreline_width_m <= 0.0F) {
         throw std::runtime_error("planet shoreline width must be finite and positive");
     }
-    if (!std::isfinite(config.atmosphere_haze_strength) ||
-        config.atmosphere_haze_strength < 0.0F || config.atmosphere_haze_strength > 1.0F) {
+    if (!std::isfinite(config.atmosphere_haze_strength) || config.atmosphere_haze_strength < 0.0F ||
+        config.atmosphere_haze_strength > 1.0F) {
         throw std::runtime_error("planet atmosphere haze strength must be finite and in [0, 1]");
     }
-    if (!std::isfinite(config.atmosphere_haze_start) ||
-        config.atmosphere_haze_start < 0.0F || config.atmosphere_haze_start > 1.0F) {
+    if (!std::isfinite(config.atmosphere_haze_start) || config.atmosphere_haze_start < 0.0F ||
+        config.atmosphere_haze_start > 1.0F) {
         throw std::runtime_error("planet atmosphere haze start must be finite and in [0, 1]");
     }
     if (!std::isfinite(config.atmosphere_haze_end) ||
         config.atmosphere_haze_end < config.atmosphere_haze_start ||
         config.atmosphere_haze_end > 1.5F) {
-        throw std::runtime_error(
-            "planet atmosphere haze end must be finite, >= start, and <= 1.5");
+        throw std::runtime_error("planet atmosphere haze end must be finite, >= start, and <= 1.5");
     }
     if (!std::isfinite(config.atmosphere_aerial_strength) ||
-        config.atmosphere_aerial_strength < 0.0F ||
-        config.atmosphere_aerial_strength > 1.0F) {
+        config.atmosphere_aerial_strength < 0.0F || config.atmosphere_aerial_strength > 1.0F) {
         throw std::runtime_error("planet atmosphere aerial strength must be finite and in [0, 1]");
     }
 }

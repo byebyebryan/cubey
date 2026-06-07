@@ -81,6 +81,11 @@ float local_detail_level_half_extent(float level) {
     return surface_frame.local_right_outer.w / exp2(exponent);
 }
 
+float local_detail_first_active_level() {
+    return clamp(surface_frame.local_detail_options.w, 0.0,
+                 max(surface_frame.local_detail_options.x - 1.0, 0.0));
+}
+
 float local_detail_patch_ownership(vec2 local_xz, float level, float blend) {
     float active_weight = surface_frame.local_origin_options.w;
     if (active_weight <= 0.0 || !local_detail_surface_debug_enabled()) {
@@ -91,7 +96,7 @@ float local_detail_patch_ownership(vec2 local_xz, float level, float blend) {
     if (radial > half_extent) {
         return 0.0;
     }
-    if (level > 0.5) {
+    if (level > local_detail_first_active_level() + 0.5) {
         float inner = local_detail_level_half_extent(level - 1.0);
         if (radial < inner) {
             return 0.0;

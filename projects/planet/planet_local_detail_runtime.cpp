@@ -5,23 +5,47 @@
 namespace cubey::projects::planet {
 
 void PlanetLocalDetailRuntime::rebuild(const PlanetConfig& config, const PlanetFrame& frame) {
-    build_ = make_planet_local_detail_mesh(config, frame);
+    rebuild(config, frame, default_planet_local_detail_view(frame));
+}
+
+void PlanetLocalDetailRuntime::rebuild(const PlanetConfig& config, const PlanetFrame& frame,
+                                       PlanetLocalDetailView view) {
+    build_ = make_planet_local_detail_mesh(config, frame, view);
     build_config_ = config;
+    build_view_ = view;
     has_build_ = true;
 }
 
 bool PlanetLocalDetailRuntime::topology_changed(const PlanetConfig& config) const {
+    return topology_changed(config, build_view_);
+}
+
+bool PlanetLocalDetailRuntime::topology_changed(const PlanetConfig& config,
+                                                PlanetLocalDetailView view) const {
     if (!has_build_) {
         return true;
     }
-    return build_config_.local_detail_lod_levels != config.local_detail_lod_levels ||
-           build_config_.local_detail_cells_per_axis != config.local_detail_cells_per_axis ||
-           build_config_.local_detail_outer_half_extent_m !=
-               config.local_detail_outer_half_extent_m;
+    if (build_config_.local_detail_lod_levels != config.local_detail_lod_levels ||
+        build_config_.local_detail_cells_per_axis != config.local_detail_cells_per_axis ||
+        build_config_.local_detail_outer_half_extent_m != config.local_detail_outer_half_extent_m ||
+        build_config_.local_detail_enabled != config.local_detail_enabled) {
+        return true;
+    }
+    const cubey::render::ClipmapGrid2DConfig grid = planet_local_detail_clipmap_config(config);
+    const PlanetLocalDetailActiveRange active_range =
+        planet_local_detail_active_range(config, grid, view);
+    const PlanetLocalDetailDiagnostics& built = build_.diagnostics;
+    return built.active != active_range.active ||
+           built.active_first_level != active_range.first_level ||
+           built.active_level_count != active_range.level_count;
+}
+
+bool PlanetLocalDetailRuntime::has_drawable_mesh() const {
+    return has_build_ && !build_.mesh.vertices.empty() && !build_.mesh.indices.empty();
 }
 
 const PlanetLocalDetailMeshData& PlanetLocalDetailRuntime::mesh() const {
-    if (!has_build_ || build_.mesh.vertices.empty() || build_.mesh.indices.empty()) {
+    if (!has_drawable_mesh()) {
         throw std::runtime_error("planet local detail mesh is not initialized");
     }
     return build_.mesh;
