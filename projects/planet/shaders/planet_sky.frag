@@ -11,6 +11,7 @@ layout(set = 0, binding = 0) uniform PlanetSkyFrame {
     vec4 camera_up_tan_half_fovy;
     vec4 camera_forward_enabled;
     vec4 sun_direction_radius;
+    vec4 moon_direction_radius;
     vec4 sun_color_intensity;
     vec4 sun_disk_glow;
     vec4 camera_position_radius;
@@ -46,6 +47,17 @@ float star_field(vec3 ray_direction) {
     float star = smoothstep(0.9978, 1.0, hash13(cell));
     float sparkle = 0.45 + 0.55 * hash13(cell + vec3(17.0, 37.0, 71.0));
     return star * sparkle;
+}
+
+float moon_star_visibility(vec3 ray_direction) {
+    float moon_radius = max(celestial.moon_direction_radius.w, 0.0);
+    if (moon_radius <= 0.0) {
+        return 1.0;
+    }
+    vec3 moon_direction = normalize(celestial.moon_direction_radius.xyz);
+    float moon_angle = acos(clamp(dot(ray_direction, moon_direction), -1.0, 1.0));
+    float edge_width = max(fwidth(moon_angle) * 1.5, moon_radius * 0.12);
+    return smoothstep(moon_radius - edge_width, moon_radius + edge_width, moon_angle);
 }
 
 vec3 atmosphere_view_haze(vec3 ray_direction, vec3 sun_direction) {
@@ -91,7 +103,7 @@ vec3 local_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
     float horizon_extinction = smoothstep(0.0, 0.36, terms.horizon);
     vec3 stars =
         vec3(0.75, 0.82, 1.0) * star_field(ray_direction) * 0.30 * terms.above_horizon *
-        (1.0 - horizon_extinction) * terms.star_visibility;
+        (1.0 - horizon_extinction) * terms.star_visibility * moon_star_visibility(ray_direction);
     float below_horizon_haze = smoothstep(-0.75, -0.04, terms.ray_up) * terms.daylight;
     vec3 night_below_horizon = vec3(0.006, 0.008, 0.018);
     vec3 night_horizon_fill = mix(night_below_horizon, vec3(0.010, 0.016, 0.036),
@@ -129,7 +141,8 @@ vec3 physical_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
     vec3 night = vec3(0.003, 0.005, 0.016);
     vec3 twilight_warm = vec3(0.92, 0.36, 0.15) * horizon_shell * twilight * 0.08;
     vec3 stars = vec3(0.75, 0.82, 1.0) * star_field(ray_direction) * 0.28 *
-                 (1.0 - max(daylight, twilight)) * above_horizon;
+                 (1.0 - max(daylight, twilight)) * above_horizon *
+                 moon_star_visibility(ray_direction);
     vec3 sky = night + scatter.radiance + twilight_warm + stars;
     vec3 below = mix(vec3(0.006, 0.008, 0.018),
                      scatter.radiance * (0.45 + 0.28 * horizon_shell) +
@@ -174,7 +187,8 @@ vec3 space_background(vec3 ray_direction, vec3 sun_direction) {
         float terminator = exp(-abs(limb_sun_dot) / 0.18);
         limb = shell * (0.12 + 0.82 * lit_limb + 0.22 * terminator);
     }
-    vec3 stars = vec3(0.75, 0.82, 1.0) * star_field(ray_direction) * 0.32 * sky_visibility;
+    vec3 stars = vec3(0.75, 0.82, 1.0) * star_field(ray_direction) * 0.32 * sky_visibility *
+                 moon_star_visibility(ray_direction);
     vec3 limb_color = mix(vec3(0.012, 0.036, 0.095), vec3(0.13, 0.30, 0.58), lit_limb);
     vec3 sky = base * sky_visibility + stars +
                atmosphere_view_haze(ray_direction, sun_direction) * sky_visibility;

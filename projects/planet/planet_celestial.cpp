@@ -82,14 +82,11 @@ enum class PlanetCelestialBinding : std::uint32_t {
 }
 
 [[nodiscard]] cubey::math::Vec3 to_float(cubey::math::DVec3 value) {
-    return {static_cast<float>(value.x), static_cast<float>(value.y),
-            static_cast<float>(value.z)};
+    return {static_cast<float>(value.x), static_cast<float>(value.y), static_cast<float>(value.z)};
 }
 
-[[nodiscard]] bool ray_sphere_surface_normal(cubey::math::DVec3 origin,
-                                             cubey::math::Vec3 direction,
-                                             double radius_m,
-                                             cubey::math::Vec3& normal) {
+[[nodiscard]] bool ray_sphere_surface_normal(cubey::math::DVec3 origin, cubey::math::Vec3 direction,
+                                             double radius_m, cubey::math::Vec3& normal) {
     if (radius_m <= 0.0 || glm::length(direction) <= 0.000001F) {
         return false;
     }
@@ -125,9 +122,10 @@ enum class PlanetCelestialBinding : std::uint32_t {
     return std::clamp((sun_alignment * 0.5F) + 0.5F, 0.0F, 1.0F);
 }
 
-[[nodiscard]] float moon_atmosphere_sky_visibility_factor(
-    const PlanetCelestialBody& body, const PlanetCelestialLighting& lighting,
-    const PlanetCelestialBodyAtmosphereInputs& atmosphere) {
+[[nodiscard]] float
+moon_atmosphere_sky_visibility_factor(const PlanetCelestialBody& body,
+                                      const PlanetCelestialLighting& lighting,
+                                      const PlanetCelestialBodyAtmosphereInputs& atmosphere) {
     if (!finite_positive(atmosphere.planet_radius_m) ||
         atmosphere.atmosphere_outer_radius_m <= atmosphere.planet_radius_m ||
         glm::dot(atmosphere.camera_position_m, atmosphere.camera_position_m) <= 0.0F) {
@@ -151,11 +149,11 @@ enum class PlanetCelestialBinding : std::uint32_t {
     const float moon_elevation = glm::dot(moon_direction, camera_up);
     const float daylight = smoothstep(-0.06F, 0.25F, sun_elevation);
     const float above_horizon = smoothstep(-0.03F, 0.10F, moon_elevation);
-    const float separation = std::acos(std::clamp(glm::dot(sun_direction, moon_direction),
-                                                  -1.0F, 1.0F));
+    const float separation =
+        std::acos(std::clamp(glm::dot(sun_direction, moon_direction), -1.0F, 1.0F));
     const float near_sun = 1.0F - smoothstep(0.18F, 1.05F, separation);
-    const float sky_visibility = inside_atmosphere * daylight * above_horizon *
-                                 (0.70F + near_sun * 0.25F);
+    const float sky_visibility =
+        inside_atmosphere * daylight * above_horizon * (0.70F + near_sun * 0.25F);
     return std::clamp(sky_visibility, 0.0F, 0.95F);
 }
 
@@ -186,8 +184,8 @@ PlanetSolarTime planet_solar_time_from_run_config(const RunConfig& config) {
 PlanetExposureConfig planet_exposure_config_from_run_config(const RunConfig& config) {
     PlanetExposureConfig exposure{};
     exposure.manual_exposure = config.pbr.exposure;
-    exposure.auto_exposure_enabled = config.atmosphere.auto_exposure < 0 ||
-                                     config.atmosphere.auto_exposure == 1;
+    exposure.auto_exposure_enabled =
+        config.atmosphere.auto_exposure < 0 || config.atmosphere.auto_exposure == 1;
     if (config.pbr.exposure_explicit) {
         exposure.auto_exposure_enabled = false;
     }
@@ -418,14 +416,13 @@ float planet_celestial_sun_elevation_degrees(const PlanetCelestialSystem& celest
         static_cast<float>(camera_up_d.y),
         static_cast<float>(camera_up_d.z),
     };
-    const float sun_elevation =
-        std::asin(std::clamp(glm::dot(normalized_or_up(celestial.sun.direction), camera_up),
-                             -1.0F, 1.0F));
+    const float sun_elevation = std::asin(
+        std::clamp(glm::dot(normalized_or_up(celestial.sun.direction), camera_up), -1.0F, 1.0F));
     return sun_elevation * kRadiansToDegrees;
 }
 
-float planet_celestial_visible_disk_light_fraction(
-    const PlanetCelestialSystem& celestial, cubey::math::DVec3 camera_world_position_m) {
+float planet_celestial_visible_disk_light_fraction(const PlanetCelestialSystem& celestial,
+                                                   cubey::math::DVec3 camera_world_position_m) {
     if (glm::length(camera_world_position_m) <= 0.000001) {
         return 1.0F;
     }
@@ -457,10 +454,10 @@ float planet_celestial_view_light_fraction(const PlanetCelestialSystem& celestia
         for (float x : kSamples) {
             ++sample_count;
             cubey::math::Vec3 normal{};
-            if (!ray_sphere_surface_normal(camera_world_position_m,
-                                           cubey::render::view_ray_direction(view.view_rays,
-                                                                             {x, y}),
-                                           static_cast<double>(view.planet_radius_m), normal)) {
+            if (!ray_sphere_surface_normal(
+                    camera_world_position_m,
+                    cubey::render::view_ray_direction(view.view_rays, {x, y}),
+                    static_cast<double>(view.planet_radius_m), normal)) {
                 continue;
             }
             ++hit_count;
@@ -500,8 +497,7 @@ float planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
 
     const float surface_weight = std::clamp(surface_reference_weight, 0.0F, 1.0F);
     const float orbit_exposure = planet_celestial_orbit_auto_exposure(
-        planet_celestial_visible_disk_light_fraction(celestial, camera_world_position_m),
-        exposure);
+        planet_celestial_visible_disk_light_fraction(celestial, camera_world_position_m), exposure);
     const float surface_exposure = planet_celestial_auto_exposure(
         planet_celestial_sun_elevation_degrees(celestial, camera_world_position_m), exposure);
     return std::lerp(orbit_exposure, surface_exposure, surface_weight);
@@ -581,8 +577,7 @@ planet_atmosphere_environment_config(const PlanetAtmosphereInputs& inputs) {
     const cubey::math::Vec3 sun_direction = normalized_or_up(inputs.sun_direction);
     const float elevation_degrees =
         std::asin(std::clamp(sun_direction.y, -1.0F, 1.0F)) * kRadiansToDegrees;
-    const float azimuth_degrees =
-        std::atan2(sun_direction.x, -sun_direction.z) * kRadiansToDegrees;
+    const float azimuth_degrees = std::atan2(sun_direction.x, -sun_direction.z) * kRadiansToDegrees;
 
     cubey::render::AtmosphereEnvironmentConfig config{};
     config.bottom_radius_km = std::max(inputs.planet_radius_m * kMetersToKm, 0.001F);
@@ -602,6 +597,29 @@ planet_atmosphere_environment_config(const PlanetAtmosphereInputs& inputs) {
 PlanetSkyFrameUniforms planet_sky_frame_uniforms(const PlanetCelestialSystem& celestial,
                                                  const PlanetSkyFrameUniformInputs& inputs) {
     const cubey::math::Vec3 sun_direction = normalized_or_up(celestial.sun.direction);
+    const cubey::math::Vec3 moon_direction = normalized_or_up(celestial.moon.direction);
+    const cubey::math::DVec3 moon_world_position_m{
+        static_cast<double>(moon_direction.x) *
+            static_cast<double>(std::max(celestial.moon.distance_m, 1.0F)),
+        static_cast<double>(moon_direction.y) *
+            static_cast<double>(std::max(celestial.moon.distance_m, 1.0F)),
+        static_cast<double>(moon_direction.z) *
+            static_cast<double>(std::max(celestial.moon.distance_m, 1.0F)),
+    };
+    const cubey::math::DVec3 camera_world_position_m{
+        static_cast<double>(inputs.camera_position_m.x),
+        static_cast<double>(inputs.camera_position_m.y),
+        static_cast<double>(inputs.camera_position_m.z),
+    };
+    const cubey::math::DVec3 camera_to_moon_m = moon_world_position_m - camera_world_position_m;
+    const cubey::math::Vec3 moon_mask_direction = glm::length(camera_to_moon_m) > 0.000001
+                                                      ? normalized_or_up(to_float(camera_to_moon_m))
+                                                      : moon_direction;
+    const float moon_radius = celestial.moon.visible
+                                  ? std::max(celestial.moon.angular_radius_rad *
+                                                 std::max(inputs.moon_angular_radius_scale, 0.0F),
+                                             0.0F)
+                                  : 0.0F;
     return {
         .camera_right_aspect = inputs.view_rays.right_aspect,
         .camera_up_tan_half_fovy = inputs.view_rays.up_tan_half_fovy,
@@ -618,6 +636,13 @@ PlanetSkyFrameUniforms planet_sky_frame_uniforms(const PlanetCelestialSystem& ce
                 sun_direction.y,
                 sun_direction.z,
                 celestial.sun.angular_radius_rad,
+            },
+        .moon_direction_radius =
+            {
+                moon_mask_direction.x,
+                moon_mask_direction.y,
+                moon_mask_direction.z,
+                moon_radius,
             },
         .sun_color_intensity =
             {

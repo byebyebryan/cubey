@@ -2,8 +2,8 @@
 
 #include "planet_config.h"
 
-#include <cubey/core/run_config.h>
 #include <cubey/core/math.h>
+#include <cubey/core/run_config.h>
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/material.h>
@@ -158,6 +158,7 @@ struct PlanetSkyFrameUniforms {
     cubey::math::Vec4 camera_up_tan_half_fovy;
     cubey::math::Vec4 camera_forward_enabled;
     cubey::math::Vec4 sun_direction_radius;
+    cubey::math::Vec4 moon_direction_radius;
     cubey::math::Vec4 sun_color_intensity;
     cubey::math::Vec4 sun_disk_glow;
     cubey::math::Vec4 camera_position_radius;
@@ -165,7 +166,7 @@ struct PlanetSkyFrameUniforms {
     cubey::math::Vec4 atmosphere_mode_options;
 };
 
-static_assert(sizeof(PlanetSkyFrameUniforms) == sizeof(float) * 36U);
+static_assert(sizeof(PlanetSkyFrameUniforms) == sizeof(float) * 40U);
 
 struct PlanetCelestialBodyFrameUniforms {
     cubey::math::Mat4 view_projection{1.0F};
@@ -184,6 +185,7 @@ struct PlanetSkyFrameUniformInputs {
     float planet_radius_m = 1.0F;
     float atmosphere_outer_radius_m = 1.0F;
     PlanetAtmosphereMode atmosphere_mode = PlanetAtmosphereMode::Physical;
+    float moon_angular_radius_scale = 1.0F;
 };
 
 struct PlanetCelestialBodyAtmosphereInputs {
@@ -269,31 +271,25 @@ planet_celestial_sun_elevation_degrees(const PlanetCelestialSystem& celestial,
 [[nodiscard]] float
 planet_celestial_visible_disk_light_fraction(const PlanetCelestialSystem& celestial,
                                              cubey::math::DVec3 camera_world_position_m);
-[[nodiscard]] float
-planet_celestial_view_light_fraction(const PlanetCelestialSystem& celestial,
-                                     cubey::math::DVec3 camera_world_position_m,
-                                     const PlanetExposureView& view);
-[[nodiscard]] float
-planet_celestial_auto_exposure(float sun_elevation_degrees,
-                               const PlanetExposureConfig& exposure);
-[[nodiscard]] float
-planet_celestial_orbit_auto_exposure(float visible_disk_light_fraction,
-                                     const PlanetExposureConfig& exposure);
-[[nodiscard]] float
-planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
-                                  cubey::math::DVec3 camera_world_position_m,
-                                  const PlanetExposureConfig& exposure);
-[[nodiscard]] float
-planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
-                                  cubey::math::DVec3 camera_world_position_m,
-                                  const PlanetExposureConfig& exposure,
-                                  float surface_reference_weight);
-[[nodiscard]] float
-planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
-                                  cubey::math::DVec3 camera_world_position_m,
-                                  const PlanetExposureConfig& exposure,
-                                  float surface_reference_weight,
-                                  const PlanetExposureView& view);
+[[nodiscard]] float planet_celestial_view_light_fraction(const PlanetCelestialSystem& celestial,
+                                                         cubey::math::DVec3 camera_world_position_m,
+                                                         const PlanetExposureView& view);
+[[nodiscard]] float planet_celestial_auto_exposure(float sun_elevation_degrees,
+                                                   const PlanetExposureConfig& exposure);
+[[nodiscard]] float planet_celestial_orbit_auto_exposure(float visible_disk_light_fraction,
+                                                         const PlanetExposureConfig& exposure);
+[[nodiscard]] float planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
+                                                      cubey::math::DVec3 camera_world_position_m,
+                                                      const PlanetExposureConfig& exposure);
+[[nodiscard]] float planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
+                                                      cubey::math::DVec3 camera_world_position_m,
+                                                      const PlanetExposureConfig& exposure,
+                                                      float surface_reference_weight);
+[[nodiscard]] float planet_celestial_display_exposure(const PlanetCelestialSystem& celestial,
+                                                      cubey::math::DVec3 camera_world_position_m,
+                                                      const PlanetExposureConfig& exposure,
+                                                      float surface_reference_weight,
+                                                      const PlanetExposureView& view);
 [[nodiscard]] PlanetAtmosphereInputs
 planet_atmosphere_inputs(const PlanetCelestialSystem& celestial,
                          const PlanetCelestialLighting& lighting,

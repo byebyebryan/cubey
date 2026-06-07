@@ -114,6 +114,9 @@ The latest follow-up batch is complete:
 - aligned moon/atmosphere docs with the actual body pass: depth-tested moon
   geometry with premultiplied phase/daylight visibility, not a shared sky-owned
   moon sprite.
+- added the missing sky-side moon contract: blended moon phases may visually
+  merge into smooth sky, but procedural stars are masked behind the full
+  rendered moon disk.
 
 The remaining near-term work should move back to feature slices or targeted
 hardening. It still should not port ocean, add real GIS data, build an

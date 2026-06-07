@@ -191,6 +191,8 @@ terminator shape therefore come from body lighting against the modeled sun
 direction instead of a sky-disk mask. The body pass uses premultiplied blending
 for phase coverage and daylight sky washout, but placement and planet
 occlusion remain geometric/depth-tested rather than sky-sprite ownership.
+The sky pass masks procedural stars behind the full rendered moon disk, so the
+unlit half can blend into smooth sky without letting stars shine through it.
 Night-side terrain receives a small phase-scaled secondary moonlight term. True
 node-aware lunar eclipses remain deferred. The surface shader receives frame
 data through a descriptor-backed uniform instead of push constants, and

@@ -47,8 +47,8 @@ float angle_between(cubey::math::Vec3 a, cubey::math::Vec3 b) {
 
 cubey::projects::planet::PlanetExposureView exposure_view(cubey::math::Quat rotation) {
     return {
-        .view_rays = cubey::render::view_ray_basis_3d(rotation, 1.0F,
-                                                       std::numbers::pi_v<float> / 3.0F),
+        .view_rays =
+            cubey::render::view_ray_basis_3d(rotation, 1.0F, std::numbers::pi_v<float> / 3.0F),
         .planet_radius_m = 1.0F,
     };
 }
@@ -78,8 +78,7 @@ void test_solar_time_applies_run_config() {
     cubey::projects::planet::PlanetSolarTime time =
         cubey::projects::planet::planet_solar_time_from_run_config(run_config);
 
-    require_near(time.day_of_year, 81.0F, 0.0001F,
-                 "planet solar time should apply run config day");
+    require_near(time.day_of_year, 81.0F, 0.0001F, "planet solar time should apply run config day");
     require_near(time.time_hours, 15.25F, 0.0001F,
                  "planet solar time should apply run config hour");
     require_near(time.hours_per_second, 0.75F, 0.0001F,
@@ -218,8 +217,7 @@ void test_moon_phase_matches_sun_moon_separation_for_coplanar_orbits() {
     solar.moon_orbit_inclination_rad = 0.0F;
     solar.moon_orbit_phase_offset_cycles = 0.0F;
     solar.equinox_day = 0.0F;
-    const float synodic_days =
-        cubey::projects::planet::planet_celestial_synodic_month_days(solar);
+    const float synodic_days = cubey::projects::planet::planet_celestial_synodic_month_days(solar);
 
     cubey::projects::planet::PlanetSolarTime new_time{};
     new_time.day_of_year = 1.0F;
@@ -243,8 +241,7 @@ void test_moon_phase_matches_sun_moon_separation_for_coplanar_orbits() {
                  std::numbers::pi_v<float> * 0.5F, 0.0005F,
                  "quarter moon should sit about ninety degrees from the sun");
     require_near(angle_between(full_moon.sun.direction, full_moon.moon.direction),
-                 std::numbers::pi_v<float>, 0.0005F,
-                 "full moon should sit opposite the sun");
+                 std::numbers::pi_v<float>, 0.0005F, "full moon should sit opposite the sun");
 }
 
 void test_celestial_diagnostics_report_plane_relationships() {
@@ -315,8 +312,8 @@ void test_celestial_lighting_scales_moonlight_by_phase() {
             "quarter moon should be brighter than new moon");
     require(full_moon.moon_light_intensity > quarter_moon.moon_light_intensity,
             "full moon should be brighter than quarter moon");
-    require_near(quarter_moon.moon_light_intensity, full_moon.moon_light_intensity * 0.5F,
-                 0.0001F, "quarter moon should be roughly half the full-moon light");
+    require_near(quarter_moon.moon_light_intensity, full_moon.moon_light_intensity * 0.5F, 0.0001F,
+                 "quarter moon should be roughly half the full-moon light");
 }
 
 void test_celestial_display_exposure_uses_local_sun_elevation() {
@@ -325,14 +322,12 @@ void test_celestial_display_exposure_uses_local_sun_elevation() {
     const cubey::projects::planet::PlanetExposureConfig exposure{};
     const cubey::math::DVec3 camera_position{0.0, 1.0, 0.0};
 
-    const float daylight_exposure =
-        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
-                                                                   exposure);
+    const float daylight_exposure = cubey::projects::planet::planet_celestial_display_exposure(
+        celestial, camera_position, exposure);
 
     celestial.sun.direction = {0.0F, -1.0F, 0.0F};
-    const float night_exposure =
-        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
-                                                                   exposure);
+    const float night_exposure = cubey::projects::planet::planet_celestial_display_exposure(
+        celestial, camera_position, exposure);
 
     require(daylight_exposure < -2.0F,
             "planet auto exposure should darken bright daylight relative to fixed exposure");
@@ -348,16 +343,16 @@ void test_celestial_auto_exposure_interpolates_day_twilight_and_night() {
     exposure.twilight_exposure = -0.5F;
     exposure.night_exposure = 2.5F;
 
-    require_near(cubey::projects::planet::planet_celestial_auto_exposure(80.0F, exposure),
-                 -3.0F, 0.000001F, "high sun should use daylight exposure");
+    require_near(cubey::projects::planet::planet_celestial_auto_exposure(80.0F, exposure), -3.0F,
+                 0.000001F, "high sun should use daylight exposure");
     const float horizon_exposure =
         cubey::projects::planet::planet_celestial_auto_exposure(0.0F, exposure);
     require(horizon_exposure < exposure.twilight_exposure,
             "horizon twilight should already lean toward daylight instead of over-brightening");
     require(horizon_exposure > exposure.daylight_exposure,
             "horizon twilight should remain between daylight and twilight exposure");
-    require_near(cubey::projects::planet::planet_celestial_auto_exposure(-60.0F, exposure),
-                 2.5F, 0.000001F, "deep night should use night exposure");
+    require_near(cubey::projects::planet::planet_celestial_auto_exposure(-60.0F, exposure), 2.5F,
+                 0.000001F, "deep night should use night exposure");
 }
 
 void test_celestial_orbit_exposure_uses_visible_disk_light_fraction() {
@@ -382,19 +377,16 @@ void test_celestial_view_light_fraction_samples_visible_planet() {
         exposure_view(cubey::math::identity_quat());
 
     celestial.sun.direction = {0.0F, 0.0F, 1.0F};
-    const float lit =
-        cubey::projects::planet::planet_celestial_view_light_fraction(celestial, camera_position,
-                                                                      view);
+    const float lit = cubey::projects::planet::planet_celestial_view_light_fraction(
+        celestial, camera_position, view);
 
     celestial.sun.direction = {1.0F, 0.0F, 0.0F};
-    const float side =
-        cubey::projects::planet::planet_celestial_view_light_fraction(celestial, camera_position,
-                                                                      view);
+    const float side = cubey::projects::planet::planet_celestial_view_light_fraction(
+        celestial, camera_position, view);
 
     celestial.sun.direction = {0.0F, 0.0F, -1.0F};
-    const float dark =
-        cubey::projects::planet::planet_celestial_view_light_fraction(celestial, camera_position,
-                                                                      view);
+    const float dark = cubey::projects::planet::planet_celestial_view_light_fraction(
+        celestial, camera_position, view);
 
     require(lit > 0.75F, "centered lit orbit view should estimate a bright planet disk");
     require(side > 0.10F && side < lit,
@@ -411,12 +403,10 @@ void test_celestial_view_light_fraction_uses_camera_view_direction() {
     const cubey::projects::planet::PlanetExposureView off_center =
         exposure_view(cubey::math::angle_axis_quat(0.95F, {0.0F, 1.0F, 0.0F}));
 
-    const float centered_light =
-        cubey::projects::planet::planet_celestial_view_light_fraction(celestial, camera_position,
-                                                                      centered);
-    const float off_center_light =
-        cubey::projects::planet::planet_celestial_view_light_fraction(celestial, camera_position,
-                                                                      off_center);
+    const float centered_light = cubey::projects::planet::planet_celestial_view_light_fraction(
+        celestial, camera_position, centered);
+    const float off_center_light = cubey::projects::planet::planet_celestial_view_light_fraction(
+        celestial, camera_position, off_center);
 
     require(off_center_light < centered_light,
             "orbit light fraction should account for where the camera is looking");
@@ -453,15 +443,12 @@ void test_celestial_display_exposure_blends_orbit_and_surface_references() {
     const cubey::projects::planet::PlanetExposureConfig exposure{};
     const cubey::math::DVec3 camera_position{0.0, 1.0, 0.0};
 
-    const float orbit_exposure =
-        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
-                                                                   exposure, 0.0F);
-    const float surface_exposure =
-        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
-                                                                   exposure, 1.0F);
-    const float blended_exposure =
-        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
-                                                                   exposure, 0.5F);
+    const float orbit_exposure = cubey::projects::planet::planet_celestial_display_exposure(
+        celestial, camera_position, exposure, 0.0F);
+    const float surface_exposure = cubey::projects::planet::planet_celestial_display_exposure(
+        celestial, camera_position, exposure, 1.0F);
+    const float blended_exposure = cubey::projects::planet::planet_celestial_display_exposure(
+        celestial, camera_position, exposure, 0.5F);
 
     require(orbit_exposure < surface_exposure,
             "orbit exposure should be less aggressive than surface night exposure");
@@ -498,12 +485,10 @@ void test_celestial_display_exposure_respects_overrides() {
         cubey::projects::planet::planet_exposure_config_from_run_config(cubey::RunConfig{});
     const cubey::projects::planet::PlanetExposureConfig biased_config =
         cubey::projects::planet::planet_exposure_config_from_run_config(biased);
-    const float default_exposure =
-        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
-                                                                   default_config);
-    const float biased_exposure =
-        cubey::projects::planet::planet_celestial_display_exposure(celestial, camera_position,
-                                                                   biased_config);
+    const float default_exposure = cubey::projects::planet::planet_celestial_display_exposure(
+        celestial, camera_position, default_config);
+    const float biased_exposure = cubey::projects::planet::planet_celestial_display_exposure(
+        celestial, camera_position, biased_config);
     require_near(biased_exposure, default_exposure + 0.5F, 0.000001F,
                  "planet exposure bias should offset automatic exposure");
 }
@@ -644,14 +629,15 @@ void test_sky_frame_uniforms_pack_sun_state() {
         cubey::render::view_ray_basis_3d(cubey::math::identity_quat(), 1.5F, 1.0F);
     const cubey::projects::planet::PlanetSkyFrameUniforms uniforms =
         cubey::projects::planet::planet_sky_frame_uniforms(
-            celestial, {
-                           .view_rays = view_rays,
-                           .camera_position_m = {0.0F, 0.0F, 10.0F},
-                           .planet_radius_m = 4.0F,
-                           .atmosphere_outer_radius_m = 5.0F,
-                           .atmosphere_mode =
-                               cubey::projects::planet::PlanetAtmosphereMode::Physical,
-                       });
+            celestial,
+            {
+                .view_rays = view_rays,
+                .camera_position_m = {0.0F, 0.0F, 10.0F},
+                .planet_radius_m = 4.0F,
+                .atmosphere_outer_radius_m = 5.0F,
+                .atmosphere_mode = cubey::projects::planet::PlanetAtmosphereMode::Physical,
+                .moon_angular_radius_scale = 3.0F,
+            });
 
     require(uniforms.camera_right_aspect == view_rays.right_aspect,
             "celestial frame uniforms should pack view right/aspect");
@@ -662,6 +648,12 @@ void test_sky_frame_uniforms_pack_sun_state() {
                      celestial.sun.direction, "celestial frame uniforms should pack sun direction");
     require_near(uniforms.sun_direction_radius.w, celestial.sun.angular_radius_rad, 0.000001F,
                  "celestial frame uniforms should pack sun angular radius");
+    require_vec_near({uniforms.moon_direction_radius.x, uniforms.moon_direction_radius.y,
+                      uniforms.moon_direction_radius.z},
+                     celestial.moon.direction,
+                     "celestial frame uniforms should pack moon direction for star masking");
+    require_near(uniforms.moon_direction_radius.w, celestial.moon.angular_radius_rad * 3.0F,
+                 0.000001F, "celestial frame uniforms should pack scaled moon angular radius");
     require_near(uniforms.sun_color_intensity.w, celestial.sun.intensity, 0.000001F,
                  "celestial frame uniforms should pack sun intensity");
     require_near(uniforms.camera_position_radius.z, 10.0F, 0.000001F,
@@ -672,6 +664,46 @@ void test_sky_frame_uniforms_pack_sun_state() {
                  "celestial frame uniforms should pack atmosphere limb radius");
     require_near(uniforms.atmosphere_mode_options.x, 1.0F, 0.000001F,
                  "celestial frame uniforms should pack atmosphere preview mode");
+}
+
+void test_sky_frame_uniforms_disable_invisible_moon_star_mask() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    celestial.moon.visible = false;
+    celestial.moon.direction = glm::normalize(cubey::math::Vec3{-0.50F, 0.10F, 0.86F});
+    celestial.moon.angular_radius_rad = 0.008F;
+
+    const cubey::projects::planet::PlanetSkyFrameUniforms uniforms =
+        cubey::projects::planet::planet_sky_frame_uniforms(
+            celestial, {
+                           .view_rays = cubey::render::view_ray_basis_3d(
+                               cubey::math::identity_quat(), 1.5F, 1.0F),
+                           .moon_angular_radius_scale = 3.0F,
+                       });
+
+    require_vec_near({uniforms.moon_direction_radius.x, uniforms.moon_direction_radius.y,
+                      uniforms.moon_direction_radius.z},
+                     celestial.moon.direction,
+                     "invisible moon should still pack a valid direction for diagnostics");
+    require_near(uniforms.moon_direction_radius.w, 0.0F, 0.000001F,
+                 "invisible moon should disable sky star masking");
+}
+
+void test_sky_frame_uniforms_use_topocentric_moon_mask_direction() {
+    cubey::projects::planet::PlanetCelestialSystem celestial{};
+    celestial.moon.direction = {0.0F, 0.0F, 1.0F};
+    celestial.moon.distance_m = 10.0F;
+
+    const cubey::projects::planet::PlanetSkyFrameUniforms uniforms =
+        cubey::projects::planet::planet_sky_frame_uniforms(
+            celestial, {
+                           .camera_position_m = {2.0F, 0.0F, 0.0F},
+                       });
+
+    const cubey::math::Vec3 expected = glm::normalize(cubey::math::Vec3{-2.0F, 0.0F, 10.0F});
+    require_vec_near({uniforms.moon_direction_radius.x, uniforms.moon_direction_radius.y,
+                      uniforms.moon_direction_radius.z},
+                     expected,
+                     "moon star mask should match the topocentric body placement direction");
 }
 
 void test_sky_pass_writes_opaque_sky() {
@@ -832,7 +864,7 @@ void test_celestial_body_pass_uses_depth_test_without_depth_write() {
     require(pass.src_color_blend_factor == VK_BLEND_FACTOR_ONE,
             "body pass should use premultiplied source color");
     require(pass.dst_color_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-            "body pass should preserve the sky behind low-alpha moon phases");
+            "body pass should blend low-alpha moon phases into the smooth sky color");
     require(pass.src_alpha_blend_factor == VK_BLEND_FACTOR_ONE,
             "body pass should use premultiplied source alpha");
     require(pass.dst_alpha_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
@@ -868,6 +900,8 @@ int main() {
         test_celestial_body_render_placement_preserves_apparent_size();
         test_celestial_body_render_placement_uses_topocentric_ray();
         test_sky_frame_uniforms_pack_sun_state();
+        test_sky_frame_uniforms_disable_invisible_moon_star_mask();
+        test_sky_frame_uniforms_use_topocentric_moon_mask_direction();
         test_sky_pass_writes_opaque_sky();
         test_celestial_body_frame_uniforms_pack_render_placement();
         test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere();

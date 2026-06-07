@@ -325,10 +325,11 @@ The latest planet foundation pass closed several previously loose contracts:
   camera-relative shading inputs, applies procedural lunar albedo variation, and
   renders the moon as a depth-tested body with premultiplied visibility for
   phase coverage and daylight sky washout. Planet occlusion is still geometric,
-  while the unlit/day-washed portions blend into the sky. Night-side terrain
-  receives a small phase-scaled moonlight contribution. The eclipse shadow
-  channel is intentionally zeroed until true node-aware lunar eclipses are
-  modeled.
+  while the unlit/day-washed portions blend into smooth sky. The sky pass masks
+  procedural stars behind the full rendered moon disk so blended moon phases do
+  not behave like literal star transparency. Night-side terrain receives a small
+  phase-scaled moonlight contribution. The eclipse shadow channel is
+  intentionally zeroed until true node-aware lunar eclipses are modeled.
 - Repeatable visual capture recipes live in
   [`docs/notes/planet-visual-captures.md`](../notes/planet-visual-captures.md)
   and cover orbit, surface, dawn/day/night, atmosphere comparison, LOD/seam
@@ -397,15 +398,16 @@ The render-order contract for the current local path is:
    planet limb/occlusion;
 2. opaque planet surface and terrain/ocean layers;
 3. explicit celestial body geometry, starting with a depth-tested moon sphere
-   whose visible body contribution is premultiplied for phase and sky washout;
+   whose visible body contribution is premultiplied for phase and sky washout,
+   plus a sky-pass star mask over the full rendered moon disk;
 4. clouds, aerial-perspective overlays, and post as those systems arrive.
 
 For the immediate slice, a distant sun disk/glow in the sky pass plus a
-depth-tested moon sphere with blended visibility is enough. The important
-boundary is that no shared atmosphere shader decides celestial placement,
-planet occlusion, moon phase, or moonlight. Later work can move the sun to
-body-backed rendering or add node-aware eclipses without changing the
-solar-system source of truth.
+depth-tested moon sphere with blended visibility is enough. The sky pass may
+mask procedural stars behind the full moon disk, but no shared atmosphere shader
+decides celestial placement, planet occlusion, moon phase, or moonlight. Later
+work can move the sun to body-backed rendering or add node-aware eclipses
+without changing the solar-system source of truth.
 
 Established engine precedents support this split. Unreal's Sky Atmosphere
 consumes scene Directional Lights marked as atmosphere lights, including
@@ -472,8 +474,8 @@ back into this architecture note.
    single-scattering and aerial-perspective model; keep full atmosphere LUTs
    deferred until the contract needs them.
 13. Done: replace sky-owned moon alpha fading with depth-tested body geometry,
-   premultiplied phase/daylight visibility, phase-scaled secondary moonlight,
-   and deferred eclipse shadowing.
+   premultiplied phase/daylight visibility, a full-disk procedural star mask,
+   phase-scaled secondary moonlight, and deferred eclipse shadowing.
 14. Done: add visual smoke coverage, view-aware orbit exposure, unified moon
    atmosphere visibility, and smaller `PlanetUi` / `PlanetSurfaceRuntime`
    project boundaries.

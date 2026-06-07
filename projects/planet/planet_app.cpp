@@ -907,6 +907,7 @@ class PlanetApp {
                                    .atmosphere_outer_radius_m =
                                        planet_config_.radius_m + planet_config_.atmosphere_height_m,
                                    .atmosphere_mode = planet_config_.atmosphere_mode,
+                                   .moon_angular_radius_scale = kPlanetMoonAngularRadiusScale,
                                });
     }
 
