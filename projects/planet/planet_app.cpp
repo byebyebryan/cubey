@@ -163,8 +163,7 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 26U);
 }
 
 [[nodiscard]] bool planet_local_detail_surface_view_enabled(const PlanetConfig& config) {
-    return (config.debug_view == PlanetDebugView::Final && config.local_detail_final_enabled) ||
-           config.debug_view == PlanetDebugView::LocalDetailWireframe ||
+    return config.debug_view == PlanetDebugView::LocalDetailWireframe ||
            config.debug_view == PlanetDebugView::LocalDetailBlend ||
            config.debug_view == PlanetDebugView::LocalDetailHeight;
 }
@@ -685,6 +684,13 @@ class PlanetApp {
         const PlanetLocalDetailDiagnostics& local_detail_diagnostics =
             local_detail_runtime_.diagnostics();
         const float local_detail_active = local_detail_surface_weight();
+        const float local_detail_outer_half_extent =
+            local_detail_diagnostics.active ? local_detail_diagnostics.active_outer_half_extent
+                                            : planet_config_.local_detail_outer_half_extent_m;
+        const float local_detail_lod_levels =
+            local_detail_diagnostics.active
+                ? static_cast<float>(local_detail_diagnostics.active_last_level + 1U)
+                : static_cast<float>(planet_config_.local_detail_lod_levels);
         const float local_detail_near_half_extent =
             cubey::render::clipmap_grid_2d_near_half_extent(local_detail_grid);
         const float local_detail_near_cell_size =
@@ -824,7 +830,7 @@ class PlanetApp {
                     frame_.local_frame.right.x,
                     frame_.local_frame.right.y,
                     frame_.local_frame.right.z,
-                    planet_config_.local_detail_outer_half_extent_m,
+                    local_detail_outer_half_extent,
                 },
             .local_up_height =
                 {
@@ -842,7 +848,7 @@ class PlanetApp {
                 },
             .local_detail_options =
                 {
-                    static_cast<float>(planet_config_.local_detail_lod_levels),
+                    local_detail_lod_levels,
                     local_detail_near_half_extent,
                     local_detail_near_cell_size,
                     static_cast<float>(local_detail_diagnostics.active_first_level),
@@ -857,10 +863,6 @@ class PlanetApp {
         }
         const PlanetLocalDetailDiagnostics& diagnostics = local_detail_runtime_.diagnostics();
         if (!diagnostics.active) {
-            return 0.0F;
-        }
-        if (planet_config_.debug_view == PlanetDebugView::Final &&
-            diagnostics.active_first_level != 0U) {
             return 0.0F;
         }
         return planet_app_smoothstep(0.20F, 0.65F, exposure_surface_reference_weight());
@@ -990,7 +992,9 @@ class PlanetApp {
 
     [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms(VkFormat color_format,
                                                                VkExtent2D extent) const {
-        return cubey::render::hdr_post_uniforms(color_format, display_exposure(extent));
+        const float exposure =
+            planet_config_.debug_view == PlanetDebugView::Final ? display_exposure(extent) : 0.0F;
+        return cubey::render::hdr_post_uniforms(color_format, exposure);
     }
 
     void record_post_pass(const cubey::vulkan::CommandRecorder& recorder,

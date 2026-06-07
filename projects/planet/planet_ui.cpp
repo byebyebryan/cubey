@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <numbers>
@@ -50,9 +51,30 @@ constexpr std::array<PlanetAtmosphereMode, 2> kAtmosphereModes{
     PlanetAtmosphereMode::Physical,
 };
 
+struct CameraLocationReadout {
+    float latitude_degrees = 0.0F;
+    float longitude_degrees = 0.0F;
+};
+
 [[nodiscard]] bool is_local_detail_debug_view(PlanetDebugView view) {
     return view == PlanetDebugView::LocalDetailWireframe ||
            view == PlanetDebugView::LocalDetailBlend || view == PlanetDebugView::LocalDetailHeight;
+}
+
+[[nodiscard]] CameraLocationReadout camera_location_readout(const PlanetFrame& frame) {
+    const double x = frame.camera_world_position_m.x;
+    const double y = frame.camera_world_position_m.y;
+    const double z = frame.camera_world_position_m.z;
+    const double radius = std::sqrt((x * x) + (y * y) + (z * z));
+    if (radius <= 0.000001) {
+        return {};
+    }
+    constexpr double kRadiansToDegrees = 180.0 / std::numbers::pi;
+    return {
+        .latitude_degrees =
+            static_cast<float>(std::asin(std::clamp(y / radius, -1.0, 1.0)) * kRadiansToDegrees),
+        .longitude_degrees = static_cast<float>(std::atan2(x, z) * kRadiansToDegrees),
+    };
 }
 
 void draw_panel_actions(PlanetUiContext& ui) {
@@ -85,6 +107,10 @@ void draw_planet_controls(PlanetUiContext& ui) {
         cubey::host::imgui_enum_combo("Debug View", ui.edit_config.debug_view, kDebugViews,
                                       planet_debug_view_name);
         ImGui::Checkbox("Wire Overlay", &ui.edit_config.wire_overlay);
+        const CameraLocationReadout camera_location = camera_location_readout(ui.frame);
+        ImGui::Text("Camera Height: %.0f m", ui.frame.camera_altitude_m);
+        ImGui::Text("Lat / Lon: %.3f / %.3f deg", camera_location.latitude_degrees,
+                    camera_location.longitude_degrees);
     }
 }
 
@@ -139,7 +165,6 @@ void draw_local_detail_controls(PlanetUiContext& ui) {
     if (const cubey::host::ScopedImGuiGroup group{"Local Detail", {.default_open = false}}; group) {
         const cubey::host::ScopedImGuiId section_id("LocalDetail");
         ImGui::Checkbox("Diagnostic Enabled", &ui.edit_config.local_detail_enabled);
-        ImGui::Checkbox("Final Integration", &ui.edit_config.local_detail_final_enabled);
         ImGui::Text("Debug Render: %s", (ui.edit_config.local_detail_enabled &&
                                          is_local_detail_debug_view(ui.edit_config.debug_view))
                                             ? "active"
@@ -318,14 +343,16 @@ void draw_diagnostics(PlanetUiContext& ui) {
         ImGui::SeparatorText("Local Detail");
         ImGui::Text("Enabled: %s", local_detail_diagnostics.enabled ? "yes" : "no");
         ImGui::Text("Active: %s", local_detail_diagnostics.active ? "yes" : "no");
-        ImGui::Text("Levels: %u configured, first active %u, count %u",
-                    local_detail_diagnostics.lod_levels,
+        ImGui::Text("Levels: %u configured, active %u-%u (%u)", local_detail_diagnostics.lod_levels,
                     local_detail_diagnostics.active_first_level,
+                    local_detail_diagnostics.active_last_level,
                     local_detail_diagnostics.active_level_count);
         ImGui::Text("Patches: %u", local_detail_diagnostics.patch_count);
         ImGui::Text("Near cell / outer extent: %.1f m / %.0f m",
                     local_detail_diagnostics.near_cell_size,
                     local_detail_diagnostics.outer_half_extent);
+        ImGui::Text("Active outer extent: %.0f m",
+                    local_detail_diagnostics.active_outer_half_extent);
         ImGui::Text("View scale: %.1f m/px, finest active %.1f m (%.2f px)",
                     local_detail_diagnostics.meters_per_pixel,
                     local_detail_diagnostics.finest_active_cell_size,

@@ -87,7 +87,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 173> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 172> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -263,10 +263,6 @@ constexpr std::array<ConfigOptionDescriptor, 173> kRunConfigOptions{
            "--planet-local-detail", "Local Detail", "Planet",
            "Enable viewer-centered near-field terrain detail.", ConfigOptionType::Bool, no_range(),
            {}, "--no-planet-local-detail"),
-    option(RunConfigOptionId::PlanetLocalDetailFinal, "planet.local_detail_final_enabled",
-           "--planet-local-detail-final", "Local Detail Final", "Planet",
-           "Enable experimental local detail integration in the final planet view.",
-           ConfigOptionType::Bool, no_range(), {}, "--no-planet-local-detail-final"),
     option(RunConfigOptionId::PlanetLocalDetailHeight, "planet.local_detail_height_strength_m",
            "--planet-local-detail-height-m", "Local Detail Height", "Planet",
            "Maximum near-field local terrain detail height in meters.", ConfigOptionType::Float,
@@ -930,8 +926,6 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.planet.local_detail_outer_half_extent_m);
     case RunConfigOptionId::PlanetLocalDetail:
         return optional_bool(config.planet.local_detail_enabled);
-    case RunConfigOptionId::PlanetLocalDetailFinal:
-        return optional_bool(config.planet.local_detail_final_enabled);
     case RunConfigOptionId::PlanetLocalDetailHeight:
         return optional_float(config.planet.local_detail_height_strength_m);
     case RunConfigOptionId::PlanetLocalDetailScale:
@@ -1245,7 +1239,6 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<float>("local_detail_outer_half_extent_m",
                               options.local_detail_outer_half_extent_m);
     adapter.writeField<int>("local_detail_enabled", options.local_detail_enabled);
-    adapter.writeField<int>("local_detail_final_enabled", options.local_detail_final_enabled);
     adapter.writeField<float>("local_detail_height_strength_m",
                               options.local_detail_height_strength_m);
     adapter.writeField<float>("local_detail_scale_m", options.local_detail_scale_m);
@@ -1287,7 +1280,6 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<float>("local_detail_outer_half_extent_m",
                              options.local_detail_outer_half_extent_m);
     adapter.readField<int>("local_detail_enabled", options.local_detail_enabled);
-    adapter.readField<int>("local_detail_final_enabled", options.local_detail_final_enabled);
     adapter.readField<float>("local_detail_height_strength_m",
                              options.local_detail_height_strength_m);
     adapter.readField<float>("local_detail_scale_m", options.local_detail_scale_m);
@@ -1748,9 +1740,6 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::PlanetLocalDetail:
         config.planet.local_detail_enabled = parse_config_bool(value, option) ? 1 : 0;
-        break;
-    case RunConfigOptionId::PlanetLocalDetailFinal:
-        config.planet.local_detail_final_enabled = parse_config_bool(value, option) ? 1 : 0;
         break;
     case RunConfigOptionId::PlanetLocalDetailHeight:
         config.planet.local_detail_height_strength_m = parse_config_float(value, option);

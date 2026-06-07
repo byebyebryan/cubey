@@ -72,6 +72,7 @@ if(BUILD_TESTING)
 
     add_executable(
         cubey_project_planet_surface_tests
+        planet_camera.cpp
         planet_config.cpp
         planet_frame.cpp
         planet_local_detail.cpp

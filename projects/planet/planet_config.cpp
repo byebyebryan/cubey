@@ -70,9 +70,6 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     if (config.planet.local_detail_enabled >= 0) {
         planet.local_detail_enabled = config.planet.local_detail_enabled != 0;
     }
-    if (config.planet.local_detail_final_enabled >= 0) {
-        planet.local_detail_final_enabled = config.planet.local_detail_final_enabled != 0;
-    }
     if (run_config_float_is_set(config.planet.local_detail_height_strength_m)) {
         planet.local_detail_height_strength_m = config.planet.local_detail_height_strength_m;
     }

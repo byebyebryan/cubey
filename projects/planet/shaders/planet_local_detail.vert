@@ -72,7 +72,7 @@ float local_detail_land_blend(float height_m) {
     return smoothstep(shoreline_width * 0.12, shoreline_width * 0.85, height_above_sea);
 }
 
-float local_detail_height_delta_m(vec3 world_plane_position, vec3 sphere_normal,
+float local_detail_height_delta_m(vec2 local_xz, vec3 sphere_normal,
                                   float base_height_m, float ownership) {
     float active_weight = surface_frame.local_origin_options.w;
     float height_strength = max(surface_frame.local_up_height.w, 0.0);
@@ -82,7 +82,7 @@ float local_detail_height_delta_m(vec3 world_plane_position, vec3 sphere_normal,
 
     float scale = max(surface_frame.local_forward_scale.w, 1.0);
     uint seed = uint(surface_frame.terrain_options.z + 0.5) + 3109U;
-    vec3 p = world_plane_position / scale;
+    vec3 p = vec3(local_xz.x, base_height_m * 0.07, local_xz.y) / scale;
     float undulation = planet_surface_fbm(p * 0.65 + vec3(2.7, -1.5, 4.2), seed, 4U);
     float ridge_source = planet_surface_fbm(p * 1.90 + vec3(-6.1, 3.8, 1.4), seed + 317U, 4U);
     float ridges = pow(max(1.0 - abs(ridge_source), 0.0), 2.6);
@@ -100,8 +100,8 @@ vec3 local_detail_world_position(vec2 local_xz, out vec3 sphere_normal, out floa
     sphere_normal = normalize(plane_position);
     float base_height_m = planet_surface_terrain_height_m(sphere_normal);
     float ownership = clamp(in_blend, 0.0, 1.0);
-    detail_height_m =
-        local_detail_height_delta_m(plane_position, sphere_normal, base_height_m, ownership);
+    detail_height_m = local_detail_height_delta_m(local_xz, sphere_normal, base_height_m,
+                                                  ownership);
     height_m = base_height_m + detail_height_m;
     return sphere_normal * (surface_frame.render_origin_radius.w + height_m);
 }

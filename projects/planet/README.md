@@ -37,7 +37,6 @@ Run it with:
 ./build/dev/projects/planet/planet --planet-max-lod-level 12 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
 ./build/dev/projects/planet/planet --planet-local-detail-lod-levels 6 --planet-local-detail-cells 128 --planet-local-detail-outer-extent-m 8192
 ./build/dev/projects/planet/planet --planet-local-detail-height-m 220 --planet-local-detail-scale-m 180
-./build/dev/projects/planet/planet --planet-local-detail-final
 ./build/dev/projects/planet/planet --no-planet-local-detail
 ./build/dev/projects/planet/planet --planet-terrain-mid-detail-strength 0.45 --planet-terrain-fine-detail-strength 0.16 --planet-terrain-fine-detail-scale 12
 ./build/dev/projects/planet/planet --planet-sea-level-m 0 --planet-shoreline-width-m 1500
@@ -100,10 +99,8 @@ mesh, mid-altitude views start from a coarser center patch, and close surface
 views can activate the full fine range. In v1 it renders primarily as a
 diagnostic path and reports active level range, patch, vertex, triangle,
 cell-size, projected-cell, and blend diagnostics in the UI. Final-view
-integration exists behind `--planet-local-detail-final` / `Final Integration`
-and is still experimental: it is gated to close-range views where the finest
-local-detail level is active, while the production handoff remains blocked on a
-proper blend or morph policy instead of hard opaque clipmap rings.
+integration is deferred because the local/global handoff still needs a proper
+blend or morph policy instead of hard opaque clipmap rings.
 `local-detail-wireframe` shows the near-field clipmap ownership, `local-detail-blend`
 shows the active ownership/cutout mask, and `local-detail-height` isolates the
 added detail displacement.

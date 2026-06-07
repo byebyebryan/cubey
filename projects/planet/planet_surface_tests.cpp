@@ -1,3 +1,4 @@
+#include "planet_camera.h"
 #include "planet_local_detail.h"
 #include "planet_local_detail_runtime.h"
 #include "planet_surface.h"
@@ -983,7 +984,7 @@ void test_planet_surface_earthlike_lod_reaches_meter_scale_budget() {
 void test_planet_local_detail_plan_reports_viewer_centered_clipmap() {
     const cubey::projects::planet::PlanetConfig config{};
     const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
-        config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 50000.0});
+        config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 10000.0});
 
     const cubey::projects::planet::PlanetLocalDetailPlan plan =
         cubey::projects::planet::plan_planet_local_detail(config, frame);
@@ -1000,9 +1001,14 @@ void test_planet_local_detail_plan_reports_viewer_centered_clipmap() {
             "planet local detail should skip subpixel fine levels at mid altitude");
     require(diagnostics.active_first_level > 0U,
             "planet local detail should start at a coarser center level at mid altitude");
-    require(diagnostics.active_level_count ==
-                config.local_detail_lod_levels - diagnostics.active_first_level,
+    require(diagnostics.active_level_count <=
+                cubey::projects::planet::kPlanetLocalDetailMaxActiveLevels,
+            "planet local detail should cap the resident active level range");
+    require(diagnostics.active_last_level ==
+                diagnostics.active_first_level + diagnostics.active_level_count - 1U,
             "planet local detail should keep a contiguous active level range");
+    require(diagnostics.active_outer_half_extent < diagnostics.outer_half_extent,
+            "planet local detail should not allocate the configured full outer extent");
     require(std::abs(diagnostics.near_cell_size - 4.0F) < 0.0001F,
             "planet local detail defaults should expose a four-meter near cell");
     require(diagnostics.triangle_count > 0U,
@@ -1035,6 +1041,31 @@ void test_planet_local_detail_deactivates_when_subpixel() {
             "inactive planet local detail should not allocate diagnostic patches");
     require(diagnostics.triangle_count == 0U,
             "inactive planet local detail should not allocate diagnostic triangles");
+}
+
+void test_planet_local_detail_finest_level_is_reachable_at_surface_floor() {
+    const cubey::projects::planet::PlanetConfig config{};
+    const float min_altitude = cubey::projects::planet::planet_camera_min_altitude_m(config);
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config, cubey::math::DVec3{0.0, 0.0, static_cast<double>(config.radius_m + min_altitude)});
+
+    const cubey::projects::planet::PlanetLocalDetailPlan plan =
+        cubey::projects::planet::plan_planet_local_detail(
+            config, frame,
+            cubey::projects::planet::PlanetLocalDetailView{
+                .camera_altitude_m = frame.camera_altitude_m,
+                .vertical_fov_radians = 1.04719758F,
+                .viewport_height_px = 720.0F,
+            });
+    const cubey::projects::planet::PlanetLocalDetailDiagnostics diagnostics =
+        cubey::projects::planet::planet_local_detail_diagnostics(config, plan);
+
+    require(diagnostics.active, "planet local detail should be active at the surface camera floor");
+    require(diagnostics.active_first_level == 0U,
+            "planet local detail should reach the finest LOD at the surface camera floor");
+    require(diagnostics.projected_finest_cell_px >=
+                cubey::projects::planet::kPlanetLocalDetailMinProjectedCellPx,
+            "planet local detail finest cell should be pixel-visible at the camera floor");
 }
 
 void test_planet_local_detail_density_is_independent_of_planet_radius() {
@@ -1533,6 +1564,7 @@ int main() {
         test_planet_surface_earthlike_lod_reaches_meter_scale_budget();
         test_planet_local_detail_plan_reports_viewer_centered_clipmap();
         test_planet_local_detail_deactivates_when_subpixel();
+        test_planet_local_detail_finest_level_is_reachable_at_surface_floor();
         test_planet_local_detail_density_is_independent_of_planet_radius();
         test_planet_local_detail_mesh_matches_clipmap_budget();
         test_planet_local_detail_runtime_tracks_topology();

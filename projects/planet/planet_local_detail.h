@@ -16,7 +16,8 @@ namespace cubey::projects::planet {
 
 inline constexpr float kPlanetLocalDetailTransitionCells = 16.0F;
 inline constexpr float kPlanetLocalDetailMaxTransitionRatio = 0.35F;
-inline constexpr float kPlanetLocalDetailMinProjectedCellPx = 0.75F;
+inline constexpr float kPlanetLocalDetailMinProjectedCellPx = 1.0F;
+inline constexpr std::uint32_t kPlanetLocalDetailMaxActiveLevels = 3;
 inline constexpr std::uint32_t kPlanetMaxLocalDetailPatches =
     cubey::render::clipmap_grid_2d_patch_count(kPlanetMaxLocalDetailLodLevels);
 
@@ -34,10 +35,12 @@ struct PlanetLocalDetailActiveRange {
     bool active = false;
     std::uint32_t first_level = 0;
     std::uint32_t level_count = 0;
+    std::uint32_t last_level = 0;
     float meters_per_pixel = 0.0F;
     float finest_active_cell_size = 0.0F;
     float coarsest_active_cell_size = 0.0F;
     float projected_finest_cell_px = 0.0F;
+    float active_outer_half_extent = 0.0F;
 };
 
 struct PlanetLocalDetailPlan {
@@ -55,11 +58,13 @@ struct PlanetLocalDetailDiagnostics {
     std::uint32_t lod_levels = 0;
     std::uint32_t active_first_level = 0;
     std::uint32_t active_level_count = 0;
+    std::uint32_t active_last_level = 0;
     std::uint32_t patch_count = 0;
     std::uint32_t vertex_count = 0;
     std::uint32_t triangle_count = 0;
     float near_cell_size = 0.0F;
     float outer_half_extent = 0.0F;
+    float active_outer_half_extent = 0.0F;
     float meters_per_pixel = 0.0F;
     float finest_active_cell_size = 0.0F;
     float coarsest_active_cell_size = 0.0F;

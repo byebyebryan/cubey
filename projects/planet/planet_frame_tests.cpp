@@ -195,7 +195,6 @@ void test_planet_config_applies_run_config_surface_options() {
     run_config.planet.local_detail_cells_per_axis = 96U;
     run_config.planet.local_detail_outer_half_extent_m = 4096.0F;
     run_config.planet.local_detail_enabled = 0;
-    run_config.planet.local_detail_final_enabled = 1;
     run_config.planet.local_detail_height_strength_m = 220.0F;
     run_config.planet.local_detail_scale_m = 180.0F;
     run_config.planet.wire_overlay = 1;
@@ -233,8 +232,6 @@ void test_planet_config_applies_run_config_surface_options() {
     require_near(config.local_detail_outer_half_extent_m, 4096.0F, 0.0001F,
                  "planet config should apply local detail extent");
     require(!config.local_detail_enabled, "planet config should apply local detail toggle");
-    require(config.local_detail_final_enabled,
-            "planet config should apply local detail final toggle");
     require_near(config.local_detail_height_strength_m, 220.0F, 0.0001F,
                  "planet config should apply local detail height");
     require_near(config.local_detail_scale_m, 180.0F, 0.0001F,
@@ -310,7 +307,7 @@ void test_planet_config_change_kind_separates_dynamic_and_topology() {
             "planet config should classify local-detail grid edits as local-detail topology");
 }
 
-void test_planet_camera_min_altitude_tracks_terrain_clearance() {
+void test_planet_camera_min_altitude_allows_close_surface_inspection() {
     cubey::projects::planet::PlanetConfig config{
         .radius_m = 600000.0F,
         .terrain_enabled = true,
@@ -318,8 +315,21 @@ void test_planet_camera_min_altitude_tracks_terrain_clearance() {
     };
 
     const float min_altitude = cubey::projects::planet::planet_camera_min_altitude_m(config);
-    require(min_altitude >= config.terrain_height_scale_m,
-            "planet camera minimum altitude should clear placeholder terrain");
+    require(min_altitude < config.terrain_height_scale_m * 0.25F,
+            "planet camera minimum altitude should allow close local-detail inspection");
+    require(min_altitude >= 120.0F,
+            "planet camera minimum altitude should retain a positive near-surface floor");
+}
+
+void test_planet_frame_preserves_close_surface_altitude() {
+    const cubey::projects::planet::PlanetConfig config{};
+    constexpr float close_altitude = 120.0F;
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config,
+        cubey::math::DVec3{0.0, 0.0, static_cast<double>(config.radius_m + close_altitude)});
+
+    require_near(frame.camera_altitude_m, close_altitude, 0.5F,
+                 "planet frame should preserve close surface camera altitude");
 }
 
 void test_planet_camera_keeps_orbit_view_at_high_altitude() {
@@ -548,7 +558,7 @@ void test_planet_surface_camera_move_stays_on_surface_shell() {
     require(moved, "surface camera movement should move while near the surface");
     require_near(cubey::projects::planet::planet_camera_distance_m(state), distance, 1.0F,
                  "surface camera movement should preserve altitude");
-    require(glm::dot(glm::normalize(before_position), glm::normalize(state.position_m)) < 0.99999F,
+    require(glm::length(state.position_m - before_position) > 100.0,
             "surface camera movement should advance along the planet tangent");
 }
 
@@ -608,7 +618,8 @@ int main() {
         test_planet_config_applies_scale_preset_before_numeric_overrides();
         test_planet_config_applies_run_config_surface_options();
         test_planet_config_change_kind_separates_dynamic_and_topology();
-        test_planet_camera_min_altitude_tracks_terrain_clearance();
+        test_planet_camera_min_altitude_allows_close_surface_inspection();
+        test_planet_frame_preserves_close_surface_altitude();
         test_planet_camera_keeps_orbit_view_at_high_altitude();
         test_planet_camera_zoom_scales_altitude_not_planet_radius();
         test_planet_camera_surface_blend_does_not_auto_spin_heading();

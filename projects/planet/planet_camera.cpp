@@ -14,6 +14,10 @@ constexpr float kSurfaceMinForwardUpDot = -0.94F;
 constexpr float kSurfaceMaxForwardUpDot = 0.82F;
 constexpr float kOrbitPoleDeadbandRadians = 0.10F;
 constexpr float kZoomBase = 0.86F;
+constexpr float kSurfaceCameraMinAltitudeM = 120.0F;
+constexpr float kSurfaceCameraMinAltitudeRadiusRatio = 0.000012F;
+constexpr float kSurfaceCameraTerrainReferenceRatio = 0.006F;
+constexpr float kSurfaceMovePlanetScaleSpeedRatio = 0.00008F;
 
 [[nodiscard]] cubey::math::Vec3 normalize_or(cubey::math::Vec3 value, cubey::math::Vec3 fallback) {
     const float length = glm::length(value);
@@ -146,12 +150,11 @@ constexpr float kZoomBase = 0.86F;
     return orbit_rotation_for_position(position_direction(position_m, {0.0F, 1.0F, 0.0F}));
 }
 
-[[nodiscard]] cubey::math::Quat surface_camera_rotation_for_position(
-    cubey::math::Vec3 position_m, cubey::math::Vec3 heading_hint) {
+[[nodiscard]] cubey::math::Quat
+surface_camera_rotation_for_position(cubey::math::Vec3 position_m, cubey::math::Vec3 heading_hint) {
     const cubey::math::Vec3 up = normalize_or(position_m, cubey::math::Vec3{0.0F, 1.0F, 0.0F});
-    cubey::math::Vec3 tangent_forward =
-        normalize_or(heading_hint - up * glm::dot(heading_hint, up),
-                     glm::cross(up, tangent_right_from_up(up)));
+    cubey::math::Vec3 tangent_forward = normalize_or(heading_hint - up * glm::dot(heading_hint, up),
+                                                     glm::cross(up, tangent_right_from_up(up)));
     const float surface_pitch = std::atan(kSurfaceLookDownSlope);
     const cubey::math::Vec3 forward = normalize_or(
         tangent_forward * std::cos(surface_pitch) - up * std::sin(surface_pitch), tangent_forward);
@@ -169,7 +172,8 @@ surface_camera_rotation_for_position(cubey::math::Vec3 position_m,
 
 [[nodiscard]] cubey::math::Quat surface_camera_rotation_for_position(cubey::math::Vec3 position_m) {
     const cubey::math::Vec3 up = normalize_or(position_m, cubey::math::Vec3{0.0F, 1.0F, 0.0F});
-    return surface_camera_rotation_for_position(position_m, glm::cross(up, tangent_right_from_up(up)));
+    return surface_camera_rotation_for_position(position_m,
+                                                glm::cross(up, tangent_right_from_up(up)));
 }
 
 [[nodiscard]] cubey::math::Quat
@@ -179,8 +183,8 @@ surface_camera_rotation_for_position(cubey::math::DVec3 position_m) {
 
 [[nodiscard]] cubey::math::DVec3 clamped_position(const PlanetConfig& config,
                                                   cubey::math::DVec3 position_m) {
-    const double distance = static_cast<double>(
-        clamped_distance(config, static_cast<float>(glm::length(position_m))));
+    const double distance =
+        static_cast<double>(clamped_distance(config, static_cast<float>(glm::length(position_m))));
     return normalize_or(position_m, cubey::math::DVec3{0.0, 0.0, 1.0}) * distance;
 }
 
@@ -188,8 +192,8 @@ surface_camera_rotation_for_position(cubey::math::DVec3 position_m) {
                                            const PlanetCameraState& state) {
     const float altitude = std::max(planet_camera_distance_m(state) - config.radius_m,
                                     planet_camera_min_altitude_m(config));
-    return std::max(
-        {planet_camera_min_altitude_m(config) * 1.6F, altitude * 1.8F, config.radius_m * 0.006F});
+    return std::max({planet_camera_min_altitude_m(config) * 1.6F, altitude * 1.8F,
+                     config.radius_m * kSurfaceMovePlanetScaleSpeedRatio});
 }
 
 } // namespace
@@ -210,9 +214,11 @@ float planet_camera_max_distance_m(const PlanetConfig& config) {
 
 float planet_camera_min_altitude_m(const PlanetConfig& config) {
     validate_planet_config(config);
-    const float terrain_clearance =
-        config.terrain_enabled ? config.terrain_height_scale_m * 1.2F : 0.0F;
-    return std::max({500.0F, config.radius_m * 0.003F, terrain_clearance});
+    const float terrain_reference =
+        config.terrain_enabled ? config.terrain_height_scale_m * kSurfaceCameraTerrainReferenceRatio
+                               : 0.0F;
+    return std::max({kSurfaceCameraMinAltitudeM,
+                     config.radius_m * kSurfaceCameraMinAltitudeRadiusRatio, terrain_reference});
 }
 
 float planet_surface_camera_blend(const PlanetConfig& config, float distance_m) {
@@ -258,7 +264,8 @@ PlanetCameraState planet_camera_initial_state_from_run_config(const PlanetConfig
                                                               const RunConfig& run_config,
                                                               float base_yaw_radians,
                                                               float base_pitch_radians) {
-    PlanetCameraState state = planet_camera_home_state(config, base_yaw_radians, base_pitch_radians);
+    PlanetCameraState state =
+        planet_camera_home_state(config, base_yaw_radians, base_pitch_radians);
     if (run_config.planet.camera_mode.empty() || run_config.planet.camera_mode == "orbit") {
         return state;
     }
@@ -268,9 +275,8 @@ PlanetCameraState planet_camera_initial_state_from_run_config(const PlanetConfig
                 ? run_config.planet.camera_altitude_m
                 : config.camera_altitude_m;
         const float surface_altitude =
-            std::min(requested_altitude,
-                     std::max(planet_camera_min_altitude_m(config) * 1.6F,
-                              config.radius_m * 0.025F));
+            std::min(requested_altitude, std::max(planet_camera_min_altitude_m(config) * 1.6F,
+                                                  config.radius_m * 0.025F));
         planet_camera_set_distance(state, config, config.radius_m + surface_altitude);
         planet_camera_reset_surface_view(state, config);
         return state;
@@ -302,8 +308,7 @@ void planet_camera_orbit_drag(PlanetCameraState& state, const PlanetConfig& conf
     }
 
     const double distance = glm::length(state.position_m);
-    const cubey::math::Vec3 direction =
-        position_direction(state.position_m, {0.0F, 0.0F, 1.0F});
+    const cubey::math::Vec3 direction = position_direction(state.position_m, {0.0F, 0.0F, 1.0F});
     const float yaw = orbit_yaw_from_direction(direction) -
                       (static_cast<float>(delta_x_px) * kDragRadiansPerPixel);
     const float latitude = orbit_latitude_from_direction(direction) +
@@ -378,8 +383,8 @@ bool planet_camera_surface_move(PlanetCameraState& state, const PlanetConfig& co
     const float distance = planet_camera_distance_m(state);
     const float step_m = surface_move_speed_mps(config, state) * static_cast<float>(delta_seconds);
     const cubey::math::DVec3 moved_position =
-        normalize_or(state.position_m + to_double(glm::normalize(tangent_motion)) *
-                                            static_cast<double>(step_m),
+        normalize_or(state.position_m +
+                         to_double(glm::normalize(tangent_motion)) * static_cast<double>(step_m),
                      state.position_m) *
         static_cast<double>(distance);
     const cubey::math::Vec3 new_up = position_direction(moved_position, old_up);

@@ -50,14 +50,11 @@ PlanetFrame make_planet_frame(const PlanetConfig& config,
                                      });
 }
 
-PlanetFrame make_planet_frame(const PlanetConfig& config,
-                              cubey::math::DVec3 camera_position_m) {
+PlanetFrame make_planet_frame(const PlanetConfig& config, cubey::math::DVec3 camera_position_m) {
     validate_planet_config(config);
 
     const double requested_camera_radius = glm::length(camera_position_m);
-    const double minimum_camera_radius =
-        static_cast<double>(config.radius_m) +
-        static_cast<double>(std::max(1.0F, config.radius_m * 0.001F));
+    const double minimum_camera_radius = static_cast<double>(config.radius_m) + 1.0;
     const double camera_radius_d = std::max(requested_camera_radius, minimum_camera_radius);
     const float camera_radius = static_cast<float>(camera_radius_d);
     const float camera_altitude = std::max(camera_radius - config.radius_m, 0.0F);
