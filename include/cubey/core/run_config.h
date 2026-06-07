@@ -132,6 +132,9 @@ struct RunConfig {
         std::uint32_t local_detail_lod_levels = 0;
         std::uint32_t local_detail_cells_per_axis = 0;
         float local_detail_outer_half_extent_m = kRunConfigUnsetFloat;
+        int local_detail_enabled = -1;
+        float local_detail_height_strength_m = kRunConfigUnsetFloat;
+        float local_detail_scale_m = kRunConfigUnsetFloat;
         int wire_overlay = -1;
         int skirts_enabled = -1;
         float skirt_depth_scale = kRunConfigUnsetFloat;

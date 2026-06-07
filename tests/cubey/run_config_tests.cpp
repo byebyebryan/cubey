@@ -1227,6 +1227,11 @@ void test_run_config_parses_planet_controls() {
     std::string local_detail_cells_value = "96";
     std::string local_detail_extent_flag = "--planet-local-detail-outer-extent-m";
     std::string local_detail_extent_value = "4096";
+    std::string local_detail_flag = "--no-planet-local-detail";
+    std::string local_detail_height_flag = "--planet-local-detail-height-m";
+    std::string local_detail_height_value = "220";
+    std::string local_detail_scale_flag = "--planet-local-detail-scale-m";
+    std::string local_detail_scale_value = "180";
     std::string wire_flag = "--planet-wire-overlay";
     std::string skirts_flag = "--no-planet-skirts";
     std::string skirt_depth_flag = "--planet-skirt-depth-scale";
@@ -1255,7 +1260,7 @@ void test_run_config_parses_planet_controls() {
     std::string camera_mode_value = "surface";
     std::string atmosphere_mode_flag = "--planet-atmosphere-mode";
     std::string atmosphere_mode_value = "physical";
-    std::array<char*, 53> argv{program.data(),
+    std::array<char*, 58> argv{program.data(),
                                scale_flag.data(),
                                scale_value.data(),
                                radius_flag.data(),
@@ -1280,6 +1285,11 @@ void test_run_config_parses_planet_controls() {
                                local_detail_cells_value.data(),
                                local_detail_extent_flag.data(),
                                local_detail_extent_value.data(),
+                               local_detail_flag.data(),
+                               local_detail_height_flag.data(),
+                               local_detail_height_value.data(),
+                               local_detail_scale_flag.data(),
+                               local_detail_scale_value.data(),
                                wire_flag.data(),
                                skirts_flag.data(),
                                skirt_depth_flag.data(),
@@ -1333,6 +1343,12 @@ void test_run_config_parses_planet_controls() {
             "run config should parse planet local detail cells");
     require(config.planet.local_detail_outer_half_extent_m == 4096.0F,
             "run config should parse planet local detail extent");
+    require(config.planet.local_detail_enabled == 0,
+            "run config should parse planet local detail toggle");
+    require(config.planet.local_detail_height_strength_m == 220.0F,
+            "run config should parse planet local detail height");
+    require(config.planet.local_detail_scale_m == 180.0F,
+            "run config should parse planet local detail scale");
     require(config.planet.wire_overlay == 1, "run config should parse planet wire overlay");
     require(config.planet.skirts_enabled == 0, "run config should parse planet skirts toggle");
     require(config.planet.skirt_depth_scale == 0.45F,

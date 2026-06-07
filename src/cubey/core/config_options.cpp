@@ -87,7 +87,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 169> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 172> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -259,6 +259,19 @@ constexpr std::array<ConfigOptionDescriptor, 169> kRunConfigOptions{
            "Local Detail Extent", "Planet",
            "Outer half extent in meters for the viewer-centered local detail clipmap.",
            ConfigOptionType::Float, min_range(1.0)),
+    option(RunConfigOptionId::PlanetLocalDetail, "planet.local_detail_enabled",
+           "--planet-local-detail", "Local Detail", "Planet",
+           "Enable viewer-centered near-field terrain detail.", ConfigOptionType::Bool,
+           no_range(), {}, "--no-planet-local-detail"),
+    option(RunConfigOptionId::PlanetLocalDetailHeight,
+           "planet.local_detail_height_strength_m", "--planet-local-detail-height-m",
+           "Local Detail Height", "Planet",
+           "Maximum near-field local terrain detail height in meters.", ConfigOptionType::Float,
+           min_range(0.0)),
+    option(RunConfigOptionId::PlanetLocalDetailScale, "planet.local_detail_scale_m",
+           "--planet-local-detail-scale-m", "Local Detail Scale", "Planet",
+           "World-space scale in meters for near-field local terrain detail.",
+           ConfigOptionType::Float, min_range(0.000001)),
     option(RunConfigOptionId::PlanetWireOverlay, "planet.wire_overlay", "--planet-wire-overlay",
            "Wire Overlay", "Planet", "Draw planet patch wire overlay.", ConfigOptionType::Bool,
            no_range(), {}, "--no-planet-wire-overlay"),
@@ -914,6 +927,12 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_uint32(config.planet.local_detail_cells_per_axis);
     case RunConfigOptionId::PlanetLocalDetailOuterExtent:
         return optional_float(config.planet.local_detail_outer_half_extent_m);
+    case RunConfigOptionId::PlanetLocalDetail:
+        return optional_bool(config.planet.local_detail_enabled);
+    case RunConfigOptionId::PlanetLocalDetailHeight:
+        return optional_float(config.planet.local_detail_height_strength_m);
+    case RunConfigOptionId::PlanetLocalDetailScale:
+        return optional_float(config.planet.local_detail_scale_m);
     case RunConfigOptionId::PlanetWireOverlay:
         return optional_bool(config.planet.wire_overlay);
     case RunConfigOptionId::PlanetSkirts:
@@ -1221,6 +1240,10 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
                                       options.local_detail_cells_per_axis);
     adapter.writeField<float>("local_detail_outer_half_extent_m",
                               options.local_detail_outer_half_extent_m);
+    adapter.writeField<int>("local_detail_enabled", options.local_detail_enabled);
+    adapter.writeField<float>("local_detail_height_strength_m",
+                              options.local_detail_height_strength_m);
+    adapter.writeField<float>("local_detail_scale_m", options.local_detail_scale_m);
     adapter.writeField<int>("wire_overlay", options.wire_overlay);
     adapter.writeField<int>("skirts_enabled", options.skirts_enabled);
     adapter.writeField<float>("skirt_depth_scale", options.skirt_depth_scale);
@@ -1259,6 +1282,10 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
                                      options.local_detail_cells_per_axis);
     adapter.readField<float>("local_detail_outer_half_extent_m",
                              options.local_detail_outer_half_extent_m);
+    adapter.readField<int>("local_detail_enabled", options.local_detail_enabled);
+    adapter.readField<float>("local_detail_height_strength_m",
+                             options.local_detail_height_strength_m);
+    adapter.readField<float>("local_detail_scale_m", options.local_detail_scale_m);
     adapter.readField<int>("wire_overlay", options.wire_overlay);
     adapter.readField<int>("skirts_enabled", options.skirts_enabled);
     adapter.readField<float>("skirt_depth_scale", options.skirt_depth_scale);
@@ -1713,6 +1740,17 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::PlanetLocalDetailOuterExtent:
         config.planet.local_detail_outer_half_extent_m = parse_config_float(value, option);
         validate_range(config.planet.local_detail_outer_half_extent_m, option);
+        break;
+    case RunConfigOptionId::PlanetLocalDetail:
+        config.planet.local_detail_enabled = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::PlanetLocalDetailHeight:
+        config.planet.local_detail_height_strength_m = parse_config_float(value, option);
+        validate_range(config.planet.local_detail_height_strength_m, option);
+        break;
+    case RunConfigOptionId::PlanetLocalDetailScale:
+        config.planet.local_detail_scale_m = parse_config_float(value, option);
+        validate_range(config.planet.local_detail_scale_m, option);
         break;
     case RunConfigOptionId::PlanetWireOverlay:
         config.planet.wire_overlay = parse_config_bool(value, option) ? 1 : 0;

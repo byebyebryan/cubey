@@ -43,6 +43,8 @@ inline constexpr std::uint64_t kPlanetCpuMeshVertexCap = 2000000ULL;
 inline constexpr std::uint32_t kPlanetDefaultLocalDetailLodLevels = 6;
 inline constexpr std::uint32_t kPlanetDefaultLocalDetailCellsPerAxis = 128;
 inline constexpr float kPlanetDefaultLocalDetailOuterHalfExtentM = 8192.0F;
+inline constexpr float kPlanetDefaultLocalDetailHeightStrengthM = 180.0F;
+inline constexpr float kPlanetDefaultLocalDetailScaleM = 160.0F;
 inline constexpr std::uint32_t kPlanetMaxLocalDetailLodLevels = 8;
 inline constexpr std::uint32_t kPlanetMaxLocalDetailCellsPerAxis = 512;
 
@@ -77,6 +79,7 @@ enum class PlanetConfigChangeKind : std::uint8_t {
     None,
     Dynamic,
     SurfaceTopology,
+    LocalDetailTopology,
 };
 
 enum class PlanetAtmosphereMode : std::uint8_t {
@@ -97,6 +100,9 @@ struct PlanetConfig {
     std::uint32_t local_detail_lod_levels = kPlanetDefaultLocalDetailLodLevels;
     std::uint32_t local_detail_cells_per_axis = kPlanetDefaultLocalDetailCellsPerAxis;
     float local_detail_outer_half_extent_m = kPlanetDefaultLocalDetailOuterHalfExtentM;
+    bool local_detail_enabled = true;
+    float local_detail_height_strength_m = kPlanetDefaultLocalDetailHeightStrengthM;
+    float local_detail_scale_m = kPlanetDefaultLocalDetailScaleM;
     PlanetDebugView debug_view = PlanetDebugView::Final;
     bool wire_overlay = false;
     bool skirts_enabled = true;

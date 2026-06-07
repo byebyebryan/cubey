@@ -117,6 +117,14 @@ void test_planet_config_rejects_invalid_local_detail_settings() {
     config = {};
     config.local_detail_outer_half_extent_m = 0.0F;
     require_invalid_planet_config(config, "planet config should reject zero local-detail extent");
+
+    config = {};
+    config.local_detail_height_strength_m = -1.0F;
+    require_invalid_planet_config(config, "planet config should reject negative local-detail height");
+
+    config = {};
+    config.local_detail_scale_m = 0.0F;
+    require_invalid_planet_config(config, "planet config should reject zero local-detail scale");
 }
 
 void test_planet_config_rejects_invalid_atmosphere_haze() {
@@ -184,6 +192,9 @@ void test_planet_config_applies_run_config_surface_options() {
     run_config.planet.local_detail_lod_levels = 5U;
     run_config.planet.local_detail_cells_per_axis = 96U;
     run_config.planet.local_detail_outer_half_extent_m = 4096.0F;
+    run_config.planet.local_detail_enabled = 0;
+    run_config.planet.local_detail_height_strength_m = 220.0F;
+    run_config.planet.local_detail_scale_m = 180.0F;
     run_config.planet.wire_overlay = 1;
     run_config.planet.skirts_enabled = 0;
     run_config.planet.skirt_depth_scale = 0.45F;
@@ -218,6 +229,11 @@ void test_planet_config_applies_run_config_surface_options() {
             "planet config should apply local detail cells");
     require_near(config.local_detail_outer_half_extent_m, 4096.0F, 0.0001F,
                  "planet config should apply local detail extent");
+    require(!config.local_detail_enabled, "planet config should apply local detail toggle");
+    require_near(config.local_detail_height_strength_m, 220.0F, 0.0001F,
+                 "planet config should apply local detail height");
+    require_near(config.local_detail_scale_m, 180.0F, 0.0001F,
+                 "planet config should apply local detail scale");
     require(config.wire_overlay, "planet config should apply wire overlay");
     require(!config.skirts_enabled, "planet config should apply skirts toggle");
     require_near(config.skirt_depth_scale, 0.45F, 0.0001F,
@@ -264,10 +280,11 @@ void test_planet_config_change_kind_separates_dynamic_and_topology() {
     dynamic.radius_m += 1000.0F;
     dynamic.max_lod_level += 1U;
     dynamic.terrain_seed += 1U;
+    dynamic.local_detail_height_strength_m += 10.0F;
     dynamic.atmosphere_haze_strength *= 0.5F;
     require(cubey::projects::planet::planet_config_change_kind(current, dynamic) ==
                 cubey::projects::planet::PlanetConfigChangeKind::Dynamic,
-            "planet config should classify radius, LOD, terrain, and atmosphere edits as dynamic");
+            "planet config should classify radius, LOD, terrain detail, and atmosphere edits as dynamic");
 
     cubey::projects::planet::PlanetConfig topology = current;
     topology.patch_resolution *= 2U;
@@ -280,6 +297,12 @@ void test_planet_config_change_kind_separates_dynamic_and_topology() {
     require(cubey::projects::planet::planet_config_change_kind(current, topology) ==
                 cubey::projects::planet::PlanetConfigChangeKind::SurfaceTopology,
             "planet config should classify skirt topology edits as topology");
+
+    topology = current;
+    topology.local_detail_cells_per_axis *= 2U;
+    require(cubey::projects::planet::planet_config_change_kind(current, topology) ==
+                cubey::projects::planet::PlanetConfigChangeKind::LocalDetailTopology,
+            "planet config should classify local-detail grid edits as local-detail topology");
 }
 
 void test_planet_camera_min_altitude_tracks_terrain_clearance() {

@@ -122,6 +122,7 @@ void draw_local_detail_controls(PlanetUiContext& ui) {
     if (const cubey::host::ScopedImGuiGroup group{
             "Local Detail", {.default_open = false}}; group) {
         const cubey::host::ScopedImGuiId section_id("LocalDetail");
+        ImGui::Checkbox("Enabled", &ui.edit_config.local_detail_enabled);
         int lod_levels = static_cast<int>(ui.edit_config.local_detail_lod_levels);
         if (ImGui::InputInt("LOD Levels", &lod_levels)) {
             ui.edit_config.local_detail_lod_levels = static_cast<std::uint32_t>(
@@ -134,6 +135,11 @@ void draw_local_detail_controls(PlanetUiContext& ui) {
         }
         ImGui::InputFloat("Outer Extent (m)", &ui.edit_config.local_detail_outer_half_extent_m,
                           0.0F, 0.0F, "%.0f");
+        ImGui::InputFloat("Height Strength (m)",
+                          &ui.edit_config.local_detail_height_strength_m, 0.0F, 0.0F,
+                          "%.0f");
+        ImGui::InputFloat("Detail Scale (m)", &ui.edit_config.local_detail_scale_m, 0.0F,
+                          0.0F, "%.0f");
     }
 }
 

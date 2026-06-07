@@ -68,6 +68,15 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
         planet.local_detail_outer_half_extent_m =
             config.planet.local_detail_outer_half_extent_m;
     }
+    if (config.planet.local_detail_enabled >= 0) {
+        planet.local_detail_enabled = config.planet.local_detail_enabled != 0;
+    }
+    if (run_config_float_is_set(config.planet.local_detail_height_strength_m)) {
+        planet.local_detail_height_strength_m = config.planet.local_detail_height_strength_m;
+    }
+    if (run_config_float_is_set(config.planet.local_detail_scale_m)) {
+        planet.local_detail_scale_m = config.planet.local_detail_scale_m;
+    }
     if (config.planet.wire_overlay >= 0) {
         planet.wire_overlay = config.planet.wire_overlay != 0;
     }
@@ -137,6 +146,11 @@ PlanetConfigChangeKind planet_config_change_kind(const PlanetConfig& current,
     if (current.patch_resolution != next.patch_resolution ||
         current.skirts_enabled != next.skirts_enabled) {
         return PlanetConfigChangeKind::SurfaceTopology;
+    }
+    if (current.local_detail_lod_levels != next.local_detail_lod_levels ||
+        current.local_detail_cells_per_axis != next.local_detail_cells_per_axis ||
+        current.local_detail_outer_half_extent_m != next.local_detail_outer_half_extent_m) {
+        return PlanetConfigChangeKind::LocalDetailTopology;
     }
     return PlanetConfigChangeKind::Dynamic;
 }
@@ -330,6 +344,14 @@ void validate_planet_config(const PlanetConfig& config) {
     if (!std::isfinite(config.local_detail_outer_half_extent_m) ||
         config.local_detail_outer_half_extent_m <= 0.0F) {
         throw std::runtime_error("planet local detail outer extent must be finite and positive");
+    }
+    if (!std::isfinite(config.local_detail_height_strength_m) ||
+        config.local_detail_height_strength_m < 0.0F) {
+        throw std::runtime_error(
+            "planet local detail height strength must be finite and nonnegative");
+    }
+    if (!std::isfinite(config.local_detail_scale_m) || config.local_detail_scale_m <= 0.0F) {
+        throw std::runtime_error("planet local detail scale must be finite and positive");
     }
     if (config.skirt_depth_scale <= 0.0F) {
         throw std::runtime_error("planet skirt depth scale must be positive");

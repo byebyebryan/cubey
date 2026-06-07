@@ -500,7 +500,8 @@ class PlanetApp {
             return;
         }
         try {
-            if (change_kind == PlanetConfigChangeKind::SurfaceTopology) {
+            if (change_kind == PlanetConfigChangeKind::SurfaceTopology ||
+                change_kind == PlanetConfigChangeKind::LocalDetailTopology) {
                 rebuild_planet_resources(context);
             } else {
                 apply_dynamic_planet_config(context.swapchain().extent());
