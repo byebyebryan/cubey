@@ -49,6 +49,7 @@ class PlanetSurfaceRuntime {
     std::vector<PlanetSurfaceGpuPatchInstance> patch_instances_{};
     std::vector<PlanetSurfacePatchId> previous_selected_patch_ids_{};
     cubey::math::DVec3 build_render_origin_world_m_{0.0, 0.0, 0.0};
+    float build_camera_surface_clearance_m_ = kPlanetDefaultCameraAltitudeM;
     PlanetSurfaceView build_view_{};
     std::vector<InstanceBufferSlot> instance_buffers_{};
     std::uint64_t instance_generation_ = 0;

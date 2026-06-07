@@ -1527,6 +1527,51 @@ void test_planet_surface_runtime_detects_plan_changes() {
             "planet surface runtime should detect render origin movement");
 }
 
+void test_planet_surface_runtime_detects_surface_scale_changes() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 6000000.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 4,
+        .max_lod_level = 2,
+        .terrain_enabled = false,
+    };
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 10000.0F});
+    const cubey::projects::planet::PlanetSurfaceView view{
+        .camera_world_position_m = frame.camera_world_position_m,
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .aspect_ratio = 16.0F / 9.0F,
+        .viewport_height_px = 720.0F,
+        .culling_enabled = true,
+    };
+
+    cubey::projects::planet::PlanetSurfaceRuntime runtime;
+    runtime.rebuild(config, frame, view);
+
+    const cubey::projects::planet::PlanetFrame zoomed_frame =
+        cubey::projects::planet::make_planet_frame(
+            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 3000.0F});
+    cubey::projects::planet::PlanetSurfaceView zoomed_view = view;
+    zoomed_view.camera_world_position_m = zoomed_frame.camera_world_position_m;
+    require(runtime.plan_changed(config, zoomed_frame, zoomed_view),
+            "planet surface runtime should replan after near-surface clearance changes");
+
+    const cubey::projects::planet::PlanetFrame surface_frame =
+        cubey::projects::planet::make_planet_frame(
+            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 1000.0F});
+    cubey::projects::planet::PlanetSurfaceView surface_view = view;
+    surface_view.camera_world_position_m = surface_frame.camera_world_position_m;
+    runtime.rebuild(config, surface_frame, surface_view);
+
+    const cubey::projects::planet::PlanetFrame walked_frame =
+        cubey::projects::planet::make_planet_frame(
+            config, cubey::math::DVec3{700.0, 0.0, config.radius_m + 1000.0F});
+    cubey::projects::planet::PlanetSurfaceView walked_view = surface_view;
+    walked_view.camera_world_position_m = walked_frame.camera_world_position_m;
+    require(runtime.plan_changed(config, walked_frame, walked_view),
+            "planet surface runtime should replan after small near-surface tangent travel");
+}
+
 } // namespace
 
 int main() {
@@ -1578,6 +1623,7 @@ int main() {
         test_planet_surface_planner_records_lod_transition_pressure();
         test_planet_surface_runtime_rebuilds_render_plan();
         test_planet_surface_runtime_detects_plan_changes();
+        test_planet_surface_runtime_detects_surface_scale_changes();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_surface_tests: %s\n", error.what());

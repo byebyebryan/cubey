@@ -1,5 +1,7 @@
 #include "planet_surface_runtime.h"
 
+#include "planet_camera.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -21,6 +23,7 @@ void PlanetSurfaceRuntime::rebuild(const PlanetConfig& config, const PlanetFrame
     mark_instance_buffers_stale();
     refresh_render_diagnostics(config, plan);
     build_render_origin_world_m_ = frame.render_origin_world_m;
+    build_camera_surface_clearance_m_ = frame.camera_surface_clearance_m;
     build_view_ = view;
     has_build_ = true;
 }
@@ -31,8 +34,25 @@ bool PlanetSurfaceRuntime::plan_changed(const PlanetConfig& config, const Planet
         return true;
     }
 
-    const double origin_threshold_m =
+    const float current_clearance_m = std::max(frame.camera_surface_clearance_m, 1.0F);
+    const float build_clearance_m = std::max(build_camera_surface_clearance_m_, 1.0F);
+    const float reference_clearance_m = std::min(current_clearance_m, build_clearance_m);
+    const float clearance_threshold_m =
+        std::clamp(reference_clearance_m * 0.25F, 64.0F, 4096.0F);
+    if (std::abs(current_clearance_m - build_clearance_m) > clearance_threshold_m) {
+        return true;
+    }
+
+    const float surface_blend = std::max(
+        planet_surface_camera_blend_from_clearance(config, current_clearance_m),
+        planet_surface_camera_blend_from_clearance(config, build_clearance_m));
+    const double orbit_origin_threshold_m =
         std::max(static_cast<double>(config.radius_m) * 0.002, 256.0);
+    const double surface_origin_threshold_m =
+        static_cast<double>(std::clamp(reference_clearance_m * 0.5F, 128.0F, 8192.0F));
+    const double origin_threshold_m =
+        std::lerp(orbit_origin_threshold_m, surface_origin_threshold_m,
+                  static_cast<double>(surface_blend));
     if (glm::length(frame.render_origin_world_m - build_render_origin_world_m_) >
         origin_threshold_m) {
         return true;
