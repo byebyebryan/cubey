@@ -26,7 +26,7 @@ using PlanetLocalDetailPatchList =
     cubey::render::ClipmapGrid2DPatchList<kPlanetMaxLocalDetailPatches>;
 
 struct PlanetLocalDetailView {
-    float camera_altitude_m = 250.0F;
+    float camera_clearance_m = 250.0F;
     float vertical_fov_radians = 1.04719758F;
     float viewport_height_px = 720.0F;
 };

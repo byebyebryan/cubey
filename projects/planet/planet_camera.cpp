@@ -238,21 +238,31 @@ float planet_camera_min_altitude_m(const PlanetConfig& config) {
                      config.radius_m * kSurfaceCameraMinAltitudeRadiusRatio, terrain_reference});
 }
 
-float planet_camera_surface_height_m(const PlanetConfig& config, cubey::math::DVec3 position_m) {
+PlanetCameraSurfaceMetrics planet_camera_surface_metrics(const PlanetConfig& config,
+                                                         cubey::math::DVec3 position_m) {
     validate_planet_config(config);
+    const float radius = static_cast<float>(glm::length(position_m));
     const cubey::math::Vec3 direction = position_direction(position_m, {0.0F, 0.0F, 1.0F});
-    return terrain_surface_height_m(config, direction);
+    const float terrain_height = terrain_surface_height_m(config, direction);
+    return {
+        .radius_m = radius,
+        .datum_altitude_m = std::max(radius - config.radius_m, 0.0F),
+        .terrain_height_m = terrain_height,
+        .clearance_m = radius - (config.radius_m + terrain_height),
+    };
+}
+
+float planet_camera_surface_height_m(const PlanetConfig& config, cubey::math::DVec3 position_m) {
+    return planet_camera_surface_metrics(config, position_m).terrain_height_m;
 }
 
 float planet_camera_surface_clearance_m(const PlanetConfig& config, cubey::math::DVec3 position_m) {
-    validate_planet_config(config);
-    const float distance = static_cast<float>(glm::length(position_m));
-    return distance - (config.radius_m + planet_camera_surface_height_m(config, position_m));
+    return planet_camera_surface_metrics(config, position_m).clearance_m;
 }
 
-float planet_surface_camera_blend(const PlanetConfig& config, float distance_m) {
+float planet_surface_camera_blend_from_clearance(const PlanetConfig& config, float clearance_m) {
     validate_planet_config(config);
-    const float altitude_m = std::max(distance_m - config.radius_m, 0.0F);
+    const float altitude_m = std::max(clearance_m, 0.0F);
     const float full_surface_altitude =
         std::max(planet_camera_min_altitude_m(config) * 2.0F, config.radius_m * 0.04F);
     const float orbit_altitude = std::max(full_surface_altitude * 4.0F, config.radius_m * 0.30F);
@@ -386,7 +396,8 @@ void planet_camera_surface_look_drag(PlanetCameraState& state, const PlanetConfi
 bool planet_camera_surface_move(PlanetCameraState& state, const PlanetConfig& config, float forward,
                                 float right, double delta_seconds) {
     if (delta_seconds <= 0.0 || (forward == 0.0F && right == 0.0F) ||
-        planet_surface_camera_blend(config, planet_camera_distance_m(state)) < 0.35F) {
+        planet_surface_camera_blend_from_clearance(
+            config, planet_camera_surface_clearance_m(config, state.position_m)) < 0.35F) {
         return false;
     }
     if (!state.surface_rotation_active) {
@@ -432,7 +443,8 @@ bool planet_camera_surface_move(PlanetCameraState& state, const PlanetConfig& co
 }
 
 void planet_camera_update_surface_mode(PlanetCameraState& state, const PlanetConfig& config) {
-    const float blend = planet_surface_camera_blend(config, planet_camera_distance_m(state));
+    const float blend = planet_surface_camera_blend_from_clearance(
+        config, planet_camera_surface_clearance_m(config, state.position_m));
     if (blend <= 0.10F) {
         state.surface_rotation_active = false;
     }
@@ -442,7 +454,8 @@ void planet_camera_reset_surface_view(PlanetCameraState& state, const PlanetConf
     state.position_m = clamped_position(config, state.position_m);
     state.surface_rotation = surface_camera_rotation_for_position(state.position_m);
     state.surface_rotation_active =
-        planet_surface_camera_blend(config, planet_camera_distance_m(state)) > 0.10F;
+        planet_surface_camera_blend_from_clearance(
+            config, planet_camera_surface_clearance_m(config, state.position_m)) > 0.10F;
 }
 
 cubey::Transform3D make_planet_camera_transform(const PlanetConfig& config,
@@ -453,7 +466,8 @@ cubey::Transform3D make_planet_camera_transform(const PlanetConfig& config,
         .translation = to_float(state.position_m),
         .rotation = orbit_rotation_for_position(state.position_m),
     };
-    const float blend = planet_surface_camera_blend(config, planet_camera_distance_m(state));
+    const float blend = planet_surface_camera_blend_from_clearance(
+        config, planet_camera_surface_clearance_m(config, state.position_m));
     if (blend <= 0.0F) {
         return orbit_transform;
     }

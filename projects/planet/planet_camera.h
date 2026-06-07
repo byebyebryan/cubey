@@ -13,12 +13,22 @@ struct PlanetCameraState {
     bool surface_rotation_active = false;
 };
 
+struct PlanetCameraSurfaceMetrics {
+    float radius_m = kPlanetDefaultRadiusM + kPlanetDefaultCameraAltitudeM;
+    float datum_altitude_m = kPlanetDefaultCameraAltitudeM;
+    float terrain_height_m = 0.0F;
+    float clearance_m = kPlanetDefaultCameraAltitudeM;
+};
+
 [[nodiscard]] float planet_camera_min_altitude_m(const PlanetConfig& config);
+[[nodiscard]] PlanetCameraSurfaceMetrics
+planet_camera_surface_metrics(const PlanetConfig& config, cubey::math::DVec3 position_m);
 [[nodiscard]] float planet_camera_surface_height_m(const PlanetConfig& config,
                                                    cubey::math::DVec3 position_m);
 [[nodiscard]] float planet_camera_surface_clearance_m(const PlanetConfig& config,
                                                       cubey::math::DVec3 position_m);
-[[nodiscard]] float planet_surface_camera_blend(const PlanetConfig& config, float distance_m);
+[[nodiscard]] float planet_surface_camera_blend_from_clearance(const PlanetConfig& config,
+                                                               float clearance_m);
 [[nodiscard]] float planet_camera_home_distance_m(const PlanetConfig& config);
 [[nodiscard]] float planet_camera_min_distance_m(const PlanetConfig& config);
 [[nodiscard]] float planet_camera_max_distance_m(const PlanetConfig& config);

@@ -12,7 +12,9 @@ struct PlanetFrame {
     float planet_radius_m = kPlanetDefaultRadiusM;
     float atmosphere_outer_radius_m = kPlanetDefaultRadiusM + kPlanetDefaultAtmosphereHeightM;
     float camera_radius_m = kPlanetDefaultRadiusM + kPlanetDefaultCameraAltitudeM;
-    float camera_altitude_m = kPlanetDefaultCameraAltitudeM;
+    float camera_datum_altitude_m = kPlanetDefaultCameraAltitudeM;
+    float camera_surface_height_m = 0.0F;
+    float camera_surface_clearance_m = kPlanetDefaultCameraAltitudeM;
     float horizon_distance_m = 0.0F;
     float near_plane_m = 1.0F;
     float far_plane_m = 1.0F;

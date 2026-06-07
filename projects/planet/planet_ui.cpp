@@ -108,9 +108,8 @@ void draw_planet_controls(PlanetUiContext& ui) {
                                       planet_debug_view_name);
         ImGui::Checkbox("Wire Overlay", &ui.edit_config.wire_overlay);
         const CameraLocationReadout camera_location = camera_location_readout(ui.frame);
-        ImGui::Text("Camera Height: %.0f m", ui.frame.camera_altitude_m);
-        ImGui::Text("Surface Clearance: %.0f m", planet_camera_surface_clearance_m(
-                                                     ui.active_config, ui.camera_state.position_m));
+        ImGui::Text("Datum Height: %.0f m", ui.frame.camera_datum_altitude_m);
+        ImGui::Text("Surface Clearance: %.0f m", ui.frame.camera_surface_clearance_m);
         ImGui::Text("Lat / Lon: %.3f / %.3f deg", camera_location.latitude_degrees,
                     camera_location.longitude_degrees);
     }
@@ -279,12 +278,12 @@ void draw_diagnostics(PlanetUiContext& ui) {
                     (ui.active_config.atmosphere_height_m / radius) * 100.0F);
         ImGui::Text("Terrain / radius: %.3f%%",
                     (ui.active_config.terrain_height_scale_m / radius) * 100.0F);
-        ImGui::Text("Altitude: %.0f m", ui.frame.camera_altitude_m);
-        ImGui::Text("Surface clearance: %.0f m", planet_camera_surface_clearance_m(
-                                                     ui.active_config, ui.camera_state.position_m));
+        ImGui::Text("Datum altitude: %.0f m", ui.frame.camera_datum_altitude_m);
+        ImGui::Text("Terrain height: %.0f m", ui.frame.camera_surface_height_m);
+        ImGui::Text("Surface clearance: %.0f m", ui.frame.camera_surface_clearance_m);
         ImGui::Text("Surface camera: %.0f%%",
-                    planet_surface_camera_blend(ui.active_config,
-                                                planet_camera_distance_m(ui.camera_state)) *
+                    planet_surface_camera_blend_from_clearance(
+                        ui.active_config, ui.frame.camera_surface_clearance_m) *
                         100.0F);
         ImGui::Text("Horizon: %.0f m", ui.frame.horizon_distance_m);
         ImGui::Text("Near / far: %.1f m / %.0f m", ui.frame.near_plane_m, ui.frame.far_plane_m);

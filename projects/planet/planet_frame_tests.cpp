@@ -83,8 +83,15 @@ void test_planet_frame_derives_horizon_and_planes() {
     const float expected_horizon =
         std::sqrt((camera_radius * camera_radius) - (config.radius_m * config.radius_m));
 
-    require_near(frame.camera_altitude_m, config.camera_altitude_m, 0.5F,
-                 "planet frame should derive camera altitude from camera radius");
+    require_near(frame.camera_datum_altitude_m, config.camera_altitude_m, 0.5F,
+                 "planet frame should derive datum altitude from camera radius");
+    require_near(frame.camera_surface_height_m,
+                 cubey::projects::planet::planet_camera_surface_height_m(
+                     config, frame.camera_world_position_m),
+                 0.5F, "planet frame should sample camera terrain height");
+    require_near(frame.camera_surface_clearance_m,
+                 frame.camera_datum_altitude_m - frame.camera_surface_height_m, 0.5F,
+                 "planet frame should derive terrain-relative clearance");
     require_near(frame.horizon_distance_m, expected_horizon, 1.0F,
                  "planet frame should compute horizon distance");
     require(frame.near_plane_m > 0.0F && frame.near_plane_m < frame.far_plane_m,
@@ -362,8 +369,12 @@ void test_planet_frame_preserves_close_surface_altitude() {
         config,
         cubey::math::DVec3{0.0, 0.0, static_cast<double>(config.radius_m + close_altitude)});
 
-    require_near(frame.camera_altitude_m, close_altitude, 0.5F,
-                 "planet frame should preserve close surface camera altitude");
+    require_near(frame.camera_datum_altitude_m, close_altitude, 0.5F,
+                 "planet frame should preserve close datum camera altitude");
+    require_near(frame.camera_surface_clearance_m,
+                 cubey::projects::planet::planet_camera_surface_clearance_m(
+                     config, frame.camera_world_position_m),
+                 0.5F, "planet frame should expose terrain-relative surface clearance");
 }
 
 void test_planet_camera_clamps_to_sampled_terrain_surface() {
@@ -420,8 +431,10 @@ void test_planet_camera_keeps_orbit_view_at_high_altitude() {
     const cubey::math::Vec3 forward =
         glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
 
-    require(cubey::projects::planet::planet_surface_camera_blend(
-                config, cubey::projects::planet::planet_camera_distance_m(state)) == 0.0F,
+    require(cubey::projects::planet::planet_surface_camera_blend_from_clearance(
+                config,
+                cubey::projects::planet::planet_camera_surface_clearance_m(config, state.position_m)) ==
+                0.0F,
             "planet camera should stay in orbit mode at high altitude");
     require(glm::dot(forward, -up) > 0.95F,
             "high-altitude planet camera should keep looking toward planet center");
@@ -440,8 +453,10 @@ void test_planet_camera_zoom_scales_altitude_not_planet_radius() {
         cubey::projects::planet::planet_camera_surface_clearance_m(config, state.position_m);
     require_near(after_clearance, before_clearance * 0.86F, 1.0F,
                  "planet scroll zoom should scale clearance above the terrain surface");
-    require(cubey::projects::planet::planet_surface_camera_blend(
-                config, cubey::projects::planet::planet_camera_distance_m(state)) == 0.0F,
+    require(cubey::projects::planet::planet_surface_camera_blend_from_clearance(
+                config,
+                cubey::projects::planet::planet_camera_surface_clearance_m(config, state.position_m)) ==
+                0.0F,
             "one planet scroll step from home should not jump into surface transition");
 }
 
@@ -528,8 +543,10 @@ void test_planet_camera_transitions_to_surface_view_near_ground() {
     const cubey::math::Vec3 forward =
         glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
 
-    require(cubey::projects::planet::planet_surface_camera_blend(
-                config, cubey::projects::planet::planet_camera_distance_m(state)) == 1.0F,
+    require(cubey::projects::planet::planet_surface_camera_blend_from_clearance(
+                config,
+                cubey::projects::planet::planet_camera_surface_clearance_m(config, state.position_m)) ==
+                1.0F,
             "planet camera should fully transition near the minimum altitude");
     require(glm::dot(forward, -up) < 0.45F,
             "surface planet camera should stop looking straight down at planet center");
@@ -547,8 +564,11 @@ void test_planet_camera_initial_state_applies_run_config_mode() {
         cubey::projects::planet::planet_camera_initial_state_from_run_config(config, run_config,
                                                                              0.35F, 0.15F);
 
-    require(cubey::projects::planet::planet_surface_camera_blend(
-                config, cubey::projects::planet::planet_camera_distance_m(surface_state)) == 1.0F,
+    require(cubey::projects::planet::planet_surface_camera_blend_from_clearance(
+                config,
+                cubey::projects::planet::planet_camera_surface_clearance_m(config,
+                                                                            surface_state.position_m)) ==
+                1.0F,
             "surface camera mode should force an initial surface-range camera");
     require(surface_state.surface_rotation_active,
             "surface camera mode should activate surface rotation immediately");
@@ -557,8 +577,11 @@ void test_planet_camera_initial_state_applies_run_config_mode() {
     const cubey::projects::planet::PlanetCameraState orbit_state =
         cubey::projects::planet::planet_camera_initial_state_from_run_config(config, run_config,
                                                                              0.35F, 0.15F);
-    require(cubey::projects::planet::planet_surface_camera_blend(
-                config, cubey::projects::planet::planet_camera_distance_m(orbit_state)) == 0.0F,
+    require(cubey::projects::planet::planet_surface_camera_blend_from_clearance(
+                config,
+                cubey::projects::planet::planet_camera_surface_clearance_m(config,
+                                                                            orbit_state.position_m)) ==
+                0.0F,
             "orbit camera mode should preserve the high-altitude home camera");
 }
 

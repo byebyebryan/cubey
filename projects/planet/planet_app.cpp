@@ -439,7 +439,9 @@ class PlanetApp {
         }
 
         const float surface_blend =
-            planet_surface_camera_blend(planet_config_, planet_camera_distance_m(camera_state_));
+            planet_surface_camera_blend_from_clearance(
+                planet_config_,
+                planet_camera_surface_clearance_m(planet_config_, camera_state_.position_m));
         if (input.mouse_button_down(cubey::input::MouseButton::Right) && surface_blend >= 0.20F) {
             const cubey::input::PointerDelta delta =
                 input.mouse_button_delta(cubey::input::MouseButton::Right);
@@ -648,7 +650,7 @@ class PlanetApp {
 
     [[nodiscard]] PlanetLocalDetailView local_detail_view(VkExtent2D extent) const {
         return {
-            .camera_altitude_m = std::max(frame_.camera_altitude_m, 1.0F),
+            .camera_clearance_m = std::max(frame_.camera_surface_clearance_m, 1.0F),
             .vertical_fov_radians = camera_.fovy_radians(),
             .viewport_height_px = static_cast<float>(std::max(extent.height, 1U)),
         };
@@ -987,7 +989,9 @@ class PlanetApp {
     }
 
     [[nodiscard]] float exposure_surface_reference_weight() const {
-        return planet_surface_camera_blend(planet_config_, planet_camera_distance_m(camera_state_));
+        return planet_surface_camera_blend_from_clearance(
+            planet_config_,
+            planet_camera_surface_clearance_m(planet_config_, camera_state_.position_m));
     }
 
     [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms(VkFormat color_format,

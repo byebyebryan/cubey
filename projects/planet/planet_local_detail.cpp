@@ -25,8 +25,8 @@ namespace {
 }
 
 [[nodiscard]] PlanetLocalDetailView sanitize_view(PlanetLocalDetailView view) {
-    if (!std::isfinite(view.camera_altitude_m) || view.camera_altitude_m < 1.0F) {
-        view.camera_altitude_m = 1.0F;
+    if (!std::isfinite(view.camera_clearance_m) || view.camera_clearance_m < 1.0F) {
+        view.camera_clearance_m = 1.0F;
     }
     if (!std::isfinite(view.vertical_fov_radians) || view.vertical_fov_radians <= 0.001F) {
         view.vertical_fov_radians = 1.04719758F;
@@ -145,7 +145,7 @@ void append_cell(PlanetLocalDetailMeshData& mesh, float active_outer_half_extent
 
 PlanetLocalDetailView default_planet_local_detail_view(const PlanetFrame& frame) {
     return sanitize_view(PlanetLocalDetailView{
-        .camera_altitude_m = std::max(frame.camera_altitude_m, 1.0F),
+        .camera_clearance_m = std::max(frame.camera_surface_clearance_m, 1.0F),
         .vertical_fov_radians = 1.04719758F,
         .viewport_height_px = 720.0F,
     });
@@ -159,7 +159,7 @@ planet_local_detail_active_range(const PlanetConfig& config,
     cubey::render::validate_clipmap_grid_2d_config(grid);
     view = sanitize_view(view);
     const float meters_per_pixel =
-        (2.0F * view.camera_altitude_m * std::tan(view.vertical_fov_radians * 0.5F)) /
+        (2.0F * view.camera_clearance_m * std::tan(view.vertical_fov_radians * 0.5F)) /
         view.viewport_height_px;
     const float safe_meters_per_pixel = std::max(meters_per_pixel, 0.0001F);
     const std::uint32_t coarsest_level = grid.lod_levels - 1U;

@@ -1028,7 +1028,7 @@ void test_planet_local_detail_deactivates_when_subpixel() {
         cubey::projects::planet::plan_planet_local_detail(
             config, frame,
             cubey::projects::planet::PlanetLocalDetailView{
-                .camera_altitude_m = 2400000.0F,
+                .camera_clearance_m = 2400000.0F,
                 .vertical_fov_radians = 1.04719758F,
                 .viewport_height_px = 720.0F,
             });
@@ -1053,7 +1053,7 @@ void test_planet_local_detail_finest_level_is_reachable_at_surface_floor() {
         cubey::projects::planet::plan_planet_local_detail(
             config, frame,
             cubey::projects::planet::PlanetLocalDetailView{
-                .camera_altitude_m = frame.camera_altitude_m,
+                .camera_clearance_m = frame.camera_surface_clearance_m,
                 .vertical_fov_radians = 1.04719758F,
                 .viewport_height_px = 720.0F,
             });
@@ -1131,7 +1131,7 @@ void test_planet_local_detail_runtime_tracks_topology() {
             "planet local detail runtime should accept matching topology");
     require(runtime.topology_changed(config,
                                      cubey::projects::planet::PlanetLocalDetailView{
-                                         .camera_altitude_m = 2400000.0F,
+                                         .camera_clearance_m = 2400000.0F,
                                          .vertical_fov_radians = 1.04719758F,
                                          .viewport_height_px = 720.0F,
                                      }),
