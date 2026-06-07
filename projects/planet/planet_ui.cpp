@@ -230,6 +230,8 @@ void draw_diagnostics(PlanetUiContext& ui) {
             planet_surface_nominal_cell_edge_m(ui.active_config, ui.active_config.max_lod_level);
         const PlanetLocalDetailPlan local_detail =
             plan_planet_local_detail(ui.active_config, ui.frame);
+        const PlanetLocalDetailDiagnostics local_detail_diagnostics =
+            planet_local_detail_diagnostics(ui.active_config, local_detail);
         ImGui::Text("Scale preset: %s", planet_scale_preset_name(ui.active_config.scale_preset));
         ImGui::Text("Radius: %.0f m", ui.active_config.radius_m);
         ImGui::Text("Atmosphere: %.0f m", ui.active_config.atmosphere_height_m);
@@ -303,14 +305,18 @@ void draw_diagnostics(PlanetUiContext& ui) {
                     surface.max_skirt_depth_m);
 
         ImGui::SeparatorText("Local Detail");
-        ImGui::Text("Levels / patches: %u / %u", local_detail.diagnostics.lod_levels,
-                    local_detail.diagnostics.patch_count);
+        ImGui::Text("Enabled: %s", local_detail_diagnostics.enabled ? "yes" : "no");
+        ImGui::Text("Levels / patches: %u / %u", local_detail_diagnostics.lod_levels,
+                    local_detail_diagnostics.patch_count);
         ImGui::Text("Near cell / outer extent: %.1f m / %.0f m",
-                    local_detail.diagnostics.near_cell_size,
-                    local_detail.diagnostics.outer_half_extent);
+                    local_detail_diagnostics.near_cell_size,
+                    local_detail_diagnostics.outer_half_extent);
         ImGui::Text("Vertices / triangles: %u / %u",
-                    local_detail.diagnostics.total_vertices,
-                    local_detail.diagnostics.total_triangles);
+                    local_detail_diagnostics.vertex_count,
+                    local_detail_diagnostics.triangle_count);
+        ImGui::Text("Detail height / scale: %.0f m / %.0f m",
+                    local_detail_diagnostics.max_detail_delta_m,
+                    local_detail_diagnostics.detail_scale_m);
     }
 }
 

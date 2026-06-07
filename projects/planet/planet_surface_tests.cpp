@@ -2,6 +2,7 @@
 #include "planet_surface_field.h"
 #include "planet_surface_runtime.h"
 #include "planet_local_detail.h"
+#include "planet_local_detail_runtime.h"
 
 #include <cmath>
 #include <cstddef>
@@ -992,16 +993,22 @@ void test_planet_local_detail_plan_reports_viewer_centered_clipmap() {
 
     const cubey::projects::planet::PlanetLocalDetailPlan plan =
         cubey::projects::planet::plan_planet_local_detail(config, frame);
+    const cubey::projects::planet::PlanetLocalDetailDiagnostics diagnostics =
+        cubey::projects::planet::planet_local_detail_diagnostics(config, plan);
 
-    require(plan.diagnostics.lod_levels == config.local_detail_lod_levels,
+    require(diagnostics.enabled, "planet local detail should default to enabled");
+    require(diagnostics.lod_levels == config.local_detail_lod_levels,
             "planet local detail should report configured clipmap levels");
-    require(plan.diagnostics.patch_count ==
+    require(diagnostics.patch_count ==
                 cubey::render::clipmap_grid_2d_patch_count(config.local_detail_lod_levels),
             "planet local detail should use the shared clipmap patch count");
-    require(std::abs(plan.diagnostics.near_cell_size - 4.0F) < 0.0001F,
+    require(std::abs(diagnostics.near_cell_size - 4.0F) < 0.0001F,
             "planet local detail defaults should expose a four-meter near cell");
-    require(plan.diagnostics.total_triangles > 0U,
+    require(diagnostics.triangle_count > 0U,
             "planet local detail should report a positive triangle budget");
+    require(std::abs(diagnostics.max_detail_delta_m -
+                     config.local_detail_height_strength_m) < 0.0001F,
+            "planet local detail should expose configured detail height");
     require(glm::length(plan.local_frame.world_origin_m - frame.local_frame.world_origin_m) < 0.001,
             "planet local detail should stay anchored to the planet local tangent frame");
 }
@@ -1023,13 +1030,58 @@ void test_planet_local_detail_density_is_independent_of_planet_radius() {
         cubey::projects::planet::plan_planet_local_detail(earth_config, earth_frame);
     const cubey::projects::planet::PlanetLocalDetailPlan mini_plan =
         cubey::projects::planet::plan_planet_local_detail(mini_config, mini_frame);
+    const cubey::projects::planet::PlanetLocalDetailDiagnostics earth_diagnostics =
+        cubey::projects::planet::planet_local_detail_diagnostics(earth_config, earth_plan);
+    const cubey::projects::planet::PlanetLocalDetailDiagnostics mini_diagnostics =
+        cubey::projects::planet::planet_local_detail_diagnostics(mini_config, mini_plan);
 
-    require(std::abs(earth_plan.diagnostics.near_cell_size -
-                     mini_plan.diagnostics.near_cell_size) < 0.0001F,
+    require(std::abs(earth_diagnostics.near_cell_size -
+                     mini_diagnostics.near_cell_size) < 0.0001F,
             "planet local detail near cell should not change with planet radius");
-    require(std::abs(earth_plan.diagnostics.outer_half_extent -
-                     mini_plan.diagnostics.outer_half_extent) < 0.0001F,
+    require(std::abs(earth_diagnostics.outer_half_extent -
+                     mini_diagnostics.outer_half_extent) < 0.0001F,
             "planet local detail extent should not change with planet radius");
+}
+
+void test_planet_local_detail_mesh_matches_clipmap_budget() {
+    const cubey::projects::planet::PlanetConfig config{};
+    const cubey::projects::planet::PlanetFrame frame =
+        cubey::projects::planet::make_planet_frame(
+            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 250.0});
+
+    const cubey::projects::planet::PlanetLocalDetailBuildResult build =
+        cubey::projects::planet::make_planet_local_detail_mesh(config, frame);
+
+    require(build.mesh.vertices.size() == build.mesh.indices.size(),
+            "planet local detail mesh should use one index per generated vertex");
+    require(build.mesh.vertices.size() == build.diagnostics.vertex_count,
+            "planet local detail diagnostics should match generated vertex count");
+    require(build.mesh.indices.size() == build.diagnostics.triangle_count * 3ULL,
+            "planet local detail diagnostics should match generated triangle count");
+    bool has_owned_vertex = false;
+    for (const cubey::projects::planet::PlanetLocalDetailVertex& vertex : build.mesh.vertices) {
+        has_owned_vertex = has_owned_vertex || vertex.blend > 0.99F;
+    }
+    require(has_owned_vertex,
+            "planet local detail center vertices should be owned by the local layer");
+}
+
+void test_planet_local_detail_runtime_tracks_topology() {
+    cubey::projects::planet::PlanetConfig config{};
+    const cubey::projects::planet::PlanetFrame frame =
+        cubey::projects::planet::make_planet_frame(
+            config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 250.0});
+    cubey::projects::planet::PlanetLocalDetailRuntime runtime{};
+
+    require(runtime.topology_changed(config),
+            "planet local detail runtime should require an initial build");
+    runtime.rebuild(config, frame);
+    require(!runtime.topology_changed(config),
+            "planet local detail runtime should accept matching topology");
+
+    config.local_detail_cells_per_axis *= 2U;
+    require(runtime.topology_changed(config),
+            "planet local detail runtime should detect local-detail topology edits");
 }
 
 void test_planet_surface_hysteresis_delays_split() {
@@ -1436,6 +1488,8 @@ int main() {
         test_planet_surface_earthlike_lod_reaches_meter_scale_budget();
         test_planet_local_detail_plan_reports_viewer_centered_clipmap();
         test_planet_local_detail_density_is_independent_of_planet_radius();
+        test_planet_local_detail_mesh_matches_clipmap_budget();
+        test_planet_local_detail_runtime_tracks_topology();
         test_planet_surface_hysteresis_delays_split();
         test_planet_surface_hysteresis_delays_merge();
         test_planet_surface_planner_falls_back_at_live_patch_budget();

@@ -3,10 +3,14 @@
 #include "planet_config.h"
 #include "planet_frame.h"
 
+#include <cubey/render/mesh.h>
 #include <cubey/render/clipmap_grid_2d.h>
 #include <cubey/render/local_tangent_frame.h>
+#include <cubey/render/primitive_mesh.h>
 
 #include <cstdint>
+#include <span>
+#include <vector>
 
 namespace cubey::projects::planet {
 
@@ -23,7 +27,42 @@ struct PlanetLocalDetailPlan {
     cubey::render::LocalTangentFrame local_frame{};
     cubey::render::ClipmapGrid2DConfig grid{};
     PlanetLocalDetailPatchList patches{};
-    cubey::render::ClipmapGrid2DDiagnostics diagnostics{};
+    cubey::render::ClipmapGrid2DDiagnostics clipmap_diagnostics{};
+};
+
+struct PlanetLocalDetailDiagnostics {
+    bool enabled = false;
+    std::uint32_t lod_levels = 0;
+    std::uint32_t patch_count = 0;
+    std::uint32_t vertex_count = 0;
+    std::uint32_t triangle_count = 0;
+    float near_cell_size = 0.0F;
+    float outer_half_extent = 0.0F;
+    float max_detail_delta_m = 0.0F;
+    float detail_scale_m = 0.0F;
+};
+
+struct PlanetLocalDetailVertex {
+    cubey::render::PrimitiveVec2 local_xz_m{};
+    cubey::render::PrimitiveVec2 patch_uv{};
+    float level = 0.0F;
+    float blend = 0.0F;
+};
+
+struct PlanetLocalDetailMeshData {
+    std::vector<PlanetLocalDetailVertex> vertices{};
+    std::vector<std::uint32_t> indices{};
+
+    [[nodiscard]] cubey::render::MeshConfig mesh_config() const {
+        return cubey::render::indexed_mesh_config(
+            std::span<const PlanetLocalDetailVertex>{vertices.data(), vertices.size()},
+            std::span<const std::uint32_t>{indices.data(), indices.size()});
+    }
+};
+
+struct PlanetLocalDetailBuildResult {
+    PlanetLocalDetailMeshData mesh{};
+    PlanetLocalDetailDiagnostics diagnostics{};
 };
 
 [[nodiscard]] inline cubey::render::ClipmapGrid2DConfig
@@ -49,8 +88,14 @@ planet_local_detail_clipmap_config(const PlanetConfig& config) {
         .local_frame = frame.local_frame,
         .grid = grid,
         .patches = patches,
-        .diagnostics = cubey::render::clipmap_grid_2d_diagnostics(grid, patches),
+        .clipmap_diagnostics = cubey::render::clipmap_grid_2d_diagnostics(grid, patches),
     };
 }
+
+[[nodiscard]] PlanetLocalDetailDiagnostics
+planet_local_detail_diagnostics(const PlanetConfig& config,
+                                const PlanetLocalDetailPlan& plan);
+[[nodiscard]] PlanetLocalDetailBuildResult
+make_planet_local_detail_mesh(const PlanetConfig& config, const PlanetFrame& frame);
 
 } // namespace cubey::projects::planet

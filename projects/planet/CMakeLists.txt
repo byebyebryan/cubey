@@ -22,6 +22,8 @@ cubey_add_app_target(
         planet_celestial.cpp
         planet_config.cpp
         planet_frame.cpp
+        planet_local_detail.cpp
+        planet_local_detail_runtime.cpp
         planet_surface.cpp
         planet_surface_field.cpp
         planet_surface_runtime.cpp
@@ -71,6 +73,8 @@ if(BUILD_TESTING)
         cubey_project_planet_surface_tests
         planet_config.cpp
         planet_frame.cpp
+        planet_local_detail.cpp
+        planet_local_detail_runtime.cpp
         planet_surface.cpp
         planet_surface_field.cpp
         planet_surface_runtime.cpp
