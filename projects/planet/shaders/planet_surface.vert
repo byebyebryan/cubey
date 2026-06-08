@@ -175,6 +175,18 @@ vec3 terrain_height_color(float height_m) {
     return mix(vec3(0.08, 0.42, 0.20), vec3(0.92, 0.88, 0.74), blend);
 }
 
+vec3 terrain_band_color(float band_m) {
+    float height_scale = max(surface_frame.terrain_options.x * 0.55, 1.0);
+    float t = clamp(band_m / height_scale, -1.0, 1.0) * 0.5 + 0.5;
+    vec3 low = vec3(0.12, 0.18, 0.48);
+    vec3 mid = vec3(0.10, 0.12, 0.14);
+    vec3 high = vec3(0.92, 0.64, 0.18);
+    if (t < 0.5) {
+        return mix(low, mid, t * 2.0);
+    }
+    return mix(mid, high, (t - 0.5) * 2.0);
+}
+
 vec3 bathymetry_color(float normalized_bathymetry) {
     float t = clamp(normalized_bathymetry, 0.0, 1.0);
     return mix(vec3(0.04, 0.28, 0.44), vec3(0.01, 0.06, 0.88), t);
@@ -223,7 +235,8 @@ vec3 final_color(vec3 normal, uint material, float normalized_elevation, float n
 
 vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m, uint material,
                   float normalized_elevation, float normalized_slope, float shoreline_mask,
-                  float land_mask, float moisture, float temperature, float roughness) {
+                  float land_mask, float moisture, float temperature, float roughness,
+                  PlanetSurfaceTerrainBands terrain_bands) {
     int debug_view = debug_view_option();
     if (debug_view == 1) {
         return face_color(in_patch_id.x);
@@ -280,6 +293,15 @@ vec3 vertex_color(vec3 sphere_normal, vec3 normal, float height_m, uint material
     if (debug_view == 17) {
         return lod_color();
     }
+    if (debug_view == 25) {
+        return terrain_height_color(terrain_bands.base_shape_m);
+    }
+    if (debug_view == 26) {
+        return terrain_band_color(terrain_bands.broad_relief_m);
+    }
+    if (debug_view == 27) {
+        return terrain_band_color(terrain_bands.mid_detail_m + terrain_bands.fine_detail_m);
+    }
     return final_color(normal, material, normalized_elevation, normalized_slope, 0.5, 0.5);
 }
 
@@ -289,7 +311,8 @@ void main() {
     float u = mix(bounds.x, bounds.z, sample_uv.x);
     float v = mix(bounds.y, bounds.w, sample_uv.y);
     vec3 sphere_normal = normalize(planet_surface_cube_face_point(in_patch_id.x, u, v));
-    float height_m = planet_surface_terrain_height_m(sphere_normal);
+    PlanetSurfaceTerrainBands terrain_bands = planet_surface_terrain_bands(sphere_normal);
+    float height_m = planet_surface_terrain_band_total_m(terrain_bands);
     vec3 normal =
         planet_surface_terrain_normal(in_patch_id.x, u, v, in_patch_id.y, sphere_normal);
     float normalized_elevation = planet_surface_normalized_elevation(height_m);
@@ -311,7 +334,7 @@ void main() {
 
     out_color = vertex_color(sphere_normal, normal, height_m, material, normalized_elevation,
                              normalized_slope, shoreline_mask, land_mask, moisture, temperature,
-                             roughness);
+                             roughness, terrain_bands);
     out_normal = normal;
     out_uv = in_uv;
     out_render_position = render_position;

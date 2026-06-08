@@ -355,9 +355,10 @@ planet_surface_terrain_feature_context(const PlanetConfig& config,
     };
 }
 
-float planet_surface_terrain_height_m(const PlanetConfig& config, cubey::math::Vec3 sphere_normal) {
+PlanetSurfaceTerrainBands planet_surface_terrain_bands(const PlanetConfig& config,
+                                                       cubey::math::Vec3 sphere_normal) {
     if (!config.terrain_enabled || config.terrain_height_scale_m <= 0.0F) {
-        return 0.0F;
+        return {};
     }
     const PlanetTerrainFeatureContext features =
         planet_surface_terrain_feature_context(config, sphere_normal);
@@ -378,10 +379,11 @@ float planet_surface_terrain_height_m(const PlanetConfig& config, cubey::math::V
     const float mountain_belt = features.mountain_belt;
     const float valleys = features.valley_network;
     const float shelf = smootherstep((continent_mask - 0.05F) / 0.46F);
-    const float ocean_floor = lerp(-0.72F + broad * 0.08F + basin * 0.07F,
-                                   -0.18F + broad * 0.10F + basin * 0.04F, shelf);
-    const float land_base =
-        (continent_mask - 0.38F) * 0.72F + broad * 0.11F + lowland * 0.16F;
+    const float ocean_floor_base = lerp(-0.72F, -0.18F, shelf);
+    const float ocean_floor_relief =
+        lerp(broad * 0.08F + basin * 0.07F, broad * 0.10F + basin * 0.04F, shelf);
+    const float land_base_shape = (continent_mask - 0.38F) * 0.72F;
+    const float land_base_relief = broad * 0.11F + lowland * 0.16F;
     const float relief_gate = features.relief_gate;
     const float plain_gate = features.plain_gate;
     const float mountains =
@@ -394,10 +396,25 @@ float planet_surface_terrain_height_m(const PlanetConfig& config, cubey::math::V
             config.terrain_seed + 113U, 3U) *
         config.terrain_fine_detail_strength * (0.12F + relief_gate * 0.88F) *
         (0.45F + mountain_belt * 0.55F);
-    const float height =
-        (lerp(ocean_floor, land_base, continent_mask) + mountains - valley_cut + fine * 0.26F) *
-        config.terrain_height_scale_m;
-    return std::clamp(height, -config.terrain_height_scale_m, config.terrain_height_scale_m);
+    PlanetSurfaceTerrainBands bands{
+        .base_shape_m =
+            lerp(ocean_floor_base, land_base_shape, continent_mask) *
+            config.terrain_height_scale_m,
+        .broad_relief_m =
+            lerp(ocean_floor_relief, land_base_relief, continent_mask) *
+            config.terrain_height_scale_m,
+        .mid_detail_m = (mountains - valley_cut) * config.terrain_height_scale_m,
+        .fine_detail_m = fine * 0.26F * config.terrain_height_scale_m,
+    };
+    const float raw_height = bands.total_height_m();
+    const float clamped_height =
+        std::clamp(raw_height, -config.terrain_height_scale_m, config.terrain_height_scale_m);
+    bands.fine_detail_m += clamped_height - raw_height;
+    return bands;
+}
+
+float planet_surface_terrain_height_m(const PlanetConfig& config, cubey::math::Vec3 sphere_normal) {
+    return planet_surface_terrain_bands(config, sphere_normal).total_height_m();
 }
 
 float planet_surface_height_above_sea_m(const PlanetConfig& config, float height_m) {
@@ -496,7 +513,9 @@ PlanetSurfaceSample planet_surface_sample_field(const PlanetConfig& config, Plan
                                                 float u, float v) {
     const cubey::math::Vec3 sphere_normal =
         glm::normalize(planet_surface_cube_face_point(id.face, u, v));
-    const float height_m = planet_surface_terrain_height_m(config, sphere_normal);
+    const PlanetSurfaceTerrainBands terrain_bands =
+        planet_surface_terrain_bands(config, sphere_normal);
+    const float height_m = terrain_bands.total_height_m();
     const double radius = surface_radius_m(config, height_m);
     const cubey::math::DVec3 world_position_m{
         static_cast<double>(sphere_normal.x) * radius,
@@ -536,6 +555,7 @@ PlanetSurfaceSample planet_surface_sample_field(const PlanetConfig& config, Plan
         .temperature = temperature,
         .roughness = terrain_roughness(material, slope, moisture),
         .material = material,
+        .terrain_bands = terrain_bands,
     };
 }
 

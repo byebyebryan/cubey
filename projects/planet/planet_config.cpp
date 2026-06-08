@@ -202,6 +202,18 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
     if (value == "terrain-height" || value == "terrain_height" || value == "height") {
         return PlanetDebugView::TerrainHeight;
     }
+    if (value == "terrain-band-base" || value == "terrain_band_base" ||
+        value == "terrain-base" || value == "terrain_base") {
+        return PlanetDebugView::TerrainBandBase;
+    }
+    if (value == "terrain-band-relief" || value == "terrain_band_relief" ||
+        value == "terrain-relief" || value == "terrain_relief") {
+        return PlanetDebugView::TerrainBandRelief;
+    }
+    if (value == "terrain-band-detail" || value == "terrain_band_detail" ||
+        value == "terrain-detail" || value == "terrain_detail") {
+        return PlanetDebugView::TerrainBandDetail;
+    }
     if (value == "terrain-slope" || value == "terrain_slope" || value == "slope") {
         return PlanetDebugView::TerrainSlope;
     }
@@ -312,6 +324,12 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "local-detail-features";
     case PlanetDebugView::LocalDetailFinal:
         return "local-detail-final";
+    case PlanetDebugView::TerrainBandBase:
+        return "terrain-band-base";
+    case PlanetDebugView::TerrainBandRelief:
+        return "terrain-band-relief";
+    case PlanetDebugView::TerrainBandDetail:
+        return "terrain-band-detail";
     }
     return "final";
 }

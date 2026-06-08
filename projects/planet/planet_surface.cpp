@@ -201,6 +201,31 @@ class PlanetPatchSelectionLookup {
     };
 }
 
+[[nodiscard]] PrimitiveVec3 terrain_band_color(const PlanetConfig& config, float band_m) {
+    const float t =
+        std::clamp(band_m / std::max(config.terrain_height_scale_m * 0.55F, 1.0F), -1.0F,
+                   1.0F) *
+            0.5F +
+        0.5F;
+    const PrimitiveVec3 low{0.12F, 0.18F, 0.48F};
+    const PrimitiveVec3 mid{0.10F, 0.12F, 0.14F};
+    const PrimitiveVec3 high{0.92F, 0.64F, 0.18F};
+    if (t < 0.5F) {
+        const float blend = t * 2.0F;
+        return {
+            lerp(low[0], mid[0], blend),
+            lerp(low[1], mid[1], blend),
+            lerp(low[2], mid[2], blend),
+        };
+    }
+    const float blend = (t - 0.5F) * 2.0F;
+    return {
+        lerp(mid[0], high[0], blend),
+        lerp(mid[1], high[1], blend),
+        lerp(mid[2], high[2], blend),
+    };
+}
+
 [[nodiscard]] PrimitiveVec3 terrain_slope_color(float normalized_slope) {
     const float t = std::clamp(normalized_slope, 0.0F, 1.0F);
     return {
@@ -352,6 +377,14 @@ class PlanetPatchSelectionLookup {
         return {0.72F, 0.38F, 0.24F};
     case PlanetDebugView::LocalDetailFinal:
         return final_color(config, sample);
+    case PlanetDebugView::TerrainBandBase:
+        return terrain_height_color(config, sample.terrain_bands.base_shape_m);
+    case PlanetDebugView::TerrainBandRelief:
+        return terrain_band_color(config, sample.terrain_bands.broad_relief_m);
+    case PlanetDebugView::TerrainBandDetail:
+        return terrain_band_color(config,
+                                  sample.terrain_bands.mid_detail_m +
+                                      sample.terrain_bands.fine_detail_m);
     }
     return final_color(config, sample);
 }

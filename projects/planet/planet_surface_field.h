@@ -20,6 +20,17 @@ enum class PlanetSurfaceMaterial : std::uint8_t {
     Snow,
 };
 
+struct PlanetSurfaceTerrainBands {
+    float base_shape_m = 0.0F;
+    float broad_relief_m = 0.0F;
+    float mid_detail_m = 0.0F;
+    float fine_detail_m = 0.0F;
+
+    [[nodiscard]] float total_height_m() const {
+        return base_shape_m + broad_relief_m + mid_detail_m + fine_detail_m;
+    }
+};
+
 struct PlanetSurfaceSample {
     cubey::math::Vec3 sphere_normal{0.0F, 1.0F, 0.0F};
     cubey::math::Vec3 normal{0.0F, 1.0F, 0.0F};
@@ -36,6 +47,7 @@ struct PlanetSurfaceSample {
     float temperature = 0.0F;
     float roughness = 0.5F;
     PlanetSurfaceMaterial material = PlanetSurfaceMaterial::Lowland;
+    PlanetSurfaceTerrainBands terrain_bands{};
 };
 
 struct PlanetTerrainFeatureContext {
@@ -106,6 +118,8 @@ struct PlanetSurfaceTilePayload {
 [[nodiscard]] PlanetTerrainFeatureContext
 planet_surface_terrain_feature_context(const PlanetConfig& config,
                                        cubey::math::Vec3 sphere_normal);
+[[nodiscard]] PlanetSurfaceTerrainBands
+planet_surface_terrain_bands(const PlanetConfig& config, cubey::math::Vec3 sphere_normal);
 [[nodiscard]] float planet_surface_terrain_height_m(const PlanetConfig& config,
                                                     cubey::math::Vec3 sphere_normal);
 [[nodiscard]] float planet_surface_height_above_sea_m(const PlanetConfig& config, float height_m);

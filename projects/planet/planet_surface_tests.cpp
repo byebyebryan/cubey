@@ -257,6 +257,51 @@ void test_planet_surface_terrain_feature_context_is_bounded() {
     }
 }
 
+void test_planet_surface_terrain_bands_sum_to_height() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 8,
+        .max_lod_level = 0,
+        .terrain_enabled = true,
+        .terrain_height_scale_m = 80.0F,
+        .terrain_noise_scale = 3.0F,
+        .terrain_seed = 42U,
+        .terrain_mid_detail_strength = 0.72F,
+        .terrain_fine_detail_strength = 0.24F,
+        .terrain_fine_detail_scale = 11.0F,
+    };
+    const cubey::math::Vec3 directions[] = {
+        glm::normalize(cubey::math::Vec3{1.0F, 0.25F, 0.10F}),
+        glm::normalize(cubey::math::Vec3{-0.40F, 0.65F, 0.72F}),
+        glm::normalize(cubey::math::Vec3{0.20F, -0.85F, 0.48F}),
+        highest_sampled_terrain_direction(config),
+    };
+
+    for (const cubey::math::Vec3 direction : directions) {
+        const cubey::projects::planet::PlanetSurfaceTerrainBands bands =
+            cubey::projects::planet::planet_surface_terrain_bands(config, direction);
+        require(std::isfinite(bands.base_shape_m) && std::isfinite(bands.broad_relief_m) &&
+                    std::isfinite(bands.mid_detail_m) && std::isfinite(bands.fine_detail_m),
+                "planet terrain bands should stay finite");
+        const float height =
+            cubey::projects::planet::planet_surface_terrain_height_m(config, direction);
+        require_close(bands.total_height_m(), height,
+                      "planet terrain bands should sum to terrain height");
+        require(height >= -config.terrain_height_scale_m &&
+                    height <= config.terrain_height_scale_m,
+                "planet terrain band total should respect configured height bounds");
+    }
+
+    cubey::projects::planet::PlanetConfig disabled = config;
+    disabled.terrain_enabled = false;
+    const cubey::projects::planet::PlanetSurfaceTerrainBands disabled_bands =
+        cubey::projects::planet::planet_surface_terrain_bands(
+            disabled, glm::normalize(cubey::math::Vec3{1.0F, 0.25F, 0.10F}));
+    require_close(disabled_bands.total_height_m(), 0.0F,
+                  "disabled terrain should expose zero terrain bands");
+}
+
 void test_planet_surface_field_disabled_terrain_returns_sphere_sample() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1200.0F,
@@ -1600,6 +1645,15 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_from_string("terrain-height") ==
                 cubey::projects::planet::PlanetDebugView::TerrainHeight,
             "planet debug view should parse terrain-height");
+    require(cubey::projects::planet::planet_debug_view_from_string("terrain-band-base") ==
+                cubey::projects::planet::PlanetDebugView::TerrainBandBase,
+            "planet debug view should parse terrain-band-base");
+    require(cubey::projects::planet::planet_debug_view_from_string("terrain-band-relief") ==
+                cubey::projects::planet::PlanetDebugView::TerrainBandRelief,
+            "planet debug view should parse terrain-band-relief");
+    require(cubey::projects::planet::planet_debug_view_from_string("terrain-band-detail") ==
+                cubey::projects::planet::PlanetDebugView::TerrainBandDetail,
+            "planet debug view should parse terrain-band-detail");
     require(cubey::projects::planet::planet_debug_view_from_string("terrain-slope") ==
                 cubey::projects::planet::PlanetDebugView::TerrainSlope,
             "planet debug view should parse terrain-slope");
@@ -1657,6 +1711,18 @@ void test_planet_surface_metric_debug_views_parse() {
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::TerrainHeight)} == "terrain-height",
             "planet debug view should name terrain-height");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::TerrainBandBase)} ==
+                "terrain-band-base",
+            "planet debug view should name terrain-band-base");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::TerrainBandRelief)} ==
+                "terrain-band-relief",
+            "planet debug view should name terrain-band-relief");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::TerrainBandDetail)} ==
+                "terrain-band-detail",
+            "planet debug view should name terrain-band-detail");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::TerrainSlope)} == "terrain-slope",
             "planet debug view should name terrain-slope");
@@ -1722,6 +1788,15 @@ void test_planet_surface_metric_debug_views_parse() {
     require(static_cast<std::uint8_t>(
                 cubey::projects::planet::PlanetDebugView::LocalDetailFinal) == 24U,
             "local-detail shader final value should stay synchronized");
+    require(static_cast<std::uint8_t>(
+                cubey::projects::planet::PlanetDebugView::TerrainBandBase) == 25U,
+            "terrain-band-base shader debug value should stay synchronized");
+    require(static_cast<std::uint8_t>(
+                cubey::projects::planet::PlanetDebugView::TerrainBandRelief) == 26U,
+            "terrain-band-relief shader debug value should stay synchronized");
+    require(static_cast<std::uint8_t>(
+                cubey::projects::planet::PlanetDebugView::TerrainBandDetail) == 27U,
+            "terrain-band-detail shader debug value should stay synchronized");
     require(!cubey::projects::planet::planet_debug_view_is_local_detail(
                 cubey::projects::planet::PlanetDebugView::Final),
             "final planet view should not enable local-detail diagnostic rendering");
@@ -1746,6 +1821,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(!cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::Final),
             "final planet view should keep continuous global terrain until local-detail handoff is solved");
+    require(!cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+                cubey::projects::planet::PlanetDebugView::TerrainBandBase),
+            "terrain band debug views should inspect the global surface without local-detail overlay");
     require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::TerrainHeight),
             "terrain field debug views should allow local-detail surface rendering");
@@ -1953,6 +2031,7 @@ int main() {
         test_planet_surface_terrain_displaces_within_height_bounds();
         test_planet_surface_terrain_detail_controls_change_shape();
         test_planet_surface_terrain_feature_context_is_bounded();
+        test_planet_surface_terrain_bands_sum_to_height();
         test_planet_surface_field_disabled_terrain_returns_sphere_sample();
         test_planet_surface_field_is_deterministic_for_seed();
         test_planet_surface_field_reports_bounded_height_normal_and_slope();

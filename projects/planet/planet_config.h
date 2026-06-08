@@ -74,6 +74,9 @@ enum class PlanetDebugView : std::uint8_t {
     LocalDetailHeight,
     LocalDetailFeatures,
     LocalDetailFinal,
+    TerrainBandBase,
+    TerrainBandRelief,
+    TerrainBandDetail,
 };
 
 enum class PlanetScalePreset : std::uint8_t {
