@@ -72,6 +72,54 @@ float local_detail_land_blend(float height_m) {
     return smoothstep(shoreline_width * 0.12, shoreline_width * 0.85, height_above_sea);
 }
 
+struct PlanetLocalDetailFeatureContributions {
+    float ridge;
+    float channel;
+    float plain;
+    float net;
+};
+
+vec3 local_detail_planet_anchor(vec3 sphere_normal, float base_height_m) {
+    return sphere_normal * (surface_frame.render_origin_radius.w + base_height_m);
+}
+
+PlanetLocalDetailFeatureContributions local_detail_feature_contributions(
+    vec2 local_xz, vec3 sphere_normal, float base_height_m) {
+    float scale = max(surface_frame.local_forward_scale.w, 1.0);
+    uint seed = uint(surface_frame.terrain_options.z + 0.5) + 3109U;
+    vec3 p = local_detail_planet_anchor(sphere_normal, base_height_m) / scale;
+    p += vec3(local_xz.x, base_height_m * 0.21, local_xz.y) / (scale * 9.0);
+
+    PlanetTerrainFeatureContext features = planet_surface_terrain_feature_context(sphere_normal);
+    float ridge_gate = features.mountain_belt * features.relief_gate * features.land_mask;
+    float channel_gate =
+        features.valley_network * features.relief_gate * features.land_mask *
+        (0.45 + features.mountain_belt * 0.55);
+    float plain_gate = features.plain_gate * features.land_mask *
+                       (1.0 - smoothstep(0.24, 0.74, features.mountain_belt));
+
+    float ridge_source =
+        planet_surface_fbm(p * 0.92 + vec3(-4.2, 2.6, 7.1), seed + 317U, 4U);
+    float ridge_line = pow(max(1.0 - abs(ridge_source * 1.18), 0.0), 2.8);
+    float ridge_breakup =
+        planet_surface_fbm(p * 1.72 + vec3(0.8, 5.3, -3.9), seed + 733U, 3U);
+    float ridge = (ridge_line + ridge_breakup * 0.10 - 0.16) * ridge_gate * 0.95;
+
+    float channel_source =
+        planet_surface_fbm(p * 0.54 + vec3(6.4, -3.3, 1.8), seed + 401U, 4U);
+    float channel_line = pow(max(1.0 - abs(channel_source * 1.34), 0.0), 3.2);
+    float channel_breakup =
+        planet_surface_fbm(p * 1.26 + vec3(-7.2, 1.4, 4.9), seed + 811U, 3U);
+    float channel = channel_line * (0.88 + channel_breakup * 0.12) * channel_gate * 0.58;
+
+    float plain_noise =
+        planet_surface_fbm(p * 0.22 + vec3(1.1, 8.5, -5.7), seed + 977U, 3U);
+    float plain = plain_noise * plain_gate * 0.18;
+
+    float net = ridge - channel + plain;
+    return PlanetLocalDetailFeatureContributions(ridge, channel, plain, net);
+}
+
 float local_detail_height_delta_m(vec2 local_xz, vec3 sphere_normal,
                                   float base_height_m, float ownership) {
     float active_weight = surface_frame.local_origin_options.w;
@@ -80,18 +128,12 @@ float local_detail_height_delta_m(vec2 local_xz, vec3 sphere_normal,
         return 0.0;
     }
 
-    float scale = max(surface_frame.local_forward_scale.w, 1.0);
-    uint seed = uint(surface_frame.terrain_options.z + 0.5) + 3109U;
-    vec3 p = vec3(local_xz.x, base_height_m * 0.07, local_xz.y) / scale;
-    float undulation = planet_surface_fbm(p * 0.65 + vec3(2.7, -1.5, 4.2), seed, 4U);
-    float ridge_source = planet_surface_fbm(p * 1.90 + vec3(-6.1, 3.8, 1.4), seed + 317U, 4U);
-    float ridges = pow(max(1.0 - abs(ridge_source), 0.0), 2.6);
-    float broken = planet_surface_fbm(p * 4.20 + vec3(0.8, 5.3, -3.9), seed + 733U, 3U);
-    float detail = undulation * 0.28 + (ridges - 0.34) * 0.78 + broken * 0.12;
+    PlanetLocalDetailFeatureContributions features =
+        local_detail_feature_contributions(local_xz, sphere_normal, base_height_m);
     float land = local_detail_land_blend(base_height_m);
     float slope_gate = smoothstep(-0.08, 0.18, dot(normalize(sphere_normal),
                                                    normalize(surface_frame.local_up_height.xyz)));
-    return detail * height_strength * land * slope_gate * ownership * active_weight;
+    return features.net * height_strength * land * slope_gate * ownership * active_weight;
 }
 
 vec3 local_detail_world_position(vec2 local_xz, out vec3 sphere_normal, out float height_m,
