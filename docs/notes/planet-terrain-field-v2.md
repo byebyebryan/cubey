@@ -22,7 +22,9 @@ The field vocabulary should stay explicit:
 - normal and normalized slope;
 - moisture and temperature;
 - roughness;
-- material or biome classification.
+- material or biome classification;
+- terrain frequency bands for base shape, broad relief, mid-detail residuals,
+  and fine residual detail.
 
 These names intentionally follow established terrain/globe/rendering terms. They
 are also the minimum data needed by future terrain materials, shoreline/ocean
@@ -38,7 +40,9 @@ replace the procedural source behind the same key/payload vocabulary. The
 summary now carries height and sea-level ranges, water/shoreline coverage,
 averaged height, averaged height above sea level, averaged moisture,
 temperature, roughness, normalized slope, material counts, dominant material,
-and terrain-relevant revision data.
+and terrain-relevant revision data. Point samples also expose named terrain
+bands so diagnostics can inspect which frequency tier is carrying the visible
+shape.
 
 CPU and shader terrain logic should stay mirrored with matching helper names.
 That duplication is deliberate for now: the CPU path gives deterministic tests
@@ -50,7 +54,8 @@ The procedural shaping should use named layers rather than a single opaque noise
 stack. The current procedural source follows this shape:
 
 - domain-warped terrain coordinates;
-- ocean basin / continent mask;
+- ocean basin / continent mask and base shape;
+- broad relief;
 - lowland breakup;
 - mountain and ridge belts;
 - valley network;
@@ -71,9 +76,11 @@ The global patch tree and local detail clipmap are intentionally separate:
   plain, and land signals rather than an unrelated local noise stack;
 - final rendering should stay on continuous global terrain until the local layer
   has a real local/global morph, persistent topology, or streaming ownership
-  policy. The first final-view handoff exposed local extent and weak ownership
-  boundaries. `local-detail-final` is now the shaded inspection path for that
-  handoff, while default `final` remains conservative.
+policy. The first final-view handoff exposed local extent and weak ownership
+boundaries. `local-detail-final` is now the bounded shaded inspection path for
+that handoff, while `local-detail-horizon` is the explicit full-range diagnostic
+for horizon-scale inspection and global cutout. Default `final` remains
+conservative.
 
 ## Long Batch Result
 
@@ -83,9 +90,9 @@ The long batch is considered useful because:
   character;
 - terrain materials derive from elevation, slope, moisture,
   temperature, shoreline, and water depth;
-- local detail diagnostics expose ownership, blend, height, semantic feature
-  channels, and shaded handoff without forcing the unfinished handoff into the
-  default final view;
+- local detail diagnostics expose ownership, blend, LOD, height, semantic
+  feature channels, bounded shaded handoff, and explicit horizon-scale
+  inspection without forcing the unfinished handoff into the default final view;
 - LOD diagnostics report enough near-cell, active-level, and tile-summary data
   to explain terrain scale at the camera;
 - docs and README clearly state what is now active, what remains deferred, and

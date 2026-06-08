@@ -217,18 +217,19 @@ Current implementation notes:
   half extent, and is the v1 near-field terrain detail layer. Its runtime plan
   is altitude-aware: levels whose projected cell size is subpixel are skipped,
   medium-altitude views start from a coarser center patch plus outer rings, and
-  orbit-scale views allocate no local-detail mesh. Local displacement is now a
-  semantic residual over the global terrain field: ridge uplift, channel cuts,
-  and plain undulation are gated by the same continent, relief, mountain,
-  valley, plain, and land signals that shape the global terrain instead of by an
-  unrelated local noise stack. The current live renderer keeps the clipmap out
-  of the default final view because the first final-view handoff exposed
-  unfinished local/global ownership. Terrain-field debug views and explicit
-  diagnostic views (`local-detail-wireframe`, `local-detail-blend`,
-  `local-detail-height`, and `local-detail-features`) inspect ownership, blend,
-  displacement, and residual channels. `local-detail-final` is the opt-in
-  shaded inspection path until local/global morphing, persistent topology, and
-  streaming are explicit.
+  orbit-scale views allocate no local-detail mesh. Normal local-detail debug
+  views are bounded by the configured/runtime local extent; `local-detail-horizon`
+  is the explicit full-range diagnostic for horizon-scale inspection and global
+  cutout. Local displacement is now a semantic residual over the global terrain
+  field: ridge uplift, channel cuts, and plain undulation are gated by the same
+  continent, relief, mountain, valley, plain, and land signals that shape the
+  global terrain instead of by an unrelated local noise stack. The current live
+  renderer keeps the clipmap out of the default final view because the first
+  final-view handoff exposed unfinished local/global ownership. Terrain-field
+  debug views and explicit diagnostic views (`local-detail-wireframe`,
+  `local-detail-blend`, `local-detail-lod`, `local-detail-height`,
+  `local-detail-features`, and `local-detail-final`) inspect ownership, blend,
+  active LODs, displacement, residual channels, and shaded bounded handoff.
   It is still procedural and project-local: no terrain streaming, ocean port,
   texture cache, persistent topology, morph policy, or compute terrain
   generation is part of this first consumer.
@@ -249,26 +250,30 @@ Current implementation notes:
   CPU and shader paths now go through a named project-local surface-field
   contract: height, world position, normal, height above sea level, water depth,
   normalized bathymetry, shoreline mask, land mask, normalized elevation,
-  normalized slope, moisture, temperature, roughness, and a simple material
-  band. It now has named procedural landform layers: domain-warped
-  continent/ocean structure, lowland breakup, ridge belts, valley cuts, and
-  land/relief-gated fine detail, plus patch-cell-scaled normal sampling. Water
-  classification is based on explicit sea level; bathymetry and shoreline are
-  diagnostic fields, not yet a separate ocean layer. The terrain detail batch is
-  tracked in
+  normalized slope, moisture, temperature, roughness, simple material bands, and
+  terrain frequency bands. The frequency bands expose base continent/ocean
+  shape, broad relief, mid-detail ridge/valley residuals, and fine residual
+  detail; `terrain-band-base`, `terrain-band-relief`, and
+  `terrain-band-detail` debug views inspect them. It now has named procedural
+  landform layers: domain-warped continent/ocean structure, lowland breakup,
+  ridge belts, valley cuts, and land/relief-gated fine detail, plus
+  patch-cell-scaled normal sampling. Water classification is based on explicit
+  sea level; bathymetry and shoreline are diagnostic fields, not yet a separate
+  ocean layer. The terrain detail batch is tracked in
   [`planet-terrain-field-v2.md`](../notes/planet-terrain-field-v2.md): keep the
   source procedural and project-local, but make tile payload summaries and field
   diagnostics credible enough for later ocean, biome, cache, and streaming
   layers.
 - Current debug views cover patch identity, LOD level, screen error, seam
-  skirts, approximate metric cell edge, normalized terrain height, normalized
-  terrain slope, terrain material bands, bathymetry, shoreline, land mask,
-  moisture, temperature, roughness, wireframe grid, LOD transition pressure,
-  celestial-plane validation, and local-detail clipmap ownership, displacement,
-  semantic residual channels, and shaded handoff. Local-detail diagnostics are
+  skirts, approximate metric cell edge, normalized terrain height, terrain
+  frequency bands, normalized terrain slope, terrain material bands, bathymetry,
+  shoreline, land mask, moisture, temperature, roughness, wireframe grid, LOD
+  transition pressure, celestial-plane validation, and local-detail clipmap
+  ownership, active LODs, displacement, semantic residual channels, bounded
+  shaded handoff, and horizon-scale inspection. Local-detail diagnostics are
   inspection tools; default final rendering remains on the continuous global
   surface while `local-detail-final` and terrain-field views can consume the
-  same near-field surface when the altitude-gated blend is active.
+  same bounded near-field surface when the altitude-gated blend is active.
 - Planet rendering has moved away from the shared atmosphere background/runtime
   for now. The shared path was useful for ocean and atmosphere demos, but its
   demo-oriented sky clock and inline celestial disks were the wrong source of
@@ -363,8 +368,8 @@ Current alignment by area:
 | --- | --- |
 | Frame and camera | Done as v1. Camera state is double precision, render origin is camera-relative, and frame data distinguishes datum altitude, sampled terrain height, and terrain-relative clearance. |
 | Global surface LOD | Done as v1. The planner is coverage-first, keeps fallback parents available, uses hysteresis, repairs selected neighbor deltas to a single LOD step, and accounts for terrain displacement in screen-error bounds. |
-| Procedural terrain field | Active contract, not just a visual placeholder. CPU tests, tile summaries, shader displacement, material bands, water depth, shoreline, climate, and roughness use the same project-local vocabulary. |
-| Local detail clipmap | Diagnostic/inspection layer. The altitude-gated clipmap now uses semantic ridge/channel/plain residuals over the global terrain field and can contribute to local-detail, terrain-field, and opt-in shaded inspection rendering. Default final rendering stays on continuous global terrain until local/global morphing, persistent topology, streaming, and ocean payloads are explicit. |
+| Procedural terrain field | Active contract, not just a visual placeholder. CPU tests, tile summaries, shader displacement, named terrain bands, material bands, water depth, shoreline, climate, and roughness use the same project-local vocabulary. |
+| Local detail clipmap | Diagnostic/inspection layer. The altitude-gated clipmap now uses semantic ridge/channel/plain residuals over the global terrain field and can contribute to bounded local-detail, terrain-field, and opt-in shaded inspection rendering. `local-detail-horizon` is reserved for full-range horizon diagnostics. Default final rendering stays on continuous global terrain until local/global morphing, persistent topology, streaming, and ocean payloads are explicit. |
 | Celestial and atmosphere | Done as v1. The planet project owns mean solar time, sun/moon state, project-local sky/atmosphere, view-aware exposure, and moon body rendering. Atmosphere LUTs, physical transmittance assets, eclipses, and real ephemeris are deferred. |
 | Streaming and resource residency | Deferred. Current runtime replans CPU patch lists and lazily uploads instance buffers, but it is not an out-of-core tile streamer or async residency manager. |
 | Planet/ocean integration | Deferred. Ocean should port in as a local water layer once the planet frame, terrain field, sea datum, local detail clipmap, and render order are stable enough. |
@@ -475,7 +480,7 @@ this architecture note.
 Current next sequence:
 
 1. Harden local/global terrain morphing so semantic local-detail output can move
-   from the opt-in `local-detail-final` inspection path into default final
+   from the bounded `local-detail-final` inspection path into default final
    rendering without exposing local extent or ownership boundaries.
 2. Define persistent topology plus cache/streaming contracts for terrain,
    bathymetry, and future ocean payloads.

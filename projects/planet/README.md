@@ -16,6 +16,9 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view lod-level
 ./build/dev/projects/planet/planet --debug-view cell-edge
 ./build/dev/projects/planet/planet --debug-view terrain-height
+./build/dev/projects/planet/planet --debug-view terrain-band-base
+./build/dev/projects/planet/planet --debug-view terrain-band-relief
+./build/dev/projects/planet/planet --debug-view terrain-band-detail
 ./build/dev/projects/planet/planet --debug-view terrain-slope
 ./build/dev/projects/planet/planet --debug-view terrain-material
 ./build/dev/projects/planet/planet --debug-view lod-transition
@@ -29,9 +32,11 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view celestial-planes
 ./build/dev/projects/planet/planet --debug-view local-detail-wireframe
 ./build/dev/projects/planet/planet --debug-view local-detail-blend
+./build/dev/projects/planet/planet --debug-view local-detail-lod
 ./build/dev/projects/planet/planet --debug-view local-detail-height
 ./build/dev/projects/planet/planet --debug-view local-detail-features
 ./build/dev/projects/planet/planet --debug-view local-detail-final
+./build/dev/projects/planet/planet --debug-view local-detail-horizon
 ./build/dev/projects/planet/planet --debug-view seams
 ./build/dev/projects/planet/planet --planet-atmosphere-mode physical
 ./build/dev/projects/planet/planet --planet-atmosphere-haze-strength 0.18 --planet-atmosphere-aerial-strength 0.35
@@ -40,7 +45,7 @@ Run it with:
 ./build/dev/projects/planet/planet --planet-local-detail-lod-levels 6 --planet-local-detail-cells 128 --planet-local-detail-outer-extent-m 8192
 ./build/dev/projects/planet/planet --planet-local-detail-height-m 220 --planet-local-detail-scale-m 180
 ./build/dev/projects/planet/planet --no-planet-local-detail
-./build/dev/projects/planet/planet --planet-terrain-mid-detail-strength 0.45 --planet-terrain-fine-detail-strength 0.16 --planet-terrain-fine-detail-scale 12
+./build/dev/projects/planet/planet --planet-terrain-mid-detail-strength 0.58 --planet-terrain-fine-detail-strength 0.12 --planet-terrain-fine-detail-scale 12
 ./build/dev/projects/planet/planet --planet-sea-level-m 0 --planet-shoreline-width-m 1500
 ```
 
@@ -64,8 +69,8 @@ The broader manual capture matrix is tracked in
 | --- | --- |
 | Planet frame/camera | Done as v1: double-precision camera position, camera-relative GPU rendering, datum height, terrain height, and terrain-relative clearance are explicit. |
 | Surface LOD | Done as v1: coverage-first cube-sphere patches, live instance-buffer uploads, hysteresis, single-step neighbor repair, terrain-aware screen-error bounds, and wire/debug diagnostics. |
-| Terrain field | Active procedural contract: CPU/shader sampling share height, normal, water depth, shoreline, material, climate, roughness, and tile-summary vocabulary. It is not final art direction or streamed data. |
-| Local detail clipmap | Diagnostic/inspection layer: altitude-gated near-field terrain detail can be inspected in local-detail and terrain-field views. Default final rendering stays on continuous global terrain until local/global morphing, persistent topology, streaming, and ocean payloads are designed. |
+| Terrain field | Active procedural contract: CPU/shader sampling share height, named terrain bands, normal, water depth, shoreline, material, climate, roughness, and tile-summary vocabulary. It is not final art direction or streamed data. |
+| Local detail clipmap | Diagnostic/inspection layer: altitude-gated near-field terrain detail can be inspected in bounded local-detail and terrain-field views, with `local-detail-horizon` reserved for horizon-scale/full-range inspection. Default final rendering stays on continuous global terrain until local/global morphing, persistent topology, streaming, and ocean payloads are designed. |
 | Sky/celestial/atmosphere | Done as v1: planet-owned mean solar clock, sun/moon directions, depth-tested moon body geometry, project-local atmosphere, HDR post, and view-aware exposure. Full LUT/transmittance atmosphere and true ephemeris remain deferred. |
 | Streaming/cache | Deferred: current patch replans and lazy uploads are not an out-of-core streamer. Parent coverage remains renderable while future child/tile data is prepared. |
 | Ocean integration | Deferred: `projects/ocean` stays local-water focused until planet frame, LOD, terrain, and local-detail contracts are ready to host it as one surface layer. |
@@ -73,10 +78,12 @@ The broader manual capture matrix is tracked in
 
 Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 `screen-error`, `lod-transition`, `seams`, `cell-edge`, `terrain-height`,
+`terrain-band-base`, `terrain-band-relief`, `terrain-band-detail`,
 `terrain-slope`, `terrain-material`, `bathymetry`, `shoreline`, `land-mask`,
 `moisture`, `temperature`, `roughness`, `wireframe`, `celestial-planes`,
-`local-detail-wireframe`, `local-detail-blend`, `local-detail-height`,
-`local-detail-features`, and `local-detail-final`.
+`local-detail-wireframe`, `local-detail-blend`, `local-detail-lod`,
+`local-detail-height`, `local-detail-features`, `local-detail-final`, and
+`local-detail-horizon`.
 `celestial-planes` colors the equator, ecliptic, and lunar orbit great circles
 plus sub-solar/sub-lunar markers for validating the mean celestial model.
 Windowed controls are applied live where possible. Left drag orbits the planet,
@@ -118,7 +125,7 @@ clipmap levels, 128 cells per axis, an 8192 m outer half extent, and a 4 m near
 cell. Runtime planning selects only the levels whose cell size is large enough
 to matter in the current view; orbit-scale cameras allocate no local-detail
 mesh, mid-altitude views start from a coarser center patch, and close surface
-views can activate the full fine range. In v1 it renders as an explicit
+views can activate the full fine range. In v1 it renders as an explicit bounded
 diagnostic/inspection path and reports active level range, patch, vertex,
 triangle, cell-size, projected-cell, surface weight, and blend diagnostics in
 the UI. Local-detail debug views and terrain-field debug views can use the local
@@ -136,7 +143,10 @@ shows the active ownership/cutout mask, and `local-detail-height` isolates the
 added detail displacement. `local-detail-features` colors the semantic local
 ridge, channel, and plain residuals that feed that displacement.
 `local-detail-final` renders the same shaded material path as `final` while
-using the local-detail surface and global cutout as an opt-in inspection view.
+using the bounded local-detail surface as an opt-in inspection view.
+`local-detail-horizon` is the full-range diagnostic: it expands the clipmap out
+to the horizon-scale inspection extent and uses the global cutout to make local
+coverage and ownership boundaries obvious.
 
 Planet surface LOD is coverage-first. Root patches provide guaranteed coarse
 coverage for every planet domain, and view/horizon culling only stops
@@ -155,14 +165,16 @@ construction and creates stable keys for later terrain, bathymetry, cache, or
 streaming work.
 
 The terrain controls are procedural contract pressure, not the final terrain
-system or final art direction. Terrain now goes through a project-local surface-field contract:
-CPU and shader paths sample deterministic height, world position, normal,
-height above sea level, water depth, normalized bathymetry, shoreline mask, land
-mask, normalized elevation, normalized slope, moisture, temperature, roughness,
-and a simple material band. The live renderer displaces the reusable grid in the
-vertex shader with deterministic multi-band terrain: domain-warped
-continent/ocean structure, lowland breakup, ridge belts, valley cuts, and
-land/relief-gated fine detail. Normals are recomputed from a patch-cell-scaled sample step so
+system or final art direction. Terrain now goes through a project-local
+surface-field contract: CPU and shader paths sample deterministic height, world
+position, normal, height above sea level, water depth, normalized bathymetry,
+shoreline mask, land mask, normalized elevation, normalized slope, moisture,
+temperature, roughness, simple material bands, and named terrain frequency
+bands for base shape, broad relief, mid-detail ridges/valleys, and fine residual
+detail. The live renderer displaces the reusable grid in the vertex shader with
+deterministic multi-band terrain: domain-warped continent/ocean structure,
+lowland breakup, ridge belts, valley cuts, and land/relief-gated fine detail.
+Normals are recomputed from a patch-cell-scaled sample step so
 higher LOD reveals smaller terrain features instead of only smoothing the mesh.
 The CPU mesh builder and tile payload path remain as diagnostic/test paths for
 the same patch contracts.

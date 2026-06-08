@@ -109,6 +109,9 @@ These captures pressure the current procedural terrain and sea-level contracts:
 
 ```sh
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view terrain-height --output outputs/planet-debug-terrain-height.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view terrain-band-base --output outputs/planet-debug-terrain-band-base.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view terrain-band-relief --output outputs/planet-debug-terrain-band-relief.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view terrain-band-detail --output outputs/planet-debug-terrain-band-detail.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view terrain-slope --output outputs/planet-debug-terrain-slope.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view bathymetry --output outputs/planet-debug-bathymetry.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view shoreline --output outputs/planet-debug-shoreline.png
@@ -116,4 +119,5 @@ These captures pressure the current procedural terrain and sea-level contracts:
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view moisture --output outputs/planet-debug-moisture.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view temperature --output outputs/planet-debug-temperature.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --debug-view roughness --output outputs/planet-debug-roughness.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-camera-mode surface --debug-view local-detail-horizon --output outputs/planet-debug-local-detail-horizon.png
 ```
