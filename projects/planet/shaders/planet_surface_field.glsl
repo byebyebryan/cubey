@@ -86,6 +86,16 @@ vec2 planet_surface_terrain_detail_strengths() {
     return vec2(mid, fine);
 }
 
+struct PlanetTerrainFeatureContext {
+    vec3 domain_point;
+    float continent_mask;
+    float mountain_belt;
+    float valley_network;
+    float relief_gate;
+    float plain_gate;
+    float land_mask;
+};
+
 vec3 planet_surface_terrain_domain_point(vec3 sphere_normal) {
     uint seed = uint(surface_frame.terrain_options.z + 0.5);
     vec3 base = sphere_normal * max(surface_frame.terrain_options.y, 0.0001);
@@ -128,6 +138,25 @@ float planet_surface_terrain_valley_network(vec3 sphere_normal) {
     return planet_surface_terrain_ridge_profile(channel * 1.35, 2.9);
 }
 
+PlanetTerrainFeatureContext planet_surface_terrain_feature_context(vec3 sphere_normal) {
+    if (surface_frame.terrain_options.x <= 0.0) {
+        return PlanetTerrainFeatureContext(vec3(0.0), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    }
+    float continent_mask = planet_surface_terrain_continent_mask(sphere_normal);
+    float mountain_belt = planet_surface_terrain_mountain_belt(sphere_normal);
+    float relief_gate = planet_surface_smootherstep((continent_mask - 0.24) / 0.54);
+    float plain_gate = planet_surface_smootherstep((continent_mask - 0.36) / 0.42) *
+                       (1.0 - smoothstep(0.30, 0.72, mountain_belt));
+    return PlanetTerrainFeatureContext(
+        planet_surface_terrain_domain_point(sphere_normal),
+        continent_mask,
+        mountain_belt,
+        planet_surface_terrain_valley_network(sphere_normal),
+        relief_gate,
+        plain_gate,
+        planet_surface_smootherstep((continent_mask - 0.30) / 0.42));
+}
+
 float planet_surface_terrain_height_m(vec3 sphere_normal) {
     float height_scale = surface_frame.terrain_options.x;
     if (height_scale <= 0.0) {
@@ -135,10 +164,11 @@ float planet_surface_terrain_height_m(vec3 sphere_normal) {
     }
 
     uint seed = uint(surface_frame.terrain_options.z + 0.5);
-    vec3 p = planet_surface_terrain_domain_point(sphere_normal);
+    PlanetTerrainFeatureContext features = planet_surface_terrain_feature_context(sphere_normal);
+    vec3 p = features.domain_point;
     vec2 detail_strength = planet_surface_terrain_detail_strengths();
-    float continent_mask = planet_surface_terrain_continent_mask(sphere_normal);
-    float mountain_belt = planet_surface_terrain_mountain_belt(sphere_normal);
+    float continent_mask = features.continent_mask;
+    float mountain_belt = features.mountain_belt;
     float broad = planet_surface_fbm(p + vec3(1.7, -3.2, 5.1), seed, 4U);
     float lowland = planet_surface_fbm(p * 2.15 + vec3(0.4, 3.2, -2.0), seed + 19U, 4U);
     float ridge_source =
@@ -148,14 +178,13 @@ float planet_surface_terrain_height_m(vec3 sphere_normal) {
     float ridges = max(planet_surface_terrain_ridge_profile(ridge_source, 2.7),
                        planet_surface_terrain_ridge_profile(ridge_source_secondary, 2.3) * 0.52);
     float basin = planet_surface_fbm(p * 1.18 + vec3(5.7, 0.3, -6.1), seed + 73U, 4U);
-    float valleys = planet_surface_terrain_valley_network(sphere_normal);
+    float valleys = features.valley_network;
     float shelf = planet_surface_smootherstep((continent_mask - 0.05) / 0.46);
     float ocean_floor = mix(-0.72 + broad * 0.08 + basin * 0.07,
                             -0.18 + broad * 0.10 + basin * 0.04, shelf);
     float land_base = (continent_mask - 0.38) * 0.72 + broad * 0.11 + lowland * 0.16;
-    float relief_gate = planet_surface_smootherstep((continent_mask - 0.24) / 0.54);
-    float plain_gate = planet_surface_smootherstep((continent_mask - 0.36) / 0.42) *
-                       (1.0 - smoothstep(0.30, 0.72, mountain_belt));
+    float relief_gate = features.relief_gate;
+    float plain_gate = features.plain_gate;
     float mountains = ridges * mountain_belt * relief_gate * detail_strength.x * 1.22;
     float valley_cut = valleys * relief_gate * detail_strength.x *
                        (0.08 + mountain_belt * 0.22 + plain_gate * 0.06);

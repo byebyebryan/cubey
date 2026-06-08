@@ -333,13 +333,35 @@ cubey::math::DVec3 planet_surface_sphere_world_position_m(const PlanetConfig& co
     };
 }
 
+PlanetTerrainFeatureContext
+planet_surface_terrain_feature_context(const PlanetConfig& config,
+                                       cubey::math::Vec3 sphere_normal) {
+    if (!config.terrain_enabled || config.terrain_height_scale_m <= 0.0F) {
+        return {};
+    }
+    const float continent_mask = terrain_continent_mask(config, sphere_normal);
+    const float mountain_belt = terrain_mountain_belt(config, sphere_normal);
+    const float relief_gate = smootherstep((continent_mask - 0.24F) / 0.54F);
+    const float plain_gate = smootherstep((continent_mask - 0.36F) / 0.42F) *
+                             (1.0F - smootherstep((mountain_belt - 0.30F) / 0.42F));
+    return {
+        .domain_point = terrain_domain_point(config, sphere_normal),
+        .continent_mask = continent_mask,
+        .mountain_belt = mountain_belt,
+        .valley_network = terrain_valley_network(config, sphere_normal),
+        .relief_gate = relief_gate,
+        .plain_gate = plain_gate,
+        .land_mask = smootherstep((continent_mask - 0.30F) / 0.42F),
+    };
+}
+
 float planet_surface_terrain_height_m(const PlanetConfig& config, cubey::math::Vec3 sphere_normal) {
     if (!config.terrain_enabled || config.terrain_height_scale_m <= 0.0F) {
         return 0.0F;
     }
-    const cubey::math::Vec3 p = terrain_domain_point(config, sphere_normal);
-    const float continent_mask = terrain_continent_mask(config, sphere_normal);
-    const float mountain_belt = terrain_mountain_belt(config, sphere_normal);
+    const PlanetTerrainFeatureContext features =
+        planet_surface_terrain_feature_context(config, sphere_normal);
+    const cubey::math::Vec3 p = features.domain_point;
     const float broad =
         fbm(p + cubey::math::Vec3{1.7F, -3.2F, 5.1F}, config.terrain_seed, 4U);
     const float lowland =
@@ -352,15 +374,16 @@ float planet_surface_terrain_height_m(const PlanetConfig& config, cubey::math::V
                                   terrain_ridge_profile(ridge_source_secondary, 2.3F) * 0.52F);
     const float basin =
         fbm(p * 1.18F + cubey::math::Vec3{5.7F, 0.3F, -6.1F}, config.terrain_seed + 73U, 4U);
-    const float valleys = terrain_valley_network(config, sphere_normal);
+    const float continent_mask = features.continent_mask;
+    const float mountain_belt = features.mountain_belt;
+    const float valleys = features.valley_network;
     const float shelf = smootherstep((continent_mask - 0.05F) / 0.46F);
     const float ocean_floor = lerp(-0.72F + broad * 0.08F + basin * 0.07F,
                                    -0.18F + broad * 0.10F + basin * 0.04F, shelf);
     const float land_base =
         (continent_mask - 0.38F) * 0.72F + broad * 0.11F + lowland * 0.16F;
-    const float relief_gate = smootherstep((continent_mask - 0.24F) / 0.54F);
-    const float plain_gate = smootherstep((continent_mask - 0.36F) / 0.42F) *
-                             (1.0F - smootherstep((mountain_belt - 0.30F) / 0.42F));
+    const float relief_gate = features.relief_gate;
+    const float plain_gate = features.plain_gate;
     const float mountains =
         ridges * mountain_belt * relief_gate * config.terrain_mid_detail_strength * 1.22F;
     const float valley_cut =

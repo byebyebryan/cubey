@@ -218,6 +218,45 @@ void test_planet_surface_terrain_detail_controls_change_shape() {
     require(found_changed_vertex, "terrain detail controls should affect generated terrain shape");
 }
 
+void test_planet_surface_terrain_feature_context_is_bounded() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1200.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 8,
+        .max_lod_level = 0,
+        .terrain_enabled = true,
+        .terrain_height_scale_m = 80.0F,
+        .terrain_noise_scale = 3.0F,
+        .terrain_seed = 42U,
+    };
+    const cubey::math::Vec3 directions[] = {
+        glm::normalize(cubey::math::Vec3{1.0F, 0.25F, 0.10F}),
+        glm::normalize(cubey::math::Vec3{-0.40F, 0.65F, 0.72F}),
+        glm::normalize(cubey::math::Vec3{0.20F, -0.85F, 0.48F}),
+        highest_sampled_terrain_direction(config),
+    };
+
+    for (const cubey::math::Vec3 direction : directions) {
+        const cubey::projects::planet::PlanetTerrainFeatureContext features =
+            cubey::projects::planet::planet_surface_terrain_feature_context(config, direction);
+        require(std::isfinite(features.domain_point.x) && std::isfinite(features.domain_point.y) &&
+                    std::isfinite(features.domain_point.z),
+                "terrain feature context should expose a finite domain point");
+        require(features.continent_mask >= 0.0F && features.continent_mask <= 1.0F,
+                "terrain feature context should keep continent mask bounded");
+        require(features.mountain_belt >= 0.0F && features.mountain_belt <= 1.0F,
+                "terrain feature context should keep mountain belt bounded");
+        require(features.valley_network >= 0.0F && features.valley_network <= 1.0F,
+                "terrain feature context should keep valley network bounded");
+        require(features.relief_gate >= 0.0F && features.relief_gate <= 1.0F,
+                "terrain feature context should keep relief gate bounded");
+        require(features.plain_gate >= 0.0F && features.plain_gate <= 1.0F,
+                "terrain feature context should keep plain gate bounded");
+        require(features.land_mask >= 0.0F && features.land_mask <= 1.0F,
+                "terrain feature context should keep land mask bounded");
+    }
+}
+
 void test_planet_surface_field_disabled_terrain_returns_sphere_sample() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1200.0F,
@@ -1834,6 +1873,7 @@ int main() {
         test_planet_surface_vertices_stay_on_radius();
         test_planet_surface_terrain_displaces_within_height_bounds();
         test_planet_surface_terrain_detail_controls_change_shape();
+        test_planet_surface_terrain_feature_context_is_bounded();
         test_planet_surface_field_disabled_terrain_returns_sphere_sample();
         test_planet_surface_field_is_deterministic_for_seed();
         test_planet_surface_field_reports_bounded_height_normal_and_slope();

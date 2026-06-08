@@ -38,6 +38,16 @@ struct PlanetSurfaceSample {
     PlanetSurfaceMaterial material = PlanetSurfaceMaterial::Lowland;
 };
 
+struct PlanetTerrainFeatureContext {
+    cubey::math::Vec3 domain_point{0.0F, 0.0F, 0.0F};
+    float continent_mask = 0.0F;
+    float mountain_belt = 0.0F;
+    float valley_network = 0.0F;
+    float relief_gate = 0.0F;
+    float plain_gate = 0.0F;
+    float land_mask = 0.0F;
+};
+
 enum class PlanetSurfaceTileSource : std::uint8_t {
     Procedural,
 };
@@ -93,6 +103,9 @@ struct PlanetSurfaceTilePayload {
 [[nodiscard]] cubey::math::DVec3 planet_surface_sphere_world_position_m(const PlanetConfig& config,
                                                                         std::uint32_t face, float u,
                                                                         float v);
+[[nodiscard]] PlanetTerrainFeatureContext
+planet_surface_terrain_feature_context(const PlanetConfig& config,
+                                       cubey::math::Vec3 sphere_normal);
 [[nodiscard]] float planet_surface_terrain_height_m(const PlanetConfig& config,
                                                     cubey::math::Vec3 sphere_normal);
 [[nodiscard]] float planet_surface_height_above_sea_m(const PlanetConfig& config, float height_m);
