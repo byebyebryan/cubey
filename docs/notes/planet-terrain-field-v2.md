@@ -74,13 +74,12 @@ The global patch tree and local detail clipmap are intentionally separate:
   global terrain field. Current local detail uses ridge uplift, channel cuts,
   and plain undulation gated by the global continent, relief, mountain, valley,
   plain, and land signals rather than an unrelated local noise stack;
-- final rendering should stay on continuous global terrain until the local layer
-  has a real local/global morph, persistent topology, or streaming ownership
-policy. The first final-view handoff exposed local extent and weak ownership
-boundaries. `local-detail-final` is now the bounded shaded inspection path for
-that handoff, while `local-detail-horizon` is the explicit full-range diagnostic
-for horizon-scale inspection and global cutout. Default `final` remains
-conservative.
+- final rendering can now use bounded local detail near the ground so surface
+  view has visible terrain features. A real local/global morph, persistent
+  topology, and streaming ownership policy are still needed before this becomes
+  a robust terrain system. `local-detail-final` is the bounded shaded inspection
+  path for that handoff, while `local-detail-horizon` is the explicit full-range
+  diagnostic for horizon-scale inspection and global cutout.
 
 ## Long Batch Result
 
@@ -92,7 +91,7 @@ The long batch is considered useful because:
   temperature, shoreline, and water depth;
 - local detail diagnostics expose ownership, blend, LOD, height, semantic
   feature channels, bounded shaded handoff, and explicit horizon-scale
-  inspection without forcing the unfinished handoff into the default final view;
+  inspection while the default final view uses the bounded near-field layer;
 - LOD diagnostics report enough near-cell, active-level, and tile-summary data
   to explain terrain scale at the camera;
 - docs and README clearly state what is now active, what remains deferred, and

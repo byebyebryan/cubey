@@ -1874,9 +1874,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_uses_horizon_local_detail(
                 cubey::projects::planet::PlanetDebugView::LocalDetailHorizon),
             "local-detail-horizon should request full-range local-detail inspection");
-    require(!cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+    require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::Final),
-            "final planet view should keep continuous global terrain until local-detail handoff is solved");
+            "final planet view should use bounded local detail in surface view");
     require(!cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::TerrainBandBase),
             "terrain band debug views should inspect the global surface without local-detail overlay");

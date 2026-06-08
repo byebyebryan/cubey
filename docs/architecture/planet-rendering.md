@@ -224,8 +224,8 @@ Current implementation notes:
   field: ridge uplift, channel cuts, and plain undulation are gated by the same
   continent, relief, mountain, valley, plain, and land signals that shape the
   global terrain instead of by an unrelated local noise stack. The current live
-  renderer keeps the clipmap out of the default final view because the first
-  final-view handoff exposed unfinished local/global ownership. Terrain-field
+  renderer lets the bounded clipmap contribute to default final rendering near
+  the ground so surface view is not limited to global-scale terrain. Terrain-field
   debug views and explicit diagnostic views (`local-detail-wireframe`,
   `local-detail-blend`, `local-detail-lod`, `local-detail-height`,
   `local-detail-features`, and `local-detail-final`) inspect ownership, blend,
@@ -270,10 +270,10 @@ Current implementation notes:
   shoreline, land mask, moisture, temperature, roughness, wireframe grid, LOD
   transition pressure, celestial-plane validation, and local-detail clipmap
   ownership, active LODs, displacement, semantic residual channels, bounded
-  shaded handoff, and horizon-scale inspection. Local-detail diagnostics are
-  inspection tools; default final rendering remains on the continuous global
-  surface while `local-detail-final` and terrain-field views can consume the
-  same bounded near-field surface when the altitude-gated blend is active.
+  shaded handoff, and horizon-scale inspection. Default final rendering uses the
+  same bounded near-field surface when the altitude-gated blend is active;
+  `local-detail-final` keeps that handoff inspectable, and `local-detail-horizon`
+  remains the full-range diagnostic.
 - Planet rendering has moved away from the shared atmosphere background/runtime
   for now. The shared path was useful for ocean and atmosphere demos, but its
   demo-oriented sky clock and inline celestial disks were the wrong source of
@@ -369,7 +369,7 @@ Current alignment by area:
 | Frame and camera | Done as v1. Camera state is double precision, render origin is camera-relative, and frame data distinguishes datum altitude, sampled terrain height, and terrain-relative clearance. |
 | Global surface LOD | Done as v1. The planner is coverage-first, keeps fallback parents available, uses hysteresis, repairs selected neighbor deltas to a single LOD step, and accounts for terrain displacement in screen-error bounds. |
 | Procedural terrain field | Active contract, not just a visual placeholder. CPU tests, tile summaries, shader displacement, named terrain bands, material bands, water depth, shoreline, climate, and roughness use the same project-local vocabulary. |
-| Local detail clipmap | Diagnostic/inspection layer. The altitude-gated clipmap now uses semantic ridge/channel/plain residuals over the global terrain field and can contribute to bounded local-detail, terrain-field, and opt-in shaded inspection rendering. `local-detail-horizon` is reserved for full-range horizon diagnostics. Default final rendering stays on continuous global terrain until local/global morphing, persistent topology, streaming, and ocean payloads are explicit. |
+| Local detail clipmap | Near-field surface layer. The altitude-gated clipmap now uses semantic ridge/channel/plain residuals over the global terrain field and can contribute to `final`, bounded local-detail, terrain-field, and opt-in shaded inspection rendering. `local-detail-horizon` is reserved for full-range horizon diagnostics. Local/global morphing, persistent topology, streaming, and ocean payloads remain explicit follow-ups. |
 | Celestial and atmosphere | Done as v1. The planet project owns mean solar time, sun/moon state, project-local sky/atmosphere, view-aware exposure, and moon body rendering. Atmosphere LUTs, physical transmittance assets, eclipses, and real ephemeris are deferred. |
 | Streaming and resource residency | Deferred. Current runtime replans CPU patch lists and lazily uploads instance buffers, but it is not an out-of-core tile streamer or async residency manager. |
 | Planet/ocean integration | Deferred. Ocean should port in as a local water layer once the planet frame, terrain field, sea datum, local detail clipmap, and render order are stable enough. |
@@ -479,9 +479,9 @@ this architecture note.
 
 Current next sequence:
 
-1. Harden local/global terrain morphing so semantic local-detail output can move
-   from the bounded `local-detail-final` inspection path into default final
-   rendering without exposing local extent or ownership boundaries.
+1. Harden local/global terrain morphing so the bounded local-detail contribution
+   in default final rendering no longer depends on a hard global cutout and does
+   not expose local extent or ownership boundaries.
 2. Define persistent topology plus cache/streaming contracts for terrain,
    bathymetry, and future ocean payloads.
 3. Lock the terrain/ocean/atmosphere render-order and depth/field handoff.

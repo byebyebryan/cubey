@@ -70,7 +70,7 @@ The broader manual capture matrix is tracked in
 | Planet frame/camera | Done as v1: double-precision camera position, camera-relative GPU rendering, datum height, terrain height, and terrain-relative clearance are explicit. |
 | Surface LOD | Done as v1: coverage-first cube-sphere patches, live instance-buffer uploads, hysteresis, single-step neighbor repair, terrain-aware screen-error bounds, and wire/debug diagnostics. |
 | Terrain field | Active procedural contract: CPU/shader sampling share height, named terrain bands, normal, water depth, shoreline, material, climate, roughness, and tile-summary vocabulary. It is not final art direction or streamed data. |
-| Local detail clipmap | Diagnostic/inspection layer: altitude-gated near-field terrain detail can be inspected in bounded local-detail and terrain-field views, with `local-detail-horizon` reserved for horizon-scale/full-range inspection. Default final rendering stays on continuous global terrain until local/global morphing, persistent topology, streaming, and ocean payloads are designed. |
+| Local detail clipmap | Near-field surface layer: altitude-gated bounded local detail contributes to `final` surface view and can be inspected in local-detail and terrain-field views, with `local-detail-horizon` reserved for horizon-scale/full-range inspection. Local/global morphing, persistent topology, streaming, and ocean payloads remain deferred. |
 | Sky/celestial/atmosphere | Done as v1: planet-owned mean solar clock, sun/moon directions, depth-tested moon body geometry, project-local atmosphere, HDR post, and view-aware exposure. Full LUT/transmittance atmosphere and true ephemeris remain deferred. |
 | Streaming/cache | Deferred: current patch replans and lazy uploads are not an out-of-core streamer. Parent coverage remains renderable while future child/tile data is prepared. |
 | Ocean integration | Deferred: `projects/ocean` stays local-water focused until planet frame, LOD, terrain, and local-detail contracts are ready to host it as one surface layer. |
@@ -130,10 +130,10 @@ diagnostic/inspection path and reports active level range, patch, vertex,
 triangle, cell-size, projected-cell, surface weight, and blend diagnostics in
 the UI. Local-detail debug views and terrain-field debug views can use the local
 detail surface when terrain, local detail, and near-surface camera blending are
-active. The default `final` view intentionally stays on the continuous global
-surface: the earlier final-view handoff exposed local extent and weak ownership
-boundaries, which is the wrong product signal until persistent topology,
-morphing, cache, streaming, and ocean payloads are designed.
+active. The default `final` view now consumes the bounded local-detail surface
+near the ground so surface view has visible terrain features instead of relying
+only on the global cube-sphere field. Persistent topology, a real local/global
+morph, cache, streaming, and ocean payloads are still deferred.
 The local displacement is now a semantic residual over the global terrain field:
 ridge uplift, channel cuts, and plain undulation are gated by the same
 continent, relief, mountain, valley, plain, and land signals that shape the
@@ -143,7 +143,7 @@ shows the active ownership/cutout mask, and `local-detail-height` isolates the
 added detail displacement. `local-detail-features` colors the semantic local
 ridge, channel, and plain residuals that feed that displacement.
 `local-detail-final` renders the same shaded material path as `final` while
-using the bounded local-detail surface as an opt-in inspection view.
+forcing the bounded local-detail surface as an inspection view.
 `local-detail-horizon` is the full-range diagnostic: it expands the clipmap out
 to the horizon-scale inspection extent and uses the global cutout to make local
 coverage and ownership boundaries obvious.
