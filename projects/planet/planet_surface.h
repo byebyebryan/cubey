@@ -87,6 +87,7 @@ struct PlanetSurfaceView {
     float vertical_fov_radians = 1.0471975803375244F;
     float aspect_ratio = 16.0F / 9.0F;
     float viewport_height_px = 720.0F;
+    float lod_target_edge_px = 0.0F;
     bool culling_enabled = false;
 };
 

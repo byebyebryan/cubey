@@ -191,12 +191,18 @@ Current implementation notes:
   mapping derive UV bounds from the id instead of owning LOD addressing.
 - Live LOD selection and CPU mesh diagnostics intentionally have different
   limits. The instanced renderer currently accepts LOD 0-12, patch resolutions
-  up to 128, and defaults to LOD 12 with a 64x64 reusable grid and a 6 px target
-  edge. The CPU mesh path still rejects configurations that would materialize
-  too many vertices. Live planning has a fixed patch instance budget and falls
-  back to coarser parent coverage when aggressive interactive settings would
-  exceed it. Use the live renderer for interactive LOD pressure and the CPU mesh
-  path for bounded validation.
+  up to 128, and defaults to LOD 8 with a 32x32 reusable grid and a 6 px target
+  edge. The older LOD 12 / 64x64 default is now treated as a stress/debug
+  setting because it can push near-surface final rendering into multi-million
+  triangle budgets on midrange GPUs. Surface-mode planning has an additional
+  view-local target override that blends toward a coarser 14 px base target as
+  the camera reaches the ground. This keeps the global cube-sphere responsible
+  for continuous coverage while reserving meter-scale detail for the local layer
+  once its final-view handoff is solved. The CPU mesh path still rejects
+  configurations that would materialize too many vertices. Live planning has a
+  fixed patch instance budget and falls back to coarser parent coverage when
+  aggressive interactive settings would exceed it. Use the live renderer for
+  interactive LOD pressure and the CPU mesh path for bounded validation.
 - Camera-driven LOD replans no longer rebuild GPU instance buffers immediately
   or wait for the device. `PlanetSurfaceRuntime` owns the current patch plan,
   previous-selection hysteresis history, diagnostics, render-origin validity
@@ -210,13 +216,13 @@ Current implementation notes:
   half extent, and is the v1 near-field terrain detail layer. Its runtime plan
   is altitude-aware: levels whose projected cell size is subpixel are skipped,
   medium-altitude views start from a coarser center patch plus outer rings, and
-  orbit-scale views allocate no local-detail mesh. The current live renderer can
-  use the clipmap in final and terrain-field views when terrain, local detail,
-  and near-surface camera blending are active. The global patch shader applies a
-  softened ownership mask so the handoff does not show hard rectangular clipmap
-  footprints. Explicit diagnostic views (`local-detail-wireframe`,
-  `local-detail-blend`, and `local-detail-height`) remain the main way to
-  inspect ownership, blend, and displacement.
+  orbit-scale views allocate no local-detail mesh. The current live renderer
+  keeps the clipmap out of the default final view because the first final-view
+  handoff read as a finite noisy terrain island. Terrain-field debug views and
+  explicit diagnostic views (`local-detail-wireframe`, `local-detail-blend`,
+  and `local-detail-height`) remain the way to inspect ownership, blend, and
+  displacement until local/global morphing, persistent topology, and streaming
+  are explicit.
   It is still procedural and project-local: no terrain streaming, ocean port,
   texture cache, persistent topology, morph policy, or compute terrain
   generation is part of this first consumer.
@@ -351,7 +357,7 @@ Current alignment by area:
 | Frame and camera | Done as v1. Camera state is double precision, render origin is camera-relative, and frame data distinguishes datum altitude, sampled terrain height, and terrain-relative clearance. |
 | Global surface LOD | Done as v1. The planner is coverage-first, keeps fallback parents available, uses hysteresis, repairs selected neighbor deltas to a single LOD step, and accounts for terrain displacement in screen-error bounds. |
 | Procedural terrain field | Active contract, not just a visual placeholder. CPU tests, tile summaries, shader displacement, material bands, water depth, shoreline, climate, and roughness use the same project-local vocabulary. |
-| Local detail clipmap | Active v1 final/diagnostic layer. The altitude-gated clipmap can contribute to final and terrain-field rendering with softened global/local ownership, while persistent topology, morphing, streaming, and ocean payloads remain deferred. |
+| Local detail clipmap | Diagnostic/inspection layer. The altitude-gated clipmap can contribute to local-detail and terrain-field debug rendering, while default final rendering stays on continuous global terrain until local/global morphing, persistent topology, streaming, and ocean payloads are explicit. |
 | Celestial and atmosphere | Done as v1. The planet project owns mean solar time, sun/moon state, project-local sky/atmosphere, view-aware exposure, and moon body rendering. Atmosphere LUTs, physical transmittance assets, eclipses, and real ephemeris are deferred. |
 | Streaming and resource residency | Deferred. Current runtime replans CPU patch lists and lazily uploads instance buffers, but it is not an out-of-core tile streamer or async residency manager. |
 | Planet/ocean integration | Deferred. Ocean should port in as a local water layer once the planet frame, terrain field, sea datum, local detail clipmap, and render order are stable enough. |
@@ -486,8 +492,9 @@ back into this architecture note.
    atmosphere visibility, and smaller `PlanetUi` / `PlanetSurfaceRuntime`
    project boundaries.
 15. Done as a v1 terrain batch: expand tile summaries, strengthen procedural
-   landforms, and enable local-detail participation in final terrain with
-   diagnostics and smoke coverage.
+   landforms, and add local-detail diagnostics/smoke coverage. Final-view
+   local-detail participation was deferred again after visual review showed the
+   current handoff reads as a finite noisy terrain island.
 16. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 

@@ -87,7 +87,11 @@ Defer:
 
 Current state:
 
-- `Swapchain` owns swapchain images and views.
+- `Swapchain` owns swapchain images and views. Windowed swapchains prefer
+  `VK_PRESENT_MODE_MAILBOX_KHR` for interactive demos, fall back to
+  `VK_PRESENT_MODE_IMMEDIATE_KHR` when mailbox is unavailable, and finally fall
+  back to required FIFO support. Explicit non-default requests still fail if the
+  surface cannot support them.
 - `FrameResources` owns per-frame-slot command buffers, acquire semaphores, and
   fences, per-slot submitted GPU tickets, plus per-image present-ready
   semaphores.

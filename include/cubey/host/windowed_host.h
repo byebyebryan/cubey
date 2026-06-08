@@ -158,7 +158,8 @@ class WindowedHost {
                                                                       std::string_view label);
     void record_profile_frame(std::uint64_t frame_index, const FrameTiming& timing,
                               const std::optional<FrameStatsSample>& sample);
-    cubey::vulkan::RenderFrameResult draw_frame(const FrameTiming& timing);
+    cubey::vulkan::RenderFrameResult draw_frame(const FrameTiming& timing,
+                                                std::uint64_t frame_index);
     [[nodiscard]] std::vector<VkCommandBuffer>
     record_ui_command_buffers(const WindowedRenderFrame& render_frame);
     [[nodiscard]] WindowedAppContext context();

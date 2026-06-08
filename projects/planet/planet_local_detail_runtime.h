@@ -10,6 +10,7 @@ class PlanetLocalDetailRuntime {
   public:
     void rebuild(const PlanetConfig& config, const PlanetFrame& frame);
     void rebuild(const PlanetConfig& config, const PlanetFrame& frame, PlanetLocalDetailView view);
+    void clear();
     [[nodiscard]] bool topology_changed(const PlanetConfig& config) const;
     [[nodiscard]] bool topology_changed(const PlanetConfig& config,
                                         PlanetLocalDetailView view) const;

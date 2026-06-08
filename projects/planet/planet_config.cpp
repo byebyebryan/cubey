@@ -304,7 +304,7 @@ bool planet_debug_view_is_local_detail(PlanetDebugView view) {
 }
 
 bool planet_debug_view_uses_local_detail_surface(PlanetDebugView view) {
-    if (view == PlanetDebugView::Final || planet_debug_view_is_local_detail(view)) {
+    if (planet_debug_view_is_local_detail(view)) {
         return true;
     }
     return view == PlanetDebugView::TerrainHeight || view == PlanetDebugView::TerrainSlope ||

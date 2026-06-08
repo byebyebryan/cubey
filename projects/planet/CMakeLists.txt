@@ -225,8 +225,8 @@ if(BUILD_TESTING)
         local-detail-blend
     )
     cubey_add_planet_visual_smoke(
-        planet_local_detail_final_writes_png
-        planet-local-detail-final.png
+        planet_local_detail_height_writes_png
+        planet-local-detail-height.png
         --planet-camera-mode
         surface
         --planet-camera-altitude-m
@@ -235,6 +235,8 @@ if(BUILD_TESTING)
         5
         --planet-local-detail-cells
         32
+        --debug-view
+        local-detail-height
     )
     cubey_add_planet_visual_smoke(
         planet_surface_field_writes_png

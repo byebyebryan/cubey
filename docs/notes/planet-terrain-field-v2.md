@@ -3,8 +3,8 @@
 This note tracks the next long terrain-focused planet batch before ocean is
 ported into `projects/planet`. The field vocabulary and first tile payload
 boundary already exist; the remaining pressure is making surface view read as a
-credible large-scale terrain system and turning the local detail clipmap from a
-diagnostic path into a final-view participant with clear ownership rules.
+credible large-scale terrain system and defining where the local detail clipmap
+belongs before it becomes a final-view participant.
 
 ## Direction
 
@@ -65,10 +65,10 @@ The global patch tree and local detail clipmap are intentionally separate:
   sampling, and fallback coverage;
 - local detail owns viewer-centered meter-scale geometry and should only be
   active when the camera is low enough that those triangles are visible;
-- final rendering can consume local detail through an altitude-gated surface
-  weight and softened global/local ownership mask, but should not expose
-  rectangular clipmap footprints, hard cutout edges, or duplicated terrain
-  ownership.
+- final rendering should stay on continuous global terrain until the local layer
+  has a real local/global morph, persistent topology, or streaming ownership
+  policy. The first final-view handoff exposed rectangular extent and noisy
+  detail, so the clipmap is back to diagnostics and terrain-field inspection.
 
 ## Long Batch Result
 
@@ -78,8 +78,8 @@ The long batch is considered useful because:
   character;
 - terrain materials derive from elevation, slope, moisture,
   temperature, shoreline, and water depth;
-- local detail final-view integration is active as a v1 near-field layer, while
-  diagnostics still expose ownership and blend state;
+- local detail diagnostics expose ownership and blend state without forcing the
+  unfinished handoff into the default final view;
 - LOD diagnostics report enough near-cell, active-level, and tile-summary data
   to explain terrain scale at the camera;
 - docs and README clearly state what is now active, what remains deferred, and

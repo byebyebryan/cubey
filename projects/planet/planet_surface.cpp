@@ -146,6 +146,14 @@ class PlanetPatchSelectionLookup {
     };
 }
 
+[[nodiscard]] float effective_lod_target_edge_px(const PlanetConfig& config,
+                                                 PlanetSurfaceView view) {
+    if (std::isfinite(view.lod_target_edge_px) && view.lod_target_edge_px > 0.0F) {
+        return view.lod_target_edge_px;
+    }
+    return config.lod_target_edge_px;
+}
+
 [[nodiscard]] PrimitiveVec3 cell_edge_color(const PlanetConfig& config,
                                             const PlanetSurfacePatchInstance& patch) {
     const PlanetSurfacePatchBounds bounds = planet_surface_patch_bounds(config, patch.id);
@@ -362,9 +370,9 @@ void update_screen_error_range(PlanetSurfaceDiagnostics& diagnostics, float valu
     diagnostics.max_screen_error_px = std::max(diagnostics.max_screen_error_px, value);
 }
 
-void update_lod_transition_diagnostics(const PlanetConfig& config,
-                                       PlanetSurfaceDiagnostics& diagnostics, float error_px) {
-    const float pressure = lod_transition_pressure(error_px, config.lod_target_edge_px);
+void update_lod_transition_diagnostics(float target_edge_px, PlanetSurfaceDiagnostics& diagnostics,
+                                       float error_px) {
+    const float pressure = lod_transition_pressure(error_px, target_edge_px);
     diagnostics.max_transition_pressure = std::max(diagnostics.max_transition_pressure, pressure);
     if (pressure > 0.0F) {
         ++diagnostics.transition_candidate_count;
@@ -574,7 +582,8 @@ void reset_selected_patch_diagnostics(PlanetSurfaceDiagnostics& diagnostics) {
     diagnostics.max_cell_edge_m_by_lod.fill(0.0F);
 }
 
-void record_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurfaceDiagnostics& diagnostics,
+void record_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurfaceView view,
+                                       PlanetSurfaceDiagnostics& diagnostics,
                                        const PlanetSurfacePatchInstance& patch) {
     diagnostics.min_lod_level = diagnostics.visible_patch_count == 0U
                                     ? patch.id.level
@@ -584,7 +593,8 @@ void record_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurface
         ++diagnostics.patches_by_lod[patch.id.level];
     }
     update_screen_error_range(diagnostics, patch.screen_error_px);
-    update_lod_transition_diagnostics(config, diagnostics, patch.screen_error_px);
+    update_lod_transition_diagnostics(effective_lod_target_edge_px(config, view), diagnostics,
+                                      patch.screen_error_px);
     update_lod_cell_edge_range(diagnostics, patch.id.level, patch_cell_edge_m(config, patch));
     if (patch.id.level == 0U) {
         ++diagnostics.base_patch_count;
@@ -595,10 +605,11 @@ void record_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurface
     diagnostics.patch_count = diagnostics.visible_patch_count;
 }
 
-void refresh_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurfacePatchPlan& plan) {
+void refresh_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurfaceView view,
+                                        PlanetSurfacePatchPlan& plan) {
     reset_selected_patch_diagnostics(plan.diagnostics);
     for (const PlanetSurfacePatchInstance& patch : plan.selected_patches) {
-        record_selected_patch_diagnostics(config, plan.diagnostics, patch);
+        record_selected_patch_diagnostics(config, view, plan.diagnostics, patch);
     }
 }
 
@@ -709,15 +720,17 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
 }
 
 [[nodiscard]] float lod_refinement_threshold_px(const PlanetConfig& config,
+                                                PlanetSurfaceView view,
                                                 const PlanetPatchSelectionLookup& lookup,
                                                 PlanetSurfacePatchId id) {
+    const float target_edge_px = effective_lod_target_edge_px(config, view);
     if (lookup.was_refined(id)) {
-        return config.lod_target_edge_px * (1.0F - config.lod_hysteresis);
+        return target_edge_px * (1.0F - config.lod_hysteresis);
     }
     if (lookup.was_selected(id)) {
-        return config.lod_target_edge_px * (1.0F + config.lod_hysteresis);
+        return target_edge_px * (1.0F + config.lod_hysteresis);
     }
-    return config.lod_target_edge_px;
+    return target_edge_px;
 }
 
 [[nodiscard]] std::uint64_t root_patch_reserve(const PlanetConfig& config) {
@@ -734,9 +747,10 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
            kPlanetMaxLivePatchInstances;
 }
 
-[[nodiscard]] bool record_visible_patch(const PlanetConfig& config, PlanetSurfacePatchPlan& plan,
+[[nodiscard]] bool record_visible_patch(const PlanetConfig& config, PlanetSurfaceView view,
+                                        PlanetSurfacePatchPlan& plan,
                                         const PlanetSurfacePatchInstance& patch) {
-    record_selected_patch_diagnostics(config, plan.diagnostics, patch);
+    record_selected_patch_diagnostics(config, view, plan.diagnostics, patch);
     plan.selected_patches.push_back(patch);
     return plan.selected_patches.size() <= kPlanetMaxLivePatchInstances;
 }
@@ -748,9 +762,11 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
     patch.screen_error_px = patch_screen_error_px(config, view, patch);
     ++plan.diagnostics.planned_patch_count;
 
+    const float target_edge_px = effective_lod_target_edge_px(config, view);
     const bool raw_wants_refinement =
-        patch.id.level < config.max_lod_level && patch.screen_error_px > config.lod_target_edge_px;
-    const float refinement_threshold_px = lod_refinement_threshold_px(config, lookup, patch.id);
+        patch.id.level < config.max_lod_level && patch.screen_error_px > target_edge_px;
+    const float refinement_threshold_px =
+        lod_refinement_threshold_px(config, view, lookup, patch.id);
     const bool wants_refinement =
         patch.id.level < config.max_lod_level && patch.screen_error_px > refinement_threshold_px;
     if (raw_wants_refinement && !wants_refinement) {
@@ -762,16 +778,16 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
     if (wants_refinement && !patch_passes_horizon_cull(config, view, patch)) {
         record_refinement_cull(plan, true);
         ++plan.diagnostics.refinement_fallback_patch_count;
-        return record_visible_patch(config, plan, patch);
+        return record_visible_patch(config, view, plan, patch);
     }
     if (wants_refinement && !patch_passes_view_cull(config, view, patch)) {
         record_refinement_cull(plan, false);
         ++plan.diagnostics.refinement_fallback_patch_count;
-        return record_visible_patch(config, plan, patch);
+        return record_visible_patch(config, view, plan, patch);
     }
     if (wants_refinement && !can_refine_with_live_budget(config, plan)) {
         ++plan.diagnostics.budget_fallback_patch_count;
-        return record_visible_patch(config, plan, patch);
+        return record_visible_patch(config, view, plan, patch);
     }
 
     if (wants_refinement) {
@@ -799,11 +815,11 @@ void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
             plan.selected_patches.resize(selected_patch_snapshot);
             plan.diagnostics = diagnostics_snapshot;
             ++plan.diagnostics.budget_fallback_patch_count;
-            return record_visible_patch(config, plan, patch);
+            return record_visible_patch(config, view, plan, patch);
         }
         return true;
     }
-    return record_visible_patch(config, plan, patch);
+    return record_visible_patch(config, view, plan, patch);
 }
 
 [[nodiscard]] PlanetSurfacePatchPlan
@@ -919,7 +935,7 @@ void repair_neighbor_lod_transitions(const PlanetConfig& config, PlanetSurfaceVi
     for (std::size_t iteration = 0; iteration < iteration_limit; ++iteration) {
         const NeighborRepairStep step = repair_neighbor_lod_once(config, view, plan);
         if (step == NeighborRepairStep::Done) {
-            refresh_selected_patch_diagnostics(config, plan);
+            refresh_selected_patch_diagnostics(config, view, plan);
             update_neighbor_lod_diagnostics(
                 plan.diagnostics,
                 analyze_planet_surface_lod_neighbors(config, plan.selected_patches));
@@ -931,7 +947,7 @@ void repair_neighbor_lod_transitions(const PlanetConfig& config, PlanetSurfaceVi
         }
     }
 
-    refresh_selected_patch_diagnostics(config, plan);
+    refresh_selected_patch_diagnostics(config, view, plan);
     update_neighbor_lod_diagnostics(
         plan.diagnostics, analyze_planet_surface_lod_neighbors(config, plan.selected_patches));
     if (plan.diagnostics.max_lod_neighbor_delta > 1U) {

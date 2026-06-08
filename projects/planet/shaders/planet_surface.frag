@@ -61,8 +61,7 @@ int debug_view_option() {
 
 bool local_detail_surface_debug_enabled() {
     int debug_view = debug_view_option();
-    return debug_view == 0 || (debug_view >= 8 && debug_view <= 16) ||
-           (debug_view >= 19 && debug_view <= 21);
+    return (debug_view >= 8 && debug_view <= 16) || (debug_view >= 19 && debug_view <= 21);
 }
 
 bool local_detail_is_local_draw() {

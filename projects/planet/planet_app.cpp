@@ -36,6 +36,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -62,6 +63,7 @@ constexpr float kPlanetCameraBaseYaw = 0.55F;
 constexpr float kPlanetCameraBasePitch = 0.28F;
 constexpr float kPlanetMoonAngularRadiusScale = 4.0F;
 constexpr float kPlanetMoonShellDistanceFraction = 0.88F;
+constexpr float kPlanetSurfaceBaseLodTargetEdgePx = 14.0F;
 constexpr std::uint32_t kPlanetSurfaceFrameUniformBinding = 0;
 constexpr VkFormat kPlanetSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
@@ -200,8 +202,10 @@ class PlanetApp {
               planet_config_, config_, kPlanetCameraBaseYaw, kPlanetCameraBasePitch)) {
         refresh_frame();
         surface_runtime_.rebuild(planet_config_, frame_, surface_view(default_surface_extent()));
-        local_detail_runtime_.rebuild(planet_config_, frame_,
-                                      local_detail_view(default_surface_extent()));
+        if (local_detail_surface_requested()) {
+            local_detail_runtime_.rebuild(planet_config_, frame_,
+                                          local_detail_view(default_surface_extent()));
+        }
     }
 
     int run() {
@@ -412,10 +416,15 @@ class PlanetApp {
             rebuild_surface_resources(context.swapchain().extent());
             surface_rebuild_pending_ = false;
         }
-        if (!camera_interacting_ &&
+        if (local_detail_surface_requested() && !camera_interacting_ &&
             local_detail_runtime_.topology_changed(
                 planet_config_, local_detail_view(context.swapchain().extent()))) {
             rebuild_local_detail_resources(context, context.swapchain().extent());
+        }
+        if (!local_detail_surface_requested()) {
+            local_detail_mesh_.reset();
+        } else {
+            create_local_detail_mesh_if_needed(context.gpu());
         }
     }
 
@@ -542,9 +551,13 @@ class PlanetApp {
         refresh_frame();
         surface_runtime_.rebuild(planet_config_, frame_,
                                  surface_view(context.swapchain().extent()));
-        local_detail_runtime_.rebuild(planet_config_, frame_,
-                                      local_detail_view(context.swapchain().extent()));
         patch_grid_mesh_.emplace(context.gpu(), surface_runtime_.patch_grid().mesh_config());
+        if (local_detail_surface_requested()) {
+            local_detail_runtime_.rebuild(planet_config_, frame_,
+                                          local_detail_view(context.swapchain().extent()));
+        } else {
+            local_detail_runtime_.clear();
+        }
         create_local_detail_mesh_if_needed(context.gpu());
         surface_runtime_.resize_frame_slots(context.frame_slot_count());
         static_cast<void>(context.gpu().drain());
@@ -556,6 +569,10 @@ class PlanetApp {
         refresh_camera_limits_for_planet();
         refresh_frame();
         surface_runtime_.rebuild(planet_config_, frame_, surface_view(extent));
+        if (!local_detail_surface_requested()) {
+            local_detail_runtime_.clear();
+            local_detail_mesh_.reset();
+        }
     }
 
     void maybe_apply_planet_config(cubey::host::WindowedAppContext& context) {
@@ -631,6 +648,10 @@ class PlanetApp {
         const float aspect = extent.height == 0U ? 1.0F
                                                  : static_cast<float>(extent.width) /
                                                        static_cast<float>(extent.height);
+        const float surface_blend = planet_surface_camera_blend_from_clearance(
+            planet_config_, frame_.camera_surface_clearance_m);
+        const float surface_target =
+            std::max(planet_config_.lod_target_edge_px, kPlanetSurfaceBaseLodTargetEdgePx);
         return {
             .camera_world_position_m = frame_.camera_world_position_m,
             .camera_forward_world =
@@ -638,6 +659,8 @@ class PlanetApp {
             .vertical_fov_radians = camera_.fovy_radians(),
             .aspect_ratio = aspect,
             .viewport_height_px = static_cast<float>(std::max(extent.height, 1U)),
+            .lod_target_edge_px =
+                std::lerp(planet_config_.lod_target_edge_px, surface_target, surface_blend),
             .culling_enabled = true,
         };
     }
@@ -864,8 +887,14 @@ class PlanetApp {
         return planet_app_smoothstep(0.20F, 0.65F, exposure_surface_reference_weight());
     }
 
+    [[nodiscard]] bool local_detail_surface_requested() const {
+        return planet_config_.local_detail_enabled &&
+               planet_debug_view_uses_local_detail_surface(planet_config_.debug_view);
+    }
+
     [[nodiscard]] bool local_detail_draw_enabled() const {
-        return local_detail_runtime_.has_drawable_mesh() && local_detail_surface_weight() > 0.001F;
+        return local_detail_surface_requested() && local_detail_mesh_.has_value() &&
+               local_detail_runtime_.has_drawable_mesh() && local_detail_surface_weight() > 0.001F;
     }
 
     [[nodiscard]] float surface_direct_intensity() const {
@@ -1171,7 +1200,8 @@ class PlanetApp {
     }
 
     void create_local_detail_mesh_if_needed(cubey::vulkan::GpuRuntime& gpu) {
-        if (!local_detail_mesh_.has_value() && local_detail_runtime_.has_drawable_mesh()) {
+        if (local_detail_surface_requested() && !local_detail_mesh_.has_value() &&
+            local_detail_runtime_.has_drawable_mesh()) {
             local_detail_mesh_.emplace(gpu, local_detail_runtime_.mesh().mesh_config());
         }
     }

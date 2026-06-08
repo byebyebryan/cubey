@@ -70,3 +70,50 @@ void test_swapchain_surface_format_uses_srgb_default_for_undefined_surface() {
     require(selected.format == VK_FORMAT_B8G8R8A8_SRGB,
             "undefined surface format default should be an sRGB attachment");
 }
+
+void test_swapchain_present_mode_prefers_requested_mode() {
+    const std::array<VkPresentModeKHR, 2> modes{
+        VK_PRESENT_MODE_FIFO_KHR,
+        VK_PRESENT_MODE_MAILBOX_KHR,
+    };
+
+    const VkPresentModeKHR selected = cubey::vulkan::choose_swapchain_present_mode(modes);
+    require(selected == VK_PRESENT_MODE_MAILBOX_KHR,
+            "swapchain present mode should prefer mailbox when available");
+}
+
+void test_swapchain_present_mode_falls_back_from_mailbox_to_immediate() {
+    const std::array<VkPresentModeKHR, 2> modes{
+        VK_PRESENT_MODE_FIFO_KHR,
+        VK_PRESENT_MODE_IMMEDIATE_KHR,
+    };
+
+    const VkPresentModeKHR selected = cubey::vulkan::choose_swapchain_present_mode(modes);
+    require(selected == VK_PRESENT_MODE_IMMEDIATE_KHR,
+            "swapchain present mode should fall back to immediate before fifo");
+}
+
+void test_swapchain_present_mode_falls_back_from_mailbox_to_fifo() {
+    const std::array<VkPresentModeKHR, 1> modes{
+        VK_PRESENT_MODE_FIFO_KHR,
+    };
+
+    const VkPresentModeKHR selected = cubey::vulkan::choose_swapchain_present_mode(modes);
+    require(selected == VK_PRESENT_MODE_FIFO_KHR,
+            "swapchain present mode should fall back to fifo when required");
+}
+
+void test_swapchain_present_mode_rejects_unsupported_explicit_mode() {
+    const std::array<VkPresentModeKHR, 1> modes{
+        VK_PRESENT_MODE_FIFO_KHR,
+    };
+
+    bool threw = false;
+    try {
+        static_cast<void>(cubey::vulkan::choose_swapchain_present_mode(
+            modes, VK_PRESENT_MODE_IMMEDIATE_KHR));
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    require(threw, "swapchain present mode should reject unsupported explicit requests");
+}

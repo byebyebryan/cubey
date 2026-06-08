@@ -42,6 +42,10 @@ void test_submission_coordinator_submit_and_wait_marks_completion();
 void test_swapchain_surface_format_falls_back_to_unorm_when_srgb_is_missing();
 void test_swapchain_surface_format_prefers_srgb_color_attachment();
 void test_swapchain_surface_format_uses_srgb_default_for_undefined_surface();
+void test_swapchain_present_mode_falls_back_from_mailbox_to_fifo();
+void test_swapchain_present_mode_falls_back_from_mailbox_to_immediate();
+void test_swapchain_present_mode_prefers_requested_mode();
+void test_swapchain_present_mode_rejects_unsupported_explicit_mode();
 void test_transfer_helpers_describe_texture_and_readback_paths();
 
 namespace cubey::tests {
@@ -90,6 +94,10 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_swapchain_surface_format_prefers_srgb_color_attachment),
         CUBEY_TEST(test_swapchain_surface_format_falls_back_to_unorm_when_srgb_is_missing),
         CUBEY_TEST(test_swapchain_surface_format_uses_srgb_default_for_undefined_surface),
+        CUBEY_TEST(test_swapchain_present_mode_prefers_requested_mode),
+        CUBEY_TEST(test_swapchain_present_mode_falls_back_from_mailbox_to_immediate),
+        CUBEY_TEST(test_swapchain_present_mode_falls_back_from_mailbox_to_fifo),
+        CUBEY_TEST(test_swapchain_present_mode_rejects_unsupported_explicit_mode),
         CUBEY_TEST(test_transfer_helpers_describe_texture_and_readback_paths),
     };
     return tests;

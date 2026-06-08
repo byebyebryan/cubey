@@ -1014,6 +1014,34 @@ void test_planet_surface_planner_selects_near_lod() {
             "planet planner should report selected near-camera child patches");
 }
 
+void test_planet_surface_view_lod_target_can_reduce_surface_patch_budget() {
+    const cubey::projects::planet::PlanetConfig config{
+        .radius_m = 1000.0F,
+        .patches_per_face = 1,
+        .patch_resolution = 2,
+        .max_lod_level = 3,
+        .lod_target_edge_px = 0.5F,
+        .terrain_enabled = false,
+    };
+    const cubey::projects::planet::PlanetSurfaceView dense_view{
+        .camera_world_position_m = {0.0, 0.0, 1300.0},
+        .camera_forward_world = {0.0F, 0.0F, -1.0F},
+        .culling_enabled = false,
+    };
+    cubey::projects::planet::PlanetSurfaceView coarse_view = dense_view;
+    coarse_view.lod_target_edge_px = 80.0F;
+
+    const cubey::projects::planet::PlanetSurfacePatchPlan dense_plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, dense_view);
+    const cubey::projects::planet::PlanetSurfacePatchPlan coarse_plan =
+        cubey::projects::planet::plan_planet_surface_patches(config, coarse_view);
+
+    require(coarse_plan.diagnostics.patch_count < dense_plan.diagnostics.patch_count,
+            "view-specific LOD target should reduce selected patch count");
+    require(coarse_plan.diagnostics.max_lod_level <= dense_plan.diagnostics.max_lod_level,
+            "view-specific LOD target should not increase max selected LOD");
+}
+
 void test_planet_surface_planner_records_high_lod_diagnostics() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1000.0F,
@@ -1060,6 +1088,7 @@ void test_planet_surface_default_lod_reaches_near_camera_detail() {
 
 void test_planet_surface_earthlike_lod_reaches_meter_scale_budget() {
     cubey::projects::planet::PlanetConfig config{};
+    config.max_lod_level = cubey::projects::planet::kPlanetMaxLiveLodLevel;
     config.lod_target_edge_px = 1.0F;
     const cubey::projects::planet::PlanetSurfaceView view{
         .camera_world_position_m = {0.0, 0.0, config.radius_m + 50000.0},
@@ -1268,6 +1297,24 @@ void test_planet_local_detail_runtime_tracks_topology() {
     config.local_detail_cells_per_axis *= 2U;
     require(runtime.topology_changed(config),
             "planet local detail runtime should detect local-detail topology edits");
+}
+
+void test_planet_local_detail_runtime_exposes_inactive_diagnostics_after_clear() {
+    const cubey::projects::planet::PlanetConfig config{};
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 250.0});
+    cubey::projects::planet::PlanetLocalDetailRuntime runtime{};
+    runtime.rebuild(config, frame);
+    runtime.clear();
+
+    const cubey::projects::planet::PlanetLocalDetailDiagnostics& diagnostics =
+        runtime.diagnostics();
+    require(!diagnostics.enabled,
+            "cleared local detail runtime should expose inactive diagnostics");
+    require(diagnostics.triangle_count == 0U,
+            "cleared local detail runtime should not report drawable triangles");
+    require(runtime.topology_changed(config),
+            "cleared local detail runtime should require a rebuild before drawing");
 }
 
 void test_planet_surface_hysteresis_delays_split() {
@@ -1587,9 +1634,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_is_local_detail(
                 cubey::projects::planet::PlanetDebugView::LocalDetailHeight),
             "local-detail-height should enable local-detail diagnostic rendering");
-    require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+    require(!cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::Final),
-            "final planet view should allow local-detail surface rendering");
+            "final planet view should keep continuous global terrain until local-detail handoff is solved");
     require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::TerrainHeight),
             "terrain field debug views should allow local-detail surface rendering");
@@ -1810,6 +1857,7 @@ int main() {
         test_planet_surface_cpu_mesh_rejects_too_dense_live_lod();
         test_planet_surface_planner_keeps_fallback_when_camera_looks_away();
         test_planet_surface_planner_selects_near_lod();
+        test_planet_surface_view_lod_target_can_reduce_surface_patch_budget();
         test_planet_surface_planner_records_high_lod_diagnostics();
         test_planet_surface_default_lod_reaches_near_camera_detail();
         test_planet_surface_earthlike_lod_reaches_meter_scale_budget();
@@ -1820,6 +1868,7 @@ int main() {
         test_planet_local_detail_density_is_independent_of_planet_radius();
         test_planet_local_detail_mesh_matches_clipmap_budget();
         test_planet_local_detail_runtime_tracks_topology();
+        test_planet_local_detail_runtime_exposes_inactive_diagnostics_after_clear();
         test_planet_surface_hysteresis_delays_split();
         test_planet_surface_hysteresis_delays_merge();
         test_planet_surface_planner_falls_back_at_live_patch_budget();

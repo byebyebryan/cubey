@@ -159,7 +159,7 @@ int WindowedHost::run() {
         cubey::vulkan::RenderFrameResult result;
         {
             [[maybe_unused]] auto span = profile_span(frame, "host.draw_frame");
-            result = draw_frame(timing);
+            result = draw_frame(timing, frame);
         }
         if (result == cubey::vulkan::RenderFrameResult::RecreateSwapchain) {
             recreate_tracker.record_recreate_request();
@@ -409,7 +409,8 @@ void WindowedHost::record_profile_frame(std::uint64_t frame_index, const FrameTi
     });
 }
 
-cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& timing) {
+cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& timing,
+                                                          std::uint64_t frame_index) {
     cubey::vulkan::RenderContext render_context({
         .device = &device(),
         .swapchain = &swapchain(),
@@ -418,7 +419,11 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
     });
 
     cubey::vulkan::RenderFrame frame;
-    cubey::vulkan::RenderFrameResult result = render_context.begin_frame(&frame);
+    cubey::vulkan::RenderFrameResult result = cubey::vulkan::RenderFrameResult::Rendered;
+    {
+        [[maybe_unused]] auto span = profile_span(frame_index, "host.begin_frame");
+        result = render_context.begin_frame(&frame);
+    }
     if (result == cubey::vulkan::RenderFrameResult::RecreateSwapchain) {
         return result;
     }
@@ -435,9 +440,19 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
         .color_target = cubey::render::swapchain_color_target_view(swapchain(), frame.image_index),
         .timing = timing,
     };
-    callbacks_.record_frame(active_context, render_frame);
-    const std::vector<VkCommandBuffer> ui_command_buffers = record_ui_command_buffers(render_frame);
-    return render_context.end_frame(frame, ui_command_buffers);
+    {
+        [[maybe_unused]] auto span = profile_span(frame_index, "host.record_frame");
+        callbacks_.record_frame(active_context, render_frame);
+    }
+    std::vector<VkCommandBuffer> ui_command_buffers;
+    {
+        [[maybe_unused]] auto span = profile_span(frame_index, "host.record_ui_commands");
+        ui_command_buffers = record_ui_command_buffers(render_frame);
+    }
+    {
+        [[maybe_unused]] auto span = profile_span(frame_index, "host.end_frame");
+        return render_context.end_frame(frame, ui_command_buffers);
+    }
 }
 
 std::vector<VkCommandBuffer>

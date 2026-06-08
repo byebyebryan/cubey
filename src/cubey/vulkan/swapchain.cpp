@@ -72,6 +72,28 @@ VkSurfaceFormatKHR choose_swapchain_surface_format(std::span<const VkSurfaceForm
     return formats[0];
 }
 
+VkPresentModeKHR choose_swapchain_present_mode(std::span<const VkPresentModeKHR> modes,
+                                               VkPresentModeKHR requested) {
+    if (modes.empty()) {
+        throw std::runtime_error("surface reported no present modes");
+    }
+    const auto supports = [modes](VkPresentModeKHR mode) {
+        return std::ranges::find(modes, mode) != modes.end();
+    };
+    if (supports(requested)) {
+        return requested;
+    }
+    if (requested == VK_PRESENT_MODE_MAILBOX_KHR) {
+        if (supports(VK_PRESENT_MODE_IMMEDIATE_KHR)) {
+            return VK_PRESENT_MODE_IMMEDIATE_KHR;
+        }
+        if (supports(VK_PRESENT_MODE_FIFO_KHR)) {
+            return VK_PRESENT_MODE_FIFO_KHR;
+        }
+    }
+    throw std::runtime_error("surface does not support requested swapchain present mode");
+}
+
 Swapchain::Swapchain(const Device& device, const SwapchainConfig& config)
     : physical_device_(device.physical_device()), device_(device.handle()),
       surface_(config.surface), image_usage_(config.image_usage),
@@ -125,9 +147,7 @@ void Swapchain::create(VkExtent2D desired_extent) {
     check(vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_, surface_, &present_mode_count,
                                                     present_modes.data()),
           "vkGetPhysicalDeviceSurfacePresentModesKHR");
-    if (std::ranges::find(present_modes, present_mode_) == present_modes.end()) {
-        throw std::runtime_error("surface does not support requested swapchain present mode");
-    }
+    present_mode_ = choose_swapchain_present_mode(present_modes, present_mode_);
 
     surface_format_ = choose_swapchain_surface_format(formats);
 

@@ -14,11 +14,14 @@ struct SwapchainConfig {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkExtent2D desired_extent{1, 1};
     VkImageUsageFlags image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+    VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
 };
 
 [[nodiscard]] VkSurfaceFormatKHR
 choose_swapchain_surface_format(std::span<const VkSurfaceFormatKHR> formats);
+[[nodiscard]] VkPresentModeKHR choose_swapchain_present_mode(
+    std::span<const VkPresentModeKHR> modes,
+    VkPresentModeKHR requested = VK_PRESENT_MODE_MAILBOX_KHR);
 
 class Swapchain {
   public:
@@ -64,7 +67,7 @@ class Swapchain {
     VkDevice device_ = VK_NULL_HANDLE;
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkImageUsageFlags image_usage_ = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    VkPresentModeKHR present_mode_ = VK_PRESENT_MODE_FIFO_KHR;
+    VkPresentModeKHR present_mode_ = VK_PRESENT_MODE_MAILBOX_KHR;
     VkSwapchainKHR swapchain_ = VK_NULL_HANDLE;
     VkSurfaceFormatKHR surface_format_{};
     VkExtent2D extent_{};

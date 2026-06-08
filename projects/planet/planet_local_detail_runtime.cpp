@@ -16,6 +16,13 @@ void PlanetLocalDetailRuntime::rebuild(const PlanetConfig& config, const PlanetF
     has_build_ = true;
 }
 
+void PlanetLocalDetailRuntime::clear() {
+    build_ = {};
+    build_config_ = {};
+    build_view_ = {};
+    has_build_ = false;
+}
+
 bool PlanetLocalDetailRuntime::topology_changed(const PlanetConfig& config) const {
     return topology_changed(config, build_view_);
 }
@@ -52,8 +59,9 @@ const PlanetLocalDetailMeshData& PlanetLocalDetailRuntime::mesh() const {
 }
 
 const PlanetLocalDetailDiagnostics& PlanetLocalDetailRuntime::diagnostics() const {
+    static constexpr PlanetLocalDetailDiagnostics kInactiveDiagnostics{};
     if (!has_build_) {
-        throw std::runtime_error("planet local detail diagnostics are not initialized");
+        return kInactiveDiagnostics;
     }
     return build_.diagnostics;
 }

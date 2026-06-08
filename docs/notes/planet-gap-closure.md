@@ -123,11 +123,11 @@ The latest follow-up batch is complete:
 - strengthened the procedural terrain source with domain warping, continent /
   ocean structure, ridge belts, valley cuts, and land/relief-gated fine detail
   mirrored between CPU and shader paths.
-- promoted local detail from diagnostic-only to an altitude-gated v1 final-view
-  participant. Final and terrain-field views can consume the clipmap near the
-  surface, the global shader uses a softened ownership mask, and diagnostics
-  report surface weight plus active local-detail state.
-- added final-view local-detail headless smoke coverage alongside the existing
+- attempted local-detail final-view integration, then moved it back out of the
+  default final path after visual review showed a finite noisy terrain island.
+  Terrain-field and local-detail diagnostics still consume the clipmap near the
+  surface and report surface weight plus active local-detail state.
+- added local-detail diagnostic headless smoke coverage alongside the existing
   planet capture checks.
 
 The remaining near-term work should move back to feature slices or targeted
