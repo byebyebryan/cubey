@@ -75,7 +75,7 @@ Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 `screen-error`, `lod-transition`, `seams`, `cell-edge`, `terrain-height`,
 `terrain-slope`, `terrain-material`, `bathymetry`, `shoreline`, `land-mask`,
 `moisture`, `temperature`, `roughness`, `wireframe`, `celestial-planes`,
-`local-detail-wireframe`, `local-detail-blend`, `local-detail-height`, and
+`local-detail-wireframe`, `local-detail-blend`, `local-detail-height`,
 `local-detail-features`, and `local-detail-final`.
 `celestial-planes` colors the equator, ecliptic, and lunar orbit great circles
 plus sub-solar/sub-lunar markers for validating the mean celestial model.
@@ -124,9 +124,13 @@ triangle, cell-size, projected-cell, surface weight, and blend diagnostics in
 the UI. Local-detail debug views and terrain-field debug views can use the local
 detail surface when terrain, local detail, and near-surface camera blending are
 active. The default `final` view intentionally stays on the continuous global
-surface: the earlier final-view handoff produced a finite noisy terrain island,
-which is the wrong product signal until persistent topology, morphing, cache,
-streaming, and ocean payloads are designed.
+surface: the earlier final-view handoff exposed local extent and weak ownership
+boundaries, which is the wrong product signal until persistent topology,
+morphing, cache, streaming, and ocean payloads are designed.
+The local displacement is now a semantic residual over the global terrain field:
+ridge uplift, channel cuts, and plain undulation are gated by the same
+continent, relief, mountain, valley, plain, and land signals that shape the
+global terrain instead of by an unrelated local noise stack.
 `local-detail-wireframe` shows the near-field clipmap ownership, `local-detail-blend`
 shows the active ownership/cutout mask, and `local-detail-height` isolates the
 added detail displacement. `local-detail-features` colors the semantic local

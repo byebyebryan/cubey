@@ -3,7 +3,7 @@
 This note records the landed terrain-field v2 batch and current sample/tile
 vocabulary before ocean is ported into `projects/planet`. The remaining
 pressure is making surface view read as a credible large-scale terrain system
-and defining where the local detail clipmap belongs before it becomes a
+and defining where the local detail clipmap belongs before it becomes a default
 final-view participant.
 
 ## Direction
@@ -65,10 +65,15 @@ The global patch tree and local detail clipmap are intentionally separate:
   sampling, and fallback coverage;
 - local detail owns viewer-centered meter-scale geometry and should only be
   active when the camera is low enough that those triangles are visible;
+- local detail displacement should behave as a semantic residual over the
+  global terrain field. Current local detail uses ridge uplift, channel cuts,
+  and plain undulation gated by the global continent, relief, mountain, valley,
+  plain, and land signals rather than an unrelated local noise stack;
 - final rendering should stay on continuous global terrain until the local layer
   has a real local/global morph, persistent topology, or streaming ownership
-  policy. The first final-view handoff exposed rectangular extent and noisy
-  detail, so the clipmap is back to diagnostics and terrain-field inspection.
+  policy. The first final-view handoff exposed local extent and weak ownership
+  boundaries. `local-detail-final` is now the shaded inspection path for that
+  handoff, while default `final` remains conservative.
 
 ## Long Batch Result
 
@@ -78,8 +83,9 @@ The long batch is considered useful because:
   character;
 - terrain materials derive from elevation, slope, moisture,
   temperature, shoreline, and water depth;
-- local detail diagnostics expose ownership and blend state without forcing the
-  unfinished handoff into the default final view;
+- local detail diagnostics expose ownership, blend, height, semantic feature
+  channels, and shaded handoff without forcing the unfinished handoff into the
+  default final view;
 - LOD diagnostics report enough near-cell, active-level, and tile-summary data
   to explain terrain scale at the camera;
 - docs and README clearly state what is now active, what remains deferred, and

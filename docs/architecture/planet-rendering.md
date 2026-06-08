@@ -217,13 +217,18 @@ Current implementation notes:
   half extent, and is the v1 near-field terrain detail layer. Its runtime plan
   is altitude-aware: levels whose projected cell size is subpixel are skipped,
   medium-altitude views start from a coarser center patch plus outer rings, and
-  orbit-scale views allocate no local-detail mesh. The current live renderer
-  keeps the clipmap out of the default final view because the first final-view
-  handoff read as a finite noisy terrain island. Terrain-field debug views and
-  explicit diagnostic views (`local-detail-wireframe`, `local-detail-blend`,
-  and `local-detail-height`) remain the way to inspect ownership, blend, and
-  displacement until local/global morphing, persistent topology, and streaming
-  are explicit.
+  orbit-scale views allocate no local-detail mesh. Local displacement is now a
+  semantic residual over the global terrain field: ridge uplift, channel cuts,
+  and plain undulation are gated by the same continent, relief, mountain,
+  valley, plain, and land signals that shape the global terrain instead of by an
+  unrelated local noise stack. The current live renderer keeps the clipmap out
+  of the default final view because the first final-view handoff exposed
+  unfinished local/global ownership. Terrain-field debug views and explicit
+  diagnostic views (`local-detail-wireframe`, `local-detail-blend`,
+  `local-detail-height`, and `local-detail-features`) inspect ownership, blend,
+  displacement, and residual channels. `local-detail-final` is the opt-in
+  shaded inspection path until local/global morphing, persistent topology, and
+  streaming are explicit.
   It is still procedural and project-local: no terrain streaming, ocean port,
   texture cache, persistent topology, morph policy, or compute terrain
   generation is part of this first consumer.
@@ -259,10 +264,11 @@ Current implementation notes:
   skirts, approximate metric cell edge, normalized terrain height, normalized
   terrain slope, terrain material bands, bathymetry, shoreline, land mask,
   moisture, temperature, roughness, wireframe grid, LOD transition pressure,
-  celestial-plane validation, and local-detail clipmap ownership/displacement.
-  Local-detail diagnostics are inspection tools; final and terrain-field views
-  can also consume the same near-field surface when the altitude-gated blend is
-  active.
+  celestial-plane validation, and local-detail clipmap ownership, displacement,
+  semantic residual channels, and shaded handoff. Local-detail diagnostics are
+  inspection tools; default final rendering remains on the continuous global
+  surface while `local-detail-final` and terrain-field views can consume the
+  same near-field surface when the altitude-gated blend is active.
 - Planet rendering has moved away from the shared atmosphere background/runtime
   for now. The shared path was useful for ocean and atmosphere demos, but its
   demo-oriented sky clock and inline celestial disks were the wrong source of
@@ -358,7 +364,7 @@ Current alignment by area:
 | Frame and camera | Done as v1. Camera state is double precision, render origin is camera-relative, and frame data distinguishes datum altitude, sampled terrain height, and terrain-relative clearance. |
 | Global surface LOD | Done as v1. The planner is coverage-first, keeps fallback parents available, uses hysteresis, repairs selected neighbor deltas to a single LOD step, and accounts for terrain displacement in screen-error bounds. |
 | Procedural terrain field | Active contract, not just a visual placeholder. CPU tests, tile summaries, shader displacement, material bands, water depth, shoreline, climate, and roughness use the same project-local vocabulary. |
-| Local detail clipmap | Diagnostic/inspection layer. The altitude-gated clipmap can contribute to local-detail and terrain-field debug rendering, while default final rendering stays on continuous global terrain until local/global morphing, persistent topology, streaming, and ocean payloads are explicit. |
+| Local detail clipmap | Diagnostic/inspection layer. The altitude-gated clipmap now uses semantic ridge/channel/plain residuals over the global terrain field and can contribute to local-detail, terrain-field, and opt-in shaded inspection rendering. Default final rendering stays on continuous global terrain until local/global morphing, persistent topology, streaming, and ocean payloads are explicit. |
 | Celestial and atmosphere | Done as v1. The planet project owns mean solar time, sun/moon state, project-local sky/atmosphere, view-aware exposure, and moon body rendering. Atmosphere LUTs, physical transmittance assets, eclipses, and real ephemeris are deferred. |
 | Streaming and resource residency | Deferred. Current runtime replans CPU patch lists and lazily uploads instance buffers, but it is not an out-of-core tile streamer or async residency manager. |
 | Planet/ocean integration | Deferred. Ocean should port in as a local water layer once the planet frame, terrain field, sea datum, local detail clipmap, and render order are stable enough. |
@@ -468,8 +474,9 @@ this architecture note.
 
 Current next sequence:
 
-1. Harden local/global terrain morphing so local-detail output can participate in
-   final rendering without reading as a finite noisy island.
+1. Harden local/global terrain morphing so semantic local-detail output can move
+   from the opt-in `local-detail-final` inspection path into default final
+   rendering without exposing local extent or ownership boundaries.
 2. Define persistent topology plus cache/streaming contracts for terrain,
    bathymetry, and future ocean payloads.
 3. Lock the terrain/ocean/atmosphere render-order and depth/field handoff.
@@ -481,7 +488,7 @@ Current next sequence:
 Completed foundation checkpoints include the initial planet viewer, cube-sphere
 surface LOD, seam/skirt diagnostics, project-local celestial ownership,
 project-local atmosphere v1, visual smoke coverage, `PlanetUi` /
-`PlanetSurfaceRuntime`, and terrain-field v2.
+`PlanetSurfaceRuntime`, terrain-field v2, and semantic local-detail diagnostics.
 
 Non-goals for the first planet pass:
 
