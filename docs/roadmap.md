@@ -576,6 +576,10 @@ has proven useful.
 - Narrow no-GLFW headless capture host that shares no-window instance/device,
   offscreen target, capture transitions, readback, PNG writing, and optional
   MP4 writing. Status: complete for current headless examples/projects.
+- Project-owned config facades once another project repeats the current planet
+  option pressure. Shared core should keep generic parse/template/override
+  plumbing; project modules should own option groups, defaults, validation, and
+  UI descriptor sources. Status: deferred.
 - Input/UI hooks once the contract is clear enough to keep project code cleaner
   without becoming a generic editor or UI framework.
 
