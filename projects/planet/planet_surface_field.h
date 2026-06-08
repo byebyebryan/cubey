@@ -62,6 +62,12 @@ struct PlanetSurfaceTileSummary {
     float max_temperature = std::numeric_limits<float>::lowest();
     float min_roughness = std::numeric_limits<float>::max();
     float max_roughness = std::numeric_limits<float>::lowest();
+    float average_height_m = 0.0F;
+    float average_height_above_sea_m = 0.0F;
+    float average_moisture = 0.0F;
+    float average_temperature = 0.0F;
+    float average_roughness = 0.0F;
+    float average_normalized_slope = 0.0F;
     float max_water_depth_m = 0.0F;
     float max_shoreline_mask = 0.0F;
     float land_coverage = 0.0F;
@@ -70,6 +76,7 @@ struct PlanetSurfaceTileSummary {
     float max_normalized_slope = 0.0F;
     std::uint32_t sample_count = 0;
     std::uint32_t material_mask = 0;
+    PlanetSurfaceMaterial dominant_material = PlanetSurfaceMaterial::Lowland;
     std::array<std::uint32_t, 6> material_counts{};
 };
 

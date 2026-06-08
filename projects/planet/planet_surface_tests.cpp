@@ -454,6 +454,12 @@ void test_planet_surface_tile_payload_is_deterministic_and_bounded() {
             "planet surface tile payload should respect minimum terrain height");
     require(first.summary.max_height_m <= config.terrain_height_scale_m + 0.001F,
             "planet surface tile payload should respect maximum terrain height");
+    require(first.summary.average_height_m >= first.summary.min_height_m &&
+                first.summary.average_height_m <= first.summary.max_height_m,
+            "planet surface tile payload should report average height inside range");
+    require(first.summary.average_height_above_sea_m >= first.summary.min_height_above_sea_m &&
+                first.summary.average_height_above_sea_m <= first.summary.max_height_above_sea_m,
+            "planet surface tile payload should report average sea-relative height inside range");
     require(first.summary.max_water_depth_m >= 0.0F,
             "planet surface tile payload should report nonnegative water depth");
     require(first.summary.max_shoreline_mask >= 0.0F && first.summary.max_shoreline_mask <= 1.0F,
@@ -471,22 +477,42 @@ void test_planet_surface_tile_payload_is_deterministic_and_bounded() {
                 first.summary.max_moisture >= first.summary.min_moisture &&
                 first.summary.max_moisture <= 1.0F,
             "planet surface tile payload should report bounded moisture");
+    require(first.summary.average_moisture >= first.summary.min_moisture &&
+                first.summary.average_moisture <= first.summary.max_moisture,
+            "planet surface tile payload should report average moisture inside range");
     require(first.summary.min_temperature >= 0.0F && first.summary.min_temperature <= 1.0F &&
                 first.summary.max_temperature >= first.summary.min_temperature &&
                 first.summary.max_temperature <= 1.0F,
             "planet surface tile payload should report bounded temperature");
+    require(first.summary.average_temperature >= first.summary.min_temperature &&
+                first.summary.average_temperature <= first.summary.max_temperature,
+            "planet surface tile payload should report average temperature inside range");
     require(first.summary.min_roughness >= 0.0F && first.summary.min_roughness <= 1.0F &&
                 first.summary.max_roughness >= first.summary.min_roughness &&
                 first.summary.max_roughness <= 1.0F,
             "planet surface tile payload should report bounded roughness");
+    require(first.summary.average_roughness >= first.summary.min_roughness &&
+                first.summary.average_roughness <= first.summary.max_roughness,
+            "planet surface tile payload should report average roughness inside range");
+    require(first.summary.average_normalized_slope >= 0.0F &&
+                first.summary.average_normalized_slope <= first.summary.max_normalized_slope,
+            "planet surface tile payload should report average slope inside range");
     require(first.summary.material_mask != 0U,
             "planet surface tile payload should report at least one material");
     std::uint32_t material_count_total = 0U;
     for (std::uint32_t count : first.summary.material_counts) {
         material_count_total += count;
     }
+    std::uint32_t dominant_index = 0U;
+    for (std::uint32_t index = 0U; index < first.summary.material_counts.size(); ++index) {
+        if (first.summary.material_counts[index] > first.summary.material_counts[dominant_index]) {
+            dominant_index = index;
+        }
+    }
     require(material_count_total == first.summary.sample_count,
             "planet surface tile payload should count every sampled material");
+    require(static_cast<std::uint32_t>(first.summary.dominant_material) == dominant_index,
+            "planet surface tile payload should report the dominant material");
     require_close(first.summary.min_height_m, second.summary.min_height_m,
                   "planet surface tile payload should be deterministic");
     require_close(first.summary.max_height_m, second.summary.max_height_m,

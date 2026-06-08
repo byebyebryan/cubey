@@ -246,13 +246,33 @@ void finalize_summary_coverage(PlanetSurfaceTileSummary& summary) {
         summary.max_temperature = 0.0F;
         summary.min_roughness = 0.0F;
         summary.max_roughness = 0.0F;
+        summary.average_height_m = 0.0F;
+        summary.average_height_above_sea_m = 0.0F;
+        summary.average_moisture = 0.0F;
+        summary.average_temperature = 0.0F;
+        summary.average_roughness = 0.0F;
+        summary.average_normalized_slope = 0.0F;
+        summary.dominant_material = PlanetSurfaceMaterial::Lowland;
         return;
     }
     const float inv_sample_count = 1.0F / static_cast<float>(summary.sample_count);
+    summary.average_height_m *= inv_sample_count;
+    summary.average_height_above_sea_m *= inv_sample_count;
+    summary.average_moisture *= inv_sample_count;
+    summary.average_temperature *= inv_sample_count;
+    summary.average_roughness *= inv_sample_count;
+    summary.average_normalized_slope *= inv_sample_count;
     summary.land_coverage = std::clamp(summary.land_coverage * inv_sample_count, 0.0F, 1.0F);
     summary.water_coverage = std::clamp(summary.water_coverage * inv_sample_count, 0.0F, 1.0F);
     summary.shoreline_coverage =
         std::clamp(summary.shoreline_coverage * inv_sample_count, 0.0F, 1.0F);
+    std::uint32_t dominant_count = 0U;
+    for (std::uint32_t index = 0U; index < summary.material_counts.size(); ++index) {
+        if (summary.material_counts[index] > dominant_count) {
+            dominant_count = summary.material_counts[index];
+            summary.dominant_material = static_cast<PlanetSurfaceMaterial>(index);
+        }
+    }
 }
 
 } // namespace
@@ -507,6 +527,12 @@ PlanetSurfaceTilePayload make_planet_surface_tile_payload(const PlanetConfig& co
             summary.max_temperature = std::max(summary.max_temperature, sample.temperature);
             summary.min_roughness = std::min(summary.min_roughness, sample.roughness);
             summary.max_roughness = std::max(summary.max_roughness, sample.roughness);
+            summary.average_height_m += sample.height_m;
+            summary.average_height_above_sea_m += sample.height_above_sea_m;
+            summary.average_moisture += sample.moisture;
+            summary.average_temperature += sample.temperature;
+            summary.average_roughness += sample.roughness;
+            summary.average_normalized_slope += sample.normalized_slope;
             summary.max_water_depth_m =
                 std::max(summary.max_water_depth_m, sample.water_depth_m);
             summary.max_shoreline_mask =
