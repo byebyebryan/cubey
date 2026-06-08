@@ -56,8 +56,10 @@ void test_smoke_tests_fail_on_vulkan_validation_errors() {
 
     require_contains(smoke, "vulkan validation error",
                      "smoke tests should fail when validation reports Vulkan errors");
-    require_contains(smoke, "set_tests_properties(\"${name}\" PROPERTIES TIMEOUT 20)",
-                     "PNG/video smoke tests should allow heavier GPU startup paths");
+    require_contains(smoke, "SKIP_RETURN_CODE 77",
+                     "smoke tests should report recognized no-GPU cases as CTest skips");
+    require_contains(smoke, "png_stats: missing expected PNG",
+                     "PNG stats tests should fail when no PNG exists without an explicit skip marker");
     require_not_contains(smoke, "|vkCreateInstance",
                          "smoke tests should not treat generic Vulkan instance failures as no-GPU skips");
 }
