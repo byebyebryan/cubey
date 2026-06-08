@@ -241,6 +241,20 @@ if(BUILD_TESTING)
         local-detail-height
     )
     cubey_add_planet_visual_smoke(
+        planet_local_detail_features_writes_png
+        planet-local-detail-features.png
+        --planet-camera-mode
+        surface
+        --planet-camera-altitude-m
+        750
+        --planet-local-detail-lod-levels
+        5
+        --planet-local-detail-cells
+        32
+        --debug-view
+        local-detail-features
+    )
+    cubey_add_planet_visual_smoke(
         planet_surface_field_writes_png
         planet-surface-field.png
         --planet-camera-mode

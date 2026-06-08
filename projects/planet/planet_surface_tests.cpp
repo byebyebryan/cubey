@@ -1610,6 +1610,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_from_string("local-detail-height") ==
                 cubey::projects::planet::PlanetDebugView::LocalDetailHeight,
             "planet debug view should parse local-detail-height");
+    require(cubey::projects::planet::planet_debug_view_from_string("local-detail-features") ==
+                cubey::projects::planet::PlanetDebugView::LocalDetailFeatures,
+            "planet debug view should parse local-detail-features");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::CellEdge)} == "cell-edge",
             "planet debug view should name cell-edge");
@@ -1661,6 +1664,10 @@ void test_planet_surface_metric_debug_views_parse() {
                 cubey::projects::planet::PlanetDebugView::LocalDetailHeight)} ==
                 "local-detail-height",
             "planet debug view should name local-detail-height");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::LocalDetailFeatures)} ==
+                "local-detail-features",
+            "planet debug view should name local-detail-features");
     require(!cubey::projects::planet::planet_debug_view_is_local_detail(
                 cubey::projects::planet::PlanetDebugView::Final),
             "final planet view should not enable local-detail diagnostic rendering");
@@ -1673,6 +1680,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_is_local_detail(
                 cubey::projects::planet::PlanetDebugView::LocalDetailHeight),
             "local-detail-height should enable local-detail diagnostic rendering");
+    require(cubey::projects::planet::planet_debug_view_is_local_detail(
+                cubey::projects::planet::PlanetDebugView::LocalDetailFeatures),
+            "local-detail-features should enable local-detail diagnostic rendering");
     require(!cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::Final),
             "final planet view should keep continuous global terrain until local-detail handoff is solved");
@@ -1682,6 +1692,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::LocalDetailWireframe),
             "local-detail debug views should allow local-detail surface rendering");
+    require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+                cubey::projects::planet::PlanetDebugView::LocalDetailFeatures),
+            "local-detail feature debug view should allow local-detail surface rendering");
     require(!cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::Wireframe),
             "global mesh wireframe should not draw local-detail surface overlays");

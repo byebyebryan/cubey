@@ -30,6 +30,7 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view local-detail-wireframe
 ./build/dev/projects/planet/planet --debug-view local-detail-blend
 ./build/dev/projects/planet/planet --debug-view local-detail-height
+./build/dev/projects/planet/planet --debug-view local-detail-features
 ./build/dev/projects/planet/planet --debug-view seams
 ./build/dev/projects/planet/planet --planet-atmosphere-mode physical
 ./build/dev/projects/planet/planet --planet-atmosphere-haze-strength 0.18 --planet-atmosphere-aerial-strength 0.35
@@ -73,7 +74,8 @@ Supported debug views are `final`, `face-id`, `patch-id`, `lod-level`,
 `screen-error`, `lod-transition`, `seams`, `cell-edge`, `terrain-height`,
 `terrain-slope`, `terrain-material`, `bathymetry`, `shoreline`, `land-mask`,
 `moisture`, `temperature`, `roughness`, `wireframe`, `celestial-planes`,
-`local-detail-wireframe`, `local-detail-blend`, and `local-detail-height`.
+`local-detail-wireframe`, `local-detail-blend`, `local-detail-height`, and
+`local-detail-features`.
 `celestial-planes` colors the equator, ecliptic, and lunar orbit great circles
 plus sub-solar/sub-lunar markers for validating the mean celestial model.
 Windowed controls are applied live where possible. Left drag orbits the planet,
@@ -126,7 +128,8 @@ which is the wrong product signal until persistent topology, morphing, cache,
 streaming, and ocean payloads are designed.
 `local-detail-wireframe` shows the near-field clipmap ownership, `local-detail-blend`
 shows the active ownership/cutout mask, and `local-detail-height` isolates the
-added detail displacement.
+added detail displacement. `local-detail-features` colors the semantic local
+ridge, channel, and plain residuals that feed that displacement.
 
 Planet surface LOD is coverage-first. Root patches provide guaranteed coarse
 coverage for every planet domain, and view/horizon culling only stops

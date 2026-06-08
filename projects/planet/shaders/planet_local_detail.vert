@@ -41,6 +41,7 @@ layout(location = 5) out vec4 out_surface_field;
 layout(location = 6) out vec4 out_climate_field;
 layout(location = 7) out vec4 out_local_detail;
 layout(location = 8) out float out_local_detail_delta;
+layout(location = 9) out vec4 out_local_detail_features;
 
 uint packed_patch_lod_option() {
     return uint(surface_frame.surface_options.y + 0.5);
@@ -78,6 +79,10 @@ struct PlanetLocalDetailFeatureContributions {
     float plain;
     float net;
 };
+
+PlanetLocalDetailFeatureContributions local_detail_zero_feature_contributions() {
+    return PlanetLocalDetailFeatureContributions(0.0, 0.0, 0.0, 0.0);
+}
 
 vec3 local_detail_planet_anchor(vec3 sphere_normal, float base_height_m) {
     return sphere_normal * (surface_frame.render_origin_radius.w + base_height_m);
@@ -121,7 +126,9 @@ PlanetLocalDetailFeatureContributions local_detail_feature_contributions(
 }
 
 float local_detail_height_delta_m(vec2 local_xz, vec3 sphere_normal,
-                                  float base_height_m, float ownership) {
+                                  float base_height_m, float ownership,
+                                  out PlanetLocalDetailFeatureContributions detail_features) {
+    detail_features = local_detail_zero_feature_contributions();
     float active_weight = surface_frame.local_origin_options.w;
     float height_strength = max(surface_frame.local_up_height.w, 0.0);
     if (active_weight <= 0.0 || height_strength <= 0.0 || ownership <= 0.0) {
@@ -133,17 +140,23 @@ float local_detail_height_delta_m(vec2 local_xz, vec3 sphere_normal,
     float land = local_detail_land_blend(base_height_m);
     float slope_gate = smoothstep(-0.08, 0.18, dot(normalize(sphere_normal),
                                                    normalize(surface_frame.local_up_height.xyz)));
-    return features.net * height_strength * land * slope_gate * ownership * active_weight;
+    float gate = land * slope_gate * ownership * active_weight;
+    detail_features = PlanetLocalDetailFeatureContributions(features.ridge * gate,
+                                                           features.channel * gate,
+                                                           features.plain * gate,
+                                                           features.net * gate);
+    return detail_features.net * height_strength;
 }
 
 vec3 local_detail_world_position(vec2 local_xz, out vec3 sphere_normal, out float height_m,
-                                 out float detail_height_m) {
+                                 out float detail_height_m,
+                                 out PlanetLocalDetailFeatureContributions detail_features) {
     vec3 plane_position = local_detail_world_plane_position(local_xz);
     sphere_normal = normalize(plane_position);
     float base_height_m = planet_surface_terrain_height_m(sphere_normal);
     float ownership = clamp(in_blend, 0.0, 1.0);
     detail_height_m = local_detail_height_delta_m(local_xz, sphere_normal, base_height_m,
-                                                  ownership);
+                                                  ownership, detail_features);
     height_m = base_height_m + detail_height_m;
     return sphere_normal * (surface_frame.render_origin_radius.w + height_m);
 }
@@ -153,14 +166,15 @@ vec3 local_detail_normal(vec2 local_xz, vec3 sphere_normal) {
     vec3 unused_normal;
     float unused_height;
     float unused_detail;
+    PlanetLocalDetailFeatureContributions unused_features;
     vec3 x0 = local_detail_world_position(local_xz - vec2(step_m, 0.0), unused_normal,
-                                          unused_height, unused_detail);
+                                          unused_height, unused_detail, unused_features);
     vec3 x1 = local_detail_world_position(local_xz + vec2(step_m, 0.0), unused_normal,
-                                          unused_height, unused_detail);
+                                          unused_height, unused_detail, unused_features);
     vec3 z0 = local_detail_world_position(local_xz - vec2(0.0, step_m), unused_normal,
-                                          unused_height, unused_detail);
+                                          unused_height, unused_detail, unused_features);
     vec3 z1 = local_detail_world_position(local_xz + vec2(0.0, step_m), unused_normal,
-                                          unused_height, unused_detail);
+                                          unused_height, unused_detail, unused_features);
     vec3 normal = cross(x1 - x0, z1 - z0);
     if (length(normal) <= 0.0000001) {
         return sphere_normal;
@@ -220,8 +234,9 @@ void main() {
     vec3 sphere_normal;
     float height_m;
     float detail_height_m;
+    PlanetLocalDetailFeatureContributions detail_features;
     vec3 world_position = local_detail_world_position(in_local_xz_m, sphere_normal, height_m,
-                                                      detail_height_m);
+                                                      detail_height_m, detail_features);
     vec3 normal = local_detail_normal(in_local_xz_m, sphere_normal);
     float normalized_elevation = planet_surface_normalized_elevation(height_m);
     float normalized_slope = planet_surface_normalized_slope(sphere_normal, normal);
@@ -250,5 +265,8 @@ void main() {
     out_climate_field = vec4(normalized_bathymetry, moisture, temperature, roughness);
     out_local_detail = vec4(in_local_xz_m, in_level, in_blend);
     out_local_detail_delta = detail_height_m / max(surface_frame.local_up_height.w, 1.0);
+    out_local_detail_features = vec4(max(detail_features.ridge, 0.0),
+                                     max(detail_features.channel, 0.0),
+                                     abs(detail_features.plain), detail_features.net);
     gl_Position = surface_frame.view_projection * vec4(render_position, 1.0);
 }

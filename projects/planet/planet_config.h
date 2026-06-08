@@ -71,6 +71,7 @@ enum class PlanetDebugView : std::uint8_t {
     LocalDetailWireframe,
     LocalDetailBlend,
     LocalDetailHeight,
+    LocalDetailFeatures,
 };
 
 enum class PlanetScalePreset : std::uint8_t {

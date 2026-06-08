@@ -12,6 +12,7 @@ layout(location = 5) in vec4 in_surface_field;
 layout(location = 6) in vec4 in_climate_field;
 layout(location = 7) in vec4 in_local_detail;
 layout(location = 8) in float in_local_detail_delta;
+layout(location = 9) in vec4 in_local_detail_features;
 
 layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     mat4 view_projection;
@@ -61,7 +62,7 @@ int debug_view_option() {
 
 bool local_detail_surface_debug_enabled() {
     int debug_view = debug_view_option();
-    return (debug_view >= 8 && debug_view <= 16) || (debug_view >= 19 && debug_view <= 21);
+    return (debug_view >= 8 && debug_view <= 16) || (debug_view >= 19 && debug_view <= 22);
 }
 
 bool local_detail_is_local_draw() {
@@ -319,6 +320,17 @@ vec4 local_detail_debug_color() {
         color = mix(color, vec3(1.00, 0.72, 0.22), smoothstep(0.86, 1.0, ownership));
         return vec4(color, 1.0);
     }
+    if (debug_view == 22) {
+        vec3 base = local_detail_debug_base() * 0.25 + vec3(0.025, 0.028, 0.034);
+        float ridge = smoothstep(0.015, 0.48, in_local_detail_features.x);
+        float channel = smoothstep(0.010, 0.30, in_local_detail_features.y);
+        float plain = smoothstep(0.004, 0.12, in_local_detail_features.z);
+        vec3 color = base;
+        color += vec3(0.95, 0.32, 0.12) * ridge;
+        color += vec3(0.10, 0.42, 1.00) * channel;
+        color += vec3(0.22, 0.78, 0.28) * plain;
+        return vec4(clamp(color, vec3(0.0), vec3(1.0)), 1.0);
+    }
     float height = local_detail_is_local_draw() ? abs(in_local_detail_delta) : 0.0;
     vec3 color = mix(vec3(0.07, 0.09, 0.13), vec3(0.96, 0.42, 0.18),
                      smoothstep(0.02, 0.75, height));
@@ -351,7 +363,7 @@ void main() {
         out_color = vec4(celestial_planes_color(), 1.0);
         return;
     }
-    if (debug_view_option() >= 19 && debug_view_option() <= 21) {
+    if (debug_view_option() >= 19 && debug_view_option() <= 22) {
         out_color = local_detail_debug_color();
         return;
     }
