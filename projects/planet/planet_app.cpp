@@ -64,6 +64,8 @@ constexpr float kPlanetCameraBasePitch = 0.28F;
 constexpr float kPlanetMoonAngularRadiusScale = 4.0F;
 constexpr float kPlanetMoonShellDistanceFraction = 0.88F;
 constexpr float kPlanetSurfaceBaseLodTargetEdgePx = 14.0F;
+constexpr float kPlanetLocalDetailInspectionMinimumOuterHalfExtentM = 131072.0F;
+constexpr float kPlanetLocalDetailInspectionHorizonExtentScale = 1.35F;
 constexpr std::uint32_t kPlanetSurfaceFrameUniformBinding = 0;
 constexpr VkFormat kPlanetSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
@@ -127,6 +129,13 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 26U);
         .depth_test = true,
         .depth_write = true,
     };
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo planet_local_detail_pass_info() {
+    cubey::render::MaterialPassInfo pass = planet_pass_info();
+    pass.label = "planet.local_detail";
+    pass.depth_compare_op = VK_COMPARE_OP_LESS_OR_EQUAL;
+    return pass;
 }
 
 [[nodiscard]] cubey::render::VertexInputLayout planet_surface_vertex_input_layout() {
@@ -371,7 +380,7 @@ class PlanetApp {
                         .vertex_bindings = local_detail_vertex_input.bindings(),
                         .vertex_attributes = local_detail_vertex_input.attribute_descriptions(),
                         .descriptor_set_layouts = descriptor_set_layouts,
-                        .material_pass = planet_pass_info(),
+                        .material_pass = planet_local_detail_pass_info(),
                     });
         create_sky_frame_pipeline(device, extent, kPlanetSceneColorFormat);
         create_celestial_body_frame_pipeline(device, extent, kPlanetSceneColorFormat,
@@ -666,10 +675,21 @@ class PlanetApp {
     }
 
     [[nodiscard]] PlanetLocalDetailView local_detail_view(VkExtent2D extent) const {
+        const bool inspection_view = planet_debug_view_is_local_detail(planet_config_.debug_view);
+        const float inspection_outer_half_extent =
+            inspection_view
+                ? std::max({planet_config_.local_detail_outer_half_extent_m,
+                            kPlanetLocalDetailInspectionMinimumOuterHalfExtentM,
+                            frame_.horizon_distance_m *
+                                kPlanetLocalDetailInspectionHorizonExtentScale})
+                : 0.0F;
         return {
             .camera_clearance_m = std::max(frame_.camera_surface_clearance_m, 1.0F),
             .vertical_fov_radians = camera_.fovy_radians(),
             .viewport_height_px = static_cast<float>(std::max(extent.height, 1U)),
+            .full_active_range = inspection_view,
+            .minimum_lod_levels = inspection_view ? kPlanetMaxLocalDetailLodLevels : 0U,
+            .minimum_outer_half_extent_m = inspection_outer_half_extent,
         };
     }
 
@@ -713,7 +733,9 @@ class PlanetApp {
         const float local_detail_near_half_extent =
             cubey::render::clipmap_grid_2d_near_half_extent(local_detail_grid);
         const float local_detail_near_cell_size =
-            cubey::render::clipmap_grid_2d_near_cell_size(local_detail_grid);
+            local_detail_diagnostics.active
+                ? local_detail_diagnostics.finest_active_cell_size
+                : cubey::render::clipmap_grid_2d_near_cell_size(local_detail_grid);
         const PlanetCelestialDiagnostics celestial_diagnostics =
             planet_celestial_diagnostics(solar_time_, solar_config_);
         return {

@@ -241,6 +241,10 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
         value == "local_blend") {
         return PlanetDebugView::LocalDetailBlend;
     }
+    if (value == "local-detail-lod" || value == "local_detail_lod" || value == "local-lod" ||
+        value == "local_lod") {
+        return PlanetDebugView::LocalDetailLod;
+    }
     if (value == "local-detail-height" || value == "local_detail_height" ||
         value == "local-height" || value == "local_height") {
         return PlanetDebugView::LocalDetailHeight;
@@ -300,6 +304,8 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "local-detail-wireframe";
     case PlanetDebugView::LocalDetailBlend:
         return "local-detail-blend";
+    case PlanetDebugView::LocalDetailLod:
+        return "local-detail-lod";
     case PlanetDebugView::LocalDetailHeight:
         return "local-detail-height";
     case PlanetDebugView::LocalDetailFeatures:
@@ -313,6 +319,7 @@ const char* planet_debug_view_name(PlanetDebugView view) {
 bool planet_debug_view_is_local_detail(PlanetDebugView view) {
     return view == PlanetDebugView::LocalDetailWireframe ||
            view == PlanetDebugView::LocalDetailBlend ||
+           view == PlanetDebugView::LocalDetailLod ||
            view == PlanetDebugView::LocalDetailHeight ||
            view == PlanetDebugView::LocalDetailFeatures ||
            view == PlanetDebugView::LocalDetailFinal;

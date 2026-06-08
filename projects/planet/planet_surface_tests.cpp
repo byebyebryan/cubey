@@ -1189,6 +1189,38 @@ void test_planet_local_detail_plan_reports_viewer_centered_clipmap() {
             "planet local detail should stay anchored to the planet local tangent frame");
 }
 
+void test_planet_local_detail_full_range_can_cover_inspection_horizon() {
+    const cubey::projects::planet::PlanetConfig config{};
+    constexpr float kInspectionOuterHalfExtentM = 131072.0F;
+    const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
+        config, cubey::math::DVec3{0.0, 0.0, config.radius_m + 750.0});
+
+    const cubey::projects::planet::PlanetLocalDetailPlan plan =
+        cubey::projects::planet::plan_planet_local_detail(
+            config, frame,
+            cubey::projects::planet::PlanetLocalDetailView{
+                .camera_clearance_m = 750.0F,
+                .vertical_fov_radians = 1.04719758F,
+                .viewport_height_px = 720.0F,
+                .full_active_range = true,
+                .minimum_lod_levels = cubey::projects::planet::kPlanetMaxLocalDetailLodLevels,
+                .minimum_outer_half_extent_m = kInspectionOuterHalfExtentM,
+            });
+    const cubey::projects::planet::PlanetLocalDetailDiagnostics diagnostics =
+        cubey::projects::planet::planet_local_detail_diagnostics(config, plan);
+
+    require(diagnostics.active, "full-range local detail should remain active near the surface");
+    require(diagnostics.lod_levels == cubey::projects::planet::kPlanetMaxLocalDetailLodLevels,
+            "full-range local detail should use the requested inspection LOD count");
+    require(diagnostics.active_last_level == diagnostics.lod_levels - 1U,
+            "full-range local detail should keep the coarsest outer ring active");
+    require(diagnostics.active_outer_half_extent == kInspectionOuterHalfExtentM,
+            "full-range local detail should cover the requested inspection extent");
+    require(diagnostics.active_level_count >
+                cubey::projects::planet::kPlanetLocalDetailMaxActiveLevels,
+            "full-range local detail should bypass the resident three-level cap");
+}
+
 void test_planet_local_detail_deactivates_when_subpixel() {
     const cubey::projects::planet::PlanetConfig config{};
     const cubey::projects::planet::PlanetFrame frame = cubey::projects::planet::make_planet_frame(
@@ -1607,6 +1639,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_from_string("local-detail-blend") ==
                 cubey::projects::planet::PlanetDebugView::LocalDetailBlend,
             "planet debug view should parse local-detail-blend");
+    require(cubey::projects::planet::planet_debug_view_from_string("local-detail-lod") ==
+                cubey::projects::planet::PlanetDebugView::LocalDetailLod,
+            "planet debug view should parse local-detail-lod");
     require(cubey::projects::planet::planet_debug_view_from_string("local-detail-height") ==
                 cubey::projects::planet::PlanetDebugView::LocalDetailHeight,
             "planet debug view should parse local-detail-height");
@@ -1664,6 +1699,9 @@ void test_planet_surface_metric_debug_views_parse() {
                 "local-detail-blend",
             "planet debug view should name local-detail-blend");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::LocalDetailLod)} == "local-detail-lod",
+            "planet debug view should name local-detail-lod");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::LocalDetailHeight)} ==
                 "local-detail-height",
             "planet debug view should name local-detail-height");
@@ -1675,6 +1713,15 @@ void test_planet_surface_metric_debug_views_parse() {
                 cubey::projects::planet::PlanetDebugView::LocalDetailFinal)} ==
                 "local-detail-final",
             "planet debug view should name local-detail-final");
+    require(static_cast<std::uint8_t>(
+                cubey::projects::planet::PlanetDebugView::LocalDetailWireframe) == 19U,
+            "local-detail shader debug range should start at wireframe");
+    require(static_cast<std::uint8_t>(
+                cubey::projects::planet::PlanetDebugView::LocalDetailLod) == 21U,
+            "local-detail LOD shader debug value should stay synchronized");
+    require(static_cast<std::uint8_t>(
+                cubey::projects::planet::PlanetDebugView::LocalDetailFinal) == 24U,
+            "local-detail shader final value should stay synchronized");
     require(!cubey::projects::planet::planet_debug_view_is_local_detail(
                 cubey::projects::planet::PlanetDebugView::Final),
             "final planet view should not enable local-detail diagnostic rendering");
@@ -1684,6 +1731,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_is_local_detail(
                 cubey::projects::planet::PlanetDebugView::LocalDetailBlend),
             "local-detail-blend should enable local-detail diagnostic rendering");
+    require(cubey::projects::planet::planet_debug_view_is_local_detail(
+                cubey::projects::planet::PlanetDebugView::LocalDetailLod),
+            "local-detail-lod should enable local-detail diagnostic rendering");
     require(cubey::projects::planet::planet_debug_view_is_local_detail(
                 cubey::projects::planet::PlanetDebugView::LocalDetailHeight),
             "local-detail-height should enable local-detail diagnostic rendering");
@@ -1702,6 +1752,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::LocalDetailWireframe),
             "local-detail debug views should allow local-detail surface rendering");
+    require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+                cubey::projects::planet::PlanetDebugView::LocalDetailLod),
+            "local-detail LOD debug view should allow local-detail surface rendering");
     require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::LocalDetailFeatures),
             "local-detail feature debug view should allow local-detail surface rendering");
@@ -1928,6 +1981,7 @@ int main() {
         test_planet_surface_default_lod_reaches_near_camera_detail();
         test_planet_surface_earthlike_lod_reaches_meter_scale_budget();
         test_planet_local_detail_plan_reports_viewer_centered_clipmap();
+        test_planet_local_detail_full_range_can_cover_inspection_horizon();
         test_planet_local_detail_deactivates_when_subpixel();
         test_planet_local_detail_finest_level_is_reachable_at_surface_floor();
         test_planet_local_detail_uses_terrain_relative_surface_floor();

@@ -62,7 +62,7 @@ int debug_view_option() {
 
 bool local_detail_surface_enabled() {
     int debug_view = debug_view_option();
-    return (debug_view >= 8 && debug_view <= 16) || (debug_view >= 19 && debug_view <= 23);
+    return (debug_view >= 8 && debug_view <= 16) || (debug_view >= 19 && debug_view <= 24);
 }
 
 bool local_detail_is_local_draw() {
@@ -81,6 +81,19 @@ float local_detail_level_half_extent(float level) {
     return surface_frame.local_right_outer.w / exp2(exponent);
 }
 
+float local_detail_level_cell_size(float level) {
+    return max(surface_frame.local_detail_options.z, 0.0001) * exp2(max(level, 0.0));
+}
+
+float local_detail_level_transition_width(float level) {
+    if (level <= 0.5) {
+        return 0.0;
+    }
+    float inner = local_detail_level_half_extent(level - 1.0);
+    float preferred = local_detail_level_cell_size(level) * 16.0;
+    return max(0.001, min(preferred, inner * 0.35));
+}
+
 float local_detail_first_active_level() {
     return clamp(surface_frame.local_detail_options.w, 0.0,
                  max(surface_frame.local_detail_options.x - 1.0, 0.0));
@@ -96,13 +109,17 @@ float local_detail_patch_ownership(vec2 local_xz, float level, float blend) {
     if (radial > half_extent) {
         return 0.0;
     }
+    float inner_blend = 1.0;
     if (level > local_detail_first_active_level() + 0.5) {
         float inner = local_detail_level_half_extent(level - 1.0);
-        if (radial < inner) {
+        float transition = local_detail_level_transition_width(level);
+        float inner_start = max(inner - transition, 0.0);
+        if (radial < inner_start) {
             return 0.0;
         }
+        inner_blend = smoothstep(inner_start, inner, radial);
     }
-    return clamp(active_weight * blend, 0.0, 1.0);
+    return clamp(active_weight * blend * inner_blend, 0.0, 1.0);
 }
 
 float local_detail_global_ownership(vec3 world_position) {
@@ -280,14 +297,13 @@ vec3 local_detail_debug_base() {
     if (local_detail_is_local_draw()) {
         float level = clamp(in_local_detail.z / max(surface_frame.local_detail_options.x - 1.0,
                                                     1.0), 0.0, 1.0);
-        return mix(vec3(0.04, 0.24, 0.42), vec3(0.46, 0.24, 0.05), level);
+        return mix(vec3(0.04, 0.24, 0.42), vec3(0.56, 0.30, 0.06), level);
     }
     return in_color * 0.08;
 }
 
 float local_detail_grid_wire_alpha(vec2 local_xz, float level) {
-    float near_cell_size = max(surface_frame.local_detail_options.z, 0.0001);
-    float cell_size = near_cell_size * exp2(max(level, 0.0));
+    float cell_size = local_detail_level_cell_size(level);
     vec2 grid_uv = local_xz / cell_size;
     vec2 cell_fraction = fract(grid_uv);
     vec2 cell_edge_distance = min(cell_fraction, 1.0 - cell_fraction);
@@ -297,6 +313,26 @@ float local_detail_grid_wire_alpha(vec2 local_xz, float level) {
     float distance_to_diagonal = abs(cell_fraction.x + cell_fraction.y - 1.0) * 0.70710678;
     float diagonal_wire = 1.0 - smoothstep(width, width * 2.0, distance_to_diagonal);
     return max(axis_wire, diagonal_wire * 0.80);
+}
+
+vec3 local_detail_lod_palette(float level) {
+    int index = int(mod(floor(level + 0.5), 6.0));
+    if (index == 0) {
+        return vec3(0.10, 0.47, 0.86);
+    }
+    if (index == 1) {
+        return vec3(0.12, 0.68, 0.43);
+    }
+    if (index == 2) {
+        return vec3(0.92, 0.72, 0.18);
+    }
+    if (index == 3) {
+        return vec3(0.86, 0.32, 0.18);
+    }
+    if (index == 4) {
+        return vec3(0.62, 0.36, 0.88);
+    }
+    return vec3(0.12, 0.70, 0.78);
 }
 
 vec4 local_detail_debug_color() {
@@ -320,7 +356,25 @@ vec4 local_detail_debug_color() {
         color = mix(color, vec3(1.00, 0.72, 0.22), smoothstep(0.86, 1.0, ownership));
         return vec4(color, 1.0);
     }
-    if (debug_view == 22) {
+    if (debug_view == 21) {
+        if (!local_detail_is_local_draw()) {
+            return vec4(in_color * 0.08, 1.0);
+        }
+        float level = in_local_detail.z;
+        float radial = max(abs(in_local_detail.x), abs(in_local_detail.y));
+        float inner = level > local_detail_first_active_level() + 0.5
+                          ? local_detail_level_half_extent(level - 1.0)
+                          : 0.0;
+        float transition = local_detail_level_transition_width(level);
+        float boundary = 1.0 - smoothstep(transition * 0.12, transition * 0.45,
+                                          abs(radial - inner));
+        float mesh_wire = local_detail_grid_wire_alpha(in_local_detail.xy, level);
+        vec3 color = local_detail_lod_palette(level);
+        color = mix(color * 0.42, color, in_local_detail.w);
+        color = mix(color, vec3(1.0, 0.97, 0.72), max(boundary * 0.76, mesh_wire * 0.42));
+        return vec4(color, 1.0);
+    }
+    if (debug_view == 23) {
         vec3 base = local_detail_debug_base() * 0.25 + vec3(0.025, 0.028, 0.034);
         float ridge = smoothstep(0.015, 0.48, in_local_detail_features.x);
         float channel = smoothstep(0.010, 0.30, in_local_detail_features.y);
@@ -363,7 +417,7 @@ void main() {
         out_color = vec4(celestial_planes_color(), 1.0);
         return;
     }
-    if (debug_view_option() >= 19 && debug_view_option() <= 22) {
+    if (debug_view_option() >= 19 && debug_view_option() <= 23) {
         out_color = local_detail_debug_color();
         return;
     }
@@ -371,7 +425,7 @@ void main() {
     vec3 normal = normalize(in_normal);
     vec3 light_dir = normalize(surface_frame.light_direction_debug.xyz);
     int debug_view = debug_view_option();
-    float final_view = debug_view == 0 || debug_view == 23 ? 1.0 : 0.0;
+    float final_view = debug_view == 0 || debug_view == 24 ? 1.0 : 0.0;
     uint material = fragment_material_id();
     vec3 albedo = final_view > 0.5 ? fragment_material_albedo(material) : in_color;
     float ndotl = max(dot(normal, light_dir), 0.0);

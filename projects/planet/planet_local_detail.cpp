@@ -35,6 +35,12 @@ namespace {
         view.viewport_height_px = 1.0F;
     }
     view.vertical_fov_radians = std::clamp(view.vertical_fov_radians, 0.01F, 3.05F);
+    if (!std::isfinite(view.minimum_outer_half_extent_m) ||
+        view.minimum_outer_half_extent_m < 0.0F) {
+        view.minimum_outer_half_extent_m = 0.0F;
+    }
+    view.minimum_lod_levels =
+        std::min(view.minimum_lod_levels, kPlanetMaxLocalDetailLodLevels);
     return view;
 }
 
@@ -187,8 +193,11 @@ planet_local_detail_active_range(const PlanetConfig& config,
             if (level >= coarsest_level) {
                 break;
             }
+            const std::uint32_t available_levels = coarsest_level - level + 1U;
             const std::uint32_t level_count =
-                std::min(kPlanetLocalDetailMaxActiveLevels, coarsest_level - level);
+                view.full_active_range
+                    ? available_levels
+                    : std::min(kPlanetLocalDetailMaxActiveLevels, coarsest_level - level);
             const std::uint32_t active_last_level = level + level_count - 1U;
             return {
                 .active = true,
@@ -226,9 +235,10 @@ PlanetLocalDetailPlan plan_planet_local_detail(const PlanetConfig& config,
 
 PlanetLocalDetailPlan plan_planet_local_detail(const PlanetConfig& config, const PlanetFrame& frame,
                                                PlanetLocalDetailView view) {
-    const cubey::render::ClipmapGrid2DConfig grid = planet_local_detail_clipmap_config(config);
     cubey::render::validate_local_tangent_frame(frame.local_frame);
     view = sanitize_view(view);
+    const cubey::render::ClipmapGrid2DConfig grid =
+        planet_local_detail_clipmap_config(config, view);
     const PlanetLocalDetailActiveRange active_range =
         planet_local_detail_active_range(config, grid, view);
     PlanetLocalDetailPatchList patches = active_local_detail_patches(grid, active_range);

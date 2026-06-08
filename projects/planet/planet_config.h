@@ -70,6 +70,7 @@ enum class PlanetDebugView : std::uint8_t {
     CelestialPlanes,
     LocalDetailWireframe,
     LocalDetailBlend,
+    LocalDetailLod,
     LocalDetailHeight,
     LocalDetailFeatures,
     LocalDetailFinal,

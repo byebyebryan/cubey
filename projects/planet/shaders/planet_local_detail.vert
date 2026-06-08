@@ -59,6 +59,11 @@ int debug_view_option() {
     return int(floor(surface_frame.surface_options.x));
 }
 
+bool local_detail_inspection_view_enabled() {
+    int debug_view = debug_view_option();
+    return debug_view >= 19 && debug_view <= 24;
+}
+
 #include "planet_surface_field.glsl"
 
 vec3 local_detail_world_plane_position(vec2 local_xz) {
@@ -125,6 +130,15 @@ PlanetLocalDetailFeatureContributions local_detail_feature_contributions(
     return PlanetLocalDetailFeatureContributions(ridge, channel, plain, net);
 }
 
+float local_detail_inspection_depth_bias_m(vec2 local_xz) {
+    if (!local_detail_inspection_view_enabled()) {
+        return 0.0;
+    }
+    float outer_half_extent = max(surface_frame.local_right_outer.w, 1.0);
+    float radial = max(abs(local_xz.x), abs(local_xz.y)) / outer_half_extent;
+    return mix(0.5, 24.0, smoothstep(0.15, 1.0, radial));
+}
+
 float local_detail_height_delta_m(vec2 local_xz, vec3 sphere_normal,
                                   float base_height_m, float ownership,
                                   out PlanetLocalDetailFeatureContributions detail_features) {
@@ -158,6 +172,7 @@ vec3 local_detail_world_position(vec2 local_xz, out vec3 sphere_normal, out floa
     detail_height_m = local_detail_height_delta_m(local_xz, sphere_normal, base_height_m,
                                                   ownership, detail_features);
     height_m = base_height_m + detail_height_m;
+    height_m += local_detail_inspection_depth_bias_m(local_xz);
     return sphere_normal * (surface_frame.render_origin_radius.w + height_m);
 }
 

@@ -8,6 +8,8 @@
 #include <cubey/render/mesh.h>
 #include <cubey/render/primitive_mesh.h>
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <span>
 #include <vector>
@@ -29,6 +31,9 @@ struct PlanetLocalDetailView {
     float camera_clearance_m = 250.0F;
     float vertical_fov_radians = 1.04719758F;
     float viewport_height_px = 720.0F;
+    bool full_active_range = false;
+    std::uint32_t minimum_lod_levels = 0;
+    float minimum_outer_half_extent_m = 0.0F;
 };
 
 struct PlanetLocalDetailActiveRange {
@@ -106,6 +111,20 @@ planet_local_detail_clipmap_config(const PlanetConfig& config) {
         .transition_cells = kPlanetLocalDetailTransitionCells,
         .max_transition_ratio = kPlanetLocalDetailMaxTransitionRatio,
     };
+}
+
+[[nodiscard]] inline cubey::render::ClipmapGrid2DConfig
+planet_local_detail_clipmap_config(const PlanetConfig& config, PlanetLocalDetailView view) {
+    cubey::render::ClipmapGrid2DConfig grid = planet_local_detail_clipmap_config(config);
+    if (view.minimum_lod_levels > 0U) {
+        grid.lod_levels = std::max(
+            grid.lod_levels, std::min(view.minimum_lod_levels, kPlanetMaxLocalDetailLodLevels));
+    }
+    if (std::isfinite(view.minimum_outer_half_extent_m) &&
+        view.minimum_outer_half_extent_m > grid.outer_half_extent) {
+        grid.outer_half_extent = view.minimum_outer_half_extent_m;
+    }
+    return grid;
 }
 
 [[nodiscard]] PlanetLocalDetailView default_planet_local_detail_view(const PlanetFrame& frame);

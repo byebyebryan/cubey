@@ -16,7 +16,7 @@
 namespace cubey::projects::planet {
 namespace {
 
-constexpr std::array<PlanetDebugView, 24> kDebugViews{
+constexpr std::array<PlanetDebugView, 25> kDebugViews{
     PlanetDebugView::Final,
     PlanetDebugView::FaceId,
     PlanetDebugView::PatchId,
@@ -38,6 +38,7 @@ constexpr std::array<PlanetDebugView, 24> kDebugViews{
     PlanetDebugView::CelestialPlanes,
     PlanetDebugView::LocalDetailWireframe,
     PlanetDebugView::LocalDetailBlend,
+    PlanetDebugView::LocalDetailLod,
     PlanetDebugView::LocalDetailHeight,
     PlanetDebugView::LocalDetailFeatures,
     PlanetDebugView::LocalDetailFinal,
@@ -162,6 +163,8 @@ void draw_surface_controls(PlanetUiContext& ui) {
 void draw_local_detail_controls(PlanetUiContext& ui) {
     if (const cubey::host::ScopedImGuiGroup group{"Local Detail", {.default_open = false}}; group) {
         const cubey::host::ScopedImGuiId section_id("LocalDetail");
+        const PlanetLocalDetailDiagnostics local_detail_diagnostics =
+            ui.local_detail_diagnostics;
         ImGui::Checkbox("Enabled", &ui.edit_config.local_detail_enabled);
         ImGui::Text("Surface Draw: %s",
                     ui.local_detail_surface_weight > 0.001F ? "active" : "inactive");
@@ -179,8 +182,14 @@ void draw_local_detail_controls(PlanetUiContext& ui) {
             ui.edit_config.local_detail_cells_per_axis = static_cast<std::uint32_t>(
                 std::clamp(cells, 1, static_cast<int>(kPlanetMaxLocalDetailCellsPerAxis)));
         }
-        ImGui::InputFloat("Outer Extent (m)", &ui.edit_config.local_detail_outer_half_extent_m,
-                          0.0F, 0.0F, "%.0f");
+        ImGui::InputFloat("Configured Outer Extent (m)",
+                          &ui.edit_config.local_detail_outer_half_extent_m, 0.0F, 0.0F, "%.0f");
+        ImGui::Text("Runtime Outer Extent: %.0f m", local_detail_diagnostics.outer_half_extent);
+        ImGui::Text("Active Outer Extent: %.0f m",
+                    local_detail_diagnostics.active_outer_half_extent);
+        ImGui::Text("Active Levels: %u-%u (%u)", local_detail_diagnostics.active_first_level,
+                    local_detail_diagnostics.active_last_level,
+                    local_detail_diagnostics.active_level_count);
         ImGui::InputFloat("Height Strength (m)", &ui.edit_config.local_detail_height_strength_m,
                           0.0F, 0.0F, "%.0f");
         ImGui::InputFloat("Detail Scale (m)", &ui.edit_config.local_detail_scale_m, 0.0F, 0.0F,
@@ -357,7 +366,9 @@ void draw_diagnostics(PlanetUiContext& ui) {
                     local_detail_diagnostics.active_last_level,
                     local_detail_diagnostics.active_level_count);
         ImGui::Text("Patches: %u", local_detail_diagnostics.patch_count);
-        ImGui::Text("Near cell / outer extent: %.1f m / %.0f m",
+        ImGui::Text("Configured outer extent: %.0f m",
+                    ui.active_config.local_detail_outer_half_extent_m);
+        ImGui::Text("Runtime near cell / outer extent: %.1f m / %.0f m",
                     local_detail_diagnostics.near_cell_size,
                     local_detail_diagnostics.outer_half_extent);
         ImGui::Text("Active outer extent: %.0f m",

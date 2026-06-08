@@ -38,13 +38,17 @@ bool PlanetLocalDetailRuntime::topology_changed(const PlanetConfig& config,
         build_config_.local_detail_enabled != config.local_detail_enabled) {
         return true;
     }
-    const cubey::render::ClipmapGrid2DConfig grid = planet_local_detail_clipmap_config(config);
+    const cubey::render::ClipmapGrid2DConfig grid =
+        planet_local_detail_clipmap_config(config, view);
     const PlanetLocalDetailActiveRange active_range =
         planet_local_detail_active_range(config, grid, view);
     const PlanetLocalDetailDiagnostics& built = build_.diagnostics;
     return built.active != active_range.active ||
            built.active_first_level != active_range.first_level ||
-           built.active_level_count != active_range.level_count;
+           built.active_level_count != active_range.level_count ||
+           built.outer_half_extent != grid.outer_half_extent ||
+           built.finest_active_cell_size != active_range.finest_active_cell_size ||
+           built.coarsest_active_cell_size != active_range.coarsest_active_cell_size;
 }
 
 bool PlanetLocalDetailRuntime::has_drawable_mesh() const {
