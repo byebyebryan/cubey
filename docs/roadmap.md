@@ -507,12 +507,14 @@ Exit criteria:
 
 ## Phase 5: First Real Project
 
-Status: active; first `smoke_2d` solver checkpoints complete.
+Status: broadened; the first `smoke_2d` solver checkpoints are complete, and
+the current project-pressure work has moved through ocean rendering into the
+planet foundation.
 
-Goal: prove the framework with one non-trivial procedural graphics project and
-let repeated project needs shape the host/engine API.
+Goal: prove the framework with non-trivial procedural graphics projects and let
+repeated project needs shape the host/engine API.
 
-Current project:
+Project checkpoints:
 
 - `projects/fluid/smoke_2d` starts the fluid simulation rewrite as a smaller 2D
   dye-and-velocity field. The current checkpoint has compute injection,
@@ -524,11 +526,21 @@ Current project:
   simulation compute followed by fullscreen rendering; solver-internal barriers
   remain project-owned, while the compute-to-render boundary uses graph-owned
   buffer barriers and the backbuffer acquire/release path.
+- `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
+  integration, horizon-scale local frames, curved far-surface mapping, and
+  terrain-field handoff vocabulary. It is now treated as a local-water renderer
+  and future donor rather than the owner of planet-scale navigation.
+- `projects/planet` is the current scale/LOD foundation project. It owns
+  Earth-like scale, camera-relative cube-sphere surface LOD, project-local
+  terrain fields, local-detail diagnostics, planet-owned sky/celestial state,
+  physical atmosphere preview, HDR post, and visual smoke coverage.
 
 Candidate follow-ups:
 
 - Pressure solver upgrades, richer injectors, or a clearer smoke/liquid split
   for `smoke_2d`.
+- Planet local-detail handoff, seam/morph behavior, cache/streaming contracts,
+  and eventual ocean payload boundaries.
 - Marching cubes for compute-generated geometry and indirect draw pressure.
 - SDF sculpting if the sparse resource model becomes the more interesting
   framework driver.
@@ -540,8 +552,8 @@ Exit criteria:
 - The project runs interactively with a window.
 - The same project can run headlessly for a fixed number of frames and produce a
   deterministic output artifact.
-- README contains the exact commands for local smoke testing. Status: complete
-  for the current `smoke_2d` checkpoint.
+- README contains exact commands for local smoke testing. Status: complete for
+  the current `smoke_2d`, ocean, and planet checkpoints.
 
 ## Phase 6: Runtime Extraction
 

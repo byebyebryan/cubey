@@ -20,7 +20,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Planet gap closure checkpoint](planet-gap-closure.md): current planet
   project state, missing foundation gaps, and the intended split-commit batch.
 - [Planet surface quality pass](planet-surface-quality.md): procedural terrain,
-  material, LOD, and capture goals for the next planet surface batch.
+  material, LOD, and capture goals from the planet surface batch.
+- [Planet terrain field v2](planet-terrain-field-v2.md): current terrain field
+  sample/tile vocabulary for later ocean, biome, cache, and streaming work.
 - [Planet atmosphere v1](planet-atmosphere-v1.md): immediate planet-local
   scattering, transmittance, and aerial-perspective direction.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable

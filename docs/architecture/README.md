@@ -11,13 +11,13 @@ than the root design and roadmap.
 - [Fluid simulation direction](fluid-simulation.md): project direction for
   2D/2.5D/3D fluid work.
 - [Ocean rendering](ocean-rendering.md):
-  active/reference/experimental/legacy ocean split, reference-derived wave
-  core, feature donor boundaries, and breaking-wave tradeoffs.
+  active/reference/legacy ocean split, reference-derived wave core, feature
+  donor boundaries, and breaking-wave tradeoffs.
 - [Ocean horizon and curved-local scale](ocean-horizon-and-planet-scale.md):
   horizon-scale local ocean, planet-compatible contracts, curved-local
   rendering, and explicit handoff to planet-scale work.
-- [Planet rendering](planet-rendering.md): empty-planet-first direction,
-  surface LOD, frame/precision contracts, and ocean handoff boundaries.
+- [Planet rendering](planet-rendering.md): planet-scale frame, LOD,
+  terrain-field, sky/celestial, and ocean handoff direction.
 - [Ocean adjacent systems](ocean-adjacent-systems.md): atmosphere, clouds,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [glTF assets and PBR](gltf-assets.md): static glTF import, PBR material

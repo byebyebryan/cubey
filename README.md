@@ -46,6 +46,10 @@ Current projects:
 
 - `atmosphere`: clear-sky scattering workbench with solar time of day, twilight,
   procedural stars, moon rendering, Milky Way atlas layers, and headless output.
+- `planet`: Earth-scale planet rendering foundation with camera-relative
+  cube-sphere LOD, procedural terrain fields, local-detail diagnostics,
+  planet-owned sky/celestial state, physical atmosphere preview, HDR post, and
+  headless visual smoke coverage.
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, pressure projection, debug views, and
   deterministic headless capture output.
@@ -102,6 +106,8 @@ Authoritative current docs:
 - [Animation and deformation](docs/architecture/animation-deformation.md)
 - [Fluid simulation direction](docs/architecture/fluid-simulation.md)
 - [Ocean rendering](docs/architecture/ocean-rendering.md)
+- [Ocean horizon and curved-local scale](docs/architecture/ocean-horizon-and-planet-scale.md)
+- [Planet rendering](docs/architecture/planet-rendering.md)
 - [Ocean adjacent systems](docs/architecture/ocean-adjacent-systems.md)
 - [C++ style guide](docs/cpp-style.md)
 - [Changelog / release notes](CHANGELOG.md)
@@ -116,6 +122,7 @@ Project-local docs:
 - [Fluid 2.5D design](projects/fluid_25d/README.md)
 - [Fire 3D](projects/fluid/fire_3d/README.md)
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
+- [Planet](projects/planet/README.md)
 - [Ocean](projects/ocean/README.md)
 - [Ocean Ref](projects/ocean_ref/README.md)
 - [Ocean Legacy](projects/ocean_legacy/README.md)
@@ -202,6 +209,7 @@ Useful windowed smokes:
 ./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --width 1280 --height 720
 ./build/dev/projects/atmosphere/atmosphere --frames 300 --width 1280 --height 720
+./build/dev/projects/planet/planet --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --ocean-map-size 128 --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean_ref/ocean_ref --ocean-ref-map-size 128 --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean_legacy/ocean_legacy --frames 300 --width 1280 --height 720
@@ -303,6 +311,7 @@ Useful headless PNG smokes:
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d.png
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d.png
 ./build/dev/projects/atmosphere/atmosphere --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-atmosphere.png
+./build/dev/projects/planet/planet --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-planet.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --ocean-map-size 128 --output /tmp/cubey-ocean.png
 ./build/dev/projects/ocean_ref/ocean_ref --headless --frames 120 --width 640 --height 360 --ocean-ref-map-size 128 --output /tmp/cubey-ocean-ref.png
 ./build/dev/projects/ocean_legacy/ocean_legacy --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean-legacy.png
@@ -361,6 +370,9 @@ layers are installed.
 - `ocean_legacy`: left-drag orbits the camera, mouse wheel zooms, Space
   pauses/resumes wave time, `R` resets, `D` cycles the legacy water debug views,
   Escape closes.
+- `planet`: left-drag orbits the planet, right-drag looks around in surface
+  mode, mouse wheel changes distance, WASD moves the surface camera, Escape
+  closes.
 - `pbr_furnace`: left-drag orbits the camera, Escape closes.
 
 `--debug-view` currently accepts `final`, `base-color`, `normal`,

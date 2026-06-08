@@ -602,7 +602,7 @@ cubey/
           ocean.frag      -- water shading, foam, and debug views
       ocean_ref/          -- frozen known-good GodotOceanWaves comparison port
       ocean_legacy/       -- previous Cubey ocean renderer and feature donor
-      planet/             -- planet-scale frame, surface LOD, and integration foundation
+      planet/             -- planet frame, surface LOD, terrain field, and sky foundation
       procedural_terrain/ -- terrain, bathymetry, shoreline, and LOD diagnostics
       pbr_furnace/
         CMakeLists.txt
@@ -625,11 +625,17 @@ cubey/
     DESIGN.md              -- current design and tenets
     roadmap.md             -- living implementation plan
     architecture/          -- detailed current foundation notes
-      gltf-assets.md
-      pbr-ibl.md
-      host-engine.md
+      animation-deformation.md
       entity-component-foundation.md
       fluid-simulation.md
+      gltf-assets.md
+      host-engine.md
+      ocean-adjacent-systems.md
+      ocean-horizon-and-planet-scale.md
+      ocean-rendering.md
+      pbr-ibl.md
+      planet-rendering.md
+      render-graph.md
       renderer-foundation.md
       threading-and-async.md
       vulkan-abstractions.md

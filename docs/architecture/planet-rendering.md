@@ -1,9 +1,10 @@
 # Planet Rendering Direction
 
-This note captures the empty-planet-first direction for future planet-scale
-work. The immediate goal is not to make `projects/ocean` larger. It is to build
-a small, inspectable planet project that owns scale, navigation, LOD, and
-coordinate policy before ocean is attached as one surface layer.
+This note captures the planet rendering foundation and remaining planet-scale
+integration direction. The immediate goal is not to make `projects/ocean`
+larger. It is to keep `projects/planet` as the owner of scale, navigation, LOD,
+terrain-field, sky/celestial, and coordinate policy before ocean is attached as
+one surface layer.
 
 ## Decision
 
@@ -127,7 +128,7 @@ Useful pieces already exist and should be reused:
   transition widths, cell sizes, and triangle diagnostics;
 - `cubey::render::TerrainOceanFieldView`: the first height/depth/shore/slope
   field contract used by terrain and ocean;
-- `cubey::engine::AtmosphereEnvironmentRuntime`: useful reference/runtime for
+- `cubey::AtmosphereEnvironmentRuntime`: useful reference/runtime for
   ocean and atmosphere demos, but no longer the active planet sky owner;
 - shared HDR post and performance UI contracts.
 - project-local `PlanetUi` and `PlanetSurfaceRuntime` boundaries that keep
@@ -460,43 +461,27 @@ Deferred surface-field work:
 
 ## Suggested Sequence
 
-The current near-term gap-closure batch is tracked in
-[`docs/notes/planet-gap-closure.md`](../notes/planet-gap-closure.md). Keep
-temporary implementation checkpoints there and promote only stable contracts
-back into this architecture note.
+The first planet gap-closure, celestial, atmosphere, and terrain-field batches
+are tracked in [`docs/notes/`](../notes/README.md). Keep temporary
+implementation checkpoints there and promote only stable contracts back into
+this architecture note.
 
-1. Add this design boundary and resync ocean docs.
-2. Add `projects/planet` as an empty-planet viewer with local sky,
-   radius/altitude controls, and frame diagnostics.
-3. Add a debug planet surface with cube-sphere or quadtree patch IDs.
-4. Add LOD selection, wireframe, and patch diagnostics.
-5. Add seam handling through skirts or morph bands.
-6. Add placeholder terrain/bathymetry/material fields.
-7. Keep strengthening atmosphere, LOD, terrain, and diagnostics until they are
-   stable enough to host other layers.
-8. Done: move sun ownership out of the shared atmosphere background path. The
-   active renderer still draws the sun as a planet-owned distant sky disk/glow;
-   the moon is the explicit body-geometry pass.
-9. Done as a first analytic body: model sun/moon state through local solar
-   system time, with planet orbit, self-rotation, and moon orbit.
-10. Done: replace the analytic moon disk with body/geometry rendering.
-11. Done as a first consistency pass: add shared project-local atmosphere terms
-   for the planet sky and surface haze, plus fixed headless capture controls.
-12. Done as a v1 path: replace the analytic default with a small project-local
-   single-scattering and aerial-perspective model; keep full atmosphere LUTs
-   deferred until the contract needs them.
-13. Done: replace sky-owned moon alpha fading with depth-tested body geometry,
-   premultiplied phase/daylight visibility, a full-disk procedural star mask,
-   phase-scaled secondary moonlight, and deferred eclipse shadowing.
-14. Done: add visual smoke coverage, view-aware orbit exposure, unified moon
-   atmosphere visibility, and smaller `PlanetUi` / `PlanetSurfaceRuntime`
-   project boundaries.
-15. Done as a v1 terrain batch: expand tile summaries, strengthen procedural
-   landforms, and add local-detail diagnostics/smoke coverage. Final-view
-   local-detail participation was deferred again after visual review showed the
-   current handoff reads as a finite noisy terrain island.
-16. Port ocean as a local water layer once the planet frame and LOD contracts are
-   stable.
+Current next sequence:
+
+1. Harden local/global terrain morphing so local-detail output can participate in
+   final rendering without reading as a finite noisy island.
+2. Define persistent topology plus cache/streaming contracts for terrain,
+   bathymetry, and future ocean payloads.
+3. Lock the terrain/ocean/atmosphere render-order and depth/field handoff.
+4. Extract project-owned config ownership once another project repeats the same
+   option pressure currently routed through shared `RunConfig`.
+5. Port ocean as a local water layer once the planet frame, terrain field,
+   local-detail, and render-order contracts are stable.
+
+Completed foundation checkpoints include the initial planet viewer, cube-sphere
+surface LOD, seam/skirt diagnostics, project-local celestial ownership,
+project-local atmosphere v1, visual smoke coverage, `PlanetUi` /
+`PlanetSurfaceRuntime`, and terrain-field v2.
 
 Non-goals for the first planet pass:
 

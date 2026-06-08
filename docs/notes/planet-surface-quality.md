@@ -1,9 +1,10 @@
 # Planet Surface Quality Pass
 
-This note records the next planet-project batch before implementation. The goal
-is to make the current procedural planet surface read less like placeholder
-bands and more like a useful foundation for later ocean, clouds, and streamed
-terrain.
+This note records the planet surface quality batch that has since landed. The
+goal was to make the procedural planet surface read less like placeholder bands
+and more like a useful foundation for later ocean, clouds, and streamed terrain.
+Current terrain-field status now lives in
+[`planet-terrain-field-v2.md`](planet-terrain-field-v2.md).
 
 ## Goals
 

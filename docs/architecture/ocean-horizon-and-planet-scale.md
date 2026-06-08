@@ -301,8 +301,9 @@ Avoid:
 1. Done: add horizon-distance and far-extent diagnostics to `projects/ocean`.
 2. Done: make the ocean mesh extent derive from camera height plus an explicit
    safety margin.
-3. In progress: improve far mesh layout so square bounds are not visible in
-   normal viewing conditions.
+3. Done enough for now: horizon-derived extent, curved far-surface mapping, and
+   aerial perspective keep square bounds out of normal ocean views. Deeper mesh
+   topology work should happen against the planet/local-detail host contract.
 4. Done as a placeholder: add horizon-aware atmosphere/aerial-perspective
    blending for the far ocean.
 5. Done as a flat seam: introduce local-frame, surface-frame, datum, projection,
@@ -314,9 +315,9 @@ Avoid:
    endpoint and should remain a water renderer/testbed while planet-scale
    patching, celestial ownership, and future streaming continue in
    `projects/planet`.
-8. Next in `projects/planet`: make Earth-like scale the default, keep mini scale
-   as an explicit debug preset, and add local-detail clipmap diagnostics before
-   porting any ocean waves.
+8. Next in `projects/planet`: harden local/global morphing, persistent
+   topology, cache/streaming contracts, render order, and ocean payload
+   attachment before porting any ocean waves.
 
 This keeps ocean product-visible while leaving a clean path for `projects/planet`
 to consume it later.

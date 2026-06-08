@@ -30,8 +30,11 @@ first owner. That keeps the renderer focused on reference-quality water
 presentation while the supporting systems become inspectable in isolation.
 
 For planet scale, `projects/ocean` should stop at horizon-scale and curved-local
-rendering. `projects/planet` should start empty, prove navigation and LOD on a
-plain surface, then port ocean as one layer when the planet frame is stable.
+rendering. `projects/planet` now owns the landed frame, surface LOD,
+terrain-field, sky/celestial, atmosphere, and local-detail diagnostics; the
+remaining integration target is to port ocean as one local water layer when
+local/global morphing, persistent topology, streaming, and render order are
+stable.
 
 ## Atmosphere Project
 

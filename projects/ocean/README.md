@@ -10,8 +10,8 @@ rendering. That is not a bad endpoint: the project already exercises the water
 renderer, FFT cascade cost model, atmosphere integration, terrain-field
 boundary, LOD diagnostics, and curvature controls. Full planet-scale navigation,
 surface patching, streaming terrain/bathymetry, weather, and clouds belong in a
-future `projects/planet`; ocean should be ported or wrapped there when the
-planet frame and LOD contracts are ready.
+`projects/planet`; ocean should be ported or wrapped there when the planet
+frame and LOD contracts are ready.
 
 GodotOceanWaves is MIT licensed; the required notice is kept in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

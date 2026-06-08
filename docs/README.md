@@ -38,9 +38,11 @@ Detailed current foundation notes live under
 - [Ocean rendering](architecture/ocean-rendering.md):
   active/reference/legacy ocean split, reference-derived wave
   core, feature donor boundaries, and breaking-wave tradeoffs.
-- [Planet rendering](architecture/planet-rendering.md): empty-planet-first
-  direction, surface LOD, frame/precision contracts, and ocean handoff
-  boundaries.
+- [Ocean horizon and curved-local scale](architecture/ocean-horizon-and-planet-scale.md):
+  ocean/planet scale boundary, curved far-surface mapping, and local-frame
+  handoff direction.
+- [Planet rendering](architecture/planet-rendering.md): planet-scale frame, LOD,
+  terrain-field, sky/celestial, and ocean handoff direction.
 - [Ocean adjacent systems](architecture/ocean-adjacent-systems.md): atmosphere,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [glTF assets and PBR](architecture/gltf-assets.md): glTF import, PBR material
@@ -71,6 +73,8 @@ Project-specific design stays beside the project:
 
 ## Notes
 
+- [Notes index](notes/README.md): current living notes, research records, and
+  promoted implementation checkpoints.
 - [Working notes](notes/working-notes.md): scratchpad for progress, gotchas,
   and context that has not been promoted into current design docs. Treat it as
   useful context, not current authority.

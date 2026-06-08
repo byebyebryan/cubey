@@ -234,10 +234,10 @@ uploaded.
 
 The test suite includes planet headless PNG smoke coverage for baseline
 headless output, surface dawn/day/night, orbit lit/terminator, daytime moon,
-wireframe LOD views, terrain-field diagnostics, and local-detail diagnostic
-views. These tests are intentionally coarse image-stat checks, not golden-image
-comparisons, but they keep the main visual paths from silently going black or
-empty.
+wireframe LOD views, one terrain-field diagnostic (`moisture`), and local-detail
+diagnostic views. These tests are intentionally coarse image-stat checks, not
+golden-image comparisons, but they keep the main visual paths from silently
+going black or empty.
 
 This project should stay focused on planet-scale contracts first. Ocean scale
 work remains in `projects/ocean` until the planet frame, LOD, and world-space

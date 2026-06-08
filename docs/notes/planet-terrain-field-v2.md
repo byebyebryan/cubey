@@ -1,10 +1,10 @@
 # Planet Terrain Detail Batch
 
-This note tracks the next long terrain-focused planet batch before ocean is
-ported into `projects/planet`. The field vocabulary and first tile payload
-boundary already exist; the remaining pressure is making surface view read as a
-credible large-scale terrain system and defining where the local detail clipmap
-belongs before it becomes a final-view participant.
+This note records the landed terrain-field v2 batch and current sample/tile
+vocabulary before ocean is ported into `projects/planet`. The remaining
+pressure is making surface view read as a credible large-scale terrain system
+and defining where the local detail clipmap belongs before it becomes a
+final-view participant.
 
 ## Direction
 
