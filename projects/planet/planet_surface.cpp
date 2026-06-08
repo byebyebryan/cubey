@@ -385,6 +385,8 @@ class PlanetPatchSelectionLookup {
         return terrain_band_color(config,
                                   sample.terrain_bands.mid_detail_m +
                                       sample.terrain_bands.fine_detail_m);
+    case PlanetDebugView::LocalDetailHorizon:
+        return final_color(config, sample);
     }
     return final_color(config, sample);
 }

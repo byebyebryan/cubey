@@ -77,6 +77,7 @@ enum class PlanetDebugView : std::uint8_t {
     TerrainBandBase,
     TerrainBandRelief,
     TerrainBandDetail,
+    LocalDetailHorizon,
 };
 
 enum class PlanetScalePreset : std::uint8_t {
@@ -146,6 +147,7 @@ void apply_planet_scale_preset(PlanetConfig& config, PlanetScalePreset preset);
 [[nodiscard]] const char* planet_debug_view_name(PlanetDebugView view);
 [[nodiscard]] bool planet_debug_view_is_local_detail(PlanetDebugView view);
 [[nodiscard]] bool planet_debug_view_uses_local_detail_surface(PlanetDebugView view);
+[[nodiscard]] bool planet_debug_view_uses_horizon_local_detail(PlanetDebugView view);
 [[nodiscard]] PlanetAtmosphereMode planet_atmosphere_mode_from_string(std::string_view value);
 [[nodiscard]] const char* planet_atmosphere_mode_name(PlanetAtmosphereMode mode);
 void validate_planet_config(const PlanetConfig& config);

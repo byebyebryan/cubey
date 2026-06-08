@@ -61,7 +61,7 @@ int debug_view_option() {
 
 bool local_detail_inspection_view_enabled() {
     int debug_view = debug_view_option();
-    return debug_view >= 19 && debug_view <= 24;
+    return (debug_view >= 19 && debug_view <= 24) || debug_view == 28;
 }
 
 #include "planet_surface_field.glsl"

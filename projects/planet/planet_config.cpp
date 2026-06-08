@@ -269,6 +269,10 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
         value == "local-final" || value == "local_final") {
         return PlanetDebugView::LocalDetailFinal;
     }
+    if (value == "local-detail-horizon" || value == "local_detail_horizon" ||
+        value == "local-horizon" || value == "local_horizon") {
+        return PlanetDebugView::LocalDetailHorizon;
+    }
     throw std::runtime_error("unsupported planet debug view: " + std::string(value));
 }
 
@@ -330,6 +334,8 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "terrain-band-relief";
     case PlanetDebugView::TerrainBandDetail:
         return "terrain-band-detail";
+    case PlanetDebugView::LocalDetailHorizon:
+        return "local-detail-horizon";
     }
     return "final";
 }
@@ -340,7 +346,8 @@ bool planet_debug_view_is_local_detail(PlanetDebugView view) {
            view == PlanetDebugView::LocalDetailLod ||
            view == PlanetDebugView::LocalDetailHeight ||
            view == PlanetDebugView::LocalDetailFeatures ||
-           view == PlanetDebugView::LocalDetailFinal;
+           view == PlanetDebugView::LocalDetailFinal ||
+           view == PlanetDebugView::LocalDetailHorizon;
 }
 
 bool planet_debug_view_uses_local_detail_surface(PlanetDebugView view) {
@@ -352,6 +359,10 @@ bool planet_debug_view_uses_local_detail_surface(PlanetDebugView view) {
            view == PlanetDebugView::Shoreline || view == PlanetDebugView::LandMask ||
            view == PlanetDebugView::Moisture || view == PlanetDebugView::Temperature ||
            view == PlanetDebugView::Roughness;
+}
+
+bool planet_debug_view_uses_horizon_local_detail(PlanetDebugView view) {
+    return view == PlanetDebugView::LocalDetailHorizon;
 }
 
 PlanetAtmosphereMode planet_atmosphere_mode_from_string(std::string_view value) {

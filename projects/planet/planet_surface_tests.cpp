@@ -1742,6 +1742,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_from_string("local-detail-final") ==
                 cubey::projects::planet::PlanetDebugView::LocalDetailFinal,
             "planet debug view should parse local-detail-final");
+    require(cubey::projects::planet::planet_debug_view_from_string("local-detail-horizon") ==
+                cubey::projects::planet::PlanetDebugView::LocalDetailHorizon,
+            "planet debug view should parse local-detail-horizon");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::CellEdge)} == "cell-edge",
             "planet debug view should name cell-edge");
@@ -1816,6 +1819,10 @@ void test_planet_surface_metric_debug_views_parse() {
                 cubey::projects::planet::PlanetDebugView::LocalDetailFinal)} ==
                 "local-detail-final",
             "planet debug view should name local-detail-final");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::LocalDetailHorizon)} ==
+                "local-detail-horizon",
+            "planet debug view should name local-detail-horizon");
     require(static_cast<std::uint8_t>(
                 cubey::projects::planet::PlanetDebugView::LocalDetailWireframe) == 19U,
             "local-detail shader debug range should start at wireframe");
@@ -1834,6 +1841,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(static_cast<std::uint8_t>(
                 cubey::projects::planet::PlanetDebugView::TerrainBandDetail) == 27U,
             "terrain-band-detail shader debug value should stay synchronized");
+    require(static_cast<std::uint8_t>(
+                cubey::projects::planet::PlanetDebugView::LocalDetailHorizon) == 28U,
+            "local-detail-horizon shader debug value should stay synchronized");
     require(!cubey::projects::planet::planet_debug_view_is_local_detail(
                 cubey::projects::planet::PlanetDebugView::Final),
             "final planet view should not enable local-detail diagnostic rendering");
@@ -1855,6 +1865,15 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_is_local_detail(
                 cubey::projects::planet::PlanetDebugView::LocalDetailFinal),
             "local-detail-final should enable local-detail inspection rendering");
+    require(cubey::projects::planet::planet_debug_view_is_local_detail(
+                cubey::projects::planet::PlanetDebugView::LocalDetailHorizon),
+            "local-detail-horizon should enable local-detail inspection rendering");
+    require(!cubey::projects::planet::planet_debug_view_uses_horizon_local_detail(
+                cubey::projects::planet::PlanetDebugView::LocalDetailFinal),
+            "local-detail-final should keep bounded local-detail inspection");
+    require(cubey::projects::planet::planet_debug_view_uses_horizon_local_detail(
+                cubey::projects::planet::PlanetDebugView::LocalDetailHorizon),
+            "local-detail-horizon should request full-range local-detail inspection");
     require(!cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::Final),
             "final planet view should keep continuous global terrain until local-detail handoff is solved");
@@ -1876,6 +1895,9 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::LocalDetailFinal),
             "local-detail final view should allow local-detail surface rendering");
+    require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+                cubey::projects::planet::PlanetDebugView::LocalDetailHorizon),
+            "local-detail horizon view should allow local-detail surface rendering");
     require(!cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::Wireframe),
             "global mesh wireframe should not draw local-detail surface overlays");

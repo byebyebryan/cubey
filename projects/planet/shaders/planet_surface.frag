@@ -62,7 +62,12 @@ int debug_view_option() {
 
 bool local_detail_surface_enabled() {
     int debug_view = debug_view_option();
-    return (debug_view >= 8 && debug_view <= 16) || (debug_view >= 19 && debug_view <= 24);
+    return (debug_view >= 8 && debug_view <= 16) || (debug_view >= 19 && debug_view <= 24) ||
+           debug_view == 28;
+}
+
+bool local_detail_horizon_view_enabled() {
+    return debug_view_option() == 28;
 }
 
 bool local_detail_is_local_draw() {
@@ -124,7 +129,7 @@ float local_detail_patch_ownership(vec2 local_xz, float level, float blend) {
 
 float local_detail_global_ownership(vec3 world_position) {
     if (surface_frame.local_origin_options.w <= 0.0 || local_detail_is_local_draw() ||
-        !local_detail_surface_enabled()) {
+        !local_detail_horizon_view_enabled()) {
         return 0.0;
     }
     vec2 local_xz = local_detail_world_xz(world_position);
@@ -425,7 +430,7 @@ void main() {
     vec3 normal = normalize(in_normal);
     vec3 light_dir = normalize(surface_frame.light_direction_debug.xyz);
     int debug_view = debug_view_option();
-    float final_view = debug_view == 0 || debug_view == 24 ? 1.0 : 0.0;
+    float final_view = debug_view == 0 || debug_view == 24 || debug_view == 28 ? 1.0 : 0.0;
     uint material = fragment_material_id();
     vec3 albedo = final_view > 0.5 ? fragment_material_albedo(material) : in_color;
     float ndotl = max(dot(normal, light_dir), 0.0);

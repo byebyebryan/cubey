@@ -675,9 +675,10 @@ class PlanetApp {
     }
 
     [[nodiscard]] PlanetLocalDetailView local_detail_view(VkExtent2D extent) const {
-        const bool inspection_view = planet_debug_view_is_local_detail(planet_config_.debug_view);
+        const bool horizon_inspection =
+            planet_debug_view_uses_horizon_local_detail(planet_config_.debug_view);
         const float inspection_outer_half_extent =
-            inspection_view
+            horizon_inspection
                 ? std::max({planet_config_.local_detail_outer_half_extent_m,
                             kPlanetLocalDetailInspectionMinimumOuterHalfExtentM,
                             frame_.horizon_distance_m *
@@ -687,8 +688,8 @@ class PlanetApp {
             .camera_clearance_m = std::max(frame_.camera_surface_clearance_m, 1.0F),
             .vertical_fov_radians = camera_.fovy_radians(),
             .viewport_height_px = static_cast<float>(std::max(extent.height, 1U)),
-            .full_active_range = inspection_view,
-            .minimum_lod_levels = inspection_view ? kPlanetMaxLocalDetailLodLevels : 0U,
+            .full_active_range = horizon_inspection,
+            .minimum_lod_levels = horizon_inspection ? kPlanetMaxLocalDetailLodLevels : 0U,
             .minimum_outer_half_extent_m = inspection_outer_half_extent,
         };
     }
