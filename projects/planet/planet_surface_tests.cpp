@@ -1587,6 +1587,18 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_is_local_detail(
                 cubey::projects::planet::PlanetDebugView::LocalDetailHeight),
             "local-detail-height should enable local-detail diagnostic rendering");
+    require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+                cubey::projects::planet::PlanetDebugView::Final),
+            "final planet view should allow local-detail surface rendering");
+    require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+                cubey::projects::planet::PlanetDebugView::TerrainHeight),
+            "terrain field debug views should allow local-detail surface rendering");
+    require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+                cubey::projects::planet::PlanetDebugView::LocalDetailWireframe),
+            "local-detail debug views should allow local-detail surface rendering");
+    require(!cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+                cubey::projects::planet::PlanetDebugView::Wireframe),
+            "global mesh wireframe should not draw local-detail surface overlays");
 }
 
 void test_planet_surface_planner_records_lod_transition_pressure() {

@@ -853,7 +853,7 @@ class PlanetApp {
 
     [[nodiscard]] float local_detail_surface_weight() const {
         if (!planet_config_.local_detail_enabled ||
-            !planet_debug_view_is_local_detail(planet_config_.debug_view)) {
+            !planet_debug_view_uses_local_detail_surface(planet_config_.debug_view)) {
             return 0.0F;
         }
         const PlanetLocalDetailDiagnostics& diagnostics = local_detail_runtime_.diagnostics();

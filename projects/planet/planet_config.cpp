@@ -303,6 +303,17 @@ bool planet_debug_view_is_local_detail(PlanetDebugView view) {
            view == PlanetDebugView::LocalDetailBlend || view == PlanetDebugView::LocalDetailHeight;
 }
 
+bool planet_debug_view_uses_local_detail_surface(PlanetDebugView view) {
+    if (view == PlanetDebugView::Final || planet_debug_view_is_local_detail(view)) {
+        return true;
+    }
+    return view == PlanetDebugView::TerrainHeight || view == PlanetDebugView::TerrainSlope ||
+           view == PlanetDebugView::TerrainMaterial || view == PlanetDebugView::Bathymetry ||
+           view == PlanetDebugView::Shoreline || view == PlanetDebugView::LandMask ||
+           view == PlanetDebugView::Moisture || view == PlanetDebugView::Temperature ||
+           view == PlanetDebugView::Roughness;
+}
+
 PlanetAtmosphereMode planet_atmosphere_mode_from_string(std::string_view value) {
     if (value.empty() || value == "analytic") {
         return PlanetAtmosphereMode::Analytic;

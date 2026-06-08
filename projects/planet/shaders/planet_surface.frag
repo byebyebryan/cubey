@@ -105,14 +105,23 @@ float local_detail_patch_ownership(vec2 local_xz, float level, float blend) {
     return clamp(active_weight * blend, 0.0, 1.0);
 }
 
-bool local_detail_global_cutout(vec3 world_position) {
+float local_detail_global_ownership(vec3 world_position) {
     if (surface_frame.local_origin_options.w <= 0.0 || local_detail_is_local_draw() ||
         !local_detail_surface_debug_enabled()) {
-        return false;
+        return 0.0;
     }
     vec2 local_xz = local_detail_world_xz(world_position);
     float radial = max(abs(local_xz.x), abs(local_xz.y));
-    return radial < surface_frame.local_right_outer.w * 0.998;
+    float outer = surface_frame.local_right_outer.w;
+    if (radial > outer) {
+        return 0.0;
+    }
+    float handoff = 1.0 - smoothstep(outer * 0.78, outer * 0.94, radial);
+    return clamp(surface_frame.local_origin_options.w * handoff, 0.0, 1.0);
+}
+
+bool local_detail_global_cutout(vec3 world_position) {
+    return local_detail_global_ownership(world_position) > 0.72;
 }
 
 float grid_wire_alpha(vec2 uv) {
