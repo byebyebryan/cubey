@@ -1,3 +1,4 @@
+#include "planet_atmosphere_adapter.h"
 #include "planet_celestial.h"
 
 #include <algorithm>

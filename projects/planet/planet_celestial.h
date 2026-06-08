@@ -4,7 +4,6 @@
 
 #include <cubey/core/math.h>
 #include <cubey/core/run_config.h>
-#include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/material.h>
 #include <cubey/render/material_instance.h>
@@ -295,8 +294,6 @@ planet_atmosphere_inputs(const PlanetCelestialSystem& celestial,
                          const PlanetCelestialLighting& lighting,
                          cubey::math::DVec3 camera_world_position_m, float planet_radius_m,
                          float atmosphere_outer_radius_m);
-[[nodiscard]] cubey::render::AtmosphereEnvironmentConfig
-planet_atmosphere_environment_config(const PlanetAtmosphereInputs& inputs);
 [[nodiscard]] PlanetSkyFrameUniforms
 planet_sky_frame_uniforms(const PlanetCelestialSystem& celestial,
                           const PlanetSkyFrameUniformInputs& inputs);

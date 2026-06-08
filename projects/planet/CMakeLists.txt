@@ -19,6 +19,7 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         planet_app.cpp
+        planet_atmosphere_adapter.cpp
         planet_camera.cpp
         planet_celestial.cpp
         planet_config.cpp
@@ -61,6 +62,7 @@ if(BUILD_TESTING)
 
     add_executable(
         cubey_project_planet_celestial_tests
+        planet_atmosphere_adapter.cpp
         planet_celestial.cpp
         planet_celestial_tests.cpp
     )
