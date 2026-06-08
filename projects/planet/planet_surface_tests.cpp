@@ -360,6 +360,45 @@ void test_planet_surface_field_classifies_material_bands() {
             "planet highland material should be brighter than water");
 }
 
+void test_planet_surface_field_produces_mixed_landforms() {
+    const cubey::projects::planet::PlanetConfig config{};
+    float min_height = std::numeric_limits<float>::max();
+    float max_height = std::numeric_limits<float>::lowest();
+    float max_slope = 0.0F;
+    std::uint32_t land_count = 0U;
+    std::uint32_t water_count = 0U;
+    std::uint32_t material_mask = 0U;
+    constexpr std::uint32_t kGrid = 8U;
+    for (std::uint32_t face = 0U; face < 6U; ++face) {
+        const cubey::projects::planet::PlanetSurfacePatchId id{.face = face};
+        for (std::uint32_t y = 0U; y <= kGrid; ++y) {
+            const float v = -1.0F + 2.0F * static_cast<float>(y) / static_cast<float>(kGrid);
+            for (std::uint32_t x = 0U; x <= kGrid; ++x) {
+                const float u = -1.0F + 2.0F * static_cast<float>(x) / static_cast<float>(kGrid);
+                const cubey::projects::planet::PlanetSurfaceSample sample =
+                    cubey::projects::planet::planet_surface_sample_field(config, id, u, v);
+                min_height = std::min(min_height, sample.height_m);
+                max_height = std::max(max_height, sample.height_m);
+                max_slope = std::max(max_slope, sample.normalized_slope);
+                land_count += sample.land_mask > 0.55F ? 1U : 0U;
+                water_count += sample.water_depth_m > 0.0F ? 1U : 0U;
+                material_mask |= 1U << static_cast<std::uint32_t>(sample.material);
+            }
+        }
+    }
+
+    std::uint32_t material_count = 0U;
+    for (std::uint32_t bit = 0U; bit < 6U; ++bit) {
+        material_count += (material_mask & (1U << bit)) != 0U ? 1U : 0U;
+    }
+    require(max_height - min_height > config.terrain_height_scale_m * 0.55F,
+            "planet terrain should produce meaningful height relief");
+    require(max_slope > 0.025F, "planet terrain should produce visible slope variation");
+    require(land_count > 0U && water_count > 0U,
+            "planet terrain should produce both land and water samples");
+    require(material_count >= 3U, "planet terrain should produce multiple material classes");
+}
+
 void test_planet_surface_field_reports_sea_level_and_bathymetry() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1200.0F,
@@ -1740,6 +1779,7 @@ int main() {
         test_planet_surface_field_is_deterministic_for_seed();
         test_planet_surface_field_reports_bounded_height_normal_and_slope();
         test_planet_surface_field_classifies_material_bands();
+        test_planet_surface_field_produces_mixed_landforms();
         test_planet_surface_field_reports_sea_level_and_bathymetry();
         test_planet_surface_tile_key_round_trips_patch_identity();
         test_planet_surface_tile_payload_is_deterministic_and_bounded();

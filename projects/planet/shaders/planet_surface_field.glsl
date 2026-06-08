@@ -86,8 +86,22 @@ vec2 planet_surface_terrain_detail_strengths() {
     return vec2(mid, fine);
 }
 
+vec3 planet_surface_terrain_domain_point(vec3 sphere_normal) {
+    uint seed = uint(surface_frame.terrain_options.z + 0.5);
+    vec3 base = sphere_normal * max(surface_frame.terrain_options.y, 0.0001);
+    vec3 warp = vec3(
+        planet_surface_fbm(base * 0.71 + vec3(-2.8, 5.2, 1.1), seed + 271U, 3U),
+        planet_surface_fbm(base * 0.67 + vec3(4.6, -1.7, 3.5), seed + 283U, 3U),
+        planet_surface_fbm(base * 0.74 + vec3(1.9, 2.4, -6.3), seed + 307U, 3U));
+    return base + warp * 0.22;
+}
+
+float planet_surface_terrain_ridge_profile(float value, float sharpness) {
+    return pow(max(1.0 - abs(value), 0.0), sharpness);
+}
+
 float planet_surface_terrain_continent_mask(vec3 sphere_normal) {
-    vec3 p = sphere_normal * max(surface_frame.terrain_options.y, 0.0001);
+    vec3 p = planet_surface_terrain_domain_point(sphere_normal);
     uint seed = uint(surface_frame.terrain_options.z + 0.5);
     float continent = planet_surface_fbm(p * 0.52 + vec3(2.3, -1.7, 4.1), seed + 211U, 5U);
     float breakup = planet_surface_fbm(p * 1.48 + vec3(-3.8, 5.0, 0.9), seed + 547U, 4U);
@@ -97,11 +111,21 @@ float planet_surface_terrain_continent_mask(vec3 sphere_normal) {
 }
 
 float planet_surface_terrain_mountain_belt(vec3 sphere_normal) {
-    vec3 p = sphere_normal * max(surface_frame.terrain_options.y, 0.0001);
+    vec3 p = planet_surface_terrain_domain_point(sphere_normal);
     uint seed = uint(surface_frame.terrain_options.z + 0.5);
     float belt = planet_surface_fbm(p * 1.08 + vec3(-6.5, 1.2, 3.7), seed + 811U, 5U);
     float fold = planet_surface_fbm(p * 2.35 + vec3(3.2, 6.4, -5.7), seed + 919U, 4U);
     return planet_surface_smootherstep((belt * 0.72 + fold * 0.24 + 0.08) / 0.44);
+}
+
+float planet_surface_terrain_valley_network(vec3 sphere_normal) {
+    vec3 p = planet_surface_terrain_domain_point(sphere_normal);
+    uint seed = uint(surface_frame.terrain_options.z + 0.5);
+    float primary = planet_surface_fbm(p * 2.55 + vec3(6.8, -4.1, 2.3), seed + 1223U, 4U);
+    float secondary =
+        planet_surface_fbm(p * 5.10 + vec3(-1.2, 8.4, -5.6), seed + 1291U, 3U);
+    float channel = primary * 0.78 + secondary * 0.22;
+    return planet_surface_terrain_ridge_profile(channel * 1.35, 2.9);
 }
 
 float planet_surface_terrain_height_m(vec3 sphere_normal) {
@@ -111,7 +135,7 @@ float planet_surface_terrain_height_m(vec3 sphere_normal) {
     }
 
     uint seed = uint(surface_frame.terrain_options.z + 0.5);
-    vec3 p = sphere_normal * max(surface_frame.terrain_options.y, 0.0001);
+    vec3 p = planet_surface_terrain_domain_point(sphere_normal);
     vec2 detail_strength = planet_surface_terrain_detail_strengths();
     float continent_mask = planet_surface_terrain_continent_mask(sphere_normal);
     float mountain_belt = planet_surface_terrain_mountain_belt(sphere_normal);
@@ -119,21 +143,30 @@ float planet_surface_terrain_height_m(vec3 sphere_normal) {
     float lowland = planet_surface_fbm(p * 2.15 + vec3(0.4, 3.2, -2.0), seed + 19U, 4U);
     float ridge_source =
         planet_surface_fbm(p * 4.10 + vec3(-4.0, 2.4, 8.5), seed + 37U, 5U);
-    float ridges = pow(max(1.0 - abs(ridge_source), 0.0), 3.1);
+    float ridge_source_secondary =
+        planet_surface_fbm(p * 7.20 + vec3(2.1, -8.2, 4.7), seed + 41U, 4U);
+    float ridges = max(planet_surface_terrain_ridge_profile(ridge_source, 2.7),
+                       planet_surface_terrain_ridge_profile(ridge_source_secondary, 2.3) * 0.52);
     float basin = planet_surface_fbm(p * 1.18 + vec3(5.7, 0.3, -6.1), seed + 73U, 4U);
+    float valleys = planet_surface_terrain_valley_network(sphere_normal);
     float shelf = planet_surface_smootherstep((continent_mask - 0.05) / 0.46);
     float ocean_floor = mix(-0.72 + broad * 0.08 + basin * 0.07,
                             -0.18 + broad * 0.10 + basin * 0.04, shelf);
-    float land_base = (continent_mask - 0.38) * 0.76 + broad * 0.08 + lowland * 0.14;
+    float land_base = (continent_mask - 0.38) * 0.72 + broad * 0.11 + lowland * 0.16;
     float relief_gate = planet_surface_smootherstep((continent_mask - 0.24) / 0.54);
-    float mountains = ridges * mountain_belt * relief_gate * detail_strength.x * 1.05;
+    float plain_gate = planet_surface_smootherstep((continent_mask - 0.36) / 0.42) *
+                       (1.0 - smoothstep(0.30, 0.72, mountain_belt));
+    float mountains = ridges * mountain_belt * relief_gate * detail_strength.x * 1.22;
+    float valley_cut = valleys * relief_gate * detail_strength.x *
+                       (0.08 + mountain_belt * 0.22 + plain_gate * 0.06);
     float fine = planet_surface_fbm(p * max(surface_frame.surface_options.w, 0.0001) +
                                         vec3(6.3, 1.1, -7.4),
                                     seed + 113U, 3U) *
                  detail_strength.y * (0.12 + relief_gate * 0.88) *
                  (0.45 + mountain_belt * 0.55);
     float height =
-        (mix(ocean_floor, land_base, continent_mask) + mountains + fine * 0.30) * height_scale;
+        (mix(ocean_floor, land_base, continent_mask) + mountains - valley_cut + fine * 0.26) *
+        height_scale;
     return clamp(height, -height_scale, height_scale);
 }
 
@@ -207,7 +240,7 @@ float planet_surface_land_mask(float height_above_sea_m) {
 }
 
 float planet_surface_temperature(vec3 sphere_normal, float normalized_elevation) {
-    vec3 p = sphere_normal * max(surface_frame.terrain_options.y, 0.0001);
+    vec3 p = planet_surface_terrain_domain_point(sphere_normal);
     uint seed = uint(surface_frame.terrain_options.z + 0.5);
     float latitude = abs(sphere_normal.y);
     float weather = planet_surface_fbm(p * 1.35 + vec3(8.1, -2.2, 1.4), seed + 1409U, 3U);
@@ -218,7 +251,7 @@ float planet_surface_temperature(vec3 sphere_normal, float normalized_elevation)
 
 float planet_surface_moisture(vec3 sphere_normal, float shoreline_mask,
                               float normalized_elevation) {
-    vec3 p = sphere_normal * max(surface_frame.terrain_options.y, 0.0001);
+    vec3 p = planet_surface_terrain_domain_point(sphere_normal);
     uint seed = uint(surface_frame.terrain_options.z + 0.5);
     float weather = planet_surface_fbm(p * 2.05 + vec3(-1.5, 7.6, -4.2), seed + 1613U, 4U);
     float latitude_rain = 1.0 - abs(sphere_normal.y) * 0.35;
@@ -254,30 +287,30 @@ vec3 planet_surface_material_color(uint material, float normalized_elevation,
     float wet = clamp(moisture, 0.0, 1.0);
     float warm = clamp(temperature, 0.0, 1.0);
     if (material == 0U) {
-        return vec3(0.018, 0.070, 0.165);
+        return vec3(0.014, 0.052, 0.118);
     }
     if (material == 1U) {
-        return vec3(0.040, 0.180, 0.260);
+        return vec3(0.038, 0.155, 0.205);
     }
     if (material == 2U) {
-        return vec3(0.520, 0.455, 0.285);
+        return vec3(0.560, 0.492, 0.315);
     }
     if (material == 3U) {
         float blend = clamp((elevation + 0.08) / 0.32, 0.0, 1.0);
-        vec3 dry = vec3(mix(0.225, 0.340, blend), mix(0.245, 0.300, blend),
-                        mix(0.135, 0.145, blend));
-        vec3 green = vec3(mix(0.070, 0.120, blend), mix(0.220, 0.360, blend),
-                          mix(0.115, 0.105, blend));
+        vec3 dry = vec3(mix(0.205, 0.335, blend), mix(0.225, 0.300, blend),
+                        mix(0.125, 0.155, blend));
+        vec3 green = vec3(mix(0.060, 0.115, blend), mix(0.185, 0.320, blend),
+                          mix(0.100, 0.110, blend));
         float green_mix = clamp(wet * (0.45 + warm * 0.55), 0.0, 1.0);
         return mix(dry, green, green_mix);
     }
     if (material == 4U) {
         float height_blend = clamp((elevation - 0.22) / 0.44, 0.0, 1.0);
         float rock_blend = max(height_blend, slope);
-        return vec3(mix(0.205, 0.515, rock_blend), mix(0.205, 0.470, rock_blend),
-                    mix(0.185, 0.400, rock_blend));
+        return vec3(mix(0.215, 0.500, rock_blend), mix(0.210, 0.475, rock_blend),
+                    mix(0.185, 0.430, rock_blend));
     }
-    return vec3(0.680, 0.720, 0.780);
+    return vec3(0.720, 0.745, 0.790);
 }
 
 vec3 planet_surface_material_debug_color(uint material) {

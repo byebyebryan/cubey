@@ -251,18 +251,18 @@ vec3 fragment_material_albedo(uint material) {
     vec3 base = planet_surface_material_color(material, normalized_elevation, normalized_slope,
                                               moisture, temperature);
     if (material == 0U || material == 1U) {
-        vec3 shallow = vec3(0.055, 0.245, 0.300);
-        return mix(base, shallow, (1.0 - normalized_bathymetry) * 0.36);
+        vec3 shallow = vec3(0.055, 0.210, 0.245);
+        return mix(base, shallow, (1.0 - normalized_bathymetry) * 0.32);
     }
     if (material == 2U) {
-        return mix(base, vec3(0.72, 0.62, 0.38), shoreline_mask * 0.40);
+        return mix(base, vec3(0.68, 0.58, 0.36), shoreline_mask * 0.36);
     }
     if (material == 3U) {
-        vec3 warm_dry = vec3(0.34, 0.30, 0.16);
-        return mix(base, warm_dry, (1.0 - moisture) * temperature * 0.20);
+        vec3 warm_dry = vec3(0.31, 0.27, 0.15);
+        return mix(base, warm_dry, (1.0 - moisture) * temperature * 0.18);
     }
     if (material == 4U) {
-        return mix(base, vec3(0.56, 0.52, 0.46), normalized_slope * 0.22);
+        return mix(base, vec3(0.52, 0.50, 0.47), normalized_slope * 0.24);
     }
     return base;
 }
