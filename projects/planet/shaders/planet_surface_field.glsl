@@ -191,16 +191,17 @@ PlanetSurfaceTerrainBands planet_surface_terrain_bands(vec3 sphere_normal) {
     float basin = planet_surface_fbm(p * 1.18 + vec3(5.7, 0.3, -6.1), seed + 73U, 4U);
     float valleys = features.valley_network;
     float shelf = planet_surface_smootherstep((continent_mask - 0.05) / 0.46);
-    float ocean_floor_base = mix(-0.72, -0.18, shelf);
-    float ocean_floor_relief = mix(broad * 0.08 + basin * 0.07,
-                                   broad * 0.10 + basin * 0.04, shelf);
-    float land_base_shape = (continent_mask - 0.38) * 0.72;
-    float land_base_relief = broad * 0.11 + lowland * 0.16;
     float relief_gate = features.relief_gate;
     float plain_gate = features.plain_gate;
-    float mountains = ridges * mountain_belt * relief_gate * detail_strength.x * 1.22;
+    float ocean_floor_base = mix(-0.82, -0.12, shelf);
+    float ocean_floor_relief = mix(broad * 0.10 + basin * 0.10,
+                                   broad * 0.13 + basin * 0.07, shelf);
+    float land_base_shape = (continent_mask - 0.34) * 0.78;
+    float land_base_relief =
+        broad * 0.16 + lowland * 0.20 + (mountain_belt - 0.42) * relief_gate * 0.10;
+    float mountains = ridges * mountain_belt * relief_gate * detail_strength.x * 1.36;
     float valley_cut = valleys * relief_gate * detail_strength.x *
-                       (0.08 + mountain_belt * 0.22 + plain_gate * 0.06);
+                       (0.10 + mountain_belt * 0.26 + plain_gate * 0.08);
     float fine = planet_surface_fbm(p * max(surface_frame.surface_options.w, 0.0001) +
                                         vec3(6.3, 1.1, -7.4),
                                     seed + 113U, 3U) *

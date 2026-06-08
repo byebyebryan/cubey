@@ -302,6 +302,43 @@ void test_planet_surface_terrain_bands_sum_to_height() {
                   "disabled terrain should expose zero terrain bands");
 }
 
+void test_planet_surface_terrain_bands_carry_global_structure() {
+    const cubey::projects::planet::PlanetConfig config{};
+    float min_base = std::numeric_limits<float>::max();
+    float max_base = std::numeric_limits<float>::lowest();
+    float min_relief = std::numeric_limits<float>::max();
+    float max_relief = std::numeric_limits<float>::lowest();
+    float min_detail = std::numeric_limits<float>::max();
+    float max_detail = std::numeric_limits<float>::lowest();
+    constexpr std::uint32_t kGrid = 8U;
+    for (std::uint32_t face = 0U; face < 6U; ++face) {
+        for (std::uint32_t y = 0U; y <= kGrid; ++y) {
+            const float v = -1.0F + 2.0F * static_cast<float>(y) / static_cast<float>(kGrid);
+            for (std::uint32_t x = 0U; x <= kGrid; ++x) {
+                const float u = -1.0F + 2.0F * static_cast<float>(x) / static_cast<float>(kGrid);
+                const cubey::math::Vec3 sphere_normal = glm::normalize(
+                    cubey::projects::planet::planet_surface_cube_face_point(face, u, v));
+                const cubey::projects::planet::PlanetSurfaceTerrainBands bands =
+                    cubey::projects::planet::planet_surface_terrain_bands(config, sphere_normal);
+                const float detail = bands.mid_detail_m + bands.fine_detail_m;
+                min_base = std::min(min_base, bands.base_shape_m);
+                max_base = std::max(max_base, bands.base_shape_m);
+                min_relief = std::min(min_relief, bands.broad_relief_m);
+                max_relief = std::max(max_relief, bands.broad_relief_m);
+                min_detail = std::min(min_detail, detail);
+                max_detail = std::max(max_detail, detail);
+            }
+        }
+    }
+
+    require(max_base - min_base > config.terrain_height_scale_m * 0.55F,
+            "planet base terrain band should carry planet-scale land and basin structure");
+    require(max_relief - min_relief > config.terrain_height_scale_m * 0.08F,
+            "planet relief terrain band should carry readable low-frequency variation");
+    require(max_detail - min_detail > config.terrain_height_scale_m * 0.04F,
+            "planet detail terrain band should carry residual ridge and valley structure");
+}
+
 void test_planet_surface_field_disabled_terrain_returns_sphere_sample() {
     const cubey::projects::planet::PlanetConfig config{
         .radius_m = 1200.0F,
@@ -2032,6 +2069,7 @@ int main() {
         test_planet_surface_terrain_detail_controls_change_shape();
         test_planet_surface_terrain_feature_context_is_bounded();
         test_planet_surface_terrain_bands_sum_to_height();
+        test_planet_surface_terrain_bands_carry_global_structure();
         test_planet_surface_field_disabled_terrain_returns_sphere_sample();
         test_planet_surface_field_is_deterministic_for_seed();
         test_planet_surface_field_reports_bounded_height_normal_and_slope();

@@ -379,18 +379,19 @@ PlanetSurfaceTerrainBands planet_surface_terrain_bands(const PlanetConfig& confi
     const float mountain_belt = features.mountain_belt;
     const float valleys = features.valley_network;
     const float shelf = smootherstep((continent_mask - 0.05F) / 0.46F);
-    const float ocean_floor_base = lerp(-0.72F, -0.18F, shelf);
-    const float ocean_floor_relief =
-        lerp(broad * 0.08F + basin * 0.07F, broad * 0.10F + basin * 0.04F, shelf);
-    const float land_base_shape = (continent_mask - 0.38F) * 0.72F;
-    const float land_base_relief = broad * 0.11F + lowland * 0.16F;
     const float relief_gate = features.relief_gate;
     const float plain_gate = features.plain_gate;
+    const float ocean_floor_base = lerp(-0.82F, -0.12F, shelf);
+    const float ocean_floor_relief =
+        lerp(broad * 0.10F + basin * 0.10F, broad * 0.13F + basin * 0.07F, shelf);
+    const float land_base_shape = (continent_mask - 0.34F) * 0.78F;
+    const float land_base_relief =
+        broad * 0.16F + lowland * 0.20F + (mountain_belt - 0.42F) * relief_gate * 0.10F;
     const float mountains =
-        ridges * mountain_belt * relief_gate * config.terrain_mid_detail_strength * 1.22F;
+        ridges * mountain_belt * relief_gate * config.terrain_mid_detail_strength * 1.36F;
     const float valley_cut =
         valleys * relief_gate * config.terrain_mid_detail_strength *
-        (0.08F + mountain_belt * 0.22F + plain_gate * 0.06F);
+        (0.10F + mountain_belt * 0.26F + plain_gate * 0.08F);
     const float fine =
         fbm(p * config.terrain_fine_detail_scale + cubey::math::Vec3{6.3F, 1.1F, -7.4F},
             config.terrain_seed + 113U, 3U) *
