@@ -249,6 +249,10 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
         value == "local-features" || value == "local_features") {
         return PlanetDebugView::LocalDetailFeatures;
     }
+    if (value == "local-detail-final" || value == "local_detail_final" ||
+        value == "local-final" || value == "local_final") {
+        return PlanetDebugView::LocalDetailFinal;
+    }
     throw std::runtime_error("unsupported planet debug view: " + std::string(value));
 }
 
@@ -300,14 +304,18 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "local-detail-height";
     case PlanetDebugView::LocalDetailFeatures:
         return "local-detail-features";
+    case PlanetDebugView::LocalDetailFinal:
+        return "local-detail-final";
     }
     return "final";
 }
 
 bool planet_debug_view_is_local_detail(PlanetDebugView view) {
     return view == PlanetDebugView::LocalDetailWireframe ||
-           view == PlanetDebugView::LocalDetailBlend || view == PlanetDebugView::LocalDetailHeight ||
-           view == PlanetDebugView::LocalDetailFeatures;
+           view == PlanetDebugView::LocalDetailBlend ||
+           view == PlanetDebugView::LocalDetailHeight ||
+           view == PlanetDebugView::LocalDetailFeatures ||
+           view == PlanetDebugView::LocalDetailFinal;
 }
 
 bool planet_debug_view_uses_local_detail_surface(PlanetDebugView view) {

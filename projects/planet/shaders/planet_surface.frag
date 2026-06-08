@@ -60,9 +60,9 @@ int debug_view_option() {
 
 #include "planet_surface_field.glsl"
 
-bool local_detail_surface_debug_enabled() {
+bool local_detail_surface_enabled() {
     int debug_view = debug_view_option();
-    return (debug_view >= 8 && debug_view <= 16) || (debug_view >= 19 && debug_view <= 22);
+    return (debug_view >= 8 && debug_view <= 16) || (debug_view >= 19 && debug_view <= 23);
 }
 
 bool local_detail_is_local_draw() {
@@ -88,7 +88,7 @@ float local_detail_first_active_level() {
 
 float local_detail_patch_ownership(vec2 local_xz, float level, float blend) {
     float active_weight = surface_frame.local_origin_options.w;
-    if (active_weight <= 0.0 || !local_detail_surface_debug_enabled()) {
+    if (active_weight <= 0.0 || !local_detail_surface_enabled()) {
         return 0.0;
     }
     float half_extent = local_detail_level_half_extent(level);
@@ -107,7 +107,7 @@ float local_detail_patch_ownership(vec2 local_xz, float level, float blend) {
 
 float local_detail_global_ownership(vec3 world_position) {
     if (surface_frame.local_origin_options.w <= 0.0 || local_detail_is_local_draw() ||
-        !local_detail_surface_debug_enabled()) {
+        !local_detail_surface_enabled()) {
         return 0.0;
     }
     vec2 local_xz = local_detail_world_xz(world_position);
@@ -370,7 +370,8 @@ void main() {
 
     vec3 normal = normalize(in_normal);
     vec3 light_dir = normalize(surface_frame.light_direction_debug.xyz);
-    float final_view = floor(surface_frame.surface_options.x) < 0.5 ? 1.0 : 0.0;
+    int debug_view = debug_view_option();
+    float final_view = debug_view == 0 || debug_view == 23 ? 1.0 : 0.0;
     uint material = fragment_material_id();
     vec3 albedo = final_view > 0.5 ? fragment_material_albedo(material) : in_color;
     float ndotl = max(dot(normal, light_dir), 0.0);

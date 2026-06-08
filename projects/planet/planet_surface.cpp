@@ -348,6 +348,8 @@ class PlanetPatchSelectionLookup {
         return terrain_height_color(config, sample.height_m);
     case PlanetDebugView::LocalDetailFeatures:
         return {0.72F, 0.38F, 0.24F};
+    case PlanetDebugView::LocalDetailFinal:
+        return final_color(config, sample);
     }
     return final_color(config, sample);
 }
