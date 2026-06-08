@@ -160,12 +160,13 @@ void draw_surface_controls(PlanetUiContext& ui) {
 void draw_local_detail_controls(PlanetUiContext& ui) {
     if (const cubey::host::ScopedImGuiGroup group{"Local Detail", {.default_open = false}}; group) {
         const cubey::host::ScopedImGuiId section_id("LocalDetail");
-        ImGui::Checkbox("Diagnostic Enabled", &ui.edit_config.local_detail_enabled);
+        ImGui::Checkbox("Enabled", &ui.edit_config.local_detail_enabled);
+        ImGui::Text("Surface Draw: %s",
+                    ui.local_detail_surface_weight > 0.001F ? "active" : "inactive");
+        ImGui::Text("Surface Weight: %.0f%%", ui.local_detail_surface_weight * 100.0F);
         ImGui::Text("Debug Render: %s",
-                    (ui.edit_config.local_detail_enabled &&
-                     planet_debug_view_is_local_detail(ui.edit_config.debug_view))
-                        ? "active"
-                        : "inactive");
+                    planet_debug_view_is_local_detail(ui.edit_config.debug_view) ? "active"
+                                                                                 : "inactive");
         int lod_levels = static_cast<int>(ui.edit_config.local_detail_lod_levels);
         if (ImGui::InputInt("LOD Levels", &lod_levels)) {
             ui.edit_config.local_detail_lod_levels = static_cast<std::uint32_t>(
@@ -332,6 +333,11 @@ void draw_diagnostics(PlanetUiContext& ui) {
         ImGui::Text("LOD repair splits: %u", surface.lod_neighbor_repaired_split_count);
         ImGui::Text("Surface vertices: %u", surface.vertex_count);
         ImGui::Text("Surface triangles: %u", surface.triangle_count);
+        ImGui::Text("Total terrain triangles: %u",
+                    surface.triangle_count +
+                        (ui.local_detail_surface_weight > 0.001F
+                             ? local_detail_diagnostics.triangle_count
+                             : 0U));
         ImGui::Text("Configured finest cell: %.1f m", finest_global_cell);
         ImGui::Text("Cell edge: %.0f m - %.0f m", surface.min_edge_length_m,
                     surface.max_edge_length_m);
@@ -343,6 +349,7 @@ void draw_diagnostics(PlanetUiContext& ui) {
         ImGui::SeparatorText("Local Detail");
         ImGui::Text("Enabled: %s", local_detail_diagnostics.enabled ? "yes" : "no");
         ImGui::Text("Active: %s", local_detail_diagnostics.active ? "yes" : "no");
+        ImGui::Text("Surface weight: %.0f%%", ui.local_detail_surface_weight * 100.0F);
         ImGui::Text("Levels: %u configured, active %u-%u (%u)", local_detail_diagnostics.lod_levels,
                     local_detail_diagnostics.active_first_level,
                     local_detail_diagnostics.active_last_level,

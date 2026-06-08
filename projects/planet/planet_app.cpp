@@ -493,6 +493,7 @@ class PlanetApp {
             .exposure_config = exposure_config_,
             .surface_diagnostics = surface_runtime_.diagnostics(),
             .local_detail_diagnostics = local_detail_runtime_.diagnostics(),
+            .local_detail_surface_weight = local_detail_surface_weight(),
             .performance = performance,
             .extent = ui_extent,
             .reset_camera = [this]() { reset_camera(); },

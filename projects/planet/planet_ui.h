@@ -30,6 +30,7 @@ struct PlanetUiContext {
     PlanetExposureConfig& exposure_config;
     const PlanetSurfaceDiagnostics& surface_diagnostics;
     const PlanetLocalDetailDiagnostics& local_detail_diagnostics;
+    float local_detail_surface_weight = 0.0F;
     cubey::host::PerformanceUiContext performance;
     VkExtent2D extent{};
     std::function<void()> reset_camera;
