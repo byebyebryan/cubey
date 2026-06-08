@@ -58,6 +58,16 @@ struct TerrainOceanFieldFixture {
             .material_masks = material_masks,
         };
     }
+
+    [[nodiscard]] cubey::render::TerrainOceanFieldView scalar_view() const {
+        return {
+            .desc = desc,
+            .height_m = height,
+            .water_depth_m = water_depth,
+            .shore_sdf_m = shore_sdf,
+            .slope = slope,
+        };
+    }
 };
 
 } // namespace
@@ -66,12 +76,16 @@ void test_terrain_ocean_fields_pack_channel_layout_and_ranges() {
     const TerrainOceanFieldFixture fixture{};
     const cubey::render::TerrainOceanPackedFields packed =
         cubey::render::pack_terrain_ocean_fields(fixture.view());
+    const cubey::render::TerrainOceanPackedFields scalar_packed =
+        cubey::render::pack_terrain_ocean_fields(fixture.scalar_view());
 
     require(packed.desc.origin_x_m == fixture.desc.origin_x_m &&
                 packed.desc.origin_z_m == fixture.desc.origin_z_m,
             "packed terrain-ocean fields should preserve grid metadata");
     require(packed.rgba32f.size() == 16U,
             "packed terrain-ocean fields should use one RGBA32F texel per sample");
+    require(scalar_packed.rgba32f == packed.rgba32f,
+            "packed terrain-ocean scalar texture should not require material masks");
     require_near(
         packed.rgba32f[static_cast<std::uint32_t>(
             cubey::render::TerrainOceanFieldChannel::HeightMeters)],
@@ -137,6 +151,17 @@ void test_terrain_ocean_fields_reject_invalid_contract_data() {
             cubey::render::validate_terrain_ocean_field_view(fixture.view());
         },
         "terrain-ocean fields should reject negative slope");
+    require_throws(
+        [] {
+            TerrainOceanFieldFixture fixture{};
+            std::array<cubey::render::TerrainOceanMaterialMask, 1> material_masks{
+                cubey::render::TerrainOceanMaterialMask{.sand = 1.0F},
+            };
+            cubey::render::TerrainOceanFieldView view = fixture.view();
+            view.material_masks = material_masks;
+            cubey::render::validate_terrain_ocean_field_view(view);
+        },
+        "terrain-ocean fields should reject partial material masks");
     require_throws(
         [] {
             TerrainOceanFieldFixture fixture{};

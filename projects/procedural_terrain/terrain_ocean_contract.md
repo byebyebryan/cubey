@@ -37,7 +37,9 @@ packed with `cubey::render::pack_terrain_ocean_fields` and uploaded as an
 - `shore_sdf_m`: signed distance to the still-water shoreline; positive on land,
   negative underwater, approximately zero at the shoreline.
 - `slope`: magnitude of the sampled height gradient.
-- `material_masks`: normalized weights for sand, rock, vegetation, and sediment.
+- `material_masks`: optional normalized weights for sand, rock, vegetation, and
+  sediment when the producer has material data. The V1 scalar texture contract
+  does not require them.
 
 ## Packed Texture Layout
 
@@ -50,8 +52,8 @@ packed with `cubey::render::pack_terrain_ocean_fields` and uploaded as an
 `terrain-depth`, `terrain-shore`, and `terrain-slope` debug views. Real
 terrain-to-ocean integration should replace that diagnostic source with terrain
 or shallow-water output without changing the channel contract.
-`material_masks` are still validated on the shared field view, but they are not
-packed into this V1 `RGBA32F` texture.
+`material_masks` are optional on the shared field view. When provided they are
+validated, but they are not packed into this V1 `RGBA32F` texture.
 
 ## Ownership Boundary
 

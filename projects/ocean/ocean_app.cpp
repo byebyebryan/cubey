@@ -506,7 +506,6 @@ make_ocean_diagnostic_terrain_fields(const OceanConfig& config, float water_datu
     std::vector<float> water_depth(count, 0.0F);
     std::vector<float> shore_sdf(count, 0.0F);
     std::vector<float> slope(count, 0.0F);
-    std::vector<cubey::render::TerrainOceanMaterialMask> material_masks(count);
 
     const float island_radius = config.mesh_extent * 0.22F;
     const float shoal_radius = config.mesh_extent * 0.42F;
@@ -535,17 +534,6 @@ make_ocean_diagnostic_terrain_fields(const OceanConfig& config, float water_datu
             slope[index] = std::clamp(shoal * 0.75F + std::abs(signed_shore) /
                                                           std::max(config.mesh_extent, 1.0F),
                                       0.0F, 1.0F);
-            const float sand = std::clamp(shoal, 0.0F, 1.0F);
-            const float rock = 0.15F;
-            const float vegetation = signed_shore > 0.0F ? 0.35F : 0.0F;
-            const float sediment = 0.50F;
-            const float material_sum = sand + rock + vegetation + sediment;
-            material_masks[index] = {
-                .sand = sand / material_sum,
-                .rock = rock / material_sum,
-                .vegetation = vegetation / material_sum,
-                .sediment = sediment / material_sum,
-            };
         }
     }
 
@@ -553,8 +541,6 @@ make_ocean_diagnostic_terrain_fields(const OceanConfig& config, float water_datu
     field_view.water_depth_m = std::span<const float>(water_depth.data(), water_depth.size());
     field_view.shore_sdf_m = std::span<const float>(shore_sdf.data(), shore_sdf.size());
     field_view.slope = std::span<const float>(slope.data(), slope.size());
-    field_view.material_masks = std::span<const cubey::render::TerrainOceanMaterialMask>(
-        material_masks.data(), material_masks.size());
     return cubey::render::pack_terrain_ocean_fields(field_view);
 }
 

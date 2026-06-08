@@ -55,9 +55,11 @@ void validate_terrain_ocean_field_view(const TerrainOceanFieldView& fields) {
     }
     const std::size_t count = terrain_ocean_sample_count(fields.desc);
     if (fields.height_m.size() != count || fields.water_depth_m.size() != count ||
-        fields.shore_sdf_m.size() != count || fields.slope.size() != count ||
-        fields.material_masks.size() != count) {
+        fields.shore_sdf_m.size() != count || fields.slope.size() != count) {
         throw std::runtime_error("terrain-ocean field spans must match grid dimensions");
+    }
+    if (!fields.material_masks.empty() && fields.material_masks.size() != count) {
+        throw std::runtime_error("terrain-ocean material mask span must be empty or match grid dimensions");
     }
     for (std::size_t index = 0; index < count; ++index) {
         const float height = fields.height_m[index];
@@ -74,7 +76,9 @@ void validate_terrain_ocean_field_view(const TerrainOceanFieldView& fields) {
         if (slope < 0.0F) {
             throw std::runtime_error("terrain-ocean slope must be non-negative");
         }
-        validate_material_mask(fields.material_masks[index]);
+        if (!fields.material_masks.empty()) {
+            validate_material_mask(fields.material_masks[index]);
+        }
     }
 }
 
