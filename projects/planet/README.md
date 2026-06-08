@@ -63,7 +63,7 @@ The broader manual capture matrix is tracked in
 | Planet frame/camera | Done as v1: double-precision camera position, camera-relative GPU rendering, datum height, terrain height, and terrain-relative clearance are explicit. |
 | Surface LOD | Done as v1: coverage-first cube-sphere patches, live instance-buffer uploads, hysteresis, single-step neighbor repair, terrain-aware screen-error bounds, and wire/debug diagnostics. |
 | Terrain field | Active procedural contract: CPU/shader sampling share height, normal, water depth, shoreline, material, climate, roughness, and tile-summary vocabulary. It is not final art direction or streamed data. |
-| Local detail clipmap | Diagnostic-only: useful for near-field planning and debug views, but not integrated into final terrain until local/global handoff, persistent topology, and blending/morph policy are solved. |
+| Local detail clipmap | Active v1 final/diagnostic layer: altitude-gated near-field terrain detail can participate in final and terrain-field views with a softened global/local handoff. Persistent topology, morph policy, streaming, and ocean payloads remain deferred. |
 | Sky/celestial/atmosphere | Done as v1: planet-owned mean solar clock, sun/moon directions, depth-tested moon body geometry, project-local atmosphere, HDR post, and view-aware exposure. Full LUT/transmittance atmosphere and true ephemeris remain deferred. |
 | Streaming/cache | Deferred: current patch replans and lazy uploads are not an out-of-core streamer. Parent coverage remains renderable while future child/tile data is prepared. |
 | Ocean integration | Deferred: `projects/ocean` stays local-water focused until planet frame, LOD, terrain, and local-detail contracts are ready to host it as one surface layer. |
@@ -110,10 +110,14 @@ cell. Runtime planning selects only the levels whose cell size is large enough
 to matter in the current view; orbit-scale cameras allocate no local-detail
 mesh, mid-altitude views start from a coarser center patch, and close surface
 views can activate the full fine range. In v1 it renders primarily as a
-diagnostic path and reports active level range, patch, vertex, triangle,
-cell-size, projected-cell, and blend diagnostics in the UI. Final-view
-integration is deferred because the local/global handoff still needs a proper
-blend or morph policy instead of hard opaque clipmap rings.
+final-view and diagnostic path and reports active level range, patch, vertex,
+triangle, cell-size, projected-cell, final surface weight, and blend diagnostics
+in the UI. Final and terrain-field debug views can use the local detail surface
+when terrain, local detail, and near-surface camera blending are active. The
+global patch shader uses a softened ownership mask so the handoff no longer
+shows a hard rectangular clipmap footprint. The policy is still v1: it is
+procedural, viewer-centered, and not yet a persistent topology, morph, cache, or
+streaming system.
 `local-detail-wireframe` shows the near-field clipmap ownership, `local-detail-blend`
 shows the active ownership/cutout mask, and `local-detail-height` isolates the
 added detail displacement.
@@ -140,8 +144,9 @@ CPU and shader paths sample deterministic height, world position, normal,
 height above sea level, water depth, normalized bathymetry, shoreline mask, land
 mask, normalized elevation, normalized slope, moisture, temperature, roughness,
 and a simple material band. The live renderer displaces the reusable grid in the
-vertex shader with deterministic multi-band terrain: broad shape, mid ridges,
-and fine detail. Normals are recomputed from a patch-cell-scaled sample step so
+vertex shader with deterministic multi-band terrain: domain-warped
+continent/ocean structure, lowland breakup, ridge belts, valley cuts, and
+land/relief-gated fine detail. Normals are recomputed from a patch-cell-scaled sample step so
 higher LOD reveals smaller terrain features instead of only smoothing the mesh.
 The CPU mesh builder and tile payload path remain as diagnostic/test paths for
 the same patch contracts.
@@ -154,9 +159,11 @@ seafloor rendering, surf, biome masks, or final art direction.
 
 Surface tile payload summaries now include terrain height ranges, sea-level
 height ranges, water depth, shoreline mask, land/water/shoreline coverage,
-moisture, temperature, roughness, and material counts. The procedural generator
-revision is derived from terrain-relevant config rather than only the seed, so
-future cache invalidation has a stable boundary.
+averaged height, averaged height above sea level, averaged moisture,
+temperature, roughness, normalized slope, dominant material, and material
+counts. The procedural generator revision is derived from terrain-relevant
+config rather than only the seed, so future cache invalidation has a stable
+boundary.
 
 The terrain v2 direction is documented in
 [`docs/notes/planet-terrain-field-v2.md`](../../docs/notes/planet-terrain-field-v2.md).
@@ -221,8 +228,9 @@ uploaded.
 
 The test suite includes planet headless PNG smoke coverage for baseline
 headless output, surface dawn/day/night, orbit lit/terminator, daytime moon,
-and wireframe LOD views. These tests are intentionally coarse image-stat checks,
-not golden-image comparisons, but they keep the main visual paths from silently
+wireframe LOD views, terrain-field diagnostics, and final-view local-detail
+participation. These tests are intentionally coarse image-stat checks, not
+golden-image comparisons, but they keep the main visual paths from silently
 going black or empty.
 
 This project should stay focused on planet-scale contracts first. Ocean scale

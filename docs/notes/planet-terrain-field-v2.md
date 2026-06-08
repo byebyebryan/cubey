@@ -33,8 +33,12 @@ handoff, weather/cloud masks, and cache residency diagnostics.
 `PlanetSurfaceSample` remains the point-sample contract. `PlanetSurfaceTileKey`
 and `PlanetSurfaceTilePayload` remain the patch payload boundary. Payload
 summaries now include coverage, range, material-count, climate, roughness, and
-terrain-relevant revision data instead of a new manager. A later streaming
-system can replace the procedural source behind the same key/payload vocabulary.
+averaged-field data instead of a new manager. A later streaming system can
+replace the procedural source behind the same key/payload vocabulary. The
+summary now carries height and sea-level ranges, water/shoreline coverage,
+averaged height, averaged height above sea level, averaged moisture,
+temperature, roughness, normalized slope, material counts, dominant material,
+and terrain-relevant revision data.
 
 CPU and shader terrain logic should stay mirrored with matching helper names.
 That duplication is deliberate for now: the CPU path gives deterministic tests
@@ -45,9 +49,11 @@ bug unless a later GPU terrain source makes the CPU path diagnostic-only.
 The procedural shaping should use named layers rather than a single opaque noise
 stack. The current procedural source follows this shape:
 
+- domain-warped terrain coordinates;
 - ocean basin / continent mask;
 - lowland breakup;
 - mountain and ridge belts;
+- valley network;
 - fine detail gated by land/relief;
 - moisture and temperature fields;
 - material classification from sea level, elevation, slope, moisture, and
@@ -59,19 +65,21 @@ The global patch tree and local detail clipmap are intentionally separate:
   sampling, and fallback coverage;
 - local detail owns viewer-centered meter-scale geometry and should only be
   active when the camera is low enough that those triangles are visible;
-- final rendering should not expose rectangular clipmap footprints, hard cutout
-  edges, or duplicated terrain ownership.
+- final rendering can consume local detail through an altitude-gated surface
+  weight and softened global/local ownership mask, but should not expose
+  rectangular clipmap footprints, hard cutout edges, or duplicated terrain
+  ownership.
 
-## Long Batch Acceptance
+## Long Batch Result
 
-The batch is considered useful when:
+The long batch is considered useful because:
 
-- surface view has stronger macro landforms and less noisy displaced-patch
+- surface view now has stronger named landforms and less one-noise-stack
   character;
-- terrain materials visibly derive from elevation, slope, moisture,
+- terrain materials derive from elevation, slope, moisture,
   temperature, shoreline, and water depth;
-- local detail final-view integration is either credible or explicitly disabled
-  outside diagnostic views, with tests explaining why;
+- local detail final-view integration is active as a v1 near-field layer, while
+  diagnostics still expose ownership and blend state;
 - LOD diagnostics report enough near-cell, active-level, and tile-summary data
   to explain terrain scale at the camera;
 - docs and README clearly state what is now active, what remains deferred, and

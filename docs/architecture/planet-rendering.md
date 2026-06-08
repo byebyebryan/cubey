@@ -210,15 +210,16 @@ Current implementation notes:
   half extent, and is the v1 near-field terrain detail layer. Its runtime plan
   is altitude-aware: levels whose projected cell size is subpixel are skipped,
   medium-altitude views start from a coarser center patch plus outer rings, and
-  orbit-scale views allocate no local-detail mesh. The current live renderer
-  keeps it primarily in explicit diagnostic views (`local-detail-wireframe`,
-  `local-detail-blend`, and `local-detail-height`). The first final-view
-  attempt exposed hard opaque clipmap rings, so final integration remains
-  blocked on a real local/global handoff policy: geometry morphing, alpha/fade
-  support, or another ownership strategy that does not show rectangular clipmap
-  footprints.
+  orbit-scale views allocate no local-detail mesh. The current live renderer can
+  use the clipmap in final and terrain-field views when terrain, local detail,
+  and near-surface camera blending are active. The global patch shader applies a
+  softened ownership mask so the handoff does not show hard rectangular clipmap
+  footprints. Explicit diagnostic views (`local-detail-wireframe`,
+  `local-detail-blend`, and `local-detail-height`) remain the main way to
+  inspect ownership, blend, and displacement.
   It is still procedural and project-local: no terrain streaming, ocean port,
-  texture cache, or compute terrain generation is part of this first consumer.
+  texture cache, persistent topology, morph policy, or compute terrain
+  generation is part of this first consumer.
 - LOD is coverage-first. View and horizon culling stop refinement, but the
   parent patch remains selected so rotating while rebuilds are deferred does not
   reveal holes.
@@ -237,10 +238,12 @@ Current implementation notes:
   contract: height, world position, normal, height above sea level, water depth,
   normalized bathymetry, shoreline mask, land mask, normalized elevation,
   normalized slope, moisture, temperature, roughness, and a simple material
-  band. It now has broad, mid-ridge, and fine-detail bands plus
-  patch-cell-scaled normal sampling. Water classification is based on explicit
-  sea level; bathymetry and shoreline are diagnostic fields, not yet a separate
-  ocean layer. The next terrain pass is tracked in
+  band. It now has named procedural landform layers: domain-warped
+  continent/ocean structure, lowland breakup, ridge belts, valley cuts, and
+  land/relief-gated fine detail, plus patch-cell-scaled normal sampling. Water
+  classification is based on explicit sea level; bathymetry and shoreline are
+  diagnostic fields, not yet a separate ocean layer. The terrain detail batch is
+  tracked in
   [`planet-terrain-field-v2.md`](../notes/planet-terrain-field-v2.md): keep the
   source procedural and project-local, but make tile payload summaries and field
   diagnostics credible enough for later ocean, biome, cache, and streaming
@@ -250,7 +253,9 @@ Current implementation notes:
   terrain slope, terrain material bands, bathymetry, shoreline, land mask,
   moisture, temperature, roughness, wireframe grid, LOD transition pressure,
   celestial-plane validation, and local-detail clipmap ownership/displacement.
-  These are diagnostic tools, not final planet visualization.
+  Local-detail diagnostics are inspection tools; final and terrain-field views
+  can also consume the same near-field surface when the altitude-gated blend is
+  active.
 - Planet rendering has moved away from the shared atmosphere background/runtime
   for now. The shared path was useful for ocean and atmosphere demos, but its
   demo-oriented sky clock and inline celestial disks were the wrong source of
@@ -301,10 +306,11 @@ The latest planet foundation pass closed several previously loose contracts:
   `PlanetSurfaceTileSource` make the current procedural surface provider look
   like a tile source. That is deliberately small, but it gives later terrain,
   bathymetry, biome, and cache work a stable `face/level/x/y` payload boundary.
-  Payload summaries now include coverage, material-count, climate, roughness,
-  height, slope, water-depth, and shoreline ranges, and their generator revision
-  hashes terrain-relevant config so future cache invalidation is not tied only
-  to the seed.
+  Payload summaries now include coverage, material-count, dominant material,
+  climate, roughness, averaged height, averaged height above sea level,
+  averaged normalized slope, height, slope, water-depth, and shoreline ranges,
+  and their generator revision hashes terrain-relevant config so future cache
+  invalidation is not tied only to the seed.
 - LOD diagnostics now report neighbor mismatch pressure, boundary edges, and
   maximum neighbor delta. Selected patch instances also carry an edge transition
   mask so shader sampling can treat borders against coarser neighbors
@@ -345,7 +351,7 @@ Current alignment by area:
 | Frame and camera | Done as v1. Camera state is double precision, render origin is camera-relative, and frame data distinguishes datum altitude, sampled terrain height, and terrain-relative clearance. |
 | Global surface LOD | Done as v1. The planner is coverage-first, keeps fallback parents available, uses hysteresis, repairs selected neighbor deltas to a single LOD step, and accounts for terrain displacement in screen-error bounds. |
 | Procedural terrain field | Active contract, not just a visual placeholder. CPU tests, tile summaries, shader displacement, material bands, water depth, shoreline, climate, and roughness use the same project-local vocabulary. |
-| Local detail clipmap | Diagnostic-only. It is useful for near-field density and ownership inspection, but final-view integration is deferred until local/global handoff, persistent clipmap topology, and blend/morph policy are explicit. |
+| Local detail clipmap | Active v1 final/diagnostic layer. The altitude-gated clipmap can contribute to final and terrain-field rendering with softened global/local ownership, while persistent topology, morphing, streaming, and ocean payloads remain deferred. |
 | Celestial and atmosphere | Done as v1. The planet project owns mean solar time, sun/moon state, project-local sky/atmosphere, view-aware exposure, and moon body rendering. Atmosphere LUTs, physical transmittance assets, eclipses, and real ephemeris are deferred. |
 | Streaming and resource residency | Deferred. Current runtime replans CPU patch lists and lazily uploads instance buffers, but it is not an out-of-core tile streamer or async residency manager. |
 | Planet/ocean integration | Deferred. Ocean should port in as a local water layer once the planet frame, terrain field, sea datum, local detail clipmap, and render order are stable enough. |
@@ -479,7 +485,10 @@ back into this architecture note.
 14. Done: add visual smoke coverage, view-aware orbit exposure, unified moon
    atmosphere visibility, and smaller `PlanetUi` / `PlanetSurfaceRuntime`
    project boundaries.
-15. Port ocean as a local water layer once the planet frame and LOD contracts are
+15. Done as a v1 terrain batch: expand tile summaries, strengthen procedural
+   landforms, and enable local-detail participation in final terrain with
+   diagnostics and smoke coverage.
+16. Port ocean as a local water layer once the planet frame and LOD contracts are
    stable.
 
 Non-goals for the first planet pass:

@@ -108,15 +108,27 @@ The latest follow-up batch is complete:
 - added single-step neighbor LOD repair and terrain-displacement screen-error
   bounds, so the selected surface has tighter seam behavior and terrain-aware
   refinement pressure.
-- clarified local detail as diagnostic-only for now. The debug views remain
-  useful for ownership, blend, and height inspection, but final-view integration
-  is blocked on a deliberate local/global handoff policy.
+- clarified local detail ownership through explicit debug views for ownership,
+  blend, and height inspection before promoting the clipmap into final-view
+  terrain.
 - aligned moon/atmosphere docs with the actual body pass: depth-tested moon
   geometry with premultiplied phase/daylight visibility, not a shared sky-owned
   moon sprite.
 - added the missing sky-side moon contract: blended moon phases may visually
   merge into smooth sky, but procedural stars are masked behind the full
   rendered moon disk.
+- expanded procedural terrain tile summaries with averaged fields and dominant
+  material so the patch payload boundary looks more like a future cache/stream
+  contract.
+- strengthened the procedural terrain source with domain warping, continent /
+  ocean structure, ridge belts, valley cuts, and land/relief-gated fine detail
+  mirrored between CPU and shader paths.
+- promoted local detail from diagnostic-only to an altitude-gated v1 final-view
+  participant. Final and terrain-field views can consume the clipmap near the
+  surface, the global shader uses a softened ownership mask, and diagnostics
+  report surface weight plus active local-detail state.
+- added final-view local-detail headless smoke coverage alongside the existing
+  planet capture checks.
 
 The remaining near-term work should move back to feature slices or targeted
 hardening. It still should not port ocean, add real GIS data, build an
