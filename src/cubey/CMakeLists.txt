@@ -141,6 +141,7 @@ target_link_libraries(
 )
 
 add_library(cubey_render STATIC
+    render/celestial_system.cpp
     render/deformation.cpp
     render/atmosphere_background_frame.cpp
     render/atmosphere_environment.cpp

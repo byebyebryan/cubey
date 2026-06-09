@@ -4,6 +4,7 @@
 
 #include <cubey/core/math.h>
 #include <cubey/core/run_config.h>
+#include <cubey/render/celestial_system.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/material.h>
 #include <cubey/render/material_instance.h>
@@ -22,135 +23,43 @@
 
 namespace cubey::projects::planet {
 
-inline constexpr float kPlanetMeanSolarDayHours = 24.0F;
-inline constexpr float kPlanetMeanTropicalYearDays = 365.2422F;
-inline constexpr float kPlanetEarthSiderealRotationHours = 23.9345F;
+inline constexpr float kPlanetMeanSolarDayHours = cubey::render::kCelestialMeanSolarDayHours;
+inline constexpr float kPlanetMeanTropicalYearDays = cubey::render::kCelestialMeanTropicalYearDays;
+inline constexpr float kPlanetEarthSiderealRotationHours =
+    cubey::render::kCelestialEarthSiderealRotationHours;
 inline constexpr float kPlanetEarthSiderealRotationPeriodDays =
-    kPlanetEarthSiderealRotationHours / kPlanetMeanSolarDayHours;
-inline constexpr float kPlanetMoonSiderealOrbitPeriodDays = 27.321661F;
-inline constexpr float kPlanetMoonOrbitInclinationRad = 0.08979719F;
-inline constexpr float kPlanetDefaultMoonOrbitPhaseOffsetCycles = 0.5980231F;
-inline constexpr float kPlanetFullMoonLightIntensity = 0.055F;
-inline constexpr float kPlanetDefaultDaylightExposure = -2.35F;
-inline constexpr float kPlanetDefaultTwilightExposure = -1.55F;
-inline constexpr float kPlanetDefaultNightExposure = 2.80F;
+    cubey::render::kCelestialEarthSiderealRotationPeriodDays;
+inline constexpr float kPlanetMoonSiderealOrbitPeriodDays =
+    cubey::render::kCelestialMoonSiderealOrbitPeriodDays;
+inline constexpr float kPlanetMoonOrbitInclinationRad =
+    cubey::render::kCelestialMoonOrbitInclinationRad;
+inline constexpr float kPlanetDefaultMoonOrbitPhaseOffsetCycles =
+    cubey::render::kCelestialDefaultMoonOrbitPhaseOffsetCycles;
+inline constexpr float kPlanetFullMoonLightIntensity =
+    cubey::render::kCelestialFullMoonLightIntensity;
+inline constexpr float kPlanetDefaultDaylightExposure =
+    cubey::render::kCelestialDefaultDaylightExposure;
+inline constexpr float kPlanetDefaultTwilightExposure =
+    cubey::render::kCelestialDefaultTwilightExposure;
+inline constexpr float kPlanetDefaultNightExposure = cubey::render::kCelestialDefaultNightExposure;
 
-struct PlanetExposureConfig {
-    bool auto_exposure_enabled = true;
-    float manual_exposure = 0.0F;
-    float daylight_exposure = kPlanetDefaultDaylightExposure;
-    float twilight_exposure = kPlanetDefaultTwilightExposure;
-    float night_exposure = kPlanetDefaultNightExposure;
-};
-
-struct PlanetExposureView {
-    cubey::render::ViewRayBasis3D view_rays{};
-    float planet_radius_m = kPlanetDefaultRadiusM;
-};
-
-enum class PlanetCelestialBodyType : std::uint8_t {
-    Sun,
-    Moon,
-};
-
-struct PlanetCelestialSun {
-    bool visible = true;
-    cubey::math::Vec3 direction{0.0F, 1.0F, 0.0F};
-    cubey::math::Vec3 color{1.0F, 0.94F, 0.82F};
-    float intensity = 2.25F;
-    float angular_radius_rad = 0.004675F;
-    float distance_m = 149597870700.0F;
-    float radius_m = 696340000.0F;
-};
-
-struct PlanetCelestialMoon {
-    bool visible = true;
-    cubey::math::Vec3 direction{0.0F, 0.0F, 1.0F};
-    cubey::math::Vec3 color{0.58F, 0.62F, 0.74F};
-    float intensity = 0.0F;
-    float angular_radius_rad = 0.00452F;
-    float distance_m = 384400000.0F;
-    float radius_m = 1737400.0F;
-    float phase_fraction = 0.5F;
-};
-
-struct PlanetCelestialBody {
-    PlanetCelestialBodyType type = PlanetCelestialBodyType::Moon;
-    bool visible = true;
-    cubey::math::Vec3 direction{0.0F, 0.0F, 1.0F};
-    cubey::math::Vec3 color{1.0F, 1.0F, 1.0F};
-    float intensity = 1.0F;
-    float angular_radius_rad = 0.00452F;
-    float distance_m = 1.0F;
-    float radius_m = 1.0F;
-    float phase_fraction = 0.5F;
-};
-
-struct PlanetCelestialSystem {
-    PlanetCelestialSun sun{};
-    PlanetCelestialMoon moon{};
-    float simulation_day = 0.0F;
-    float planet_rotation_angle_rad = 0.0F;
-    float planet_orbit_angle_rad = 0.0F;
-    float moon_orbit_angle_rad = 0.0F;
-};
-
-struct PlanetCelestialDiagnostics {
-    float mean_solar_day_hours = kPlanetMeanSolarDayHours;
-    float sidereal_rotation_hours = kPlanetEarthSiderealRotationHours;
-    float tropical_year_days = kPlanetMeanTropicalYearDays;
-    float lunar_sidereal_month_days = kPlanetMoonSiderealOrbitPeriodDays;
-    float lunar_synodic_month_days = 29.53068F;
-    float axial_tilt_rad = 0.0F;
-    float lunar_orbit_inclination_rad = 0.0F;
-    float moon_phase_fraction = 0.0F;
-    cubey::math::Vec3 equator_plane_normal{0.0F, 1.0F, 0.0F};
-    cubey::math::Vec3 ecliptic_plane_normal{0.0F, 1.0F, 0.0F};
-    cubey::math::Vec3 moon_orbit_plane_normal{0.0F, 1.0F, 0.0F};
-    cubey::math::Vec3 sun_direction{0.0F, 1.0F, 0.0F};
-    cubey::math::Vec3 moon_direction{0.0F, 0.0F, 1.0F};
-};
-
-struct PlanetCelestialBodyRenderPlacementInputs {
-    cubey::math::Vec3 camera_render_position_m{0.0F, 0.0F, 0.0F};
-    cubey::math::DVec3 camera_world_position_m{0.0, 0.0, 0.0};
-    cubey::math::DVec3 planet_center_world_position_m{0.0, 0.0, 0.0};
-    float near_plane_m = 1.0F;
-    float far_plane_m = 1000.0F;
-    float angular_radius_scale = 1.0F;
-    float shell_distance_fraction = 0.58F;
-};
-
-struct PlanetCelestialBodyRenderPlacement {
-    bool visible = false;
-    cubey::math::Vec3 center_render_m{0.0F, 0.0F, 0.0F};
-    float radius_render_m = 0.0F;
-    float shell_distance_m = 0.0F;
-    float angular_radius_rad = 0.0F;
-};
-
-struct PlanetSolarTime {
-    float day_of_year = 80.0F;
-    float time_hours = 5.5F;
-    float hours_per_second = 0.5F;
-};
+using PlanetExposureConfig = cubey::render::CelestialExposureConfig;
+using PlanetExposureView = cubey::render::CelestialExposureView;
+using PlanetCelestialBodyType = cubey::render::CelestialBodyType;
+using PlanetCelestialSun = cubey::render::CelestialSun;
+using PlanetCelestialMoon = cubey::render::CelestialMoon;
+using PlanetCelestialBody = cubey::render::CelestialBody;
+using PlanetCelestialSystem = cubey::render::CelestialSystem;
+using PlanetCelestialDiagnostics = cubey::render::CelestialDiagnostics;
+using PlanetCelestialBodyRenderPlacementInputs =
+    cubey::render::CelestialBodyRenderPlacementInputs;
+using PlanetCelestialBodyRenderPlacement = cubey::render::CelestialBodyRenderPlacement;
+using PlanetSolarTime = cubey::render::CelestialSolarTime;
 
 [[nodiscard]] PlanetSolarTime planet_solar_time_from_run_config(const RunConfig& config);
 [[nodiscard]] PlanetExposureConfig planet_exposure_config_from_run_config(const RunConfig& config);
 
-struct PlanetSolarSystemConfig {
-    float axial_tilt_rad = 0.4090928F;
-    float planet_rotation_period_days = kPlanetEarthSiderealRotationPeriodDays;
-    float planet_orbit_period_days = kPlanetMeanTropicalYearDays;
-    float moon_orbit_period_days = kPlanetMoonSiderealOrbitPeriodDays;
-    float moon_orbit_inclination_rad = kPlanetMoonOrbitInclinationRad;
-    float moon_orbit_phase_offset_cycles = kPlanetDefaultMoonOrbitPhaseOffsetCycles;
-    float equinox_day = 80.0F;
-    float sun_distance_m = 149597870700.0F;
-    float sun_radius_m = 696340000.0F;
-    float moon_distance_m = 384400000.0F;
-    float moon_radius_m = 1737400.0F;
-};
+using PlanetSolarSystemConfig = cubey::render::CelestialSolarSystemConfig;
 
 struct PlanetSkyFrameUniforms {
     cubey::math::Vec4 camera_right_aspect;
@@ -193,38 +102,14 @@ struct PlanetCelestialBodyAtmosphereInputs {
     float atmosphere_outer_radius_m = 0.0F;
 };
 
-struct PlanetCelestialLighting {
-    cubey::math::Vec3 primary_light_direction{0.0F, 1.0F, 0.0F};
-    cubey::math::Vec3 primary_light_color{1.0F, 0.94F, 0.82F};
-    float primary_light_intensity = 0.9F;
-    float primary_light_angular_radius_rad = 0.004675F;
-    cubey::math::Vec3 moon_light_direction{0.0F, 0.0F, 1.0F};
-    cubey::math::Vec3 moon_light_color{0.56F, 0.64F, 0.86F};
-    float moon_light_intensity = 0.0F;
-    cubey::math::Vec3 ambient_color{0.040F, 0.050F, 0.070F};
-    float ambient_intensity = 0.12F;
-    cubey::math::Vec3 haze_color{0.085F, 0.125F, 0.185F};
-};
+using PlanetCelestialLighting = cubey::render::CelestialLighting;
 
 struct PlanetCelestialBodyFrameInputs {
     cubey::math::Vec3 camera_render_position_m{0.0F, 0.0F, 0.0F};
     PlanetCelestialBodyAtmosphereInputs atmosphere{};
 };
 
-struct PlanetAtmosphereInputs {
-    cubey::math::Vec3 camera_position_m{0.0F, 0.0F, 0.0F};
-    float camera_radius_m = 0.0F;
-    float camera_altitude_m = 0.0F;
-    float planet_radius_m = kPlanetDefaultRadiusM;
-    float atmosphere_outer_radius_m = kPlanetDefaultRadiusM + kPlanetDefaultAtmosphereHeightM;
-    cubey::math::Vec3 sun_direction{0.0F, 1.0F, 0.0F};
-    cubey::math::Vec3 sun_color{1.0F, 0.94F, 0.82F};
-    float sun_intensity = 1.0F;
-    float sun_angular_radius_rad = 0.004675F;
-    cubey::math::Vec3 moon_direction{0.0F, 0.0F, 1.0F};
-    float moon_phase_fraction = 0.5F;
-    float moon_angular_radius_rad = 0.00452F;
-};
+using PlanetAtmosphereInputs = cubey::render::CelestialAtmosphereInputs;
 
 struct PlanetSkyFrameMaterialConfig {
     std::uint32_t frame_slot_count = 1;
