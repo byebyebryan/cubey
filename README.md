@@ -48,7 +48,7 @@ Current projects:
   procedural stars, moon rendering, Milky Way atlas layers, and headless output.
 - `planet`: Earth-scale planet rendering foundation with camera-relative
   cube-sphere LOD, procedural terrain fields, local-detail diagnostics,
-  planet-owned sky/celestial state, physical atmosphere preview, HDR post, and
+  shared sky/celestial state, physical atmosphere preview, HDR post, and
   headless visual smoke coverage.
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, pressure projection, debug views, and

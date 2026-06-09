@@ -71,7 +71,7 @@ The broader manual capture matrix is tracked in
 | Surface LOD | Done as v1: coverage-first cube-sphere patches, live instance-buffer uploads, hysteresis, single-step neighbor repair, terrain-aware screen-error bounds, and wire/debug diagnostics. |
 | Terrain field | Active procedural contract: CPU/shader sampling share height, named terrain bands, normal, water depth, shoreline, material, climate, roughness, and tile-summary vocabulary. It is not final art direction or streamed data. |
 | Local detail clipmap | Near-field surface layer: altitude-gated bounded local detail contributes to `final` surface view and can be inspected in local-detail and terrain-field views, with `local-detail-horizon` reserved for horizon-scale/full-range inspection. Local/global morphing, persistent topology, streaming, and ocean payloads remain deferred. |
-| Sky/celestial/atmosphere | Done as v1: planet-owned mean solar clock, sun/moon directions, depth-tested moon body geometry, project-local atmosphere, HDR post, and view-aware exposure. Full LUT/transmittance atmosphere and true ephemeris remain deferred. |
+| Sky/celestial/atmosphere | Done as v1: shared mean solar clock/celestial mechanics, shared sky frame with night-sky atlas sampling, depth-tested moon body geometry, project-local physical atmosphere preview, HDR post, and view-aware exposure. Full LUT/transmittance atmosphere and true ephemeris remain deferred. |
 | Streaming/cache | Deferred: current patch replans and lazy uploads are not an out-of-core streamer. Parent coverage remains renderable while future child/tile data is prepared. |
 | Ocean integration | Deferred: `projects/ocean` stays local-water focused until planet frame, LOD, terrain, and local-detail contracts are ready to host it as one surface layer. |
 | Config ownership | Deferred cleanup: planet still consumes shared `RunConfig`; a project-owned CLI/config facade should be extracted when the next project repeats this pressure. |
@@ -199,12 +199,13 @@ It keeps the source procedural and project-local while making the sample and
 tile summary vocabulary explicit enough for later ocean, biome, cache, and
 streaming work.
 
-`planet` now owns its sky and celestial state locally. The shared atmosphere
-background/runtime is no longer used by this project because its demo-oriented
-sun/moon disk and clock assumptions were fighting the planet-viewer contract.
-A project-local solar clock drives planet orbit, planet self-rotation, and moon
-orbit. That state resolves sun and moon directions, physical radii, angular
-radii, direct lighting, ambient lighting, and the planet-owned sky pass.
+`planet` is now the first consumer of the shared sky/celestial foundation. The
+mean solar clock, Earth-like sun/moon mechanics, exposure helpers, fullscreen sky
+frame, and celestial-body frame live under `cubey::render`; `projects/planet`
+keeps only the project adapters for run config, UI, terrain frame data, and the
+planet-specific atmosphere mode enum. That shared state resolves sun and moon
+directions, physical radii, angular radii, direct lighting, ambient lighting, and
+the sky pass.
 The clock is a mean Earth-like model: UI time is a 24h mean solar day, internal
 planet spin uses a 23.9345h sidereal rotation, the seasonal year is 365.2422d,
 and the moon uses a 27.321661d sidereal orbit with derived 29.53d phase
@@ -215,11 +216,12 @@ sun in daylight. Eccentricity, equation of time, lunar apsidal/nodal precession,
 and true Earth/Moon barycentric motion are deferred until the planet project
 needs that fidelity.
 
-The current sky pass renders dark space, sparse procedural stars, a sun
-disk/glow, and a local planet limb. The default `physical` atmosphere mode uses
-a small project-local single-scattering model with Rayleigh/Mie vocabulary, sun
-transmittance, and surface aerial perspective. The older `analytic` mode
-remains selectable for comparison and debugging. The moon is now a
+The current shared sky pass renders dark space, generated night-sky/Milky Way
+atlas content plus sparse procedural stars, a sun disk/glow, and a local planet
+limb. The default `physical` atmosphere mode uses a small project-local
+single-scattering model with Rayleigh/Mie vocabulary, sun transmittance, and
+surface aerial perspective. The older `analytic` mode remains selectable for
+comparison and debugging. The moon is now a
 depth-tested sphere rendered from the same local celestial state on a
 camera-relative shell that preserves its apparent angular size. Phase and
 terminator shape therefore come from body lighting against the modeled sun

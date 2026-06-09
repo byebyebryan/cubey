@@ -31,10 +31,10 @@ presentation while the supporting systems become inspectable in isolation.
 
 For planet scale, `projects/ocean` should stop at horizon-scale and curved-local
 rendering. `projects/planet` now owns the landed frame, surface LOD,
-terrain-field, sky/celestial, atmosphere, and local-detail diagnostics; the
-remaining integration target is to port ocean as one local water layer when
-local/global morphing, persistent topology, streaming, and render order are
-stable.
+terrain-field integration, atmosphere preview, and local-detail diagnostics
+while consuming the shared sky/celestial foundation; the remaining integration
+target is to port ocean as one local water layer when local/global morphing,
+persistent topology, streaming, and render order are stable.
 
 ## Atmosphere Project
 
@@ -168,7 +168,7 @@ distort the ocean renderer. Its first useful scope should be deliberately plain:
 Ocean integration target:
 
 - planet supplies radius, datum, local tangent frame, camera-relative origin,
-  atmosphere altitude, celestial body state, and render order;
+  atmosphere altitude, shared celestial body state adapters, and render order;
 - ocean supplies local wave displacement, normals, foam, material response, and
   optional local wake/disturbance fields;
 - terrain, bathymetry, clouds, and global weather remain planet or adjacent
@@ -183,8 +183,8 @@ These are more important than exact implementation details:
 - camera-relative origin behavior for large ocean shots;
 - planet radius, datum/sea level, and local tangent frame ownership;
 - linear HDR color, exposure, and tone-map ownership;
-- celestial body ownership, with derived sun direction, sun color/radiance, and
-  sun intensity fed into atmosphere and surface lighting;
+- shared celestial body ownership, with derived sun direction, sun color/radiance,
+  and sun intensity fed into atmosphere and surface lighting;
 - depth convention for opaque scene depth, seabed height, water depth, and
   bathymetry;
 - texture channel layouts for shoreline, bathymetry, terrain material, weather,
