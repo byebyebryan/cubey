@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/core/math.h>
+#include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/celestial_system.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/material.h>
@@ -31,9 +32,15 @@ struct SkyFrameUniforms {
     cubey::math::Vec4 camera_position_radius;
     cubey::math::Vec4 background_space_limb;
     cubey::math::Vec4 atmosphere_mode_options;
+    cubey::math::Vec4 night_options;
+    cubey::math::Vec4 celestial_options;
+    cubey::math::Vec4 moon_options;
+    cubey::math::Vec4 moon_phase_options;
+    cubey::math::Vec4 milky_way_options;
+    cubey::math::Vec4 render_options;
 };
 
-static_assert(sizeof(SkyFrameUniforms) == sizeof(float) * 40U);
+static_assert(sizeof(SkyFrameUniforms) == sizeof(float) * 64U);
 
 struct CelestialBodyFrameUniforms {
     cubey::math::Mat4 view_projection{1.0F};
@@ -68,6 +75,7 @@ struct CelestialBodyFrameInputs {
 
 struct SkyFrameMaterialConfig {
     std::uint32_t frame_slot_count = 1;
+    AtmosphereBackgroundTextureBindings textures{};
 };
 
 struct SkyFramePipelineConfig {

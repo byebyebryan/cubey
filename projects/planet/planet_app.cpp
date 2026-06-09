@@ -14,6 +14,7 @@
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
+#include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/hdr_post_frame.h>
@@ -319,6 +320,10 @@ class PlanetApp {
                 });
             moon_mesh_.emplace(gpu, moon_mesh.mesh_config());
         }
+        if (!sky_atlas_resources_.has_value()) {
+            sky_atlas_resources_.emplace(
+                cubey::render::create_atmosphere_background_generated_textures(device, gpu));
+        }
         if (!surface_frame_material_.has_value() ||
             surface_frame_material_->material().set_count() != frame_slot_count) {
             surface_frame_material_.reset();
@@ -407,6 +412,7 @@ class PlanetApp {
         sky_frame_.destroy();
         surface_runtime_.clear_gpu_buffers();
         moon_mesh_.reset();
+        sky_atlas_resources_.reset();
         local_detail_mesh_.reset();
         patch_grid_mesh_.reset();
         surface_frame_material_.reset();
@@ -1257,6 +1263,7 @@ class PlanetApp {
             sky_frame_.destroy();
             sky_frame_.create_materials(device, {
                                                     .frame_slot_count = frame_slot_count,
+                                                    .textures = sky_atlas_resources_->bindings(),
                                                 });
         }
     }
@@ -1264,8 +1271,8 @@ class PlanetApp {
     void create_sky_frame_pipeline(const cubey::vulkan::Device& device, VkExtent2D extent,
                                    VkFormat color_format) {
         const std::array<cubey::render::ShaderStageFile, 2> shaders{
-            cubey::render::vertex_shader_file(shader_path("planet_sky.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("planet_sky.frag.spv")),
+            cubey::render::vertex_shader_file(shader_path("sky.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("sky.frag.spv")),
         };
         sky_frame_.destroy_pipeline();
         sky_frame_.create_pipeline(device, {
@@ -1290,8 +1297,8 @@ class PlanetApp {
                                               VkExtent2D extent, VkFormat color_format,
                                               VkFormat depth_format) {
         const std::array<cubey::render::ShaderStageFile, 2> shaders{
-            cubey::render::vertex_shader_file(shader_path("planet_celestial_body.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("planet_celestial_body.frag.spv")),
+            cubey::render::vertex_shader_file(shader_path("celestial_body.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("celestial_body.frag.spv")),
         };
         celestial_body_frame_.destroy_pipeline();
         celestial_body_frame_.create_pipeline(device, {
@@ -1355,6 +1362,7 @@ class PlanetApp {
     std::optional<cubey::render::Mesh> patch_grid_mesh_;
     std::optional<cubey::render::Mesh> local_detail_mesh_;
     std::optional<cubey::render::Mesh> moon_mesh_;
+    std::optional<cubey::render::AtmosphereBackgroundAtlasResources> sky_atlas_resources_;
     std::optional<cubey::render::FrameUniformMaterialInstance<PlanetSurfaceFrameUniforms>>
         surface_frame_material_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;

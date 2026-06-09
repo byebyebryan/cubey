@@ -13,6 +13,8 @@ namespace {
 
 enum class SkyBinding : std::uint32_t {
     FrameUniforms = 0,
+    MoonAtlas = 1,
+    NightSkyAtlas = 2,
 };
 
 [[nodiscard]] constexpr std::uint32_t binding(SkyBinding binding) noexcept {
@@ -163,6 +165,48 @@ SkyFrameUniforms sky_frame_uniforms(const CelestialSystem& celestial,
                 0.0F,
                 0.0F,
             },
+        .night_options =
+            {
+                0.62F,
+                0.22F,
+                0.36F,
+                0.92F,
+            },
+        .celestial_options =
+            {
+                std::cos(celestial.planet_rotation_angle_rad),
+                std::sin(celestial.planet_rotation_angle_rad),
+                0.0F,
+                0.0F,
+            },
+        .moon_options =
+            {
+                0.32F,
+                0.45F,
+                0.0F,
+                0.0F,
+            },
+        .moon_phase_options =
+            {
+                celestial.moon.phase_fraction,
+                celestial.moon.intensity,
+                0.0F,
+                0.0F,
+            },
+        .milky_way_options =
+            {
+                1.0F,
+                0.70F,
+                0.0F,
+                0.0F,
+            },
+        .render_options =
+            {
+                0.0F,
+                0.0F,
+                0.0F,
+                0.0F,
+            },
     };
 }
 
@@ -178,6 +222,16 @@ MaterialPassInfo sky_pass_info() {
                             cubey::vulkan::DescriptorSetBindingConfig{
                                 .binding = binding(SkyBinding::FrameUniforms),
                                 .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = binding(SkyBinding::MoonAtlas),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = binding(SkyBinding::NightSkyAtlas),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
                         },
@@ -265,11 +319,27 @@ MaterialPassInfo celestial_body_pass_info() {
 
 void SkyFrame::create_materials(const cubey::vulkan::Device& device,
                                 const SkyFrameMaterialConfig& config) {
+    validate_atmosphere_background_texture_bindings(config.textures);
     material_.emplace(device, FrameUniformMaterialInstanceConfig{
                                   .material_pass = sky_pass_info(),
                                   .descriptor_set = 0,
                                   .frame_slot_count = config.frame_slot_count,
                                   .uniform_binding = binding(SkyBinding::FrameUniforms),
+                                  .sampled_images =
+                                      {
+                                          SampledImageMaterialBinding{
+                                              .binding = binding(SkyBinding::MoonAtlas),
+                                              .sampler = config.textures.lunar_sampler,
+                                              .image_view = config.textures.lunar_view,
+                                              .layout = config.textures.lunar_layout,
+                                          },
+                                          SampledImageMaterialBinding{
+                                              .binding = binding(SkyBinding::NightSkyAtlas),
+                                              .sampler = config.textures.night_sky_sampler,
+                                              .image_view = config.textures.night_sky_view,
+                                              .layout = config.textures.night_sky_layout,
+                                          },
+                                      },
                               });
 }
 
