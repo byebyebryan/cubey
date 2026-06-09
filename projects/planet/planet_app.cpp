@@ -179,6 +179,10 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 26U);
     return t * t * (3.0F - 2.0F * t);
 }
 
+[[nodiscard]] float degrees_to_radians(float degrees) {
+    return degrees * std::numbers::pi_v<float> / 180.0F;
+}
+
 [[nodiscard]] float packed_debug_wire_option(const PlanetConfig& config) {
     return static_cast<float>(static_cast<int>(config.debug_view)) +
            (config.wire_overlay ? 0.25F : 0.0F);
@@ -210,6 +214,9 @@ class PlanetApp {
           celestial_lighting_(planet_celestial_lighting(celestial_system_)),
           camera_state_(planet_camera_initial_state_from_run_config(
               planet_config_, config_, kPlanetCameraBaseYaw, kPlanetCameraBasePitch)) {
+        if (config_.headless) {
+            apply_headless_initial_camera();
+        }
         refresh_frame();
         surface_runtime_.rebuild(planet_config_, frame_, surface_view(default_surface_extent()));
         if (local_detail_surface_requested()) {
@@ -287,6 +294,14 @@ class PlanetApp {
             create_forward_pass(context.device(), context.render_target().extent,
                                 context.render_target().format,
                                 cubey::host::headless_capture_frame_slot_count(config_));
+        };
+        callbacks.before_frame = [this](cubey::host::HeadlessPngContext& context,
+                                        const cubey::host::HeadlessCaptureFrame& frame) {
+            if (frame.index > 0U) {
+                update_solar_time(frame.timing.delta_seconds);
+                update_headless_capture_camera(frame.timing.delta_seconds,
+                                               context.render_target().extent);
+            }
         };
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
                                         const cubey::host::HeadlessCaptureFrame& frame,
@@ -642,6 +657,33 @@ class PlanetApp {
     void reset_camera() {
         camera_state_ =
             planet_camera_home_state(planet_config_, kPlanetCameraBaseYaw, kPlanetCameraBasePitch);
+    }
+
+    void apply_headless_initial_camera() {
+        if (run_config_float_is_set(config_.planet.camera_surface_pitch_degrees)) {
+            planet_camera_surface_look_rotate(
+                camera_state_, planet_config_, 0.0F,
+                degrees_to_radians(config_.planet.camera_surface_pitch_degrees));
+        }
+    }
+
+    void update_headless_capture_camera(double delta_seconds, VkExtent2D extent) {
+        if (delta_seconds <= 0.0 ||
+            !run_config_float_is_set(config_.planet.camera_orbit_spin_degrees_per_second) ||
+            config_.planet.camera_mode == "surface") {
+            return;
+        }
+
+        planet_camera_orbit_rotate(
+            camera_state_, planet_config_,
+            degrees_to_radians(config_.planet.camera_orbit_spin_degrees_per_second) *
+                static_cast<float>(delta_seconds),
+            0.0F);
+        refresh_frame();
+        const PlanetSurfaceView view = surface_view(extent);
+        if (surface_runtime_.plan_changed(planet_config_, frame_, view)) {
+            surface_runtime_.rebuild(planet_config_, frame_, view);
+        }
     }
 
     [[nodiscard]] cubey::Transform3D camera_transform() const {

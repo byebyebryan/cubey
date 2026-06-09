@@ -42,10 +42,14 @@ planet_camera_initial_state_from_run_config(const PlanetConfig& config, const Ru
                                             float base_yaw_radians, float base_pitch_radians);
 void planet_camera_set_distance(PlanetCameraState& state, const PlanetConfig& config,
                                 float distance_m);
+void planet_camera_orbit_rotate(PlanetCameraState& state, const PlanetConfig& config,
+                                float yaw_delta_radians, float latitude_delta_radians);
 void planet_camera_zoom_by_scroll(PlanetCameraState& state, const PlanetConfig& config,
                                   double scroll_y);
 void planet_camera_orbit_drag(PlanetCameraState& state, const PlanetConfig& config,
                               double delta_x_px, double delta_y_px);
+void planet_camera_surface_look_rotate(PlanetCameraState& state, const PlanetConfig& config,
+                                       float yaw_delta_radians, float pitch_delta_radians);
 void planet_camera_surface_look_drag(PlanetCameraState& state, const PlanetConfig& config,
                                      double delta_x_px, double delta_y_px);
 [[nodiscard]] bool planet_camera_surface_move(PlanetCameraState& state, const PlanetConfig& config,

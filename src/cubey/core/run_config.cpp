@@ -103,6 +103,16 @@ RunConfig parse_run_config(int argc, char** argv) {
     if (config.planet.camera_altitude_m < 0.0F) {
         throw std::runtime_error("planet camera altitude must be nonnegative");
     }
+    if (run_config_float_is_set(config.planet.camera_orbit_spin_degrees_per_second) &&
+        (config.planet.camera_orbit_spin_degrees_per_second < -360.0F ||
+         config.planet.camera_orbit_spin_degrees_per_second > 360.0F)) {
+        throw std::runtime_error("planet camera orbit spin must be in [-360, 360]");
+    }
+    if (run_config_float_is_set(config.planet.camera_surface_pitch_degrees) &&
+        (config.planet.camera_surface_pitch_degrees < -90.0F ||
+         config.planet.camera_surface_pitch_degrees > 90.0F)) {
+        throw std::runtime_error("planet camera surface pitch must be in [-90, 90]");
+    }
     if (config.profile_diagnostics && config.profile_output_prefix.empty()) {
         throw std::runtime_error("profile diagnostics require --profile-output");
     }

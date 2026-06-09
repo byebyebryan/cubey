@@ -332,6 +332,21 @@ void planet_camera_set_distance(PlanetCameraState& state, const PlanetConfig& co
         direction_d * static_cast<double>(clamped_distance(config, direction, distance_m));
 }
 
+void planet_camera_orbit_rotate(PlanetCameraState& state, const PlanetConfig& config,
+                                float yaw_delta_radians, float latitude_delta_radians) {
+    if (yaw_delta_radians == 0.0F && latitude_delta_radians == 0.0F) {
+        return;
+    }
+
+    const double distance = glm::length(state.position_m);
+    const cubey::math::Vec3 direction = position_direction(state.position_m, {0.0F, 0.0F, 1.0F});
+    const float yaw = orbit_yaw_from_direction(direction) + yaw_delta_radians;
+    const float latitude = orbit_latitude_from_direction(direction) + latitude_delta_radians;
+    const cubey::math::Vec3 position = orbit_direction_from_yaw_latitude(yaw, latitude);
+    state.position_m = clamped_position(config, to_double(position) * distance);
+    state.surface_rotation_active = false;
+}
+
 void planet_camera_zoom_by_scroll(PlanetCameraState& state, const PlanetConfig& config,
                                   double scroll_y) {
     if (scroll_y == 0.0) {
@@ -352,20 +367,14 @@ void planet_camera_orbit_drag(PlanetCameraState& state, const PlanetConfig& conf
         return;
     }
 
-    const double distance = glm::length(state.position_m);
-    const cubey::math::Vec3 direction = position_direction(state.position_m, {0.0F, 0.0F, 1.0F});
-    const float yaw = orbit_yaw_from_direction(direction) -
-                      (static_cast<float>(delta_x_px) * kDragRadiansPerPixel);
-    const float latitude = orbit_latitude_from_direction(direction) +
-                           (static_cast<float>(delta_y_px) * kDragRadiansPerPixel);
-    const cubey::math::Vec3 position = orbit_direction_from_yaw_latitude(yaw, latitude);
-    state.position_m = clamped_position(config, to_double(position) * distance);
-    state.surface_rotation_active = false;
+    planet_camera_orbit_rotate(state, config,
+                               -static_cast<float>(delta_x_px) * kDragRadiansPerPixel,
+                               static_cast<float>(delta_y_px) * kDragRadiansPerPixel);
 }
 
-void planet_camera_surface_look_drag(PlanetCameraState& state, const PlanetConfig& config,
-                                     double delta_x_px, double delta_y_px) {
-    if (delta_x_px == 0.0 && delta_y_px == 0.0) {
+void planet_camera_surface_look_rotate(PlanetCameraState& state, const PlanetConfig& config,
+                                       float yaw_delta_radians, float pitch_delta_radians) {
+    if (yaw_delta_radians == 0.0F && pitch_delta_radians == 0.0F) {
         return;
     }
     if (!state.surface_rotation_active) {
@@ -375,13 +384,11 @@ void planet_camera_surface_look_drag(PlanetCameraState& state, const PlanetConfi
 
     const cubey::math::Vec3 up =
         position_direction(state.position_m, cubey::math::Vec3{0.0F, 1.0F, 0.0F});
-    const cubey::math::Quat yaw = cubey::math::angle_axis_quat(
-        -static_cast<float>(delta_x_px) * kSurfaceLookRadiansPerPixel, up);
+    const cubey::math::Quat yaw = cubey::math::angle_axis_quat(yaw_delta_radians, up);
     cubey::math::Quat candidate = glm::normalize(yaw * state.surface_rotation);
     const cubey::math::Vec3 right =
         normalize_or(candidate * cubey::math::Vec3{1.0F, 0.0F, 0.0F}, tangent_right_from_up(up));
-    const cubey::math::Quat pitch = cubey::math::angle_axis_quat(
-        -static_cast<float>(delta_y_px) * kSurfaceLookRadiansPerPixel, right);
+    const cubey::math::Quat pitch = cubey::math::angle_axis_quat(pitch_delta_radians, right);
     const cubey::math::Quat pitched = glm::normalize(pitch * candidate);
     const cubey::math::Vec3 forward =
         glm::normalize(pitched * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
@@ -391,6 +398,17 @@ void planet_camera_surface_look_drag(PlanetCameraState& state, const PlanetConfi
     }
     state.surface_rotation = glm::normalize(candidate);
     state.position_m = clamped_position(config, state.position_m);
+}
+
+void planet_camera_surface_look_drag(PlanetCameraState& state, const PlanetConfig& config,
+                                     double delta_x_px, double delta_y_px) {
+    if (delta_x_px == 0.0 && delta_y_px == 0.0) {
+        return;
+    }
+
+    planet_camera_surface_look_rotate(
+        state, config, -static_cast<float>(delta_x_px) * kSurfaceLookRadiansPerPixel,
+        -static_cast<float>(delta_y_px) * kSurfaceLookRadiansPerPixel);
 }
 
 bool planet_camera_surface_move(PlanetCameraState& state, const PlanetConfig& config, float forward,

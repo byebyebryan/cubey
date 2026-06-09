@@ -273,6 +273,8 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "planet.radius_m",
         "planet.atmosphere_height_m",
         "planet.camera_altitude_m",
+        "planet.camera_orbit_spin_degrees_per_second",
+        "planet.camera_surface_pitch_degrees",
         "planet.patches_per_face",
         "planet.patch_resolution",
         "planet.max_lod_level",
@@ -1228,6 +1230,10 @@ void test_run_config_parses_planet_controls() {
     std::string atmosphere_value = "70000";
     std::string altitude_flag = "--planet-camera-altitude-m";
     std::string altitude_value = "240000";
+    std::string orbit_spin_flag = "--planet-camera-orbit-spin-deg-per-sec";
+    std::string orbit_spin_value = "18";
+    std::string surface_pitch_flag = "--planet-camera-surface-pitch-deg";
+    std::string surface_pitch_value = "24";
     std::string patches_flag = "--planet-patches-per-face";
     std::string patches_value = "4";
     std::string patch_resolution_flag = "--planet-patch-resolution";
@@ -1277,7 +1283,7 @@ void test_run_config_parses_planet_controls() {
     std::string camera_mode_value = "surface";
     std::string atmosphere_mode_flag = "--planet-atmosphere-mode";
     std::string atmosphere_mode_value = "physical";
-    std::array<char*, 58> argv{program.data(),
+    std::array<char*, 62> argv{program.data(),
                                scale_flag.data(),
                                scale_value.data(),
                                radius_flag.data(),
@@ -1286,6 +1292,10 @@ void test_run_config_parses_planet_controls() {
                                atmosphere_value.data(),
                                altitude_flag.data(),
                                altitude_value.data(),
+                               orbit_spin_flag.data(),
+                               orbit_spin_value.data(),
+                               surface_pitch_flag.data(),
+                               surface_pitch_value.data(),
                                patches_flag.data(),
                                patches_value.data(),
                                patch_resolution_flag.data(),
@@ -1345,6 +1355,10 @@ void test_run_config_parses_planet_controls() {
             "run config should parse planet atmosphere height");
     require(config.planet.camera_altitude_m == 240000.0F,
             "run config should parse planet camera altitude");
+    require(config.planet.camera_orbit_spin_degrees_per_second == 18.0F,
+            "run config should parse planet orbit spin");
+    require(config.planet.camera_surface_pitch_degrees == 24.0F,
+            "run config should parse planet surface pitch");
     require(config.planet.patches_per_face == 4U,
             "run config should parse planet patches per face");
     require(config.planet.patch_resolution == 128U,

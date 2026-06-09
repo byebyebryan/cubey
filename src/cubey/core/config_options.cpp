@@ -87,7 +87,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 172> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 174> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -227,6 +227,15 @@ constexpr std::array<ConfigOptionDescriptor, 172> kRunConfigOptions{
            "--planet-camera-altitude-m", "Camera Altitude", "Planet",
            "Default camera altitude above the planet surface in meters.", ConfigOptionType::Float,
            min_range(0.0)),
+    option(RunConfigOptionId::PlanetCameraOrbitSpin,
+           "planet.camera_orbit_spin_degrees_per_second",
+           "--planet-camera-orbit-spin-deg-per-sec", "Orbit Spin", "Planet",
+           "Headless capture orbit-camera yaw spin rate in degrees per second.",
+           ConfigOptionType::Float, bounded_range(-360.0, 360.0)),
+    option(RunConfigOptionId::PlanetCameraSurfacePitch, "planet.camera_surface_pitch_degrees",
+           "--planet-camera-surface-pitch-deg", "Surface Pitch", "Planet",
+           "Headless capture initial surface-camera pitch offset in degrees.",
+           ConfigOptionType::Float, bounded_range(-90.0, 90.0)),
     option(RunConfigOptionId::PlanetPatchesPerFace, "planet.patches_per_face",
            "--planet-patches-per-face", "Patches / Face", "Planet",
            "Root patch count per cube-sphere face.", ConfigOptionType::UInt32,
@@ -908,6 +917,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.planet.atmosphere_height_m);
     case RunConfigOptionId::PlanetCameraAltitude:
         return optional_float(config.planet.camera_altitude_m);
+    case RunConfigOptionId::PlanetCameraOrbitSpin:
+        return optional_float(config.planet.camera_orbit_spin_degrees_per_second);
+    case RunConfigOptionId::PlanetCameraSurfacePitch:
+        return optional_float(config.planet.camera_surface_pitch_degrees);
     case RunConfigOptionId::PlanetPatchesPerFace:
         return optional_uint32(config.planet.patches_per_face);
     case RunConfigOptionId::PlanetPatchResolution:
@@ -1229,6 +1242,9 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<float>("radius_m", options.radius_m);
     adapter.writeField<float>("atmosphere_height_m", options.atmosphere_height_m);
     adapter.writeField<float>("camera_altitude_m", options.camera_altitude_m);
+    adapter.writeField<float>("camera_orbit_spin_degrees_per_second",
+                              options.camera_orbit_spin_degrees_per_second);
+    adapter.writeField<float>("camera_surface_pitch_degrees", options.camera_surface_pitch_degrees);
     adapter.writeField<std::uint32_t>("patches_per_face", options.patches_per_face);
     adapter.writeField<std::uint32_t>("patch_resolution", options.patch_resolution);
     adapter.writeField<std::uint32_t>("max_lod_level", options.max_lod_level);
@@ -1270,6 +1286,9 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<float>("radius_m", options.radius_m);
     adapter.readField<float>("atmosphere_height_m", options.atmosphere_height_m);
     adapter.readField<float>("camera_altitude_m", options.camera_altitude_m);
+    adapter.readField<float>("camera_orbit_spin_degrees_per_second",
+                             options.camera_orbit_spin_degrees_per_second);
+    adapter.readField<float>("camera_surface_pitch_degrees", options.camera_surface_pitch_degrees);
     adapter.readField<std::uint32_t>("patches_per_face", options.patches_per_face);
     adapter.readField<std::uint32_t>("patch_resolution", options.patch_resolution);
     adapter.readField<std::uint32_t>("max_lod_level", options.max_lod_level);
@@ -1700,6 +1719,14 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::PlanetCameraAltitude:
         config.planet.camera_altitude_m = parse_config_float(value, option);
         validate_range(config.planet.camera_altitude_m, option);
+        break;
+    case RunConfigOptionId::PlanetCameraOrbitSpin:
+        config.planet.camera_orbit_spin_degrees_per_second = parse_config_float(value, option);
+        validate_range(config.planet.camera_orbit_spin_degrees_per_second, option);
+        break;
+    case RunConfigOptionId::PlanetCameraSurfacePitch:
+        config.planet.camera_surface_pitch_degrees = parse_config_float(value, option);
+        validate_range(config.planet.camera_surface_pitch_degrees, option);
         break;
     case RunConfigOptionId::PlanetPatchesPerFace:
         config.planet.patches_per_face =
