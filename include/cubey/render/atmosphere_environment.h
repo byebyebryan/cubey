@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/core/math.h>
+#include <cubey/render/celestial_system.h>
 #include <cubey/render/view_ray_basis_3d.h>
 
 #include <array>
@@ -168,10 +169,16 @@ atmosphere_environment_sun_direction(const AtmosphereEnvironmentConfig& config);
 [[nodiscard]] AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
     const AtmosphereEnvironmentConfig& config,
     const AtmosphereEnvironmentFrameUniformInputs& inputs);
+[[nodiscard]] AtmosphereEnvironmentFrameUniforms
+atmosphere_environment_frame_uniforms_from_celestial(
+    const AtmosphereEnvironmentConfig& config, const CelestialSystem& celestial,
+    const AtmosphereEnvironmentFrameUniformInputs& inputs);
 [[nodiscard]] std::array<float, 9> atmosphere_environment_sh_basis(math::Vec3 direction);
 [[nodiscard]] math::Vec3 atmosphere_environment_evaluate_sh(
     const std::array<math::Vec3, 9>& coefficients, math::Vec3 direction);
 [[nodiscard]] AtmosphereEnvironmentLighting atmosphere_environment_lighting(
     const AtmosphereEnvironmentConfig& config);
+[[nodiscard]] AtmosphereEnvironmentLighting atmosphere_environment_lighting_from_celestial(
+    const AtmosphereEnvironmentConfig& config, const CelestialSystem& celestial);
 
 } // namespace cubey::render

@@ -35,6 +35,13 @@ struct AtmosphereEnvironmentRuntimeFrameInfo {
         render::AtmosphereEnvironmentRenderView::Final;
 };
 
+struct AtmosphereEnvironmentRuntimeCelestialFrameInfo {
+    render::ViewRayBasis3D view_rays{};
+    render::AtmosphereEnvironmentRenderView render_view =
+        render::AtmosphereEnvironmentRenderView::Final;
+    render::CelestialSystem celestial{};
+};
+
 struct AtmosphereEnvironmentRuntimeFrame {
     render::AtmosphereEnvironmentFrameUniforms background{};
     cubey::scene::Environment3D scene_environment{};
@@ -70,6 +77,8 @@ class AtmosphereEnvironmentRuntime {
     [[nodiscard]] cubey::scene::Environment3D scene_environment() const;
     [[nodiscard]] AtmosphereEnvironmentRuntimeFrame
     frame(const AtmosphereEnvironmentRuntimeFrameInfo& info) const;
+    [[nodiscard]] AtmosphereEnvironmentRuntimeFrame
+    frame_from_celestial(const AtmosphereEnvironmentRuntimeCelestialFrameInfo& info) const;
     [[nodiscard]] render::PbrEnvironmentTextureBindings
     pbr_environment_bindings(const render::GeneratedPbrEnvironment& fallback) const;
     [[nodiscard]] const render::AtmosphereReflectionProbe& reflection_probe() const;

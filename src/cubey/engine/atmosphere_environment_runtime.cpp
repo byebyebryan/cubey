@@ -55,10 +55,20 @@ bool environment_equal(const render::AtmosphereEnvironmentConfig& lhs,
            lhs.sun_elevation_degrees == rhs.sun_elevation_degrees &&
            lhs.sun_azimuth_degrees == rhs.sun_azimuth_degrees &&
            lhs.camera_altitude_km == rhs.camera_altitude_km && lhs.ground_mode == rhs.ground_mode &&
-           lhs.render_celestial_content == rhs.render_celestial_content &&
-           lhs.reference_geometry_enabled == rhs.reference_geometry_enabled &&
-           lhs.reference_grid_km == rhs.reference_grid_km &&
-           lhs.reference_intensity == rhs.reference_intensity;
+	           lhs.render_celestial_content == rhs.render_celestial_content &&
+	           lhs.reference_geometry_enabled == rhs.reference_geometry_enabled &&
+	           lhs.reference_grid_km == rhs.reference_grid_km &&
+	           lhs.reference_intensity == rhs.reference_intensity;
+}
+
+cubey::scene::Environment3D scene_environment_from_lighting(
+    const render::AtmosphereEnvironmentLighting& lighting) {
+    return cubey::scene::Environment3D{
+        .ambient_color = lighting.ambient_color,
+        .ambient_intensity = 0.0F,
+        .diffuse_irradiance_sh = lighting.diffuse_irradiance_sh,
+        .diffuse_irradiance_sh_enabled = true,
+    };
 }
 
 } // namespace
@@ -173,12 +183,7 @@ AtmosphereEnvironmentRuntime::lighting() const noexcept {
 }
 
 cubey::scene::Environment3D AtmosphereEnvironmentRuntime::scene_environment() const {
-    return cubey::scene::Environment3D{
-        .ambient_color = lighting_.ambient_color,
-        .ambient_intensity = 0.0F,
-        .diffuse_irradiance_sh = lighting_.diffuse_irradiance_sh,
-        .diffuse_irradiance_sh_enabled = true,
-    };
+    return scene_environment_from_lighting(lighting_);
 }
 
 AtmosphereEnvironmentRuntimeFrame
@@ -192,6 +197,22 @@ AtmosphereEnvironmentRuntime::frame(const AtmosphereEnvironmentRuntimeFrameInfo&
             }),
         .scene_environment = scene_environment(),
         .lighting = lighting_,
+    };
+}
+
+AtmosphereEnvironmentRuntimeFrame AtmosphereEnvironmentRuntime::frame_from_celestial(
+    const AtmosphereEnvironmentRuntimeCelestialFrameInfo& info) const {
+    const render::AtmosphereEnvironmentLighting lighting =
+        render::atmosphere_environment_lighting_from_celestial(environment_, info.celestial);
+    return {
+        .background = render::atmosphere_environment_frame_uniforms_from_celestial(
+            environment_, info.celestial,
+            render::AtmosphereEnvironmentFrameUniformInputs{
+                .view_rays = info.view_rays,
+                .render_view = info.render_view,
+            }),
+        .scene_environment = scene_environment_from_lighting(lighting),
+        .lighting = lighting,
     };
 }
 

@@ -89,7 +89,50 @@ void test_atmosphere_environment_packs_frame_uniforms() {
                         .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
                     });
     require(sky_only_uniforms.render_options.x == 1.0F,
-            "atmosphere environment should pack sky-only ground policy");
+	            "atmosphere environment should pack sky-only ground policy");
+}
+
+void test_atmosphere_environment_packs_celestial_frame_uniforms() {
+    cubey::render::AtmosphereEnvironmentConfig config;
+    config.sun_elevation_degrees = -30.0F;
+    config.sun_azimuth_degrees = 0.0F;
+    config.moon.angular_radius_scale = 2.0F;
+
+    cubey::render::CelestialSystem celestial;
+    celestial.sun.direction = {0.0F, 1.0F, 0.0F};
+    celestial.sun.angular_radius_rad = 0.010F;
+    celestial.moon.direction = {0.0F, 0.0F, 1.0F};
+    celestial.moon.phase_fraction = 0.5F;
+    celestial.moon.angular_radius_rad = 0.020F;
+    celestial.planet_rotation_angle_rad = std::numbers::pi_v<float> * 0.5F;
+
+    const cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
+        cubey::render::atmosphere_environment_frame_uniforms_from_celestial(
+            config, celestial,
+            {
+                .view_rays =
+                    cubey::render::ViewRayBasis3D{
+                        .right_aspect = {1.0F, 0.0F, 0.0F, 1.5F},
+                        .up_tan_half_fovy = {0.0F, 1.0F, 0.0F, 0.75F},
+                        .forward = {0.0F, 0.0F, -1.0F, 0.0F},
+                    },
+                .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
+            });
+
+    require_near(uniforms.sun_direction_radius.y, 1.0F, 0.0001F,
+                 "celestial atmosphere bridge should override sun direction");
+    require_near(uniforms.sun_direction_radius.w, 0.010F, 0.0001F,
+                 "celestial atmosphere bridge should override sun radius");
+    require_near(uniforms.moon_direction_radius.z, 1.0F, 0.0001F,
+                 "celestial atmosphere bridge should override moon direction");
+    require_near(uniforms.moon_direction_radius.w, 0.040F, 0.0001F,
+                 "celestial atmosphere bridge should preserve moon radius scale");
+    require_near(uniforms.moon_options.w, 1.0F, 0.0001F,
+                 "celestial atmosphere bridge should derive full-moon illumination");
+    require(std::abs(uniforms.celestial_options.x) < 0.0001F,
+            "celestial atmosphere bridge should pack shared sidereal rotation cosine");
+    require_near(uniforms.celestial_options.y, 1.0F, 0.0001F,
+                 "celestial atmosphere bridge should pack shared sidereal rotation sine");
 }
 
 void test_atmosphere_environment_resolves_celestial_time_math() {

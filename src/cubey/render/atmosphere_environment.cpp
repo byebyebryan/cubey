@@ -49,6 +49,13 @@ namespace {
     return {std::max(value.x, 0.0F), std::max(value.y, 0.0F), std::max(value.z, 0.0F)};
 }
 
+[[nodiscard]] math::Vec3 normalized_or_up(math::Vec3 direction) {
+    if (glm::dot(direction, direction) <= 0.0F) {
+        return {0.0F, 1.0F, 0.0F};
+    }
+    return glm::normalize(direction);
+}
+
 [[nodiscard]] math::Vec3 mix_vec3(math::Vec3 lhs, math::Vec3 rhs, float t) {
     return (lhs * (1.0F - t)) + (rhs * t);
 }
@@ -224,6 +231,33 @@ solar_position(const AtmosphereEnvironmentTimeOfDay& time_of_day) {
         horizontal * std::sin(azimuth),
         std::sin(elevation),
         -horizontal * std::cos(azimuth),
+    };
+}
+
+[[nodiscard]] AtmosphereEnvironmentSolarPosition solar_position_from_direction(
+    math::Vec3 direction) {
+    const math::Vec3 normal = normalized_or_up(direction);
+    const float elevation = std::asin(std::clamp(normal.y, -1.0F, 1.0F));
+    const float azimuth = std::atan2(normal.x, -normal.z);
+    return {
+        .elevation_degrees = atmosphere_environment_radians_to_degrees(elevation),
+        .azimuth_degrees = wrap_signed_degrees(atmosphere_environment_radians_to_degrees(azimuth)),
+    };
+}
+
+[[nodiscard]] float celestial_moon_illumination(float phase_fraction) {
+    const float phase = atmosphere_environment_wrap_unit(phase_fraction);
+    return std::clamp(0.5F - 0.5F * std::cos(phase * 2.0F * std::numbers::pi_v<float>), 0.0F,
+                      1.0F);
+}
+
+[[nodiscard]] AtmosphereEnvironmentLunarState lunar_state_from_celestial(
+    const CelestialSystem& celestial, const AtmosphereEnvironmentMoon& moon) {
+    return {
+        .direction = normalized_or_up(celestial.moon.direction),
+        .phase_fraction = atmosphere_environment_wrap_unit(celestial.moon.phase_fraction),
+        .illumination = celestial_moon_illumination(celestial.moon.phase_fraction),
+        .angular_radius = celestial.moon.angular_radius_rad * moon.angular_radius_scale,
     };
 }
 
@@ -430,6 +464,38 @@ AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
     };
 }
 
+AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms_from_celestial(
+    const AtmosphereEnvironmentConfig& config, const CelestialSystem& celestial,
+    const AtmosphereEnvironmentFrameUniformInputs& inputs) {
+    AtmosphereEnvironmentFrameUniforms uniforms =
+        atmosphere_environment_frame_uniforms(config, inputs);
+    const math::Vec3 sun = normalized_or_up(celestial.sun.direction);
+    const AtmosphereEnvironmentLunarState moon =
+        lunar_state_from_celestial(celestial, config.moon);
+    uniforms.sun_direction_radius = {
+        sun.x,
+        sun.y,
+        sun.z,
+        celestial.sun.angular_radius_rad,
+    };
+    uniforms.moon_direction_radius = {
+        moon.direction.x,
+        moon.direction.y,
+        moon.direction.z,
+        moon.angular_radius,
+    };
+    uniforms.moon_options.w = moon.illumination;
+    uniforms.moon_phase_options = {
+        moon.phase_fraction,
+        std::sin(moon.phase_fraction * 2.0F * std::numbers::pi_v<float>),
+        0.0F,
+        0.0F,
+    };
+    uniforms.celestial_options.x = std::cos(celestial.planet_rotation_angle_rad);
+    uniforms.celestial_options.y = std::sin(celestial.planet_rotation_angle_rad);
+    return uniforms;
+}
+
 std::array<float, 9> atmosphere_environment_sh_basis(math::Vec3 direction) {
     return sh_basis(direction);
 }
@@ -448,6 +514,39 @@ AtmosphereEnvironmentLighting atmosphere_environment_lighting(
     const float sun_intensity = atmosphere_sun_intensity(config.sun_elevation_degrees);
     const float moon_intensity = atmosphere_moon_intensity(config, moon,
                                                           config.sun_elevation_degrees);
+    const std::array<math::Vec3, 9> diffuse_irradiance_sh = project_atmosphere_lighting_sh(
+        config, sun_direction, sun_color, sun_intensity, moon, moon_intensity);
+    const math::Vec3 upward_irradiance =
+        evaluate_sh(diffuse_irradiance_sh, {0.0F, 1.0F, 0.0F});
+    const bool use_sun = sun_intensity >= moon_intensity;
+
+    return {
+        .sun_direction = sun_direction,
+        .sun_color = sun_color,
+        .sun_intensity = sun_intensity,
+        .moon_direction = moon.direction,
+        .moon_color = atmosphere_moon_color(),
+        .moon_intensity = moon_intensity,
+        .primary_light_direction = use_sun ? sun_direction : moon.direction,
+        .primary_light_color = use_sun ? sun_color : atmosphere_moon_color(),
+        .primary_light_intensity = use_sun ? sun_intensity : moon_intensity,
+        .ambient_color = upward_irradiance,
+        .ambient_intensity = 1.0F,
+        .diffuse_irradiance_sh = diffuse_irradiance_sh,
+    };
+}
+
+AtmosphereEnvironmentLighting atmosphere_environment_lighting_from_celestial(
+    const AtmosphereEnvironmentConfig& config, const CelestialSystem& celestial) {
+    const math::Vec3 sun_direction = normalized_or_up(celestial.sun.direction);
+    const AtmosphereEnvironmentSolarPosition sun_position =
+        solar_position_from_direction(sun_direction);
+    const AtmosphereEnvironmentLunarState moon =
+        lunar_state_from_celestial(celestial, config.moon);
+    const math::Vec3 sun_color = atmosphere_sun_color(sun_position.elevation_degrees);
+    const float sun_intensity = atmosphere_sun_intensity(sun_position.elevation_degrees);
+    const float moon_intensity =
+        atmosphere_moon_intensity(config, moon, sun_position.elevation_degrees);
     const std::array<math::Vec3, 9> diffuse_irradiance_sh = project_atmosphere_lighting_sh(
         config, sun_direction, sun_color, sun_intensity, moon, moon_intensity);
     const math::Vec3 upward_irradiance =

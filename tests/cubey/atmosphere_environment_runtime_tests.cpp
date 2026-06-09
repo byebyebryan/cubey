@@ -203,7 +203,47 @@ void test_atmosphere_environment_runtime_builds_frame_payload() {
             "atmosphere runtime frame should carry scene environment lighting");
     require(frame.scene_environment.diffuse_irradiance_sh[0] ==
                 frame.lighting.diffuse_irradiance_sh[0],
-            "atmosphere runtime frame should keep lighting and scene environment in sync");
+	            "atmosphere runtime frame should keep lighting and scene environment in sync");
+}
+
+void test_atmosphere_environment_runtime_builds_celestial_frame_payload() {
+    cubey::AtmosphereEnvironmentRuntime runtime;
+    cubey::render::AtmosphereEnvironmentConfig environment;
+    environment.sun_elevation_degrees = -20.0F;
+    environment.sun_azimuth_degrees = 0.0F;
+    runtime.set_environment(environment);
+
+    cubey::render::CelestialSystem celestial;
+    celestial.sun.direction = {0.0F, 1.0F, 0.0F};
+    celestial.sun.angular_radius_rad = 0.012F;
+    celestial.moon.direction = {1.0F, 0.0F, 0.0F};
+    celestial.moon.phase_fraction = 0.5F;
+    celestial.moon.angular_radius_rad = 0.020F;
+    celestial.planet_rotation_angle_rad = 0.75F;
+
+    const cubey::AtmosphereEnvironmentRuntimeFrame frame = runtime.frame_from_celestial({
+        .view_rays =
+            cubey::render::ViewRayBasis3D{
+                .right_aspect = {1.0F, 0.0F, 0.0F, 1.75F},
+                .up_tan_half_fovy = {0.0F, 1.0F, 0.0F, 0.5F},
+                .forward = {0.0F, 0.0F, -1.0F, 0.0F},
+            },
+        .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
+        .celestial = celestial,
+    });
+
+    require_near(frame.background.sun_direction_radius.y, 1.0F, 0.0001F,
+                 "celestial runtime frame should override legacy sun direction");
+    require_near(frame.background.sun_direction_radius.w, 0.012F, 0.0001F,
+                 "celestial runtime frame should override legacy sun angular radius");
+    require_near(frame.background.moon_direction_radius.x, 1.0F, 0.0001F,
+                 "celestial runtime frame should override legacy moon direction");
+    require_near(frame.background.moon_phase_options.x, 0.5F, 0.0001F,
+                 "celestial runtime frame should preserve shared moon phase");
+    require_near(frame.lighting.sun_direction.y, 1.0F, 0.0001F,
+                 "celestial runtime frame lighting should use shared sun direction");
+    require(frame.scene_environment.diffuse_irradiance_sh[0] == frame.lighting.diffuse_irradiance_sh[0],
+            "celestial runtime frame should keep derived scene environment and lighting in sync");
 }
 
 void test_atmosphere_environment_runtime_requires_resources_before_bindings() {
