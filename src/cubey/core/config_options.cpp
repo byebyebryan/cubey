@@ -49,6 +49,7 @@ constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
 constexpr std::array<std::string_view, 2> kPlanetScalePresets{"earthlike", "mini"};
 constexpr std::array<std::string_view, 2> kPlanetCameraModes{"orbit", "surface"};
+constexpr std::array<std::string_view, 3> kPlanetSurfaceLooks{"default", "sun", "antisun"};
 constexpr std::array<std::string_view, 3> kPlanetAtmosphereModes{"analytic", "physical",
                                                                  "physical-preview"};
 constexpr std::array<std::string_view, 2> kTimeOfDayModes{"manual", "solar"};
@@ -87,7 +88,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 174> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 176> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -236,6 +237,14 @@ constexpr std::array<ConfigOptionDescriptor, 174> kRunConfigOptions{
            "--planet-camera-surface-pitch-deg", "Surface Pitch", "Planet",
            "Headless capture initial surface-camera pitch offset in degrees.",
            ConfigOptionType::Float, bounded_range(-90.0, 90.0)),
+    option(RunConfigOptionId::PlanetCameraSurfaceYaw, "planet.camera_surface_yaw_degrees",
+           "--planet-camera-surface-yaw-deg", "Surface Yaw", "Planet",
+           "Headless capture initial surface-camera yaw offset in degrees.",
+           ConfigOptionType::Float, bounded_range(-360.0, 360.0)),
+    option(RunConfigOptionId::PlanetCameraSurfaceLook, "planet.camera_surface_look",
+           "--planet-camera-surface-look", "Surface Look", "Planet",
+           "Headless capture surface-camera heading preset: default, sun, or antisun.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kPlanetSurfaceLooks)),
     option(RunConfigOptionId::PlanetPatchesPerFace, "planet.patches_per_face",
            "--planet-patches-per-face", "Patches / Face", "Planet",
            "Root patch count per cube-sphere face.", ConfigOptionType::UInt32,
@@ -921,6 +930,12 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.planet.camera_orbit_spin_degrees_per_second);
     case RunConfigOptionId::PlanetCameraSurfacePitch:
         return optional_float(config.planet.camera_surface_pitch_degrees);
+    case RunConfigOptionId::PlanetCameraSurfaceYaw:
+        return optional_float(config.planet.camera_surface_yaw_degrees);
+    case RunConfigOptionId::PlanetCameraSurfaceLook:
+        return config.planet.camera_surface_look.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.planet.camera_surface_look);
     case RunConfigOptionId::PlanetPatchesPerFace:
         return optional_uint32(config.planet.patches_per_face);
     case RunConfigOptionId::PlanetPatchResolution:
@@ -1245,6 +1260,8 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<float>("camera_orbit_spin_degrees_per_second",
                               options.camera_orbit_spin_degrees_per_second);
     adapter.writeField<float>("camera_surface_pitch_degrees", options.camera_surface_pitch_degrees);
+    adapter.writeField<float>("camera_surface_yaw_degrees", options.camera_surface_yaw_degrees);
+    adapter.writeField<std::string>("camera_surface_look", options.camera_surface_look);
     adapter.writeField<std::uint32_t>("patches_per_face", options.patches_per_face);
     adapter.writeField<std::uint32_t>("patch_resolution", options.patch_resolution);
     adapter.writeField<std::uint32_t>("max_lod_level", options.max_lod_level);
@@ -1289,6 +1306,8 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<float>("camera_orbit_spin_degrees_per_second",
                              options.camera_orbit_spin_degrees_per_second);
     adapter.readField<float>("camera_surface_pitch_degrees", options.camera_surface_pitch_degrees);
+    adapter.readField<float>("camera_surface_yaw_degrees", options.camera_surface_yaw_degrees);
+    adapter.readField<std::string>("camera_surface_look", options.camera_surface_look);
     adapter.readField<std::uint32_t>("patches_per_face", options.patches_per_face);
     adapter.readField<std::uint32_t>("patch_resolution", options.patch_resolution);
     adapter.readField<std::uint32_t>("max_lod_level", options.max_lod_level);
@@ -1727,6 +1746,13 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::PlanetCameraSurfacePitch:
         config.planet.camera_surface_pitch_degrees = parse_config_float(value, option);
         validate_range(config.planet.camera_surface_pitch_degrees, option);
+        break;
+    case RunConfigOptionId::PlanetCameraSurfaceYaw:
+        config.planet.camera_surface_yaw_degrees = parse_config_float(value, option);
+        validate_range(config.planet.camera_surface_yaw_degrees, option);
+        break;
+    case RunConfigOptionId::PlanetCameraSurfaceLook:
+        config.planet.camera_surface_look = std::string(value);
         break;
     case RunConfigOptionId::PlanetPatchesPerFace:
         config.planet.patches_per_face =

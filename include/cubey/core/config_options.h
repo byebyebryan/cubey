@@ -69,6 +69,8 @@ enum class RunConfigOptionId {
     PlanetCameraAltitude,
     PlanetCameraOrbitSpin,
     PlanetCameraSurfacePitch,
+    PlanetCameraSurfaceYaw,
+    PlanetCameraSurfaceLook,
     PlanetPatchesPerFace,
     PlanetPatchResolution,
     PlanetMaxLodLevel,

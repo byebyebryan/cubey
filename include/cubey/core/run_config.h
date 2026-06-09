@@ -125,6 +125,8 @@ struct RunConfig {
         float camera_altitude_m = kRunConfigUnsetFloat;
         float camera_orbit_spin_degrees_per_second = kRunConfigUnsetFloat;
         float camera_surface_pitch_degrees = kRunConfigUnsetFloat;
+        float camera_surface_yaw_degrees = kRunConfigUnsetFloat;
+        std::string camera_surface_look{};
         std::uint32_t patches_per_face = 0;
         std::uint32_t patch_resolution = 0;
         std::uint32_t max_lod_level = 0;

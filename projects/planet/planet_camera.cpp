@@ -400,6 +400,24 @@ void planet_camera_surface_look_rotate(PlanetCameraState& state, const PlanetCon
     state.position_m = clamped_position(config, state.position_m);
 }
 
+void planet_camera_surface_look_at_direction(PlanetCameraState& state, const PlanetConfig& config,
+                                             cubey::math::Vec3 world_direction) {
+    const cubey::math::Vec3 up =
+        position_direction(state.position_m, cubey::math::Vec3{0.0F, 1.0F, 0.0F});
+    cubey::math::Vec3 tangent_heading = world_direction - up * glm::dot(world_direction, up);
+    if (glm::length(tangent_heading) <= 0.000001F) {
+        const cubey::math::Quat current_rotation =
+            make_planet_camera_transform(config, state).rotation;
+        const cubey::math::Vec3 current_forward =
+            current_rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F};
+        tangent_heading = current_forward - up * glm::dot(current_forward, up);
+    }
+    state.surface_rotation =
+        surface_camera_rotation_for_position(to_float(state.position_m), tangent_heading);
+    state.surface_rotation_active = true;
+    state.position_m = clamped_position(config, state.position_m);
+}
+
 void planet_camera_surface_look_drag(PlanetCameraState& state, const PlanetConfig& config,
                                      double delta_x_px, double delta_y_px) {
     if (delta_x_px == 0.0 && delta_y_px == 0.0) {

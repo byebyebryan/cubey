@@ -113,6 +113,17 @@ RunConfig parse_run_config(int argc, char** argv) {
          config.planet.camera_surface_pitch_degrees > 90.0F)) {
         throw std::runtime_error("planet camera surface pitch must be in [-90, 90]");
     }
+    if (run_config_float_is_set(config.planet.camera_surface_yaw_degrees) &&
+        (config.planet.camera_surface_yaw_degrees < -360.0F ||
+         config.planet.camera_surface_yaw_degrees > 360.0F)) {
+        throw std::runtime_error("planet camera surface yaw must be in [-360, 360]");
+    }
+    if (!config.planet.camera_surface_look.empty() &&
+        config.planet.camera_surface_look != "default" &&
+        config.planet.camera_surface_look != "sun" &&
+        config.planet.camera_surface_look != "antisun") {
+        throw std::runtime_error("planet camera surface look must be default, sun, or antisun");
+    }
     if (config.profile_diagnostics && config.profile_output_prefix.empty()) {
         throw std::runtime_error("profile diagnostics require --profile-output");
     }

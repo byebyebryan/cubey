@@ -660,6 +660,21 @@ class PlanetApp {
     }
 
     void apply_headless_initial_camera() {
+        if (config_.planet.camera_mode != "surface") {
+            return;
+        }
+        if (config_.planet.camera_surface_look == "sun") {
+            planet_camera_surface_look_at_direction(camera_state_, planet_config_,
+                                                    celestial_system_.sun.direction);
+        } else if (config_.planet.camera_surface_look == "antisun") {
+            planet_camera_surface_look_at_direction(camera_state_, planet_config_,
+                                                    -celestial_system_.sun.direction);
+        }
+        if (run_config_float_is_set(config_.planet.camera_surface_yaw_degrees)) {
+            planet_camera_surface_look_rotate(
+                camera_state_, planet_config_,
+                degrees_to_radians(config_.planet.camera_surface_yaw_degrees), 0.0F);
+        }
         if (run_config_float_is_set(config_.planet.camera_surface_pitch_degrees)) {
             planet_camera_surface_look_rotate(
                 camera_state_, planet_config_, 0.0F,

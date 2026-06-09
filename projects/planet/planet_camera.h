@@ -50,6 +50,8 @@ void planet_camera_orbit_drag(PlanetCameraState& state, const PlanetConfig& conf
                               double delta_x_px, double delta_y_px);
 void planet_camera_surface_look_rotate(PlanetCameraState& state, const PlanetConfig& config,
                                        float yaw_delta_radians, float pitch_delta_radians);
+void planet_camera_surface_look_at_direction(PlanetCameraState& state, const PlanetConfig& config,
+                                             cubey::math::Vec3 world_direction);
 void planet_camera_surface_look_drag(PlanetCameraState& state, const PlanetConfig& config,
                                      double delta_x_px, double delta_y_px);
 [[nodiscard]] bool planet_camera_surface_move(PlanetCameraState& state, const PlanetConfig& config,

@@ -275,6 +275,8 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "planet.camera_altitude_m",
         "planet.camera_orbit_spin_degrees_per_second",
         "planet.camera_surface_pitch_degrees",
+        "planet.camera_surface_yaw_degrees",
+        "planet.camera_surface_look",
         "planet.patches_per_face",
         "planet.patch_resolution",
         "planet.max_lod_level",
@@ -1234,6 +1236,10 @@ void test_run_config_parses_planet_controls() {
     std::string orbit_spin_value = "18";
     std::string surface_pitch_flag = "--planet-camera-surface-pitch-deg";
     std::string surface_pitch_value = "24";
+    std::string surface_yaw_flag = "--planet-camera-surface-yaw-deg";
+    std::string surface_yaw_value = "-35";
+    std::string surface_look_flag = "--planet-camera-surface-look";
+    std::string surface_look_value = "sun";
     std::string patches_flag = "--planet-patches-per-face";
     std::string patches_value = "4";
     std::string patch_resolution_flag = "--planet-patch-resolution";
@@ -1283,7 +1289,7 @@ void test_run_config_parses_planet_controls() {
     std::string camera_mode_value = "surface";
     std::string atmosphere_mode_flag = "--planet-atmosphere-mode";
     std::string atmosphere_mode_value = "physical";
-    std::array<char*, 62> argv{program.data(),
+    std::array<char*, 66> argv{program.data(),
                                scale_flag.data(),
                                scale_value.data(),
                                radius_flag.data(),
@@ -1296,6 +1302,10 @@ void test_run_config_parses_planet_controls() {
                                orbit_spin_value.data(),
                                surface_pitch_flag.data(),
                                surface_pitch_value.data(),
+                               surface_yaw_flag.data(),
+                               surface_yaw_value.data(),
+                               surface_look_flag.data(),
+                               surface_look_value.data(),
                                patches_flag.data(),
                                patches_value.data(),
                                patch_resolution_flag.data(),
@@ -1359,6 +1369,10 @@ void test_run_config_parses_planet_controls() {
             "run config should parse planet orbit spin");
     require(config.planet.camera_surface_pitch_degrees == 24.0F,
             "run config should parse planet surface pitch");
+    require(config.planet.camera_surface_yaw_degrees == -35.0F,
+            "run config should parse planet surface yaw");
+    require(config.planet.camera_surface_look == "sun",
+            "run config should parse planet surface look preset");
     require(config.planet.patches_per_face == 4U,
             "run config should parse planet patches per face");
     require(config.planet.patch_resolution == 128U,
@@ -1468,6 +1482,17 @@ void test_run_config_rejects_invalid_planet_controls() {
                                     camera_mode_argv.data());
         },
         "run config should reject invalid planet camera mode");
+
+    std::string surface_look_flag = "--planet-camera-surface-look";
+    std::string surface_look_value = "moonward";
+    std::array<char*, 3> surface_look_argv{program.data(), surface_look_flag.data(),
+                                           surface_look_value.data()};
+    require_throws(
+        [&surface_look_argv]() {
+            cubey::parse_run_config(static_cast<int>(surface_look_argv.size()),
+                                    surface_look_argv.data());
+        },
+        "run config should reject invalid planet surface look preset");
 
     std::string scale_preset_flag = "--planet-scale-preset";
     std::string scale_preset_value = "tiny";

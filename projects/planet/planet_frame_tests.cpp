@@ -644,6 +644,34 @@ void test_planet_surface_camera_vertical_drag_direction() {
             "surface camera mouse-down drag should lower the local view");
 }
 
+void test_planet_surface_camera_look_at_direction_targets_local_heading() {
+    const cubey::projects::planet::PlanetConfig config{};
+    const float distance =
+        config.radius_m + cubey::projects::planet::planet_camera_min_altitude_m(config);
+    cubey::projects::planet::PlanetCameraState state =
+        cubey::projects::planet::planet_camera_home_state(config, 0.0F, 0.0F);
+    cubey::projects::planet::planet_camera_set_distance(state, config, distance);
+    cubey::projects::planet::planet_camera_reset_surface_view(state, config);
+
+    const cubey::math::Vec3 target{1.0F, 0.0F, 0.0F};
+    cubey::projects::planet::planet_camera_surface_look_at_direction(state, config, target);
+
+    const cubey::Transform3D transform =
+        cubey::projects::planet::make_planet_camera_transform(config, state);
+    const cubey::math::Vec3 up = glm::normalize(transform.translation);
+    const cubey::math::Vec3 forward =
+        glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
+    const cubey::math::Vec3 forward_tangent =
+        glm::normalize(forward - up * glm::dot(forward, up));
+    const cubey::math::Vec3 target_tangent =
+        glm::normalize(target - up * glm::dot(target, up));
+
+    require(state.surface_rotation_active,
+            "surface camera look-at should activate the surface rotation");
+    require(glm::dot(forward_tangent, target_tangent) > 0.99F,
+            "surface camera look-at should face the local tangent target");
+}
+
 void test_planet_surface_camera_move_stays_on_surface_shell() {
     const cubey::projects::planet::PlanetConfig config{};
     const float distance =
@@ -737,6 +765,7 @@ int main() {
         test_planet_camera_initial_state_applies_run_config_mode();
         test_planet_surface_camera_drag_rotates_view_without_moving_anchor();
         test_planet_surface_camera_vertical_drag_direction();
+        test_planet_surface_camera_look_at_direction_targets_local_heading();
         test_planet_surface_camera_move_stays_on_surface_shell();
         test_planet_camera_keeps_double_precision_position_state();
         test_planet_frame_converts_camera_to_render_origin();
