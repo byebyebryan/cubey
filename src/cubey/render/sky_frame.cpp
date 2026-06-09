@@ -167,10 +167,10 @@ SkyFrameUniforms sky_frame_uniforms(const CelestialSystem& celestial,
             },
         .night_options =
             {
+                0.54F,
+                0.16F,
                 0.62F,
-                0.22F,
-                0.36F,
-                0.92F,
+                1.0F,
             },
         .celestial_options =
             {
@@ -195,8 +195,8 @@ SkyFrameUniforms sky_frame_uniforms(const CelestialSystem& celestial,
             },
         .milky_way_options =
             {
-                1.0F,
-                0.70F,
+                0.78F,
+                0.60F,
                 0.0F,
                 0.0F,
             },

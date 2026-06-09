@@ -665,6 +665,12 @@ void test_sky_frame_uniforms_pack_sun_state() {
                  "celestial frame uniforms should pack atmosphere limb radius");
     require_near(uniforms.atmosphere_mode_options.x, 1.0F, 0.000001F,
                  "celestial frame uniforms should pack atmosphere preview mode");
+    require(uniforms.night_options.x < 0.60F,
+            "celestial frame uniforms should keep night-sky atlas defaults subtle");
+    require_near(uniforms.night_options.w, 1.0F, 0.000001F,
+                 "celestial frame uniforms should fully wash out night sky in daylight");
+    require(uniforms.milky_way_options.x < 0.90F,
+            "celestial frame uniforms should keep Milky Way defaults below inspection strength");
 }
 
 void test_sky_frame_uniforms_disable_invisible_moon_star_mask() {

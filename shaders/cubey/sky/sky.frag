@@ -58,6 +58,10 @@ float star_field(vec3 ray_direction) {
     return star * sparkle;
 }
 
+float luminance(vec3 color) {
+    return dot(color, vec3(0.2126, 0.7152, 0.0722));
+}
+
 float moon_star_visibility(vec3 ray_direction) {
     float moon_radius = max(celestial.moon_direction_radius.w, 0.0);
     if (moon_radius <= 0.0) {
@@ -79,8 +83,30 @@ vec3 star_sample_direction(vec3 ray_direction) {
     return normalize(rotated);
 }
 
+float surface_airmass_star_visibility(float ray_up) {
+    float above_horizon = smoothstep(-0.015, 0.080, ray_up);
+    float horizon_airmass = exp(-max(ray_up, 0.0) / 0.16);
+    float clear_air = 1.0 - smoothstep(0.12, 0.78, horizon_airmass);
+    return above_horizon * clear_air;
+}
+
+float surface_dark_sky_visibility(float ray_up, float sun_elevation, float daylight,
+                                  float twilight) {
+    float astronomical_night = 1.0 - smoothstep(-0.48, -0.31, sun_elevation);
+    float twilight_cut = 1.0 - smoothstep(0.005, 0.14, twilight);
+    float daylight_cut = pow(clamp(1.0 - daylight, 0.0, 1.0), 5.0);
+    return clamp(astronomical_night * twilight_cut * daylight_cut *
+                     surface_airmass_star_visibility(ray_up),
+                 0.0, 1.0);
+}
+
+float surface_bright_sky_visibility(vec3 sky_without_stars) {
+    return 1.0 - smoothstep(0.0045, 0.016, luminance(max(sky_without_stars, vec3(0.0))));
+}
+
 vec3 night_sky_radiance(vec3 ray_direction, float above_horizon, float horizon_extinction,
-                        float daylight, float star_visibility) {
+                        float daylight, float star_visibility, float visibility_scale,
+                        float atlas_visibility_scale) {
     float atlas_intensity = max(celestial.night_options.x, 0.0);
     float procedural_intensity = max(celestial.night_options.y, 0.0);
     float horizon_fade = clamp(celestial.night_options.z, 0.0, 1.0);
@@ -93,6 +119,7 @@ vec3 night_sky_radiance(vec3 ray_direction, float above_horizon, float horizon_e
     float visibility = above_horizon * star_visibility * moon_mask * moon_washout;
     visibility *= mix(1.0, 1.0 - daylight, day_washout);
     visibility *= mix(1.0, 1.0 - horizon_extinction, horizon_fade);
+    visibility *= clamp(visibility_scale, 0.0, 1.0);
     if (visibility <= 0.0) {
         return vec3(0.0);
     }
@@ -100,13 +127,14 @@ vec3 night_sky_radiance(vec3 ray_direction, float above_horizon, float horizon_e
     vec3 sample_direction = star_sample_direction(ray_direction);
     vec3 atlas = max(textureLod(night_sky_atlas, sample_direction, celestial.render_options.x).rgb,
                      vec3(0.0));
-    float luma = dot(atlas, vec3(0.2126, 0.7152, 0.0722));
+    float luma = luminance(atlas);
     vec3 atlas_color = mix(vec3(luma), atlas, clamp(celestial.milky_way_options.y, 0.0, 1.0));
     atlas_color *= mix(0.50, 1.45, clamp(celestial.milky_way_options.x, 0.0, 2.0) * 0.5);
 
     vec3 procedural_stars =
         vec3(0.75, 0.82, 1.0) * star_field(ray_direction) * procedural_intensity;
-    return (atlas_color * atlas_intensity + procedural_stars) * visibility;
+    float atlas_visibility = clamp(atlas_visibility_scale, 0.0, 1.0);
+    return (atlas_color * atlas_intensity * atlas_visibility + procedural_stars) * visibility;
 }
 
 vec3 atmosphere_view_haze(vec3 ray_direction, vec3 sun_direction) {
@@ -150,8 +178,13 @@ vec3 local_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
     vec3 color = mix(upper_color, scatter, scatter_weight);
 
     float horizon_extinction = smoothstep(0.0, 0.36, terms.horizon);
+    float surface_sky_visibility =
+        surface_dark_sky_visibility(terms.ray_up, terms.sun_elevation, terms.daylight,
+                                    terms.twilight) *
+        surface_bright_sky_visibility(color);
     vec3 stars = night_sky_radiance(ray_direction, terms.above_horizon, horizon_extinction,
-                                    terms.daylight, terms.star_visibility);
+                                    max(terms.daylight, terms.twilight), 1.0,
+                                    surface_sky_visibility, surface_sky_visibility * 0.14);
     float below_horizon_haze = smoothstep(-0.75, -0.04, terms.ray_up) * terms.daylight;
     vec3 night_below_horizon = vec3(0.006, 0.008, 0.018);
     vec3 night_horizon_fill = mix(night_below_horizon, vec3(0.010, 0.016, 0.036),
@@ -188,8 +221,16 @@ vec3 physical_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
         celestial.sun_color_intensity.rgb, celestial.sun_color_intensity.w);
     vec3 night = vec3(0.003, 0.005, 0.016);
     vec3 twilight_warm = vec3(0.92, 0.36, 0.15) * horizon_shell * twilight * 0.08;
+    float transmittance_luma =
+        dot(clamp(scatter.transmittance, vec3(0.0), vec3(1.0)),
+            vec3(0.2126, 0.7152, 0.0722));
+    float surface_sky_visibility =
+        surface_dark_sky_visibility(ray_up, sun_elevation, daylight, twilight) *
+        surface_bright_sky_visibility(night + scatter.radiance + twilight_warm) *
+        smoothstep(0.18, 0.82, transmittance_luma);
     vec3 stars = night_sky_radiance(ray_direction, above_horizon, horizon_shell,
-                                    max(daylight, twilight), 1.0 - max(daylight, twilight));
+                                    max(daylight, twilight), 1.0, surface_sky_visibility,
+                                    surface_sky_visibility * 0.14);
     vec3 sky = night + scatter.radiance + twilight_warm + stars;
     vec3 below = mix(vec3(0.006, 0.008, 0.018),
                      scatter.radiance * (0.45 + 0.28 * horizon_shell) +
@@ -234,7 +275,8 @@ vec3 space_background(vec3 ray_direction, vec3 sun_direction) {
         float terminator = exp(-abs(limb_sun_dot) / 0.18);
         limb = shell * (0.12 + 0.82 * lit_limb + 0.22 * terminator);
     }
-    vec3 stars = night_sky_radiance(ray_direction, sky_visibility, 0.0, 0.0, 1.0);
+    vec3 stars =
+        night_sky_radiance(ray_direction, sky_visibility, 0.0, 0.0, 1.0, 1.0, 1.0);
     vec3 limb_color = mix(vec3(0.012, 0.036, 0.095), vec3(0.13, 0.30, 0.58), lit_limb);
     vec3 sky = base * sky_visibility + stars +
                atmosphere_view_haze(ray_direction, sun_direction) * sky_visibility;
