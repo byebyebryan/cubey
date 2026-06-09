@@ -104,6 +104,30 @@ float surface_bright_sky_visibility(vec3 sky_without_stars) {
     return 1.0 - smoothstep(0.0045, 0.016, luminance(max(sky_without_stars, vec3(0.0))));
 }
 
+float surface_twilight_window(float sun_elevation, float daylight, float twilight) {
+    float low_sun = smoothstep(-0.40, -0.03, sun_elevation);
+    float daylight_fade = 1.0 - smoothstep(0.05, 0.34, sun_elevation);
+    float exposure_fade = 1.0 - smoothstep(0.25, 0.90, daylight);
+    return clamp(max(twilight, low_sun * daylight_fade) * exposure_fade, 0.0, 1.0);
+}
+
+vec3 surface_twilight_radiance(float ray_up, float sun_elevation, float toward_sun,
+                               float daylight, float twilight) {
+    float window = surface_twilight_window(sun_elevation, daylight, twilight);
+    float above_horizon = smoothstep(-0.045, 0.075, ray_up);
+    float horizon_band = exp(-abs(ray_up) / 0.20) * above_horizon;
+    float upper_band = smoothstep(0.02, 0.42, ray_up) *
+                       (1.0 - smoothstep(0.52, 0.92, ray_up)) * above_horizon;
+    float sun_lobe = pow(clamp(toward_sun, 0.0, 1.0), 0.38);
+    float sun_horizon = horizon_band * (0.34 + 0.66 * sun_lobe);
+
+    vec3 ember = vec3(1.00, 0.24, 0.055) * sun_horizon * 0.18;
+    vec3 gold = vec3(1.00, 0.64, 0.20) * horizon_band *
+                smoothstep(-0.16, 0.10, sun_elevation) * 0.08;
+    vec3 violet = vec3(0.27, 0.12, 0.34) * upper_band * (0.45 + 0.55 * sun_lobe) * 0.12;
+    return (ember + gold + violet) * window;
+}
+
 vec3 night_sky_radiance(vec3 ray_direction, float above_horizon, float horizon_extinction,
                         float daylight, float star_visibility, float visibility_scale,
                         float atlas_visibility_scale) {
@@ -176,12 +200,15 @@ vec3 local_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
         clamp(terms.horizon * 0.62 + terms.upper_sky * 0.22, 0.0, 0.78) *
         terms.atmosphere_visibility;
     vec3 color = mix(upper_color, scatter, scatter_weight);
+    vec3 twilight_color =
+        surface_twilight_radiance(terms.ray_up, terms.sun_elevation, terms.toward_sun,
+                                  terms.daylight, terms.twilight);
 
     float horizon_extinction = smoothstep(0.0, 0.36, terms.horizon);
     float surface_sky_visibility =
         surface_dark_sky_visibility(terms.ray_up, terms.sun_elevation, terms.daylight,
                                     terms.twilight) *
-        surface_bright_sky_visibility(color);
+        surface_bright_sky_visibility(color + twilight_color);
     vec3 stars = night_sky_radiance(ray_direction, terms.above_horizon, horizon_extinction,
                                     max(terms.daylight, terms.twilight), 1.0,
                                     surface_sky_visibility, surface_sky_visibility * 0.14);
@@ -195,7 +222,7 @@ vec3 local_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
         (0.68 + 0.22 * terms.toward_sun);
     vec3 below_horizon =
         mix(night_horizon_fill, day_horizon_fill, clamp(below_horizon_haze, 0.0, 1.0));
-    color = mix(below_horizon, color + stars, terms.above_horizon);
+    color = mix(below_horizon, color + twilight_color + stars, terms.above_horizon);
     return color;
 }
 
@@ -215,23 +242,25 @@ vec3 physical_atmosphere_background(vec3 ray_direction, vec3 sun_direction) {
     float daylight = smoothstep(-0.08, 0.24, sun_elevation);
     float twilight = exp(-abs(sun_elevation) / 0.16) * smoothstep(-0.22, 0.08, sun_elevation);
     float horizon_shell = exp(-abs(ray_up) / 0.14);
+    float toward_sun = planet_atmosphere_toward_sun(ray_direction, camera_up, sun_direction);
 
     PlanetAtmosphereScatterSample scatter = planet_atmosphere_integrate_ray(
         camera_position, ray_direction, -1.0, planet_radius, atmosphere_radius, sun_direction,
         celestial.sun_color_intensity.rgb, celestial.sun_color_intensity.w);
     vec3 night = vec3(0.003, 0.005, 0.016);
-    vec3 twilight_warm = vec3(0.92, 0.36, 0.15) * horizon_shell * twilight * 0.08;
+    vec3 twilight_color =
+        surface_twilight_radiance(ray_up, sun_elevation, toward_sun, daylight, twilight);
     float transmittance_luma =
         dot(clamp(scatter.transmittance, vec3(0.0), vec3(1.0)),
             vec3(0.2126, 0.7152, 0.0722));
     float surface_sky_visibility =
         surface_dark_sky_visibility(ray_up, sun_elevation, daylight, twilight) *
-        surface_bright_sky_visibility(night + scatter.radiance + twilight_warm) *
+        surface_bright_sky_visibility(night + scatter.radiance + twilight_color) *
         smoothstep(0.18, 0.82, transmittance_luma);
     vec3 stars = night_sky_radiance(ray_direction, above_horizon, horizon_shell,
                                     max(daylight, twilight), 1.0, surface_sky_visibility,
                                     surface_sky_visibility * 0.14);
-    vec3 sky = night + scatter.radiance + twilight_warm + stars;
+    vec3 sky = night + scatter.radiance + twilight_color + stars;
     vec3 below = mix(vec3(0.006, 0.008, 0.018),
                      scatter.radiance * (0.45 + 0.28 * horizon_shell) +
                          vec3(0.050, 0.070, 0.100) * daylight,
