@@ -62,6 +62,13 @@ Practical implementation shape:
 - add diagnostics for camera height, computed horizon distance, ocean mesh
   extent, and displacement/detail fade bands.
 
+Current implementation status: `projects/ocean` has the local tangent frame,
+curved-far surface mode, automatic horizon-driven mesh extent, Mid/High/Wide
+camera presets, headless camera-preset capture support, and diagnostics for the
+effective mesh plus cascade contribution weights. It deliberately still uses
+`ClipmapGrid2D`; changing to the planet adaptive patch planner is deferred until
+planet handoff or shoreline integration creates a real address-space need.
+
 Tier 1 should solve the current square-bound presentation problem.
 
 ### Tier 1.5: Planet-Compatible Contracts

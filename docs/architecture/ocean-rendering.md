@@ -89,6 +89,35 @@ near-term direction is to keep FFT for coherent broad/mid ocean motion while
 recovering close-up detail through cheaper shading, foam, and analytic shape
 paths where possible.
 
+## LOD And Far Field
+
+The active ocean remains on a camera-relative `ClipmapGrid2D` mesh. That is
+still the right near-term base for local, horizon-scale ocean work because the
+wave data is camera-local, FFT cascades are sampled in tangent-space XZ, and the
+renderer needs predictable ring diagnostics while crest, foam, and lighting are
+still changing. Do not migrate ocean to the planet `AdaptivePatchLod` planner
+until shoreline handoff, global weather/bathymetry, or object occlusion needs a
+shared planet address space.
+
+The current policy treats far-field repetition as a data-domain problem first,
+not only a mesh problem. Enabled FFT slots can still be regular cascades, but
+their contribution should be explicit:
+
+- displacement fades by both camera distance and clipmap cell size;
+- normal/foam contribution has a separate surface-distance fade;
+- diagnostics report the effective horizon-expanded mesh, near/far cell size,
+  patch load, and per-cascade shape/surface weight at the horizon;
+- headless captures can pin `--ocean-camera-preset mid|high|wide` so far-field
+  changes are comparable without relying only on interactive inspection.
+
+The default fade bands are deliberately conservative after the anti-repeat
+experiments: displacement fades across roughly 8-24 wavelengths, surface detail
+across roughly 10-30 wavelengths, and coarse rings reject displacement between
+about `tile / 10` and `tile / 4`. If this makes the far view too smooth, prefer
+raising the exposed shape/normal/foam fade scales or adding a separate,
+low-frequency far-field domain before reintroducing high-frequency tile cues at
+the horizon.
+
 ## Feature Donor Boundaries
 
 Useful `ocean_legacy` ideas to revisit later:
