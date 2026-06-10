@@ -139,9 +139,9 @@ float surface_dark_sky_visibility(float ray_up, float sun_elevation, float dayli
 }
 
 float surface_twilight_window(float sun_elevation, float daylight, float twilight) {
-    float low_sun = smoothstep(-0.40, -0.03, sun_elevation);
-    float daylight_fade = 1.0 - smoothstep(0.05, 0.34, sun_elevation);
-    float exposure_fade = 1.0 - smoothstep(0.25, 0.90, daylight);
+    float low_sun = smoothstep(-0.50, -0.015, sun_elevation);
+    float daylight_fade = 1.0 - smoothstep(0.08, 0.42, sun_elevation);
+    float exposure_fade = 1.0 - smoothstep(0.38, 0.96, daylight);
     return clamp(max(twilight, low_sun * daylight_fade) * exposure_fade, 0.0, 1.0);
 }
 
@@ -151,15 +151,16 @@ vec3 surface_twilight_radiance(float ray_up, float sun_elevation, float toward_s
     float above_horizon = smoothstep(-0.045, 0.075, ray_up);
     float horizon_band = exp(-abs(ray_up) / 0.20) * above_horizon;
     float upper_band = smoothstep(0.02, 0.42, ray_up) *
-                       (1.0 - smoothstep(0.52, 0.92, ray_up)) * above_horizon;
+                       (1.0 - smoothstep(0.68, 1.00, ray_up)) * above_horizon;
     float sun_lobe = pow(clamp(toward_sun, 0.0, 1.0), 0.38);
-    float sun_horizon = horizon_band * (0.34 + 0.66 * sun_lobe);
+    float antisun_lobe = pow(clamp(1.0 - toward_sun, 0.0, 1.0), 0.55);
+    float sun_horizon = horizon_band * (0.06 + 0.94 * sun_lobe);
 
-    vec3 ember = cubey_srgb_to_linear(vec3(1.00, 0.24, 0.055)) * sun_horizon * 0.18;
-    vec3 gold = cubey_srgb_to_linear(vec3(1.00, 0.64, 0.20)) * horizon_band *
-                smoothstep(-0.16, 0.10, sun_elevation) * 0.08;
-    vec3 violet = cubey_srgb_to_linear(vec3(0.27, 0.12, 0.34)) * upper_band *
-                  (0.45 + 0.55 * sun_lobe) * 0.12;
+    vec3 ember = cubey_srgb_to_linear(vec3(1.00, 0.34, 0.08)) * sun_horizon * 0.13;
+    vec3 gold = cubey_srgb_to_linear(vec3(1.00, 0.62, 0.24)) * horizon_band *
+                smoothstep(-0.24, 0.12, sun_elevation) * (0.030 + 0.055 * sun_lobe);
+    vec3 violet = cubey_srgb_to_linear(vec3(0.22, 0.18, 0.48)) * upper_band *
+                  (0.36 + 0.36 * sun_lobe + 0.36 * antisun_lobe) * 0.24;
     return (ember + gold + violet) * window;
 }
 
