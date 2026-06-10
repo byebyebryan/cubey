@@ -14,6 +14,68 @@ namespace {
     return glm::normalize(direction);
 }
 
+struct PlanetAtmosphereTangentFrame {
+    cubey::math::Vec3 right{1.0F, 0.0F, 0.0F};
+    cubey::math::Vec3 up{0.0F, 1.0F, 0.0F};
+    cubey::math::Vec3 forward{0.0F, 0.0F, 1.0F};
+};
+
+[[nodiscard]] cubey::math::Vec3 projected_or_zero(cubey::math::Vec3 value,
+                                                  cubey::math::Vec3 normal) {
+    return value - normal * glm::dot(value, normal);
+}
+
+[[nodiscard]] cubey::math::Vec3 tangent_fallback_axis(cubey::math::Vec3 up) {
+    return std::abs(up.y) < 0.92F ? cubey::math::Vec3{0.0F, 1.0F, 0.0F}
+                                  : cubey::math::Vec3{1.0F, 0.0F, 0.0F};
+}
+
+[[nodiscard]] cubey::math::Vec3 normalized_or_fallback(cubey::math::Vec3 value,
+                                                       cubey::math::Vec3 fallback) {
+    if (glm::dot(value, value) <= 0.00000001F) {
+        return glm::normalize(fallback);
+    }
+    return glm::normalize(value);
+}
+
+[[nodiscard]] PlanetAtmosphereTangentFrame planet_atmosphere_tangent_frame(
+    const PlanetAtmosphereInputs& inputs, const cubey::render::ViewRayBasis3D& view_rays) {
+    PlanetAtmosphereTangentFrame frame;
+    frame.up = normalized_or_up(inputs.camera_position_m);
+    const cubey::math::Vec3 right_hint = projected_or_zero(cubey::math::Vec3{view_rays.right_aspect},
+                                                           frame.up);
+    const cubey::math::Vec3 fallback =
+        glm::cross(tangent_fallback_axis(frame.up), frame.up);
+    frame.right = normalized_or_fallback(right_hint, fallback);
+    frame.forward = glm::normalize(glm::cross(frame.right, frame.up));
+    return frame;
+}
+
+[[nodiscard]] cubey::math::Vec3 to_shared_atmosphere_space(
+    cubey::math::Vec3 direction, const PlanetAtmosphereTangentFrame& frame) {
+    const cubey::math::Vec3 normalized = normalized_or_up(direction);
+    return {
+        glm::dot(normalized, frame.right),
+        glm::dot(normalized, frame.up),
+        glm::dot(normalized, frame.forward),
+    };
+}
+
+[[nodiscard]] cubey::render::ViewRayBasis3D shared_atmosphere_view_rays(
+    const cubey::render::ViewRayBasis3D& view_rays, const PlanetAtmosphereTangentFrame& frame) {
+    const cubey::math::Vec3 right =
+        to_shared_atmosphere_space(cubey::math::Vec3{view_rays.right_aspect}, frame);
+    const cubey::math::Vec3 up =
+        to_shared_atmosphere_space(cubey::math::Vec3{view_rays.up_tan_half_fovy}, frame);
+    const cubey::math::Vec3 forward =
+        to_shared_atmosphere_space(cubey::math::Vec3{view_rays.forward}, frame);
+    return {
+        .right_aspect = {right.x, right.y, right.z, view_rays.right_aspect.w},
+        .up_tan_half_fovy = {up.x, up.y, up.z, view_rays.up_tan_half_fovy.w},
+        .forward = {forward.x, forward.y, forward.z, 0.0F},
+    };
+}
+
 } // namespace
 
 cubey::render::AtmosphereEnvironmentConfig
@@ -36,8 +98,44 @@ planet_atmosphere_environment_config(const PlanetAtmosphereInputs& inputs) {
     config.sun_angular_radius = inputs.sun_angular_radius_rad;
     config.render_celestial_content = false;
     config.reference_geometry_enabled = false;
+    config.ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
     config.moon.enabled = false;
     return config;
+}
+
+cubey::render::AtmosphereEnvironmentFrameUniforms planet_shared_atmosphere_frame_uniforms(
+    const PlanetAtmosphereInputs& inputs, const PlanetSharedAtmosphereFrameInputs& frame_inputs) {
+    const PlanetAtmosphereTangentFrame tangent =
+        planet_atmosphere_tangent_frame(inputs, frame_inputs.view_rays);
+    const cubey::render::ViewRayBasis3D view_rays =
+        shared_atmosphere_view_rays(frame_inputs.view_rays, tangent);
+    cubey::render::AtmosphereEnvironmentConfig config =
+        planet_atmosphere_environment_config(inputs);
+    cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
+        cubey::render::atmosphere_environment_frame_uniforms(
+            config, {
+                        .view_rays = view_rays,
+                        .render_view = frame_inputs.render_view,
+                    });
+
+    const cubey::math::Vec3 sun_direction =
+        to_shared_atmosphere_space(inputs.sun_direction, tangent);
+    const cubey::math::Vec3 moon_direction =
+        to_shared_atmosphere_space(inputs.moon_direction, tangent);
+    uniforms.sun_direction_radius = {
+        sun_direction.x,
+        sun_direction.y,
+        sun_direction.z,
+        inputs.sun_angular_radius_rad,
+    };
+    uniforms.moon_direction_radius = {
+        moon_direction.x,
+        moon_direction.y,
+        moon_direction.z,
+        inputs.moon_angular_radius_rad,
+    };
+    uniforms.moon_phase_options.x = inputs.moon_phase_fraction;
+    return uniforms;
 }
 
 } // namespace cubey::projects::planet

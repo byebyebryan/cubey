@@ -544,6 +544,76 @@ void test_planet_atmosphere_environment_config_round_trips_sun_direction() {
             "planet atmosphere adapter should not let shared atmosphere own celestial rendering");
 }
 
+void test_planet_shared_atmosphere_frame_uses_local_tangent_up() {
+    cubey::projects::planet::PlanetAtmosphereInputs inputs{};
+    inputs.planet_radius_m = 600000.0F;
+    inputs.atmosphere_outer_radius_m = 670000.0F;
+    inputs.camera_position_m = {610000.0F, 0.0F, 0.0F};
+    inputs.camera_altitude_m = 10000.0F;
+    inputs.sun_direction = glm::normalize(cubey::math::Vec3{0.50F, 0.40F, -0.76F});
+    inputs.sun_angular_radius_rad = 0.006F;
+    inputs.moon_direction = glm::normalize(cubey::math::Vec3{0.10F, 0.30F, 0.95F});
+    inputs.moon_angular_radius_rad = 0.004F;
+    inputs.moon_phase_fraction = 0.33F;
+    const cubey::render::ViewRayBasis3D view_rays{
+        .right_aspect = {0.0F, 0.0F, 1.0F, 1.5F},
+        .up_tan_half_fovy = {1.0F, 0.0F, 0.0F, 0.6F},
+        .forward = {0.0F, -1.0F, 0.0F, 0.0F},
+    };
+
+    const cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
+        cubey::projects::planet::planet_shared_atmosphere_frame_uniforms(
+            inputs, {.view_rays = view_rays});
+
+    require_vec_near(cubey::math::Vec3{uniforms.camera_up_tan_half_fovy}, {0.0F, 1.0F, 0.0F},
+                     "shared atmosphere view up should become local planet up");
+    require_vec_near(cubey::math::Vec3{uniforms.camera_right_aspect}, {1.0F, 0.0F, 0.0F},
+                     "shared atmosphere view right should stay tangent to local horizon");
+    require_vec_near(cubey::math::Vec3{uniforms.camera_forward_debug_view}, {0.0F, 0.0F, -1.0F},
+                     "shared atmosphere view forward should preserve camera orientation");
+    require_near(uniforms.camera_right_aspect.w, 1.5F, 0.000001F,
+                 "shared atmosphere adapter should preserve aspect");
+    require_near(uniforms.camera_up_tan_half_fovy.w, 0.6F, 0.000001F,
+                 "shared atmosphere adapter should preserve tan half fovy");
+    require_near(uniforms.sun_direction_radius.y, inputs.sun_direction.x, 0.0001F,
+                 "shared atmosphere sun elevation should be relative to local planet up");
+}
+
+void test_planet_shared_atmosphere_frame_disables_shared_celestial_content() {
+    cubey::projects::planet::PlanetAtmosphereInputs inputs{};
+    inputs.planet_radius_m = 600000.0F;
+    inputs.atmosphere_outer_radius_m = 670000.0F;
+    inputs.camera_position_m = {0.0F, 610000.0F, 0.0F};
+    inputs.camera_altitude_m = 10000.0F;
+    inputs.sun_direction = glm::normalize(cubey::math::Vec3{0.30F, 0.60F, -0.74F});
+    inputs.moon_direction = glm::normalize(cubey::math::Vec3{-0.20F, 0.40F, 0.89F});
+
+    const cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
+        cubey::projects::planet::planet_shared_atmosphere_frame_uniforms(
+            inputs, {
+                        .view_rays = cubey::render::view_ray_basis_3d(
+                            cubey::math::identity_quat(), 1.0F, std::numbers::pi_v<float> / 3.0F),
+                        .render_view = cubey::render::AtmosphereEnvironmentRenderView::Mie,
+                    });
+
+    require_near(uniforms.radii_ground.x, 600.0F, 0.0001F,
+                 "shared atmosphere adapter should convert planet radius to kilometers");
+    require_near(uniforms.radii_ground.y, 670.0F, 0.0001F,
+                 "shared atmosphere adapter should convert atmosphere radius to kilometers");
+    require_near(uniforms.radii_ground.z, 10.0F, 0.0001F,
+                 "shared atmosphere adapter should convert camera altitude to kilometers");
+    require_near(uniforms.render_options.x, 1.0F, 0.000001F,
+                 "shared atmosphere adapter should render sky-only for planet comparisons");
+    require_near(uniforms.render_options.y, 0.0F, 0.000001F,
+                 "shared atmosphere adapter should disable shared celestial disks");
+    require_near(uniforms.atmosphere_options.y, 0.0F, 0.000001F,
+                 "shared atmosphere adapter should disable reference geometry");
+    require_near(uniforms.moon_options.x, 0.0F, 0.000001F,
+                 "shared atmosphere adapter should disable shared moon rendering");
+    require_near(uniforms.camera_forward_debug_view.w, 2.0F, 0.000001F,
+                 "shared atmosphere adapter should preserve debug render view");
+}
+
 void test_celestial_body_conversion_preserves_moon_state() {
     cubey::projects::planet::PlanetCelestialSystem celestial{};
     celestial.moon.direction = glm::normalize(cubey::math::Vec3{0.20F, 0.30F, 0.93F});
@@ -903,6 +973,8 @@ int main() {
         test_celestial_display_exposure_respects_overrides();
         test_planet_atmosphere_inputs_follow_celestial_state();
         test_planet_atmosphere_environment_config_round_trips_sun_direction();
+        test_planet_shared_atmosphere_frame_uses_local_tangent_up();
+        test_planet_shared_atmosphere_frame_disables_shared_celestial_content();
         test_celestial_body_conversion_preserves_moon_state();
         test_celestial_body_render_placement_preserves_apparent_size();
         test_celestial_body_render_placement_uses_topocentric_ray();
