@@ -24,6 +24,10 @@ layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     vec4 celestial_moon_direction;
     vec4 camera_world_radius;
     vec4 atmosphere_radius_mode;
+    vec4 atmosphere_rayleigh;
+    vec4 atmosphere_mie;
+    vec4 atmosphere_ozone;
+    vec4 atmosphere_shared_options;
     vec4 sun_color_intensity;
     vec4 moon_color_intensity;
     vec4 local_origin_options;

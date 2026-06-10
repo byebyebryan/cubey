@@ -1745,6 +1745,15 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_from_string("local-detail-horizon") ==
                 cubey::projects::planet::PlanetDebugView::LocalDetailHorizon,
             "planet debug view should parse local-detail-horizon");
+    require(cubey::projects::planet::planet_debug_view_from_string("atmosphere-transmittance") ==
+                cubey::projects::planet::PlanetDebugView::AtmosphereTransmittance,
+            "planet debug view should parse atmosphere-transmittance");
+    require(cubey::projects::planet::planet_debug_view_from_string("atmosphere-inscatter") ==
+                cubey::projects::planet::PlanetDebugView::AtmosphereInscatter,
+            "planet debug view should parse atmosphere-inscatter");
+    require(cubey::projects::planet::planet_debug_view_from_string("atmosphere-path-length") ==
+                cubey::projects::planet::PlanetDebugView::AtmospherePathLength,
+            "planet debug view should parse atmosphere-path-length");
     require(std::string_view{cubey::projects::planet::planet_debug_view_name(
                 cubey::projects::planet::PlanetDebugView::CellEdge)} == "cell-edge",
             "planet debug view should name cell-edge");
@@ -1823,6 +1832,18 @@ void test_planet_surface_metric_debug_views_parse() {
                 cubey::projects::planet::PlanetDebugView::LocalDetailHorizon)} ==
                 "local-detail-horizon",
             "planet debug view should name local-detail-horizon");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::AtmosphereTransmittance)} ==
+                "atmosphere-transmittance",
+            "planet debug view should name atmosphere-transmittance");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::AtmosphereInscatter)} ==
+                "atmosphere-inscatter",
+            "planet debug view should name atmosphere-inscatter");
+    require(std::string_view{cubey::projects::planet::planet_debug_view_name(
+                cubey::projects::planet::PlanetDebugView::AtmospherePathLength)} ==
+                "atmosphere-path-length",
+            "planet debug view should name atmosphere-path-length");
     require(static_cast<std::uint8_t>(
                 cubey::projects::planet::PlanetDebugView::LocalDetailWireframe) == 19U,
             "local-detail shader debug range should start at wireframe");
@@ -1844,6 +1865,15 @@ void test_planet_surface_metric_debug_views_parse() {
     require(static_cast<std::uint8_t>(
                 cubey::projects::planet::PlanetDebugView::LocalDetailHorizon) == 28U,
             "local-detail-horizon shader debug value should stay synchronized");
+    require(static_cast<std::uint8_t>(
+                cubey::projects::planet::PlanetDebugView::AtmosphereTransmittance) == 29U,
+            "atmosphere-transmittance shader debug value should stay synchronized");
+    require(static_cast<std::uint8_t>(
+                cubey::projects::planet::PlanetDebugView::AtmosphereInscatter) == 30U,
+            "atmosphere-inscatter shader debug value should stay synchronized");
+    require(static_cast<std::uint8_t>(
+                cubey::projects::planet::PlanetDebugView::AtmospherePathLength) == 31U,
+            "atmosphere-path-length shader debug value should stay synchronized");
     require(!cubey::projects::planet::planet_debug_view_is_local_detail(
                 cubey::projects::planet::PlanetDebugView::Final),
             "final planet view should not enable local-detail diagnostic rendering");
@@ -1898,6 +1928,15 @@ void test_planet_surface_metric_debug_views_parse() {
     require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::LocalDetailHorizon),
             "local-detail horizon view should allow local-detail surface rendering");
+    require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+                cubey::projects::planet::PlanetDebugView::AtmosphereTransmittance),
+            "atmosphere transmittance view should allow local-detail surface rendering");
+    require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+                cubey::projects::planet::PlanetDebugView::AtmosphereInscatter),
+            "atmosphere inscatter view should allow local-detail surface rendering");
+    require(cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
+                cubey::projects::planet::PlanetDebugView::AtmospherePathLength),
+            "atmosphere path-length view should allow local-detail surface rendering");
     require(!cubey::projects::planet::planet_debug_view_uses_local_detail_surface(
                 cubey::projects::planet::PlanetDebugView::Wireframe),
             "global mesh wireframe should not draw local-detail surface overlays");

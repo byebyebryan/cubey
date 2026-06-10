@@ -16,7 +16,7 @@
 namespace cubey::projects::planet {
 namespace {
 
-constexpr std::array<PlanetDebugView, 29> kDebugViews{
+constexpr std::array<PlanetDebugView, 32> kDebugViews{
     PlanetDebugView::Final,
     PlanetDebugView::FaceId,
     PlanetDebugView::PatchId,
@@ -46,6 +46,9 @@ constexpr std::array<PlanetDebugView, 29> kDebugViews{
     PlanetDebugView::LocalDetailFeatures,
     PlanetDebugView::LocalDetailFinal,
     PlanetDebugView::LocalDetailHorizon,
+    PlanetDebugView::AtmosphereTransmittance,
+    PlanetDebugView::AtmosphereInscatter,
+    PlanetDebugView::AtmospherePathLength,
 };
 
 constexpr std::array<PlanetScalePreset, 2> kScalePresets{

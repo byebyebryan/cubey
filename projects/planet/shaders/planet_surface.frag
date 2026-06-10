@@ -1,6 +1,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
+#include "cubey/atmosphere.glsl"
 #include "planet_atmosphere.glsl"
 
 layout(location = 0) in vec3 in_color;
@@ -31,6 +32,10 @@ layout(set = 0, binding = 0) uniform PlanetSurfaceFrame {
     vec4 celestial_moon_direction;
     vec4 camera_world_radius;
     vec4 atmosphere_radius_mode;
+    vec4 atmosphere_rayleigh;
+    vec4 atmosphere_mie;
+    vec4 atmosphere_ozone;
+    vec4 atmosphere_shared_options;
     vec4 sun_color_intensity;
     vec4 moon_color_intensity;
     vec4 local_origin_options;
@@ -58,17 +63,22 @@ int debug_view_option() {
     return int(floor(surface_frame.surface_options.x));
 }
 
+const int PLANET_DEBUG_ATMOSPHERE_TRANSMITTANCE = 29;
+const int PLANET_DEBUG_ATMOSPHERE_INSCATTER = 30;
+const int PLANET_DEBUG_ATMOSPHERE_PATH_LENGTH = 31;
+
 #include "planet_surface_field.glsl"
 
 bool local_detail_surface_enabled() {
     int debug_view = debug_view_option();
     return debug_view == 0 || (debug_view >= 8 && debug_view <= 16) ||
-           (debug_view >= 19 && debug_view <= 24) || debug_view == 28;
+           (debug_view >= 19 && debug_view <= 24) || debug_view == 28 ||
+           (debug_view >= 29 && debug_view <= 31);
 }
 
 bool local_detail_global_cutout_enabled() {
     int debug_view = debug_view_option();
-    return debug_view == 0 || debug_view == 28;
+    return debug_view == 0 || debug_view == 28 || (debug_view >= 29 && debug_view <= 31);
 }
 
 bool local_detail_is_local_draw() {
@@ -197,9 +207,26 @@ bool physical_surface_atmosphere_enabled() {
     return surface_frame.atmosphere_radius_mode.z > 0.5;
 }
 
-float surface_atmosphere_radius_m() {
-    float planet_radius = surface_frame.render_origin_radius.w;
-    return max(surface_frame.atmosphere_radius_mode.x, planet_radius * 1.001);
+CubeyAtmosphereMedium surface_atmosphere_medium(vec3 light_dir) {
+    float meters_to_km = 0.001;
+    float planet_radius_km = surface_frame.render_origin_radius.w * meters_to_km;
+    return CubeyAtmosphereMedium(
+        vec3(0.0),
+        planet_radius_km,
+        max(surface_frame.atmosphere_radius_mode.x * meters_to_km, planet_radius_km * 1.001),
+        surface_frame.atmosphere_rayleigh.xyz,
+        surface_frame.atmosphere_rayleigh.w,
+        surface_frame.atmosphere_mie.x,
+        surface_frame.atmosphere_mie.y,
+        surface_frame.atmosphere_mie.z,
+        surface_frame.atmosphere_mie.w,
+        surface_frame.atmosphere_ozone.xyz,
+        surface_frame.atmosphere_ozone.w,
+        surface_frame.atmosphere_shared_options.x,
+        normalize(light_dir),
+        surface_frame.atmosphere_radius_mode.w,
+        vec3(surface_frame.atmosphere_shared_options.y),
+        surface_frame.atmosphere_shared_options.z);
 }
 
 vec3 surface_world_position() {
@@ -212,31 +239,36 @@ vec3 surface_physical_direct_light(vec3 world_position, vec3 sphere_normal, vec3
         return fallback_light;
     }
     float planet_radius = surface_frame.render_origin_radius.w;
-    float atmosphere_radius = surface_atmosphere_radius_m();
     vec3 sample_position =
         world_position + normalize(sphere_normal) * max(planet_radius * 0.00002, 8.0);
-    vec3 transmittance =
-        planet_atmosphere_sun_transmittance(sample_position, light_dir, planet_radius,
-                                            atmosphere_radius);
+    vec3 transmittance = cubey_atmosphere_sun_transmittance(
+        surface_atmosphere_medium(light_dir), sample_position * 0.001);
     return surface_frame.sun_color_intensity.rgb * direct_intensity * transmittance;
 }
 
-vec3 surface_apply_physical_aerial_perspective(vec3 color, vec3 world_position, vec3 light_dir,
-                                               float view_distance) {
-    float planet_radius = surface_frame.render_origin_radius.w;
-    float atmosphere_radius = surface_atmosphere_radius_m();
+CubeyAtmosphereSample surface_physical_aerial_sample(vec3 world_position, vec3 light_dir) {
     vec3 camera_position = surface_frame.camera_world_radius.xyz;
     vec3 view_ray = world_position - camera_position;
     float ray_length = length(view_ray);
     if (ray_length <= 0.001) {
-        return color;
+        CubeyAtmosphereSample empty;
+        empty.color = vec3(0.0);
+        empty.rayleigh = vec3(0.0);
+        empty.mie = vec3(0.0);
+        empty.transmittance = vec3(1.0);
+        empty.optical_depth = cubey_atmosphere_optical_depth_zero();
+        empty.ray_length = 0.0;
+        return empty;
     }
 
-    PlanetAtmosphereScatterSample aerial = planet_atmosphere_integrate_ray(
-        camera_position, view_ray / ray_length, min(view_distance, ray_length), planet_radius,
-        atmosphere_radius, light_dir, surface_frame.sun_color_intensity.rgb,
-        surface_frame.sun_color_intensity.w);
-    vec3 aerial_color = color * aerial.transmittance + aerial.radiance * 0.85;
+    return cubey_atmosphere_integrate_view(surface_atmosphere_medium(light_dir),
+                                           camera_position * 0.001,
+                                           view_ray / ray_length, ray_length * 0.001);
+}
+
+vec3 surface_apply_physical_aerial_perspective(vec3 color, vec3 world_position, vec3 light_dir) {
+    CubeyAtmosphereSample aerial = surface_physical_aerial_sample(world_position, light_dir);
+    vec3 aerial_color = color * aerial.transmittance + aerial.color * 0.85;
     float aerial_strength = clamp(surface_frame.atmosphere_radius_mode.y, 0.0, 1.0);
     return mix(color, aerial_color, aerial_strength);
 }
@@ -431,6 +463,25 @@ void main() {
     vec3 normal = normalize(in_normal);
     vec3 light_dir = normalize(surface_frame.light_direction_debug.xyz);
     int debug_view = debug_view_option();
+    if (debug_view == PLANET_DEBUG_ATMOSPHERE_TRANSMITTANCE ||
+        debug_view == PLANET_DEBUG_ATMOSPHERE_INSCATTER ||
+        debug_view == PLANET_DEBUG_ATMOSPHERE_PATH_LENGTH) {
+        CubeyAtmosphereSample aerial = surface_physical_aerial_sample(world_position, light_dir);
+        if (debug_view == PLANET_DEBUG_ATMOSPHERE_TRANSMITTANCE) {
+            out_color = vec4(aerial.transmittance, 1.0);
+            return;
+        }
+        if (debug_view == PLANET_DEBUG_ATMOSPHERE_INSCATTER) {
+            out_color = vec4(vec3(1.0) - exp(-aerial.color * 1.25), 1.0);
+            return;
+        }
+        float horizon_distance_km = max(surface_frame.camera_horizon.w * 0.001, 0.001);
+        float path = clamp(aerial.ray_length / horizon_distance_km, 0.0, 1.0);
+        vec3 near_path = vec3(0.025, 0.035, 0.060);
+        vec3 far_path = vec3(0.95, 0.72, 0.22);
+        out_color = vec4(mix(near_path, far_path, smoothstep(0.0, 1.0, path)), 1.0);
+        return;
+    }
     float final_view = debug_view == 0 || debug_view == 24 || debug_view == 28 ? 1.0 : 0.0;
     uint material = fragment_material_id();
     vec3 albedo = final_view > 0.5 ? fragment_material_albedo(material) : in_color;
@@ -488,8 +539,7 @@ void main() {
                  haze_strength;
     vec3 view_dir = normalize(in_render_position - surface_frame.camera_horizon.xyz);
     if (physical_surface_atmosphere_enabled() && final_view > 0.5) {
-        color = surface_apply_physical_aerial_perspective(color, world_position, light_dir,
-                                                          view_distance);
+        color = surface_apply_physical_aerial_perspective(color, world_position, light_dir);
     } else {
         vec3 final_haze_color =
             surface_haze_color(haze_color, normalize(in_sphere_normal), light_dir, view_dir, haze);

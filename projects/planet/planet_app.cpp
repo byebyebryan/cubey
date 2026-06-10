@@ -68,6 +68,8 @@ constexpr float kPlanetMoonShellDistanceFraction = 0.88F;
 constexpr float kPlanetSurfaceBaseLodTargetEdgePx = 14.0F;
 constexpr float kPlanetLocalDetailInspectionMinimumOuterHalfExtentM = 131072.0F;
 constexpr float kPlanetLocalDetailInspectionHorizonExtentScale = 1.35F;
+constexpr float kPlanetSharedAtmosphereSunRadiance = 22.0F;
+constexpr float kPlanetSharedAtmosphereMinTwilightSoftness = 0.022F;
 constexpr std::uint32_t kPlanetSurfaceFrameUniformBinding = 0;
 constexpr VkFormat kPlanetSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
@@ -92,6 +94,10 @@ struct PlanetSurfaceFrameUniforms {
     cubey::math::Vec4 atmosphere_radius_mode{
         kPlanetDefaultRadiusM + kPlanetDefaultAtmosphereHeightM, kPlanetDefaultAtmosphereHeightM,
         static_cast<float>(static_cast<std::uint32_t>(PlanetAtmosphereMode::Physical)), 0.004675F};
+    cubey::math::Vec4 atmosphere_rayleigh{0.005802F, 0.013558F, 0.033100F, 8.0F};
+    cubey::math::Vec4 atmosphere_mie{0.003996F, 0.004400F, 1.2F, 0.80F};
+    cubey::math::Vec4 atmosphere_ozone{0.000650F, 0.001881F, 0.000085F, 25.0F};
+    cubey::math::Vec4 atmosphere_shared_options{15.0F, 22.0F, 0.022F, 0.0F};
     cubey::math::Vec4 sun_color_intensity{1.0F, 0.94F, 0.82F, 0.88F};
     cubey::math::Vec4 moon_color_intensity{0.56F, 0.64F, 0.86F, 0.0F};
     cubey::math::Vec4 local_origin_options{0.0F, 0.0F, 0.0F, 0.0F};
@@ -103,7 +109,7 @@ struct PlanetSurfaceFrameUniforms {
                                            0.0F, 0.0F, 0.0F};
 };
 
-static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 26U);
+static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 30U);
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_PLANET_SHADER_DIR) / filename;
@@ -807,6 +813,11 @@ class PlanetApp {
                 : cubey::render::clipmap_grid_2d_near_cell_size(local_detail_grid);
         const PlanetCelestialDiagnostics celestial_diagnostics =
             planet_celestial_diagnostics(solar_time_, solar_config_);
+        const PlanetAtmosphereInputs atmosphere_inputs = planet_atmosphere_inputs(
+            celestial_system_, celestial_lighting_, frame_.camera_world_position_m,
+            planet_config_.radius_m, planet_config_.radius_m + planet_config_.atmosphere_height_m);
+        const cubey::render::AtmosphereEnvironmentConfig atmosphere_config =
+            planet_atmosphere_environment_config(atmosphere_inputs);
         return {
             .view_projection = camera_.view_projection_matrix(transform, aspect),
             .light_direction_debug =
@@ -913,6 +924,37 @@ class PlanetApp {
                     planet_config_.atmosphere_aerial_strength,
                     static_cast<float>(static_cast<std::uint32_t>(planet_config_.atmosphere_mode)),
                     celestial_lighting_.primary_light_angular_radius_rad,
+                },
+            .atmosphere_rayleigh =
+                {
+                    atmosphere_config.rayleigh_scattering.x *
+                        atmosphere_config.rayleigh_density_scale,
+                    atmosphere_config.rayleigh_scattering.y *
+                        atmosphere_config.rayleigh_density_scale,
+                    atmosphere_config.rayleigh_scattering.z *
+                        atmosphere_config.rayleigh_density_scale,
+                    atmosphere_config.rayleigh_scale_height_km,
+                },
+            .atmosphere_mie =
+                {
+                    atmosphere_config.mie_scattering * atmosphere_config.mie_density_scale,
+                    atmosphere_config.mie_extinction * atmosphere_config.mie_density_scale,
+                    atmosphere_config.mie_scale_height_km,
+                    atmosphere_config.mie_anisotropy,
+                },
+            .atmosphere_ozone =
+                {
+                    atmosphere_config.ozone_absorption.x,
+                    atmosphere_config.ozone_absorption.y,
+                    atmosphere_config.ozone_absorption.z,
+                    atmosphere_config.ozone_center_altitude_km,
+                },
+            .atmosphere_shared_options =
+                {
+                    atmosphere_config.ozone_half_width_km,
+                    kPlanetSharedAtmosphereSunRadiance,
+                    kPlanetSharedAtmosphereMinTwilightSoftness,
+                    0.0F,
                 },
             .sun_color_intensity =
                 {

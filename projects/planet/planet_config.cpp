@@ -276,6 +276,18 @@ PlanetDebugView planet_debug_view_from_string(std::string_view value) {
         value == "local-horizon" || value == "local_horizon") {
         return PlanetDebugView::LocalDetailHorizon;
     }
+    if (value == "atmosphere-transmittance" || value == "atmosphere_transmittance" ||
+        value == "aerial-transmittance" || value == "aerial_transmittance") {
+        return PlanetDebugView::AtmosphereTransmittance;
+    }
+    if (value == "atmosphere-inscatter" || value == "atmosphere_inscatter" ||
+        value == "aerial-inscatter" || value == "aerial_inscatter") {
+        return PlanetDebugView::AtmosphereInscatter;
+    }
+    if (value == "atmosphere-path-length" || value == "atmosphere_path_length" ||
+        value == "aerial-path-length" || value == "aerial_path_length") {
+        return PlanetDebugView::AtmospherePathLength;
+    }
     throw std::runtime_error("unsupported planet debug view: " + std::string(value));
 }
 
@@ -339,6 +351,12 @@ const char* planet_debug_view_name(PlanetDebugView view) {
         return "terrain-band-detail";
     case PlanetDebugView::LocalDetailHorizon:
         return "local-detail-horizon";
+    case PlanetDebugView::AtmosphereTransmittance:
+        return "atmosphere-transmittance";
+    case PlanetDebugView::AtmosphereInscatter:
+        return "atmosphere-inscatter";
+    case PlanetDebugView::AtmospherePathLength:
+        return "atmosphere-path-length";
     }
     return "final";
 }
@@ -362,7 +380,10 @@ bool planet_debug_view_uses_local_detail_surface(PlanetDebugView view) {
            view == PlanetDebugView::TerrainMaterial || view == PlanetDebugView::Bathymetry ||
            view == PlanetDebugView::Shoreline || view == PlanetDebugView::LandMask ||
            view == PlanetDebugView::Moisture || view == PlanetDebugView::Temperature ||
-           view == PlanetDebugView::Roughness;
+           view == PlanetDebugView::Roughness ||
+           view == PlanetDebugView::AtmosphereTransmittance ||
+           view == PlanetDebugView::AtmosphereInscatter ||
+           view == PlanetDebugView::AtmospherePathLength;
 }
 
 bool planet_debug_view_uses_horizon_local_detail(PlanetDebugView view) {

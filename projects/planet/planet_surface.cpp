@@ -339,6 +339,9 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
                                   sample.terrain_bands.mid_detail_m +
                                       sample.terrain_bands.fine_detail_m);
     case PlanetDebugView::LocalDetailHorizon:
+    case PlanetDebugView::AtmosphereTransmittance:
+    case PlanetDebugView::AtmosphereInscatter:
+    case PlanetDebugView::AtmospherePathLength:
         return final_color(config, sample);
     }
     return final_color(config, sample);
