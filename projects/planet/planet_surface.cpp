@@ -3,15 +3,14 @@
 #include "planet_surface_field.h"
 
 #include <cubey/core/math.h>
+#include <cubey/render/adaptive_patch_lod.h>
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <stdexcept>
-#include <unordered_set>
 #include <vector>
 
 namespace cubey::projects::planet {
@@ -25,52 +24,6 @@ constexpr std::array<PrimitiveVec3, 6> kFaceColors{
     PrimitiveVec3{0.95F, 0.22F, 0.18F}, PrimitiveVec3{0.18F, 0.45F, 0.95F},
     PrimitiveVec3{0.20F, 0.78F, 0.36F}, PrimitiveVec3{0.96F, 0.70F, 0.18F},
     PrimitiveVec3{0.58F, 0.30F, 0.92F}, PrimitiveVec3{0.15F, 0.78F, 0.78F},
-};
-
-struct PlanetSurfacePatchIdHash {
-    [[nodiscard]] std::size_t operator()(PlanetSurfacePatchId id) const noexcept {
-        std::uint64_t hash = id.face * 73856093ULL;
-        hash ^= id.level * 19349663ULL;
-        hash ^= id.x * 83492791ULL;
-        hash ^= id.y * 2654435761ULL;
-        return static_cast<std::size_t>(hash);
-    }
-};
-
-[[nodiscard]] PlanetSurfacePatchId parent_patch_id(PlanetSurfacePatchId id) {
-    return {
-        .face = id.face,
-        .level = id.level - 1U,
-        .x = id.x >> 1U,
-        .y = id.y >> 1U,
-    };
-}
-
-class PlanetPatchSelectionLookup {
-  public:
-    explicit PlanetPatchSelectionLookup(std::span<const PlanetSurfacePatchId> previous_selection) {
-        selected_.reserve(previous_selection.size());
-        refined_ancestors_.reserve(previous_selection.size());
-        for (PlanetSurfacePatchId id : previous_selection) {
-            selected_.insert(id);
-            while (id.level > 0U) {
-                id = parent_patch_id(id);
-                refined_ancestors_.insert(id);
-            }
-        }
-    }
-
-    [[nodiscard]] bool was_selected(PlanetSurfacePatchId id) const {
-        return selected_.contains(id);
-    }
-
-    [[nodiscard]] bool was_refined(PlanetSurfacePatchId id) const {
-        return refined_ancestors_.contains(id);
-    }
-
-  private:
-    std::unordered_set<PlanetSurfacePatchId, PlanetSurfacePatchIdHash> selected_;
-    std::unordered_set<PlanetSurfacePatchId, PlanetSurfacePatchIdHash> refined_ancestors_;
 };
 
 [[nodiscard]] float lerp(float a, float b, float t) {
@@ -402,24 +355,6 @@ void update_edge_range(PlanetSurfaceDiagnostics& diagnostics, cubey::math::DVec3
     diagnostics.max_edge_length_m = std::max(diagnostics.max_edge_length_m, length);
 }
 
-void update_screen_error_range(PlanetSurfaceDiagnostics& diagnostics, float value) {
-    if (diagnostics.visible_patch_count == 0U || diagnostics.min_screen_error_px == 0.0F) {
-        diagnostics.min_screen_error_px = value;
-    } else {
-        diagnostics.min_screen_error_px = std::min(diagnostics.min_screen_error_px, value);
-    }
-    diagnostics.max_screen_error_px = std::max(diagnostics.max_screen_error_px, value);
-}
-
-void update_lod_transition_diagnostics(float target_edge_px, PlanetSurfaceDiagnostics& diagnostics,
-                                       float error_px) {
-    const float pressure = lod_transition_pressure(error_px, target_edge_px);
-    diagnostics.max_transition_pressure = std::max(diagnostics.max_transition_pressure, pressure);
-    if (pressure > 0.0F) {
-        ++diagnostics.transition_candidate_count;
-    }
-}
-
 void update_lod_cell_edge_range(PlanetSurfaceDiagnostics& diagnostics, std::uint32_t level,
                                 float value) {
     if (level >= diagnostics.min_cell_edge_m_by_lod.size()) {
@@ -454,35 +389,11 @@ struct PatchBounds {
     double radius_m = 0.0;
 };
 
-struct PatchGridSpan {
-    std::uint32_t x0 = 0;
-    std::uint32_t y0 = 0;
-    std::uint32_t x1 = 0;
-    std::uint32_t y1 = 0;
-};
-
 [[nodiscard]] float patch_cell_edge_m(const PlanetConfig& config,
                                       const PlanetSurfacePatchInstance& patch);
 
-[[nodiscard]] std::uint32_t max_lod_grid_divisions(const PlanetConfig& config) {
-    return config.patches_per_face << config.max_lod_level;
-}
-
 [[nodiscard]] float terrain_displacement_bound_m(const PlanetConfig& config) {
     return config.terrain_enabled ? std::max(config.terrain_height_scale_m, 0.0F) : 0.0F;
-}
-
-[[nodiscard]] PatchGridSpan patch_grid_span(const PlanetConfig& config,
-                                            PlanetSurfacePatchId id) {
-    const std::uint32_t total_divisions = max_lod_grid_divisions(config);
-    const std::uint32_t patch_divisions = config.patches_per_face << id.level;
-    const std::uint32_t scale = total_divisions / patch_divisions;
-    return {
-        .x0 = id.x * scale,
-        .y0 = id.y * scale,
-        .x1 = (id.x + 1U) * scale,
-        .y1 = (id.y + 1U) * scale,
-    };
 }
 
 [[nodiscard]] PatchBounds patch_bounds(const PlanetConfig& config,
@@ -496,162 +407,6 @@ struct PatchGridSpan {
     }
     bounds.radius_m += static_cast<double>(terrain_displacement_bound_m(config));
     return bounds;
-}
-
-class PlanetPatchSelectionSet {
-  public:
-    explicit PlanetPatchSelectionSet(std::span<const PlanetSurfacePatchInstance> patches) {
-        selected_.reserve(patches.size());
-        for (const PlanetSurfacePatchInstance& patch : patches) {
-            selected_.insert(patch.id);
-        }
-    }
-
-    [[nodiscard]] bool contains(PlanetSurfacePatchId id) const {
-        return selected_.contains(id);
-    }
-
-  private:
-    std::unordered_set<PlanetSurfacePatchId, PlanetSurfacePatchIdHash> selected_;
-};
-
-[[nodiscard]] std::optional<PlanetSurfacePatchId>
-find_selected_patch_covering_cell(const PlanetConfig& config, const PlanetPatchSelectionSet& set,
-                                  std::uint32_t face, std::uint32_t cell_x,
-                                  std::uint32_t cell_y) {
-    const std::uint32_t total_divisions = max_lod_grid_divisions(config);
-    for (int level = static_cast<int>(config.max_lod_level); level >= 0; --level) {
-        const auto level_u32 = static_cast<std::uint32_t>(level);
-        const std::uint32_t divisions = config.patches_per_face << level_u32;
-        const PlanetSurfacePatchId id{
-            .face = face,
-            .level = level_u32,
-            .x = std::min((cell_x * divisions) / total_divisions, divisions - 1U),
-            .y = std::min((cell_y * divisions) / total_divisions, divisions - 1U),
-        };
-        if (set.contains(id)) {
-            return id;
-        }
-    }
-    return std::nullopt;
-}
-
-struct NeighborEdgeProbe {
-    bool boundary = false;
-    bool found_neighbor = false;
-    std::uint32_t max_delta = 0;
-    std::uint32_t max_coarser_delta = 0;
-    std::uint32_t max_finer_delta = 0;
-};
-
-[[nodiscard]] NeighborEdgeProbe analyze_neighbor_edge(const PlanetConfig& config,
-                                                      const PlanetPatchSelectionSet& set,
-                                                      PlanetSurfacePatchId id,
-                                                      std::uint32_t edge_index) {
-    const std::uint32_t total_divisions = max_lod_grid_divisions(config);
-    const PatchGridSpan span = patch_grid_span(config, id);
-    const bool left = edge_index == 0U;
-    const bool right = edge_index == 1U;
-    const bool bottom = edge_index == 2U;
-    const bool top = edge_index == 3U;
-    if ((left && span.x0 == 0U) || (right && span.x1 >= total_divisions) ||
-        (bottom && span.y0 == 0U) || (top && span.y1 >= total_divisions)) {
-        return {.boundary = true};
-    }
-
-    NeighborEdgeProbe probe{};
-    const std::uint32_t edge_length = (left || right) ? (span.y1 - span.y0) : (span.x1 - span.x0);
-    for (std::uint32_t sample = 1U; sample <= 3U; ++sample) {
-        const std::uint32_t along =
-            ((left || right) ? span.y0 : span.x0) + (edge_length * sample) / 4U;
-        const std::uint32_t cell_x =
-            left ? span.x0 - 1U : right ? span.x1 : std::min(along, total_divisions - 1U);
-        const std::uint32_t cell_y =
-            bottom ? span.y0 - 1U : top ? span.y1 : std::min(along, total_divisions - 1U);
-        const std::optional<PlanetSurfacePatchId> neighbor =
-            find_selected_patch_covering_cell(config, set, id.face, cell_x, cell_y);
-        if (!neighbor.has_value()) {
-            continue;
-        }
-        probe.found_neighbor = true;
-        const std::uint32_t delta = id.level > neighbor->level ? id.level - neighbor->level
-                                                               : neighbor->level - id.level;
-        probe.max_delta = std::max(probe.max_delta, delta);
-        if (id.level > neighbor->level) {
-            probe.max_coarser_delta = std::max(probe.max_coarser_delta, id.level - neighbor->level);
-        } else if (neighbor->level > id.level) {
-            probe.max_finer_delta = std::max(probe.max_finer_delta, neighbor->level - id.level);
-        }
-    }
-    return probe;
-}
-
-[[nodiscard]] std::uint32_t edge_transition_mask(const PlanetConfig& config,
-                                                 const PlanetPatchSelectionSet& set,
-                                                 PlanetSurfacePatchId id) {
-    std::uint32_t mask = 0;
-    for (std::uint32_t edge = 0; edge < 4U; ++edge) {
-        const NeighborEdgeProbe probe = analyze_neighbor_edge(config, set, id, edge);
-        if (probe.max_coarser_delta > 0U) {
-            mask |= 1U << edge;
-        }
-    }
-    return mask;
-}
-
-void update_neighbor_lod_diagnostics(PlanetSurfaceDiagnostics& diagnostics,
-                                     PlanetSurfaceLodNeighborDiagnostics neighbor_diagnostics) {
-    diagnostics.lod_neighbor_edge_count = neighbor_diagnostics.edge_count;
-    diagnostics.lod_neighbor_boundary_edge_count = neighbor_diagnostics.boundary_edge_count;
-    diagnostics.lod_neighbor_mismatch_edge_count = neighbor_diagnostics.mismatch_edge_count;
-    diagnostics.max_lod_neighbor_delta = neighbor_diagnostics.max_lod_delta;
-}
-
-void reset_selected_patch_diagnostics(PlanetSurfaceDiagnostics& diagnostics) {
-    diagnostics.visible_patch_count = 0;
-    diagnostics.patch_count = 0;
-    diagnostics.base_patch_count = 0;
-    diagnostics.refined_patch_count = 0;
-    diagnostics.transition_candidate_count = 0;
-    diagnostics.min_lod_level = 0;
-    diagnostics.max_lod_level = 0;
-    diagnostics.patches_by_lod.fill(0U);
-    diagnostics.min_screen_error_px = 0.0F;
-    diagnostics.max_screen_error_px = 0.0F;
-    diagnostics.max_transition_pressure = 0.0F;
-    diagnostics.min_cell_edge_m_by_lod.fill(0.0F);
-    diagnostics.max_cell_edge_m_by_lod.fill(0.0F);
-}
-
-void record_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurfaceView view,
-                                       PlanetSurfaceDiagnostics& diagnostics,
-                                       const PlanetSurfacePatchInstance& patch) {
-    diagnostics.min_lod_level = diagnostics.visible_patch_count == 0U
-                                    ? patch.id.level
-                                    : std::min(diagnostics.min_lod_level, patch.id.level);
-    diagnostics.max_lod_level = std::max(diagnostics.max_lod_level, patch.id.level);
-    if (patch.id.level < diagnostics.patches_by_lod.size()) {
-        ++diagnostics.patches_by_lod[patch.id.level];
-    }
-    update_screen_error_range(diagnostics, patch.screen_error_px);
-    update_lod_transition_diagnostics(effective_lod_target_edge_px(config, view), diagnostics,
-                                      patch.screen_error_px);
-    update_lod_cell_edge_range(diagnostics, patch.id.level, patch_cell_edge_m(config, patch));
-    if (patch.id.level == 0U) {
-        ++diagnostics.base_patch_count;
-    } else {
-        ++diagnostics.refined_patch_count;
-    }
-    ++diagnostics.visible_patch_count;
-    diagnostics.patch_count = diagnostics.visible_patch_count;
-}
-
-void refresh_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurfaceView view,
-                                        PlanetSurfacePatchPlan& plan) {
-    reset_selected_patch_diagnostics(plan.diagnostics);
-    for (const PlanetSurfacePatchInstance& patch : plan.selected_patches) {
-        record_selected_patch_diagnostics(config, view, plan.diagnostics, patch);
-    }
 }
 
 [[nodiscard]] bool patch_passes_horizon_cull(const PlanetConfig& config, PlanetSurfaceView view,
@@ -752,248 +507,132 @@ void refresh_selected_patch_diagnostics(const PlanetConfig& config, PlanetSurfac
     return std::max(horizontal_cell_m, vertical_cell_m);
 }
 
-void record_refinement_cull(PlanetSurfacePatchPlan& plan, bool horizon_culled) {
-    if (horizon_culled) {
-        ++plan.diagnostics.culled_horizon_count;
-    } else {
-        ++plan.diagnostics.culled_view_count;
-    }
+[[nodiscard]] cubey::render::AdaptivePatchLodPatchId
+to_adaptive_patch_id(PlanetSurfacePatchId id) {
+    return {
+        .root = id.face,
+        .level = id.level,
+        .x = id.x,
+        .y = id.y,
+    };
 }
 
-[[nodiscard]] float lod_refinement_threshold_px(const PlanetConfig& config,
-                                                PlanetSurfaceView view,
-                                                const PlanetPatchSelectionLookup& lookup,
-                                                PlanetSurfacePatchId id) {
-    const float target_edge_px = effective_lod_target_edge_px(config, view);
-    if (lookup.was_refined(id)) {
-        return target_edge_px * (1.0F - config.lod_hysteresis);
-    }
-    if (lookup.was_selected(id)) {
-        return target_edge_px * (1.0F + config.lod_hysteresis);
-    }
-    return target_edge_px;
+[[nodiscard]] PlanetSurfacePatchId
+from_adaptive_patch_id(cubey::render::AdaptivePatchLodPatchId id) {
+    return {
+        .face = id.root,
+        .level = id.level,
+        .x = id.x,
+        .y = id.y,
+    };
 }
 
-[[nodiscard]] std::uint64_t root_patch_reserve(const PlanetConfig& config) {
-    return static_cast<std::uint64_t>(config.patches_per_face) *
-           static_cast<std::uint64_t>(config.patches_per_face) * 6ULL;
+[[nodiscard]] cubey::render::AdaptivePatchLodConfig
+planet_adaptive_lod_config(const PlanetConfig& config, float target_error_px) {
+    return {
+        .root_count = 6,
+        .root_divisions_per_axis = config.patches_per_face,
+        .max_lod_level = config.max_lod_level,
+        .max_selected_patches = kPlanetMaxLivePatchInstances,
+        .target_error_px = target_error_px,
+        .hysteresis = config.lod_hysteresis,
+    };
 }
 
-[[nodiscard]] bool can_refine_with_live_budget(const PlanetConfig& config,
-                                               const PlanetSurfacePatchPlan& plan) {
-    const std::uint64_t fallback_depth_reserve =
-        4ULL * (static_cast<std::uint64_t>(config.max_lod_level) + 1ULL);
-    return static_cast<std::uint64_t>(plan.selected_patches.size()) + root_patch_reserve(config) +
-               fallback_depth_reserve + 4ULL <
-           kPlanetMaxLivePatchInstances;
+[[nodiscard]] cubey::render::AdaptivePatchLodConfig
+planet_adaptive_lod_config(const PlanetConfig& config) {
+    return planet_adaptive_lod_config(config, config.lod_target_edge_px);
 }
 
-[[nodiscard]] bool record_visible_patch(const PlanetConfig& config, PlanetSurfaceView view,
-                                        PlanetSurfacePatchPlan& plan,
-                                        const PlanetSurfacePatchInstance& patch) {
-    record_selected_patch_diagnostics(config, view, plan.diagnostics, patch);
-    plan.selected_patches.push_back(patch);
-    return plan.selected_patches.size() <= kPlanetMaxLivePatchInstances;
+[[nodiscard]] cubey::render::AdaptivePatchLodPatchInstance
+to_adaptive_patch_instance(const PlanetSurfacePatchInstance& patch) {
+    return {
+        .id = to_adaptive_patch_id(patch.id),
+        .screen_error_px = patch.screen_error_px,
+    };
 }
 
-[[nodiscard]] bool append_coverage_patches(const PlanetConfig& config, PlanetSurfaceView view,
-                                           const PlanetPatchSelectionLookup& lookup,
-                                           PlanetSurfacePatchInstance patch,
-                                           PlanetSurfacePatchPlan& plan) {
-    patch.screen_error_px = patch_screen_error_px(config, view, patch);
-    ++plan.diagnostics.planned_patch_count;
+[[nodiscard]] PlanetSurfacePatchInstance
+from_adaptive_patch_instance(const cubey::render::AdaptivePatchLodPatchInstance& patch) {
+    return {
+        .id = from_adaptive_patch_id(patch.id),
+        .screen_error_px = patch.screen_error_px,
+    };
+}
 
-    const float target_edge_px = effective_lod_target_edge_px(config, view);
-    const bool raw_wants_refinement =
-        patch.id.level < config.max_lod_level && patch.screen_error_px > target_edge_px;
-    const float refinement_threshold_px =
-        lod_refinement_threshold_px(config, view, lookup, patch.id);
-    const bool wants_refinement =
-        patch.id.level < config.max_lod_level && patch.screen_error_px > refinement_threshold_px;
-    if (raw_wants_refinement && !wants_refinement) {
-        ++plan.diagnostics.hysteresis_delayed_split_count;
-    } else if (!raw_wants_refinement && wants_refinement) {
-        ++plan.diagnostics.hysteresis_delayed_merge_count;
+[[nodiscard]] std::vector<cubey::render::AdaptivePatchLodPatchInstance>
+to_adaptive_patch_instances(std::span<const PlanetSurfacePatchInstance> patches) {
+    std::vector<cubey::render::AdaptivePatchLodPatchInstance> result;
+    result.reserve(patches.size());
+    for (const PlanetSurfacePatchInstance& patch : patches) {
+        result.push_back(to_adaptive_patch_instance(patch));
     }
+    return result;
+}
 
-    if (wants_refinement && !patch_passes_horizon_cull(config, view, patch)) {
-        record_refinement_cull(plan, true);
-        ++plan.diagnostics.refinement_fallback_patch_count;
-        return record_visible_patch(config, view, plan, patch);
+[[nodiscard]] std::vector<cubey::render::AdaptivePatchLodPatchId>
+to_adaptive_patch_ids(std::span<const PlanetSurfacePatchId> ids) {
+    std::vector<cubey::render::AdaptivePatchLodPatchId> result;
+    result.reserve(ids.size());
+    for (PlanetSurfacePatchId id : ids) {
+        result.push_back(to_adaptive_patch_id(id));
     }
-    if (wants_refinement && !patch_passes_view_cull(config, view, patch)) {
-        record_refinement_cull(plan, false);
-        ++plan.diagnostics.refinement_fallback_patch_count;
-        return record_visible_patch(config, view, plan, patch);
-    }
-    if (wants_refinement && !can_refine_with_live_budget(config, plan)) {
-        ++plan.diagnostics.budget_fallback_patch_count;
-        return record_visible_patch(config, view, plan, patch);
-    }
+    return result;
+}
 
-    if (wants_refinement) {
-        const std::size_t selected_patch_snapshot = plan.selected_patches.size();
-        const PlanetSurfaceDiagnostics diagnostics_snapshot = plan.diagnostics;
-        ++plan.diagnostics.subdivided_patch_count;
-        const bool children_fit =
-            append_coverage_patches(
-                config, view, lookup,
-                PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 0U)},
-                plan) &&
-            append_coverage_patches(
-                config, view, lookup,
-                PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 1U)},
-                plan) &&
-            append_coverage_patches(
-                config, view, lookup,
-                PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 2U)},
-                plan) &&
-            append_coverage_patches(
-                config, view, lookup,
-                PlanetSurfacePatchInstance{.id = planet_surface_child_patch_id(patch.id, 3U)},
-                plan);
-        if (!children_fit) {
-            plan.selected_patches.resize(selected_patch_snapshot);
-            plan.diagnostics = diagnostics_snapshot;
-            ++plan.diagnostics.budget_fallback_patch_count;
-            return record_visible_patch(config, view, plan, patch);
-        }
-        return true;
+[[nodiscard]] PlanetSurfaceDiagnostics
+planet_diagnostics_from_adaptive_lod(
+    const PlanetConfig& config,
+    const cubey::render::AdaptivePatchLodDiagnostics& diagnostics,
+    std::span<const PlanetSurfacePatchInstance> selected_patches) {
+    PlanetSurfaceDiagnostics result{};
+    result.planned_patch_count = diagnostics.planned_patch_count;
+    result.visible_patch_count = diagnostics.visible_patch_count;
+    result.culled_horizon_count = diagnostics.culled_horizon_count;
+    result.culled_view_count = diagnostics.culled_view_count;
+    result.patch_count = diagnostics.patch_count;
+    result.base_patch_count = diagnostics.base_patch_count;
+    result.refined_patch_count = diagnostics.refined_patch_count;
+    result.subdivided_patch_count = diagnostics.subdivided_patch_count;
+    result.refinement_fallback_patch_count = diagnostics.refinement_fallback_patch_count;
+    result.budget_fallback_patch_count = diagnostics.budget_fallback_patch_count;
+    result.hysteresis_delayed_split_count = diagnostics.hysteresis_delayed_split_count;
+    result.hysteresis_delayed_merge_count = diagnostics.hysteresis_delayed_merge_count;
+    result.transition_candidate_count = diagnostics.transition_candidate_count;
+    result.lod_neighbor_edge_count = diagnostics.lod_neighbor_edge_count;
+    result.lod_neighbor_boundary_edge_count = diagnostics.lod_neighbor_boundary_edge_count;
+    result.lod_neighbor_mismatch_edge_count = diagnostics.lod_neighbor_mismatch_edge_count;
+    result.max_lod_neighbor_delta = diagnostics.max_lod_neighbor_delta;
+    result.lod_neighbor_repaired_split_count = diagnostics.lod_neighbor_repaired_split_count;
+    result.min_lod_level = diagnostics.min_lod_level;
+    result.max_lod_level = diagnostics.max_lod_level;
+    result.min_screen_error_px = diagnostics.min_screen_error_px;
+    result.max_screen_error_px = diagnostics.max_screen_error_px;
+    result.max_transition_pressure = diagnostics.max_transition_pressure;
+    for (std::size_t level = 0;
+         level < std::min(result.patches_by_lod.size(), diagnostics.patches_by_lod.size());
+         ++level) {
+        result.patches_by_lod[level] = diagnostics.patches_by_lod[level];
     }
-    return record_visible_patch(config, view, plan, patch);
+    for (const PlanetSurfacePatchInstance& patch : selected_patches) {
+        update_lod_cell_edge_range(result, patch.id.level, patch_cell_edge_m(config, patch));
+    }
+    return result;
 }
 
 [[nodiscard]] PlanetSurfacePatchPlan
-make_surface_patch_plan(const PlanetConfig& config, PlanetSurfaceView view,
-                        PlanetSurfacePatchSelectionHints hints) {
+planet_plan_from_adaptive_lod(const PlanetConfig& config,
+                              const cubey::render::AdaptivePatchLodPlan& adaptive_plan) {
     PlanetSurfacePatchPlan plan{};
-    const PlanetPatchSelectionLookup lookup{hints.previous_selected_patches};
-    for (std::uint32_t face = 0; face < 6U; ++face) {
-        for (std::uint32_t py = 0; py < config.patches_per_face; ++py) {
-            for (std::uint32_t px = 0; px < config.patches_per_face; ++px) {
-                if (!append_coverage_patches(config, view, lookup,
-                                             PlanetSurfacePatchInstance{
-                                                 .id =
-                                                     {
-                                                         .face = face,
-                                                         .level = 0,
-                                                         .x = px,
-                                                         .y = py,
-                                                     },
-                                             },
-                                             plan)) {
-                    throw std::runtime_error(
-                        "planet live LOD selection exceeded the root patch budget");
-                }
-            }
-        }
+    plan.selected_patches.reserve(adaptive_plan.selected_patches.size());
+    for (const cubey::render::AdaptivePatchLodPatchInstance& patch :
+         adaptive_plan.selected_patches) {
+        plan.selected_patches.push_back(from_adaptive_patch_instance(patch));
     }
+    plan.diagnostics =
+        planet_diagnostics_from_adaptive_lod(config, adaptive_plan.diagnostics,
+                                             plan.selected_patches);
     return plan;
-}
-
-[[nodiscard]] PlanetSurfacePatchInstance patch_instance_for_id(const PlanetConfig& config,
-                                                               PlanetSurfaceView view,
-                                                               PlanetSurfacePatchId id) {
-    PlanetSurfacePatchInstance patch{.id = id};
-    patch.screen_error_px = patch_screen_error_px(config, view, patch);
-    return patch;
-}
-
-void replace_patch_with_children(const PlanetConfig& config, PlanetSurfaceView view,
-                                 PlanetSurfacePatchPlan& plan, std::size_t patch_index) {
-    const PlanetSurfacePatchId parent = plan.selected_patches.at(patch_index).id;
-    std::array<PlanetSurfacePatchInstance, 4> children{};
-    for (std::uint32_t child = 0; child < children.size(); ++child) {
-        children[child] =
-            patch_instance_for_id(config, view, planet_surface_child_patch_id(parent, child));
-    }
-    plan.selected_patches[patch_index] = children[0];
-    plan.selected_patches.insert(plan.selected_patches.begin() + static_cast<std::ptrdiff_t>(patch_index) +
-                                     1,
-                                 children.begin() + 1, children.end());
-    ++plan.diagnostics.lod_neighbor_repaired_split_count;
-}
-
-enum class NeighborRepairStep : std::uint8_t {
-    Done,
-    Split,
-    NeedsBudget,
-};
-
-[[nodiscard]] NeighborRepairStep repair_neighbor_lod_once(const PlanetConfig& config,
-                                                          PlanetSurfaceView view,
-                                                          PlanetSurfacePatchPlan& plan) {
-    const PlanetPatchSelectionSet set{plan.selected_patches};
-    for (std::size_t index = 0; index < plan.selected_patches.size(); ++index) {
-        const PlanetSurfacePatchId id = plan.selected_patches[index].id;
-        if (id.level >= config.max_lod_level) {
-            continue;
-        }
-        for (std::uint32_t edge = 0; edge < 4U; ++edge) {
-            const NeighborEdgeProbe probe = analyze_neighbor_edge(config, set, id, edge);
-            if (probe.max_finer_delta <= 1U) {
-                continue;
-            }
-            if (plan.selected_patches.size() + 3U > kPlanetMaxLivePatchInstances) {
-                return NeighborRepairStep::NeedsBudget;
-            }
-            replace_patch_with_children(config, view, plan, index);
-            return NeighborRepairStep::Split;
-        }
-    }
-    return NeighborRepairStep::Done;
-}
-
-[[nodiscard]] bool coarsen_selected_patches_once(const PlanetConfig& config, PlanetSurfaceView view,
-                                                 PlanetSurfacePatchPlan& plan) {
-    std::vector<PlanetSurfacePatchInstance> coarsened;
-    coarsened.reserve(plan.selected_patches.size());
-    std::unordered_set<PlanetSurfacePatchId, PlanetSurfacePatchIdHash> seen;
-    seen.reserve(plan.selected_patches.size());
-    bool changed = false;
-    for (const PlanetSurfacePatchInstance& patch : plan.selected_patches) {
-        PlanetSurfacePatchId id = patch.id;
-        if (id.level > 0U) {
-            id = parent_patch_id(id);
-            changed = true;
-        }
-        if (seen.insert(id).second) {
-            coarsened.push_back(patch_instance_for_id(config, view, id));
-        }
-    }
-    if (!changed) {
-        return false;
-    }
-    plan.selected_patches = std::move(coarsened);
-    ++plan.diagnostics.budget_fallback_patch_count;
-    return true;
-}
-
-void repair_neighbor_lod_transitions(const PlanetConfig& config, PlanetSurfaceView view,
-                                     PlanetSurfacePatchPlan& plan) {
-    const std::size_t iteration_limit =
-        std::max<std::size_t>(1U, plan.selected_patches.size() * (config.max_lod_level + 1U));
-    for (std::size_t iteration = 0; iteration < iteration_limit; ++iteration) {
-        const NeighborRepairStep step = repair_neighbor_lod_once(config, view, plan);
-        if (step == NeighborRepairStep::Done) {
-            refresh_selected_patch_diagnostics(config, view, plan);
-            update_neighbor_lod_diagnostics(
-                plan.diagnostics,
-                analyze_planet_surface_lod_neighbors(config, plan.selected_patches));
-            return;
-        }
-        if (step == NeighborRepairStep::NeedsBudget &&
-            !coarsen_selected_patches_once(config, view, plan)) {
-            break;
-        }
-    }
-
-    refresh_selected_patch_diagnostics(config, view, plan);
-    update_neighbor_lod_diagnostics(
-        plan.diagnostics, analyze_planet_surface_lod_neighbors(config, plan.selected_patches));
-    if (plan.diagnostics.max_lod_neighbor_delta > 1U) {
-        throw std::runtime_error("planet LOD neighbor repair could not enforce single-step deltas");
-    }
 }
 
 [[nodiscard]] cubey::math::Vec3
@@ -1230,38 +869,55 @@ PlanetSurfaceLodNeighborDiagnostics
 analyze_planet_surface_lod_neighbors(const PlanetConfig& config,
                                      std::span<const PlanetSurfacePatchInstance> patches) {
     validate_planet_config(config);
-    PlanetSurfaceLodNeighborDiagnostics diagnostics{};
-    const PlanetPatchSelectionSet set{patches};
-    for (const PlanetSurfacePatchInstance& patch : patches) {
-        for (std::uint32_t edge = 0; edge < 4U; ++edge) {
-            const NeighborEdgeProbe probe = analyze_neighbor_edge(config, set, patch.id, edge);
-            if (probe.boundary) {
-                ++diagnostics.boundary_edge_count;
-                continue;
-            }
-            if (!probe.found_neighbor) {
-                continue;
-            }
-            ++diagnostics.edge_count;
-            diagnostics.max_lod_delta = std::max(diagnostics.max_lod_delta, probe.max_delta);
-            if (probe.max_delta > 0U) {
-                ++diagnostics.mismatch_edge_count;
-            }
-        }
-    }
-    return diagnostics;
+    const std::vector<cubey::render::AdaptivePatchLodPatchInstance> adaptive_patches =
+        to_adaptive_patch_instances(patches);
+    const cubey::render::AdaptivePatchLodNeighborDiagnostics diagnostics =
+        cubey::render::analyze_adaptive_patch_lod_neighbors(
+            planet_adaptive_lod_config(config), adaptive_patches);
+    return {
+        .edge_count = diagnostics.edge_count,
+        .boundary_edge_count = diagnostics.boundary_edge_count,
+        .mismatch_edge_count = diagnostics.mismatch_edge_count,
+        .max_lod_delta = diagnostics.max_lod_delta,
+    };
 }
 
 PlanetSurfacePatchPlan plan_planet_surface_patches(const PlanetConfig& config,
                                                    PlanetSurfaceView view,
                                                    PlanetSurfacePatchSelectionHints hints) {
     validate_planet_config(config);
-    PlanetSurfacePatchPlan plan = make_surface_patch_plan(config, view, hints);
-    if (plan.selected_patches.size() > kPlanetMaxLivePatchInstances) {
-        throw std::runtime_error("planet live LOD fallback exceeded the patch instance budget");
-    }
-    repair_neighbor_lod_transitions(config, view, plan);
-    return plan;
+    const std::vector<cubey::render::AdaptivePatchLodPatchId> previous_selection =
+        to_adaptive_patch_ids(hints.previous_selected_patches);
+    const cubey::render::AdaptivePatchLodConfig adaptive_config =
+        planet_adaptive_lod_config(config, effective_lod_target_edge_px(config, view));
+    const cubey::render::AdaptivePatchLodPlan adaptive_plan =
+        cubey::render::plan_adaptive_patch_lod(
+            adaptive_config,
+            {
+                .screen_error_px =
+                    [&config, view](cubey::render::AdaptivePatchLodPatchId id) {
+                        const PlanetSurfacePatchId patch_id = from_adaptive_patch_id(id);
+                        return patch_screen_error_px(config, view,
+                                                     PlanetSurfacePatchInstance{.id = patch_id});
+                    },
+                .refinement_cull =
+                    [&config, view](
+                        const cubey::render::AdaptivePatchLodPatchInstance& patch) {
+                        const PlanetSurfacePatchInstance planet_patch =
+                            from_adaptive_patch_instance(patch);
+                        if (!patch_passes_horizon_cull(config, view, planet_patch)) {
+                            return cubey::render::AdaptivePatchLodCullResult::HorizonCulled;
+                        }
+                        if (!patch_passes_view_cull(config, view, planet_patch)) {
+                            return cubey::render::AdaptivePatchLodCullResult::ViewCulled;
+                        }
+                        return cubey::render::AdaptivePatchLodCullResult::Visible;
+                    },
+            },
+            cubey::render::AdaptivePatchLodSelectionHints{
+                .previous_selected_patches = previous_selection,
+            });
+    return planet_plan_from_adaptive_lod(config, adaptive_plan);
 }
 
 PlanetPatchGridMeshData make_planet_patch_grid_mesh(const PlanetConfig& config) {
@@ -1342,14 +998,18 @@ make_planet_surface_gpu_patch_instances(const PlanetConfig& config,
                                         const PlanetSurfacePatchPlan& plan) {
     std::vector<PlanetSurfaceGpuPatchInstance> instances;
     instances.reserve(plan.selected_patches.size());
-    const PlanetPatchSelectionSet set{plan.selected_patches};
+    const std::vector<cubey::render::AdaptivePatchLodPatchInstance> adaptive_patches =
+        to_adaptive_patch_instances(plan.selected_patches);
+    const cubey::render::AdaptivePatchLodConfig adaptive_config =
+        planet_adaptive_lod_config(config);
     for (const PlanetSurfacePatchInstance& patch : plan.selected_patches) {
         instances.push_back({
             .face = patch.id.face,
             .level = patch.id.level,
             .x = patch.id.x,
             .y = patch.id.y,
-            .edge_transition_mask = edge_transition_mask(config, set, patch.id),
+            .edge_transition_mask = cubey::render::adaptive_patch_lod_edge_transition_mask(
+                adaptive_config, adaptive_patches, to_adaptive_patch_id(patch.id)),
             .screen_error_px = patch.screen_error_px,
         });
     }
