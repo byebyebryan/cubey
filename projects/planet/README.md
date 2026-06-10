@@ -97,11 +97,12 @@ WASD moves the surface camera. Orbit dragging clamps just short of the poles to
 avoid north/south direction flips. The control panel is split into a
 project-local UI adapter (`PlanetUi`) so runtime state, surface planning, and
 ImGui layout do not keep growing in the app shell.
-The CPU LOD planner selects camera-relative cube-sphere patch instances by
-projected edge size and reports patch, LOD, refinement cull, screen-error,
-transition pressure, edge-length, per-LOD cell-size, budget fallback,
-hysteresis, and skirt ranges in the UI. The live renderer draws those selected
-patches with one reusable GPU
+The surface path adapts camera-relative cube-sphere patch instances through the
+shared `cubey::render::AdaptivePatchLod` planner, using planet-owned
+screen-error, terrain displacement, and horizon/view culling callbacks. It
+reports patch, LOD, refinement cull, screen-error, transition pressure,
+edge-length, per-LOD cell-size, budget fallback, hysteresis, and skirt ranges in
+the UI. The live renderer draws those selected patches with one reusable GPU
 patch grid plus per-frame-slot instance buffers carrying `face/level/x/y`
 identity. Live instanced rendering supports up to LOD 12 and patch resolution
 128, defaults to LOD 8, patch resolution 32, and a 6 px target edge, and falls
@@ -115,8 +116,9 @@ still use the configured target.
 The CPU mesh builder has a stricter vertex cap because it materializes every
 selected patch for diagnostics.
 The live surface path is now mediated by `PlanetSurfaceRuntime`, which owns the
-current patch plan, previous-selection hysteresis history, render-origin
-validity checks, diagnostics, and lazy per-frame instance-buffer uploads.
+planet adapter around the shared patch plan, previous-selection hysteresis
+history, render-origin validity checks, diagnostics, and lazy per-frame
+instance-buffer uploads.
 
 The default target scale is Earth-like. A smaller mini-planet preset remains a
 debug option for quickly inspecting curvature, LOD colors, and celestial motion,
@@ -162,6 +164,9 @@ revealing empty holes while patch replans are deferred during dragging.
 Previous patch selections feed a small split/merge hysteresis deadband so
 camera-driven replans do not churn at the exact LOD threshold; `lod-transition`
 plus the UI counters show where patches are near or held around that boundary.
+The reusable planner also repairs selected neighbor deltas to one LOD step and
+emits edge-transition masks; planet uses those masks for the current skirt/seam
+packing while keeping the cube-sphere address mapping project-local.
 
 Patch identity is explicit: each selected surface instance has a `face/level/x/y`
 address, and UV bounds are derived from that address plus the root

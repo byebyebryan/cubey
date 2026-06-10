@@ -17,6 +17,8 @@ stable across the repo:
   layout transitions or descriptor updates;
 - CPU-side primitive mesh data for common world-space shapes, plus vertex
   input layouts matching current shader contracts;
+- CPU-side surface LOD planning helpers for the clipmap and adaptive patch
+  shapes used by rendering projects;
 - material pass metadata, material descriptor instances, and small pipeline
   recipe helpers for the descriptor/pipeline shapes already shared by examples;
 - explicit frame slots and per-frame uniform buffers for CPU-updated render
@@ -37,7 +39,8 @@ The current renderer stack is intentionally split by ownership:
   submission, synchronization helpers, swapchain state, and GPU lifetime.
 - `cubey::render` owns renderer-facing vocabulary: target views, resource
   wrappers, material/pass metadata, graph declaration/execution, PBR shader
-  contracts, primitive meshes, and small command helpers.
+  contracts, primitive meshes, shared surface LOD planning helpers, and small
+  command helpers.
 - `cubey::scene` owns entity/component data, scene snapshots, view planning,
   renderable/light packets, and CPU draw plans.
 - `cubey::engine` owns reusable renderer policy and service lifetime:
@@ -153,6 +156,15 @@ full engine architecture.
   registry-handle plus app-owned mesh-table upload path, while keeping table
   ownership and GPU lifetime explicit. The primitive layer does not create
   renderables, materials, descriptors, pipelines, or scene entities.
+- `ClipmapGrid2D` and `AdaptivePatchLod` are the current shared CPU surface LOD
+  planning primitives. `ClipmapGrid2D` covers static viewer-centered 2D
+  clipmap/ring meshes for ocean and procedural terrain diagnostics.
+  `AdaptivePatchLod` covers coverage-first quadtree patch selection with
+  screen-error callbacks, split/merge hysteresis, budget fallback, neighbor LOD
+  repair, edge-transition masks, and diagnostics for planet-scale patch trees.
+  Both helpers stop at CPU planning data: project code still owns coordinate
+  mapping, culling policy, terrain/wave error metrics, mesh generation, shader
+  packing, streaming, and rendering.
 - `MeshHandle` and `MaterialHandle` are opaque CPU-side values used by scene
   renderables and renderable packets. `RenderResourceRegistry` issues and
   destroys those handles, validates liveness, and stores CPU metadata:

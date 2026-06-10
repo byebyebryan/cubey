@@ -141,6 +141,9 @@ Useful pieces already exist:
 - `LocalTangentFrame` in `cubey::render` provides shared local-patch frame
   vocabulary with double-precision world origin, basis axes, planet radius, and
   water datum;
+- `AdaptivePatchLod` in `cubey::render` provides the reusable quadtree selection,
+  hysteresis, budget fallback, neighbor repair, edge mask, and diagnostic
+  mechanics used by the planet global surface patch tree;
 - `OceanSurfaceFrame` derives the active ocean mesh config, horizon
   diagnostics, projection far plane, and surface-frame metadata from the camera
   each frame;

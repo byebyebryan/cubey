@@ -9,8 +9,9 @@ fields so shoreline work is legible before the ocean renderer is integrated.
 The terrain-ocean data boundary is documented in
 [`terrain_ocean_contract.md`](terrain_ocean_contract.md).
 The app now exports that boundary through the shared
-`cubey::render::TerrainOceanFieldView` contract, and its clipmap diagnostics use
-the same shared patch and triangle-count helpers as `projects/ocean`.
+`cubey::render::TerrainOceanFieldView` contract, and its static 2D clipmap
+diagnostics use the same shared patch and triangle-count helpers as
+`projects/ocean`.
 
 Run a windowed view:
 

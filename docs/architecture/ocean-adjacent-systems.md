@@ -34,7 +34,9 @@ rendering. `projects/planet` now owns the landed frame, surface LOD,
 terrain-field integration, atmosphere preview, and local-detail diagnostics
 while consuming the shared sky/celestial foundation; the remaining integration
 target is to port ocean as one local water layer when local/global morphing,
-persistent topology, streaming, and render order are stable.
+persistent topology, streaming, and render order are stable. The reusable
+adaptive patch selection mechanics now live in `cubey::render`, but planet still
+owns the cube-sphere mapping and world-scale policy.
 
 ## Atmosphere Project
 
@@ -196,9 +198,13 @@ These are more important than exact implementation details:
   planet LOD can report the same concepts.
 
 The initial contracts can remain project-local structs and GLSL includes. Promote
-them to shared renderer or shader packages when at least two projects use the
-same contract without special cases; the terrain-ocean field texture and clipmap
-diagnostic helpers have crossed that threshold and now live in `cubey::render`.
+them to shared renderer or shader packages when they are stable enough to stand
+without project policy or when at least two projects use the same contract
+without special cases. The terrain-ocean field texture and static 2D clipmap
+diagnostic helpers have crossed that multi-consumer threshold. The adaptive patch
+LOD selection helper moved to `cubey::render` after the planet behavior
+stabilized, but project-specific terrain, ocean, and planet policies remain
+outside that helper.
 
 ## Suggested Order
 

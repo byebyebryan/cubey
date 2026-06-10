@@ -11,7 +11,7 @@ renderer, FFT cascade cost model, atmosphere integration, terrain-field
 boundary, LOD diagnostics, and curvature controls. Full planet-scale navigation,
 surface patching, streaming terrain/bathymetry, weather, and clouds belong in a
 `projects/planet`; ocean should be ported or wrapped there when the planet
-frame and LOD contracts are ready.
+frame, adaptive patch LOD, and render-order contracts are ready.
 
 GodotOceanWaves is MIT licensed; the required notice is kept in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
@@ -104,6 +104,12 @@ cascade work` toggles are stronger than contribution sliders: they skip disabled
 cascade spectrum, modulation, FFT, and unpack dispatches, then hide those
 cascades from the surface shader. Use `All slots`, `Core`, and `Cheap` to check
 which slots and material additions are worth their GPU cost.
+
+Ocean still uses a camera-relative `clipmap_grid_2d` surface mesh. The shared
+planet-scale `adaptive_patch_lod` planner is available in `cubey::render`, but
+ocean has not moved to that model; the next ocean LOD pass should deliberately
+compare staying on clipmaps against adopting adaptive patches only where planet
+handoff, horizon coverage, or shoreline integration needs that address space.
 
 The default FFT map is `512`, and ocean wave fields default to half precision.
 Use `--ocean-map-size 1024 --ocean-field-precision full` only when comparing

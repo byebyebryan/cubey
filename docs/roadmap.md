@@ -204,7 +204,8 @@ Current checkpoint:
   environment lighting, shared celestial mechanics plus fullscreen sky/body
   frame helpers, a shared lightweight environment-lighting uniform/GLSL include
   consumed by water and volumetric pyro, terrain-ocean field packing, and shared
-  2D clipmap grid planning for ocean and terrain LOD diagnostics.
+  surface LOD planning: 2D clipmap grids for ocean/procedural-terrain diagnostics
+  and adaptive quadtree patch planning for planet-scale surface LOD.
 - Reusable `cubey::render::ResourceTable`,
   `cubey::render::RenderItem`,
   `cubey::render::MaterialPassInfo`,
@@ -532,9 +533,10 @@ Project checkpoints:
   terrain-field handoff vocabulary. It is now treated as a local-water renderer
   and future donor rather than the owner of planet-scale navigation.
 - `projects/planet` is the current scale/LOD foundation project. It owns
-  Earth-like scale, camera-relative cube-sphere surface LOD, project-local
-  terrain fields, local-detail diagnostics, shared sky/celestial foundation
-  consumption, physical atmosphere preview, HDR post, and visual smoke coverage.
+  Earth-like scale, camera-relative cube-sphere surface LOD on the shared
+  adaptive patch planner, project-local terrain fields, local-detail diagnostics,
+  shared sky/celestial foundation consumption, physical atmosphere preview, HDR
+  post, and visual smoke coverage.
 
 Candidate follow-ups:
 

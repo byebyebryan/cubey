@@ -126,14 +126,18 @@ Useful pieces already exist and should be reused:
   planet radius, datum, and world/local conversion;
 - `cubey::render::ClipmapGrid2D`: flat 2D clipmap planning, patch counts,
   transition widths, cell sizes, and triangle diagnostics;
+- `cubey::render::AdaptivePatchLod`: coverage-first quadtree patch planning,
+  screen-error callback wiring, split/merge hysteresis, patch-budget fallback,
+  neighbor LOD repair, edge-transition masks, and diagnostics;
 - `cubey::render::TerrainOceanFieldView`: the first height/depth/shore/slope
   field contract used by terrain and ocean;
 - `cubey::AtmosphereEnvironmentRuntime`: useful reference/runtime for
   ocean and atmosphere demos, but no longer the active planet sky owner;
 - shared HDR post and performance UI contracts.
 - project-local `PlanetUi` and `PlanetSurfaceRuntime` boundaries that keep
-  control-panel layout, surface LOD planning, hysteresis history, diagnostics,
-  render-origin validity, and instance-buffer upload state out of the app shell.
+  control-panel layout, cube-sphere LOD adaptation, hysteresis history,
+  diagnostics, render-origin validity, and instance-buffer upload state out of
+  the app shell.
 
 Do not promote ocean-specific classes wholesale yet. `OceanSurfaceFrame`,
 `OceanHorizonDiagnostics`, and ocean shader surface mapping contain useful
@@ -144,17 +148,19 @@ fog, cascade LOD, and terrain-foam controls.
 
 LOD should be established before ocean is ported.
 
-Recommended first approach:
+The first planet surface LOD slice is now in place. Planet owns the cube-sphere
+domain mapping, stable `face/level/x/y` addresses, terrain displacement/error
+callbacks, horizon/view culling callbacks, mesh/skirt generation, shader packing,
+and runtime instance-buffer upload. The shared `cubey::render::AdaptivePatchLod`
+planner owns the reusable quadtree selection mechanics: coverage-first
+refinement, screen-error thresholding, split/merge hysteresis, live-patch budget
+fallback, neighbor repair to one LOD step, edge-transition masks, and CPU
+diagnostics.
 
-- start with a cube-sphere or six-face quadtree patch model;
-- draw a neutral planet surface with per-level coloring and wireframe;
-- select patches from screen-space error or a simple distance/altitude metric;
-- identify each surface patch by stable `face/level/x/y` coordinates and derive
-  local bounds from that address;
-- keep each patch rendered from a reusable fixed grid;
-- add skirts or morph bands before adding visual layers;
-- report patch count, visible levels, near/far cell size, triangle count,
-  screen error, altitude, and horizon distance every frame.
+The reusable planner is intentionally not a terrain or planet renderer. It does
+not know about cube faces, planet radii, bathymetry, streaming assets, mesh
+layouts, or Vulkan resources. Those remain planet/project policy until a second
+consumer proves a stronger shared contract.
 
 Geometry clipmaps can remain useful for local viewer-centered data and for ocean
 surface payloads. Planet terrain itself should get a more general patch tree
@@ -168,8 +174,9 @@ needed around the viewer right now?"
 
 ## First Contracts
 
-Add these in the planet project first, then promote only when a second project
-uses the same contract:
+Add these in the planet project first. Promote narrow pieces only when they are
+stable enough to stand without planet policy or when a second project uses the
+same contract:
 
 - `PlanetConfig`: radius, atmosphere height, datum/sea level, scale preset, and
   diagnostic toggles.
@@ -369,7 +376,7 @@ Current alignment by area:
 | Area | Status |
 | --- | --- |
 | Frame and camera | Done as v1. Camera state is double precision, render origin is camera-relative, and frame data distinguishes datum altitude, sampled terrain height, and terrain-relative clearance. |
-| Global surface LOD | Done as v1. The planner is coverage-first, keeps fallback parents available, uses hysteresis, repairs selected neighbor deltas to a single LOD step, and accounts for terrain displacement in screen-error bounds. |
+| Global surface LOD | Done as v1 and now routed through shared `cubey::render::AdaptivePatchLod`. Planet still owns cube-sphere mapping, terrain displacement bounds, horizon/view culling callbacks, mesh/skirt generation, shader packing, and GPU upload policy. |
 | Procedural terrain field | Active contract, not just a visual placeholder. CPU tests, tile summaries, shader displacement, named terrain bands, material bands, water depth, shoreline, climate, and roughness use the same project-local vocabulary. |
 | Local detail clipmap | Near-field surface layer. The altitude-gated clipmap now uses semantic ridge/channel/plain residuals over the global terrain field and can contribute to `final`, bounded local-detail, terrain-field, and opt-in shaded inspection rendering. `local-detail-horizon` is reserved for full-range horizon diagnostics. Local/global morphing, persistent topology, streaming, and ocean payloads remain explicit follow-ups. |
 | Celestial and atmosphere | Done as v1. The planet project owns mean solar time, sun/moon state, planet-frame adapters, view-aware exposure, and moon body rendering while the unified foundation atmosphere is the default sky backend. `sky-frame-legacy` remains a comparison fallback. Atmosphere LUTs, physical transmittance assets, eclipses, and real ephemeris are deferred. |
