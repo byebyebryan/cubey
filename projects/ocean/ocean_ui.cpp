@@ -274,7 +274,17 @@ void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
         "slot's spectral cutoff.");
 }
 
-void draw_lod_diagnostics(const OceanConfig& config) {
+void draw_lod_diagnostics(const OceanSurfaceFrame& surface_frame) {
+    const OceanConfig& config = surface_frame.mesh_config;
+    const OceanHorizonDiagnostics& horizon = surface_frame.horizon;
+
+    ImGui::Text("Effective mesh: %u LOD / %.1f km half / near %.2f m / far %.2f m",
+                config.mesh_lod_levels, horizon.mesh_half_extent_m / kOceanMetersPerKilometer,
+                ocean_mesh_near_cell_size(config), horizon.far_cell_size_m);
+    ImGui::Text("Horizon coverage: %.1f km required / %.0f%% / camera %.1f m",
+                horizon.required_half_extent_m / kOceanMetersPerKilometer,
+                horizon.coverage_ratio * 100.0F, horizon.camera_altitude_m);
+
     std::array<OceanLodStats, kOceanMaxMeshLodLevels> stats{};
     const OceanMeshPatchList patches = ocean_mesh_clipmap_patches(config);
     for (const OceanMeshPatch& patch : patches) {
@@ -309,30 +319,41 @@ void draw_lod_diagnostics(const OceanConfig& config) {
     }
     ImGui::EndTable();
 
-    if (!ImGui::BeginTable("Cascade LOD bands", 5,
+    if (!ImGui::BeginTable("Cascade LOD bands", 7,
                            ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg)) {
         return;
     }
     ImGui::TableSetupColumn("Cascade");
+    ImGui::TableSetupColumn("State");
     ImGui::TableSetupColumn("Tile");
     ImGui::TableSetupColumn("Shape m");
     ImGui::TableSetupColumn("Surface m");
     ImGui::TableSetupColumn("Mesh cell");
+    ImGui::TableSetupColumn("Horizon wt");
     ImGui::TableHeadersRow();
     for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
         const OceanCascadeConfig& cascade_config = ocean_cascade(config, cascade);
         const OceanCascadeLodBand lod = ocean_cascade_lod_band(config, cascade);
+        const float shape_weight =
+            ocean_cascade_displacement_lod_weight(config, cascade, horizon.horizon_distance_m,
+                                                  horizon.far_cell_size_m);
+        const float surface_weight =
+            ocean_cascade_surface_lod_weight(config, cascade, horizon.horizon_distance_m);
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        ImGui::Text("C%u%s", cascade, ocean_cascade_enabled(config, cascade) ? "" : " off");
+        ImGui::Text("C%u", cascade);
         ImGui::TableSetColumnIndex(1);
-        ImGui::Text("%.0f", cascade_config.tile_length);
+        ImGui::Text("%s", ocean_cascade_enabled(config, cascade) ? "on" : "off");
         ImGui::TableSetColumnIndex(2);
-        ImGui::Text("%.0f-%.0f", lod.displacement_fade_start, lod.displacement_fade_end);
+        ImGui::Text("%.0f", cascade_config.tile_length);
         ImGui::TableSetColumnIndex(3);
-        ImGui::Text("%.0f-%.0f", lod.surface_fade_start, lod.surface_fade_end);
+        ImGui::Text("%.0f-%.0f", lod.displacement_fade_start, lod.displacement_fade_end);
         ImGui::TableSetColumnIndex(4);
+        ImGui::Text("%.0f-%.0f", lod.surface_fade_start, lod.surface_fade_end);
+        ImGui::TableSetColumnIndex(5);
         ImGui::Text("%.1f-%.1f", lod.mesh_cell_full, lod.mesh_cell_zero);
+        ImGui::TableSetColumnIndex(6);
+        ImGui::Text("%.2f / %.2f", shape_weight, surface_weight);
     }
     ImGui::EndTable();
 }
@@ -712,7 +733,7 @@ void draw_ocean_ui(OceanUiContext ui) {
                     ui.surface_frame.horizon.coverage_ratio * 100.0F);
         ImGui::Text("Vertices: %u",
                     ocean_mesh_total_vertex_count(ui.surface_frame.mesh_config));
-        draw_lod_diagnostics(ui.surface_frame.mesh_config);
+        draw_lod_diagnostics(ui.surface_frame);
     }
 
     ImGui::End();

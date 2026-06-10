@@ -51,6 +51,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -420,6 +421,31 @@ ocean_depth_texture_desc(const char* label, VkExtent2D extent, VkFormat format) 
             .pitch = kCameraBasePitch};
 }
 
+[[nodiscard]] OceanCameraPreset ocean_camera_preset_from_name(std::string_view name) {
+    if (name.empty() || name == "default") {
+        return OceanCameraPreset::Default;
+    }
+    if (name == "low") {
+        return OceanCameraPreset::Low;
+    }
+    if (name == "mid") {
+        return OceanCameraPreset::Mid;
+    }
+    if (name == "high") {
+        return OceanCameraPreset::High;
+    }
+    if (name == "close") {
+        return OceanCameraPreset::Close;
+    }
+    if (name == "overhead") {
+        return OceanCameraPreset::Overhead;
+    }
+    if (name == "wide") {
+        return OceanCameraPreset::Wide;
+    }
+    throw std::runtime_error("unknown ocean camera preset: " + std::string(name));
+}
+
 [[nodiscard]] bool ocean_resource_layout_changed(const OceanConfig& lhs, const OceanConfig& rhs) {
     return lhs.map_size != rhs.map_size || lhs.field_precision != rhs.field_precision ||
            lhs.cascade_enabled != rhs.cascade_enabled ||
@@ -557,6 +583,7 @@ class OceanApp {
         if (cubey::run_config_float_is_set(config_.ocean.wire_opacity)) {
             diagnostics_.wire_opacity = config_.ocean.wire_opacity;
         }
+        camera_preset_ = ocean_camera_preset_from_name(config_.ocean.camera_preset);
         camera_.set_projection(camera_.fovy_radians(), kCameraNearPlane, kCameraFarPlane);
         orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_distance_limits(kCameraMinDistance, kCameraMaxDistance);

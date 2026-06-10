@@ -468,6 +468,16 @@ int main() {
                      0.001F, "ocean should derive cascade mesh full-support cell size");
         require(cascade0_lod.mesh_cell_full < cascade0_lod.mesh_cell_zero,
                 "ocean cascade LOD should fade as mesh cells become coarser");
+        require_near(ocean::ocean_cascade_displacement_lod_weight(
+                         defaults, 0, 0.0F, cascade0_lod.mesh_cell_full * 0.5F),
+                     1.0F, 0.001F, "ocean should fully support near fine-mesh displacement");
+        require_near(ocean::ocean_cascade_displacement_lod_weight(
+                         defaults, 0, cascade0_lod.displacement_fade_end + 1.0F,
+                         cascade0_lod.mesh_cell_full * 0.5F),
+                     0.0F, 0.001F, "ocean should fade displacement after the distance band");
+        require_near(ocean::ocean_cascade_mesh_lod_weight(defaults, 0,
+                                                          cascade0_lod.mesh_cell_zero + 1.0F),
+                     0.0F, 0.001F, "ocean should reject displacement on coarse mesh cells");
         ocean::validate_ocean_config(defaults);
 
         require(ocean::ocean_render_view_from_name("") == ocean::OceanRenderView::Final,
@@ -645,6 +655,8 @@ int main() {
                               "4",
                               "--debug-view",
                               "normal",
+                              "--ocean-camera-preset",
+                              "wide",
                               "--ocean-wire-overlay",
                               "--ocean-wire-opacity",
                               "0.8",
@@ -658,7 +670,7 @@ int main() {
                               "0.8",
                               "--ocean-curvature-strength",
                               "0.35"};
-        cubey::RunConfig parsed = cubey::parse_run_config(22, const_cast<char**>(argv));
+        cubey::RunConfig parsed = cubey::parse_run_config(24, const_cast<char**>(argv));
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
         require(parsed.ocean.surface_mode == "flat",
                 "CLI parser should accept --ocean-surface-mode");
@@ -675,6 +687,8 @@ int main() {
         require(parsed.ocean.terrain_fields == 1,
                 "CLI parser should accept --ocean-terrain-fields");
         require(parsed.ocean.cascade == 4, "CLI parser should accept --ocean-cascade");
+        require(parsed.ocean.camera_preset == "wide",
+                "CLI parser should accept --ocean-camera-preset");
         require(parsed.debug_view == "normal", "CLI parser should preserve debug view");
         require(parsed.ocean.wire_overlay, "CLI parser should accept ocean wire overlay");
         require_near(parsed.ocean.wire_opacity, 0.8F, 0.001F,
@@ -1065,8 +1079,14 @@ int main() {
         require_contains(ui_source, "&ui.config.foam_sharpness", "UI should expose foam sharpness");
         require_contains(ui_source, "Cascade LOD bands",
                          "UI should expose cascade LOD transition diagnostics");
+        require_contains(ui_source, "draw_lod_diagnostics(ui.surface_frame)",
+                         "UI should use the effective ocean surface frame for LOD diagnostics");
         require_contains(ui_source, "ocean_cascade_lod_band(config, cascade)",
                          "UI should derive LOD diagnostics from shared config helpers");
+        require_contains(ui_source, "ocean_cascade_displacement_lod_weight(config, cascade",
+                         "UI should show cascade shape contribution at the horizon");
+        require_contains(ui_source, "Horizon wt",
+                         "UI should show far-field shape and surface contribution weights");
         require_contains(ui_source, "ocean_cascade_domain(ui.config, index)",
                          "UI should expose cascade wavelength domain diagnostics");
         require_contains(ui_source, "domain %.2f-%.2f m",

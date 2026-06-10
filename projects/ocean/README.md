@@ -62,6 +62,7 @@ coverage, patch counts, triangle load, cascade distance fades, and mesh-cell
 support while tuning the mesh.
 Headless captures can use
 `--ocean-cascade all|0|1|2|3|4`,
+`--ocean-camera-preset default|low|mid|high|close|overhead|wide`,
 `--ocean-surface-mode flat|curved-far`,
 `--ocean-planet-radius-scale 0.01..10.0`,
 `--ocean-curvature-start-ratio 0.0..1.0`,

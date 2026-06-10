@@ -101,6 +101,7 @@ struct RunConfig {
         std::uint32_t map_size = 0;
         std::string field_precision{};
         std::string surface_mode{};
+        std::string camera_preset{};
         int cascade = -1;
         int spectral_domains = -1;
         int terrain_fields = -1;

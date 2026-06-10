@@ -45,9 +45,19 @@ mkdir -p outputs/ocean-cascades
 
 ## Far-Field Review
 
-For now, use the GUI camera presets for `Mid`, `High`, and `Wide` far-field
-inspection. Keep the view, time, and feature preset fixed while changing one LOD
-or cascade setting at a time. The important failure modes are:
+Use these for repeatable zoomed-out stills:
+
+```sh
+mkdir -p outputs/ocean-far-field
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset mid --output outputs/ocean-far-field/final-mid.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --output outputs/ocean-far-field/final-high.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --output outputs/ocean-far-field/final-wide.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view lod --output outputs/ocean-far-field/lod-wide.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view foam-source --output outputs/ocean-far-field/foam-source-wide.png
+```
+
+Keep the view, time, and feature preset fixed while changing one LOD or cascade
+setting at a time. The important failure modes are:
 
 - visible FFT tile repetition in whitecaps or normal detail;
 - displacement carried by clipmap rings that are too coarse to represent it;

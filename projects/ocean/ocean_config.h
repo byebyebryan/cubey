@@ -446,6 +446,60 @@ ocean_field_precision_from_name(std::string_view name) {
     };
 }
 
+[[nodiscard]] inline float ocean_cascade_lod_smoothstep(float edge0, float edge1, float value) {
+    if (edge1 <= edge0) {
+        return value >= edge1 ? 1.0F : 0.0F;
+    }
+    const float t = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+    return t * t * (3.0F - 2.0F * t);
+}
+
+[[nodiscard]] inline float ocean_cascade_distance_lod_weight(const OceanConfig& config,
+                                                             std::uint32_t cascade,
+                                                             float camera_distance_m,
+                                                             float start_waves,
+                                                             float end_waves,
+                                                             float fade_scale) {
+    const float tile_length = std::max(ocean_cascade(config, cascade).tile_length, 0.001F);
+    const float scale = std::max(fade_scale, 0.001F);
+    const float start = tile_length * start_waves * scale;
+    const float end = tile_length * end_waves * scale;
+    return 1.0F - ocean_cascade_lod_smoothstep(start, std::max(end, start + 0.001F),
+                                               std::max(camera_distance_m, 0.0F));
+}
+
+[[nodiscard]] inline float ocean_cascade_mesh_lod_weight(const OceanConfig& config,
+                                                         std::uint32_t cascade,
+                                                         float mesh_cell_size_m) {
+    const float tile_length = std::max(ocean_cascade(config, cascade).tile_length, 0.001F);
+    const float full_cell = tile_length / kOceanCascadeMeshFullTileCellDivisor;
+    const float zero_cell = tile_length / kOceanCascadeMeshZeroTileCellDivisor;
+    return 1.0F - ocean_cascade_lod_smoothstep(full_cell, std::max(zero_cell, full_cell + 0.001F),
+                                               std::max(mesh_cell_size_m, 0.001F));
+}
+
+[[nodiscard]] inline float ocean_cascade_displacement_lod_weight(const OceanConfig& config,
+                                                                 std::uint32_t cascade,
+                                                                 float camera_distance_m,
+                                                                 float mesh_cell_size_m) {
+    return ocean_cascade_distance_lod_weight(config, cascade,
+                                             camera_distance_m,
+                                             kOceanCascadeDistanceFadeStartWaves,
+                                             kOceanCascadeDistanceFadeEndWaves,
+                                             config.shape_fade_distance_scale) *
+           ocean_cascade_mesh_lod_weight(config, cascade, mesh_cell_size_m);
+}
+
+[[nodiscard]] inline float ocean_cascade_surface_lod_weight(const OceanConfig& config,
+                                                            std::uint32_t cascade,
+                                                            float camera_distance_m) {
+    return ocean_cascade_distance_lod_weight(config, cascade,
+                                             camera_distance_m,
+                                             kOceanCascadeSurfaceFadeStartWaves,
+                                             kOceanCascadeSurfaceFadeEndWaves,
+                                             config.shape_fade_distance_scale);
+}
+
 [[nodiscard]] inline float ocean_cascade_domain_high_k(const OceanConfig& config,
                                                        std::uint32_t cascade) {
     const OceanCascadeConfig& cascade_config = ocean_cascade(config, cascade);
