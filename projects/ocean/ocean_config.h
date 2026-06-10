@@ -75,12 +75,12 @@ inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;
 inline constexpr std::uint32_t kOceanMaxMeshLodLevels = 6U;
 inline constexpr float kOceanPi = 3.14159265358979323846F;
 inline constexpr float kOceanCascadeSmallestWaveMultiplier = 4.0F;
-inline constexpr float kOceanCascadeDistanceFadeStartWaves = 10.0F;
-inline constexpr float kOceanCascadeDistanceFadeEndWaves = 34.0F;
-inline constexpr float kOceanCascadeSurfaceFadeStartWaves = 12.0F;
-inline constexpr float kOceanCascadeSurfaceFadeEndWaves = 40.0F;
-inline constexpr float kOceanCascadeMeshFullTileCellDivisor = 8.0F;
-inline constexpr float kOceanCascadeMeshZeroTileCellDivisor = 3.0F;
+inline constexpr float kOceanCascadeDistanceFadeStartWaves = 8.0F;
+inline constexpr float kOceanCascadeDistanceFadeEndWaves = 24.0F;
+inline constexpr float kOceanCascadeSurfaceFadeStartWaves = 10.0F;
+inline constexpr float kOceanCascadeSurfaceFadeEndWaves = 30.0F;
+inline constexpr float kOceanCascadeMeshFullTileCellDivisor = 10.0F;
+inline constexpr float kOceanCascadeMeshZeroTileCellDivisor = 4.0F;
 
 struct OceanCascadeConfig {
     float tile_length = 88.0F;

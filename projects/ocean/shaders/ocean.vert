@@ -45,10 +45,10 @@ layout(location = 8) out float frag_surface_curve_drop;
 const float OCEAN_MESH_TRANSITION_CELLS = 16.0;
 const float OCEAN_MESH_MAX_TRANSITION_RATIO = 0.35;
 const float OCEAN_SHAPE_ANTI_REPEAT_WEIGHT = 0.32;
-const float OCEAN_CASCADE_DISTANCE_FADE_START_WAVES = 10.0;
-const float OCEAN_CASCADE_DISTANCE_FADE_END_WAVES = 34.0;
-const float OCEAN_CASCADE_MESH_FULL_TILE_CELL_DIVISOR = 8.0;
-const float OCEAN_CASCADE_MESH_ZERO_TILE_CELL_DIVISOR = 3.0;
+const float OCEAN_CASCADE_DISTANCE_FADE_START_WAVES = 8.0;
+const float OCEAN_CASCADE_DISTANCE_FADE_END_WAVES = 24.0;
+const float OCEAN_CASCADE_MESH_FULL_TILE_CELL_DIVISOR = 10.0;
+const float OCEAN_CASCADE_MESH_ZERO_TILE_CELL_DIVISOR = 4.0;
 
 vec2 triangle_corner(uint vertex_in_cell) {
     if (vertex_in_cell == 0u) {

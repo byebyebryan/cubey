@@ -859,6 +859,14 @@ int main() {
                          "vertex shader should centralize cascade distance LOD weights");
         require_contains(vertex_shader, "float cascade_mesh_lod_weight",
                          "vertex shader should fade displacement by clipmap mesh cell size");
+        require_contains(vertex_shader, "OCEAN_CASCADE_DISTANCE_FADE_START_WAVES = 8.0",
+                         "vertex shader should mirror the C++ displacement LOD start");
+        require_contains(vertex_shader, "OCEAN_CASCADE_DISTANCE_FADE_END_WAVES = 24.0",
+                         "vertex shader should mirror the C++ displacement LOD end");
+        require_contains(vertex_shader, "OCEAN_CASCADE_MESH_FULL_TILE_CELL_DIVISOR = 10.0",
+                         "vertex shader should mirror the C++ mesh full-support threshold");
+        require_contains(vertex_shader, "OCEAN_CASCADE_MESH_ZERO_TILE_CELL_DIVISOR = 4.0",
+                         "vertex shader should mirror the C++ mesh zero-support threshold");
         require_contains(vertex_shader, "frag_mesh_cell_size",
                          "vertex shader should pass mesh cell size to fragment diagnostics");
         require_contains(vertex_shader, "float horizon_displacement_weight",
@@ -1177,6 +1185,10 @@ int main() {
                          "fragment shader should share distance LOD logic with displacement");
         require_contains(fragment_shader, "float cascade_mesh_lod_weight",
                          "fragment shader should reconstruct mesh-aware displacement LOD");
+        require_contains(fragment_shader, "OCEAN_CASCADE_SURFACE_FADE_START_WAVES = 10.0",
+                         "fragment shader should mirror the C++ surface LOD start");
+        require_contains(fragment_shader, "OCEAN_CASCADE_SURFACE_FADE_END_WAVES = 30.0",
+                         "fragment shader should mirror the C++ surface LOD end");
         require_contains(fragment_shader, "active_displacement_lod_weight",
                          "fragment shader should expose active cascade support in LOD debug view");
         require_contains(fragment_shader, "ocean_normal_fade_distance_scale()",
