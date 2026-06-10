@@ -37,6 +37,9 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view local-detail-features
 ./build/dev/projects/planet/planet --debug-view local-detail-final
 ./build/dev/projects/planet/planet --debug-view local-detail-horizon
+./build/dev/projects/planet/planet --debug-view atmosphere-transmittance
+./build/dev/projects/planet/planet --debug-view atmosphere-inscatter
+./build/dev/projects/planet/planet --debug-view atmosphere-path-length
 ./build/dev/projects/planet/planet --debug-view seams
 ./build/dev/projects/planet/planet --planet-atmosphere-mode physical
 ./build/dev/projects/planet/planet --planet-sky-backend sky-frame-legacy
@@ -251,11 +254,12 @@ the local sun elevation in surface mode, and blends between those references
 through the camera transition. This is a stable v1 proxy, not a true
 view-luminance histogram. Daylight, twilight, and night exposure targets remain
 separately tunable in the UI.
-Surface haze is intentionally exposed as live planet config: `Surface Haze`,
-`Haze Start`, and `Haze End` tune the analytic distance-haze fallback, while
-`Aerial Strength` blends the physical aerial perspective path. These are
-art-direction controls over the current v1 atmosphere approximation, not full
-Rayleigh/Mie density or LUT parameters.
+The `physical` atmosphere mode uses the shared atmosphere Rayleigh/Mie/ozone
+model for both sky and surface aerial perspective, so horizon and surface
+boundary behavior use one coefficient source. `Surface Haze`, `Haze Start`, and
+`Haze End` tune only the `analytic` distance-haze fallback; `Aerial Strength`
+blends the shared physical aerial perspective. Full LUT/transmittance caching
+and cloud/terrain shadows remain deferred.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it

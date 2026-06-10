@@ -47,11 +47,22 @@ frame and celestial inputs. Keep `analytic` atmosphere-mode captures and
 `sky-frame-legacy` backend captures around as comparison/debug fallbacks. The
 legacy `shared-atmosphere` and `local` backend strings remain accepted only as
 compatibility aliases.
+In `physical` mode, the planet surface shader and unified sky sample the same
+shared Rayleigh/Mie/ozone atmosphere model; `analytic` mode keeps the older
+distance-haze controls for fallback comparison.
 
 ```sh
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode analytic --output outputs/planet-atmo-analytic-dawn.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-atmo-physical-dawn.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --planet-atmosphere-mode physical --output outputs/planet-atmo-physical-backlit.png
+```
+
+Use these to inspect the surface aerial perspective segment directly:
+
+```sh
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --debug-view atmosphere-transmittance --output outputs/planet-atmo-transmittance.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --debug-view atmosphere-inscatter --output outputs/planet-atmo-inscatter.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --debug-view atmosphere-path-length --output outputs/planet-atmo-path-length.png
 ```
 
 Use these paired captures when comparing the unified atmosphere default against
