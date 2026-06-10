@@ -31,3 +31,5 @@ the detailed foundation notes under `docs/architecture/`.
   captures and optimization candidates.
 - [Ocean performance notes](ocean-performance.md): current spectral ocean FFT
   cost model, observed map-size tradeoffs, and optimization guardrails.
+- [Ocean visual capture recipes](ocean-visual-captures.md): repeatable ocean
+  debug, cascade isolation, far-field, and reference comparison matrix.

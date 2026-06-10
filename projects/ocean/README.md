@@ -122,3 +122,6 @@ Performance context for the current spectral FFT path is captured in
 disabled cascades no longer allocate or dispatch full wave resources, and
 `256` currently loses too much wave, normal, and foam detail for the primary
 presentation path.
+
+Repeatable visual review commands are captured in
+[Ocean visual capture recipes](../../docs/notes/ocean-visual-captures.md).
