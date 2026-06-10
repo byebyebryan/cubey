@@ -41,6 +41,9 @@ void test_atmosphere_environment_packs_frame_uniforms() {
     config.time_of_day.latitude_degrees = 42.0F;
     config.camera_altitude_km = 2.0F;
     config.render_moon_disk = false;
+    config.rayleigh_density_scale = 1.25F;
+    config.mie_density_scale = 0.75F;
+    config.ozone_density_scale = 1.50F;
 
     const cubey::math::Vec3 sun = cubey::render::atmosphere_environment_sun_direction(config);
     require_near(sun.x, std::cos(cubey::render::atmosphere_environment_degrees_to_radians(30.0F)),
@@ -92,6 +95,12 @@ void test_atmosphere_environment_packs_frame_uniforms() {
             "atmosphere environment should pack the observer latitude sine");
     require(uniforms.render_options.x == 0.0F,
             "atmosphere environment should default to ground rendering");
+    require_near(uniforms.rayleigh.x, config.rayleigh_scattering.x * 1.25F, 0.0001F,
+                 "atmosphere environment should pack scaled Rayleigh scattering");
+    require_near(uniforms.mie.x, config.mie_scattering * 0.75F, 0.0001F,
+                 "atmosphere environment should pack scaled Mie scattering");
+    require_near(uniforms.ozone.y, config.ozone_absorption.y * 1.50F, 0.0001F,
+                 "atmosphere environment should pack scaled ozone absorption");
 
     config.ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
     const cubey::render::AtmosphereEnvironmentFrameUniforms sky_only_uniforms =

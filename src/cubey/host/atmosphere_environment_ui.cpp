@@ -14,6 +14,38 @@ void mark_changed(bool changed, bool& dirty) {
 
 } // namespace
 
+bool draw_atmosphere_environment_look_controls(
+    cubey::render::AtmosphereEnvironmentConfig& environment,
+    AtmosphereEnvironmentLookUiConfig config) {
+    bool changed = false;
+    if (const ScopedImGuiGroup group{
+            config.label,
+            {.default_open = config.default_open, .level = config.level, .help = config.help}};
+        group) {
+        const ScopedImGuiId section_id(config.label);
+        mark_changed(imgui_slider_float("Rayleigh", &environment.rayleigh_density_scale, 0.0F,
+                                        2.0F, "%.2f",
+                                        "Molecular scattering density multiplier."),
+                     changed);
+        mark_changed(imgui_slider_float("Mie", &environment.mie_density_scale, 0.0F, 3.0F,
+                                        "%.2f", "Aerosol scattering density multiplier."),
+                     changed);
+        mark_changed(imgui_slider_float("Ozone", &environment.ozone_density_scale, 0.0F, 2.0F,
+                                        "%.2f", "Ozone absorption density multiplier."),
+                     changed);
+        mark_changed(imgui_slider_float("Twilight", &environment.night_sky.twilight_strength,
+                                        0.0F, 4.0F, "%.2f",
+                                        "Brightness of the twilight band."),
+                     changed);
+        mark_changed(imgui_slider_float("Horizon Warmth",
+                                        &environment.night_sky.twilight_horizon_warmth, 0.0F,
+                                        2.0F, "%.2f",
+                                        "Warm color bias near the twilight horizon."),
+                     changed);
+    }
+    return changed;
+}
+
 bool draw_atmosphere_environment_controls(cubey::AtmosphereEnvironmentRunState& atmosphere,
                                           AtmosphereEnvironmentUiConfig config) {
     bool changed = false;
@@ -68,6 +100,8 @@ bool draw_atmosphere_environment_controls(cubey::AtmosphereEnvironmentRunState& 
                          changed);
         }
 
+        mark_changed(draw_atmosphere_environment_look_controls(environment), changed);
+
         if (const ScopedImGuiGroup night_group{
                 "Night sky",
                 {.default_open = false,
@@ -75,9 +109,6 @@ bool draw_atmosphere_environment_controls(cubey::AtmosphereEnvironmentRunState& 
                  .help = "Night-sky visibility used by the atmosphere background."}};
             night_group) {
             const ScopedImGuiId night_id("Night sky");
-            mark_changed(imgui_slider_float("Twilight", &environment.night_sky.twilight_strength,
-                                            0.0F, 4.0F, "%.2f", "Brightness of the twilight band."),
-                         changed);
             mark_changed(imgui_slider_float("Stars", &environment.night_sky.star_intensity, 0.0F,
                                             4.0F, "%.2f", "Brightness of procedural stars."),
                          changed);

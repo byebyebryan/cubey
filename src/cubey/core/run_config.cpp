@@ -167,8 +167,14 @@ RunConfig parse_run_config(int argc, char** argv) {
     if (config.atmosphere.camera_altitude_km < 0.0F) {
         throw std::runtime_error("atmosphere camera altitude must be nonnegative");
     }
+    if (config.atmosphere.rayleigh_scale < 0.0F) {
+        throw std::runtime_error("atmosphere Rayleigh scale must be nonnegative");
+    }
     if (config.atmosphere.mie_scale < 0.0F) {
         throw std::runtime_error("atmosphere Mie scale must be nonnegative");
+    }
+    if (config.atmosphere.ozone_scale < 0.0F) {
+        throw std::runtime_error("atmosphere ozone scale must be nonnegative");
     }
     if (config.atmosphere.time_hours < 0.0F || config.atmosphere.time_hours > 24.0F) {
         throw std::runtime_error("atmosphere time hours must be in [0, 24]");

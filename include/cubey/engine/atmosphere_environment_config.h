@@ -35,6 +35,9 @@ atmosphere_environment_run_config_time_playing(const RunConfig::AtmosphereOption
 [[nodiscard]] AtmosphereEnvironmentRunState
 atmosphere_environment_run_state_from_config(const RunConfig::AtmosphereOptions& atmosphere,
                                              const AtmosphereEnvironmentRunDefaults& defaults = {});
+void apply_atmosphere_environment_look_options(
+    render::AtmosphereEnvironmentConfig& environment,
+    const RunConfig::AtmosphereOptions& atmosphere);
 void atmosphere_environment_resolve_run_state(AtmosphereEnvironmentRunState& state);
 [[nodiscard]] bool atmosphere_environment_advance_time(AtmosphereEnvironmentRunState& state,
                                                        double delta_seconds);

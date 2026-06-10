@@ -44,8 +44,8 @@ struct AtmosphereEnvironmentSolarPosition {
 };
 
 struct AtmosphereEnvironmentNightSky {
-    float twilight_strength = 1.0F;
-    float twilight_horizon_warmth = 1.0F;
+    float twilight_strength = 1.10F;
+    float twilight_horizon_warmth = 0.72F;
     float star_intensity = 1.0F;
     float star_density = 0.65F;
     float milky_way_intensity = 0.75F;
@@ -82,11 +82,12 @@ struct AtmosphereEnvironmentConfig {
     float mie_extinction = 0.004400F;
     float mie_scale_height_km = 1.2F;
     float mie_anisotropy = 0.80F;
-    float mie_density_scale = 1.0F;
+    float mie_density_scale = 0.85F;
 
     math::Vec3 ozone_absorption{0.000650F, 0.001881F, 0.000085F};
     float ozone_center_altitude_km = 25.0F;
     float ozone_half_width_km = 15.0F;
+    float ozone_density_scale = 1.10F;
 
     float ground_albedo = 0.10F;
     float sun_angular_radius = 0.004675F;

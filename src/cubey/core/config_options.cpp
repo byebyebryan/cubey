@@ -90,7 +90,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 177> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 179> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -420,9 +420,16 @@ constexpr std::array<ConfigOptionDescriptor, 177> kRunConfigOptions{
     option(RunConfigOptionId::AtmosphereCameraAltitude, "atmosphere.camera_altitude_km",
            "--camera-altitude-km", "Camera Altitude", "Atmosphere",
            "Observer altitude above sea level.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::AtmosphereRayleighScale, "atmosphere.rayleigh_scale",
+           "--rayleigh-scale", "Rayleigh Scale", "Atmosphere",
+           "Rayleigh molecular scattering density multiplier.", ConfigOptionType::Float,
+           min_range(0.0)),
     option(RunConfigOptionId::AtmosphereMieScale, "atmosphere.mie_scale", "--mie-scale",
            "Mie Scale", "Atmosphere", "Mie aerosol density multiplier.", ConfigOptionType::Float,
            min_range(0.0)),
+    option(RunConfigOptionId::AtmosphereOzoneScale, "atmosphere.ozone_scale", "--ozone-scale",
+           "Ozone Scale", "Atmosphere", "Ozone absorption density multiplier.",
+           ConfigOptionType::Float, min_range(0.0)),
     option(RunConfigOptionId::AtmosphereTimeHours, "atmosphere.time_hours", "--time-hours",
            "Time Hours", "Atmosphere", "Solar-clock time in hours.", ConfigOptionType::Float,
            bounded_range(0.0, 24.0)),
@@ -1051,8 +1058,12 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.atmosphere.sun_azimuth_degrees);
     case RunConfigOptionId::AtmosphereCameraAltitude:
         return optional_float(config.atmosphere.camera_altitude_km);
+    case RunConfigOptionId::AtmosphereRayleighScale:
+        return optional_float(config.atmosphere.rayleigh_scale);
     case RunConfigOptionId::AtmosphereMieScale:
         return optional_float(config.atmosphere.mie_scale);
+    case RunConfigOptionId::AtmosphereOzoneScale:
+        return optional_float(config.atmosphere.ozone_scale);
     case RunConfigOptionId::AtmosphereTimeHours:
         return optional_float(config.atmosphere.time_hours);
     case RunConfigOptionId::AtmosphereDayOfYear:
@@ -1427,7 +1438,9 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::AtmosphereOptions& 
     adapter.writeField<float>("sun_elevation_degrees", options.sun_elevation_degrees);
     adapter.writeField<float>("sun_azimuth_degrees", options.sun_azimuth_degrees);
     adapter.writeField<float>("camera_altitude_km", options.camera_altitude_km);
+    adapter.writeField<float>("rayleigh_scale", options.rayleigh_scale);
     adapter.writeField<float>("mie_scale", options.mie_scale);
+    adapter.writeField<float>("ozone_scale", options.ozone_scale);
     adapter.writeField<float>("time_hours", options.time_hours);
     adapter.writeField<float>("day_of_year", options.day_of_year);
     adapter.writeField<float>("latitude_degrees", options.latitude_degrees);
@@ -1459,7 +1472,9 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::AtmosphereOptions& opti
     adapter.readField<float>("sun_elevation_degrees", options.sun_elevation_degrees);
     adapter.readField<float>("sun_azimuth_degrees", options.sun_azimuth_degrees);
     adapter.readField<float>("camera_altitude_km", options.camera_altitude_km);
+    adapter.readField<float>("rayleigh_scale", options.rayleigh_scale);
     adapter.readField<float>("mie_scale", options.mie_scale);
+    adapter.readField<float>("ozone_scale", options.ozone_scale);
     adapter.readField<float>("time_hours", options.time_hours);
     adapter.readField<float>("day_of_year", options.day_of_year);
     adapter.readField<float>("latitude_degrees", options.latitude_degrees);
@@ -1960,9 +1975,17 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.atmosphere.camera_altitude_km = parse_config_float(value, option);
         validate_range(config.atmosphere.camera_altitude_km, option);
         break;
+    case RunConfigOptionId::AtmosphereRayleighScale:
+        config.atmosphere.rayleigh_scale = parse_config_float(value, option);
+        validate_range(config.atmosphere.rayleigh_scale, option);
+        break;
     case RunConfigOptionId::AtmosphereMieScale:
         config.atmosphere.mie_scale = parse_config_float(value, option);
         validate_range(config.atmosphere.mie_scale, option);
+        break;
+    case RunConfigOptionId::AtmosphereOzoneScale:
+        config.atmosphere.ozone_scale = parse_config_float(value, option);
+        validate_range(config.atmosphere.ozone_scale, option);
         break;
     case RunConfigOptionId::AtmosphereTimeHours:
         config.atmosphere.time_hours = parse_config_float(value, option);

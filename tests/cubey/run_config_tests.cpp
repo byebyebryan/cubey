@@ -316,6 +316,9 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.water_surface",
         "atmosphere.time_of_day_mode",
         "atmosphere.sun_elevation_degrees",
+        "atmosphere.rayleigh_scale",
+        "atmosphere.mie_scale",
+        "atmosphere.ozone_scale",
         "atmosphere.time_speed_hours_per_second",
         "atmosphere.auto_exposure",
         "atmosphere.moon",
@@ -732,8 +735,12 @@ void test_run_config_parses_atmosphere_options() {
     std::string azimuth_value = "-28.0";
     std::string altitude_flag = "--camera-altitude-km";
     std::string altitude_value = "2.25";
+    std::string rayleigh_flag = "--rayleigh-scale";
+    std::string rayleigh_value = "1.15";
     std::string mie_flag = "--mie-scale";
     std::string mie_value = "1.75";
+    std::string ozone_flag = "--ozone-scale";
+    std::string ozone_value = "1.25";
     std::string mode_flag = "--time-of-day-mode";
     std::string mode_value = "manual";
     std::string time_flag = "--time-hours";
@@ -767,7 +774,7 @@ void test_run_config_parses_atmosphere_options() {
     std::string moon_size_scale_flag = "--moon-size-scale";
     std::string moon_size_scale_value = "1.8";
     std::string no_moon_flag = "--no-moon";
-    std::array<char*, 44> argv{program.data(),
+    std::array<char*, 48> argv{program.data(),
                                preset_flag.data(),
                                preset_value.data(),
                                elevation_flag.data(),
@@ -776,8 +783,12 @@ void test_run_config_parses_atmosphere_options() {
                                azimuth_value.data(),
                                altitude_flag.data(),
                                altitude_value.data(),
+                               rayleigh_flag.data(),
+                               rayleigh_value.data(),
                                mie_flag.data(),
                                mie_value.data(),
+                               ozone_flag.data(),
+                               ozone_value.data(),
                                mode_flag.data(),
                                mode_value.data(),
                                time_flag.data(),
@@ -820,7 +831,10 @@ void test_run_config_parses_atmosphere_options() {
     require(config.atmosphere.sun_azimuth_degrees == -28.0F, "run config should parse sun azimuth");
     require(config.atmosphere.camera_altitude_km == 2.25F,
             "run config should parse camera altitude");
+    require(config.atmosphere.rayleigh_scale == 1.15F,
+            "run config should parse Rayleigh scale");
     require(config.atmosphere.mie_scale == 1.75F, "run config should parse Mie scale");
+    require(config.atmosphere.ozone_scale == 1.25F, "run config should parse ozone scale");
     require(config.atmosphere.time_of_day_mode == "manual",
             "run config should parse atmosphere time mode");
     require(config.atmosphere.time_hours == 18.5F, "run config should parse time hours");

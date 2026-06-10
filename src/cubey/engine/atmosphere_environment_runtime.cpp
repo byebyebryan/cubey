@@ -50,6 +50,7 @@ bool environment_equal(const render::AtmosphereEnvironmentConfig& lhs,
            vec3_equal(lhs.ozone_absorption, rhs.ozone_absorption) &&
            lhs.ozone_center_altitude_km == rhs.ozone_center_altitude_km &&
            lhs.ozone_half_width_km == rhs.ozone_half_width_km &&
+           lhs.ozone_density_scale == rhs.ozone_density_scale &&
            lhs.ground_albedo == rhs.ground_albedo &&
            lhs.sun_angular_radius == rhs.sun_angular_radius &&
            lhs.sun_elevation_degrees == rhs.sun_elevation_degrees &&

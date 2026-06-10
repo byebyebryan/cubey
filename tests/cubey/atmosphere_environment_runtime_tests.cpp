@@ -146,6 +146,48 @@ void test_atmosphere_environment_run_state_resolves_control_mutations() {
                  "shared resolver should clear resolved exposure when auto exposure is disabled");
 }
 
+void test_atmosphere_environment_look_options_apply_without_time_or_sun() {
+    cubey::render::AtmosphereEnvironmentConfig environment;
+    environment.camera_altitude_km = 3.0F;
+    environment.sun_elevation_degrees = 24.0F;
+    environment.sun_azimuth_degrees = -15.0F;
+    environment.time_of_day.time_hours = 8.0F;
+
+    cubey::RunConfig::AtmosphereOptions atmosphere;
+    atmosphere.camera_altitude_km = 12.0F;
+    atmosphere.sun_elevation_degrees = 4.0F;
+    atmosphere.time_hours = 16.0F;
+    atmosphere.rayleigh_scale = 1.2F;
+    atmosphere.mie_scale = 0.8F;
+    atmosphere.ozone_scale = 1.4F;
+    atmosphere.twilight_strength = 0.7F;
+    atmosphere.twilight_horizon_warmth = 0.6F;
+    atmosphere.moonlight_intensity = 1.5F;
+    atmosphere.moon = 0;
+
+    cubey::apply_atmosphere_environment_look_options(environment, atmosphere);
+
+    require_near(environment.rayleigh_density_scale, 1.2F, 0.0001F,
+                 "shared atmosphere look helper should apply Rayleigh scale");
+    require_near(environment.mie_density_scale, 0.8F, 0.0001F,
+                 "shared atmosphere look helper should apply Mie scale");
+    require_near(environment.ozone_density_scale, 1.4F, 0.0001F,
+                 "shared atmosphere look helper should apply ozone scale");
+    require_near(environment.night_sky.twilight_strength, 0.7F, 0.0001F,
+                 "shared atmosphere look helper should apply twilight strength");
+    require_near(environment.night_sky.twilight_horizon_warmth, 0.6F, 0.0001F,
+                 "shared atmosphere look helper should apply twilight warmth");
+    require_near(environment.moon.moonlight_intensity, 1.5F, 0.0001F,
+                 "shared atmosphere look helper should apply moonlight");
+    require(!environment.moon.enabled, "shared atmosphere look helper should apply moon enable");
+    require_near(environment.camera_altitude_km, 3.0F, 0.0001F,
+                 "shared atmosphere look helper should not apply camera altitude");
+    require_near(environment.sun_elevation_degrees, 24.0F, 0.0001F,
+                 "shared atmosphere look helper should not apply manual sun elevation");
+    require_near(environment.time_of_day.time_hours, 8.0F, 0.0001F,
+                 "shared atmosphere look helper should not apply solar time");
+}
+
 void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment() {
     cubey::AtmosphereEnvironmentRuntime runtime;
     cubey::render::AtmosphereEnvironmentConfig environment;

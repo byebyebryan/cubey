@@ -51,8 +51,29 @@ void apply_atmosphere_render_options(render::AtmosphereEnvironmentConfig& enviro
     if (run_config_float_is_set(atmosphere.camera_altitude_km)) {
         environment.camera_altitude_km = atmosphere.camera_altitude_km;
     }
+    apply_atmosphere_environment_look_options(environment, atmosphere);
+}
+
+void resolve_solar_sun(render::AtmosphereEnvironmentConfig& environment) {
+    const render::AtmosphereEnvironmentSolarPosition solar =
+        render::atmosphere_environment_solar_position(environment.time_of_day);
+    environment.sun_elevation_degrees = solar.elevation_degrees;
+    environment.sun_azimuth_degrees = solar.azimuth_degrees;
+}
+
+} // namespace
+
+void apply_atmosphere_environment_look_options(
+    render::AtmosphereEnvironmentConfig& environment,
+    const RunConfig::AtmosphereOptions& atmosphere) {
+    if (run_config_float_is_set(atmosphere.rayleigh_scale)) {
+        environment.rayleigh_density_scale = atmosphere.rayleigh_scale;
+    }
     if (run_config_float_is_set(atmosphere.mie_scale)) {
         environment.mie_density_scale = atmosphere.mie_scale;
+    }
+    if (run_config_float_is_set(atmosphere.ozone_scale)) {
+        environment.ozone_density_scale = atmosphere.ozone_scale;
     }
     if (run_config_float_is_set(atmosphere.twilight_strength)) {
         environment.night_sky.twilight_strength = atmosphere.twilight_strength;
@@ -91,15 +112,6 @@ void apply_atmosphere_render_options(render::AtmosphereEnvironmentConfig& enviro
         environment.moon.enabled = atmosphere.moon == 1;
     }
 }
-
-void resolve_solar_sun(render::AtmosphereEnvironmentConfig& environment) {
-    const render::AtmosphereEnvironmentSolarPosition solar =
-        render::atmosphere_environment_solar_position(environment.time_of_day);
-    environment.sun_elevation_degrees = solar.elevation_degrees;
-    environment.sun_azimuth_degrees = solar.azimuth_degrees;
-}
-
-} // namespace
 
 bool atmosphere_environment_run_config_uses_solar_time(
     const RunConfig::AtmosphereOptions& atmosphere) {

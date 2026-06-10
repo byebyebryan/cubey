@@ -405,9 +405,9 @@ AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
             },
         .ozone =
             {
-                config.ozone_absorption.x,
-                config.ozone_absorption.y,
-                config.ozone_absorption.z,
+                config.ozone_absorption.x * config.ozone_density_scale,
+                config.ozone_absorption.y * config.ozone_density_scale,
+                config.ozone_absorption.z * config.ozone_density_scale,
                 config.ozone_center_altitude_km,
             },
         .sun_direction_radius =
