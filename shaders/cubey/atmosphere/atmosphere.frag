@@ -4,8 +4,6 @@
 #include "cubey/atmosphere.glsl"
 #include "cubey/color_space.glsl"
 
-const int ATMOSPHERE_VIEW_SAMPLE_COUNT = 16;
-const int ATMOSPHERE_LIGHT_SAMPLE_COUNT = 8;
 const float ATMOSPHERE_SUN_INTENSITY = 22.0;
 const float ATMOSPHERE_MIN_TWILIGHT_SOFTNESS = 0.022;
 
@@ -36,40 +34,10 @@ layout(set = 0, binding = 2) uniform samplerCube night_sky_atlas;
 layout(location = 0) in vec2 frag_ndc;
 layout(location = 0) out vec4 out_color;
 
-struct OpticalDepth {
-    float rayleigh;
-    float mie;
-    float ozone;
-};
-
-struct AtmosphereSample {
-    vec3 color;
-    vec3 rayleigh;
-    vec3 mie;
-    vec3 transmittance;
-    OpticalDepth optical_depth;
-};
-
-OpticalDepth optical_depth_zero() {
-    return OpticalDepth(0.0, 0.0, 0.0);
-}
-
-OpticalDepth optical_depth_add(OpticalDepth lhs, OpticalDepth rhs) {
-    return OpticalDepth(lhs.rayleigh + rhs.rayleigh, lhs.mie + rhs.mie, lhs.ozone + rhs.ozone);
-}
-
-OpticalDepth optical_depth_scale(OpticalDepth value, float scale) {
-    return OpticalDepth(value.rayleigh * scale, value.mie * scale, value.ozone * scale);
-}
-
 vec2 ray_sphere_intersection(vec3 ray_origin, vec3 ray_direction, vec3 sphere_center,
                              float sphere_radius) {
     return cubey_atmosphere_ray_sphere_intersection(ray_origin, ray_direction, sphere_center,
                                                     sphere_radius);
-}
-
-float altitude_at(vec3 position, vec3 planet_center) {
-    return max(length(position - planet_center) - atmosphere.radii_ground.x, 0.0);
 }
 
 vec3 atmosphere_ray_origin() {
@@ -88,25 +56,28 @@ vec3 atmosphere_camera_up(vec3 ray_origin, vec3 planet_center) {
     return normalize(up);
 }
 
-float ozone_density(float altitude_km) {
-    float center = atmosphere.ozone.w;
-    float half_width = atmosphere.atmosphere_options.x;
-    return max(1.0 - abs(altitude_km - center) / half_width, 0.0);
+CubeyAtmosphereMedium atmosphere_medium(vec3 planet_center) {
+    return CubeyAtmosphereMedium(
+        planet_center,
+        atmosphere.radii_ground.x,
+        atmosphere.radii_ground.y,
+        atmosphere.rayleigh.xyz,
+        atmosphere.rayleigh.w,
+        atmosphere.mie.x,
+        atmosphere.mie.y,
+        atmosphere.mie.z,
+        atmosphere.mie.w,
+        atmosphere.ozone.xyz,
+        atmosphere.ozone.w,
+        atmosphere.atmosphere_options.x,
+        normalize(atmosphere.sun_direction_radius.xyz),
+        atmosphere.sun_direction_radius.w,
+        vec3(ATMOSPHERE_SUN_INTENSITY),
+        ATMOSPHERE_MIN_TWILIGHT_SOFTNESS);
 }
 
-OpticalDepth sample_density(vec3 position, vec3 planet_center) {
-    float altitude = altitude_at(position, planet_center);
-    return OpticalDepth(
-        exp(-altitude / atmosphere.rayleigh.w),
-        exp(-altitude / atmosphere.mie.z),
-        ozone_density(altitude)
-    );
-}
-
-vec3 transmittance_from_depth(OpticalDepth depth) {
-    return cubey_atmosphere_transmittance_from_depth(
-        atmosphere.rayleigh.xyz, atmosphere.mie.y, atmosphere.ozone.xyz, depth.rayleigh, depth.mie,
-        depth.ozone);
+vec3 transmittance_from_depth(CubeyAtmosphereOpticalDepth depth, vec3 planet_center) {
+    return cubey_atmosphere_depth_transmittance(atmosphere_medium(planet_center), depth);
 }
 
 vec3 safe_horizontal_direction(vec3 direction, vec3 fallback) {
@@ -124,38 +95,10 @@ vec3 safe_horizontal_direction(vec3 direction, vec3 fallback) {
     return vec3(0.0, 0.0, 1.0);
 }
 
-OpticalDepth integrate_optical_depth(vec3 origin, vec3 direction, float ray_length,
-                                     vec3 planet_center, int sample_count) {
-    if (ray_length <= 0.0) {
-        return optical_depth_zero();
-    }
-    int clamped_sample_count = clamp(sample_count, 1, ATMOSPHERE_LIGHT_SAMPLE_COUNT);
-    OpticalDepth optical_depth = optical_depth_zero();
-    float step_length = ray_length / float(clamped_sample_count);
-    for (int i = 0; i < ATMOSPHERE_LIGHT_SAMPLE_COUNT; ++i) {
-        if (i >= clamped_sample_count) {
-            break;
-        }
-        float t = (float(i) + 0.5) * step_length;
-        optical_depth =
-            optical_depth_add(optical_depth, optical_depth_scale(sample_density(
-                                  origin + direction * t, planet_center), step_length));
-    }
-    return optical_depth;
-}
-
-float rayleigh_phase(float cos_theta) {
-    return cubey_atmosphere_rayleigh_phase(cos_theta);
-}
-
-float mie_phase(float cos_theta) {
-    return cubey_atmosphere_mie_phase(cos_theta, atmosphere.mie.w);
-}
-
-float sun_visibility(vec3 sample_position, vec3 sun_direction, vec3 planet_center) {
-    return cubey_atmosphere_limb_visibility(
-        sample_position, sun_direction, planet_center, atmosphere.radii_ground.x,
-        atmosphere.sun_direction_radius.w, ATMOSPHERE_MIN_TWILIGHT_SOFTNESS);
+CubeyAtmosphereOpticalDepth integrate_optical_depth(vec3 origin, vec3 direction, float ray_length,
+                                                    vec3 planet_center, int sample_count) {
+    return cubey_atmosphere_integrate_optical_depth(atmosphere_medium(planet_center), origin,
+                                                   direction, 0.0, ray_length, sample_count);
 }
 
 float ground_sun_visibility(vec3 normal, vec3 sun_direction) {
@@ -318,8 +261,10 @@ float moon_washout(vec3 ray_direction, float base_strength, float lobe_strength,
     float moon_strength = atmosphere.moon_options.x * atmosphere.moon_options.y *
                           atmosphere.moon_options.w;
     float moon_angle = acos(clamp(dot(ray_direction, moon_direction), -1.0, 1.0));
-    float moon_lobe = 1.0 - smoothstep(atmosphere.moon_direction_radius.w * 8.0,
-                                       atmosphere.moon_direction_radius.w * 90.0, moon_angle);
+    float moon_radius = max(atmosphere.moon_direction_radius.w, 0.0001);
+    float lobe_inner = max(moon_radius * 1.8, moon_radius + fwidth(moon_angle) * 2.0);
+    float lobe_outer = moon_radius * 12.0;
+    float moon_lobe = 1.0 - smoothstep(lobe_inner, lobe_outer, moon_angle);
     return clamp(1.0 - moon_strength * (base_strength + moon_lobe * lobe_strength),
                  min_visibility, 1.0);
 }
@@ -546,72 +491,10 @@ vec3 night_sky_radiance(vec3 ray_direction, vec3 sun_direction) {
            milky_way_radiance(ray_direction, sun_direction);
 }
 
-AtmosphereSample integrate_atmosphere(vec3 ray_origin, vec3 ray_direction, float ray_start,
-                                      float ray_end, vec3 planet_center) {
-    AtmosphereSample result;
-    result.color = vec3(0.0);
-    result.rayleigh = vec3(0.0);
-    result.mie = vec3(0.0);
-    result.transmittance = vec3(1.0);
-    result.optical_depth = optical_depth_zero();
-
-    float ray_length = max(ray_end - ray_start, 0.0);
-    if (ray_length <= 0.0) {
-        return result;
-    }
-
-    vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
-    float cos_theta = dot(ray_direction, sun_direction);
-    float rayleigh_phase_value = rayleigh_phase(cos_theta);
-    float mie_phase_value = mie_phase(cos_theta);
-    float step_length = ray_length / float(ATMOSPHERE_VIEW_SAMPLE_COUNT);
-
-    for (int i = 0; i < ATMOSPHERE_VIEW_SAMPLE_COUNT; ++i) {
-        float t = ray_start + (float(i) + 0.5) * step_length;
-        vec3 sample_position = ray_origin + ray_direction * t;
-        OpticalDepth density = sample_density(sample_position, planet_center);
-        result.optical_depth =
-            optical_depth_add(result.optical_depth, optical_depth_scale(density, step_length));
-
-        vec2 sun_atmosphere_hit = ray_sphere_intersection(sample_position, sun_direction,
-                                                          planet_center,
-                                                          atmosphere.radii_ground.y);
-        float sun_ray_length = max(sun_atmosphere_hit.y, 0.0);
-        float solar_visibility = sun_visibility(sample_position, sun_direction, planet_center);
-        if (solar_visibility <= 0.0001) {
-            continue;
-        }
-
-        OpticalDepth light_depth = integrate_optical_depth(
-            sample_position, sun_direction, sun_ray_length, planet_center,
-            ATMOSPHERE_LIGHT_SAMPLE_COUNT);
-        OpticalDepth total_depth = optical_depth_add(result.optical_depth, light_depth);
-        vec3 transmittance = transmittance_from_depth(total_depth);
-        vec3 rayleigh_scattering =
-            density.rayleigh * atmosphere.rayleigh.xyz * rayleigh_phase_value;
-        vec3 mie_scattering = density.mie * vec3(atmosphere.mie.x) * mie_phase_value;
-
-        result.rayleigh += transmittance * rayleigh_scattering * step_length * solar_visibility;
-        result.mie += transmittance * mie_scattering * step_length * solar_visibility;
-    }
-
-    result.rayleigh *= ATMOSPHERE_SUN_INTENSITY;
-    result.mie *= ATMOSPHERE_SUN_INTENSITY;
-    result.color = result.rayleigh + result.mie;
-    result.transmittance = transmittance_from_depth(result.optical_depth);
-    return result;
-}
-
-float nearest_positive_ground_hit(vec3 ray_origin, vec3 ray_direction, vec3 planet_center) {
-    vec2 ground_hit = ray_sphere_intersection(ray_origin, ray_direction, planet_center,
-                                              atmosphere.radii_ground.x);
-    if (ground_hit.x > 0.0) {
-        return ground_hit.x;
-    }
-    if (ground_hit.y > 0.0) {
-        return ground_hit.y;
-    }
-    return -1.0;
+CubeyAtmosphereSample integrate_atmosphere(vec3 ray_origin, vec3 ray_direction, float ray_start,
+                                           float ray_end, vec3 planet_center) {
+    return cubey_atmosphere_integrate_ray(atmosphere_medium(planet_center), ray_origin,
+                                          ray_direction, ray_start, ray_end);
 }
 
 vec3 sun_disk_luminance(vec3 ray_origin, vec3 ray_direction, vec3 planet_center) {
@@ -625,9 +508,9 @@ vec3 sun_disk_luminance(vec3 ray_origin, vec3 ray_direction, vec3 planet_center)
     vec2 atmosphere_hit = ray_sphere_intersection(ray_origin, ray_direction, planet_center,
                                                   atmosphere.radii_ground.y);
     float ray_end = max(atmosphere_hit.y, 0.0);
-    OpticalDepth depth = integrate_optical_depth(ray_origin, ray_direction, ray_end,
-                                                planet_center, ATMOSPHERE_LIGHT_SAMPLE_COUNT);
-    return transmittance_from_depth(depth) * disk * ATMOSPHERE_SUN_INTENSITY;
+    CubeyAtmosphereOpticalDepth depth = integrate_optical_depth(
+        ray_origin, ray_direction, ray_end, planet_center, CUBEY_ATMOSPHERE_LIGHT_SAMPLE_COUNT);
+    return transmittance_from_depth(depth, planet_center) * disk * ATMOSPHERE_SUN_INTENSITY;
 }
 
 struct MoonSurfaceSample {
@@ -697,10 +580,10 @@ vec3 moon_disk_radiance(vec3 ray_origin, vec3 ray_direction, vec3 sun_direction,
     vec2 atmosphere_hit = ray_sphere_intersection(ray_origin, ray_direction, planet_center,
                                                   atmosphere.radii_ground.y);
     float ray_end = max(atmosphere_hit.y, 0.0);
-    OpticalDepth depth = integrate_optical_depth(ray_origin, ray_direction, ray_end,
-                                                planet_center, ATMOSPHERE_LIGHT_SAMPLE_COUNT);
+    CubeyAtmosphereOpticalDepth depth = integrate_optical_depth(
+        ray_origin, ray_direction, ray_end, planet_center, CUBEY_ATMOSPHERE_LIGHT_SAMPLE_COUNT);
     vec3 moon_color = cubey_srgb_to_linear(vec3(0.78, 0.84, 1.0));
-    return transmittance_from_depth(depth) * moon_color * surface.albedo * surface_light *
+    return transmittance_from_depth(depth, planet_center) * moon_color * surface.albedo * surface_light *
            rim_antialias * limb_softening * opposition_boost * atmosphere.moon_options.y * 0.18;
 }
 
@@ -814,14 +697,14 @@ vec3 render_aerial_perspective_debug(vec3 ray_origin, vec3 ray_direction, vec3 p
     float max_t = max(atmosphere_hit.y, 0.0);
     float ramp = smoothstep(-1.0, 1.0, frag_ndc.x);
     float scene_t = min(max_t, mix(8.0, 320.0, ramp));
-    AtmosphereSample atmosphere_sample = integrate_atmosphere(ray_origin, ray_direction, 0.0,
-                                                              scene_t, planet_center);
+    CubeyAtmosphereSample atmosphere_sample = integrate_atmosphere(ray_origin, ray_direction, 0.0,
+                                                                   scene_t, planet_center);
     vec3 scene_color = cubey_srgb_to_linear(mix(vec3(0.16, 0.18, 0.14),
                                                 vec3(0.55, 0.55, 0.50), ramp));
     return scene_color * atmosphere_sample.transmittance + atmosphere_sample.color;
 }
 
-vec3 debug_optical_depth(OpticalDepth depth) {
+vec3 debug_optical_depth(CubeyAtmosphereOpticalDepth depth) {
     return vec3(depth.rayleigh * 0.020, depth.mie * 0.080, depth.ozone * 0.035);
 }
 
@@ -871,10 +754,11 @@ void main() {
         return;
     }
 
-    vec2 atmosphere_hit = ray_sphere_intersection(ray_origin, ray_direction, planet_center,
-                                                  atmosphere.radii_ground.y);
-    if (atmosphere_hit.y <= 0.0) {
-        vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
+    vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
+    CubeyAtmosphereMedium medium = atmosphere_medium(planet_center);
+    CubeyAtmosphereRaySegment segment =
+        cubey_atmosphere_classify_ray(medium, ray_origin, ray_direction, -1.0);
+    if (!segment.hit_atmosphere) {
         vec3 space_color = (render_sun_disk ? sun_disk_luminance(ray_origin, ray_direction,
                                                                  planet_center)
                                             : vec3(0.0)) +
@@ -887,19 +771,12 @@ void main() {
         return;
     }
 
-    float ray_start = max(atmosphere_hit.x, 0.0);
-    float ray_end = atmosphere_hit.y;
-    float ground_t = nearest_positive_ground_hit(ray_origin, ray_direction, planet_center);
-    bool hit_ground = ground_t > 0.0 && ground_t < ray_end;
+    bool hit_ground = segment.hit_ground;
     bool sky_only = atmosphere.render_options.x >= 0.5;
     bool shade_ground = hit_ground && !sky_only;
-    if (hit_ground && !sky_only) {
-        ray_end = ground_t;
-    }
 
-    AtmosphereSample atmosphere_sample = integrate_atmosphere(ray_origin, ray_direction, ray_start,
-                                                              ray_end, planet_center);
-    vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
+    CubeyAtmosphereSample atmosphere_sample = integrate_atmosphere(
+        ray_origin, ray_direction, segment.start, segment.end, planet_center);
     vec3 night_sky = (hit_ground || !render_night_sky)
         ? vec3(0.0)
         : night_sky_radiance(ray_direction, sun_direction) * atmosphere_sample.transmittance;
@@ -909,7 +786,7 @@ void main() {
         sun_disk_luminance(ray_origin, ray_direction, planet_center);
     vec3 color = atmosphere_sample.color + sun_disk + night_sky + moon_disk;
     if (shade_ground) {
-        color += ground_radiance(ray_origin, ray_direction, planet_center, ground_t) *
+        color += ground_radiance(ray_origin, ray_direction, planet_center, segment.ground_t) *
                  atmosphere_sample.transmittance;
     }
 
@@ -930,8 +807,8 @@ void main() {
     } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_MOON) {
         color = moon_disk;
         if (shade_ground) {
-            color = moon_ground_debug_radiance(ray_origin, ray_direction, planet_center, ground_t) *
-                    atmosphere_sample.transmittance;
+            color = moon_ground_debug_radiance(ray_origin, ray_direction, planet_center,
+                                               segment.ground_t) * atmosphere_sample.transmittance;
         }
     }
 
