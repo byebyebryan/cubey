@@ -861,13 +861,14 @@ int main() {
                      "atmosphere shader should read frame data from a uniform buffer");
     require_contains(shader_source, "#include \"cubey/atmosphere.glsl\"",
                      "atmosphere shader should use the shared atmosphere helper include");
-    require_contains(shader_source, "rayleigh_phase",
-                     "atmosphere shader should include Rayleigh phase");
-    require_contains(shader_source, "mie_phase", "atmosphere shader should include Mie phase");
+    require_contains(shared_helper_source, "cubey_atmosphere_rayleigh_phase",
+                     "shared atmosphere include should define Rayleigh phase");
+    require_contains(shared_helper_source, "cubey_atmosphere_mie_phase",
+                     "shared atmosphere include should define Mie phase");
     require_contains(shader_source, "ray_sphere_intersection",
                      "atmosphere shader should intersect atmosphere and ground spheres");
-    require_contains(shader_source, "ozone_density",
-                     "atmosphere shader should include ozone absorption density");
+    require_contains(shared_helper_source, "cubey_atmosphere_ozone_density",
+                     "shared atmosphere include should define ozone absorption density");
     require_contains(shader_source, "transmittance_from_depth",
                      "atmosphere shader should expose transmittance");
     require_contains(shader_source, "sun_visibility",
