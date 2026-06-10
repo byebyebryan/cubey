@@ -59,8 +59,8 @@ constexpr std::array<PlanetAtmosphereMode, 2> kAtmosphereModes{
 };
 
 constexpr std::array<PlanetSkyBackend, 2> kSkyBackends{
-    PlanetSkyBackend::Local,
-    PlanetSkyBackend::SharedAtmosphere,
+    PlanetSkyBackend::UnifiedAtmosphere,
+    PlanetSkyBackend::SkyFrameLegacy,
 };
 
 struct CameraLocationReadout {

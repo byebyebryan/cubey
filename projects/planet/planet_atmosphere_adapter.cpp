@@ -14,6 +14,12 @@ namespace {
     return glm::normalize(direction);
 }
 
+[[nodiscard]] float moon_illumination(float phase_fraction) {
+    const float wrapped = phase_fraction - std::floor(phase_fraction);
+    return std::clamp(0.5F - 0.5F * std::cos(wrapped * 2.0F * std::numbers::pi_v<float>), 0.0F,
+                      1.0F);
+}
+
 struct PlanetAtmosphereTangentFrame {
     cubey::math::Vec3 right{1.0F, 0.0F, 0.0F};
     cubey::math::Vec3 up{0.0F, 1.0F, 0.0F};
@@ -111,10 +117,13 @@ planet_atmosphere_environment_config(const PlanetAtmosphereInputs& inputs) {
     config.sun_azimuth_degrees =
         cubey::render::atmosphere_environment_wrap_signed_degrees(azimuth_degrees);
     config.sun_angular_radius = inputs.sun_angular_radius_rad;
-    config.render_celestial_content = false;
+    config.render_celestial_content = true;
+    config.render_sun_disk = true;
+    config.render_night_sky = true;
+    config.render_moon_disk = false;
     config.reference_geometry_enabled = false;
     config.ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
-    config.moon.enabled = false;
+    config.moon.enabled = true;
     return config;
 }
 
@@ -153,7 +162,10 @@ cubey::render::AtmosphereEnvironmentFrameUniforms planet_shared_atmosphere_frame
         moon_direction.z,
         inputs.moon_angular_radius_rad,
     };
+    uniforms.moon_options.w = moon_illumination(inputs.moon_phase_fraction);
     uniforms.moon_phase_options.x = inputs.moon_phase_fraction;
+    uniforms.moon_phase_options.y =
+        std::sin(inputs.moon_phase_fraction * 2.0F * std::numbers::pi_v<float>);
     return uniforms;
 }
 

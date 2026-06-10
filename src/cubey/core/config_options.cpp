@@ -52,7 +52,8 @@ constexpr std::array<std::string_view, 2> kPlanetCameraModes{"orbit", "surface"}
 constexpr std::array<std::string_view, 3> kPlanetSurfaceLooks{"default", "sun", "antisun"};
 constexpr std::array<std::string_view, 3> kPlanetAtmosphereModes{"analytic", "physical",
                                                                  "physical-preview"};
-constexpr std::array<std::string_view, 2> kPlanetSkyBackends{"local", "shared-atmosphere"};
+constexpr std::array<std::string_view, 2> kPlanetSkyBackends{"unified-atmosphere",
+                                                             "sky-frame-legacy"};
 constexpr std::array<std::string_view, 2> kTimeOfDayModes{"manual", "solar"};
 constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{

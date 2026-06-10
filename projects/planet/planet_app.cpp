@@ -1049,19 +1049,19 @@ class PlanetApp {
     }
 
     [[nodiscard]] cubey::render::MaterialPassInfo selected_sky_pass_info() const {
-        return planet_config_.sky_backend == PlanetSkyBackend::SharedAtmosphere
-                   ? cubey::render::atmosphere_background_pass_info()
-                   : planet_sky_pass_info();
+        return planet_config_.sky_backend == PlanetSkyBackend::SkyFrameLegacy
+                   ? planet_sky_pass_info()
+                   : cubey::render::atmosphere_background_pass_info();
     }
 
     void record_sky_frame(const cubey::vulkan::CommandRecorder& recorder,
                           cubey::render::ColorTargetView target,
                           cubey::render::FrameSlot frame_slot) const {
-        if (planet_config_.sky_backend == PlanetSkyBackend::SharedAtmosphere) {
-            shared_atmosphere_frame_.record_pass(recorder, target, frame_slot);
+        if (planet_config_.sky_backend == PlanetSkyBackend::SkyFrameLegacy) {
+            sky_frame_.record_pass(recorder, target, frame_slot);
             return;
         }
-        sky_frame_.record_pass(recorder, target, frame_slot);
+        shared_atmosphere_frame_.record_pass(recorder, target, frame_slot);
     }
 
     [[nodiscard]] PlanetCelestialBodyFrameUniforms

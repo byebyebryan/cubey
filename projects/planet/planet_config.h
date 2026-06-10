@@ -98,8 +98,8 @@ enum class PlanetAtmosphereMode : std::uint8_t {
 };
 
 enum class PlanetSkyBackend : std::uint8_t {
-    Local,
-    SharedAtmosphere,
+    UnifiedAtmosphere,
+    SkyFrameLegacy,
 };
 
 struct PlanetConfig {
@@ -137,7 +137,7 @@ struct PlanetConfig {
     float atmosphere_haze_end = kPlanetDefaultAtmosphereHazeEnd;
     float atmosphere_aerial_strength = kPlanetDefaultAtmosphereAerialStrength;
     PlanetAtmosphereMode atmosphere_mode = PlanetAtmosphereMode::Physical;
-    PlanetSkyBackend sky_backend = PlanetSkyBackend::Local;
+    PlanetSkyBackend sky_backend = PlanetSkyBackend::UnifiedAtmosphere;
 
     friend bool operator==(const PlanetConfig&, const PlanetConfig&) = default;
 };

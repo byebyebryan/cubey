@@ -390,24 +390,24 @@ const char* planet_atmosphere_mode_name(PlanetAtmosphereMode mode) {
 }
 
 PlanetSkyBackend planet_sky_backend_from_string(std::string_view value) {
-    if (value.empty() || value == "local") {
-        return PlanetSkyBackend::Local;
+    if (value.empty() || value == "unified-atmosphere" || value == "unified_atmosphere" ||
+        value == "shared-atmosphere" || value == "shared_atmosphere" || value == "atmosphere") {
+        return PlanetSkyBackend::UnifiedAtmosphere;
     }
-    if (value == "shared-atmosphere" || value == "shared_atmosphere" ||
-        value == "atmosphere") {
-        return PlanetSkyBackend::SharedAtmosphere;
+    if (value == "sky-frame-legacy" || value == "sky_frame_legacy" || value == "local") {
+        return PlanetSkyBackend::SkyFrameLegacy;
     }
     throw std::runtime_error("unsupported planet sky backend: " + std::string(value));
 }
 
 const char* planet_sky_backend_name(PlanetSkyBackend backend) {
     switch (backend) {
-    case PlanetSkyBackend::Local:
-        return "local";
-    case PlanetSkyBackend::SharedAtmosphere:
-        return "shared-atmosphere";
+    case PlanetSkyBackend::UnifiedAtmosphere:
+        return "unified-atmosphere";
+    case PlanetSkyBackend::SkyFrameLegacy:
+        return "sky-frame-legacy";
     }
-    return "local";
+    return "unified-atmosphere";
 }
 
 void validate_planet_config(const PlanetConfig& config) {
