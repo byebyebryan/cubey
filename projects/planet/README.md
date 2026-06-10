@@ -44,6 +44,7 @@ Run it with:
 ./build/dev/projects/planet/planet --planet-atmosphere-mode physical
 ./build/dev/projects/planet/planet --planet-sky-backend sky-frame-legacy
 ./build/dev/projects/planet/planet --planet-atmosphere-haze-strength 0.18 --planet-atmosphere-aerial-strength 0.35
+./build/dev/projects/planet/planet --rayleigh-scale 1.0 --mie-scale 0.85 --ozone-scale 1.1 --twilight-strength 1.1
 ./build/dev/projects/planet/planet --planet-max-lod-level 7 --planet-lod-target-edge-px 8
 ./build/dev/projects/planet/planet --planet-max-lod-level 12 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
 ./build/dev/projects/planet/planet --planet-local-detail-lod-levels 6 --planet-local-detail-cells 128 --planet-local-detail-outer-extent-m 8192
@@ -56,7 +57,9 @@ Run it with:
 For repeatable atmosphere and celestial-body captures, keep the solar clock
 paused and pin both time and camera mode. Surface sky captures should also pin
 the heading with `--planet-camera-surface-look sun|antisun`; the default surface
-heading can miss the twilight lobe entirely.
+heading can miss the twilight lobe entirely, and a named clock time is only a
+repeatable sample for the current surface point rather than a guarantee of local
+daylight.
 
 ```sh
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-surface-dawn.png
@@ -260,6 +263,11 @@ boundary behavior use one coefficient source. `Surface Haze`, `Haze Start`, and
 `Haze End` tune only the `analytic` distance-haze fallback; `Aerial Strength`
 blends the shared physical aerial perspective. Full LUT/transmittance caching
 and cloud/terrain shadows remain deferred.
+Planet also consumes the shared atmosphere look profile. The windowed
+`Atmosphere > Sky Look` group edits Rayleigh, Mie, ozone, twilight strength, and
+horizon warmth live, and the same options can be seeded from CLI/config through
+`--rayleigh-scale`, `--mie-scale`, `--ozone-scale`,
+`--twilight-strength`, and `--twilight-horizon-warmth`.
 
 This is not yet a real async streamer. Camera-driven patch replans refresh CPU
 patch data and lazily upload each frame slot's instance buffer the next time it

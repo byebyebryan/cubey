@@ -28,6 +28,9 @@ Use the mean solar clock controls to keep captures deterministic:
 Surface sky checks should use `--planet-camera-surface-look sun` or `antisun`.
 The default surface heading is useful for terrain navigation, but it can miss
 the sunrise/sunset lobe and produce misleading black-blue-white transitions.
+Surface clock labels are repeatable samples for the current surface point, not
+absolute local-daylight guarantees. Use `celestial-planes` or orbit captures
+when validating whether a surface sample is actually on the day side.
 
 ## Sky Video Checks
 
@@ -50,6 +53,10 @@ compatibility aliases.
 In `physical` mode, the planet surface shader and unified sky sample the same
 shared Rayleigh/Mie/ozone atmosphere model; `analytic` mode keeps the older
 distance-haze controls for fallback comparison.
+Planet inherits the shared atmosphere look profile. In the UI, `Atmosphere >
+Sky Look` exposes Rayleigh, Mie, ozone, twilight strength, and horizon warmth;
+the same values can be seeded with `--rayleigh-scale`, `--mie-scale`,
+`--ozone-scale`, `--twilight-strength`, and `--twilight-horizon-warmth`.
 
 ```sh
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode analytic --output outputs/planet-atmo-analytic-dawn.png
@@ -64,6 +71,24 @@ Use these to inspect the surface aerial perspective segment directly:
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --debug-view atmosphere-inscatter --output outputs/planet-atmo-inscatter.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --debug-view atmosphere-path-length --output outputs/planet-atmo-path-length.png
 ```
+
+Use this compact matrix after changing atmosphere color or the shared look
+defaults. It writes to `outputs/planet-look/` so multiple tuning passes can keep
+their review images separate from the baseline recipes:
+
+```sh
+mkdir -p outputs/planet-look
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-look/surface-sun-dawn.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look antisun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-look/surface-antisun-dawn.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 0.0 --planet-camera-mode surface --planet-atmosphere-mode physical --output outputs/planet-look/surface-night.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --planet-camera-altitude-m 14000000 --planet-atmosphere-mode physical --output outputs/planet-look/orbit-terminator-wide.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-sky-backend sky-frame-legacy --planet-atmosphere-mode physical --output outputs/planet-look/legacy-surface-sun-dawn.png
+```
+
+For this matrix, check that the sun-facing dawn has a warm horizon with a
+blue-violet upper ramp, the antisun dawn is subdued instead of fully black, the
+night sample stays dark with stars/Milky Way visible, and the orbit sample keeps
+black space outside a thin atmosphere limb.
 
 Use these paired captures when comparing the unified atmosphere default against
 the legacy sky-frame backend:
