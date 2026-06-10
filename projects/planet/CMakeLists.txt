@@ -144,6 +144,18 @@ if(BUILD_TESTING)
         5.5
     )
     cubey_add_planet_visual_smoke(
+        planet_shared_atmosphere_sky_writes_png
+        planet-shared-atmosphere-sky.png
+        --planet-camera-mode
+        surface
+        --planet-day-of-year
+        80
+        --planet-time-hours
+        5.5
+        --planet-sky-backend
+        shared-atmosphere
+    )
+    cubey_add_planet_visual_smoke(
         planet_surface_day_writes_png
         planet-surface-day.png
         --planet-camera-mode

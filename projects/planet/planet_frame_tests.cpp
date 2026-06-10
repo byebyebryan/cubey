@@ -257,6 +257,7 @@ void test_planet_config_applies_run_config_surface_options() {
     run_config.planet.atmosphere_haze_end = 0.85F;
     run_config.planet.atmosphere_aerial_strength = 0.50F;
     run_config.planet.atmosphere_mode = "physical";
+    run_config.planet.sky_backend = "shared-atmosphere";
 
     const cubey::projects::planet::PlanetConfig config =
         cubey::projects::planet::planet_config_from_run_config(run_config);
@@ -308,12 +309,21 @@ void test_planet_config_applies_run_config_surface_options() {
                  "planet config should apply atmosphere aerial strength");
     require(config.atmosphere_mode == cubey::projects::planet::PlanetAtmosphereMode::Physical,
             "planet config should apply atmosphere mode");
+    require(config.sky_backend == cubey::projects::planet::PlanetSkyBackend::SharedAtmosphere,
+            "planet config should apply sky backend");
 
     run_config.planet.atmosphere_mode = "physical-preview";
     const cubey::projects::planet::PlanetConfig alias_config =
         cubey::projects::planet::planet_config_from_run_config(run_config);
     require(alias_config.atmosphere_mode == cubey::projects::planet::PlanetAtmosphereMode::Physical,
             "planet config should preserve physical-preview as a compatibility alias");
+
+    run_config.planet.sky_backend = "atmosphere";
+    const cubey::projects::planet::PlanetConfig sky_alias_config =
+        cubey::projects::planet::planet_config_from_run_config(run_config);
+    require(sky_alias_config.sky_backend ==
+                cubey::projects::planet::PlanetSkyBackend::SharedAtmosphere,
+            "planet config should preserve atmosphere as a shared sky backend compatibility alias");
 }
 
 void test_planet_config_change_kind_separates_dynamic_and_topology() {
@@ -324,10 +334,11 @@ void test_planet_config_change_kind_separates_dynamic_and_topology() {
     dynamic.terrain_seed += 1U;
     dynamic.local_detail_height_strength_m += 10.0F;
     dynamic.atmosphere_haze_strength *= 0.5F;
+    dynamic.sky_backend = cubey::projects::planet::PlanetSkyBackend::SharedAtmosphere;
     require(cubey::projects::planet::planet_config_change_kind(current, dynamic) ==
                 cubey::projects::planet::PlanetConfigChangeKind::Dynamic,
-            "planet config should classify radius, LOD, terrain detail, and atmosphere edits as "
-            "dynamic");
+            "planet config should classify radius, LOD, terrain detail, atmosphere, and sky backend "
+            "edits as dynamic");
 
     cubey::projects::planet::PlanetConfig topology = current;
     topology.patch_resolution *= 2U;
