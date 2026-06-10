@@ -43,12 +43,29 @@ night-sky atlas compositing:
 ## Atmosphere Comparison
 
 The default `physical` mode is the stable project-local atmosphere path. Keep
-`analytic` captures around as a comparison/debug fallback.
+`analytic` captures around as a comparison/debug fallback. `--planet-sky-backend
+shared-atmosphere` is an opt-in background comparison against the shared
+foundation atmosphere; planet still owns sun/moon/body placement, and surface
+haze remains project-local.
 
 ```sh
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode analytic --output outputs/planet-atmo-analytic-dawn.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-atmo-physical-dawn.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --planet-atmosphere-mode physical --output outputs/planet-atmo-physical-backlit.png
+```
+
+Use these paired captures when comparing the local sky backend against the shared
+atmosphere backend:
+
+```sh
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-sky-backend local --output outputs/planet-sky-local-surface-sun-dawn.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-sky-backend shared-atmosphere --output outputs/planet-sky-shared-surface-sun-dawn.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look antisun --planet-camera-surface-pitch-deg 22 --planet-sky-backend local --output outputs/planet-sky-local-surface-antisun-dawn.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look antisun --planet-camera-surface-pitch-deg 22 --planet-sky-backend shared-atmosphere --output outputs/planet-sky-shared-surface-antisun-dawn.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --planet-sky-backend local --output outputs/planet-sky-local-orbit-limb.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --planet-sky-backend shared-atmosphere --output outputs/planet-sky-shared-orbit-limb.png
+./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 23.0 --planet-time-speed-hours-per-second 0.0 --planet-camera-mode orbit --planet-camera-altitude-m 14000000 --planet-camera-orbit-spin-deg-per-sec 8.0 --planet-sky-backend local --output outputs/planet-sky-local-orbit-spin.mp4
+./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 23.0 --planet-time-speed-hours-per-second 0.0 --planet-camera-mode orbit --planet-camera-altitude-m 14000000 --planet-camera-orbit-spin-deg-per-sec 8.0 --planet-sky-backend shared-atmosphere --output outputs/planet-sky-shared-orbit-spin.mp4
 ```
 
 ## Surface Showcase

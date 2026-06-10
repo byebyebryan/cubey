@@ -342,9 +342,10 @@ The latest planet foundation pass closed several previously loose contracts:
   resetting the camera or waiting for the device. Patch-grid topology changes
   still rebuild the reusable grid and synchronize explicitly.
 - `PlanetAtmosphereInputs` is derived from the planet-owned celestial model and
-  can be adapted into the shared atmosphere runtime for future comparisons. The
-  active planet renderer keeps a project-local atmosphere shader path; `analytic`
-  is the fallback/debug mode and `physical` is the default v1 scattering path.
+  now feeds an opt-in `shared-atmosphere` sky backend through a local tangent-frame
+  adapter. The default planet renderer keeps the project-local sky/atmosphere
+  shader path; `analytic` is the fallback/debug mode and `physical` is the default
+  v1 scattering path.
 - Moon rendering remains explicit body geometry. The body pass now receives
   camera-relative shading inputs, applies procedural lunar albedo variation, and
   renders the moon as a depth-tested body with premultiplied visibility for
@@ -370,7 +371,7 @@ Current alignment by area:
 | Global surface LOD | Done as v1. The planner is coverage-first, keeps fallback parents available, uses hysteresis, repairs selected neighbor deltas to a single LOD step, and accounts for terrain displacement in screen-error bounds. |
 | Procedural terrain field | Active contract, not just a visual placeholder. CPU tests, tile summaries, shader displacement, named terrain bands, material bands, water depth, shoreline, climate, and roughness use the same project-local vocabulary. |
 | Local detail clipmap | Near-field surface layer. The altitude-gated clipmap now uses semantic ridge/channel/plain residuals over the global terrain field and can contribute to `final`, bounded local-detail, terrain-field, and opt-in shaded inspection rendering. `local-detail-horizon` is reserved for full-range horizon diagnostics. Local/global morphing, persistent topology, streaming, and ocean payloads remain explicit follow-ups. |
-| Celestial and atmosphere | Done as v1. The planet project owns mean solar time, sun/moon state, project-local sky/atmosphere, view-aware exposure, and moon body rendering. Atmosphere LUTs, physical transmittance assets, eclipses, and real ephemeris are deferred. |
+| Celestial and atmosphere | Done as v1. The planet project owns mean solar time, sun/moon state, project-local sky/atmosphere, opt-in shared-atmosphere sky comparison, view-aware exposure, and moon body rendering. Atmosphere LUTs, physical transmittance assets, eclipses, and real ephemeris are deferred. |
 | Streaming and resource residency | Deferred. Current runtime replans CPU patch lists and lazily uploads instance buffers, but it is not an out-of-core tile streamer or async residency manager. |
 | Planet/ocean integration | Deferred. Ocean should port in as a local water layer once the planet frame, terrain field, sea datum, local detail clipmap, and render order are stable enough. |
 | Project config facade | Deferred. Planet still routes through shared `RunConfig`; extracting project-owned CLI/config ownership is worthwhile once another project repeats the same option pressure. |
@@ -387,6 +388,13 @@ and the explicit celestial-body frame renders depth-tested body geometry.
 `projects/planet` is the first consumer because orbit and surface views need
 real occlusion, radius, phase, lighting, diagnostics, planetary self-rotation,
 and eventually eclipses or multiple moons.
+The `shared-atmosphere` sky backend is a comparison path, not a replacement: it
+renders the shared foundation atmosphere in sky-only mode, receives planet-owned
+view/sun/moon directions through the tangent adapter, and leaves explicit
+celestial body rendering plus surface haze/aerial perspective under planet
+control. The next production atmosphere target is still a LUT-backed path:
+transmittance first, then sky-view and multi-scattering LUTs, then shared aerial
+perspective for terrain/ocean.
 
 The target ownership is:
 
