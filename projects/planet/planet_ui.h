@@ -8,6 +8,7 @@
 #include "planet_surface.h"
 
 #include <cubey/host/performance_ui.h>
+#include <cubey/render/atmosphere_environment.h>
 
 #include <vulkan/vulkan.h>
 
@@ -22,6 +23,7 @@ struct PlanetUiContext {
     bool& config_apply_pending;
     std::string& rebuild_error;
     PlanetSolarTime& solar_time;
+    cubey::render::AtmosphereEnvironmentConfig& atmosphere_look_config;
     const PlanetSolarSystemConfig& solar_config;
     const PlanetCelestialSystem& celestial_system;
     const PlanetCelestialLighting& celestial_lighting;

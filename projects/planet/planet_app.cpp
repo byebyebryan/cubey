@@ -12,6 +12,7 @@
 
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/math.h>
+#include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -210,6 +211,13 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 30U);
     return mid * kQuantizeBase + fine;
 }
 
+[[nodiscard]] cubey::render::AtmosphereEnvironmentConfig
+planet_atmosphere_look_config_from_run_config(const RunConfig& config) {
+    cubey::render::AtmosphereEnvironmentConfig look_config;
+    cubey::apply_atmosphere_environment_look_options(look_config, config.atmosphere);
+    return look_config;
+}
+
 class PlanetApp {
   public:
     explicit PlanetApp(RunConfig config)
@@ -217,6 +225,7 @@ class PlanetApp {
           edit_planet_config_(planet_config_),
           solar_time_(planet_solar_time_from_run_config(config_)),
           exposure_config_(planet_exposure_config_from_run_config(config_)),
+          atmosphere_look_config_(planet_atmosphere_look_config_from_run_config(config_)),
           celestial_system_(planet_celestial_system_from_solar_time(solar_time_)),
           celestial_lighting_(planet_celestial_lighting(celestial_system_)),
           camera_state_(planet_camera_initial_state_from_run_config(
@@ -535,6 +544,7 @@ class PlanetApp {
             .config_apply_pending = planet_config_apply_pending_,
             .rebuild_error = rebuild_error_,
             .solar_time = solar_time_,
+            .atmosphere_look_config = atmosphere_look_config_,
             .solar_config = solar_config_,
             .celestial_system = celestial_system_,
             .celestial_lighting = celestial_lighting_,
@@ -817,7 +827,7 @@ class PlanetApp {
             celestial_system_, celestial_lighting_, frame_.camera_world_position_m,
             planet_config_.radius_m, planet_config_.radius_m + planet_config_.atmosphere_height_m);
         const cubey::render::AtmosphereEnvironmentConfig atmosphere_config =
-            planet_atmosphere_environment_config(atmosphere_inputs);
+            planet_atmosphere_environment_config(atmosphere_inputs, atmosphere_look_config_);
         return {
             .view_projection = camera_.view_projection_matrix(transform, aspect),
             .light_direction_debug =
@@ -944,9 +954,12 @@ class PlanetApp {
                 },
             .atmosphere_ozone =
                 {
-                    atmosphere_config.ozone_absorption.x,
-                    atmosphere_config.ozone_absorption.y,
-                    atmosphere_config.ozone_absorption.z,
+                    atmosphere_config.ozone_absorption.x *
+                        atmosphere_config.ozone_density_scale,
+                    atmosphere_config.ozone_absorption.y *
+                        atmosphere_config.ozone_density_scale,
+                    atmosphere_config.ozone_absorption.z *
+                        atmosphere_config.ozone_density_scale,
                     atmosphere_config.ozone_center_altitude_km,
                 },
             .atmosphere_shared_options =
@@ -1087,6 +1100,7 @@ class PlanetApp {
             inputs, {
                         .view_rays = cubey::render::view_ray_basis_3d(
                             transform.rotation, aspect, camera_.fovy_radians()),
+                        .look_config = atmosphere_look_config_,
                     });
     }
 
@@ -1507,6 +1521,7 @@ class PlanetApp {
     PlanetConfig edit_planet_config_{};
     PlanetSolarTime solar_time_{};
     PlanetExposureConfig exposure_config_{};
+    cubey::render::AtmosphereEnvironmentConfig atmosphere_look_config_{};
     PlanetSolarSystemConfig solar_config_{};
     PlanetCelestialSystem celestial_system_{};
     PlanetCelestialLighting celestial_lighting_{};

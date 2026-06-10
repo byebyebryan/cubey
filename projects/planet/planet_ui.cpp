@@ -2,6 +2,7 @@
 
 #include "planet_local_detail.h"
 
+#include <cubey/host/atmosphere_environment_ui.h>
 #include <cubey/host/imgui_helpers.h>
 
 #include <imgui.h>
@@ -225,6 +226,12 @@ void draw_atmosphere_controls(PlanetUiContext& ui) {
                            ui.edit_config.atmosphere_haze_start, 1.5F, "%.2f");
         ImGui::SliderFloat("Aerial Strength", &ui.edit_config.atmosphere_aerial_strength, 0.0F,
                            1.0F, "%.2f");
+        static_cast<void>(cubey::host::draw_atmosphere_environment_look_controls(
+            ui.atmosphere_look_config,
+            {.label = "Sky Look",
+             .default_open = true,
+             .level = 1U,
+             .help = "Shared atmosphere color controls used by planet sky and surface haze."}));
     }
 }
 

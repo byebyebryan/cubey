@@ -526,9 +526,14 @@ void test_planet_atmosphere_environment_config_round_trips_sun_direction() {
     inputs.camera_altitude_m = 1200.0F;
     inputs.sun_direction = glm::normalize(cubey::math::Vec3{0.42F, 0.35F, -0.84F});
     inputs.sun_angular_radius_rad = 0.006F;
+    cubey::render::AtmosphereEnvironmentConfig look_config;
+    look_config.rayleigh_density_scale = 1.15F;
+    look_config.mie_density_scale = 0.75F;
+    look_config.ozone_density_scale = 1.25F;
+    look_config.night_sky.twilight_strength = 0.7F;
 
     const cubey::render::AtmosphereEnvironmentConfig config =
-        cubey::projects::planet::planet_atmosphere_environment_config(inputs);
+        cubey::projects::planet::planet_atmosphere_environment_config(inputs, look_config);
     const cubey::math::Vec3 shared_direction =
         cubey::render::atmosphere_environment_sun_direction(config);
 
@@ -547,6 +552,14 @@ void test_planet_atmosphere_environment_config_round_trips_sun_direction() {
             "planet atmosphere adapter should let unified atmosphere draw night sky");
     require(!config.render_moon_disk,
             "planet atmosphere adapter should leave moon disk rendering to planet geometry");
+    require_near(config.rayleigh_density_scale, 1.15F, 0.0001F,
+                 "planet atmosphere adapter should preserve shared Rayleigh look scale");
+    require_near(config.mie_density_scale, 0.75F, 0.0001F,
+                 "planet atmosphere adapter should preserve shared Mie look scale");
+    require_near(config.ozone_density_scale, 1.25F, 0.0001F,
+                 "planet atmosphere adapter should preserve shared ozone look scale");
+    require_near(config.night_sky.twilight_strength, 0.7F, 0.0001F,
+                 "planet atmosphere adapter should preserve shared twilight look scale");
 }
 
 void test_planet_unified_atmosphere_frame_uses_local_tangent_up() {
@@ -565,10 +578,13 @@ void test_planet_unified_atmosphere_frame_uses_local_tangent_up() {
         .up_tan_half_fovy = {1.0F, 0.0F, 0.0F, 0.6F},
         .forward = {0.0F, -1.0F, 0.0F, 0.0F},
     };
+    cubey::render::AtmosphereEnvironmentConfig look_config;
+    look_config.rayleigh_density_scale = 1.2F;
+    look_config.ozone_density_scale = 1.3F;
 
     const cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
         cubey::projects::planet::planet_unified_atmosphere_frame_uniforms(
-            inputs, {.view_rays = view_rays});
+            inputs, {.view_rays = view_rays, .look_config = look_config});
 
     require_vec_near(cubey::math::Vec3{uniforms.camera_up_tan_half_fovy}, {0.0F, 1.0F, 0.0F},
                      "unified atmosphere view up should become local planet up");
@@ -582,6 +598,12 @@ void test_planet_unified_atmosphere_frame_uses_local_tangent_up() {
                  "unified atmosphere adapter should preserve tan half fovy");
     require_near(uniforms.sun_direction_radius.y, inputs.sun_direction.x, 0.0001F,
                  "unified atmosphere sun elevation should be relative to local planet up");
+    require_near(uniforms.rayleigh.x,
+                 look_config.rayleigh_scattering.x * look_config.rayleigh_density_scale, 0.0001F,
+                 "unified atmosphere frame should pack shared Rayleigh look scale");
+    require_near(uniforms.ozone.y,
+                 look_config.ozone_absorption.y * look_config.ozone_density_scale, 0.0001F,
+                 "unified atmosphere frame should pack shared ozone look scale");
 }
 
 void test_planet_unified_atmosphere_frame_splits_sky_and_moon_ownership() {

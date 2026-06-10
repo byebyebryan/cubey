@@ -99,8 +99,9 @@ struct PlanetAtmosphereTangentFrame {
 
 } // namespace
 
-cubey::render::AtmosphereEnvironmentConfig
-planet_atmosphere_environment_config(const PlanetAtmosphereInputs& inputs) {
+cubey::render::AtmosphereEnvironmentConfig planet_atmosphere_environment_config(
+    const PlanetAtmosphereInputs& inputs,
+    const cubey::render::AtmosphereEnvironmentConfig& look_config) {
     constexpr float kMetersToKm = 0.001F;
     constexpr float kRadiansToDegrees = 180.0F / std::numbers::pi_v<float>;
     const cubey::math::Vec3 sun_direction = normalized_or_up(inputs.sun_direction);
@@ -108,7 +109,7 @@ planet_atmosphere_environment_config(const PlanetAtmosphereInputs& inputs) {
         std::asin(std::clamp(sun_direction.y, -1.0F, 1.0F)) * kRadiansToDegrees;
     const float azimuth_degrees = std::atan2(sun_direction.x, -sun_direction.z) * kRadiansToDegrees;
 
-    cubey::render::AtmosphereEnvironmentConfig config{};
+    cubey::render::AtmosphereEnvironmentConfig config = look_config;
     config.bottom_radius_km = std::max(inputs.planet_radius_m * kMetersToKm, 0.001F);
     config.top_radius_km =
         std::max(inputs.atmosphere_outer_radius_m * kMetersToKm, config.bottom_radius_km);
@@ -136,7 +137,7 @@ cubey::render::AtmosphereEnvironmentFrameUniforms planet_unified_atmosphere_fram
     const cubey::math::Vec3 camera_position_km =
         to_unified_atmosphere_position_km(inputs.camera_position_m, tangent, inputs);
     cubey::render::AtmosphereEnvironmentConfig config =
-        planet_atmosphere_environment_config(inputs);
+        planet_atmosphere_environment_config(inputs, frame_inputs.look_config);
     cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
         cubey::render::atmosphere_environment_frame_uniforms(
             config, {
