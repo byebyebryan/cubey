@@ -47,6 +47,12 @@ void test_color_space_converts_srgb_authored_values_to_linear();
 void test_color_space_converts_hsv_and_hsl_authored_values();
 void test_clipmap_grid_2d_emits_far_to_near_annular_patches();
 void test_clipmap_grid_2d_rejects_invalid_config();
+void test_adaptive_patch_lod_selects_quadtree_children();
+void test_adaptive_patch_lod_hysteresis_delays_split_and_merge();
+void test_adaptive_patch_lod_falls_back_at_patch_budget();
+void test_adaptive_patch_lod_repairs_neighbor_deltas();
+void test_adaptive_patch_lod_marks_edges_against_coarser_neighbors();
+void test_adaptive_patch_lod_rejects_invalid_config_and_callbacks();
 void test_local_tangent_frame_converts_between_world_and_local_space();
 void test_local_tangent_frame_preserves_camera_relative_precision();
 void test_local_tangent_frame_reports_height_above_water_datum();
@@ -246,6 +252,12 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_color_space_converts_hsv_and_hsl_authored_values),
         CUBEY_TEST(test_clipmap_grid_2d_emits_far_to_near_annular_patches),
         CUBEY_TEST(test_clipmap_grid_2d_rejects_invalid_config),
+        CUBEY_TEST(test_adaptive_patch_lod_selects_quadtree_children),
+        CUBEY_TEST(test_adaptive_patch_lod_hysteresis_delays_split_and_merge),
+        CUBEY_TEST(test_adaptive_patch_lod_falls_back_at_patch_budget),
+        CUBEY_TEST(test_adaptive_patch_lod_repairs_neighbor_deltas),
+        CUBEY_TEST(test_adaptive_patch_lod_marks_edges_against_coarser_neighbors),
+        CUBEY_TEST(test_adaptive_patch_lod_rejects_invalid_config_and_callbacks),
         CUBEY_TEST(test_local_tangent_frame_converts_between_world_and_local_space),
         CUBEY_TEST(test_local_tangent_frame_preserves_camera_relative_precision),
         CUBEY_TEST(test_local_tangent_frame_reports_height_above_water_datum),
