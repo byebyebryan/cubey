@@ -549,7 +549,7 @@ void test_planet_atmosphere_environment_config_round_trips_sun_direction() {
             "planet atmosphere adapter should leave moon disk rendering to planet geometry");
 }
 
-void test_planet_shared_atmosphere_frame_uses_local_tangent_up() {
+void test_planet_unified_atmosphere_frame_uses_local_tangent_up() {
     cubey::projects::planet::PlanetAtmosphereInputs inputs{};
     inputs.planet_radius_m = 600000.0F;
     inputs.atmosphere_outer_radius_m = 670000.0F;
@@ -567,24 +567,24 @@ void test_planet_shared_atmosphere_frame_uses_local_tangent_up() {
     };
 
     const cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
-        cubey::projects::planet::planet_shared_atmosphere_frame_uniforms(
+        cubey::projects::planet::planet_unified_atmosphere_frame_uniforms(
             inputs, {.view_rays = view_rays});
 
     require_vec_near(cubey::math::Vec3{uniforms.camera_up_tan_half_fovy}, {0.0F, 1.0F, 0.0F},
-                     "shared atmosphere view up should become local planet up");
+                     "unified atmosphere view up should become local planet up");
     require_vec_near(cubey::math::Vec3{uniforms.camera_right_aspect}, {1.0F, 0.0F, 0.0F},
-                     "shared atmosphere view right should stay tangent to local horizon");
+                     "unified atmosphere view right should stay tangent to local horizon");
     require_vec_near(cubey::math::Vec3{uniforms.camera_forward_debug_view}, {0.0F, 0.0F, -1.0F},
-                     "shared atmosphere view forward should preserve camera orientation");
+                     "unified atmosphere view forward should preserve camera orientation");
     require_near(uniforms.camera_right_aspect.w, 1.5F, 0.000001F,
-                 "shared atmosphere adapter should preserve aspect");
+                 "unified atmosphere adapter should preserve aspect");
     require_near(uniforms.camera_up_tan_half_fovy.w, 0.6F, 0.000001F,
-                 "shared atmosphere adapter should preserve tan half fovy");
+                 "unified atmosphere adapter should preserve tan half fovy");
     require_near(uniforms.sun_direction_radius.y, inputs.sun_direction.x, 0.0001F,
-                 "shared atmosphere sun elevation should be relative to local planet up");
+                 "unified atmosphere sun elevation should be relative to local planet up");
 }
 
-void test_planet_shared_atmosphere_frame_splits_sky_and_moon_ownership() {
+void test_planet_unified_atmosphere_frame_splits_sky_and_moon_ownership() {
     cubey::projects::planet::PlanetAtmosphereInputs inputs{};
     inputs.planet_radius_m = 600000.0F;
     inputs.atmosphere_outer_radius_m = 670000.0F;
@@ -596,7 +596,7 @@ void test_planet_shared_atmosphere_frame_splits_sky_and_moon_ownership() {
     inputs.moon_phase_fraction = 0.5F;
 
     const cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
-        cubey::projects::planet::planet_shared_atmosphere_frame_uniforms(
+        cubey::projects::planet::planet_unified_atmosphere_frame_uniforms(
             inputs, {
                         .view_rays = cubey::render::view_ray_basis_3d(
                             cubey::math::identity_quat(), 1.0F, std::numbers::pi_v<float> / 3.0F),
@@ -604,31 +604,31 @@ void test_planet_shared_atmosphere_frame_splits_sky_and_moon_ownership() {
                     });
 
     require_near(uniforms.radii_ground.x, 600.0F, 0.0001F,
-                 "shared atmosphere adapter should convert planet radius to kilometers");
+                 "unified atmosphere adapter should convert planet radius to kilometers");
     require_near(uniforms.radii_ground.y, 670.0F, 0.0001F,
-                 "shared atmosphere adapter should convert atmosphere radius to kilometers");
+                 "unified atmosphere adapter should convert atmosphere radius to kilometers");
     require_near(uniforms.radii_ground.z, 10.0F, 0.0001F,
-                 "shared atmosphere adapter should convert camera altitude to kilometers");
+                 "unified atmosphere adapter should convert camera altitude to kilometers");
     require_near(uniforms.render_options.x, 1.0F, 0.000001F,
-                 "shared atmosphere adapter should render sky-only for planet");
+                 "unified atmosphere adapter should render sky-only for planet");
     require_near(uniforms.render_options.y, 1.0F, 0.000001F,
-                 "shared atmosphere adapter should enable unified sky celestial content");
+                 "unified atmosphere adapter should enable unified sky celestial content");
     require_near(uniforms.celestial_render_options.x, 1.0F, 0.000001F,
-                 "shared atmosphere adapter should render the unified sky sun disk");
+                 "unified atmosphere adapter should render the unified sky sun disk");
     require_near(uniforms.celestial_render_options.y, 1.0F, 0.000001F,
-                 "shared atmosphere adapter should render unified night sky");
+                 "unified atmosphere adapter should render unified night sky");
     require_near(uniforms.celestial_render_options.z, 0.0F, 0.000001F,
-                 "shared atmosphere adapter should suppress inline moon disk rendering");
+                 "unified atmosphere adapter should suppress inline moon disk rendering");
     require_near(uniforms.atmosphere_options.y, 0.0F, 0.000001F,
-                 "shared atmosphere adapter should disable reference geometry");
+                 "unified atmosphere adapter should disable reference geometry");
     require_near(uniforms.moon_options.x, 1.0F, 0.000001F,
-                 "shared atmosphere adapter should keep moon data for sky washout");
+                 "unified atmosphere adapter should keep moon data for sky washout");
     require_near(uniforms.moon_options.w, 1.0F, 0.000001F,
-                 "shared atmosphere adapter should derive moon illumination from planet phase");
+                 "unified atmosphere adapter should derive moon illumination from planet phase");
     require_near(uniforms.moon_phase_options.y, 0.0F, 0.000001F,
-                 "shared atmosphere adapter should pack moon phase sine");
+                 "unified atmosphere adapter should pack moon phase sine");
     require_near(uniforms.camera_forward_debug_view.w, 2.0F, 0.000001F,
-                 "shared atmosphere adapter should preserve debug render view");
+                 "unified atmosphere adapter should preserve debug render view");
 }
 
 void test_celestial_body_conversion_preserves_moon_state() {
@@ -990,8 +990,8 @@ int main() {
         test_celestial_display_exposure_respects_overrides();
         test_planet_atmosphere_inputs_follow_celestial_state();
         test_planet_atmosphere_environment_config_round_trips_sun_direction();
-        test_planet_shared_atmosphere_frame_uses_local_tangent_up();
-        test_planet_shared_atmosphere_frame_splits_sky_and_moon_ownership();
+        test_planet_unified_atmosphere_frame_uses_local_tangent_up();
+        test_planet_unified_atmosphere_frame_splits_sky_and_moon_ownership();
         test_celestial_body_conversion_preserves_moon_state();
         test_celestial_body_render_placement_preserves_apparent_size();
         test_celestial_body_render_placement_uses_topocentric_ray();

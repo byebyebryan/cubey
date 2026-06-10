@@ -353,7 +353,7 @@ class PlanetApp {
         }
         surface_runtime_.resize_frame_slots(frame_slot_count);
         create_sky_frame_resources_if_needed(device, frame_slot_count);
-        create_shared_atmosphere_frame_resources_if_needed(device, frame_slot_count);
+        create_unified_atmosphere_frame_resources_if_needed(device, frame_slot_count);
         create_celestial_body_frame_resources_if_needed(device, frame_slot_count);
         create_hdr_post_resources_if_needed(device, frame_slot_count);
     }
@@ -405,7 +405,7 @@ class PlanetApp {
                         .material_pass = planet_local_detail_pass_info(),
                     });
         create_sky_frame_pipeline(device, extent, kPlanetSceneColorFormat);
-        create_shared_atmosphere_frame_pipeline(device, extent, kPlanetSceneColorFormat);
+        create_unified_atmosphere_frame_pipeline(device, extent, kPlanetSceneColorFormat);
         create_celestial_body_frame_pipeline(device, extent, kPlanetSceneColorFormat,
                                              forward_pass().depth_target().format);
         create_hdr_post_pipeline(device, extent, color_format);
@@ -417,7 +417,7 @@ class PlanetApp {
         graph_executor_.clear();
         hdr_post_frame_.destroy_pipeline();
         celestial_body_frame_.destroy_pipeline();
-        shared_atmosphere_frame_.destroy_pipeline();
+        unified_atmosphere_frame_.destroy_pipeline();
         sky_frame_.destroy_pipeline();
         local_detail_pipeline_.reset();
         forward_pass_.reset();
@@ -428,7 +428,7 @@ class PlanetApp {
         hdr_post_frame_.destroy();
         hdr_post_frame_slot_count_ = 0;
         celestial_body_frame_.destroy();
-        shared_atmosphere_frame_.destroy();
+        unified_atmosphere_frame_.destroy();
         sky_frame_.destroy();
         surface_runtime_.clear_gpu_buffers();
         moon_mesh_.reset();
@@ -1033,7 +1033,7 @@ class PlanetApp {
     }
 
     [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
-    shared_atmosphere_frame_uniforms(VkExtent2D extent) const {
+    unified_atmosphere_frame_uniforms(VkExtent2D extent) const {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = extent.height == 0U ? 1.0F
                                                  : static_cast<float>(extent.width) /
@@ -1041,7 +1041,7 @@ class PlanetApp {
         const PlanetAtmosphereInputs inputs = planet_atmosphere_inputs(
             celestial_system_, celestial_lighting_, frame_.camera_world_position_m,
             planet_config_.radius_m, planet_config_.radius_m + planet_config_.atmosphere_height_m);
-        return planet_shared_atmosphere_frame_uniforms(
+        return planet_unified_atmosphere_frame_uniforms(
             inputs, {
                         .view_rays = cubey::render::view_ray_basis_3d(
                             transform.rotation, aspect, camera_.fovy_radians()),
@@ -1061,7 +1061,7 @@ class PlanetApp {
             sky_frame_.record_pass(recorder, target, frame_slot);
             return;
         }
-        shared_atmosphere_frame_.record_pass(recorder, target, frame_slot);
+        unified_atmosphere_frame_.record_pass(recorder, target, frame_slot);
     }
 
     [[nodiscard]] PlanetCelestialBodyFrameUniforms
@@ -1278,8 +1278,8 @@ class PlanetApp {
         const PlanetSurfaceFrameUniforms uniforms = surface_frame_uniforms(color_target.extent);
         surface_frame_material().upload(frame_slot, uniforms);
         sky_frame_.upload(frame_slot, sky_frame_uniforms(color_target.extent));
-        shared_atmosphere_frame_.upload(frame_slot,
-                                        shared_atmosphere_frame_uniforms(color_target.extent));
+        unified_atmosphere_frame_.upload(frame_slot,
+                                         unified_atmosphere_frame_uniforms(color_target.extent));
         celestial_body_frame_.upload(frame_slot, moon_body_frame_uniforms(color_target.extent));
         hdr_post_frame_.upload(frame_slot, post_uniforms(color_target.format, color_target.extent));
         const cubey::render::InstanceBuffer<PlanetSurfaceGpuPatchInstance>& instance_buffer =
@@ -1358,12 +1358,12 @@ class PlanetApp {
         }
     }
 
-    void create_shared_atmosphere_frame_resources_if_needed(const cubey::vulkan::Device& device,
-                                                           std::uint32_t frame_slot_count) {
-        if (!shared_atmosphere_frame_.materials_created() ||
-            shared_atmosphere_frame_.material().material_instance().set_count() != frame_slot_count) {
-            shared_atmosphere_frame_.destroy();
-            shared_atmosphere_frame_.create_materials(
+    void create_unified_atmosphere_frame_resources_if_needed(const cubey::vulkan::Device& device,
+                                                            std::uint32_t frame_slot_count) {
+        if (!unified_atmosphere_frame_.materials_created() ||
+            unified_atmosphere_frame_.material().material_instance().set_count() != frame_slot_count) {
+            unified_atmosphere_frame_.destroy();
+            unified_atmosphere_frame_.create_materials(
                 device, {
                             .frame_slot_count = frame_slot_count,
                             .textures = sky_atlas_resources_->bindings(),
@@ -1385,14 +1385,14 @@ class PlanetApp {
                                            });
     }
 
-    void create_shared_atmosphere_frame_pipeline(const cubey::vulkan::Device& device,
-                                                 VkExtent2D extent, VkFormat color_format) {
+    void create_unified_atmosphere_frame_pipeline(const cubey::vulkan::Device& device,
+                                                  VkExtent2D extent, VkFormat color_format) {
         const std::array<cubey::render::ShaderStageFile, 2> shaders{
             cubey::render::vertex_shader_file(shader_path("atmosphere.vert.spv")),
             cubey::render::fragment_shader_file(shader_path("atmosphere.frag.spv")),
         };
-        shared_atmosphere_frame_.destroy_pipeline();
-        shared_atmosphere_frame_.create_pipeline(device, {
+        unified_atmosphere_frame_.destroy_pipeline();
+        unified_atmosphere_frame_.create_pipeline(device, {
                                                             .extent = extent,
                                                             .color_format = color_format,
                                                             .shader_stage_files = shaders,
@@ -1485,7 +1485,7 @@ class PlanetApp {
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
     std::optional<cubey::render::GraphicsPipelineResource> local_detail_pipeline_;
     PlanetSkyFrame sky_frame_{};
-    cubey::render::AtmosphereBackgroundFrame shared_atmosphere_frame_{};
+    cubey::render::AtmosphereBackgroundFrame unified_atmosphere_frame_{};
     PlanetCelestialBodyFrame celestial_body_frame_{};
     cubey::render::HdrPostFrame hdr_post_frame_{};
     cubey::render::RenderGraphFrameExecutor graph_executor_;

@@ -57,7 +57,7 @@ struct PlanetAtmosphereTangentFrame {
     return frame;
 }
 
-[[nodiscard]] cubey::math::Vec3 to_shared_atmosphere_space(
+[[nodiscard]] cubey::math::Vec3 to_unified_atmosphere_space(
     cubey::math::Vec3 direction, const PlanetAtmosphereTangentFrame& frame) {
     const cubey::math::Vec3 normalized = normalized_or_up(direction);
     return {
@@ -67,7 +67,7 @@ struct PlanetAtmosphereTangentFrame {
     };
 }
 
-[[nodiscard]] cubey::math::Vec3 to_shared_atmosphere_position_km(
+[[nodiscard]] cubey::math::Vec3 to_unified_atmosphere_position_km(
     cubey::math::Vec3 position_m, const PlanetAtmosphereTangentFrame& frame,
     const PlanetAtmosphereInputs& inputs) {
     if (glm::dot(position_m, position_m) <= 0.000001F) {
@@ -82,14 +82,14 @@ struct PlanetAtmosphereTangentFrame {
     };
 }
 
-[[nodiscard]] cubey::render::ViewRayBasis3D shared_atmosphere_view_rays(
+[[nodiscard]] cubey::render::ViewRayBasis3D unified_atmosphere_view_rays(
     const cubey::render::ViewRayBasis3D& view_rays, const PlanetAtmosphereTangentFrame& frame) {
     const cubey::math::Vec3 right =
-        to_shared_atmosphere_space(cubey::math::Vec3{view_rays.right_aspect}, frame);
+        to_unified_atmosphere_space(cubey::math::Vec3{view_rays.right_aspect}, frame);
     const cubey::math::Vec3 up =
-        to_shared_atmosphere_space(cubey::math::Vec3{view_rays.up_tan_half_fovy}, frame);
+        to_unified_atmosphere_space(cubey::math::Vec3{view_rays.up_tan_half_fovy}, frame);
     const cubey::math::Vec3 forward =
-        to_shared_atmosphere_space(cubey::math::Vec3{view_rays.forward}, frame);
+        to_unified_atmosphere_space(cubey::math::Vec3{view_rays.forward}, frame);
     return {
         .right_aspect = {right.x, right.y, right.z, view_rays.right_aspect.w},
         .up_tan_half_fovy = {up.x, up.y, up.z, view_rays.up_tan_half_fovy.w},
@@ -127,14 +127,14 @@ planet_atmosphere_environment_config(const PlanetAtmosphereInputs& inputs) {
     return config;
 }
 
-cubey::render::AtmosphereEnvironmentFrameUniforms planet_shared_atmosphere_frame_uniforms(
-    const PlanetAtmosphereInputs& inputs, const PlanetSharedAtmosphereFrameInputs& frame_inputs) {
+cubey::render::AtmosphereEnvironmentFrameUniforms planet_unified_atmosphere_frame_uniforms(
+    const PlanetAtmosphereInputs& inputs, const PlanetUnifiedAtmosphereFrameInputs& frame_inputs) {
     const PlanetAtmosphereTangentFrame tangent =
         planet_atmosphere_tangent_frame(inputs, frame_inputs.view_rays);
     const cubey::render::ViewRayBasis3D view_rays =
-        shared_atmosphere_view_rays(frame_inputs.view_rays, tangent);
+        unified_atmosphere_view_rays(frame_inputs.view_rays, tangent);
     const cubey::math::Vec3 camera_position_km =
-        to_shared_atmosphere_position_km(inputs.camera_position_m, tangent, inputs);
+        to_unified_atmosphere_position_km(inputs.camera_position_m, tangent, inputs);
     cubey::render::AtmosphereEnvironmentConfig config =
         planet_atmosphere_environment_config(inputs);
     cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
@@ -147,9 +147,9 @@ cubey::render::AtmosphereEnvironmentFrameUniforms planet_shared_atmosphere_frame
                     });
 
     const cubey::math::Vec3 sun_direction =
-        to_shared_atmosphere_space(inputs.sun_direction, tangent);
+        to_unified_atmosphere_space(inputs.sun_direction, tangent);
     const cubey::math::Vec3 moon_direction =
-        to_shared_atmosphere_space(inputs.moon_direction, tangent);
+        to_unified_atmosphere_space(inputs.moon_direction, tangent);
     uniforms.sun_direction_radius = {
         sun_direction.x,
         sun_direction.y,
