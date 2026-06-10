@@ -52,6 +52,7 @@ constexpr std::array<std::string_view, 2> kPlanetCameraModes{"orbit", "surface"}
 constexpr std::array<std::string_view, 3> kPlanetSurfaceLooks{"default", "sun", "antisun"};
 constexpr std::array<std::string_view, 3> kPlanetAtmosphereModes{"analytic", "physical",
                                                                  "physical-preview"};
+constexpr std::array<std::string_view, 2> kPlanetSkyBackends{"local", "shared-atmosphere"};
 constexpr std::array<std::string_view, 2> kTimeOfDayModes{"manual", "solar"};
 constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
@@ -88,7 +89,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 176> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 177> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -368,6 +369,10 @@ constexpr std::array<ConfigOptionDescriptor, 176> kRunConfigOptions{
     option(RunConfigOptionId::PlanetAtmosphereMode, "planet.atmosphere_mode",
            "--planet-atmosphere-mode", "Atmosphere Mode", "Planet", "Planet sky atmosphere mode.",
            ConfigOptionType::Enum, no_range(), enum_choices(kPlanetAtmosphereModes)),
+    option(RunConfigOptionId::PlanetSkyBackend, "planet.sky_backend", "--planet-sky-backend",
+           "Sky Backend", "Planet",
+           "Planet sky backend used for comparing local and shared atmosphere paths.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kPlanetSkyBackends)),
     option(RunConfigOptionId::TerrainSeed, "terrain.seed", "--terrain-seed", "Seed", "Terrain",
            "Deterministic procedural terrain seed.", ConfigOptionType::UInt64),
     option(RunConfigOptionId::TerrainCellSize, "terrain.cell_size", "--terrain-cell-size",
@@ -1009,6 +1014,9 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.planet.atmosphere_mode.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.planet.atmosphere_mode);
+    case RunConfigOptionId::PlanetSkyBackend:
+        return config.planet.sky_backend.empty() ? nlohmann::json(nullptr)
+                                                 : nlohmann::json(config.planet.sky_backend);
     case RunConfigOptionId::TerrainSeed:
         return config.terrain.seed_set ? nlohmann::json(config.terrain.seed)
                                        : nlohmann::json(nullptr);
@@ -1296,6 +1304,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<int>("time_paused", options.time_paused);
     adapter.writeField<std::string>("camera_mode", options.camera_mode);
     adapter.writeField<std::string>("atmosphere_mode", options.atmosphere_mode);
+    adapter.writeField<std::string>("sky_backend", options.sky_backend);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options) {
@@ -1342,6 +1351,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<int>("time_paused", options.time_paused);
     adapter.readField<std::string>("camera_mode", options.camera_mode);
     adapter.readField<std::string>("atmosphere_mode", options.atmosphere_mode);
+    adapter.readField<std::string>("sky_backend", options.sky_backend);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::PbrOptions& options) {
@@ -1888,6 +1898,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::PlanetAtmosphereMode:
         config.planet.atmosphere_mode = std::string(value);
+        break;
+    case RunConfigOptionId::PlanetSkyBackend:
+        config.planet.sky_backend = std::string(value);
         break;
     case RunConfigOptionId::TerrainSeed:
         config.terrain.seed = parse_number<std::uint64_t>(value, option, "unsigned integer");

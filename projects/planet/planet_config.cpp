@@ -130,6 +130,9 @@ PlanetConfig planet_config_from_run_config(const RunConfig& config) {
     if (!config.planet.atmosphere_mode.empty()) {
         planet.atmosphere_mode = planet_atmosphere_mode_from_string(config.planet.atmosphere_mode);
     }
+    if (!config.planet.sky_backend.empty()) {
+        planet.sky_backend = planet_sky_backend_from_string(config.planet.sky_backend);
+    }
     if (!config.debug_view.empty()) {
         planet.debug_view = planet_debug_view_from_string(config.debug_view);
     }
@@ -384,6 +387,27 @@ const char* planet_atmosphere_mode_name(PlanetAtmosphereMode mode) {
         return "physical";
     }
     return "analytic";
+}
+
+PlanetSkyBackend planet_sky_backend_from_string(std::string_view value) {
+    if (value.empty() || value == "local") {
+        return PlanetSkyBackend::Local;
+    }
+    if (value == "shared-atmosphere" || value == "shared_atmosphere" ||
+        value == "atmosphere") {
+        return PlanetSkyBackend::SharedAtmosphere;
+    }
+    throw std::runtime_error("unsupported planet sky backend: " + std::string(value));
+}
+
+const char* planet_sky_backend_name(PlanetSkyBackend backend) {
+    switch (backend) {
+    case PlanetSkyBackend::Local:
+        return "local";
+    case PlanetSkyBackend::SharedAtmosphere:
+        return "shared-atmosphere";
+    }
+    return "local";
 }
 
 void validate_planet_config(const PlanetConfig& config) {
