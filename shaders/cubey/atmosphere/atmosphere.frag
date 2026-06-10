@@ -178,10 +178,56 @@ float star_visibility(float sun_elevation) {
     return 1.0 - smoothstep(-18.0, -6.0, sun_elevation);
 }
 
+float surface_airmass_star_visibility(float ray_up) {
+    float above_horizon = smoothstep(-0.015, 0.080, ray_up);
+    float horizon_airmass = exp(-max(ray_up, 0.0) / 0.16);
+    float clear_air = 1.0 - smoothstep(0.12, 0.78, horizon_airmass);
+    return above_horizon * clear_air;
+}
+
+float surface_dark_sky_visibility(float ray_up, float sun_elevation, float daylight,
+                                  float twilight) {
+    float astronomical_night = 1.0 - smoothstep(-0.48, -0.31, sun_elevation);
+    float twilight_cut = 1.0 - smoothstep(0.005, 0.14, twilight);
+    float daylight_cut = pow(clamp(1.0 - daylight, 0.0, 1.0), 5.0);
+    return clamp(astronomical_night * twilight_cut * daylight_cut *
+                     surface_airmass_star_visibility(ray_up),
+                 0.0, 1.0);
+}
+
+float surface_twilight_window(float sun_elevation, float daylight, float twilight) {
+    float low_sun = smoothstep(-0.40, -0.03, sun_elevation);
+    float daylight_fade = 1.0 - smoothstep(0.05, 0.34, sun_elevation);
+    float exposure_fade = 1.0 - smoothstep(0.25, 0.90, daylight);
+    return clamp(max(twilight, low_sun * daylight_fade) * exposure_fade, 0.0, 1.0);
+}
+
+vec3 surface_twilight_radiance(float ray_up, float sun_elevation, float toward_sun,
+                               float daylight, float twilight) {
+    float window = surface_twilight_window(sun_elevation, daylight, twilight);
+    float above_horizon = smoothstep(-0.045, 0.075, ray_up);
+    float horizon_band = exp(-abs(ray_up) / 0.20) * above_horizon;
+    float upper_band = smoothstep(0.02, 0.42, ray_up) *
+                       (1.0 - smoothstep(0.52, 0.92, ray_up)) * above_horizon;
+    float sun_lobe = pow(clamp(toward_sun, 0.0, 1.0), 0.38);
+    float sun_horizon = horizon_band * (0.34 + 0.66 * sun_lobe);
+
+    vec3 ember = cubey_srgb_to_linear(vec3(1.00, 0.24, 0.055)) * sun_horizon * 0.18;
+    vec3 gold = cubey_srgb_to_linear(vec3(1.00, 0.64, 0.20)) * horizon_band *
+                smoothstep(-0.16, 0.10, sun_elevation) * 0.08;
+    vec3 violet = cubey_srgb_to_linear(vec3(0.27, 0.12, 0.34)) * upper_band *
+                  (0.45 + 0.55 * sun_lobe) * 0.12;
+    return (ember + gold + violet) * window;
+}
+
 vec3 twilight_radiance(vec3 ray_direction, vec3 sun_direction) {
     float sun_elevation = sun_elevation_degrees(sun_direction);
-    float visibility = twilight_visibility(sun_elevation) * atmosphere.night_options.x;
-    if (visibility <= 0.0) {
+    float legacy_visibility = twilight_visibility(sun_elevation);
+    float sun_elevation_dot = clamp(sun_direction.y, -1.0, 1.0);
+    float daylight = smoothstep(-0.08, 0.24, sun_elevation_dot);
+    float twilight_window = exp(-abs(sun_elevation_dot) / 0.16) *
+                            smoothstep(-0.22, 0.08, sun_elevation_dot);
+    if (legacy_visibility <= 0.0 && twilight_window <= 0.0) {
         return vec3(0.0);
     }
 
@@ -195,9 +241,12 @@ vec3 twilight_radiance(vec3 ray_direction, vec3 sun_direction) {
     vec3 zenith = cubey_srgb_to_linear(vec3(0.010, 0.024, 0.074)) * 0.18;
     vec3 horizon_blue = cubey_srgb_to_linear(vec3(0.075, 0.092, 0.155)) * 0.20;
     vec3 sun_warmth = cubey_srgb_to_linear(vec3(1.0, 0.34, 0.09)) * 0.10;
-    vec3 twilight = mix(horizon_blue, zenith, upper_sky);
-    twilight += sun_warmth * horizon * sun_azimuth_lobe * horizon_warmth;
-    return twilight * visibility;
+    vec3 twilight_color = mix(horizon_blue, zenith, upper_sky);
+    twilight_color += sun_warmth * horizon * sun_azimuth_lobe * horizon_warmth;
+    vec3 surface_twilight =
+        surface_twilight_radiance(ray_direction.y, sun_elevation_dot, sun_azimuth_lobe, daylight,
+                                  twilight_window);
+    return (twilight_color * legacy_visibility + surface_twilight) * atmosphere.night_options.x;
 }
 
 float hash12(vec2 value) {
@@ -278,10 +327,16 @@ float moon_washout(vec3 ray_direction, float base_strength, float lobe_strength,
 float night_object_visibility(vec3 ray_direction, vec3 sun_direction, float horizon_end,
                               float moon_base, float moon_lobe, float moon_min,
                               float pollution_min) {
+    float sun_elevation_dot = clamp(sun_direction.y, -1.0, 1.0);
+    float daylight = smoothstep(-0.08, 0.24, sun_elevation_dot);
+    float twilight = exp(-abs(sun_elevation_dot) / 0.16) *
+                     smoothstep(-0.22, 0.08, sun_elevation_dot);
     float night = star_visibility(sun_elevation_degrees(sun_direction));
     float horizon = smoothstep(-0.03, horizon_end, ray_direction.y);
+    float surface_dark =
+        surface_dark_sky_visibility(ray_direction.y, sun_elevation_dot, daylight, twilight);
     float pollution = mix(1.0, pollution_min, clamp(atmosphere.milky_way_options.z, 0.0, 1.0));
-    return night * horizon * night_haze_visibility() * pollution *
+    return max(night * horizon, surface_dark) * night_haze_visibility() * pollution *
            moon_washout(ray_direction, moon_base, moon_lobe, moon_min);
 }
 
