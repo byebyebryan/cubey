@@ -29,7 +29,7 @@ void require_near(float actual, float expected, float tolerance, const char* mes
 } // namespace
 
 void test_atmosphere_environment_packs_frame_uniforms() {
-    require(sizeof(cubey::render::AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 64U,
+    require(sizeof(cubey::render::AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 72U,
             "atmosphere environment frame uniforms should keep the shader vec4 layout size");
 
     cubey::render::AtmosphereEnvironmentConfig config;
@@ -39,6 +39,8 @@ void test_atmosphere_environment_packs_frame_uniforms() {
     config.moon.enabled = false;
     config.moon.disk_intensity = 0.5F;
     config.time_of_day.latitude_degrees = 42.0F;
+    config.camera_altitude_km = 2.0F;
+    config.render_moon_disk = false;
 
     const cubey::math::Vec3 sun = cubey::render::atmosphere_environment_sun_direction(config);
     require_near(sun.x, std::cos(cubey::render::atmosphere_environment_degrees_to_radians(30.0F)),
@@ -70,8 +72,18 @@ void test_atmosphere_environment_packs_frame_uniforms() {
                 static_cast<float>(static_cast<std::uint32_t>(
                     cubey::render::AtmosphereEnvironmentRenderView::Moon)),
             "atmosphere environment should pack the debug render view");
+    require_near(uniforms.camera_position_radius.y, config.bottom_radius_km + 2.0F, 0.0001F,
+                 "atmosphere environment should synthesize camera radius from altitude");
+    require_near(uniforms.camera_position_radius.w, config.bottom_radius_km, 0.0001F,
+                 "atmosphere environment should pack planet radius with camera position");
     require(uniforms.moon_options.x == 0.0F,
             "atmosphere environment should pack the moon enable flag");
+    require(uniforms.celestial_render_options.x == 1.0F,
+            "atmosphere environment should pack the sun disk draw flag");
+    require(uniforms.celestial_render_options.y == 1.0F,
+            "atmosphere environment should pack the night sky draw flag");
+    require(uniforms.celestial_render_options.z == 0.0F,
+            "atmosphere environment should pack the moon disk draw flag");
     require(uniforms.milky_way_options.w == 1.0F,
             "atmosphere environment should pack camera visual mode for Milky Way rendering");
     require(uniforms.celestial_options.z ==
@@ -89,7 +101,22 @@ void test_atmosphere_environment_packs_frame_uniforms() {
                         .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
                     });
     require(sky_only_uniforms.render_options.x == 1.0F,
-	            "atmosphere environment should pack sky-only ground policy");
+		            "atmosphere environment should pack sky-only ground policy");
+
+    const cubey::render::AtmosphereEnvironmentFrameUniforms explicit_camera_uniforms =
+        cubey::render::atmosphere_environment_frame_uniforms(
+            config, {
+                        .view_rays = view_rays,
+                        .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
+                        .camera_position_km = {3.0F, 4.0F, 5.0F},
+                        .camera_position_km_explicit = true,
+                    });
+    require_near(explicit_camera_uniforms.camera_position_radius.x, 3.0F, 0.0001F,
+                 "atmosphere environment should preserve explicit camera position x");
+    require_near(explicit_camera_uniforms.camera_position_radius.y, 4.0F, 0.0001F,
+                 "atmosphere environment should preserve explicit camera position y");
+    require_near(explicit_camera_uniforms.camera_position_radius.z, 5.0F, 0.0001F,
+                 "atmosphere environment should preserve explicit camera position z");
 }
 
 void test_atmosphere_environment_packs_celestial_frame_uniforms() {

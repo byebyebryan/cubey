@@ -13,6 +13,7 @@ layout(set = 0, binding = 0) uniform AtmosphereFrame {
     vec4 camera_right_aspect;
     vec4 camera_up_tan_half_fovy;
     vec4 camera_forward_debug_view;
+    vec4 camera_position_radius;
     vec4 radii_ground;
     vec4 rayleigh;
     vec4 mie;
@@ -26,6 +27,7 @@ layout(set = 0, binding = 0) uniform AtmosphereFrame {
     vec4 moon_phase_options;
     vec4 milky_way_options;
     vec4 render_options;
+    vec4 celestial_render_options;
 } atmosphere;
 
 layout(set = 0, binding = 1) uniform sampler2D moon_atlas;
@@ -68,6 +70,22 @@ vec2 ray_sphere_intersection(vec3 ray_origin, vec3 ray_direction, vec3 sphere_ce
 
 float altitude_at(vec3 position, vec3 planet_center) {
     return max(length(position - planet_center) - atmosphere.radii_ground.x, 0.0);
+}
+
+vec3 atmosphere_ray_origin() {
+    return atmosphere.camera_position_radius.xyz;
+}
+
+vec3 atmosphere_planet_center() {
+    return vec3(0.0);
+}
+
+vec3 atmosphere_camera_up(vec3 ray_origin, vec3 planet_center) {
+    vec3 up = ray_origin - planet_center;
+    if (dot(up, up) <= 0.000001) {
+        return vec3(0.0, 1.0, 0.0);
+    }
+    return normalize(up);
 }
 
 float ozone_density(float altitude_km) {
@@ -541,7 +559,7 @@ float nearest_positive_ground_hit(vec3 ray_origin, vec3 ray_direction, vec3 plan
     return -1.0;
 }
 
-vec3 sun_disk_luminance(vec3 ray_direction, vec3 planet_center) {
+vec3 sun_disk_luminance(vec3 ray_origin, vec3 ray_direction, vec3 planet_center) {
     vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
     float sun_cos = dot(ray_direction, sun_direction);
     float sun_cutoff = cos(atmosphere.sun_direction_radius.w);
@@ -549,7 +567,6 @@ vec3 sun_disk_luminance(vec3 ray_direction, vec3 planet_center) {
     if (disk <= 0.0) {
         return vec3(0.0);
     }
-    vec3 ray_origin = vec3(0.0);
     vec2 atmosphere_hit = ray_sphere_intersection(ray_origin, ray_direction, planet_center,
                                                   atmosphere.radii_ground.y);
     float ray_end = max(atmosphere_hit.y, 0.0);
@@ -574,7 +591,8 @@ MoonSurfaceSample moon_surface_sample(vec2 position, vec3 surface_normal, vec3 m
     return MoonSurfaceSample(albedo, detail_normal);
 }
 
-vec3 moon_disk_radiance(vec3 ray_direction, vec3 sun_direction, vec3 planet_center) {
+vec3 moon_disk_radiance(vec3 ray_origin, vec3 ray_direction, vec3 sun_direction,
+                        vec3 planet_center) {
     if (atmosphere.moon_options.x < 0.5 || atmosphere.moon_options.y <= 0.0 ||
         atmosphere.moon_options.w <= 0.0001) {
         return vec3(0.0);
@@ -621,10 +639,10 @@ vec3 moon_disk_radiance(vec3 ray_direction, vec3 sun_direction, vec3 planet_cent
     float opposition_boost = mix(0.88, 1.12, pow(phase_alignment, 6.0));
     float limb_softening = mix(0.78, 1.0, smoothstep(0.0, 0.35, mu));
 
-    vec2 atmosphere_hit = ray_sphere_intersection(vec3(0.0), ray_direction, planet_center,
+    vec2 atmosphere_hit = ray_sphere_intersection(ray_origin, ray_direction, planet_center,
                                                   atmosphere.radii_ground.y);
     float ray_end = max(atmosphere_hit.y, 0.0);
-    OpticalDepth depth = integrate_optical_depth(vec3(0.0), ray_direction, ray_end,
+    OpticalDepth depth = integrate_optical_depth(ray_origin, ray_direction, ray_end,
                                                 planet_center, ATMOSPHERE_LIGHT_SAMPLE_COUNT);
     vec3 moon_color = cubey_srgb_to_linear(vec3(0.78, 0.84, 1.0));
     return transmittance_from_depth(depth) * moon_color * surface.albedo * surface_light *
@@ -649,7 +667,7 @@ float reference_ring(vec2 position, float radius) {
     return 1.0 - smoothstep(width * 0.25, width, distance_to_ring);
 }
 
-vec4 ground_reference_geometry(vec3 ground_position) {
+vec4 ground_reference_geometry(vec3 ground_position, vec3 ray_origin, vec3 planet_center) {
     if (atmosphere.atmosphere_options.y < 0.5) {
         return vec4(0.0);
     }
@@ -661,11 +679,9 @@ vec4 ground_reference_geometry(vec3 ground_position) {
     float altitude = atmosphere.radii_ground.z;
     float range = mix(80.0, 650.0, smoothstep(0.5, 25.0, altitude));
     float distance_fade = 1.0 - smoothstep(range * 0.62, range, ground_distance);
-    float horizon_fade = smoothstep(0.0, 0.08, dot(normalize(ground_position -
-                                                            vec3(0.0, -atmosphere.radii_ground.x -
-                                                                          atmosphere.radii_ground.z,
-                                                                 0.0)),
-                                                    vec3(0.0, 1.0, 0.0)));
+    float horizon_fade = smoothstep(
+        0.0, 0.08, dot(normalize(ground_position - planet_center),
+                       atmosphere_camera_up(ray_origin, planet_center)));
 
     float minor_grid = reference_line(ground_xz, grid_scale);
     float major_grid = reference_line(ground_xz, grid_scale * 10.0);
@@ -699,9 +715,9 @@ vec4 ground_reference_geometry(vec3 ground_position) {
     return vec4(color, clamp(alpha, 0.0, 1.0));
 }
 
-vec3 ground_radiance(vec3 ray_direction, vec3 planet_center, float ground_t) {
+vec3 ground_radiance(vec3 ray_origin, vec3 ray_direction, vec3 planet_center, float ground_t) {
     vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
-    vec3 ground_position = ray_direction * ground_t;
+    vec3 ground_position = ray_origin + ray_direction * ground_t;
     vec3 normal = normalize(ground_position - planet_center);
     float ndotl = dot(normal, sun_direction);
     float sun_visibility = ground_sun_visibility(normal, sun_direction);
@@ -720,13 +736,14 @@ vec3 ground_radiance(vec3 ray_direction, vec3 planet_center, float ground_t) {
     vec3 base = cubey_srgb_to_linear(vec3(0.18, 0.20, 0.16)) * atmosphere.radii_ground.w;
     vec3 lit_ground = base * (0.12 + direct_light * 1.35 + twilight_fill + night_ambient) +
                       moonlight * atmosphere.radii_ground.w;
-    vec4 reference = ground_reference_geometry(ground_position);
+    vec4 reference = ground_reference_geometry(ground_position, ray_origin, planet_center);
     return mix(lit_ground, reference.rgb, reference.a);
 }
 
-vec3 moon_ground_debug_radiance(vec3 ray_direction, vec3 planet_center, float ground_t) {
+vec3 moon_ground_debug_radiance(vec3 ray_origin, vec3 ray_direction, vec3 planet_center,
+                                float ground_t) {
     vec3 moon_direction = normalize(atmosphere.moon_direction_radius.xyz);
-    vec3 ground_position = ray_direction * ground_t;
+    vec3 ground_position = ray_origin + ray_direction * ground_t;
     vec3 normal = normalize(ground_position - planet_center);
     float moon_visibility = ground_sun_visibility(normal, moon_direction);
     float moon_direct = max(dot(normal, moon_direction), 0.0) * moon_visibility *
@@ -736,13 +753,13 @@ vec3 moon_ground_debug_radiance(vec3 ray_direction, vec3 planet_center, float gr
            atmosphere.radii_ground.w;
 }
 
-vec3 render_aerial_perspective_debug(vec3 ray_direction, vec3 planet_center) {
-    vec2 atmosphere_hit = ray_sphere_intersection(vec3(0.0), ray_direction, planet_center,
+vec3 render_aerial_perspective_debug(vec3 ray_origin, vec3 ray_direction, vec3 planet_center) {
+    vec2 atmosphere_hit = ray_sphere_intersection(ray_origin, ray_direction, planet_center,
                                                   atmosphere.radii_ground.y);
     float max_t = max(atmosphere_hit.y, 0.0);
     float ramp = smoothstep(-1.0, 1.0, frag_ndc.x);
     float scene_t = min(max_t, mix(8.0, 320.0, ramp));
-    AtmosphereSample atmosphere_sample = integrate_atmosphere(vec3(0.0), ray_direction, 0.0,
+    AtmosphereSample atmosphere_sample = integrate_atmosphere(ray_origin, ray_direction, 0.0,
                                                               scene_t, planet_center);
     vec3 scene_color = cubey_srgb_to_linear(mix(vec3(0.16, 0.18, 0.14),
                                                 vec3(0.55, 0.55, 0.50), ramp));
@@ -778,11 +795,17 @@ void main() {
         atmosphere.camera_right_aspect.xyz * frag_ndc.x * atmosphere.camera_right_aspect.w *
             tan_half_fovy -
         atmosphere.camera_up_tan_half_fovy.xyz * frag_ndc.y * tan_half_fovy);
-    vec3 planet_center = vec3(0.0, -atmosphere.radii_ground.x - atmosphere.radii_ground.z, 0.0);
+    vec3 ray_origin = atmosphere_ray_origin();
+    vec3 planet_center = atmosphere_planet_center();
     int debug_view = int(atmosphere.camera_forward_debug_view.w + 0.5);
     bool render_celestial_content = atmosphere.render_options.y >= 0.5;
+    bool render_sun_disk = render_celestial_content && atmosphere.celestial_render_options.x >= 0.5;
+    bool render_night_sky =
+        render_celestial_content && atmosphere.celestial_render_options.y >= 0.5;
+    bool render_moon_disk =
+        render_celestial_content && atmosphere.celestial_render_options.z >= 0.5;
 
-    if (debug_view == CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE) {
+    if (debug_view == CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE && render_moon_disk) {
         vec3 color = render_moon_surface_debug();
         out_color = vec4(color, 1.0);
         return;
@@ -793,22 +816,25 @@ void main() {
         return;
     }
 
-    vec2 atmosphere_hit = ray_sphere_intersection(vec3(0.0), ray_direction, planet_center,
+    vec2 atmosphere_hit = ray_sphere_intersection(ray_origin, ray_direction, planet_center,
                                                   atmosphere.radii_ground.y);
     if (atmosphere_hit.y <= 0.0) {
         vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
-        vec3 space_color = render_celestial_content
-            ? sun_disk_luminance(ray_direction, planet_center) +
-                  night_sky_radiance(ray_direction, sun_direction) +
-                  moon_disk_radiance(ray_direction, sun_direction, planet_center)
-            : vec3(0.0);
+        vec3 space_color = (render_sun_disk ? sun_disk_luminance(ray_origin, ray_direction,
+                                                                 planet_center)
+                                            : vec3(0.0)) +
+                           (render_night_sky ? night_sky_radiance(ray_direction, sun_direction)
+                                             : vec3(0.0)) +
+                           (render_moon_disk ? moon_disk_radiance(ray_origin, ray_direction,
+                                                                  sun_direction, planet_center)
+                                             : vec3(0.0));
         out_color = vec4(space_color, 1.0);
         return;
     }
 
     float ray_start = max(atmosphere_hit.x, 0.0);
     float ray_end = atmosphere_hit.y;
-    float ground_t = nearest_positive_ground_hit(vec3(0.0), ray_direction, planet_center);
+    float ground_t = nearest_positive_ground_hit(ray_origin, ray_direction, planet_center);
     bool hit_ground = ground_t > 0.0 && ground_t < ray_end;
     bool sky_only = atmosphere.render_options.x >= 0.5;
     bool shade_ground = hit_ground && !sky_only;
@@ -816,19 +842,19 @@ void main() {
         ray_end = ground_t;
     }
 
-    AtmosphereSample atmosphere_sample = integrate_atmosphere(vec3(0.0), ray_direction, ray_start,
+    AtmosphereSample atmosphere_sample = integrate_atmosphere(ray_origin, ray_direction, ray_start,
                                                               ray_end, planet_center);
     vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
-    vec3 night_sky = (hit_ground || !render_celestial_content)
+    vec3 night_sky = (hit_ground || !render_night_sky)
         ? vec3(0.0)
         : night_sky_radiance(ray_direction, sun_direction) * atmosphere_sample.transmittance;
-    vec3 moon_disk = (hit_ground || !render_celestial_content) ? vec3(0.0) :
-        moon_disk_radiance(ray_direction, sun_direction, planet_center);
-    vec3 sun_disk = (hit_ground || !render_celestial_content) ? vec3(0.0) :
-        sun_disk_luminance(ray_direction, planet_center);
+    vec3 moon_disk = (hit_ground || !render_moon_disk) ? vec3(0.0) :
+        moon_disk_radiance(ray_origin, ray_direction, sun_direction, planet_center);
+    vec3 sun_disk = (hit_ground || !render_sun_disk) ? vec3(0.0) :
+        sun_disk_luminance(ray_origin, ray_direction, planet_center);
     vec3 color = atmosphere_sample.color + sun_disk + night_sky + moon_disk;
     if (shade_ground) {
-        color += ground_radiance(ray_direction, planet_center, ground_t) *
+        color += ground_radiance(ray_origin, ray_direction, planet_center, ground_t) *
                  atmosphere_sample.transmittance;
     }
 
@@ -843,13 +869,13 @@ void main() {
     } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_SUN_DISK) {
         color = sun_disk;
     } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_AERIAL_PERSPECTIVE) {
-        color = render_aerial_perspective_debug(ray_direction, planet_center);
+        color = render_aerial_perspective_debug(ray_origin, ray_direction, planet_center);
     } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_NIGHT_SKY) {
         color = night_sky;
     } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_MOON) {
         color = moon_disk;
         if (shade_ground) {
-            color = moon_ground_debug_radiance(ray_direction, planet_center, ground_t) *
+            color = moon_ground_debug_radiance(ray_origin, ray_direction, planet_center, ground_t) *
                     atmosphere_sample.transmittance;
         }
     }

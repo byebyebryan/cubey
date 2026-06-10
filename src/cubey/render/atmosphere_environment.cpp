@@ -359,6 +359,11 @@ AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
         atmosphere_environment_degrees_to_radians(config.time_of_day.latitude_degrees);
     const AtmosphereEnvironmentLunarState lunar_state =
         atmosphere_environment_lunar_state(config.time_of_day, config.moon);
+    const float bottom_radius_km = std::max(config.bottom_radius_km, 0.001F);
+    const float camera_radius_km = bottom_radius_km + std::max(config.camera_altitude_km, 0.0F);
+    const math::Vec3 camera_position_km =
+        inputs.camera_position_km_explicit ? inputs.camera_position_km
+                                           : math::Vec3{0.0F, camera_radius_km, 0.0F};
 
     return {
         .camera_right_aspect = inputs.view_rays.right_aspect,
@@ -370,9 +375,16 @@ AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
                 inputs.view_rays.forward.z,
                 static_cast<float>(static_cast<std::uint32_t>(inputs.render_view)),
             },
+        .camera_position_radius =
+            {
+                camera_position_km.x,
+                camera_position_km.y,
+                camera_position_km.z,
+                bottom_radius_km,
+            },
         .radii_ground =
             {
-                config.bottom_radius_km,
+                bottom_radius_km,
                 config.top_radius_km,
                 config.camera_altitude_km,
                 config.ground_albedo,
@@ -459,6 +471,13 @@ AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
                 static_cast<float>(static_cast<std::uint32_t>(config.ground_mode)),
                 config.render_celestial_content ? 1.0F : 0.0F,
                 0.0F,
+                0.0F,
+            },
+        .celestial_render_options =
+            {
+                config.render_sun_disk ? 1.0F : 0.0F,
+                config.render_night_sky ? 1.0F : 0.0F,
+                config.render_moon_disk ? 1.0F : 0.0F,
                 0.0F,
             },
     };

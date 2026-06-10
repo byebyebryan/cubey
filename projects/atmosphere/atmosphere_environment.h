@@ -8,7 +8,7 @@
 namespace cubey::projects::atmosphere {
 
 using AtmosphereFrameUniforms = cubey::render::AtmosphereEnvironmentFrameUniforms;
-static_assert(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 64U);
+static_assert(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 72U);
 
 struct AtmosphereFrameUniformInputs {
     cubey::render::ViewRayBasis3D view_rays{};

@@ -61,6 +61,21 @@ struct PlanetAtmosphereTangentFrame {
     };
 }
 
+[[nodiscard]] cubey::math::Vec3 to_shared_atmosphere_position_km(
+    cubey::math::Vec3 position_m, const PlanetAtmosphereTangentFrame& frame,
+    const PlanetAtmosphereInputs& inputs) {
+    if (glm::dot(position_m, position_m) <= 0.000001F) {
+        return {0.0F, (inputs.planet_radius_m + std::max(inputs.camera_altitude_m, 0.0F)) * 0.001F,
+                0.0F};
+    }
+    constexpr float kMetersToKm = 0.001F;
+    return {
+        glm::dot(position_m, frame.right) * kMetersToKm,
+        glm::dot(position_m, frame.up) * kMetersToKm,
+        glm::dot(position_m, frame.forward) * kMetersToKm,
+    };
+}
+
 [[nodiscard]] cubey::render::ViewRayBasis3D shared_atmosphere_view_rays(
     const cubey::render::ViewRayBasis3D& view_rays, const PlanetAtmosphereTangentFrame& frame) {
     const cubey::math::Vec3 right =
@@ -109,6 +124,8 @@ cubey::render::AtmosphereEnvironmentFrameUniforms planet_shared_atmosphere_frame
         planet_atmosphere_tangent_frame(inputs, frame_inputs.view_rays);
     const cubey::render::ViewRayBasis3D view_rays =
         shared_atmosphere_view_rays(frame_inputs.view_rays, tangent);
+    const cubey::math::Vec3 camera_position_km =
+        to_shared_atmosphere_position_km(inputs.camera_position_m, tangent, inputs);
     cubey::render::AtmosphereEnvironmentConfig config =
         planet_atmosphere_environment_config(inputs);
     cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
@@ -116,6 +133,8 @@ cubey::render::AtmosphereEnvironmentFrameUniforms planet_shared_atmosphere_frame
             config, {
                         .view_rays = view_rays,
                         .render_view = frame_inputs.render_view,
+                        .camera_position_km = camera_position_km,
+                        .camera_position_km_explicit = true,
                     });
 
     const cubey::math::Vec3 sun_direction =

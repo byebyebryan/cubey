@@ -95,6 +95,9 @@ struct AtmosphereEnvironmentConfig {
     float camera_altitude_km = 0.15F;
     AtmosphereEnvironmentGroundMode ground_mode = AtmosphereEnvironmentGroundMode::Ground;
     bool render_celestial_content = true;
+    bool render_sun_disk = true;
+    bool render_night_sky = true;
+    bool render_moon_disk = true;
     bool reference_geometry_enabled = true;
     float reference_grid_km = 1.0F;
     float reference_intensity = 0.72F;
@@ -111,6 +114,7 @@ struct AtmosphereEnvironmentFrameUniforms {
     math::Vec4 camera_right_aspect;
     math::Vec4 camera_up_tan_half_fovy;
     math::Vec4 camera_forward_debug_view;
+    math::Vec4 camera_position_radius;
     math::Vec4 radii_ground;
     math::Vec4 rayleigh;
     math::Vec4 mie;
@@ -124,13 +128,16 @@ struct AtmosphereEnvironmentFrameUniforms {
     math::Vec4 moon_phase_options;
     math::Vec4 milky_way_options;
     math::Vec4 render_options;
+    math::Vec4 celestial_render_options;
 };
 
-static_assert(sizeof(AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 64U);
+static_assert(sizeof(AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 72U);
 
 struct AtmosphereEnvironmentFrameUniformInputs {
     ViewRayBasis3D view_rays{};
     AtmosphereEnvironmentRenderView render_view = AtmosphereEnvironmentRenderView::Final;
+    math::Vec3 camera_position_km{0.0F, 0.0F, 0.0F};
+    bool camera_position_km_explicit = false;
 };
 
 struct AtmosphereEnvironmentLighting {
