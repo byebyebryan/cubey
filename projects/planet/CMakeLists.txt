@@ -1,6 +1,8 @@
 set(CUBEY_PLANET_SHADERS
     "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/sky.vert"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/sky.frag"
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/celestial_body.vert"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/celestial_body.frag"
     shaders/planet_surface.vert
@@ -36,6 +38,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/sky_atmosphere.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_surface_field.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
