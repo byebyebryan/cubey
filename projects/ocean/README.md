@@ -37,6 +37,10 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view foam-candidate
 ./build/dev/projects/ocean/ocean --debug-view foam-detail
 ./build/dev/projects/ocean/ocean --debug-view lod
+./build/dev/projects/ocean/ocean --debug-view footprint
+./build/dev/projects/ocean/ocean --debug-view energy-lod
+./build/dev/projects/ocean/ocean --debug-view foam-filtered
+./build/dev/projects/ocean/ocean --debug-view far-field
 ./build/dev/projects/ocean/ocean --debug-view sky-radiance
 ./build/dev/projects/ocean/ocean --debug-view reflection
 ./build/dev/projects/ocean/ocean --debug-view direct-light
@@ -97,7 +101,8 @@ weather simulation.
 
 Feature isolation controls expose global shape strength, global foam strength,
 foam history, shape and detail anti-repeat, split atmosphere material influence,
-shape/normal/foam fade distances, and terrain foam strength. Shape LOD now
+shape/normal/foam fade distances, terrain foam strength, far-field material
+energy, and filtered far-whitecap coverage. Shape LOD now
 combines distance fade with mesh-cell support, so coarse clipmap rings stop
 carrying displacement detail that the current mesh cannot represent while
 normal/foam detail can continue as shading-only contribution. The default LOD
@@ -109,6 +114,13 @@ contribution sliders: they skip disabled cascade spectrum, modulation, FFT, and
 unpack dispatches, then hide those cascades from the surface shader. Use `All
 slots`, `Core`, and `Cheap` to check which slots and material additions are
 worth their GPU cost.
+
+The far-field material handoff is explicitly diagnostic-driven. `footprint`
+shows the estimated pixel footprint in meters, `energy-lod` shows unresolved
+wave energy against displacement and surface LOD support, `foam-filtered` shows
+the filtered foam coverage pyramid, and `far-field` shows material handoff
+energy plus the filtered whitecap term. These views are intended to catch
+regular FFT tiling and overly aggressive far-distance fade before tuning by eye.
 
 Ocean still uses a camera-relative `clipmap_grid_2d` surface mesh. The shared
 planet-scale `adaptive_patch_lod` planner is available in `cubey::render`, but

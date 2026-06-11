@@ -16,15 +16,18 @@ surface curvature, atmosphere lighting, or foam shading:
 mkdir -p outputs/ocean-look
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --output outputs/ocean-look/final-default.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view lod --output outputs/ocean-look/debug-lod.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view energy-lod --output outputs/ocean-look/debug-energy-lod.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view displacement --output outputs/ocean-look/debug-displacement.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view foam --output outputs/ocean-look/debug-foam.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view foam-filtered --output outputs/ocean-look/debug-foam-filtered.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view foam-source --output outputs/ocean-look/debug-foam-source.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view foam-history --output outputs/ocean-look/debug-foam-history.png
 ```
 
 Check that the final view still reads as coherent cresting waves rather than
-rounded bulges, the LOD view shows stable clipmap rings, and the foam views do
-not collapse into regular texture tiling when the camera is pulled back.
+rounded bulges, the LOD and energy views agree on which cascades are still
+resolvable, and the raw plus filtered foam views do not collapse into regular
+texture tiling when the camera is pulled back.
 
 ## Cascade Isolation
 
@@ -53,6 +56,10 @@ mkdir -p outputs/ocean-far-field
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --output outputs/ocean-far-field/final-high.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --output outputs/ocean-far-field/final-wide.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view lod --output outputs/ocean-far-field/lod-wide.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view footprint --output outputs/ocean-far-field/footprint-wide.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view energy-lod --output outputs/ocean-far-field/energy-lod-wide.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view foam-filtered --output outputs/ocean-far-field/foam-filtered-wide.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view far-field --output outputs/ocean-far-field/far-field-wide.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view foam-source --output outputs/ocean-far-field/foam-source-wide.png
 ```
 
@@ -63,6 +70,8 @@ setting at a time. The important failure modes are:
 - displacement carried by clipmap rings that are too coarse to represent it;
 - foam detail fading differently from wave shape, leaving a flat but tiled
   texture cue;
+- filtered far-whitecap coverage becoming cloudy, noisy, or obviously locked to
+  one FFT tile;
 - horizon coverage changing because automatic mesh extent silently expanded or
   contracted.
 
