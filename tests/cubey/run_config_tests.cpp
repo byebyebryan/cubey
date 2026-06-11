@@ -166,6 +166,7 @@ void test_run_config_rejects_invalid_capture_options() {
 void test_run_config_descriptors_have_help_text() {
     bool saw_ocean = false;
     bool saw_atmosphere = false;
+    bool saw_clouds = false;
     bool saw_profile = false;
     bool saw_smoke = false;
     bool saw_water3d = false;
@@ -180,6 +181,9 @@ void test_run_config_descriptors_have_help_text() {
         if (option.path == "atmosphere.time_of_day_mode") {
             saw_atmosphere = true;
         }
+        if (option.path == "clouds.camera_mode") {
+            saw_clouds = true;
+        }
         if (option.path == "profile.output") {
             saw_profile = true;
         }
@@ -192,6 +196,7 @@ void test_run_config_descriptors_have_help_text() {
     }
     require(saw_ocean, "config descriptors should include active ocean controls");
     require(saw_atmosphere, "config descriptors should include atmosphere controls");
+    require(saw_clouds, "config descriptors should include cloud controls");
     require(saw_profile, "config descriptors should include profiling controls");
     require(saw_smoke, "config descriptors should include smoke controls");
     require(saw_water3d, "config descriptors should include water 3D controls");
@@ -245,6 +250,7 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--water2d-hose",       "--water3d-transfer",      "--water3d-p2g-mode",
         "--water3d-whitewater", "--ocean-field-precision", "--planet-max-lod-level",
         "--planet-lod-hysteresis", "--planet-time-hours", "--planet-camera-mode",
+        "--cloud-camera-mode", "--cloud-quality", "--cloud-coverage",
     };
     for (std::string_view flag : promoted_flags) {
         const std::string explicit_branch = "arg == \"" + std::string(flag) + "\"";
@@ -322,6 +328,16 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "atmosphere.time_speed_hours_per_second",
         "atmosphere.auto_exposure",
         "atmosphere.moon",
+        "clouds.camera_mode",
+        "clouds.quality",
+        "clouds.planet_radius_m",
+        "clouds.camera_altitude_m",
+        "clouds.bottom_altitude_m",
+        "clouds.top_altitude_m",
+        "clouds.coverage",
+        "clouds.density",
+        "clouds.weather_scale_km",
+        "clouds.wind_speed_mps",
         "smoke.injectors",
         "smoke.pressure_iterations",
         "smoke.pressure_solver",
@@ -453,6 +469,12 @@ void test_run_config_loads_json_config_file() {
     "time_of_day_mode": "solar",
     "time_hours": 18.5,
     "moon": false
+  },
+  "clouds": {
+    "camera_mode": "high",
+    "quality": "full",
+    "coverage": 0.62,
+    "wind_speed_mps": 24.0
   }
 })");
 
@@ -503,6 +525,9 @@ void test_run_config_loads_json_config_file() {
     require(config.atmosphere.time_of_day_mode == "solar" &&
                 config.atmosphere.time_hours == 18.5F && config.atmosphere.moon == 0,
             "config file should set atmosphere controls");
+    require(config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
+                config.clouds.coverage == 0.62F && config.clouds.wind_speed_mps == 24.0F,
+            "config file should set cloud controls");
 }
 
 void test_run_config_cli_and_set_override_config_file() {
@@ -631,6 +656,8 @@ void test_run_config_writes_json_template() {
             "config template should include water 2D options");
     require(text.find("\"water3d\"") != std::string::npos,
             "config template should include water 3D options");
+    require(text.find("\"clouds\"") != std::string::npos,
+            "config template should include cloud options");
 }
 
 void test_run_config_parses_input_path() {
@@ -861,6 +888,71 @@ void test_run_config_parses_atmosphere_options() {
             "run config should parse moon phase offset");
     require(config.atmosphere.moon_size_scale == 1.8F, "run config should parse moon size scale");
     require(config.atmosphere.moon == 0, "run config should parse moon disable flag");
+}
+
+void test_run_config_parses_cloud_options() {
+    std::string program = "cubey";
+    std::string camera_flag = "--cloud-camera-mode";
+    std::string camera_value = "high";
+    std::string quality_flag = "--cloud-quality";
+    std::string quality_value = "full";
+    std::string planet_radius_flag = "--cloud-planet-radius-m";
+    std::string planet_radius_value = "6000000";
+    std::string camera_altitude_flag = "--cloud-camera-altitude-m";
+    std::string camera_altitude_value = "16000";
+    std::string bottom_flag = "--cloud-bottom-altitude-m";
+    std::string bottom_value = "2200";
+    std::string top_flag = "--cloud-top-altitude-m";
+    std::string top_value = "9200";
+    std::string coverage_flag = "--cloud-coverage";
+    std::string coverage_value = "0.73";
+    std::string density_flag = "--cloud-density";
+    std::string density_value = "1.25";
+    std::string weather_scale_flag = "--cloud-weather-scale-km";
+    std::string weather_scale_value = "260";
+    std::string wind_flag = "--cloud-wind-speed-mps";
+    std::string wind_value = "32";
+    std::array<char*, 21> argv{
+        program.data(),
+        camera_flag.data(),
+        camera_value.data(),
+        quality_flag.data(),
+        quality_value.data(),
+        planet_radius_flag.data(),
+        planet_radius_value.data(),
+        camera_altitude_flag.data(),
+        camera_altitude_value.data(),
+        bottom_flag.data(),
+        bottom_value.data(),
+        top_flag.data(),
+        top_value.data(),
+        coverage_flag.data(),
+        coverage_value.data(),
+        density_flag.data(),
+        density_value.data(),
+        weather_scale_flag.data(),
+        weather_scale_value.data(),
+        wind_flag.data(),
+        wind_value.data(),
+    };
+
+    const cubey::RunConfig config =
+        cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.clouds.camera_mode == "high", "run config should parse cloud camera mode");
+    require(config.clouds.quality == "full", "run config should parse cloud quality");
+    require(config.clouds.planet_radius_m == 6000000.0F,
+            "run config should parse cloud planet radius");
+    require(config.clouds.camera_altitude_m == 16000.0F,
+            "run config should parse cloud camera altitude");
+    require(config.clouds.bottom_altitude_m == 2200.0F,
+            "run config should parse cloud bottom altitude");
+    require(config.clouds.top_altitude_m == 9200.0F,
+            "run config should parse cloud top altitude");
+    require(config.clouds.coverage == 0.73F, "run config should parse cloud coverage");
+    require(config.clouds.density == 1.25F, "run config should parse cloud density");
+    require(config.clouds.weather_scale_km == 260.0F,
+            "run config should parse cloud weather scale");
+    require(config.clouds.wind_speed_mps == 32.0F, "run config should parse cloud wind speed");
 }
 
 void test_run_config_rejects_invalid_atmosphere_options() {

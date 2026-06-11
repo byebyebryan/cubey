@@ -62,6 +62,8 @@ constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
     "final", "stellar-emission", "dust-tau", "star-clouds", "hii-emission", "speckles",
 };
+constexpr std::array<std::string_view, 3> kCloudCameraModes{"surface", "high", "orbit"};
+constexpr std::array<std::string_view, 3> kCloudQualities{"quarter", "half", "full"};
 constexpr std::array<std::string_view, 3> kSmokePressureSolvers{"jacobi", "rbgs",
                                                                 "red-black-gauss-seidel"};
 constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip", "picflip",
@@ -93,7 +95,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 177> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 187> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -494,6 +496,41 @@ constexpr std::array<ConfigOptionDescriptor, 177> kRunConfigOptions{
     option(RunConfigOptionId::AtmosphereMoon, "atmosphere.moon", "--moon", "Moon", "Atmosphere",
            "Enable the procedural moon and moonlight.", ConfigOptionType::Bool, no_range(), {},
            "--no-moon"),
+    option(RunConfigOptionId::CloudCameraMode, "clouds.camera_mode", "--cloud-camera-mode",
+           "Camera Mode", "Clouds", "Initial cloud camera mode.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kCloudCameraModes)),
+    option(RunConfigOptionId::CloudQuality, "clouds.quality", "--cloud-quality", "Quality",
+           "Clouds", "Cloud render quality preset.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kCloudQualities)),
+    option(RunConfigOptionId::CloudPlanetRadius, "clouds.planet_radius_m",
+           "--cloud-planet-radius-m", "Planet Radius", "Clouds",
+           "Planet radius used by the cloud shell in meters.", ConfigOptionType::Float,
+           min_range(1.0)),
+    option(RunConfigOptionId::CloudCameraAltitude, "clouds.camera_altitude_m",
+           "--cloud-camera-altitude-m", "Camera Altitude", "Clouds",
+           "Cloud camera altitude above the planet surface in meters.", ConfigOptionType::Float,
+           min_range(0.0)),
+    option(RunConfigOptionId::CloudBottomAltitude, "clouds.bottom_altitude_m",
+           "--cloud-bottom-altitude-m", "Cloud Bottom", "Clouds",
+           "Cloud layer bottom altitude above the planet surface in meters.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::CloudTopAltitude, "clouds.top_altitude_m",
+           "--cloud-top-altitude-m", "Cloud Top", "Clouds",
+           "Cloud layer top altitude above the planet surface in meters.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::CloudCoverage, "clouds.coverage", "--cloud-coverage", "Coverage",
+           "Clouds", "Base cloud coverage fraction.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudDensity, "clouds.density", "--cloud-density", "Density",
+           "Clouds", "Cloud extinction density multiplier.", ConfigOptionType::Float,
+           min_range(0.0)),
+    option(RunConfigOptionId::CloudWeatherScale, "clouds.weather_scale_km",
+           "--cloud-weather-scale-km", "Weather Scale", "Clouds",
+           "World-space scale of the low-frequency cloud weather map in kilometers.",
+           ConfigOptionType::Float, min_range(0.001)),
+    option(RunConfigOptionId::CloudWindSpeed, "clouds.wind_speed_mps", "--cloud-wind-speed-mps",
+           "Wind Speed", "Clouds", "Cloud weather-map wind speed in meters per second.",
+           ConfigOptionType::Float, min_range(0.0)),
     option(RunConfigOptionId::SmokeInjectors, "smoke.injectors", "--smoke-injectors", "Injectors",
            "Smoke 2D", "Number of built-in smoke injectors.", ConfigOptionType::UInt32,
            min_range(1.0)),
@@ -1099,6 +1136,28 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.atmosphere.moon_size_scale);
     case RunConfigOptionId::AtmosphereMoon:
         return optional_bool(config.atmosphere.moon);
+    case RunConfigOptionId::CloudCameraMode:
+        return config.clouds.camera_mode.empty() ? nlohmann::json(nullptr)
+                                                 : nlohmann::json(config.clouds.camera_mode);
+    case RunConfigOptionId::CloudQuality:
+        return config.clouds.quality.empty() ? nlohmann::json(nullptr)
+                                             : nlohmann::json(config.clouds.quality);
+    case RunConfigOptionId::CloudPlanetRadius:
+        return optional_float(config.clouds.planet_radius_m);
+    case RunConfigOptionId::CloudCameraAltitude:
+        return optional_float(config.clouds.camera_altitude_m);
+    case RunConfigOptionId::CloudBottomAltitude:
+        return optional_float(config.clouds.bottom_altitude_m);
+    case RunConfigOptionId::CloudTopAltitude:
+        return optional_float(config.clouds.top_altitude_m);
+    case RunConfigOptionId::CloudCoverage:
+        return optional_float(config.clouds.coverage);
+    case RunConfigOptionId::CloudDensity:
+        return optional_float(config.clouds.density);
+    case RunConfigOptionId::CloudWeatherScale:
+        return optional_float(config.clouds.weather_scale_km);
+    case RunConfigOptionId::CloudWindSpeed:
+        return optional_float(config.clouds.wind_speed_mps);
     case RunConfigOptionId::SmokeInjectors:
         return optional_uint32(config.smoke.injectors);
     case RunConfigOptionId::SmokePressureIterations:
@@ -1481,6 +1540,32 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::AtmosphereOptions& opti
     adapter.readField<int>("moon", options.moon);
 }
 
+inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& options) {
+    adapter.writeField<std::string>("camera_mode", options.camera_mode);
+    adapter.writeField<std::string>("quality", options.quality);
+    adapter.writeField<float>("planet_radius_m", options.planet_radius_m);
+    adapter.writeField<float>("camera_altitude_m", options.camera_altitude_m);
+    adapter.writeField<float>("bottom_altitude_m", options.bottom_altitude_m);
+    adapter.writeField<float>("top_altitude_m", options.top_altitude_m);
+    adapter.writeField<float>("coverage", options.coverage);
+    adapter.writeField<float>("density", options.density);
+    adapter.writeField<float>("weather_scale_km", options.weather_scale_km);
+    adapter.writeField<float>("wind_speed_mps", options.wind_speed_mps);
+}
+
+inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) {
+    adapter.readField<std::string>("camera_mode", options.camera_mode);
+    adapter.readField<std::string>("quality", options.quality);
+    adapter.readField<float>("planet_radius_m", options.planet_radius_m);
+    adapter.readField<float>("camera_altitude_m", options.camera_altitude_m);
+    adapter.readField<float>("bottom_altitude_m", options.bottom_altitude_m);
+    adapter.readField<float>("top_altitude_m", options.top_altitude_m);
+    adapter.readField<float>("coverage", options.coverage);
+    adapter.readField<float>("density", options.density);
+    adapter.readField<float>("weather_scale_km", options.weather_scale_km);
+    adapter.readField<float>("wind_speed_mps", options.wind_speed_mps);
+}
+
 inline void serialize(JsonAdapter& adapter, const RunConfig& config) {
     adapter.writeField<std::string>("title", config.title);
     adapter.writeField<std::uint32_t>("width", config.width);
@@ -1502,6 +1587,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig& config) {
     adapter.writeField<RunConfig::PlanetOptions>("planet", config.planet);
     adapter.writeField<RunConfig::TerrainOptions>("terrain", config.terrain);
     adapter.writeField<RunConfig::AtmosphereOptions>("atmosphere", config.atmosphere);
+    adapter.writeField<RunConfig::CloudOptions>("clouds", config.clouds);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig& config) {
@@ -1525,6 +1611,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig& config) {
     adapter.readField<RunConfig::PlanetOptions>("planet", config.planet);
     adapter.readField<RunConfig::TerrainOptions>("terrain", config.terrain);
     adapter.readField<RunConfig::AtmosphereOptions>("atmosphere", config.atmosphere);
+    adapter.readField<RunConfig::CloudOptions>("clouds", config.clouds);
 
     if (!output.empty()) {
         config.output_path = output;
@@ -2041,6 +2128,44 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::AtmosphereMoon:
         config.atmosphere.moon = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::CloudCameraMode:
+        config.clouds.camera_mode = std::string(value);
+        break;
+    case RunConfigOptionId::CloudQuality:
+        config.clouds.quality = std::string(value);
+        break;
+    case RunConfigOptionId::CloudPlanetRadius:
+        config.clouds.planet_radius_m = parse_config_float(value, option);
+        validate_range(config.clouds.planet_radius_m, option);
+        break;
+    case RunConfigOptionId::CloudCameraAltitude:
+        config.clouds.camera_altitude_m = parse_config_float(value, option);
+        validate_range(config.clouds.camera_altitude_m, option);
+        break;
+    case RunConfigOptionId::CloudBottomAltitude:
+        config.clouds.bottom_altitude_m = parse_config_float(value, option);
+        validate_range(config.clouds.bottom_altitude_m, option);
+        break;
+    case RunConfigOptionId::CloudTopAltitude:
+        config.clouds.top_altitude_m = parse_config_float(value, option);
+        validate_range(config.clouds.top_altitude_m, option);
+        break;
+    case RunConfigOptionId::CloudCoverage:
+        config.clouds.coverage = parse_config_float(value, option);
+        validate_range(config.clouds.coverage, option);
+        break;
+    case RunConfigOptionId::CloudDensity:
+        config.clouds.density = parse_config_float(value, option);
+        validate_range(config.clouds.density, option);
+        break;
+    case RunConfigOptionId::CloudWeatherScale:
+        config.clouds.weather_scale_km = parse_config_float(value, option);
+        validate_range(config.clouds.weather_scale_km, option);
+        break;
+    case RunConfigOptionId::CloudWindSpeed:
+        config.clouds.wind_speed_mps = parse_config_float(value, option);
+        validate_range(config.clouds.wind_speed_mps, option);
         break;
     case RunConfigOptionId::SmokeInjectors:
         config.smoke.injectors = parse_number<std::uint32_t>(value, option, "unsigned integer");

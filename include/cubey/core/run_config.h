@@ -224,6 +224,19 @@ struct RunConfig {
         int moon = -1;
     };
 
+    struct CloudOptions {
+        std::string camera_mode{};
+        std::string quality{};
+        float planet_radius_m = kRunConfigUnsetFloat;
+        float camera_altitude_m = kRunConfigUnsetFloat;
+        float bottom_altitude_m = kRunConfigUnsetFloat;
+        float top_altitude_m = kRunConfigUnsetFloat;
+        float coverage = kRunConfigUnsetFloat;
+        float density = kRunConfigUnsetFloat;
+        float weather_scale_km = kRunConfigUnsetFloat;
+        float wind_speed_mps = kRunConfigUnsetFloat;
+    };
+
     std::string title = "cubey";
     std::uint32_t width = 1280;
     std::uint32_t height = 720;
@@ -238,6 +251,7 @@ struct RunConfig {
     GltfOptions gltf{};
     TerrainOptions terrain{};
     AtmosphereOptions atmosphere{};
+    CloudOptions clouds{};
     std::uint32_t frames = 0;
     std::uint32_t fps = 60;
     std::filesystem::path output_path = "cubey-output.png";

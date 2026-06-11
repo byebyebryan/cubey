@@ -337,7 +337,7 @@ named explicitly and live in either `examples/` or `projects/`:
   example-local private modules for lifecycle, resources, scene setup, and
   command recording; that split is not automatically Cubey library API.
 - `projects/` - first-class graphics experiments and longer-lived creative
-  work, including `atmosphere`, `smoke_2d`, `water_2d`, `water_3d`,
+  work, including `atmosphere`, `clouds`, `smoke_2d`, `water_2d`, `water_3d`,
   `fire_3d`, `explosion_3d`, `fractal_2d`, `gltf_viewer`, `ocean`,
   `planet`, `procedural_terrain`, and `pbr_furnace`, plus later candidates
   such as `marching_cubes` and `sdf_sculpt`.
@@ -504,6 +504,11 @@ cubey/
         atmosphere_app.* -- solar time, sky, moon, Milky Way, and HDR post host path
         atmosphere_environment.* -- project-to-shared atmosphere config adapter
         atmosphere_ui.* -- live atmosphere and night-sky controls
+      clouds/
+        CMakeLists.txt
+        main.cpp
+        clouds_app.*      -- planet-aware cloud shell host/headless orchestration
+        clouds_config.*   -- cloud/weather camera, quality, and layer config
       fractal_2d/
         CMakeLists.txt
         main.cpp

@@ -528,6 +528,9 @@ Project checkpoints:
   simulation compute followed by fullscreen rendering; solver-internal barriers
   remain project-owned, while the compute-to-render boundary uses graph-owned
   buffer barriers and the backbuffer acquire/release path.
+- `projects/clouds` is the standalone planet-aware cloud/weather pressure
+  project. It renders a first spherical cloud shell with surface, high-altitude,
+  and orbit camera modes before any ocean or planet integration.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer
