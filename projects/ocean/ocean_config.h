@@ -153,6 +153,13 @@ struct OceanConfig {
     float shape_fade_distance_scale = 1.0F;
     float normal_fade_distance_scale = 1.0F;
     float foam_fade_distance_scale = 1.0F;
+    bool far_field_enabled = true;
+    float far_field_start_m = 450.0F;
+    float far_field_end_m = 2200.0F;
+    float far_normal_strength = 0.18F;
+    float far_roughness_strength = 0.12F;
+    float far_glint_strength = 0.10F;
+    float far_streak_scale_m = 900.0F;
     bool spectral_domains_enabled = true;
     bool terrain_fields_enabled = false;
     OceanFieldPrecision field_precision = OceanFieldPrecision::Half;
@@ -616,7 +623,10 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.self_shadow_distance <= 0.0F || config.self_shadow_bias < 0.0F ||
         config.self_shadow_steps == 0U || config.self_shadow_steps > 24U ||
         config.terrain_foam_strength < 0.0F || config.shape_fade_distance_scale <= 0.0F ||
-        config.normal_fade_distance_scale <= 0.0F || config.foam_fade_distance_scale <= 0.0F) {
+        config.normal_fade_distance_scale <= 0.0F || config.foam_fade_distance_scale <= 0.0F ||
+        config.far_field_start_m < 0.0F || config.far_field_end_m <= config.far_field_start_m ||
+        config.far_normal_strength < 0.0F || config.far_roughness_strength < 0.0F ||
+        config.far_glint_strength < 0.0F || config.far_streak_scale_m <= 0.0F) {
         throw std::runtime_error("ocean shading controls are out of range");
     }
     for (const OceanCascadeConfig& cascade : config.cascades) {

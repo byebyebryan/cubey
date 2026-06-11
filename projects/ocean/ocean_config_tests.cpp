@@ -474,6 +474,20 @@ int main() {
                      "ocean should default normal fade distance unchanged");
         require_near(defaults.foam_fade_distance_scale, 1.0F, 0.001F,
                      "ocean should default foam fade distance unchanged");
+        require(defaults.far_field_enabled,
+                "ocean should default statistical far-field material handoff on");
+        require_near(defaults.far_field_start_m, 450.0F, 0.001F,
+                     "ocean should default far-field start distance");
+        require_near(defaults.far_field_end_m, 2200.0F, 0.001F,
+                     "ocean should default far-field end distance");
+        require_near(defaults.far_normal_strength, 0.18F, 0.001F,
+                     "ocean should default far-field normal contribution conservatively");
+        require_near(defaults.far_roughness_strength, 0.12F, 0.001F,
+                     "ocean should default far-field roughness contribution conservatively");
+        require_near(defaults.far_glint_strength, 0.10F, 0.001F,
+                     "ocean should default far-field glint contribution conservatively");
+        require_near(defaults.far_streak_scale_m, 900.0F, 0.001F,
+                     "ocean should default broad far-field streak scale");
         const ocean::OceanCascadeLodBand cascade0_lod = ocean::ocean_cascade_lod_band(defaults, 0);
         require_near(cascade0_lod.displacement_fade_start,
                      defaults.cascades[0].tile_length *
@@ -1052,6 +1066,10 @@ int main() {
                          "app should pass foam density as diagnostics push data");
         require_contains(app_source, "ocean_config_.foam_sharpness",
                          "app should pass foam sharpness as diagnostics push data");
+        require_contains(app_source, "ocean_config_.far_field_enabled",
+                         "app should pass far-field material enable state");
+        require_contains(app_source, "ocean_config_.far_streak_scale_m",
+                         "app should pass far-field streak scale");
         require_contains(app_source, "ocean_config_.spectral_domains_enabled",
                          "app should pass spectral domain bounds to spectrum generation");
         require_contains(app_source, "kCameraMaxDistance = 8000.0F",
@@ -1131,6 +1149,14 @@ int main() {
                        "UI should keep wave self-shadow controls in the shading section");
         require_before(ui_source, "&ui.config.self_shadow_strength", "&ui.config.foam_density",
                        "UI should place wave self-shadow controls before foam material controls");
+        require_contains(ui_source, "&ui.config.far_field_enabled",
+                         "UI should expose far-field material handoff");
+        require_contains(ui_source, "&ui.config.far_normal_strength",
+                         "UI should expose far-field normal strength");
+        require_contains(ui_source, "&ui.config.far_roughness_strength",
+                         "UI should expose far-field roughness strength");
+        require_contains(ui_source, "&ui.config.far_glint_strength",
+                         "UI should expose far-field glint strength");
         require_contains(ui_source, "&ui.config.self_shadow_distance",
                          "UI should expose wave self-shadow reach");
         require_contains(ui_source, "&ui.config.self_shadow_bias",
@@ -1189,6 +1215,12 @@ int main() {
                          "vertex shader should expose shape fade distance control");
         require_contains(fragment_shader, "float ocean_detail_anti_repeat_strength",
                          "fragment shader should isolate far detail anti-repeat contribution");
+        require_contains(fragment_shader, "vec4 far_field_options",
+                         "fragment shader should consume far-field material controls");
+        require_contains(fragment_shader, "float active_far_field_lod_energy",
+                         "fragment shader should derive far-field handoff from unresolved LOD");
+        require_contains(fragment_shader, "ocean_apply_far_field_normal",
+                         "fragment shader should add statistical far-field normal variation");
         require_contains(fragment_shader, "float ocean_surface_foam_strength",
                          "fragment shader should isolate surface foam contribution");
         require_contains(fragment_shader, "float ocean_atmosphere_reflection_strength",
@@ -1377,7 +1409,7 @@ int main() {
                          "surface descriptors should expose feature-isolation uniforms");
         require_contains(gpu_header_source, "OceanSurfaceFeatureUniforms",
                          "GPU resource header should define packed feature-isolation uniforms");
-        require_contains(gpu_header_source, "sizeof(float) * 32U",
+        require_contains(gpu_header_source, "sizeof(float) * 40U",
                          "GPU resource header should size expanded feature-isolation uniforms");
         require_contains(gpu_header_source, "self_shadow_options",
                          "GPU resource header should pack wave self-shadow controls");

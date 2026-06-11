@@ -152,6 +152,10 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.shape_fade_distance_scale = 1.0F;
         ui.config.normal_fade_distance_scale = 1.0F;
         ui.config.foam_fade_distance_scale = 1.0F;
+        ui.config.far_field_enabled = true;
+        ui.config.far_normal_strength = 0.18F;
+        ui.config.far_roughness_strength = 0.12F;
+        ui.config.far_glint_strength = 0.10F;
         ui.diagnostics.shape_anti_repeat_strength = 1.0F;
         ui.diagnostics.detail_anti_repeat_strength = 1.0F;
         ui.config.spectral_domains_enabled = true;
@@ -172,6 +176,10 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.shape_fade_distance_scale = 1.0F;
         ui.config.normal_fade_distance_scale = 1.0F;
         ui.config.foam_fade_distance_scale = 1.0F;
+        ui.config.far_field_enabled = false;
+        ui.config.far_normal_strength = 0.0F;
+        ui.config.far_roughness_strength = 0.0F;
+        ui.config.far_glint_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
         ui.config.spectral_domains_enabled = false;
@@ -192,6 +200,10 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.shape_fade_distance_scale = 0.85F;
         ui.config.normal_fade_distance_scale = 0.80F;
         ui.config.foam_fade_distance_scale = 0.80F;
+        ui.config.far_field_enabled = false;
+        ui.config.far_normal_strength = 0.0F;
+        ui.config.far_roughness_strength = 0.0F;
+        ui.config.far_glint_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
         ui.config.spectral_domains_enabled = false;
@@ -621,6 +633,32 @@ void draw_ocean_ui(OceanUiContext ui) {
                                         "Microfacet roughness used by ocean shading.");
         cubey::host::imgui_slider_float("Normal strength", &ui.config.normal_strength, 0.0F, 2.0F,
                                         "%.2f", "Final normal-map intensity.");
+        cubey::host::imgui_checkbox(
+            "Far field", &ui.config.far_field_enabled,
+            "Hand unresolved distant wave energy into statistical normals, roughness, and glints.");
+        ImGui::BeginDisabled(!ui.config.far_field_enabled);
+        cubey::host::imgui_slider_float("Far start", &ui.config.far_field_start_m, 50.0F,
+                                        1800.0F, "%.0f m",
+                                        "Distance where statistical far-field material response begins.");
+        cubey::host::imgui_slider_float("Far end", &ui.config.far_field_end_m, 200.0F, 5000.0F,
+                                        "%.0f m",
+                                        "Distance where statistical far-field material response reaches full strength.");
+        if (ui.config.far_field_end_m <= ui.config.far_field_start_m) {
+            ui.config.far_field_end_m = ui.config.far_field_start_m + 1.0F;
+        }
+        cubey::host::imgui_slider_float(
+            "Far normal", &ui.config.far_normal_strength, 0.0F, 0.8F, "%.2f",
+            "Low-frequency wind-aligned normal variation added when displacement is unresolved.");
+        cubey::host::imgui_slider_float(
+            "Far roughness", &ui.config.far_roughness_strength, 0.0F, 0.5F, "%.2f",
+            "Roughness increase driven by unresolved distant wave energy.");
+        cubey::host::imgui_slider_float(
+            "Far glint", &ui.config.far_glint_strength, 0.0F, 0.6F, "%.2f",
+            "Subtle wind-aligned specular modulation for distant water.");
+        cubey::host::imgui_slider_float("Far streak scale", &ui.config.far_streak_scale_m, 80.0F,
+                                        2400.0F, "%.0f m",
+                                        "World-space scale of low-contrast wind-aligned far-field streaks.");
+        ImGui::EndDisabled();
         cubey::host::imgui_slider_float(
             "Wave shadow", &ui.config.self_shadow_strength, 0.0F, 1.0F, "%.2f",
             "Strength of experimental heightfield ray-marched wave self-shadowing.");

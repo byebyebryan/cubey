@@ -1303,6 +1303,7 @@ class OceanApp {
 
     [[nodiscard]] OceanSurfaceFeatureUniforms surface_feature_uniforms(
         const OceanSurfaceFrame& surface_frame) const {
+        const float far_wind_radians = radians(ocean_config_.cascades[0].wind_direction_degrees);
         return {
             .feature_options =
                 {
@@ -1359,6 +1360,20 @@ class OceanApp {
                     surface_frame.curvature_start_m,
                     surface_frame.curvature_end_m,
                     surface_frame.curvature_strength,
+                },
+            .far_field_options =
+                {
+                    ocean_config_.far_field_enabled ? 1.0F : 0.0F,
+                    ocean_config_.far_field_start_m,
+                    ocean_config_.far_field_end_m,
+                    ocean_config_.far_normal_strength,
+                },
+            .far_field_options2 =
+                {
+                    ocean_config_.far_roughness_strength,
+                    ocean_config_.far_glint_strength,
+                    ocean_config_.far_streak_scale_m,
+                    far_wind_radians,
                 },
         };
     }
