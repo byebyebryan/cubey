@@ -78,3 +78,20 @@ The first shared vocabulary should stay small:
 
 Ocean and planet integration should wait until the standalone project proves the
 surface, high-altitude, and orbit cases.
+
+## V1 Validation Findings
+
+The first standalone clouds checkpoint is useful as a pressure project, but it
+is not ready to feed other renderers. The known blockers are:
+
+- visible seams in the procedural cloud/weather field;
+- awkward project-local controls instead of shared hierarchical/config-driven
+  controls;
+- no FPS/frame-time or raymarch workload diagnostics in the UI;
+- recurrence of the atmosphere horizon band because the prototype owns a local
+  sky/ground composition path.
+
+Treat these as prerequisites for promotion. The likely next direction is a
+seam-safe spherical weather/domain representation, shared performance and
+config UI integration, and reuse of the fixed shared atmosphere composition
+path instead of duplicating sky composition inside the cloud shader.

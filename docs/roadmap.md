@@ -530,7 +530,10 @@ Project checkpoints:
   buffer barriers and the backbuffer acquire/release path.
 - `projects/clouds` is the standalone planet-aware cloud/weather pressure
   project. It renders a first spherical cloud shell with surface, high-altitude,
-  and orbit camera modes before any ocean or planet integration.
+  and orbit camera modes before any ocean or planet integration. Its current
+  known blockers are visible weather-field seams, rough controls, missing
+  performance diagnostics, and an atmosphere horizon-band regression from the
+  prototype-local sky composition path.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer

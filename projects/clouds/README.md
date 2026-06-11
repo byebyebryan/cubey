@@ -50,3 +50,24 @@ Controls:
 See
 [`docs/notes/cloud-weather-rendering-research.md`](../../docs/notes/cloud-weather-rendering-research.md)
 for the research context and promotion criteria.
+
+## Known V1 Issues
+
+These are observed blockers before the clouds project should feed ocean or
+planet rendering:
+
+- Cloud-map seams are visible. The current procedural field is sampled in
+  camera/position space and does not yet use a seam-safe spherical weather map
+  or domain layout.
+- Interactive control is rough. The project has quick camera mode buttons and
+  basic sliders, but it has not been moved onto the shared hierarchical control
+  model used by the more mature projects.
+- Runtime feedback is incomplete. The window does not show FPS/frame-time or
+  sample-budget diagnostics yet, so perceived slowness is hard to separate from
+  actual raymarch cost.
+- The atmosphere horizon band can appear again. The clouds shader currently
+  owns its own sky/ground composition path for the prototype, so it can diverge
+  from the fixed shared atmosphere behavior used by established projects.
+
+The next clouds pass should address these before adding ocean reflection,
+planet integration, or richer cloud types.
