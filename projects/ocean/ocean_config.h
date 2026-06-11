@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
@@ -110,6 +111,7 @@ struct OceanConfig {
     bool horizon_auto_extent = true;
     float horizon_extent_margin = 1.25F;
     float horizon_target_near_cell_m = 2.0F;
+    float horizon_altitude_cell_ratio = 0.04F;
     OceanSurfaceMode surface_mode = OceanSurfaceMode::CurvedFar;
     float planet_radius_scale = 1.0F;
     float curvature_start_ratio = 0.25F;
@@ -560,6 +562,8 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (config.mesh_extent <= 0.0F || config.depth <= 0.0F ||
         config.horizon_extent_margin <= 0.0F || config.horizon_target_near_cell_m <= 0.0F ||
+        !std::isfinite(config.horizon_altitude_cell_ratio) ||
+        config.horizon_altitude_cell_ratio < 0.0F ||
         config.planet_radius_scale <= 0.0F ||
         config.curvature_start_ratio < 0.0F || config.curvature_end_ratio <= 0.0F ||
         config.curvature_strength < 0.0F || config.curvature_strength > 1.0F ||

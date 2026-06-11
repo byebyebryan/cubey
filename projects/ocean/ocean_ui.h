@@ -29,10 +29,19 @@ struct OceanDiagnosticsConfig {
     float detail_anti_repeat_strength = 1.0F;
 };
 
+struct OceanMeshDrawStats {
+    std::uint32_t generated_patches = 0;
+    std::uint32_t submitted_patches = 0;
+    std::uint32_t culled_patches = 0;
+    std::uint32_t generated_triangles = 0;
+    std::uint32_t submitted_triangles = 0;
+};
+
 struct OceanUiContext {
     OceanConfig& config;
     OceanDiagnosticsConfig& diagnostics;
     OceanSurfaceFrame surface_frame;
+    OceanMeshDrawStats draw_stats;
     cubey::AtmosphereEnvironmentRunState& atmosphere;
     cubey::host::PerformanceUiContext performance;
     OceanRenderView& render_view;

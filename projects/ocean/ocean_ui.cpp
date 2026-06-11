@@ -278,9 +278,12 @@ void draw_lod_diagnostics(const OceanSurfaceFrame& surface_frame) {
     const OceanConfig& config = surface_frame.mesh_config;
     const OceanHorizonDiagnostics& horizon = surface_frame.horizon;
 
-    ImGui::Text("Effective mesh: %u LOD / %.1f km half / near %.2f m / far %.2f m",
-                config.mesh_lod_levels, horizon.mesh_half_extent_m / kOceanMetersPerKilometer,
-                ocean_mesh_near_cell_size(config), horizon.far_cell_size_m);
+    ImGui::Text("Effective mesh: %u cells / %u LOD / %.1f km half",
+                config.mesh_cells, config.mesh_lod_levels,
+                horizon.mesh_half_extent_m / kOceanMetersPerKilometer);
+    ImGui::Text("Cell size: near %.2f m / target %.2f m / far %.2f m",
+                ocean_mesh_near_cell_size(config), horizon.target_near_cell_size_m,
+                horizon.far_cell_size_m);
     ImGui::Text("Horizon coverage: %.1f km required / %.0f%% / camera %.1f m",
                 horizon.required_half_extent_m / kOceanMetersPerKilometer,
                 horizon.coverage_ratio * 100.0F, horizon.camera_altitude_m);
@@ -579,6 +582,10 @@ void draw_ocean_ui(OceanUiContext ui) {
                                         &ui.config.horizon_target_near_cell_m, 0.5F, 8.0F,
                                         "%.2f m",
                                         "Preferred near-field cell size when auto horizon is on.");
+        cubey::host::imgui_slider_float(
+            "Altitude cell ratio", &ui.config.horizon_altitude_cell_ratio, 0.0F, 0.08F, "%.3f",
+            "High-camera multiplier for the effective near-cell target. Larger values make high "
+            "views use fewer mesh cells.");
         cubey::host::imgui_slider_float("Horizon fog", &ui.config.horizon_fog, 0.0F, 1.0F, "%.2f",
                                         "Distance fade used to soften the horizon.");
         cubey::host::imgui_enum_combo("Surface mode", ui.config.surface_mode, kOceanSurfaceModes,
@@ -657,11 +664,14 @@ void draw_ocean_ui(OceanUiContext ui) {
         }
     }
 
-    const std::array<cubey::host::PerformanceCounter, 3> performance_counters{
+    const std::array<cubey::host::PerformanceCounter, 6> performance_counters{
         cubey::host::PerformanceCounter{
-            "Mesh patches", ocean_mesh_patch_count(ui.surface_frame.mesh_config), nullptr},
+            "Clip patches", ui.draw_stats.generated_patches, nullptr},
+        cubey::host::PerformanceCounter{"Draw patches", ui.draw_stats.submitted_patches, nullptr},
         cubey::host::PerformanceCounter{"LOD levels",
                                         ui.surface_frame.mesh_config.mesh_lod_levels, nullptr},
+        cubey::host::PerformanceCounter{"Clip tris", ui.draw_stats.generated_triangles, nullptr},
+        cubey::host::PerformanceCounter{"Draw tris", ui.draw_stats.submitted_triangles, nullptr},
         cubey::host::PerformanceCounter{
             "Horizon cover",
             static_cast<std::uint64_t>(
@@ -720,9 +730,15 @@ void draw_ocean_ui(OceanUiContext ui) {
         }
         ImGui::Text("Mesh: %u LOD / %u patches / %u tris",
                     ui.surface_frame.mesh_config.mesh_lod_levels,
-                    ocean_mesh_patch_count(ui.surface_frame.mesh_config),
-                    ocean_mesh_total_triangle_count(ui.surface_frame.mesh_config));
+                    ui.draw_stats.generated_patches, ui.draw_stats.generated_triangles);
+        ImGui::Text("Submitted: %u patches / %u tris / culled %u patches",
+                    ui.draw_stats.submitted_patches, ui.draw_stats.submitted_triangles,
+                    ui.draw_stats.culled_patches);
+        ImGui::Text("Base cells: %u configured / %u effective", ui.config.mesh_cells,
+                    ui.surface_frame.mesh_config.mesh_cells);
         ImGui::Text("Near cell: %.2f m", ocean_mesh_near_cell_size(ui.surface_frame.mesh_config));
+        ImGui::Text("Target near cell: %.2f m",
+                    ui.surface_frame.horizon.target_near_cell_size_m);
         ImGui::Text("Far cell: %.2f m", ui.surface_frame.horizon.far_cell_size_m);
         ImGui::Text("Camera altitude: %.1f m", ui.surface_frame.horizon.camera_altitude_m);
         ImGui::Text("Horizon: %.1f km / required extent %.1f km",

@@ -89,6 +89,8 @@ int main() {
                      "ocean should default to a conservative horizon margin");
         require_near(defaults.horizon_target_near_cell_m, 2.0F, 0.001F,
                      "ocean should default to a near-field horizon mesh target");
+        require_near(defaults.horizon_altitude_cell_ratio, 0.04F, 0.001F,
+                     "ocean should default to altitude-aware horizon mesh thinning");
         require(defaults.surface_mode == ocean::OceanSurfaceMode::CurvedFar,
                 "ocean should default to the curved far-surface mode");
         require_near(defaults.planet_radius_scale, 1.0F, 0.001F,
@@ -205,6 +207,27 @@ int main() {
                     defaults.horizon_target_near_cell_m ||
                 effective_horizon_mesh.mesh_lod_levels == ocean::kOceanMaxMeshLodLevels,
                 "auto horizon mesh should target near cell size until max LOD");
+        require(effective_horizon_mesh.mesh_cells == defaults.mesh_cells,
+                "low camera auto horizon mesh should preserve the configured near resolution");
+        const float high_camera_altitude_m = 900.0F;
+        const float high_camera_target_cell =
+            ocean::ocean_horizon_effective_near_cell_target_m(defaults,
+                                                              high_camera_altitude_m);
+        require(high_camera_target_cell > defaults.horizon_target_near_cell_m,
+                "high camera horizon target should grow from altitude");
+        const ocean::OceanConfig high_camera_mesh =
+            ocean::ocean_horizon_effective_mesh_config(defaults, high_camera_altitude_m, 0.0F,
+                                                       earth_radius_m);
+        require(high_camera_mesh.mesh_cells < defaults.mesh_cells,
+                "high camera auto horizon mesh should lower the effective patch resolution");
+        require(ocean::ocean_mesh_near_cell_size(high_camera_mesh) <= high_camera_target_cell ||
+                    high_camera_mesh.mesh_lod_levels == ocean::kOceanMaxMeshLodLevels,
+                "high camera auto horizon mesh should preserve its effective near-cell target");
+        ocean::OceanConfig full_res_high_camera_mesh = high_camera_mesh;
+        full_res_high_camera_mesh.mesh_cells = defaults.mesh_cells;
+        require(ocean::ocean_mesh_total_triangle_count(high_camera_mesh) <
+                    ocean::ocean_mesh_total_triangle_count(full_res_high_camera_mesh),
+                "high camera auto horizon mesh should reduce LOD0 triangle cost");
         ocean::OceanConfig manual_horizon_mesh = defaults;
         manual_horizon_mesh.horizon_auto_extent = false;
         const ocean::OceanConfig disabled_horizon_mesh =
@@ -744,6 +767,16 @@ int main() {
         }
         require(rejected, "ocean should reject invalid horizon near-cell target");
 
+        ocean::OceanConfig invalid_horizon_altitude_cell = defaults;
+        invalid_horizon_altitude_cell.horizon_altitude_cell_ratio = -0.01F;
+        rejected = false;
+        try {
+            ocean::validate_ocean_config(invalid_horizon_altitude_cell);
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        require(rejected, "ocean should reject invalid horizon altitude-cell ratio");
+
         ocean::OceanConfig invalid_curvature_order = defaults;
         invalid_curvature_order.curvature_start_ratio = 0.75F;
         invalid_curvature_order.curvature_end_ratio = 0.25F;
@@ -912,8 +945,14 @@ int main() {
                          "app should pass shape anti-repeat as diagnostics push data");
         require_contains(app_source, "diagnostics_.detail_anti_repeat_strength",
                          "app should pass detail anti-repeat as feature uniform data");
-        require_contains(app_source, "surface_feature_uniforms(surface_frame)",
+        require_contains(app_source, "surface_feature_uniforms(draw_plan.surface_frame)",
                          "app should isolate shader feature controls in a frame uniform");
+        require_contains(app_source, "OceanMeshDrawPlan ocean_mesh_draw_plan",
+                         "ocean app should centralize visible mesh patch planning");
+        require_contains(app_source, "cubey::scene::intersects(frustum, bounds)",
+                         "ocean app should frustum-cull clipmap patches before draw");
+        require_contains(app_source, ".triangles = draw_plan.stats.submitted_triangles",
+                         "ocean frame stats should report submitted post-cull mesh triangles");
         require_contains(app_source, "upload_surface_feature_uniforms",
                          "app should upload shader feature controls before ocean draw");
         require_contains(app_source, "ocean_config_.surface_shape_strength",
@@ -1037,6 +1076,14 @@ int main() {
                          "UI should expose horizon extent margin control");
         require_contains(ui_source, "&ui.config.horizon_target_near_cell_m",
                          "UI should expose horizon near-cell target control");
+        require_contains(ui_source, "&ui.config.horizon_altitude_cell_ratio",
+                         "UI should expose altitude-aware horizon mesh thinning");
+        require_contains(ui_source, "ui.surface_frame.mesh_config.mesh_cells",
+                         "UI should expose the effective auto-horizon mesh resolution");
+        require_contains(ui_source, "\"Clip tris\"",
+                         "UI performance counters should expose generated clipmap triangles");
+        require_contains(ui_source, "\"Draw tris\"",
+                         "UI performance counters should expose submitted post-cull triangles");
         require_contains(ui_source, "ui.config.surface_mode",
                          "UI should expose ocean surface mode");
         require_contains(ui_source, "&ui.config.planet_radius_scale",

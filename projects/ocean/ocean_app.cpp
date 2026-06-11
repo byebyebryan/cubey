@@ -30,6 +30,7 @@
 #include <cubey/render/uniform_buffer.h>
 #include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/scene/camera_3d.h>
+#include <cubey/scene/view_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
@@ -160,6 +161,13 @@ struct OceanFrameGraph {
     cubey::render::RenderGraphTextureHandle surface_depth{};
 };
 
+struct OceanMeshDrawPlan {
+    OceanSurfaceFrame surface_frame{};
+    OceanMeshPatchList patches{};
+    std::array<bool, kOceanMaxMeshPatches> visible_patches{};
+    OceanMeshDrawStats stats{};
+};
+
 struct OceanCameraPresetConfig {
     OceanCameraPreset preset = OceanCameraPreset::Default;
     float distance = kCameraDistance;
@@ -174,6 +182,74 @@ struct OceanCameraPresetConfig {
         return frame_index - frame_slot.count;
     }
     return 0;
+}
+
+[[nodiscard]] float ocean_patch_mesh_cell_size(const OceanMeshPatch& patch) {
+    const float span_x = patch.bounds.max_x - patch.bounds.min_x;
+    const float span_z = patch.bounds.max_z - patch.bounds.min_z;
+    return std::max(span_x / static_cast<float>(std::max(patch.cells_x, 1U)),
+                    span_z / static_cast<float>(std::max(patch.cells_z, 1U)));
+}
+
+[[nodiscard]] float ocean_patch_snap_size(const OceanMeshPatch& patch) {
+    return std::max(ocean_patch_mesh_cell_size(patch) /
+                        static_cast<float>(1U << std::min(patch.level, 30U)),
+                    0.001F);
+}
+
+[[nodiscard]] float ocean_patch_wave_cull_margin_m(const OceanConfig& config) {
+    float scale_sum = 0.0F;
+    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+        if (ocean_cascade_enabled(config, cascade)) {
+            scale_sum += ocean_cascade(config, cascade).displacement_scale;
+        }
+    }
+    return std::max(96.0F, scale_sum * 24.0F * std::max(config.surface_shape_strength, 0.0F));
+}
+
+[[nodiscard]] cubey::Bounds3D ocean_mesh_patch_world_bounds(
+    const OceanConfig& config,
+    const OceanSurfaceFrame& surface_frame,
+    const OceanMeshPatch& patch,
+    cubey::math::Vec3 camera_position_m) {
+    const float snap = ocean_patch_snap_size(patch);
+    const float snapped_x = std::floor(camera_position_m.x / snap) * snap;
+    const float snapped_z = std::floor(camera_position_m.z / snap) * snap;
+
+    const float horizontal_margin = ocean_patch_wave_cull_margin_m(config);
+    const float vertical_margin = ocean_patch_wave_cull_margin_m(config) * 1.5F;
+    const float min_x = snapped_x + patch.bounds.min_x - horizontal_margin;
+    const float max_x = snapped_x + patch.bounds.max_x + horizontal_margin;
+    const float min_z = snapped_z + patch.bounds.min_z - horizontal_margin;
+    const float max_z = snapped_z + patch.bounds.max_z + horizontal_margin;
+
+    float min_drop = 0.0F;
+    const std::array<cubey::math::Vec2, 4> corners{
+        cubey::math::Vec2{min_x, min_z},
+        cubey::math::Vec2{min_x, max_z},
+        cubey::math::Vec2{max_x, min_z},
+        cubey::math::Vec2{max_x, max_z},
+    };
+    for (const cubey::math::Vec2 corner : corners) {
+        const float distance =
+            glm::length(cubey::math::Vec2{corner.x - camera_position_m.x,
+                                          corner.y - camera_position_m.z});
+        min_drop = std::min(min_drop,
+                            ocean_surface_curvature_drop_m(
+                                distance, surface_frame.local_frame.planet_radius_m,
+                                surface_frame.curvature_start_m, surface_frame.curvature_end_m,
+                                surface_frame.curvature_strength));
+    }
+
+    const float water_datum = surface_frame.local_frame.water_datum_m;
+    const float min_y = water_datum + min_drop - vertical_margin;
+    const float max_y = water_datum + vertical_margin;
+    return {
+        .center = {(min_x + max_x) * 0.5F, (min_y + max_y) * 0.5F,
+                   (min_z + max_z) * 0.5F},
+        .half_extent = {(max_x - min_x) * 0.5F, (max_y - min_y) * 0.5F,
+                        (max_z - min_z) * 0.5F},
+    };
 }
 
 void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64_t frame_index,
@@ -374,10 +450,6 @@ ocean_atmosphere_run_state(const RunConfig& run_config) {
         ++result;
     }
     return result;
-}
-
-[[nodiscard]] std::uint32_t triangle_count(const OceanConfig& config) {
-    return ocean_mesh_total_triangle_count(config);
 }
 
 [[nodiscard]] cubey::render::ComputeDispatchGroups
@@ -620,11 +692,13 @@ class OceanApp {
                                   const FrameTiming& timing) { update_windowed(context, timing); };
         callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) {
             bool atmosphere_changed = false;
-            const OceanSurfaceFrame surface_frame = ocean_surface_frame();
+            const OceanMeshDrawPlan draw_plan =
+                ocean_mesh_draw_plan(context.swapchain().extent());
             draw_ocean_ui({
                 .config = ocean_config_,
                 .diagnostics = diagnostics_,
-                .surface_frame = surface_frame,
+                .surface_frame = draw_plan.surface_frame,
+                .draw_stats = draw_plan.stats,
                 .atmosphere = atmosphere_state_,
                 .performance =
                     {
@@ -761,11 +835,12 @@ class OceanApp {
         latest_frame_ms_ = timing.delta_seconds * 1000.0;
         latest_fps_ = timing.delta_seconds > 0.0 ? 1.0 / timing.delta_seconds : 0.0;
 
+        const OceanMeshDrawPlan draw_plan = ocean_mesh_draw_plan(extent);
         const FrameStatsSample sample{
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = triangle_count(ocean_config_),
+            .triangles = draw_plan.stats.submitted_triangles,
         };
         if (std::optional<FrameStatsSnapshot> stats = ui_frame_stats_.record_frame(sample);
             stats.has_value()) {
@@ -1087,6 +1162,37 @@ class OceanApp {
         return ocean_view_projection_matrix(extent, transform, surface_frame.projection_far_plane_m);
     }
 
+    [[nodiscard]] OceanMeshDrawPlan ocean_mesh_draw_plan(VkExtent2D extent) const {
+        const cubey::Transform3D transform = camera_transform();
+        OceanMeshDrawPlan plan{};
+        plan.surface_frame =
+            ocean_surface_frame_from_camera(ocean_config_, transform.translation,
+                                            planet_radius_m());
+        plan.patches = ocean_mesh_clipmap_patches(plan.surface_frame.mesh_config);
+        const cubey::math::Mat4 view_projection =
+            ocean_view_projection_matrix(extent, transform, plan.surface_frame);
+        const cubey::scene::Frustum3D frustum =
+            cubey::scene::frustum_from_view_projection(view_projection);
+
+        plan.stats.generated_patches = static_cast<std::uint32_t>(plan.patches.count);
+        plan.stats.generated_triangles =
+            ocean_mesh_total_triangle_count(plan.surface_frame.mesh_config);
+        for (std::size_t index = 0; index < plan.patches.count; ++index) {
+            const OceanMeshPatch& patch = plan.patches.patches[index];
+            const cubey::Bounds3D bounds = ocean_mesh_patch_world_bounds(
+                ocean_config_, plan.surface_frame, patch, transform.translation);
+            const bool visible = cubey::scene::intersects(frustum, bounds);
+            plan.visible_patches[index] = visible;
+            if (visible) {
+                ++plan.stats.submitted_patches;
+                plan.stats.submitted_triangles += ocean_mesh_patch_triangle_count(patch);
+            }
+        }
+        plan.stats.culled_patches =
+            plan.stats.generated_patches - plan.stats.submitted_patches;
+        return plan;
+    }
+
     [[nodiscard]] OceanPushConstants surface_push_constants(VkExtent2D extent,
                                                             const OceanSurfaceFrame& surface_frame,
                                                             const OceanMeshPatch& patch) const {
@@ -1392,18 +1498,21 @@ class OceanApp {
 
     void record_ocean_draw(const cubey::vulkan::CommandRecorder& recorder, VkExtent2D extent,
                            cubey::render::FrameSlot frame_slot) const {
-        const OceanSurfaceFrame surface_frame = ocean_surface_frame();
-        const OceanMeshPatchList patches = ocean_mesh_clipmap_patches(surface_frame.mesh_config);
+        const OceanMeshDrawPlan draw_plan = ocean_mesh_draw_plan(extent);
         const cubey::render::GraphicsPipelineResource& surface_pipeline =
             ocean_gpu_.surface_pipeline();
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, surface_pipeline.pipeline());
         recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, surface_pipeline.layout(), 0,
                                      ocean_gpu_.surface_set(frame_slot));
         ocean_gpu_.upload_surface_feature_uniforms(frame_slot,
-                                                   surface_feature_uniforms(surface_frame));
-        for (const OceanMeshPatch& patch : patches) {
+                                                   surface_feature_uniforms(draw_plan.surface_frame));
+        for (std::size_t index = 0; index < draw_plan.patches.count; ++index) {
+            if (!draw_plan.visible_patches[index]) {
+                continue;
+            }
+            const OceanMeshPatch& patch = draw_plan.patches.patches[index];
             const OceanPushConstants constants =
-                surface_push_constants(extent, surface_frame, patch);
+                surface_push_constants(extent, draw_plan.surface_frame, patch);
             recorder.push_constants(surface_pipeline.layout(),
                                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                     constants);
