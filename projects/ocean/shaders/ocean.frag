@@ -36,7 +36,6 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 surface_curve_options;
     vec4 far_field_options;
     vec4 far_field_options2;
-    vec4 far_foam_options;
     vec4 far_detail_options;
 } ocean_features;
 layout(set = 0, binding = 20) uniform sampler2D foam_filtered_cascade0_level0_texture;
@@ -253,40 +252,12 @@ float ocean_far_field_end_m() {
     return max(ocean_features.far_field_options.z, ocean_far_field_start_m() + 0.001);
 }
 
-float ocean_far_normal_strength() {
-    return max(ocean_features.far_field_options.w, 0.0);
-}
-
 float ocean_far_roughness_strength() {
     return max(ocean_features.far_field_options2.x, 0.0);
 }
 
 float ocean_far_glint_strength() {
     return max(ocean_features.far_field_options2.y, 0.0);
-}
-
-float ocean_far_streak_scale_m() {
-    return max(ocean_features.far_field_options2.z, 0.001);
-}
-
-float ocean_far_whitecap_strength() {
-    return max(ocean_features.far_foam_options.x, 0.0);
-}
-
-float ocean_far_whitecap_threshold() {
-    return max(ocean_features.far_foam_options.y, 0.0);
-}
-
-float ocean_far_whitecap_variance_weight() {
-    return max(ocean_features.far_foam_options.z, 0.0);
-}
-
-float ocean_far_whitecap_streak_strength() {
-    return clamp(ocean_features.far_foam_options.w, 0.0, 1.0);
-}
-
-float ocean_far_wind_angle() {
-    return ocean_features.far_field_options2.w;
 }
 
 float ocean_far_field_factor(float dist) {
@@ -317,10 +288,6 @@ float ocean_far_reflection_variation_strength() {
 
 float ocean_sun_glitter_width() {
     return clamp(ocean_features.far_detail_options.w, 0.001, 0.5);
-}
-
-vec2 ocean_far_wind_dir() {
-    return normalize(vec2(cos(ocean_far_wind_angle()), sin(ocean_far_wind_angle())));
 }
 
 bool ocean_terrain_fields_enabled() {
@@ -484,20 +451,6 @@ float value_noise(vec2 value) {
     float c = hash12(cell + vec2(0.0, 1.0));
     float d = hash12(cell + vec2(1.0, 1.0));
     return mix(mix(a, b, local.x), mix(c, d, local.x), local.y);
-}
-
-float ocean_far_streak_signal(vec2 position) {
-    vec2 wind = ocean_far_wind_dir();
-    vec2 cross_wind = vec2(-wind.y, wind.x);
-    float scale = ocean_far_streak_scale_m();
-    float downwind = dot(position, wind) / scale;
-    float cross = dot(position, cross_wind) / max(scale * 0.18, 0.001);
-    float time = ocean.camera_time.w;
-    float broad = value_noise(vec2(downwind * 0.72 + time * 0.003,
-                                   cross * 1.85 - time * 0.006));
-    float mid = value_noise(vec2(downwind * 1.65 + 37.0 - time * 0.004,
-                                 cross * 4.20 - 11.0));
-    return (broad * 0.68 + mid * 0.32) * 2.0 - 1.0;
 }
 
 vec2 detail_anti_repeat_weights(uint cascade, vec2 position, float factor) {
@@ -867,23 +820,6 @@ vec4 sample_filtered_foam(uint cascade, vec2 position, float tile_length, float 
                sample_filtered_foam_level(cascade, level1, uv), fract(filter_level));
 }
 
-vec4 sample_filtered_foam_domain(uint cascade, vec2 position, float tile_length,
-                                 float footprint_m, uint domain) {
-    float angle = detail_anti_repeat_angle(cascade, domain);
-    float scale = detail_anti_repeat_scale(cascade, domain);
-    vec2 secondary_position =
-        rotate2(position, angle) * scale + detail_anti_repeat_offset(cascade, domain);
-    return sample_filtered_foam(cascade, secondary_position, tile_length, footprint_m * scale);
-}
-
-vec4 sample_filtered_foam_anti_repeat(uint cascade, vec2 position, float tile_length,
-                                      float footprint_m) {
-    vec4 primary = sample_filtered_foam(cascade, position, tile_length, footprint_m);
-    vec4 secondary0 = sample_filtered_foam_domain(cascade, position, tile_length, footprint_m, 0u);
-    vec4 secondary1 = sample_filtered_foam_domain(cascade, position, tile_length, footprint_m, 1u);
-    return (primary + secondary0 * 0.36 + secondary1 * 0.24) / 1.60;
-}
-
 bool ocean_detail_anti_repeat_enabled(float factor) {
     return factor > 0.0;
 }
@@ -907,43 +843,6 @@ vec2 filtered_foam_total(float dist, float footprint_m) {
         total += filtered.xy * lod_weight * ocean_surface_foam_strength();
     }
     return clamp(total, 0.0, 1.0);
-}
-
-float ocean_far_whitecap_coverage(float dist, float footprint_m, float ndotv,
-                                  float far_field_energy) {
-    if (far_field_energy <= 0.0 || ocean_far_whitecap_strength() <= 0.0) {
-        return 0.0;
-    }
-    float density = 0.0;
-    float variance = 0.0;
-    float scale_sum = 0.0;
-    for (uint cascade = 0u; cascade < 5u; ++cascade) {
-        float scale = max(cascade_normal_scale(cascade), cascade_displacement_scale(cascade));
-        if (!ocean_cascade_enabled(cascade) || scale <= 0.0) {
-            continue;
-        }
-        float tile_length = max(cascade_tile_length(cascade), 0.001);
-        vec4 filtered =
-            sample_filtered_foam_anti_repeat(cascade, frag_sample_position, tile_length,
-                                             footprint_m);
-        vec2 moment_variance = max(filtered.zw - filtered.xy * filtered.xy, vec2(0.0));
-        density += max(filtered.x, filtered.y * 0.42) * scale;
-        variance += max(moment_variance.x, moment_variance.y) * scale;
-        scale_sum += scale;
-    }
-    if (scale_sum <= 0.0) {
-        return 0.0;
-    }
-    density /= scale_sum;
-    variance /= scale_sum;
-    float streak = mix(1.0, mix(0.72, 1.28, 0.5 + 0.5 * ocean_far_streak_signal(frag_sample_position)),
-                       ocean_far_whitecap_streak_strength());
-    float signal = (density + variance * ocean_far_whitecap_variance_weight()) * streak;
-    float threshold = ocean_far_whitecap_threshold();
-    float coverage = smoothstep(threshold, threshold + 0.22, signal) *
-                     ocean_far_whitecap_strength() * far_field_energy;
-    float view_factor = mix(0.72, 1.0, smoothstep(0.04, 0.48, ndotv));
-    return clamp(coverage * view_factor, 0.0, 0.28);
 }
 
 vec4 sample_normal_foam_domain(uint cascade, vec2 position, float tile_length,
@@ -1223,18 +1122,6 @@ float active_far_field_lod_energy(float dist, float mesh_cell_size) {
     return scale_sum > 0.0 ? clamp(energy / scale_sum, 0.0, 1.0) : 0.0;
 }
 
-vec3 ocean_apply_far_field_normal(vec3 normal, vec2 position, float far_field_energy) {
-    if (far_field_energy <= 0.0 || ocean_far_normal_strength() <= 0.0) {
-        return normal;
-    }
-    vec2 wind = ocean_far_wind_dir();
-    vec2 cross_wind = vec2(-wind.y, wind.x);
-    float signal = ocean_far_streak_signal(position);
-    vec2 gradient = normalize(wind * 0.35 + cross_wind * 0.65) * signal *
-                    far_field_energy * ocean_far_normal_strength();
-    return normalize(normal + vec3(-gradient.x, 0.0, -gradient.y));
-}
-
 float triangle_wire_factor(vec3 barycentric) {
     vec3 width = max(fwidth(barycentric), vec3(0.0001));
     vec3 edge = smoothstep(width * 0.75, width * 1.75, barycentric);
@@ -1263,7 +1150,6 @@ void main() {
     float far_field_energy =
         ocean_far_field_factor(dist) * active_far_field_lod_energy(dist, frag_mesh_cell_size);
     float far_material_energy = max(far_field_energy, far_detail_filter * surface_lod);
-    normal = ocean_apply_far_field_normal(normal, frag_sample_position, far_field_energy);
     vec3 reflection_dir = reflect(-view_dir, normal);
     float ndotv = clamp(dot(normal, view_dir), 0.0, 1.0);
     float ndotl = clamp(dot(normal, sun_dir), 0.0, 1.0);
@@ -1276,9 +1162,7 @@ void main() {
                   ocean_terrain_foam_strength()
             : 0.0;
     float near_foam_coverage = ocean_foam_coverage(foam_data, dist, ndotv);
-    float far_whitecap_coverage =
-        ocean_far_whitecap_coverage(dist, pixel_footprint_m, ndotv, far_field_energy);
-    float foam_coverage = max(max(near_foam_coverage, far_whitecap_coverage), terrain_shore_foam);
+    float foam_coverage = max(near_foam_coverage, terrain_shore_foam);
     float ambient_light = ocean_ambient_light_scale();
     float direct_light = ocean_direct_light_scale();
     float reference_shadow = ocean_reference_pillar_shadow(frag_world_position, sun_dir);
@@ -1378,8 +1262,7 @@ void main() {
         vec2 filtered = filtered_foam_total(dist, pixel_footprint_m);
         color = vec3(filtered.x, filtered.y, max(filtered.x, filtered.y));
     } else if (view == OCEAN_VIEW_FAR_FIELD) {
-        color = vec3(far_field_energy, far_whitecap_coverage,
-                     far_detail_filter);
+        color = vec3(far_field_energy, far_material_energy, far_detail_filter);
     }
 
     if (ocean.debug_options.w > 0.0) {

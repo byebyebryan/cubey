@@ -156,18 +156,12 @@ struct OceanConfig {
     bool far_field_enabled = true;
     float far_field_start_m = 450.0F;
     float far_field_end_m = 2200.0F;
-    float far_normal_strength = 0.0F;
     float far_roughness_strength = 0.12F;
     float far_glint_strength = 0.28F;
-    float far_streak_scale_m = 900.0F;
     float far_detail_footprint_start_m = 0.9F;
     float far_detail_footprint_end_m = 5.0F;
     float far_reflection_variation_strength = 0.08F;
     float sun_glitter_width = 0.10F;
-    float far_whitecap_strength = 0.0F;
-    float far_whitecap_threshold = 0.055F;
-    float far_whitecap_variance_weight = 0.35F;
-    float far_whitecap_streak_strength = 0.20F;
     bool spectral_domains_enabled = true;
     bool terrain_fields_enabled = false;
     OceanFieldPrecision field_precision = OceanFieldPrecision::Half;
@@ -633,15 +627,10 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.terrain_foam_strength < 0.0F || config.shape_fade_distance_scale <= 0.0F ||
         config.normal_fade_distance_scale <= 0.0F || config.foam_fade_distance_scale <= 0.0F ||
         config.far_field_start_m < 0.0F || config.far_field_end_m <= config.far_field_start_m ||
-        config.far_normal_strength < 0.0F || config.far_roughness_strength < 0.0F ||
-        config.far_glint_strength < 0.0F || config.far_streak_scale_m <= 0.0F ||
+        config.far_roughness_strength < 0.0F || config.far_glint_strength < 0.0F ||
         config.far_detail_footprint_start_m < 0.0F ||
         config.far_detail_footprint_end_m <= config.far_detail_footprint_start_m ||
-        config.far_reflection_variation_strength < 0.0F || config.sun_glitter_width <= 0.0F ||
-        config.far_whitecap_strength < 0.0F || config.far_whitecap_threshold < 0.0F ||
-        config.far_whitecap_variance_weight < 0.0F ||
-        config.far_whitecap_streak_strength < 0.0F ||
-        config.far_whitecap_streak_strength > 1.0F) {
+        config.far_reflection_variation_strength < 0.0F || config.sun_glitter_width <= 0.0F) {
         throw std::runtime_error("ocean shading controls are out of range");
     }
     for (const OceanCascadeConfig& cascade : config.cascades) {

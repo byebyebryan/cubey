@@ -153,14 +153,12 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.normal_fade_distance_scale = 1.0F;
         ui.config.foam_fade_distance_scale = 1.0F;
         ui.config.far_field_enabled = true;
-        ui.config.far_normal_strength = 0.0F;
         ui.config.far_roughness_strength = 0.12F;
         ui.config.far_glint_strength = 0.28F;
         ui.config.far_detail_footprint_start_m = 0.9F;
         ui.config.far_detail_footprint_end_m = 5.0F;
         ui.config.far_reflection_variation_strength = 0.08F;
         ui.config.sun_glitter_width = 0.10F;
-        ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 1.0F;
         ui.diagnostics.detail_anti_repeat_strength = 1.0F;
         ui.config.spectral_domains_enabled = true;
@@ -182,14 +180,12 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.normal_fade_distance_scale = 1.0F;
         ui.config.foam_fade_distance_scale = 1.0F;
         ui.config.far_field_enabled = false;
-        ui.config.far_normal_strength = 0.0F;
         ui.config.far_roughness_strength = 0.0F;
         ui.config.far_glint_strength = 0.0F;
         ui.config.far_detail_footprint_start_m = 0.9F;
         ui.config.far_detail_footprint_end_m = 5.0F;
         ui.config.far_reflection_variation_strength = 0.0F;
         ui.config.sun_glitter_width = 0.10F;
-        ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
         ui.config.spectral_domains_enabled = false;
@@ -211,14 +207,12 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.normal_fade_distance_scale = 0.80F;
         ui.config.foam_fade_distance_scale = 0.80F;
         ui.config.far_field_enabled = false;
-        ui.config.far_normal_strength = 0.0F;
         ui.config.far_roughness_strength = 0.0F;
         ui.config.far_glint_strength = 0.0F;
         ui.config.far_detail_footprint_start_m = 0.9F;
         ui.config.far_detail_footprint_end_m = 5.0F;
         ui.config.far_reflection_variation_strength = 0.0F;
         ui.config.sun_glitter_width = 0.10F;
-        ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
         ui.config.spectral_domains_enabled = false;
@@ -650,7 +644,7 @@ void draw_ocean_ui(OceanUiContext ui) {
                                         "%.2f", "Final normal-map intensity.");
         cubey::host::imgui_checkbox(
             "Far field", &ui.config.far_field_enabled,
-            "Hand unresolved distant wave energy into statistical normals, roughness, and glints.");
+            "Hand unresolved distant wave energy into roughness, reflection, and glints.");
         ImGui::BeginDisabled(!ui.config.far_field_enabled);
         cubey::host::imgui_slider_float("Far start", &ui.config.far_field_start_m, 50.0F,
                                         1800.0F, "%.0f m",
@@ -662,9 +656,6 @@ void draw_ocean_ui(OceanUiContext ui) {
             ui.config.far_field_end_m = ui.config.far_field_start_m + 1.0F;
         }
         cubey::host::imgui_slider_float(
-            "Far normal", &ui.config.far_normal_strength, 0.0F, 0.8F, "%.2f",
-            "Low-frequency wind-aligned normal variation added when displacement is unresolved.");
-        cubey::host::imgui_slider_float(
             "Far roughness", &ui.config.far_roughness_strength, 0.0F, 0.5F, "%.2f",
             "Roughness increase driven by unresolved distant wave energy.");
         cubey::host::imgui_slider_float(
@@ -673,9 +664,6 @@ void draw_ocean_ui(OceanUiContext ui) {
         cubey::host::imgui_slider_float(
             "Glitter width", &ui.config.sun_glitter_width, 0.02F, 0.40F, "%.2f",
             "Angular width of the far-field reflected-sun corridor.");
-        cubey::host::imgui_slider_float("Far streak scale", &ui.config.far_streak_scale_m, 80.0F,
-                                        2400.0F, "%.0f m",
-                                        "World-space scale of low-contrast wind-aligned far-field streaks.");
         cubey::host::imgui_slider_float(
             "Far detail start", &ui.config.far_detail_footprint_start_m, 0.1F, 6.0F, "%.2f m",
             "Pixel footprint where distant normal detail starts fading into material response.");
@@ -689,18 +677,6 @@ void draw_ocean_ui(OceanUiContext ui) {
             "Far reflection patches", &ui.config.far_reflection_variation_strength, 0.0F,
             0.3F, "%.2f",
             "Broad low-frequency variation applied to distant reflected sky and atmosphere.");
-        cubey::host::imgui_slider_float(
-            "Far whitecaps", &ui.config.far_whitecap_strength, 0.0F, 0.6F, "%.2f",
-            "Experimental filtered whitecap coverage added only in far-field shading; off by default because it can reveal FFT tiling.");
-        cubey::host::imgui_slider_float(
-            "Far whitecap threshold", &ui.config.far_whitecap_threshold, 0.0F, 0.25F, "%.3f",
-            "Filtered coverage threshold before distant whitecaps become visible.");
-        cubey::host::imgui_slider_float(
-            "Far whitecap variance", &ui.config.far_whitecap_variance_weight, 0.0F, 1.5F,
-            "%.2f", "How much filtered foam variance contributes to distant whitecap density.");
-        cubey::host::imgui_slider_float(
-            "Far whitecap streaks", &ui.config.far_whitecap_streak_strength, 0.0F, 1.0F,
-            "%.2f", "Wind-aligned modulation applied to filtered far whitecap coverage.");
         ImGui::EndDisabled();
         cubey::host::imgui_slider_float(
             "Wave shadow", &ui.config.self_shadow_strength, 0.0F, 1.0F, "%.2f",

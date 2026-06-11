@@ -70,8 +70,8 @@ setting at a time. The important failure modes are:
 - displacement carried by clipmap rings that are too coarse to represent it;
 - foam detail fading differently from wave shape, leaving a flat but tiled
   texture cue;
-- filtered far-whitecap coverage becoming cloudy, noisy, or obviously locked to
-  one FFT tile, especially if the opt-in final contribution is raised above 0;
+- filtered foam diagnostics becoming cloudy, noisy, or obviously locked to one
+  FFT tile;
 - high-frequency normal detail remaining visible as texture noise instead of
   fading into roughness, reflection, and subtle swell hints;
 - sun glitter appearing as a uniform sparkle field instead of a reflected-light

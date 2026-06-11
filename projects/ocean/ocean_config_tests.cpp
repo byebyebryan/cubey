@@ -480,14 +480,10 @@ int main() {
                      "ocean should default far-field start distance");
         require_near(defaults.far_field_end_m, 2200.0F, 0.001F,
                      "ocean should default far-field end distance");
-        require_near(defaults.far_normal_strength, 0.0F, 0.001F,
-                     "ocean should keep statistical far-field normal opt-in by default");
         require_near(defaults.far_roughness_strength, 0.12F, 0.001F,
                      "ocean should default far-field roughness contribution conservatively");
         require_near(defaults.far_glint_strength, 0.28F, 0.001F,
                      "ocean should default far-field sun glitter contribution on");
-        require_near(defaults.far_streak_scale_m, 900.0F, 0.001F,
-                     "ocean should default broad far-field streak scale");
         require_near(defaults.far_detail_footprint_start_m, 0.9F, 0.001F,
                      "ocean should default far-detail footprint fade start");
         require_near(defaults.far_detail_footprint_end_m, 5.0F, 0.001F,
@@ -496,14 +492,6 @@ int main() {
                      "ocean should default broad far reflection variation conservatively");
         require_near(defaults.sun_glitter_width, 0.10F, 0.001F,
                      "ocean should default reflected-sun glitter corridor width");
-        require_near(defaults.far_whitecap_strength, 0.0F, 0.001F,
-                     "ocean should keep filtered far whitecaps opt-in by default");
-        require_near(defaults.far_whitecap_threshold, 0.055F, 0.001F,
-                     "ocean should default filtered far whitecap threshold");
-        require_near(defaults.far_whitecap_variance_weight, 0.35F, 0.001F,
-                     "ocean should default filtered far whitecap variance weight");
-        require_near(defaults.far_whitecap_streak_strength, 0.20F, 0.001F,
-                     "ocean should default filtered far whitecap streak modulation");
         const ocean::OceanCascadeLodBand cascade0_lod = ocean::ocean_cascade_lod_band(defaults, 0);
         require_near(cascade0_lod.displacement_fade_start,
                      defaults.cascades[0].tile_length *
@@ -1084,10 +1072,12 @@ int main() {
                          "app should pass foam sharpness as diagnostics push data");
         require_contains(app_source, "ocean_config_.far_field_enabled",
                          "app should pass far-field material enable state");
-        require_contains(app_source, "ocean_config_.far_streak_scale_m",
-                         "app should pass far-field streak scale");
-        require_contains(app_source, "ocean_config_.far_whitecap_strength",
-                         "app should pass filtered far-whitecap controls");
+        require_not_contains(app_source, "ocean_config_.far_normal_strength",
+                             "app should not pass removed far-field normal carrier");
+        require_not_contains(app_source, "ocean_config_.far_streak_scale_m",
+                             "app should not pass removed far-field streak carrier");
+        require_not_contains(app_source, "ocean_config_.far_whitecap_strength",
+                             "app should not pass removed filtered far-whitecap carrier");
         require_contains(app_source, "ocean_config_.far_detail_footprint_start_m",
                          "app should pass far-detail footprint controls");
         require_contains(app_source, "ocean_config_.far_reflection_variation_strength",
@@ -1175,14 +1165,14 @@ int main() {
                        "UI should place wave self-shadow controls before foam material controls");
         require_contains(ui_source, "&ui.config.far_field_enabled",
                          "UI should expose far-field material handoff");
-        require_contains(ui_source, "&ui.config.far_normal_strength",
-                         "UI should expose far-field normal strength");
+        require_not_contains(ui_source, "&ui.config.far_normal_strength",
+                             "UI should not expose removed far-field normal strength");
         require_contains(ui_source, "&ui.config.far_roughness_strength",
                          "UI should expose far-field roughness strength");
         require_contains(ui_source, "&ui.config.far_glint_strength",
                          "UI should expose far-field glint strength");
-        require_contains(ui_source, "&ui.config.far_whitecap_strength",
-                         "UI should expose filtered far-whitecap strength");
+        require_not_contains(ui_source, "&ui.config.far_whitecap_strength",
+                             "UI should not expose removed filtered far-whitecap strength");
         require_contains(ui_source, "&ui.config.far_detail_footprint_start_m",
                          "UI should expose far-detail footprint fade controls");
         require_contains(ui_source, "&ui.config.far_reflection_variation_strength",
@@ -1251,18 +1241,21 @@ int main() {
                          "fragment shader should consume far-field material controls");
         require_contains(fragment_shader, "float active_far_field_lod_energy",
                          "fragment shader should derive far-field handoff from unresolved LOD");
-        require_contains(fragment_shader, "ocean_apply_far_field_normal",
-                         "fragment shader should add statistical far-field normal variation");
-        require_contains(fragment_shader, "float ocean_far_whitecap_coverage",
-                         "fragment shader should derive filtered far-whitecap coverage");
-        require_contains(fragment_shader, "sample_filtered_foam_anti_repeat",
-                         "fragment shader should anti-repeat filtered far-whitecap samples");
+        require_not_contains(fragment_shader, "ocean_apply_far_field_normal",
+                             "fragment shader should not use removed far-field normal carrier");
+        require_not_contains(fragment_shader, "float ocean_far_whitecap_coverage",
+                             "fragment shader should not use removed filtered far-whitecap carrier");
+        require_not_contains(fragment_shader, "sample_filtered_foam_anti_repeat",
+                             "fragment shader should not keep rejected far-whitecap anti-repeat path");
         require_contains(fragment_shader, "float ocean_far_detail_filter",
                          "fragment shader should filter far normal detail by footprint");
         require_contains(fragment_shader, "float ocean_far_reflection_variation",
                          "fragment shader should add broad far reflection variation");
         require_contains(fragment_shader, "float far_material_energy",
                          "fragment shader should hand filtered detail into material response");
+        require_contains(fragment_shader,
+                         "color = vec3(far_field_energy, far_material_energy, far_detail_filter)",
+                         "far-field debug view should expose active material handoff channels");
         require_contains(fragment_shader, "float ocean_far_sun_glitter",
                          "fragment shader should add a reflected-sun far glitter corridor");
         require_contains(fragment_shader, "float ocean_surface_foam_strength",
@@ -1453,8 +1446,8 @@ int main() {
                          "surface descriptors should expose feature-isolation uniforms");
         require_contains(gpu_header_source, "OceanSurfaceFeatureUniforms",
                          "GPU resource header should define packed feature-isolation uniforms");
-        require_contains(gpu_header_source, "sizeof(float) * 48U",
-                         "GPU resource header should size expanded feature-isolation uniforms");
+        require_contains(gpu_header_source, "sizeof(float) * 44U",
+                         "GPU resource header should size active feature-isolation uniforms");
         require_contains(gpu_header_source, "self_shadow_options",
                          "GPU resource header should pack wave self-shadow controls");
         require_contains(gpu_header_source, "surface_frame_options",

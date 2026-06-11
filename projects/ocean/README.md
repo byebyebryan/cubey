@@ -102,8 +102,7 @@ weather simulation.
 Feature isolation controls expose global shape strength, global foam strength,
 foam history, shape and detail anti-repeat, split atmosphere material influence,
 shape/normal/foam fade distances, terrain foam strength, far-field material
-energy, sun glitter, broad reflection variation, and opt-in filtered
-far-whitecap coverage. Shape LOD now
+energy, sun glitter, and broad reflection variation. Shape LOD now
 combines distance fade with mesh-cell support, so coarse clipmap rings stop
 carrying displacement detail that the current mesh cannot represent while
 normal/foam detail can continue as shading-only contribution. Far normal detail
@@ -124,10 +123,9 @@ broad sky-reflection patches, and a sun-glitter corridor when the light/view
 geometry supports it. `footprint` shows the estimated pixel footprint in meters,
 `energy-lod` shows unresolved wave energy against displacement and surface LOD
 support, `foam-filtered` shows the filtered foam coverage pyramid, and
-`far-field` shows material handoff energy plus the filtered whitecap term.
-Filtered far whitecaps and synthetic far normals are intentionally off by
-default because the current carriers can reveal FFT tiling as stipple or
-camera-stretched streaks.
+`far-field` shows active material handoff energy plus footprint filtering. The
+rejected filtered far-whitecap and synthetic far-normal carriers were removed
+because they exposed FFT tiling as stipple or camera-stretched streaks.
 
 Ocean still uses a camera-relative `clipmap_grid_2d` surface mesh. The shared
 planet-scale `adaptive_patch_lod` planner is available in `cubey::render`, but

@@ -16,7 +16,6 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 surface_curve_options;
     vec4 far_field_options;
     vec4 far_field_options2;
-    vec4 far_foam_options;
     vec4 far_detail_options;
 } ocean_features;
 
