@@ -480,16 +480,16 @@ int main() {
                      "ocean should default far-field start distance");
         require_near(defaults.far_field_end_m, 2200.0F, 0.001F,
                      "ocean should default far-field end distance");
-        require_near(defaults.far_normal_strength, 0.18F, 0.001F,
-                     "ocean should default far-field normal contribution conservatively");
+        require_near(defaults.far_normal_strength, 0.0F, 0.001F,
+                     "ocean should keep statistical far-field normal opt-in by default");
         require_near(defaults.far_roughness_strength, 0.12F, 0.001F,
                      "ocean should default far-field roughness contribution conservatively");
         require_near(defaults.far_glint_strength, 0.10F, 0.001F,
                      "ocean should default far-field glint contribution conservatively");
         require_near(defaults.far_streak_scale_m, 900.0F, 0.001F,
                      "ocean should default broad far-field streak scale");
-        require_near(defaults.far_whitecap_strength, 0.22F, 0.001F,
-                     "ocean should default filtered far whitecaps conservatively");
+        require_near(defaults.far_whitecap_strength, 0.0F, 0.001F,
+                     "ocean should keep filtered far whitecaps opt-in by default");
         require_near(defaults.far_whitecap_threshold, 0.055F, 0.001F,
                      "ocean should default filtered far whitecap threshold");
         require_near(defaults.far_whitecap_variance_weight, 0.35F, 0.001F,

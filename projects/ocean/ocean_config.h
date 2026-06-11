@@ -156,11 +156,11 @@ struct OceanConfig {
     bool far_field_enabled = true;
     float far_field_start_m = 450.0F;
     float far_field_end_m = 2200.0F;
-    float far_normal_strength = 0.18F;
+    float far_normal_strength = 0.0F;
     float far_roughness_strength = 0.12F;
     float far_glint_strength = 0.10F;
     float far_streak_scale_m = 900.0F;
-    float far_whitecap_strength = 0.22F;
+    float far_whitecap_strength = 0.0F;
     float far_whitecap_threshold = 0.055F;
     float far_whitecap_variance_weight = 0.35F;
     float far_whitecap_streak_strength = 0.20F;

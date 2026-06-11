@@ -102,7 +102,7 @@ weather simulation.
 Feature isolation controls expose global shape strength, global foam strength,
 foam history, shape and detail anti-repeat, split atmosphere material influence,
 shape/normal/foam fade distances, terrain foam strength, far-field material
-energy, and filtered far-whitecap coverage. Shape LOD now
+energy, and opt-in filtered far-whitecap coverage. Shape LOD now
 combines distance fade with mesh-cell support, so coarse clipmap rings stop
 carrying displacement detail that the current mesh cannot represent while
 normal/foam detail can continue as shading-only contribution. The default LOD
@@ -119,8 +119,10 @@ The far-field material handoff is explicitly diagnostic-driven. `footprint`
 shows the estimated pixel footprint in meters, `energy-lod` shows unresolved
 wave energy against displacement and surface LOD support, `foam-filtered` shows
 the filtered foam coverage pyramid, and `far-field` shows material handoff
-energy plus the filtered whitecap term. These views are intended to catch
-regular FFT tiling and overly aggressive far-distance fade before tuning by eye.
+energy plus the filtered whitecap term. Filtered far whitecaps are intentionally
+off by default because the current carrier can reveal FFT tiling as stipple;
+these views are intended to catch regular tiling and overly aggressive
+far-distance fade before tuning by eye.
 
 Ocean still uses a camera-relative `clipmap_grid_2d` surface mesh. The shared
 planet-scale `adaptive_patch_lod` planner is available in `cubey::render`, but

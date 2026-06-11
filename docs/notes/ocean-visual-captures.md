@@ -71,7 +71,7 @@ setting at a time. The important failure modes are:
 - foam detail fading differently from wave shape, leaving a flat but tiled
   texture cue;
 - filtered far-whitecap coverage becoming cloudy, noisy, or obviously locked to
-  one FFT tile;
+  one FFT tile, especially if the opt-in final contribution is raised above 0;
 - horizon coverage changing because automatic mesh extent silently expanded or
   contracted.
 

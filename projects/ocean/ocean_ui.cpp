@@ -153,10 +153,10 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.normal_fade_distance_scale = 1.0F;
         ui.config.foam_fade_distance_scale = 1.0F;
         ui.config.far_field_enabled = true;
-        ui.config.far_normal_strength = 0.18F;
+        ui.config.far_normal_strength = 0.0F;
         ui.config.far_roughness_strength = 0.12F;
         ui.config.far_glint_strength = 0.10F;
-        ui.config.far_whitecap_strength = 0.22F;
+        ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 1.0F;
         ui.diagnostics.detail_anti_repeat_strength = 1.0F;
         ui.config.spectral_domains_enabled = true;
@@ -663,7 +663,7 @@ void draw_ocean_ui(OceanUiContext ui) {
                                         "World-space scale of low-contrast wind-aligned far-field streaks.");
         cubey::host::imgui_slider_float(
             "Far whitecaps", &ui.config.far_whitecap_strength, 0.0F, 0.6F, "%.2f",
-            "Low-contrast filtered whitecap coverage added only in far-field shading.");
+            "Experimental filtered whitecap coverage added only in far-field shading; off by default because it can reveal FFT tiling.");
         cubey::host::imgui_slider_float(
             "Far whitecap threshold", &ui.config.far_whitecap_threshold, 0.0F, 0.25F, "%.3f",
             "Filtered coverage threshold before distant whitecaps become visible.");
