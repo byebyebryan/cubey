@@ -113,8 +113,8 @@ CubeyAtmosphereMedium atmosphere_medium() {
 vec3 ground_color(vec3 position, vec3 direction) {
     vec3 up = normalize(position - planet_center());
     float ocean = smoothstep(-0.15, 0.25, fbm(up * 9.0 + vec3(4.0, 1.0, 8.0)));
-    vec3 ocean_color = vec3(0.015, 0.07, 0.12);
-    vec3 land_color = vec3(0.18, 0.20, 0.11);
+    vec3 ocean_color = vec3(0.018, 0.060, 0.115);
+    vec3 land_color = vec3(0.145, 0.130, 0.090);
     float ndotl = max(dot(up, normalize(params.sun_direction_intensity.xyz)), 0.0);
     vec3 base = mix(ocean_color, land_color, ocean);
     vec3 ambient = vec3(0.018, 0.022, 0.030);
@@ -164,11 +164,10 @@ float cloud_density(vec3 position_km) {
     }
     float weather = weather_coverage(position_km);
     float coverage = clamp(params.weather.x, 0.0, 1.0);
-    float coverage_mask = smoothstep(1.0 - coverage, 1.0, weather);
+    float coverage_mask = smoothstep(1.0 - coverage * 0.72, 0.96, weather);
     vec3 detail_coord = position_km * 0.42 + vec3(params.weather.w * 0.03, 13.5, 0.0);
     float detail = fbm(detail_coord);
-    float erosion = smoothstep(0.18, 0.88, detail);
-    float puffy = mix(0.55, 1.25, erosion);
+    float puffy = smoothstep(0.34, 0.86, detail);
     return max(coverage_mask * height * puffy * params.weather.y, 0.0);
 }
 
@@ -221,8 +220,17 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     }
     float ray_start = max(top_hit.x, 0.0);
     float ray_end = top_hit.y;
+    float bottom_radius = params.camera_position_radius.w + params.cloud_shell.x;
+    float camera_radius = length(origin - center);
+    if (camera_radius < bottom_radius) {
+        vec2 bottom_hit = ray_sphere(origin, direction, center, bottom_radius);
+        if (bottom_hit.y > 0.0) {
+            ray_start = max(ray_start, bottom_hit.y);
+        }
+    }
     vec2 ground_hit = ray_sphere(origin, direction, center, params.camera_position_radius.w);
-    if (ground_hit.x > 0.0) {
+    bool hit_ground = ground_hit.x > 0.0;
+    if (hit_ground) {
         ray_end = min(ray_end, ground_hit.x);
     }
     if (ray_end <= ray_start) {
@@ -243,6 +251,9 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         float jitter = hash31(vec3(frag_position, float(i))) - 0.5;
         vec3 p = origin + direction * (ray_start + (float(i) + 0.5 + jitter * 0.35) * step_len);
         float density = cloud_density(p);
+        if (params.camera_forward_mode.w > 1.5 && !hit_ground) {
+            density *= 0.22;
+        }
         float weather = weather_coverage(p);
         ++used_steps;
         density_sum += density;
@@ -254,10 +265,18 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         float shadow = light_transmittance(p, sun_dir, light_steps);
         float powder = 1.0 - exp(-density * step_len * 0.75);
         float phase = mix(0.45, 1.55, pow(max(dot(direction, sun_dir), 0.0), 3.0));
-        float sun_light = shadow * phase * (0.55 + powder * 0.85) * params.sun_direction_intensity.w;
-        float ambient = 0.18 + 0.25 * smoothstep(-0.2, 0.8, dot(normalize(p - center), vec3(0.0, 1.0, 0.0)));
-        vec3 cloud_light = vec3(0.95, 0.91, 0.82) * sun_light + vec3(0.30, 0.38, 0.48) * ambient;
-        float alpha = 1.0 - exp(-density * step_len * 0.30);
+        float sun_light = shadow * phase * (0.65 + powder * 1.10) * params.sun_direction_intensity.w;
+        vec3 local_up = normalize(p - center);
+        float altitude = length(p - center) - params.camera_position_radius.w;
+        float height01 = clamp((altitude - params.cloud_shell.x) /
+                                   max(params.cloud_shell.y - params.cloud_shell.x, 0.001),
+                               0.0, 1.0);
+        float ambient = 0.25 + 0.35 * smoothstep(-0.2, 0.8, dot(local_up, vec3(0.0, 1.0, 0.0)));
+        float top_lift = smoothstep(0.20, 0.85, height01);
+        vec3 cloud_light =
+            vec3(1.08, 1.03, 0.93) * sun_light * 1.25 +
+            vec3(0.55, 0.62, 0.70) * ambient * mix(0.70, 1.10, top_lift);
+        float alpha = 1.0 - exp(-density * step_len * 0.95);
         result.color += result.transmittance * alpha * cloud_light;
         result.transmittance *= 1.0 - alpha;
         light_sum += sun_light + ambient;

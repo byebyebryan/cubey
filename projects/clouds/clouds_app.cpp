@@ -105,7 +105,7 @@ std::filesystem::path shader_path(const char* filename) {
         return basis;
     }
 
-    const float base_pitch = config.camera_mode == CloudsCameraMode::High ? -0.42F : -0.04F;
+    const float base_pitch = config.camera_mode == CloudsCameraMode::High ? -0.92F : 0.22F;
     const float resolved_pitch = std::clamp(base_pitch + pitch, -1.25F, 1.25F);
     basis.forward = safe_normalize({std::sin(yaw) * std::cos(resolved_pitch),
                                     std::sin(resolved_pitch),
