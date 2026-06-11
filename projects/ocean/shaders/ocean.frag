@@ -311,6 +311,10 @@ float ocean_far_detail_filter(float dist, float footprint_m) {
     return ocean_far_field_factor(dist) * footprint_factor;
 }
 
+float ocean_far_reflection_variation_strength() {
+    return max(ocean_features.far_detail_options.z, 0.0);
+}
+
 vec2 ocean_far_wind_dir() {
     return normalize(vec2(cos(ocean_far_wind_angle()), sin(ocean_far_wind_angle())));
 }
@@ -508,6 +512,19 @@ float foam_breakup_weight(uint cascade, vec2 position, float factor) {
     float mid = value_noise(position * 0.0017 + vec2(seed - 17.0, seed + 29.0));
     float breakup = mix(0.58, 1.22, broad) * mix(0.82, 1.12, mid);
     return mix(1.0, breakup, factor);
+}
+
+float ocean_far_reflection_variation(vec2 position, float far_material_energy) {
+    float strength = ocean_far_reflection_variation_strength() * far_material_energy;
+    if (strength <= 0.0) {
+        return 1.0;
+    }
+    float time = ocean.camera_time.w;
+    float broad = value_noise(position / 5200.0 + vec2(19.0 + time * 0.00005, -7.0));
+    float mid = value_noise(rotate2(position, 0.57) / 1800.0 +
+                            vec2(-31.0, 23.0 - time * 0.00008));
+    float signal = (broad * 0.65 + mid * 0.35) * 2.0 - 1.0;
+    return clamp(1.0 + signal * strength, 0.65, 1.25);
 }
 
 float cascade_tile_length(uint cascade) {
@@ -1227,6 +1244,7 @@ void main() {
     float unresolved_lod_energy = active_unresolved_lod_energy(dist, frag_mesh_cell_size);
     float far_field_energy =
         ocean_far_field_factor(dist) * active_far_field_lod_energy(dist, frag_mesh_cell_size);
+    float far_material_energy = max(far_field_energy, far_detail_filter * surface_lod);
     float far_streak_signal = ocean_far_streak_signal(frag_sample_position);
     normal = ocean_apply_far_field_normal(normal, frag_sample_position, far_field_energy);
     vec3 reflection_dir = reflect(-view_dir, normal);
@@ -1254,8 +1272,7 @@ void main() {
     float shadowed_direct_light = direct_light * direct_shadow;
     float roughness = clamp(ocean.water_color.w, 0.02, 1.0);
     roughness = mix(roughness, max(roughness, 0.78), material_distance);
-    roughness = clamp(roughness + far_field_energy * ocean_far_roughness_strength() *
-                                      (0.55 + 0.45 * abs(far_streak_signal)),
+    roughness = clamp(roughness + far_material_energy * ocean_far_roughness_strength(),
                       0.02, 1.0);
 
     float fresnel =
@@ -1263,6 +1280,7 @@ void main() {
                 (1.0 + 22.7 * pow(roughness, 1.5)),
             1.0, OCEAN_REFLECTANCE);
     vec3 reflection = ocean_environment_reflection(reflection_dir, roughness);
+    reflection *= ocean_far_reflection_variation(frag_sample_position, far_material_energy);
     vec3 ambient = water_color * (0.08 + 0.34 * ambient_light * clamp(normal.y, 0.0, 1.0)) +
                    ocean_sky_radiance(normal) * 0.08;
     float sss_height = max(0.0, frag_wave.x + 2.5) *

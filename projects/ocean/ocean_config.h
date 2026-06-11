@@ -162,6 +162,7 @@ struct OceanConfig {
     float far_streak_scale_m = 900.0F;
     float far_detail_footprint_start_m = 0.9F;
     float far_detail_footprint_end_m = 5.0F;
+    float far_reflection_variation_strength = 0.08F;
     float far_whitecap_strength = 0.0F;
     float far_whitecap_threshold = 0.055F;
     float far_whitecap_variance_weight = 0.35F;
@@ -635,6 +636,7 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.far_glint_strength < 0.0F || config.far_streak_scale_m <= 0.0F ||
         config.far_detail_footprint_start_m < 0.0F ||
         config.far_detail_footprint_end_m <= config.far_detail_footprint_start_m ||
+        config.far_reflection_variation_strength < 0.0F ||
         config.far_whitecap_strength < 0.0F || config.far_whitecap_threshold < 0.0F ||
         config.far_whitecap_variance_weight < 0.0F ||
         config.far_whitecap_streak_strength < 0.0F ||

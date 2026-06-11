@@ -1386,7 +1386,7 @@ class OceanApp {
                 {
                     ocean_config_.far_detail_footprint_start_m,
                     ocean_config_.far_detail_footprint_end_m,
-                    0.0F,
+                    ocean_config_.far_reflection_variation_strength,
                     0.0F,
                 },
         };

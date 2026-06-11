@@ -492,6 +492,8 @@ int main() {
                      "ocean should default far-detail footprint fade start");
         require_near(defaults.far_detail_footprint_end_m, 5.0F, 0.001F,
                      "ocean should default far-detail footprint fade end");
+        require_near(defaults.far_reflection_variation_strength, 0.08F, 0.001F,
+                     "ocean should default broad far reflection variation conservatively");
         require_near(defaults.far_whitecap_strength, 0.0F, 0.001F,
                      "ocean should keep filtered far whitecaps opt-in by default");
         require_near(defaults.far_whitecap_threshold, 0.055F, 0.001F,
@@ -1086,6 +1088,8 @@ int main() {
                          "app should pass filtered far-whitecap controls");
         require_contains(app_source, "ocean_config_.far_detail_footprint_start_m",
                          "app should pass far-detail footprint controls");
+        require_contains(app_source, "ocean_config_.far_reflection_variation_strength",
+                         "app should pass far reflection variation controls");
         require_contains(app_source, "ocean_config_.spectral_domains_enabled",
                          "app should pass spectral domain bounds to spectrum generation");
         require_contains(app_source, "kCameraMaxDistance = 8000.0F",
@@ -1177,6 +1181,8 @@ int main() {
                          "UI should expose filtered far-whitecap strength");
         require_contains(ui_source, "&ui.config.far_detail_footprint_start_m",
                          "UI should expose far-detail footprint fade controls");
+        require_contains(ui_source, "&ui.config.far_reflection_variation_strength",
+                         "UI should expose far reflection variation controls");
         require_contains(ui_source, "&ui.config.self_shadow_distance",
                          "UI should expose wave self-shadow reach");
         require_contains(ui_source, "&ui.config.self_shadow_bias",
@@ -1247,6 +1253,10 @@ int main() {
                          "fragment shader should anti-repeat filtered far-whitecap samples");
         require_contains(fragment_shader, "float ocean_far_detail_filter",
                          "fragment shader should filter far normal detail by footprint");
+        require_contains(fragment_shader, "float ocean_far_reflection_variation",
+                         "fragment shader should add broad far reflection variation");
+        require_contains(fragment_shader, "float far_material_energy",
+                         "fragment shader should hand filtered detail into material response");
         require_contains(fragment_shader, "float ocean_surface_foam_strength",
                          "fragment shader should isolate surface foam contribution");
         require_contains(fragment_shader, "float ocean_atmosphere_reflection_strength",

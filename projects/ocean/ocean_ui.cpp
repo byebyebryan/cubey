@@ -158,6 +158,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_glint_strength = 0.10F;
         ui.config.far_detail_footprint_start_m = 0.9F;
         ui.config.far_detail_footprint_end_m = 5.0F;
+        ui.config.far_reflection_variation_strength = 0.08F;
         ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 1.0F;
         ui.diagnostics.detail_anti_repeat_strength = 1.0F;
@@ -185,6 +186,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_glint_strength = 0.0F;
         ui.config.far_detail_footprint_start_m = 0.9F;
         ui.config.far_detail_footprint_end_m = 5.0F;
+        ui.config.far_reflection_variation_strength = 0.0F;
         ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
@@ -212,6 +214,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_glint_strength = 0.0F;
         ui.config.far_detail_footprint_start_m = 0.9F;
         ui.config.far_detail_footprint_end_m = 5.0F;
+        ui.config.far_reflection_variation_strength = 0.0F;
         ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
@@ -676,6 +679,10 @@ void draw_ocean_ui(OceanUiContext ui) {
         if (ui.config.far_detail_footprint_end_m <= ui.config.far_detail_footprint_start_m) {
             ui.config.far_detail_footprint_end_m = ui.config.far_detail_footprint_start_m + 0.01F;
         }
+        cubey::host::imgui_slider_float(
+            "Far reflection patches", &ui.config.far_reflection_variation_strength, 0.0F,
+            0.3F, "%.2f",
+            "Broad low-frequency variation applied to distant reflected sky and atmosphere.");
         cubey::host::imgui_slider_float(
             "Far whitecaps", &ui.config.far_whitecap_strength, 0.0F, 0.6F, "%.2f",
             "Experimental filtered whitecap coverage added only in far-field shading; off by default because it can reveal FFT tiling.");
