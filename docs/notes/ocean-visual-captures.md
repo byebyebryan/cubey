@@ -2,8 +2,8 @@
 
 These recipes are for repeatable manual checks while the active ocean renderer
 is still being tuned. They are not golden-image tests. The goal is to keep the
-far-field repetition, LOD contribution, foam coherence, and atmosphere response
-easy to compare across ocean changes.
+far-field repetition, LOD contribution, foam coherence, atmosphere response, and
+sun-glitter behavior easy to compare across ocean changes.
 
 All commands write under `outputs/`, which is intentionally ignored by git.
 
@@ -72,12 +72,31 @@ setting at a time. The important failure modes are:
   texture cue;
 - filtered far-whitecap coverage becoming cloudy, noisy, or obviously locked to
   one FFT tile, especially if the opt-in final contribution is raised above 0;
+- high-frequency normal detail remaining visible as texture noise instead of
+  fading into roughness, reflection, and subtle swell hints;
+- sun glitter appearing as a uniform sparkle field instead of a reflected-light
+  corridor;
 - horizon coverage changing because automatic mesh extent silently expanded or
   contracted.
 
 The `Diagnostics` panel should be open during far-field tuning. It exposes the
 effective horizon-expanded mesh, near/far cell size, clipmap patch load, and
 cascade LOD bands that decide which wave scales are still allowed to contribute.
+
+## Sun Glitter Review
+
+Use these to check the photo-reference target: far water should stay mostly
+smooth and reflective, with glitter concentrated under the reflected sun path
+rather than spread across the whole ocean:
+
+```sh
+mkdir -p outputs/ocean-glitter
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset mid --time-of-day-mode manual --sun-elevation 42 --sun-azimuth -20 --pause-time --output outputs/ocean-glitter/high-sun-mid.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --time-of-day-mode manual --sun-elevation 42 --sun-azimuth -20 --pause-time --output outputs/ocean-glitter/high-sun-high.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --time-of-day-mode manual --sun-elevation 8 --sun-azimuth -20 --pause-time --output outputs/ocean-glitter/low-sun-high.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --time-of-day-mode manual --sun-elevation 42 --sun-azimuth -20 --pause-time --debug-view reflection --output outputs/ocean-glitter/reflection-high-sun-high.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --time-of-day-mode manual --sun-elevation 42 --sun-azimuth -20 --pause-time --debug-view far-field --output outputs/ocean-glitter/far-field-high-sun-high.png
+```
 
 ## Reference Comparison
 

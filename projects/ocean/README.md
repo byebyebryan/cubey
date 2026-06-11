@@ -102,27 +102,32 @@ weather simulation.
 Feature isolation controls expose global shape strength, global foam strength,
 foam history, shape and detail anti-repeat, split atmosphere material influence,
 shape/normal/foam fade distances, terrain foam strength, far-field material
-energy, and opt-in filtered far-whitecap coverage. Shape LOD now
+energy, sun glitter, broad reflection variation, and opt-in filtered
+far-whitecap coverage. Shape LOD now
 combines distance fade with mesh-cell support, so coarse clipmap rings stop
 carrying displacement detail that the current mesh cannot represent while
-normal/foam detail can continue as shading-only contribution. The default LOD
-policy is intentionally conservative for zoomed-out inspection: displacement
-fades over roughly 8-24 wavelengths, surface detail fades over roughly 10-30
-wavelengths, and mesh-cell support fades displacement between about
-`tile / 10` and `tile / 4`. The `Active cascade work` toggles are stronger than
+normal/foam detail can continue as shading-only contribution. Far normal detail
+also fades by pixel footprint, then feeds roughness/reflection instead of adding
+more geometry-like noise. The default LOD policy is intentionally conservative
+for zoomed-out inspection: displacement fades over roughly 8-24 wavelengths,
+surface detail fades over roughly 10-30 wavelengths, and mesh-cell support fades
+displacement between about `tile / 10` and `tile / 4`. The `Active cascade work`
+toggles are stronger than
 contribution sliders: they skip disabled cascade spectrum, modulation, FFT, and
 unpack dispatches, then hide those cascades from the surface shader. Use `All
 slots`, `Core`, and `Cheap` to check which slots and material additions are
 worth their GPU cost.
 
-The far-field material handoff is explicitly diagnostic-driven. `footprint`
-shows the estimated pixel footprint in meters, `energy-lod` shows unresolved
-wave energy against displacement and surface LOD support, `foam-filtered` shows
-the filtered foam coverage pyramid, and `far-field` shows material handoff
-energy plus the filtered whitecap term. Filtered far whitecaps are intentionally
-off by default because the current carrier can reveal FFT tiling as stipple;
-these views are intended to catch regular tiling and overly aggressive
-far-distance fade before tuning by eye.
+The far-field target is photo-oriented rather than reference-demo-oriented:
+distant water should be a low-contrast reflective plane with subtle swell hints,
+broad sky-reflection patches, and a sun-glitter corridor when the light/view
+geometry supports it. `footprint` shows the estimated pixel footprint in meters,
+`energy-lod` shows unresolved wave energy against displacement and surface LOD
+support, `foam-filtered` shows the filtered foam coverage pyramid, and
+`far-field` shows material handoff energy plus the filtered whitecap term.
+Filtered far whitecaps and synthetic far normals are intentionally off by
+default because the current carriers can reveal FFT tiling as stipple or
+camera-stretched streaks.
 
 Ocean still uses a camera-relative `clipmap_grid_2d` surface mesh. The shared
 planet-scale `adaptive_patch_lod` planner is available in `cubey::render`, but
