@@ -619,7 +619,8 @@ int main() {
                 {
                     .sun_elevation_degrees = 20.0F,
                     .sun_azimuth_degrees = -20.0F,
-                    .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
+                    .ground_mode =
+                        cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
                     .reference_geometry_enabled = false,
                 });
         require_near(default_atmosphere_state.environment.time_of_day.time_hours, 5.5F, 0.001F,

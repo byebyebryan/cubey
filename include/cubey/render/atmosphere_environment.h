@@ -65,6 +65,7 @@ struct AtmosphereEnvironmentMoon {
 enum class AtmosphereEnvironmentGroundMode : std::uint32_t {
     Ground = 0,
     SkyOnly = 1,
+    SkyOnlyNoGroundOcclusion = 2,
 };
 
 struct AtmosphereEnvironmentConfig {

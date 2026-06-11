@@ -67,7 +67,8 @@ water_3d_atmosphere_run_state(const RunConfig& config) {
     return cubey::atmosphere_environment_run_state_from_config(
         config.atmosphere,
         {
-            .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
+            .ground_mode =
+                cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
             .reference_geometry_enabled = false,
         });
 }

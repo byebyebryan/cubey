@@ -110,7 +110,17 @@ void test_atmosphere_environment_packs_frame_uniforms() {
                         .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
                     });
     require(sky_only_uniforms.render_options.x == 1.0F,
-		            "atmosphere environment should pack sky-only ground policy");
+            "atmosphere environment should pack sky-only ground policy");
+
+    config.ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion;
+    const cubey::render::AtmosphereEnvironmentFrameUniforms no_ground_uniforms =
+        cubey::render::atmosphere_environment_frame_uniforms(
+            config, {
+                        .view_rays = view_rays,
+                        .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
+                    });
+    require(no_ground_uniforms.render_options.x == 2.0F,
+            "atmosphere environment should pack no-ground-occlusion sky policy");
 
     const cubey::render::AtmosphereEnvironmentFrameUniforms explicit_camera_uniforms =
         cubey::render::atmosphere_environment_frame_uniforms(

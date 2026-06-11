@@ -123,7 +123,8 @@ cubey::render::AtmosphereEnvironmentConfig planet_atmosphere_environment_config(
     config.render_night_sky = true;
     config.render_moon_disk = false;
     config.reference_geometry_enabled = false;
-    config.ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
+    config.ground_mode =
+        cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion;
     config.moon.enabled = true;
     return config;
 }

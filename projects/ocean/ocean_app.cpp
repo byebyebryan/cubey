@@ -348,7 +348,8 @@ ocean_atmosphere_run_state(const RunConfig& run_config) {
         {
             .sun_elevation_degrees = kOceanSunElevationDegrees,
             .sun_azimuth_degrees = kOceanSunAzimuthDegrees,
-            .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
+            .ground_mode =
+                cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
             .reference_geometry_enabled = false,
         });
 }

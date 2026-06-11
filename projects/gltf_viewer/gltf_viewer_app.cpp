@@ -52,7 +52,8 @@ gltf_viewer_atmosphere_run_state(const RunConfig& run_config) {
         {
             .sun_elevation_degrees = direction_elevation_degrees(kLightDirection),
             .sun_azimuth_degrees = direction_azimuth_degrees(kLightDirection),
-            .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
+            .ground_mode =
+                cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
             .reference_geometry_enabled = false,
         });
 }

@@ -631,8 +631,10 @@ void test_planet_unified_atmosphere_frame_splits_sky_and_moon_ownership() {
                  "unified atmosphere adapter should convert atmosphere radius to kilometers");
     require_near(uniforms.radii_ground.z, 10.0F, 0.0001F,
                  "unified atmosphere adapter should convert camera altitude to kilometers");
-    require_near(uniforms.render_options.x, 1.0F, 0.000001F,
-                 "unified atmosphere adapter should render sky-only for planet");
+    require_near(uniforms.render_options.x, 2.0F, 0.000001F,
+                 "unified atmosphere adapter should render sky-only without smooth ground occlusion");
+    require_near(uniforms.render_options.z, 0.0F, 0.000001F,
+                 "unified atmosphere adapter should not lower the sky occluder by default");
     require_near(uniforms.render_options.y, 1.0F, 0.000001F,
                  "unified atmosphere adapter should enable unified sky celestial content");
     require_near(uniforms.celestial_render_options.x, 1.0F, 0.000001F,
