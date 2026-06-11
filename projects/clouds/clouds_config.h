@@ -63,7 +63,7 @@ struct CloudsConfig {
     float camera_altitude_m = 1200.0F;
     float bottom_altitude_m = kCloudsDefaultBottomAltitudeM;
     float top_altitude_m = kCloudsDefaultTopAltitudeM;
-    float coverage = 0.64F;
+    float coverage = 0.46F;
     float density = 1.15F;
     float weather_scale_km = 180.0F;
     float wind_speed_mps = 18.0F;

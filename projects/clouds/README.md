@@ -56,9 +56,8 @@ for the research context and promotion criteria.
 These are observed blockers before the clouds project should feed ocean or
 planet rendering:
 
-- Cloud-map seams are visible. The current procedural field is sampled in
-  camera/position space and does not yet use a seam-safe spherical weather map
-  or domain layout.
+- Broad cloud-map seams have a first fix through a seam-safe spherical weather
+  domain. Orbit-edge composition artifacts and high-view tuning are still rough.
 - Interactive control is rough. The project has quick camera mode buttons and
   basic sliders, but it has not been moved onto the shared hierarchical control
   model used by the more mature projects.
@@ -69,5 +68,5 @@ planet rendering:
   owns its own sky/ground composition path for the prototype, so it can diverge
   from the fixed shared atmosphere behavior used by established projects.
 
-The next clouds pass should address these before adding ocean reflection,
-planet integration, or richer cloud types.
+The next clouds pass should keep tightening these before adding ocean
+reflection, planet integration, or richer cloud types.
