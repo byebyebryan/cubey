@@ -251,6 +251,8 @@ Deferred to `projects/planet`:
 - floating origin or large-world camera state outside the ocean project;
 - planet-scale patch LOD and streaming;
 - global weather and terrain/bathymetry/material fields.
+- volumetric cloud raymarching; ocean should later consume cloud sky,
+  reflection, and shadow outputs from the planet/weather stack.
 
 The ocean project should stop at the current local horizon-scale/curved-local
 boundary until `projects/planet` provides a stronger host. Planet-scale ocean is

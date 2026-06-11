@@ -14,8 +14,10 @@ This note captures the intended split so parallel work can stay mergeable.
 Build adjacent systems as separate projects first, then integrate them into the
 ocean renderer through small data and shader contracts:
 
-- `projects/atmosphere`: clear-sky scattering, atmosphere debug disks, horizon
-  aerial perspective, and later procedural clouds.
+- `projects/atmosphere`: clear-sky scattering, atmosphere debug disks, and
+  horizon aerial perspective.
+- `projects/clouds`: planet-aware cloud/weather rendering, cloud shadows, and
+  scale-specific sky/cloud output for later ocean and planet integration.
 - `projects/procedural_terrain`: heightfield terrain, bathymetry, shoreline
   masks, material masks, and terrain/scene depth rendering.
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
@@ -57,9 +59,11 @@ First useful scope:
 - approximate transmittance and aerial perspective along a view ray;
 - headless PNG and MP4 captures for clear visual comparison.
 
-Clouds should come after the clear-sky path is stable. Treat them as an
+Clouds should stay separate from the clear-sky shader. Treat them as an
 additional layer with its own weather map, coverage, density, lighting, and
-shadow controls rather than folding cloud noise into the base sky shader.
+shadow controls rather than folding cloud noise into the base atmosphere pass.
+The first cloud implementation belongs in `projects/clouds`, where it can prove
+surface, above-cloud, and orbit behavior before any shared renderer promotion.
 
 Ocean integration target:
 
@@ -191,7 +195,9 @@ These are more important than exact implementation details:
 - texture channel layouts for shoreline, bathymetry, terrain material, weather,
   cloud, and shallow-water fields;
 - render order: atmosphere background, explicit celestial bodies where needed,
-  opaque terrain/scene depth, ocean water, then optional cloud or post layers.
+  opaque terrain/scene depth, cloud background/composite where appropriate,
+  ocean water, then post layers. Ocean should consume cloud sky/reflection and
+  cloud shadow outputs, not raymarch volumetric clouds inside the water shader.
 - shared clipmap or patch-tree diagnostics for patch count, triangle/vertex
   totals, near cell size, screen error, and outer extent so terrain, ocean, and
   planet LOD can report the same concepts.
@@ -218,8 +224,8 @@ outside that helper.
    the same shoreline/bathymetry contract.
 6. Continue `projects/planet` as the planet-frame, LOD, local sky, and
    celestial owner before trying to make ocean itself planet-scale.
-7. Add clouds after clear sky, terrain composition, and planet frame ownership
-   are coherent.
+7. Build `projects/clouds` as a standalone planet-aware weather/cloud renderer
+   and integrate its outputs only after surface/high/orbit captures are stable.
 
 This sequence keeps each project independently useful while aiming every slice
 at concrete ocean integration points.
