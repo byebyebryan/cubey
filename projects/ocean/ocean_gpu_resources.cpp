@@ -12,6 +12,8 @@ namespace cubey::projects::ocean {
 namespace {
 
 constexpr std::uint32_t kOceanGpuProfilerPassCapacity = 32U;
+constexpr std::uint32_t kOceanFoamFilterTextureCount =
+    kOceanCascadeCount * kOceanFoamFilterLevelCount;
 constexpr std::uint32_t kOceanSurfaceReflectionBinding = kOceanCascadeCount * 3U;
 constexpr std::uint32_t kOceanSurfaceSkyRadianceBinding = kOceanSurfaceReflectionBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceTerrainFieldBinding = kOceanSurfaceSkyRadianceBinding + 1U;
@@ -19,6 +21,10 @@ constexpr std::uint32_t kOceanSurfaceTerrainFieldUniformBinding =
     kOceanSurfaceTerrainFieldBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceFeatureUniformBinding =
     kOceanSurfaceTerrainFieldUniformBinding + 1U;
+constexpr std::uint32_t kOceanSurfaceFoamFilterBinding =
+    kOceanSurfaceFeatureUniformBinding + 1U;
+constexpr std::uint32_t kOceanSurfaceBindingCount =
+    kOceanSurfaceFoamFilterBinding + kOceanFoamFilterTextureCount;
 
 [[nodiscard]] std::filesystem::path shader_path(const std::filesystem::path& shader_dir,
                                                 const char* filename) {
@@ -27,6 +33,11 @@ constexpr std::uint32_t kOceanSurfaceFeatureUniformBinding =
 
 [[nodiscard]] std::uint32_t field_texture_index(std::uint32_t cascade, std::uint32_t field) {
     return cascade * kOceanSpectrumFieldCount + field;
+}
+
+[[nodiscard]] std::uint32_t foam_filter_texture_index(std::uint32_t cascade,
+                                                      std::uint32_t level) {
+    return cascade * kOceanFoamFilterLevelCount + level;
 }
 
 [[nodiscard]] VkFormat ocean_field_format(OceanFieldPrecision precision) {
@@ -159,6 +170,7 @@ void OceanGpuResources::create(const cubey::vulkan::Device& device,
 void OceanGpuResources::reset() {
     profiler_.reset();
     surface_pipeline_.reset();
+    foam_filter_pipeline_.reset();
     unpack_pipeline_.reset();
     fft_pipeline_.reset();
     modulate_pipeline_.reset();
@@ -167,6 +179,8 @@ void OceanGpuResources::reset() {
     surface_pool_.reset();
     surface_layout_.reset();
     surface_feature_uniforms_.reset();
+    foam_filter_pool_.reset();
+    foam_filter_layout_.reset();
     unpack_pool_.reset();
     unpack_layout_.reset();
     fft_pool_.reset();
@@ -177,12 +191,14 @@ void OceanGpuResources::reset() {
     spectrum_layout_.reset();
 
     surface_sets_.clear();
+    foam_filter_sets_ = {};
     unpack_sets_ = {};
     fft_sets_ = {};
     modulate_sets_ = {};
     spectrum_sets_ = {};
 
     foam_ = {};
+    foam_filtered_ = {};
     normal_ = {};
     displacement_ = {};
     pong_ = {};
@@ -221,6 +237,11 @@ void OceanGpuResources::create_textures(const cubey::vulkan::Device& device,
         normal_[cascade].emplace(
             make_ocean_field_texture(device, map_size, field_format, true));
         foam_[cascade].emplace(make_ocean_field_texture(device, map_size, field_format, true));
+        for (std::uint32_t level = 0; level < kOceanFoamFilterLevelCount; ++level) {
+            const std::uint32_t filter_index = foam_filter_texture_index(cascade, level);
+            foam_filtered_[filter_index].emplace(make_ocean_field_texture(
+                device, ocean_foam_filter_level_size(map_size, level), field_format, true));
+        }
     }
 }
 
@@ -321,7 +342,27 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         set = unpack_pool_->allocate(unpack_layout_->handle());
     }
 
-    std::array<cubey::vulkan::DescriptorSetBindingConfig, kOceanCascadeCount * 3U + 5U>
+    const std::array foam_filter_bindings{
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 0,
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        },
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 1,
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        },
+    };
+    const cubey::vulkan::DescriptorSetInfo foam_filter_info =
+        descriptor_info(foam_filter_bindings, kOceanFoamFilterTextureCount);
+    foam_filter_layout_.emplace(device, foam_filter_info.layout_info());
+    foam_filter_pool_.emplace(device, foam_filter_info.pool_info());
+    for (VkDescriptorSet& set : foam_filter_sets_) {
+        set = foam_filter_pool_->allocate(foam_filter_layout_->handle());
+    }
+
+    std::array<cubey::vulkan::DescriptorSetBindingConfig, kOceanSurfaceBindingCount>
         surface_bindings{};
     for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
         surface_bindings[cascade] = cubey::vulkan::DescriptorSetBindingConfig{
@@ -372,6 +413,14 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         };
+    for (std::uint32_t index = 0; index < kOceanFoamFilterTextureCount; ++index) {
+        surface_bindings[kOceanSurfaceFoamFilterBinding + index] =
+            cubey::vulkan::DescriptorSetBindingConfig{
+                .binding = kOceanSurfaceFoamFilterBinding + index,
+                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            };
+    }
     const cubey::vulkan::DescriptorSetInfo surface_info =
         descriptor_info(surface_bindings, frame_slot_count);
     surface_layout_.emplace(device, surface_info.layout_info());
@@ -402,6 +451,15 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
             writes.combined_image_sampler(surface_set, cascade + kOceanCascadeCount * 2U,
                                           foam_texture.sampler().handle(), foam_texture.view(),
                                           VK_IMAGE_LAYOUT_GENERAL);
+            for (std::uint32_t level = 0; level < kOceanFoamFilterLevelCount; ++level) {
+                const cubey::render::Texture2D& filtered_texture =
+                    cascade_allocated(cascade) ? foam_filtered(cascade, level) : fallback_field();
+                writes.combined_image_sampler(
+                    surface_set,
+                    kOceanSurfaceFoamFilterBinding + foam_filter_texture_index(cascade, level),
+                    filtered_texture.sampler().handle(), filtered_texture.view(),
+                    VK_IMAGE_LAYOUT_GENERAL);
+            }
         }
         if (!cascade_allocated(cascade)) {
             continue;
@@ -416,6 +474,14 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
             .storage_image(unpack_set(cascade), 2, displacement(cascade).view())
             .storage_image(unpack_set(cascade), 3, normal(cascade).view())
             .storage_image(unpack_set(cascade), 4, foam(cascade).view());
+
+        for (std::uint32_t level = 0; level < kOceanFoamFilterLevelCount; ++level) {
+            const cubey::render::Texture2D& source_texture =
+                level == 0U ? foam(cascade) : foam_filtered(cascade, level - 1U);
+            writes.storage_image(foam_filter_set(cascade, level), 0, source_texture.view())
+                .storage_image(foam_filter_set(cascade, level), 1,
+                               foam_filtered(cascade, level).view());
+        }
 
         for (std::uint32_t field_index = 0; field_index < kOceanSpectrumFieldCount; ++field_index) {
             const std::uint32_t base_fft_set =
@@ -499,6 +565,7 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
     const VkPushConstantRange modulate_push_constants = compute_push_constant_range(8U);
     const VkPushConstantRange fft_push_constants = compute_push_constant_range(8U);
     const VkPushConstantRange unpack_push_constants = compute_push_constant_range(8U);
+    const VkPushConstantRange foam_filter_push_constants = compute_push_constant_range(4U);
 
     const std::array spectrum_layouts{spectrum_layout_->handle()};
     spectrum_pipeline_.emplace(device,
@@ -540,6 +607,16 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
                                  .descriptor_set_layouts = unpack_layouts,
                                  .push_constants = {&unpack_push_constants, 1},
                              });
+
+    const std::array foam_filter_layouts{foam_filter_layout_->handle()};
+    foam_filter_pipeline_.emplace(
+        device, cubey::render::ComputePipelineResourceConfig{
+                    .shader_stage = cubey::render::compute_shader_file(
+                        ocean_compute_shader_path(config.shader_dir, "ocean_foam_filter",
+                                                  config.ocean.field_precision)),
+                    .descriptor_set_layouts = foam_filter_layouts,
+                    .push_constants = {&foam_filter_push_constants, 1},
+                });
 
     const std::array surface_shader_stage_files{
         cubey::render::vertex_shader_file(shader_path(config.shader_dir, "ocean.vert.spv")),
@@ -591,6 +668,13 @@ const cubey::render::ComputePipelineResource& OceanGpuResources::unpack_pipeline
     return unpack_pipeline_.value();
 }
 
+const cubey::render::ComputePipelineResource& OceanGpuResources::foam_filter_pipeline() const {
+    if (!foam_filter_pipeline_.has_value()) {
+        throw std::runtime_error("ocean foam filter pipeline is not initialized");
+    }
+    return foam_filter_pipeline_.value();
+}
+
 VkDescriptorSet OceanGpuResources::spectrum_set(std::uint32_t cascade) const {
     return descriptor_at(spectrum_sets_, cascade, "ocean spectrum descriptor set");
 }
@@ -610,6 +694,15 @@ VkDescriptorSet OceanGpuResources::fft_set(std::uint32_t cascade, std::uint32_t 
 
 VkDescriptorSet OceanGpuResources::unpack_set(std::uint32_t cascade) const {
     return descriptor_at(unpack_sets_, cascade, "ocean unpack descriptor set");
+}
+
+VkDescriptorSet OceanGpuResources::foam_filter_set(std::uint32_t cascade,
+                                                   std::uint32_t level) const {
+    if (cascade >= kOceanCascadeCount || level >= kOceanFoamFilterLevelCount) {
+        throw std::runtime_error("ocean foam filter descriptor index out of range");
+    }
+    return descriptor_at(foam_filter_sets_, foam_filter_texture_index(cascade, level),
+                         "ocean foam filter descriptor set");
 }
 
 VkDescriptorSet OceanGpuResources::surface_set(cubey::render::FrameSlot frame_slot) const {
@@ -655,6 +748,18 @@ const cubey::render::Texture2D& OceanGpuResources::foam(std::uint32_t cascade) c
     return texture_at(foam_, cascade, "ocean foam texture");
 }
 
+const cubey::render::Texture2D& OceanGpuResources::foam_filtered(std::uint32_t cascade,
+                                                                 std::uint32_t level) const {
+    if (cascade >= kOceanCascadeCount || level >= kOceanFoamFilterLevelCount) {
+        throw std::runtime_error("ocean foam filter texture index out of range");
+    }
+    const std::uint32_t index = foam_filter_texture_index(cascade, level);
+    if (!foam_filtered_[index].has_value()) {
+        throw std::runtime_error("ocean filtered foam texture is not initialized");
+    }
+    return foam_filtered_[index].value();
+}
+
 const cubey::render::Texture2D& OceanGpuResources::fallback_field() const {
     if (!fallback_field_.has_value()) {
         throw std::runtime_error("ocean fallback field texture is not initialized");
@@ -674,6 +779,11 @@ std::uint32_t OceanGpuResources::cascade_resolution(std::uint32_t cascade) const
         throw std::runtime_error("ocean cascade index out of range");
     }
     return cascade_resolutions_[cascade];
+}
+
+std::uint32_t OceanGpuResources::foam_filter_resolution(std::uint32_t cascade,
+                                                        std::uint32_t level) const {
+    return ocean_foam_filter_level_size(cascade_resolution(cascade), level);
 }
 
 const std::vector<cubey::vulkan::GpuPassTiming>& OceanGpuResources::latest_timings() const {

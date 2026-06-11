@@ -1,0 +1,5 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#define OCEAN_FIELD_FORMAT rgba32f
+#include "ocean_foam_filter_body.glsl"

@@ -75,6 +75,7 @@ inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U
 inline constexpr std::uint32_t kOceanDefaultMapSize = 512U;
 inline constexpr std::uint32_t kOceanCascadeCount = 5U;
 inline constexpr std::uint32_t kOceanSpectrumFieldCount = 2U;
+inline constexpr std::uint32_t kOceanFoamFilterLevelCount = 3U;
 inline constexpr std::uint32_t kOceanMinMeshCells = 32U;
 inline constexpr std::uint32_t kOceanMaxMeshCells = 512U;
 inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;
@@ -441,6 +442,23 @@ ocean_field_precision_from_name(std::string_view name) {
         throw std::runtime_error("ocean cascade index out of range");
     }
     return std::max(1U, config.cascade_update_intervals[cascade]);
+}
+
+[[nodiscard]] inline std::uint32_t ocean_foam_filter_level_size(std::uint32_t map_size,
+                                                                std::uint32_t level) {
+    if (level >= kOceanFoamFilterLevelCount) {
+        throw std::runtime_error("ocean foam filter level index out of range");
+    }
+    return std::max(16U, map_size >> (level + 1U));
+}
+
+[[nodiscard]] inline std::uint32_t ocean_foam_filter_level_size(const OceanConfig& config,
+                                                                std::uint32_t cascade,
+                                                                std::uint32_t level) {
+    if (cascade >= kOceanCascadeCount) {
+        throw std::runtime_error("ocean cascade index out of range");
+    }
+    return ocean_foam_filter_level_size(ocean_cascade_map_size(config, cascade), level);
 }
 
 [[nodiscard]] inline OceanCascadeLodBand ocean_cascade_lod_band(const OceanConfig& config,

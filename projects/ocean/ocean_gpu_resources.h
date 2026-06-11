@@ -74,6 +74,7 @@ class OceanGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource& modulate_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& fft_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& unpack_pipeline() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource& foam_filter_pipeline() const;
 
     [[nodiscard]] VkDescriptorSet spectrum_set(std::uint32_t cascade) const;
     [[nodiscard]] VkDescriptorSet modulate_set(std::uint32_t cascade) const;
@@ -96,9 +97,15 @@ class OceanGpuResources {
     [[nodiscard]] const cubey::render::Texture2D& displacement(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& normal(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& foam(std::uint32_t cascade) const;
+    [[nodiscard]] const cubey::render::Texture2D& foam_filtered(std::uint32_t cascade,
+                                                                std::uint32_t level) const;
+    [[nodiscard]] VkDescriptorSet foam_filter_set(std::uint32_t cascade,
+                                                  std::uint32_t level) const;
     [[nodiscard]] const cubey::render::Texture2D& fallback_field() const;
     [[nodiscard]] bool cascade_allocated(std::uint32_t cascade) const;
     [[nodiscard]] std::uint32_t cascade_resolution(std::uint32_t cascade) const;
+    [[nodiscard]] std::uint32_t foam_filter_resolution(std::uint32_t cascade,
+                                                       std::uint32_t level) const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
         return profiler_.has_value() ? &profiler_.value() : nullptr;
     }
@@ -132,6 +139,9 @@ class OceanGpuResources {
     TextureArray displacement_{};
     TextureArray normal_{};
     TextureArray foam_{};
+    std::array<std::optional<cubey::render::Texture2D>,
+               kOceanCascadeCount * kOceanFoamFilterLevelCount>
+        foam_filtered_{};
     std::optional<cubey::render::Texture2D> fallback_field_;
     std::array<bool, kOceanCascadeCount> cascade_allocated_{};
     std::array<std::uint32_t, kOceanCascadeCount> cascade_resolutions_{};
@@ -152,6 +162,11 @@ class OceanGpuResources {
     std::optional<cubey::vulkan::DescriptorPool> unpack_pool_;
     std::array<VkDescriptorSet, kOceanCascadeCount> unpack_sets_{};
 
+    std::optional<cubey::vulkan::DescriptorSetLayout> foam_filter_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> foam_filter_pool_;
+    std::array<VkDescriptorSet, kOceanCascadeCount * kOceanFoamFilterLevelCount>
+        foam_filter_sets_{};
+
     std::optional<cubey::vulkan::DescriptorSetLayout> surface_layout_;
     std::optional<cubey::vulkan::DescriptorPool> surface_pool_;
     std::vector<VkDescriptorSet> surface_sets_{};
@@ -162,6 +177,7 @@ class OceanGpuResources {
     std::optional<cubey::render::ComputePipelineResource> modulate_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> fft_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> unpack_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> foam_filter_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_pipeline_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 };

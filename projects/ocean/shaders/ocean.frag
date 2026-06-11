@@ -35,6 +35,21 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 surface_frame_options;
     vec4 surface_curve_options;
 } ocean_features;
+layout(set = 0, binding = 20) uniform sampler2D foam_filtered_cascade0_level0_texture;
+layout(set = 0, binding = 21) uniform sampler2D foam_filtered_cascade0_level1_texture;
+layout(set = 0, binding = 22) uniform sampler2D foam_filtered_cascade0_level2_texture;
+layout(set = 0, binding = 23) uniform sampler2D foam_filtered_cascade1_level0_texture;
+layout(set = 0, binding = 24) uniform sampler2D foam_filtered_cascade1_level1_texture;
+layout(set = 0, binding = 25) uniform sampler2D foam_filtered_cascade1_level2_texture;
+layout(set = 0, binding = 26) uniform sampler2D foam_filtered_cascade2_level0_texture;
+layout(set = 0, binding = 27) uniform sampler2D foam_filtered_cascade2_level1_texture;
+layout(set = 0, binding = 28) uniform sampler2D foam_filtered_cascade2_level2_texture;
+layout(set = 0, binding = 29) uniform sampler2D foam_filtered_cascade3_level0_texture;
+layout(set = 0, binding = 30) uniform sampler2D foam_filtered_cascade3_level1_texture;
+layout(set = 0, binding = 31) uniform sampler2D foam_filtered_cascade3_level2_texture;
+layout(set = 0, binding = 32) uniform sampler2D foam_filtered_cascade4_level0_texture;
+layout(set = 0, binding = 33) uniform sampler2D foam_filtered_cascade4_level1_texture;
+layout(set = 0, binding = 34) uniform sampler2D foam_filtered_cascade4_level2_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -668,6 +683,63 @@ vec4 sample_foam(uint cascade, vec2 uv, float pixels_per_meter) {
                min(1.0, pixels_per_meter * 0.1));
 }
 
+vec4 sample_filtered_foam_level(uint cascade, uint level, vec2 uv) {
+    if (cascade == 0u) {
+        if (level == 0u) {
+            return texture(foam_filtered_cascade0_level0_texture, uv);
+        }
+        if (level == 1u) {
+            return texture(foam_filtered_cascade0_level1_texture, uv);
+        }
+        return texture(foam_filtered_cascade0_level2_texture, uv);
+    }
+    if (cascade == 1u) {
+        if (level == 0u) {
+            return texture(foam_filtered_cascade1_level0_texture, uv);
+        }
+        if (level == 1u) {
+            return texture(foam_filtered_cascade1_level1_texture, uv);
+        }
+        return texture(foam_filtered_cascade1_level2_texture, uv);
+    }
+    if (cascade == 2u) {
+        if (level == 0u) {
+            return texture(foam_filtered_cascade2_level0_texture, uv);
+        }
+        if (level == 1u) {
+            return texture(foam_filtered_cascade2_level1_texture, uv);
+        }
+        return texture(foam_filtered_cascade2_level2_texture, uv);
+    }
+    if (cascade == 3u) {
+        if (level == 0u) {
+            return texture(foam_filtered_cascade3_level0_texture, uv);
+        }
+        if (level == 1u) {
+            return texture(foam_filtered_cascade3_level1_texture, uv);
+        }
+        return texture(foam_filtered_cascade3_level2_texture, uv);
+    }
+    if (level == 0u) {
+        return texture(foam_filtered_cascade4_level0_texture, uv);
+    }
+    if (level == 1u) {
+        return texture(foam_filtered_cascade4_level1_texture, uv);
+    }
+    return texture(foam_filtered_cascade4_level2_texture, uv);
+}
+
+vec4 sample_filtered_foam(uint cascade, vec2 position, float tile_length, float footprint_m) {
+    float pixels_per_meter = cascade_map_size(cascade) / max(tile_length, 0.001);
+    float source_texel_footprint = max(2.0, footprint_m * pixels_per_meter);
+    float filter_level = clamp(log2(source_texel_footprint) - 1.0, 0.0, 2.0);
+    uint level0 = uint(floor(filter_level));
+    uint level1 = min(level0 + 1u, 2u);
+    vec2 uv = position / tile_length;
+    return mix(sample_filtered_foam_level(cascade, level0, uv),
+               sample_filtered_foam_level(cascade, level1, uv), fract(filter_level));
+}
+
 bool ocean_detail_anti_repeat_enabled(float factor) {
     return factor > 0.0;
 }
@@ -676,6 +748,21 @@ float cascade_surface_lod_weight(uint cascade, float dist) {
     return cascade_distance_lod_weight(cascade, dist, OCEAN_CASCADE_SURFACE_FADE_START_WAVES,
                                        OCEAN_CASCADE_SURFACE_FADE_END_WAVES,
                                        ocean_shape_fade_distance_scale());
+}
+
+vec2 filtered_foam_total(float dist, float footprint_m) {
+    vec2 total = vec2(0.0);
+    for (uint cascade = 0u; cascade < 5u; ++cascade) {
+        if (!ocean_cascade_enabled(cascade)) {
+            continue;
+        }
+        float tile_length = max(cascade_tile_length(cascade), 0.001);
+        vec4 filtered =
+            sample_filtered_foam(cascade, frag_sample_position, tile_length, footprint_m);
+        float lod_weight = cascade_surface_lod_weight(cascade, dist);
+        total += filtered.xy * lod_weight * ocean_surface_foam_strength();
+    }
+    return clamp(total, 0.0, 1.0);
 }
 
 vec4 sample_normal_foam_domain(uint cascade, vec2 position, float tile_length,
@@ -1065,8 +1152,8 @@ void main() {
     } else if (view == OCEAN_VIEW_ENERGY_LOD) {
         color = vec3(unresolved_lod_energy, displacement_lod, surface_lod);
     } else if (view == OCEAN_VIEW_FOAM_FILTERED) {
-        float footprint_filter = smoothstep(1.0, 18.0, pixel_footprint_m);
-        color = vec3(mix(max(foam_persistent, foam_current), foam_coverage, footprint_filter));
+        vec2 filtered = filtered_foam_total(dist, pixel_footprint_m);
+        color = vec3(filtered.x, filtered.y, max(filtered.x, filtered.y));
     } else if (view == OCEAN_VIEW_FAR_FIELD) {
         color = vec3(unresolved_lod_energy, material_distance,
                      smoothstep(OCEAN_FAR_ANTI_REPEAT_START, OCEAN_FAR_ANTI_REPEAT_END, dist));
