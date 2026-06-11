@@ -156,6 +156,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_normal_strength = 0.18F;
         ui.config.far_roughness_strength = 0.12F;
         ui.config.far_glint_strength = 0.10F;
+        ui.config.far_whitecap_strength = 0.22F;
         ui.diagnostics.shape_anti_repeat_strength = 1.0F;
         ui.diagnostics.detail_anti_repeat_strength = 1.0F;
         ui.config.spectral_domains_enabled = true;
@@ -180,6 +181,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_normal_strength = 0.0F;
         ui.config.far_roughness_strength = 0.0F;
         ui.config.far_glint_strength = 0.0F;
+        ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
         ui.config.spectral_domains_enabled = false;
@@ -204,6 +206,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_normal_strength = 0.0F;
         ui.config.far_roughness_strength = 0.0F;
         ui.config.far_glint_strength = 0.0F;
+        ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
         ui.config.spectral_domains_enabled = false;
@@ -658,6 +661,18 @@ void draw_ocean_ui(OceanUiContext ui) {
         cubey::host::imgui_slider_float("Far streak scale", &ui.config.far_streak_scale_m, 80.0F,
                                         2400.0F, "%.0f m",
                                         "World-space scale of low-contrast wind-aligned far-field streaks.");
+        cubey::host::imgui_slider_float(
+            "Far whitecaps", &ui.config.far_whitecap_strength, 0.0F, 0.6F, "%.2f",
+            "Low-contrast filtered whitecap coverage added only in far-field shading.");
+        cubey::host::imgui_slider_float(
+            "Far whitecap threshold", &ui.config.far_whitecap_threshold, 0.0F, 0.25F, "%.3f",
+            "Filtered coverage threshold before distant whitecaps become visible.");
+        cubey::host::imgui_slider_float(
+            "Far whitecap variance", &ui.config.far_whitecap_variance_weight, 0.0F, 1.5F,
+            "%.2f", "How much filtered foam variance contributes to distant whitecap density.");
+        cubey::host::imgui_slider_float(
+            "Far whitecap streaks", &ui.config.far_whitecap_streak_strength, 0.0F, 1.0F,
+            "%.2f", "Wind-aligned modulation applied to filtered far whitecap coverage.");
         ImGui::EndDisabled();
         cubey::host::imgui_slider_float(
             "Wave shadow", &ui.config.self_shadow_strength, 0.0F, 1.0F, "%.2f",

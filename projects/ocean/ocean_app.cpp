@@ -1375,6 +1375,13 @@ class OceanApp {
                     ocean_config_.far_streak_scale_m,
                     far_wind_radians,
                 },
+            .far_foam_options =
+                {
+                    ocean_config_.far_whitecap_strength,
+                    ocean_config_.far_whitecap_threshold,
+                    ocean_config_.far_whitecap_variance_weight,
+                    ocean_config_.far_whitecap_streak_strength,
+                },
         };
     }
 
