@@ -6,6 +6,7 @@
 #include <cubey/core/math.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
+#include <cubey/host/imgui_helpers.h>
 #include <cubey/host/performance_ui.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
@@ -38,6 +39,16 @@ namespace cubey::projects::clouds {
 namespace {
 
 constexpr float kDefaultFovyRadians = 60.0F * (glm::pi<float>() / 180.0F);
+constexpr std::array<CloudsCameraMode, 3> kCloudsCameraModes{
+    CloudsCameraMode::Surface,
+    CloudsCameraMode::High,
+    CloudsCameraMode::Orbit,
+};
+constexpr std::array<CloudsQuality, 3> kCloudsQualityModes{
+    CloudsQuality::Quarter,
+    CloudsQuality::Half,
+    CloudsQuality::Full,
+};
 
 struct CloudsPushConstants {
     cubey::math::Vec4 camera_right_aspect;
@@ -285,40 +296,114 @@ class CloudsApp {
     }
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
-        if (!ImGui::Begin("Clouds")) {
+        if (!cubey::host::begin_control_panel("Clouds")) {
             ImGui::End();
             return;
         }
 
-        ImGui::Text("Debug: %s", clouds_debug_view_name(config_.debug_view));
-        ImGui::Text("Quality: %s", clouds_quality_name(config_.quality));
-        ImGui::Text("Camera: %s", clouds_camera_mode_name(config_.camera_mode));
-        if (ImGui::Button("Surface")) {
-            set_camera_mode(CloudsCameraMode::Surface);
+        if (cubey::host::imgui_button("Reset",
+                                      "Restore the startup camera, time, and cloud settings.")) {
+            config_ = home_config_;
+            yaw_ = 0.0F;
+            pitch_ = 0.0F;
+            elapsed_seconds_ = 0.0F;
+            ui_frame_stats_.reset();
+            latest_frame_stats_.reset();
         }
-        ImGui::SameLine();
-        if (ImGui::Button("High")) {
-            set_camera_mode(CloudsCameraMode::High);
+
+        cubey::host::imgui_enum_combo(
+            "Debug view", config_.debug_view, kCloudsDebugViews, clouds_debug_view_name,
+            "Inspect final color, weather, density, transmittance, lighting, shadow, or step use.");
+        cubey::host::imgui_enum_combo(
+            "Quality", config_.quality, kCloudsQualityModes, clouds_quality_name,
+            "Controls raymarch view and light sample budgets.");
+
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Camera", {.help = "Camera preset and orbit/surface framing controls."}};
+            group) {
+            const cubey::host::ScopedImGuiId section_id("Camera");
+            CloudsCameraMode selected_mode = config_.camera_mode;
+            if (cubey::host::imgui_enum_combo("Mode", selected_mode, kCloudsCameraModes,
+                                              clouds_camera_mode_name,
+                                              "Surface, high-altitude, and orbit inspection "
+                                              "presets.")) {
+                set_camera_mode(selected_mode);
+            }
+            ImGui::InputFloat("Altitude", &config_.camera_altitude_m, 0.0F, 0.0F, "%.0f");
+            cubey::host::imgui_attach_help("Camera altitude above the planet surface in meters.");
+            ImGui::Text("Yaw / pitch: %.2f / %.2f rad", yaw_, pitch_);
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Orbit")) {
-            set_camera_mode(CloudsCameraMode::Orbit);
+
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Weather", {.help = "Coverage, density, wind, and macro weather scale."}};
+            group) {
+            const cubey::host::ScopedImGuiId section_id("Weather");
+            cubey::host::imgui_slider_float("Coverage", &config_.coverage, 0.0F, 1.0F, "%.2f",
+                                            "Amount of sky covered by the procedural weather map.");
+            cubey::host::imgui_slider_float("Density", &config_.density, 0.0F, 2.0F, "%.2f",
+                                            "Optical density multiplier for the cloud volume.");
+            cubey::host::imgui_slider_float("Scale", &config_.weather_scale_km, 20.0F, 500.0F,
+                                            "%.0f km",
+                                            "Horizontal scale of the broad weather field.");
+            cubey::host::imgui_slider_float("Wind", &config_.wind_speed_mps, 0.0F, 80.0F,
+                                            "%.1f m/s",
+                                            "Advection speed for procedural cloud features.");
         }
-        ImGui::SliderFloat("Coverage", &config_.coverage, 0.0F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Density", &config_.density, 0.0F, 2.0F, "%.2f");
-        ImGui::InputFloat("Camera altitude (m)", &config_.camera_altitude_m, 0.0F, 0.0F, "%.0f");
-        ImGui::InputFloat("Bottom altitude (m)", &config_.bottom_altitude_m, 0.0F, 0.0F, "%.0f");
-        ImGui::InputFloat("Top altitude (m)", &config_.top_altitude_m, 0.0F, 0.0F, "%.0f");
-        ImGui::SliderFloat("Weather scale (km)", &config_.weather_scale_km, 20.0F, 500.0F,
-                           "%.0f");
-        ImGui::SliderFloat("Wind speed (m/s)", &config_.wind_speed_mps, 0.0F, 80.0F, "%.1f");
-        ImGui::Checkbox("Solar clock", &config_.time.solar_clock);
-        ImGui::Checkbox("Play", &config_.time.playing);
-        ImGui::SliderFloat("Time", &config_.time.time_hours, 0.0F, 24.0F, "%.2f");
-        ImGui::SliderFloat("Speed (h/s)", &config_.time.speed_hours_per_second, 0.0F, 12.0F,
-                           "%.2f");
+
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Layer", {.default_open = false,
+                           .help = "Cloud-shell altitude range above the planet surface."}};
+            group) {
+            const cubey::host::ScopedImGuiId section_id("Layer");
+            ImGui::InputFloat("Bottom", &config_.bottom_altitude_m, 0.0F, 0.0F, "%.0f");
+            cubey::host::imgui_attach_help("Cloud layer bottom altitude in meters.");
+            ImGui::InputFloat("Top", &config_.top_altitude_m, 0.0F, 0.0F, "%.0f");
+            cubey::host::imgui_attach_help("Cloud layer top altitude in meters.");
+        }
+
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Time", {.default_open = false,
+                          .help = "Solar-clock controls used for cloud lighting."}};
+            group) {
+            const cubey::host::ScopedImGuiId section_id("Time");
+            cubey::host::imgui_checkbox("Solar clock", &config_.time.solar_clock,
+                                        "Compute sun direction from time, day, latitude, and "
+                                        "azimuth offset.");
+            cubey::host::imgui_checkbox("Play", &config_.time.playing,
+                                        "Advance the solar clock every frame.");
+            cubey::host::imgui_slider_float("Time", &config_.time.time_hours, 0.0F, 24.0F,
+                                            "%.2f h", "Local solar time in hours.");
+            cubey::host::imgui_slider_float("Day", &config_.time.day_of_year, 1.0F, 366.0F,
+                                            "%.0f", "Day of year for solar position.");
+            cubey::host::imgui_slider_float("Latitude", &config_.time.latitude_degrees, -90.0F,
+                                            90.0F, "%.1f deg",
+                                            "Observer latitude used by the solar clock.");
+            cubey::host::imgui_slider_float("Azimuth offset",
+                                            &config_.time.azimuth_offset_degrees, -180.0F, 180.0F,
+                                            "%.1f deg",
+                                            "Horizontal rotation applied to the solar clock.");
+            cubey::host::imgui_slider_float("Speed", &config_.time.speed_hours_per_second, 0.0F,
+                                            12.0F, "%.2f h/s",
+                                            "Simulated hours advanced per real second.");
+        }
+
         const auto solar = clouds_solar_position(config_);
-        ImGui::Text("Sun: %.1f elev / %.1f az", solar.elevation_degrees, solar.azimuth_degrees);
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Diagnostics", {.default_open = false,
+                                 .help = "Read-only cloud camera, shell, and solar state."}};
+            group) {
+            const cubey::host::ScopedImGuiId section_id("Diagnostics");
+            ImGui::Text("Camera: %s / %.0f m", clouds_camera_mode_name(config_.camera_mode),
+                        config_.camera_altitude_m);
+            ImGui::Text("Layer: %.0f m - %.0f m", config_.bottom_altitude_m,
+                        config_.top_altitude_m);
+            ImGui::Text("Weather phase: %.2f km",
+                        elapsed_seconds_ * config_.wind_speed_mps * 0.001F);
+            ImGui::Text("Sun: %.1f elev / %.1f az", solar.elevation_degrees,
+                        solar.azimuth_degrees);
+            ImGui::TextUnformatted("Keys: D debug, Space solar play, R reset");
+        }
+
         const CloudsQualityBudget budget = clouds_quality_budget(config_.quality);
         const std::array<cubey::host::PerformanceCounter, 5> performance_counters{
             cubey::host::PerformanceCounter{"View steps",
@@ -344,7 +429,6 @@ class CloudsApp {
             .counters = performance_counters,
             .config = {.default_open = true},
         });
-        ImGui::Text("Keys: D debug, Space play, R reset");
         ImGui::End();
     }
 
