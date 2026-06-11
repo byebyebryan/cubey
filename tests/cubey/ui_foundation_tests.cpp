@@ -100,16 +100,16 @@ void test_active_project_ui_raw_combo_exceptions_are_explicit() {
             "terrain UI raw selectable use should stay limited to grid presets");
 }
 
-void test_reference_ocean_ui_exceptions_are_documented() {
+void test_retired_ocean_ui_exceptions_are_removed() {
     const std::string docs =
         cubey::tests::read_source_file(source_root() / "docs/architecture/ocean-rendering.md");
 
-    cubey::tests::require_contains(
+    cubey::tests::require_not_contains(
         docs, "intentionally exempt from current active-panel",
-        "ocean_ref should be documented as a frozen UI cleanup exception");
-    cubey::tests::require_contains(
+        "removed ocean_ref should not remain a UI cleanup exception");
+    cubey::tests::require_not_contains(
         docs, "shared UI/config helper adoption",
-        "ocean_legacy should be documented as a donor UI cleanup exception");
+        "removed ocean_legacy should not remain a UI cleanup exception");
 }
 
 void test_imgui_helper_layer_covers_active_common_controls() {

@@ -98,18 +98,15 @@ mkdir -p outputs/ocean-glitter
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --time-of-day-mode manual --sun-elevation 42 --sun-azimuth -20 --pause-time --debug-view far-field --output outputs/ocean-glitter/far-field-high-sun-high.png
 ```
 
-## Reference Comparison
+## Active Baseline Comparison
 
-Keep `projects/ocean_ref` as the known-good implementation reference. Compare
-against it when judging whether a new ocean tuning pass improves crest shape,
-foam coherence, or cost:
+The retired `ocean_ref` and `ocean_legacy` projects are available only through
+git history. For current tuning, compare repeatable active-ocean captures
+before and after a change:
 
 ```sh
-./build/dev/projects/ocean_ref/ocean_ref --headless --frames 120 --width 1280 --height 720 --output outputs/ocean-ref-default.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --output outputs/ocean-active-default.png
+mkdir -p outputs/ocean-active-baseline
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --output outputs/ocean-active-baseline/default.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset mid --output outputs/ocean-active-baseline/mid.png
+./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --debug-view energy-lod --output outputs/ocean-active-baseline/high-energy-lod.png
 ```
-
-The reference remains a visual guardrail, not the target architecture. The
-active ocean has additional atmosphere, foam-history, terrain-field,
-diagnostic, and feature-isolation paths that make exact cost or pixel matching
-the wrong comparison.

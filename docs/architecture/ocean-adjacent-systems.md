@@ -1,12 +1,11 @@
 # Ocean Adjacent Systems
 
-`projects/ocean` is the active reference-derived deep-water renderer,
-`projects/ocean_ref` is the known-good wave baseline, and
-`projects/ocean_legacy` is the older feature donor. The next visible quality
-jump still depends on systems that should not be built directly inside the
-ocean project first. Shorelines, shallow water, atmospheric scattering, clouds,
-and planet-scale LOD each have enough policy and tuning surface to deserve
-standalone project pressure before they become shared renderer inputs.
+`projects/ocean` is the active reference-derived deep-water renderer. The next
+visible quality jump still depends on systems that should not be built directly
+inside the ocean project first. Shorelines, shallow water, atmospheric
+scattering, clouds, and planet-scale LOD each have enough policy and tuning
+surface to deserve standalone project pressure before they become shared
+renderer inputs.
 
 This note captures the intended split so parallel work can stay mergeable.
 
@@ -67,8 +66,8 @@ Ocean integration target:
 - sample the same sky model for background, reflection, fog, and sun glint;
 - use one shared sun direction and radiance value;
 - keep output in linear HDR before project-specific exposure and tone mapping.
-- compare the integration against `ocean_ref` before retiring the ocean-local
-  sky fallback.
+- compare the integration against current `projects/ocean` captures before
+  retiring any ocean-local fallback.
 
 Current foundation checkpoint:
 

@@ -22,7 +22,7 @@ void test_profile_recorder_writes_csv_summary_and_trace_outputs();
 void test_run_cli_app_sets_default_title_and_returns_runner_status();
 void test_active_project_ui_uses_shared_common_controls();
 void test_active_project_ui_raw_combo_exceptions_are_explicit();
-void test_reference_ocean_ui_exceptions_are_documented();
+void test_retired_ocean_ui_exceptions_are_removed();
 void test_imgui_helper_layer_covers_active_common_controls();
 void test_active_project_ui_uses_shared_performance_panel();
 void test_active_project_ui_starts_low_noise_sections_collapsed();
@@ -76,7 +76,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_config_parses_png_output_path),
         CUBEY_TEST(test_active_project_ui_uses_shared_common_controls),
         CUBEY_TEST(test_active_project_ui_raw_combo_exceptions_are_explicit),
-        CUBEY_TEST(test_reference_ocean_ui_exceptions_are_documented),
+        CUBEY_TEST(test_retired_ocean_ui_exceptions_are_removed),
         CUBEY_TEST(test_imgui_helper_layer_covers_active_common_controls),
         CUBEY_TEST(test_active_project_ui_uses_shared_performance_panel),
         CUBEY_TEST(test_active_project_ui_starts_low_noise_sections_collapsed),

@@ -90,10 +90,6 @@ RunConfig parse_run_config(int argc, char** argv) {
         (config.ocean.wire_opacity < 0.0F || config.ocean.wire_opacity > 1.0F)) {
         throw std::runtime_error("ocean wire opacity must be in [0, 1]");
     }
-    if (run_config_float_is_set(config.ocean_ref.wire_opacity) &&
-        (config.ocean_ref.wire_opacity < 0.0F || config.ocean_ref.wire_opacity > 1.0F)) {
-        throw std::runtime_error("ocean_ref wire opacity must be in [0, 1]");
-    }
     if (config.planet.radius_m <= 0.0F) {
         throw std::runtime_error("planet radius must be positive");
     }

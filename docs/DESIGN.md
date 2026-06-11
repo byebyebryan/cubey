@@ -339,9 +339,8 @@ named explicitly and live in either `examples/` or `projects/`:
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, including `atmosphere`, `smoke_2d`, `water_2d`, `water_3d`,
   `fire_3d`, `explosion_3d`, `fractal_2d`, `gltf_viewer`, `ocean`,
-  `ocean_ref`, `ocean_legacy`, `planet`, `procedural_terrain`, and
-  `pbr_furnace`, plus later candidates such as `marching_cubes` and
-  `sdf_sculpt`.
+  `planet`, `procedural_terrain`, and `pbr_furnace`, plus later candidates
+  such as `marching_cubes` and `sdf_sculpt`.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
 - `tests/` - unit and integration tests.
@@ -600,8 +599,6 @@ cubey/
           ocean_unpack.comp -- displacement, normals, and foam from FFT fields
           ocean.vert      -- camera-relative clipmap and cascaded displacement
           ocean.frag      -- water shading, foam, and debug views
-      ocean_ref/          -- frozen known-good GodotOceanWaves comparison port
-      ocean_legacy/       -- previous Cubey ocean renderer and feature donor
       planet/             -- planet frame, surface LOD, terrain field, and sky foundation
       procedural_terrain/ -- terrain, bathymetry, shoreline, and LOD diagnostics
       pbr_furnace/

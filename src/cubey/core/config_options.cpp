@@ -93,7 +93,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 180> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 177> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -214,16 +214,6 @@ constexpr std::array<ConfigOptionDescriptor, 180> kRunConfigOptions{
     option(RunConfigOptionId::OceanWireOpacity, "ocean.wire_opacity", "--ocean-wire-opacity",
            "Wire Opacity", "Ocean", "Opacity used by the ocean wire overlay.",
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
-    option(RunConfigOptionId::OceanRefMapSize, "ocean_ref.map_size", "--ocean-ref-map-size",
-           "Map Size", "Ocean Ref", "FFT map size for the frozen ocean reference.",
-           ConfigOptionType::UInt32, min_range(1.0)),
-    option(RunConfigOptionId::OceanRefWireOverlay, "ocean_ref.wire_overlay",
-           "--ocean-ref-wire-overlay", "Wire Overlay", "Ocean Ref",
-           "Draw ocean reference mesh wire overlay.", ConfigOptionType::Bool),
-    option(RunConfigOptionId::OceanRefWireOpacity, "ocean_ref.wire_opacity",
-           "--ocean-ref-wire-opacity", "Wire Opacity", "Ocean Ref",
-           "Opacity used by the ocean reference wire overlay.", ConfigOptionType::Float,
-           bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::PlanetScalePreset, "planet.scale_preset", "--planet-scale-preset",
            "Scale Preset", "Planet", "Planet scale defaults: earthlike or mini.",
            ConfigOptionType::Enum, no_range(), enum_choices(kPlanetScalePresets)),
@@ -933,13 +923,6 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.ocean.wire_overlay;
     case RunConfigOptionId::OceanWireOpacity:
         return optional_float(config.ocean.wire_opacity);
-    case RunConfigOptionId::OceanRefMapSize:
-        return config.ocean_ref.map_size == 0U ? nlohmann::json(nullptr)
-                                               : nlohmann::json(config.ocean_ref.map_size);
-    case RunConfigOptionId::OceanRefWireOverlay:
-        return config.ocean_ref.wire_overlay;
-    case RunConfigOptionId::OceanRefWireOpacity:
-        return optional_float(config.ocean_ref.wire_opacity);
     case RunConfigOptionId::PlanetScalePreset:
         return config.planet.scale_preset.empty() ? nlohmann::json(nullptr)
                                                   : nlohmann::json(config.planet.scale_preset);
@@ -1272,18 +1255,6 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::OceanOptions& options) 
     }
 }
 
-inline void serialize(JsonAdapter& adapter, const RunConfig::OceanRefOptions& options) {
-    adapter.writeField<std::uint32_t>("map_size", options.map_size);
-    adapter.writeField<float>("wire_opacity", options.wire_opacity);
-    adapter.writeField<bool>("wire_overlay", options.wire_overlay);
-}
-
-inline void deserialize(JsonAdapter& adapter, RunConfig::OceanRefOptions& options) {
-    adapter.readField<std::uint32_t>("map_size", options.map_size);
-    adapter.readField<float>("wire_opacity", options.wire_opacity);
-    adapter.readField<bool>("wire_overlay", options.wire_overlay);
-}
-
 inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& options) {
     adapter.writeField<std::string>("scale_preset", options.scale_preset);
     adapter.writeField<float>("radius_m", options.radius_m);
@@ -1528,7 +1499,6 @@ inline void serialize(JsonAdapter& adapter, const RunConfig& config) {
     adapter.writeField<RunConfig::GltfOptions>("gltf", config.gltf);
     adapter.writeField<RunConfig::PbrOptions>("pbr", config.pbr);
     adapter.writeField<RunConfig::OceanOptions>("ocean", config.ocean);
-    adapter.writeField<RunConfig::OceanRefOptions>("ocean_ref", config.ocean_ref);
     adapter.writeField<RunConfig::PlanetOptions>("planet", config.planet);
     adapter.writeField<RunConfig::TerrainOptions>("terrain", config.terrain);
     adapter.writeField<RunConfig::AtmosphereOptions>("atmosphere", config.atmosphere);
@@ -1552,7 +1522,6 @@ inline void deserialize(JsonAdapter& adapter, RunConfig& config) {
     adapter.readField<RunConfig::GltfOptions>("gltf", config.gltf);
     adapter.readField<RunConfig::PbrOptions>("pbr", config.pbr);
     adapter.readField<RunConfig::OceanOptions>("ocean", config.ocean);
-    adapter.readField<RunConfig::OceanRefOptions>("ocean_ref", config.ocean_ref);
     adapter.readField<RunConfig::PlanetOptions>("planet", config.planet);
     adapter.readField<RunConfig::TerrainOptions>("terrain", config.terrain);
     adapter.readField<RunConfig::AtmosphereOptions>("atmosphere", config.atmosphere);
@@ -1754,16 +1723,6 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::OceanWireOpacity:
         config.ocean.wire_opacity = parse_config_float(value, option);
         validate_range(config.ocean.wire_opacity, option);
-        break;
-    case RunConfigOptionId::OceanRefMapSize:
-        config.ocean_ref.map_size = parse_number<std::uint32_t>(value, option, "unsigned integer");
-        break;
-    case RunConfigOptionId::OceanRefWireOverlay:
-        config.ocean_ref.wire_overlay = parse_config_bool(value, option);
-        break;
-    case RunConfigOptionId::OceanRefWireOpacity:
-        config.ocean_ref.wire_opacity = parse_config_float(value, option);
-        validate_range(config.ocean_ref.wire_opacity, option);
         break;
     case RunConfigOptionId::PlanetScalePreset:
         config.planet.scale_preset = std::string(value);

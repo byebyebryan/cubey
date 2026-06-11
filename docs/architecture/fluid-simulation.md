@@ -19,8 +19,7 @@ is a small set of focused projects, each with different scaling assumptions:
 - `projects/ocean`: active reference-derived large-scale water rendering with a
   camera-relative mesh, GodotOceanWaves-style spectrum/FFT waves, foam/debug
   views, and future hooks for wakes and shorelines. It is rendering-first, not a
-  fluid solver. `projects/ocean_ref` is the frozen comparison baseline and
-  `projects/ocean_legacy` is the old feature donor.
+  fluid solver.
 - `projects/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
   basins, sources, sinks, and heightfield-driven water.
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
@@ -248,9 +247,8 @@ project is worth the complexity.
 ## Suggested Order
 
 1. Keep `projects/ocean` on the promoted experimental base, but use explicit
-   feature-isolation controls and `projects/ocean_ref` comparisons to decide
-   which cascade slots, foam, terrain/depth, and diagnostics features are worth
-   their cost.
+   feature-isolation controls and repeatable captures to decide which cascade
+   slots, foam, terrain/depth, and diagnostics features are worth their cost.
 2. Continue `fluid_25d` with virtual-pipes shallow water over terrain, then feed
    depth/shoreline data into the ocean renderer.
 3. Continue `smoke_2d` beyond the current Jacobi/RBGS baseline with richer

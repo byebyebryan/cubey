@@ -72,10 +72,6 @@ Current projects:
   spectrum/FFT/unpack core, with configurable cascade slots, atmosphere
   lighting, terrain-field hooks, foam/debug views, and feature-isolation
   controls.
-- `ocean_ref`: frozen known-good GodotOceanWaves port kept for visual and
-  implementation comparisons.
-- `ocean_legacy`: previous experimental ocean renderer, kept as a feature donor
-  for macro waves, foam history, refraction, seafloor, and shoreline hooks.
 - `procedural_terrain`: deterministic heightfield terrain and bathymetry data
   demo with shoreline/material debug views and headless capture output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
@@ -124,8 +120,6 @@ Project-local docs:
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
 - [Planet](projects/planet/README.md)
 - [Ocean](projects/ocean/README.md)
-- [Ocean Ref](projects/ocean_ref/README.md)
-- [Ocean Legacy](projects/ocean_legacy/README.md)
 - [Procedural Terrain](projects/procedural_terrain/README.md)
 
 ## Development Setup
@@ -211,8 +205,6 @@ Useful windowed smokes:
 ./build/dev/projects/atmosphere/atmosphere --frames 300 --width 1280 --height 720
 ./build/dev/projects/planet/planet --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --ocean-map-size 128 --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean_ref/ocean_ref --ocean-ref-map-size 128 --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean_legacy/ocean_legacy --frames 300 --width 1280 --height 720
 ./build/dev/projects/procedural_terrain/procedural_terrain --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
@@ -289,11 +281,9 @@ strength, foam history, active cascade-slot work toggles, shape/detail
 anti-repeat, split atmosphere material influence, shape/normal/foam fade
 distances, and terrain foam controls for checking which additions help or hurt
 the reference-derived core.
-`ocean_ref` keeps the same wave core under `--ocean-ref-*` options as a frozen
-known-good reference.
-`ocean_legacy` keeps the older Cubey experimental renderer with macro waves,
-foam history, refraction, seafloor, and additional debug views for future
-selective porting.
+The old `ocean_ref` and `ocean_legacy` projects were retired after their useful
+comparison and donor work landed in `ocean`; use git history if a deleted
+implementation detail is needed for archaeology.
 `procedural_terrain` generates deterministic island/coast/shelf/seabed fields
 and renders an oblique heightfield mesh. It exposes
 `--debug-view final|height|water-depth|shoreline|material|slope`, plus
@@ -313,8 +303,6 @@ Useful headless PNG smokes:
 ./build/dev/projects/atmosphere/atmosphere --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-atmosphere.png
 ./build/dev/projects/planet/planet --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-planet.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --ocean-map-size 128 --output /tmp/cubey-ocean.png
-./build/dev/projects/ocean_ref/ocean_ref --headless --frames 120 --width 640 --height 360 --ocean-ref-map-size 128 --output /tmp/cubey-ocean-ref.png
-./build/dev/projects/ocean_legacy/ocean_legacy --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-ocean-legacy.png
 ./build/dev/projects/procedural_terrain/procedural_terrain --headless --width 640 --height 360 --output /tmp/cubey-procedural-terrain.png
 ./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
 ```
@@ -332,7 +320,6 @@ Useful headless video captures when FFmpeg/libav support is enabled:
 ./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 23.0 --planet-time-speed-hours-per-second 0.0 --planet-camera-mode orbit --planet-camera-altitude-m 14000000 --planet-camera-orbit-spin-deg-per-sec 8.0 --planet-atmosphere-mode physical --output /tmp/cubey-planet-orbit.mp4
 ./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 4.35 --planet-time-speed-hours-per-second 0.03 --planet-camera-mode surface --planet-camera-altitude-m 1200 --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output /tmp/cubey-planet-surface-twilight.mp4
 ./build/dev/projects/ocean/ocean --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --ocean-map-size 128 --output /tmp/cubey-ocean.mp4
-./build/dev/projects/ocean_legacy/ocean_legacy --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-ocean-legacy.mp4
 ```
 
 Use `--require-validation` on local smoke commands when Vulkan validation
@@ -366,12 +353,9 @@ layers are installed.
   Escape closes.
 - `gltf_viewer`: left-drag orbits the camera, `D` cycles PBR debug views,
   Escape closes.
-- `ocean` / `ocean_ref`: left-drag orbits the camera, mouse wheel
+- `ocean`: left-drag orbits the camera, mouse wheel
   zooms, Space pauses/resumes wave time, `R` resets, `D` cycles wave-core debug
   views, Escape closes.
-- `ocean_legacy`: left-drag orbits the camera, mouse wheel zooms, Space
-  pauses/resumes wave time, `R` resets, `D` cycles the legacy water debug views,
-  Escape closes.
 - `planet`: left-drag orbits the planet, right-drag looks around in surface
   mode, mouse wheel changes distance, WASD moves the surface camera, Escape
   closes.

@@ -66,8 +66,6 @@ Project-specific design stays beside the project:
 - [Fire 3D](../projects/fluid/fire_3d/README.md)
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [Ocean](../projects/ocean/README.md)
-- [Ocean Ref](../projects/ocean_ref/README.md)
-- [Ocean Legacy](../projects/ocean_legacy/README.md)
 - [Planet](../projects/planet/README.md)
 - [Procedural Terrain](../projects/procedural_terrain/README.md)
 

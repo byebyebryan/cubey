@@ -1,24 +1,14 @@
 # Ocean Rendering Direction
 
-Cubey now keeps three ocean lanes with different jobs:
+`projects/ocean` is the active renderer. It uses the GodotOceanWaves-derived
+spectrum/FFT/unpack core as its wave foundation while keeping configurable
+cascade slots, atmosphere integration, terrain-field descriptors, expanded foam
+diagnostics, and debug views behind explicit feature-isolation controls.
 
-- `projects/ocean` is the active renderer. It uses the known-good
-  GodotOceanWaves-derived spectrum/FFT/unpack core as a guardrail while keeping
-  configurable cascade slots, atmosphere integration, terrain-field
-  descriptors, expanded foam diagnostics, and debug views behind explicit
-  feature-isolation controls.
-- `projects/ocean_ref` is the frozen reference port. Keep it source-stable so
-  active ocean changes can be checked against a working wave-shape guardrail,
-  not treated as an oracle. It is intentionally exempt from current active-panel
-  UI cleanup unless a bug blocks comparison work.
-- `projects/ocean_legacy` is the previous Cubey experimental renderer. It is a
-  feature donor for macro crests, persistent foam history, refraction, seafloor,
-  atmosphere hooks, and shoreline/bathymetry ideas. It is not expected to track
-  shared UI/config helper adoption except when a feature is actively ported.
-
-This split keeps wave shape and foam quality grounded in a known-good
-implementation while making experimental contributions directly inspectable in
-the active renderer.
+The old `projects/ocean_ref` and `projects/ocean_legacy` comparison projects
+were retired once their useful guardrail and donor roles had served the active
+renderer. Use git history for archaeology; new ocean work should land directly
+behind diagnostics and feature-isolation controls in `projects/ocean`.
 
 ## Current Active Shape
 
@@ -68,17 +58,16 @@ The active renderer includes:
   water aerial-perspective placeholder, fill, and reflection;
 - a diagnostic terrain-ocean `RGBA32F` field texture bound through the shared
   height/depth/shore/slope contract;
-- active `--ocean-*` CLI controls, while the frozen reference keeps
-  `--ocean-ref-*` controls.
+- active `--ocean-*` CLI controls.
 
 The active renderer should now be evaluated feature by feature rather than
 pulled wholesale back to the reference ABI. The GUI's Feature Isolation section
 exposes global shape and foam strength, foam history, shape and detail
 anti-repeat, active cascade-slot work toggles, split atmosphere material
 influence, shape/normal/foam fade controls, and terrain foam controls so each
-addition can be checked against `ocean_ref` for quality and cost. Cascade work
-toggles skip disabled cascade compute dispatches; contribution sliders only
-change surface composition.
+addition can be checked in isolation for quality and cost. Cascade work toggles
+skip disabled cascade compute dispatches; contribution sliders only change
+surface composition.
 
 Performance work should start from the spectral ocean cost model captured in
 [Ocean performance notes](../notes/ocean-performance.md). The current default
@@ -118,9 +107,9 @@ raising the exposed shape/normal/foam fade scales or adding a separate,
 low-frequency far-field domain before reintroducing high-frequency tile cues at
 the horizon.
 
-## Feature Donor Boundaries
+## Historical Donor Notes
 
-Useful `ocean_legacy` ideas to revisit later:
+Useful ideas from the retired ocean experiments to revisit through git history:
 
 - macro or Stokes/Gerstner-style crest trains for stronger near-field silhouette;
 - persistent foam coverage/freshness history and breakup detail;
@@ -129,9 +118,9 @@ Useful `ocean_legacy` ideas to revisit later:
 - broader debug views for compression, thickness, foam source/history, and
   translucency inspection.
 
-Legacy code is evidence, not the base. The default path should be to port the
-smallest useful slice into `projects/ocean`, use `projects/ocean_ref` only as a
-guardrail, and keep the reference intact.
+Historical code is evidence, not the base. The default path should be to port
+the smallest useful idea into `projects/ocean` behind diagnostics rather than
+recreating another standing comparison project.
 
 ## Rendering References
 
