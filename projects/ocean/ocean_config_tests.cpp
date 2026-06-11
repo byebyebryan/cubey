@@ -561,6 +561,18 @@ int main() {
         require(ocean::ocean_render_view_from_name("curvature") ==
                     ocean::OceanRenderView::Curvature,
                 "curvature debug view should parse");
+        require(ocean::ocean_render_view_from_name("footprint") ==
+                    ocean::OceanRenderView::Footprint,
+                "footprint debug view should parse");
+        require(ocean::ocean_render_view_from_name("energy-lod") ==
+                    ocean::OceanRenderView::EnergyLod,
+                "energy LOD debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-filtered") ==
+                    ocean::OceanRenderView::FoamFiltered,
+                "filtered foam debug view should parse");
+        require(ocean::ocean_render_view_from_name("far-field") ==
+                    ocean::OceanRenderView::FarField,
+                "far-field debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Foam) ==
                     ocean::OceanRenderView::FoamSource,
                 "ocean debug view cycle should include the foam source view");
@@ -592,8 +604,20 @@ int main() {
                     ocean::OceanRenderView::Curvature,
                 "ocean debug view cycle should include curvature after terrain slope");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Curvature) ==
+                    ocean::OceanRenderView::Footprint,
+                "ocean debug view cycle should include footprint after curvature");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::Footprint) ==
+                    ocean::OceanRenderView::EnergyLod,
+                "ocean debug view cycle should include energy LOD after footprint");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::EnergyLod) ==
+                    ocean::OceanRenderView::FoamFiltered,
+                "ocean debug view cycle should include filtered foam after energy LOD");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamFiltered) ==
+                    ocean::OceanRenderView::FarField,
+                "ocean debug view cycle should include far-field after filtered foam");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FarField) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap after curvature");
+                "ocean debug view cycle should wrap after far-field diagnostics");
 
         bool rejected = false;
         try {

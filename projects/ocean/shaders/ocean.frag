@@ -86,6 +86,10 @@ const uint OCEAN_VIEW_TERRAIN_DEPTH = 18u;
 const uint OCEAN_VIEW_TERRAIN_SHORE = 19u;
 const uint OCEAN_VIEW_TERRAIN_SLOPE = 20u;
 const uint OCEAN_VIEW_CURVATURE = 21u;
+const uint OCEAN_VIEW_FOOTPRINT = 22u;
+const uint OCEAN_VIEW_ENERGY_LOD = 23u;
+const uint OCEAN_VIEW_FOAM_FILTERED = 24u;
+const uint OCEAN_VIEW_FAR_FIELD = 25u;
 const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
@@ -876,6 +880,36 @@ vec3 debug_curvature_color(float drop) {
                        : mix(mid_color, far_color, (value - 0.5) * 2.0);
 }
 
+float ocean_pixel_footprint_m() {
+    vec2 dx = dFdx(frag_sample_position);
+    vec2 dy = dFdy(frag_sample_position);
+    float major_axis = max(length(dx), length(dy));
+    float area = abs(dx.x * dy.y - dx.y * dy.x);
+    return max(max(major_axis, sqrt(max(area, 0.0))), frag_mesh_cell_size);
+}
+
+vec3 debug_footprint_color(float footprint_m) {
+    float value = clamp((log2(max(footprint_m, 0.001)) + 4.0) / 13.0, 0.0, 1.0);
+    vec3 near_color = cubey_srgb_to_linear(vec3(0.08, 0.20, 0.62));
+    vec3 mid_color = cubey_srgb_to_linear(vec3(0.15, 0.82, 0.64));
+    vec3 far_color = cubey_srgb_to_linear(vec3(1.0, 0.72, 0.18));
+    return value < 0.5 ? mix(near_color, mid_color, value * 2.0)
+                       : mix(mid_color, far_color, (value - 0.5) * 2.0);
+}
+
+float active_surface_lod_weight(float dist) {
+    float weight = 0.0;
+    float active_count = 0.0;
+    for (uint cascade = 0u; cascade < 5u; ++cascade) {
+        if (!ocean_cascade_enabled(cascade) || cascade_normal_scale(cascade) <= 0.0) {
+            continue;
+        }
+        weight += cascade_surface_lod_weight(cascade, dist);
+        active_count += 1.0;
+    }
+    return active_count > 0.0 ? weight / active_count : 0.0;
+}
+
 float active_displacement_lod_weight(float dist, float mesh_cell_size) {
     float weight = 0.0;
     float active_count = 0.0;
@@ -887,6 +921,22 @@ float active_displacement_lod_weight(float dist, float mesh_cell_size) {
         active_count += 1.0;
     }
     return active_count > 0.0 ? weight / active_count : 0.0;
+}
+
+float active_unresolved_lod_energy(float dist, float mesh_cell_size) {
+    float energy = 0.0;
+    float scale_sum = 0.0;
+    for (uint cascade = 0u; cascade < 5u; ++cascade) {
+        float scale = max(cascade_normal_scale(cascade), cascade_displacement_scale(cascade));
+        if (!ocean_cascade_enabled(cascade) || scale <= 0.0) {
+            continue;
+        }
+        float surface_weight = cascade_surface_lod_weight(cascade, dist);
+        float displacement_weight = cascade_displacement_lod_weight(cascade, dist, mesh_cell_size);
+        energy += max(surface_weight - displacement_weight, 0.0) * scale;
+        scale_sum += scale;
+    }
+    return scale_sum > 0.0 ? clamp(energy / scale_sum, 0.0, 1.0) : 0.0;
 }
 
 float triangle_wire_factor(vec3 barycentric) {
@@ -913,6 +963,10 @@ void main() {
     float ndotv = clamp(dot(normal, view_dir), 0.0, 1.0);
     float ndotl = clamp(dot(normal, sun_dir), 0.0, 1.0);
     float material_distance = ocean_material_distance_factor(dist);
+    float pixel_footprint_m = ocean_pixel_footprint_m();
+    float displacement_lod = active_displacement_lod_weight(dist, frag_mesh_cell_size);
+    float surface_lod = active_surface_lod_weight(dist);
+    float unresolved_lod_energy = active_unresolved_lod_energy(dist, frag_mesh_cell_size);
     vec4 terrain_fields = sample_terrain_ocean_fields(frag_sample_position);
     float terrain_shore_foam =
         ocean_terrain_fields_enabled()
@@ -1006,6 +1060,16 @@ void main() {
                            1.0));
     } else if (view == OCEAN_VIEW_CURVATURE) {
         color = debug_curvature_color(frag_surface_curve_drop);
+    } else if (view == OCEAN_VIEW_FOOTPRINT) {
+        color = debug_footprint_color(pixel_footprint_m);
+    } else if (view == OCEAN_VIEW_ENERGY_LOD) {
+        color = vec3(unresolved_lod_energy, displacement_lod, surface_lod);
+    } else if (view == OCEAN_VIEW_FOAM_FILTERED) {
+        float footprint_filter = smoothstep(1.0, 18.0, pixel_footprint_m);
+        color = vec3(mix(max(foam_persistent, foam_current), foam_coverage, footprint_filter));
+    } else if (view == OCEAN_VIEW_FAR_FIELD) {
+        color = vec3(unresolved_lod_energy, material_distance,
+                     smoothstep(OCEAN_FAR_ANTI_REPEAT_START, OCEAN_FAR_ANTI_REPEAT_END, dist));
     }
 
     if (ocean.debug_options.w > 0.0) {

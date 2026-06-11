@@ -35,6 +35,10 @@ enum class OceanRenderView : std::uint32_t {
     TerrainShore = 19,
     TerrainSlope = 20,
     Curvature = 21,
+    Footprint = 22,
+    EnergyLod = 23,
+    FoamFiltered = 24,
+    FarField = 25,
 };
 
 enum class OceanFieldPrecision : std::uint32_t {
@@ -47,7 +51,7 @@ enum class OceanSurfaceMode : std::uint32_t {
     CurvedFar = 1,
 };
 
-inline constexpr std::array<OceanRenderView, 22> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 26> kOceanRenderViews{
     OceanRenderView::Final,        OceanRenderView::Height,       OceanRenderView::Displacement,
     OceanRenderView::Normal,       OceanRenderView::Foam,         OceanRenderView::FoamSource,
     OceanRenderView::FoamHistory,  OceanRenderView::FoamCore,     OceanRenderView::FoamCandidate,
@@ -55,7 +59,8 @@ inline constexpr std::array<OceanRenderView, 22> kOceanRenderViews{
     OceanRenderView::Reflection,   OceanRenderView::DirectLight,  OceanRenderView::AmbientLight,
     OceanRenderView::Exposure,     OceanRenderView::FoamRaw,      OceanRenderView::FoamLit,
     OceanRenderView::TerrainDepth, OceanRenderView::TerrainShore, OceanRenderView::TerrainSlope,
-    OceanRenderView::Curvature,
+    OceanRenderView::Curvature,    OceanRenderView::Footprint,    OceanRenderView::EnergyLod,
+    OceanRenderView::FoamFiltered, OceanRenderView::FarField,
 };
 inline constexpr std::array<OceanFieldPrecision, 2> kOceanFieldPrecisions{
     OceanFieldPrecision::Full,
@@ -312,6 +317,14 @@ struct OceanCascadeLodBand {
         return "terrain-slope";
     case OceanRenderView::Curvature:
         return "curvature";
+    case OceanRenderView::Footprint:
+        return "footprint";
+    case OceanRenderView::EnergyLod:
+        return "energy-lod";
+    case OceanRenderView::FoamFiltered:
+        return "foam-filtered";
+    case OceanRenderView::FarField:
+        return "far-field";
     }
     return "final";
 }
