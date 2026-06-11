@@ -484,8 +484,8 @@ int main() {
                      "ocean should keep statistical far-field normal opt-in by default");
         require_near(defaults.far_roughness_strength, 0.12F, 0.001F,
                      "ocean should default far-field roughness contribution conservatively");
-        require_near(defaults.far_glint_strength, 0.10F, 0.001F,
-                     "ocean should default far-field glint contribution conservatively");
+        require_near(defaults.far_glint_strength, 0.28F, 0.001F,
+                     "ocean should default far-field sun glitter contribution on");
         require_near(defaults.far_streak_scale_m, 900.0F, 0.001F,
                      "ocean should default broad far-field streak scale");
         require_near(defaults.far_detail_footprint_start_m, 0.9F, 0.001F,
@@ -494,6 +494,8 @@ int main() {
                      "ocean should default far-detail footprint fade end");
         require_near(defaults.far_reflection_variation_strength, 0.08F, 0.001F,
                      "ocean should default broad far reflection variation conservatively");
+        require_near(defaults.sun_glitter_width, 0.10F, 0.001F,
+                     "ocean should default reflected-sun glitter corridor width");
         require_near(defaults.far_whitecap_strength, 0.0F, 0.001F,
                      "ocean should keep filtered far whitecaps opt-in by default");
         require_near(defaults.far_whitecap_threshold, 0.055F, 0.001F,
@@ -1090,6 +1092,8 @@ int main() {
                          "app should pass far-detail footprint controls");
         require_contains(app_source, "ocean_config_.far_reflection_variation_strength",
                          "app should pass far reflection variation controls");
+        require_contains(app_source, "ocean_config_.sun_glitter_width",
+                         "app should pass sun glitter corridor controls");
         require_contains(app_source, "ocean_config_.spectral_domains_enabled",
                          "app should pass spectral domain bounds to spectrum generation");
         require_contains(app_source, "kCameraMaxDistance = 8000.0F",
@@ -1183,6 +1187,8 @@ int main() {
                          "UI should expose far-detail footprint fade controls");
         require_contains(ui_source, "&ui.config.far_reflection_variation_strength",
                          "UI should expose far reflection variation controls");
+        require_contains(ui_source, "&ui.config.sun_glitter_width",
+                         "UI should expose sun glitter corridor width");
         require_contains(ui_source, "&ui.config.self_shadow_distance",
                          "UI should expose wave self-shadow reach");
         require_contains(ui_source, "&ui.config.self_shadow_bias",
@@ -1257,6 +1263,8 @@ int main() {
                          "fragment shader should add broad far reflection variation");
         require_contains(fragment_shader, "float far_material_energy",
                          "fragment shader should hand filtered detail into material response");
+        require_contains(fragment_shader, "float ocean_far_sun_glitter",
+                         "fragment shader should add a reflected-sun far glitter corridor");
         require_contains(fragment_shader, "float ocean_surface_foam_strength",
                          "fragment shader should isolate surface foam contribution");
         require_contains(fragment_shader, "float ocean_atmosphere_reflection_strength",

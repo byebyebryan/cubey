@@ -155,10 +155,11 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_field_enabled = true;
         ui.config.far_normal_strength = 0.0F;
         ui.config.far_roughness_strength = 0.12F;
-        ui.config.far_glint_strength = 0.10F;
+        ui.config.far_glint_strength = 0.28F;
         ui.config.far_detail_footprint_start_m = 0.9F;
         ui.config.far_detail_footprint_end_m = 5.0F;
         ui.config.far_reflection_variation_strength = 0.08F;
+        ui.config.sun_glitter_width = 0.10F;
         ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 1.0F;
         ui.diagnostics.detail_anti_repeat_strength = 1.0F;
@@ -187,6 +188,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_detail_footprint_start_m = 0.9F;
         ui.config.far_detail_footprint_end_m = 5.0F;
         ui.config.far_reflection_variation_strength = 0.0F;
+        ui.config.sun_glitter_width = 0.10F;
         ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
@@ -215,6 +217,7 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_detail_footprint_start_m = 0.9F;
         ui.config.far_detail_footprint_end_m = 5.0F;
         ui.config.far_reflection_variation_strength = 0.0F;
+        ui.config.sun_glitter_width = 0.10F;
         ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
@@ -665,8 +668,11 @@ void draw_ocean_ui(OceanUiContext ui) {
             "Far roughness", &ui.config.far_roughness_strength, 0.0F, 0.5F, "%.2f",
             "Roughness increase driven by unresolved distant wave energy.");
         cubey::host::imgui_slider_float(
-            "Far glint", &ui.config.far_glint_strength, 0.0F, 0.6F, "%.2f",
-            "Subtle wind-aligned specular modulation for distant water.");
+            "Sun glitter", &ui.config.far_glint_strength, 0.0F, 0.8F, "%.2f",
+            "Far-field specular strength along the reflected sun corridor.");
+        cubey::host::imgui_slider_float(
+            "Glitter width", &ui.config.sun_glitter_width, 0.02F, 0.40F, "%.2f",
+            "Angular width of the far-field reflected-sun corridor.");
         cubey::host::imgui_slider_float("Far streak scale", &ui.config.far_streak_scale_m, 80.0F,
                                         2400.0F, "%.0f m",
                                         "World-space scale of low-contrast wind-aligned far-field streaks.");

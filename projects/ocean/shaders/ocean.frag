@@ -315,6 +315,10 @@ float ocean_far_reflection_variation_strength() {
     return max(ocean_features.far_detail_options.z, 0.0);
 }
 
+float ocean_sun_glitter_width() {
+    return clamp(ocean_features.far_detail_options.w, 0.001, 0.5);
+}
+
 vec2 ocean_far_wind_dir() {
     return normalize(vec2(cos(ocean_far_wind_angle()), sin(ocean_far_wind_angle())));
 }
@@ -525,6 +529,20 @@ float ocean_far_reflection_variation(vec2 position, float far_material_energy) {
                             vec2(-31.0, 23.0 - time * 0.00008));
     float signal = (broad * 0.65 + mid * 0.35) * 2.0 - 1.0;
     return clamp(1.0 + signal * strength, 0.65, 1.25);
+}
+
+float ocean_far_sun_glitter(vec3 reflection_dir, vec3 sun_dir, vec2 position,
+                            float far_material_energy) {
+    float strength = ocean_far_glint_strength() * far_material_energy;
+    if (strength <= 0.0) {
+        return 0.0;
+    }
+    float alignment = max(dot(normalize(reflection_dir), normalize(sun_dir)), 0.0);
+    float corridor = smoothstep(max(0.0, 1.0 - ocean_sun_glitter_width()), 1.0, alignment);
+    float light_gate = smoothstep(0.015, 0.35, ocean_primary_light_intensity());
+    float broad_variation = ocean_far_reflection_variation(position, far_material_energy);
+    float variation = mix(0.72, 1.22, clamp((broad_variation - 0.65) / 0.60, 0.0, 1.0));
+    return corridor * strength * light_gate * variation;
 }
 
 float cascade_tile_length(uint cascade) {
@@ -1245,7 +1263,6 @@ void main() {
     float far_field_energy =
         ocean_far_field_factor(dist) * active_far_field_lod_energy(dist, frag_mesh_cell_size);
     float far_material_energy = max(far_field_energy, far_detail_filter * surface_lod);
-    float far_streak_signal = ocean_far_streak_signal(frag_sample_position);
     normal = ocean_apply_far_field_normal(normal, frag_sample_position, far_field_energy);
     vec3 reflection_dir = reflect(-view_dir, normal);
     float ndotv = clamp(dot(normal, view_dir), 0.0, 1.0);
@@ -1294,10 +1311,9 @@ void main() {
     vec3 halfway = normalize(sun_dir + view_dir);
     float specular =
         pow(max(dot(normal, halfway), 0.0), mix(24.0, 110.0, 1.0 - roughness)) * fresnel * 1.6;
-    float far_glint = far_field_energy * ocean_far_glint_strength() *
-                      smoothstep(0.72, 0.995, max(dot(reflection_dir, sun_dir), 0.0)) *
-                      (0.72 + 0.28 * far_streak_signal);
-    specular += far_glint * fresnel * 0.75;
+    float far_glint =
+        ocean_far_sun_glitter(reflection_dir, sun_dir, frag_sample_position, far_material_energy);
+    specular += far_glint * fresnel;
     specular *= shadowed_direct_light * mix(1.0, 0.35, material_distance) *
                 (1.0 - foam_coverage * 0.82);
     vec3 water = mix(ambient + direct, reflection, clamp(fresnel, 0.0, 0.92));
