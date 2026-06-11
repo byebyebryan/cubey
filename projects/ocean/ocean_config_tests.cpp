@@ -488,6 +488,10 @@ int main() {
                      "ocean should default far-field glint contribution conservatively");
         require_near(defaults.far_streak_scale_m, 900.0F, 0.001F,
                      "ocean should default broad far-field streak scale");
+        require_near(defaults.far_detail_footprint_start_m, 0.9F, 0.001F,
+                     "ocean should default far-detail footprint fade start");
+        require_near(defaults.far_detail_footprint_end_m, 5.0F, 0.001F,
+                     "ocean should default far-detail footprint fade end");
         require_near(defaults.far_whitecap_strength, 0.0F, 0.001F,
                      "ocean should keep filtered far whitecaps opt-in by default");
         require_near(defaults.far_whitecap_threshold, 0.055F, 0.001F,
@@ -1080,6 +1084,8 @@ int main() {
                          "app should pass far-field streak scale");
         require_contains(app_source, "ocean_config_.far_whitecap_strength",
                          "app should pass filtered far-whitecap controls");
+        require_contains(app_source, "ocean_config_.far_detail_footprint_start_m",
+                         "app should pass far-detail footprint controls");
         require_contains(app_source, "ocean_config_.spectral_domains_enabled",
                          "app should pass spectral domain bounds to spectrum generation");
         require_contains(app_source, "kCameraMaxDistance = 8000.0F",
@@ -1169,6 +1175,8 @@ int main() {
                          "UI should expose far-field glint strength");
         require_contains(ui_source, "&ui.config.far_whitecap_strength",
                          "UI should expose filtered far-whitecap strength");
+        require_contains(ui_source, "&ui.config.far_detail_footprint_start_m",
+                         "UI should expose far-detail footprint fade controls");
         require_contains(ui_source, "&ui.config.self_shadow_distance",
                          "UI should expose wave self-shadow reach");
         require_contains(ui_source, "&ui.config.self_shadow_bias",
@@ -1237,6 +1245,8 @@ int main() {
                          "fragment shader should derive filtered far-whitecap coverage");
         require_contains(fragment_shader, "sample_filtered_foam_anti_repeat",
                          "fragment shader should anti-repeat filtered far-whitecap samples");
+        require_contains(fragment_shader, "float ocean_far_detail_filter",
+                         "fragment shader should filter far normal detail by footprint");
         require_contains(fragment_shader, "float ocean_surface_foam_strength",
                          "fragment shader should isolate surface foam contribution");
         require_contains(fragment_shader, "float ocean_atmosphere_reflection_strength",
@@ -1425,7 +1435,7 @@ int main() {
                          "surface descriptors should expose feature-isolation uniforms");
         require_contains(gpu_header_source, "OceanSurfaceFeatureUniforms",
                          "GPU resource header should define packed feature-isolation uniforms");
-        require_contains(gpu_header_source, "sizeof(float) * 44U",
+        require_contains(gpu_header_source, "sizeof(float) * 48U",
                          "GPU resource header should size expanded feature-isolation uniforms");
         require_contains(gpu_header_source, "self_shadow_options",
                          "GPU resource header should pack wave self-shadow controls");

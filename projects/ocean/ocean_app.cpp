@@ -1382,6 +1382,13 @@ class OceanApp {
                     ocean_config_.far_whitecap_variance_weight,
                     ocean_config_.far_whitecap_streak_strength,
                 },
+            .far_detail_options =
+                {
+                    ocean_config_.far_detail_footprint_start_m,
+                    ocean_config_.far_detail_footprint_end_m,
+                    0.0F,
+                    0.0F,
+                },
         };
     }
 

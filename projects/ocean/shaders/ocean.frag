@@ -37,6 +37,7 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 far_field_options;
     vec4 far_field_options2;
     vec4 far_foam_options;
+    vec4 far_detail_options;
 } ocean_features;
 layout(set = 0, binding = 20) uniform sampler2D foam_filtered_cascade0_level0_texture;
 layout(set = 0, binding = 21) uniform sampler2D foam_filtered_cascade0_level1_texture;
@@ -293,6 +294,21 @@ float ocean_far_field_factor(float dist) {
         return 0.0;
     }
     return smoothstep(ocean_far_field_start_m(), ocean_far_field_end_m(), dist);
+}
+
+float ocean_far_detail_footprint_start_m() {
+    return max(ocean_features.far_detail_options.x, 0.001);
+}
+
+float ocean_far_detail_footprint_end_m() {
+    return max(ocean_features.far_detail_options.y, ocean_far_detail_footprint_start_m() + 0.001);
+}
+
+float ocean_far_detail_filter(float dist, float footprint_m) {
+    float footprint_factor =
+        smoothstep(ocean_far_detail_footprint_start_m(), ocean_far_detail_footprint_end_m(),
+                   footprint_m);
+    return ocean_far_field_factor(dist) * footprint_factor;
 }
 
 vec2 ocean_far_wind_dir() {
@@ -931,7 +947,7 @@ vec4 sample_normal_foam_gradient(uint cascade, vec2 position, float tile_length,
     return vec4(gradient, foam);
 }
 
-OceanFoamData ocean_foam_data(float dist) {
+OceanFoamData ocean_foam_data(float dist, float footprint_m) {
     OceanFoamData data;
     data.gradient = vec2(0.0);
     data.total = vec2(0.0);
@@ -971,6 +987,7 @@ OceanFoamData ocean_foam_data(float dist) {
     data.gradient *=
         mix(0.015, ocean.foam_color.w, exp(-dist * 0.0175 /
                                            ocean_normal_fade_distance_scale()));
+    data.gradient *= mix(1.0, 0.08, ocean_far_detail_filter(dist, footprint_m));
     return data;
 }
 
@@ -1193,17 +1210,18 @@ void main() {
     uint view = uint(ocean.debug_options.x + 0.5);
     vec3 camera_position = ocean.camera_time.xyz;
     float dist = length(frag_sample_position - camera_position.xz);
-    OceanFoamData foam_data = ocean_foam_data(dist);
-    vec3 normal = normalize(frag_surface_up + vec3(-foam_data.gradient.x, 0.0,
-                                                   -foam_data.gradient.y));
-    float foam_persistent = foam_data.total.x;
-    float foam_current = foam_data.total.y;
-
     vec3 water_color = cubey_srgb_to_linear(ocean.water_color.rgb);
     vec3 foam_color = cubey_srgb_to_linear(ocean.foam_color.rgb);
     vec3 view_dir = normalize(camera_position - frag_world_position);
     vec3 sun_dir = ocean_primary_light_direction();
     float pixel_footprint_m = ocean_pixel_footprint_m();
+    float far_detail_filter = ocean_far_detail_filter(dist, pixel_footprint_m);
+    OceanFoamData foam_data = ocean_foam_data(dist, pixel_footprint_m);
+    vec3 normal = normalize(frag_surface_up + vec3(-foam_data.gradient.x, 0.0,
+                                                   -foam_data.gradient.y));
+    float foam_persistent = foam_data.total.x;
+    float foam_current = foam_data.total.y;
+
     float displacement_lod = active_displacement_lod_weight(dist, frag_mesh_cell_size);
     float surface_lod = active_surface_lod_weight(dist);
     float unresolved_lod_energy = active_unresolved_lod_energy(dist, frag_mesh_cell_size);
@@ -1327,7 +1345,7 @@ void main() {
         color = vec3(filtered.x, filtered.y, max(filtered.x, filtered.y));
     } else if (view == OCEAN_VIEW_FAR_FIELD) {
         color = vec3(far_field_energy, far_whitecap_coverage,
-                     smoothstep(OCEAN_FAR_ANTI_REPEAT_START, OCEAN_FAR_ANTI_REPEAT_END, dist));
+                     far_detail_filter);
     }
 
     if (ocean.debug_options.w > 0.0) {

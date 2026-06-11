@@ -156,6 +156,8 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_normal_strength = 0.0F;
         ui.config.far_roughness_strength = 0.12F;
         ui.config.far_glint_strength = 0.10F;
+        ui.config.far_detail_footprint_start_m = 0.9F;
+        ui.config.far_detail_footprint_end_m = 5.0F;
         ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 1.0F;
         ui.diagnostics.detail_anti_repeat_strength = 1.0F;
@@ -181,6 +183,8 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_normal_strength = 0.0F;
         ui.config.far_roughness_strength = 0.0F;
         ui.config.far_glint_strength = 0.0F;
+        ui.config.far_detail_footprint_start_m = 0.9F;
+        ui.config.far_detail_footprint_end_m = 5.0F;
         ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
@@ -206,6 +210,8 @@ void apply_feature_preset(OceanUiContext& ui, const char* preset) {
         ui.config.far_normal_strength = 0.0F;
         ui.config.far_roughness_strength = 0.0F;
         ui.config.far_glint_strength = 0.0F;
+        ui.config.far_detail_footprint_start_m = 0.9F;
+        ui.config.far_detail_footprint_end_m = 5.0F;
         ui.config.far_whitecap_strength = 0.0F;
         ui.diagnostics.shape_anti_repeat_strength = 0.0F;
         ui.diagnostics.detail_anti_repeat_strength = 0.0F;
@@ -661,6 +667,15 @@ void draw_ocean_ui(OceanUiContext ui) {
         cubey::host::imgui_slider_float("Far streak scale", &ui.config.far_streak_scale_m, 80.0F,
                                         2400.0F, "%.0f m",
                                         "World-space scale of low-contrast wind-aligned far-field streaks.");
+        cubey::host::imgui_slider_float(
+            "Far detail start", &ui.config.far_detail_footprint_start_m, 0.1F, 6.0F, "%.2f m",
+            "Pixel footprint where distant normal detail starts fading into material response.");
+        cubey::host::imgui_slider_float(
+            "Far detail end", &ui.config.far_detail_footprint_end_m, 0.2F, 16.0F, "%.2f m",
+            "Pixel footprint where distant normal detail reaches its minimum residual strength.");
+        if (ui.config.far_detail_footprint_end_m <= ui.config.far_detail_footprint_start_m) {
+            ui.config.far_detail_footprint_end_m = ui.config.far_detail_footprint_start_m + 0.01F;
+        }
         cubey::host::imgui_slider_float(
             "Far whitecaps", &ui.config.far_whitecap_strength, 0.0F, 0.6F, "%.2f",
             "Experimental filtered whitecap coverage added only in far-field shading; off by default because it can reveal FFT tiling.");
