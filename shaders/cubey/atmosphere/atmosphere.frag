@@ -727,25 +727,6 @@ vec3 render_moon_surface_debug() {
     return vec3(albedo * relief_preview * limb);
 }
 
-CubeyAtmosphereRaySegment classify_atmosphere_sky_background_ray(CubeyAtmosphereMedium medium,
-                                                                 vec3 ray_origin,
-                                                                 vec3 ray_direction) {
-    float camera_radius = length(ray_origin - medium.planet_center);
-    bool camera_inside_atmosphere = camera_radius < medium.top_radius;
-    vec2 atmosphere_hit = ray_sphere_intersection(ray_origin, ray_direction,
-                                                  medium.planet_center, medium.top_radius);
-    if (!camera_inside_atmosphere && atmosphere_hit.y <= 0.0) {
-        return CubeyAtmosphereRaySegment(0.0, 0.0, -1.0, false, false,
-                                         camera_inside_atmosphere);
-    }
-
-    float ray_start = camera_inside_atmosphere ? 0.0 : max(atmosphere_hit.x, 0.0);
-    float ray_end = atmosphere_hit.y;
-    bool hit_atmosphere = ray_end > ray_start;
-    return CubeyAtmosphereRaySegment(ray_start, ray_end, -1.0, hit_atmosphere, false,
-                                     camera_inside_atmosphere);
-}
-
 void main() {
     float tan_half_fovy = atmosphere.camera_up_tan_half_fovy.w;
     vec3 ray_direction = normalize(
@@ -779,7 +760,7 @@ void main() {
     bool ignore_ground_occlusion = atmosphere.render_options.x >= 1.5;
     CubeyAtmosphereRaySegment segment =
         ignore_ground_occlusion
-            ? classify_atmosphere_sky_background_ray(medium, ray_origin, ray_direction)
+            ? cubey_atmosphere_classify_sky_background_ray(medium, ray_origin, ray_direction, -1.0)
             : cubey_atmosphere_classify_ray(medium, ray_origin, ray_direction, -1.0);
     if (!segment.hit_atmosphere) {
         vec3 space_color = (render_sun_disk ? sun_disk_luminance(ray_origin, ray_direction,

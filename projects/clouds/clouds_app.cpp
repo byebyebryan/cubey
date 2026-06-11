@@ -4,7 +4,9 @@
 
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/math.h>
+#include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
+#include <cubey/host/performance_ui.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/render/atmosphere_environment.h>
@@ -199,10 +201,17 @@ class CloudsApp {
         };
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
                                   const FrameTiming& timing) { update_windowed(context, timing); };
-        callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) { draw_ui(); };
+        callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) {
+            draw_ui(context);
+        };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext&,
                                         const cubey::host::WindowedRenderFrame& frame) {
             record_windowed_frame(frame.command_buffer, frame.color_target);
+        };
+        callbacks.frame_stats_sample =
+            [this](cubey::host::WindowedAppContext& context,
+                   const FrameTiming& timing) -> std::optional<cubey::host::FrameStatsSample> {
+            return record_frame_stats(context.swapchain().extent(), timing);
         };
         callbacks.shutdown = [this](cubey::host::WindowedAppContext&) {
             destroy_swapchain_resources();
@@ -275,7 +284,7 @@ class CloudsApp {
         validate_clouds_config(config_);
     }
 
-    void draw_ui() {
+    void draw_ui(cubey::host::WindowedAppContext& context) {
         if (!ImGui::Begin("Clouds")) {
             ImGui::End();
             return;
@@ -310,8 +319,52 @@ class CloudsApp {
                            "%.2f");
         const auto solar = clouds_solar_position(config_);
         ImGui::Text("Sun: %.1f elev / %.1f az", solar.elevation_degrees, solar.azimuth_degrees);
+        const CloudsQualityBudget budget = clouds_quality_budget(config_.quality);
+        const std::array<cubey::host::PerformanceCounter, 5> performance_counters{
+            cubey::host::PerformanceCounter{"View steps",
+                                            static_cast<std::uint64_t>(budget.view_steps), nullptr},
+            cubey::host::PerformanceCounter{"Light steps",
+                                            static_cast<std::uint64_t>(budget.light_steps),
+                                            nullptr},
+            cubey::host::PerformanceCounter{
+                "Max samples / px",
+                static_cast<std::uint64_t>(budget.view_steps * (1 + budget.light_steps)),
+                nullptr},
+            cubey::host::PerformanceCounter{
+                "Quality scale", static_cast<std::uint64_t>(budget.resolution_scale * 100.0F),
+                "%"},
+            cubey::host::PerformanceCounter{"Fullscreen tris", 1, nullptr},
+        };
+        cubey::host::draw_performance_ui({
+            .frame_stats = latest_frame_stats_,
+            .latest_fps = latest_fps_,
+            .latest_frame_ms = latest_frame_ms_,
+            .process = process_stats_.sample(),
+            .device_memory_budget = context.device().device_memory_budget(),
+            .counters = performance_counters,
+            .config = {.default_open = true},
+        });
         ImGui::Text("Keys: D debug, Space play, R reset");
         ImGui::End();
+    }
+
+    [[nodiscard]] std::optional<cubey::host::FrameStatsSample>
+    record_frame_stats(VkExtent2D extent, const FrameTiming& timing) {
+        latest_frame_ms_ = timing.delta_seconds * 1000.0;
+        latest_fps_ = timing.delta_seconds > 0.0 ? 1.0 / timing.delta_seconds : 0.0;
+
+        const cubey::host::FrameStatsSample sample{
+            .delta_seconds = timing.delta_seconds,
+            .width = extent.width,
+            .height = extent.height,
+            .triangles = 1,
+        };
+        if (std::optional<cubey::host::FrameStatsSnapshot> stats =
+                ui_frame_stats_.record_frame(sample);
+            stats.has_value()) {
+            latest_frame_stats_ = stats.value();
+        }
+        return sample;
     }
 
     void set_camera_mode(CloudsCameraMode mode) {
@@ -389,6 +442,11 @@ class CloudsApp {
     float elapsed_seconds_ = 0.0F;
     float yaw_ = 0.0F;
     float pitch_ = 0.0F;
+    cubey::host::FrameStats ui_frame_stats_;
+    std::optional<cubey::host::FrameStatsSnapshot> latest_frame_stats_;
+    double latest_fps_ = 0.0;
+    double latest_frame_ms_ = 0.0;
+    cubey::host::ProcessResourceStatsSampler process_stats_;
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
 };
 

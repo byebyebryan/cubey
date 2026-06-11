@@ -242,6 +242,28 @@ CubeyAtmosphereRaySegment cubey_atmosphere_classify_ray(CubeyAtmosphereMedium me
                                      camera_inside_atmosphere);
 }
 
+CubeyAtmosphereRaySegment cubey_atmosphere_classify_sky_background_ray(
+    CubeyAtmosphereMedium medium, vec3 origin, vec3 direction, float max_distance) {
+    float camera_radius = length(origin - medium.planet_center);
+    bool camera_inside_atmosphere = camera_radius < medium.top_radius;
+    vec2 atmosphere_hit = cubey_atmosphere_ray_sphere_intersection(
+        origin, direction, medium.planet_center, medium.top_radius);
+    if (!camera_inside_atmosphere && atmosphere_hit.y <= 0.0) {
+        return CubeyAtmosphereRaySegment(0.0, 0.0, -1.0, false, false,
+                                         camera_inside_atmosphere);
+    }
+
+    float ray_start = camera_inside_atmosphere ? 0.0 : max(atmosphere_hit.x, 0.0);
+    float ray_end = atmosphere_hit.y;
+    if (max_distance >= 0.0) {
+        ray_end = min(ray_end, max_distance);
+    }
+
+    bool hit_atmosphere = ray_end > ray_start;
+    return CubeyAtmosphereRaySegment(ray_start, ray_end, -1.0, hit_atmosphere, false,
+                                     camera_inside_atmosphere);
+}
+
 CubeyAtmosphereSample cubey_atmosphere_integrate_ray(CubeyAtmosphereMedium medium, vec3 origin,
                                                      vec3 direction, float ray_start,
                                                      float ray_end) {

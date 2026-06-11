@@ -110,28 +110,9 @@ CubeyAtmosphereMedium atmosphere_medium() {
         0.022);
 }
 
-vec3 ground_color(vec3 position, vec3 direction) {
-    vec3 up = normalize(position - planet_center());
-    float ocean = smoothstep(-0.15, 0.25, fbm(up * 9.0 + vec3(4.0, 1.0, 8.0)));
-    vec3 ocean_color = vec3(0.018, 0.060, 0.115);
-    vec3 land_color = vec3(0.145, 0.130, 0.090);
-    float ndotl = max(dot(up, normalize(params.sun_direction_intensity.xyz)), 0.0);
-    vec3 base = mix(ocean_color, land_color, ocean);
-    vec3 ambient = vec3(0.018, 0.022, 0.030);
-    return base * (ambient + vec3(0.75, 0.70, 0.62) * ndotl * params.sun_direction_intensity.w);
-}
-
 vec3 sky_color(vec3 origin, vec3 direction) {
     CubeyAtmosphereMedium medium = atmosphere_medium();
-    CubeyAtmosphereRaySegment segment = cubey_atmosphere_classify_ray(medium, origin, direction, -1.0);
-    CubeyAtmosphereSample sky_sample =
-        cubey_atmosphere_integrate_view(medium, origin, direction, -1.0);
-    vec3 color = sky_sample.color;
-    if (segment.hit_ground && segment.ground_t > 0.0) {
-        color += sky_sample.transmittance *
-                 ground_color(origin + direction * segment.ground_t, direction);
-    }
-    return color;
+    return cubey_atmosphere_integrate_view(medium, origin, direction, -1.0).color;
 }
 
 float cloud_height_profile(float altitude_km) {

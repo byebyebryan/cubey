@@ -865,6 +865,8 @@ int main() {
                      "shared atmosphere include should define Rayleigh phase");
     require_contains(shared_helper_source, "cubey_atmosphere_mie_phase",
                      "shared atmosphere include should define Mie phase");
+    require_contains(shared_helper_source, "cubey_atmosphere_classify_sky_background_ray",
+                     "shared atmosphere include should define sky-background ray classification");
     require_contains(shader_source, "ray_sphere_intersection",
                      "atmosphere shader should intersect atmosphere and ground spheres");
     require_contains(shared_helper_source, "cubey_atmosphere_ozone_density",
