@@ -71,10 +71,12 @@ vec3 planet_surface_albedo(vec3 position) {
 
 float surface_cloud_shadow(vec3 surface_position, vec3 sun_dir) {
     float shadow_strength = max(params.render_options.w, 0.0);
-    if (shadow_strength <= 0.001) {
+    vec3 center = planet_center();
+    vec3 up = normalize(surface_position - center);
+    float sun_visibility = smoothstep(-0.08, 0.04, dot(up, sun_dir));
+    if (shadow_strength <= 0.001 || sun_visibility <= 0.001) {
         return 1.0;
     }
-    vec3 center = planet_center();
     vec3 origin = surface_position + normalize(surface_position - center) * 0.02;
     float top_radius = params.camera_position_radius.w + params.cloud_shell.y;
     vec2 top_hit = ray_sphere(origin, sun_dir, center, top_radius);
@@ -106,7 +108,7 @@ vec3 planet_surface_radiance(vec3 position, float cloud_shadow) {
     vec3 albedo = planet_surface_albedo(position);
     vec3 direct = vec3(1.00, 0.93, 0.80) * ndotl * sun_visibility * light_intensity *
                   cloud_shadow;
-    vec3 ambient = vec3(0.014, 0.019, 0.030) * mix(0.30, 1.0, light_intensity);
+    vec3 ambient = vec3(0.014, 0.019, 0.030) * mix(0.10, 1.0, sun_visibility);
     return albedo * (ambient + direct);
 }
 

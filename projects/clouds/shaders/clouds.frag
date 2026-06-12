@@ -37,6 +37,30 @@ layout(location = 0) out vec4 out_color;
 
 #include "clouds_model.glsl"
 
+float cloud_horizon_visibility(vec3 position_km, vec3 sun_dir, float penumbra_scale) {
+    vec3 center = planet_center();
+    float ground_radius = params.camera_position_radius.w;
+    vec3 to_sample = position_km - center;
+    float sample_radius = max(length(to_sample), ground_radius + 0.001);
+    vec3 local_up = to_sample / sample_radius;
+    float horizon_dip = sqrt(max(1.0 - (ground_radius * ground_radius) /
+                                           (sample_radius * sample_radius),
+                                 0.0));
+    float horizon_cos = -horizon_dip;
+    float penumbra = mix(0.015, 0.045, smoothstep(0.0, 0.035, horizon_dip));
+    penumbra *= penumbra_scale;
+    return smoothstep(horizon_cos - penumbra, horizon_cos + penumbra,
+                      dot(local_up, sun_dir));
+}
+
+float cloud_sun_visibility(vec3 position_km, vec3 sun_dir) {
+    return cloud_horizon_visibility(position_km, sun_dir, 1.0);
+}
+
+float cloud_twilight_visibility(vec3 position_km, vec3 sun_dir) {
+    return cloud_horizon_visibility(position_km, sun_dir, 3.2);
+}
+
 float light_transmittance(vec3 position_km, vec3 sun_dir, int light_steps) {
     vec3 center = planet_center();
     float top_radius = params.camera_position_radius.w + params.cloud_shell.y;
@@ -154,7 +178,8 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
             continue;
         }
 
-        float shadow = light_transmittance(p, sun_dir, light_steps);
+        float sun_visibility = cloud_sun_visibility(p, sun_dir);
+        float shadow = sun_visibility > 0.001 ? light_transmittance(p, sun_dir, light_steps) : 0.0;
         float powder = 1.0 - exp(-density * step_len * 0.75);
         float view_sun = max(dot(direction, sun_dir), 0.0);
         float silver_edge = pow(view_sun, cloud_style_value(5.0, 4.5, 3.6, 5.5, 7.5));
@@ -166,7 +191,7 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
             shadow * interior * phase *
             (cloud_style_value(0.62, 0.65, 0.52, 0.58, 0.46) +
              powder * cloud_style_value(1.18, 1.20, 0.82, 1.35, 0.55)) *
-            params.sun_direction_intensity.w;
+            params.sun_direction_intensity.w * sun_visibility;
         vec3 local_up = normalize(p - center);
         float altitude = length(p - center) - params.camera_position_radius.w;
         float height01 = clamp((altitude - params.cloud_shell.x) /
@@ -176,6 +201,11 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
                         cloud_style_value(0.30, 0.31, 0.24, 0.22, 0.26) *
                             smoothstep(-0.2, 0.8, dot(local_up, vec3(0.0, 1.0, 0.0)));
         ambient *= mix(cloud_style_value(0.82, 0.78, 0.92, 0.58, 0.96), 1.0, shadow);
+        float twilight_visibility = cloud_twilight_visibility(p, sun_dir);
+        float ambient_energy = smoothstep(0.01, 0.55,
+                                          params.sun_direction_intensity.w * twilight_visibility);
+        ambient *= mix(cloud_style_value(0.018, 0.018, 0.024, 0.012, 0.030), 1.0,
+                       ambient_energy);
         float top_lift = smoothstep(0.20, 0.85, height01);
         vec3 direct_tint = mix(vec3(1.12, 0.96, 0.78), vec3(1.06, 1.04, 0.98),
                                params.sun_direction_intensity.w);

@@ -261,8 +261,7 @@ clouds_solar_position(const CloudsConfig& config) {
     const cubey::math::Vec3 sun_direction =
         cubey::render::atmosphere_environment_direction_from_alt_az(
             solar_position.elevation_degrees, solar_position.azimuth_degrees);
-    const float sun_intensity = std::clamp((solar_position.elevation_degrees + 8.0F) / 28.0F,
-                                           0.04F, 1.0F);
+    constexpr float kSolarRadianceScale = 1.0F;
 
     return {
         .camera_right_aspect = {basis.right.x, basis.right.y, basis.right.z, aspect},
@@ -276,7 +275,7 @@ clouds_solar_position(const CloudsConfig& config) {
         .weather = {config.coverage, config.density, config.weather_scale_km,
                     elapsed_seconds * config.wind_speed_mps * 0.001F},
         .sun_direction_intensity = {sun_direction.x, sun_direction.y, sun_direction.z,
-                                    sun_intensity},
+                                    kSolarRadianceScale},
         .render_options = {static_cast<float>(static_cast<std::uint32_t>(config.debug_view)),
                            static_cast<float>(budget.view_steps),
                            static_cast<float>(budget.light_steps), config.shadow_strength},
