@@ -158,11 +158,16 @@ BackgroundSample sample_background(vec3 origin, vec3 direction) {
     result.ray_fraction = 0.0;
 
     CubeyAtmosphereMedium medium = atmosphere_medium();
-    CubeyAtmosphereRaySegment segment =
+    CubeyAtmosphereRaySegment ground_segment =
         cubey_atmosphere_classify_ray(medium, origin, direction, -1.0);
-    if (segment.hit_atmosphere) {
+    CubeyAtmosphereRaySegment sky_segment =
+        ground_segment.hit_ground
+            ? ground_segment
+            : cubey_atmosphere_classify_sky_background_ray(medium, origin, direction, -1.0);
+    if (sky_segment.hit_atmosphere) {
         CubeyAtmosphereSample atmosphere =
-            cubey_atmosphere_integrate_ray(medium, origin, direction, segment.start, segment.end);
+            cubey_atmosphere_integrate_ray(medium, origin, direction, sky_segment.start,
+                                           sky_segment.end);
         result.atmosphere = atmosphere.color;
         result.transmittance = atmosphere.transmittance;
         result.atmosphere_hit = 1.0;
@@ -170,9 +175,9 @@ BackgroundSample sample_background(vec3 origin, vec3 direction) {
                                     0.0, 1.0);
     }
     result.color = result.atmosphere;
-    if (segment.hit_ground) {
+    if (ground_segment.hit_ground) {
         result.ground_hit = 1.0;
-        vec3 surface_position = origin + direction * segment.ground_t;
+        vec3 surface_position = origin + direction * ground_segment.ground_t;
         result.ground = planet_surface_radiance(surface_position);
         result.color += result.transmittance * result.ground;
     }
