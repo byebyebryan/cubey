@@ -92,15 +92,18 @@ std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_CLOUDS_SHADER_DIR) / filename;
 }
 
-[[nodiscard]] cubey::render::MaterialPassInfo clouds_pass_info() {
-    const VkPushConstantRange push_constant_range{
+[[nodiscard]] VkPushConstantRange clouds_push_constant_range() {
+    return {
         .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
         .size = sizeof(CloudsPushConstants),
     };
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo clouds_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "clouds.fullscreen",
-        .push_constants = {push_constant_range},
+        .push_constants = {clouds_push_constant_range()},
     };
 }
 
@@ -108,6 +111,7 @@ std::filesystem::path shader_path(const char* filename) {
     return cubey::render::MaterialPassInfo{
         .label = "clouds.composite",
         .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0)},
+        .push_constants = {clouds_push_constant_range()},
     };
 }
 
@@ -647,16 +651,19 @@ class CloudsApp {
     void record_composite_draw(const cubey::vulkan::CommandRecorder& recorder,
                                const cubey::render::ColorTargetView& target,
                                cubey::render::FrameSlot frame_slot) const {
+        const CloudsPushConstants constants =
+            clouds_push_constants(config_, target.extent, yaw_, pitch_, elapsed_seconds_);
         cubey::render::record_render_target_pass(
             recorder, cubey::render::render_target_view(target),
             cubey::render::RenderClearValues{
                 .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
             },
-            [this, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            [this, frame_slot, constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 cubey::render::record_fullscreen_pipeline_draw(
                     pass_recorder,
                     {.pipeline = &composite_pipeline_resource(),
-                     .descriptor_set = composite_material().set(frame_slot)});
+                     .descriptor_set = composite_material().set(frame_slot)},
+                    VK_SHADER_STAGE_FRAGMENT_BIT, constants);
             });
     }
 
@@ -670,7 +677,7 @@ class CloudsApp {
         const VkExtent2D cloud_extent =
             clouds_scaled_extent(target.extent, clouds_quality_budget(config_.quality));
         const cubey::render::RenderGraphTextureHandle cloud_color =
-            graph.create_texture(clouds_color_texture_desc("cloud color", cloud_extent,
+            graph.create_texture(clouds_color_texture_desc("cloud product", cloud_extent,
                                                            kCloudsSceneColorFormat));
 
         graph.add_pass("cloud raymarch", cubey::render::RenderGraphQueueDomain::Graphics)

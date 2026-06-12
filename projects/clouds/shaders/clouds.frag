@@ -115,75 +115,6 @@ CubeyAtmosphereMedium atmosphere_medium() {
         0.022);
 }
 
-vec3 planet_surface_albedo(vec3 position) {
-    vec3 up = normalize(position - planet_center());
-    float continents = fbm(up * 4.0 + vec3(3.0, 11.0, 19.0));
-    float shoreline = smoothstep(0.45, 0.58, continents);
-    float lowlands = fbm(up.yzx * 13.0 + vec3(17.0, 2.0, 5.0));
-    vec3 ocean = mix(vec3(0.012, 0.043, 0.083), vec3(0.028, 0.085, 0.135), lowlands);
-    vec3 land = mix(vec3(0.115, 0.095, 0.060), vec3(0.210, 0.185, 0.120), lowlands);
-    return mix(ocean, land, shoreline);
-}
-
-vec3 planet_surface_radiance(vec3 position) {
-    vec3 up = normalize(position - planet_center());
-    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
-    float sun_visibility = smoothstep(-0.08, 0.04, dot(up, sun_dir));
-    float ndotl = max(dot(up, sun_dir), 0.0);
-    float light_intensity = params.sun_direction_intensity.w;
-    vec3 albedo = planet_surface_albedo(position);
-    vec3 direct = vec3(1.00, 0.93, 0.80) * ndotl * sun_visibility * light_intensity;
-    vec3 ambient = vec3(0.014, 0.019, 0.030) * mix(0.30, 1.0, light_intensity);
-    return albedo * (ambient + direct);
-}
-
-struct BackgroundSample {
-    vec3 color;
-    vec3 atmosphere;
-    vec3 ground;
-    vec3 transmittance;
-    float ground_hit;
-    float atmosphere_hit;
-    float ray_fraction;
-};
-
-BackgroundSample sample_background(vec3 origin, vec3 direction) {
-    BackgroundSample result;
-    result.color = vec3(0.0);
-    result.atmosphere = vec3(0.0);
-    result.ground = vec3(0.0);
-    result.transmittance = vec3(1.0);
-    result.ground_hit = 0.0;
-    result.atmosphere_hit = 0.0;
-    result.ray_fraction = 0.0;
-
-    CubeyAtmosphereMedium medium = atmosphere_medium();
-    CubeyAtmosphereRaySegment ground_segment =
-        cubey_atmosphere_classify_ray(medium, origin, direction, -1.0);
-    CubeyAtmosphereRaySegment sky_segment =
-        ground_segment.hit_ground
-            ? ground_segment
-            : cubey_atmosphere_classify_sky_background_ray(medium, origin, direction, -1.0);
-    if (sky_segment.hit_atmosphere) {
-        CubeyAtmosphereSample atmosphere =
-            cubey_atmosphere_integrate_ray(medium, origin, direction, sky_segment.start,
-                                           sky_segment.end);
-        result.atmosphere = atmosphere.color;
-        result.transmittance = atmosphere.transmittance;
-        result.atmosphere_hit = 1.0;
-        result.ray_fraction = clamp(atmosphere.ray_length / max(medium.top_radius * 0.08, 1.0),
-                                    0.0, 1.0);
-    }
-    result.color = result.atmosphere;
-    if (ground_segment.hit_ground) {
-        result.ground_hit = 1.0;
-        vec3 surface_position = origin + direction * ground_segment.ground_t;
-        result.ground = planet_surface_radiance(surface_position);
-        result.color += result.transmittance * result.ground;
-    }
-    return result;
-}
-
 float cloud_height_profile(float altitude_km) {
     float bottom = params.cloud_shell.x;
     float top = params.cloud_shell.y;
@@ -391,36 +322,35 @@ void main() {
     int view_steps = clamp(int(params.render_options.y + 0.5), 1, CLOUDS_MAX_VIEW_STEPS);
     int light_steps = clamp(int(params.render_options.z + 0.5), 1, CLOUDS_MAX_LIGHT_STEPS);
 
-    BackgroundSample background = sample_background(origin, direction);
     CloudSample clouds = march_clouds(origin, direction, view_steps, light_steps);
-    vec3 final_color = background.color * clouds.transmittance + clouds.color;
+    vec3 output_color = clouds.color;
+    float output_alpha = clouds.transmittance;
 
     if (debug_view == CLOUDS_VIEW_WEATHER) {
-        final_color = vec3(clouds.mean_weather);
+        output_color = vec3(clouds.mean_weather);
+        output_alpha = 1.0;
     } else if (debug_view == CLOUDS_VIEW_DENSITY) {
-        final_color = vec3(clouds.mean_density * 1.6);
+        output_color = vec3(clouds.mean_density * 1.6);
+        output_alpha = 1.0;
     } else if (debug_view == CLOUDS_VIEW_TRANSMITTANCE) {
-        final_color = vec3(clouds.transmittance);
+        output_color = vec3(clouds.transmittance);
+        output_alpha = 1.0;
     } else if (debug_view == CLOUDS_VIEW_LIGHTING) {
-        final_color = vec3(clouds.mean_light);
+        output_color = vec3(clouds.mean_light);
+        output_alpha = 1.0;
     } else if (debug_view == CLOUDS_VIEW_SHADOW) {
-        final_color = vec3(clouds.mean_shadow);
+        output_color = vec3(clouds.mean_shadow);
+        output_alpha = 1.0;
     } else if (debug_view == CLOUDS_VIEW_STEPS) {
-        final_color = vec3(clouds.step_fraction, 1.0 - clouds.step_fraction, 0.15);
-    } else if (debug_view == CLOUDS_VIEW_BACKGROUND) {
-        final_color = background.color;
-    } else if (debug_view == CLOUDS_VIEW_ATMOSPHERE) {
-        final_color = background.atmosphere;
-    } else if (debug_view == CLOUDS_VIEW_GROUND) {
-        final_color = background.ground;
-    } else if (debug_view == CLOUDS_VIEW_GROUND_HIT) {
-        final_color = vec3(background.ground_hit, background.atmosphere_hit,
-                           background.ray_fraction);
+        output_color = vec3(clouds.step_fraction, 1.0 - clouds.step_fraction, 0.15);
+        output_alpha = 1.0;
     } else if (debug_view == CLOUDS_VIEW_CLOUD_ALPHA) {
-        final_color = vec3(1.0 - clouds.transmittance);
+        output_color = vec3(1.0 - clouds.transmittance);
+        output_alpha = 1.0;
     } else if (debug_view == CLOUDS_VIEW_SHELL) {
-        final_color = vec3(clouds.shell_hit, clouds.hit_ground, clouds.shell_span);
+        output_color = vec3(clouds.shell_hit, clouds.hit_ground, clouds.shell_span);
+        output_alpha = 1.0;
     }
 
-    out_color = vec4(final_color, 1.0);
+    out_color = vec4(output_color, output_alpha);
 }
