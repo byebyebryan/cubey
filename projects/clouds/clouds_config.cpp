@@ -197,6 +197,9 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "shell") {
         return CloudsDebugView::Shell;
     }
+    if (value == "surface-shadow") {
+        return CloudsDebugView::SurfaceShadow;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -228,6 +231,8 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "cloud-alpha";
     case CloudsDebugView::Shell:
         return "shell";
+    case CloudsDebugView::SurfaceShadow:
+        return "surface-shadow";
     }
     return "final";
 }
@@ -313,6 +318,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (run_config_float_is_set(run_config.clouds.wind_speed_mps)) {
         config.wind_speed_mps = run_config.clouds.wind_speed_mps;
     }
+    if (run_config_float_is_set(run_config.clouds.shadow_strength)) {
+        config.shadow_strength = run_config.clouds.shadow_strength;
+    }
 
     if (run_config.atmosphere.time_of_day_mode == "manual") {
         config.time.solar_clock = false;
@@ -392,6 +400,10 @@ void validate_clouds_config(const CloudsConfig& config) {
     }
     if (!finite_nonnegative(config.wind_speed_mps)) {
         throw std::runtime_error("cloud wind speed must be finite and nonnegative");
+    }
+    if (!std::isfinite(config.shadow_strength) || config.shadow_strength < 0.0F ||
+        config.shadow_strength > 2.0F) {
+        throw std::runtime_error("cloud shadow strength must be finite and in [0, 2]");
     }
 }
 

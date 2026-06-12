@@ -51,11 +51,18 @@ void test_names_and_next_debug_view() {
             "cloud composition debug view should advance");
     require(cubey::projects::clouds::next_clouds_debug_view(
                 cubey::projects::clouds::CloudsDebugView::Shell) ==
+                cubey::projects::clouds::CloudsDebugView::SurfaceShadow,
+            "cloud debug view should include surface shadow");
+    require(cubey::projects::clouds::next_clouds_debug_view(
+                cubey::projects::clouds::CloudsDebugView::SurfaceShadow) ==
                 cubey::projects::clouds::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::clouds::clouds_debug_view_from_string("cloud-alpha") ==
                 cubey::projects::clouds::CloudsDebugView::CloudAlpha,
             "cloud alpha debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("surface-shadow") ==
+                cubey::projects::clouds::CloudsDebugView::SurfaceShadow,
+            "cloud surface shadow debug view should parse");
 }
 
 void test_run_config_mapping() {
@@ -71,6 +78,7 @@ void test_run_config_mapping() {
     run_config.clouds.density = 1.25F;
     run_config.clouds.weather_scale_km = 240.0F;
     run_config.clouds.wind_speed_mps = 35.0F;
+    run_config.clouds.shadow_strength = 0.8F;
     run_config.atmosphere.time_of_day_mode = "solar";
     run_config.atmosphere.time_hours = 6.5F;
     run_config.atmosphere.time_speed_hours_per_second = 0.25F;
@@ -91,6 +99,8 @@ void test_run_config_mapping() {
                      cubey::projects::clouds::CloudsCameraMode::Orbit),
                  0.001F, "cloud camera altitude should follow camera mode default");
     require_near(config.coverage, 0.75F, 0.001F, "cloud coverage should map");
+    require_near(config.shadow_strength, 0.8F, 0.001F,
+                 "cloud shadow strength should map");
     require_near(config.time.time_hours, 6.5F, 0.001F, "cloud solar time should map");
     require(!config.time.playing, "cloud pause flag should map");
 }
@@ -144,6 +154,7 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.wind_speed_mps", "22");
+    cubey::set_run_config_option_from_string(config, "clouds.shadow_strength", "0.7");
     require(config.clouds.camera_mode == "high", "cloud camera mode descriptor should set");
     require(config.clouds.quality == "full", "cloud quality descriptor should set");
     require(config.clouds.weather_preset == "storm",
@@ -152,6 +163,8 @@ void test_config_descriptors() {
                  "cloud coverage descriptor should set");
     require_near(config.clouds.wind_speed_mps, 22.0F, 0.001F,
                  "cloud wind descriptor should set");
+    require_near(config.clouds.shadow_strength, 0.7F, 0.001F,
+                 "cloud shadow descriptor should set");
 }
 
 } // namespace

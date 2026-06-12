@@ -155,6 +155,7 @@ enum class RunConfigOptionId {
     CloudDensity,
     CloudWeatherScale,
     CloudWindSpeed,
+    CloudShadowStrength,
     SmokeInjectors,
     SmokePressureIterations,
     SmokePressureSolver,

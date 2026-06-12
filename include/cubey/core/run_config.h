@@ -236,6 +236,7 @@ struct RunConfig {
         float density = kRunConfigUnsetFloat;
         float weather_scale_km = kRunConfigUnsetFloat;
         float wind_speed_mps = kRunConfigUnsetFloat;
+        float shadow_strength = kRunConfigUnsetFloat;
     };
 
     std::string title = "cubey";

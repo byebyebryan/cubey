@@ -17,6 +17,7 @@ const int CLOUDS_VIEW_GROUND = 9;
 const int CLOUDS_VIEW_GROUND_HIT = 10;
 const int CLOUDS_VIEW_CLOUD_ALPHA = 11;
 const int CLOUDS_VIEW_SHELL = 12;
+const int CLOUDS_VIEW_SURFACE_SHADOW = 13;
 
 layout(set = 0, binding = 0) uniform sampler2D cloud_product_texture;
 
@@ -74,6 +75,10 @@ float fbm(vec3 p) {
     return sum;
 }
 
+vec2 ray_sphere(vec3 origin, vec3 direction, vec3 center, float radius) {
+    return cubey_atmosphere_ray_sphere_intersection(origin, direction, center, radius);
+}
+
 vec3 planet_center() {
     return vec3(0.0, -params.camera_position_radius.w, 0.0);
 }
@@ -120,14 +125,102 @@ vec3 planet_surface_albedo(vec3 position) {
     return mix(ocean, land, shoreline);
 }
 
-vec3 planet_surface_radiance(vec3 position) {
+float cloud_height_profile(float altitude_km) {
+    float bottom = params.cloud_shell.x;
+    float top = params.cloud_shell.y;
+    float h = clamp((altitude_km - bottom) / max(top - bottom, 0.001), 0.0, 1.0);
+    float base = smoothstep(0.03, 0.16, h);
+    float top_fade = 1.0 - smoothstep(0.55, 1.0, h);
+    float body = pow(max(sin(h * 3.14159265359), 0.0), 0.45);
+    return base * top_fade * mix(0.72, 1.18, body);
+}
+
+float weather_coverage(vec3 position_km) {
+    vec3 center = planet_center();
+    vec3 up = normalize(position_km - center);
+    float scale = max(params.weather.z, 0.001);
+    float frequency = clamp(params.camera_position_radius.w / (scale * 3.5), 1.0, 24.0);
+    float orbit_view = smoothstep(1.5, 2.0, params.camera_forward_mode.w);
+    vec3 wind_offset = vec3(params.weather.w * 0.004, params.weather.w * 0.0017,
+                            -params.weather.w * 0.0028);
+    vec3 warp = vec3(
+        fbm(up * (frequency * 0.42) + wind_offset + vec3(11.0, 3.0, 7.0)),
+        fbm(up * (frequency * 0.38) - wind_offset.yzx + vec3(23.0, 19.0, 5.0)),
+        fbm(up * (frequency * 0.46) + wind_offset.zxy + vec3(2.0, 29.0, 31.0))) -
+                vec3(0.5);
+    vec3 domain = normalize(up + warp * 0.26);
+    float macro = fbm(domain * frequency + wind_offset);
+    float secondary = fbm(domain.yzx * (frequency * 1.65) - wind_offset.zxy + vec3(17.0));
+    float cells = fbm(domain.zxy * (frequency * 2.45) + wind_offset.xzy + vec3(41.0, 7.0, 13.0));
+    float bands =
+        0.5 + 0.5 * sin(dot(domain, normalize(vec3(0.62, 0.18, -0.76))) * frequency * 1.15 +
+                          params.weather.w * 0.006);
+    float weather = mix(mix(macro, secondary, 0.34), bands, 0.10);
+    weather = mix(weather, cells, mix(0.18, 0.04, orbit_view));
+    return clamp(weather, 0.0, 1.0);
+}
+
+float cloud_density(vec3 position_km) {
+    float altitude = length(position_km - planet_center()) - params.camera_position_radius.w;
+    float height = cloud_height_profile(altitude);
+    if (height <= 0.0) {
+        return 0.0;
+    }
+    float weather = weather_coverage(position_km);
+    float coverage = clamp(params.weather.x, 0.0, 1.0);
+    float orbit_view = smoothstep(1.5, 2.0, params.camera_forward_mode.w);
+    float coverage_mask = smoothstep(0.34 + (1.0 - coverage) * 0.36, 0.83, weather);
+    float detail_scale = mix(0.42, 0.055, orbit_view);
+    vec3 detail_coord = position_km * detail_scale + vec3(params.weather.w * 0.03, 13.5, 0.0);
+    float detail = fbm(detail_coord);
+    float puffy = smoothstep(0.34, 0.78, detail);
+    puffy = mix(puffy, smoothstep(0.18, 0.78, weather), orbit_view * 0.85);
+    float scallop_scale = mix(0.78, 0.075, orbit_view);
+    float scallop = fbm(position_km * scallop_scale - vec3(params.weather.w * 0.016, 5.0, 19.0));
+    float edge = smoothstep(0.08, 0.72, coverage_mask * 0.78 + puffy * 0.42);
+    edge = mix(edge, coverage_mask, orbit_view * 0.70);
+    float erosion = mix(0.20, 1.22, puffy) * mix(0.62, 1.12, scallop);
+    erosion = mix(erosion, 0.92, orbit_view * 0.70);
+    return max(edge * height * erosion * params.weather.y, 0.0);
+}
+
+float surface_cloud_shadow(vec3 surface_position, vec3 sun_dir) {
+    float shadow_strength = max(params.render_options.w, 0.0);
+    if (shadow_strength <= 0.001) {
+        return 1.0;
+    }
+    vec3 center = planet_center();
+    vec3 origin = surface_position + normalize(surface_position - center) * 0.02;
+    float top_radius = params.camera_position_radius.w + params.cloud_shell.y;
+    vec2 top_hit = ray_sphere(origin, sun_dir, center, top_radius);
+    if (top_hit.y <= 0.0) {
+        return 1.0;
+    }
+    float ray_start = max(top_hit.x, 0.0);
+    float ray_end = top_hit.y;
+    if (ray_end <= ray_start) {
+        return 1.0;
+    }
+
+    const int shadow_steps = 12;
+    float step_len = (ray_end - ray_start) / float(shadow_steps);
+    float optical_depth = 0.0;
+    for (int i = 0; i < shadow_steps; ++i) {
+        vec3 p = origin + sun_dir * (ray_start + (float(i) + 0.5) * step_len);
+        optical_depth += cloud_density(p) * step_len;
+    }
+    return exp(-optical_depth * 0.42 * shadow_strength);
+}
+
+vec3 planet_surface_radiance(vec3 position, float cloud_shadow) {
     vec3 up = normalize(position - planet_center());
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     float sun_visibility = smoothstep(-0.08, 0.04, dot(up, sun_dir));
     float ndotl = max(dot(up, sun_dir), 0.0);
     float light_intensity = params.sun_direction_intensity.w;
     vec3 albedo = planet_surface_albedo(position);
-    vec3 direct = vec3(1.00, 0.93, 0.80) * ndotl * sun_visibility * light_intensity;
+    vec3 direct = vec3(1.00, 0.93, 0.80) * ndotl * sun_visibility * light_intensity *
+                  cloud_shadow;
     vec3 ambient = vec3(0.014, 0.019, 0.030) * mix(0.30, 1.0, light_intensity);
     return albedo * (ambient + direct);
 }
@@ -140,6 +233,7 @@ struct BackgroundSample {
     float ground_hit;
     float atmosphere_hit;
     float ray_fraction;
+    float cloud_shadow;
 };
 
 BackgroundSample sample_background(vec3 origin, vec3 direction) {
@@ -151,6 +245,7 @@ BackgroundSample sample_background(vec3 origin, vec3 direction) {
     result.ground_hit = 0.0;
     result.atmosphere_hit = 0.0;
     result.ray_fraction = 0.0;
+    result.cloud_shadow = 1.0;
 
     CubeyAtmosphereMedium medium = atmosphere_medium();
     CubeyAtmosphereRaySegment ground_segment =
@@ -173,7 +268,9 @@ BackgroundSample sample_background(vec3 origin, vec3 direction) {
     if (ground_segment.hit_ground) {
         result.ground_hit = 1.0;
         vec3 surface_position = origin + direction * ground_segment.ground_t;
-        result.ground = planet_surface_radiance(surface_position);
+        result.cloud_shadow =
+            surface_cloud_shadow(surface_position, normalize(params.sun_direction_intensity.xyz));
+        result.ground = planet_surface_radiance(surface_position, result.cloud_shadow);
         result.color += result.transmittance * result.ground;
     }
     return result;
@@ -208,6 +305,8 @@ void main() {
         } else if (debug_view == CLOUDS_VIEW_GROUND_HIT) {
             scene_color =
                 vec3(background.ground_hit, background.atmosphere_hit, background.ray_fraction);
+        } else if (debug_view == CLOUDS_VIEW_SURFACE_SHADOW) {
+            scene_color = vec3(background.cloud_shadow * background.ground_hit);
         }
     }
 

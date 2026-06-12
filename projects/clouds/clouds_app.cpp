@@ -274,7 +274,7 @@ clouds_solar_position(const CloudsConfig& config) {
                                     sun_intensity},
         .render_options = {static_cast<float>(static_cast<std::uint32_t>(config.debug_view)),
                            static_cast<float>(budget.view_steps),
-                           static_cast<float>(budget.light_steps), config.time.time_hours},
+                           static_cast<float>(budget.light_steps), config.shadow_strength},
     };
 }
 
@@ -457,6 +457,9 @@ class CloudsApp {
             cubey::host::imgui_slider_float("Wind", &config_.wind_speed_mps, 0.0F, 80.0F,
                                             "%.1f m/s",
                                             "Advection speed for procedural cloud features.");
+            cubey::host::imgui_slider_float(
+                "Shadow", &config_.shadow_strength, 0.0F, 2.0F, "%.2f",
+                "Strength of prototype cloud shadows on the standalone ground proxy.");
         }
 
         if (const cubey::host::ScopedImGuiGroup group{

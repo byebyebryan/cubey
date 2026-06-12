@@ -20,6 +20,7 @@ const int CLOUDS_VIEW_GROUND = 9;
 const int CLOUDS_VIEW_GROUND_HIT = 10;
 const int CLOUDS_VIEW_CLOUD_ALPHA = 11;
 const int CLOUDS_VIEW_SHELL = 12;
+const int CLOUDS_VIEW_SURFACE_SHADOW = 13;
 
 layout(push_constant) uniform CloudsParams {
     vec4 camera_right_aspect;
