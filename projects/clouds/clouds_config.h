@@ -14,8 +14,11 @@ inline constexpr float kCloudsDefaultTopAltitudeM = 7500.0F;
 
 enum class CloudsCameraMode : std::uint32_t {
     Surface = 0,
-    High = 1,
-    Orbit = 2,
+    SurfaceUp = 1,
+    High = 2,
+    HighOblique = 3,
+    Orbit = 4,
+    OrbitTerminator = 5,
 };
 
 enum class CloudsQuality : std::uint32_t {

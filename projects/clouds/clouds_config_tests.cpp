@@ -26,6 +26,15 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::clouds::clouds_camera_mode_from_string("surface") ==
                 cubey::projects::clouds::CloudsCameraMode::Surface,
             "surface camera mode should parse");
+    require(cubey::projects::clouds::clouds_camera_mode_from_string("surface-up") ==
+                cubey::projects::clouds::CloudsCameraMode::SurfaceUp,
+            "surface-up camera mode should parse");
+    require(cubey::projects::clouds::clouds_camera_mode_from_string("high-oblique") ==
+                cubey::projects::clouds::CloudsCameraMode::HighOblique,
+            "high-oblique camera mode should parse");
+    require(cubey::projects::clouds::clouds_camera_mode_from_string("orbit-terminator") ==
+                cubey::projects::clouds::CloudsCameraMode::OrbitTerminator,
+            "orbit-terminator camera mode should parse");
     require(cubey::projects::clouds::clouds_quality_from_string("full") ==
                 cubey::projects::clouds::CloudsQuality::Full,
             "full quality should parse");
@@ -80,6 +89,27 @@ void test_run_config_mapping() {
     require(!config.time.playing, "cloud pause flag should map");
 }
 
+void test_camera_preset_defaults() {
+    cubey::RunConfig run_config{};
+    run_config.clouds.camera_mode = "orbit-terminator";
+
+    cubey::projects::clouds::CloudsConfig config =
+        cubey::projects::clouds::clouds_config_from_run_config(run_config);
+    require(config.camera_mode == cubey::projects::clouds::CloudsCameraMode::OrbitTerminator,
+            "orbit terminator preset should map from run config");
+    require_near(config.camera_altitude_m,
+                 cubey::projects::clouds::clouds_default_camera_altitude_m(
+                     cubey::projects::clouds::CloudsCameraMode::OrbitTerminator),
+                 0.001F, "orbit terminator should use orbit altitude");
+    require_near(config.time.time_hours, 6.0F, 0.001F,
+                 "orbit terminator should default to dawn framing");
+
+    run_config.atmosphere.time_hours = 12.5F;
+    config = cubey::projects::clouds::clouds_config_from_run_config(run_config);
+    require_near(config.time.time_hours, 12.5F, 0.001F,
+                 "explicit time should override orbit terminator preset time");
+}
+
 void test_config_descriptors() {
     cubey::RunConfig config{};
     cubey::set_run_config_option_from_string(config, "clouds.camera_mode", "high");
@@ -100,6 +130,7 @@ int main() {
     try {
         test_names_and_next_debug_view();
         test_run_config_mapping();
+        test_camera_preset_defaults();
         test_config_descriptors();
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

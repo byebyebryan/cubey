@@ -20,14 +20,23 @@ namespace {
 } // namespace
 
 CloudsCameraMode clouds_camera_mode_from_string(std::string_view value) {
-    if (value == "surface") {
+    if (value == "surface" || value == "surface-horizon") {
         return CloudsCameraMode::Surface;
     }
-    if (value == "high") {
+    if (value == "surface-up") {
+        return CloudsCameraMode::SurfaceUp;
+    }
+    if (value == "high" || value == "high-top") {
         return CloudsCameraMode::High;
     }
-    if (value == "orbit") {
+    if (value == "high-oblique") {
+        return CloudsCameraMode::HighOblique;
+    }
+    if (value == "orbit" || value == "orbit-day") {
         return CloudsCameraMode::Orbit;
+    }
+    if (value == "orbit-terminator") {
+        return CloudsCameraMode::OrbitTerminator;
     }
     throw std::runtime_error("unknown cloud camera mode: " + std::string(value));
 }
@@ -36,10 +45,16 @@ const char* clouds_camera_mode_name(CloudsCameraMode mode) {
     switch (mode) {
     case CloudsCameraMode::Surface:
         return "surface";
+    case CloudsCameraMode::SurfaceUp:
+        return "surface-up";
     case CloudsCameraMode::High:
         return "high";
+    case CloudsCameraMode::HighOblique:
+        return "high-oblique";
     case CloudsCameraMode::Orbit:
         return "orbit";
+    case CloudsCameraMode::OrbitTerminator:
+        return "orbit-terminator";
     }
     return "surface";
 }
@@ -168,9 +183,15 @@ float clouds_default_camera_altitude_m(CloudsCameraMode mode) {
     switch (mode) {
     case CloudsCameraMode::Surface:
         return 120.0F;
+    case CloudsCameraMode::SurfaceUp:
+        return 120.0F;
     case CloudsCameraMode::High:
         return 12000.0F;
+    case CloudsCameraMode::HighOblique:
+        return 28000.0F;
     case CloudsCameraMode::Orbit:
+        return 420000.0F;
+    case CloudsCameraMode::OrbitTerminator:
         return 420000.0F;
     }
     return 1200.0F;
@@ -183,6 +204,7 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
         config.camera_mode = clouds_camera_mode_from_string(run_config.clouds.camera_mode);
     }
     config.camera_altitude_m = clouds_default_camera_altitude_m(config.camera_mode);
+    bool time_hours_overridden = false;
     if (!run_config.clouds.quality.empty()) {
         config.quality = clouds_quality_from_string(run_config.clouds.quality);
     }
@@ -221,6 +243,7 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     }
     if (run_config_float_is_set(run_config.atmosphere.time_hours)) {
         config.time.time_hours = run_config.atmosphere.time_hours;
+        time_hours_overridden = true;
     }
     if (run_config_float_is_set(run_config.atmosphere.day_of_year)) {
         config.time.day_of_year = run_config.atmosphere.day_of_year;
@@ -242,6 +265,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     }
     if (run_config_float_is_set(run_config.atmosphere.sun_azimuth_degrees)) {
         config.time.manual_sun_azimuth_degrees = run_config.atmosphere.sun_azimuth_degrees;
+    }
+    if (!time_hours_overridden && config.camera_mode == CloudsCameraMode::OrbitTerminator) {
+        config.time.time_hours = 6.0F;
     }
 
     validate_clouds_config(config);

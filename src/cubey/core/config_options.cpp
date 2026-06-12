@@ -62,7 +62,8 @@ constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
     "final", "stellar-emission", "dust-tau", "star-clouds", "hii-emission", "speckles",
 };
-constexpr std::array<std::string_view, 3> kCloudCameraModes{"surface", "high", "orbit"};
+constexpr std::array<std::string_view, 6> kCloudCameraModes{
+    "surface", "surface-up", "high", "high-oblique", "orbit", "orbit-terminator"};
 constexpr std::array<std::string_view, 3> kCloudQualities{"quarter", "half", "full"};
 constexpr std::array<std::string_view, 3> kSmokePressureSolvers{"jacobi", "rbgs",
                                                                 "red-black-gauss-seidel"};

@@ -16,8 +16,11 @@ Useful runs:
 ```sh
 ./build/dev/projects/clouds/clouds
 ./build/dev/projects/clouds/clouds --cloud-camera-mode surface
+./build/dev/projects/clouds/clouds --cloud-camera-mode surface-up
 ./build/dev/projects/clouds/clouds --cloud-camera-mode high
+./build/dev/projects/clouds/clouds --cloud-camera-mode high-oblique
 ./build/dev/projects/clouds/clouds --cloud-camera-mode orbit
+./build/dev/projects/clouds/clouds --cloud-camera-mode orbit-terminator
 ./build/dev/projects/clouds/clouds --debug-view weather
 ./build/dev/projects/clouds/clouds --debug-view density
 ./build/dev/projects/clouds/clouds --debug-view shadow
@@ -42,8 +45,9 @@ Controls:
 ## Current Scope
 
 - The cloud layer is a spherical shell around the configured planet radius.
-- `--cloud-camera-mode surface|high|orbit` changes the default camera altitude
-  and view framing.
+- `--cloud-camera-mode surface|surface-up|high|high-oblique|orbit|orbit-terminator`
+  changes the default camera altitude and view framing. The shorter legacy
+  names `surface`, `high`, and `orbit` remain the standard aliases.
 - `--cloud-quality quarter|half|full` controls raymarch sample budgets. The UI
   shows the intended resolution-scale contract, but clouds still render directly
   to the final target until the separate low-resolution composite path lands.

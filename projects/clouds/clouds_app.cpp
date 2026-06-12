@@ -39,10 +39,9 @@ namespace cubey::projects::clouds {
 namespace {
 
 constexpr float kDefaultFovyRadians = 60.0F * (glm::pi<float>() / 180.0F);
-constexpr std::array<CloudsCameraMode, 3> kCloudsCameraModes{
-    CloudsCameraMode::Surface,
-    CloudsCameraMode::High,
-    CloudsCameraMode::Orbit,
+constexpr std::array<CloudsCameraMode, 6> kCloudsCameraModes{
+    CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
+    CloudsCameraMode::HighOblique, CloudsCameraMode::Orbit, CloudsCameraMode::OrbitTerminator,
 };
 constexpr std::array<CloudsQuality, 3> kCloudsQualityModes{
     CloudsQuality::Quarter,
@@ -95,13 +94,44 @@ std::filesystem::path shader_path(const char* filename) {
     return value * glm::inversesqrt(len2);
 }
 
+[[nodiscard]] bool clouds_camera_mode_is_orbit(CloudsCameraMode mode) {
+    return mode == CloudsCameraMode::Orbit || mode == CloudsCameraMode::OrbitTerminator;
+}
+
+[[nodiscard]] float clouds_camera_shader_mode(CloudsCameraMode mode) {
+    if (clouds_camera_mode_is_orbit(mode)) {
+        return 2.0F;
+    }
+    if (mode == CloudsCameraMode::High || mode == CloudsCameraMode::HighOblique) {
+        return 1.0F;
+    }
+    return 0.0F;
+}
+
+[[nodiscard]] float clouds_camera_base_pitch(CloudsCameraMode mode) {
+    switch (mode) {
+    case CloudsCameraMode::Surface:
+        return 0.22F;
+    case CloudsCameraMode::SurfaceUp:
+        return 0.72F;
+    case CloudsCameraMode::High:
+        return -0.92F;
+    case CloudsCameraMode::HighOblique:
+        return -0.46F;
+    case CloudsCameraMode::Orbit:
+    case CloudsCameraMode::OrbitTerminator:
+        return 0.0F;
+    }
+    return 0.22F;
+}
+
 [[nodiscard]] CloudsViewBasis clouds_view_basis(const CloudsConfig& config, float yaw,
                                                 float pitch) {
     CloudsViewBasis basis{};
     const float altitude_km = config.camera_altitude_m * 0.001F;
     basis.position_km = {0.0F, altitude_km, 0.0F};
 
-    if (config.camera_mode == CloudsCameraMode::Orbit) {
+    if (clouds_camera_mode_is_orbit(config.camera_mode)) {
         const float orbit_pitch = std::clamp(pitch, -0.75F, 0.75F);
         const float radius_km = config.planet_radius_m * 0.001F + altitude_km;
         const cubey::math::Vec3 planet_center{0.0F, -config.planet_radius_m * 0.001F, 0.0F};
@@ -118,7 +148,7 @@ std::filesystem::path shader_path(const char* filename) {
         return basis;
     }
 
-    const float base_pitch = config.camera_mode == CloudsCameraMode::High ? -0.92F : 0.22F;
+    const float base_pitch = clouds_camera_base_pitch(config.camera_mode);
     const float resolved_pitch = std::clamp(base_pitch + pitch, -1.25F, 1.25F);
     basis.forward = safe_normalize({std::sin(yaw) * std::cos(resolved_pitch),
                                     std::sin(resolved_pitch),
@@ -164,7 +194,7 @@ clouds_solar_position(const CloudsConfig& config) {
         .camera_right_aspect = {basis.right.x, basis.right.y, basis.right.z, aspect},
         .camera_up_tan_half_fovy = {basis.up.x, basis.up.y, basis.up.z, tan_half_fovy},
         .camera_forward_mode = {basis.forward.x, basis.forward.y, basis.forward.z,
-                                static_cast<float>(static_cast<std::uint32_t>(config.camera_mode))},
+                                clouds_camera_shader_mode(config.camera_mode)},
         .camera_position_radius = {basis.position_km.x, basis.position_km.y, basis.position_km.z,
                                    config.planet_radius_m * 0.001F},
         .cloud_shell = {config.bottom_altitude_m * 0.001F, config.top_altitude_m * 0.001F,
@@ -326,7 +356,8 @@ class CloudsApp {
             CloudsCameraMode selected_mode = config_.camera_mode;
             if (cubey::host::imgui_enum_combo("Mode", selected_mode, kCloudsCameraModes,
                                               clouds_camera_mode_name,
-                                              "Surface, high-altitude, and orbit inspection "
+                                              "Surface, upward surface, high top-down, high "
+                                              "oblique, orbit, and orbit terminator inspection "
                                               "presets.")) {
                 set_camera_mode(selected_mode);
             }
@@ -458,6 +489,9 @@ class CloudsApp {
         }
         config_.camera_mode = mode;
         config_.camera_altitude_m = clouds_default_camera_altitude_m(mode);
+        if (mode == CloudsCameraMode::OrbitTerminator) {
+            config_.time.time_hours = 6.0F;
+        }
         yaw_ = 0.0F;
         pitch_ = 0.0F;
     }

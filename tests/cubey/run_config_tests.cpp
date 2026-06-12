@@ -893,7 +893,7 @@ void test_run_config_parses_atmosphere_options() {
 void test_run_config_parses_cloud_options() {
     std::string program = "cubey";
     std::string camera_flag = "--cloud-camera-mode";
-    std::string camera_value = "high";
+    std::string camera_value = "high-oblique";
     std::string quality_flag = "--cloud-quality";
     std::string quality_value = "full";
     std::string planet_radius_flag = "--cloud-planet-radius-m";
@@ -938,7 +938,8 @@ void test_run_config_parses_cloud_options() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.clouds.camera_mode == "high", "run config should parse cloud camera mode");
+    require(config.clouds.camera_mode == "high-oblique",
+            "run config should parse cloud camera mode");
     require(config.clouds.quality == "full", "run config should parse cloud quality");
     require(config.clouds.planet_radius_m == 6000000.0F,
             "run config should parse cloud planet radius");
