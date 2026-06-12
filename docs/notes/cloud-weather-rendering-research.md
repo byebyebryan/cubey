@@ -109,13 +109,19 @@ broken clouds, uses orbit-aware detail suppression so planet views preserve
 broad weather masses, and switches non-ground background rays to the shared
 `cubey_atmosphere_classify_sky_background_ray` helper.
 
+The fourth checkpoint splits the offscreen cloud target into linear cloud
+radiance plus view transmittance, moves background/ground/atmosphere composition
+into the composite pass, adds a standalone analytic surface-shadow diagnostic,
+and softens high-altitude cloud contribution near the horizon. These are still
+project-local prototype outputs rather than a shared renderer API.
+
 The remaining promotion blockers are now less about first visibility and more
 about renderer contracts:
 
-- separate cloud radiance/transmittance from final display color so ocean and
-  planet can compose clouds with their own scene passes;
-- produce a cloud shadow texture or analytic sun-shadow factor for surface and
-  ocean lighting;
+- promote cloud radiance/transmittance out of the standalone project so ocean
+  and planet can compose clouds with their own scene passes;
+- promote the current analytic sun-shadow factor into a reusable cloud shadow
+  texture or sampled lighting input for surface and ocean lighting;
 - add temporal accumulation or blue-noise sampling before increasing quality;
 - decide whether weather authoring is procedural-only, texture-driven, or a
   hybrid with uploaded weather maps;

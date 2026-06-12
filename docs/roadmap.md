@@ -532,11 +532,12 @@ Project checkpoints:
   project. It renders a first spherical cloud shell with surface, high-altitude,
   and orbit camera modes before any ocean or planet integration. Its current
   checkpoint has seam-safe spherical weather, quality-scaled offscreen
-  raymarch/composite rendering, broken-cloud inspection tuning, explicit
-  composition diagnostics, and shared sky-background classification for
-  non-ground rays. Its current blockers are rough controls, lack of temporal
-  accumulation, no weather authoring path, and no promoted cloud
-  radiance/transmittance/shadow outputs for ocean or planet consumers.
+  cloud-product/composite rendering, broken-cloud inspection tuning, explicit
+  composition diagnostics, prototype analytic surface shadows, high-view horizon
+  cloud fading, and shared sky-background classification for non-ground rays.
+  Its current blockers are rough controls, lack of temporal accumulation, no
+  weather authoring path, and no promoted renderer API for cloud
+  radiance/transmittance/shadow outputs used by ocean or planet consumers.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer

@@ -4,13 +4,15 @@
 rendering. It keeps cloud policy separate from the clear-sky atmosphere project
 while consuming the same solar-clock and atmosphere scattering foundation.
 
-The current renderer is a v1 spherical cloud-shell raymarch. It renders the
-cloud/sky scene into a quality-scaled offscreen target, composites to the final
-target, and supports surface, high-altitude, and orbit camera modes,
+The current renderer is a v1 spherical cloud-shell raymarch. It renders a
+quality-scaled cloud product target with linear cloud radiance plus view
+transmittance, composites that product over the standalone atmosphere/ground
+proxy, and supports surface, high-altitude, and orbit camera modes,
 low-frequency weather coverage, detail erosion, single-scattering lighting,
-cheap self-shadowing, and debug views for the major fields. It deliberately
-does not integrate into ocean or planet yet; those projects should later consume
-cloud sky/reflection and shadow outputs after this standalone path is stable.
+cheap self-shadowing, prototype surface cloud shadows, and debug views for the
+major fields. It deliberately does not integrate into ocean or planet yet;
+those projects should later consume cloud sky/reflection and shadow outputs
+after this standalone path is stable.
 
 Useful runs:
 
@@ -29,6 +31,8 @@ Useful runs:
 ./build/dev/projects/clouds/clouds --debug-view ground-hit
 ./build/dev/projects/clouds/clouds --debug-view cloud-alpha
 ./build/dev/projects/clouds/clouds --debug-view shell
+./build/dev/projects/clouds/clouds --debug-view surface-shadow
+./build/dev/projects/clouds/clouds --cloud-shadow-strength 1.0
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode surface --output outputs/clouds-surface.png
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode high --output outputs/clouds-high.png
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode orbit --output outputs/clouds-orbit.png
@@ -39,8 +43,8 @@ Controls:
 
 - Left-drag: rotate the camera.
 - `D`: cycle final, weather, density, transmittance, lighting, shadow, step,
-  background, atmosphere, ground, ground-hit, cloud-alpha, and shell debug
-  views.
+  background, atmosphere, ground, ground-hit, cloud-alpha, shell, and
+  surface-shadow debug views.
 - Space: play/pause solar time.
 - `R`: reset camera, time, and cloud settings.
 
@@ -55,14 +59,20 @@ Controls:
   preset is intentionally a broken-cloud view so surface, high-altitude, and
   orbit review captures all show meaningful structure.
 - `--cloud-quality quarter|half|full` controls both raymarch sample budgets and
-  the offscreen cloud render scale before final compositing.
+  the offscreen cloud product render scale before final compositing.
+- `--cloud-shadow-strength` controls the prototype analytic cloud shadow factor
+  applied only to the standalone procedural ground/ocean proxy.
 - Weather fields are procedural and deterministic. There is not yet an uploaded
   weather texture, authoring UI, temporal accumulation buffer, ocean reflection
-  output, or cloud shadow texture.
+  output, or promoted cloud shadow texture.
 
 See
 [`docs/notes/cloud-weather-rendering-research.md`](../../docs/notes/cloud-weather-rendering-research.md)
 for the research context and promotion criteria.
+
+Current review captures are under
+`outputs/clouds-product-check-20260612/`, including surface, high-oblique,
+orbit, cloud-alpha, and surface-shadow checks.
 
 ## Known V1 Issues
 
@@ -70,17 +80,19 @@ These are observed blockers before the clouds project should feed ocean or
 planet rendering:
 
 - Broad cloud-map seams have a first fix through a seam-safe spherical weather
-  domain. Orbit-edge composition artifacts and high-view tuning are still rough,
-  but orbit detail now suppresses local high-frequency erosion so the planet
-  reads as broad weather masses rather than speckle.
+  domain. Orbit-edge and high-view composition are still rough, but high-altitude
+  cloud contribution now tapers near the horizon and orbit detail suppresses
+  local high-frequency erosion so the planet reads as broad weather masses
+  rather than speckle.
 - Interactive control is rough. The project has quick camera mode buttons and
   basic sliders, but it has not been moved onto the shared hierarchical control
   model used by the more mature projects.
 - Runtime feedback now shows FPS/frame-time, sample-budget diagnostics, cloud
   render pixels, output pixels, and the active cloud render scale.
-- Sky, ground, and cloud composition is explicit and uses the shared atmosphere
-  sky-background ray classifier for non-ground rays, but it remains
-  project-local prototype code rather than a reusable cloud scene pass.
+- Sky, ground, and cloud composition is explicit and uses a cloud product target
+  plus the shared atmosphere sky-background ray classifier for non-ground rays,
+  but it remains project-local prototype code rather than a reusable cloud scene
+  pass.
 
 ## Integration Contract
 
@@ -88,7 +100,7 @@ Ocean and planet should not raymarch volumetric clouds inside their material
 shaders. The intended promotion path is a cloud scene/composite producer that
 emits:
 
-- linear sky/cloud radiance plus transmittance for background composition;
+- linear cloud radiance plus transmittance for background composition;
 - a low-frequency cloud shadow factor keyed by sun direction;
 - optional reflection/environment inputs for water and PBR consumers;
 - debug views for weather, density, lighting, shadow, cloud alpha, and shell
