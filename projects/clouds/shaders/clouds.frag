@@ -2,7 +2,6 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/atmosphere.glsl"
-#include "cubey/pbr.glsl"
 
 const float CLOUDS_PI = 3.14159265359;
 const int CLOUDS_MAX_VIEW_STEPS = 64;
@@ -405,6 +404,5 @@ void main() {
         final_color = vec3(clouds.shell_hit, clouds.hit_ground, clouds.shell_span);
     }
 
-    vec3 display = cubey_pbr_apply_display_transform(final_color, vec4(-1.20, 1.0, 0.0, 0.0));
-    out_color = vec4(display, 1.0);
+    out_color = vec4(final_color, 1.0);
 }

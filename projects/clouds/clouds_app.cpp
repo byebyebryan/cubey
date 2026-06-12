@@ -11,11 +11,14 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/material_instance.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
+#include <cubey/render/render_graph.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/sampler.h>
 
 #include <glm/gtc/constants.hpp>
 #include <imgui.h>
@@ -39,6 +42,7 @@ namespace cubey::projects::clouds {
 namespace {
 
 constexpr float kDefaultFovyRadians = 60.0F * (glm::pi<float>() / 180.0F);
+constexpr VkFormat kCloudsSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr std::array<CloudsCameraMode, 6> kCloudsCameraModes{
     CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
     CloudsCameraMode::HighOblique, CloudsCameraMode::Orbit, CloudsCameraMode::OrbitTerminator,
@@ -73,6 +77,17 @@ struct CloudsViewBasis {
     cubey::math::Vec3 forward{0.0F, 0.0F, -1.0F};
 };
 
+enum class CloudsRenderTargetMode : std::uint8_t {
+    Present,
+    ColorAttachment,
+};
+
+struct CloudsFrameGraph {
+    cubey::render::CompiledRenderGraph graph;
+    cubey::render::RenderGraphTextureHandle cloud_color{};
+    VkExtent2D cloud_extent{};
+};
+
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_CLOUDS_SHADER_DIR) / filename;
 }
@@ -87,6 +102,52 @@ std::filesystem::path shader_path(const char* filename) {
         .label = "clouds.fullscreen",
         .push_constants = {push_constant_range},
     };
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo clouds_composite_pass_info() {
+    return cubey::render::MaterialPassInfo{
+        .label = "clouds.composite",
+        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0)},
+    };
+}
+
+[[nodiscard]] cubey::render::RenderGraphTextureDesc
+clouds_color_texture_desc(std::string label, VkExtent2D extent, VkFormat format) {
+    return {
+        .label = std::move(label),
+        .extent = {extent.width, extent.height, 1U},
+        .format = format,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+    };
+}
+
+[[nodiscard]] VkExtent2D clouds_scaled_extent(VkExtent2D target_extent,
+                                              CloudsQualityBudget budget) {
+    const float scale = std::clamp(budget.resolution_scale, 0.05F, 1.0F);
+    return {
+        .width = std::max(1U, static_cast<std::uint32_t>(
+                                  std::ceil(static_cast<float>(target_extent.width) * scale))),
+        .height = std::max(1U, static_cast<std::uint32_t>(
+                                   std::ceil(static_cast<float>(target_extent.height) * scale))),
+    };
+}
+
+[[nodiscard]] std::uint64_t extent_pixel_count(VkExtent2D extent) {
+    return static_cast<std::uint64_t>(extent.width) * static_cast<std::uint64_t>(extent.height);
+}
+
+[[nodiscard]] cubey::render::RenderGraphTextureState
+clouds_target_initial_state(CloudsRenderTargetMode mode) {
+    return mode == CloudsRenderTargetMode::Present
+               ? cubey::render::render_graph_undefined_texture_state()
+               : cubey::render::render_graph_color_attachment_texture_state();
+}
+
+[[nodiscard]] cubey::render::RenderGraphTextureState
+clouds_target_final_state(CloudsRenderTargetMode mode) {
+    return mode == CloudsRenderTargetMode::Present
+               ? cubey::render::render_graph_present_texture_state()
+               : cubey::render::render_graph_color_attachment_texture_state();
 }
 
 [[nodiscard]] cubey::math::Vec3 safe_normalize(cubey::math::Vec3 value,
@@ -239,7 +300,7 @@ class CloudsApp {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             create_pipeline(context.device(), context.swapchain().format(),
-                            context.swapchain().extent());
+                            context.swapchain().extent(), context.frame_slot_count());
         };
         callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext&) {
             destroy_swapchain_resources();
@@ -249,9 +310,10 @@ class CloudsApp {
         callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) {
             draw_ui(context);
         };
-        callbacks.record_frame = [this](cubey::host::WindowedAppContext&,
+        callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
-            record_windowed_frame(frame.command_buffer, frame.color_target);
+            record_windowed_frame(context.device(), frame.command_buffer, frame.color_target,
+                                  frame.frame_slot);
         };
         callbacks.frame_stats_sample =
             [this](cubey::host::WindowedAppContext& context,
@@ -284,9 +346,10 @@ class CloudsApp {
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
-            create_pipeline(context.device(), target.format, target.extent);
+            create_pipeline(context.device(), target.format, target.extent,
+                            cubey::host::headless_capture_frame_slot_count(run_config_));
         };
-        callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
+        callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
                                         const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
@@ -294,7 +357,7 @@ class CloudsApp {
             CloudsConfig frame_config = config_;
             advance_clouds_time(frame_config, elapsed_seconds_);
             config_ = frame_config;
-            record_headless_target(command_buffer, target);
+            record_headless_target(context.device(), command_buffer, target, frame.frame_slot);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_swapchain_resources();
@@ -447,7 +510,9 @@ class CloudsApp {
         }
 
         const CloudsQualityBudget budget = clouds_quality_budget(config_.quality);
-        const std::array<cubey::host::PerformanceCounter, 5> performance_counters{
+        const VkExtent2D output_extent = context.swapchain().extent();
+        const VkExtent2D cloud_extent = clouds_scaled_extent(output_extent, budget);
+        const std::array<cubey::host::PerformanceCounter, 7> performance_counters{
             cubey::host::PerformanceCounter{"View steps",
                                             static_cast<std::uint64_t>(budget.view_steps), nullptr},
             cubey::host::PerformanceCounter{"Light steps",
@@ -458,9 +523,13 @@ class CloudsApp {
                 static_cast<std::uint64_t>(budget.view_steps * (1 + budget.light_steps)),
                 nullptr},
             cubey::host::PerformanceCounter{
-                "Res scale contract",
+                "Cloud scale",
                 static_cast<std::uint64_t>(budget.resolution_scale * 100.0F), "%"},
-            cubey::host::PerformanceCounter{"Fullscreen tris", 1, nullptr},
+            cubey::host::PerformanceCounter{"Cloud pixels", extent_pixel_count(cloud_extent),
+                                            nullptr},
+            cubey::host::PerformanceCounter{"Output pixels", extent_pixel_count(output_extent),
+                                            nullptr},
+            cubey::host::PerformanceCounter{"Fullscreen tris", 2, nullptr},
         };
         cubey::host::draw_performance_ui({
             .frame_stats = latest_frame_stats_,
@@ -483,7 +552,7 @@ class CloudsApp {
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = 1,
+            .triangles = 2,
         };
         if (std::optional<cubey::host::FrameStatsSnapshot> stats =
                 ui_frame_stats_.record_frame(sample);
@@ -507,21 +576,56 @@ class CloudsApp {
     }
 
     void destroy_swapchain_resources() {
-        pipeline_resource_.reset();
+        graph_executor_.clear();
+        composite_sampler_.reset();
+        composite_material_.reset();
+        composite_pipeline_resource_.reset();
+        cloud_pipeline_resource_.reset();
     }
 
-    void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent) {
+    void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
+                         std::uint32_t frame_slot_count) {
+        graph_executor_.resize(frame_slot_count);
+
         const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
             cubey::render::vertex_shader_file(shader_path("clouds.vert.spv")),
             cubey::render::fragment_shader_file(shader_path("clouds.frag.spv")),
         };
         const cubey::render::MaterialPassInfo material_pass = clouds_pass_info();
-        pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                               .extent = extent,
-                                               .color_format = color_format,
-                                               .shader_stage_files = shader_stage_files,
-                                               .material_pass = material_pass,
+        cloud_pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                                     .extent = clouds_scaled_extent(
+                                                         extent, clouds_quality_budget(config_.quality)),
+                                                     .color_format = kCloudsSceneColorFormat,
+                                                     .shader_stage_files = shader_stage_files,
+                                                     .material_pass = material_pass,
+                                                 });
+
+        const cubey::render::MaterialPassInfo composite_pass = clouds_composite_pass_info();
+        composite_material_.emplace(device, cubey::render::MaterialInstanceConfig{
+                                                .material_pass = composite_pass,
+                                                .descriptor_set = 0,
+                                                .set_count = frame_slot_count,
+                                            });
+        composite_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
+                                               .min_filter = VK_FILTER_LINEAR,
+                                               .mag_filter = VK_FILTER_LINEAR,
+                                               .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                                            });
+        const std::array<cubey::render::ShaderStageFile, 2> composite_shader_stage_files{
+            cubey::render::vertex_shader_file(shader_path("clouds.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("clouds_composite.frag.spv")),
+        };
+        const std::array<VkDescriptorSetLayout, 1> composite_set_layouts{
+            composite_material_->layout(),
+        };
+        composite_pipeline_resource_.emplace(
+            device, cubey::render::GraphicsPipelineFileResourceConfig{
+                        .extent = extent,
+                        .color_format = color_format,
+                        .shader_stage_files = composite_shader_stage_files,
+                        .descriptor_set_layouts = composite_set_layouts,
+                        .material_pass = composite_pass,
+                    });
     }
 
     void record_clouds_draw(const cubey::vulkan::CommandRecorder& recorder,
@@ -535,34 +639,133 @@ class CloudsApp {
             },
             [this, constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
                 cubey::render::record_fullscreen_pipeline_draw(
-                    pass_recorder, {.pipeline = &pipeline_resource()}, VK_SHADER_STAGE_FRAGMENT_BIT,
-                    constants);
+                    pass_recorder, {.pipeline = &cloud_pipeline_resource()},
+                    VK_SHADER_STAGE_FRAGMENT_BIT, constants);
             });
     }
 
-    void record_windowed_frame(VkCommandBuffer command_buffer,
-                               const cubey::render::ColorTargetView& target) const {
-        const cubey::vulkan::CommandRecorder recorder(command_buffer);
-        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-        cubey::render::record_present_render_target(
+    void record_composite_draw(const cubey::vulkan::CommandRecorder& recorder,
+                               const cubey::render::ColorTargetView& target,
+                               cubey::render::FrameSlot frame_slot) const {
+        cubey::render::record_render_target_pass(
             recorder, cubey::render::render_target_view(target),
-            [this, &target](const cubey::vulkan::CommandRecorder& present_recorder) {
-                record_clouds_draw(present_recorder, target);
+            cubey::render::RenderClearValues{
+                .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
+            },
+            [this, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
+                cubey::render::record_fullscreen_pipeline_draw(
+                    pass_recorder,
+                    {.pipeline = &composite_pipeline_resource(),
+                     .descriptor_set = composite_material().set(frame_slot)});
             });
-        recorder.end("vkEndCommandBuffer clouds");
     }
 
-    void record_headless_target(VkCommandBuffer command_buffer,
-                                const cubey::render::ColorTargetView& target) const {
-        const cubey::vulkan::CommandRecorder recorder(command_buffer);
-        record_clouds_draw(recorder, target);
+    [[nodiscard]] CloudsFrameGraph build_frame_graph(
+        cubey::render::ColorTargetView target, cubey::render::FrameSlot frame_slot,
+        CloudsRenderTargetMode target_mode) const {
+        cubey::render::RenderGraphBuilder graph;
+        const cubey::render::RenderGraphTextureHandle backbuffer =
+            graph.import_color_target("backbuffer", target, clouds_target_initial_state(target_mode),
+                                      clouds_target_final_state(target_mode));
+        const VkExtent2D cloud_extent =
+            clouds_scaled_extent(target.extent, clouds_quality_budget(config_.quality));
+        const cubey::render::RenderGraphTextureHandle cloud_color =
+            graph.create_texture(clouds_color_texture_desc("cloud color", cloud_extent,
+                                                           kCloudsSceneColorFormat));
+
+        graph.add_pass("cloud raymarch", cubey::render::RenderGraphQueueDomain::Graphics)
+            .write_color(cloud_color)
+            .execute([this, cloud_color](const cubey::render::RenderGraphExecutionContext& context) {
+                record_clouds_draw(context.recorder(),
+                                   cubey::render::resolved_color_target_view(context, cloud_color));
+            });
+        graph.add_pass("cloud composite", cubey::render::RenderGraphQueueDomain::Graphics)
+            .read_texture(cloud_color)
+            .write_color(backbuffer)
+            .execute([this, backbuffer,
+                      frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                record_composite_draw(context.recorder(),
+                                      cubey::render::resolved_color_target_view(context, backbuffer),
+                                      frame_slot);
+            });
+
+        return {
+            .graph = graph.compile(),
+            .cloud_color = cloud_color,
+            .cloud_extent = cloud_extent,
+        };
     }
 
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& pipeline_resource() const {
-        if (!pipeline_resource_.has_value()) {
-            throw std::runtime_error("clouds pipeline resource is not initialized");
+    void record_frame_graph(cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
+                            const cubey::render::ColorTargetView& target,
+                            cubey::render::FrameSlot frame_slot, CloudsRenderTargetMode target_mode,
+                            cubey::render::RenderGraphCommandBufferMode command_buffer_mode,
+                            const char* label) {
+        const CloudsFrameGraph frame_graph = build_frame_graph(target, frame_slot, target_mode);
+        graph_executor_.record(
+            cubey::render::RenderGraphFrameRecordInfo{
+                .device = &device,
+                .command_buffer = command_buffer,
+                .frame_slot = frame_slot,
+                .label = label,
+                .command_buffer_mode = command_buffer_mode,
+            },
+            frame_graph.graph,
+            [this, &device, frame_slot,
+             &frame_graph](const cubey::render::RenderGraphResourceSet& graph_resources) {
+                const cubey::render::RenderGraphSampledTextureView cloud_color =
+                    cubey::render::resolved_sampled_texture_view(
+                        frame_graph.graph, graph_resources, frame_graph.cloud_color);
+                cubey::render::MaterialDescriptorWriter(composite_material().set(frame_slot))
+                    .combined_image_sampler(0, composite_sampler().handle(), cloud_color.view,
+                                            cloud_color.layout)
+                    .update(device);
+            });
+    }
+
+    void record_windowed_frame(cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
+                               const cubey::render::ColorTargetView& target,
+                               cubey::render::FrameSlot frame_slot) {
+        record_frame_graph(device, command_buffer, target, frame_slot, CloudsRenderTargetMode::Present,
+                           cubey::render::RenderGraphCommandBufferMode::BeginAndEnd,
+                           "vkEndCommandBuffer clouds");
+    }
+
+    void record_headless_target(cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
+                                const cubey::render::ColorTargetView& target,
+                                cubey::render::FrameSlot frame_slot) {
+        record_frame_graph(device, command_buffer, target, frame_slot,
+                           CloudsRenderTargetMode::ColorAttachment,
+                           cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+                           "vkEndCommandBuffer clouds headless");
+    }
+
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& cloud_pipeline_resource() const {
+        if (!cloud_pipeline_resource_.has_value()) {
+            throw std::runtime_error("cloud pipeline resource is not initialized");
         }
-        return pipeline_resource_.value();
+        return cloud_pipeline_resource_.value();
+    }
+
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& composite_pipeline_resource() const {
+        if (!composite_pipeline_resource_.has_value()) {
+            throw std::runtime_error("cloud composite pipeline resource is not initialized");
+        }
+        return composite_pipeline_resource_.value();
+    }
+
+    [[nodiscard]] const cubey::render::MaterialInstance& composite_material() const {
+        if (!composite_material_.has_value()) {
+            throw std::runtime_error("cloud composite material is not initialized");
+        }
+        return composite_material_.value();
+    }
+
+    [[nodiscard]] const cubey::vulkan::Sampler& composite_sampler() const {
+        if (!composite_sampler_.has_value()) {
+            throw std::runtime_error("cloud composite sampler is not initialized");
+        }
+        return composite_sampler_.value();
     }
 
     RunConfig run_config_;
@@ -576,7 +779,11 @@ class CloudsApp {
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
     cubey::host::ProcessResourceStatsSampler process_stats_;
-    std::optional<cubey::render::GraphicsPipelineResource> pipeline_resource_;
+    cubey::render::RenderGraphFrameExecutor graph_executor_;
+    std::optional<cubey::render::GraphicsPipelineResource> cloud_pipeline_resource_;
+    std::optional<cubey::render::GraphicsPipelineResource> composite_pipeline_resource_;
+    std::optional<cubey::render::MaterialInstance> composite_material_;
+    std::optional<cubey::vulkan::Sampler> composite_sampler_;
 };
 
 } // namespace
