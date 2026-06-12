@@ -248,14 +248,21 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         return result;
     }
     result.shell_hit = 1.0;
+    float layer_thickness = max(params.cloud_shell.y - params.cloud_shell.x, 0.001);
+    float shell_span_ratio = (ray_end - ray_start) / layer_thickness;
     result.shell_span =
-        clamp((ray_end - ray_start) / max(params.cloud_shell.y - params.cloud_shell.x, 0.001) *
-                  0.18,
-              0.0, 1.0);
+        clamp(shell_span_ratio * 0.18, 0.0, 1.0);
+    float high_view = smoothstep(0.5, 1.1, params.camera_forward_mode.w);
+    float view_horizon = dot(direction, normalize(origin - center));
+    float tangent_fade = 1.0 - smoothstep(-0.34, -0.035, view_horizon);
+    float high_horizon_fade = mix(1.0, tangent_fade, high_view);
+    float sky_limb_fade = 1.0;
+    if (!hit_ground) {
+        sky_limb_fade = mix(1.0, smoothstep(0.55, 2.70, shell_span_ratio), high_view);
+    }
 
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     float step_len = (ray_end - ray_start) / float(max(view_steps, 1));
-    float layer_thickness = max(params.cloud_shell.y - params.cloud_shell.x, 0.001);
     float edge_fade_distance = max(layer_thickness * 0.55, step_len * 2.0);
     int used_steps = 0;
     float density_sum = 0.0;
@@ -270,6 +277,8 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         float sample_t = ray_start + (float(i) + 0.5 + jitter * 0.18) * step_len;
         vec3 p = origin + direction * sample_t;
         float density = cloud_density(p);
+        density *= high_horizon_fade;
+        density *= sky_limb_fade;
         float edge_distance = min(sample_t - ray_start, ray_end - sample_t);
         density *= smoothstep(0.0, edge_fade_distance, edge_distance);
         if (params.camera_forward_mode.w > 1.5 && !hit_ground) {

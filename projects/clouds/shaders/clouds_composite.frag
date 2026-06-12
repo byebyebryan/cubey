@@ -283,6 +283,13 @@ bool cloud_product_debug_view(int debug_view) {
            debug_view == CLOUDS_VIEW_CLOUD_ALPHA || debug_view == CLOUDS_VIEW_SHELL;
 }
 
+float high_view_horizon_cloud_fade(vec3 origin, vec3 direction) {
+    float high_view = smoothstep(0.5, 1.1, params.camera_forward_mode.w);
+    float view_horizon = dot(direction, normalize(origin - planet_center()));
+    float horizon_fade = 1.0 - smoothstep(-0.56, -0.04, view_horizon);
+    return mix(1.0, horizon_fade, high_view);
+}
+
 void main() {
     vec2 uv = frag_position * 0.5 + 0.5;
     vec4 cloud_product = texture(cloud_product_texture, uv);
@@ -293,8 +300,10 @@ void main() {
         vec3 origin = params.camera_position_radius.xyz;
         vec3 direction = view_direction();
         BackgroundSample background = sample_background(origin, direction);
+        float high_horizon_fade = high_view_horizon_cloud_fade(origin, direction);
         float cloud_transmittance = clamp(cloud_product.a, 0.0, 1.0);
-        scene_color = background.color * cloud_transmittance + cloud_product.rgb;
+        cloud_transmittance = mix(1.0, cloud_transmittance, high_horizon_fade);
+        scene_color = background.color * cloud_transmittance + cloud_product.rgb * high_horizon_fade;
 
         if (debug_view == CLOUDS_VIEW_BACKGROUND) {
             scene_color = background.color;
