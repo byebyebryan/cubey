@@ -115,6 +115,17 @@ into the composite pass, adds a standalone analytic surface-shadow diagnostic,
 and softens high-altitude cloud contribution near the horizon. These are still
 project-local prototype outputs rather than a shared renderer API.
 
+The fifth checkpoint makes the cloud model typed without promoting it out of the
+project. `fair-weather`, `broken-cumulus`, `overcast-stratus`, `storm-cells`,
+and `high-cirrus` are canonical presets; older names remain aliases. Presets now
+set coverage, density, weather scale, wind, cloud-layer altitude, and an
+internal cloud-style id passed through the existing push constant footprint. The
+raymarch pass and composite surface-shadow diagnostic share the same
+`clouds_model.glsl` density/weather implementation, with procedural fronts,
+cells, calm gaps, wind-aligned streaks, type-specific height profiles, and
+style-aware lighting. The added `projects/clouds/capture_review.sh` helper
+captures the standard surface/high/orbit/debug bundle before future tuning.
+
 The remaining promotion blockers are now less about first visibility and more
 about renderer contracts:
 
