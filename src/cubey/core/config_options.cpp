@@ -65,6 +65,8 @@ constexpr std::array<std::string_view, 6> kMilkyWayLayers{
 constexpr std::array<std::string_view, 6> kCloudCameraModes{
     "surface", "surface-up", "high", "high-oblique", "orbit", "orbit-terminator"};
 constexpr std::array<std::string_view, 3> kCloudQualities{"quarter", "half", "full"};
+constexpr std::array<std::string_view, 5> kCloudWeatherPresets{
+    "clear", "scattered", "inspection", "overcast", "storm"};
 constexpr std::array<std::string_view, 3> kSmokePressureSolvers{"jacobi", "rbgs",
                                                                 "red-black-gauss-seidel"};
 constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip", "picflip",
@@ -96,7 +98,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 187> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 188> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -503,6 +505,10 @@ constexpr std::array<ConfigOptionDescriptor, 187> kRunConfigOptions{
     option(RunConfigOptionId::CloudQuality, "clouds.quality", "--cloud-quality", "Quality",
            "Clouds", "Cloud render quality preset.", ConfigOptionType::Enum, no_range(),
            enum_choices(kCloudQualities)),
+    option(RunConfigOptionId::CloudWeatherPreset, "clouds.weather_preset",
+           "--cloud-weather-preset", "Weather Preset", "Clouds",
+           "Cloud coverage, density, scale, and wind preset.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kCloudWeatherPresets)),
     option(RunConfigOptionId::CloudPlanetRadius, "clouds.planet_radius_m",
            "--cloud-planet-radius-m", "Planet Radius", "Clouds",
            "Planet radius used by the cloud shell in meters.", ConfigOptionType::Float,
@@ -1143,6 +1149,9 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::CloudQuality:
         return config.clouds.quality.empty() ? nlohmann::json(nullptr)
                                              : nlohmann::json(config.clouds.quality);
+    case RunConfigOptionId::CloudWeatherPreset:
+        return config.clouds.weather_preset.empty() ? nlohmann::json(nullptr)
+                                                    : nlohmann::json(config.clouds.weather_preset);
     case RunConfigOptionId::CloudPlanetRadius:
         return optional_float(config.clouds.planet_radius_m);
     case RunConfigOptionId::CloudCameraAltitude:
@@ -1544,6 +1553,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::AtmosphereOptions& opti
 inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& options) {
     adapter.writeField<std::string>("camera_mode", options.camera_mode);
     adapter.writeField<std::string>("quality", options.quality);
+    adapter.writeField<std::string>("weather_preset", options.weather_preset);
     adapter.writeField<float>("planet_radius_m", options.planet_radius_m);
     adapter.writeField<float>("camera_altitude_m", options.camera_altitude_m);
     adapter.writeField<float>("bottom_altitude_m", options.bottom_altitude_m);
@@ -1557,6 +1567,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
 inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) {
     adapter.readField<std::string>("camera_mode", options.camera_mode);
     adapter.readField<std::string>("quality", options.quality);
+    adapter.readField<std::string>("weather_preset", options.weather_preset);
     adapter.readField<float>("planet_radius_m", options.planet_radius_m);
     adapter.readField<float>("camera_altitude_m", options.camera_altitude_m);
     adapter.readField<float>("bottom_altitude_m", options.bottom_altitude_m);
@@ -2135,6 +2146,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::CloudQuality:
         config.clouds.quality = std::string(value);
+        break;
+    case RunConfigOptionId::CloudWeatherPreset:
+        config.clouds.weather_preset = std::string(value);
         break;
     case RunConfigOptionId::CloudPlanetRadius:
         config.clouds.planet_radius_m = parse_config_float(value, option);

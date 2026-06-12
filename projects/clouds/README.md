@@ -21,6 +21,7 @@ Useful runs:
 ./build/dev/projects/clouds/clouds --cloud-camera-mode high-oblique
 ./build/dev/projects/clouds/clouds --cloud-camera-mode orbit
 ./build/dev/projects/clouds/clouds --cloud-camera-mode orbit-terminator
+./build/dev/projects/clouds/clouds --cloud-weather-preset storm
 ./build/dev/projects/clouds/clouds --debug-view weather
 ./build/dev/projects/clouds/clouds --debug-view density
 ./build/dev/projects/clouds/clouds --debug-view shadow
@@ -48,6 +49,10 @@ Controls:
 - `--cloud-camera-mode surface|surface-up|high|high-oblique|orbit|orbit-terminator`
   changes the default camera altitude and view framing. The shorter legacy
   names `surface`, `high`, and `orbit` remain the standard aliases.
+- `--cloud-weather-preset clear|scattered|inspection|overcast|storm` selects
+  baseline coverage, density, weather scale, and wind. The default `inspection`
+  preset is intentionally cloud-rich so headless review captures show the
+  volume.
 - `--cloud-quality quarter|half|full` controls raymarch sample budgets. The UI
   shows the intended resolution-scale contract, but clouds still render directly
   to the final target until the separate low-resolution composite path lands.

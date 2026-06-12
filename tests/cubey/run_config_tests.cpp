@@ -473,6 +473,7 @@ void test_run_config_loads_json_config_file() {
   "clouds": {
     "camera_mode": "high",
     "quality": "full",
+    "weather_preset": "inspection",
     "coverage": 0.62,
     "wind_speed_mps": 24.0
   }
@@ -526,6 +527,7 @@ void test_run_config_loads_json_config_file() {
                 config.atmosphere.time_hours == 18.5F && config.atmosphere.moon == 0,
             "config file should set atmosphere controls");
     require(config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
+                config.clouds.weather_preset == "inspection" &&
                 config.clouds.coverage == 0.62F && config.clouds.wind_speed_mps == 24.0F,
             "config file should set cloud controls");
 }
@@ -896,6 +898,8 @@ void test_run_config_parses_cloud_options() {
     std::string camera_value = "high-oblique";
     std::string quality_flag = "--cloud-quality";
     std::string quality_value = "full";
+    std::string weather_preset_flag = "--cloud-weather-preset";
+    std::string weather_preset_value = "storm";
     std::string planet_radius_flag = "--cloud-planet-radius-m";
     std::string planet_radius_value = "6000000";
     std::string camera_altitude_flag = "--cloud-camera-altitude-m";
@@ -912,12 +916,14 @@ void test_run_config_parses_cloud_options() {
     std::string weather_scale_value = "260";
     std::string wind_flag = "--cloud-wind-speed-mps";
     std::string wind_value = "32";
-    std::array<char*, 21> argv{
+    std::array<char*, 23> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
         quality_flag.data(),
         quality_value.data(),
+        weather_preset_flag.data(),
+        weather_preset_value.data(),
         planet_radius_flag.data(),
         planet_radius_value.data(),
         camera_altitude_flag.data(),
@@ -941,6 +947,8 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.camera_mode == "high-oblique",
             "run config should parse cloud camera mode");
     require(config.clouds.quality == "full", "run config should parse cloud quality");
+    require(config.clouds.weather_preset == "storm",
+            "run config should parse cloud weather preset");
     require(config.clouds.planet_radius_m == 6000000.0F,
             "run config should parse cloud planet radius");
     require(config.clouds.camera_altitude_m == 16000.0F,

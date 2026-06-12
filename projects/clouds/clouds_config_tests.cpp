@@ -38,6 +38,9 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::clouds::clouds_quality_from_string("full") ==
                 cubey::projects::clouds::CloudsQuality::Full,
             "full quality should parse");
+    require(cubey::projects::clouds::clouds_weather_preset_from_string("storm") ==
+                cubey::projects::clouds::CloudsWeatherPreset::Storm,
+            "storm weather preset should parse");
     require(cubey::projects::clouds::next_clouds_debug_view(
                 cubey::projects::clouds::CloudsDebugView::Shadow) ==
                 cubey::projects::clouds::CloudsDebugView::Steps,
@@ -60,6 +63,7 @@ void test_run_config_mapping() {
     run_config.debug_view = "density";
     run_config.clouds.camera_mode = "orbit";
     run_config.clouds.quality = "quarter";
+    run_config.clouds.weather_preset = "storm";
     run_config.clouds.planet_radius_m = 1000000.0F;
     run_config.clouds.bottom_altitude_m = 2000.0F;
     run_config.clouds.top_altitude_m = 9000.0F;
@@ -78,6 +82,8 @@ void test_run_config_mapping() {
             "cloud camera mode should map from run config");
     require(config.quality == cubey::projects::clouds::CloudsQuality::Quarter,
             "cloud quality should map from run config");
+    require(config.weather_preset == cubey::projects::clouds::CloudsWeatherPreset::Storm,
+            "cloud weather preset should map from run config");
     require(config.debug_view == cubey::projects::clouds::CloudsDebugView::Density,
             "cloud debug view should map from common debug config");
     require_near(config.camera_altitude_m,
@@ -110,14 +116,38 @@ void test_camera_preset_defaults() {
                  "explicit time should override orbit terminator preset time");
 }
 
+void test_weather_preset_defaults() {
+    cubey::RunConfig run_config{};
+    run_config.clouds.weather_preset = "overcast";
+
+    cubey::projects::clouds::CloudsConfig config =
+        cubey::projects::clouds::clouds_config_from_run_config(run_config);
+    require(config.weather_preset == cubey::projects::clouds::CloudsWeatherPreset::Overcast,
+            "overcast weather preset should map from run config");
+    require_near(config.coverage, 0.86F, 0.001F,
+                 "overcast weather preset should set coverage");
+    require_near(config.weather_scale_km, 240.0F, 0.001F,
+                 "overcast weather preset should set scale");
+
+    run_config.clouds.coverage = 0.35F;
+    config = cubey::projects::clouds::clouds_config_from_run_config(run_config);
+    require(config.weather_preset == cubey::projects::clouds::CloudsWeatherPreset::Overcast,
+            "explicit coverage should preserve selected weather preset");
+    require_near(config.coverage, 0.35F, 0.001F,
+                 "explicit coverage should override weather preset coverage");
+}
+
 void test_config_descriptors() {
     cubey::RunConfig config{};
     cubey::set_run_config_option_from_string(config, "clouds.camera_mode", "high");
     cubey::set_run_config_option_from_string(config, "clouds.quality", "full");
+    cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.wind_speed_mps", "22");
     require(config.clouds.camera_mode == "high", "cloud camera mode descriptor should set");
     require(config.clouds.quality == "full", "cloud quality descriptor should set");
+    require(config.clouds.weather_preset == "storm",
+            "cloud weather preset descriptor should set");
     require_near(config.clouds.coverage, 0.44F, 0.001F,
                  "cloud coverage descriptor should set");
     require_near(config.clouds.wind_speed_mps, 22.0F, 0.001F,
@@ -131,6 +161,7 @@ int main() {
         test_names_and_next_debug_view();
         test_run_config_mapping();
         test_camera_preset_defaults();
+        test_weather_preset_defaults();
         test_config_descriptors();
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

@@ -227,6 +227,7 @@ struct RunConfig {
     struct CloudOptions {
         std::string camera_mode{};
         std::string quality{};
+        std::string weather_preset{};
         float planet_radius_m = kRunConfigUnsetFloat;
         float camera_altitude_m = kRunConfigUnsetFloat;
         float bottom_altitude_m = kRunConfigUnsetFloat;

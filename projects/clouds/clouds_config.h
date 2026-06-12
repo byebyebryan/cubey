@@ -27,6 +27,14 @@ enum class CloudsQuality : std::uint32_t {
     Full = 2,
 };
 
+enum class CloudsWeatherPreset : std::uint32_t {
+    Clear = 0,
+    Scattered = 1,
+    Inspection = 2,
+    Overcast = 3,
+    Storm = 4,
+};
+
 enum class CloudsDebugView : std::uint32_t {
     Final = 0,
     Weather = 1,
@@ -68,6 +76,7 @@ struct CloudsTimeConfig {
 struct CloudsConfig {
     CloudsCameraMode camera_mode = CloudsCameraMode::Surface;
     CloudsQuality quality = CloudsQuality::Half;
+    CloudsWeatherPreset weather_preset = CloudsWeatherPreset::Inspection;
     CloudsDebugView debug_view = CloudsDebugView::Final;
     CloudsTimeConfig time{};
 
@@ -75,9 +84,9 @@ struct CloudsConfig {
     float camera_altitude_m = 1200.0F;
     float bottom_altitude_m = kCloudsDefaultBottomAltitudeM;
     float top_altitude_m = kCloudsDefaultTopAltitudeM;
-    float coverage = 0.46F;
-    float density = 1.15F;
-    float weather_scale_km = 180.0F;
+    float coverage = 0.70F;
+    float density = 1.08F;
+    float weather_scale_km = 130.0F;
     float wind_speed_mps = 18.0F;
 };
 
@@ -91,6 +100,9 @@ struct CloudsQualityBudget {
 [[nodiscard]] const char* clouds_camera_mode_name(CloudsCameraMode mode);
 [[nodiscard]] CloudsQuality clouds_quality_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_quality_name(CloudsQuality quality);
+[[nodiscard]] CloudsWeatherPreset clouds_weather_preset_from_string(std::string_view value);
+[[nodiscard]] const char* clouds_weather_preset_name(CloudsWeatherPreset preset);
+void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset preset);
 [[nodiscard]] CloudsDebugView clouds_debug_view_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_debug_view_name(CloudsDebugView view);
 [[nodiscard]] CloudsDebugView next_clouds_debug_view(CloudsDebugView view);

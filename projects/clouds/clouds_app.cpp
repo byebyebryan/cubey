@@ -48,6 +48,10 @@ constexpr std::array<CloudsQuality, 3> kCloudsQualityModes{
     CloudsQuality::Half,
     CloudsQuality::Full,
 };
+constexpr std::array<CloudsWeatherPreset, 5> kCloudsWeatherPresets{
+    CloudsWeatherPreset::Clear, CloudsWeatherPreset::Scattered, CloudsWeatherPreset::Inspection,
+    CloudsWeatherPreset::Overcast, CloudsWeatherPreset::Storm,
+};
 
 struct CloudsPushConstants {
     cubey::math::Vec4 camera_right_aspect;
@@ -370,6 +374,12 @@ class CloudsApp {
                 "Weather", {.help = "Coverage, density, wind, and macro weather scale."}};
             group) {
             const cubey::host::ScopedImGuiId section_id("Weather");
+            CloudsWeatherPreset selected_preset = config_.weather_preset;
+            if (cubey::host::imgui_enum_combo("Preset", selected_preset, kCloudsWeatherPresets,
+                                              clouds_weather_preset_name,
+                                              "Cloud weather inspection preset.")) {
+                apply_clouds_weather_preset(config_, selected_preset);
+            }
             cubey::host::imgui_slider_float("Coverage", &config_.coverage, 0.0F, 1.0F, "%.2f",
                                             "Amount of sky covered by the procedural weather map.");
             cubey::host::imgui_slider_float("Density", &config_.density, 0.0F, 2.0F, "%.2f",

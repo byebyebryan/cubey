@@ -17,7 +17,45 @@ namespace {
     return std::isfinite(value) && value >= 0.0F;
 }
 
+struct CloudsWeatherPresetSettings {
+    float coverage = 0.0F;
+    float density = 0.0F;
+    float weather_scale_km = 0.0F;
+    float wind_speed_mps = 0.0F;
+};
+
+[[nodiscard]] CloudsWeatherPresetSettings clouds_weather_preset_settings(
+    CloudsWeatherPreset preset) {
+    switch (preset) {
+    case CloudsWeatherPreset::Clear:
+        return {.coverage = 0.12F, .density = 0.55F, .weather_scale_km = 280.0F,
+                .wind_speed_mps = 8.0F};
+    case CloudsWeatherPreset::Scattered:
+        return {.coverage = 0.42F, .density = 0.92F, .weather_scale_km = 210.0F,
+                .wind_speed_mps = 14.0F};
+    case CloudsWeatherPreset::Inspection:
+        return {.coverage = 0.70F, .density = 1.08F, .weather_scale_km = 130.0F,
+                .wind_speed_mps = 18.0F};
+    case CloudsWeatherPreset::Overcast:
+        return {.coverage = 0.86F, .density = 0.96F, .weather_scale_km = 240.0F,
+                .wind_speed_mps = 12.0F};
+    case CloudsWeatherPreset::Storm:
+        return {.coverage = 0.78F, .density = 1.45F, .weather_scale_km = 95.0F,
+                .wind_speed_mps = 32.0F};
+    }
+    return clouds_weather_preset_settings(CloudsWeatherPreset::Inspection);
+}
+
 } // namespace
+
+void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset preset) {
+    config.weather_preset = preset;
+    const CloudsWeatherPresetSettings settings = clouds_weather_preset_settings(preset);
+    config.coverage = settings.coverage;
+    config.density = settings.density;
+    config.weather_scale_km = settings.weather_scale_km;
+    config.wind_speed_mps = settings.wind_speed_mps;
+}
 
 CloudsCameraMode clouds_camera_mode_from_string(std::string_view value) {
     if (value == "surface" || value == "surface-horizon") {
@@ -82,6 +120,41 @@ const char* clouds_quality_name(CloudsQuality quality) {
         return "full";
     }
     return "half";
+}
+
+CloudsWeatherPreset clouds_weather_preset_from_string(std::string_view value) {
+    if (value == "clear") {
+        return CloudsWeatherPreset::Clear;
+    }
+    if (value == "scattered") {
+        return CloudsWeatherPreset::Scattered;
+    }
+    if (value.empty() || value == "inspection") {
+        return CloudsWeatherPreset::Inspection;
+    }
+    if (value == "overcast") {
+        return CloudsWeatherPreset::Overcast;
+    }
+    if (value == "storm") {
+        return CloudsWeatherPreset::Storm;
+    }
+    throw std::runtime_error("unknown cloud weather preset: " + std::string(value));
+}
+
+const char* clouds_weather_preset_name(CloudsWeatherPreset preset) {
+    switch (preset) {
+    case CloudsWeatherPreset::Clear:
+        return "clear";
+    case CloudsWeatherPreset::Scattered:
+        return "scattered";
+    case CloudsWeatherPreset::Inspection:
+        return "inspection";
+    case CloudsWeatherPreset::Overcast:
+        return "overcast";
+    case CloudsWeatherPreset::Storm:
+        return "storm";
+    }
+    return "inspection";
 }
 
 CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
@@ -208,6 +281,11 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (!run_config.clouds.quality.empty()) {
         config.quality = clouds_quality_from_string(run_config.clouds.quality);
     }
+    if (!run_config.clouds.weather_preset.empty()) {
+        config.weather_preset =
+            clouds_weather_preset_from_string(run_config.clouds.weather_preset);
+    }
+    apply_clouds_weather_preset(config, config.weather_preset);
     if (!run_config.debug_view.empty()) {
         config.debug_view = clouds_debug_view_from_string(run_config.debug_view);
     }
