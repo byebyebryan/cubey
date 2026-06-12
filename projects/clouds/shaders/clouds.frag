@@ -185,7 +185,7 @@ float cloud_height_profile(float altitude_km) {
     float top = params.cloud_shell.y;
     float h = clamp((altitude_km - bottom) / max(top - bottom, 0.001), 0.0, 1.0);
     float base = smoothstep(0.02, 0.20, h);
-    float anvil = smoothstep(1.0, 0.58, h);
+    float anvil = 1.0 - smoothstep(0.58, 1.0, h);
     return base * anvil;
 }
 
@@ -306,6 +306,8 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
 
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     float step_len = (ray_end - ray_start) / float(max(view_steps, 1));
+    float layer_thickness = max(params.cloud_shell.y - params.cloud_shell.x, 0.001);
+    float edge_fade_distance = max(layer_thickness * 0.55, step_len * 2.0);
     int used_steps = 0;
     float density_sum = 0.0;
     float weather_sum = 0.0;
@@ -316,8 +318,11 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
             break;
         }
         float jitter = hash31(vec3(frag_position, float(i))) - 0.5;
-        vec3 p = origin + direction * (ray_start + (float(i) + 0.5 + jitter * 0.35) * step_len);
+        float sample_t = ray_start + (float(i) + 0.5 + jitter * 0.18) * step_len;
+        vec3 p = origin + direction * sample_t;
         float density = cloud_density(p);
+        float edge_distance = min(sample_t - ray_start, ray_end - sample_t);
+        density *= smoothstep(0.0, edge_fade_distance, edge_distance);
         if (params.camera_forward_mode.w > 1.5 && !hit_ground) {
             density *= 0.22;
         }
