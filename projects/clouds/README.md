@@ -21,6 +21,9 @@ Useful runs:
 ./build/dev/projects/clouds/clouds --debug-view weather
 ./build/dev/projects/clouds/clouds --debug-view density
 ./build/dev/projects/clouds/clouds --debug-view shadow
+./build/dev/projects/clouds/clouds --debug-view ground-hit
+./build/dev/projects/clouds/clouds --debug-view cloud-alpha
+./build/dev/projects/clouds/clouds --debug-view shell
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode surface --output outputs/clouds-surface.png
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode high --output outputs/clouds-high.png
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode orbit --output outputs/clouds-orbit.png
@@ -30,8 +33,9 @@ Useful runs:
 Controls:
 
 - Left-drag: rotate the camera.
-- `D`: cycle final, weather, density, transmittance, lighting, shadow, and step
-  debug views.
+- `D`: cycle final, weather, density, transmittance, lighting, shadow, step,
+  background, atmosphere, ground, ground-hit, cloud-alpha, and shell debug
+  views.
 - Space: play/pause solar time.
 - `R`: reset camera, time, and cloud settings.
 
@@ -40,9 +44,9 @@ Controls:
 - The cloud layer is a spherical shell around the configured planet radius.
 - `--cloud-camera-mode surface|high|orbit` changes the default camera altitude
   and view framing.
-- `--cloud-quality quarter|half|full` controls raymarch sample budgets. The
-  quality value is also carried as a resolution-scale contract for the later
-  low-resolution composite path.
+- `--cloud-quality quarter|half|full` controls raymarch sample budgets. The UI
+  shows the intended resolution-scale contract, but clouds still render directly
+  to the final target until the separate low-resolution composite path lands.
 - Weather fields are procedural and deterministic. There is not yet an uploaded
   weather texture, authoring UI, temporal accumulation buffer, ocean reflection
   output, or cloud shadow texture.
@@ -61,12 +65,10 @@ planet rendering:
 - Interactive control is rough. The project has quick camera mode buttons and
   basic sliders, but it has not been moved onto the shared hierarchical control
   model used by the more mature projects.
-- Runtime feedback is incomplete. The window does not show FPS/frame-time or
-  sample-budget diagnostics yet, so perceived slowness is hard to separate from
-  actual raymarch cost.
-- The atmosphere horizon band can appear again. The clouds shader currently
-  owns its own sky/ground composition path for the prototype, so it can diverge
-  from the fixed shared atmosphere behavior used by established projects.
+- Runtime feedback now shows FPS/frame-time and sample-budget diagnostics, but
+  the quality presets still do not reduce the actual render target resolution.
+- Sky, ground, and cloud composition is now explicit and has debug views, but it
+  remains project-local prototype code rather than a reusable cloud scene pass.
 
 The next clouds pass should keep tightening these before adding ocean
 reflection, planet integration, or richer cloud types.

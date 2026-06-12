@@ -313,7 +313,8 @@ class CloudsApp {
 
         cubey::host::imgui_enum_combo(
             "Debug view", config_.debug_view, kCloudsDebugViews, clouds_debug_view_name,
-            "Inspect final color, weather, density, transmittance, lighting, shadow, or step use.");
+            "Inspect final color, cloud fields, background composition, shell hits, or "
+            "raymarch step use.");
         cubey::host::imgui_enum_combo(
             "Quality", config_.quality, kCloudsQualityModes, clouds_quality_name,
             "Controls raymarch view and light sample budgets.");
@@ -416,8 +417,8 @@ class CloudsApp {
                 static_cast<std::uint64_t>(budget.view_steps * (1 + budget.light_steps)),
                 nullptr},
             cubey::host::PerformanceCounter{
-                "Quality scale", static_cast<std::uint64_t>(budget.resolution_scale * 100.0F),
-                "%"},
+                "Res scale contract",
+                static_cast<std::uint64_t>(budget.resolution_scale * 100.0F), "%"},
             cubey::host::PerformanceCounter{"Fullscreen tris", 1, nullptr},
         };
         cubey::host::draw_performance_ui({

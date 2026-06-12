@@ -15,6 +15,12 @@ const int CLOUDS_VIEW_TRANSMITTANCE = 3;
 const int CLOUDS_VIEW_LIGHTING = 4;
 const int CLOUDS_VIEW_SHADOW = 5;
 const int CLOUDS_VIEW_STEPS = 6;
+const int CLOUDS_VIEW_BACKGROUND = 7;
+const int CLOUDS_VIEW_ATMOSPHERE = 8;
+const int CLOUDS_VIEW_GROUND = 9;
+const int CLOUDS_VIEW_GROUND_HIT = 10;
+const int CLOUDS_VIEW_CLOUD_ALPHA = 11;
+const int CLOUDS_VIEW_SHELL = 12;
 
 layout(push_constant) uniform CloudsParams {
     vec4 camera_right_aspect;
@@ -110,9 +116,68 @@ CubeyAtmosphereMedium atmosphere_medium() {
         0.022);
 }
 
-vec3 sky_color(vec3 origin, vec3 direction) {
+vec3 planet_surface_albedo(vec3 position) {
+    vec3 up = normalize(position - planet_center());
+    float continents = fbm(up * 4.0 + vec3(3.0, 11.0, 19.0));
+    float shoreline = smoothstep(0.45, 0.58, continents);
+    float lowlands = fbm(up.yzx * 13.0 + vec3(17.0, 2.0, 5.0));
+    vec3 ocean = mix(vec3(0.012, 0.043, 0.083), vec3(0.028, 0.085, 0.135), lowlands);
+    vec3 land = mix(vec3(0.115, 0.095, 0.060), vec3(0.210, 0.185, 0.120), lowlands);
+    return mix(ocean, land, shoreline);
+}
+
+vec3 planet_surface_radiance(vec3 position) {
+    vec3 up = normalize(position - planet_center());
+    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
+    float sun_visibility = smoothstep(-0.08, 0.04, dot(up, sun_dir));
+    float ndotl = max(dot(up, sun_dir), 0.0);
+    float light_intensity = params.sun_direction_intensity.w;
+    vec3 albedo = planet_surface_albedo(position);
+    vec3 direct = vec3(1.00, 0.93, 0.80) * ndotl * sun_visibility * light_intensity;
+    vec3 ambient = vec3(0.014, 0.019, 0.030) * mix(0.30, 1.0, light_intensity);
+    return albedo * (ambient + direct);
+}
+
+struct BackgroundSample {
+    vec3 color;
+    vec3 atmosphere;
+    vec3 ground;
+    vec3 transmittance;
+    float ground_hit;
+    float atmosphere_hit;
+    float ray_fraction;
+};
+
+BackgroundSample sample_background(vec3 origin, vec3 direction) {
+    BackgroundSample result;
+    result.color = vec3(0.0);
+    result.atmosphere = vec3(0.0);
+    result.ground = vec3(0.0);
+    result.transmittance = vec3(1.0);
+    result.ground_hit = 0.0;
+    result.atmosphere_hit = 0.0;
+    result.ray_fraction = 0.0;
+
     CubeyAtmosphereMedium medium = atmosphere_medium();
-    return cubey_atmosphere_integrate_view(medium, origin, direction, -1.0).color;
+    CubeyAtmosphereRaySegment segment =
+        cubey_atmosphere_classify_ray(medium, origin, direction, -1.0);
+    if (segment.hit_atmosphere) {
+        CubeyAtmosphereSample atmosphere =
+            cubey_atmosphere_integrate_ray(medium, origin, direction, segment.start, segment.end);
+        result.atmosphere = atmosphere.color;
+        result.transmittance = atmosphere.transmittance;
+        result.atmosphere_hit = 1.0;
+        result.ray_fraction = clamp(atmosphere.ray_length / max(medium.top_radius * 0.08, 1.0),
+                                    0.0, 1.0);
+    }
+    result.color = result.atmosphere;
+    if (segment.hit_ground) {
+        result.ground_hit = 1.0;
+        vec3 surface_position = origin + direction * segment.ground_t;
+        result.ground = planet_surface_radiance(surface_position);
+        result.color += result.transmittance * result.ground;
+    }
+    return result;
 }
 
 float cloud_height_profile(float altitude_km) {
@@ -190,6 +255,9 @@ struct CloudSample {
     float mean_light;
     float mean_shadow;
     float step_fraction;
+    float shell_hit;
+    float hit_ground;
+    float shell_span;
 };
 
 CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_steps) {
@@ -201,6 +269,9 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     result.mean_light = 0.0;
     result.mean_shadow = 0.0;
     result.step_fraction = 0.0;
+    result.shell_hit = 0.0;
+    result.hit_ground = 0.0;
+    result.shell_span = 0.0;
 
     vec3 center = planet_center();
     float top_radius = params.camera_position_radius.w + params.cloud_shell.y;
@@ -222,10 +293,16 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     bool hit_ground = ground_hit.x > 0.0;
     if (hit_ground) {
         ray_end = min(ray_end, ground_hit.x);
+        result.hit_ground = 1.0;
     }
     if (ray_end <= ray_start) {
         return result;
     }
+    result.shell_hit = 1.0;
+    result.shell_span =
+        clamp((ray_end - ray_start) / max(params.cloud_shell.y - params.cloud_shell.x, 0.001) *
+                  0.18,
+              0.0, 1.0);
 
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     float step_len = (ray_end - ray_start) / float(max(view_steps, 1));
@@ -292,9 +369,9 @@ void main() {
     int view_steps = clamp(int(params.render_options.y + 0.5), 1, CLOUDS_MAX_VIEW_STEPS);
     int light_steps = clamp(int(params.render_options.z + 0.5), 1, CLOUDS_MAX_LIGHT_STEPS);
 
-    vec3 sky = sky_color(origin, direction);
+    BackgroundSample background = sample_background(origin, direction);
     CloudSample clouds = march_clouds(origin, direction, view_steps, light_steps);
-    vec3 final_color = sky * clouds.transmittance + clouds.color;
+    vec3 final_color = background.color * clouds.transmittance + clouds.color;
 
     if (debug_view == CLOUDS_VIEW_WEATHER) {
         final_color = vec3(clouds.mean_weather);
@@ -308,6 +385,19 @@ void main() {
         final_color = vec3(clouds.mean_shadow);
     } else if (debug_view == CLOUDS_VIEW_STEPS) {
         final_color = vec3(clouds.step_fraction, 1.0 - clouds.step_fraction, 0.15);
+    } else if (debug_view == CLOUDS_VIEW_BACKGROUND) {
+        final_color = background.color;
+    } else if (debug_view == CLOUDS_VIEW_ATMOSPHERE) {
+        final_color = background.atmosphere;
+    } else if (debug_view == CLOUDS_VIEW_GROUND) {
+        final_color = background.ground;
+    } else if (debug_view == CLOUDS_VIEW_GROUND_HIT) {
+        final_color = vec3(background.ground_hit, background.atmosphere_hit,
+                           background.ray_fraction);
+    } else if (debug_view == CLOUDS_VIEW_CLOUD_ALPHA) {
+        final_color = vec3(1.0 - clouds.transmittance);
+    } else if (debug_view == CLOUDS_VIEW_SHELL) {
+        final_color = vec3(clouds.shell_hit, clouds.hit_ground, clouds.shell_span);
     }
 
     vec3 display = cubey_pbr_apply_display_transform(final_color, vec4(-1.20, 1.0, 0.0, 0.0));

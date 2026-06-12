@@ -34,9 +34,16 @@ void test_names_and_next_debug_view() {
                 cubey::projects::clouds::CloudsDebugView::Steps,
             "cloud debug view should advance");
     require(cubey::projects::clouds::next_clouds_debug_view(
-                cubey::projects::clouds::CloudsDebugView::Steps) ==
+                cubey::projects::clouds::CloudsDebugView::GroundHit) ==
+                cubey::projects::clouds::CloudsDebugView::CloudAlpha,
+            "cloud composition debug view should advance");
+    require(cubey::projects::clouds::next_clouds_debug_view(
+                cubey::projects::clouds::CloudsDebugView::Shell) ==
                 cubey::projects::clouds::CloudsDebugView::Final,
             "cloud debug view should wrap");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("cloud-alpha") ==
+                cubey::projects::clouds::CloudsDebugView::CloudAlpha,
+            "cloud alpha debug view should parse");
 }
 
 void test_run_config_mapping() {

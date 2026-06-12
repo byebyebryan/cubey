@@ -91,6 +91,24 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "steps") {
         return CloudsDebugView::Steps;
     }
+    if (value == "background") {
+        return CloudsDebugView::Background;
+    }
+    if (value == "atmosphere") {
+        return CloudsDebugView::Atmosphere;
+    }
+    if (value == "ground") {
+        return CloudsDebugView::Ground;
+    }
+    if (value == "ground-hit") {
+        return CloudsDebugView::GroundHit;
+    }
+    if (value == "cloud-alpha") {
+        return CloudsDebugView::CloudAlpha;
+    }
+    if (value == "shell") {
+        return CloudsDebugView::Shell;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -110,6 +128,18 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "shadow";
     case CloudsDebugView::Steps:
         return "steps";
+    case CloudsDebugView::Background:
+        return "background";
+    case CloudsDebugView::Atmosphere:
+        return "atmosphere";
+    case CloudsDebugView::Ground:
+        return "ground";
+    case CloudsDebugView::GroundHit:
+        return "ground-hit";
+    case CloudsDebugView::CloudAlpha:
+        return "cloud-alpha";
+    case CloudsDebugView::Shell:
+        return "shell";
     }
     return "final";
 }

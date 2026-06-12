@@ -95,3 +95,10 @@ Treat these as prerequisites for promotion. The likely next direction is a
 seam-safe spherical weather/domain representation, shared performance and
 config UI integration, and reuse of the fixed shared atmosphere composition
 path instead of duplicating sky composition inside the cloud shader.
+
+The second clouds checkpoint adds the first seam-safe spherical weather domain,
+shared performance UI, and explicit prototype composition terms for background
+atmosphere, procedural ground, cloud alpha, and cloud-shell ray coverage. That
+makes the horizon band and shell framing diagnosable inside the standalone
+project. The reduced-resolution rule above still needs a real offscreen cloud
+target and composite pass before quality presets reduce rendered pixels.
