@@ -4,12 +4,13 @@
 rendering. It keeps cloud policy separate from the clear-sky atmosphere project
 while consuming the same solar-clock and atmosphere scattering foundation.
 
-The current renderer is a v1 fullscreen spherical cloud-shell raymarch. It has
-surface, high-altitude, and orbit camera modes, low-frequency weather coverage,
-detail erosion, single-scattering lighting, cheap self-shadowing, and debug
-views for the major fields. It deliberately does not integrate into ocean or
-planet yet; those projects should later consume cloud sky/reflection and shadow
-outputs after this standalone path is stable.
+The current renderer is a v1 spherical cloud-shell raymarch. It renders the
+cloud/sky scene into a quality-scaled offscreen target, composites to the final
+target, and supports surface, high-altitude, and orbit camera modes,
+low-frequency weather coverage, detail erosion, single-scattering lighting,
+cheap self-shadowing, and debug views for the major fields. It deliberately
+does not integrate into ocean or planet yet; those projects should later consume
+cloud sky/reflection and shadow outputs after this standalone path is stable.
 
 Useful runs:
 
@@ -51,11 +52,10 @@ Controls:
   names `surface`, `high`, and `orbit` remain the standard aliases.
 - `--cloud-weather-preset clear|scattered|inspection|overcast|storm` selects
   baseline coverage, density, weather scale, and wind. The default `inspection`
-  preset is intentionally cloud-rich so headless review captures show the
-  volume.
-- `--cloud-quality quarter|half|full` controls raymarch sample budgets. The UI
-  shows the intended resolution-scale contract, but clouds still render directly
-  to the final target until the separate low-resolution composite path lands.
+  preset is intentionally a broken-cloud view so surface, high-altitude, and
+  orbit review captures all show meaningful structure.
+- `--cloud-quality quarter|half|full` controls both raymarch sample budgets and
+  the offscreen cloud render scale before final compositing.
 - Weather fields are procedural and deterministic. There is not yet an uploaded
   weather texture, authoring UI, temporal accumulation buffer, ocean reflection
   output, or cloud shadow texture.
@@ -70,14 +70,29 @@ These are observed blockers before the clouds project should feed ocean or
 planet rendering:
 
 - Broad cloud-map seams have a first fix through a seam-safe spherical weather
-  domain. Orbit-edge composition artifacts and high-view tuning are still rough.
+  domain. Orbit-edge composition artifacts and high-view tuning are still rough,
+  but orbit detail now suppresses local high-frequency erosion so the planet
+  reads as broad weather masses rather than speckle.
 - Interactive control is rough. The project has quick camera mode buttons and
   basic sliders, but it has not been moved onto the shared hierarchical control
   model used by the more mature projects.
-- Runtime feedback now shows FPS/frame-time and sample-budget diagnostics, but
-  the quality presets still do not reduce the actual render target resolution.
-- Sky, ground, and cloud composition is now explicit and has debug views, but it
-  remains project-local prototype code rather than a reusable cloud scene pass.
+- Runtime feedback now shows FPS/frame-time, sample-budget diagnostics, cloud
+  render pixels, output pixels, and the active cloud render scale.
+- Sky, ground, and cloud composition is explicit and uses the shared atmosphere
+  sky-background ray classifier for non-ground rays, but it remains
+  project-local prototype code rather than a reusable cloud scene pass.
+
+## Integration Contract
+
+Ocean and planet should not raymarch volumetric clouds inside their material
+shaders. The intended promotion path is a cloud scene/composite producer that
+emits:
+
+- linear sky/cloud radiance plus transmittance for background composition;
+- a low-frequency cloud shadow factor keyed by sun direction;
+- optional reflection/environment inputs for water and PBR consumers;
+- debug views for weather, density, lighting, shadow, cloud alpha, and shell
+  coverage.
 
 The next clouds pass should keep tightening these before adding ocean
 reflection, planet integration, or richer cloud types.

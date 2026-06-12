@@ -100,5 +100,27 @@ The second clouds checkpoint adds the first seam-safe spherical weather domain,
 shared performance UI, and explicit prototype composition terms for background
 atmosphere, procedural ground, cloud alpha, and cloud-shell ray coverage. That
 makes the horizon band and shell framing diagnosable inside the standalone
-project. The reduced-resolution rule above still needs a real offscreen cloud
-target and composite pass before quality presets reduce rendered pixels.
+project.
+
+The third checkpoint adds a real offscreen cloud color target and composite
+pass, so `quarter`, `half`, and `full` quality now change both sample budgets
+and rendered cloud pixels. It also retunes the default inspection weather toward
+broken clouds, uses orbit-aware detail suppression so planet views preserve
+broad weather masses, and switches non-ground background rays to the shared
+`cubey_atmosphere_classify_sky_background_ray` helper.
+
+The remaining promotion blockers are now less about first visibility and more
+about renderer contracts:
+
+- separate cloud radiance/transmittance from final display color so ocean and
+  planet can compose clouds with their own scene passes;
+- produce a cloud shadow texture or analytic sun-shadow factor for surface and
+  ocean lighting;
+- add temporal accumulation or blue-noise sampling before increasing quality;
+- decide whether weather authoring is procedural-only, texture-driven, or a
+  hybrid with uploaded weather maps;
+- move useful controls onto the shared hierarchical config/UI surface.
+
+Ocean should consume cloud reflection/background/shadow outputs. Planet should
+consume the same weather model at orbit and surface scale. Neither should embed
+the volumetric raymarch in a water, terrain, or PBR material shader.
