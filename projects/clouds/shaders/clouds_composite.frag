@@ -20,6 +20,7 @@ const int CLOUDS_VIEW_SHELL = 12;
 const int CLOUDS_VIEW_SURFACE_SHADOW = 13;
 const int CLOUDS_VIEW_DOMAIN = 14;
 const int CLOUDS_VIEW_DISTANCE = 15;
+const float CLOUDS_ATMOSPHERE_HEIGHT_KM = 100.0;
 
 layout(set = 0, binding = 0) uniform sampler2D cloud_product_texture;
 
@@ -41,7 +42,7 @@ layout(location = 0) out vec4 out_color;
 
 CubeyAtmosphereMedium atmosphere_medium() {
     float ground_radius = params.camera_position_radius.w;
-    float top_radius = ground_radius + params.cloud_shell.z;
+    float top_radius = ground_radius + CLOUDS_ATMOSPHERE_HEIGHT_KM;
     return CubeyAtmosphereMedium(
         planet_center(),
         ground_radius,

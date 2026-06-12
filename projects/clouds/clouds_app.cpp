@@ -49,6 +49,7 @@ constexpr float kSurfaceMinPitchRadians = -1.35F;
 constexpr float kSurfaceMaxPitchRadians = 1.35F;
 constexpr float kOrbitMaxLatitudeRadians = 1.30F;
 constexpr VkFormat kCloudsSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+constexpr float kCloudsSunIntensityScale = 0.48F;
 constexpr std::array<CloudsCameraMode, 6> kCloudsCameraModes{
     CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
     CloudsCameraMode::HighOblique, CloudsCameraMode::Orbit, CloudsCameraMode::OrbitTerminator,
@@ -302,6 +303,23 @@ clouds_solar_position(const CloudsConfig& config) {
     });
 }
 
+[[nodiscard]] cubey::render::AtmosphereEnvironmentLighting
+clouds_environment_lighting(const CloudsConfig& config,
+                            const cubey::render::AtmosphereEnvironmentSolarPosition& solar) {
+    cubey::render::AtmosphereEnvironmentConfig environment{};
+    environment.time_of_day.time_hours = config.time.time_hours;
+    environment.time_of_day.day_of_year = config.time.day_of_year;
+    environment.time_of_day.latitude_degrees = config.time.latitude_degrees;
+    environment.time_of_day.azimuth_offset_degrees = config.time.azimuth_offset_degrees;
+    environment.sun_elevation_degrees = solar.elevation_degrees;
+    environment.sun_azimuth_degrees = solar.azimuth_degrees;
+    environment.camera_altitude_km = config.camera_altitude_m * 0.001F;
+    environment.ground_mode =
+        cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion;
+    environment.reference_geometry_enabled = false;
+    return cubey::render::atmosphere_environment_lighting(environment);
+}
+
 [[nodiscard]] CloudsPushConstants clouds_push_constants(const CloudsConfig& config,
                                                         VkExtent2D extent, float yaw,
                                                         float pitch, float elapsed_seconds) {
@@ -313,7 +331,10 @@ clouds_solar_position(const CloudsConfig& config) {
     const cubey::math::Vec3 sun_direction =
         cubey::render::atmosphere_environment_direction_from_alt_az(
             solar_position.elevation_degrees, solar_position.azimuth_degrees);
-    constexpr float kSolarRadianceScale = 1.0F;
+    const cubey::render::AtmosphereEnvironmentLighting lighting =
+        clouds_environment_lighting(config, solar_position);
+    const float sun_intensity =
+        std::min(lighting.sun_intensity * kCloudsSunIntensityScale, 1.15F);
 
     return {
         .camera_right_aspect = {basis.right.x, basis.right.y, basis.right.z, aspect},
@@ -323,11 +344,11 @@ clouds_solar_position(const CloudsConfig& config) {
         .camera_position_radius = {basis.position_km.x, basis.position_km.y, basis.position_km.z,
                                    config.planet_radius_m * 0.001F},
         .cloud_shell = {config.bottom_altitude_m * 0.001F, config.top_altitude_m * 0.001F,
-                        100.0F, clouds_cloud_style_shader_value(config.cloud_style)},
+                        lighting.moon_intensity, clouds_cloud_style_shader_value(config.cloud_style)},
         .weather = {config.coverage, config.density, config.weather_scale_km,
                     elapsed_seconds * config.wind_speed_mps * 0.001F},
         .sun_direction_intensity = {sun_direction.x, sun_direction.y, sun_direction.z,
-                                    kSolarRadianceScale},
+                                    sun_intensity},
         .render_options = {static_cast<float>(static_cast<std::uint32_t>(config.debug_view)),
                            static_cast<float>(budget.view_steps),
                            static_cast<float>(budget.light_steps), config.shadow_strength},
@@ -581,6 +602,8 @@ class CloudsApp {
         }
 
         const auto solar = clouds_solar_position(config_);
+        const cubey::render::AtmosphereEnvironmentLighting lighting =
+            clouds_environment_lighting(config_, solar);
         if (const cubey::host::ScopedImGuiGroup group{
                 "Diagnostics", {.default_open = false,
                                  .help = "Read-only cloud camera, shell, and solar state."}};
@@ -594,6 +617,9 @@ class CloudsApp {
                         elapsed_seconds_ * config_.wind_speed_mps * 0.001F);
             ImGui::Text("Sun: %.1f elev / %.1f az", solar.elevation_degrees,
                         solar.azimuth_degrees);
+            ImGui::Text("Cloud light: %.2f sun / %.3f moon",
+                        std::min(lighting.sun_intensity * kCloudsSunIntensityScale, 1.15F),
+                        lighting.moon_intensity);
             ImGui::TextUnformatted("Keys: D debug, Space solar play, R reset");
         }
 

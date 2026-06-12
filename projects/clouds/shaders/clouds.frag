@@ -378,6 +378,8 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
                        ambient_shadow);
         ambient *= mix(cloud_style_value(0.0002, 0.0003, 0.0004, 0.0002, 0.0005), 1.0,
                        ambient_energy);
+        float moon_energy = clamp(params.cloud_shell.z, 0.0, 1.0) * (1.0 - ambient_energy);
+        ambient += moon_energy * cloud_style_value(0.040, 0.046, 0.060, 0.038, 0.032);
         float top_lift = smoothstep(0.20, 0.85, height01);
         vec3 direct_tint = mix(vec3(1.12, 0.96, 0.78), vec3(1.06, 1.04, 0.98),
                                params.sun_direction_intensity.w);
