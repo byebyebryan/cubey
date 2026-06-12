@@ -114,9 +114,37 @@ vec3 planet_surface_radiance(vec3 position, float cloud_shadow) {
     return albedo * (ambient + direct);
 }
 
+float hash13(vec3 p) {
+    p = fract(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
+float star_visibility(vec3 sun_dir) {
+    float sun_elevation = clamp(sun_dir.y, -1.0, 1.0);
+    return 1.0 - smoothstep(-0.28, -0.08, sun_elevation);
+}
+
+vec3 cloud_space_radiance(vec3 direction) {
+    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
+    float sun_alignment = max(dot(direction, sun_dir), 0.0);
+    float disk = smoothstep(0.999985, 1.0, sun_alignment);
+    float glow = pow(sun_alignment, 360.0) * smoothstep(-0.08, 0.12, sun_dir.y);
+    vec3 base = vec3(0.0010, 0.0016, 0.0048);
+
+    vec3 cell = floor(direction * 1150.0);
+    float stars = smoothstep(0.9988, 1.0, hash13(cell));
+    stars *= 0.55 + 0.45 * hash13(cell + vec3(19.0, 37.0, 71.0));
+    stars *= star_visibility(sun_dir);
+
+    return base + vec3(0.78, 0.84, 1.0) * stars * 0.030 +
+           vec3(1.0, 0.86, 0.58) * (disk * 12.0 + glow * 0.24);
+}
+
 struct BackgroundSample {
     vec3 color;
     vec3 atmosphere;
+    vec3 space;
     vec3 ground;
     vec3 transmittance;
     float ground_hit;
@@ -129,6 +157,7 @@ BackgroundSample sample_background(vec3 origin, vec3 direction) {
     BackgroundSample result;
     result.color = vec3(0.0);
     result.atmosphere = vec3(0.0);
+    result.space = vec3(0.0);
     result.ground = vec3(0.0);
     result.transmittance = vec3(1.0);
     result.ground_hit = 0.0;
@@ -140,9 +169,8 @@ BackgroundSample sample_background(vec3 origin, vec3 direction) {
     CubeyAtmosphereRaySegment ground_segment =
         cubey_atmosphere_classify_ray(medium, origin, direction, -1.0);
     CubeyAtmosphereRaySegment sky_segment =
-        ground_segment.hit_ground
-            ? ground_segment
-            : cubey_atmosphere_classify_sky_background_ray(medium, origin, direction, -1.0);
+        cubey_atmosphere_classify_sky_background_ray(medium, origin, direction, -1.0);
+    result.space = cloud_space_radiance(direction);
     if (sky_segment.hit_atmosphere) {
         CubeyAtmosphereSample atmosphere =
             cubey_atmosphere_integrate_ray(medium, origin, direction, sky_segment.start,
@@ -153,14 +181,25 @@ BackgroundSample sample_background(vec3 origin, vec3 direction) {
         result.ray_fraction = clamp(atmosphere.ray_length / max(medium.top_radius * 0.08, 1.0),
                                     0.0, 1.0);
     }
-    result.color = result.atmosphere;
+    result.color = result.atmosphere + result.transmittance * result.space;
     if (ground_segment.hit_ground) {
         result.ground_hit = 1.0;
         vec3 surface_position = origin + direction * ground_segment.ground_t;
         result.cloud_shadow =
             surface_cloud_shadow(surface_position, normalize(params.sun_direction_intensity.xyz));
-        result.ground = planet_surface_radiance(surface_position, result.cloud_shadow);
-        result.color += result.transmittance * result.ground;
+        CubeyAtmosphereSample ground_atmosphere =
+            cubey_atmosphere_integrate_ray(medium, origin, direction, ground_segment.start,
+                                           ground_segment.end);
+        result.ground =
+            ground_atmosphere.color +
+            ground_atmosphere.transmittance *
+                planet_surface_radiance(surface_position, result.cloud_shadow);
+        vec3 camera_up = normalize(origin - planet_center());
+        float view_horizon = dot(direction, camera_up);
+        float orbit_view = smoothstep(1.5, 2.0, params.camera_forward_mode.w);
+        float ground_weight =
+            mix(1.0 - smoothstep(-0.045, 0.020, view_horizon), 1.0, orbit_view);
+        result.color = mix(result.color, result.ground, ground_weight);
     }
     return result;
 }
