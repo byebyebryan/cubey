@@ -126,6 +126,18 @@ cells, calm gaps, wind-aligned streaks, type-specific height profiles, and
 style-aware lighting. The added `projects/clouds/capture_review.sh` helper
 captures the standard surface/high/orbit/debug bundle before future tuning.
 
+The sixth checkpoint addresses the first proper-fix batch. The standalone
+composite now separates sky/space background from the diagnostic ground proxy,
+so sky rays are no longer ground-occluded just because the prototype has a
+ground surface. Surface and high cameras use a finite local cloud volume plus a
+cheap distant horizon layer, while orbit cameras keep the spherical shell.
+`domain` and `distance` debug views expose the active path and march coverage.
+Cloud products resolve through per-frame-slot temporal reconstruction using
+history textures that are safe for the host's frame-slot model. Night lighting
+uses shared atmosphere sun intensity and scalar moon ambient intensity, so
+night clouds should read as silhouettes unless the shared environment reports
+moonlight.
+
 The remaining promotion blockers are now less about first visibility and more
 about renderer contracts:
 

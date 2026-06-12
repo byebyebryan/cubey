@@ -4,12 +4,14 @@
 rendering. It keeps cloud policy separate from the clear-sky atmosphere project
 while consuming the same solar-clock and atmosphere scattering foundation.
 
-The current renderer is a v1 spherical cloud-shell raymarch. It renders a
+The current renderer is a v1 planet-aware cloud raymarch. Surface and high
+cameras use a finite local cloud volume with a distant horizon layer, while
+orbit cameras keep the spherical planet-scale shell. The renderer writes a
 quality-scaled cloud product target with linear cloud radiance plus view
-transmittance, composites that product over the standalone atmosphere/ground
-proxy, and supports surface, high-altitude, and orbit camera modes,
-typed procedural weather presets, front/cell/streak weather structure,
-type-specific density profiles, single-scattering lighting, cheap
+transmittance, resolves it through per-frame-slot temporal reconstruction, and
+composites that product over the standalone atmosphere/ground proxy. It
+supports typed procedural weather presets, front/cell/streak weather structure,
+type-specific density profiles, shared-atmosphere sun/moon lighting, cheap
 self-shadowing, prototype surface cloud shadows, and debug views for the major
 fields. It deliberately does not integrate into ocean or planet yet; those
 projects should later consume cloud sky/reflection and shadow outputs after this
@@ -37,6 +39,8 @@ Useful runs:
 ./build/dev/projects/clouds/clouds --debug-view cloud-alpha
 ./build/dev/projects/clouds/clouds --debug-view shell
 ./build/dev/projects/clouds/clouds --debug-view surface-shadow
+./build/dev/projects/clouds/clouds --debug-view domain
+./build/dev/projects/clouds/clouds --debug-view distance
 ./build/dev/projects/clouds/clouds --cloud-shadow-strength 1.0
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode surface --output outputs/clouds-surface.png
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode high --output outputs/clouds-high.png
@@ -49,14 +53,16 @@ Controls:
 
 - Left-drag: rotate the camera.
 - `D`: cycle final, weather, density, transmittance, lighting, shadow, step,
-  background, atmosphere, ground, ground-hit, cloud-alpha, shell, and
-  surface-shadow debug views.
+  background, atmosphere, ground, ground-hit, cloud-alpha, shell,
+  surface-shadow, domain, and distance debug views.
 - Space: play/pause solar time.
 - `R`: reset camera, time, and cloud settings.
 
 ## Current Scope
 
-- The cloud layer is a spherical shell around the configured planet radius.
+- Surface and high cameras render a finite local cloud volume to avoid
+  planet-scale tangent marches near the horizon. Orbit cameras render the
+  spherical shell around the configured planet radius.
 - `--cloud-camera-mode surface|surface-up|high|high-oblique|orbit|orbit-terminator`
   changes the default camera altitude and view framing. The shorter legacy
   names `surface`, `high`, and `orbit` remain the standard aliases.
@@ -74,8 +80,8 @@ Controls:
 - `--cloud-shadow-strength` controls the prototype analytic cloud shadow factor
   applied only to the standalone procedural ground/ocean proxy.
 - Weather fields are procedural and deterministic. There is not yet an uploaded
-  weather texture, authoring UI, temporal accumulation buffer, ocean reflection
-  output, or promoted cloud shadow texture.
+  weather texture, authoring UI, ocean reflection output, or promoted cloud
+  shadow texture.
 
 See
 [`docs/notes/cloud-weather-rendering-research.md`](../../docs/notes/cloud-weather-rendering-research.md)
@@ -83,8 +89,9 @@ for the research context and promotion criteria.
 
 Use `projects/clouds/capture_review.sh outputs/clouds-review` to write the
 standard review bundle: surface, surface-up, high, high-oblique, orbit,
-orbit-terminator, weather, density, cloud-alpha, and surface-shadow. If
-ImageMagick is available the helper also writes `contact-sheet.png`.
+orbit-terminator, weather, density, cloud-alpha, domain, distance,
+surface-shadow, and orbit-night. If ImageMagick is available the helper also
+writes `contact-sheet.png`.
 
 ## Known V1 Issues
 
@@ -93,17 +100,17 @@ planet rendering:
 
 - Broad cloud-map seams have a first fix through a seam-safe spherical weather
   domain and typed procedural fronts/cells/streaks. Orbit-edge and high-view
-  composition are still rough, but high-altitude cloud contribution now tapers
-  near the horizon and orbit detail suppresses local high-frequency erosion so
-  the planet reads as broad weather masses rather than speckle.
-- Surface camera views still show horizon streaking/banding from the v1
-  raymarched cloud shell and vertically extruded density model. Full quality
-  reduces noise but does not remove the pattern, so this needs a deeper
-  density/reconstruction pass rather than more sample-budget tuning.
-- High-oblique views can expose a dark upper-atmosphere/space band because the
-  standalone clouds composite uses a local prototype atmosphere/background
-  pass. This should be resolved before cloud outputs are promoted into the
-  shared sky/environment path.
+  composition still need more art direction, but orbit detail suppresses local
+  high-frequency erosion so the planet reads as broad weather masses rather
+  than speckle.
+- Surface and high views now use a finite local volume plus a distant horizon
+  layer instead of marching the full spherical shell tangent to the planet.
+  This is the intended direction, but the horizon blend and density shaping
+  still need visual tuning.
+- High-oblique background composition now separates sky/space from the
+  diagnostic ground proxy and uses sky-only atmosphere classification for the
+  background. Any remaining horizon band should be treated as a visual tuning
+  bug, not as the old ground-occluded atmosphere path.
 - Interactive control is rough. The project has quick camera mode buttons and
   basic sliders, but it has not been moved onto the shared hierarchical control
   model used by the more mature projects.
@@ -113,9 +120,9 @@ planet rendering:
   plus the shared atmosphere sky-background ray classifier for non-ground rays,
   but it remains project-local prototype code rather than a reusable cloud scene
   pass.
-- Night-side cloud lighting now gates direct/twilight contribution more
-  strictly, but proper moonlight/starlight and exposure-aware night cloud
-  silhouettes are still missing.
+- Night-side cloud lighting now gets direct sun and moon ambient intensity from
+  the shared atmosphere lighting model. Moonlight is still scalar ambient rather
+  than a full directional/moon-shadow model.
 
 ## Integration Contract
 

@@ -104,6 +104,7 @@ struct CloudsFrameGraph {
     cubey::render::RenderGraphTextureHandle resolved_cloud_color{};
     VkExtent2D cloud_extent{};
     bool history_read_valid = false;
+    std::uint32_t history_write_index = 0;
 };
 
 std::filesystem::path shader_path(const char* filename) {
@@ -700,11 +701,13 @@ class CloudsApp {
         cloud_pipeline_resource_.reset();
         cloud_history_textures_.clear();
         cloud_history_read_indices_.clear();
-        cloud_history_valid_.clear();
+        cloud_history_texture_valid_.clear();
     }
 
     void invalidate_cloud_history() {
-        std::fill(cloud_history_valid_.begin(), cloud_history_valid_.end(), false);
+        for (std::array<bool, 2>& valid : cloud_history_texture_valid_) {
+            valid = {false, false};
+        }
         std::fill(cloud_history_read_indices_.begin(), cloud_history_read_indices_.end(), 0U);
     }
 
@@ -712,7 +715,7 @@ class CloudsApp {
                                        std::uint32_t frame_slot_count) {
         cloud_history_textures_.clear();
         cloud_history_read_indices_.assign(frame_slot_count, 0U);
-        cloud_history_valid_.assign(frame_slot_count, false);
+        cloud_history_texture_valid_.assign(frame_slot_count, {false, false});
         cloud_history_textures_.resize(frame_slot_count);
         for (std::array<std::optional<cubey::render::Texture2D>, 2>& slot_textures :
              cloud_history_textures_) {
@@ -737,6 +740,13 @@ class CloudsApp {
             throw std::runtime_error("cloud history texture is not initialized");
         }
         return cloud_history_textures_[frame_slot.index][ping_pong].value();
+    }
+
+    [[nodiscard]] bool
+    cloud_history_texture_valid(cubey::render::FrameSlot frame_slot,
+                                std::uint32_t ping_pong) const noexcept {
+        return frame_slot.index < cloud_history_texture_valid_.size() && ping_pong < 2U &&
+               cloud_history_texture_valid_[frame_slot.index][ping_pong];
     }
 
     void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
@@ -827,8 +837,11 @@ class CloudsApp {
 
     [[nodiscard]] CloudsTemporalPushConstants
     clouds_temporal_push_constants(cubey::render::FrameSlot frame_slot) const {
-        const bool reset = frame_slot.index >= cloud_history_valid_.size() ||
-                           !cloud_history_valid_[frame_slot.index];
+        const std::uint32_t history_read_index =
+            frame_slot.index < cloud_history_read_indices_.size()
+                ? cloud_history_read_indices_[frame_slot.index]
+                : 0U;
+        const bool reset = !cloud_history_texture_valid(frame_slot, history_read_index);
         const float current_weight = reset ? 1.0F : 0.22F;
         return {
             .options =
@@ -887,11 +900,6 @@ class CloudsApp {
                                       clouds_target_final_state(target_mode));
         const VkExtent2D cloud_extent =
             clouds_scaled_extent(target.extent, clouds_quality_budget(config_.quality));
-        const cubey::render::RenderGraphTextureHandle cloud_color =
-            graph.create_texture(clouds_color_texture_desc("cloud product", cloud_extent,
-                                                           kCloudsSceneColorFormat));
-        const bool history_valid = frame_slot.index < cloud_history_valid_.size() &&
-                                   cloud_history_valid_[frame_slot.index];
         const std::uint32_t history_read_index =
             frame_slot.index < cloud_history_read_indices_.size()
                 ? cloud_history_read_indices_[frame_slot.index]
@@ -899,6 +907,9 @@ class CloudsApp {
         const std::uint32_t history_write_index = 1U - history_read_index;
         const cubey::render::RenderGraphTextureState sampled_state =
             clouds_sampled_color_texture_state();
+        const bool history_valid = cloud_history_texture_valid(frame_slot, history_read_index);
+        const bool history_write_valid =
+            cloud_history_texture_valid(frame_slot, history_write_index);
         cubey::render::RenderGraphTextureHandle cloud_history_read{};
         if (history_valid) {
             const cubey::render::Texture2D& read_texture =
@@ -913,32 +924,46 @@ class CloudsApp {
         const cubey::render::RenderGraphTextureHandle cloud_history_write = graph.import_texture(
             clouds_color_texture_desc("cloud history write", cloud_extent, kCloudsSceneColorFormat),
             write_texture.handle(), write_texture.view(),
-            history_valid ? std::optional<cubey::render::RenderGraphTextureState>{sampled_state}
-                          : std::optional<cubey::render::RenderGraphTextureState>{
-                                cubey::render::render_graph_undefined_texture_state()},
+            history_write_valid
+                ? std::optional<cubey::render::RenderGraphTextureState>{sampled_state}
+                : std::optional<cubey::render::RenderGraphTextureState>{
+                      cubey::render::render_graph_undefined_texture_state()},
             sampled_state);
 
-        graph.add_pass("cloud raymarch", cubey::render::RenderGraphQueueDomain::Graphics)
-            .write_color(cloud_color)
-            .execute([this, cloud_color](const cubey::render::RenderGraphExecutionContext& context) {
-                record_clouds_draw(context.recorder(),
-                                   cubey::render::resolved_color_target_view(context, cloud_color));
-            });
-        auto temporal_pass =
+        cubey::render::RenderGraphTextureHandle cloud_color{};
+        if (history_valid) {
+            cloud_color =
+                graph.create_texture(clouds_color_texture_desc("cloud product", cloud_extent,
+                                                               kCloudsSceneColorFormat));
+            graph.add_pass("cloud raymarch", cubey::render::RenderGraphQueueDomain::Graphics)
+                .write_color(cloud_color)
+                .execute(
+                    [this, cloud_color](const cubey::render::RenderGraphExecutionContext& context) {
+                        record_clouds_draw(
+                            context.recorder(),
+                            cubey::render::resolved_color_target_view(context, cloud_color));
+                    });
             graph.add_pass("cloud temporal", cubey::render::RenderGraphQueueDomain::Graphics)
                 .read_texture(cloud_color)
-                .write_color(cloud_history_write);
-        if (history_valid) {
-            temporal_pass.read_texture(cloud_history_read);
+                .read_texture(cloud_history_read)
+                .write_color(cloud_history_write)
+                .execute([this, cloud_history_write,
+                          frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                    record_temporal_draw(
+                        context.recorder(),
+                        cubey::render::resolved_color_target_view(context, cloud_history_write),
+                        frame_slot);
+                });
+        } else {
+            graph.add_pass("cloud raymarch", cubey::render::RenderGraphQueueDomain::Graphics)
+                .write_color(cloud_history_write)
+                .execute([this, cloud_history_write](
+                             const cubey::render::RenderGraphExecutionContext& context) {
+                    record_clouds_draw(
+                        context.recorder(),
+                        cubey::render::resolved_color_target_view(context, cloud_history_write));
+                });
         }
-        temporal_pass.execute(
-            [this, cloud_history_write,
-             frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
-                record_temporal_draw(
-                    context.recorder(),
-                    cubey::render::resolved_color_target_view(context, cloud_history_write),
-                    frame_slot);
-            });
         graph.add_pass("cloud composite", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(cloud_history_write)
             .write_color(backbuffer)
@@ -957,6 +982,7 @@ class CloudsApp {
             .resolved_cloud_color = cloud_history_write,
             .cloud_extent = cloud_extent,
             .history_read_valid = history_valid,
+            .history_write_index = history_write_index,
         };
     }
 
@@ -977,21 +1003,21 @@ class CloudsApp {
             frame_graph.graph,
             [this, &device, frame_slot,
              &frame_graph](const cubey::render::RenderGraphResourceSet& graph_resources) {
-                const cubey::render::RenderGraphSampledTextureView cloud_color =
-                    cubey::render::resolved_sampled_texture_view(
-                        frame_graph.graph, graph_resources, frame_graph.cloud_color);
-                const cubey::render::RenderGraphSampledTextureView history_color =
-                    frame_graph.history_read_valid
-                        ? cubey::render::resolved_sampled_texture_view(
-                              frame_graph.graph, graph_resources,
-                              frame_graph.cloud_history_read)
-                        : cloud_color;
-                cubey::render::MaterialDescriptorWriter(temporal_material().set(frame_slot))
-                    .combined_image_sampler(0, composite_sampler().handle(), cloud_color.view,
-                                            cloud_color.layout)
-                    .combined_image_sampler(1, composite_sampler().handle(), history_color.view,
-                                            history_color.layout)
-                    .update(device);
+                if (frame_graph.history_read_valid) {
+                    const cubey::render::RenderGraphSampledTextureView cloud_color =
+                        cubey::render::resolved_sampled_texture_view(
+                            frame_graph.graph, graph_resources, frame_graph.cloud_color);
+                    const cubey::render::RenderGraphSampledTextureView history_color =
+                        cubey::render::resolved_sampled_texture_view(
+                            frame_graph.graph, graph_resources,
+                            frame_graph.cloud_history_read);
+                    cubey::render::MaterialDescriptorWriter(temporal_material().set(frame_slot))
+                        .combined_image_sampler(0, composite_sampler().handle(), cloud_color.view,
+                                                cloud_color.layout)
+                        .combined_image_sampler(1, composite_sampler().handle(), history_color.view,
+                                                history_color.layout)
+                        .update(device);
+                }
                 const cubey::render::RenderGraphSampledTextureView resolved_cloud_color =
                     cubey::render::resolved_sampled_texture_view(
                         frame_graph.graph, graph_resources, frame_graph.resolved_cloud_color);
@@ -1001,11 +1027,10 @@ class CloudsApp {
                                             resolved_cloud_color.layout)
                     .update(device);
             });
-        if (frame_slot.index < cloud_history_valid_.size() &&
+        if (frame_slot.index < cloud_history_texture_valid_.size() &&
             frame_slot.index < cloud_history_read_indices_.size()) {
-            cloud_history_valid_[frame_slot.index] = true;
-            cloud_history_read_indices_[frame_slot.index] =
-                1U - cloud_history_read_indices_[frame_slot.index];
+            cloud_history_texture_valid_[frame_slot.index][frame_graph.history_write_index] = true;
+            cloud_history_read_indices_[frame_slot.index] = frame_graph.history_write_index;
         }
         ++temporal_frame_index_;
     }
@@ -1089,7 +1114,7 @@ class CloudsApp {
     std::optional<cubey::vulkan::Sampler> composite_sampler_;
     std::vector<std::array<std::optional<cubey::render::Texture2D>, 2>> cloud_history_textures_;
     std::vector<std::uint32_t> cloud_history_read_indices_;
-    std::vector<bool> cloud_history_valid_;
+    std::vector<std::array<bool, 2>> cloud_history_texture_valid_;
     std::uint32_t temporal_frame_index_ = 0;
 };
 
