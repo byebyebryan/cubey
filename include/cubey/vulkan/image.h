@@ -106,6 +106,8 @@ class Image {
 [[nodiscard]] VkFormat choose_depth_format(const Device& device);
 [[nodiscard]] ImageConfig color_render_target_image_config(VkExtent2D extent, VkFormat format);
 [[nodiscard]] ImageConfig depth_image_config(VkExtent2D extent, VkFormat format);
+[[nodiscard]] ImageConfig color_attachment_sampled_image_config(VkExtent2D extent,
+                                                                VkFormat format);
 [[nodiscard]] ImageConfig storage_sampled_image_config(VkExtent2D extent, VkFormat format);
 [[nodiscard]] ImageConfig storage_sampled_volume_image_config(VkExtent3D extent, VkFormat format);
 [[nodiscard]] ImageConfig transfer_sampled_image_config(VkExtent2D extent, VkFormat format);

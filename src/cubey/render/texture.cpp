@@ -92,6 +92,10 @@ cubey::vulkan::ImageConfig texture_2d_image_config(const Texture2DConfig& config
     validate_config(config);
     cubey::vulkan::ImageConfig image_config{};
     switch (config.usage) {
+    case Texture2DUsage::ColorAttachmentSampled:
+        image_config = cubey::vulkan::color_attachment_sampled_image_config(config.extent,
+                                                                            config.format);
+        break;
     case Texture2DUsage::StorageSampled:
         image_config = cubey::vulkan::storage_sampled_image_config(config.extent, config.format);
         break;

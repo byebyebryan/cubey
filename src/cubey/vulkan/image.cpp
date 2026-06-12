@@ -219,6 +219,15 @@ ImageConfig depth_image_config(VkExtent2D extent, VkFormat format) {
     };
 }
 
+ImageConfig color_attachment_sampled_image_config(VkExtent2D extent, VkFormat format) {
+    return {
+        .extent = {extent.width, extent.height, 1},
+        .format = format,
+        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+    };
+}
+
 ImageConfig storage_sampled_image_config(VkExtent2D extent, VkFormat format) {
     return {
         .extent = {extent.width, extent.height, 1},

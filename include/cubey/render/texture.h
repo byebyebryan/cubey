@@ -15,6 +15,7 @@
 namespace cubey::render {
 
 enum class Texture2DUsage : std::uint8_t {
+    ColorAttachmentSampled,
     StorageSampled,
     TransferSampled,
 };

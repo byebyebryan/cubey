@@ -325,7 +325,9 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         if (i >= view_steps) {
             break;
         }
-        float jitter = hash31(vec3(frag_position, float(i))) - 0.5;
+        float jitter = hash31(vec3(frag_position + params.render_options.w * 0.071,
+                                   float(i) + params.render_options.w * 1.37)) -
+                       0.5;
         float sample_t = ray_start + (float(i) + 0.5 + jitter * 0.18) * step_len;
         vec3 p = origin + direction * sample_t;
         float density = cloud_density(p);
