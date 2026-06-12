@@ -20,6 +20,8 @@ const int CLOUDS_VIEW_GROUND_HIT = 10;
 const int CLOUDS_VIEW_CLOUD_ALPHA = 11;
 const int CLOUDS_VIEW_SHELL = 12;
 const int CLOUDS_VIEW_SURFACE_SHADOW = 13;
+const int CLOUDS_VIEW_DOMAIN = 14;
+const int CLOUDS_VIEW_DISTANCE = 15;
 
 layout(push_constant) uniform CloudsParams {
     vec4 camera_right_aspect;
@@ -97,26 +99,44 @@ struct CloudSample {
     float shell_hit;
     float hit_ground;
     float shell_span;
+    float domain_regime;
+    float distance_fraction;
 };
 
-CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_steps) {
-    CloudSample result;
-    result.color = vec3(0.0);
-    result.transmittance = 1.0;
-    result.mean_density = 0.0;
-    result.mean_weather = 0.0;
-    result.mean_light = 0.0;
-    result.mean_shadow = 0.0;
-    result.step_fraction = 0.0;
-    result.shell_hit = 0.0;
-    result.hit_ground = 0.0;
-    result.shell_span = 0.0;
+struct CloudRayInterval {
+    float start;
+    float end;
+    float max_distance;
+    float hit_ground;
+    float shell_hit;
+    float shell_span;
+    float domain_regime;
+};
 
-    vec3 center = planet_center();
+float cloud_orbit_regime() {
+    return smoothstep(1.5, 2.0, params.camera_forward_mode.w);
+}
+
+float local_cloud_max_distance(float camera_altitude, float layer_top) {
+    float high_view = smoothstep(0.5, 1.1, params.camera_forward_mode.w);
+    float altitude_scale = smoothstep(0.0, 36.0, camera_altitude);
+    return mix(140.0, 520.0, max(high_view, altitude_scale)) + layer_top * 5.0;
+}
+
+CloudRayInterval spherical_cloud_interval(vec3 origin, vec3 direction, vec3 center) {
+    CloudRayInterval interval;
+    interval.start = 0.0;
+    interval.end = 0.0;
+    interval.max_distance = 0.0;
+    interval.hit_ground = 0.0;
+    interval.shell_hit = 0.0;
+    interval.shell_span = 0.0;
+    interval.domain_regime = 1.0;
+
     float top_radius = params.camera_position_radius.w + params.cloud_shell.y;
     vec2 top_hit = ray_sphere(origin, direction, center, top_radius);
     if (top_hit.y <= 0.0) {
-        return result;
+        return interval;
     }
     float ray_start = max(top_hit.x, 0.0);
     float ray_end = top_hit.y;
@@ -132,16 +152,158 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     bool hit_ground = ground_hit.x > 0.0;
     if (hit_ground) {
         ray_end = min(ray_end, ground_hit.x);
-        result.hit_ground = 1.0;
+        interval.hit_ground = 1.0;
     }
     if (ray_end <= ray_start) {
+        return interval;
+    }
+    float layer_thickness = max(params.cloud_shell.y - params.cloud_shell.x, 0.001);
+    interval.start = ray_start;
+    interval.end = ray_end;
+    interval.max_distance = max(ray_end - ray_start, layer_thickness);
+    interval.shell_hit = 1.0;
+    interval.shell_span = clamp(((ray_end - ray_start) / layer_thickness) * 0.18, 0.0, 1.0);
+    return interval;
+}
+
+CloudRayInterval local_cloud_interval(vec3 origin, vec3 direction, vec3 center) {
+    CloudRayInterval interval;
+    interval.start = 0.0;
+    interval.end = 0.0;
+    interval.max_distance = 0.0;
+    interval.hit_ground = 0.0;
+    interval.shell_hit = 0.0;
+    interval.shell_span = 0.0;
+    interval.domain_regime = 0.0;
+
+    vec3 local_up = normalize(origin - center);
+    float camera_altitude = length(origin - center) - params.camera_position_radius.w;
+    float bottom = params.cloud_shell.x;
+    float top = params.cloud_shell.y;
+    float max_distance = local_cloud_max_distance(camera_altitude, top);
+    float ray_start = 0.0;
+    float ray_end = 0.0;
+    float vertical = dot(direction, local_up);
+    if (abs(vertical) < 0.0005) {
+        if (camera_altitude >= bottom && camera_altitude <= top) {
+            ray_end = max_distance;
+        } else {
+            return interval;
+        }
+    } else {
+        float bottom_t = (bottom - camera_altitude) / vertical;
+        float top_t = (top - camera_altitude) / vertical;
+        ray_start = max(min(bottom_t, top_t), 0.0);
+        ray_end = max(bottom_t, top_t);
+    }
+
+    vec2 ground_hit = ray_sphere(origin, direction, center, params.camera_position_radius.w);
+    if (ground_hit.x > 0.0) {
+        ray_end = min(ray_end, ground_hit.x);
+        interval.hit_ground = 1.0;
+    }
+    ray_end = min(ray_end, max_distance);
+    if (ray_end <= ray_start) {
+        return interval;
+    }
+
+    float layer_thickness = max(top - bottom, 0.001);
+    interval.start = ray_start;
+    interval.end = ray_end;
+    interval.max_distance = max_distance;
+    interval.shell_hit = 1.0;
+    interval.shell_span = clamp(((ray_end - ray_start) / layer_thickness) * 0.18, 0.0, 1.0);
+    return interval;
+}
+
+CloudRayInterval cloud_ray_interval(vec3 origin, vec3 direction, vec3 center) {
+    float orbit = cloud_orbit_regime();
+    if (orbit > 0.5) {
+        return spherical_cloud_interval(origin, direction, center);
+    }
+    return local_cloud_interval(origin, direction, center);
+}
+
+float distant_surface_cloud_alpha(vec3 origin, vec3 direction, vec3 center) {
+    float local = 1.0 - cloud_orbit_regime();
+    if (local <= 0.001) {
+        return 0.0;
+    }
+
+    vec3 local_up = normalize(origin - center);
+    float ray_up = dot(direction, local_up);
+    float above_horizon = smoothstep(-0.035, 0.080, ray_up);
+    float horizon_band = exp(-abs(ray_up) / 0.075) * above_horizon;
+    if (horizon_band <= 0.0001) {
+        return 0.0;
+    }
+
+    float camera_altitude = length(origin - center) - params.camera_position_radius.w;
+    float sample_distance = local_cloud_max_distance(camera_altitude, params.cloud_shell.y) * 0.86;
+    vec3 sample_position = origin + direction * sample_distance;
+    vec3 shell_up = normalize(sample_position - center);
+    float altitude = mix(params.cloud_shell.x, params.cloud_shell.y, 0.56);
+    sample_position = center + shell_up * (params.camera_position_radius.w + altitude);
+    float weather = weather_coverage(sample_position);
+    float coverage = smoothstep(0.42, 0.86, weather) * params.weather.x;
+    float density = clamp(params.weather.y * 0.30, 0.0, 0.46);
+    return clamp(horizon_band * coverage * density * local, 0.0, 0.42);
+}
+
+vec3 distant_surface_cloud_light(vec3 origin, vec3 direction, vec3 center) {
+    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
+    vec3 local_up = normalize(origin - center);
+    float sun_elevation = dot(sun_dir, local_up);
+    float daylight = smoothstep(-0.08, 0.24, sun_elevation);
+    float twilight = exp(-abs(sun_elevation) / 0.16) * smoothstep(-0.22, 0.08, sun_elevation);
+    float toward_sun = max(dot(direction, sun_dir), 0.0);
+    vec3 day = mix(vec3(0.34, 0.39, 0.44), vec3(0.72, 0.72, 0.66), pow(toward_sun, 2.0));
+    vec3 dusk = mix(vec3(0.12, 0.10, 0.16), vec3(0.72, 0.34, 0.16), pow(toward_sun, 0.55));
+    vec3 night = vec3(0.006, 0.008, 0.014);
+    return mix(mix(night, dusk, twilight), day, daylight) * (0.18 + 0.82 * daylight);
+}
+
+CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_steps) {
+    CloudSample result;
+    result.color = vec3(0.0);
+    result.transmittance = 1.0;
+    result.mean_density = 0.0;
+    result.mean_weather = 0.0;
+    result.mean_light = 0.0;
+    result.mean_shadow = 0.0;
+    result.step_fraction = 0.0;
+    result.shell_hit = 0.0;
+    result.hit_ground = 0.0;
+    result.shell_span = 0.0;
+    result.domain_regime = cloud_orbit_regime();
+    result.distance_fraction = 0.0;
+
+    vec3 center = planet_center();
+    CloudRayInterval interval = cloud_ray_interval(origin, direction, center);
+    if (interval.shell_hit <= 0.0) {
+        float distant_alpha = distant_surface_cloud_alpha(origin, direction, center);
+        if (distant_alpha > 0.0001) {
+            result.color += distant_surface_cloud_light(origin, direction, center) * distant_alpha;
+            result.transmittance *= 1.0 - distant_alpha;
+            result.mean_density = distant_alpha;
+            result.mean_weather = distant_alpha;
+            result.mean_light = distant_alpha;
+            result.step_fraction = 0.0;
+            result.shell_span = distant_alpha;
+        }
         return result;
     }
-    result.shell_hit = 1.0;
+    float ray_start = interval.start;
+    float ray_end = interval.end;
+    bool hit_ground = interval.hit_ground > 0.5;
+    result.hit_ground = interval.hit_ground;
+    result.shell_hit = interval.shell_hit;
+    result.domain_regime = interval.domain_regime;
     float layer_thickness = max(params.cloud_shell.y - params.cloud_shell.x, 0.001);
     float shell_span_ratio = (ray_end - ray_start) / layer_thickness;
-    result.shell_span =
-        clamp(shell_span_ratio * 0.18, 0.0, 1.0);
+    result.shell_span = interval.shell_span;
+    result.distance_fraction = clamp((ray_end - ray_start) / max(interval.max_distance, 0.001),
+                                     0.0, 1.0);
     float high_view = smoothstep(0.5, 1.1, params.camera_forward_mode.w);
     float view_horizon = dot(direction, normalize(origin - center));
     float tangent_fade = 1.0 - smoothstep(-0.34, -0.035, view_horizon);
@@ -275,6 +437,13 @@ void main() {
         output_alpha = 1.0;
     } else if (debug_view == CLOUDS_VIEW_SHELL) {
         output_color = vec3(clouds.shell_hit, clouds.hit_ground, clouds.shell_span);
+        output_alpha = 1.0;
+    } else if (debug_view == CLOUDS_VIEW_DOMAIN) {
+        output_color = vec3(1.0 - clouds.domain_regime, clouds.domain_regime,
+                            clouds.shell_hit);
+        output_alpha = 1.0;
+    } else if (debug_view == CLOUDS_VIEW_DISTANCE) {
+        output_color = vec3(clouds.distance_fraction, clouds.shell_span, clouds.hit_ground);
         output_alpha = 1.0;
     }
 

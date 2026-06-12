@@ -62,6 +62,14 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include surface shadow");
     require(cubey::projects::clouds::next_clouds_debug_view(
                 cubey::projects::clouds::CloudsDebugView::SurfaceShadow) ==
+                cubey::projects::clouds::CloudsDebugView::Domain,
+            "cloud debug view should include domain diagnostics");
+    require(cubey::projects::clouds::next_clouds_debug_view(
+                cubey::projects::clouds::CloudsDebugView::Domain) ==
+                cubey::projects::clouds::CloudsDebugView::Distance,
+            "cloud debug view should include distance diagnostics");
+    require(cubey::projects::clouds::next_clouds_debug_view(
+                cubey::projects::clouds::CloudsDebugView::Distance) ==
                 cubey::projects::clouds::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::clouds::clouds_debug_view_from_string("cloud-alpha") ==
@@ -70,6 +78,12 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::clouds::clouds_debug_view_from_string("surface-shadow") ==
                 cubey::projects::clouds::CloudsDebugView::SurfaceShadow,
             "cloud surface shadow debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("domain") ==
+                cubey::projects::clouds::CloudsDebugView::Domain,
+            "cloud domain debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("distance") ==
+                cubey::projects::clouds::CloudsDebugView::Distance,
+            "cloud distance debug view should parse");
 }
 
 void test_run_config_mapping() {

@@ -18,6 +18,8 @@ const int CLOUDS_VIEW_GROUND_HIT = 10;
 const int CLOUDS_VIEW_CLOUD_ALPHA = 11;
 const int CLOUDS_VIEW_SHELL = 12;
 const int CLOUDS_VIEW_SURFACE_SHADOW = 13;
+const int CLOUDS_VIEW_DOMAIN = 14;
+const int CLOUDS_VIEW_DISTANCE = 15;
 
 layout(set = 0, binding = 0) uniform sampler2D cloud_product_texture;
 
@@ -208,7 +210,8 @@ bool cloud_product_debug_view(int debug_view) {
     return debug_view == CLOUDS_VIEW_WEATHER || debug_view == CLOUDS_VIEW_DENSITY ||
            debug_view == CLOUDS_VIEW_TRANSMITTANCE || debug_view == CLOUDS_VIEW_LIGHTING ||
            debug_view == CLOUDS_VIEW_SHADOW || debug_view == CLOUDS_VIEW_STEPS ||
-           debug_view == CLOUDS_VIEW_CLOUD_ALPHA || debug_view == CLOUDS_VIEW_SHELL;
+           debug_view == CLOUDS_VIEW_CLOUD_ALPHA || debug_view == CLOUDS_VIEW_SHELL ||
+           debug_view == CLOUDS_VIEW_DOMAIN || debug_view == CLOUDS_VIEW_DISTANCE;
 }
 
 float high_view_horizon_cloud_fade(vec3 origin, vec3 direction) {

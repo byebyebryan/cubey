@@ -230,6 +230,12 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "surface-shadow") {
         return CloudsDebugView::SurfaceShadow;
     }
+    if (value == "domain") {
+        return CloudsDebugView::Domain;
+    }
+    if (value == "distance") {
+        return CloudsDebugView::Distance;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -263,6 +269,10 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "shell";
     case CloudsDebugView::SurfaceShadow:
         return "surface-shadow";
+    case CloudsDebugView::Domain:
+        return "domain";
+    case CloudsDebugView::Distance:
+        return "distance";
     }
     return "final";
 }

@@ -58,15 +58,18 @@ enum class CloudsDebugView : std::uint32_t {
     CloudAlpha = 11,
     Shell = 12,
     SurfaceShadow = 13,
+    Domain = 14,
+    Distance = 15,
 };
 
-inline constexpr std::array<CloudsDebugView, 14> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 16> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::Weather, CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting, CloudsDebugView::Shadow,
     CloudsDebugView::Steps,        CloudsDebugView::Background,
     CloudsDebugView::Atmosphere,   CloudsDebugView::Ground,
     CloudsDebugView::GroundHit,    CloudsDebugView::CloudAlpha,
     CloudsDebugView::Shell,        CloudsDebugView::SurfaceShadow,
+    CloudsDebugView::Domain,       CloudsDebugView::Distance,
 };
 
 struct CloudsTimeConfig {
