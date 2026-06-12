@@ -183,9 +183,10 @@ float cloud_height_profile(float altitude_km) {
     float bottom = params.cloud_shell.x;
     float top = params.cloud_shell.y;
     float h = clamp((altitude_km - bottom) / max(top - bottom, 0.001), 0.0, 1.0);
-    float base = smoothstep(0.02, 0.20, h);
-    float anvil = 1.0 - smoothstep(0.58, 1.0, h);
-    return base * anvil;
+    float base = smoothstep(0.03, 0.16, h);
+    float top_fade = 1.0 - smoothstep(0.55, 1.0, h);
+    float body = pow(max(sin(h * CLOUDS_PI), 0.0), 0.45);
+    return base * top_fade * mix(0.72, 1.18, body);
 }
 
 float weather_coverage(vec3 position_km) {
@@ -193,6 +194,7 @@ float weather_coverage(vec3 position_km) {
     vec3 up = normalize(position_km - center);
     float scale = max(params.weather.z, 0.001);
     float frequency = clamp(params.camera_position_radius.w / (scale * 3.5), 1.0, 24.0);
+    float orbit_view = smoothstep(1.5, 2.0, params.camera_forward_mode.w);
     vec3 wind_offset = vec3(params.weather.w * 0.004, params.weather.w * 0.0017,
                             -params.weather.w * 0.0028);
     vec3 warp = vec3(
@@ -200,13 +202,16 @@ float weather_coverage(vec3 position_km) {
         fbm(up * (frequency * 0.38) - wind_offset.yzx + vec3(23.0, 19.0, 5.0)),
         fbm(up * (frequency * 0.46) + wind_offset.zxy + vec3(2.0, 29.0, 31.0))) -
                 vec3(0.5);
-    vec3 domain = normalize(up + warp * 0.20);
+    vec3 domain = normalize(up + warp * 0.26);
     float macro = fbm(domain * frequency + wind_offset);
     float secondary = fbm(domain.yzx * (frequency * 1.65) - wind_offset.zxy + vec3(17.0));
+    float cells = fbm(domain.zxy * (frequency * 2.45) + wind_offset.xzy + vec3(41.0, 7.0, 13.0));
     float bands =
         0.5 + 0.5 * sin(dot(domain, normalize(vec3(0.62, 0.18, -0.76))) * frequency * 1.15 +
                           params.weather.w * 0.006);
-    return clamp(mix(mix(macro, secondary, 0.30), bands, 0.14), 0.0, 1.0);
+    float weather = mix(mix(macro, secondary, 0.34), bands, 0.10);
+    weather = mix(weather, cells, mix(0.18, 0.04, orbit_view));
+    return clamp(weather, 0.0, 1.0);
 }
 
 float cloud_density(vec3 position_km) {
@@ -217,12 +222,20 @@ float cloud_density(vec3 position_km) {
     }
     float weather = weather_coverage(position_km);
     float coverage = clamp(params.weather.x, 0.0, 1.0);
-    float coverage_mask = smoothstep(0.24 + (1.0 - coverage) * 0.38, 0.80, weather);
-    vec3 detail_coord = position_km * 0.42 + vec3(params.weather.w * 0.03, 13.5, 0.0);
+    float orbit_view = smoothstep(1.5, 2.0, params.camera_forward_mode.w);
+    float coverage_mask = smoothstep(0.34 + (1.0 - coverage) * 0.36, 0.83, weather);
+    float detail_scale = mix(0.42, 0.055, orbit_view);
+    vec3 detail_coord = position_km * detail_scale + vec3(params.weather.w * 0.03, 13.5, 0.0);
     float detail = fbm(detail_coord);
-    float puffy = smoothstep(0.22, 0.78, detail);
-    float erosion = mix(0.42, 1.15, puffy);
-    return max(coverage_mask * height * erosion * params.weather.y, 0.0);
+    float puffy = smoothstep(0.34, 0.78, detail);
+    puffy = mix(puffy, smoothstep(0.18, 0.78, weather), orbit_view * 0.85);
+    float scallop_scale = mix(0.78, 0.075, orbit_view);
+    float scallop = fbm(position_km * scallop_scale - vec3(params.weather.w * 0.016, 5.0, 19.0));
+    float edge = smoothstep(0.08, 0.72, coverage_mask * 0.78 + puffy * 0.42);
+    edge = mix(edge, coverage_mask, orbit_view * 0.70);
+    float erosion = mix(0.20, 1.22, puffy) * mix(0.62, 1.12, scallop);
+    erosion = mix(erosion, 0.92, orbit_view * 0.70);
+    return max(edge * height * erosion * params.weather.y, 0.0);
 }
 
 float light_transmittance(vec3 position_km, vec3 sun_dir, int light_steps) {

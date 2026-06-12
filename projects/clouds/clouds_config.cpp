@@ -34,7 +34,7 @@ struct CloudsWeatherPresetSettings {
         return {.coverage = 0.42F, .density = 0.92F, .weather_scale_km = 210.0F,
                 .wind_speed_mps = 14.0F};
     case CloudsWeatherPreset::Inspection:
-        return {.coverage = 0.70F, .density = 1.08F, .weather_scale_km = 130.0F,
+        return {.coverage = 0.58F, .density = 1.18F, .weather_scale_km = 170.0F,
                 .wind_speed_mps = 18.0F};
     case CloudsWeatherPreset::Overcast:
         return {.coverage = 0.86F, .density = 0.96F, .weather_scale_km = 240.0F,
