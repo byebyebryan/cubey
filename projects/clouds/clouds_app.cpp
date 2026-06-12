@@ -42,6 +42,10 @@ namespace cubey::projects::clouds {
 namespace {
 
 constexpr float kDefaultFovyRadians = 60.0F * (glm::pi<float>() / 180.0F);
+constexpr float kCameraDragRadiansPerPixel = 0.006F;
+constexpr float kSurfaceMinPitchRadians = -1.35F;
+constexpr float kSurfaceMaxPitchRadians = 1.35F;
+constexpr float kOrbitMaxLatitudeRadians = 1.30F;
 constexpr VkFormat kCloudsSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr std::array<CloudsCameraMode, 6> kCloudsCameraModes{
     CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
@@ -194,9 +198,19 @@ clouds_target_final_state(CloudsRenderTargetMode mode) {
         return -0.46F;
     case CloudsCameraMode::Orbit:
     case CloudsCameraMode::OrbitTerminator:
-        return 0.0F;
+        return 0.50F;
     }
     return 0.22F;
+}
+
+[[nodiscard]] float clouds_clamp_camera_pitch_offset(CloudsCameraMode mode, float pitch_offset) {
+    const float base_pitch = clouds_camera_base_pitch(mode);
+    if (clouds_camera_mode_is_orbit(mode)) {
+        return std::clamp(pitch_offset, -kOrbitMaxLatitudeRadians - base_pitch,
+                          kOrbitMaxLatitudeRadians - base_pitch);
+    }
+    return std::clamp(pitch_offset, kSurfaceMinPitchRadians - base_pitch,
+                      kSurfaceMaxPitchRadians - base_pitch);
 }
 
 [[nodiscard]] CloudsViewBasis clouds_view_basis(const CloudsConfig& config, float yaw,
@@ -206,12 +220,14 @@ clouds_target_final_state(CloudsRenderTargetMode mode) {
     basis.position_km = {0.0F, altitude_km, 0.0F};
 
     if (clouds_camera_mode_is_orbit(config.camera_mode)) {
-        const float orbit_pitch = std::clamp(pitch, -0.75F, 0.75F);
+        const float orbit_pitch =
+            std::clamp(clouds_camera_base_pitch(config.camera_mode) + pitch,
+                       -kOrbitMaxLatitudeRadians, kOrbitMaxLatitudeRadians);
         const float radius_km = config.planet_radius_m * 0.001F + altitude_km;
         const cubey::math::Vec3 planet_center{0.0F, -config.planet_radius_m * 0.001F, 0.0F};
         const cubey::math::Vec3 radial{
             std::sin(yaw) * std::cos(orbit_pitch),
-            std::cos(orbit_pitch),
+            std::sin(orbit_pitch),
             std::cos(yaw) * std::cos(orbit_pitch),
         };
         basis.position_km = planet_center + radial * radius_km;
@@ -392,8 +408,10 @@ class CloudsApp {
         if (input.mouse_enabled() && input.mouse_button_down(cubey::input::MouseButton::Left)) {
             const cubey::input::PointerDelta delta =
                 input.mouse_button_delta(cubey::input::MouseButton::Left);
-            yaw_ -= static_cast<float>(delta.x) * 0.006F;
-            pitch_ = std::clamp(pitch_ - static_cast<float>(delta.y) * 0.006F, -1.2F, 1.2F);
+            yaw_ -= static_cast<float>(delta.x) * kCameraDragRadiansPerPixel;
+            pitch_ = clouds_clamp_camera_pitch_offset(
+                config_.camera_mode,
+                pitch_ - static_cast<float>(delta.y) * kCameraDragRadiansPerPixel);
         }
         elapsed_seconds_ += static_cast<float>(timing.delta_seconds);
         advance_clouds_time(config_, timing.delta_seconds);
@@ -583,7 +601,7 @@ class CloudsApp {
             config_.time.time_hours = 6.0F;
         }
         yaw_ = 0.0F;
-        pitch_ = 0.0F;
+        pitch_ = clouds_clamp_camera_pitch_offset(mode, 0.0F);
     }
 
     void destroy_swapchain_resources() {
