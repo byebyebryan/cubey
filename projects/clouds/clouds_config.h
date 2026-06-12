@@ -28,11 +28,19 @@ enum class CloudsQuality : std::uint32_t {
 };
 
 enum class CloudsWeatherPreset : std::uint32_t {
-    Clear = 0,
-    Scattered = 1,
-    Inspection = 2,
-    Overcast = 3,
-    Storm = 4,
+    FairWeather = 0,
+    BrokenCumulus = 1,
+    OvercastStratus = 2,
+    StormCells = 3,
+    HighCirrus = 4,
+};
+
+enum class CloudsCloudStyle : std::uint32_t {
+    FairWeather = 0,
+    BrokenCumulus = 1,
+    OvercastStratus = 2,
+    StormCells = 3,
+    HighCirrus = 4,
 };
 
 enum class CloudsDebugView : std::uint32_t {
@@ -77,7 +85,8 @@ struct CloudsTimeConfig {
 struct CloudsConfig {
     CloudsCameraMode camera_mode = CloudsCameraMode::Surface;
     CloudsQuality quality = CloudsQuality::Half;
-    CloudsWeatherPreset weather_preset = CloudsWeatherPreset::Inspection;
+    CloudsWeatherPreset weather_preset = CloudsWeatherPreset::BrokenCumulus;
+    CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
     CloudsDebugView debug_view = CloudsDebugView::Final;
     CloudsTimeConfig time{};
 

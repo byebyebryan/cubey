@@ -22,28 +22,54 @@ struct CloudsWeatherPresetSettings {
     float density = 0.0F;
     float weather_scale_km = 0.0F;
     float wind_speed_mps = 0.0F;
+    float bottom_altitude_m = kCloudsDefaultBottomAltitudeM;
+    float top_altitude_m = kCloudsDefaultTopAltitudeM;
+    CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
 };
 
 [[nodiscard]] CloudsWeatherPresetSettings clouds_weather_preset_settings(
     CloudsWeatherPreset preset) {
     switch (preset) {
-    case CloudsWeatherPreset::Clear:
-        return {.coverage = 0.12F, .density = 0.55F, .weather_scale_km = 280.0F,
-                .wind_speed_mps = 8.0F};
-    case CloudsWeatherPreset::Scattered:
-        return {.coverage = 0.42F, .density = 0.92F, .weather_scale_km = 210.0F,
-                .wind_speed_mps = 14.0F};
-    case CloudsWeatherPreset::Inspection:
+    case CloudsWeatherPreset::FairWeather:
+        return {.coverage = 0.28F,
+                .density = 0.78F,
+                .weather_scale_km = 260.0F,
+                .wind_speed_mps = 9.0F,
+                .bottom_altitude_m = 1800.0F,
+                .top_altitude_m = 5200.0F,
+                .cloud_style = CloudsCloudStyle::FairWeather};
+    case CloudsWeatherPreset::BrokenCumulus:
         return {.coverage = 0.58F, .density = 1.18F, .weather_scale_km = 170.0F,
-                .wind_speed_mps = 18.0F};
-    case CloudsWeatherPreset::Overcast:
-        return {.coverage = 0.86F, .density = 0.96F, .weather_scale_km = 240.0F,
-                .wind_speed_mps = 12.0F};
-    case CloudsWeatherPreset::Storm:
-        return {.coverage = 0.78F, .density = 1.45F, .weather_scale_km = 95.0F,
-                .wind_speed_mps = 32.0F};
+                .wind_speed_mps = 18.0F,
+                .bottom_altitude_m = 1500.0F,
+                .top_altitude_m = 7500.0F,
+                .cloud_style = CloudsCloudStyle::BrokenCumulus};
+    case CloudsWeatherPreset::OvercastStratus:
+        return {.coverage = 0.88F,
+                .density = 0.95F,
+                .weather_scale_km = 280.0F,
+                .wind_speed_mps = 12.0F,
+                .bottom_altitude_m = 1200.0F,
+                .top_altitude_m = 5200.0F,
+                .cloud_style = CloudsCloudStyle::OvercastStratus};
+    case CloudsWeatherPreset::StormCells:
+        return {.coverage = 0.76F,
+                .density = 1.55F,
+                .weather_scale_km = 105.0F,
+                .wind_speed_mps = 32.0F,
+                .bottom_altitude_m = 900.0F,
+                .top_altitude_m = 10500.0F,
+                .cloud_style = CloudsCloudStyle::StormCells};
+    case CloudsWeatherPreset::HighCirrus:
+        return {.coverage = 0.46F,
+                .density = 0.42F,
+                .weather_scale_km = 360.0F,
+                .wind_speed_mps = 38.0F,
+                .bottom_altitude_m = 7200.0F,
+                .top_altitude_m = 12000.0F,
+                .cloud_style = CloudsCloudStyle::HighCirrus};
     }
-    return clouds_weather_preset_settings(CloudsWeatherPreset::Inspection);
+    return clouds_weather_preset_settings(CloudsWeatherPreset::BrokenCumulus);
 }
 
 } // namespace
@@ -55,6 +81,9 @@ void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset prese
     config.density = settings.density;
     config.weather_scale_km = settings.weather_scale_km;
     config.wind_speed_mps = settings.wind_speed_mps;
+    config.bottom_altitude_m = settings.bottom_altitude_m;
+    config.top_altitude_m = settings.top_altitude_m;
+    config.cloud_style = settings.cloud_style;
 }
 
 CloudsCameraMode clouds_camera_mode_from_string(std::string_view value) {
@@ -123,38 +152,39 @@ const char* clouds_quality_name(CloudsQuality quality) {
 }
 
 CloudsWeatherPreset clouds_weather_preset_from_string(std::string_view value) {
-    if (value == "clear") {
-        return CloudsWeatherPreset::Clear;
+    if (value == "fair-weather" || value == "clear") {
+        return CloudsWeatherPreset::FairWeather;
     }
-    if (value == "scattered") {
-        return CloudsWeatherPreset::Scattered;
+    if (value.empty() || value == "broken-cumulus" || value == "scattered" ||
+        value == "inspection") {
+        return CloudsWeatherPreset::BrokenCumulus;
     }
-    if (value.empty() || value == "inspection") {
-        return CloudsWeatherPreset::Inspection;
+    if (value == "overcast-stratus" || value == "overcast") {
+        return CloudsWeatherPreset::OvercastStratus;
     }
-    if (value == "overcast") {
-        return CloudsWeatherPreset::Overcast;
+    if (value == "storm-cells" || value == "storm") {
+        return CloudsWeatherPreset::StormCells;
     }
-    if (value == "storm") {
-        return CloudsWeatherPreset::Storm;
+    if (value == "high-cirrus") {
+        return CloudsWeatherPreset::HighCirrus;
     }
     throw std::runtime_error("unknown cloud weather preset: " + std::string(value));
 }
 
 const char* clouds_weather_preset_name(CloudsWeatherPreset preset) {
     switch (preset) {
-    case CloudsWeatherPreset::Clear:
-        return "clear";
-    case CloudsWeatherPreset::Scattered:
-        return "scattered";
-    case CloudsWeatherPreset::Inspection:
-        return "inspection";
-    case CloudsWeatherPreset::Overcast:
-        return "overcast";
-    case CloudsWeatherPreset::Storm:
-        return "storm";
+    case CloudsWeatherPreset::FairWeather:
+        return "fair-weather";
+    case CloudsWeatherPreset::BrokenCumulus:
+        return "broken-cumulus";
+    case CloudsWeatherPreset::OvercastStratus:
+        return "overcast-stratus";
+    case CloudsWeatherPreset::StormCells:
+        return "storm-cells";
+    case CloudsWeatherPreset::HighCirrus:
+        return "high-cirrus";
     }
-    return "inspection";
+    return "broken-cumulus";
 }
 
 CloudsDebugView clouds_debug_view_from_string(std::string_view value) {

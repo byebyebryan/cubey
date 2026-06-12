@@ -38,9 +38,16 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::clouds::clouds_quality_from_string("full") ==
                 cubey::projects::clouds::CloudsQuality::Full,
             "full quality should parse");
+    require(cubey::projects::clouds::clouds_weather_preset_from_string("storm-cells") ==
+                cubey::projects::clouds::CloudsWeatherPreset::StormCells,
+            "storm-cells weather preset should parse");
     require(cubey::projects::clouds::clouds_weather_preset_from_string("storm") ==
-                cubey::projects::clouds::CloudsWeatherPreset::Storm,
-            "storm weather preset should parse");
+                cubey::projects::clouds::CloudsWeatherPreset::StormCells,
+            "legacy storm weather preset should parse");
+    require(cubey::projects::clouds::clouds_weather_preset_name(
+                cubey::projects::clouds::CloudsWeatherPreset::BrokenCumulus) ==
+                std::string_view("broken-cumulus"),
+            "weather preset name should use canonical spelling");
     require(cubey::projects::clouds::next_clouds_debug_view(
                 cubey::projects::clouds::CloudsDebugView::Shadow) ==
                 cubey::projects::clouds::CloudsDebugView::Steps,
@@ -90,8 +97,10 @@ void test_run_config_mapping() {
             "cloud camera mode should map from run config");
     require(config.quality == cubey::projects::clouds::CloudsQuality::Quarter,
             "cloud quality should map from run config");
-    require(config.weather_preset == cubey::projects::clouds::CloudsWeatherPreset::Storm,
+    require(config.weather_preset == cubey::projects::clouds::CloudsWeatherPreset::StormCells,
             "cloud weather preset should map from run config");
+    require(config.cloud_style == cubey::projects::clouds::CloudsCloudStyle::StormCells,
+            "cloud weather preset should select cloud style");
     require(config.debug_view == cubey::projects::clouds::CloudsDebugView::Density,
             "cloud debug view should map from common debug config");
     require_near(config.camera_altitude_m,
@@ -132,19 +141,37 @@ void test_weather_preset_defaults() {
 
     cubey::projects::clouds::CloudsConfig config =
         cubey::projects::clouds::clouds_config_from_run_config(run_config);
-    require(config.weather_preset == cubey::projects::clouds::CloudsWeatherPreset::Overcast,
+    require(config.weather_preset ==
+                cubey::projects::clouds::CloudsWeatherPreset::OvercastStratus,
             "overcast weather preset should map from run config");
-    require_near(config.coverage, 0.86F, 0.001F,
+    require(config.cloud_style == cubey::projects::clouds::CloudsCloudStyle::OvercastStratus,
+            "overcast weather preset should select stratus style");
+    require_near(config.coverage, 0.88F, 0.001F,
                  "overcast weather preset should set coverage");
-    require_near(config.weather_scale_km, 240.0F, 0.001F,
+    require_near(config.weather_scale_km, 280.0F, 0.001F,
                  "overcast weather preset should set scale");
+    require_near(config.bottom_altitude_m, 1200.0F, 0.001F,
+                 "overcast weather preset should set bottom altitude");
+    require_near(config.top_altitude_m, 5200.0F, 0.001F,
+                 "overcast weather preset should set top altitude");
 
     run_config.clouds.coverage = 0.35F;
     config = cubey::projects::clouds::clouds_config_from_run_config(run_config);
-    require(config.weather_preset == cubey::projects::clouds::CloudsWeatherPreset::Overcast,
+    require(config.weather_preset ==
+                cubey::projects::clouds::CloudsWeatherPreset::OvercastStratus,
             "explicit coverage should preserve selected weather preset");
     require_near(config.coverage, 0.35F, 0.001F,
                  "explicit coverage should override weather preset coverage");
+
+    run_config = {};
+    run_config.clouds.weather_preset = "high-cirrus";
+    config = cubey::projects::clouds::clouds_config_from_run_config(run_config);
+    require(config.weather_preset == cubey::projects::clouds::CloudsWeatherPreset::HighCirrus,
+            "high cirrus weather preset should map from run config");
+    require(config.cloud_style == cubey::projects::clouds::CloudsCloudStyle::HighCirrus,
+            "high cirrus weather preset should select cloud style");
+    require_near(config.bottom_altitude_m, 7200.0F, 0.001F,
+                 "high cirrus weather preset should set bottom altitude");
 }
 
 void test_config_descriptors() {

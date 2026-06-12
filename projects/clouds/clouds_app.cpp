@@ -53,8 +53,9 @@ constexpr std::array<CloudsQuality, 3> kCloudsQualityModes{
     CloudsQuality::Full,
 };
 constexpr std::array<CloudsWeatherPreset, 5> kCloudsWeatherPresets{
-    CloudsWeatherPreset::Clear, CloudsWeatherPreset::Scattered, CloudsWeatherPreset::Inspection,
-    CloudsWeatherPreset::Overcast, CloudsWeatherPreset::Storm,
+    CloudsWeatherPreset::FairWeather,     CloudsWeatherPreset::BrokenCumulus,
+    CloudsWeatherPreset::OvercastStratus, CloudsWeatherPreset::StormCells,
+    CloudsWeatherPreset::HighCirrus,
 };
 
 struct CloudsPushConstants {
@@ -177,6 +178,10 @@ clouds_target_final_state(CloudsRenderTargetMode mode) {
     return 0.0F;
 }
 
+[[nodiscard]] float clouds_cloud_style_shader_value(CloudsCloudStyle style) {
+    return static_cast<float>(static_cast<std::uint32_t>(style));
+}
+
 [[nodiscard]] float clouds_camera_base_pitch(CloudsCameraMode mode) {
     switch (mode) {
     case CloudsCameraMode::Surface:
@@ -267,7 +272,7 @@ clouds_solar_position(const CloudsConfig& config) {
         .camera_position_radius = {basis.position_km.x, basis.position_km.y, basis.position_km.z,
                                    config.planet_radius_m * 0.001F},
         .cloud_shell = {config.bottom_altitude_m * 0.001F, config.top_altitude_m * 0.001F,
-                        100.0F, budget.resolution_scale},
+                        100.0F, clouds_cloud_style_shader_value(config.cloud_style)},
         .weather = {config.coverage, config.density, config.weather_scale_km,
                     elapsed_seconds * config.wind_speed_mps * 0.001F},
         .sun_direction_intensity = {sun_direction.x, sun_direction.y, sun_direction.z,
@@ -444,7 +449,7 @@ class CloudsApp {
             CloudsWeatherPreset selected_preset = config_.weather_preset;
             if (cubey::host::imgui_enum_combo("Preset", selected_preset, kCloudsWeatherPresets,
                                               clouds_weather_preset_name,
-                                              "Cloud weather inspection preset.")) {
+                                              "Cloud type and weather preset.")) {
                 apply_clouds_weather_preset(config_, selected_preset);
             }
             cubey::host::imgui_slider_float("Coverage", &config_.coverage, 0.0F, 1.0F, "%.2f",

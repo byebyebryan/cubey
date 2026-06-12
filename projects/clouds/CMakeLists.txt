@@ -13,8 +13,10 @@ cubey_add_app_target(
         shaders/clouds.frag
         shaders/clouds_composite.frag
     SHADER_INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/clouds_model.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )
