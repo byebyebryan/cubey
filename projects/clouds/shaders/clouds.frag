@@ -156,19 +156,35 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
 
         float shadow = light_transmittance(p, sun_dir, light_steps);
         float powder = 1.0 - exp(-density * step_len * 0.75);
-        float phase = mix(0.45, 1.55, pow(max(dot(direction, sun_dir), 0.0), 3.0));
-        float sun_light = shadow * phase * (0.65 + powder * 1.10) * params.sun_direction_intensity.w;
+        float view_sun = max(dot(direction, sun_dir), 0.0);
+        float silver_edge = pow(view_sun, cloud_style_value(5.0, 4.5, 3.6, 5.5, 7.5));
+        float phase_base = cloud_style_value(0.42, 0.44, 0.50, 0.36, 0.60);
+        float phase_peak = cloud_style_value(1.75, 1.85, 1.45, 2.10, 1.35);
+        float phase = mix(phase_base, phase_peak, silver_edge);
+        float interior = mix(cloud_style_value(0.62, 0.58, 0.72, 0.46, 0.80), 1.0, shadow);
+        float sun_light =
+            shadow * interior * phase *
+            (cloud_style_value(0.62, 0.65, 0.52, 0.58, 0.46) +
+             powder * cloud_style_value(1.18, 1.20, 0.82, 1.35, 0.55)) *
+            params.sun_direction_intensity.w;
         vec3 local_up = normalize(p - center);
         float altitude = length(p - center) - params.camera_position_radius.w;
         float height01 = clamp((altitude - params.cloud_shell.x) /
                                    max(params.cloud_shell.y - params.cloud_shell.x, 0.001),
                                0.0, 1.0);
-        float ambient = 0.25 + 0.35 * smoothstep(-0.2, 0.8, dot(local_up, vec3(0.0, 1.0, 0.0)));
+        float ambient = cloud_style_value(0.23, 0.22, 0.30, 0.16, 0.34) +
+                        cloud_style_value(0.30, 0.31, 0.24, 0.22, 0.26) *
+                            smoothstep(-0.2, 0.8, dot(local_up, vec3(0.0, 1.0, 0.0)));
+        ambient *= mix(cloud_style_value(0.82, 0.78, 0.92, 0.58, 0.96), 1.0, shadow);
         float top_lift = smoothstep(0.20, 0.85, height01);
+        vec3 direct_tint = mix(vec3(1.12, 0.96, 0.78), vec3(1.06, 1.04, 0.98),
+                               params.sun_direction_intensity.w);
+        vec3 ambient_tint = cloud_style_value(0.54, 0.56, 0.58, 0.46, 0.62) *
+                            mix(vec3(0.44, 0.50, 0.59), vec3(0.64, 0.69, 0.76), top_lift);
         vec3 cloud_light =
-            vec3(1.08, 1.03, 0.93) * sun_light * 1.25 +
-            vec3(0.55, 0.62, 0.70) * ambient * mix(0.70, 1.10, top_lift);
-        float alpha = 1.0 - exp(-density * step_len * 0.95);
+            direct_tint * sun_light * (1.08 + silver_edge * 0.34) + ambient_tint * ambient;
+        float alpha =
+            1.0 - exp(-density * step_len * cloud_style_value(0.88, 0.95, 0.72, 1.08, 0.54));
         result.color += result.transmittance * alpha * cloud_light;
         result.transmittance *= 1.0 - alpha;
         light_sum += sun_light + ambient;
