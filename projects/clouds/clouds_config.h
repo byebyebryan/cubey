@@ -84,7 +84,7 @@ struct CloudsTimeConfig {
 
 struct CloudsConfig {
     CloudsCameraMode camera_mode = CloudsCameraMode::Surface;
-    CloudsQuality quality = CloudsQuality::Half;
+    CloudsQuality quality = CloudsQuality::Quarter;
     CloudsWeatherPreset weather_preset = CloudsWeatherPreset::BrokenCumulus;
     CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
     CloudsDebugView debug_view = CloudsDebugView::Final;

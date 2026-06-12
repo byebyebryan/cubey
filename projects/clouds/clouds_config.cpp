@@ -280,9 +280,9 @@ CloudsQualityBudget clouds_quality_budget(CloudsQuality quality) {
     case CloudsQuality::Quarter:
         return {.view_steps = 24, .light_steps = 3, .resolution_scale = 0.25F};
     case CloudsQuality::Half:
-        return {.view_steps = 40, .light_steps = 5, .resolution_scale = 0.5F};
+        return {.view_steps = 28, .light_steps = 3, .resolution_scale = 0.5F};
     case CloudsQuality::Full:
-        return {.view_steps = 64, .light_steps = 8, .resolution_scale = 1.0F};
+        return {.view_steps = 48, .light_steps = 5, .resolution_scale = 1.0F};
     }
     return {};
 }

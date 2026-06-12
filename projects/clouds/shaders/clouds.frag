@@ -52,12 +52,12 @@ float cloud_solar_margin(vec3 position_km, vec3 sun_dir) {
 
 float cloud_sun_visibility(vec3 position_km, vec3 sun_dir) {
     float margin = cloud_solar_margin(position_km, sun_dir);
-    return smoothstep(-0.10, 0.14, margin);
+    return smoothstep(0.03, 0.12, margin);
 }
 
 float cloud_twilight_visibility(vec3 position_km, vec3 sun_dir) {
     float margin = cloud_solar_margin(position_km, sun_dir);
-    return smoothstep(-0.38, 0.18, margin);
+    return smoothstep(-0.01, 0.16, margin);
 }
 
 float light_transmittance(vec3 position_km, vec3 sun_dir, int light_steps) {
@@ -207,12 +207,12 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
                         cloud_style_value(0.30, 0.31, 0.24, 0.22, 0.26) *
                             smoothstep(-0.2, 0.8, dot(local_up, vec3(0.0, 1.0, 0.0)));
         float twilight_visibility = cloud_twilight_visibility(p, sun_dir);
-        float ambient_energy = smoothstep(0.01, 0.55,
+        float ambient_energy = smoothstep(0.08, 0.65,
                                           params.sun_direction_intensity.w * twilight_visibility);
         float ambient_shadow = mix(1.0, self_shadow, ambient_energy * 0.35);
         ambient *= mix(cloud_style_value(0.82, 0.78, 0.92, 0.58, 0.96), 1.0,
                        ambient_shadow);
-        ambient *= mix(cloud_style_value(0.018, 0.018, 0.024, 0.012, 0.030), 1.0,
+        ambient *= mix(cloud_style_value(0.0002, 0.0003, 0.0004, 0.0002, 0.0005), 1.0,
                        ambient_energy);
         float top_lift = smoothstep(0.20, 0.85, height01);
         vec3 direct_tint = mix(vec3(1.12, 0.96, 0.78), vec3(1.06, 1.04, 0.98),

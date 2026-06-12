@@ -68,7 +68,9 @@ Controls:
   cloud view so surface, high-altitude, and orbit captures all show meaningful
   structure.
 - `--cloud-quality quarter|half|full` controls both raymarch sample budgets and
-  the offscreen cloud product render scale before final compositing.
+  the offscreen cloud product render scale before final compositing. `quarter`
+  is the default interactive mode; higher modes are still useful for diagnosis
+  but are not yet real-time enough to be the default.
 - `--cloud-shadow-strength` controls the prototype analytic cloud shadow factor
   applied only to the standalone procedural ground/ocean proxy.
 - Weather fields are procedural and deterministic. There is not yet an uploaded
@@ -94,6 +96,14 @@ planet rendering:
   composition are still rough, but high-altitude cloud contribution now tapers
   near the horizon and orbit detail suppresses local high-frequency erosion so
   the planet reads as broad weather masses rather than speckle.
+- Surface camera views still show horizon streaking/banding from the v1
+  raymarched cloud shell and vertically extruded density model. Full quality
+  reduces noise but does not remove the pattern, so this needs a deeper
+  density/reconstruction pass rather than more sample-budget tuning.
+- High-oblique views can expose a dark upper-atmosphere/space band because the
+  standalone clouds composite uses a local prototype atmosphere/background
+  pass. This should be resolved before cloud outputs are promoted into the
+  shared sky/environment path.
 - Interactive control is rough. The project has quick camera mode buttons and
   basic sliders, but it has not been moved onto the shared hierarchical control
   model used by the more mature projects.
@@ -103,6 +113,9 @@ planet rendering:
   plus the shared atmosphere sky-background ray classifier for non-ground rays,
   but it remains project-local prototype code rather than a reusable cloud scene
   pass.
+- Night-side cloud lighting now gates direct/twilight contribution more
+  strictly, but proper moonlight/starlight and exposure-aware night cloud
+  silhouettes are still missing.
 
 ## Integration Contract
 
