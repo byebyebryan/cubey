@@ -37,7 +37,7 @@ layout(location = 0) out vec4 out_color;
 
 #include "clouds_model.glsl"
 
-float cloud_horizon_visibility(vec3 position_km, vec3 sun_dir, float penumbra_scale) {
+float cloud_solar_margin(vec3 position_km, vec3 sun_dir) {
     vec3 center = planet_center();
     float ground_radius = params.camera_position_radius.w;
     vec3 to_sample = position_km - center;
@@ -47,18 +47,17 @@ float cloud_horizon_visibility(vec3 position_km, vec3 sun_dir, float penumbra_sc
                                            (sample_radius * sample_radius),
                                  0.0));
     float horizon_cos = -horizon_dip;
-    float penumbra = mix(0.015, 0.045, smoothstep(0.0, 0.035, horizon_dip));
-    penumbra *= penumbra_scale;
-    return smoothstep(horizon_cos - penumbra, horizon_cos + penumbra,
-                      dot(local_up, sun_dir));
+    return dot(local_up, sun_dir) - horizon_cos;
 }
 
 float cloud_sun_visibility(vec3 position_km, vec3 sun_dir) {
-    return cloud_horizon_visibility(position_km, sun_dir, 1.0);
+    float margin = cloud_solar_margin(position_km, sun_dir);
+    return smoothstep(-0.10, 0.14, margin);
 }
 
 float cloud_twilight_visibility(vec3 position_km, vec3 sun_dir) {
-    return cloud_horizon_visibility(position_km, sun_dir, 3.2);
+    float margin = cloud_solar_margin(position_km, sun_dir);
+    return smoothstep(-0.38, 0.18, margin);
 }
 
 float light_transmittance(vec3 position_km, vec3 sun_dir, int light_steps) {
@@ -69,6 +68,11 @@ float light_transmittance(vec3 position_km, vec3 sun_dir, int light_steps) {
     if (ray_end <= 0.0) {
         return 1.0;
     }
+    float layer_thickness = max(params.cloud_shell.y - params.cloud_shell.x, 0.001);
+    // Near the terminator, full shell-length light rays turn cheap self-shadowing
+    // into a slab artifact. Keep this local until clouds get a proper shadow map.
+    float max_light_distance = max(layer_thickness * 10.0, 24.0);
+    ray_end = min(ray_end, max_light_distance);
 
     float step_len = ray_end / float(max(light_steps, 1));
     float optical_depth = 0.0;
@@ -179,16 +183,18 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         }
 
         float sun_visibility = cloud_sun_visibility(p, sun_dir);
-        float shadow = sun_visibility > 0.001 ? light_transmittance(p, sun_dir, light_steps) : 0.0;
+        float self_shadow = light_transmittance(p, sun_dir, light_steps);
+        float shadow = self_shadow * sun_visibility;
         float powder = 1.0 - exp(-density * step_len * 0.75);
         float view_sun = max(dot(direction, sun_dir), 0.0);
         float silver_edge = pow(view_sun, cloud_style_value(5.0, 4.5, 3.6, 5.5, 7.5));
         float phase_base = cloud_style_value(0.42, 0.44, 0.50, 0.36, 0.60);
         float phase_peak = cloud_style_value(1.75, 1.85, 1.45, 2.10, 1.35);
         float phase = mix(phase_base, phase_peak, silver_edge);
-        float interior = mix(cloud_style_value(0.62, 0.58, 0.72, 0.46, 0.80), 1.0, shadow);
+        float interior =
+            mix(cloud_style_value(0.62, 0.58, 0.72, 0.46, 0.80), 1.0, self_shadow);
         float sun_light =
-            shadow * interior * phase *
+            self_shadow * interior * phase *
             (cloud_style_value(0.62, 0.65, 0.52, 0.58, 0.46) +
              powder * cloud_style_value(1.18, 1.20, 0.82, 1.35, 0.55)) *
             params.sun_direction_intensity.w * sun_visibility;
@@ -200,10 +206,12 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         float ambient = cloud_style_value(0.23, 0.22, 0.30, 0.16, 0.34) +
                         cloud_style_value(0.30, 0.31, 0.24, 0.22, 0.26) *
                             smoothstep(-0.2, 0.8, dot(local_up, vec3(0.0, 1.0, 0.0)));
-        ambient *= mix(cloud_style_value(0.82, 0.78, 0.92, 0.58, 0.96), 1.0, shadow);
         float twilight_visibility = cloud_twilight_visibility(p, sun_dir);
         float ambient_energy = smoothstep(0.01, 0.55,
                                           params.sun_direction_intensity.w * twilight_visibility);
+        float ambient_shadow = mix(1.0, self_shadow, ambient_energy * 0.35);
+        ambient *= mix(cloud_style_value(0.82, 0.78, 0.92, 0.58, 0.96), 1.0,
+                       ambient_shadow);
         ambient *= mix(cloud_style_value(0.018, 0.018, 0.024, 0.012, 0.030), 1.0,
                        ambient_energy);
         float top_lift = smoothstep(0.20, 0.85, height01);

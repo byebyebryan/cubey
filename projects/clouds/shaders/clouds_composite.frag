@@ -74,7 +74,7 @@ float surface_cloud_shadow(vec3 surface_position, vec3 sun_dir) {
     vec3 center = planet_center();
     vec3 up = normalize(surface_position - center);
     float sun_visibility = smoothstep(-0.08, 0.04, dot(up, sun_dir));
-    if (shadow_strength <= 0.001 || sun_visibility <= 0.001) {
+    if (shadow_strength <= 0.001) {
         return 1.0;
     }
     vec3 origin = surface_position + normalize(surface_position - center) * 0.02;
@@ -96,7 +96,8 @@ float surface_cloud_shadow(vec3 surface_position, vec3 sun_dir) {
         vec3 p = origin + sun_dir * (ray_start + (float(i) + 0.5) * step_len);
         optical_depth += cloud_density(p) * step_len;
     }
-    return exp(-optical_depth * 0.42 * shadow_strength);
+    float cloud_shadow = exp(-optical_depth * 0.42 * shadow_strength);
+    return mix(1.0, cloud_shadow, sun_visibility);
 }
 
 vec3 planet_surface_radiance(vec3 position, float cloud_shadow) {
@@ -108,7 +109,8 @@ vec3 planet_surface_radiance(vec3 position, float cloud_shadow) {
     vec3 albedo = planet_surface_albedo(position);
     vec3 direct = vec3(1.00, 0.93, 0.80) * ndotl * sun_visibility * light_intensity *
                   cloud_shadow;
-    vec3 ambient = vec3(0.014, 0.019, 0.030) * mix(0.10, 1.0, sun_visibility);
+    float twilight_visibility = smoothstep(-0.30, 0.08, dot(up, sun_dir));
+    vec3 ambient = vec3(0.014, 0.019, 0.030) * mix(0.10, 1.0, twilight_visibility);
     return albedo * (ambient + direct);
 }
 
