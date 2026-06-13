@@ -497,6 +497,52 @@ void derive_flow_aligned_channels(const TerrainLabConfig& config, TerrainLabFiel
     }
 }
 
+void relax_steep_process_slopes(const TerrainLabConfig& config, TerrainLabFieldData& fields) {
+    if (config.process_strength <= 0.0F || fields.desc.width < 3U || fields.desc.height < 3U) {
+        return;
+    }
+
+    std::vector<float> relaxed = fields.height_m;
+    std::vector<float> next = relaxed;
+    std::vector<float> slope;
+    std::vector<float> curvature;
+    float max_slope = 0.0F;
+    float max_abs_curvature = 0.0F;
+
+    for (std::uint32_t iteration = 0; iteration < 2U; ++iteration) {
+        compute_slope_and_curvature(fields.desc, relaxed, slope, curvature, max_slope,
+                                    max_abs_curvature);
+        next = relaxed;
+        for (std::uint32_t y = 1U; y + 1U < fields.desc.height; ++y) {
+            for (std::uint32_t x = 1U; x + 1U < fields.desc.width; ++x) {
+                const std::size_t sample = fields.index(x, y);
+                const float neighbor_average =
+                    (relaxed[fields.index(x - 1U, y)] + relaxed[fields.index(x + 1U, y)] +
+                     relaxed[fields.index(x, y - 1U)] + relaxed[fields.index(x, y + 1U)]) *
+                    0.25F;
+                const float slope_relax = smoothstep(0.18F, 0.72F, slope[sample]);
+                const float channel_bank =
+                    smoothstep(0.12F, 0.52F, fields.channel_influence[sample]) *
+                    (1.0F - smoothstep(0.66F, 0.96F, fields.channel_influence[sample]));
+                const float structure_hold =
+                    saturate((fields.ridge_influence[sample] * 0.18F) +
+                             (fields.divide_influence[sample] * 0.16F));
+                const float relax_weight =
+                    saturate(((slope_relax * 0.16F) + (channel_bank * 0.08F)) *
+                             config.process_strength * (1.0F - structure_hold));
+                next[sample] = lerp(relaxed[sample], neighbor_average, relax_weight);
+            }
+        }
+        relaxed.swap(next);
+    }
+
+    for (std::size_t sample = 0; sample < fields.sample_count(); ++sample) {
+        const float relaxation_delta = relaxed[sample] - fields.height_m[sample];
+        fields.process_delta_m[sample] += relaxation_delta;
+        fields.height_m[sample] = relaxed[sample];
+    }
+}
+
 void update_height_range(TerrainLabFieldData& fields) {
     if (fields.height_m.empty()) {
         fields.min_height_m = 0.0F;
@@ -898,6 +944,7 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
         fields.process_delta_m[sample] = -valley_cut + valley_fill - talus_relax;
         fields.height_m[sample] = fields.structure_height_m[sample] + fields.process_delta_m[sample];
     }
+    relax_steep_process_slopes(config, fields);
 
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
