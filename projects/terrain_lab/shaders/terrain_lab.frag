@@ -71,12 +71,12 @@ float value_noise2(vec2 p) {
 }
 
 vec3 material_color() {
-    vec3 rock = vec3(0.39, 0.40, 0.38);
-    vec3 soil = vec3(0.38, 0.30, 0.22);
-    vec3 scree = vec3(0.48, 0.47, 0.43);
-    vec3 meadow = vec3(0.31, 0.46, 0.23);
-    vec3 forest = vec3(0.13, 0.28, 0.17);
-    vec3 snow = vec3(0.86, 0.88, 0.84);
+    vec3 rock = vec3(0.35, 0.36, 0.34);
+    vec3 soil = vec3(0.34, 0.28, 0.20);
+    vec3 scree = vec3(0.49, 0.48, 0.44);
+    vec3 meadow = vec3(0.27, 0.43, 0.21);
+    vec3 forest = vec3(0.10, 0.24, 0.13);
+    vec3 snow = vec3(0.84, 0.86, 0.82);
     return rock * frag_material_a.x + soil * frag_material_a.y +
            scree * frag_material_a.z + meadow * frag_material_a.w +
            forest * frag_material_b.x + snow * frag_material_b.y;
@@ -87,6 +87,9 @@ vec3 final_color() {
     float grain = (value_noise2(frag_world_position.xz * 0.012) - 0.5) * 0.05;
     grain += (value_noise2(frag_world_position.xz * 0.041 + vec2(19.0, -7.0)) - 0.5) * 0.035;
     color *= 1.0 + grain;
+    color = mix(color, vec3(0.16, 0.27, 0.21), clamp(frag_hydrology.w, 0.0, 1.0) * 0.14);
+    color = mix(color, vec3(0.12, 0.23, 0.22), clamp(frag_influences.w, 0.0, 1.0) * 0.10);
+    color = mix(color, vec3(0.42, 0.37, 0.25), clamp(frag_material_b.z, 0.0, 1.0) * 0.08);
 
     vec3 normal = normalize(frag_normal);
     vec3 light_direction = normalize(pc.light_direction_debug.xyz);
@@ -96,8 +99,8 @@ vec3 final_color() {
     float lighting = 0.28 + diffuse * 0.58 + wrap * 0.10 + sky * 0.12;
     vec3 lit = color * lighting;
 
-    float distance_t = smoothstep(2300.0, 7400.0, length(frag_world_position.xz));
-    return mix(lit, vec3(0.55, 0.66, 0.72), distance_t * 0.38);
+    float distance_t = smoothstep(3600.0, 9200.0, length(frag_world_position.xz));
+    return mix(lit, vec3(0.58, 0.68, 0.73), distance_t * 0.25);
 }
 
 vec3 flow_direction_color(float direction) {

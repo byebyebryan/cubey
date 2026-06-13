@@ -32,7 +32,7 @@
 namespace cubey::projects::terrain_lab {
 namespace {
 
-constexpr float kDefaultPitchRadians = -0.88F;
+constexpr float kDefaultPitchRadians = -0.74F;
 
 struct TerrainLabPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
@@ -64,7 +64,7 @@ struct TerrainLabRenderRanges {
 }
 
 [[nodiscard]] float terrain_lab_camera_distance(const TerrainLabConfig& config) {
-    return std::max(1200.0F, terrain_lab_extent_m(config) * 0.92F);
+    return std::max(1600.0F, terrain_lab_extent_m(config) * 1.12F);
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo terrain_lab_pass_info() {
@@ -263,7 +263,7 @@ class TerrainLabApp {
                                 : static_cast<float>(extent.width) /
                                       static_cast<float>(extent.height);
         const float target_y = fields_.min_height_m +
-                               ((fields_.max_height_m - fields_.min_height_m) * 0.18F);
+                               ((fields_.max_height_m - fields_.min_height_m) * 0.28F);
         const cubey::Transform3D camera_transform = cubey::orbit_camera_transform({
             .target = {0.0F, target_y, 0.0F},
             .distance = orbit_controller_.distance(),
