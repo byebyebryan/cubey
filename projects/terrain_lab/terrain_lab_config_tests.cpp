@@ -8,11 +8,25 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <stdexcept>
+#include <string>
+
+#ifndef CUBEY_TERRAIN_LAB_SOURCE_DIR
+#error "CUBEY_TERRAIN_LAB_SOURCE_DIR must be defined by the terrain_lab test target"
+#endif
 
 namespace {
 
 void require(bool condition, const char* message) {
+    if (!condition) {
+        throw std::runtime_error(message);
+    }
+}
+
+void require(bool condition, const std::string& message) {
     if (!condition) {
         throw std::runtime_error(message);
     }
@@ -24,6 +38,30 @@ void require_near(float value, float expected, float tolerance, const char* mess
 
 float material_sum(const cubey::projects::terrain_lab::TerrainLabMaterialMask& mask) {
     return mask.rock + mask.soil + mask.scree + mask.meadow + mask.forest + mask.snow;
+}
+
+std::string read_text_file(const std::filesystem::path& path) {
+    std::ifstream stream(path);
+    if (!stream) {
+        throw std::runtime_error("failed to open text file: " + path.string());
+    }
+    std::ostringstream buffer;
+    buffer << stream.rdbuf();
+    return buffer.str();
+}
+
+void require_contains(const std::string& text, const std::string& needle) {
+    require(text.find(needle) != std::string::npos, "expected text not found: " + needle);
+}
+
+void require_shader_debug_constant(
+    const std::string& shader_source,
+    cubey::projects::terrain_lab::TerrainLabDebugView view,
+    const char* shader_suffix) {
+    const std::string expected = "const uint TERRAIN_LAB_VIEW_" + std::string(shader_suffix) +
+                                 " = " +
+                                 std::to_string(static_cast<std::uint32_t>(view)) + "u;";
+    require_contains(shader_source, expected);
 }
 
 } // namespace
@@ -90,6 +128,42 @@ int main() {
     require(terrain::next_terrain_lab_debug_view(terrain::TerrainLabDebugView::NoiseOff) ==
                 terrain::TerrainLabDebugView::Final,
             "terrain lab debug view cycle should wrap");
+
+    const std::string terrain_lab_fragment_shader = read_text_file(
+        std::filesystem::path(CUBEY_TERRAIN_LAB_SOURCE_DIR) / "shaders" / "terrain_lab.frag");
+    require_shader_debug_constant(terrain_lab_fragment_shader, terrain::TerrainLabDebugView::Final,
+                                  "FINAL");
+    require_shader_debug_constant(terrain_lab_fragment_shader, terrain::TerrainLabDebugView::Height,
+                                  "HEIGHT");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::Structure, "STRUCTURE");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::Process, "PROCESS");
+    require_shader_debug_constant(terrain_lab_fragment_shader, terrain::TerrainLabDebugView::Detail,
+                                  "DETAIL");
+    require_shader_debug_constant(terrain_lab_fragment_shader, terrain::TerrainLabDebugView::Slope,
+                                  "SLOPE");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::Curvature, "CURVATURE");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::FlowDirection, "FLOW_DIRECTION");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::FlowAccumulation,
+                                  "FLOW_ACCUMULATION");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::StreamPower, "STREAM_POWER");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::Wetness, "WETNESS");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::Deposition, "DEPOSITION");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::Material, "MATERIAL");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::BiomeDensity, "BIOME_DENSITY");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::CanopyHeight, "CANOPY_HEIGHT");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::NoiseOff, "NOISE_OFF");
 
     bool rejected = false;
     try {

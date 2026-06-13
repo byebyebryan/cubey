@@ -25,6 +25,11 @@ if (BUILD_TESTING)
         PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
+    target_compile_definitions(
+        cubey_project_terrain_lab_tests
+        PRIVATE
+            CUBEY_TERRAIN_LAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    )
     target_link_libraries(
         cubey_project_terrain_lab_tests
         PRIVATE
@@ -33,4 +38,42 @@ if (BUILD_TESTING)
             cubey_project_warnings
     )
     add_test(NAME terrain_lab_config_tests COMMAND cubey_project_terrain_lab_tests)
+
+    set(CUBEY_TERRAIN_LAB_HEADLESS_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_lab_headless_writes_png
+        cubey_project_terrain_lab
+        "${CUBEY_TERRAIN_LAB_HEADLESS_SMOKE_OUTPUT}"
+        --headless
+        --grid-width 65
+        --grid-height 65
+    )
+    cubey_add_png_stats_test(
+        terrain_lab_headless_writes_png
+        "${CUBEY_TERRAIN_LAB_HEADLESS_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
+    set(CUBEY_TERRAIN_LAB_FLOW_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-flow-accumulation.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_lab_flow_accumulation_writes_png
+        cubey_project_terrain_lab
+        "${CUBEY_TERRAIN_LAB_FLOW_SMOKE_OUTPUT}"
+        --headless
+        --grid-width 65
+        --grid-height 65
+        --debug-view
+        flow-accumulation
+    )
+    cubey_add_png_stats_test(
+        terrain_lab_flow_accumulation_writes_png
+        "${CUBEY_TERRAIN_LAB_FLOW_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
 endif()
