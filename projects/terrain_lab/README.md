@@ -98,6 +98,12 @@ Generated CPU fields include:
 - material masks for rock, soil, scree, meadow, forest, and snow;
 - grass, shrub, tree, and canopy-height density fields.
 
+Field summaries also expose naturalization diagnostics for channel/divide
+sample counts, divide-channel height separation, channel-flow alignment,
+material entropy, and boundary edge steps. These are intended as iteration
+guardrails for terrain shaping, not as a claim that the slice is physically
+complete.
+
 The renderer converts those fields into a CPU heightfield mesh and packs the
 main diagnostic payloads into vertex attributes. The current standalone app
 supports windowed orbit inspection, `D` to cycle debug views, and headless PNG
@@ -145,15 +151,32 @@ Useful run commands:
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab-material.png
 ```
 
+Useful local review output commands:
+
+```sh
+mkdir -p outputs/terrain_lab
+./build/dev/projects/terrain_lab/terrain_lab --headless --width 1280 --height 720 --output outputs/terrain_lab/final.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view feature-graph --width 1280 --height 720 --output outputs/terrain_lab/feature-graph.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view watershed --width 1280 --height 720 --output outputs/terrain_lab/watershed.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view channel --width 1280 --height 720 --output outputs/terrain_lab/channel.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view divide --width 1280 --height 720 --output outputs/terrain_lab/divide.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/material.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view flow-accumulation --width 1280 --height 720 --output outputs/terrain_lab/flow-accumulation.png
+```
+
+`outputs/` is ignored by Git; these captures are local review artifacts.
+
 ## Status
 
 Current status: CPU field foundation plus a minimal standalone visual workbench.
-The generator now includes a deterministic four-basin watershed core with
-divide, channel, and watershed-id fields. Channels drive valley incision,
-wetness, and deposition, while divide fields keep high-ground structure
-explicit. The workbench has deterministic mesh extraction, field/debug shading,
-windowed and headless render paths, PNG smoke coverage, and shader/debug-view
-sync tests.
+The generator includes a deterministic four-basin watershed core with divide,
+channel, and watershed-id fields. The latest pass softens hard watershed
+ownership, derives stronger channels from initial flow accumulation, applies a
+small slope-relaxation process, and breaks up material masks with semantic
+noise. Channels drive valley incision, wetness, and deposition, while divide
+fields keep high-ground structure explicit without dominating the final height.
+The workbench has deterministic mesh extraction, field/debug shading, windowed
+and headless render paths, PNG smoke coverage, and shader/debug-view sync tests.
 
 Still out of scope for the current slice: live ImGui editing, runtime
 regeneration, a true drainage graph with stream connectivity guarantees, tiled

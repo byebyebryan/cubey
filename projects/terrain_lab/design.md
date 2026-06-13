@@ -130,9 +130,12 @@ carry enough structure that valleys, ridges, water, and materials line up in the
 rendered result.
 
 The current watershed core is still a rasterized feature model rather than a
-full stream graph. It emits four deterministic basin ids plus divide and channel
-influences. Those fields now guide structure, process, material, and diagnostic
-rendering, while richer drainage connectivity remains a later refinement.
+full stream graph. It emits four deterministic basin ids plus soft divide and
+channel-guide influences. The process pass now recomputes stronger channel
+influence from initial flow accumulation, so guide channels bias drainage
+instead of single-handedly carving every valley. Those fields guide structure,
+process, material, and diagnostic rendering, while richer drainage connectivity
+remains a later refinement.
 
 ### Process Passes
 
@@ -239,6 +242,12 @@ foundation validates deterministic CPU fields, mesh payload extraction, shader
 debug-view constants, a windowed startup smoke, and final, flow-accumulation,
 feature-graph, and watershed PNG captures. UI editing, runtime regeneration,
 tiled rendering, and shader-displacement validation are still deferred.
+
+Recent naturalization diagnostics also track channel/divide sample counts,
+divide-channel height separation, channel-flow alignment, material entropy, and
+edge steps. These checks keep the generator honest during tuning, but visual
+review remains required because the current terrain is still an approximate
+workbench slice rather than a physically complete landscape model.
 
 ## References
 

@@ -51,7 +51,8 @@ Current implementation notes:
 
 ## Phase 2: Temperate Mountain Watershed
 
-Status: watershed core landed; deeper graph and stream-network work remains.
+Status: naturalized watershed core landed; deeper graph and stream-network work
+remains.
 
 Goal: prove one coherent inland terrain slice.
 
@@ -78,9 +79,12 @@ Success criteria:
 
 Current implementation notes:
 
-- a deterministic four-basin watershed raster produces watershed id, divide
-  influence, channel influence, and channel distance fields;
-- channels drive valley incision, wetness, deposition, and detail suppression;
+- a deterministic four-basin watershed raster produces watershed id, soft
+  divide influence, channel guide influence, and channel distance fields;
+- an initial flow solve derives the stronger channel influence used for
+  incision, wetness, deposition, and detail suppression;
+- a small slope-relaxation pass smooths harsh process artifacts while preserving
+  structure/process/detail contribution accounting;
 - tests compare channel samples against non-channel terrain and divide samples
   against channels;
 - remaining work is a richer feature graph with stronger stream connectivity,
@@ -119,6 +123,8 @@ Current implementation notes:
 
 ## Phase 4: Detail And Material Pass
 
+Status: first naturalization pass landed; richer material response remains.
+
 Goal: add local richness without breaking terrain coherence.
 
 Deliverables:
@@ -134,6 +140,15 @@ Success criteria:
 - cliffs, ridges, valley floors, and wet/depositional areas receive different
   detail behavior;
 - material masks remain stable under moderate detail tuning.
+
+Current implementation notes:
+
+- detail residuals are damped on channel floors and separated into ridge,
+  slope, and broad residual components;
+- material masks use slope, wetness, elevation, deposition, channel influence,
+  and semantic noise breakup;
+- final shading uses existing field payloads for subtle wet/channel/deposition
+  tinting without adding renderer-global terrain state.
 
 ## Phase 5: Biome Dressing Proxies
 
