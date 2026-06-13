@@ -258,6 +258,24 @@ better temporal rejection are still valid follow-ups. They should refine a good
 distance-regime model, not act as the primary fix for far-field horizon
 streaking.
 
+The eleventh checkpoint implements the first version of that distance-regime
+split. Cloud frame data moved from maxed-out push constants into a per-frame
+uniform buffer so the shader can carry explicit feature-isolation controls.
+The weather model now exposes broad, front, cell, and streak components, with
+CLI/UI/config controls for local volume, horizon layer, weather feature
+weights, and detail erosion. The old composite-only vertical lower-sky blur was
+removed.
+
+The surface horizon now fades dense local-volume marching out of lower-sky
+grazing rays and replaces it with a dedicated low-frequency horizon layer. The
+standard quarter-quality review capture at
+`outputs/clouds-distance-split-final2-20260613-103748` shows the main surface
+row/streak artifact removed while high, high-oblique, and orbit views still
+retain cloud mass. The tradeoff is that the surface horizon is currently more
+subtle and less richly shaped than ideal. Treat the next visual pass as
+horizon-layer shape/lighting tuning, not as another temporal reconstruction
+pass.
+
 The remaining promotion blockers are now less about first visibility and more
 about renderer contracts:
 
@@ -265,10 +283,9 @@ about renderer contracts:
   and planet can compose clouds with their own scene passes;
 - promote the current analytic sun-shadow factor into a reusable cloud shadow
   texture or sampled lighting input for surface and ocean lighting;
-- improve temporal/blue-noise sampling and horizon reconstruction before
-  increasing quality or promoting the local-volume path; the project now has
-  metadata and reprojection hooks, but the visible surface/high streaking still
-  needs more work;
+- improve horizon-layer shape/lighting before promotion; temporal/blue-noise
+  sampling is still useful, but the current surface artifact is no longer being
+  hidden by a final composite blur;
 - decide whether weather authoring is procedural-only, texture-driven, or a
   hybrid with uploaded weather maps;
 - move useful controls onto the shared hierarchical config/UI surface.
