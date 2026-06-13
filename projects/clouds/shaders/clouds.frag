@@ -332,9 +332,17 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     if (!hit_ground) {
         sky_limb_fade = mix(1.0, smoothstep(0.55, 2.70, shell_span_ratio), high_view);
     }
+    float local_view = 1.0 - interval.domain_regime;
+    float grazing_march = 1.0 - smoothstep(0.04, 0.24, abs(view_horizon));
+    float long_span_march = smoothstep(0.22, 0.92, result.distance_fraction);
+    float adaptive_march = clamp(local_view * grazing_march * long_span_march, 0.0, 1.0);
+    int effective_view_steps =
+        clamp(view_steps + int(ceil(float(view_steps) * 0.75 * adaptive_march)), 1,
+              CLOUDS_MAX_VIEW_STEPS);
+    result.local_march_fraction = adaptive_march;
 
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
-    float step_len = (ray_end - ray_start) / float(max(view_steps, 1));
+    float step_len = (ray_end - ray_start) / float(max(effective_view_steps, 1));
     float edge_fade_distance = max(layer_thickness * 0.55, step_len * 2.0);
     int used_steps = 0;
     float density_sum = 0.0;
@@ -345,7 +353,7 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     float light_sum = 0.0;
     float shadow_sum = 0.0;
     for (int i = 0; i < CLOUDS_MAX_VIEW_STEPS; ++i) {
-        if (i >= view_steps) {
+        if (i >= effective_view_steps) {
             break;
         }
         float jitter = hash31(vec3(frag_position + params.render_options.w * 0.071,
@@ -437,7 +445,7 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     result.mean_weather = weather_sum / denom;
     result.mean_light = light_sum / denom;
     result.mean_shadow = shadow_sum / denom;
-    result.step_fraction = float(used_steps) / float(max(view_steps, 1));
+    result.step_fraction = float(used_steps) / float(max(effective_view_steps, 1));
     result.step_length_fraction = clamp(step_len / max(layer_thickness, 0.001), 0.0, 1.0);
     return result;
 }
