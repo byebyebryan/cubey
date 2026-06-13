@@ -76,4 +76,44 @@ if (BUILD_TESTING)
         0.00001
         0.00005
     )
+
+    set(CUBEY_TERRAIN_LAB_FEATURE_GRAPH_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-feature-graph.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_lab_feature_graph_writes_png
+        cubey_project_terrain_lab
+        "${CUBEY_TERRAIN_LAB_FEATURE_GRAPH_SMOKE_OUTPUT}"
+        --headless
+        --grid-width 65
+        --grid-height 65
+        --debug-view
+        feature-graph
+    )
+    cubey_add_png_stats_test(
+        terrain_lab_feature_graph_writes_png
+        "${CUBEY_TERRAIN_LAB_FEATURE_GRAPH_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
+    set(CUBEY_TERRAIN_LAB_WATERSHED_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-watershed.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_lab_watershed_writes_png
+        cubey_project_terrain_lab
+        "${CUBEY_TERRAIN_LAB_WATERSHED_SMOKE_OUTPUT}"
+        --headless
+        --grid-width 65
+        --grid-height 65
+        --debug-view
+        watershed
+    )
+    cubey_add_png_stats_test(
+        terrain_lab_watershed_writes_png
+        "${CUBEY_TERRAIN_LAB_WATERSHED_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
 endif()

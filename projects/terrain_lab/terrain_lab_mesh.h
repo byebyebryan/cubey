@@ -21,6 +21,7 @@ struct TerrainLabVertex {
     cubey::math::Vec4 material_b{};
     cubey::math::Vec4 vegetation{};
     cubey::math::Vec4 influences{};
+    cubey::math::Vec4 feature_tags{};
 };
 
 struct TerrainLabMeshData {

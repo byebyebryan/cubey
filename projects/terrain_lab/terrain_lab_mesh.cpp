@@ -73,6 +73,9 @@ cubey::render::VertexInputLayout terrain_lab_vertex_input_layout() {
                 cubey::render::vertex_input_attribute(
                     8, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
                     offset_of(offsetof(TerrainLabVertex, influences))),
+                cubey::render::vertex_input_attribute(
+                    9, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
+                    offset_of(offsetof(TerrainLabVertex, feature_tags))),
             },
     };
 }
@@ -87,6 +90,9 @@ TerrainLabMeshData make_terrain_lab_mesh(const TerrainLabFieldData& fields) {
     }
 
     const float height_range = std::max(fields.max_height_m - fields.min_height_m, 0.001F);
+    const float watershed_denominator =
+        fields.watershed_count <= 1U ? 1.0F : static_cast<float>(fields.watershed_count - 1U);
+    const float channel_distance_range = std::max(fields.max_channel_distance_m, 0.001F);
     TerrainLabMeshData mesh;
     mesh.vertices.reserve(fields.sample_count());
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
@@ -133,9 +139,16 @@ TerrainLabMeshData make_terrain_lab_mesh(const TerrainLabFieldData& fields) {
                 .influences =
                     {
                         fields.ridge_influence[sample],
-                        fields.valley_influence[sample],
                         fields.basin_influence[sample],
-                        0.0F,
+                        fields.divide_influence[sample],
+                        fields.channel_influence[sample],
+                    },
+                .feature_tags =
+                    {
+                        static_cast<float>(fields.watershed_id[sample]) / watershed_denominator,
+                        fields.channel_distance_m[sample] / channel_distance_range,
+                        static_cast<float>(fields.watershed_id[sample]),
+                        static_cast<float>(fields.watershed_count),
                     },
             });
         }

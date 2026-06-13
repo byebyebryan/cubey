@@ -17,6 +17,7 @@ layout(location = 5) in vec4 frag_material_a;
 layout(location = 6) in vec4 frag_material_b;
 layout(location = 7) in vec4 frag_vegetation;
 layout(location = 8) in vec4 frag_influences;
+layout(location = 9) in vec4 frag_feature_tags;
 
 layout(location = 0) out vec4 out_color;
 
@@ -36,6 +37,10 @@ const uint TERRAIN_LAB_VIEW_MATERIAL = 12u;
 const uint TERRAIN_LAB_VIEW_BIOME_DENSITY = 13u;
 const uint TERRAIN_LAB_VIEW_CANOPY_HEIGHT = 14u;
 const uint TERRAIN_LAB_VIEW_NOISE_OFF = 15u;
+const uint TERRAIN_LAB_VIEW_FEATURE_GRAPH = 16u;
+const uint TERRAIN_LAB_VIEW_WATERSHED = 17u;
+const uint TERRAIN_LAB_VIEW_CHANNEL = 18u;
+const uint TERRAIN_LAB_VIEW_DIVIDE = 19u;
 
 vec3 ramp3(float t, vec3 a, vec3 b, vec3 c) {
     t = clamp(t, 0.0, 1.0);
@@ -105,6 +110,20 @@ vec3 flow_direction_color(float direction) {
                 0.5 + 0.5 * cos(6.28318 * (t + 0.66)));
 }
 
+vec3 watershed_color(float id_t) {
+    float slot = floor(clamp(id_t, 0.0, 1.0) * 3.0 + 0.5);
+    if (slot < 0.5) {
+        return vec3(0.35, 0.48, 0.78);
+    }
+    if (slot < 1.5) {
+        return vec3(0.32, 0.62, 0.43);
+    }
+    if (slot < 2.5) {
+        return vec3(0.78, 0.55, 0.28);
+    }
+    return vec3(0.62, 0.42, 0.72);
+}
+
 void main() {
     uint debug_view = uint(pc.light_direction_debug.w + 0.5);
     float height_t = (frag_terrain.x - pc.field_ranges.x) /
@@ -115,6 +134,10 @@ void main() {
                    max(log(1.0 + pc.hydrology_ranges.x), 0.001);
     float stream_t = clamp(frag_hydrology.z / max(pc.hydrology_ranges.y, 0.001), 0.0, 1.0);
     float canopy_t = clamp(frag_vegetation.w / max(pc.hydrology_ranges.z, 0.001), 0.0, 1.0);
+    float divide_t = clamp(frag_influences.z, 0.0, 1.0);
+    float channel_t = clamp(frag_influences.w, 0.0, 1.0);
+    float channel_distance_t = clamp(frag_feature_tags.y, 0.0, 1.0);
+    vec3 basin_color = watershed_color(frag_feature_tags.x);
 
     vec3 color = final_color();
     if (debug_view == TERRAIN_LAB_VIEW_HEIGHT) {
@@ -154,6 +177,20 @@ void main() {
                       vec3(0.58, 0.72, 0.40));
     } else if (debug_view == TERRAIN_LAB_VIEW_NOISE_OFF) {
         color = signed_ramp(frag_contributions.w, pc.contribution_ranges.w);
+    } else if (debug_view == TERRAIN_LAB_VIEW_FEATURE_GRAPH) {
+        color = basin_color * 0.58;
+        color = mix(color, vec3(0.92, 0.80, 0.38), divide_t * 0.72);
+        color = mix(color, vec3(0.10, 0.50, 0.78), channel_t * 0.86);
+    } else if (debug_view == TERRAIN_LAB_VIEW_WATERSHED) {
+        color = basin_color;
+        color = mix(color, vec3(0.08, 0.10, 0.12), divide_t * 0.38);
+    } else if (debug_view == TERRAIN_LAB_VIEW_CHANNEL) {
+        color = ramp3(channel_t, vec3(0.12, 0.11, 0.09), vec3(0.11, 0.38, 0.50),
+                      vec3(0.72, 0.93, 0.96));
+        color = mix(color, vec3(0.08, 0.09, 0.10), channel_distance_t * 0.25);
+    } else if (debug_view == TERRAIN_LAB_VIEW_DIVIDE) {
+        color = ramp3(divide_t, vec3(0.10, 0.12, 0.13), vec3(0.58, 0.42, 0.21),
+                      vec3(0.95, 0.82, 0.45));
     }
 
     out_color = vec4(color, 1.0);

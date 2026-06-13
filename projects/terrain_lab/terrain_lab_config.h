@@ -37,9 +37,13 @@ enum class TerrainLabDebugView : std::uint32_t {
     BiomeDensity = 13,
     CanopyHeight = 14,
     NoiseOff = 15,
+    FeatureGraph = 16,
+    Watershed = 17,
+    Channel = 18,
+    Divide = 19,
 };
 
-inline constexpr std::array<TerrainLabDebugView, 16> kTerrainLabDebugViews{
+inline constexpr std::array<TerrainLabDebugView, 20> kTerrainLabDebugViews{
     TerrainLabDebugView::Final,       TerrainLabDebugView::Height,
     TerrainLabDebugView::Structure,   TerrainLabDebugView::Process,
     TerrainLabDebugView::Detail,      TerrainLabDebugView::Slope,
@@ -49,7 +53,9 @@ inline constexpr std::array<TerrainLabDebugView, 16> kTerrainLabDebugViews{
     TerrainLabDebugView::Deposition,  TerrainLabDebugView::Material,
     TerrainLabDebugView::BiomeDensity,
     TerrainLabDebugView::CanopyHeight,
-    TerrainLabDebugView::NoiseOff,
+    TerrainLabDebugView::NoiseOff,    TerrainLabDebugView::FeatureGraph,
+    TerrainLabDebugView::Watershed,   TerrainLabDebugView::Channel,
+    TerrainLabDebugView::Divide,
 };
 
 inline constexpr std::uint32_t kTerrainLabDefaultGridWidth = 257U;
@@ -121,6 +127,14 @@ struct TerrainLabConfig {
         return "canopy-height";
     case TerrainLabDebugView::NoiseOff:
         return "noise-off";
+    case TerrainLabDebugView::FeatureGraph:
+        return "feature-graph";
+    case TerrainLabDebugView::Watershed:
+        return "watershed";
+    case TerrainLabDebugView::Channel:
+        return "channel";
+    case TerrainLabDebugView::Divide:
+        return "divide";
     }
     return "final";
 }

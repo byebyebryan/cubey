@@ -123,10 +123,25 @@ int main() {
     require(terrain::terrain_lab_debug_view_from_name("noise-off") ==
                 terrain::TerrainLabDebugView::NoiseOff,
             "terrain lab noise-off debug view should parse");
+    require(terrain::terrain_lab_debug_view_from_name("feature-graph") ==
+                terrain::TerrainLabDebugView::FeatureGraph,
+            "terrain lab feature graph debug view should parse");
+    require(terrain::terrain_lab_debug_view_from_name("watershed") ==
+                terrain::TerrainLabDebugView::Watershed,
+            "terrain lab watershed debug view should parse");
+    require(terrain::terrain_lab_debug_view_from_name("channel") ==
+                terrain::TerrainLabDebugView::Channel,
+            "terrain lab channel debug view should parse");
+    require(terrain::terrain_lab_debug_view_from_name("divide") ==
+                terrain::TerrainLabDebugView::Divide,
+            "terrain lab divide debug view should parse");
     require(terrain::next_terrain_lab_debug_view(terrain::TerrainLabDebugView::Detail) ==
                 terrain::TerrainLabDebugView::Slope,
             "terrain lab debug view cycle should enter geometry views after detail");
     require(terrain::next_terrain_lab_debug_view(terrain::TerrainLabDebugView::NoiseOff) ==
+                terrain::TerrainLabDebugView::FeatureGraph,
+            "terrain lab debug view cycle should enter watershed diagnostics after noise-off");
+    require(terrain::next_terrain_lab_debug_view(terrain::TerrainLabDebugView::Divide) ==
                 terrain::TerrainLabDebugView::Final,
             "terrain lab debug view cycle should wrap");
 
@@ -165,6 +180,14 @@ int main() {
                                   terrain::TerrainLabDebugView::CanopyHeight, "CANOPY_HEIGHT");
     require_shader_debug_constant(terrain_lab_fragment_shader,
                                   terrain::TerrainLabDebugView::NoiseOff, "NOISE_OFF");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::FeatureGraph, "FEATURE_GRAPH");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::Watershed, "WATERSHED");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::Channel, "CHANNEL");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::Divide, "DIVIDE");
 
     bool rejected = false;
     try {
@@ -613,10 +636,24 @@ int main() {
                  "terrain lab mesh should pack canopy height");
     require_near(first_vertex.influences.x, fields.ridge_influence.front(), 0.001F,
                  "terrain lab mesh should pack ridge influence");
-    require_near(first_vertex.influences.y, fields.valley_influence.front(), 0.001F,
-                 "terrain lab mesh should pack valley influence");
-    require_near(first_vertex.influences.z, fields.basin_influence.front(), 0.001F,
+    require_near(first_vertex.influences.y, fields.basin_influence.front(), 0.001F,
                  "terrain lab mesh should pack basin influence");
+    require_near(first_vertex.influences.z, fields.divide_influence.front(), 0.001F,
+                 "terrain lab mesh should pack divide influence");
+    require_near(first_vertex.influences.w, fields.channel_influence.front(), 0.001F,
+                 "terrain lab mesh should pack channel influence");
+    const float watershed_denominator =
+        fields.watershed_count <= 1U ? 1.0F : static_cast<float>(fields.watershed_count - 1U);
+    require_near(first_vertex.feature_tags.x,
+                 static_cast<float>(fields.watershed_id.front()) / watershed_denominator, 0.001F,
+                 "terrain lab mesh should pack normalized watershed id");
+    require_near(first_vertex.feature_tags.y,
+                 fields.channel_distance_m.front() / fields.max_channel_distance_m, 0.001F,
+                 "terrain lab mesh should pack normalized channel distance");
+    require_near(first_vertex.feature_tags.z, static_cast<float>(fields.watershed_id.front()),
+                 0.001F, "terrain lab mesh should pack raw watershed id");
+    require_near(first_vertex.feature_tags.w, static_cast<float>(fields.watershed_count), 0.001F,
+                 "terrain lab mesh should pack watershed count");
 
     const std::size_t center_index = fields.index(fields.desc.width / 2U, fields.desc.height / 2U);
     require_near(mesh.vertices[center_index].position.x, 0.0F, 0.001F,
