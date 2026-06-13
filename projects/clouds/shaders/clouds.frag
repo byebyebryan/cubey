@@ -251,15 +251,42 @@ float distant_surface_cloud_alpha(vec3 origin, vec3 direction, vec3 center) {
     }
 
     float camera_altitude = length(origin - center) - params.camera_position_radius.w;
-    float sample_distance = local_cloud_max_distance(camera_altitude, params.cloud_shell.y) * 0.86;
-    vec3 sample_position = origin + direction * sample_distance;
-    vec3 shell_up = normalize(sample_position - center);
-    float altitude = mix(params.cloud_shell.x, params.cloud_shell.y, 0.56);
-    sample_position = center + shell_up * (params.camera_position_radius.w + altitude);
-    float weather = weather_coverage(sample_position);
-    float coverage = smoothstep(0.42, 0.86, weather) * params.weather.x;
-    float density = clamp(params.weather.y * 0.30, 0.0, 0.46);
-    return clamp(horizon_band * coverage * density * local, 0.0, 0.42);
+    float max_distance = local_cloud_max_distance(camera_altitude, params.cloud_shell.y);
+    vec3 side = cross(local_up, direction);
+    float side_len = length(side);
+    if (side_len > 0.001) {
+        side /= side_len;
+    } else {
+        side = cross(local_up, vec3(0.0, 0.0, 1.0));
+        if (length(side) <= 0.001) {
+            side = cross(local_up, vec3(1.0, 0.0, 0.0));
+        }
+        side = normalize(side);
+    }
+
+    float density_sum = 0.0;
+    float weight_sum = 0.0;
+    const int far_sample_count = 6;
+    for (int i = 0; i < far_sample_count; ++i) {
+        float u = (float(i) + 0.5) / float(far_sample_count);
+        float sample_distance = max_distance * mix(0.38, 0.96, u);
+        vec3 sample_position = origin + direction * sample_distance;
+        vec3 shell_up = normalize(sample_position - center);
+        float altitude = mix(params.cloud_shell.x, params.cloud_shell.y, mix(0.42, 0.66, u));
+        float lateral = (u - 0.5) * max(params.weather.z, 1.0) * 0.34;
+        sample_position =
+            center + shell_up * (params.camera_position_radius.w + altitude) + side * lateral;
+        CloudDensityContext context =
+            cloud_density_context(sample_distance, max(max_distance / float(far_sample_count), 1.0),
+                                  abs(ray_up), u);
+        CloudDensitySample density_sample = cloud_density_sample(sample_position, context);
+        float weight = mix(1.10, 0.70, u);
+        density_sum += density_sample.base_density * weight;
+        weight_sum += weight;
+    }
+
+    float density = density_sum / max(weight_sum, 0.001);
+    return clamp(horizon_band * density * 0.34 * local, 0.0, 0.42);
 }
 
 vec3 distant_surface_cloud_light(vec3 origin, vec3 direction, vec3 center) {
