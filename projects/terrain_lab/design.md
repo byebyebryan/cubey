@@ -78,13 +78,10 @@ Candidate feature data:
 - optional fault, strata, dune, or volcanic feature sets for later slices;
 - influence masks for plains, steep slopes, valley floors, and high relief.
 
-Candidate scalar fields:
+Initial scalar fields:
 
 - height;
-- base elevation potential;
-- uplift or relief potential;
-- erosion resistance;
-- normal;
+- structure, process, and detail height contributions;
 - slope;
 - curvature;
 - flow direction;
@@ -92,7 +89,7 @@ Candidate scalar fields:
 - stream power;
 - wetness;
 - deposition or sediment;
-- talus/scree potential;
+- ridge, valley, and basin influence;
 - material masks;
 - grass, shrub, tree, and canopy density fields.
 
@@ -226,6 +223,10 @@ mechanical checks:
 
 Headless captures should cover both final and diagnostic views. The first GUI
 smoke can wait until the field generator and a minimal renderer exist.
+
+The current foundation validates deterministic CPU fields only. Renderer,
+headless PNG, UI, and shader-displacement validation are deferred until the app
+target exists.
 
 ## References
 

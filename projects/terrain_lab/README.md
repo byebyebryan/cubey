@@ -5,9 +5,9 @@ exists because terrain is large enough to deserve its own project boundary
 instead of living only as a shoreline helper, a planet subroutine, or a shader
 detail stack.
 
-The project starts docs-first. The immediate goal is to define the terrain
-direction, then implement narrow biome and landform slices that can be tested,
-rendered, and reused by other projects later.
+The project starts with deterministic CPU terrain fields before a renderer. The
+immediate goal is to implement narrow biome and landform slices that can be
+tested, rendered, and reused by other projects later.
 
 ## Direction
 
@@ -80,6 +80,33 @@ The first implementation slice should be a temperate mountain watershed:
 This slice is intentionally inland. Coastal work can reconnect later through
 `procedural_terrain` once the general terrain field model is stronger.
 
+## Current Field Foundation
+
+The current target is test-only. `TerrainLabConfig` reads common grid width,
+grid height, and debug-view settings from `RunConfig`, while leaving
+coast-oriented `terrain.*` flags to `procedural_terrain`.
+
+Generated CPU fields include:
+
+- height;
+- structure, process, and detail height contributions;
+- slope and curvature;
+- flow direction, flow accumulation, and stream power;
+- wetness and deposition;
+- ridge, valley, and basin influence fields;
+- material masks for rock, soil, scree, meadow, forest, and snow;
+- grass, shrub, tree, and canopy-height density fields.
+
+Useful validation commands:
+
+```sh
+cmake --preset dev
+cmake --build --preset dev --target cubey_project_terrain_lab_tests
+ctest --preset dev -R terrain_lab --output-on-failure
+```
+
 ## Status
 
-Current status: docs only. No CMake target is registered yet.
+Current status: CPU field foundation with a test-only CMake target. No
+standalone app, Vulkan renderer, UI, or headless PNG smoke target is registered
+yet.

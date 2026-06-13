@@ -50,7 +50,7 @@ Current projects:
   cube-sphere LOD, procedural terrain fields, local-detail diagnostics,
   shared sky/celestial state, physical atmosphere preview, HDR post, and
   headless visual smoke coverage.
-- `terrain_lab`: docs-first local terrain generation workbench for coherent
+- `terrain_lab`: test-first local terrain generation workbench for coherent
   terrain fields, biome and landform slices, material masks, and future
   adapters into planet, ocean, or environment projects.
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,

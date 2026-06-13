@@ -6,7 +6,7 @@ final image.
 
 ## Phase 0: Project Direction
 
-Status: current.
+Status: landed.
 
 Deliverables:
 
@@ -19,6 +19,8 @@ Deliverables:
 No CMake target is needed in this phase.
 
 ## Phase 1: Field Foundation
+
+Status: active foundation landed.
 
 Goal: build the terrain generator as deterministic data before building the
 full renderer.
@@ -39,6 +41,14 @@ Success criteria:
 - fields are finite and normalized where required;
 - field generation can run without a window;
 - detail residuals can be disabled independently from structure.
+
+Current implementation notes:
+
+- config/test target is registered without an app target;
+- common `RunConfig` grid and debug-view inputs are accepted;
+- coast-oriented `terrain.*` flags remain outside Terrain Lab;
+- CPU fields cover height, contribution, slope, curvature, drainage, wetness,
+  deposition, material, vegetation-density, and influence data.
 
 ## Phase 2: Temperate Mountain Watershed
 
@@ -66,6 +76,8 @@ Success criteria:
 - the terrain remains readable with detail noise disabled.
 
 ## Phase 3: Renderer Workbench
+
+Status: deferred.
 
 Goal: make field inspection fast enough for terrain iteration.
 
