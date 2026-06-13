@@ -49,6 +49,7 @@ constexpr float kSurfaceMinPitchRadians = -1.35F;
 constexpr float kSurfaceMaxPitchRadians = 1.35F;
 constexpr float kOrbitMaxLatitudeRadians = 1.30F;
 constexpr VkFormat kCloudsSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+constexpr VkFormat kCloudsMetadataFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr float kCloudsSunIntensityScale = 0.48F;
 constexpr std::array<CloudsCameraMode, 6> kCloudsCameraModes{
     CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
@@ -99,6 +100,7 @@ enum class CloudsRenderTargetMode : std::uint8_t {
 struct CloudsFrameGraph {
     cubey::render::CompiledRenderGraph graph;
     cubey::render::RenderGraphTextureHandle cloud_color{};
+    cubey::render::RenderGraphTextureHandle cloud_metadata{};
     cubey::render::RenderGraphTextureHandle cloud_history_read{};
     cubey::render::RenderGraphTextureHandle cloud_history_write{};
     cubey::render::RenderGraphTextureHandle resolved_cloud_color{};
@@ -145,7 +147,7 @@ std::filesystem::path shader_path(const char* filename) {
 [[nodiscard]] cubey::render::MaterialPassInfo clouds_composite_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "clouds.composite",
-        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0)},
+        .descriptor_sets = {cubey::render::sampled_texture_descriptor_set_layout(0, 2)},
         .push_constants = {clouds_push_constant_range()},
     };
 }
@@ -788,7 +790,11 @@ class CloudsApp {
         const cubey::render::MaterialPassInfo material_pass = clouds_pass_info();
         cloud_pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                                      .extent = cloud_extent,
-                                                     .color_format = kCloudsSceneColorFormat,
+                                                     .color_formats =
+                                                         {
+                                                             kCloudsSceneColorFormat,
+                                                             kCloudsMetadataFormat,
+                                                         },
                                                      .shader_stage_files = shader_stage_files,
                                                      .material_pass = material_pass,
                                                  });
@@ -846,12 +852,17 @@ class CloudsApp {
 
     void record_clouds_draw(const cubey::vulkan::CommandRecorder& recorder,
                             const cubey::render::ColorTargetView& target,
+                            const cubey::render::ColorTargetView& metadata_target,
                             VkExtent2D view_extent) const {
         CloudsPushConstants constants =
             clouds_push_constants(config_, view_extent, yaw_, pitch_, elapsed_seconds_);
         constants.render_options.w = static_cast<float>(temporal_frame_index_ % 256U);
+        const std::array<cubey::render::ColorTargetView, 2> targets{
+            target,
+            metadata_target,
+        };
         cubey::render::record_render_target_pass(
-            recorder, cubey::render::render_target_view(target),
+            recorder, cubey::render::render_target_view(targets),
             cubey::render::RenderClearValues{
                 .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
             },
@@ -960,18 +971,23 @@ class CloudsApp {
             sampled_state);
 
         cubey::render::RenderGraphTextureHandle cloud_color{};
+        cubey::render::RenderGraphTextureHandle cloud_metadata =
+            graph.create_texture(clouds_color_texture_desc("cloud metadata", cloud_extent,
+                                                           kCloudsMetadataFormat));
         if (temporal_pass_enabled) {
             cloud_color =
                 graph.create_texture(clouds_color_texture_desc("cloud product", cloud_extent,
                                                                kCloudsSceneColorFormat));
             graph.add_pass("cloud raymarch", cubey::render::RenderGraphQueueDomain::Graphics)
                 .write_color(cloud_color)
+                .write_color(cloud_metadata)
                 .execute(
-                    [this, cloud_color, view_extent = target.extent](
+                    [this, cloud_color, cloud_metadata, view_extent = target.extent](
                         const cubey::render::RenderGraphExecutionContext& context) {
                         record_clouds_draw(
                             context.recorder(),
                             cubey::render::resolved_color_target_view(context, cloud_color),
+                            cubey::render::resolved_color_target_view(context, cloud_metadata),
                             view_extent);
                     });
             graph.add_pass("cloud temporal", cubey::render::RenderGraphQueueDomain::Graphics)
@@ -988,16 +1004,19 @@ class CloudsApp {
         } else {
             graph.add_pass("cloud raymarch", cubey::render::RenderGraphQueueDomain::Graphics)
                 .write_color(cloud_history_write)
-                .execute([this, cloud_history_write, view_extent = target.extent](
+                .write_color(cloud_metadata)
+                .execute([this, cloud_history_write, cloud_metadata, view_extent = target.extent](
                              const cubey::render::RenderGraphExecutionContext& context) {
                     record_clouds_draw(
                         context.recorder(),
                         cubey::render::resolved_color_target_view(context, cloud_history_write),
+                        cubey::render::resolved_color_target_view(context, cloud_metadata),
                         view_extent);
                 });
         }
         graph.add_pass("cloud composite", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(cloud_history_write)
+            .read_texture(cloud_metadata)
             .write_color(backbuffer)
             .execute([this, backbuffer,
                       frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
@@ -1009,6 +1028,7 @@ class CloudsApp {
         return {
             .graph = graph.compile(),
             .cloud_color = cloud_color,
+            .cloud_metadata = cloud_metadata,
             .cloud_history_read = cloud_history_read,
             .cloud_history_write = cloud_history_write,
             .resolved_cloud_color = cloud_history_write,
@@ -1053,10 +1073,16 @@ class CloudsApp {
                 const cubey::render::RenderGraphSampledTextureView resolved_cloud_color =
                     cubey::render::resolved_sampled_texture_view(
                         frame_graph.graph, graph_resources, frame_graph.resolved_cloud_color);
+                const cubey::render::RenderGraphSampledTextureView resolved_cloud_metadata =
+                    cubey::render::resolved_sampled_texture_view(
+                        frame_graph.graph, graph_resources, frame_graph.cloud_metadata);
                 cubey::render::MaterialDescriptorWriter(composite_material().set(frame_slot))
                     .combined_image_sampler(0, composite_sampler().handle(),
                                             resolved_cloud_color.view,
                                             resolved_cloud_color.layout)
+                    .combined_image_sampler(1, composite_sampler().handle(),
+                                            resolved_cloud_metadata.view,
+                                            resolved_cloud_metadata.layout)
                     .update(device);
             });
         if (frame_slot.index < cloud_history_texture_valid_.size() &&

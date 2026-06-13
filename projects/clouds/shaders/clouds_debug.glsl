@@ -23,6 +23,9 @@ const int CLOUDS_VIEW_DENSITY_LOD = 18;
 const int CLOUDS_VIEW_STEP_LENGTH = 19;
 const int CLOUDS_VIEW_LOCAL_MARCH = 20;
 const int CLOUDS_VIEW_FAR_HORIZON = 21;
+const int CLOUDS_VIEW_CLOUD_DEPTH = 22;
+const int CLOUDS_VIEW_CLOUD_CONFIDENCE = 23;
+const int CLOUDS_VIEW_HORIZON_BLEND = 24;
 
 bool cloud_product_debug_view(int debug_view) {
     return debug_view == CLOUDS_VIEW_WEATHER || debug_view == CLOUDS_VIEW_DENSITY ||

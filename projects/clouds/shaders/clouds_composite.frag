@@ -8,6 +8,7 @@
 const float CLOUDS_ATMOSPHERE_HEIGHT_KM = 100.0;
 
 layout(set = 0, binding = 0) uniform sampler2D cloud_product_texture;
+layout(set = 0, binding = 1) uniform sampler2D cloud_metadata_texture;
 
 layout(push_constant) uniform CloudsParams {
     vec4 camera_right_aspect;
@@ -232,6 +233,7 @@ void main() {
     vec2 uv = frag_position * 0.5 + 0.5;
     int debug_view = int(params.render_options.x + 0.5);
     vec4 cloud_product = texture(cloud_product_texture, uv);
+    vec4 cloud_metadata = texture(cloud_metadata_texture, uv);
     vec3 scene_color = cloud_product.rgb;
 
     if (!cloud_product_debug_view(debug_view)) {
@@ -256,6 +258,13 @@ void main() {
                 vec3(background.ground_hit, background.atmosphere_hit, background.ray_fraction);
         } else if (debug_view == CLOUDS_VIEW_SURFACE_SHADOW) {
             scene_color = vec3(background.cloud_shadow * background.ground_hit);
+        } else if (debug_view == CLOUDS_VIEW_CLOUD_DEPTH) {
+            float depth = clamp(cloud_metadata.x / 240.0, 0.0, 1.0);
+            scene_color = vec3(depth);
+        } else if (debug_view == CLOUDS_VIEW_CLOUD_CONFIDENCE) {
+            scene_color = vec3(cloud_metadata.w);
+        } else if (debug_view == CLOUDS_VIEW_HORIZON_BLEND) {
+            scene_color = vec3(cloud_metadata.z, cloud_metadata.y, 0.12);
         }
     }
 

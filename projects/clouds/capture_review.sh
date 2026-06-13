@@ -56,6 +56,9 @@ capture cloud-alpha --cloud-camera-mode high-oblique --debug-view cloud-alpha
 capture domain --cloud-camera-mode high-oblique --debug-view domain
 capture distance --cloud-camera-mode high-oblique --debug-view distance
 capture surface-shadow --cloud-camera-mode surface --debug-view surface-shadow
+capture cloud-depth --cloud-camera-mode surface --debug-view cloud-depth
+capture cloud-confidence --cloud-camera-mode surface --debug-view cloud-confidence
+capture horizon-blend --cloud-camera-mode surface --debug-view horizon-blend
 capture_at_time orbit-night 0.0 --cloud-camera-mode orbit
 
 if command -v magick >/dev/null 2>&1; then
@@ -75,6 +78,9 @@ if command -v magick >/dev/null 2>&1; then
         "${OUT_DIR}/step-length.png" \
         "${OUT_DIR}/local-march.png" \
         "${OUT_DIR}/far-horizon.png" \
+        "${OUT_DIR}/cloud-depth.png" \
+        "${OUT_DIR}/cloud-confidence.png" \
+        "${OUT_DIR}/horizon-blend.png" \
         "${OUT_DIR}/cloud-alpha.png" \
         "${OUT_DIR}/domain.png" \
         "${OUT_DIR}/distance.png" \
@@ -100,6 +106,9 @@ elif command -v montage >/dev/null 2>&1; then
         "${OUT_DIR}/step-length.png" \
         "${OUT_DIR}/local-march.png" \
         "${OUT_DIR}/far-horizon.png" \
+        "${OUT_DIR}/cloud-depth.png" \
+        "${OUT_DIR}/cloud-confidence.png" \
+        "${OUT_DIR}/horizon-blend.png" \
         "${OUT_DIR}/cloud-alpha.png" \
         "${OUT_DIR}/domain.png" \
         "${OUT_DIR}/distance.png" \

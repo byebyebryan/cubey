@@ -20,6 +20,7 @@ layout(push_constant) uniform CloudsParams {
 
 layout(location = 0) in vec2 frag_position;
 layout(location = 0) out vec4 out_color;
+layout(location = 1) out vec4 out_metadata;
 
 #include "clouds_model.glsl"
 
@@ -86,6 +87,9 @@ struct CloudSample {
     float step_length_fraction;
     float local_march_fraction;
     float distant_alpha;
+    float mean_distance;
+    float horizon_factor;
+    float confidence;
     float shell_hit;
     float hit_ground;
     float shell_span;
@@ -305,6 +309,9 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     result.step_length_fraction = 0.0;
     result.local_march_fraction = 0.0;
     result.distant_alpha = 0.0;
+    result.mean_distance = 0.0;
+    result.horizon_factor = 0.0;
+    result.confidence = 0.0;
     result.shell_hit = 0.0;
     result.hit_ground = 0.0;
     result.shell_span = 0.0;
@@ -324,6 +331,12 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
             result.mean_light = distant_alpha;
             result.step_fraction = 0.0;
             result.distant_alpha = distant_alpha;
+            result.mean_distance =
+                local_cloud_max_distance(length(origin - center) - params.camera_position_radius.w,
+                                         params.cloud_shell.y) *
+                0.82;
+            result.horizon_factor = distant_alpha;
+            result.confidence = clamp(distant_alpha * 1.8, 0.0, 1.0);
             result.shell_span = distant_alpha;
         }
         return result;
@@ -355,6 +368,7 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         clamp(view_steps + int(ceil(float(view_steps) * 1.35 * adaptive_march)), 1,
               CLOUDS_MAX_VIEW_STEPS);
     result.local_march_fraction = adaptive_march;
+    result.horizon_factor = adaptive_march;
 
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     float step_len = (ray_end - ray_start) / float(max(effective_view_steps, 1));
@@ -369,6 +383,8 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     float weather_sum = 0.0;
     float light_sum = 0.0;
     float shadow_sum = 0.0;
+    float distance_sum = 0.0;
+    float distance_weight_sum = 0.0;
     for (int i = 0; i < CLOUDS_MAX_VIEW_STEPS; ++i) {
         if (i >= effective_view_steps) {
             break;
@@ -395,6 +411,9 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         detail_density_sum += density_sample.detail_density * density_scale;
         density_lod_sum += density_sample.detail_lod;
         weather_sum += weather;
+        float distance_weight = max(density, density_sample.base_density * density_scale);
+        distance_sum += sample_t * distance_weight;
+        distance_weight_sum += distance_weight;
         if (density <= 0.0001) {
             continue;
         }
@@ -461,6 +480,11 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     result.mean_shadow = shadow_sum / denom;
     result.step_fraction = float(used_steps) / float(max(effective_view_steps, 1));
     result.step_length_fraction = clamp(step_len / max(layer_thickness, 0.001), 0.0, 1.0);
+    result.mean_distance = distance_weight_sum > 0.0001
+                               ? distance_sum / distance_weight_sum
+                               : (ray_start + ray_end) * 0.5;
+    float cloud_alpha = 1.0 - result.transmittance;
+    result.confidence = clamp(cloud_alpha * mix(0.75, 1.25, 1.0 - adaptive_march), 0.0, 1.0);
     return result;
 }
 
@@ -528,4 +552,8 @@ void main() {
     }
 
     out_color = vec4(output_color, output_alpha);
+    float cloud_alpha = clamp(1.0 - clouds.transmittance, 0.0, 1.0);
+    out_metadata = vec4(max(clouds.mean_distance, 0.0), cloud_alpha,
+                        clamp(clouds.horizon_factor, 0.0, 1.0),
+                        clamp(clouds.confidence, 0.0, 1.0));
 }

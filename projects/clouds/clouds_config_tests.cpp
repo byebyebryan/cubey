@@ -74,6 +74,10 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include base-density diagnostics");
     require(cubey::projects::clouds::next_clouds_debug_view(
                 cubey::projects::clouds::CloudsDebugView::FarHorizon) ==
+                cubey::projects::clouds::CloudsDebugView::CloudDepth,
+            "cloud debug view should include cloud-depth diagnostics");
+    require(cubey::projects::clouds::next_clouds_debug_view(
+                cubey::projects::clouds::CloudsDebugView::HorizonBlend) ==
                 cubey::projects::clouds::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::clouds::clouds_debug_view_from_string("cloud-alpha") ==
@@ -106,6 +110,15 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::clouds::clouds_debug_view_from_string("far-horizon") ==
                 cubey::projects::clouds::CloudsDebugView::FarHorizon,
             "cloud far-horizon debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("cloud-depth") ==
+                cubey::projects::clouds::CloudsDebugView::CloudDepth,
+            "cloud depth debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("cloud-confidence") ==
+                cubey::projects::clouds::CloudsDebugView::CloudConfidence,
+            "cloud confidence debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("horizon-blend") ==
+                cubey::projects::clouds::CloudsDebugView::HorizonBlend,
+            "cloud horizon blend debug view should parse");
 }
 
 void test_run_config_mapping() {

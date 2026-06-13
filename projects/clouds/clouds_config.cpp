@@ -254,6 +254,15 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "far-horizon") {
         return CloudsDebugView::FarHorizon;
     }
+    if (value == "cloud-depth") {
+        return CloudsDebugView::CloudDepth;
+    }
+    if (value == "cloud-confidence") {
+        return CloudsDebugView::CloudConfidence;
+    }
+    if (value == "horizon-blend") {
+        return CloudsDebugView::HorizonBlend;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -303,6 +312,12 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "local-march";
     case CloudsDebugView::FarHorizon:
         return "far-horizon";
+    case CloudsDebugView::CloudDepth:
+        return "cloud-depth";
+    case CloudsDebugView::CloudConfidence:
+        return "cloud-confidence";
+    case CloudsDebugView::HorizonBlend:
+        return "horizon-blend";
     }
     return "final";
 }
