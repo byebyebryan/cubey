@@ -166,28 +166,33 @@ CloudRayInterval local_cloud_interval(vec3 origin, vec3 direction, vec3 center) 
     interval.shell_span = 0.0;
     interval.domain_regime = 0.0;
 
-    vec3 local_up = normalize(origin - center);
     float camera_altitude = length(origin - center) - params.camera_position_radius.w;
     float bottom = params.cloud_shell.x;
     float top = params.cloud_shell.y;
     float max_distance = local_cloud_max_distance(camera_altitude, top);
-    float ray_start = 0.0;
-    float ray_end = 0.0;
-    float vertical = dot(direction, local_up);
-    if (abs(vertical) < 0.0005) {
-        if (camera_altitude >= bottom && camera_altitude <= top) {
-            ray_end = max_distance;
-        } else {
-            return interval;
+
+    float ground_radius = params.camera_position_radius.w;
+    float bottom_radius = ground_radius + bottom;
+    float top_radius = ground_radius + top;
+    float camera_radius = length(origin - center);
+
+    vec2 top_hit = ray_sphere(origin, direction, center, top_radius);
+    if (top_hit.y <= 0.0) {
+        return interval;
+    }
+    float ray_start = max(top_hit.x, 0.0);
+    float ray_end = top_hit.y;
+
+    vec2 bottom_hit = ray_sphere(origin, direction, center, bottom_radius);
+    if (bottom_hit.y > 0.0) {
+        if (camera_radius < bottom_radius) {
+            ray_start = max(ray_start, bottom_hit.y);
+        } else if (bottom_hit.x > 0.0) {
+            ray_end = min(ray_end, bottom_hit.x);
         }
-    } else {
-        float bottom_t = (bottom - camera_altitude) / vertical;
-        float top_t = (top - camera_altitude) / vertical;
-        ray_start = max(min(bottom_t, top_t), 0.0);
-        ray_end = max(bottom_t, top_t);
     }
 
-    vec2 ground_hit = ray_sphere(origin, direction, center, params.camera_position_radius.w);
+    vec2 ground_hit = ray_sphere(origin, direction, center, ground_radius);
     if (ground_hit.x > 0.0) {
         ray_end = min(ray_end, ground_hit.x);
         interval.hit_ground = 1.0;
