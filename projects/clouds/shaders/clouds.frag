@@ -118,8 +118,11 @@ float local_cloud_max_distance(float camera_altitude, float layer_top) {
 }
 
 float cloud_ray_jitter() {
-    vec2 pixel = gl_FragCoord.xy + vec2(params.render_options.w * 5.588238);
-    return fract(52.9829189 * fract(dot(pixel, vec2(0.06711056, 0.00583715))));
+    float frame = params.render_options.w;
+    vec2 pixel = gl_FragCoord.xy + vec2(frame * 17.0, frame * 31.0);
+    float gradient_noise =
+        fract(52.9829189 * fract(dot(pixel, vec2(0.06711056, 0.00583715))));
+    return fract(gradient_noise + frame * 0.61803398875);
 }
 
 CloudRayInterval spherical_cloud_interval(vec3 origin, vec3 direction, vec3 center) {
