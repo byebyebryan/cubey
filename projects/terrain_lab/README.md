@@ -94,6 +94,7 @@ Generated CPU fields include:
 - flow direction, flow accumulation, and stream power;
 - wetness and deposition;
 - ridge, valley, and basin influence fields;
+- watershed id, divide influence, channel influence, and channel distance;
 - material masks for rock, soil, scree, meadow, forest, and snow;
 - grass, shrub, tree, and canopy-height density fields.
 
@@ -120,6 +121,10 @@ Supported debug views:
 - `biome-density`
 - `canopy-height`
 - `noise-off`
+- `feature-graph`
+- `watershed`
+- `channel`
+- `divide`
 
 Useful validation commands:
 
@@ -134,6 +139,8 @@ Useful run commands:
 ```sh
 ./build/dev/projects/terrain_lab/terrain_lab --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view flow-accumulation --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --debug-view feature-graph --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --debug-view watershed --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --headless --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab-material.png
 ```
@@ -141,10 +148,14 @@ Useful run commands:
 ## Status
 
 Current status: CPU field foundation plus a minimal standalone visual workbench.
-The workbench has deterministic mesh extraction, field/debug shading, windowed
-and headless render paths, PNG smoke coverage, and shader/debug-view sync tests.
+The generator now includes a deterministic four-basin watershed core with
+divide, channel, and watershed-id fields. Channels drive valley incision,
+wetness, and deposition, while divide fields keep high-ground structure
+explicit. The workbench has deterministic mesh extraction, field/debug shading,
+windowed and headless render paths, PNG smoke coverage, and shader/debug-view
+sync tests.
 
 Still out of scope for the current slice: live ImGui editing, runtime
-regeneration, tiled or clipmap terrain rendering, foliage/proxy dressing,
-atmosphere-backed lighting, and adapters into `planet`, `ocean`, or
-`procedural_terrain`.
+regeneration, a true drainage graph with stream connectivity guarantees, tiled
+or clipmap terrain rendering, foliage/proxy dressing, atmosphere-backed
+lighting, and adapters into `planet`, `ocean`, or `procedural_terrain`.

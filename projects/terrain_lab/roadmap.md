@@ -47,11 +47,11 @@ Current implementation notes:
 - common `RunConfig` grid and debug-view inputs are accepted;
 - coast-oriented `terrain.*` flags remain outside Terrain Lab;
 - CPU fields cover height, contribution, slope, curvature, drainage, wetness,
-  deposition, material, vegetation-density, and influence data.
+  deposition, material, vegetation-density, watershed, and influence data.
 
 ## Phase 2: Temperate Mountain Watershed
 
-Status: first deterministic field pass landed; deeper feature graph work remains.
+Status: watershed core landed; deeper graph and stream-network work remains.
 
 Goal: prove one coherent inland terrain slice.
 
@@ -75,6 +75,16 @@ Success criteria:
 - steep exposed slopes favor rock/scree, while valley floors favor soil,
   meadow, or forest potential;
 - the terrain remains readable with detail noise disabled.
+
+Current implementation notes:
+
+- a deterministic four-basin watershed raster produces watershed id, divide
+  influence, channel influence, and channel distance fields;
+- channels drive valley incision, wetness, deposition, and detail suppression;
+- tests compare channel samples against non-channel terrain and divide samples
+  against channels;
+- remaining work is a richer feature graph with stronger stream connectivity,
+  basin hierarchy, and slice-specific controls.
 
 ## Phase 3: Renderer Workbench
 
@@ -102,6 +112,7 @@ Current implementation notes:
 - windowed orbit inspection and headless PNG capture are registered;
 - final and flow-accumulation PNG smokes use conservative image stats to catch
   blank output;
+- feature-graph and watershed PNG smokes cover the first watershed diagnostics;
 - fragment shader debug constants are checked against the C++ enum;
 - live ImGui controls, runtime regeneration, tiled meshes, and atmosphere-backed
   lighting are intentionally deferred.

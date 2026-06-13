@@ -90,6 +90,7 @@ Initial scalar fields:
 - wetness;
 - deposition or sediment;
 - ridge, valley, and basin influence;
+- watershed id, divide influence, channel influence, and channel distance;
 - material masks;
 - grass, shrub, tree, and canopy density fields.
 
@@ -127,6 +128,11 @@ drainage paths before final height detail is applied.
 The feature graph does not have to be geologically complete. It only has to
 carry enough structure that valleys, ridges, water, and materials line up in the
 rendered result.
+
+The current watershed core is still a rasterized feature model rather than a
+full stream graph. It emits four deterministic basin ids plus divide and channel
+influences. Those fields now guide structure, process, material, and diagnostic
+rendering, while richer drainage connectivity remains a later refinement.
 
 ### Process Passes
 
@@ -219,6 +225,8 @@ mechanical checks:
 - deterministic output for a fixed seed and config;
 - finite field values;
 - normalized material and biome masks;
+- valid watershed ids, divide influence, channel influence, and channel
+  distances;
 - valid flow directions;
 - no isolated negative drainage sinks unless the slice intentionally supports
   closed basins;
@@ -228,9 +236,9 @@ mechanical checks:
 
 Headless captures should cover both final and diagnostic views. The current
 foundation validates deterministic CPU fields, mesh payload extraction, shader
-debug-view constants, a windowed startup smoke, and final plus flow-accumulation
-PNG captures. UI editing, runtime regeneration, tiled rendering, and
-shader-displacement validation are still deferred.
+debug-view constants, a windowed startup smoke, and final, flow-accumulation,
+feature-graph, and watershed PNG captures. UI editing, runtime regeneration,
+tiled rendering, and shader-displacement validation are still deferred.
 
 ## References
 
