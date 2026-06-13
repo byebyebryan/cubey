@@ -39,7 +39,7 @@ struct CloudsWeatherPresetSettings {
                 .top_altitude_m = 5200.0F,
                 .cloud_style = CloudsCloudStyle::FairWeather};
     case CloudsWeatherPreset::BrokenCumulus:
-        return {.coverage = 0.58F, .density = 1.18F, .weather_scale_km = 170.0F,
+        return {.coverage = 0.54F, .density = 1.10F, .weather_scale_km = 210.0F,
                 .wind_speed_mps = 18.0F,
                 .bottom_altitude_m = 1500.0F,
                 .top_altitude_m = 7500.0F,

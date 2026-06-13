@@ -52,6 +52,9 @@ capture density-lod --cloud-camera-mode surface --debug-view density-lod
 capture step-length --cloud-camera-mode surface --debug-view step-length
 capture local-march --cloud-camera-mode surface --debug-view local-march
 capture far-horizon --cloud-camera-mode surface --debug-view far-horizon
+capture local-volume --cloud-camera-mode surface --debug-view local-volume
+capture horizon-layer --cloud-camera-mode surface --debug-view horizon-layer
+capture weather-components --cloud-camera-mode surface --debug-view weather-components
 capture cloud-alpha --cloud-camera-mode high-oblique --debug-view cloud-alpha
 capture domain --cloud-camera-mode high-oblique --debug-view domain
 capture distance --cloud-camera-mode high-oblique --debug-view distance
@@ -78,6 +81,9 @@ if command -v magick >/dev/null 2>&1; then
         "${OUT_DIR}/step-length.png" \
         "${OUT_DIR}/local-march.png" \
         "${OUT_DIR}/far-horizon.png" \
+        "${OUT_DIR}/local-volume.png" \
+        "${OUT_DIR}/horizon-layer.png" \
+        "${OUT_DIR}/weather-components.png" \
         "${OUT_DIR}/cloud-depth.png" \
         "${OUT_DIR}/cloud-confidence.png" \
         "${OUT_DIR}/horizon-blend.png" \
@@ -87,7 +93,7 @@ if command -v magick >/dev/null 2>&1; then
         "${OUT_DIR}/surface-shadow.png" \
         "${OUT_DIR}/orbit-night.png" \
         -geometry 480x270+12+32 \
-        -tile 5x5 \
+        -tile 5x6 \
         "${OUT_DIR}/contact-sheet.png"
 elif command -v montage >/dev/null 2>&1; then
     montage \
@@ -106,6 +112,9 @@ elif command -v montage >/dev/null 2>&1; then
         "${OUT_DIR}/step-length.png" \
         "${OUT_DIR}/local-march.png" \
         "${OUT_DIR}/far-horizon.png" \
+        "${OUT_DIR}/local-volume.png" \
+        "${OUT_DIR}/horizon-layer.png" \
+        "${OUT_DIR}/weather-components.png" \
         "${OUT_DIR}/cloud-depth.png" \
         "${OUT_DIR}/cloud-confidence.png" \
         "${OUT_DIR}/horizon-blend.png" \
@@ -115,7 +124,7 @@ elif command -v montage >/dev/null 2>&1; then
         "${OUT_DIR}/surface-shadow.png" \
         "${OUT_DIR}/orbit-night.png" \
         -geometry 480x270+12+32 \
-        -tile 5x5 \
+        -tile 5x6 \
         "${OUT_DIR}/contact-sheet.png"
 fi
 

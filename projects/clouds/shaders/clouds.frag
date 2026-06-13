@@ -97,6 +97,9 @@ struct CloudSample {
     float shell_span;
     float domain_regime;
     float distance_fraction;
+    float local_alpha;
+    float horizon_alpha;
+    vec3 weather_components;
 };
 
 struct CloudRayInterval {
@@ -107,6 +110,15 @@ struct CloudRayInterval {
     float shell_hit;
     float shell_span;
     float domain_regime;
+};
+
+struct HorizonCloudSample {
+    vec3 color;
+    float alpha;
+    float factor;
+    float mean_distance;
+    float mean_weather;
+    vec3 components;
 };
 
 float cloud_orbit_regime() {
@@ -240,18 +252,29 @@ CloudRayInterval cloud_ray_interval(vec3 origin, vec3 direction, vec3 center) {
     return local_cloud_interval(origin, direction, center);
 }
 
-float distant_surface_cloud_alpha(vec3 origin, vec3 direction, vec3 center) {
+vec3 distant_surface_cloud_light(vec3 origin, vec3 direction, vec3 center);
+
+HorizonCloudSample sample_horizon_cloud_layer(vec3 origin, vec3 direction, vec3 center) {
+    HorizonCloudSample result;
+    result.color = vec3(0.0);
+    result.alpha = 0.0;
+    result.factor = 0.0;
+    result.mean_distance = 0.0;
+    result.mean_weather = 0.0;
+    result.components = vec3(0.0);
+
     float local = 1.0 - cloud_orbit_regime();
-    if (local <= 0.001) {
-        return 0.0;
+    if (local <= 0.001 || params.feature_options.y <= 0.5) {
+        return result;
     }
 
     vec3 local_up = normalize(origin - center);
     float ray_up = dot(direction, local_up);
-    float above_horizon = smoothstep(-0.035, 0.080, ray_up);
-    float horizon_band = exp(-abs(ray_up) / 0.095) * above_horizon;
+    float above_horizon = smoothstep(-0.045, 0.16, ray_up);
+    float below_upper_sky = 1.0 - smoothstep(0.42, 0.82, ray_up);
+    float horizon_band = exp(-abs(ray_up) / 0.24) * above_horizon * below_upper_sky;
     if (horizon_band <= 0.0001) {
-        return 0.0;
+        return result;
     }
 
     float camera_altitude = length(origin - center) - params.camera_position_radius.w;
@@ -268,29 +291,59 @@ float distant_surface_cloud_alpha(vec3 origin, vec3 direction, vec3 center) {
         side = normalize(side);
     }
 
-    float density_sum = 0.0;
+    float weather_sum = 0.0;
+    vec3 component_sum = vec3(0.0);
     float weight_sum = 0.0;
-    const int far_sample_count = 6;
+    float distance_sum = 0.0;
+    const int far_sample_count = 7;
     for (int i = 0; i < far_sample_count; ++i) {
         float u = (float(i) + 0.5) / float(far_sample_count);
-        float sample_distance = max_distance * mix(0.38, 0.96, u);
+        float sample_distance = max_distance * mix(0.34, 1.0, u);
         vec3 sample_position = origin + direction * sample_distance;
         vec3 shell_up = normalize(sample_position - center);
-        float altitude = mix(params.cloud_shell.x, params.cloud_shell.y, mix(0.42, 0.66, u));
-        float lateral = (u - 0.5) * max(params.weather.z, 1.0) * 0.34;
+        float altitude = mix(params.cloud_shell.x, params.cloud_shell.y, mix(0.34, 0.62, u));
+        float lateral = (u - 0.5) * max(params.weather.z, 1.0) * 0.28;
         sample_position =
             center + shell_up * (params.camera_position_radius.w + altitude) + side * lateral;
-        CloudDensityContext context =
-            cloud_density_context(sample_distance, max(max_distance / float(far_sample_count), 1.0),
-                                  abs(ray_up), u);
-        CloudDensitySample density_sample = cloud_density_sample(sample_position, context);
-        float weight = mix(1.10, 0.70, u);
-        density_sum += density_sample.base_density * weight;
+        CloudWeatherComponents components = cloud_weather_components(sample_position);
+        float front_weight = clamp(params.weather_feature_weights.x, 0.0, 1.0);
+        float cell_weight = clamp(params.weather_feature_weights.y, 0.0, 1.0);
+        float streak_weight = clamp(params.weather_feature_weights.z, 0.0, 1.0);
+        float fronts = mix(components.broad, components.fronts, front_weight);
+        float cells = mix(components.broad, components.cells, cell_weight);
+        float streaks = mix(components.broad, components.streaks, streak_weight);
+        float low_weather =
+            mix(mix(components.broad, fronts, 0.30), cells, 0.18) *
+            (1.0 - components.calm * 0.22);
+        if (cloud_style_id() > 3.5) {
+            low_weather = mix(streaks, fronts, 0.18) * (1.0 - components.calm * 0.25);
+        }
+        float coverage = clamp(params.weather.x, 0.0, 1.0);
+        float threshold = cloud_style_value(0.34, 0.27, 0.22, 0.20, 0.42) +
+                          (1.0 - coverage) *
+                              cloud_style_value(0.32, 0.27, 0.22, 0.20, 0.30);
+        float softness = cloud_style_value(0.30, 0.34, 0.42, 0.26, 0.36);
+        float coverage_mask = smoothstep(threshold, threshold + softness, low_weather);
+        float height = cloud_height_profile(altitude);
+        float density = max(coverage_mask * height * params.weather.y, 0.0);
+        float weight = mix(1.18, 0.66, u);
+        weather_sum += density * weight;
+        component_sum += vec3(components.fronts, components.cells, components.streaks) * weight;
+        distance_sum += sample_distance * density * weight;
         weight_sum += weight;
     }
 
-    float density = density_sum / max(weight_sum, 0.001);
-    return clamp(horizon_band * density * 0.52 * local, 0.0, 0.55);
+    float density = weather_sum / max(weight_sum, 0.001);
+    float strength = clamp(params.feature_options.z, 0.0, 2.0);
+    result.alpha = clamp(horizon_band * density * 1.05 * strength * local, 0.0, 0.55);
+    result.factor = clamp(horizon_band * local, 0.0, 1.0);
+    result.mean_distance = density > 0.0001
+                               ? distance_sum / max(weather_sum, 0.001)
+                               : max_distance * 0.84;
+    result.mean_weather = density;
+    result.components = component_sum / max(weight_sum, 0.001);
+    result.color = distant_surface_cloud_light(origin, direction, center) * result.alpha;
+    return result;
 }
 
 vec3 distant_surface_cloud_light(vec3 origin, vec3 direction, vec3 center) {
@@ -329,27 +382,29 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     result.shell_span = 0.0;
     result.domain_regime = cloud_orbit_regime();
     result.distance_fraction = 0.0;
+    result.local_alpha = 0.0;
+    result.horizon_alpha = 0.0;
+    result.weather_components = vec3(0.0);
 
     vec3 center = planet_center();
+    HorizonCloudSample horizon_layer = sample_horizon_cloud_layer(origin, direction, center);
+    result.horizon_alpha = horizon_layer.alpha;
+    result.weather_components = horizon_layer.components;
     CloudRayInterval interval = cloud_ray_interval(origin, direction, center);
-    if (interval.shell_hit <= 0.0) {
-        float distant_alpha = distant_surface_cloud_alpha(origin, direction, center);
-        if (distant_alpha > 0.0001) {
-            result.color += distant_surface_cloud_light(origin, direction, center) * distant_alpha;
-            result.transmittance *= 1.0 - distant_alpha;
-            result.mean_density = distant_alpha;
-            result.mean_base_density = distant_alpha;
-            result.mean_weather = distant_alpha;
-            result.mean_light = distant_alpha;
+    if (interval.shell_hit <= 0.0 || params.feature_options.x <= 0.5) {
+        if (horizon_layer.alpha > 0.0001) {
+            result.color += horizon_layer.color;
+            result.transmittance *= 1.0 - horizon_layer.alpha;
+            result.mean_density = horizon_layer.mean_weather;
+            result.mean_base_density = horizon_layer.mean_weather;
+            result.mean_weather = horizon_layer.mean_weather;
+            result.mean_light = horizon_layer.alpha;
             result.step_fraction = 0.0;
-            result.distant_alpha = distant_alpha;
-            result.mean_distance =
-                local_cloud_max_distance(length(origin - center) - params.camera_position_radius.w,
-                                         params.cloud_shell.y) *
-                0.82;
-            result.horizon_factor = distant_alpha;
-            result.confidence = clamp(distant_alpha * 1.8, 0.0, 1.0);
-            result.shell_span = distant_alpha;
+            result.distant_alpha = horizon_layer.alpha;
+            result.mean_distance = horizon_layer.mean_distance;
+            result.horizon_factor = horizon_layer.factor;
+            result.confidence = clamp(horizon_layer.alpha * 1.8, 0.0, 1.0);
+            result.shell_span = horizon_layer.factor;
         }
         return result;
     }
@@ -398,6 +453,7 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     float shadow_sum = 0.0;
     float distance_sum = 0.0;
     float distance_weight_sum = 0.0;
+    vec3 component_sum = vec3(0.0);
     for (int i = 0; i < CLOUDS_MAX_VIEW_STEPS; ++i) {
         if (i >= effective_view_steps) {
             break;
@@ -413,12 +469,17 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
             cloud_density_context(sample_t, step_len, abs(view_horizon), sample_distance_fraction,
                                   sample_footprint);
         CloudDensitySample density_sample = cloud_density_sample(p, density_context);
+        CloudWeatherComponents components = cloud_weather_components(p);
         float density_scale = high_horizon_fade * sky_limb_fade;
         float edge_distance = min(sample_t - ray_start, ray_end - sample_t);
         density_scale *= smoothstep(0.0, edge_fade_distance, edge_distance);
-        float far_horizon_reconstruction =
-            adaptive_march * smoothstep(0.28, 0.92, sample_distance_fraction);
-        density_scale *= mix(1.0, 0.38, far_horizon_reconstruction);
+        float surface_view = 1.0 - smoothstep(0.45, 1.05, params.camera_forward_mode.w);
+        float lower_sky_takeover = params.feature_options.y * local_view * surface_view *
+                                   (1.0 - smoothstep(0.12, 0.52, view_horizon));
+        float horizon_takeover =
+            clamp(max(max(horizon_layer.factor, adaptive_march), lower_sky_takeover) * 1.18,
+                  0.0, 1.0);
+        density_scale *= pow(max(1.0 - horizon_takeover, 0.0), 2.0);
         if (params.camera_forward_mode.w > 1.5 && !hit_ground) {
             density_scale *= 0.22;
         }
@@ -430,6 +491,7 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         detail_density_sum += density_sample.detail_density * density_scale;
         density_lod_sum += density_sample.detail_lod;
         weather_sum += weather;
+        component_sum += vec3(components.fronts, components.cells, components.streaks);
         float distance_weight = max(density, density_sample.base_density * density_scale);
         distance_sum += sample_t * distance_weight;
         distance_weight_sum += distance_weight;
@@ -489,29 +551,21 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         }
     }
 
-    float reconstructed_horizon_alpha =
-        distant_surface_cloud_alpha(origin, direction, center) * smoothstep(0.18, 0.88,
-                                                                            adaptive_march);
-    if (reconstructed_horizon_alpha > 0.0001) {
+    result.local_alpha = clamp(1.0 - result.transmittance, 0.0, 1.0);
+    if (horizon_layer.alpha > 0.0001) {
         float existing_alpha = 1.0 - result.transmittance;
-        float add_alpha = clamp(reconstructed_horizon_alpha * (1.0 - existing_alpha * 0.55),
-                                0.0, 0.45);
-        vec3 horizon_light = distant_surface_cloud_light(origin, direction, center);
+        float add_alpha = clamp(horizon_layer.alpha * (1.0 - existing_alpha * 0.55), 0.0, 0.45);
+        vec3 horizon_light = horizon_layer.color / max(horizon_layer.alpha, 0.001);
         result.color += result.transmittance * horizon_light * add_alpha;
         result.transmittance *= 1.0 - add_alpha;
-        float horizon_distance =
-            local_cloud_max_distance(length(origin - center) - params.camera_position_radius.w,
-                                     params.cloud_shell.y) *
-            0.82;
-        distance_sum += horizon_distance * add_alpha;
+        distance_sum += horizon_layer.mean_distance * add_alpha;
         distance_weight_sum += add_alpha;
-        density_sum += add_alpha;
-        base_density_sum += add_alpha;
-        detail_density_sum += add_alpha;
-        weather_sum += add_alpha;
-        light_sum += add_alpha;
+        density_sum += horizon_layer.mean_weather * add_alpha;
+        base_density_sum += horizon_layer.mean_weather * add_alpha;
+        weather_sum += horizon_layer.mean_weather * add_alpha;
+        light_sum += horizon_layer.alpha;
         result.distant_alpha = max(result.distant_alpha, add_alpha);
-        result.horizon_factor = max(result.horizon_factor, add_alpha);
+        result.horizon_factor = max(result.horizon_factor, horizon_layer.factor);
     }
 
     float denom = max(float(used_steps), 1.0);
@@ -522,6 +576,8 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     result.mean_weather = weather_sum / denom;
     result.mean_light = light_sum / denom;
     result.mean_shadow = shadow_sum / denom;
+    result.weather_components =
+        used_steps > 0 ? component_sum / denom : result.weather_components;
     result.step_fraction = float(used_steps) / float(max(effective_view_steps, 1));
     result.step_length_fraction = clamp(step_len / max(layer_thickness, 0.001), 0.0, 1.0);
     result.mean_distance = distance_weight_sum > 0.0001
@@ -592,6 +648,16 @@ void main() {
         output_alpha = 1.0;
     } else if (debug_view == CLOUDS_VIEW_FAR_HORIZON) {
         output_color = vec3(clouds.distant_alpha, clouds.shell_hit, clouds.hit_ground);
+        output_alpha = 1.0;
+    } else if (debug_view == CLOUDS_VIEW_LOCAL_VOLUME) {
+        output_color = vec3(clouds.local_alpha, clouds.shell_hit, clouds.local_march_fraction);
+        output_alpha = 1.0;
+    } else if (debug_view == CLOUDS_VIEW_HORIZON_LAYER) {
+        output_color = vec3(clouds.horizon_alpha, clouds.horizon_factor,
+                            params.feature_options.y);
+        output_alpha = 1.0;
+    } else if (debug_view == CLOUDS_VIEW_WEATHER_COMPONENTS) {
+        output_color = clouds.weather_components;
         output_alpha = 1.0;
     }
 

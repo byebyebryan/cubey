@@ -136,7 +136,16 @@ vec3 cloud_weather_domain(vec3 position_km, float frequency, vec3 wind_offset) {
     return normalize(up + warp * 0.30);
 }
 
-float weather_coverage(vec3 position_km) {
+struct CloudWeatherComponents {
+    float broad;
+    float fronts;
+    float cells;
+    float streaks;
+    float calm;
+    float coverage;
+};
+
+CloudWeatherComponents cloud_weather_components(vec3 position_km) {
     float frequency = cloud_weather_frequency();
     float orbit_view = smoothstep(1.5, 2.0, params.camera_forward_mode.w);
     vec3 wind_offset = cloud_wind_offset();
@@ -168,16 +177,38 @@ float weather_coverage(vec3 position_km) {
                             fbm(domain.xzy * (frequency * 0.48) -
                                 wind_offset.zyx * 0.42 + vec3(9.0, 27.0, 3.0)));
 
-    float fair_weather = mix(broad, cells, 0.30) * (1.0 - calm * 0.48);
-    float broken_cumulus = mix(mix(broad, fronts, 0.40), cells, mix(0.33, 0.08, orbit_view)) *
-                           (1.0 - calm * 0.30);
-    float overcast_stratus = mix(fronts, broad, 0.22) * (1.0 - calm * 0.14);
-    float storm_cells = max(fronts * 0.84, cells * 1.08) * (1.0 - calm * 0.22);
-    float high_cirrus = mix(streaks, fronts, 0.18) * (1.0 - calm * 0.25);
+    float front_weight = clamp(params.weather_feature_weights.x, 0.0, 1.0);
+    float cell_weight = clamp(params.weather_feature_weights.y, 0.0, 1.0);
+    float streak_weight = clamp(params.weather_feature_weights.z, 0.0, 1.0);
+    float weighted_fronts = mix(broad, fronts, front_weight);
+    float weighted_cells = mix(broad, cells, cell_weight);
+    float weighted_streaks = mix(broad, streaks, streak_weight);
 
-    return clamp(cloud_style_value(fair_weather, broken_cumulus, overcast_stratus, storm_cells,
-                                   high_cirrus),
-                 0.0, 1.0);
+    float fair_weather = mix(broad, weighted_cells, 0.30) * (1.0 - calm * 0.48);
+    float broken_cumulus =
+        mix(mix(broad, weighted_fronts, 0.40), weighted_cells, mix(0.33, 0.08, orbit_view)) *
+        (1.0 - calm * 0.30);
+    float overcast_stratus = mix(weighted_fronts, broad, 0.22) * (1.0 - calm * 0.14);
+    float storm_cells = max(weighted_fronts * 0.84, weighted_cells * 1.08) *
+                        (1.0 - calm * 0.22);
+    float high_cirrus = mix(weighted_streaks, weighted_fronts, 0.18) *
+                        (1.0 - calm * 0.25);
+
+    CloudWeatherComponents components;
+    components.broad = broad;
+    components.fronts = fronts;
+    components.cells = cells;
+    components.streaks = streaks;
+    components.calm = calm;
+    components.coverage =
+        clamp(cloud_style_value(fair_weather, broken_cumulus, overcast_stratus, storm_cells,
+                                high_cirrus),
+              0.0, 1.0);
+    return components;
+}
+
+float weather_coverage(vec3 position_km) {
+    return cloud_weather_components(position_km).coverage;
 }
 
 struct CloudDensityContext {
@@ -334,9 +365,11 @@ CloudDensitySample cloud_density_sample(vec3 position_km, CloudDensityContext co
 
     float base_density = max(base_edge * height * 0.92 * params.weather.y, 0.0);
     float detail_density = max(edge * height * erosion * params.weather.y, 0.0);
+    float detail_weight = clamp(params.feature_options.w, 0.0, 1.0);
     density_result.base_density = base_density;
     density_result.detail_density = detail_density;
-    density_result.density = mix(base_density, detail_density, detail_lod);
+    density_result.detail_lod = detail_lod * detail_weight;
+    density_result.density = mix(base_density, detail_density, density_result.detail_lod);
     return density_result;
 }
 
