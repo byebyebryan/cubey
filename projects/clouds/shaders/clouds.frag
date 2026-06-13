@@ -338,6 +338,9 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     float edge_fade_distance = max(layer_thickness * 0.55, step_len * 2.0);
     int used_steps = 0;
     float density_sum = 0.0;
+    float base_density_sum = 0.0;
+    float detail_density_sum = 0.0;
+    float density_lod_sum = 0.0;
     float weather_sum = 0.0;
     float light_sum = 0.0;
     float shadow_sum = 0.0;
@@ -350,17 +353,25 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
                        0.5;
         float sample_t = ray_start + (float(i) + 0.5 + jitter * 0.18) * step_len;
         vec3 p = origin + direction * sample_t;
-        float density = cloud_density(p);
-        density *= high_horizon_fade;
-        density *= sky_limb_fade;
+        CloudDensityContext density_context =
+            cloud_density_context(sample_t, step_len, abs(view_horizon),
+                                  clamp((sample_t - ray_start) /
+                                            max(ray_end - ray_start, 0.001),
+                                        0.0, 1.0));
+        CloudDensitySample density_sample = cloud_density_sample(p, density_context);
+        float density_scale = high_horizon_fade * sky_limb_fade;
         float edge_distance = min(sample_t - ray_start, ray_end - sample_t);
-        density *= smoothstep(0.0, edge_fade_distance, edge_distance);
+        density_scale *= smoothstep(0.0, edge_fade_distance, edge_distance);
         if (params.camera_forward_mode.w > 1.5 && !hit_ground) {
-            density *= 0.22;
+            density_scale *= 0.22;
         }
-        float weather = weather_coverage(p);
+        float density = density_sample.density * density_scale;
+        float weather = density_sample.weather;
         ++used_steps;
         density_sum += density;
+        base_density_sum += density_sample.base_density * density_scale;
+        detail_density_sum += density_sample.detail_density * density_scale;
+        density_lod_sum += density_sample.detail_lod;
         weather_sum += weather;
         if (density <= 0.0001) {
             continue;
@@ -420,6 +431,9 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
 
     float denom = max(float(used_steps), 1.0);
     result.mean_density = density_sum / denom;
+    result.mean_base_density = base_density_sum / denom;
+    result.mean_detail_density = detail_density_sum / denom;
+    result.mean_density_lod = density_lod_sum / denom;
     result.mean_weather = weather_sum / denom;
     result.mean_light = light_sum / denom;
     result.mean_shadow = shadow_sum / denom;

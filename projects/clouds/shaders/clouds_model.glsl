@@ -180,17 +180,67 @@ float weather_coverage(vec3 position_km) {
                  0.0, 1.0);
 }
 
-float cloud_density(vec3 position_km) {
+struct CloudDensityContext {
+    float sample_distance;
+    float step_length;
+    float grazing;
+    float orbit_view;
+    float local_view;
+    float distance_fraction;
+};
+
+struct CloudDensitySample {
+    float density;
+    float base_density;
+    float detail_density;
+    float detail_lod;
+    float weather;
+    float height;
+};
+
+CloudDensityContext cloud_density_context(float sample_distance, float step_length,
+                                          float grazing, float distance_fraction) {
+    CloudDensityContext context;
+    context.sample_distance = max(sample_distance, 0.0);
+    context.step_length = max(step_length, 0.0);
+    context.grazing = clamp(grazing, 0.0, 1.0);
+    context.orbit_view = smoothstep(1.5, 2.0, params.camera_forward_mode.w);
+    context.local_view = 1.0 - context.orbit_view;
+    context.distance_fraction = clamp(distance_fraction, 0.0, 1.0);
+    return context;
+}
+
+CloudDensityContext cloud_density_default_context() {
+    return cloud_density_context(0.0, 0.0, 1.0, 0.0);
+}
+
+CloudDensitySample empty_cloud_density_sample() {
+    CloudDensitySample density_result;
+    density_result.density = 0.0;
+    density_result.base_density = 0.0;
+    density_result.detail_density = 0.0;
+    density_result.detail_lod = 1.0;
+    density_result.weather = 0.0;
+    density_result.height = 0.0;
+    return density_result;
+}
+
+CloudDensitySample cloud_density_sample(vec3 position_km, CloudDensityContext context) {
+    CloudDensitySample density_result = empty_cloud_density_sample();
     float altitude = length(position_km - planet_center()) - params.camera_position_radius.w;
     float height = cloud_height_profile(altitude);
+    density_result.height = height;
     if (height <= 0.0) {
-        return 0.0;
+        return density_result;
     }
 
     float h = cloud_normalized_height(altitude);
     float weather = weather_coverage(position_km);
+    density_result.weather = weather;
     float coverage = clamp(params.weather.x, 0.0, 1.0);
-    float orbit_view = smoothstep(1.5, 2.0, params.camera_forward_mode.w);
+    float orbit_view = context.orbit_view;
+    float detail_lod = 1.0;
+    density_result.detail_lod = detail_lod;
 
     float threshold =
         cloud_style_value(0.44, 0.34, 0.25, 0.23, 0.48) +
@@ -209,6 +259,11 @@ float cloud_density(vec3 position_km) {
         smoothstep(0.38, 0.84,
                    fbm(position_km * mix(0.11, 0.035, orbit_view) +
                        vec3(params.weather.w * 0.055, 19.0, 7.0)));
+
+    float base_puffy = smoothstep(0.18, 0.78, weather);
+    float base_sheets = coverage_mask;
+    float base_storm_core = max(coverage_mask, weather);
+    float base_wisps = weather;
 
     puffy = mix(puffy, smoothstep(0.18, 0.78, weather), orbit_view * 0.75);
     sheets = mix(sheets, coverage_mask, orbit_view * 0.68);
@@ -230,6 +285,23 @@ float cloud_density(vec3 position_km) {
 
     float edge = cloud_style_value(fair_weather, broken_cumulus, overcast_stratus, storm_cells,
                                    high_cirrus);
+    float base_fair_weather =
+        smoothstep(0.08, 0.72, coverage_mask * 0.58 + base_puffy * 0.56) *
+        mix(0.66, 1.16, base_puffy);
+    float base_broken_cumulus =
+        smoothstep(0.07, 0.74, coverage_mask * 0.72 + base_puffy * 0.48) *
+        mix(0.62, 1.22, base_puffy);
+    float base_overcast_stratus = mix(coverage_mask, base_sheets, 0.22) * mix(0.92, 0.72, h);
+    float base_storm_cells =
+        smoothstep(0.05, 0.78, max(coverage_mask * 0.84, base_storm_core * 0.78)) *
+        mix(0.90, 1.42, base_storm_core * smoothstep(0.18, 0.88, h));
+    float base_high_cirrus =
+        smoothstep(0.08, 0.70, coverage_mask * 0.55 + base_wisps * 0.62) *
+        mix(0.38, 0.76, base_wisps);
+    float base_edge =
+        cloud_style_value(base_fair_weather, base_broken_cumulus, base_overcast_stratus,
+                          base_storm_cells, base_high_cirrus);
+
     float scallop_scale =
         mix(cloud_style_value(0.82, 0.78, 0.24, 0.62, 0.13), 0.075, orbit_view);
     float scallop =
@@ -240,7 +312,16 @@ float cloud_density(vec3 position_km) {
     erosion *= mix(0.72, 1.12, scallop);
     erosion = mix(erosion, 0.92, orbit_view * 0.64);
 
-    return max(edge * height * erosion * params.weather.y, 0.0);
+    float base_density = max(base_edge * height * 0.92 * params.weather.y, 0.0);
+    float detail_density = max(edge * height * erosion * params.weather.y, 0.0);
+    density_result.base_density = base_density;
+    density_result.detail_density = detail_density;
+    density_result.density = detail_density;
+    return density_result;
+}
+
+float cloud_density(vec3 position_km) {
+    return cloud_density_sample(position_km, cloud_density_default_context()).density;
 }
 
 #endif
