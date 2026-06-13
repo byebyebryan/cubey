@@ -386,7 +386,8 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         float jitter = hash31(vec3(frag_position + params.render_options.w * 0.071,
                                    float(i) + params.render_options.w * 1.37)) -
                        0.5;
-        float sample_t = ray_start + (float(i) + 0.5 + jitter * 0.18) * step_len;
+        float jitter_width = mix(0.18, 0.54, adaptive_march);
+        float sample_t = ray_start + (float(i) + 0.5 + jitter * jitter_width) * step_len;
         vec3 p = origin + direction * sample_t;
         CloudDensityContext density_context =
             cloud_density_context(sample_t, step_len, abs(view_horizon),

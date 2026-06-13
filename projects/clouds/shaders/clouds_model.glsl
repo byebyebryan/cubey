@@ -239,12 +239,12 @@ CloudDensitySample cloud_density_sample(vec3 position_km, CloudDensityContext co
     density_result.weather = weather;
     float coverage = clamp(params.weather.x, 0.0, 1.0);
     float orbit_view = context.orbit_view;
-    float distance_suppression = smoothstep(120.0, 520.0, context.sample_distance);
-    float footprint_suppression = smoothstep(5.0, 22.0, context.step_length);
-    float grazing_support = smoothstep(0.02, 0.18, context.grazing);
-    float local_suppression = max(distance_suppression * 0.72, footprint_suppression * 0.65);
+    float distance_suppression = smoothstep(80.0, 340.0, context.sample_distance);
+    float footprint_suppression = smoothstep(2.5, 14.0, context.step_length);
+    float grazing_support = smoothstep(0.04, 0.30, context.grazing);
+    float local_suppression = max(distance_suppression * 0.92, footprint_suppression * 0.86);
     float local_detail_lod =
-        clamp(min(1.0 - local_suppression, mix(0.35, 1.0, grazing_support)), 0.18, 1.0);
+        clamp(min(1.0 - local_suppression, mix(0.04, 1.0, grazing_support)), 0.02, 1.0);
     float detail_lod = mix(local_detail_lod, 1.0, orbit_view);
     density_result.detail_lod = detail_lod;
 
