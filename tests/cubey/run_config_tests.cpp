@@ -250,7 +250,7 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--water2d-hose",       "--water3d-transfer",      "--water3d-p2g-mode",
         "--water3d-whitewater", "--ocean-field-precision", "--planet-max-lod-level",
         "--planet-lod-hysteresis", "--planet-time-hours", "--planet-camera-mode",
-        "--cloud-camera-mode", "--cloud-quality", "--cloud-coverage",
+        "--terrain-lab-slice", "--cloud-camera-mode", "--cloud-quality", "--cloud-coverage",
     };
     for (std::string_view flag : promoted_flags) {
         const std::string explicit_branch = "arg == \"" + std::string(flag) + "\"";
@@ -320,6 +320,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.cell_size",
         "terrain.sea_level",
         "terrain.water_surface",
+        "terrain_lab.slice_preset",
         "atmosphere.time_of_day_mode",
         "atmosphere.sun_elevation_degrees",
         "atmosphere.rayleigh_scale",
@@ -446,6 +447,9 @@ void test_run_config_loads_json_config_file() {
     "seed": 12345,
     "water_surface": false
   },
+  "terrain_lab": {
+    "slice_preset": "arid-mesa-canyon"
+  },
   "smoke": {
     "pressure_solver": "red-black-gauss-seidel",
     "dye_decay": 0.98,
@@ -514,6 +518,8 @@ void test_run_config_loads_json_config_file() {
     require(config.terrain.seed_set && config.terrain.seed == 12345U,
             "config file should mark terrain seed as explicit");
     require(config.terrain.water_surface == 0, "config file should set terrain booleans");
+    require(config.terrain_lab.slice_preset == "arid-mesa-canyon",
+            "config file should set Terrain Lab slice preset");
     require(config.smoke.pressure_solver == "red-black-gauss-seidel" &&
                 config.smoke.dye_decay == 0.98F && config.smoke.injector_radius == 0.05F,
             "config file should set smoke controls");
@@ -549,6 +555,9 @@ void test_run_config_cli_and_set_override_config_file() {
   "ocean": {
     "terrain_fields": false
   },
+  "terrain_lab": {
+    "slice_preset": "temperate-mountain-watershed"
+  },
   "water3d": {
     "whitewater": false
   }
@@ -563,12 +572,14 @@ void test_run_config_cli_and_set_override_config_file() {
     std::string set_height = "height=720";
     std::string set_env = "pbr.environment_source=atmosphere";
     std::string set_terrain = "ocean.terrain_fields=true";
+    std::string slice_flag = "--terrain-lab-slice";
+    std::string slice_value = "arid-mesa-canyon";
     std::string set_whitewater = "water3d.whitewater=true";
-    std::array<char*, 13> argv{program.data(),       width_flag.data(),  width_value.data(),
-                               config_flag.data(),   config_path.data(), set_flag.data(),
-                               set_height.data(),    set_flag.data(),    set_env.data(),
-                               set_flag.data(),      set_terrain.data(), set_flag.data(),
-                               set_whitewater.data()};
+    std::array<char*, 15> argv{program.data(),       width_flag.data(),  width_value.data(),
+                               config_flag.data(),   config_path.data(), slice_flag.data(),
+                               slice_value.data(),   set_flag.data(),    set_height.data(),
+                               set_flag.data(),      set_env.data(),     set_flag.data(),
+                               set_terrain.data(),   set_flag.data(),    set_whitewater.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -577,6 +588,8 @@ void test_run_config_cli_and_set_override_config_file() {
     require(config.pbr.environment_source == "atmosphere",
             "--set should override nested config values");
     require(config.ocean.terrain_fields == 1, "--set should parse bool overrides");
+    require(config.terrain_lab.slice_preset == "arid-mesa-canyon",
+            "named CLI flags should override config-backed Terrain Lab slice");
     require(config.water3d.whitewater == 1,
             "--set should override descriptor-backed water controls");
 }
@@ -590,10 +603,14 @@ void test_run_config_descriptor_cli_and_set_precedence() {
     std::string set_auto_exposure = "atmosphere.auto_exposure=true";
     std::string water_wave_flag = "--water3d-wave";
     std::string set_water_wave = "water3d.wave=false";
-    std::array<char*, 10> argv{program.data(),           terrain_flag.data(),       set_flag.data(),
+    std::string slice_flag = "--terrain-lab-slice";
+    std::string slice_value = "temperate-mountain-watershed";
+    std::string set_slice = "terrain_lab.slice_preset=arid-mesa-canyon";
+    std::array<char*, 14> argv{program.data(),           terrain_flag.data(),       set_flag.data(),
                                set_terrain.data(),       auto_exposure_flag.data(), set_flag.data(),
                                set_auto_exposure.data(), water_wave_flag.data(),    set_flag.data(),
-                               set_water_wave.data()};
+                               set_water_wave.data(),    slice_flag.data(),         slice_value.data(),
+                               set_flag.data(),          set_slice.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -603,6 +620,8 @@ void test_run_config_descriptor_cli_and_set_precedence() {
             "--set should override descriptor-backed negative bool CLI flags");
     require(config.water3d.wave == 0,
             "--set should override newly descriptor-backed project bool CLI flags");
+    require(config.terrain_lab.slice_preset == "arid-mesa-canyon",
+            "--set should override descriptor-backed Terrain Lab enum CLI flags");
 }
 
 void test_run_config_rejects_invalid_json_config_file() {
@@ -1349,6 +1368,17 @@ void test_run_config_rejects_invalid_ocean_controls() {
     require_throws(
         [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
         "run config should reject unsupported ocean cascade selection");
+
+    std::string terrain_lab_slice_flag = "--terrain-lab-slice";
+    std::string terrain_lab_slice_value = "wetland";
+    std::array<char*, 3> terrain_lab_argv{
+        program.data(), terrain_lab_slice_flag.data(), terrain_lab_slice_value.data()};
+    require_throws(
+        [&terrain_lab_argv]() {
+            cubey::parse_run_config(static_cast<int>(terrain_lab_argv.size()),
+                                    terrain_lab_argv.data());
+        },
+        "run config should reject unsupported Terrain Lab slice selection");
 }
 
 void test_run_config_parses_planet_controls() {
