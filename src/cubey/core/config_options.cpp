@@ -80,6 +80,10 @@ constexpr std::array<std::string_view, 2> kTerrainLabSlicePresets{
     "arid-mesa-canyon",
     "temperate-mountain-watershed",
 };
+constexpr std::array<std::string_view, 2> kTerrainLabCameraPresets{
+    "orbit",
+    "profile",
+};
 constexpr double kPlanetMaxPatchResolution = 128.0;
 constexpr double kPlanetMaxLiveLodLevel = 12.0;
 constexpr double kPlanetMaxLocalDetailLodLevels = 8.0;
@@ -105,7 +109,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 191> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 192> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -411,6 +415,10 @@ constexpr std::array<ConfigOptionDescriptor, 191> kRunConfigOptions{
            "--terrain-lab-slice", "Slice Preset", "Terrain Lab",
            "Terrain Lab biome slice preset.", ConfigOptionType::Enum, no_range(),
            enum_choices(kTerrainLabSlicePresets)),
+    option(RunConfigOptionId::TerrainLabCameraPreset, "terrain_lab.camera_preset",
+           "--terrain-lab-camera-preset", "Camera Preset", "Terrain Lab",
+           "Initial Terrain Lab review camera framing.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kTerrainLabCameraPresets)),
     option(RunConfigOptionId::AtmospherePreset, "atmosphere.preset", "--atmosphere-preset",
            "Preset", "Atmosphere", "Atmosphere preset name.", ConfigOptionType::String),
     option(RunConfigOptionId::AtmosphereTimeOfDayMode, "atmosphere.time_of_day_mode",
@@ -1103,6 +1111,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.terrain_lab.slice_preset.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.terrain_lab.slice_preset);
+    case RunConfigOptionId::TerrainLabCameraPreset:
+        return config.terrain_lab.camera_preset.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain_lab.camera_preset);
     case RunConfigOptionId::AtmospherePreset:
         return config.atmosphere.preset;
     case RunConfigOptionId::AtmosphereTimeOfDayMode:
@@ -2066,6 +2078,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainLabSlicePreset:
         config.terrain_lab.slice_preset = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainLabCameraPreset:
+        config.terrain_lab.camera_preset = std::string(value);
         break;
     case RunConfigOptionId::AtmospherePreset:
         config.atmosphere.preset = std::string(value);

@@ -114,6 +114,7 @@ enum class RunConfigOptionId {
     TerrainValleys,
     TerrainWaterSurface,
     TerrainLabSlicePreset,
+    TerrainLabCameraPreset,
     AtmospherePreset,
     AtmosphereTimeOfDayMode,
     AtmosphereNightSkyMode,

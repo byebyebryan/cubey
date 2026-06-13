@@ -192,6 +192,7 @@ struct RunConfig {
 
     struct TerrainLabOptions {
         std::string slice_preset{};
+        std::string camera_preset{};
     };
 
     struct AtmosphereOptions {

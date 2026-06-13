@@ -206,6 +206,8 @@ int main() {
                  0.001F, "terrain lab default elevation scale should be stable");
     require(defaults.slice_preset == terrain::TerrainLabSlicePreset::AridMesaCanyon,
             "terrain lab should default to the arid mesa slice");
+    require(defaults.camera_preset == terrain::TerrainLabCameraPreset::Orbit,
+            "terrain lab should default to the orbit camera");
     require(defaults.debug_view == terrain::TerrainLabDebugView::Final,
             "terrain lab should default to final debug view");
     terrain::validate_terrain_lab_config(defaults);
@@ -225,6 +227,16 @@ int main() {
     require(terrain::terrain_lab_slice_preset_from_name("temperate_mountain_watershed") ==
                 terrain::TerrainLabSlicePreset::TemperateMountainWatershed,
             "terrain lab slice preset should accept underscore alias");
+
+    require(terrain::terrain_lab_camera_preset_from_name("") ==
+                terrain::TerrainLabCameraPreset::Orbit,
+            "empty terrain lab camera preset should use orbit");
+    require(terrain::terrain_lab_camera_preset_from_name("orbit") ==
+                terrain::TerrainLabCameraPreset::Orbit,
+            "terrain lab camera preset should parse orbit");
+    require(terrain::terrain_lab_camera_preset_from_name("profile") ==
+                terrain::TerrainLabCameraPreset::Profile,
+            "terrain lab camera preset should parse profile");
 
     require(terrain::terrain_lab_debug_view_from_name("") == terrain::TerrainLabDebugView::Final,
             "empty terrain lab debug view should use final");
@@ -334,11 +346,20 @@ int main() {
     }
     require(rejected, "terrain lab should reject unknown slice presets");
 
+    rejected = false;
+    try {
+        static_cast<void>(terrain::terrain_lab_camera_preset_from_name("telephoto"));
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "terrain lab should reject unknown camera presets");
+
     cubey::RunConfig run_config;
     run_config.grid.width = 65;
     run_config.grid.height = 33;
     run_config.debug_view = "wetness";
     run_config.terrain_lab.slice_preset = "temperate-mountain-watershed";
+    run_config.terrain_lab.camera_preset = "profile";
     run_config.terrain.seed = 77U;
     run_config.terrain.seed_set = true;
     run_config.terrain.cell_size = 6.0F;
@@ -354,6 +375,8 @@ int main() {
     require(from_run_config.slice_preset ==
                 terrain::TerrainLabSlicePreset::TemperateMountainWatershed,
             "terrain lab should read slice preset from common run config");
+    require(from_run_config.camera_preset == terrain::TerrainLabCameraPreset::Profile,
+            "terrain lab should read camera preset from common run config");
     require(from_run_config.seed == terrain::kTerrainLabDefaultSeed,
             "terrain lab should not read coast-oriented terrain seed flags");
     require_near(from_run_config.cell_size_m, terrain::kTerrainLabDefaultCellSizeMeters, 0.001F,

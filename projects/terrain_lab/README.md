@@ -90,8 +90,8 @@ terrain field model is stronger.
 ## Current Workbench
 
 `TerrainLabConfig` reads common grid width, grid height, slice-preset, and
-debug-view settings from `RunConfig`, while leaving coast-oriented `terrain.*`
-flags to `procedural_terrain`.
+camera-preset, and debug-view settings from `RunConfig`, while leaving
+coast-oriented `terrain.*` flags to `procedural_terrain`.
 
 Generated CPU fields include:
 
@@ -164,6 +164,7 @@ Useful local review output commands:
 ```sh
 mkdir -p outputs/terrain_lab
 ./build/dev/projects/terrain_lab/terrain_lab --headless --width 1280 --height 720 --output outputs/terrain_lab/final.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-camera-preset profile --width 1280 --height 720 --output outputs/terrain_lab/final-profile.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view feature-graph --width 1280 --height 720 --output outputs/terrain_lab/feature-graph.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view channel --width 1280 --height 720 --output outputs/terrain_lab/channel.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/material.png

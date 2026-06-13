@@ -22,6 +22,16 @@ inline constexpr std::array<TerrainLabSlicePreset, 2> kTerrainLabSlicePresets{
     TerrainLabSlicePreset::TemperateMountainWatershed,
 };
 
+enum class TerrainLabCameraPreset : std::uint32_t {
+    Orbit = 0,
+    Profile = 1,
+};
+
+inline constexpr std::array<TerrainLabCameraPreset, 2> kTerrainLabCameraPresets{
+    TerrainLabCameraPreset::Orbit,
+    TerrainLabCameraPreset::Profile,
+};
+
 enum class TerrainLabDebugView : std::uint32_t {
     Final = 0,
     Height = 1,
@@ -81,6 +91,7 @@ struct TerrainLabConfig {
     float process_strength = kTerrainLabDefaultProcessStrength;
     float detail_strength = kTerrainLabDefaultDetailStrength;
     TerrainLabSlicePreset slice_preset = TerrainLabSlicePreset::AridMesaCanyon;
+    TerrainLabCameraPreset camera_preset = TerrainLabCameraPreset::Orbit;
     TerrainLabDebugView debug_view = TerrainLabDebugView::Final;
 
     friend bool operator==(const TerrainLabConfig&, const TerrainLabConfig&) = default;
@@ -143,6 +154,16 @@ struct TerrainLabConfig {
     return "final";
 }
 
+[[nodiscard]] inline const char* terrain_lab_camera_preset_name(TerrainLabCameraPreset preset) {
+    switch (preset) {
+    case TerrainLabCameraPreset::Orbit:
+        return "orbit";
+    case TerrainLabCameraPreset::Profile:
+        return "profile";
+    }
+    return "orbit";
+}
+
 [[nodiscard]] inline bool terrain_lab_name_matches(std::string_view value,
                                                    std::string_view canonical) {
     if (value.size() != canonical.size()) {
@@ -182,6 +203,19 @@ struct TerrainLabConfig {
         }
     }
     throw std::runtime_error("unknown terrain lab debug view: " + std::string(name));
+}
+
+[[nodiscard]] inline TerrainLabCameraPreset
+terrain_lab_camera_preset_from_name(std::string_view name) {
+    if (name.empty()) {
+        return TerrainLabCameraPreset::Orbit;
+    }
+    for (const TerrainLabCameraPreset preset : kTerrainLabCameraPresets) {
+        if (terrain_lab_name_matches(name, terrain_lab_camera_preset_name(preset))) {
+            return preset;
+        }
+    }
+    throw std::runtime_error("unknown terrain lab camera preset: " + std::string(name));
 }
 
 [[nodiscard]] inline TerrainLabDebugView next_terrain_lab_debug_view(
@@ -233,6 +267,7 @@ inline void validate_terrain_lab_config(const TerrainLabConfig& config) {
     }
     terrain.debug_view = terrain_lab_debug_view_from_name(config.debug_view);
     terrain.slice_preset = terrain_lab_slice_preset_from_name(config.terrain_lab.slice_preset);
+    terrain.camera_preset = terrain_lab_camera_preset_from_name(config.terrain_lab.camera_preset);
     validate_terrain_lab_config(terrain);
     return terrain;
 }

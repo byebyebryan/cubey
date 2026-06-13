@@ -32,8 +32,12 @@
 namespace cubey::projects::terrain_lab {
 namespace {
 
-constexpr float kDefaultPitchRadians = -0.74F;
-constexpr float kDefaultYawRadians = 0.52F;
+struct TerrainLabCameraFrame {
+    float pitch_radians = -0.74F;
+    float yaw_radians = 0.52F;
+    float distance_extent_scale = 1.12F;
+    float target_height_fraction = 0.28F;
+};
 
 struct TerrainLabPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
@@ -64,8 +68,24 @@ struct TerrainLabRenderRanges {
            config.cell_size_m;
 }
 
+[[nodiscard]] TerrainLabCameraFrame terrain_lab_camera_frame(TerrainLabCameraPreset preset) {
+    switch (preset) {
+    case TerrainLabCameraPreset::Orbit:
+        return {};
+    case TerrainLabCameraPreset::Profile:
+        return {
+            .pitch_radians = -0.30F,
+            .yaw_radians = 0.78F,
+            .distance_extent_scale = 0.96F,
+            .target_height_fraction = 0.20F,
+        };
+    }
+    return {};
+}
+
 [[nodiscard]] float terrain_lab_camera_distance(const TerrainLabConfig& config) {
-    return std::max(1600.0F, terrain_lab_extent_m(config) * 1.12F);
+    const TerrainLabCameraFrame frame = terrain_lab_camera_frame(config.camera_preset);
+    return std::max(1600.0F, terrain_lab_extent_m(config) * frame.distance_extent_scale);
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo terrain_lab_pass_info() {
@@ -263,13 +283,15 @@ class TerrainLabApp {
             extent.height == 0U ? 1.0F
                                 : static_cast<float>(extent.width) /
                                       static_cast<float>(extent.height);
-        const float target_y = fields_.min_height_m +
-                               ((fields_.max_height_m - fields_.min_height_m) * 0.28F);
+        const TerrainLabCameraFrame frame = terrain_lab_camera_frame(terrain_config_.camera_preset);
+        const float target_y =
+            fields_.min_height_m +
+            ((fields_.max_height_m - fields_.min_height_m) * frame.target_height_fraction);
         const cubey::Transform3D camera_transform = cubey::orbit_camera_transform({
             .target = {0.0F, target_y, 0.0F},
             .distance = orbit_controller_.distance(),
-            .yaw = orbit_controller_.yaw() + kDefaultYawRadians,
-            .pitch = orbit_controller_.pitch() + kDefaultPitchRadians,
+            .yaw = orbit_controller_.yaw() + frame.yaw_radians,
+            .pitch = orbit_controller_.pitch() + frame.pitch_radians,
         });
         return {
             .view_projection = camera_.view_projection_matrix(camera_transform, aspect),
