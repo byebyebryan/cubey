@@ -5,18 +5,18 @@ rendering. It keeps cloud policy separate from the clear-sky atmosphere project
 while consuming the same solar-clock and atmosphere scattering foundation.
 
 The current renderer is a v1 planet-aware cloud raymarch. Surface and high
-cameras use a finite local cloud volume with a distant horizon layer, while
-orbit cameras keep the spherical planet-scale shell. The renderer writes a
-quality-scaled cloud product target with linear cloud radiance plus view
-transmittance, resolves it through per-frame-slot temporal reconstruction, and
-composites that product over the standalone atmosphere/ground proxy. It
-supports typed procedural weather presets, front/cell/streak weather structure,
-type-specific density profiles, shared-atmosphere sun/moon lighting, cheap
-base/detail density separation, distance/grazing detail LOD, cheap
-self-shadowing, prototype surface cloud shadows, and debug views for the major
-fields. It deliberately does not integrate into ocean or planet yet; those
-projects should later consume cloud sky/reflection and shadow outputs after this
-standalone path is stable.
+cameras use a capped spherical-shell local cloud segment with a distant horizon
+layer, while orbit cameras keep the full spherical planet-scale shell. The
+renderer writes a quality-scaled cloud product target with linear cloud
+radiance plus view transmittance, resolves it through per-frame-slot temporal
+reconstruction, and composites that product over the standalone
+atmosphere/ground proxy. It supports typed procedural weather presets,
+front/cell/streak weather structure, type-specific density profiles,
+shared-atmosphere sun/moon lighting, cheap base/detail density separation,
+distance/grazing detail LOD, cheap self-shadowing, prototype surface cloud
+shadows, and raw product debug views for the major fields. It deliberately does
+not integrate into ocean or planet yet; those projects should later consume
+cloud sky/reflection and shadow outputs after this standalone path is stable.
 
 Useful runs:
 
@@ -83,9 +83,12 @@ Controls:
   cloud view so surface, high-altitude, and orbit captures all show meaningful
   structure.
 - `--cloud-quality quarter|half|full` controls both raymarch sample budgets and
-  the offscreen cloud product render scale before final compositing. `quarter`
-  is the default interactive mode; higher modes are still useful for diagnosis
-  but are not yet real-time enough to be the default.
+  the offscreen cloud product render scale before final compositing. Local
+  surface/high views keep at least half vertical cloud resolution even in
+  `quarter` mode because near-horizon cloud rows are sensitive to vertical
+  undersampling. `quarter` is still the default interactive mode; higher modes
+  remain useful for diagnosis but are not yet real-time enough to be the
+  default.
 - `--cloud-temporal` / `--no-cloud-temporal` toggles per-frame-slot temporal
   reconstruction of the cloud product. Disable it when isolating raw raymarch
   noise or history artifacts.
@@ -116,13 +119,14 @@ planet rendering:
   composition still need more art direction, but orbit detail suppresses local
   high-frequency erosion so the planet reads as broad weather masses rather
   than speckle.
-- Surface and high views now use a finite local volume plus a distant horizon
-  layer instead of marching the full spherical shell tangent to the planet. The
-  density model now separates broad base density from high-frequency erosion,
-  suppresses detail for distant/grazing local rays, adds targeted adaptive
-  horizon samples, and replaces the old single-sample horizon fallback. This
-  reduces hard banding but does not fully solve surface/high horizontal streaks;
-  remaining artifacts are visible in `density`, `detail-density`,
+- Surface and high views now use a capped spherical-shell local segment plus a
+  distant horizon layer instead of marching the full spherical shell tangent to
+  the planet. The density model separates broad base density from high-frequency
+  erosion, suppresses detail for distant/grazing local rays, adds targeted
+  adaptive horizon samples, replaces the old single-sample horizon fallback,
+  and keeps a higher vertical cloud target in local quarter-quality views. This
+  reduces hard banding but does not fully solve surface/high horizontal
+  streaks; remaining artifacts are visible in raw `density`, `detail-density`,
   `density-lod`, and `local-march` diagnostics.
 - High-oblique background composition now separates sky/space from the
   diagnostic ground proxy and uses sky-only atmosphere classification for the
@@ -132,7 +136,8 @@ planet rendering:
   basic sliders, plus temporal and debug controls, but it has not been moved
   onto the shared hierarchical control model used by the more mature projects.
 - Runtime feedback now shows FPS/frame-time, sample-budget diagnostics, cloud
-  render pixels, output pixels, and the active cloud render scale.
+  render pixels, output pixels, and the active cloud render scale split by X/Y
+  axis.
 - Sky, ground, and cloud composition is explicit and uses a cloud product target
   plus the shared atmosphere sky-background ray classifier for non-ground rays,
   but it remains project-local prototype code rather than a reusable cloud scene

@@ -151,6 +151,18 @@ that the finite local volume still needs a more robust reconstruction strategy,
 likely a better per-pixel ray integration filter, blue-noise/temporal
 reprojection strategy, or a separate horizon/cloud impostor.
 
+The eighth checkpoint tightens the diagnostic and geometry basis before deeper
+sampling work. Raw cloud-product debug views now bypass final composition
+consistently, so density, alpha, shell, local-march, and related diagnostics can
+be inspected without sky/ground lighting hiding the source. Surface and high
+cameras now intersect the same spherical cloud shell shape as orbit mode, then
+cap the march to the local distance budget rather than using a flat altitude
+slab. Local surface/high quality also keeps at least half vertical cloud target
+resolution in `quarter` mode. This removes one obvious local/orbit geometry
+split and reduces vertical undersampling near the horizon, but captures still
+show residual row-like streaking. Treat the next fix as a sampling/reprojection
+or horizon-reconstruction problem, not just a tuning issue.
+
 The remaining promotion blockers are now less about first visibility and more
 about renderer contracts:
 
