@@ -15,6 +15,11 @@ still being compatible with ocean high cameras and planet orbit views.
 - Guerrilla/Nubis real-time cloud work: model clouds from authorable weather
   and density fields, then keep raymarching heavily budgeted through sparse
   sampling, lighting approximations, and temporal reuse.
+- Toft/Bowles/Zimmermann real-time volumetric cloudscapes: jittered sparse
+  raymarching, temporal accumulation, and better per-step integration reduce
+  sample artifacts, but do not replace a good cloud/domain model.
+- NVIDIA spatiotemporal blue noise notes: stochastic sampling should use a
+  distribution designed for temporal filters instead of independent hash noise.
 
 Useful URLs:
 
@@ -22,6 +27,8 @@ Useful URLs:
 - https://dev.epicgames.com/documentation/en-us/unreal-engine/volumetric-cloud-component-in-unreal-engine
 - https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@latest/manual/Override-Volumetric-Clouds.html
 - https://www.guerrilla-games.com/read/the-real-time-volumetric-cloudscapes-of-horizon-zero-dawn
+- https://arxiv.org/abs/1609.05344
+- https://developer.nvidia.com/blog/rendering-in-real-time-with-spatiotemporal-blue-noise-textures-part-1/
 
 ## Direction
 
@@ -189,6 +196,67 @@ for local grazing rays, and blends a broader low-frequency local horizon layer.
 This is the right mechanical base for fixing horizon streaking, but the
 captures remain only subtly improved; the remaining artifact should be treated
 as a deeper sampling/reconstruction issue, not as a solved tuning problem.
+
+## Reference Code Pass 2026-06-13
+
+The following external projects were cloned beside Cubey for source review:
+
+- `/home/bryan/code/Mesh-Cloud-Rendering`
+- `/home/bryan/code/UnityVolumetricCloudsURP`
+- `/home/bryan/code/CloudRenderer`
+
+`Mesh-Cloud-Rendering` is not a volumetric renderer. It uses authored cloud
+meshes, precomputed per-vertex occlusion/transmittance data, a half-resolution
+cloud target, quarter-resolution blur/distortion passes, and a final composite.
+That makes it a poor source for local volumetric low-cloud marching, but a
+useful reminder that distant clouds do not have to come from the same expensive
+raymarch as nearby clouds. A stable mesh, impostor, or shell layer with
+intentional blur/distortion could be a better horizon/far-cloud path than a
+grazing finite-volume march.
+
+`UnityVolumetricCloudsURP` is the most relevant implementation reference. It is
+a URP port of Unity/HDRP-style volumetric clouds and reinforces several
+patterns Cubey should keep or adopt:
+
+- keep cloud lighting/transmittance in a low-resolution target and carry cloud
+  depth/mean distance as a first-class output for composition;
+- use temporal history with neighborhood clipping/rejection, but do not expect
+  temporal filtering to fix a bad raw march;
+- expose separate shape, erosion, micro-erosion, coverage, density, curvature,
+  primary-step, light-step, and temporal-accumulation controls;
+- separate local/world clouds from skybox-style clouds instead of forcing one
+  path to solve all distances;
+- use cloud-map/LUT style authoring for broad coverage/type before high
+  frequency erosion;
+- blur or filter cloud shadow maps separately because shadow integration often
+  uses far fewer steps than the main view march.
+
+`CloudRenderer` is a straightforward OpenGL volume raycaster with cellular
+automata density, fixed view samples, and per-sample light rays. It is useful as
+an intentionally simple baseline, but it is not a practical scale/performance
+model for Cubey's ocean/planet horizon cases.
+
+The previous Cubey attempts and this reference pass point to the same
+conclusion: the visible surface/high streaking is not primarily a temporal
+resolve issue. Surface raw/final captures are close enough that the row/ring
+structure should be treated as part of the raw local horizon signal. The next
+implementation pass should stop tuning around that artifact and split the cloud
+representation by distance regime:
+
+- near/overhead: keep a bounded volumetric raymarch for clouds that have real
+  parallax and thickness;
+- mid/far horizon: introduce a low-frequency weather-map or shell/impostor
+  layer that fades in before grazing local-volume rays dominate the image;
+- high/cirrus: keep this as a cheap shell/2D layer unless a real volumetric
+  need appears;
+- diagnostics: add isolation toggles for base weather, fronts/cells/streaks,
+  detail erosion, and horizon fallback so the source of each visual feature is
+  visible without touching shader code.
+
+Blue-noise or spatiotemporal-blue-noise sampling, analytical integration, and
+better temporal rejection are still valid follow-ups. They should refine a good
+distance-regime model, not act as the primary fix for far-field horizon
+streaking.
 
 The remaining promotion blockers are now less about first visibility and more
 about renderer contracts:
