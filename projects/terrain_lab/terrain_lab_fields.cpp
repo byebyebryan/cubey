@@ -848,7 +848,7 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
     return summary;
 }
 
-TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) {
+TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLabConfig& config) {
     validate_terrain_lab_config(config);
     TerrainLabFieldData fields;
     fields.desc = {
@@ -1053,6 +1053,21 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
 
     validate_terrain_lab_fields(fields);
     return fields;
+}
+
+TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& config) {
+    return generate_temperate_mountain_watershed_fields(config);
+}
+
+TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) {
+    validate_terrain_lab_config(config);
+    switch (config.slice_preset) {
+    case TerrainLabSlicePreset::AridMesaCanyon:
+        return generate_arid_mesa_canyon_fields(config);
+    case TerrainLabSlicePreset::TemperateMountainWatershed:
+        return generate_temperate_mountain_watershed_fields(config);
+    }
+    return generate_arid_mesa_canyon_fields(config);
 }
 
 } // namespace cubey::projects::terrain_lab

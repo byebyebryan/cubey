@@ -81,15 +81,21 @@ int main() {
                  "terrain lab default cell size should be stable");
     require_near(defaults.elevation_scale_m, terrain::kTerrainLabDefaultElevationScaleMeters,
                  0.001F, "terrain lab default elevation scale should be stable");
-    require(defaults.slice_preset == terrain::TerrainLabSlicePreset::TemperateMountainWatershed,
-            "terrain lab should default to the watershed slice");
+    require(defaults.slice_preset == terrain::TerrainLabSlicePreset::AridMesaCanyon,
+            "terrain lab should default to the arid mesa slice");
     require(defaults.debug_view == terrain::TerrainLabDebugView::Final,
             "terrain lab should default to final debug view");
     terrain::validate_terrain_lab_config(defaults);
 
     require(terrain::terrain_lab_slice_preset_from_name("") ==
-                terrain::TerrainLabSlicePreset::TemperateMountainWatershed,
-            "empty terrain lab slice preset should use watershed");
+                terrain::TerrainLabSlicePreset::AridMesaCanyon,
+            "empty terrain lab slice preset should use arid mesa");
+    require(terrain::terrain_lab_slice_preset_from_name("arid-mesa-canyon") ==
+                terrain::TerrainLabSlicePreset::AridMesaCanyon,
+            "terrain lab slice preset should parse arid mesa");
+    require(terrain::terrain_lab_slice_preset_from_name("arid_mesa_canyon") ==
+                terrain::TerrainLabSlicePreset::AridMesaCanyon,
+            "terrain lab slice preset should accept arid mesa underscore alias");
     require(terrain::terrain_lab_slice_preset_from_name("temperate-mountain-watershed") ==
                 terrain::TerrainLabSlicePreset::TemperateMountainWatershed,
             "terrain lab slice preset should parse canonical name");
@@ -209,6 +215,7 @@ int main() {
     run_config.grid.width = 65;
     run_config.grid.height = 33;
     run_config.debug_view = "wetness";
+    run_config.terrain_lab.slice_preset = "temperate-mountain-watershed";
     run_config.terrain.seed = 77U;
     run_config.terrain.seed_set = true;
     run_config.terrain.cell_size = 6.0F;
@@ -221,6 +228,9 @@ int main() {
             "terrain lab should read grid height from common run config");
     require(from_run_config.debug_view == terrain::TerrainLabDebugView::Wetness,
             "terrain lab should read debug view from common run config");
+    require(from_run_config.slice_preset ==
+                terrain::TerrainLabSlicePreset::TemperateMountainWatershed,
+            "terrain lab should read slice preset from common run config");
     require(from_run_config.seed == terrain::kTerrainLabDefaultSeed,
             "terrain lab should not read coast-oriented terrain seed flags");
     require_near(from_run_config.cell_size_m, terrain::kTerrainLabDefaultCellSizeMeters, 0.001F,

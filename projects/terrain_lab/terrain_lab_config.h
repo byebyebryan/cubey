@@ -13,10 +13,12 @@
 namespace cubey::projects::terrain_lab {
 
 enum class TerrainLabSlicePreset : std::uint32_t {
-    TemperateMountainWatershed = 0,
+    AridMesaCanyon = 0,
+    TemperateMountainWatershed = 1,
 };
 
-inline constexpr std::array<TerrainLabSlicePreset, 1> kTerrainLabSlicePresets{
+inline constexpr std::array<TerrainLabSlicePreset, 2> kTerrainLabSlicePresets{
+    TerrainLabSlicePreset::AridMesaCanyon,
     TerrainLabSlicePreset::TemperateMountainWatershed,
 };
 
@@ -78,7 +80,7 @@ struct TerrainLabConfig {
     float structure_strength = kTerrainLabDefaultStructureStrength;
     float process_strength = kTerrainLabDefaultProcessStrength;
     float detail_strength = kTerrainLabDefaultDetailStrength;
-    TerrainLabSlicePreset slice_preset = TerrainLabSlicePreset::TemperateMountainWatershed;
+    TerrainLabSlicePreset slice_preset = TerrainLabSlicePreset::AridMesaCanyon;
     TerrainLabDebugView debug_view = TerrainLabDebugView::Final;
 
     friend bool operator==(const TerrainLabConfig&, const TerrainLabConfig&) = default;
@@ -87,10 +89,12 @@ struct TerrainLabConfig {
 [[nodiscard]] inline const char* terrain_lab_slice_preset_name(
     TerrainLabSlicePreset preset) {
     switch (preset) {
+    case TerrainLabSlicePreset::AridMesaCanyon:
+        return "arid-mesa-canyon";
     case TerrainLabSlicePreset::TemperateMountainWatershed:
         return "temperate-mountain-watershed";
     }
-    return "temperate-mountain-watershed";
+    return "arid-mesa-canyon";
 }
 
 [[nodiscard]] inline const char* terrain_lab_debug_view_name(TerrainLabDebugView view) {
@@ -157,7 +161,7 @@ struct TerrainLabConfig {
 [[nodiscard]] inline TerrainLabSlicePreset terrain_lab_slice_preset_from_name(
     std::string_view name) {
     if (name.empty()) {
-        return TerrainLabSlicePreset::TemperateMountainWatershed;
+        return TerrainLabSlicePreset::AridMesaCanyon;
     }
     for (const TerrainLabSlicePreset preset : kTerrainLabSlicePresets) {
         if (terrain_lab_name_matches(name, terrain_lab_slice_preset_name(preset))) {
@@ -228,6 +232,7 @@ inline void validate_terrain_lab_config(const TerrainLabConfig& config) {
         terrain.grid_height = config.grid.height;
     }
     terrain.debug_view = terrain_lab_debug_view_from_name(config.debug_view);
+    terrain.slice_preset = terrain_lab_slice_preset_from_name(config.terrain_lab.slice_preset);
     validate_terrain_lab_config(terrain);
     return terrain;
 }
