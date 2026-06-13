@@ -73,23 +73,6 @@ struct AridMesaSampleFeatures {
     return (a.x * b.x) + (a.z * b.z);
 }
 
-[[nodiscard]] Point2 normalize(Point2 p) {
-    const float p_length = length(p);
-    if (p_length <= 0.0F) {
-        return {};
-    }
-    return {.x = p.x / p_length, .z = p.z / p_length};
-}
-
-[[nodiscard]] float distance_to_line(Point2 p, Point2 origin, Point2 direction) {
-    const Point2 axis = normalize(direction);
-    if (axis.x == 0.0F && axis.z == 0.0F) {
-        return length({.x = p.x - origin.x, .z = p.z - origin.z});
-    }
-    const Point2 normal{.x = -axis.z, .z = axis.x};
-    return std::abs(dot({.x = p.x - origin.x, .z = p.z - origin.z}, normal));
-}
-
 [[nodiscard]] std::uint32_t hash_u32(std::int32_t x, std::int32_t y, std::uint64_t seed) {
     std::uint64_t value = seed;
     value ^= static_cast<std::uint32_t>(x) + 0x9e37'79b9U + (value << 6U) + (value >> 2U);
@@ -405,44 +388,47 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
     const float canyon_wall = smoothstep(0.068F, 0.20F, canyon_distance) *
                               (1.0F - smoothstep(0.26F, 0.48F, canyon_distance));
 
-    const Point2 wash_a_origin{.x = -0.86F, .z = -0.64F};
-    const Point2 wash_a_direction{.x = 1.18F, .z = 1.58F};
-    const Point2 wash_a_axis = normalize(wash_a_direction);
-    const Point2 wash_a_offset{.x = p.x - wash_a_origin.x, .z = p.z - wash_a_origin.z};
-    const float wash_a_t = dot(wash_a_offset, wash_a_axis);
-    const float wash_a_gate =
-        smoothstep(0.04F, 0.42F, wash_a_t) * (1.0F - smoothstep(1.70F, 2.12F, wash_a_t));
-    const float wash_a_distance = distance_to_line(p, wash_a_origin, wash_a_direction);
-    const float wash_a = (1.0F - smoothstep(0.016F, 0.105F, wash_a_distance)) * wash_a_gate;
+    const float left_t = smoothstep(-0.78F, -0.18F, p.z) * (1.0F - smoothstep(-0.05F, 0.24F, p.z));
+    const float left_join_t = saturate((p.z + 0.78F) / 0.72F);
+    const float left_wash_center =
+        canyon_center - (0.46F * (1.0F - left_join_t)) +
+        std::sin(left_join_t * 3.14159265359F) * 0.070F +
+        fbm((p.x * 3.7F) - 2.0F, (p.z * 3.7F) + 4.0F, config.seed + 2611U, 3) * 0.026F;
+    const float left_side_gate =
+        1.0F - smoothstep(canyon_center - 0.04F, canyon_center + 0.08F, p.x);
+    const float left_distance = std::abs(p.x - left_wash_center);
+    const float left_wash =
+        (1.0F - smoothstep(0.030F, 0.130F, left_distance)) * left_t * left_side_gate;
 
-    const Point2 wash_b_origin{.x = 0.88F, .z = -0.26F};
-    const Point2 wash_b_direction{.x = -1.14F, .z = 1.34F};
-    const Point2 wash_b_axis = normalize(wash_b_direction);
-    const Point2 wash_b_offset{.x = p.x - wash_b_origin.x, .z = p.z - wash_b_origin.z};
-    const float wash_b_t = dot(wash_b_offset, wash_b_axis);
-    const float wash_b_gate =
-        smoothstep(0.02F, 0.36F, wash_b_t) * (1.0F - smoothstep(1.42F, 1.92F, wash_b_t));
-    const float wash_b_distance = distance_to_line(p, wash_b_origin, wash_b_direction);
-    const float wash_b = (1.0F - smoothstep(0.014F, 0.092F, wash_b_distance)) * wash_b_gate;
+    const float right_t = smoothstep(-0.22F, 0.42F, p.z) * (1.0F - smoothstep(0.54F, 0.84F, p.z));
+    const float right_join_t = saturate((p.z + 0.22F) / 0.76F);
+    const float right_wash_center =
+        canyon_center + (0.48F * (1.0F - right_join_t)) -
+        std::sin(right_join_t * 3.14159265359F) * 0.060F +
+        fbm((p.x * 3.9F) + 6.0F, (p.z * 3.9F) - 9.0F, config.seed + 2613U, 3) * 0.024F;
+    const float right_side_gate = smoothstep(canyon_center - 0.08F, canyon_center + 0.04F, p.x);
+    const float right_distance = std::abs(p.x - right_wash_center);
+    const float right_wash =
+        (1.0F - smoothstep(0.030F, 0.125F, right_distance)) * right_t * right_side_gate;
 
     const float wash_patch = smoothstep(
         0.18F, 0.80F,
         fbm((p.x * 5.2F) + 4.0F, (p.z * 5.2F) - 8.0F, config.seed + 2617U, 4) * 0.5F + 0.5F);
     const float wash_influence =
-        saturate(std::max(wash_a, wash_b) * lerp(0.74F, 1.16F, wash_patch));
-    const float wash_distance = std::min(wash_a_distance, wash_b_distance);
+        saturate(std::max(left_wash, right_wash) * lerp(0.46F, 0.72F, wash_patch));
+    const float wash_distance = std::min(left_distance, right_distance);
     const float channel_distance_norm = std::min(canyon_distance, wash_distance);
     const float extent_m = std::max(half_extent_x_m(desc), half_extent_z_m(desc));
 
     const float plateau_noise =
         fbm((p.x * 1.35F) + 9.0F, (p.z * 1.35F) - 3.0F, config.seed + 2621U, 4) * 0.5F + 0.5F;
-    const float plateau = saturate((1.0F - canyon_broad * 0.68F - wash_influence * 0.28F) *
+    const float plateau = saturate((1.0F - canyon_broad * 0.68F - wash_influence * 0.08F) *
                                    lerp(0.78F, 1.08F, plateau_noise));
     const float mesa_rim = smoothstep(0.16F, 0.32F, canyon_distance) *
                            (1.0F - smoothstep(0.34F, 0.62F, canyon_distance));
-    const float channel = saturate(std::max(canyon_floor, wash_influence * 0.50F));
-    const float valley = saturate((canyon_broad * 0.80F) + (wash_influence * 0.28F));
-    const float basin = saturate((canyon_floor * 0.76F) + (wash_influence * 0.12F));
+    const float channel = saturate(std::max(canyon_floor, wash_influence * 0.22F));
+    const float valley = saturate((canyon_broad * 0.80F) + (wash_influence * 0.10F));
+    const float basin = saturate((canyon_floor * 0.76F) + (wash_influence * 0.04F));
     const float ridge = saturate((canyon_wall * 0.82F) + (mesa_rim * 0.28F) +
                                  plateau * (0.08F + plateau_noise * 0.06F));
     const float divide = saturate((plateau * 0.24F) + (mesa_rim * 0.40F) + (1.0F - valley) * 0.10F);
@@ -1185,7 +1171,7 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
                 smoothstep(-0.18F, 0.78F, broad + features.plateau_influence * 0.62F);
             const float canyon_cut = (features.valley_influence * 0.20F) +
                                      (features.canyon_floor * 0.24F) +
-                                     (features.wash_influence * 0.09F);
+                                     (features.wash_influence * 0.025F);
             const float structure =
                 ((high_desert_tilt * 0.24F) + (features.plateau_influence * 0.30F) +
                  (features.ridge_influence * 0.10F) + (mesa_bench * 0.08F) + (broad * 0.12F) +
