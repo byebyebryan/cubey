@@ -56,9 +56,12 @@ struct FieldSampleStats {
     double meadow_sum = 0.0;
     double forest_sum = 0.0;
     double snow_sum = 0.0;
+    double grass_sum = 0.0;
+    double shrub_sum = 0.0;
     double tree_sum = 0.0;
     double channel_height_sum = 0.0;
     double channel_soil_sum = 0.0;
+    double channel_scree_sum = 0.0;
     double ridge_rock_sum = 0.0;
     double ridge_soil_sum = 0.0;
     double ridge_scree_sum = 0.0;
@@ -75,6 +78,7 @@ struct FieldSampleStats {
     std::size_t non_channel_count = 0;
     std::size_t divide_count = 0;
     std::size_t ridge_count = 0;
+    std::size_t shrub_count = 0;
 };
 
 FieldSampleStats
@@ -127,6 +131,8 @@ inspect_field_samples(const cubey::projects::terrain_lab::TerrainLabFieldData& f
         stats.meadow_sum += material.meadow;
         stats.forest_sum += material.forest;
         stats.snow_sum += material.snow;
+        stats.grass_sum += fields.grass_density[index];
+        stats.shrub_sum += fields.shrub_density[index];
         stats.tree_sum += fields.tree_density[index];
         stats.saw_material_variation = stats.saw_material_variation || material.rock > 0.05F ||
                                        material.forest > 0.05F || material.snow > 0.05F;
@@ -136,9 +142,13 @@ inspect_field_samples(const cubey::projects::terrain_lab::TerrainLabFieldData& f
         stats.saw_divide = stats.saw_divide || fields.divide_influence[index] > 0.2F;
         stats.saw_channel = stats.saw_channel || fields.channel_influence[index] > 0.2F;
         stats.saw_watershed[fields.watershed_id[index]] = true;
+        if (fields.shrub_density[index] > 0.012F) {
+            ++stats.shrub_count;
+        }
         if (fields.channel_influence[index] > 0.45F) {
             stats.channel_height_sum += fields.height_m[index];
             stats.channel_soil_sum += material.soil;
+            stats.channel_scree_sum += material.scree;
             stats.channel_wetness_sum += fields.wetness[index];
             stats.channel_deposition_sum += fields.deposition[index];
             stats.channel_flow_sum += fields.flow_accumulation[index];
@@ -329,6 +339,10 @@ int main() {
                                   terrain::TerrainLabDebugView::Channel, "CHANNEL");
     require_shader_debug_constant(terrain_lab_fragment_shader, terrain::TerrainLabDebugView::Divide,
                                   "DIVIDE");
+    require_contains(terrain_lab_fragment_shader, "strata_band_strength");
+    require_contains(terrain_lab_fragment_shader, "caprock_strength");
+    require_contains(terrain_lab_fragment_shader, "talus_proxy");
+    require_contains(terrain_lab_fragment_shader, "scrub_proxy");
 
     bool rejected = false;
     try {
@@ -561,16 +575,29 @@ int main() {
     const double inv_arid_count = 1.0 / static_cast<double>(fields.sample_count());
     const float arid_rock_scree_soil = static_cast<float>(
         (arid_stats.rock_sum + arid_stats.scree_sum + arid_stats.soil_sum) * inv_arid_count);
+    const float arid_mean_forest = static_cast<float>(arid_stats.forest_sum * inv_arid_count);
+    const float arid_mean_shrub_density = static_cast<float>(arid_stats.shrub_sum * inv_arid_count);
+    const float arid_mean_tree_density = static_cast<float>(arid_stats.tree_sum * inv_arid_count);
     require(arid_rock_scree_soil > 0.80F,
             "terrain lab arid slice should be dominated by rock, scree, and soil");
+    require(arid_mean_forest < 0.002F,
+            "terrain lab arid slice should keep forest material nearly absent");
     require(static_cast<float>(arid_stats.snow_sum * inv_arid_count) < 0.001F,
             "terrain lab arid slice should not produce snow");
+    require(arid_mean_shrub_density > arid_mean_tree_density + 0.005F,
+            "terrain lab arid slice should expose sparse shrub proxies before trees");
+    require(arid_mean_shrub_density < 0.12F,
+            "terrain lab arid slice should keep shrub density sparse");
+    require(arid_stats.shrub_count > 16U,
+            "terrain lab arid slice should produce enough sparse shrub samples");
     const float arid_mean_channel_height = static_cast<float>(
         arid_stats.channel_height_sum / static_cast<double>(arid_stats.channel_count));
     const float arid_mean_non_channel_height = static_cast<float>(
         arid_stats.non_channel_height_sum / static_cast<double>(arid_stats.non_channel_count));
     const float arid_mean_channel_soil = static_cast<float>(
         arid_stats.channel_soil_sum / static_cast<double>(arid_stats.channel_count));
+    const float arid_mean_channel_scree = static_cast<float>(
+        arid_stats.channel_scree_sum / static_cast<double>(arid_stats.channel_count));
     const float arid_mean_non_channel_soil = static_cast<float>(
         arid_stats.non_channel_soil_sum / static_cast<double>(arid_stats.non_channel_count));
     const float arid_mean_ridge_rock_scree =
@@ -586,6 +613,8 @@ int main() {
             "terrain lab arid canyon floor should be soilier than non-channel terrain");
     require(arid_mean_ridge_rock_scree > arid_mean_ridge_soil,
             "terrain lab arid canyon should retain exposed rock and scree walls");
+    require(arid_mean_ridge_rock_scree > arid_mean_channel_scree + 0.10F,
+            "terrain lab arid canyon should favor talus and rock on walls over wash floors");
 
     const terrain::TerrainLabFieldData fields_repeat = terrain::generate_terrain_lab_fields(small);
     const terrain::TerrainLabFieldSummary summary = terrain::summarize_terrain_lab_fields(fields);
@@ -775,13 +804,21 @@ int main() {
             "terrain lab noise-off fields should still have drainage structure");
 
     const terrain::TerrainLabMeshData mesh = terrain::make_terrain_lab_mesh(fields);
-    require(mesh.vertices.size() == fields.sample_count(),
-            "terrain lab mesh should include one vertex per field sample");
-    require(mesh.indices.size() == (fields.desc.width - 1U) * (fields.desc.height - 1U) * 6U,
-            "terrain lab mesh should include two triangles per field cell");
-    require(terrain::terrain_lab_triangle_count(mesh) ==
+    const std::size_t terrain_index_count = static_cast<std::size_t>(fields.desc.width - 1U) *
+                                            static_cast<std::size_t>(fields.desc.height - 1U) * 6U;
+    require(mesh.terrain_vertex_count == fields.sample_count(),
+            "terrain lab mesh should track one heightfield vertex per field sample");
+    require(mesh.terrain_index_count == terrain_index_count,
+            "terrain lab mesh should track two terrain triangles per field cell");
+    require(mesh.vertices.size() > fields.sample_count(),
+            "terrain lab mesh should include arid proxy dressing vertices");
+    require(mesh.indices.size() > terrain_index_count,
+            "terrain lab mesh should include arid proxy dressing indices");
+    require(mesh.proxy_vertex_count > 0U && mesh.proxy_index_count > 0U,
+            "terrain lab mesh should expose proxy dressing counts");
+    require(terrain::terrain_lab_triangle_count(mesh) >
                 (fields.desc.width - 1U) * (fields.desc.height - 1U) * 2U,
-            "terrain lab triangle count should match index topology");
+            "terrain lab triangle count should include proxy dressing");
     const terrain::TerrainLabVertex& first_vertex = mesh.vertices.front();
     require_near(first_vertex.position.x, -half_extent, 0.001F,
                  "terrain lab mesh should place first column relative to center origin");

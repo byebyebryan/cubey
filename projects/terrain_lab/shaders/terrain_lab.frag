@@ -71,15 +71,46 @@ float value_noise2(vec2 p) {
 }
 
 vec3 material_color() {
-    vec3 rock = vec3(0.35, 0.36, 0.34);
-    vec3 soil = vec3(0.34, 0.28, 0.20);
-    vec3 scree = vec3(0.49, 0.48, 0.44);
-    vec3 meadow = vec3(0.27, 0.43, 0.21);
-    vec3 forest = vec3(0.10, 0.24, 0.13);
+    vec3 rock = vec3(0.37, 0.35, 0.31);
+    vec3 soil = vec3(0.39, 0.30, 0.19);
+    vec3 scree = vec3(0.52, 0.49, 0.42);
+    vec3 meadow = vec3(0.30, 0.39, 0.18);
+    vec3 forest = vec3(0.11, 0.22, 0.12);
     vec3 snow = vec3(0.84, 0.86, 0.82);
     return rock * frag_material_a.x + soil * frag_material_a.y +
            scree * frag_material_a.z + meadow * frag_material_a.w +
            forest * frag_material_b.x + snow * frag_material_b.y;
+}
+
+float strata_band_strength() {
+    float strata_noise = (value_noise2(frag_world_position.xz * 0.0016) - 0.5) * 0.30;
+    float major_layer = fract(frag_world_position.y * 0.018 + strata_noise);
+    float minor_layer = fract(frag_world_position.y * 0.057 + strata_noise * 1.7 + 0.23);
+    float major = 1.0 - smoothstep(0.018, 0.078, abs(major_layer - 0.5));
+    float minor = 1.0 - smoothstep(0.014, 0.046, abs(minor_layer - 0.5));
+    return clamp(max(major * 0.85, minor * 0.42), 0.0, 1.0);
+}
+
+float caprock_strength() {
+    float rim = clamp(frag_influences.x * 0.55 + frag_influences.z * 0.45, 0.0, 1.0);
+    float upper = smoothstep(0.62, 0.92, frag_terrain.w);
+    float ledge = smoothstep(0.22, 0.68, normalize(frag_normal).y);
+    return rim * upper * ledge * (1.0 - clamp(frag_influences.w, 0.0, 1.0) * 0.55);
+}
+
+float sparse_spot(vec2 world_position, float cell_size_m, float density, float radius, float salt) {
+    vec2 grid_position = world_position / cell_size_m;
+    vec2 cell = floor(grid_position);
+    float selector = hash21(cell + vec2(salt, salt * 1.37));
+    if (selector > density) {
+        return 0.0;
+    }
+
+    vec2 center = vec2(hash21(cell + vec2(7.1 + salt, 3.7)),
+                       hash21(cell + vec2(2.4, 9.2 + salt)));
+    center = mix(vec2(0.18), vec2(0.82), center);
+    float distance_to_center = length(fract(grid_position) - center);
+    return 1.0 - smoothstep(radius, radius + 0.045, distance_to_center);
 }
 
 vec3 final_color() {
@@ -87,20 +118,56 @@ vec3 final_color() {
     float grain = (value_noise2(frag_world_position.xz * 0.012) - 0.5) * 0.05;
     grain += (value_noise2(frag_world_position.xz * 0.041 + vec2(19.0, -7.0)) - 0.5) * 0.035;
     color *= 1.0 + grain;
-    color = mix(color, vec3(0.16, 0.27, 0.21), clamp(frag_hydrology.w, 0.0, 1.0) * 0.14);
-    color = mix(color, vec3(0.18, 0.23, 0.20), clamp(frag_influences.w, 0.0, 1.0) * 0.045);
-    color = mix(color, vec3(0.42, 0.37, 0.25), clamp(frag_material_b.z, 0.0, 1.0) * 0.08);
+    float proxy_geometry = frag_feature_tags.w < -0.5 ? 1.0 : 0.0;
+    color = mix(color, vec3(0.16, 0.24, 0.09),
+                proxy_geometry * clamp(frag_vegetation.y, 0.0, 1.0) * 0.78);
+    color = mix(color, vec3(0.22, 0.20, 0.16),
+                proxy_geometry * clamp(frag_material_a.x + frag_material_a.z, 0.0, 1.0) * 0.55);
+    float channel = clamp(frag_influences.w, 0.0, 1.0);
+    float exposed = clamp((frag_material_a.x + frag_material_a.z) * 0.44 +
+                              frag_influences.x * 0.46 + frag_influences.z * 0.22,
+                          0.0, 1.0) *
+                    (1.0 - channel * 0.52);
+    float wall = smoothstep(0.08, 0.58, 1.0 - normalize(frag_normal).y);
+    float strata = strata_band_strength() * exposed * (0.38 + wall * 0.62);
+    color = mix(color, color * vec3(0.70, 0.66, 0.58), strata * 0.58);
+    color = mix(color, vec3(0.55, 0.47, 0.33), strata * 0.20);
+
+    float caprock = caprock_strength();
+    color = mix(color, vec3(0.25, 0.23, 0.19), caprock * 0.28);
+    color = mix(color, vec3(0.51, 0.44, 0.31), caprock * 0.10);
+
+    color = mix(color, vec3(0.16, 0.27, 0.21), clamp(frag_hydrology.w, 0.0, 1.0) * 0.10);
+    color = mix(color, vec3(0.46, 0.38, 0.23), channel * 0.12);
+    color = mix(color, vec3(0.44, 0.38, 0.25), clamp(frag_material_b.z, 0.0, 1.0) * 0.11);
+
+    float talus_density = clamp(frag_material_a.z * 0.72 + frag_material_a.x * 0.16, 0.0, 0.56);
+    float talus_proxy =
+        sparse_spot(frag_world_position.xz, 34.0, talus_density, 0.095, 43.0) *
+        smoothstep(0.12, 0.42, frag_material_a.z) * (0.42 + exposed * 0.58);
+    color = mix(color, vec3(0.19, 0.18, 0.15), talus_proxy * 0.44);
+
+    float scrub_density = clamp(frag_vegetation.y * 1.55, 0.0, 0.48);
+    float scrub_proxy =
+        sparse_spot(frag_world_position.xz, 58.0, scrub_density, 0.12, 17.0) *
+        smoothstep(0.012, 0.08, frag_vegetation.y) * (1.0 - channel * 0.36);
+    color = mix(color, vec3(0.18, 0.22, 0.12), scrub_proxy * 0.70);
+
+    float grass_mottle =
+        smoothstep(0.10, 0.46, frag_vegetation.x) *
+        smoothstep(0.54, 0.92, value_noise2(frag_world_position.xz * 0.030 + vec2(5.0, -3.0)));
+    color = mix(color, vec3(0.24, 0.31, 0.14), grass_mottle * 0.12);
 
     vec3 normal = normalize(frag_normal);
     vec3 light_direction = normalize(pc.light_direction_debug.xyz);
     float diffuse = max(dot(normal, light_direction), 0.0);
     float sky = clamp(normal.y, 0.0, 1.0);
     float wrap = max(dot(normal, normalize(vec3(-0.4, 0.35, -0.5))), 0.0);
-    float lighting = 0.28 + diffuse * 0.58 + wrap * 0.10 + sky * 0.12;
+    float lighting = 0.25 + diffuse * 0.66 + wrap * 0.12 + sky * 0.10;
     vec3 lit = color * lighting;
 
     float distance_t = smoothstep(3600.0, 9200.0, length(frag_world_position.xz));
-    return mix(lit, vec3(0.58, 0.68, 0.73), distance_t * 0.25);
+    return mix(lit, vec3(0.56, 0.66, 0.71), distance_t * 0.22);
 }
 
 vec3 flow_direction_color(float direction) {

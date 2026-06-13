@@ -77,6 +77,8 @@ The active first slice is an arid mesa canyon:
   response.
 - Grass, shrub, and very sparse tree density fields as data outputs, not a full
   foliage renderer.
+- Final-view readability dressing for strata, caprock, talus speckle, dry-wash
+  floors, and sparse scrub proxies driven by existing fields.
 - Headless and windowed debug views for height, slope, flow, feature graph,
   material, and vegetation-density fields.
 
@@ -168,6 +170,8 @@ mkdir -p outputs/terrain_lab
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view feature-graph --width 1280 --height 720 --output outputs/terrain_lab/feature-graph.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view channel --width 1280 --height 720 --output outputs/terrain_lab/channel.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/material.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view biome-density --width 1280 --height 720 --output outputs/terrain_lab/biome-density.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view slope --width 1280 --height 720 --output outputs/terrain_lab/slope.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view flow-accumulation --width 1280 --height 720 --output outputs/terrain_lab/flow-accumulation.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view noise-off --width 1280 --height 720 --output outputs/terrain_lab/noise-off.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-watershed --debug-view watershed --width 1280 --height 720 --output outputs/terrain_lab/watershed-temperate.png

@@ -27,6 +27,10 @@ struct TerrainLabVertex {
 struct TerrainLabMeshData {
     std::vector<TerrainLabVertex> vertices{};
     std::vector<std::uint32_t> indices{};
+    std::size_t terrain_vertex_count = 0;
+    std::size_t terrain_index_count = 0;
+    std::size_t proxy_vertex_count = 0;
+    std::size_t proxy_index_count = 0;
 
     [[nodiscard]] cubey::render::MeshConfig mesh_config() const;
 };

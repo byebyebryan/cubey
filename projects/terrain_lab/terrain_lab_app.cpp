@@ -251,7 +251,7 @@ class TerrainLabApp {
                     },
                 .clear =
                     {
-                        .color = cubey::render::color_clear_value(0.58F, 0.70F, 0.78F, 1.0F),
+                        .color = cubey::render::color_clear_value(0.56F, 0.68F, 0.74F, 1.0F),
                         .depth = cubey::render::depth_clear_value(),
                     },
             });
