@@ -845,9 +845,10 @@ class CloudsApp {
     }
 
     void record_clouds_draw(const cubey::vulkan::CommandRecorder& recorder,
-                            const cubey::render::ColorTargetView& target) const {
+                            const cubey::render::ColorTargetView& target,
+                            VkExtent2D view_extent) const {
         CloudsPushConstants constants =
-            clouds_push_constants(config_, target.extent, yaw_, pitch_, elapsed_seconds_);
+            clouds_push_constants(config_, view_extent, yaw_, pitch_, elapsed_seconds_);
         constants.render_options.w = static_cast<float>(temporal_frame_index_ % 256U);
         cubey::render::record_render_target_pass(
             recorder, cubey::render::render_target_view(target),
@@ -966,10 +967,12 @@ class CloudsApp {
             graph.add_pass("cloud raymarch", cubey::render::RenderGraphQueueDomain::Graphics)
                 .write_color(cloud_color)
                 .execute(
-                    [this, cloud_color](const cubey::render::RenderGraphExecutionContext& context) {
+                    [this, cloud_color, view_extent = target.extent](
+                        const cubey::render::RenderGraphExecutionContext& context) {
                         record_clouds_draw(
                             context.recorder(),
-                            cubey::render::resolved_color_target_view(context, cloud_color));
+                            cubey::render::resolved_color_target_view(context, cloud_color),
+                            view_extent);
                     });
             graph.add_pass("cloud temporal", cubey::render::RenderGraphQueueDomain::Graphics)
                 .read_texture(cloud_color)
@@ -985,11 +988,12 @@ class CloudsApp {
         } else {
             graph.add_pass("cloud raymarch", cubey::render::RenderGraphQueueDomain::Graphics)
                 .write_color(cloud_history_write)
-                .execute([this, cloud_history_write](
+                .execute([this, cloud_history_write, view_extent = target.extent](
                              const cubey::render::RenderGraphExecutionContext& context) {
                     record_clouds_draw(
                         context.recorder(),
-                        cubey::render::resolved_color_target_view(context, cloud_history_write));
+                        cubey::render::resolved_color_target_view(context, cloud_history_write),
+                        view_extent);
                 });
         }
         graph.add_pass("cloud composite", cubey::render::RenderGraphQueueDomain::Graphics)

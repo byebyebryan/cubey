@@ -199,15 +199,46 @@ float high_view_horizon_cloud_fade(vec3 origin, vec3 direction) {
     return mix(1.0, horizon_fade, high_view);
 }
 
+float local_horizon_filter_strength(vec3 origin, vec3 direction) {
+    float orbit_view = smoothstep(1.5, 2.0, params.camera_forward_mode.w);
+    float local_view = 1.0 - orbit_view;
+    float view_horizon = dot(direction, normalize(origin - planet_center()));
+    float above_horizon = smoothstep(-0.08, 0.06, view_horizon);
+    float lower_sky = 1.0 - smoothstep(0.30, 0.70, view_horizon);
+    float high_view = smoothstep(0.5, 1.1, params.camera_forward_mode.w);
+    return clamp(local_view * above_horizon * lower_sky * mix(0.84, 0.52, high_view), 0.0, 0.84);
+}
+
+vec4 sample_cloud_product_filtered(vec2 uv, float filter_strength) {
+    vec4 center = texture(cloud_product_texture, uv);
+    if (filter_strength <= 0.001) {
+        return center;
+    }
+
+    vec2 texel = 1.0 / vec2(textureSize(cloud_product_texture, 0));
+    vec2 y = vec2(0.0, texel.y);
+    float radius = mix(1.0, 4.6, filter_strength);
+    vec4 blur = center * 0.28;
+    blur += texture(cloud_product_texture, uv + y * radius * 0.45) * 0.18;
+    blur += texture(cloud_product_texture, uv - y * radius * 0.45) * 0.18;
+    blur += texture(cloud_product_texture, uv + y * radius * 0.95) * 0.12;
+    blur += texture(cloud_product_texture, uv - y * radius * 0.95) * 0.12;
+    blur += texture(cloud_product_texture, uv + y * radius * 1.55) * 0.06;
+    blur += texture(cloud_product_texture, uv - y * radius * 1.55) * 0.06;
+    return mix(center, blur, filter_strength);
+}
+
 void main() {
     vec2 uv = frag_position * 0.5 + 0.5;
+    int debug_view = int(params.render_options.x + 0.5);
     vec4 cloud_product = texture(cloud_product_texture, uv);
     vec3 scene_color = cloud_product.rgb;
 
-    int debug_view = int(params.render_options.x + 0.5);
     if (!cloud_product_debug_view(debug_view)) {
         vec3 origin = params.camera_position_radius.xyz;
         vec3 direction = view_direction();
+        cloud_product = sample_cloud_product_filtered(
+            uv, local_horizon_filter_strength(origin, direction));
         BackgroundSample background = sample_background(origin, direction);
         float high_horizon_fade = high_view_horizon_cloud_fade(origin, direction);
         float cloud_transmittance = clamp(cloud_product.a, 0.0, 1.0);

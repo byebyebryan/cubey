@@ -537,11 +537,12 @@ Project checkpoints:
   cloud fading, shared sky-background classification for non-ground rays,
   temporal reconstruction, raw cloud-product debug passthrough, a capped
   spherical-shell local march for surface/high cameras, local vertical
-  render-scale floors, and base/detail density diagnostics for local horizon
-  artifacts. Its current blockers are rough controls, unresolved surface/high
-  horizontal streaking, no weather authoring path, and no promoted renderer API
-  for cloud radiance/transmittance/shadow outputs used by ocean or planet
-  consumers.
+  render-scale floors, final-view-aspect ray tracing for anisotropic cloud
+  targets, local horizon sample jitter/filtering, and base/detail density
+  diagnostics for local horizon artifacts. Its current blockers are rough
+  controls, residual raw surface/high horizontal streaking, no weather authoring
+  path, and no promoted renderer API for cloud radiance/transmittance/shadow
+  outputs used by ocean or planet consumers.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer

@@ -4,7 +4,7 @@
 #include "cubey/atmosphere.glsl"
 #include "clouds_debug.glsl"
 
-const int CLOUDS_MAX_VIEW_STEPS = 64;
+const int CLOUDS_MAX_VIEW_STEPS = 96;
 const int CLOUDS_MAX_LIGHT_STEPS = 8;
 
 layout(push_constant) uniform CloudsParams {
@@ -111,6 +111,11 @@ float local_cloud_max_distance(float camera_altitude, float layer_top) {
     float high_view = smoothstep(0.5, 1.1, params.camera_forward_mode.w);
     float altitude_scale = smoothstep(0.0, 36.0, camera_altitude);
     return mix(140.0, 520.0, max(high_view, altitude_scale)) + layer_top * 5.0;
+}
+
+float cloud_ray_jitter() {
+    vec2 pixel = gl_FragCoord.xy + vec2(params.render_options.w * 5.588238);
+    return fract(52.9829189 * fract(dot(pixel, vec2(0.06711056, 0.00583715))));
 }
 
 CloudRayInterval spherical_cloud_interval(vec3 origin, vec3 direction, vec3 center) {
@@ -347,13 +352,15 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     float long_span_march = smoothstep(0.22, 0.92, result.distance_fraction);
     float adaptive_march = clamp(local_view * grazing_march * long_span_march, 0.0, 1.0);
     int effective_view_steps =
-        clamp(view_steps + int(ceil(float(view_steps) * 0.75 * adaptive_march)), 1,
+        clamp(view_steps + int(ceil(float(view_steps) * 1.35 * adaptive_march)), 1,
               CLOUDS_MAX_VIEW_STEPS);
     result.local_march_fraction = adaptive_march;
 
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     float step_len = (ray_end - ray_start) / float(max(effective_view_steps, 1));
     float edge_fade_distance = max(layer_thickness * 0.55, step_len * 2.0);
+    float ray_jitter = cloud_ray_jitter() - 0.5;
+    float ray_jitter_width = mix(0.12, 0.42, adaptive_march);
     int used_steps = 0;
     float density_sum = 0.0;
     float base_density_sum = 0.0;
@@ -366,11 +373,7 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         if (i >= effective_view_steps) {
             break;
         }
-        float jitter = hash31(vec3(frag_position + params.render_options.w * 0.071,
-                                   float(i) + params.render_options.w * 1.37)) -
-                       0.5;
-        float jitter_width = mix(0.18, 0.54, adaptive_march);
-        float sample_t = ray_start + (float(i) + 0.5 + jitter * jitter_width) * step_len;
+        float sample_t = ray_start + (float(i) + 0.5 + ray_jitter * ray_jitter_width) * step_len;
         vec3 p = origin + direction * sample_t;
         CloudDensityContext density_context =
             cloud_density_context(sample_t, step_len, abs(view_horizon),

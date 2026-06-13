@@ -163,6 +163,18 @@ split and reduces vertical undersampling near the horizon, but captures still
 show residual row-like streaking. Treat the next fix as a sampling/reprojection
 or horizon-reconstruction problem, not just a tuning issue.
 
+The ninth checkpoint fixes one concrete source introduced by anisotropic local
+cloud target scaling: the raymarch pass now traces camera rays with the final
+view aspect ratio instead of the scaled cloud texture aspect. It also swaps the
+local raymarch to pixel/frame stratified ray-start jitter, increases adaptive
+samples only for local grazing rays, fades local detail density earlier for
+distant/grazing samples, and adds a final-only lower-sky vertical filter for
+local horizon composition. This makes the default surface view materially less
+streaky while keeping raw diagnostics unfiltered. The raw density buffer still
+shows row-like structure, so a future pass should replace the local horizon
+march with a better reconstruction or reprojection strategy rather than only
+adding more blur.
+
 The remaining promotion blockers are now less about first visibility and more
 about renderer contracts:
 

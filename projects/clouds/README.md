@@ -86,9 +86,10 @@ Controls:
   the offscreen cloud product render scale before final compositing. Local
   surface/high views keep at least half vertical cloud resolution even in
   `quarter` mode because near-horizon cloud rows are sensitive to vertical
-  undersampling. `quarter` is still the default interactive mode; higher modes
-  remain useful for diagnosis but are not yet real-time enough to be the
-  default.
+  undersampling. The cloud raymarch still uses the final view aspect ratio when
+  the offscreen target is scaled non-uniformly. `quarter` is still the default
+  interactive mode; higher modes remain useful for diagnosis but are not yet
+  real-time enough to be the default.
 - `--cloud-temporal` / `--no-cloud-temporal` toggles per-frame-slot temporal
   reconstruction of the cloud product. Disable it when isolating raw raymarch
   noise or history artifacts.
@@ -124,10 +125,12 @@ planet rendering:
   the planet. The density model separates broad base density from high-frequency
   erosion, suppresses detail for distant/grazing local rays, adds targeted
   adaptive horizon samples, replaces the old single-sample horizon fallback,
-  and keeps a higher vertical cloud target in local quarter-quality views. This
-  reduces hard banding but does not fully solve surface/high horizontal
-  streaks; remaining artifacts are visible in raw `density`, `detail-density`,
-  `density-lod`, and `local-march` diagnostics.
+  keeps a higher vertical cloud target in local quarter-quality views, preserves
+  the final view aspect for anisotropic cloud targets, and applies a final-only
+  lower-sky filter for local horizon composition. This reduces hard banding but
+  does not fully solve the raw surface/high horizontal streak source; remaining
+  artifacts are visible in raw `density`, `detail-density`, `density-lod`, and
+  `local-march` diagnostics.
 - High-oblique background composition now separates sky/space from the
   diagnostic ground proxy and uses sky-only atmosphere classification for the
   background. Any remaining horizon band should be treated as a visual tuning
