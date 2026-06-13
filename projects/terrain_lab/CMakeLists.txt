@@ -2,6 +2,7 @@ if (BUILD_TESTING)
     add_executable(cubey_project_terrain_lab_tests
         terrain_lab_config_tests.cpp
         terrain_lab_fields.cpp
+        terrain_lab_mesh.cpp
     )
     target_include_directories(
         cubey_project_terrain_lab_tests
@@ -11,7 +12,7 @@ if (BUILD_TESTING)
     target_link_libraries(
         cubey_project_terrain_lab_tests
         PRIVATE
-            cubey::core
+            cubey::cubey
             cubey_project_options
             cubey_project_warnings
     )

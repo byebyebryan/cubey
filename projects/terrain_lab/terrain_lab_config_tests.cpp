@@ -1,11 +1,13 @@
 #include "terrain_lab_config.h"
 #include "terrain_lab_fields.h"
+#include "terrain_lab_mesh.h"
 
 #include <cubey/core/run_config.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 
 namespace {
@@ -374,6 +376,92 @@ int main() {
             "terrain lab noise-off structure should remain non-flat");
     require(no_detail_fields.max_flow_accumulation > 1.0F,
             "terrain lab noise-off fields should still have drainage structure");
+
+    const terrain::TerrainLabMeshData mesh = terrain::make_terrain_lab_mesh(fields);
+    require(mesh.vertices.size() == fields.sample_count(),
+            "terrain lab mesh should include one vertex per field sample");
+    require(mesh.indices.size() == (fields.desc.width - 1U) * (fields.desc.height - 1U) * 6U,
+            "terrain lab mesh should include two triangles per field cell");
+    require(terrain::terrain_lab_triangle_count(mesh) ==
+                (fields.desc.width - 1U) * (fields.desc.height - 1U) * 2U,
+            "terrain lab triangle count should match index topology");
+    const terrain::TerrainLabVertex& first_vertex = mesh.vertices.front();
+    require_near(first_vertex.position.x, -half_extent, 0.001F,
+                 "terrain lab mesh should place first column relative to center origin");
+    require_near(first_vertex.position.z, -half_extent, 0.001F,
+                 "terrain lab mesh should place first row relative to center origin");
+    require_near(first_vertex.position.y, fields.height_m.front(), 0.001F,
+                 "terrain lab mesh should use field height as vertex elevation");
+    require_near(first_vertex.terrain.x, fields.height_m.front(), 0.001F,
+                 "terrain lab mesh should pack height");
+    require_near(first_vertex.terrain.y, fields.slope.front(), 0.001F,
+                 "terrain lab mesh should pack slope");
+    require_near(first_vertex.terrain.z, fields.curvature.front(), 0.001F,
+                 "terrain lab mesh should pack curvature");
+    require_near(first_vertex.contributions.x, fields.structure_height_m.front(), 0.001F,
+                 "terrain lab mesh should pack structure contribution");
+    require_near(first_vertex.contributions.y, fields.process_delta_m.front(), 0.001F,
+                 "terrain lab mesh should pack process contribution");
+    require_near(first_vertex.contributions.z, fields.detail_height_m.front(), 0.001F,
+                 "terrain lab mesh should pack detail contribution");
+    require_near(first_vertex.contributions.w,
+                 fields.structure_height_m.front() + fields.process_delta_m.front(), 0.001F,
+                 "terrain lab mesh should pack noise-off height");
+    require_near(first_vertex.hydrology.x, static_cast<float>(fields.flow_direction.front()),
+                 0.001F, "terrain lab mesh should pack flow direction");
+    require_near(first_vertex.hydrology.y, fields.flow_accumulation.front(), 0.001F,
+                 "terrain lab mesh should pack flow accumulation");
+    require_near(first_vertex.hydrology.z, fields.stream_power.front(), 0.001F,
+                 "terrain lab mesh should pack stream power");
+    require_near(first_vertex.hydrology.w, fields.wetness.front(), 0.001F,
+                 "terrain lab mesh should pack wetness");
+    require_near(first_vertex.material_a.x, fields.material_masks.front().rock, 0.001F,
+                 "terrain lab mesh should pack rock material");
+    require_near(first_vertex.material_a.y, fields.material_masks.front().soil, 0.001F,
+                 "terrain lab mesh should pack soil material");
+    require_near(first_vertex.material_a.z, fields.material_masks.front().scree, 0.001F,
+                 "terrain lab mesh should pack scree material");
+    require_near(first_vertex.material_a.w, fields.material_masks.front().meadow, 0.001F,
+                 "terrain lab mesh should pack meadow material");
+    require_near(first_vertex.material_b.x, fields.material_masks.front().forest, 0.001F,
+                 "terrain lab mesh should pack forest material");
+    require_near(first_vertex.material_b.y, fields.material_masks.front().snow, 0.001F,
+                 "terrain lab mesh should pack snow material");
+    require_near(first_vertex.material_b.z, fields.deposition.front(), 0.001F,
+                 "terrain lab mesh should pack deposition");
+    require_near(first_vertex.vegetation.x, fields.grass_density.front(), 0.001F,
+                 "terrain lab mesh should pack grass density");
+    require_near(first_vertex.vegetation.y, fields.shrub_density.front(), 0.001F,
+                 "terrain lab mesh should pack shrub density");
+    require_near(first_vertex.vegetation.z, fields.tree_density.front(), 0.001F,
+                 "terrain lab mesh should pack tree density");
+    require_near(first_vertex.vegetation.w, fields.canopy_height_m.front(), 0.001F,
+                 "terrain lab mesh should pack canopy height");
+    require_near(first_vertex.influences.x, fields.ridge_influence.front(), 0.001F,
+                 "terrain lab mesh should pack ridge influence");
+    require_near(first_vertex.influences.y, fields.valley_influence.front(), 0.001F,
+                 "terrain lab mesh should pack valley influence");
+    require_near(first_vertex.influences.z, fields.basin_influence.front(), 0.001F,
+                 "terrain lab mesh should pack basin influence");
+
+    const std::size_t center_index = fields.index(fields.desc.width / 2U, fields.desc.height / 2U);
+    require_near(mesh.vertices[center_index].position.x, 0.0F, 0.001F,
+                 "terrain lab mesh center vertex should land on origin X");
+    require_near(mesh.vertices[center_index].position.z, 0.0F, 0.001F,
+                 "terrain lab mesh center vertex should land on origin Z");
+    for (const terrain::TerrainLabVertex& vertex : mesh.vertices) {
+        const float normal_length =
+            std::sqrt((vertex.normal.x * vertex.normal.x) +
+                      (vertex.normal.y * vertex.normal.y) +
+                      (vertex.normal.z * vertex.normal.z));
+        require_near(normal_length, 1.0F, 0.001F,
+                     "terrain lab mesh normals should be normalized");
+        require(vertex.terrain.w >= 0.0F && vertex.terrain.w <= 1.0F,
+                "terrain lab mesh should pack normalized height");
+    }
+    for (const std::uint32_t index : mesh.indices) {
+        require(index < mesh.vertices.size(), "terrain lab mesh indices should address vertices");
+    }
 
     return 0;
 }
