@@ -134,6 +134,15 @@ struct WatershedSampleFeatures {
     };
 }
 
+[[nodiscard]] Point2 warp_sample_for_watershed(Point2 p, const TerrainLabConfig& config) {
+    return {
+        .x = p.x + fbm((p.x * 1.6F) - 5.0F, (p.z * 1.6F) + 1.0F, config.seed + 1301U, 4) *
+                       0.075F,
+        .z = p.z + fbm((p.x * 1.7F) + 3.0F, (p.z * 1.7F) - 6.0F, config.seed + 1303U, 4) *
+                       0.060F,
+    };
+}
+
 [[nodiscard]] std::array<WatershedBasinFeature, kTerrainLabWatershedCount> watershed_basins(
     const TerrainLabConfig& config) {
     std::array<WatershedBasinFeature, kTerrainLabWatershedCount> basins{};
@@ -161,15 +170,16 @@ struct WatershedSampleFeatures {
     Point2 p, const TerrainLabGridDesc& desc,
     const std::array<WatershedBasinFeature, kTerrainLabWatershedCount>& basins,
     const TerrainLabConfig& config) {
+    const Point2 warped = warp_sample_for_watershed(p, config);
     float best_distance = std::numeric_limits<float>::max();
     float second_distance = std::numeric_limits<float>::max();
     std::uint32_t watershed_id = 0;
     for (std::uint32_t index = 0; index < kTerrainLabWatershedCount; ++index) {
-        const Point2 offset{p.x - basins[index].center.x, p.z - basins[index].center.z};
+        const Point2 offset{warped.x - basins[index].center.x, warped.z - basins[index].center.z};
         const float warp =
-            fbm((p.x * 2.0F) + static_cast<float>(index),
-                (p.z * 2.0F) - static_cast<float>(index), config.seed + 1709U + index, 3) *
-            0.065F;
+            fbm((warped.x * 2.1F) + static_cast<float>(index),
+                (warped.z * 2.1F) - static_cast<float>(index), config.seed + 1709U + index, 3) *
+            0.045F;
         const float distance = (offset.x * offset.x * 0.96F) + (offset.z * offset.z * 0.78F) +
                                warp;
         if (distance < best_distance) {
@@ -182,28 +192,34 @@ struct WatershedSampleFeatures {
     }
 
     const WatershedBasinFeature basin = basins[watershed_id];
-    const float t = saturate((p.z + 1.0F) * 0.5F);
+    const float t = saturate((warped.z + 1.0F) * 0.5F);
     const float main_channel_x =
         lerp(basin.center.x * 0.72F, basin.outlet_x, t) +
         std::sin((t * 3.14159265359F) + basin.bend_phase) * 0.15F;
-    const float main_distance = std::abs(p.x - main_channel_x);
+    const float main_distance = std::abs(warped.x - main_channel_x);
     const float main_channel =
-        (1.0F - smoothstep(0.026F, 0.18F, main_distance)) * smoothstep(-0.92F, -0.56F, p.z);
+        (1.0F - smoothstep(0.026F, 0.18F, main_distance)) *
+        smoothstep(-0.92F, -0.56F, warped.z);
 
     const float tributary_center =
         main_channel_x + basin.tributary_side * (0.25F - (t * 0.13F));
     const float tributary_line =
-        tributary_center + basin.tributary_side * (p.z - basin.center.z) * 0.38F;
-    const float tributary_distance = std::abs(p.x - tributary_line);
-    const float tributary_gate = smoothstep(-0.72F, -0.05F, p.z) *
-                                 (1.0F - smoothstep(0.34F, 0.86F, p.z));
+        tributary_center + basin.tributary_side * (warped.z - basin.center.z) * 0.38F;
+    const float tributary_distance = std::abs(warped.x - tributary_line);
+    const float tributary_gate = smoothstep(-0.72F, -0.05F, warped.z) *
+                                 (1.0F - smoothstep(0.34F, 0.86F, warped.z));
     const float tributary_channel =
         (1.0F - smoothstep(0.02F, 0.14F, tributary_distance)) * tributary_gate * 0.52F;
 
+    const float divide_noise =
+        fbm((p.x * 4.8F) + 8.0F, (p.z * 4.8F) - 11.0F, config.seed + 1723U, 4) * 0.5F +
+        0.5F;
+    const float distance_gap = std::max(second_distance - best_distance, 0.0F);
     const float divide_influence =
-        1.0F - smoothstep(0.015F, 0.36F, std::max(second_distance - best_distance, 0.0F));
+        (1.0F - smoothstep(0.018F, 0.30F, distance_gap)) *
+        lerp(0.58F, 0.86F, divide_noise);
     const float channel_influence =
-        saturate((main_channel + tributary_channel) * (1.0F - divide_influence * 0.32F));
+        saturate((main_channel + tributary_channel) * (1.0F - divide_influence * 0.45F));
     const float channel_distance_norm = std::min(main_distance, tributary_distance);
     const float channel_distance_m =
         channel_distance_norm * std::max(half_extent_x_m(desc), half_extent_z_m(desc));
@@ -785,18 +801,20 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
             const Point2 p = normalized_sample(fields.desc, x, y);
             const float divide = fields.divide_influence[sample];
             const float channel = fields.channel_influence[sample];
-            const float ridge = saturate((ridge_influence(p, config) * 0.58F) + (divide * 0.54F));
+            const float soft_divide = smoothstep(0.18F, 0.82F, divide);
+            const float ridge =
+                saturate((ridge_influence(p, config) * 0.68F) + (soft_divide * 0.24F));
             const float basin = saturate((basin_influence(p, config) * 0.58F) +
-                                         (1.0F - divide) * 0.12F);
+                                         (1.0F - soft_divide) * 0.10F);
             const float valley = saturate((valley_influence(p, config) * 0.36F) +
-                                          (channel * 0.82F));
+                                          (channel * 0.56F));
             const float headwater = saturate((1.0F - p.z) * 0.5F);
             const float broad =
                 fbm(p.x * 1.3F - 3.0F, p.z * 1.3F + 5.0F, config.seed + 101U, 5);
             const float structure =
-                ((headwater * 0.54F) + (ridge * 0.56F) + (divide * 0.26F) +
+                ((headwater * 0.54F) + (ridge * 0.54F) + (soft_divide * 0.10F) +
                  (broad * 0.12F) - (basin * 0.20F) - (valley * 0.30F) -
-                 (channel * 0.18F) - 0.18F) *
+                 (channel * 0.10F) - 0.18F) *
                 config.elevation_scale_m * config.structure_strength;
 
             fields.ridge_influence[sample] = ridge;
