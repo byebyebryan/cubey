@@ -66,25 +66,32 @@ Terrain Lab should stay distinct from the existing terrain-adjacent projects:
 
 ## First Target Slice
 
-The first implementation slice should be a temperate mountain watershed:
+The active first slice is an arid mesa canyon:
 
 - 4-16 km local region.
-- Ridge and basin structure generated before detail noise.
-- Drainage network, flow accumulation, valley floors, and wetness fields.
-- Slope-driven rock, soil, scree, meadow, and snow/altitude masks.
-- Grass, shrub, and tree density fields as data outputs, not a full foliage
-  renderer.
-- Headless and windowed debug views for height, slope, flow, watershed,
+- Mesa benches, canyon rims, dry washes, and valley floors generated before
+  detail noise.
+- Flow accumulation and channel fields used as dry-wash structure rather than
+  a wet river network.
+- Slope-driven rock, soil, scree, sparse meadow/scrub, and no-snow material
+  response.
+- Grass, shrub, and very sparse tree density fields as data outputs, not a full
+  foliage renderer.
+- Headless and windowed debug views for height, slope, flow, feature graph,
   material, and vegetation-density fields.
 
-This slice is intentionally inland. Coastal work can reconnect later through
-`procedural_terrain` once the general terrain field model is stronger.
+The earlier temperate mountain watershed remains available as an explicit
+fixture with `--terrain-lab-slice temperate-mountain-watershed`. It is useful
+for validating watershed ids, divide fields, channel-flow alignment, and wetter
+vegetation masks without forcing the arid slice into a quadrant-style layout.
+Coastal work can reconnect later through `procedural_terrain` once the general
+terrain field model is stronger.
 
 ## Current Workbench
 
-`TerrainLabConfig` reads common grid width, grid height, and debug-view settings
-from `RunConfig`, while leaving coast-oriented `terrain.*` flags to
-`procedural_terrain`.
+`TerrainLabConfig` reads common grid width, grid height, slice-preset, and
+debug-view settings from `RunConfig`, while leaving coast-oriented `terrain.*`
+flags to `procedural_terrain`.
 
 Generated CPU fields include:
 
@@ -101,8 +108,9 @@ Generated CPU fields include:
 Field summaries also expose naturalization diagnostics for channel/divide
 sample counts, divide-channel height separation, channel-flow alignment,
 material entropy, and boundary edge steps. These are intended as iteration
-guardrails for terrain shaping, not as a claim that the slice is physically
-complete.
+guardrails for terrain shaping. Some checks are more meaningful for the
+watershed fixture than for the arid default, where the divide field marks mesa
+rims and interfluves rather than basin ownership.
 
 The renderer converts those fields into a CPU heightfield mesh and packs the
 main diagnostic payloads into vertex attributes. The current standalone app
@@ -146,7 +154,7 @@ Useful run commands:
 ./build/dev/projects/terrain_lab/terrain_lab --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view flow-accumulation --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view feature-graph --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --debug-view watershed --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice temperate-mountain-watershed --debug-view watershed --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --headless --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab-material.png
 ```
@@ -157,11 +165,10 @@ Useful local review output commands:
 mkdir -p outputs/terrain_lab
 ./build/dev/projects/terrain_lab/terrain_lab --headless --width 1280 --height 720 --output outputs/terrain_lab/final.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view feature-graph --width 1280 --height 720 --output outputs/terrain_lab/feature-graph.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view watershed --width 1280 --height 720 --output outputs/terrain_lab/watershed.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view channel --width 1280 --height 720 --output outputs/terrain_lab/channel.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view divide --width 1280 --height 720 --output outputs/terrain_lab/divide.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/material.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view flow-accumulation --width 1280 --height 720 --output outputs/terrain_lab/flow-accumulation.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-watershed --debug-view watershed --width 1280 --height 720 --output outputs/terrain_lab/watershed-temperate.png
 ```
 
 `outputs/` is ignored by Git; these captures are local review artifacts.
@@ -169,14 +176,12 @@ mkdir -p outputs/terrain_lab
 ## Status
 
 Current status: CPU field foundation plus a minimal standalone visual workbench.
-The generator includes a deterministic four-basin watershed core with divide,
-channel, and watershed-id fields. The latest pass softens hard watershed
-ownership, derives stronger channels from initial flow accumulation, applies a
-small slope-relaxation process, and breaks up material masks with semantic
-noise. Channels drive valley incision, wetness, and deposition, while divide
-fields keep high-ground structure explicit without dominating the final height.
-The workbench has deterministic mesh extraction, field/debug shading, windowed
-and headless render paths, PNG smoke coverage, and shader/debug-view sync tests.
+The default generator now targets an arid mesa canyon with mesa benches, canyon
+rims, dry washes, talus/scree response, sparse scrub density, and low wetness.
+The older deterministic four-basin temperate watershed core remains as an
+explicit slice fixture with divide, channel, and watershed-id fields. The
+workbench has deterministic mesh extraction, field/debug shading, windowed and
+headless render paths, PNG smoke coverage, and shader/debug-view sync tests.
 
 Still out of scope for the current slice: live ImGui editing, runtime
 regeneration, a true drainage graph with stream connectivity guarantees, tiled

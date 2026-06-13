@@ -49,10 +49,10 @@ Current implementation notes:
 - CPU fields cover height, contribution, slope, curvature, drainage, wetness,
   deposition, material, vegetation-density, watershed, and influence data.
 
-## Phase 2: Temperate Mountain Watershed
+## Phase 2: Temperate Mountain Watershed Reference
 
-Status: naturalized watershed core landed; deeper graph and stream-network work
-remains.
+Status: naturalized watershed core landed and retained as an explicit fixture;
+deeper graph and stream-network work remains.
 
 Goal: prove one coherent inland terrain slice.
 
@@ -87,8 +87,12 @@ Current implementation notes:
   structure/process/detail contribution accounting;
 - tests compare channel samples against non-channel terrain and divide samples
   against channels;
+- `--terrain-lab-slice temperate-mountain-watershed` keeps this behavior
+  available for tests and comparison captures after the arid slice became the
+  default;
 - remaining work is a richer feature graph with stronger stream connectivity,
-  basin hierarchy, and slice-specific controls.
+  basin hierarchy, and slice-specific controls if the watershed slice becomes
+  active again.
 
 ## Phase 3: Renderer Workbench
 
@@ -116,7 +120,8 @@ Current implementation notes:
 - windowed orbit inspection and headless PNG capture are registered;
 - final and flow-accumulation PNG smokes use conservative image stats to catch
   blank output;
-- feature-graph and watershed PNG smokes cover the first watershed diagnostics;
+- feature-graph PNG smokes cover the default arid feature payload, while the
+  watershed PNG smoke pins the explicit watershed slice;
 - fragment shader debug constants are checked against the C++ enum;
 - live ImGui controls, runtime regeneration, tiled meshes, and atmosphere-backed
   lighting are intentionally deferred.
@@ -171,6 +176,8 @@ Success criteria:
 
 ## Phase 6: Additional Terrain Slices
 
+Status: active for arid mesa canyon.
+
 Candidate slices:
 
 - arid mesa canyon: strata, cliffs, dry washes, talus, sparse vegetation;
@@ -185,6 +192,16 @@ Candidate slices:
 Each slice should add only the feature/process vocabulary needed for that
 terrain type. Shared abstractions should wait until at least two slices need the
 same mechanism.
+
+Current implementation notes:
+
+- arid mesa canyon is the default slice and owns the first non-watershed
+  terrain identity;
+- generated fields include mesa/rim/divide influence, dry canyon and side-wash
+  channels, low wetness, no snow, rock/scree/soil-heavy material masks, sparse
+  scrub density, and very low tree density;
+- the next arid work should be visual tuning and slice-specific process controls
+  before adding another biome.
 
 ## Phase 7: Integration Adapters
 

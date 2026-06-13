@@ -14,6 +14,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #ifndef CUBEY_TERRAIN_LAB_SOURCE_DIR
 #error "CUBEY_TERRAIN_LAB_SOURCE_DIR must be defined by the terrain_lab test target"
@@ -41,6 +42,114 @@ float material_sum(const cubey::projects::terrain_lab::TerrainLabMaterialMask& m
     return mask.rock + mask.soil + mask.scree + mask.meadow + mask.forest + mask.snow;
 }
 
+struct FieldSampleStats {
+    bool saw_material_variation = false;
+    bool saw_tree_density = false;
+    bool saw_detail = false;
+    bool saw_process = false;
+    bool saw_divide = false;
+    bool saw_channel = false;
+    std::vector<bool> saw_watershed{};
+    double rock_sum = 0.0;
+    double soil_sum = 0.0;
+    double scree_sum = 0.0;
+    double meadow_sum = 0.0;
+    double forest_sum = 0.0;
+    double snow_sum = 0.0;
+    double tree_sum = 0.0;
+    double channel_height_sum = 0.0;
+    double channel_wetness_sum = 0.0;
+    double channel_deposition_sum = 0.0;
+    double channel_flow_sum = 0.0;
+    double non_channel_wetness_sum = 0.0;
+    double non_channel_deposition_sum = 0.0;
+    double non_channel_flow_sum = 0.0;
+    double divide_height_sum = 0.0;
+    std::size_t channel_count = 0;
+    std::size_t non_channel_count = 0;
+    std::size_t divide_count = 0;
+};
+
+FieldSampleStats
+inspect_field_samples(const cubey::projects::terrain_lab::TerrainLabFieldData& fields) {
+    FieldSampleStats stats;
+    stats.saw_watershed.assign(fields.watershed_count, false);
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        require(std::isfinite(fields.height_m[index]), "terrain lab height should be finite");
+        require(std::isfinite(fields.structure_height_m[index]),
+                "terrain lab structure should be finite");
+        require(std::isfinite(fields.process_delta_m[index]),
+                "terrain lab process should be finite");
+        require(std::isfinite(fields.detail_height_m[index]),
+                "terrain lab detail should be finite");
+        require(std::isfinite(fields.slope[index]), "terrain lab slope should be finite");
+        require(std::isfinite(fields.curvature[index]), "terrain lab curvature should be finite");
+        require(fields.flow_direction[index] <= 8U, "terrain lab flow direction should be valid");
+        require(fields.flow_accumulation[index] >= 0.0F,
+                "terrain lab flow accumulation should be nonnegative");
+        require(fields.stream_power[index] >= 0.0F,
+                "terrain lab stream power should be nonnegative");
+        require(fields.wetness[index] >= 0.0F && fields.wetness[index] <= 1.0F,
+                "terrain lab wetness should be normalized");
+        require(fields.deposition[index] >= 0.0F && fields.deposition[index] <= 1.0F,
+                "terrain lab deposition should be normalized");
+        require(fields.grass_density[index] >= 0.0F && fields.grass_density[index] <= 1.0F,
+                "terrain lab grass density should be normalized");
+        require(fields.shrub_density[index] >= 0.0F && fields.shrub_density[index] <= 1.0F,
+                "terrain lab shrub density should be normalized");
+        require(fields.tree_density[index] >= 0.0F && fields.tree_density[index] <= 1.0F,
+                "terrain lab tree density should be normalized");
+        require(fields.canopy_height_m[index] >= 0.0F,
+                "terrain lab canopy height should be nonnegative");
+        require(fields.watershed_id[index] < fields.watershed_count,
+                "terrain lab watershed id should be valid");
+        require(fields.divide_influence[index] >= 0.0F && fields.divide_influence[index] <= 1.0F,
+                "terrain lab divide influence should be normalized");
+        require(fields.channel_influence[index] >= 0.0F && fields.channel_influence[index] <= 1.0F,
+                "terrain lab channel influence should be normalized");
+        require(fields.channel_distance_m[index] >= 0.0F,
+                "terrain lab channel distance should be nonnegative");
+        require_near(material_sum(fields.material_masks[index]), 1.0F, 0.001F,
+                     "terrain lab material masks should sum to one");
+
+        const cubey::projects::terrain_lab::TerrainLabMaterialMask& material =
+            fields.material_masks[index];
+        stats.rock_sum += material.rock;
+        stats.soil_sum += material.soil;
+        stats.scree_sum += material.scree;
+        stats.meadow_sum += material.meadow;
+        stats.forest_sum += material.forest;
+        stats.snow_sum += material.snow;
+        stats.tree_sum += fields.tree_density[index];
+        stats.saw_material_variation = stats.saw_material_variation || material.rock > 0.05F ||
+                                       material.forest > 0.05F || material.snow > 0.05F;
+        stats.saw_tree_density = stats.saw_tree_density || fields.tree_density[index] > 0.01F;
+        stats.saw_detail = stats.saw_detail || std::abs(fields.detail_height_m[index]) > 0.001F;
+        stats.saw_process = stats.saw_process || std::abs(fields.process_delta_m[index]) > 0.001F;
+        stats.saw_divide = stats.saw_divide || fields.divide_influence[index] > 0.2F;
+        stats.saw_channel = stats.saw_channel || fields.channel_influence[index] > 0.2F;
+        stats.saw_watershed[fields.watershed_id[index]] = true;
+        if (fields.channel_influence[index] > 0.45F) {
+            stats.channel_height_sum += fields.height_m[index];
+            stats.channel_wetness_sum += fields.wetness[index];
+            stats.channel_deposition_sum += fields.deposition[index];
+            stats.channel_flow_sum += fields.flow_accumulation[index];
+            ++stats.channel_count;
+        }
+        if (fields.channel_influence[index] < 0.05F && fields.divide_influence[index] < 0.25F) {
+            stats.non_channel_wetness_sum += fields.wetness[index];
+            stats.non_channel_deposition_sum += fields.deposition[index];
+            stats.non_channel_flow_sum += fields.flow_accumulation[index];
+            ++stats.non_channel_count;
+        }
+        if (fields.divide_influence[index] > 0.55F && fields.channel_influence[index] < 0.20F) {
+            stats.divide_height_sum += fields.height_m[index];
+            ++stats.divide_count;
+        }
+    }
+    return stats;
+}
+
 std::string read_text_file(const std::filesystem::path& path) {
     std::ifstream stream(path);
     if (!stream) {
@@ -55,13 +164,11 @@ void require_contains(const std::string& text, const std::string& needle) {
     require(text.find(needle) != std::string::npos, "expected text not found: " + needle);
 }
 
-void require_shader_debug_constant(
-    const std::string& shader_source,
-    cubey::projects::terrain_lab::TerrainLabDebugView view,
-    const char* shader_suffix) {
+void require_shader_debug_constant(const std::string& shader_source,
+                                   cubey::projects::terrain_lab::TerrainLabDebugView view,
+                                   const char* shader_suffix) {
     const std::string expected = "const uint TERRAIN_LAB_VIEW_" + std::string(shader_suffix) +
-                                 " = " +
-                                 std::to_string(static_cast<std::uint32_t>(view)) + "u;";
+                                 " = " + std::to_string(static_cast<std::uint32_t>(view)) + "u;";
     require_contains(shader_source, expected);
 }
 
@@ -192,8 +299,8 @@ int main() {
                                   terrain::TerrainLabDebugView::Watershed, "WATERSHED");
     require_shader_debug_constant(terrain_lab_fragment_shader,
                                   terrain::TerrainLabDebugView::Channel, "CHANNEL");
-    require_shader_debug_constant(terrain_lab_fragment_shader,
-                                  terrain::TerrainLabDebugView::Divide, "DIVIDE");
+    require_shader_debug_constant(terrain_lab_fragment_shader, terrain::TerrainLabDebugView::Divide,
+                                  "DIVIDE");
 
     bool rejected = false;
     try {
@@ -321,16 +428,15 @@ int main() {
     terrain::validate_terrain_lab_fields(fields);
     const float half_extent =
         static_cast<float>(fields.desc.width - 1U) * fields.desc.cell_size_m * 0.5F;
-    require(fields.sample_count() == 65U * 65U,
-            "terrain lab fields should match grid dimensions");
+    require(fields.sample_count() == 65U * 65U, "terrain lab fields should match grid dimensions");
     require_near(terrain::terrain_lab_grid_sample_x_m(fields.desc, 0U), -half_extent, 0.001F,
                  "terrain lab grid should be centered on X");
     require_near(terrain::terrain_lab_grid_sample_z_m(fields.desc, 0U), -half_extent, 0.001F,
                  "terrain lab grid should be centered on Z");
-    require_near(terrain::terrain_lab_grid_sample_x_m(fields.desc, fields.desc.width / 2U),
-                 0.0F, 0.001F, "terrain lab center sample should land on origin X");
-    require_near(terrain::terrain_lab_grid_sample_z_m(fields.desc, fields.desc.height / 2U),
-                 0.0F, 0.001F, "terrain lab center sample should land on origin Z");
+    require_near(terrain::terrain_lab_grid_sample_x_m(fields.desc, fields.desc.width / 2U), 0.0F,
+                 0.001F, "terrain lab center sample should land on origin X");
+    require_near(terrain::terrain_lab_grid_sample_z_m(fields.desc, fields.desc.height / 2U), 0.0F,
+                 0.001F, "terrain lab center sample should land on origin Z");
 
     require(fields.height_m.size() == fields.sample_count(),
             "terrain lab height field size mismatch");
@@ -377,147 +483,46 @@ int main() {
             "terrain lab channel field size mismatch");
     require(fields.channel_distance_m.size() == fields.sample_count(),
             "terrain lab channel distance field size mismatch");
-    require(fields.watershed_count == 4U, "terrain lab watershed graph should expose four basins");
+    require(fields.watershed_count == 1U, "terrain lab arid slice should use one local basin");
     require(fields.max_channel_distance_m > fields.desc.cell_size_m,
-            "terrain lab watershed graph should track channel distance range");
+            "terrain lab feature graph should track channel distance range");
 
     require(fields.max_height_m - fields.min_height_m > 100.0F,
             "terrain lab fields should produce non-flat terrain");
     require(fields.max_slope > 0.0F, "terrain lab fields should produce nonzero slopes");
-    require(fields.max_abs_curvature > 0.0F,
-            "terrain lab fields should produce nonzero curvature");
-    require(fields.max_flow_accumulation > 1.0F,
-            "terrain lab fields should accumulate drainage");
-    require(fields.max_stream_power >= 0.0F,
-            "terrain lab stream power should stay nonnegative");
+    require(fields.max_abs_curvature > 0.0F, "terrain lab fields should produce nonzero curvature");
+    require(fields.max_flow_accumulation > 1.0F, "terrain lab fields should accumulate drainage");
+    require(fields.max_stream_power >= 0.0F, "terrain lab stream power should stay nonnegative");
     require(fields.max_wetness > 0.0F && fields.max_wetness <= 1.0F,
             "terrain lab wetness should be normalized");
     require(fields.max_deposition > 0.0F && fields.max_deposition <= 1.0F,
             "terrain lab deposition should be normalized");
 
-    bool saw_material_variation = false;
-    bool saw_tree_density = false;
-    bool saw_detail = false;
-    bool saw_process = false;
-    bool saw_divide = false;
-    bool saw_channel = false;
-    std::array<bool, 4> saw_watershed{};
-    double channel_height_sum = 0.0;
-    double channel_wetness_sum = 0.0;
-    double channel_deposition_sum = 0.0;
-    double channel_flow_sum = 0.0;
-    double non_channel_wetness_sum = 0.0;
-    double non_channel_deposition_sum = 0.0;
-    double non_channel_flow_sum = 0.0;
-    double divide_height_sum = 0.0;
-    std::size_t channel_count = 0;
-    std::size_t non_channel_count = 0;
-    std::size_t divide_count = 0;
-    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
-        require(std::isfinite(fields.height_m[index]), "terrain lab height should be finite");
-        require(std::isfinite(fields.structure_height_m[index]),
-                "terrain lab structure should be finite");
-        require(std::isfinite(fields.process_delta_m[index]),
-                "terrain lab process should be finite");
-        require(std::isfinite(fields.detail_height_m[index]), "terrain lab detail should be finite");
-        require(std::isfinite(fields.slope[index]), "terrain lab slope should be finite");
-        require(std::isfinite(fields.curvature[index]), "terrain lab curvature should be finite");
-        require(fields.flow_direction[index] <= 8U, "terrain lab flow direction should be valid");
-        require(fields.flow_accumulation[index] >= 0.0F,
-                "terrain lab flow accumulation should be nonnegative");
-        require(fields.stream_power[index] >= 0.0F,
-                "terrain lab stream power should be nonnegative");
-        require(fields.wetness[index] >= 0.0F && fields.wetness[index] <= 1.0F,
-                "terrain lab wetness should be normalized");
-        require(fields.deposition[index] >= 0.0F && fields.deposition[index] <= 1.0F,
-                "terrain lab deposition should be normalized");
-        require(fields.grass_density[index] >= 0.0F && fields.grass_density[index] <= 1.0F,
-                "terrain lab grass density should be normalized");
-        require(fields.shrub_density[index] >= 0.0F && fields.shrub_density[index] <= 1.0F,
-                "terrain lab shrub density should be normalized");
-        require(fields.tree_density[index] >= 0.0F && fields.tree_density[index] <= 1.0F,
-                "terrain lab tree density should be normalized");
-        require(fields.canopy_height_m[index] >= 0.0F,
-                "terrain lab canopy height should be nonnegative");
-        require(fields.watershed_id[index] < fields.watershed_count,
-                "terrain lab watershed id should be valid");
-        require(fields.divide_influence[index] >= 0.0F && fields.divide_influence[index] <= 1.0F,
-                "terrain lab divide influence should be normalized");
-        require(fields.channel_influence[index] >= 0.0F &&
-                    fields.channel_influence[index] <= 1.0F,
-                "terrain lab channel influence should be normalized");
-        require(fields.channel_distance_m[index] >= 0.0F,
-                "terrain lab channel distance should be nonnegative");
-        require_near(material_sum(fields.material_masks[index]), 1.0F, 0.001F,
-                     "terrain lab material masks should sum to one");
-        saw_material_variation =
-            saw_material_variation || fields.material_masks[index].rock > 0.05F ||
-            fields.material_masks[index].forest > 0.05F || fields.material_masks[index].snow > 0.05F;
-        saw_tree_density = saw_tree_density || fields.tree_density[index] > 0.01F;
-        saw_detail = saw_detail || std::abs(fields.detail_height_m[index]) > 0.001F;
-        saw_process = saw_process || std::abs(fields.process_delta_m[index]) > 0.001F;
-        saw_divide = saw_divide || fields.divide_influence[index] > 0.2F;
-        saw_channel = saw_channel || fields.channel_influence[index] > 0.2F;
-        saw_watershed[fields.watershed_id[index]] = true;
-        if (fields.channel_influence[index] > 0.45F) {
-            channel_height_sum += fields.height_m[index];
-            channel_wetness_sum += fields.wetness[index];
-            channel_deposition_sum += fields.deposition[index];
-            channel_flow_sum += fields.flow_accumulation[index];
-            ++channel_count;
-        }
-        if (fields.channel_influence[index] < 0.05F && fields.divide_influence[index] < 0.25F) {
-            non_channel_wetness_sum += fields.wetness[index];
-            non_channel_deposition_sum += fields.deposition[index];
-            non_channel_flow_sum += fields.flow_accumulation[index];
-            ++non_channel_count;
-        }
-        if (fields.divide_influence[index] > 0.55F && fields.channel_influence[index] < 0.20F) {
-            divide_height_sum += fields.height_m[index];
-            ++divide_count;
-        }
-    }
-    require(saw_material_variation, "terrain lab should produce varied material masks");
-    require(saw_tree_density, "terrain lab should produce tree density fields");
-    require(saw_detail, "terrain lab should produce detail contribution fields");
-    require(saw_process, "terrain lab should produce process contribution fields");
-    require(saw_divide, "terrain lab should produce divide influence fields");
-    require(saw_channel, "terrain lab should produce channel influence fields");
-    require(std::all_of(saw_watershed.begin(), saw_watershed.end(), [](bool saw) { return saw; }),
-            "terrain lab should rasterize every watershed basin");
-    require(channel_count > 16U, "terrain lab should produce enough channel samples to compare");
-    require(non_channel_count > 16U,
-            "terrain lab should produce enough non-channel samples to compare");
-    require(divide_count > 16U, "terrain lab should produce enough divide samples to compare");
-    const float mean_channel_height =
-        static_cast<float>(channel_height_sum / static_cast<double>(channel_count));
-    const float mean_channel_wetness =
-        static_cast<float>(channel_wetness_sum / static_cast<double>(channel_count));
-    const float mean_channel_deposition =
-        static_cast<float>(channel_deposition_sum / static_cast<double>(channel_count));
-    const float mean_channel_flow =
-        static_cast<float>(channel_flow_sum / static_cast<double>(channel_count));
-    const float mean_non_channel_wetness =
-        static_cast<float>(non_channel_wetness_sum / static_cast<double>(non_channel_count));
-    const float mean_non_channel_deposition =
-        static_cast<float>(non_channel_deposition_sum / static_cast<double>(non_channel_count));
-    const float mean_non_channel_flow =
-        static_cast<float>(non_channel_flow_sum / static_cast<double>(non_channel_count));
-    const float mean_divide_height =
-        static_cast<float>(divide_height_sum / static_cast<double>(divide_count));
-    require(mean_channel_wetness > mean_non_channel_wetness + 0.04F,
-            "terrain lab channels should be wetter than non-channel terrain");
-    require(mean_channel_deposition > mean_non_channel_deposition + 0.02F,
-            "terrain lab channels should be more depositional than non-channel terrain");
-    require(mean_channel_flow > mean_non_channel_flow,
-            "terrain lab channels should carry more accumulated flow than non-channel terrain");
-    require(mean_divide_height > mean_channel_height + 15.0F,
-            "terrain lab divides should remain higher than channels");
+    const FieldSampleStats arid_stats = inspect_field_samples(fields);
+    require(arid_stats.saw_material_variation,
+            "terrain lab arid slice should produce varied material masks");
+    require(arid_stats.saw_detail, "terrain lab arid slice should produce detail fields");
+    require(arid_stats.saw_process, "terrain lab arid slice should produce process fields");
+    require(arid_stats.saw_divide, "terrain lab arid slice should produce mesa divide fields");
+    require(arid_stats.saw_channel,
+            "terrain lab arid slice should produce dry wash and canyon channel fields");
+    require(std::all_of(arid_stats.saw_watershed.begin(), arid_stats.saw_watershed.end(),
+                        [](bool saw) { return saw; }),
+            "terrain lab arid slice should rasterize its local basin");
+    require(arid_stats.channel_count > 16U,
+            "terrain lab arid slice should produce enough channel samples");
+    require(arid_stats.non_channel_count > 16U,
+            "terrain lab arid slice should produce enough non-channel samples");
+    const double inv_arid_count = 1.0 / static_cast<double>(fields.sample_count());
+    const float arid_rock_scree_soil = static_cast<float>(
+        (arid_stats.rock_sum + arid_stats.scree_sum + arid_stats.soil_sum) * inv_arid_count);
+    require(arid_rock_scree_soil > 0.80F,
+            "terrain lab arid slice should be dominated by rock, scree, and soil");
+    require(static_cast<float>(arid_stats.snow_sum * inv_arid_count) < 0.001F,
+            "terrain lab arid slice should not produce snow");
 
-    const terrain::TerrainLabFieldData fields_repeat =
-        terrain::generate_terrain_lab_fields(small);
-    const terrain::TerrainLabFieldSummary summary =
-        terrain::summarize_terrain_lab_fields(fields);
+    const terrain::TerrainLabFieldData fields_repeat = terrain::generate_terrain_lab_fields(small);
+    const terrain::TerrainLabFieldSummary summary = terrain::summarize_terrain_lab_fields(fields);
     const terrain::TerrainLabFieldSummary summary_repeat =
         terrain::summarize_terrain_lab_fields(fields_repeat);
     require(summary.sample_count == summary_repeat.sample_count,
@@ -538,9 +543,8 @@ int main() {
                  "terrain lab channel height summary should be repeatable");
     require_near(summary.mean_divide_height_m, summary_repeat.mean_divide_height_m, 0.001F,
                  "terrain lab divide height summary should be repeatable");
-    require_near(summary.divide_channel_height_gap_m,
-                 summary_repeat.divide_channel_height_gap_m, 0.001F,
-                 "terrain lab divide-channel height gap summary should be repeatable");
+    require_near(summary.divide_channel_height_gap_m, summary_repeat.divide_channel_height_gap_m,
+                 0.001F, "terrain lab divide-channel height gap summary should be repeatable");
     require_near(summary.mean_channel_flow_accumulation,
                  summary_repeat.mean_channel_flow_accumulation, 0.001F,
                  "terrain lab channel flow summary should be repeatable");
@@ -569,23 +573,22 @@ int main() {
                  "terrain lab channel summary should be repeatable");
     require_near(summary.max_channel_distance_m, summary_repeat.max_channel_distance_m, 0.001F,
                  "terrain lab channel distance summary should be repeatable");
-    require(summary.watershed_count == 4U, "terrain lab summary should count watershed basins");
+    require(summary.watershed_count == 1U, "terrain lab summary should count arid local basin");
     require(summary.height_span_m > 100.0F, "terrain lab summary should expose height span");
-    require(summary.channel_sample_count == channel_count,
+    require(summary.channel_sample_count == arid_stats.channel_count,
             "terrain lab summary should expose channel sample count");
-    require(summary.non_channel_sample_count == non_channel_count,
+    require(summary.non_channel_sample_count == arid_stats.non_channel_count,
             "terrain lab summary should expose non-channel sample count");
-    require(summary.divide_sample_count == divide_count,
+    require(summary.divide_sample_count == arid_stats.divide_count,
             "terrain lab summary should expose divide sample count");
-    require_near(summary.mean_channel_height_m, mean_channel_height, 0.001F,
-                 "terrain lab summary should expose channel height");
-    require_near(summary.mean_divide_height_m, mean_divide_height, 0.001F,
-                 "terrain lab summary should expose divide height");
-    require(summary.divide_channel_height_gap_m > 15.0F,
-            "terrain lab summary should expose divide-channel height separation");
-    require(summary.mean_channel_flow_accumulation >
-                summary.mean_non_channel_flow_accumulation,
-            "terrain lab summary should expose channel-flow alignment");
+    require_near(summary.mean_channel_height_m,
+                 static_cast<float>(arid_stats.channel_height_sum /
+                                    static_cast<double>(arid_stats.channel_count)),
+                 0.001F, "terrain lab summary should expose channel height");
+    require(summary.mean_wetness < 0.30F,
+            "terrain lab arid slice should stay drier than the watershed fixture");
+    require(summary.mean_tree_density < 0.01F,
+            "terrain lab arid slice should keep tree density sparse");
     require(summary.mean_material_entropy > 0.05F && summary.mean_material_entropy <= 1.0F,
             "terrain lab summary should expose material mask diversity");
     require(summary.mean_edge_step_m >= 0.0F && summary.mean_edge_step_m < summary.height_span_m,
@@ -594,6 +597,85 @@ int main() {
             "terrain lab summary should include divide coverage");
     require(summary.mean_channel_influence > 0.0F,
             "terrain lab summary should include channel coverage");
+
+    terrain::TerrainLabConfig watershed_config = small;
+    watershed_config.slice_preset = terrain::TerrainLabSlicePreset::TemperateMountainWatershed;
+    const terrain::TerrainLabFieldData watershed_fields =
+        terrain::generate_terrain_lab_fields(watershed_config);
+    terrain::validate_terrain_lab_fields(watershed_fields);
+    require(watershed_fields.watershed_count == 4U,
+            "terrain lab watershed fixture should expose four basins");
+    require(watershed_fields.max_channel_distance_m > watershed_fields.desc.cell_size_m,
+            "terrain lab watershed fixture should track channel distance range");
+    const FieldSampleStats watershed_stats = inspect_field_samples(watershed_fields);
+    require(watershed_stats.saw_material_variation,
+            "terrain lab watershed fixture should produce varied material masks");
+    require(watershed_stats.saw_tree_density,
+            "terrain lab watershed fixture should produce tree density fields");
+    require(watershed_stats.saw_detail,
+            "terrain lab watershed fixture should produce detail fields");
+    require(watershed_stats.saw_process,
+            "terrain lab watershed fixture should produce process fields");
+    require(watershed_stats.saw_divide,
+            "terrain lab watershed fixture should produce divide fields");
+    require(watershed_stats.saw_channel,
+            "terrain lab watershed fixture should produce channel fields");
+    require(std::all_of(watershed_stats.saw_watershed.begin(), watershed_stats.saw_watershed.end(),
+                        [](bool saw) { return saw; }),
+            "terrain lab watershed fixture should rasterize every basin");
+    require(watershed_stats.channel_count > 16U,
+            "terrain lab watershed fixture should produce enough channel samples");
+    require(watershed_stats.non_channel_count > 16U,
+            "terrain lab watershed fixture should produce enough non-channel samples");
+    require(watershed_stats.divide_count > 16U,
+            "terrain lab watershed fixture should produce enough divide samples");
+    const float watershed_mean_channel_height = static_cast<float>(
+        watershed_stats.channel_height_sum / static_cast<double>(watershed_stats.channel_count));
+    const float watershed_mean_channel_wetness = static_cast<float>(
+        watershed_stats.channel_wetness_sum / static_cast<double>(watershed_stats.channel_count));
+    const float watershed_mean_channel_deposition =
+        static_cast<float>(watershed_stats.channel_deposition_sum /
+                           static_cast<double>(watershed_stats.channel_count));
+    const float watershed_mean_channel_flow = static_cast<float>(
+        watershed_stats.channel_flow_sum / static_cast<double>(watershed_stats.channel_count));
+    const float watershed_mean_non_channel_wetness =
+        static_cast<float>(watershed_stats.non_channel_wetness_sum /
+                           static_cast<double>(watershed_stats.non_channel_count));
+    const float watershed_mean_non_channel_deposition =
+        static_cast<float>(watershed_stats.non_channel_deposition_sum /
+                           static_cast<double>(watershed_stats.non_channel_count));
+    const float watershed_mean_non_channel_flow =
+        static_cast<float>(watershed_stats.non_channel_flow_sum /
+                           static_cast<double>(watershed_stats.non_channel_count));
+    const float watershed_mean_divide_height = static_cast<float>(
+        watershed_stats.divide_height_sum / static_cast<double>(watershed_stats.divide_count));
+    require(watershed_mean_channel_wetness > watershed_mean_non_channel_wetness + 0.04F,
+            "terrain lab watershed channels should be wetter than non-channel terrain");
+    require(watershed_mean_channel_deposition > watershed_mean_non_channel_deposition + 0.02F,
+            "terrain lab watershed channels should be more depositional than non-channel terrain");
+    require(watershed_mean_channel_flow > watershed_mean_non_channel_flow,
+            "terrain lab watershed channels should carry more flow than non-channel terrain");
+    require(watershed_mean_divide_height > watershed_mean_channel_height + 15.0F,
+            "terrain lab watershed divides should remain higher than channels");
+    const terrain::TerrainLabFieldSummary watershed_summary =
+        terrain::summarize_terrain_lab_fields(watershed_fields);
+    require(watershed_summary.watershed_count == 4U,
+            "terrain lab watershed summary should count watershed basins");
+    require(watershed_summary.channel_sample_count == watershed_stats.channel_count,
+            "terrain lab watershed summary should expose channel sample count");
+    require(watershed_summary.non_channel_sample_count == watershed_stats.non_channel_count,
+            "terrain lab watershed summary should expose non-channel sample count");
+    require(watershed_summary.divide_sample_count == watershed_stats.divide_count,
+            "terrain lab watershed summary should expose divide sample count");
+    require_near(watershed_summary.mean_channel_height_m, watershed_mean_channel_height, 0.001F,
+                 "terrain lab watershed summary should expose channel height");
+    require_near(watershed_summary.mean_divide_height_m, watershed_mean_divide_height, 0.001F,
+                 "terrain lab watershed summary should expose divide height");
+    require(watershed_summary.divide_channel_height_gap_m > 15.0F,
+            "terrain lab watershed summary should expose divide-channel height separation");
+    require(watershed_summary.mean_channel_flow_accumulation >
+                watershed_summary.mean_non_channel_flow_accumulation,
+            "terrain lab watershed summary should expose channel-flow alignment");
 
     terrain::TerrainLabConfig other_seed = small;
     other_seed.seed += 1U;
@@ -620,8 +702,7 @@ int main() {
         require_near(no_detail_fields.height_m[index],
                      no_detail_fields.structure_height_m[index] +
                          no_detail_fields.process_delta_m[index],
-                     0.001F,
-                     "terrain lab noise-off height should equal structure plus process");
+                     0.001F, "terrain lab noise-off height should equal structure plus process");
     }
     require(all_detail_zero, "terrain lab detail can be disabled independently");
     require(max_no_detail_structure - min_no_detail_structure > 100.0F,
@@ -717,11 +798,9 @@ int main() {
                  "terrain lab mesh center vertex should land on origin Z");
     for (const terrain::TerrainLabVertex& vertex : mesh.vertices) {
         const float normal_length =
-            std::sqrt((vertex.normal.x * vertex.normal.x) +
-                      (vertex.normal.y * vertex.normal.y) +
+            std::sqrt((vertex.normal.x * vertex.normal.x) + (vertex.normal.y * vertex.normal.y) +
                       (vertex.normal.z * vertex.normal.z));
-        require_near(normal_length, 1.0F, 0.001F,
-                     "terrain lab mesh normals should be normalized");
+        require_near(normal_length, 1.0F, 0.001F, "terrain lab mesh normals should be normalized");
         require(vertex.terrain.w >= 0.0F && vertex.terrain.w <= 1.0F,
                 "terrain lab mesh should pack normalized height");
     }

@@ -39,6 +39,19 @@ struct WatershedSampleFeatures {
     float channel_distance_m = 0.0F;
 };
 
+struct AridMesaSampleFeatures {
+    float canyon_floor = 0.0F;
+    float canyon_wall = 0.0F;
+    float wash_influence = 0.0F;
+    float plateau_influence = 0.0F;
+    float ridge_influence = 0.0F;
+    float valley_influence = 0.0F;
+    float basin_influence = 0.0F;
+    float divide_influence = 0.0F;
+    float channel_influence = 0.0F;
+    float channel_distance_m = 0.0F;
+};
+
 [[nodiscard]] float saturate(float value) {
     return std::clamp(value, 0.0F, 1.0F);
 }
@@ -58,6 +71,23 @@ struct WatershedSampleFeatures {
 
 [[nodiscard]] float dot(Point2 a, Point2 b) {
     return (a.x * b.x) + (a.z * b.z);
+}
+
+[[nodiscard]] Point2 normalize(Point2 p) {
+    const float p_length = length(p);
+    if (p_length <= 0.0F) {
+        return {};
+    }
+    return {.x = p.x / p_length, .z = p.z / p_length};
+}
+
+[[nodiscard]] float distance_to_line(Point2 p, Point2 origin, Point2 direction) {
+    const Point2 axis = normalize(direction);
+    if (axis.x == 0.0F && axis.z == 0.0F) {
+        return length({.x = p.x - origin.x, .z = p.z - origin.z});
+    }
+    const Point2 normal{.x = -axis.z, .z = axis.x};
+    return std::abs(dot({.x = p.x - origin.x, .z = p.z - origin.z}, normal));
 }
 
 [[nodiscard]] std::uint32_t hash_u32(std::int32_t x, std::int32_t y, std::uint64_t seed) {
@@ -321,6 +351,116 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
     return entropy / std::log(static_cast<float>(weights.size()));
 }
 
+[[nodiscard]] TerrainLabFieldData make_empty_terrain_lab_fields(const TerrainLabConfig& config) {
+    TerrainLabFieldData fields;
+    fields.desc = {
+        .seed = config.seed,
+        .width = config.grid_width,
+        .height = config.grid_height,
+        .cell_size_m = config.cell_size_m,
+        .origin_x_m = 0.0F,
+        .origin_z_m = 0.0F,
+    };
+
+    const std::size_t count = fields.sample_count();
+    fields.height_m.assign(count, 0.0F);
+    fields.structure_height_m.assign(count, 0.0F);
+    fields.process_delta_m.assign(count, 0.0F);
+    fields.detail_height_m.assign(count, 0.0F);
+    fields.slope.assign(count, 0.0F);
+    fields.curvature.assign(count, 0.0F);
+    fields.flow_direction.assign(count, kFlowSinkDirection);
+    fields.flow_accumulation.assign(count, 1.0F);
+    fields.stream_power.assign(count, 0.0F);
+    fields.wetness.assign(count, 0.0F);
+    fields.deposition.assign(count, 0.0F);
+    fields.material_masks.assign(count, {});
+    fields.grass_density.assign(count, 0.0F);
+    fields.shrub_density.assign(count, 0.0F);
+    fields.tree_density.assign(count, 0.0F);
+    fields.canopy_height_m.assign(count, 0.0F);
+    fields.ridge_influence.assign(count, 0.0F);
+    fields.valley_influence.assign(count, 0.0F);
+    fields.basin_influence.assign(count, 0.0F);
+    fields.watershed_id.assign(count, 0U);
+    fields.divide_influence.assign(count, 0.0F);
+    fields.channel_influence.assign(count, 0.0F);
+    fields.channel_distance_m.assign(count, 0.0F);
+    return fields;
+}
+
+[[nodiscard]] AridMesaSampleFeatures arid_mesa_features_at(Point2 p, const TerrainLabGridDesc& desc,
+                                                           const TerrainLabConfig& config) {
+    const float phase = random01(config.seed, 11U, 701U) * 6.28318530718F;
+    const float canyon_noise =
+        fbm((p.x * 2.4F) - 3.0F, (p.z * 2.4F) + 5.0F, config.seed + 2609U, 4);
+    const float canyon_center = lerp(-0.10F, 0.06F, random01(config.seed, 11U, 709U)) +
+                                (p.z * 0.18F) + std::sin((p.z * 2.20F) + phase) * 0.045F +
+                                canyon_noise * 0.035F;
+    const float canyon_distance = std::abs(p.x - canyon_center);
+    const float downstream = smoothstep(-0.95F, 0.92F, p.z);
+    const float canyon_floor =
+        (1.0F - smoothstep(0.046F, 0.165F, canyon_distance)) * lerp(0.82F, 1.0F, downstream);
+    const float canyon_broad = 1.0F - smoothstep(0.18F, 0.64F, canyon_distance);
+    const float canyon_wall = smoothstep(0.068F, 0.20F, canyon_distance) *
+                              (1.0F - smoothstep(0.26F, 0.48F, canyon_distance));
+
+    const Point2 wash_a_origin{.x = -0.86F, .z = -0.64F};
+    const Point2 wash_a_direction{.x = 1.18F, .z = 1.58F};
+    const Point2 wash_a_axis = normalize(wash_a_direction);
+    const Point2 wash_a_offset{.x = p.x - wash_a_origin.x, .z = p.z - wash_a_origin.z};
+    const float wash_a_t = dot(wash_a_offset, wash_a_axis);
+    const float wash_a_gate =
+        smoothstep(0.04F, 0.42F, wash_a_t) * (1.0F - smoothstep(1.70F, 2.12F, wash_a_t));
+    const float wash_a_distance = distance_to_line(p, wash_a_origin, wash_a_direction);
+    const float wash_a = (1.0F - smoothstep(0.016F, 0.105F, wash_a_distance)) * wash_a_gate;
+
+    const Point2 wash_b_origin{.x = 0.88F, .z = -0.26F};
+    const Point2 wash_b_direction{.x = -1.14F, .z = 1.34F};
+    const Point2 wash_b_axis = normalize(wash_b_direction);
+    const Point2 wash_b_offset{.x = p.x - wash_b_origin.x, .z = p.z - wash_b_origin.z};
+    const float wash_b_t = dot(wash_b_offset, wash_b_axis);
+    const float wash_b_gate =
+        smoothstep(0.02F, 0.36F, wash_b_t) * (1.0F - smoothstep(1.42F, 1.92F, wash_b_t));
+    const float wash_b_distance = distance_to_line(p, wash_b_origin, wash_b_direction);
+    const float wash_b = (1.0F - smoothstep(0.014F, 0.092F, wash_b_distance)) * wash_b_gate;
+
+    const float wash_patch = smoothstep(
+        0.18F, 0.80F,
+        fbm((p.x * 5.2F) + 4.0F, (p.z * 5.2F) - 8.0F, config.seed + 2617U, 4) * 0.5F + 0.5F);
+    const float wash_influence =
+        saturate(std::max(wash_a, wash_b) * lerp(0.74F, 1.16F, wash_patch));
+    const float wash_distance = std::min(wash_a_distance, wash_b_distance);
+    const float channel_distance_norm = std::min(canyon_distance, wash_distance);
+    const float extent_m = std::max(half_extent_x_m(desc), half_extent_z_m(desc));
+
+    const float plateau_noise =
+        fbm((p.x * 1.35F) + 9.0F, (p.z * 1.35F) - 3.0F, config.seed + 2621U, 4) * 0.5F + 0.5F;
+    const float plateau = saturate((1.0F - canyon_broad * 0.68F - wash_influence * 0.28F) *
+                                   lerp(0.78F, 1.08F, plateau_noise));
+    const float mesa_rim = smoothstep(0.16F, 0.32F, canyon_distance) *
+                           (1.0F - smoothstep(0.34F, 0.62F, canyon_distance));
+    const float channel = saturate(std::max(canyon_floor, wash_influence * 0.50F));
+    const float valley = saturate((canyon_broad * 0.80F) + (wash_influence * 0.28F));
+    const float basin = saturate((canyon_floor * 0.76F) + (wash_influence * 0.12F));
+    const float ridge = saturate((canyon_wall * 0.82F) + (mesa_rim * 0.28F) +
+                                 plateau * (0.08F + plateau_noise * 0.06F));
+    const float divide = saturate((plateau * 0.24F) + (mesa_rim * 0.40F) + (1.0F - valley) * 0.10F);
+
+    return {
+        .canyon_floor = saturate(canyon_floor),
+        .canyon_wall = saturate(canyon_wall),
+        .wash_influence = wash_influence,
+        .plateau_influence = plateau,
+        .ridge_influence = ridge,
+        .valley_influence = valley,
+        .basin_influence = basin,
+        .divide_influence = divide,
+        .channel_influence = channel,
+        .channel_distance_m = std::max(channel_distance_norm * extent_m, 0.0F),
+    };
+}
+
 void compute_slope_and_curvature(const TerrainLabGridDesc& desc, const std::vector<float>& height,
                                  std::vector<float>& slope, std::vector<float>& curvature,
                                  float& max_slope, float& max_abs_curvature) {
@@ -464,9 +604,9 @@ void derive_flow_aligned_channels(const TerrainLabConfig& config, TerrainLabFiel
             const float downstream = smoothstep(-0.92F, 0.78F, p.z);
             const float meander_noise =
                 fbm((p.x * 7.0F) + 2.0F, (p.z * 7.0F) - 4.0F, config.seed + 1913U, 4) * 0.5F + 0.5F;
-            const float drainage_channel =
-                drainage * (0.22F + guide_bias * 0.50F + downstream * 0.10F) *
-                (0.70F + slope_t * 0.22F);
+            const float drainage_channel = drainage *
+                                           (0.22F + guide_bias * 0.50F + downstream * 0.10F) *
+                                           (0.70F + slope_t * 0.22F);
             const float guided_channel =
                 guide_bias * (0.30F + drainage * 0.45F + meander_noise * 0.08F);
             const float divide_suppression = 1.0F - fields.divide_influence[sample] * 0.54F;
@@ -850,40 +990,8 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
 
 TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLabConfig& config) {
     validate_terrain_lab_config(config);
-    TerrainLabFieldData fields;
-    fields.desc = {
-        .seed = config.seed,
-        .width = config.grid_width,
-        .height = config.grid_height,
-        .cell_size_m = config.cell_size_m,
-        .origin_x_m = 0.0F,
-        .origin_z_m = 0.0F,
-    };
-
+    TerrainLabFieldData fields = make_empty_terrain_lab_fields(config);
     const std::size_t count = fields.sample_count();
-    fields.height_m.assign(count, 0.0F);
-    fields.structure_height_m.assign(count, 0.0F);
-    fields.process_delta_m.assign(count, 0.0F);
-    fields.detail_height_m.assign(count, 0.0F);
-    fields.slope.assign(count, 0.0F);
-    fields.curvature.assign(count, 0.0F);
-    fields.flow_direction.assign(count, kFlowSinkDirection);
-    fields.flow_accumulation.assign(count, 1.0F);
-    fields.stream_power.assign(count, 0.0F);
-    fields.wetness.assign(count, 0.0F);
-    fields.deposition.assign(count, 0.0F);
-    fields.material_masks.assign(count, {});
-    fields.grass_density.assign(count, 0.0F);
-    fields.shrub_density.assign(count, 0.0F);
-    fields.tree_density.assign(count, 0.0F);
-    fields.canopy_height_m.assign(count, 0.0F);
-    fields.ridge_influence.assign(count, 0.0F);
-    fields.valley_influence.assign(count, 0.0F);
-    fields.basin_influence.assign(count, 0.0F);
-    fields.watershed_id.assign(count, 0U);
-    fields.divide_influence.assign(count, 0.0F);
-    fields.channel_influence.assign(count, 0.0F);
-    fields.channel_distance_m.assign(count, 0.0F);
 
     rasterize_watershed_features(config, fields);
 
@@ -1056,7 +1164,196 @@ TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLa
 }
 
 TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& config) {
-    return generate_temperate_mountain_watershed_fields(config);
+    validate_terrain_lab_config(config);
+    TerrainLabFieldData fields = make_empty_terrain_lab_fields(config);
+    const std::size_t count = fields.sample_count();
+    const float arid_elevation_scale_m = config.elevation_scale_m * 0.62F;
+    fields.watershed_count = 1U;
+    fields.max_channel_distance_m = 0.0F;
+
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const Point2 p = normalized_sample(fields.desc, x, y);
+            const AridMesaSampleFeatures features = arid_mesa_features_at(p, fields.desc, config);
+            const float broad =
+                fbm((p.x * 1.18F) - 6.0F, (p.z * 1.18F) + 2.0F, config.seed + 2701U, 5);
+            const float bench_noise =
+                fbm((p.x * 3.4F) + 11.0F, (p.z * 3.4F) - 5.0F, config.seed + 2707U, 4);
+            const float high_desert_tilt = (1.0F - p.z) * 0.5F;
+            const float mesa_bench =
+                smoothstep(-0.18F, 0.78F, broad + features.plateau_influence * 0.62F);
+            const float canyon_cut = (features.valley_influence * 0.20F) +
+                                     (features.canyon_floor * 0.24F) +
+                                     (features.wash_influence * 0.09F);
+            const float structure =
+                ((high_desert_tilt * 0.24F) + (features.plateau_influence * 0.30F) +
+                 (features.ridge_influence * 0.10F) + (mesa_bench * 0.08F) + (broad * 0.12F) +
+                 (bench_noise * 0.045F) - canyon_cut - 0.08F) *
+                arid_elevation_scale_m * config.structure_strength;
+
+            fields.ridge_influence[sample] = features.ridge_influence;
+            fields.valley_influence[sample] = features.valley_influence;
+            fields.basin_influence[sample] = features.basin_influence;
+            fields.divide_influence[sample] = features.divide_influence;
+            fields.channel_influence[sample] = features.channel_influence;
+            fields.channel_distance_m[sample] = features.channel_distance_m;
+            fields.max_channel_distance_m =
+                std::max(fields.max_channel_distance_m, features.channel_distance_m);
+            fields.structure_height_m[sample] = structure;
+            fields.height_m[sample] = structure;
+        }
+    }
+
+    std::vector<float> temp_slope;
+    std::vector<float> temp_curvature;
+    std::vector<std::uint8_t> temp_direction;
+    std::vector<float> temp_accumulation;
+    std::vector<float> temp_stream_power;
+    float temp_max_slope = 0.0F;
+    float temp_max_curvature = 0.0F;
+    float temp_max_accumulation = 0.0F;
+    float temp_max_stream_power = 0.0F;
+    compute_slope_and_curvature(fields.desc, fields.structure_height_m, temp_slope, temp_curvature,
+                                temp_max_slope, temp_max_curvature);
+    compute_flow_fields(fields.desc, fields.structure_height_m, temp_slope, temp_direction,
+                        temp_accumulation, temp_stream_power, temp_max_accumulation,
+                        temp_max_stream_power);
+    derive_flow_aligned_channels(config, fields, temp_accumulation, temp_slope);
+
+    const float inv_log_count =
+        1.0F / std::log1p(static_cast<float>(std::max<std::size_t>(count, 1U)));
+    for (std::size_t sample = 0; sample < count; ++sample) {
+        const float flow_t = std::log1p(temp_accumulation[sample]) * inv_log_count;
+        const float slope_t = smoothstep(0.045F, 0.46F, temp_slope[sample]);
+        const float channel = fields.channel_influence[sample];
+        const float wall = fields.ridge_influence[sample];
+        const float valley = fields.valley_influence[sample];
+        const float wash_cut = channel * smoothstep(0.06F, 0.76F, flow_t + channel * 0.22F) *
+                               arid_elevation_scale_m * 0.050F * config.process_strength;
+        const float sheet_erosion =
+            valley * slope_t * arid_elevation_scale_m * 0.020F * config.process_strength;
+        const float cliff_weathering = wall * smoothstep(0.55F, 0.96F, slope_t) *
+                                       arid_elevation_scale_m * 0.016F * config.process_strength;
+        const float talus_deposit = wall * smoothstep(0.14F, 0.52F, slope_t) *
+                                    (1.0F - smoothstep(0.54F, 0.94F, slope_t)) *
+                                    arid_elevation_scale_m * 0.018F * config.process_strength;
+        const float wash_fill = fields.basin_influence[sample] * (1.0F - slope_t) *
+                                arid_elevation_scale_m * 0.016F * config.process_strength;
+        fields.process_delta_m[sample] =
+            -wash_cut - sheet_erosion - cliff_weathering + talus_deposit + wash_fill;
+        fields.height_m[sample] =
+            fields.structure_height_m[sample] + fields.process_delta_m[sample];
+    }
+    relax_steep_process_slopes(config, fields);
+    update_height_range(fields);
+
+    const float process_height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const Point2 p = normalized_sample(fields.desc, x, y);
+            const AridMesaSampleFeatures features = arid_mesa_features_at(p, fields.desc, config);
+            const float elevation_t =
+                saturate((fields.height_m[sample] - fields.min_height_m) / process_height_span);
+            const float exposed =
+                saturate((features.canyon_wall * 0.78F) + (fields.ridge_influence[sample] * 0.36F) +
+                         (features.plateau_influence * 0.14F));
+            const float channel_floor = smoothstep(0.46F, 0.90F, fields.channel_influence[sample]);
+            const float strata =
+                std::sin((elevation_t * 54.0F) +
+                         fbm((p.x * 9.0F) + 2.0F, (p.z * 9.0F) - 7.0F, config.seed + 2711U, 3) *
+                             3.0F) *
+                features.canyon_wall * 0.006F;
+            const float rock_roughness =
+                fbm((p.x * 24.0F) - 13.0F, (p.z * 24.0F) + 17.0F, config.seed + 2719U, 4) *
+                exposed * 0.008F;
+            const float desert_pavement =
+                fbm((p.x * 15.0F) + 19.0F, (p.z * 15.0F) - 23.0F, config.seed + 2729U, 3) *
+                features.plateau_influence * 0.006F;
+            const float detail = (strata + rock_roughness + desert_pavement) *
+                                 arid_elevation_scale_m * config.detail_strength *
+                                 (1.0F - channel_floor * 0.72F);
+            fields.detail_height_m[sample] = detail;
+            fields.height_m[sample] += detail;
+        }
+    }
+
+    update_height_range(fields);
+    compute_slope_and_curvature(fields.desc, fields.height_m, fields.slope, fields.curvature,
+                                fields.max_slope, fields.max_abs_curvature);
+    compute_flow_fields(fields.desc, fields.height_m, fields.slope, fields.flow_direction,
+                        fields.flow_accumulation, fields.stream_power, fields.max_flow_accumulation,
+                        fields.max_stream_power);
+
+    const float height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
+    fields.max_wetness = 0.0F;
+    fields.max_deposition = 0.0F;
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const Point2 p = normalized_sample(fields.desc, x, y);
+            const AridMesaSampleFeatures features = arid_mesa_features_at(p, fields.desc, config);
+            const float elevation_t =
+                saturate((fields.height_m[sample] - fields.min_height_m) / height_span);
+            const float slope_t = smoothstep(0.05F, 0.52F, fields.slope[sample]);
+            const float flow_t = std::log1p(fields.flow_accumulation[sample]) * inv_log_count;
+            const float channel = fields.channel_influence[sample];
+            const float dry_wash = saturate((channel * 0.76F) + (features.wash_influence * 0.24F));
+            const float wetness = saturate(
+                (flow_t * 0.16F) + (dry_wash * 0.11F) + (fields.basin_influence[sample] * 0.055F) +
+                ((1.0F - slope_t) * 0.025F) - (fields.divide_influence[sample] * 0.05F));
+            const float deposition =
+                saturate((dry_wash * (1.0F - slope_t) * 0.38F) +
+                         (fields.basin_influence[sample] * 0.17F) + (flow_t * 0.035F));
+            fields.wetness[sample] = wetness;
+            fields.deposition[sample] = deposition;
+            fields.max_wetness = std::max(fields.max_wetness, wetness);
+            fields.max_deposition = std::max(fields.max_deposition, deposition);
+
+            const float material_noise =
+                fbm((p.x * 9.0F) - 2.0F, (p.z * 9.0F) + 7.0F, config.seed + 2801U, 4) * 0.5F + 0.5F;
+            const float scree_patch =
+                fbm((p.x * 14.0F) - 19.0F, (p.z * 14.0F) + 23.0F, config.seed + 2803U, 3) * 0.5F +
+                0.5F;
+            const float vegetation_patch =
+                fbm((p.x * 5.4F) + 13.0F, (p.z * 5.4F) - 5.0F, config.seed + 2809U, 4) * 0.5F +
+                0.5F;
+            const float high = smoothstep(0.80F, 0.98F, elevation_t);
+            const float rock = ((slope_t * 0.82F) + (features.canyon_wall * 0.72F) +
+                                (fields.ridge_influence[sample] * 0.30F)) *
+                               (1.0F - dry_wash * 0.45F) * lerp(0.84F, 1.20F, material_noise);
+            const float scree = smoothstep(0.18F, 0.72F, slope_t) *
+                                (1.0F - smoothstep(0.78F, 1.0F, slope_t)) *
+                                (0.36F + features.canyon_wall * 0.54F + dry_wash * 0.12F) *
+                                (1.0F - dry_wash * 0.35F) * lerp(0.76F, 1.28F, scree_patch);
+            const float soil = (0.42F + deposition * 0.54F + (1.0F - slope_t) * 0.22F +
+                                features.plateau_influence * 0.14F + dry_wash * 0.35F) *
+                               lerp(0.86F, 1.18F, material_noise);
+            const float meadow =
+                wetness * (1.0F - slope_t) * (0.40F + dry_wash * 0.18F) * (1.0F - high * 0.40F);
+            const float forest = wetness * deposition * (1.0F - slope_t) * 0.020F *
+                                 lerp(0.50F, 1.20F, vegetation_patch);
+            const TerrainLabMaterialMask material =
+                normalized_material_mask(rock, soil, scree, meadow, forest, 0.0F);
+            fields.material_masks[sample] = material;
+
+            const float grass =
+                saturate((material.meadow * 0.36F + material.soil * 0.08F) *
+                         (0.22F + wetness * 0.62F) * lerp(0.72F, 1.18F, vegetation_patch));
+            const float shrub =
+                saturate((material.soil * 0.20F + material.scree * 0.05F) * (1.0F - slope_t) *
+                         (0.20F + wetness * 0.58F) * lerp(0.64F, 1.26F, vegetation_patch));
+            const float tree = saturate(material.forest * 0.50F);
+            fields.grass_density[sample] = grass;
+            fields.shrub_density[sample] = shrub;
+            fields.tree_density[sample] = tree;
+            fields.canopy_height_m[sample] = tree <= 0.0F ? 0.0F : tree * lerp(1.5F, 5.0F, wetness);
+        }
+    }
+
+    validate_terrain_lab_fields(fields);
+    return fields;
 }
 
 TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) {

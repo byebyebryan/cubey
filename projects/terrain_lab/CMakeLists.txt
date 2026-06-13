@@ -107,6 +107,8 @@ if (BUILD_TESTING)
         --headless
         --grid-width 65
         --grid-height 65
+        --terrain-lab-slice
+        temperate-mountain-watershed
         --debug-view
         watershed
     )

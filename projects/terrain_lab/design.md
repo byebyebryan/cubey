@@ -122,20 +122,24 @@ settings.
 ### Feature Graph
 
 The feature graph is the main guardrail against incoherent terrain. For the
-first watershed slice, it should describe ridge hierarchy, basin ownership, and
-drainage paths before final height detail is applied.
+active arid mesa slice, it should describe mesa benches, canyon rims, dry wash
+paths, and local interfluves before final height detail is applied. For the
+temperate watershed fixture, it should describe ridge hierarchy, basin
+ownership, and drainage paths before final height detail is applied.
 
 The feature graph does not have to be geologically complete. It only has to
 carry enough structure that valleys, ridges, water, and materials line up in the
 rendered result.
 
-The current watershed core is still a rasterized feature model rather than a
-full stream graph. It emits four deterministic basin ids plus soft divide and
-channel-guide influences. The process pass now recomputes stronger channel
-influence from initial flow accumulation, so guide channels bias drainage
-instead of single-handedly carving every valley. Those fields guide structure,
-process, material, and diagnostic rendering, while richer drainage connectivity
-remains a later refinement.
+The current arid core is still a rasterized feature model rather than a full
+geomorphology graph. It emits a single local basin, soft mesa divide/rim
+influence, a sinuous canyon floor, and dry side-wash guide channels. The
+temperate watershed fixture emits four deterministic basin ids plus soft divide
+and channel-guide influences. Both paths recompute stronger channel influence
+from initial flow accumulation, so guide channels bias drainage instead of
+single-handedly carving every valley. Those fields guide structure, process,
+material, and diagnostic rendering, while richer drainage connectivity remains a
+later refinement.
 
 ### Process Passes
 
@@ -239,9 +243,10 @@ mechanical checks:
 
 Headless captures should cover both final and diagnostic views. The current
 foundation validates deterministic CPU fields, mesh payload extraction, shader
-debug-view constants, a windowed startup smoke, and final, flow-accumulation,
-feature-graph, and watershed PNG captures. UI editing, runtime regeneration,
-tiled rendering, and shader-displacement validation are still deferred.
+debug-view constants, a windowed startup smoke, default arid final,
+flow-accumulation, and feature-graph PNG captures, plus an explicit watershed
+PNG capture. UI editing, runtime regeneration, tiled rendering, and
+shader-displacement validation are still deferred.
 
 Recent naturalization diagnostics also track channel/divide sample counts,
 divide-channel height separation, channel-flow alignment, material entropy, and
@@ -271,5 +276,6 @@ to build a full scientific erosion simulator immediately.
   should stay terrain-specific until a second consumer exists?
 - Should the first renderer share any planet local-detail clipmap code, or use a
   simpler tiled heightfield until the generation side is proven?
-- Which terrain slice after the watershed gives the best contrast: arid mesa
-  canyon, alpine glacial valley, dunes, volcanic terrain, or wetland?
+- Which terrain slice after the arid mesa canyon gives the best contrast:
+  alpine glacial valley, dunes, volcanic terrain, wetland, or coastal
+  reconnection?
