@@ -168,14 +168,31 @@ clouds_color_texture_desc(std::string label, VkExtent2D extent, VkFormat format)
     };
 }
 
-[[nodiscard]] VkExtent2D clouds_scaled_extent(VkExtent2D target_extent,
-                                              CloudsQualityBudget budget) {
-    const float scale = std::clamp(budget.resolution_scale, 0.05F, 1.0F);
+[[nodiscard]] bool clouds_camera_mode_is_orbit(CloudsCameraMode mode) {
+    return mode == CloudsCameraMode::Orbit || mode == CloudsCameraMode::OrbitTerminator;
+}
+
+[[nodiscard]] float clouds_resolution_scale_x(CloudsQualityBudget budget) {
+    return std::clamp(budget.resolution_scale, 0.05F, 1.0F);
+}
+
+[[nodiscard]] float clouds_resolution_scale_y(CloudsQualityBudget budget, CloudsCameraMode mode) {
+    float scale = clouds_resolution_scale_x(budget);
+    if (!clouds_camera_mode_is_orbit(mode)) {
+        scale = std::max(scale, 0.5F);
+    }
+    return scale;
+}
+
+[[nodiscard]] VkExtent2D clouds_scaled_extent(VkExtent2D target_extent, CloudsQualityBudget budget,
+                                              CloudsCameraMode mode) {
+    const float scale_x = clouds_resolution_scale_x(budget);
+    const float scale_y = clouds_resolution_scale_y(budget, mode);
     return {
         .width = std::max(1U, static_cast<std::uint32_t>(
-                                  std::ceil(static_cast<float>(target_extent.width) * scale))),
+                                  std::ceil(static_cast<float>(target_extent.width) * scale_x))),
         .height = std::max(1U, static_cast<std::uint32_t>(
-                                   std::ceil(static_cast<float>(target_extent.height) * scale))),
+                                   std::ceil(static_cast<float>(target_extent.height) * scale_y))),
     };
 }
 
@@ -204,10 +221,6 @@ clouds_target_final_state(CloudsRenderTargetMode mode) {
         return fallback;
     }
     return value * glm::inversesqrt(len2);
-}
-
-[[nodiscard]] bool clouds_camera_mode_is_orbit(CloudsCameraMode mode) {
-    return mode == CloudsCameraMode::Orbit || mode == CloudsCameraMode::OrbitTerminator;
 }
 
 [[nodiscard]] float clouds_camera_shader_mode(CloudsCameraMode mode) {
@@ -632,8 +645,9 @@ class CloudsApp {
 
         const CloudsQualityBudget budget = clouds_quality_budget(config_.quality);
         const VkExtent2D output_extent = context.swapchain().extent();
-        const VkExtent2D cloud_extent = clouds_scaled_extent(output_extent, budget);
-        const std::array<cubey::host::PerformanceCounter, 7> performance_counters{
+        const VkExtent2D cloud_extent = clouds_scaled_extent(output_extent, budget,
+                                                             config_.camera_mode);
+        const std::array<cubey::host::PerformanceCounter, 8> performance_counters{
             cubey::host::PerformanceCounter{"View steps",
                                             static_cast<std::uint64_t>(budget.view_steps), nullptr},
             cubey::host::PerformanceCounter{"Light steps",
@@ -644,8 +658,13 @@ class CloudsApp {
                 static_cast<std::uint64_t>(budget.view_steps * (1 + budget.light_steps)),
                 nullptr},
             cubey::host::PerformanceCounter{
-                "Cloud scale",
-                static_cast<std::uint64_t>(budget.resolution_scale * 100.0F), "%"},
+                "Cloud scale X",
+                static_cast<std::uint64_t>(clouds_resolution_scale_x(budget) * 100.0F), "%"},
+            cubey::host::PerformanceCounter{
+                "Cloud scale Y",
+                static_cast<std::uint64_t>(
+                    clouds_resolution_scale_y(budget, config_.camera_mode) * 100.0F),
+                "%"},
             cubey::host::PerformanceCounter{"Cloud pixels", extent_pixel_count(cloud_extent),
                                             nullptr},
             cubey::host::PerformanceCounter{"Output pixels", extent_pixel_count(output_extent),
@@ -759,7 +778,8 @@ class CloudsApp {
                          std::uint32_t frame_slot_count) {
         graph_executor_.resize(frame_slot_count);
         const VkExtent2D cloud_extent =
-            clouds_scaled_extent(extent, clouds_quality_budget(config_.quality));
+            clouds_scaled_extent(extent, clouds_quality_budget(config_.quality),
+                                 config_.camera_mode);
 
         const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
             cubey::render::vertex_shader_file(shader_path("clouds.vert.spv")),
@@ -905,7 +925,8 @@ class CloudsApp {
             graph.import_color_target("backbuffer", target, clouds_target_initial_state(target_mode),
                                       clouds_target_final_state(target_mode));
         const VkExtent2D cloud_extent =
-            clouds_scaled_extent(target.extent, clouds_quality_budget(config_.quality));
+            clouds_scaled_extent(target.extent, clouds_quality_budget(config_.quality),
+                                 config_.camera_mode);
         const std::uint32_t history_read_index =
             frame_slot.index < cloud_history_read_indices_.size()
                 ? cloud_history_read_indices_[frame_slot.index]
