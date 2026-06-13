@@ -369,6 +369,17 @@ int main() {
     bool saw_divide = false;
     bool saw_channel = false;
     std::array<bool, 4> saw_watershed{};
+    double channel_height_sum = 0.0;
+    double channel_wetness_sum = 0.0;
+    double channel_deposition_sum = 0.0;
+    double channel_flow_sum = 0.0;
+    double non_channel_wetness_sum = 0.0;
+    double non_channel_deposition_sum = 0.0;
+    double non_channel_flow_sum = 0.0;
+    double divide_height_sum = 0.0;
+    std::size_t channel_count = 0;
+    std::size_t non_channel_count = 0;
+    std::size_t divide_count = 0;
     for (std::size_t index = 0; index < fields.sample_count(); ++index) {
         require(std::isfinite(fields.height_m[index]), "terrain lab height should be finite");
         require(std::isfinite(fields.structure_height_m[index]),
@@ -415,6 +426,23 @@ int main() {
         saw_divide = saw_divide || fields.divide_influence[index] > 0.2F;
         saw_channel = saw_channel || fields.channel_influence[index] > 0.2F;
         saw_watershed[fields.watershed_id[index]] = true;
+        if (fields.channel_influence[index] > 0.45F) {
+            channel_height_sum += fields.height_m[index];
+            channel_wetness_sum += fields.wetness[index];
+            channel_deposition_sum += fields.deposition[index];
+            channel_flow_sum += fields.flow_accumulation[index];
+            ++channel_count;
+        }
+        if (fields.channel_influence[index] < 0.05F && fields.divide_influence[index] < 0.25F) {
+            non_channel_wetness_sum += fields.wetness[index];
+            non_channel_deposition_sum += fields.deposition[index];
+            non_channel_flow_sum += fields.flow_accumulation[index];
+            ++non_channel_count;
+        }
+        if (fields.divide_influence[index] > 0.55F && fields.channel_influence[index] < 0.20F) {
+            divide_height_sum += fields.height_m[index];
+            ++divide_count;
+        }
     }
     require(saw_material_variation, "terrain lab should produce varied material masks");
     require(saw_tree_density, "terrain lab should produce tree density fields");
@@ -424,6 +452,34 @@ int main() {
     require(saw_channel, "terrain lab should produce channel influence fields");
     require(std::all_of(saw_watershed.begin(), saw_watershed.end(), [](bool saw) { return saw; }),
             "terrain lab should rasterize every watershed basin");
+    require(channel_count > 16U, "terrain lab should produce enough channel samples to compare");
+    require(non_channel_count > 16U,
+            "terrain lab should produce enough non-channel samples to compare");
+    require(divide_count > 16U, "terrain lab should produce enough divide samples to compare");
+    const float mean_channel_height =
+        static_cast<float>(channel_height_sum / static_cast<double>(channel_count));
+    const float mean_channel_wetness =
+        static_cast<float>(channel_wetness_sum / static_cast<double>(channel_count));
+    const float mean_channel_deposition =
+        static_cast<float>(channel_deposition_sum / static_cast<double>(channel_count));
+    const float mean_channel_flow =
+        static_cast<float>(channel_flow_sum / static_cast<double>(channel_count));
+    const float mean_non_channel_wetness =
+        static_cast<float>(non_channel_wetness_sum / static_cast<double>(non_channel_count));
+    const float mean_non_channel_deposition =
+        static_cast<float>(non_channel_deposition_sum / static_cast<double>(non_channel_count));
+    const float mean_non_channel_flow =
+        static_cast<float>(non_channel_flow_sum / static_cast<double>(non_channel_count));
+    const float mean_divide_height =
+        static_cast<float>(divide_height_sum / static_cast<double>(divide_count));
+    require(mean_channel_wetness > mean_non_channel_wetness + 0.04F,
+            "terrain lab channels should be wetter than non-channel terrain");
+    require(mean_channel_deposition > mean_non_channel_deposition + 0.02F,
+            "terrain lab channels should be more depositional than non-channel terrain");
+    require(mean_channel_flow > mean_non_channel_flow,
+            "terrain lab channels should carry more accumulated flow than non-channel terrain");
+    require(mean_divide_height > mean_channel_height + 15.0F,
+            "terrain lab divides should remain higher than channels");
 
     const terrain::TerrainLabFieldData fields_repeat =
         terrain::generate_terrain_lab_fields(small);

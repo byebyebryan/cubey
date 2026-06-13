@@ -695,15 +695,20 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
             const std::size_t sample = fields.index(x, y);
             const Point2 p = normalized_sample(fields.desc, x, y);
-            const float ridge = ridge_influence(p, config);
-            const float basin = basin_influence(p, config);
-            const float valley = valley_influence(p, config);
+            const float divide = fields.divide_influence[sample];
+            const float channel = fields.channel_influence[sample];
+            const float ridge = saturate((ridge_influence(p, config) * 0.58F) + (divide * 0.54F));
+            const float basin = saturate((basin_influence(p, config) * 0.58F) +
+                                         (1.0F - divide) * 0.12F);
+            const float valley = saturate((valley_influence(p, config) * 0.36F) +
+                                          (channel * 0.82F));
             const float headwater = saturate((1.0F - p.z) * 0.5F);
             const float broad =
                 fbm(p.x * 1.3F - 3.0F, p.z * 1.3F + 5.0F, config.seed + 101U, 5);
             const float structure =
-                ((headwater * 0.58F) + (ridge * 0.52F) + (broad * 0.14F) -
-                 (basin * 0.22F) - (valley * 0.18F) - 0.16F) *
+                ((headwater * 0.54F) + (ridge * 0.56F) + (divide * 0.26F) +
+                 (broad * 0.12F) - (basin * 0.20F) - (valley * 0.30F) -
+                 (channel * 0.18F) - 0.18F) *
                 config.elevation_scale_m * config.structure_strength;
 
             fields.ridge_influence[sample] = ridge;
@@ -734,15 +739,21 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
     for (std::size_t sample = 0; sample < count; ++sample) {
         const float flow_t = std::log1p(temp_accumulation[sample]) * inv_log_count;
         const float slope_t = smoothstep(0.045F, 0.38F, temp_slope[sample]);
+        const float channel = fields.channel_influence[sample];
+        const float divide = fields.divide_influence[sample];
+        const float process_channel = saturate((flow_t * 0.55F) + (channel * 0.72F));
+        const float valley = saturate((fields.valley_influence[sample] * 0.34F) +
+                                      (channel * 0.86F));
         const float valley_cut =
-            fields.valley_influence[sample] * smoothstep(0.08F, 0.72F, flow_t) *
-            config.elevation_scale_m * 0.24F * config.process_strength;
+            valley * smoothstep(0.08F, 0.76F, process_channel) * config.elevation_scale_m *
+            0.29F * config.process_strength;
         const float valley_fill =
-            fields.valley_influence[sample] * flow_t * (1.0F - slope_t) *
-            config.elevation_scale_m * 0.055F * config.process_strength;
+            channel * process_channel * (1.0F - slope_t) * config.elevation_scale_m * 0.072F *
+            config.process_strength;
         const float talus_relax =
             smoothstep(0.62F, 0.95F, slope_t) * fields.ridge_influence[sample] *
-            config.elevation_scale_m * 0.045F * config.process_strength;
+            (1.0F + divide * 0.36F) * config.elevation_scale_m * 0.045F *
+            config.process_strength;
         fields.process_delta_m[sample] = -valley_cut + valley_fill - talus_relax;
         fields.height_m[sample] = fields.structure_height_m[sample] + fields.process_delta_m[sample];
     }
@@ -752,9 +763,10 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
             const std::size_t sample = fields.index(x, y);
             const Point2 p = normalized_sample(fields.desc, x, y);
             const float exposed = saturate((fields.ridge_influence[sample] * 0.7F) +
+                                           (fields.divide_influence[sample] * 0.28F) +
                                            (1.0F - fields.valley_influence[sample]) * 0.3F);
-            const float detail_gate =
-                exposed * (1.0F - fields.valley_influence[sample] * 0.45F);
+            const float detail_gate = exposed * (1.0F - fields.valley_influence[sample] * 0.35F) *
+                                      (1.0F - fields.channel_influence[sample] * 0.68F);
             const float detail =
                 fbm(p.x * 18.0F + 11.0F, p.z * 18.0F - 2.0F, config.seed + 401U, 4) *
                 config.elevation_scale_m * 0.020F * config.detail_strength * detail_gate;
@@ -778,11 +790,16 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
                                            height_span);
         const float slope_t = smoothstep(0.05F, 0.46F, fields.slope[sample]);
         const float flow_t = std::log1p(fields.flow_accumulation[sample]) * inv_log_count;
-        const float valley = fields.valley_influence[sample];
-        const float wetness = saturate((flow_t * 0.56F) + (valley * 0.28F) +
-                                       ((1.0F - slope_t) * 0.16F));
+        const float channel = fields.channel_influence[sample];
+        const float divide = fields.divide_influence[sample];
+        const float valley = saturate((fields.valley_influence[sample] * 0.32F) +
+                                      (channel * 0.78F));
+        const float wetness = saturate((flow_t * 0.50F) + (valley * 0.30F) +
+                                       (channel * 0.20F) + ((1.0F - slope_t) * 0.14F) -
+                                       (divide * 0.08F));
         const float deposition = saturate(wetness * (1.0F - slope_t) *
-                                          (0.35F + fields.basin_influence[sample] * 0.65F));
+                                          (0.14F + fields.basin_influence[sample] * 0.24F +
+                                           channel * 0.72F));
         fields.wetness[sample] = wetness;
         fields.deposition[sample] = deposition;
         fields.max_wetness = std::max(fields.max_wetness, wetness);
@@ -791,12 +808,16 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
         const float high = smoothstep(0.68F, 0.92F, elevation_t);
         const float snow = high * (1.0F - smoothstep(0.52F, 0.88F, slope_t));
         const float rock =
-            ((slope_t * 0.82F) + fields.ridge_influence[sample] * 0.42F) * (1.0F - snow);
+            ((slope_t * 0.78F) + fields.ridge_influence[sample] * 0.34F + divide * 0.36F) *
+            (1.0F - snow);
         const float scree =
-            smoothstep(0.30F, 0.78F, slope_t) * (1.0F - wetness * 0.55F) * (1.0F - snow);
-        const float meadow = wetness * (1.0F - slope_t) * (1.0F - high * 0.55F);
+            smoothstep(0.30F, 0.78F, slope_t) * (1.0F - wetness * 0.55F) *
+            (1.0F - channel * 0.20F) * (1.0F - snow);
+        const float meadow = wetness * (1.0F - slope_t) * (1.0F - high * 0.55F) *
+                             (0.72F + channel * 0.28F);
         const float forest = smoothstep(0.26F, 0.72F, wetness) * (1.0F - slope_t) *
-                             (1.0F - high) * (1.0F - deposition * 0.35F);
+                             (1.0F - high) * (1.0F - deposition * 0.35F) *
+                             (1.0F - channel * 0.18F);
         const float soil = (0.34F + deposition * 0.45F + (1.0F - slope_t) * 0.24F) *
                            (1.0F - snow * 0.75F);
         const TerrainLabMaterialMask material =
