@@ -125,6 +125,13 @@ float cloud_ray_jitter() {
     return fract(gradient_noise + frame * 0.61803398875);
 }
 
+float cloud_step_jitter(int step_index) {
+    float frame = params.render_options.w;
+    vec3 seed = vec3(gl_FragCoord.xy + vec2(frame * 11.0, frame * 23.0),
+                     float(step_index) * 37.0 + frame * 0.37);
+    return fract(sin(dot(seed, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+}
+
 CloudRayInterval spherical_cloud_interval(vec3 origin, vec3 direction, vec3 center) {
     CloudRayInterval interval;
     interval.start = 0.0;
@@ -240,7 +247,7 @@ float distant_surface_cloud_alpha(vec3 origin, vec3 direction, vec3 center) {
     vec3 local_up = normalize(origin - center);
     float ray_up = dot(direction, local_up);
     float above_horizon = smoothstep(-0.035, 0.080, ray_up);
-    float horizon_band = exp(-abs(ray_up) / 0.075) * above_horizon;
+    float horizon_band = exp(-abs(ray_up) / 0.095) * above_horizon;
     if (horizon_band <= 0.0001) {
         return 0.0;
     }
@@ -281,7 +288,7 @@ float distant_surface_cloud_alpha(vec3 origin, vec3 direction, vec3 center) {
     }
 
     float density = density_sum / max(weight_sum, 0.001);
-    return clamp(horizon_band * density * 0.34 * local, 0.0, 0.42);
+    return clamp(horizon_band * density * 0.52 * local, 0.0, 0.55);
 }
 
 vec3 distant_surface_cloud_light(vec3 origin, vec3 direction, vec3 center) {
@@ -375,6 +382,7 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
 
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     float step_len = (ray_end - ray_start) / float(max(effective_view_steps, 1));
+    float ray_angular_footprint = max(length(dFdx(direction)), length(dFdy(direction)));
     float edge_fade_distance = max(layer_thickness * 0.55, step_len * 2.0);
     float ray_jitter = cloud_ray_jitter() - 0.5;
     float ray_jitter_width = mix(0.12, 0.42, adaptive_march);
@@ -392,17 +400,23 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         if (i >= effective_view_steps) {
             break;
         }
-        float sample_t = ray_start + (float(i) + 0.5 + ray_jitter * ray_jitter_width) * step_len;
+        float step_jitter =
+            mix(ray_jitter, cloud_step_jitter(i) - 0.5, adaptive_march * 0.78);
+        float sample_t = ray_start + (float(i) + 0.5 + step_jitter * ray_jitter_width) * step_len;
         vec3 p = origin + direction * sample_t;
+        float sample_footprint = max(step_len, sample_t * ray_angular_footprint);
+        float sample_distance_fraction =
+            clamp((sample_t - ray_start) / max(ray_end - ray_start, 0.001), 0.0, 1.0);
         CloudDensityContext density_context =
-            cloud_density_context(sample_t, step_len, abs(view_horizon),
-                                  clamp((sample_t - ray_start) /
-                                            max(ray_end - ray_start, 0.001),
-                                        0.0, 1.0));
+            cloud_density_context(sample_t, step_len, abs(view_horizon), sample_distance_fraction,
+                                  sample_footprint);
         CloudDensitySample density_sample = cloud_density_sample(p, density_context);
         float density_scale = high_horizon_fade * sky_limb_fade;
         float edge_distance = min(sample_t - ray_start, ray_end - sample_t);
         density_scale *= smoothstep(0.0, edge_fade_distance, edge_distance);
+        float far_horizon_reconstruction =
+            adaptive_march * smoothstep(0.28, 0.92, sample_distance_fraction);
+        density_scale *= mix(1.0, 0.38, far_horizon_reconstruction);
         if (params.camera_forward_mode.w > 1.5 && !hit_ground) {
             density_scale *= 0.22;
         }
@@ -471,6 +485,31 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
         if (result.transmittance < 0.015) {
             break;
         }
+    }
+
+    float reconstructed_horizon_alpha =
+        distant_surface_cloud_alpha(origin, direction, center) * smoothstep(0.18, 0.88,
+                                                                            adaptive_march);
+    if (reconstructed_horizon_alpha > 0.0001) {
+        float existing_alpha = 1.0 - result.transmittance;
+        float add_alpha = clamp(reconstructed_horizon_alpha * (1.0 - existing_alpha * 0.55),
+                                0.0, 0.45);
+        vec3 horizon_light = distant_surface_cloud_light(origin, direction, center);
+        result.color += result.transmittance * horizon_light * add_alpha;
+        result.transmittance *= 1.0 - add_alpha;
+        float horizon_distance =
+            local_cloud_max_distance(length(origin - center) - params.camera_position_radius.w,
+                                     params.cloud_shell.y) *
+            0.82;
+        distance_sum += horizon_distance * add_alpha;
+        distance_weight_sum += add_alpha;
+        density_sum += add_alpha;
+        base_density_sum += add_alpha;
+        detail_density_sum += add_alpha;
+        weather_sum += add_alpha;
+        light_sum += add_alpha;
+        result.distant_alpha = max(result.distant_alpha, add_alpha);
+        result.horizon_factor = max(result.horizon_factor, add_alpha);
     }
 
     float denom = max(float(used_steps), 1.0);

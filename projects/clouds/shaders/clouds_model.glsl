@@ -183,6 +183,7 @@ float weather_coverage(vec3 position_km) {
 struct CloudDensityContext {
     float sample_distance;
     float step_length;
+    float footprint_length;
     float grazing;
     float orbit_view;
     float local_view;
@@ -199,15 +200,23 @@ struct CloudDensitySample {
 };
 
 CloudDensityContext cloud_density_context(float sample_distance, float step_length,
-                                          float grazing, float distance_fraction) {
+                                          float grazing, float distance_fraction,
+                                          float footprint_length) {
     CloudDensityContext context;
     context.sample_distance = max(sample_distance, 0.0);
     context.step_length = max(step_length, 0.0);
+    context.footprint_length = max(footprint_length, context.step_length);
     context.grazing = clamp(grazing, 0.0, 1.0);
     context.orbit_view = smoothstep(1.5, 2.0, params.camera_forward_mode.w);
     context.local_view = 1.0 - context.orbit_view;
     context.distance_fraction = clamp(distance_fraction, 0.0, 1.0);
     return context;
+}
+
+CloudDensityContext cloud_density_context(float sample_distance, float step_length,
+                                          float grazing, float distance_fraction) {
+    return cloud_density_context(sample_distance, step_length, grazing, distance_fraction,
+                                 step_length);
 }
 
 CloudDensityContext cloud_density_default_context() {
@@ -240,7 +249,7 @@ CloudDensitySample cloud_density_sample(vec3 position_km, CloudDensityContext co
     float coverage = clamp(params.weather.x, 0.0, 1.0);
     float orbit_view = context.orbit_view;
     float distance_suppression = smoothstep(36.0, 190.0, context.sample_distance);
-    float footprint_suppression = smoothstep(2.5, 12.0, context.step_length);
+    float footprint_suppression = smoothstep(1.8, 9.0, context.footprint_length);
     float grazing_support = smoothstep(0.04, 0.30, context.grazing);
     float horizon_suppression =
         (1.0 - smoothstep(0.12, 0.46, context.grazing)) *
