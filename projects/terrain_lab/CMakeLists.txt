@@ -1,6 +1,7 @@
 if (BUILD_TESTING)
     add_executable(cubey_project_terrain_lab_tests
         terrain_lab_config_tests.cpp
+        terrain_lab_fields.cpp
     )
     target_include_directories(
         cubey_project_terrain_lab_tests

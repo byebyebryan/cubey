@@ -1,8 +1,11 @@
 #include "terrain_lab_config.h"
+#include "terrain_lab_fields.h"
 
 #include <cubey/core/run_config.h>
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <stdexcept>
 
 namespace {
@@ -15,6 +18,10 @@ void require(bool condition, const char* message) {
 
 void require_near(float value, float expected, float tolerance, const char* message) {
     require(value >= expected - tolerance && value <= expected + tolerance, message);
+}
+
+float material_sum(const cubey::projects::terrain_lab::TerrainLabMaterialMask& mask) {
+    return mask.rock + mask.soil + mask.scree + mask.meadow + mask.forest + mask.snow;
 }
 
 } // namespace
@@ -195,6 +202,178 @@ int main() {
         rejected = true;
     }
     require(rejected, "terrain lab should reject invalid detail strength");
+
+    terrain::TerrainLabConfig small = defaults;
+    small.grid_width = 65U;
+    small.grid_height = 65U;
+    small.cell_size_m = 64.0F;
+    const terrain::TerrainLabFieldData fields = terrain::generate_terrain_lab_fields(small);
+    terrain::validate_terrain_lab_fields(fields);
+    const float half_extent =
+        static_cast<float>(fields.desc.width - 1U) * fields.desc.cell_size_m * 0.5F;
+    require(fields.sample_count() == 65U * 65U,
+            "terrain lab fields should match grid dimensions");
+    require_near(terrain::terrain_lab_grid_sample_x_m(fields.desc, 0U), -half_extent, 0.001F,
+                 "terrain lab grid should be centered on X");
+    require_near(terrain::terrain_lab_grid_sample_z_m(fields.desc, 0U), -half_extent, 0.001F,
+                 "terrain lab grid should be centered on Z");
+    require_near(terrain::terrain_lab_grid_sample_x_m(fields.desc, fields.desc.width / 2U),
+                 0.0F, 0.001F, "terrain lab center sample should land on origin X");
+    require_near(terrain::terrain_lab_grid_sample_z_m(fields.desc, fields.desc.height / 2U),
+                 0.0F, 0.001F, "terrain lab center sample should land on origin Z");
+
+    require(fields.height_m.size() == fields.sample_count(),
+            "terrain lab height field size mismatch");
+    require(fields.structure_height_m.size() == fields.sample_count(),
+            "terrain lab structure field size mismatch");
+    require(fields.process_delta_m.size() == fields.sample_count(),
+            "terrain lab process field size mismatch");
+    require(fields.detail_height_m.size() == fields.sample_count(),
+            "terrain lab detail field size mismatch");
+    require(fields.slope.size() == fields.sample_count(), "terrain lab slope field size mismatch");
+    require(fields.curvature.size() == fields.sample_count(),
+            "terrain lab curvature field size mismatch");
+    require(fields.flow_direction.size() == fields.sample_count(),
+            "terrain lab flow direction field size mismatch");
+    require(fields.flow_accumulation.size() == fields.sample_count(),
+            "terrain lab flow accumulation field size mismatch");
+    require(fields.stream_power.size() == fields.sample_count(),
+            "terrain lab stream power field size mismatch");
+    require(fields.wetness.size() == fields.sample_count(),
+            "terrain lab wetness field size mismatch");
+    require(fields.deposition.size() == fields.sample_count(),
+            "terrain lab deposition field size mismatch");
+    require(fields.material_masks.size() == fields.sample_count(),
+            "terrain lab material field size mismatch");
+    require(fields.grass_density.size() == fields.sample_count(),
+            "terrain lab grass field size mismatch");
+    require(fields.shrub_density.size() == fields.sample_count(),
+            "terrain lab shrub field size mismatch");
+    require(fields.tree_density.size() == fields.sample_count(),
+            "terrain lab tree field size mismatch");
+    require(fields.canopy_height_m.size() == fields.sample_count(),
+            "terrain lab canopy field size mismatch");
+    require(fields.ridge_influence.size() == fields.sample_count(),
+            "terrain lab ridge field size mismatch");
+    require(fields.valley_influence.size() == fields.sample_count(),
+            "terrain lab valley field size mismatch");
+    require(fields.basin_influence.size() == fields.sample_count(),
+            "terrain lab basin field size mismatch");
+
+    require(fields.max_height_m - fields.min_height_m > 100.0F,
+            "terrain lab fields should produce non-flat terrain");
+    require(fields.max_slope > 0.0F, "terrain lab fields should produce nonzero slopes");
+    require(fields.max_abs_curvature > 0.0F,
+            "terrain lab fields should produce nonzero curvature");
+    require(fields.max_flow_accumulation > 1.0F,
+            "terrain lab fields should accumulate drainage");
+    require(fields.max_stream_power >= 0.0F,
+            "terrain lab stream power should stay nonnegative");
+    require(fields.max_wetness > 0.0F && fields.max_wetness <= 1.0F,
+            "terrain lab wetness should be normalized");
+    require(fields.max_deposition > 0.0F && fields.max_deposition <= 1.0F,
+            "terrain lab deposition should be normalized");
+
+    bool saw_material_variation = false;
+    bool saw_tree_density = false;
+    bool saw_detail = false;
+    bool saw_process = false;
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        require(std::isfinite(fields.height_m[index]), "terrain lab height should be finite");
+        require(std::isfinite(fields.structure_height_m[index]),
+                "terrain lab structure should be finite");
+        require(std::isfinite(fields.process_delta_m[index]),
+                "terrain lab process should be finite");
+        require(std::isfinite(fields.detail_height_m[index]), "terrain lab detail should be finite");
+        require(std::isfinite(fields.slope[index]), "terrain lab slope should be finite");
+        require(std::isfinite(fields.curvature[index]), "terrain lab curvature should be finite");
+        require(fields.flow_direction[index] <= 8U, "terrain lab flow direction should be valid");
+        require(fields.flow_accumulation[index] >= 0.0F,
+                "terrain lab flow accumulation should be nonnegative");
+        require(fields.stream_power[index] >= 0.0F,
+                "terrain lab stream power should be nonnegative");
+        require(fields.wetness[index] >= 0.0F && fields.wetness[index] <= 1.0F,
+                "terrain lab wetness should be normalized");
+        require(fields.deposition[index] >= 0.0F && fields.deposition[index] <= 1.0F,
+                "terrain lab deposition should be normalized");
+        require(fields.grass_density[index] >= 0.0F && fields.grass_density[index] <= 1.0F,
+                "terrain lab grass density should be normalized");
+        require(fields.shrub_density[index] >= 0.0F && fields.shrub_density[index] <= 1.0F,
+                "terrain lab shrub density should be normalized");
+        require(fields.tree_density[index] >= 0.0F && fields.tree_density[index] <= 1.0F,
+                "terrain lab tree density should be normalized");
+        require(fields.canopy_height_m[index] >= 0.0F,
+                "terrain lab canopy height should be nonnegative");
+        require_near(material_sum(fields.material_masks[index]), 1.0F, 0.001F,
+                     "terrain lab material masks should sum to one");
+        saw_material_variation =
+            saw_material_variation || fields.material_masks[index].rock > 0.05F ||
+            fields.material_masks[index].forest > 0.05F || fields.material_masks[index].snow > 0.05F;
+        saw_tree_density = saw_tree_density || fields.tree_density[index] > 0.01F;
+        saw_detail = saw_detail || std::abs(fields.detail_height_m[index]) > 0.001F;
+        saw_process = saw_process || std::abs(fields.process_delta_m[index]) > 0.001F;
+    }
+    require(saw_material_variation, "terrain lab should produce varied material masks");
+    require(saw_tree_density, "terrain lab should produce tree density fields");
+    require(saw_detail, "terrain lab should produce detail contribution fields");
+    require(saw_process, "terrain lab should produce process contribution fields");
+
+    const terrain::TerrainLabFieldData fields_repeat =
+        terrain::generate_terrain_lab_fields(small);
+    const terrain::TerrainLabFieldSummary summary =
+        terrain::summarize_terrain_lab_fields(fields);
+    const terrain::TerrainLabFieldSummary summary_repeat =
+        terrain::summarize_terrain_lab_fields(fields_repeat);
+    require(summary.sample_count == summary_repeat.sample_count,
+            "terrain lab summaries should be repeatable");
+    require_near(summary.min_height_m, summary_repeat.min_height_m, 0.001F,
+                 "terrain lab min height summary should be repeatable");
+    require_near(summary.max_height_m, summary_repeat.max_height_m, 0.001F,
+                 "terrain lab max height summary should be repeatable");
+    require_near(summary.mean_height_m, summary_repeat.mean_height_m, 0.001F,
+                 "terrain lab mean height summary should be repeatable");
+    require_near(summary.mean_slope, summary_repeat.mean_slope, 0.001F,
+                 "terrain lab mean slope summary should be repeatable");
+    require_near(summary.max_flow_accumulation, summary_repeat.max_flow_accumulation, 0.001F,
+                 "terrain lab flow summary should be repeatable");
+    require_near(summary.mean_wetness, summary_repeat.mean_wetness, 0.001F,
+                 "terrain lab wetness summary should be repeatable");
+    require_near(summary.mean_tree_density, summary_repeat.mean_tree_density, 0.001F,
+                 "terrain lab tree summary should be repeatable");
+
+    terrain::TerrainLabConfig other_seed = small;
+    other_seed.seed += 1U;
+    const terrain::TerrainLabFieldSummary other_summary =
+        terrain::summarize_terrain_lab_fields(terrain::generate_terrain_lab_fields(other_seed));
+    require(std::abs(other_summary.mean_height_m - summary.mean_height_m) > 0.001F ||
+                std::abs(other_summary.mean_wetness - summary.mean_wetness) > 0.00001F,
+            "terrain lab seed should influence generated fields");
+
+    terrain::TerrainLabConfig no_detail = small;
+    no_detail.detail_strength = 0.0F;
+    const terrain::TerrainLabFieldData no_detail_fields =
+        terrain::generate_terrain_lab_fields(no_detail);
+    float min_no_detail_structure = no_detail_fields.structure_height_m.front();
+    float max_no_detail_structure = no_detail_fields.structure_height_m.front();
+    bool all_detail_zero = true;
+    for (std::size_t index = 0; index < no_detail_fields.sample_count(); ++index) {
+        min_no_detail_structure =
+            std::min(min_no_detail_structure, no_detail_fields.structure_height_m[index]);
+        max_no_detail_structure =
+            std::max(max_no_detail_structure, no_detail_fields.structure_height_m[index]);
+        all_detail_zero =
+            all_detail_zero && std::abs(no_detail_fields.detail_height_m[index]) <= 0.001F;
+        require_near(no_detail_fields.height_m[index],
+                     no_detail_fields.structure_height_m[index] +
+                         no_detail_fields.process_delta_m[index],
+                     0.001F,
+                     "terrain lab noise-off height should equal structure plus process");
+    }
+    require(all_detail_zero, "terrain lab detail can be disabled independently");
+    require(max_no_detail_structure - min_no_detail_structure > 100.0F,
+            "terrain lab noise-off structure should remain non-flat");
+    require(no_detail_fields.max_flow_accumulation > 1.0F,
+            "terrain lab noise-off fields should still have drainage structure");
 
     return 0;
 }
