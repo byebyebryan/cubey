@@ -50,6 +50,9 @@ Current projects:
   cube-sphere LOD, procedural terrain fields, local-detail diagnostics,
   shared sky/celestial state, physical atmosphere preview, HDR post, and
   headless visual smoke coverage.
+- `terrain_lab`: docs-first local terrain generation workbench for coherent
+  terrain fields, biome and landform slices, material masks, and future
+  adapters into planet, ocean, or environment projects.
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, pressure projection, debug views, and
   deterministic headless capture output.
@@ -119,6 +122,7 @@ Project-local docs:
 - [Fire 3D](projects/fluid/fire_3d/README.md)
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
 - [Planet](projects/planet/README.md)
+- [Terrain Lab](projects/terrain_lab/README.md)
 - [Ocean](projects/ocean/README.md)
 - [Procedural Terrain](projects/procedural_terrain/README.md)
 
