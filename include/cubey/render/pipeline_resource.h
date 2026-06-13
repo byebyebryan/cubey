@@ -72,6 +72,7 @@ class ShaderProgram {
 struct GraphicsPipelineResourceConfig {
     VkExtent2D extent{};
     VkFormat color_format = VK_FORMAT_UNDEFINED;
+    std::vector<VkFormat> color_formats{};
     VkFormat depth_format = VK_FORMAT_UNDEFINED;
     std::span<const VkPipelineShaderStageCreateInfo> shader_stages{};
     std::span<const VkVertexInputBindingDescription> vertex_bindings{};
@@ -83,6 +84,7 @@ struct GraphicsPipelineResourceConfig {
 struct GraphicsPipelineFileResourceConfig {
     VkExtent2D extent{};
     VkFormat color_format = VK_FORMAT_UNDEFINED;
+    std::vector<VkFormat> color_formats{};
     VkFormat depth_format = VK_FORMAT_UNDEFINED;
     std::span<const ShaderStageFile> shader_stage_files{};
     std::span<const VkVertexInputBindingDescription> vertex_bindings{};
@@ -94,6 +96,7 @@ struct GraphicsPipelineFileResourceConfig {
 struct GraphicsPipelineTargetInfo {
     VkExtent2D extent{};
     VkFormat color_format = VK_FORMAT_UNDEFINED;
+    std::vector<VkFormat> color_formats{};
     VkFormat depth_format = VK_FORMAT_UNDEFINED;
 };
 
@@ -111,6 +114,7 @@ graphics_pipeline_file_resource_config(const GraphicsPipelineTargetInfo& target,
     return {
         .extent = target.extent,
         .color_format = target.color_format,
+        .color_formats = target.color_formats,
         .depth_format = target.depth_format,
         .shader_stage_files = recipe.shader_stage_files,
         .vertex_bindings = recipe.vertex_bindings,

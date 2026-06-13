@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <stdexcept>
+#include <utility>
 
 namespace cubey::render {
 namespace {
@@ -32,6 +33,25 @@ void validate_depth_target(const DepthTargetView& target) {
     if (target.image == VK_NULL_HANDLE || target.view == VK_NULL_HANDLE) {
         throw std::runtime_error("depth target requires valid image and view handles");
     }
+}
+
+void validate_color_targets(std::span<const ColorTargetView> colors) {
+    if (colors.empty()) {
+        throw std::runtime_error("render target requires at least one color attachment");
+    }
+
+    const VkExtent2D extent = colors.front().extent;
+    for (const ColorTargetView& color : colors) {
+        validate_color_target(color);
+        if (color.extent.width != extent.width || color.extent.height != extent.height) {
+            throw std::runtime_error("render target color attachment extents must match");
+        }
+    }
+}
+
+std::vector<ColorTargetView> copy_color_targets(std::span<const ColorTargetView> colors) {
+    validate_color_targets(colors);
+    return {colors.begin(), colors.end()};
 }
 
 } // namespace
@@ -81,6 +101,7 @@ RenderTargetView render_target_view(ColorTargetView color) {
     validate_color_target(color);
     return {
         .color = color,
+        .colors = {color},
         .depth = std::nullopt,
     };
 }
@@ -93,6 +114,33 @@ RenderTargetView render_target_view(ColorTargetView color, DepthTargetView depth
     }
     return {
         .color = color,
+        .colors = {color},
+        .depth = depth,
+    };
+}
+
+RenderTargetView render_target_view(std::span<const ColorTargetView> colors) {
+    std::vector<ColorTargetView> copied_colors = copy_color_targets(colors);
+    const ColorTargetView first_color = copied_colors.front();
+    return {
+        .color = first_color,
+        .colors = std::move(copied_colors),
+        .depth = std::nullopt,
+    };
+}
+
+RenderTargetView render_target_view(std::span<const ColorTargetView> colors,
+                                    DepthTargetView depth) {
+    std::vector<ColorTargetView> copied_colors = copy_color_targets(colors);
+    validate_depth_target(depth);
+    const ColorTargetView first_color = copied_colors.front();
+    if (first_color.extent.width != depth.extent.width ||
+        first_color.extent.height != depth.extent.height) {
+        throw std::runtime_error("render target color and depth extents must match");
+    }
+    return {
+        .color = first_color,
+        .colors = std::move(copied_colors),
         .depth = depth,
     };
 }
@@ -100,21 +148,30 @@ RenderTargetView render_target_view(ColorTargetView color, DepthTargetView depth
 RenderTargetRenderingInfo::RenderTargetRenderingInfo(const RenderTargetView& target,
                                                      const RenderClearValues& clear,
                                                      RenderTargetAttachmentOps ops) {
-    validate_color_target(target.color);
-    color_attachment_ =
-        cubey::vulkan::color_rendering_attachment(target.color.view, clear.color, ops.color);
+    const std::span<const ColorTargetView> colors =
+        target.colors.empty() ? std::span<const ColorTargetView>(&target.color, 1) : target.colors;
+    validate_color_targets(colors);
+    color_attachments_.reserve(colors.size());
+    for (const ColorTargetView& color : colors) {
+        color_attachments_.push_back(
+            cubey::vulkan::color_rendering_attachment(color.view, clear.color, ops.color));
+    }
     if (target.depth.has_value()) {
         validate_depth_target(target.depth.value());
+        if (colors.front().extent.width != target.depth->extent.width ||
+            colors.front().extent.height != target.depth->extent.height) {
+            throw std::runtime_error("render target color and depth extents must match");
+        }
         depth_attachment_ =
             cubey::vulkan::depth_rendering_attachment(target.depth->view, clear.depth, ops.depth);
     }
 
     info_ = cubey::vulkan::vk_struct<VkRenderingInfo>(VK_STRUCTURE_TYPE_RENDERING_INFO);
     info_.renderArea.offset = {0, 0};
-    info_.renderArea.extent = target.color.extent;
+    info_.renderArea.extent = colors.front().extent;
     info_.layerCount = 1;
-    info_.colorAttachmentCount = 1;
-    info_.pColorAttachments = &color_attachment_;
+    info_.colorAttachmentCount = static_cast<std::uint32_t>(color_attachments_.size());
+    info_.pColorAttachments = color_attachments_.data();
     if (depth_attachment_.has_value()) {
         info_.pDepthAttachment = &depth_attachment_.value();
     }

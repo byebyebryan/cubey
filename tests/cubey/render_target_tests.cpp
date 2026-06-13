@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #include <stdexcept>
+#include <array>
 
 namespace {
 
@@ -70,6 +71,38 @@ void test_render_target_rendering_info_describes_dynamic_rendering() {
             "color attachment should preserve color view");
     require(rendering.depth_attachment().imageView == depth.view,
             "depth attachment should preserve depth view");
+}
+
+void test_render_target_rendering_info_describes_multiple_color_attachments() {
+    const VkExtent2D extent{320, 180};
+    const std::array<cubey::render::ColorTargetView, 2> colors{
+        cubey::render::color_target_view(extent, VK_FORMAT_R16G16B16A16_SFLOAT,
+                                         reinterpret_cast<VkImage>(0x10),
+                                         reinterpret_cast<VkImageView>(0x11)),
+        cubey::render::color_target_view(extent, VK_FORMAT_R16G16B16A16_SFLOAT,
+                                         reinterpret_cast<VkImage>(0x12),
+                                         reinterpret_cast<VkImageView>(0x13)),
+    };
+    const cubey::render::RenderTargetView target = cubey::render::render_target_view(colors);
+    VkClearValue color_clear{};
+    color_clear.color = {{0.0F, 0.0F, 0.0F, 1.0F}};
+    const cubey::render::RenderClearValues clear_values{
+        .color = color_clear,
+    };
+
+    const cubey::render::RenderTargetRenderingInfo rendering(target, clear_values);
+    const VkRenderingInfo& info = rendering.info();
+
+    require(target.color.view == colors[0].view, "multi target should preserve primary color");
+    require(target.colors.size() == colors.size(), "multi target should preserve color count");
+    require(info.colorAttachmentCount == colors.size(),
+            "rendering info should expose multiple color attachments");
+    require(info.pColorAttachments == rendering.color_attachments().data(),
+            "rendering info should point at owned color attachments");
+    require(rendering.color_attachments()[0].imageView == colors[0].view,
+            "first color attachment should preserve color view");
+    require(rendering.color_attachments()[1].imageView == colors[1].view,
+            "second color attachment should preserve color view");
 }
 
 void test_depth_only_rendering_info_describes_sampled_depth_target() {

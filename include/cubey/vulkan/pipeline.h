@@ -13,6 +13,7 @@ namespace cubey::vulkan {
 struct DynamicGraphicsPipelineConfig {
     VkPipelineLayout layout = VK_NULL_HANDLE;
     VkFormat color_format = VK_FORMAT_UNDEFINED;
+    std::vector<VkFormat> color_formats{};
     VkFormat depth_format = VK_FORMAT_UNDEFINED;
     std::span<const VkPipelineShaderStageCreateInfo> shader_stages;
     std::span<const VkVertexInputBindingDescription> vertex_bindings;
@@ -100,7 +101,7 @@ class DynamicGraphicsPipelineInfo {
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages_;
     std::vector<VkVertexInputBindingDescription> vertex_bindings_;
     std::vector<VkVertexInputAttributeDescription> vertex_attributes_;
-    VkFormat color_format_ = VK_FORMAT_UNDEFINED;
+    std::vector<VkFormat> color_formats_;
     VkPipelineRenderingCreateInfo rendering_info_{};
     VkPipelineVertexInputStateCreateInfo vertex_input_{};
     VkPipelineInputAssemblyStateCreateInfo input_assembly_{};
@@ -108,7 +109,7 @@ class DynamicGraphicsPipelineInfo {
     VkPipelineRasterizationStateCreateInfo rasterizer_{};
     VkPipelineMultisampleStateCreateInfo multisample_{};
     VkPipelineDepthStencilStateCreateInfo depth_stencil_{};
-    VkPipelineColorBlendAttachmentState color_blend_attachment_{};
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments_;
     VkPipelineColorBlendStateCreateInfo color_blend_{};
     std::array<VkDynamicState, 2> dynamic_states_{};
     VkPipelineDynamicStateCreateInfo dynamic_state_{};

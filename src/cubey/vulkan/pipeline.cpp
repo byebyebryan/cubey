@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <stdexcept>
+#include <vector>
 
 namespace cubey::vulkan {
 namespace {
@@ -12,9 +13,15 @@ void validate_dynamic_graphics_pipeline_config(const DynamicGraphicsPipelineConf
     if (config.layout == VK_NULL_HANDLE) {
         throw std::runtime_error("dynamic graphics pipeline requires a pipeline layout");
     }
-    if (config.color_format == VK_FORMAT_UNDEFINED && config.depth_format == VK_FORMAT_UNDEFINED) {
+    if (config.color_format == VK_FORMAT_UNDEFINED && config.color_formats.empty() &&
+        config.depth_format == VK_FORMAT_UNDEFINED) {
         throw std::runtime_error(
             "dynamic graphics pipeline requires at least one attachment format");
+    }
+    for (const VkFormat color_format : config.color_formats) {
+        if (color_format == VK_FORMAT_UNDEFINED) {
+            throw std::runtime_error("dynamic graphics pipeline color formats must be defined");
+        }
     }
     if (config.shader_stages.empty()) {
         throw std::runtime_error("dynamic graphics pipeline requires at least one shader stage");
@@ -38,6 +45,16 @@ void validate_compute_pipeline_config(const ComputePipelineConfig& config) {
     if (config.shader_stage.pName == nullptr) {
         throw std::runtime_error("compute pipeline requires a shader entry point");
     }
+}
+
+std::vector<VkFormat> effective_color_formats(const DynamicGraphicsPipelineConfig& config) {
+    if (!config.color_formats.empty()) {
+        return config.color_formats;
+    }
+    if (config.color_format != VK_FORMAT_UNDEFINED) {
+        return {config.color_format};
+    }
+    return {};
 }
 
 } // namespace
@@ -82,13 +99,14 @@ DynamicGraphicsPipelineInfo::DynamicGraphicsPipelineInfo(
     shader_stages_.assign(config.shader_stages.begin(), config.shader_stages.end());
     vertex_bindings_.assign(config.vertex_bindings.begin(), config.vertex_bindings.end());
     vertex_attributes_.assign(config.vertex_attributes.begin(), config.vertex_attributes.end());
-    const bool has_color_attachment = config.color_format != VK_FORMAT_UNDEFINED;
-    color_format_ = config.color_format;
+    color_formats_ = effective_color_formats(config);
+    const bool has_color_attachment = !color_formats_.empty();
 
     rendering_info_ =
         vk_struct<VkPipelineRenderingCreateInfo>(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
-    rendering_info_.colorAttachmentCount = has_color_attachment ? 1U : 0U;
-    rendering_info_.pColorAttachmentFormats = has_color_attachment ? &color_format_ : nullptr;
+    rendering_info_.colorAttachmentCount = static_cast<std::uint32_t>(color_formats_.size());
+    rendering_info_.pColorAttachmentFormats =
+        has_color_attachment ? color_formats_.data() : nullptr;
     rendering_info_.depthAttachmentFormat = config.depth_format;
 
     vertex_input_ = vk_struct<VkPipelineVertexInputStateCreateInfo>(
@@ -137,20 +155,27 @@ DynamicGraphicsPipelineInfo::DynamicGraphicsPipelineInfo(
     depth_stencil_.depthWriteEnable = config.depth_write ? VK_TRUE : VK_FALSE;
     depth_stencil_.depthCompareOp = config.depth_compare_op;
 
-    color_blend_attachment_.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                                             VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    color_blend_attachment_.blendEnable = config.blend_enable ? VK_TRUE : VK_FALSE;
-    color_blend_attachment_.srcColorBlendFactor = config.src_color_blend_factor;
-    color_blend_attachment_.dstColorBlendFactor = config.dst_color_blend_factor;
-    color_blend_attachment_.colorBlendOp = config.color_blend_op;
-    color_blend_attachment_.srcAlphaBlendFactor = config.src_alpha_blend_factor;
-    color_blend_attachment_.dstAlphaBlendFactor = config.dst_alpha_blend_factor;
-    color_blend_attachment_.alphaBlendOp = config.alpha_blend_op;
+    color_blend_attachments_.resize(color_formats_.size());
+    for (VkPipelineColorBlendAttachmentState& color_blend_attachment :
+         color_blend_attachments_) {
+        color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+                                                VK_COLOR_COMPONENT_G_BIT |
+                                                VK_COLOR_COMPONENT_B_BIT |
+                                                VK_COLOR_COMPONENT_A_BIT;
+        color_blend_attachment.blendEnable = config.blend_enable ? VK_TRUE : VK_FALSE;
+        color_blend_attachment.srcColorBlendFactor = config.src_color_blend_factor;
+        color_blend_attachment.dstColorBlendFactor = config.dst_color_blend_factor;
+        color_blend_attachment.colorBlendOp = config.color_blend_op;
+        color_blend_attachment.srcAlphaBlendFactor = config.src_alpha_blend_factor;
+        color_blend_attachment.dstAlphaBlendFactor = config.dst_alpha_blend_factor;
+        color_blend_attachment.alphaBlendOp = config.alpha_blend_op;
+    }
 
     color_blend_ = vk_struct<VkPipelineColorBlendStateCreateInfo>(
         VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
-    color_blend_.attachmentCount = has_color_attachment ? 1U : 0U;
-    color_blend_.pAttachments = has_color_attachment ? &color_blend_attachment_ : nullptr;
+    color_blend_.attachmentCount = static_cast<std::uint32_t>(color_blend_attachments_.size());
+    color_blend_.pAttachments =
+        has_color_attachment ? color_blend_attachments_.data() : nullptr;
 
     create_info_ =
         vk_struct<VkGraphicsPipelineCreateInfo>(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
