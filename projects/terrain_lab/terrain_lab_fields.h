@@ -29,6 +29,7 @@ struct TerrainLabMaterialMask {
 
 struct TerrainLabFieldSummary {
     std::size_t sample_count = 0;
+    std::uint32_t watershed_count = 0;
     float min_height_m = 0.0F;
     float max_height_m = 0.0F;
     float mean_height_m = 0.0F;
@@ -36,6 +37,9 @@ struct TerrainLabFieldSummary {
     float max_flow_accumulation = 0.0F;
     float mean_wetness = 0.0F;
     float mean_tree_density = 0.0F;
+    float mean_divide_influence = 0.0F;
+    float mean_channel_influence = 0.0F;
+    float max_channel_distance_m = 0.0F;
 };
 
 struct TerrainLabFieldData {
@@ -59,6 +63,10 @@ struct TerrainLabFieldData {
     std::vector<float> ridge_influence{};
     std::vector<float> valley_influence{};
     std::vector<float> basin_influence{};
+    std::vector<std::uint32_t> watershed_id{};
+    std::vector<float> divide_influence{};
+    std::vector<float> channel_influence{};
+    std::vector<float> channel_distance_m{};
     float min_height_m = 0.0F;
     float max_height_m = 0.0F;
     float max_slope = 0.0F;
@@ -67,6 +75,8 @@ struct TerrainLabFieldData {
     float max_stream_power = 0.0F;
     float max_wetness = 0.0F;
     float max_deposition = 0.0F;
+    float max_channel_distance_m = 0.0F;
+    std::uint32_t watershed_count = 0;
 
     [[nodiscard]] std::size_t sample_count() const;
     [[nodiscard]] std::size_t index(std::uint32_t x, std::uint32_t y) const;

@@ -5,6 +5,7 @@
 #include <cubey/core/run_config.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -335,6 +336,17 @@ int main() {
             "terrain lab valley field size mismatch");
     require(fields.basin_influence.size() == fields.sample_count(),
             "terrain lab basin field size mismatch");
+    require(fields.watershed_id.size() == fields.sample_count(),
+            "terrain lab watershed field size mismatch");
+    require(fields.divide_influence.size() == fields.sample_count(),
+            "terrain lab divide field size mismatch");
+    require(fields.channel_influence.size() == fields.sample_count(),
+            "terrain lab channel field size mismatch");
+    require(fields.channel_distance_m.size() == fields.sample_count(),
+            "terrain lab channel distance field size mismatch");
+    require(fields.watershed_count == 4U, "terrain lab watershed graph should expose four basins");
+    require(fields.max_channel_distance_m > fields.desc.cell_size_m,
+            "terrain lab watershed graph should track channel distance range");
 
     require(fields.max_height_m - fields.min_height_m > 100.0F,
             "terrain lab fields should produce non-flat terrain");
@@ -354,6 +366,9 @@ int main() {
     bool saw_tree_density = false;
     bool saw_detail = false;
     bool saw_process = false;
+    bool saw_divide = false;
+    bool saw_channel = false;
+    std::array<bool, 4> saw_watershed{};
     for (std::size_t index = 0; index < fields.sample_count(); ++index) {
         require(std::isfinite(fields.height_m[index]), "terrain lab height should be finite");
         require(std::isfinite(fields.structure_height_m[index]),
@@ -380,6 +395,15 @@ int main() {
                 "terrain lab tree density should be normalized");
         require(fields.canopy_height_m[index] >= 0.0F,
                 "terrain lab canopy height should be nonnegative");
+        require(fields.watershed_id[index] < fields.watershed_count,
+                "terrain lab watershed id should be valid");
+        require(fields.divide_influence[index] >= 0.0F && fields.divide_influence[index] <= 1.0F,
+                "terrain lab divide influence should be normalized");
+        require(fields.channel_influence[index] >= 0.0F &&
+                    fields.channel_influence[index] <= 1.0F,
+                "terrain lab channel influence should be normalized");
+        require(fields.channel_distance_m[index] >= 0.0F,
+                "terrain lab channel distance should be nonnegative");
         require_near(material_sum(fields.material_masks[index]), 1.0F, 0.001F,
                      "terrain lab material masks should sum to one");
         saw_material_variation =
@@ -388,11 +412,18 @@ int main() {
         saw_tree_density = saw_tree_density || fields.tree_density[index] > 0.01F;
         saw_detail = saw_detail || std::abs(fields.detail_height_m[index]) > 0.001F;
         saw_process = saw_process || std::abs(fields.process_delta_m[index]) > 0.001F;
+        saw_divide = saw_divide || fields.divide_influence[index] > 0.2F;
+        saw_channel = saw_channel || fields.channel_influence[index] > 0.2F;
+        saw_watershed[fields.watershed_id[index]] = true;
     }
     require(saw_material_variation, "terrain lab should produce varied material masks");
     require(saw_tree_density, "terrain lab should produce tree density fields");
     require(saw_detail, "terrain lab should produce detail contribution fields");
     require(saw_process, "terrain lab should produce process contribution fields");
+    require(saw_divide, "terrain lab should produce divide influence fields");
+    require(saw_channel, "terrain lab should produce channel influence fields");
+    require(std::all_of(saw_watershed.begin(), saw_watershed.end(), [](bool saw) { return saw; }),
+            "terrain lab should rasterize every watershed basin");
 
     const terrain::TerrainLabFieldData fields_repeat =
         terrain::generate_terrain_lab_fields(small);
@@ -416,6 +447,19 @@ int main() {
                  "terrain lab wetness summary should be repeatable");
     require_near(summary.mean_tree_density, summary_repeat.mean_tree_density, 0.001F,
                  "terrain lab tree summary should be repeatable");
+    require(summary.watershed_count == summary_repeat.watershed_count,
+            "terrain lab watershed summary should be repeatable");
+    require_near(summary.mean_divide_influence, summary_repeat.mean_divide_influence, 0.001F,
+                 "terrain lab divide summary should be repeatable");
+    require_near(summary.mean_channel_influence, summary_repeat.mean_channel_influence, 0.001F,
+                 "terrain lab channel summary should be repeatable");
+    require_near(summary.max_channel_distance_m, summary_repeat.max_channel_distance_m, 0.001F,
+                 "terrain lab channel distance summary should be repeatable");
+    require(summary.watershed_count == 4U, "terrain lab summary should count watershed basins");
+    require(summary.mean_divide_influence > 0.0F,
+            "terrain lab summary should include divide coverage");
+    require(summary.mean_channel_influence > 0.0F,
+            "terrain lab summary should include channel coverage");
 
     terrain::TerrainLabConfig other_seed = small;
     other_seed.seed += 1U;
