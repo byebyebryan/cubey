@@ -7,10 +7,10 @@
 
 const float CLOUDS_ATMOSPHERE_HEIGHT_KM = 100.0;
 
-layout(set = 0, binding = 0) uniform sampler2D cloud_product_texture;
-layout(set = 0, binding = 1) uniform sampler2D cloud_metadata_texture;
+layout(set = 0, binding = 1) uniform sampler2D cloud_product_texture;
+layout(set = 0, binding = 2) uniform sampler2D cloud_metadata_texture;
 
-layout(push_constant) uniform CloudsParams {
+layout(std140, set = 0, binding = 0) uniform CloudsFrame {
     vec4 camera_right_aspect;
     vec4 camera_up_tan_half_fovy;
     vec4 camera_forward_mode;
@@ -19,6 +19,8 @@ layout(push_constant) uniform CloudsParams {
     vec4 weather;
     vec4 sun_direction_intensity;
     vec4 render_options;
+    vec4 feature_options;
+    vec4 weather_feature_weights;
 } params;
 
 layout(location = 0) in vec2 frag_position;

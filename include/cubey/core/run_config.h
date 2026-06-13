@@ -237,7 +237,14 @@ struct RunConfig {
         float weather_scale_km = kRunConfigUnsetFloat;
         float wind_speed_mps = kRunConfigUnsetFloat;
         float shadow_strength = kRunConfigUnsetFloat;
+        float horizon_strength = kRunConfigUnsetFloat;
+        float weather_fronts = kRunConfigUnsetFloat;
+        float weather_cells = kRunConfigUnsetFloat;
+        float weather_streaks = kRunConfigUnsetFloat;
+        float detail_erosion = kRunConfigUnsetFloat;
         int temporal = -1;
+        int local_volume = -1;
+        int horizon_layer = -1;
     };
 
     std::string title = "cubey";

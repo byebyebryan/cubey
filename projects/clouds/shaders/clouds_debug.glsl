@@ -26,6 +26,9 @@ const int CLOUDS_VIEW_FAR_HORIZON = 21;
 const int CLOUDS_VIEW_CLOUD_DEPTH = 22;
 const int CLOUDS_VIEW_CLOUD_CONFIDENCE = 23;
 const int CLOUDS_VIEW_HORIZON_BLEND = 24;
+const int CLOUDS_VIEW_LOCAL_VOLUME = 25;
+const int CLOUDS_VIEW_HORIZON_LAYER = 26;
+const int CLOUDS_VIEW_WEATHER_COMPONENTS = 27;
 
 bool cloud_product_debug_view(int debug_view) {
     return debug_view == CLOUDS_VIEW_WEATHER || debug_view == CLOUDS_VIEW_DENSITY ||
@@ -38,7 +41,10 @@ bool cloud_product_debug_view(int debug_view) {
            debug_view == CLOUDS_VIEW_DENSITY_LOD ||
            debug_view == CLOUDS_VIEW_STEP_LENGTH ||
            debug_view == CLOUDS_VIEW_LOCAL_MARCH ||
-           debug_view == CLOUDS_VIEW_FAR_HORIZON;
+           debug_view == CLOUDS_VIEW_FAR_HORIZON ||
+           debug_view == CLOUDS_VIEW_LOCAL_VOLUME ||
+           debug_view == CLOUDS_VIEW_HORIZON_LAYER ||
+           debug_view == CLOUDS_VIEW_WEATHER_COMPONENTS;
 }
 
 #endif

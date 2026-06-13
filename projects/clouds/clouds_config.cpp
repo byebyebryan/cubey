@@ -263,6 +263,15 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "horizon-blend") {
         return CloudsDebugView::HorizonBlend;
     }
+    if (value == "local-volume") {
+        return CloudsDebugView::LocalVolume;
+    }
+    if (value == "horizon-layer") {
+        return CloudsDebugView::HorizonLayer;
+    }
+    if (value == "weather-components") {
+        return CloudsDebugView::WeatherComponents;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -318,6 +327,12 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "cloud-confidence";
     case CloudsDebugView::HorizonBlend:
         return "horizon-blend";
+    case CloudsDebugView::LocalVolume:
+        return "local-volume";
+    case CloudsDebugView::HorizonLayer:
+        return "horizon-layer";
+    case CloudsDebugView::WeatherComponents:
+        return "weather-components";
     }
     return "final";
 }
@@ -406,8 +421,29 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (run_config_float_is_set(run_config.clouds.shadow_strength)) {
         config.shadow_strength = run_config.clouds.shadow_strength;
     }
+    if (run_config_float_is_set(run_config.clouds.horizon_strength)) {
+        config.horizon_strength = run_config.clouds.horizon_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.weather_fronts)) {
+        config.weather_fronts = run_config.clouds.weather_fronts;
+    }
+    if (run_config_float_is_set(run_config.clouds.weather_cells)) {
+        config.weather_cells = run_config.clouds.weather_cells;
+    }
+    if (run_config_float_is_set(run_config.clouds.weather_streaks)) {
+        config.weather_streaks = run_config.clouds.weather_streaks;
+    }
+    if (run_config_float_is_set(run_config.clouds.detail_erosion)) {
+        config.detail_erosion = run_config.clouds.detail_erosion;
+    }
     if (run_config.clouds.temporal >= 0) {
         config.temporal_enabled = run_config.clouds.temporal != 0;
+    }
+    if (run_config.clouds.local_volume >= 0) {
+        config.local_volume_enabled = run_config.clouds.local_volume != 0;
+    }
+    if (run_config.clouds.horizon_layer >= 0) {
+        config.horizon_layer_enabled = run_config.clouds.horizon_layer != 0;
     }
 
     if (run_config.atmosphere.time_of_day_mode == "manual") {
@@ -492,6 +528,26 @@ void validate_clouds_config(const CloudsConfig& config) {
     if (!std::isfinite(config.shadow_strength) || config.shadow_strength < 0.0F ||
         config.shadow_strength > 2.0F) {
         throw std::runtime_error("cloud shadow strength must be finite and in [0, 2]");
+    }
+    if (!std::isfinite(config.horizon_strength) || config.horizon_strength < 0.0F ||
+        config.horizon_strength > 2.0F) {
+        throw std::runtime_error("cloud horizon strength must be finite and in [0, 2]");
+    }
+    if (!std::isfinite(config.weather_fronts) || config.weather_fronts < 0.0F ||
+        config.weather_fronts > 1.0F) {
+        throw std::runtime_error("cloud weather fronts must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.weather_cells) || config.weather_cells < 0.0F ||
+        config.weather_cells > 1.0F) {
+        throw std::runtime_error("cloud weather cells must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.weather_streaks) || config.weather_streaks < 0.0F ||
+        config.weather_streaks > 1.0F) {
+        throw std::runtime_error("cloud weather streaks must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.detail_erosion) || config.detail_erosion < 0.0F ||
+        config.detail_erosion > 1.0F) {
+        throw std::runtime_error("cloud detail erosion must be finite and in [0, 1]");
     }
 }
 

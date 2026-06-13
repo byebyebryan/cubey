@@ -69,9 +69,12 @@ enum class CloudsDebugView : std::uint32_t {
     CloudDepth = 22,
     CloudConfidence = 23,
     HorizonBlend = 24,
+    LocalVolume = 25,
+    HorizonLayer = 26,
+    WeatherComponents = 27,
 };
 
-inline constexpr std::array<CloudsDebugView, 25> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 28> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::Weather, CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting, CloudsDebugView::Shadow,
     CloudsDebugView::Steps,        CloudsDebugView::Background,
@@ -83,7 +86,8 @@ inline constexpr std::array<CloudsDebugView, 25> kCloudsDebugViews{
     CloudsDebugView::DensityLod,   CloudsDebugView::StepLength,
     CloudsDebugView::LocalMarch,   CloudsDebugView::FarHorizon,
     CloudsDebugView::CloudDepth,   CloudsDebugView::CloudConfidence,
-    CloudsDebugView::HorizonBlend,
+    CloudsDebugView::HorizonBlend, CloudsDebugView::LocalVolume,
+    CloudsDebugView::HorizonLayer, CloudsDebugView::WeatherComponents,
 };
 
 struct CloudsTimeConfig {
@@ -117,6 +121,13 @@ struct CloudsConfig {
     float weather_scale_km = 170.0F;
     float wind_speed_mps = 18.0F;
     float shadow_strength = 0.65F;
+    float horizon_strength = 0.75F;
+    float weather_fronts = 1.0F;
+    float weather_cells = 1.0F;
+    float weather_streaks = 1.0F;
+    float detail_erosion = 1.0F;
+    bool local_volume_enabled = true;
+    bool horizon_layer_enabled = true;
 };
 
 struct CloudsQualityBudget {

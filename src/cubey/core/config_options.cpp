@@ -101,7 +101,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 190> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 197> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -545,9 +545,34 @@ constexpr std::array<ConfigOptionDescriptor, 190> kRunConfigOptions{
            "--cloud-shadow-strength", "Shadow Strength", "Clouds",
            "Strength of prototype cloud shadows on the standalone cloud ground proxy.",
            ConfigOptionType::Float, bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudHorizonStrength, "clouds.horizon_strength",
+           "--cloud-horizon-strength", "Horizon Strength", "Clouds",
+           "Strength of the dedicated far-horizon cloud layer.", ConfigOptionType::Float,
+           bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudWeatherFronts, "clouds.weather_fronts",
+           "--cloud-weather-fronts", "Weather Fronts", "Clouds",
+           "Feature-isolation weight for frontal cloud structures.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudWeatherCells, "clouds.weather_cells", "--cloud-weather-cells",
+           "Weather Cells", "Clouds", "Feature-isolation weight for cellular cloud structures.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudWeatherStreaks, "clouds.weather_streaks",
+           "--cloud-weather-streaks", "Weather Streaks", "Clouds",
+           "Feature-isolation weight for wind-aligned streak structures.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudDetailErosion, "clouds.detail_erosion",
+           "--cloud-detail-erosion", "Detail Erosion", "Clouds",
+           "Feature-isolation weight for high-frequency cloud erosion.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudTemporal, "clouds.temporal", "--cloud-temporal",
            "Temporal", "Clouds", "Enable temporal reconstruction for the cloud product.",
            ConfigOptionType::Bool, no_range(), {}, "--no-cloud-temporal"),
+    option(RunConfigOptionId::CloudLocalVolume, "clouds.local_volume", "--cloud-local-volume",
+           "Local Volume", "Clouds", "Enable near and overhead volumetric cloud marching.",
+           ConfigOptionType::Bool, no_range(), {}, "--no-cloud-local-volume"),
+    option(RunConfigOptionId::CloudHorizonLayer, "clouds.horizon_layer", "--cloud-horizon-layer",
+           "Horizon Layer", "Clouds", "Enable the dedicated far-horizon cloud layer.",
+           ConfigOptionType::Bool, no_range(), {}, "--no-cloud-horizon-layer"),
     option(RunConfigOptionId::SmokeInjectors, "smoke.injectors", "--smoke-injectors", "Injectors",
            "Smoke 2D", "Number of built-in smoke injectors.", ConfigOptionType::UInt32,
            min_range(1.0)),
@@ -1180,8 +1205,22 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.wind_speed_mps);
     case RunConfigOptionId::CloudShadowStrength:
         return optional_float(config.clouds.shadow_strength);
+    case RunConfigOptionId::CloudHorizonStrength:
+        return optional_float(config.clouds.horizon_strength);
+    case RunConfigOptionId::CloudWeatherFronts:
+        return optional_float(config.clouds.weather_fronts);
+    case RunConfigOptionId::CloudWeatherCells:
+        return optional_float(config.clouds.weather_cells);
+    case RunConfigOptionId::CloudWeatherStreaks:
+        return optional_float(config.clouds.weather_streaks);
+    case RunConfigOptionId::CloudDetailErosion:
+        return optional_float(config.clouds.detail_erosion);
     case RunConfigOptionId::CloudTemporal:
         return optional_bool(config.clouds.temporal);
+    case RunConfigOptionId::CloudLocalVolume:
+        return optional_bool(config.clouds.local_volume);
+    case RunConfigOptionId::CloudHorizonLayer:
+        return optional_bool(config.clouds.horizon_layer);
     case RunConfigOptionId::SmokeInjectors:
         return optional_uint32(config.smoke.injectors);
     case RunConfigOptionId::SmokePressureIterations:
@@ -1577,7 +1616,14 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("weather_scale_km", options.weather_scale_km);
     adapter.writeField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.writeField<float>("shadow_strength", options.shadow_strength);
+    adapter.writeField<float>("horizon_strength", options.horizon_strength);
+    adapter.writeField<float>("weather_fronts", options.weather_fronts);
+    adapter.writeField<float>("weather_cells", options.weather_cells);
+    adapter.writeField<float>("weather_streaks", options.weather_streaks);
+    adapter.writeField<float>("detail_erosion", options.detail_erosion);
     adapter.writeField<int>("temporal", options.temporal);
+    adapter.writeField<int>("local_volume", options.local_volume);
+    adapter.writeField<int>("horizon_layer", options.horizon_layer);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) {
@@ -1593,7 +1639,14 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("weather_scale_km", options.weather_scale_km);
     adapter.readField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.readField<float>("shadow_strength", options.shadow_strength);
+    adapter.readField<float>("horizon_strength", options.horizon_strength);
+    adapter.readField<float>("weather_fronts", options.weather_fronts);
+    adapter.readField<float>("weather_cells", options.weather_cells);
+    adapter.readField<float>("weather_streaks", options.weather_streaks);
+    adapter.readField<float>("detail_erosion", options.detail_erosion);
     adapter.readField<int>("temporal", options.temporal);
+    adapter.readField<int>("local_volume", options.local_volume);
+    adapter.readField<int>("horizon_layer", options.horizon_layer);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig& config) {
@@ -2204,8 +2257,34 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.clouds.shadow_strength = parse_config_float(value, option);
         validate_range(config.clouds.shadow_strength, option);
         break;
+    case RunConfigOptionId::CloudHorizonStrength:
+        config.clouds.horizon_strength = parse_config_float(value, option);
+        validate_range(config.clouds.horizon_strength, option);
+        break;
+    case RunConfigOptionId::CloudWeatherFronts:
+        config.clouds.weather_fronts = parse_config_float(value, option);
+        validate_range(config.clouds.weather_fronts, option);
+        break;
+    case RunConfigOptionId::CloudWeatherCells:
+        config.clouds.weather_cells = parse_config_float(value, option);
+        validate_range(config.clouds.weather_cells, option);
+        break;
+    case RunConfigOptionId::CloudWeatherStreaks:
+        config.clouds.weather_streaks = parse_config_float(value, option);
+        validate_range(config.clouds.weather_streaks, option);
+        break;
+    case RunConfigOptionId::CloudDetailErosion:
+        config.clouds.detail_erosion = parse_config_float(value, option);
+        validate_range(config.clouds.detail_erosion, option);
+        break;
     case RunConfigOptionId::CloudTemporal:
         config.clouds.temporal = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::CloudLocalVolume:
+        config.clouds.local_volume = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::CloudHorizonLayer:
+        config.clouds.horizon_layer = parse_config_bool(value, option) ? 1 : 0;
         break;
     case RunConfigOptionId::SmokeInjectors:
         config.smoke.injectors = parse_number<std::uint32_t>(value, option, "unsigned integer");

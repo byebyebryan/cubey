@@ -78,6 +78,10 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include cloud-depth diagnostics");
     require(cubey::projects::clouds::next_clouds_debug_view(
                 cubey::projects::clouds::CloudsDebugView::HorizonBlend) ==
+                cubey::projects::clouds::CloudsDebugView::LocalVolume,
+            "cloud debug view should include local-volume diagnostics");
+    require(cubey::projects::clouds::next_clouds_debug_view(
+                cubey::projects::clouds::CloudsDebugView::WeatherComponents) ==
                 cubey::projects::clouds::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::clouds::clouds_debug_view_from_string("cloud-alpha") ==
@@ -119,6 +123,15 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::clouds::clouds_debug_view_from_string("horizon-blend") ==
                 cubey::projects::clouds::CloudsDebugView::HorizonBlend,
             "cloud horizon blend debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("local-volume") ==
+                cubey::projects::clouds::CloudsDebugView::LocalVolume,
+            "cloud local volume debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("horizon-layer") ==
+                cubey::projects::clouds::CloudsDebugView::HorizonLayer,
+            "cloud horizon layer debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("weather-components") ==
+                cubey::projects::clouds::CloudsDebugView::WeatherComponents,
+            "cloud weather components debug view should parse");
 }
 
 void test_run_config_mapping() {
@@ -135,7 +148,14 @@ void test_run_config_mapping() {
     run_config.clouds.weather_scale_km = 240.0F;
     run_config.clouds.wind_speed_mps = 35.0F;
     run_config.clouds.shadow_strength = 0.8F;
+    run_config.clouds.horizon_strength = 0.9F;
+    run_config.clouds.weather_fronts = 0.25F;
+    run_config.clouds.weather_cells = 0.5F;
+    run_config.clouds.weather_streaks = 0.75F;
+    run_config.clouds.detail_erosion = 0.35F;
     run_config.clouds.temporal = 0;
+    run_config.clouds.local_volume = 0;
+    run_config.clouds.horizon_layer = 1;
     run_config.atmosphere.time_of_day_mode = "solar";
     run_config.atmosphere.time_hours = 6.5F;
     run_config.atmosphere.time_speed_hours_per_second = 0.25F;
@@ -160,7 +180,19 @@ void test_run_config_mapping() {
     require_near(config.coverage, 0.75F, 0.001F, "cloud coverage should map");
     require_near(config.shadow_strength, 0.8F, 0.001F,
                  "cloud shadow strength should map");
+    require_near(config.horizon_strength, 0.9F, 0.001F,
+                 "cloud horizon strength should map");
+    require_near(config.weather_fronts, 0.25F, 0.001F,
+                 "cloud weather fronts should map");
+    require_near(config.weather_cells, 0.5F, 0.001F,
+                 "cloud weather cells should map");
+    require_near(config.weather_streaks, 0.75F, 0.001F,
+                 "cloud weather streaks should map");
+    require_near(config.detail_erosion, 0.35F, 0.001F,
+                 "cloud detail erosion should map");
     require(!config.temporal_enabled, "cloud temporal option should map");
+    require(!config.local_volume_enabled, "cloud local volume option should map");
+    require(config.horizon_layer_enabled, "cloud horizon layer option should map");
     require_near(config.time.time_hours, 6.5F, 0.001F, "cloud solar time should map");
     require(!config.time.playing, "cloud pause flag should map");
 }
@@ -233,7 +265,14 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.wind_speed_mps", "22");
     cubey::set_run_config_option_from_string(config, "clouds.shadow_strength", "0.7");
+    cubey::set_run_config_option_from_string(config, "clouds.horizon_strength", "0.8");
+    cubey::set_run_config_option_from_string(config, "clouds.weather_fronts", "0.2");
+    cubey::set_run_config_option_from_string(config, "clouds.weather_cells", "0.4");
+    cubey::set_run_config_option_from_string(config, "clouds.weather_streaks", "0.6");
+    cubey::set_run_config_option_from_string(config, "clouds.detail_erosion", "0.5");
     cubey::set_run_config_option_from_string(config, "clouds.temporal", "false");
+    cubey::set_run_config_option_from_string(config, "clouds.local_volume", "false");
+    cubey::set_run_config_option_from_string(config, "clouds.horizon_layer", "true");
     require(config.clouds.camera_mode == "high", "cloud camera mode descriptor should set");
     require(config.clouds.quality == "full", "cloud quality descriptor should set");
     require(config.clouds.weather_preset == "storm",
@@ -244,7 +283,19 @@ void test_config_descriptors() {
                  "cloud wind descriptor should set");
     require_near(config.clouds.shadow_strength, 0.7F, 0.001F,
                  "cloud shadow descriptor should set");
+    require_near(config.clouds.horizon_strength, 0.8F, 0.001F,
+                 "cloud horizon descriptor should set");
+    require_near(config.clouds.weather_fronts, 0.2F, 0.001F,
+                 "cloud weather fronts descriptor should set");
+    require_near(config.clouds.weather_cells, 0.4F, 0.001F,
+                 "cloud weather cells descriptor should set");
+    require_near(config.clouds.weather_streaks, 0.6F, 0.001F,
+                 "cloud weather streaks descriptor should set");
+    require_near(config.clouds.detail_erosion, 0.5F, 0.001F,
+                 "cloud detail erosion descriptor should set");
     require(config.clouds.temporal == 0, "cloud temporal descriptor should set");
+    require(config.clouds.local_volume == 0, "cloud local volume descriptor should set");
+    require(config.clouds.horizon_layer == 1, "cloud horizon layer descriptor should set");
 }
 
 } // namespace
