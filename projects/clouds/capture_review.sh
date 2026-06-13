@@ -38,6 +38,7 @@ capture() {
 }
 
 capture surface --cloud-camera-mode surface
+capture surface-raw --cloud-camera-mode surface --no-cloud-temporal
 capture surface-up --cloud-camera-mode surface-up
 capture high --cloud-camera-mode high
 capture high-oblique --cloud-camera-mode high-oblique
@@ -45,6 +46,12 @@ capture orbit --cloud-camera-mode orbit
 capture orbit-terminator --cloud-camera-mode orbit-terminator
 capture weather --cloud-camera-mode orbit --debug-view weather
 capture density --cloud-camera-mode high-oblique --debug-view density
+capture base-density --cloud-camera-mode surface --debug-view base-density
+capture detail-density --cloud-camera-mode surface --debug-view detail-density
+capture density-lod --cloud-camera-mode surface --debug-view density-lod
+capture step-length --cloud-camera-mode surface --debug-view step-length
+capture local-march --cloud-camera-mode surface --debug-view local-march
+capture far-horizon --cloud-camera-mode surface --debug-view far-horizon
 capture cloud-alpha --cloud-camera-mode high-oblique --debug-view cloud-alpha
 capture domain --cloud-camera-mode high-oblique --debug-view domain
 capture distance --cloud-camera-mode high-oblique --debug-view distance
@@ -54,6 +61,7 @@ capture_at_time orbit-night 0.0 --cloud-camera-mode orbit
 if command -v magick >/dev/null 2>&1; then
     magick montage \
         "${OUT_DIR}/surface.png" \
+        "${OUT_DIR}/surface-raw.png" \
         "${OUT_DIR}/surface-up.png" \
         "${OUT_DIR}/high.png" \
         "${OUT_DIR}/high-oblique.png" \
@@ -61,17 +69,24 @@ if command -v magick >/dev/null 2>&1; then
         "${OUT_DIR}/orbit-terminator.png" \
         "${OUT_DIR}/weather.png" \
         "${OUT_DIR}/density.png" \
+        "${OUT_DIR}/base-density.png" \
+        "${OUT_DIR}/detail-density.png" \
+        "${OUT_DIR}/density-lod.png" \
+        "${OUT_DIR}/step-length.png" \
+        "${OUT_DIR}/local-march.png" \
+        "${OUT_DIR}/far-horizon.png" \
         "${OUT_DIR}/cloud-alpha.png" \
         "${OUT_DIR}/domain.png" \
         "${OUT_DIR}/distance.png" \
         "${OUT_DIR}/surface-shadow.png" \
         "${OUT_DIR}/orbit-night.png" \
         -geometry 480x270+12+32 \
-        -tile 3x5 \
+        -tile 4x5 \
         "${OUT_DIR}/contact-sheet.png"
 elif command -v montage >/dev/null 2>&1; then
     montage \
         "${OUT_DIR}/surface.png" \
+        "${OUT_DIR}/surface-raw.png" \
         "${OUT_DIR}/surface-up.png" \
         "${OUT_DIR}/high.png" \
         "${OUT_DIR}/high-oblique.png" \
@@ -79,13 +94,19 @@ elif command -v montage >/dev/null 2>&1; then
         "${OUT_DIR}/orbit-terminator.png" \
         "${OUT_DIR}/weather.png" \
         "${OUT_DIR}/density.png" \
+        "${OUT_DIR}/base-density.png" \
+        "${OUT_DIR}/detail-density.png" \
+        "${OUT_DIR}/density-lod.png" \
+        "${OUT_DIR}/step-length.png" \
+        "${OUT_DIR}/local-march.png" \
+        "${OUT_DIR}/far-horizon.png" \
         "${OUT_DIR}/cloud-alpha.png" \
         "${OUT_DIR}/domain.png" \
         "${OUT_DIR}/distance.png" \
         "${OUT_DIR}/surface-shadow.png" \
         "${OUT_DIR}/orbit-night.png" \
         -geometry 480x270+12+32 \
-        -tile 3x5 \
+        -tile 4x5 \
         "${OUT_DIR}/contact-sheet.png"
 fi
 

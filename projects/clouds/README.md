@@ -12,6 +12,7 @@ transmittance, resolves it through per-frame-slot temporal reconstruction, and
 composites that product over the standalone atmosphere/ground proxy. It
 supports typed procedural weather presets, front/cell/streak weather structure,
 type-specific density profiles, shared-atmosphere sun/moon lighting, cheap
+base/detail density separation, distance/grazing detail LOD, cheap
 self-shadowing, prototype surface cloud shadows, and debug views for the major
 fields. It deliberately does not integrate into ocean or planet yet; those
 projects should later consume cloud sky/reflection and shadow outputs after this
@@ -41,7 +42,14 @@ Useful runs:
 ./build/dev/projects/clouds/clouds --debug-view surface-shadow
 ./build/dev/projects/clouds/clouds --debug-view domain
 ./build/dev/projects/clouds/clouds --debug-view distance
+./build/dev/projects/clouds/clouds --debug-view base-density
+./build/dev/projects/clouds/clouds --debug-view detail-density
+./build/dev/projects/clouds/clouds --debug-view density-lod
+./build/dev/projects/clouds/clouds --debug-view step-length
+./build/dev/projects/clouds/clouds --debug-view local-march
+./build/dev/projects/clouds/clouds --debug-view far-horizon
 ./build/dev/projects/clouds/clouds --cloud-shadow-strength 1.0
+./build/dev/projects/clouds/clouds --no-cloud-temporal
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode surface --output outputs/clouds-surface.png
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode high --output outputs/clouds-high.png
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode orbit --output outputs/clouds-orbit.png
@@ -54,7 +62,8 @@ Controls:
 - Left-drag: rotate the camera.
 - `D`: cycle final, weather, density, transmittance, lighting, shadow, step,
   background, atmosphere, ground, ground-hit, cloud-alpha, shell,
-  surface-shadow, domain, and distance debug views.
+  surface-shadow, domain, distance, base-density, detail-density, density-lod,
+  step-length, local-march, and far-horizon debug views.
 - Space: play/pause solar time.
 - `R`: reset camera, time, and cloud settings.
 
@@ -77,6 +86,9 @@ Controls:
   the offscreen cloud product render scale before final compositing. `quarter`
   is the default interactive mode; higher modes are still useful for diagnosis
   but are not yet real-time enough to be the default.
+- `--cloud-temporal` / `--no-cloud-temporal` toggles per-frame-slot temporal
+  reconstruction of the cloud product. Disable it when isolating raw raymarch
+  noise or history artifacts.
 - `--cloud-shadow-strength` controls the prototype analytic cloud shadow factor
   applied only to the standalone procedural ground/ocean proxy.
 - Weather fields are procedural and deterministic. There is not yet an uploaded
@@ -89,9 +101,10 @@ for the research context and promotion criteria.
 
 Use `projects/clouds/capture_review.sh outputs/clouds-review` to write the
 standard review bundle: surface, surface-up, high, high-oblique, orbit,
-orbit-terminator, weather, density, cloud-alpha, domain, distance,
-surface-shadow, and orbit-night. If ImageMagick is available the helper also
-writes `contact-sheet.png`.
+orbit-terminator, temporal-off surface, weather, density, base-density,
+detail-density, density-lod, step-length, local-march, far-horizon,
+cloud-alpha, domain, distance, surface-shadow, and orbit-night. If ImageMagick
+is available the helper also writes `contact-sheet.png`.
 
 ## Known V1 Issues
 
@@ -104,16 +117,20 @@ planet rendering:
   high-frequency erosion so the planet reads as broad weather masses rather
   than speckle.
 - Surface and high views now use a finite local volume plus a distant horizon
-  layer instead of marching the full spherical shell tangent to the planet.
-  This is the intended direction, but the horizon blend and density shaping
-  still need visual tuning.
+  layer instead of marching the full spherical shell tangent to the planet. The
+  density model now separates broad base density from high-frequency erosion,
+  suppresses detail for distant/grazing local rays, adds targeted adaptive
+  horizon samples, and replaces the old single-sample horizon fallback. This
+  reduces hard banding but does not fully solve surface/high horizontal streaks;
+  remaining artifacts are visible in `density`, `detail-density`,
+  `density-lod`, and `local-march` diagnostics.
 - High-oblique background composition now separates sky/space from the
   diagnostic ground proxy and uses sky-only atmosphere classification for the
   background. Any remaining horizon band should be treated as a visual tuning
   bug, not as the old ground-occluded atmosphere path.
 - Interactive control is rough. The project has quick camera mode buttons and
-  basic sliders, but it has not been moved onto the shared hierarchical control
-  model used by the more mature projects.
+  basic sliders, plus temporal and debug controls, but it has not been moved
+  onto the shared hierarchical control model used by the more mature projects.
 - Runtime feedback now shows FPS/frame-time, sample-budget diagnostics, cloud
   render pixels, output pixels, and the active cloud render scale.
 - Sky, ground, and cloud composition is explicit and uses a cloud product target
@@ -133,8 +150,8 @@ emits:
 - linear cloud radiance plus transmittance for background composition;
 - a low-frequency cloud shadow factor keyed by sun direction;
 - optional reflection/environment inputs for water and PBR consumers;
-- debug views for weather, density, lighting, shadow, cloud alpha, and shell
-  coverage.
+- debug views for weather, density, base/detail density, lighting, shadow,
+  cloud alpha, shell coverage, horizon fallback, and local march diagnostics.
 
 The next clouds pass should keep tightening these before adding ocean
 reflection, planet integration, or richer cloud types.

@@ -534,9 +534,11 @@ Project checkpoints:
   checkpoint has seam-safe spherical weather, quality-scaled offscreen
   cloud-product/composite rendering, broken-cloud inspection tuning, explicit
   composition diagnostics, prototype analytic surface shadows, high-view horizon
-  cloud fading, and shared sky-background classification for non-ground rays.
-  Its current blockers are rough controls, lack of temporal accumulation, no
-  weather authoring path, and no promoted renderer API for cloud
+  cloud fading, shared sky-background classification for non-ground rays,
+  temporal reconstruction, and base/detail density diagnostics for local
+  horizon artifacts. Its current blockers are rough controls, unresolved
+  surface/high horizontal streaking, no weather authoring path, and no promoted
+  renderer API for cloud
   radiance/transmittance/shadow outputs used by ocean or planet consumers.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and

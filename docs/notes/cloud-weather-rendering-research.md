@@ -138,6 +138,19 @@ uses shared atmosphere sun intensity and scalar moon ambient intensity, so
 night clouds should read as silhouettes unless the shared environment reports
 moonlight.
 
+The seventh checkpoint focuses on the surface/high horizontal streaking seen in
+local-volume captures. It adds explicit raw/temporal isolation, base-density and
+detail-density diagnostics, density-LOD, step-length, local-march, and
+far-horizon views. The density model now reports a broad base field separately
+from high-frequency erosion, fades detail toward the base field for distant or
+grazing local rays, increases samples only for local horizon rays, widens
+stochastic march jitter in that region, and replaces the old single-sample
+horizon fallback with a short broad-field integration. The pass reduces hard
+banding and makes the source diagnosable, but the remaining surface streaks show
+that the finite local volume still needs a more robust reconstruction strategy,
+likely a better per-pixel ray integration filter, blue-noise/temporal
+reprojection strategy, or a separate horizon/cloud impostor.
+
 The remaining promotion blockers are now less about first visibility and more
 about renderer contracts:
 
@@ -145,7 +158,8 @@ about renderer contracts:
   and planet can compose clouds with their own scene passes;
 - promote the current analytic sun-shadow factor into a reusable cloud shadow
   texture or sampled lighting input for surface and ocean lighting;
-- add temporal accumulation or blue-noise sampling before increasing quality;
+- improve temporal/blue-noise sampling and horizon reconstruction before
+  increasing quality or promoting the local-volume path;
 - decide whether weather authoring is procedural-only, texture-driven, or a
   hybrid with uploaded weather maps;
 - move useful controls onto the shared hierarchical config/UI surface.
