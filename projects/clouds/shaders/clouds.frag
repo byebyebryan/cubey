@@ -22,6 +22,12 @@ const int CLOUDS_VIEW_SHELL = 12;
 const int CLOUDS_VIEW_SURFACE_SHADOW = 13;
 const int CLOUDS_VIEW_DOMAIN = 14;
 const int CLOUDS_VIEW_DISTANCE = 15;
+const int CLOUDS_VIEW_BASE_DENSITY = 16;
+const int CLOUDS_VIEW_DETAIL_DENSITY = 17;
+const int CLOUDS_VIEW_DENSITY_LOD = 18;
+const int CLOUDS_VIEW_STEP_LENGTH = 19;
+const int CLOUDS_VIEW_LOCAL_MARCH = 20;
+const int CLOUDS_VIEW_FAR_HORIZON = 21;
 
 layout(push_constant) uniform CloudsParams {
     vec4 camera_right_aspect;
@@ -95,7 +101,13 @@ struct CloudSample {
     float mean_weather;
     float mean_light;
     float mean_shadow;
+    float mean_base_density;
+    float mean_detail_density;
+    float mean_density_lod;
     float step_fraction;
+    float step_length_fraction;
+    float local_march_fraction;
+    float distant_alpha;
     float shell_hit;
     float hit_ground;
     float shell_span;
@@ -271,7 +283,13 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     result.mean_weather = 0.0;
     result.mean_light = 0.0;
     result.mean_shadow = 0.0;
+    result.mean_base_density = 0.0;
+    result.mean_detail_density = 0.0;
+    result.mean_density_lod = 0.0;
     result.step_fraction = 0.0;
+    result.step_length_fraction = 0.0;
+    result.local_march_fraction = 0.0;
+    result.distant_alpha = 0.0;
     result.shell_hit = 0.0;
     result.hit_ground = 0.0;
     result.shell_span = 0.0;
@@ -286,9 +304,11 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
             result.color += distant_surface_cloud_light(origin, direction, center) * distant_alpha;
             result.transmittance *= 1.0 - distant_alpha;
             result.mean_density = distant_alpha;
+            result.mean_base_density = distant_alpha;
             result.mean_weather = distant_alpha;
             result.mean_light = distant_alpha;
             result.step_fraction = 0.0;
+            result.distant_alpha = distant_alpha;
             result.shell_span = distant_alpha;
         }
         return result;
@@ -404,6 +424,7 @@ CloudSample march_clouds(vec3 origin, vec3 direction, int view_steps, int light_
     result.mean_light = light_sum / denom;
     result.mean_shadow = shadow_sum / denom;
     result.step_fraction = float(used_steps) / float(max(view_steps, 1));
+    result.step_length_fraction = clamp(step_len / max(layer_thickness, 0.001), 0.0, 1.0);
     return result;
 }
 
@@ -448,6 +469,25 @@ void main() {
         output_alpha = 1.0;
     } else if (debug_view == CLOUDS_VIEW_DISTANCE) {
         output_color = vec3(clouds.distance_fraction, clouds.shell_span, clouds.hit_ground);
+        output_alpha = 1.0;
+    } else if (debug_view == CLOUDS_VIEW_BASE_DENSITY) {
+        output_color = vec3(clouds.mean_base_density * 1.6);
+        output_alpha = 1.0;
+    } else if (debug_view == CLOUDS_VIEW_DETAIL_DENSITY) {
+        output_color = vec3(clouds.mean_detail_density * 1.6);
+        output_alpha = 1.0;
+    } else if (debug_view == CLOUDS_VIEW_DENSITY_LOD) {
+        output_color = vec3(clouds.mean_density_lod, 1.0 - clouds.mean_density_lod, 0.15);
+        output_alpha = 1.0;
+    } else if (debug_view == CLOUDS_VIEW_STEP_LENGTH) {
+        output_color = vec3(clouds.step_length_fraction, clouds.step_fraction, 0.15);
+        output_alpha = 1.0;
+    } else if (debug_view == CLOUDS_VIEW_LOCAL_MARCH) {
+        output_color = vec3(clouds.local_march_fraction, clouds.step_fraction,
+                            clouds.distance_fraction);
+        output_alpha = 1.0;
+    } else if (debug_view == CLOUDS_VIEW_FAR_HORIZON) {
+        output_color = vec3(clouds.distant_alpha, clouds.shell_hit, clouds.hit_ground);
         output_alpha = 1.0;
     }
 

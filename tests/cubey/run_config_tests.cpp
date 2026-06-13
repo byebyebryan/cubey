@@ -339,6 +339,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.weather_scale_km",
         "clouds.wind_speed_mps",
         "clouds.shadow_strength",
+        "clouds.temporal",
         "smoke.injectors",
         "smoke.pressure_iterations",
         "smoke.pressure_solver",
@@ -477,7 +478,8 @@ void test_run_config_loads_json_config_file() {
     "weather_preset": "inspection",
     "coverage": 0.62,
     "wind_speed_mps": 24.0,
-    "shadow_strength": 0.75
+    "shadow_strength": 0.75,
+    "temporal": false
   }
 })");
 
@@ -531,7 +533,7 @@ void test_run_config_loads_json_config_file() {
     require(config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
                 config.clouds.weather_preset == "inspection" &&
                 config.clouds.coverage == 0.62F && config.clouds.wind_speed_mps == 24.0F &&
-                config.clouds.shadow_strength == 0.75F,
+                config.clouds.shadow_strength == 0.75F && config.clouds.temporal == 0,
             "config file should set cloud controls");
 }
 
@@ -921,7 +923,8 @@ void test_run_config_parses_cloud_options() {
     std::string wind_value = "32";
     std::string shadow_flag = "--cloud-shadow-strength";
     std::string shadow_value = "0.8";
-    std::array<char*, 25> argv{
+    std::string temporal_flag = "--no-cloud-temporal";
+    std::array<char*, 26> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -947,6 +950,7 @@ void test_run_config_parses_cloud_options() {
         wind_value.data(),
         shadow_flag.data(),
         shadow_value.data(),
+        temporal_flag.data(),
     };
 
     const cubey::RunConfig config =
@@ -971,6 +975,7 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.wind_speed_mps == 32.0F, "run config should parse cloud wind speed");
     require(config.clouds.shadow_strength == 0.8F,
             "run config should parse cloud shadow strength");
+    require(config.clouds.temporal == 0, "run config should parse negative cloud temporal flag");
 }
 
 void test_run_config_rejects_invalid_atmosphere_options() {

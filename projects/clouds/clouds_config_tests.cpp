@@ -70,6 +70,10 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include distance diagnostics");
     require(cubey::projects::clouds::next_clouds_debug_view(
                 cubey::projects::clouds::CloudsDebugView::Distance) ==
+                cubey::projects::clouds::CloudsDebugView::BaseDensity,
+            "cloud debug view should include base-density diagnostics");
+    require(cubey::projects::clouds::next_clouds_debug_view(
+                cubey::projects::clouds::CloudsDebugView::FarHorizon) ==
                 cubey::projects::clouds::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::clouds::clouds_debug_view_from_string("cloud-alpha") ==
@@ -84,6 +88,24 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::clouds::clouds_debug_view_from_string("distance") ==
                 cubey::projects::clouds::CloudsDebugView::Distance,
             "cloud distance debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("base-density") ==
+                cubey::projects::clouds::CloudsDebugView::BaseDensity,
+            "cloud base-density debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("detail-density") ==
+                cubey::projects::clouds::CloudsDebugView::DetailDensity,
+            "cloud detail-density debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("density-lod") ==
+                cubey::projects::clouds::CloudsDebugView::DensityLod,
+            "cloud density-lod debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("step-length") ==
+                cubey::projects::clouds::CloudsDebugView::StepLength,
+            "cloud step-length debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("local-march") ==
+                cubey::projects::clouds::CloudsDebugView::LocalMarch,
+            "cloud local-march debug view should parse");
+    require(cubey::projects::clouds::clouds_debug_view_from_string("far-horizon") ==
+                cubey::projects::clouds::CloudsDebugView::FarHorizon,
+            "cloud far-horizon debug view should parse");
 }
 
 void test_run_config_mapping() {
@@ -100,6 +122,7 @@ void test_run_config_mapping() {
     run_config.clouds.weather_scale_km = 240.0F;
     run_config.clouds.wind_speed_mps = 35.0F;
     run_config.clouds.shadow_strength = 0.8F;
+    run_config.clouds.temporal = 0;
     run_config.atmosphere.time_of_day_mode = "solar";
     run_config.atmosphere.time_hours = 6.5F;
     run_config.atmosphere.time_speed_hours_per_second = 0.25F;
@@ -124,6 +147,7 @@ void test_run_config_mapping() {
     require_near(config.coverage, 0.75F, 0.001F, "cloud coverage should map");
     require_near(config.shadow_strength, 0.8F, 0.001F,
                  "cloud shadow strength should map");
+    require(!config.temporal_enabled, "cloud temporal option should map");
     require_near(config.time.time_hours, 6.5F, 0.001F, "cloud solar time should map");
     require(!config.time.playing, "cloud pause flag should map");
 }
@@ -196,6 +220,7 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.wind_speed_mps", "22");
     cubey::set_run_config_option_from_string(config, "clouds.shadow_strength", "0.7");
+    cubey::set_run_config_option_from_string(config, "clouds.temporal", "false");
     require(config.clouds.camera_mode == "high", "cloud camera mode descriptor should set");
     require(config.clouds.quality == "full", "cloud quality descriptor should set");
     require(config.clouds.weather_preset == "storm",
@@ -206,6 +231,7 @@ void test_config_descriptors() {
                  "cloud wind descriptor should set");
     require_near(config.clouds.shadow_strength, 0.7F, 0.001F,
                  "cloud shadow descriptor should set");
+    require(config.clouds.temporal == 0, "cloud temporal descriptor should set");
 }
 
 } // namespace

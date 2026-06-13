@@ -236,6 +236,24 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "distance") {
         return CloudsDebugView::Distance;
     }
+    if (value == "base-density") {
+        return CloudsDebugView::BaseDensity;
+    }
+    if (value == "detail-density") {
+        return CloudsDebugView::DetailDensity;
+    }
+    if (value == "density-lod") {
+        return CloudsDebugView::DensityLod;
+    }
+    if (value == "step-length") {
+        return CloudsDebugView::StepLength;
+    }
+    if (value == "local-march") {
+        return CloudsDebugView::LocalMarch;
+    }
+    if (value == "far-horizon") {
+        return CloudsDebugView::FarHorizon;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -273,6 +291,18 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "domain";
     case CloudsDebugView::Distance:
         return "distance";
+    case CloudsDebugView::BaseDensity:
+        return "base-density";
+    case CloudsDebugView::DetailDensity:
+        return "detail-density";
+    case CloudsDebugView::DensityLod:
+        return "density-lod";
+    case CloudsDebugView::StepLength:
+        return "step-length";
+    case CloudsDebugView::LocalMarch:
+        return "local-march";
+    case CloudsDebugView::FarHorizon:
+        return "far-horizon";
     }
     return "final";
 }
@@ -360,6 +390,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     }
     if (run_config_float_is_set(run_config.clouds.shadow_strength)) {
         config.shadow_strength = run_config.clouds.shadow_strength;
+    }
+    if (run_config.clouds.temporal >= 0) {
+        config.temporal_enabled = run_config.clouds.temporal != 0;
     }
 
     if (run_config.atmosphere.time_of_day_mode == "manual") {

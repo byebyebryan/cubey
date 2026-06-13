@@ -101,7 +101,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 189> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 190> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -545,6 +545,9 @@ constexpr std::array<ConfigOptionDescriptor, 189> kRunConfigOptions{
            "--cloud-shadow-strength", "Shadow Strength", "Clouds",
            "Strength of prototype cloud shadows on the standalone cloud ground proxy.",
            ConfigOptionType::Float, bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudTemporal, "clouds.temporal", "--cloud-temporal",
+           "Temporal", "Clouds", "Enable temporal reconstruction for the cloud product.",
+           ConfigOptionType::Bool, no_range(), {}, "--no-cloud-temporal"),
     option(RunConfigOptionId::SmokeInjectors, "smoke.injectors", "--smoke-injectors", "Injectors",
            "Smoke 2D", "Number of built-in smoke injectors.", ConfigOptionType::UInt32,
            min_range(1.0)),
@@ -1177,6 +1180,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.wind_speed_mps);
     case RunConfigOptionId::CloudShadowStrength:
         return optional_float(config.clouds.shadow_strength);
+    case RunConfigOptionId::CloudTemporal:
+        return optional_bool(config.clouds.temporal);
     case RunConfigOptionId::SmokeInjectors:
         return optional_uint32(config.smoke.injectors);
     case RunConfigOptionId::SmokePressureIterations:
@@ -1572,6 +1577,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("weather_scale_km", options.weather_scale_km);
     adapter.writeField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.writeField<float>("shadow_strength", options.shadow_strength);
+    adapter.writeField<int>("temporal", options.temporal);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) {
@@ -1587,6 +1593,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("weather_scale_km", options.weather_scale_km);
     adapter.readField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.readField<float>("shadow_strength", options.shadow_strength);
+    adapter.readField<int>("temporal", options.temporal);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig& config) {
@@ -2196,6 +2203,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudShadowStrength:
         config.clouds.shadow_strength = parse_config_float(value, option);
         validate_range(config.clouds.shadow_strength, option);
+        break;
+    case RunConfigOptionId::CloudTemporal:
+        config.clouds.temporal = parse_config_bool(value, option) ? 1 : 0;
         break;
     case RunConfigOptionId::SmokeInjectors:
         config.smoke.injectors = parse_number<std::uint32_t>(value, option, "unsigned integer");

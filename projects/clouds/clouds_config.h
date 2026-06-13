@@ -60,9 +60,15 @@ enum class CloudsDebugView : std::uint32_t {
     SurfaceShadow = 13,
     Domain = 14,
     Distance = 15,
+    BaseDensity = 16,
+    DetailDensity = 17,
+    DensityLod = 18,
+    StepLength = 19,
+    LocalMarch = 20,
+    FarHorizon = 21,
 };
 
-inline constexpr std::array<CloudsDebugView, 16> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 22> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::Weather, CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting, CloudsDebugView::Shadow,
     CloudsDebugView::Steps,        CloudsDebugView::Background,
@@ -70,6 +76,9 @@ inline constexpr std::array<CloudsDebugView, 16> kCloudsDebugViews{
     CloudsDebugView::GroundHit,    CloudsDebugView::CloudAlpha,
     CloudsDebugView::Shell,        CloudsDebugView::SurfaceShadow,
     CloudsDebugView::Domain,       CloudsDebugView::Distance,
+    CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
+    CloudsDebugView::DensityLod,   CloudsDebugView::StepLength,
+    CloudsDebugView::LocalMarch,   CloudsDebugView::FarHorizon,
 };
 
 struct CloudsTimeConfig {
@@ -91,6 +100,7 @@ struct CloudsConfig {
     CloudsWeatherPreset weather_preset = CloudsWeatherPreset::BrokenCumulus;
     CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
     CloudsDebugView debug_view = CloudsDebugView::Final;
+    bool temporal_enabled = true;
     CloudsTimeConfig time{};
 
     float planet_radius_m = kCloudsDefaultPlanetRadiusM;
