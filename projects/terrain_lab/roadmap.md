@@ -20,7 +20,7 @@ No CMake target is needed in this phase.
 
 ## Phase 1: Field Foundation
 
-Status: active foundation landed.
+Status: landed.
 
 Goal: build the terrain generator as deterministic data before building the
 full renderer.
@@ -44,13 +44,14 @@ Success criteria:
 
 Current implementation notes:
 
-- config/test target is registered without an app target;
 - common `RunConfig` grid and debug-view inputs are accepted;
 - coast-oriented `terrain.*` flags remain outside Terrain Lab;
 - CPU fields cover height, contribution, slope, curvature, drainage, wetness,
   deposition, material, vegetation-density, and influence data.
 
 ## Phase 2: Temperate Mountain Watershed
+
+Status: first deterministic field pass landed; deeper feature graph work remains.
 
 Goal: prove one coherent inland terrain slice.
 
@@ -77,14 +78,14 @@ Success criteria:
 
 ## Phase 3: Renderer Workbench
 
-Status: deferred.
+Status: v1 visual workbench landed; live editing remains deferred.
 
 Goal: make field inspection fast enough for terrain iteration.
 
 Deliverables:
 
 - standalone `terrain_lab` app target;
-- heightfield or tiled mesh rendering;
+- CPU heightfield mesh rendering;
 - material/debug view switching;
 - basic sun lighting and optional atmosphere backdrop;
 - deterministic headless capture;
@@ -95,6 +96,15 @@ Success criteria:
 - final and diagnostic headless captures can run in CI-style smoke tests;
 - debug views expose the fields that shape the terrain;
 - config changes can be compared without rebuilding unrelated projects.
+
+Current implementation notes:
+
+- windowed orbit inspection and headless PNG capture are registered;
+- final and flow-accumulation PNG smokes use conservative image stats to catch
+  blank output;
+- fragment shader debug constants are checked against the C++ enum;
+- live ImGui controls, runtime regeneration, tiled meshes, and atmosphere-backed
+  lighting are intentionally deferred.
 
 ## Phase 4: Detail And Material Pass
 

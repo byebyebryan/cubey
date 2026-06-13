@@ -189,6 +189,11 @@ The first renderer should be a workbench, not the final terrain renderer:
 The generator should not depend on the renderer. CPU/reference field generation
 should stay testable without opening a Vulkan window.
 
+The current workbench uses CPU mesh extraction from the field grid and keeps the
+renderer project-local. It is sufficient for orbit inspection, debug-view
+switching, and headless PNG smoke tests, but it is not yet a tiled terrain
+renderer, editor, or shared engine contract.
+
 ## Integration Boundary
 
 Terrain Lab should eventually feed other projects, but only through explicit
@@ -221,12 +226,11 @@ mechanical checks:
 - material masks agree with slope, wetness, and elevation constraints;
 - noise-off terrain remains recognizable.
 
-Headless captures should cover both final and diagnostic views. The first GUI
-smoke can wait until the field generator and a minimal renderer exist.
-
-The current foundation validates deterministic CPU fields only. Renderer,
-headless PNG, UI, and shader-displacement validation are deferred until the app
-target exists.
+Headless captures should cover both final and diagnostic views. The current
+foundation validates deterministic CPU fields, mesh payload extraction, shader
+debug-view constants, a windowed startup smoke, and final plus flow-accumulation
+PNG captures. UI editing, runtime regeneration, tiled rendering, and
+shader-displacement validation are still deferred.
 
 ## References
 

@@ -5,9 +5,9 @@ exists because terrain is large enough to deserve its own project boundary
 instead of living only as a shoreline helper, a planet subroutine, or a shader
 detail stack.
 
-The project starts with deterministic CPU terrain fields before a renderer. The
-immediate goal is to implement narrow biome and landform slices that can be
-tested, rendered, and reused by other projects later.
+The project starts with deterministic CPU terrain fields and a small Vulkan
+workbench. The immediate goal is to implement narrow biome and landform slices
+that can be tested, inspected visually, and reused by other projects later.
 
 ## Direction
 
@@ -80,11 +80,11 @@ The first implementation slice should be a temperate mountain watershed:
 This slice is intentionally inland. Coastal work can reconnect later through
 `procedural_terrain` once the general terrain field model is stronger.
 
-## Current Field Foundation
+## Current Workbench
 
-The current target is test-only. `TerrainLabConfig` reads common grid width,
-grid height, and debug-view settings from `RunConfig`, while leaving
-coast-oriented `terrain.*` flags to `procedural_terrain`.
+`TerrainLabConfig` reads common grid width, grid height, and debug-view settings
+from `RunConfig`, while leaving coast-oriented `terrain.*` flags to
+`procedural_terrain`.
 
 Generated CPU fields include:
 
@@ -97,16 +97,54 @@ Generated CPU fields include:
 - material masks for rock, soil, scree, meadow, forest, and snow;
 - grass, shrub, tree, and canopy-height density fields.
 
+The renderer converts those fields into a CPU heightfield mesh and packs the
+main diagnostic payloads into vertex attributes. The current standalone app
+supports windowed orbit inspection, `D` to cycle debug views, and headless PNG
+captures for final and diagnostic views.
+
+Supported debug views:
+
+- `final`
+- `height`
+- `structure`
+- `process`
+- `detail`
+- `slope`
+- `curvature`
+- `flow-direction`
+- `flow-accumulation`
+- `stream-power`
+- `wetness`
+- `deposition`
+- `material`
+- `biome-density`
+- `canopy-height`
+- `noise-off`
+
 Useful validation commands:
 
 ```sh
 cmake --preset dev
-cmake --build --preset dev --target cubey_project_terrain_lab_tests
+cmake --build --preset dev --target cubey_project_terrain_lab cubey_project_terrain_lab_tests cubey_png_stats
 ctest --preset dev -R terrain_lab --output-on-failure
+```
+
+Useful run commands:
+
+```sh
+./build/dev/projects/terrain_lab/terrain_lab --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --debug-view flow-accumulation --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --headless --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab-material.png
 ```
 
 ## Status
 
-Current status: CPU field foundation with a test-only CMake target. No
-standalone app, Vulkan renderer, UI, or headless PNG smoke target is registered
-yet.
+Current status: CPU field foundation plus a minimal standalone visual workbench.
+The workbench has deterministic mesh extraction, field/debug shading, windowed
+and headless render paths, PNG smoke coverage, and shader/debug-view sync tests.
+
+Still out of scope for the current slice: live ImGui editing, runtime
+regeneration, tiled or clipmap terrain rendering, foliage/proxy dressing,
+atmosphere-backed lighting, and adapters into `planet`, `ocean`, or
+`procedural_terrain`.
