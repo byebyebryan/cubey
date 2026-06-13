@@ -463,6 +463,40 @@ void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float
     }
 }
 
+void derive_flow_aligned_channels(const TerrainLabConfig& config, TerrainLabFieldData& fields,
+                                  const std::vector<float>& flow_accumulation,
+                                  const std::vector<float>& slope) {
+    const std::size_t count = terrain_lab_sample_count(fields.desc);
+    const float inv_log_count =
+        1.0F / std::log1p(static_cast<float>(std::max<std::size_t>(count, 1U)));
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const Point2 p = normalized_sample(fields.desc, x, y);
+            const float guide = fields.channel_influence[sample];
+            const float flow_t = std::log1p(flow_accumulation[sample]) * inv_log_count;
+            const float drainage = smoothstep(0.20F, 0.64F, flow_t);
+            const float slope_t = smoothstep(0.025F, 0.32F, slope[sample]);
+            const float guide_bias = smoothstep(0.03F, 0.46F, guide);
+            const float downstream = smoothstep(-0.92F, 0.78F, p.z);
+            const float meander_noise =
+                fbm((p.x * 7.0F) + 2.0F, (p.z * 7.0F) - 4.0F, config.seed + 1913U, 4) *
+                    0.5F +
+                0.5F;
+            const float drainage_channel =
+                drainage * (0.56F + slope_t * 0.28F + downstream * 0.16F);
+            const float guided_channel =
+                guide_bias * (0.30F + drainage * 0.36F + meander_noise * 0.18F);
+            const float divide_suppression = 1.0F - fields.divide_influence[sample] * 0.48F;
+            const float channel = saturate((drainage_channel + guided_channel) *
+                                           divide_suppression);
+            fields.channel_influence[sample] = channel;
+            fields.valley_influence[sample] =
+                saturate(std::max(fields.valley_influence[sample] * 0.72F, channel * 0.88F));
+        }
+    }
+}
+
 void update_height_range(TerrainLabFieldData& fields) {
     if (fields.height_m.empty()) {
         fields.min_height_m = 0.0F;
@@ -839,6 +873,7 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
     compute_flow_fields(fields.desc, fields.structure_height_m, temp_slope, temp_direction,
                         temp_accumulation, temp_stream_power, temp_max_accumulation,
                         temp_max_stream_power);
+    derive_flow_aligned_channels(config, fields, temp_accumulation, temp_slope);
 
     const float inv_log_count =
         1.0F / std::log1p(static_cast<float>(std::max<std::size_t>(count, 1U)));
