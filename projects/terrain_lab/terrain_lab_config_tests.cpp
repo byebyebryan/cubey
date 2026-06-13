@@ -58,9 +58,15 @@ struct FieldSampleStats {
     double snow_sum = 0.0;
     double tree_sum = 0.0;
     double channel_height_sum = 0.0;
+    double channel_soil_sum = 0.0;
+    double ridge_rock_sum = 0.0;
+    double ridge_soil_sum = 0.0;
+    double ridge_scree_sum = 0.0;
     double channel_wetness_sum = 0.0;
     double channel_deposition_sum = 0.0;
     double channel_flow_sum = 0.0;
+    double non_channel_height_sum = 0.0;
+    double non_channel_soil_sum = 0.0;
     double non_channel_wetness_sum = 0.0;
     double non_channel_deposition_sum = 0.0;
     double non_channel_flow_sum = 0.0;
@@ -68,6 +74,7 @@ struct FieldSampleStats {
     std::size_t channel_count = 0;
     std::size_t non_channel_count = 0;
     std::size_t divide_count = 0;
+    std::size_t ridge_count = 0;
 };
 
 FieldSampleStats
@@ -131,12 +138,15 @@ inspect_field_samples(const cubey::projects::terrain_lab::TerrainLabFieldData& f
         stats.saw_watershed[fields.watershed_id[index]] = true;
         if (fields.channel_influence[index] > 0.45F) {
             stats.channel_height_sum += fields.height_m[index];
+            stats.channel_soil_sum += material.soil;
             stats.channel_wetness_sum += fields.wetness[index];
             stats.channel_deposition_sum += fields.deposition[index];
             stats.channel_flow_sum += fields.flow_accumulation[index];
             ++stats.channel_count;
         }
         if (fields.channel_influence[index] < 0.05F && fields.divide_influence[index] < 0.25F) {
+            stats.non_channel_height_sum += fields.height_m[index];
+            stats.non_channel_soil_sum += material.soil;
             stats.non_channel_wetness_sum += fields.wetness[index];
             stats.non_channel_deposition_sum += fields.deposition[index];
             stats.non_channel_flow_sum += fields.flow_accumulation[index];
@@ -145,6 +155,12 @@ inspect_field_samples(const cubey::projects::terrain_lab::TerrainLabFieldData& f
         if (fields.divide_influence[index] > 0.55F && fields.channel_influence[index] < 0.20F) {
             stats.divide_height_sum += fields.height_m[index];
             ++stats.divide_count;
+        }
+        if (fields.ridge_influence[index] > 0.45F && fields.channel_influence[index] < 0.35F) {
+            stats.ridge_rock_sum += material.rock;
+            stats.ridge_soil_sum += material.soil;
+            stats.ridge_scree_sum += material.scree;
+            ++stats.ridge_count;
         }
     }
     return stats;
@@ -513,6 +529,12 @@ int main() {
             "terrain lab arid slice should produce enough channel samples");
     require(arid_stats.non_channel_count > 16U,
             "terrain lab arid slice should produce enough non-channel samples");
+    require(arid_stats.divide_count > 16U,
+            "terrain lab arid slice should produce enough mesa divide samples");
+    require(arid_stats.ridge_count > 16U,
+            "terrain lab arid slice should produce enough rim and wall samples");
+    require(arid_stats.channel_count < fields.sample_count() / 5U,
+            "terrain lab arid slice should keep secondary washes subordinate");
     const double inv_arid_count = 1.0 / static_cast<double>(fields.sample_count());
     const float arid_rock_scree_soil = static_cast<float>(
         (arid_stats.rock_sum + arid_stats.scree_sum + arid_stats.soil_sum) * inv_arid_count);
@@ -520,6 +542,27 @@ int main() {
             "terrain lab arid slice should be dominated by rock, scree, and soil");
     require(static_cast<float>(arid_stats.snow_sum * inv_arid_count) < 0.001F,
             "terrain lab arid slice should not produce snow");
+    const float arid_mean_channel_height = static_cast<float>(
+        arid_stats.channel_height_sum / static_cast<double>(arid_stats.channel_count));
+    const float arid_mean_non_channel_height = static_cast<float>(
+        arid_stats.non_channel_height_sum / static_cast<double>(arid_stats.non_channel_count));
+    const float arid_mean_channel_soil = static_cast<float>(
+        arid_stats.channel_soil_sum / static_cast<double>(arid_stats.channel_count));
+    const float arid_mean_non_channel_soil = static_cast<float>(
+        arid_stats.non_channel_soil_sum / static_cast<double>(arid_stats.non_channel_count));
+    const float arid_mean_ridge_rock_scree =
+        static_cast<float>((arid_stats.ridge_rock_sum + arid_stats.ridge_scree_sum) /
+                           static_cast<double>(arid_stats.ridge_count));
+    const float arid_mean_ridge_soil =
+        static_cast<float>(arid_stats.ridge_soil_sum / static_cast<double>(arid_stats.ridge_count));
+    require(arid_mean_channel_height < arid_mean_non_channel_height - 8.0F,
+            "terrain lab arid canyon floor should stay lower than mesa terrain");
+    require(arid_mean_channel_soil > 0.28F,
+            "terrain lab arid canyon floor should keep a warm soil/deposition component");
+    require(arid_mean_channel_soil > arid_mean_non_channel_soil,
+            "terrain lab arid canyon floor should be soilier than non-channel terrain");
+    require(arid_mean_ridge_rock_scree > arid_mean_ridge_soil,
+            "terrain lab arid canyon should retain exposed rock and scree walls");
 
     const terrain::TerrainLabFieldData fields_repeat = terrain::generate_terrain_lab_fields(small);
     const terrain::TerrainLabFieldSummary summary = terrain::summarize_terrain_lab_fields(fields);
@@ -581,10 +624,8 @@ int main() {
             "terrain lab summary should expose non-channel sample count");
     require(summary.divide_sample_count == arid_stats.divide_count,
             "terrain lab summary should expose divide sample count");
-    require_near(summary.mean_channel_height_m,
-                 static_cast<float>(arid_stats.channel_height_sum /
-                                    static_cast<double>(arid_stats.channel_count)),
-                 0.001F, "terrain lab summary should expose channel height");
+    require_near(summary.mean_channel_height_m, arid_mean_channel_height, 0.001F,
+                 "terrain lab summary should expose channel height");
     require(summary.mean_wetness < 0.30F,
             "terrain lab arid slice should stay drier than the watershed fixture");
     require(summary.mean_tree_density < 0.01F,

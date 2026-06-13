@@ -44,6 +44,9 @@ struct AridMesaSampleFeatures {
     float canyon_wall = 0.0F;
     float wash_influence = 0.0F;
     float plateau_influence = 0.0F;
+    float rim_influence = 0.0F;
+    float bench_influence = 0.0F;
+    float talus_influence = 0.0F;
     float ridge_influence = 0.0F;
     float valley_influence = 0.0F;
     float basin_influence = 0.0F;
@@ -387,6 +390,12 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
     const float canyon_broad = 1.0F - smoothstep(0.18F, 0.64F, canyon_distance);
     const float canyon_wall = smoothstep(0.068F, 0.20F, canyon_distance) *
                               (1.0F - smoothstep(0.26F, 0.48F, canyon_distance));
+    const float rim_influence = smoothstep(0.14F, 0.28F, canyon_distance) *
+                                (1.0F - smoothstep(0.30F, 0.50F, canyon_distance));
+    const float bench_influence = smoothstep(0.30F, 0.50F, canyon_distance) *
+                                  (1.0F - smoothstep(0.62F, 0.88F, canyon_distance));
+    const float talus_influence = smoothstep(0.12F, 0.24F, canyon_distance) *
+                                  (1.0F - smoothstep(0.28F, 0.46F, canyon_distance));
 
     const float left_t = smoothstep(-0.78F, -0.18F, p.z) * (1.0F - smoothstep(-0.05F, 0.24F, p.z));
     const float left_join_t = saturate((p.z + 0.78F) / 0.72F);
@@ -422,22 +431,25 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
 
     const float plateau_noise =
         fbm((p.x * 1.35F) + 9.0F, (p.z * 1.35F) - 3.0F, config.seed + 2621U, 4) * 0.5F + 0.5F;
-    const float plateau = saturate((1.0F - canyon_broad * 0.68F - wash_influence * 0.08F) *
+    const float plateau = saturate((1.0F - canyon_broad * 0.58F - wash_influence * 0.08F) *
                                    lerp(0.78F, 1.08F, plateau_noise));
-    const float mesa_rim = smoothstep(0.16F, 0.32F, canyon_distance) *
-                           (1.0F - smoothstep(0.34F, 0.62F, canyon_distance));
     const float channel = saturate(std::max(canyon_floor, wash_influence * 0.22F));
     const float valley = saturate((canyon_broad * 0.80F) + (wash_influence * 0.10F));
     const float basin = saturate((canyon_floor * 0.76F) + (wash_influence * 0.04F));
-    const float ridge = saturate((canyon_wall * 0.82F) + (mesa_rim * 0.28F) +
-                                 plateau * (0.08F + plateau_noise * 0.06F));
-    const float divide = saturate((plateau * 0.24F) + (mesa_rim * 0.40F) + (1.0F - valley) * 0.10F);
+    const float ridge =
+        saturate((canyon_wall * 0.72F) + (rim_influence * 0.42F) + (bench_influence * 0.12F) +
+                 plateau * (0.08F + plateau_noise * 0.06F));
+    const float divide = saturate((plateau * 0.28F) + (rim_influence * 0.50F) +
+                                  (bench_influence * 0.26F) + (1.0F - valley) * 0.10F);
 
     return {
         .canyon_floor = saturate(canyon_floor),
         .canyon_wall = saturate(canyon_wall),
         .wash_influence = wash_influence,
         .plateau_influence = plateau,
+        .rim_influence = saturate(rim_influence),
+        .bench_influence = saturate(bench_influence),
+        .talus_influence = saturate(talus_influence),
         .ridge_influence = ridge,
         .valley_influence = valley,
         .basin_influence = basin,
@@ -1169,13 +1181,16 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
             const float high_desert_tilt = (1.0F - p.z) * 0.5F;
             const float mesa_bench =
                 smoothstep(-0.18F, 0.78F, broad + features.plateau_influence * 0.62F);
-            const float canyon_cut = (features.valley_influence * 0.20F) +
+            const float bench_step = (features.rim_influence * 0.090F) +
+                                     (features.bench_influence * 0.055F) -
+                                     (features.talus_influence * 0.030F);
+            const float canyon_cut = (features.valley_influence * 0.16F) +
                                      (features.canyon_floor * 0.24F) +
                                      (features.wash_influence * 0.025F);
             const float structure =
                 ((high_desert_tilt * 0.24F) + (features.plateau_influence * 0.30F) +
-                 (features.ridge_influence * 0.10F) + (mesa_bench * 0.08F) + (broad * 0.12F) +
-                 (bench_noise * 0.045F) - canyon_cut - 0.08F) *
+                 (features.ridge_influence * 0.08F) + (mesa_bench * 0.08F) + bench_step +
+                 (broad * 0.11F) + (bench_noise * 0.035F) - canyon_cut - 0.08F) *
                 arid_elevation_scale_m * config.structure_strength;
 
             fields.ridge_influence[sample] = features.ridge_influence;
@@ -1242,9 +1257,9 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
             const AridMesaSampleFeatures features = arid_mesa_features_at(p, fields.desc, config);
             const float elevation_t =
                 saturate((fields.height_m[sample] - fields.min_height_m) / process_height_span);
-            const float exposed =
-                saturate((features.canyon_wall * 0.78F) + (fields.ridge_influence[sample] * 0.36F) +
-                         (features.plateau_influence * 0.14F));
+            const float exposed = saturate(
+                (features.canyon_wall * 0.70F) + (features.rim_influence * 0.42F) +
+                (fields.ridge_influence[sample] * 0.26F) + (features.plateau_influence * 0.10F));
             const float channel_floor = smoothstep(0.46F, 0.90F, fields.channel_influence[sample]);
             const float strata =
                 std::sin((elevation_t * 54.0F) +
@@ -1257,7 +1272,10 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
             const float desert_pavement =
                 fbm((p.x * 15.0F) + 19.0F, (p.z * 15.0F) - 23.0F, config.seed + 2729U, 3) *
                 features.plateau_influence * 0.006F;
-            const float detail = (strata + rock_roughness + desert_pavement) *
+            const float bench_breakup =
+                fbm((p.x * 11.0F) - 29.0F, (p.z * 11.0F) + 31.0F, config.seed + 2731U, 3) *
+                features.bench_influence * 0.004F;
+            const float detail = (strata + rock_roughness + desert_pavement + bench_breakup) *
                                  arid_elevation_scale_m * config.detail_strength *
                                  (1.0F - channel_floor * 0.72F);
             fields.detail_height_m[sample] = detail;
@@ -1306,15 +1324,18 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
                 fbm((p.x * 5.4F) + 13.0F, (p.z * 5.4F) - 5.0F, config.seed + 2809U, 4) * 0.5F +
                 0.5F;
             const float high = smoothstep(0.80F, 0.98F, elevation_t);
-            const float rock = ((slope_t * 0.82F) + (features.canyon_wall * 0.72F) +
-                                (fields.ridge_influence[sample] * 0.30F)) *
-                               (1.0F - dry_wash * 0.45F) * lerp(0.84F, 1.20F, material_noise);
+            const float rock =
+                ((slope_t * 0.82F) + (features.canyon_wall * 0.72F) +
+                 (features.rim_influence * 0.38F) + (fields.ridge_influence[sample] * 0.22F)) *
+                (1.0F - dry_wash * 0.62F) * lerp(0.84F, 1.20F, material_noise);
             const float scree = smoothstep(0.18F, 0.72F, slope_t) *
                                 (1.0F - smoothstep(0.78F, 1.0F, slope_t)) *
-                                (0.36F + features.canyon_wall * 0.54F + dry_wash * 0.12F) *
-                                (1.0F - dry_wash * 0.35F) * lerp(0.76F, 1.28F, scree_patch);
+                                (0.30F + features.talus_influence * 0.58F +
+                                 features.canyon_wall * 0.36F + dry_wash * 0.08F) *
+                                (1.0F - dry_wash * 0.50F) * lerp(0.76F, 1.28F, scree_patch);
             const float soil = (0.42F + deposition * 0.54F + (1.0F - slope_t) * 0.22F +
-                                features.plateau_influence * 0.14F + dry_wash * 0.35F) *
+                                features.plateau_influence * 0.14F +
+                                features.bench_influence * 0.14F + dry_wash * 0.70F) *
                                lerp(0.86F, 1.18F, material_noise);
             const float meadow =
                 wetness * (1.0F - slope_t) * (0.40F + dry_wash * 0.18F) * (1.0F - high * 0.40F);

@@ -88,7 +88,7 @@ vec3 final_color() {
     grain += (value_noise2(frag_world_position.xz * 0.041 + vec2(19.0, -7.0)) - 0.5) * 0.035;
     color *= 1.0 + grain;
     color = mix(color, vec3(0.16, 0.27, 0.21), clamp(frag_hydrology.w, 0.0, 1.0) * 0.14);
-    color = mix(color, vec3(0.12, 0.23, 0.22), clamp(frag_influences.w, 0.0, 1.0) * 0.10);
+    color = mix(color, vec3(0.18, 0.23, 0.20), clamp(frag_influences.w, 0.0, 1.0) * 0.045);
     color = mix(color, vec3(0.42, 0.37, 0.25), clamp(frag_material_b.z, 0.0, 1.0) * 0.08);
 
     vec3 normal = normalize(frag_normal);
