@@ -304,6 +304,19 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
     };
 }
 
+[[nodiscard]] float material_entropy(const TerrainLabMaterialMask& mask) {
+    const std::array<float, 6> weights{
+        mask.rock, mask.soil, mask.scree, mask.meadow, mask.forest, mask.snow,
+    };
+    float entropy = 0.0F;
+    for (const float weight : weights) {
+        if (weight > 0.0F) {
+            entropy -= weight * std::log(weight);
+        }
+    }
+    return entropy / std::log(static_cast<float>(weights.size()));
+}
+
 void compute_slope_and_curvature(const TerrainLabGridDesc& desc, const std::vector<float>& height,
                                  std::vector<float>& slope, std::vector<float>& curvature,
                                  float& max_slope, float& max_abs_curvature) {
@@ -622,6 +635,7 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
         .watershed_count = fields.watershed_count,
         .min_height_m = fields.min_height_m,
         .max_height_m = fields.max_height_m,
+        .height_span_m = fields.max_height_m - fields.min_height_m,
         .max_flow_accumulation = fields.max_flow_accumulation,
         .max_channel_distance_m = fields.max_channel_distance_m,
     };
@@ -632,23 +646,97 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
     double slope_sum = 0.0;
     double wetness_sum = 0.0;
     double tree_sum = 0.0;
+    double material_entropy_sum = 0.0;
     double divide_sum = 0.0;
     double channel_sum = 0.0;
+    double channel_height_sum = 0.0;
+    double channel_flow_sum = 0.0;
+    double non_channel_flow_sum = 0.0;
+    double divide_height_sum = 0.0;
+    double edge_step_sum = 0.0;
+    std::size_t edge_step_count = 0;
     for (std::size_t sample = 0; sample < summary.sample_count; ++sample) {
         height_sum += fields.height_m[sample];
         slope_sum += fields.slope[sample];
         wetness_sum += fields.wetness[sample];
         tree_sum += fields.tree_density[sample];
+        material_entropy_sum += material_entropy(fields.material_masks[sample]);
         divide_sum += fields.divide_influence[sample];
         channel_sum += fields.channel_influence[sample];
+        if (fields.channel_influence[sample] > 0.45F) {
+            channel_height_sum += fields.height_m[sample];
+            channel_flow_sum += fields.flow_accumulation[sample];
+            ++summary.channel_sample_count;
+        }
+        if (fields.channel_influence[sample] < 0.05F && fields.divide_influence[sample] < 0.25F) {
+            non_channel_flow_sum += fields.flow_accumulation[sample];
+            ++summary.non_channel_sample_count;
+        }
+        if (fields.divide_influence[sample] > 0.55F && fields.channel_influence[sample] < 0.20F) {
+            divide_height_sum += fields.height_m[sample];
+            ++summary.divide_sample_count;
+        }
+    }
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const bool left = x == 0U;
+            const bool right = x + 1U == fields.desc.width;
+            const bool top = y == 0U;
+            const bool bottom = y + 1U == fields.desc.height;
+            if (!left && !right && !top && !bottom) {
+                continue;
+            }
+            const std::size_t sample = fields.index(x, y);
+            if (left && fields.desc.width > 1U) {
+                edge_step_sum += std::abs(fields.height_m[sample] -
+                                          fields.height_m[fields.index(1U, y)]);
+                ++edge_step_count;
+            }
+            if (right && fields.desc.width > 1U) {
+                edge_step_sum += std::abs(fields.height_m[sample] -
+                                          fields.height_m[fields.index(fields.desc.width - 2U, y)]);
+                ++edge_step_count;
+            }
+            if (top && fields.desc.height > 1U) {
+                edge_step_sum += std::abs(fields.height_m[sample] -
+                                          fields.height_m[fields.index(x, 1U)]);
+                ++edge_step_count;
+            }
+            if (bottom && fields.desc.height > 1U) {
+                edge_step_sum += std::abs(
+                    fields.height_m[sample] -
+                    fields.height_m[fields.index(x, fields.desc.height - 2U)]);
+                ++edge_step_count;
+            }
+        }
     }
     const double inv_count = 1.0 / static_cast<double>(summary.sample_count);
     summary.mean_height_m = static_cast<float>(height_sum * inv_count);
     summary.mean_slope = static_cast<float>(slope_sum * inv_count);
     summary.mean_wetness = static_cast<float>(wetness_sum * inv_count);
     summary.mean_tree_density = static_cast<float>(tree_sum * inv_count);
+    summary.mean_material_entropy = static_cast<float>(material_entropy_sum * inv_count);
     summary.mean_divide_influence = static_cast<float>(divide_sum * inv_count);
     summary.mean_channel_influence = static_cast<float>(channel_sum * inv_count);
+    if (summary.channel_sample_count > 0U) {
+        const double inv_channel = 1.0 / static_cast<double>(summary.channel_sample_count);
+        summary.mean_channel_height_m = static_cast<float>(channel_height_sum * inv_channel);
+        summary.mean_channel_flow_accumulation = static_cast<float>(channel_flow_sum * inv_channel);
+    }
+    if (summary.non_channel_sample_count > 0U) {
+        summary.mean_non_channel_flow_accumulation = static_cast<float>(
+            non_channel_flow_sum / static_cast<double>(summary.non_channel_sample_count));
+    }
+    if (summary.divide_sample_count > 0U) {
+        summary.mean_divide_height_m =
+            static_cast<float>(divide_height_sum / static_cast<double>(summary.divide_sample_count));
+    }
+    summary.divide_channel_height_gap_m =
+        summary.mean_divide_height_m - summary.mean_channel_height_m;
+    if (edge_step_count > 0U) {
+        summary.mean_edge_step_m =
+            static_cast<float>(edge_step_sum / static_cast<double>(edge_step_count));
+    }
     return summary;
 }
 

@@ -516,16 +516,41 @@ int main() {
                  "terrain lab min height summary should be repeatable");
     require_near(summary.max_height_m, summary_repeat.max_height_m, 0.001F,
                  "terrain lab max height summary should be repeatable");
+    require_near(summary.height_span_m, summary_repeat.height_span_m, 0.001F,
+                 "terrain lab height span summary should be repeatable");
     require_near(summary.mean_height_m, summary_repeat.mean_height_m, 0.001F,
                  "terrain lab mean height summary should be repeatable");
     require_near(summary.mean_slope, summary_repeat.mean_slope, 0.001F,
                  "terrain lab mean slope summary should be repeatable");
     require_near(summary.max_flow_accumulation, summary_repeat.max_flow_accumulation, 0.001F,
                  "terrain lab flow summary should be repeatable");
+    require_near(summary.mean_channel_height_m, summary_repeat.mean_channel_height_m, 0.001F,
+                 "terrain lab channel height summary should be repeatable");
+    require_near(summary.mean_divide_height_m, summary_repeat.mean_divide_height_m, 0.001F,
+                 "terrain lab divide height summary should be repeatable");
+    require_near(summary.divide_channel_height_gap_m,
+                 summary_repeat.divide_channel_height_gap_m, 0.001F,
+                 "terrain lab divide-channel height gap summary should be repeatable");
+    require_near(summary.mean_channel_flow_accumulation,
+                 summary_repeat.mean_channel_flow_accumulation, 0.001F,
+                 "terrain lab channel flow summary should be repeatable");
+    require_near(summary.mean_non_channel_flow_accumulation,
+                 summary_repeat.mean_non_channel_flow_accumulation, 0.001F,
+                 "terrain lab non-channel flow summary should be repeatable");
     require_near(summary.mean_wetness, summary_repeat.mean_wetness, 0.001F,
                  "terrain lab wetness summary should be repeatable");
     require_near(summary.mean_tree_density, summary_repeat.mean_tree_density, 0.001F,
                  "terrain lab tree summary should be repeatable");
+    require_near(summary.mean_material_entropy, summary_repeat.mean_material_entropy, 0.001F,
+                 "terrain lab material entropy summary should be repeatable");
+    require_near(summary.mean_edge_step_m, summary_repeat.mean_edge_step_m, 0.001F,
+                 "terrain lab edge step summary should be repeatable");
+    require(summary.channel_sample_count == summary_repeat.channel_sample_count,
+            "terrain lab channel sample count should be repeatable");
+    require(summary.non_channel_sample_count == summary_repeat.non_channel_sample_count,
+            "terrain lab non-channel sample count should be repeatable");
+    require(summary.divide_sample_count == summary_repeat.divide_sample_count,
+            "terrain lab divide sample count should be repeatable");
     require(summary.watershed_count == summary_repeat.watershed_count,
             "terrain lab watershed summary should be repeatable");
     require_near(summary.mean_divide_influence, summary_repeat.mean_divide_influence, 0.001F,
@@ -535,6 +560,26 @@ int main() {
     require_near(summary.max_channel_distance_m, summary_repeat.max_channel_distance_m, 0.001F,
                  "terrain lab channel distance summary should be repeatable");
     require(summary.watershed_count == 4U, "terrain lab summary should count watershed basins");
+    require(summary.height_span_m > 100.0F, "terrain lab summary should expose height span");
+    require(summary.channel_sample_count == channel_count,
+            "terrain lab summary should expose channel sample count");
+    require(summary.non_channel_sample_count == non_channel_count,
+            "terrain lab summary should expose non-channel sample count");
+    require(summary.divide_sample_count == divide_count,
+            "terrain lab summary should expose divide sample count");
+    require_near(summary.mean_channel_height_m, mean_channel_height, 0.001F,
+                 "terrain lab summary should expose channel height");
+    require_near(summary.mean_divide_height_m, mean_divide_height, 0.001F,
+                 "terrain lab summary should expose divide height");
+    require(summary.divide_channel_height_gap_m > 15.0F,
+            "terrain lab summary should expose divide-channel height separation");
+    require(summary.mean_channel_flow_accumulation >
+                summary.mean_non_channel_flow_accumulation,
+            "terrain lab summary should expose channel-flow alignment");
+    require(summary.mean_material_entropy > 0.05F && summary.mean_material_entropy <= 1.0F,
+            "terrain lab summary should expose material mask diversity");
+    require(summary.mean_edge_step_m >= 0.0F && summary.mean_edge_step_m < summary.height_span_m,
+            "terrain lab summary should expose bounded edge discontinuity");
     require(summary.mean_divide_influence > 0.0F,
             "terrain lab summary should include divide coverage");
     require(summary.mean_channel_influence > 0.0F,

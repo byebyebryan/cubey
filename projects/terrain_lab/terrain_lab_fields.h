@@ -29,14 +29,25 @@ struct TerrainLabMaterialMask {
 
 struct TerrainLabFieldSummary {
     std::size_t sample_count = 0;
+    std::size_t channel_sample_count = 0;
+    std::size_t non_channel_sample_count = 0;
+    std::size_t divide_sample_count = 0;
     std::uint32_t watershed_count = 0;
     float min_height_m = 0.0F;
     float max_height_m = 0.0F;
+    float height_span_m = 0.0F;
     float mean_height_m = 0.0F;
     float mean_slope = 0.0F;
     float max_flow_accumulation = 0.0F;
+    float mean_channel_height_m = 0.0F;
+    float mean_divide_height_m = 0.0F;
+    float divide_channel_height_gap_m = 0.0F;
+    float mean_channel_flow_accumulation = 0.0F;
+    float mean_non_channel_flow_accumulation = 0.0F;
     float mean_wetness = 0.0F;
     float mean_tree_density = 0.0F;
+    float mean_material_entropy = 0.0F;
+    float mean_edge_step_m = 0.0F;
     float mean_divide_influence = 0.0F;
     float mean_channel_influence = 0.0F;
     float max_channel_distance_m = 0.0F;
