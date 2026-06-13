@@ -3,23 +3,8 @@
 
 #include "cubey/atmosphere.glsl"
 #include "cubey/pbr.glsl"
+#include "clouds_debug.glsl"
 
-const int CLOUDS_VIEW_FINAL = 0;
-const int CLOUDS_VIEW_WEATHER = 1;
-const int CLOUDS_VIEW_DENSITY = 2;
-const int CLOUDS_VIEW_TRANSMITTANCE = 3;
-const int CLOUDS_VIEW_LIGHTING = 4;
-const int CLOUDS_VIEW_SHADOW = 5;
-const int CLOUDS_VIEW_STEPS = 6;
-const int CLOUDS_VIEW_BACKGROUND = 7;
-const int CLOUDS_VIEW_ATMOSPHERE = 8;
-const int CLOUDS_VIEW_GROUND = 9;
-const int CLOUDS_VIEW_GROUND_HIT = 10;
-const int CLOUDS_VIEW_CLOUD_ALPHA = 11;
-const int CLOUDS_VIEW_SHELL = 12;
-const int CLOUDS_VIEW_SURFACE_SHADOW = 13;
-const int CLOUDS_VIEW_DOMAIN = 14;
-const int CLOUDS_VIEW_DISTANCE = 15;
 const float CLOUDS_ATMOSPHERE_HEIGHT_KM = 100.0;
 
 layout(set = 0, binding = 0) uniform sampler2D cloud_product_texture;
@@ -205,14 +190,6 @@ BackgroundSample sample_background(vec3 origin, vec3 direction) {
         result.color = mix(result.color, result.ground, ground_weight);
     }
     return result;
-}
-
-bool cloud_product_debug_view(int debug_view) {
-    return debug_view == CLOUDS_VIEW_WEATHER || debug_view == CLOUDS_VIEW_DENSITY ||
-           debug_view == CLOUDS_VIEW_TRANSMITTANCE || debug_view == CLOUDS_VIEW_LIGHTING ||
-           debug_view == CLOUDS_VIEW_SHADOW || debug_view == CLOUDS_VIEW_STEPS ||
-           debug_view == CLOUDS_VIEW_CLOUD_ALPHA || debug_view == CLOUDS_VIEW_SHELL ||
-           debug_view == CLOUDS_VIEW_DOMAIN || debug_view == CLOUDS_VIEW_DISTANCE;
 }
 
 float high_view_horizon_cloud_fade(vec3 origin, vec3 direction) {
