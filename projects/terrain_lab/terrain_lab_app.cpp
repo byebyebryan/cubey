@@ -33,6 +33,7 @@ namespace cubey::projects::terrain_lab {
 namespace {
 
 constexpr float kDefaultPitchRadians = -0.74F;
+constexpr float kDefaultYawRadians = 0.52F;
 
 struct TerrainLabPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
@@ -267,7 +268,7 @@ class TerrainLabApp {
         const cubey::Transform3D camera_transform = cubey::orbit_camera_transform({
             .target = {0.0F, target_y, 0.0F},
             .distance = orbit_controller_.distance(),
-            .yaw = orbit_controller_.yaw(),
+            .yaw = orbit_controller_.yaw() + kDefaultYawRadians,
             .pitch = orbit_controller_.pitch() + kDefaultPitchRadians,
         });
         return {
