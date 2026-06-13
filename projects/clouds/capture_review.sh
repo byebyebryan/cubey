@@ -87,7 +87,7 @@ if command -v magick >/dev/null 2>&1; then
         "${OUT_DIR}/surface-shadow.png" \
         "${OUT_DIR}/orbit-night.png" \
         -geometry 480x270+12+32 \
-        -tile 4x5 \
+        -tile 5x5 \
         "${OUT_DIR}/contact-sheet.png"
 elif command -v montage >/dev/null 2>&1; then
     montage \
@@ -115,7 +115,7 @@ elif command -v montage >/dev/null 2>&1; then
         "${OUT_DIR}/surface-shadow.png" \
         "${OUT_DIR}/orbit-night.png" \
         -geometry 480x270+12+32 \
-        -tile 4x5 \
+        -tile 5x5 \
         "${OUT_DIR}/contact-sheet.png"
 fi
 

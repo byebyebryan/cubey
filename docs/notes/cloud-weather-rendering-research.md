@@ -175,6 +175,21 @@ shows row-like structure, so a future pass should replace the local horizon
 march with a better reconstruction or reprojection strategy rather than only
 adding more blur.
 
+The tenth checkpoint adds the first proper reconstruction substrate. The
+renderer can now create dynamic passes with multiple color attachments, and the
+cloud raymarch writes a metadata target next to the color/transmittance product:
+mean cloud distance, cloud alpha, horizon factor, and reconstruction
+confidence. The temporal pass keeps color and metadata ping-pong histories,
+uploads current/previous camera and weather state through a uniform buffer,
+reprojects history from the current cloud-distance estimate, rejects history
+when depth/alpha/confidence disagree, and clamps accepted history to the current
+neighborhood. The cloud density model also accepts an approximate pixel
+footprint, fades high-frequency erosion by that footprint, uses per-step dither
+for local grazing rays, and blends a broader low-frequency local horizon layer.
+This is the right mechanical base for fixing horizon streaking, but the
+captures remain only subtly improved; the remaining artifact should be treated
+as a deeper sampling/reconstruction issue, not as a solved tuning problem.
+
 The remaining promotion blockers are now less about first visibility and more
 about renderer contracts:
 
@@ -183,7 +198,9 @@ about renderer contracts:
 - promote the current analytic sun-shadow factor into a reusable cloud shadow
   texture or sampled lighting input for surface and ocean lighting;
 - improve temporal/blue-noise sampling and horizon reconstruction before
-  increasing quality or promoting the local-volume path;
+  increasing quality or promoting the local-volume path; the project now has
+  metadata and reprojection hooks, but the visible surface/high streaking still
+  needs more work;
 - decide whether weather authoring is procedural-only, texture-driven, or a
   hybrid with uploaded weather maps;
 - move useful controls onto the shared hierarchical config/UI surface.

@@ -8,15 +8,17 @@ The current renderer is a v1 planet-aware cloud raymarch. Surface and high
 cameras use a capped spherical-shell local cloud segment with a distant horizon
 layer, while orbit cameras keep the full spherical planet-scale shell. The
 renderer writes a quality-scaled cloud product target with linear cloud
-radiance plus view transmittance, resolves it through per-frame-slot temporal
-reconstruction, and composites that product over the standalone
-atmosphere/ground proxy. It supports typed procedural weather presets,
-front/cell/streak weather structure, type-specific density profiles,
-shared-atmosphere sun/moon lighting, cheap base/detail density separation,
-distance/grazing detail LOD, cheap self-shadowing, prototype surface cloud
-shadows, and raw product debug views for the major fields. It deliberately does
-not integrate into ocean or planet yet; those projects should later consume
-cloud sky/reflection and shadow outputs after this standalone path is stable.
+radiance plus view transmittance, emits reconstruction metadata
+(mean cloud distance, alpha, horizon factor, confidence), resolves color and
+metadata through per-frame-slot temporal reconstruction, and composites that
+product over the standalone atmosphere/ground proxy. It supports typed
+procedural weather presets, front/cell/streak weather structure, type-specific
+density profiles, shared-atmosphere sun/moon lighting, cheap base/detail density
+separation, distance/grazing/footprint detail LOD, cheap self-shadowing,
+prototype surface cloud shadows, and raw product debug views for the major
+fields. It deliberately does not integrate into ocean or planet yet; those
+projects should later consume cloud sky/reflection and shadow outputs after this
+standalone path is stable.
 
 Useful runs:
 
@@ -48,6 +50,9 @@ Useful runs:
 ./build/dev/projects/clouds/clouds --debug-view step-length
 ./build/dev/projects/clouds/clouds --debug-view local-march
 ./build/dev/projects/clouds/clouds --debug-view far-horizon
+./build/dev/projects/clouds/clouds --debug-view cloud-depth
+./build/dev/projects/clouds/clouds --debug-view cloud-confidence
+./build/dev/projects/clouds/clouds --debug-view horizon-blend
 ./build/dev/projects/clouds/clouds --cloud-shadow-strength 1.0
 ./build/dev/projects/clouds/clouds --no-cloud-temporal
 ./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode surface --output outputs/clouds-surface.png
@@ -63,7 +68,8 @@ Controls:
 - `D`: cycle final, weather, density, transmittance, lighting, shadow, step,
   background, atmosphere, ground, ground-hit, cloud-alpha, shell,
   surface-shadow, domain, distance, base-density, detail-density, density-lod,
-  step-length, local-march, and far-horizon debug views.
+  step-length, local-march, far-horizon, cloud-depth, cloud-confidence, and
+  horizon-blend debug views.
 - Space: play/pause solar time.
 - `R`: reset camera, time, and cloud settings.
 
@@ -91,8 +97,10 @@ Controls:
   interactive mode; higher modes remain useful for diagnosis but are not yet
   real-time enough to be the default.
 - `--cloud-temporal` / `--no-cloud-temporal` toggles per-frame-slot temporal
-  reconstruction of the cloud product. Disable it when isolating raw raymarch
-  noise or history artifacts.
+  reconstruction of the cloud product. The temporal pass reprojects history
+  from cloud mean-distance metadata, rejects disagreeing depth/alpha/confidence
+  samples, and clamps history against the current neighborhood. Disable it when
+  isolating raw raymarch noise or history artifacts.
 - `--cloud-shadow-strength` controls the prototype analytic cloud shadow factor
   applied only to the standalone procedural ground/ocean proxy.
 - Weather fields are procedural and deterministic. There is not yet an uploaded
@@ -127,10 +135,13 @@ planet rendering:
   adaptive horizon samples, replaces the old single-sample horizon fallback,
   keeps a higher vertical cloud target in local quarter-quality views, preserves
   the final view aspect for anisotropic cloud targets, and applies a final-only
-  lower-sky filter for local horizon composition. This reduces hard banding but
-  does not fully solve the raw surface/high horizontal streak source; remaining
-  artifacts are visible in raw `density`, `detail-density`, `density-lod`, and
-  `local-march` diagnostics.
+  lower-sky filter for local horizon composition. The latest reconstruction
+  pass adds metadata-driven temporal reprojection, footprint-aware density LOD,
+  per-step horizon dither, and a stronger low-frequency local horizon layer.
+  This gives the project the right hooks for the fix, but does not fully solve
+  the raw surface/high horizontal streak source; remaining artifacts are
+  visible in raw `density`, `detail-density`, `density-lod`, and `local-march`
+  diagnostics.
 - High-oblique background composition now separates sky/space from the
   diagnostic ground proxy and uses sky-only atmosphere classification for the
   background. Any remaining horizon band should be treated as a visual tuning
