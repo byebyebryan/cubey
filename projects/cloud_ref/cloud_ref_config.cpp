@@ -208,6 +208,15 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "lighting") {
         return CloudsDebugView::Lighting;
     }
+    if (value == "ambient-light") {
+        return CloudsDebugView::AmbientLight;
+    }
+    if (value == "direct-light") {
+        return CloudsDebugView::DirectLight;
+    }
+    if (value == "phase-light") {
+        return CloudsDebugView::PhaseLight;
+    }
     if (value == "shadow") {
         return CloudsDebugView::Shadow;
     }
@@ -246,6 +255,12 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "transmittance";
     case CloudsDebugView::Lighting:
         return "lighting";
+    case CloudsDebugView::AmbientLight:
+        return "ambient-light";
+    case CloudsDebugView::DirectLight:
+        return "direct-light";
+    case CloudsDebugView::PhaseLight:
+        return "phase-light";
     case CloudsDebugView::Shadow:
         return "shadow";
     case CloudsDebugView::Steps:

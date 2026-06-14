@@ -57,16 +57,20 @@ enum class CloudsDebugView : std::uint32_t {
     Distance = 15,
     BaseDensity = 16,
     DetailDensity = 17,
+    AmbientLight = 18,
+    DirectLight = 19,
+    PhaseLight = 20,
 };
 
-inline constexpr std::array<CloudsDebugView, 13> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 16> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
     CloudsDebugView::Weather,      CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting,
-    CloudsDebugView::Shadow,       CloudsDebugView::Steps,
-    CloudsDebugView::Background,   CloudsDebugView::CloudAlpha,
-    CloudsDebugView::Distance,     CloudsDebugView::BaseDensity,
-    CloudsDebugView::DetailDensity,
+    CloudsDebugView::AmbientLight, CloudsDebugView::DirectLight,
+    CloudsDebugView::PhaseLight,   CloudsDebugView::Shadow,
+    CloudsDebugView::Steps,        CloudsDebugView::Background,
+    CloudsDebugView::CloudAlpha,   CloudsDebugView::Distance,
+    CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
 };
 
 struct CloudsTimeConfig {
@@ -99,16 +103,16 @@ struct CloudsConfig {
     float density = 0.02F;
     float weather_scale_km = 210.0F;
     float wind_speed_mps = 450.0F;
-    float shadow_strength = 0.65F;
-    float horizon_strength = 0.75F;
+    float shadow_strength = 0.82F;
+    float horizon_strength = 0.62F;
     float weather_fronts = 1.0F;
     float weather_cells = 1.0F;
     float weather_streaks = 1.0F;
     float detail_erosion = 1.0F;
     float crispiness = 40.0F;
     float curliness = 0.10F;
-    float absorption = 0.35F;
-    bool powder_enabled = false;
+    float absorption = 0.28F;
+    bool powder_enabled = true;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;
 };

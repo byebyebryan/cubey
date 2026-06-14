@@ -53,9 +53,21 @@ void test_names_and_next_debug_view() {
                 cubey::projects::cloud_ref::CloudsDebugView::RawFinal,
             "cloud debug view should expose raw final after final");
     require(cubey::projects::cloud_ref::next_clouds_debug_view(
+                cubey::projects::cloud_ref::CloudsDebugView::Lighting) ==
+                cubey::projects::cloud_ref::CloudsDebugView::AmbientLight,
+            "cloud debug view should include ambient-light diagnostics");
+    require(cubey::projects::cloud_ref::next_clouds_debug_view(
+                cubey::projects::cloud_ref::CloudsDebugView::AmbientLight) ==
+                cubey::projects::cloud_ref::CloudsDebugView::DirectLight,
+            "cloud debug view should include direct-light diagnostics");
+    require(cubey::projects::cloud_ref::next_clouds_debug_view(
+                cubey::projects::cloud_ref::CloudsDebugView::DirectLight) ==
+                cubey::projects::cloud_ref::CloudsDebugView::PhaseLight,
+            "cloud debug view should include phase-light diagnostics");
+    require(cubey::projects::cloud_ref::next_clouds_debug_view(
                 cubey::projects::cloud_ref::CloudsDebugView::Shadow) ==
                 cubey::projects::cloud_ref::CloudsDebugView::Steps,
-            "cloud debug view should advance");
+            "cloud debug view should advance after shadow");
     require(cubey::projects::cloud_ref::next_clouds_debug_view(
                 cubey::projects::cloud_ref::CloudsDebugView::Background) ==
                 cubey::projects::cloud_ref::CloudsDebugView::CloudAlpha,
@@ -74,6 +86,15 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref::clouds_debug_view_from_string("raw-final") ==
                 cubey::projects::cloud_ref::CloudsDebugView::RawFinal,
             "raw final debug view should parse");
+    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("ambient-light") ==
+                cubey::projects::cloud_ref::CloudsDebugView::AmbientLight,
+            "cloud ambient light debug view should parse");
+    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("direct-light") ==
+                cubey::projects::cloud_ref::CloudsDebugView::DirectLight,
+            "cloud direct light debug view should parse");
+    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("phase-light") ==
+                cubey::projects::cloud_ref::CloudsDebugView::PhaseLight,
+            "cloud phase light debug view should parse");
     require(cubey::projects::cloud_ref::clouds_debug_view_from_string("distance") ==
                 cubey::projects::cloud_ref::CloudsDebugView::Distance,
             "cloud distance debug view should parse");

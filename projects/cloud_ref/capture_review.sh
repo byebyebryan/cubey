@@ -38,6 +38,9 @@ capture detail-density --cloud-camera-mode surface --debug-view detail-density
 capture density --cloud-camera-mode surface --debug-view density
 capture transmittance --cloud-camera-mode surface --debug-view transmittance
 capture lighting --cloud-camera-mode surface --debug-view lighting
+capture ambient-light --cloud-camera-mode surface --debug-view ambient-light
+capture direct-light --cloud-camera-mode surface --debug-view direct-light
+capture phase-light --cloud-camera-mode surface --debug-view phase-light
 capture shadow --cloud-camera-mode surface --debug-view shadow
 capture cloud-alpha --cloud-camera-mode surface --debug-view cloud-alpha
 capture distance --cloud-camera-mode surface --debug-view distance
@@ -45,6 +48,7 @@ capture steps --cloud-camera-mode surface --debug-view steps
 capture background --cloud-camera-mode surface --debug-view background
 
 if command -v magick >/dev/null 2>&1; then
+    rm -f "${OUT_DIR}/contact-sheet.png"
     magick montage "${OUT_DIR}"/*.png -geometry 320x180+8+8 -tile 2x \
         "${OUT_DIR}/contact-sheet.png"
 fi

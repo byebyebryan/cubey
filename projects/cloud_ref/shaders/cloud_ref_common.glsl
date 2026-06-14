@@ -16,6 +16,9 @@ const int CLOUD_REF_DEBUG_CLOUD_ALPHA = 11;
 const int CLOUD_REF_DEBUG_DISTANCE = 15;
 const int CLOUD_REF_DEBUG_BASE_DENSITY = 16;
 const int CLOUD_REF_DEBUG_DETAIL_DENSITY = 17;
+const int CLOUD_REF_DEBUG_AMBIENT_LIGHT = 18;
+const int CLOUD_REF_DEBUG_DIRECT_LIGHT = 19;
+const int CLOUD_REF_DEBUG_PHASE_LIGHT = 20;
 
 layout(std140, set = 0, binding = 0) uniform CloudRefFrame {
     vec4 camera_right_aspect;

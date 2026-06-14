@@ -447,3 +447,21 @@ camera-relative shell intersections, source-like lighting/fog/composition, and
 reference defaults. Cubey-specific atmosphere, ocean, planet, temporal cache,
 and weather-system changes should happen later in the production `cloud`
 project.
+
+## Cloud Ref Lighting Checkpoint
+
+The current `cloud_ref` pass keeps the TerrainEngine-style density and shell
+march intact and focuses only on cloud lighting/color. The march now accumulates
+separate ambient, direct, and phase/rim lighting terms, exposed as
+`ambient-light`, `direct-light`, and `phase-light` debug views. The default
+presentation enables powder, lowers ambient wash and distance fog, warms direct
+sunlight, and applies a small contrast-preserving final pass.
+
+This made the reference easier to diagnose and modestly less flat in
+`surface-up` and `high-oblique` captures, but it did not fully recreate the
+original TerrainEngine look. The remaining gap is mostly presentation context
+and architecture: TerrainEngine's terrain, water reflection, bloom/god rays,
+and post stack carry much of the final image richness. Further `cloud_ref`
+constant tuning should be secondary to deciding whether the production cloud
+project needs a cached sky/cloud product, real weather layering, and shared
+atmosphere/ocean composition outputs.

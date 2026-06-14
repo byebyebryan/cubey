@@ -80,13 +80,14 @@ constexpr std::array<CloudsWeatherPreset, 5> kCloudRefWeatherPresets{
     CloudsWeatherPreset::StormCells,
     CloudsWeatherPreset::HighCirrus,
 };
-constexpr std::array<CloudsDebugView, 13> kCloudRefDebugViews{
+constexpr std::array<CloudsDebugView, 16> kCloudRefDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
-    CloudsDebugView::Lighting,     CloudsDebugView::Shadow,   CloudsDebugView::Steps,
-    CloudsDebugView::Background,   CloudsDebugView::CloudAlpha,
-    CloudsDebugView::Distance,     CloudsDebugView::BaseDensity,
-    CloudsDebugView::DetailDensity,
+    CloudsDebugView::Lighting,     CloudsDebugView::AmbientLight,
+    CloudsDebugView::DirectLight,  CloudsDebugView::PhaseLight,
+    CloudsDebugView::Shadow,       CloudsDebugView::Steps,    CloudsDebugView::Background,
+    CloudsDebugView::CloudAlpha,   CloudsDebugView::Distance,
+    CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
 };
 
 struct CloudRefFrameUniforms {
@@ -318,8 +319,8 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
     const float tan_half_fovy = std::tan(kDefaultFovyRadians * 0.5F);
     const CloudsQualityBudget budget = clouds_quality_budget(config.quality);
     const cubey::math::Vec3 sun_direction = cloud_ref_source_sun_direction();
-    const cubey::math::Vec3 cloud_top_color{0.994F, 0.876F, 0.876F};
-    const cubey::math::Vec3 cloud_bottom_color{0.382F, 0.412F, 0.471F};
+    const cubey::math::Vec3 cloud_top_color{1.12F, 1.04F, 0.82F};
+    const cubey::math::Vec3 cloud_bottom_color{0.24F, 0.30F, 0.38F};
     return {
         .camera_right_aspect = {basis.right.x, basis.right.y, basis.right.z, aspect},
         .camera_up_tan_half_fovy = {basis.up.x, basis.up.y, basis.up.z, tan_half_fovy},
@@ -648,6 +649,8 @@ class CloudRefApp {
         ImGui::SliderFloat("Crispiness", &config_.crispiness, 1.0F, 120.0F, "%.1f");
         ImGui::SliderFloat("Curliness", &config_.curliness, 0.01F, 3.0F, "%.2f");
         ImGui::SliderFloat("Absorption", &config_.absorption, 0.0F, 1.5F, "%.2f");
+        ImGui::SliderFloat("Shadow strength", &config_.shadow_strength, 0.0F, 2.0F, "%.2f");
+        ImGui::SliderFloat("Horizon fill", &config_.horizon_strength, 0.0F, 2.0F, "%.2f");
         ImGui::Checkbox("Powder", &config_.powder_enabled);
         ImGui::SliderFloat("Weather scale", &config_.weather_scale_km, 40.0F, 500.0F, "%.0f km");
         ImGui::Separator();

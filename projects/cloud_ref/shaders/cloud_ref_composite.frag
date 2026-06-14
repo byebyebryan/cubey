@@ -44,8 +44,10 @@ vec3 cloud_ref_final_post(vec3 color, vec3 direction, float cloud_alpha) {
     color += vec3(1.0, 0.58, 0.22) * halo * (0.10 + 0.16 * cloud_alpha);
     color += vec3(1.0, 0.82, 0.50) * tight_glare * 1.25;
     color += vec3(0.10, 0.12, 0.13) * horizon * (1.0 - cloud_alpha) * 0.22;
-    color = max(color - vec3(0.012), vec3(0.0));
-    color = pow(max(color * 1.14, vec3(0.0)), vec3(1.04));
+    float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    color = mix(vec3(luma), color, 1.08);
+    color = max((color - vec3(0.018)) * 1.10, vec3(0.0));
+    color = pow(max(color, vec3(0.0)), vec3(1.02));
     return color;
 }
 

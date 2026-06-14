@@ -39,6 +39,9 @@ Useful runs:
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view density
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view transmittance
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view lighting
+./build/dev/projects/cloud_ref/cloud_ref --debug-view ambient-light
+./build/dev/projects/cloud_ref/cloud_ref --debug-view direct-light
+./build/dev/projects/cloud_ref/cloud_ref --debug-view phase-light
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view shadow
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view cloud-alpha
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view distance
@@ -81,6 +84,14 @@ source-style post shaping. `surface-up.png` is the best surface cloud framing;
 `surface.png` is intentionally a straight horizon review angle. `raw-final.png`
 shows the same composition before final resolve/post.
 
+The lighting checkpoint in `outputs/cloud-ref-lighting-review/` splits cloud
+lighting diagnostics into `ambient-light`, `direct-light`, and `phase-light`,
+then retunes the standalone march for less ambient wash, warmer direct light,
+powder enabled by default, and a slightly more contrast-preserving final pass.
+This is a cloud-only pass: it does not pursue TerrainEngine water, terrain,
+bloom, or god-ray context, so the final views still depend heavily on the
+placeholder horizon scene.
+
 Controls:
 
 - Left-drag: rotate the camera.
@@ -95,5 +106,8 @@ Known limits:
 - TerrainEngine water/skybox/post effects are approximated with shader-only
   presentation context; real water, bloom FBOs, god rays, and cloud-distance
   outputs are not ported yet.
+- The latest lighting pass improves inspection and reduces flat grey lift, but
+  richer final shots still need better scene context and/or a production cloud
+  renderer rather than more one-off `cloud_ref` constants.
 - Orbit mode is a diagnostic preview, not a finished planet-scale weather
   system.
