@@ -312,7 +312,8 @@ void main() {
         debug_color = vec3(result.alpha);
     } else if (debug_view == CLOUD_REF_DEBUG_DISTANCE) {
         debug_color = vec3(clamp(result.first_distance / 500.0, 0.0, 1.0));
-    } else if (debug_view == CLOUD_REF_DEBUG_FINAL) {
+    } else if (debug_view == CLOUD_REF_DEBUG_FINAL ||
+               debug_view == CLOUD_REF_DEBUG_RAW_FINAL) {
         debug_alpha = result.transmittance;
     }
 

@@ -49,6 +49,10 @@ void test_names_and_next_debug_view() {
                 std::string_view("broken-cumulus"),
             "weather preset name should use canonical spelling");
     require(cubey::projects::cloud_ref::next_clouds_debug_view(
+                cubey::projects::cloud_ref::CloudsDebugView::Final) ==
+                cubey::projects::cloud_ref::CloudsDebugView::RawFinal,
+            "cloud debug view should expose raw final after final");
+    require(cubey::projects::cloud_ref::next_clouds_debug_view(
                 cubey::projects::cloud_ref::CloudsDebugView::Shadow) ==
                 cubey::projects::cloud_ref::CloudsDebugView::Steps,
             "cloud debug view should advance");
@@ -67,6 +71,9 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref::clouds_debug_view_from_string("cloud-alpha") ==
                 cubey::projects::cloud_ref::CloudsDebugView::CloudAlpha,
             "cloud alpha debug view should parse");
+    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("raw-final") ==
+                cubey::projects::cloud_ref::CloudsDebugView::RawFinal,
+            "raw final debug view should parse");
     require(cubey::projects::cloud_ref::clouds_debug_view_from_string("distance") ==
                 cubey::projects::cloud_ref::CloudsDebugView::Distance,
             "cloud distance debug view should parse");

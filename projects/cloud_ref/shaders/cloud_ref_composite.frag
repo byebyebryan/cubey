@@ -52,14 +52,18 @@ vec3 cloud_ref_final_post(vec3 color, vec3 direction, float cloud_alpha) {
 void main() {
     vec2 uv = frag_position * 0.5 + 0.5;
     int debug_view = int(params.ref_options.x + 0.5);
+    bool final_view = debug_view == CLOUD_REF_DEBUG_FINAL;
+    bool raw_final_view = debug_view == CLOUD_REF_DEBUG_RAW_FINAL;
     vec3 direction = cloud_ref_view_direction(frag_position);
     vec3 background = cloud_ref_background(direction);
-    vec4 cloud = debug_view == CLOUD_REF_DEBUG_FINAL ? cloud_ref_resolve_cloud_product(uv)
-                                                     : texture(cloud_product_texture, uv);
+    vec4 cloud = final_view ? cloud_ref_resolve_cloud_product(uv)
+                            : texture(cloud_product_texture, uv);
     vec3 color = background * clamp(cloud.a, 0.0, 1.0) + cloud.rgb;
     if (debug_view == CLOUD_REF_DEBUG_BACKGROUND) {
         color = background;
-    } else if (debug_view != CLOUD_REF_DEBUG_FINAL) {
+    } else if (raw_final_view) {
+        color = max(color, vec3(0.0));
+    } else if (!final_view) {
         color = cloud.rgb;
     } else {
         color = cloud_ref_final_post(color, direction, 1.0 - clamp(cloud.a, 0.0, 1.0));

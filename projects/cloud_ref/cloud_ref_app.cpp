@@ -80,10 +80,11 @@ constexpr std::array<CloudsWeatherPreset, 5> kCloudRefWeatherPresets{
     CloudsWeatherPreset::StormCells,
     CloudsWeatherPreset::HighCirrus,
 };
-constexpr std::array<CloudsDebugView, 12> kCloudRefDebugViews{
-    CloudsDebugView::Final,        CloudsDebugView::Weather, CloudsDebugView::Density,
-    CloudsDebugView::Transmittance, CloudsDebugView::Lighting, CloudsDebugView::Shadow,
-    CloudsDebugView::Steps,        CloudsDebugView::Background, CloudsDebugView::CloudAlpha,
+constexpr std::array<CloudsDebugView, 13> kCloudRefDebugViews{
+    CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
+    CloudsDebugView::Density,      CloudsDebugView::Transmittance,
+    CloudsDebugView::Lighting,     CloudsDebugView::Shadow,   CloudsDebugView::Steps,
+    CloudsDebugView::Background,   CloudsDebugView::CloudAlpha,
     CloudsDebugView::Distance,     CloudsDebugView::BaseDensity,
     CloudsDebugView::DetailDensity,
 };

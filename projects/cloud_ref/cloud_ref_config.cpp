@@ -193,6 +193,9 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value.empty() || value == "final") {
         return CloudsDebugView::Final;
     }
+    if (value == "raw-final") {
+        return CloudsDebugView::RawFinal;
+    }
     if (value == "weather") {
         return CloudsDebugView::Weather;
     }
@@ -233,6 +236,8 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
     switch (view) {
     case CloudsDebugView::Final:
         return "final";
+    case CloudsDebugView::RawFinal:
+        return "raw-final";
     case CloudsDebugView::Weather:
         return "weather";
     case CloudsDebugView::Density:
