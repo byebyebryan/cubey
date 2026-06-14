@@ -7,7 +7,7 @@ OUT_DIR="${1:-${ROOT_DIR}/outputs/cloud-ref-review-$(date +%Y%m%d-%H%M%S)}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"
-QUALITY="${QUALITY:-half}"
+QUALITY="${QUALITY:-full}"
 PRESET="${PRESET:-broken-cumulus}"
 
 mkdir -p "${OUT_DIR}"
@@ -31,6 +31,7 @@ capture surface-up --cloud-camera-mode surface-up
 capture high --cloud-camera-mode high
 capture high-oblique --cloud-camera-mode high-oblique
 capture orbit-preview --cloud-camera-mode orbit
+capture raw-final --cloud-camera-mode surface --debug-view raw-final
 capture weather --cloud-camera-mode surface --debug-view weather
 capture base-density --cloud-camera-mode surface --debug-view base-density
 capture detail-density --cloud-camera-mode surface --debug-view detail-density
