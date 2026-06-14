@@ -312,6 +312,7 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
             APPEND
             CUBEY_DYNAMIC_RENDERING_SCAN_DIRS
                 "${CMAKE_SOURCE_DIR}/projects/atmosphere"
+                "${CMAKE_SOURCE_DIR}/projects/cloud_ref"
                 "${CMAKE_SOURCE_DIR}/projects/clouds_legacy"
                 "${CMAKE_SOURCE_DIR}/projects/fractal_2d"
                 "${CMAKE_SOURCE_DIR}/projects/fluid"
