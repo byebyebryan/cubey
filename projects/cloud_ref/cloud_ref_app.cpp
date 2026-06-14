@@ -50,7 +50,6 @@ constexpr float kDefaultFovyRadians = 62.0F * (glm::pi<float>() / 180.0F);
 constexpr float kCameraDragRadiansPerPixel = 0.006F;
 constexpr float kSurfaceMinPitchRadians = -1.50F;
 constexpr float kSurfaceMaxPitchRadians = 1.35F;
-constexpr float kCloudRefSunIntensityScale = 0.50F;
 constexpr std::uint32_t kBaseNoiseSize = 128U;
 constexpr std::uint32_t kDetailNoiseSize = 32U;
 constexpr std::uint32_t kWeatherTextureSize = 1024U;
@@ -107,7 +106,7 @@ struct CloudRefFrameUniforms {
 static_assert(sizeof(CloudRefFrameUniforms) == sizeof(float) * 48U);
 
 struct CloudRefViewBasis {
-    cubey::math::Vec3 position_km{0.0F, 0.0F, 0.0F};
+    cubey::math::Vec3 position{0.0F, 0.0F, 0.0F};
     cubey::math::Vec3 right{1.0F, 0.0F, 0.0F};
     cubey::math::Vec3 up{0.0F, 1.0F, 0.0F};
     cubey::math::Vec3 forward{0.0F, 0.0F, -1.0F};
@@ -288,8 +287,6 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
 
 [[nodiscard]] CloudRefViewBasis cloud_ref_view_basis(const CloudsConfig& config, float yaw,
                                                      float pitch_offset) {
-    const float radius_km = config.planet_radius_m * 0.001F;
-    const float altitude_km = config.camera_altitude_m * 0.001F;
     const cubey::math::Vec3 surface_up{0.0F, 1.0F, 0.0F};
     const float yaw_sin = std::sin(yaw);
     const float yaw_cos = std::cos(yaw);
@@ -299,44 +296,15 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
     const cubey::math::Vec3 forward =
         glm::normalize(flat_forward * std::cos(pitch) + surface_up * std::sin(pitch));
     return {
-        .position_km = {0.0F, radius_km + altitude_km, 0.0F},
+        .position = {0.0F, config.camera_altitude_m, 0.0F},
         .right = right,
         .up = glm::normalize(glm::cross(right, forward)),
         .forward = forward,
     };
 }
 
-[[nodiscard]] cubey::render::AtmosphereEnvironmentSolarPosition
-cloud_ref_solar_position(const CloudsConfig& config) {
-    if (!config.time.solar_clock) {
-        return {
-            .elevation_degrees = config.time.manual_sun_elevation_degrees,
-            .azimuth_degrees = config.time.manual_sun_azimuth_degrees,
-        };
-    }
-    return cubey::render::atmosphere_environment_solar_position({
-        .time_hours = config.time.time_hours,
-        .day_of_year = config.time.day_of_year,
-        .latitude_degrees = config.time.latitude_degrees,
-        .azimuth_offset_degrees = config.time.azimuth_offset_degrees,
-    });
-}
-
-[[nodiscard]] cubey::render::AtmosphereEnvironmentLighting
-cloud_ref_environment_lighting(const CloudsConfig& config,
-                               const cubey::render::AtmosphereEnvironmentSolarPosition& solar) {
-    cubey::render::AtmosphereEnvironmentConfig environment{};
-    environment.time_of_day.time_hours = config.time.time_hours;
-    environment.time_of_day.day_of_year = config.time.day_of_year;
-    environment.time_of_day.latitude_degrees = config.time.latitude_degrees;
-    environment.time_of_day.azimuth_offset_degrees = config.time.azimuth_offset_degrees;
-    environment.sun_elevation_degrees = solar.elevation_degrees;
-    environment.sun_azimuth_degrees = solar.azimuth_degrees;
-    environment.camera_altitude_km = config.camera_altitude_m * 0.001F;
-    environment.ground_mode =
-        cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion;
-    environment.reference_geometry_enabled = false;
-    return cubey::render::atmosphere_environment_lighting(environment);
+[[nodiscard]] cubey::math::Vec3 cloud_ref_source_sun_direction() {
+    return glm::normalize(cubey::math::Vec3{-0.5F, 0.5F, 1.0F});
 }
 
 [[nodiscard]] CloudRefFrameUniforms cloud_ref_frame_uniforms(const CloudsConfig& config,
@@ -348,14 +316,7 @@ cloud_ref_environment_lighting(const CloudsConfig& config,
         static_cast<float>(target_extent.width) / static_cast<float>(target_extent.height);
     const float tan_half_fovy = std::tan(kDefaultFovyRadians * 0.5F);
     const CloudsQualityBudget budget = clouds_quality_budget(config.quality);
-    const auto solar_position = cloud_ref_solar_position(config);
-    const cubey::math::Vec3 sun_direction =
-        cubey::render::atmosphere_environment_direction_from_alt_az(
-            solar_position.elevation_degrees, solar_position.azimuth_degrees);
-    const cubey::render::AtmosphereEnvironmentLighting lighting =
-        cloud_ref_environment_lighting(config, solar_position);
-    const float sun_intensity =
-        std::min(lighting.sun_intensity * kCloudRefSunIntensityScale, 1.25F);
+    const cubey::math::Vec3 sun_direction = cloud_ref_source_sun_direction();
     const cubey::math::Vec3 cloud_top_color{0.994F, 0.876F, 0.876F};
     const cubey::math::Vec3 cloud_bottom_color{0.382F, 0.412F, 0.471F};
     return {
@@ -363,15 +324,14 @@ cloud_ref_environment_lighting(const CloudsConfig& config,
         .camera_up_tan_half_fovy = {basis.up.x, basis.up.y, basis.up.z, tan_half_fovy},
         .camera_forward_mode = {basis.forward.x, basis.forward.y, basis.forward.z,
                                 cloud_ref_camera_shader_mode(config.camera_mode)},
-        .camera_position_radius = {basis.position_km.x, basis.position_km.y, basis.position_km.z,
-                                   config.planet_radius_m * 0.001F},
-        .cloud_shell = {config.bottom_altitude_m * 0.001F, config.top_altitude_m * 0.001F,
-                        lighting.moon_intensity,
+        .camera_position_radius = {basis.position.x, basis.position.y, basis.position.z,
+                                   config.planet_radius_m},
+        .cloud_shell = {config.bottom_altitude_m,
+                        config.top_altitude_m - config.bottom_altitude_m, 0.0F,
                         cloud_ref_cloud_style_value(config.cloud_style)},
         .weather = {config.coverage, config.density, config.weather_scale_km,
-                    elapsed_seconds * config.wind_speed_mps * 0.001F},
-        .sun_direction_intensity = {sun_direction.x, sun_direction.y, sun_direction.z,
-                                    sun_intensity},
+                    elapsed_seconds * config.wind_speed_mps},
+        .sun_direction_intensity = {sun_direction.x, sun_direction.y, sun_direction.z, 1.0F},
         .ref_options = {static_cast<float>(static_cast<std::uint32_t>(config.debug_view)),
                         static_cast<float>(budget.view_steps),
                         static_cast<float>(budget.light_steps),

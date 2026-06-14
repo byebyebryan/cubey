@@ -8,7 +8,7 @@
 
 namespace cubey::projects::cloud_ref {
 
-inline constexpr float kCloudsDefaultPlanetRadiusM = 6371000.0F;
+inline constexpr float kCloudsDefaultPlanetRadiusM = 600000.0F;
 inline constexpr float kCloudsDefaultBottomAltitudeM = 5000.0F;
 inline constexpr float kCloudsDefaultTopAltitudeM = 22000.0F;
 
@@ -80,8 +80,8 @@ struct CloudsTimeConfig {
 };
 
 struct CloudsConfig {
-    CloudsCameraMode camera_mode = CloudsCameraMode::HighOblique;
-    CloudsQuality quality = CloudsQuality::Half;
+    CloudsCameraMode camera_mode = CloudsCameraMode::Surface;
+    CloudsQuality quality = CloudsQuality::Full;
     CloudsWeatherPreset weather_preset = CloudsWeatherPreset::BrokenCumulus;
     CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
     CloudsDebugView debug_view = CloudsDebugView::Final;
@@ -89,7 +89,7 @@ struct CloudsConfig {
     CloudsTimeConfig time{};
 
     float planet_radius_m = kCloudsDefaultPlanetRadiusM;
-    float camera_altitude_m = 28000.0F;
+    float camera_altitude_m = 800.0F;
     float bottom_altitude_m = kCloudsDefaultBottomAltitudeM;
     float top_altitude_m = kCloudsDefaultTopAltitudeM;
     float coverage = 0.45F;

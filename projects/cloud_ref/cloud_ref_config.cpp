@@ -282,9 +282,9 @@ CloudsQualityBudget clouds_quality_budget(CloudsQuality quality) {
 float clouds_default_camera_altitude_m(CloudsCameraMode mode) {
     switch (mode) {
     case CloudsCameraMode::Surface:
-        return 120.0F;
+        return 800.0F;
     case CloudsCameraMode::SurfaceUp:
-        return 120.0F;
+        return 800.0F;
     case CloudsCameraMode::High:
         return 12000.0F;
     case CloudsCameraMode::HighOblique:

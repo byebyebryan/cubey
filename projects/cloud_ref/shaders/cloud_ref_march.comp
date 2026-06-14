@@ -14,9 +14,10 @@ layout(set = 0, binding = 3) uniform sampler3D detail_noise_texture;
 layout(set = 0, binding = 4) uniform sampler2D weather_texture;
 
 const vec4 STRATUS_GRADIENT = vec4(0.00, 0.10, 0.20, 0.30);
-const vec4 STRATOCUMULUS_GRADIENT = vec4(0.02, 0.15, 0.48, 0.80);
+const vec4 STRATOCUMULUS_GRADIENT = vec4(0.02, 0.20, 0.48, 0.625);
 const vec4 CUMULUS_GRADIENT = vec4(0.00, 0.1625, 0.88, 0.98);
 const vec3 WIND_DIRECTION = normalize(vec3(0.5, 0.0, 0.1));
+const float CLOUD_TOP_OFFSET = 750.0;
 const vec3 NOISE_KERNEL[6] = vec3[](
     vec3(0.38051305, 0.92453449, -0.02111345),
     vec3(-0.50625799, -0.03590792, -0.86163418),
@@ -49,8 +50,8 @@ struct MarchResult {
 };
 
 float cloud_ref_height_fraction(vec3 position) {
-    return (length(position) - cloud_ref_inner_radius_km()) /
-           max(cloud_ref_outer_radius_km() - cloud_ref_inner_radius_km(), 0.001);
+    return (length(position - cloud_ref_sphere_center()) - cloud_ref_inner_radius()) /
+           max(cloud_ref_outer_radius() - cloud_ref_inner_radius(), 0.001);
 }
 
 float cloud_ref_density_gradient(float height_fraction, float cloud_type) {
@@ -65,12 +66,7 @@ float cloud_ref_density_gradient(float height_fraction, float cloud_type) {
 }
 
 vec2 cloud_ref_project_uv(vec3 position) {
-    return position.xz / cloud_ref_inner_radius_km() + vec2(0.5);
-}
-
-vec2 cloud_ref_weather_uv(vec3 position) {
-    float scale = max(params.weather.z, 1.0);
-    return position.xz / scale + vec2(0.5);
+    return position.xz / cloud_ref_inner_radius() + vec2(0.5);
 }
 
 DensitySample cloud_ref_sample_density(vec3 position, bool expensive, float lod) {
@@ -81,12 +77,10 @@ DensitySample cloud_ref_sample_density(vec3 position, bool expensive, float lod)
 
     float crispiness = max(params.shape_options.x, 0.001);
     float curliness = max(params.shape_options.y, 0.001);
-    float wind_offset_km = params.weather.w;
     vec3 animation =
-        WIND_DIRECTION * (height_fraction * 0.75 + wind_offset_km);
+        height_fraction * WIND_DIRECTION * CLOUD_TOP_OFFSET + WIND_DIRECTION * params.weather.w;
     vec2 shape_uv = cloud_ref_project_uv(position);
     vec2 moving_shape_uv = cloud_ref_project_uv(position + animation);
-    vec2 moving_weather_uv = cloud_ref_weather_uv(position + animation);
 
     vec4 low_frequency =
         textureLod(base_noise_texture, vec3(shape_uv * crispiness, height_fraction), lod);
@@ -94,17 +88,13 @@ DensitySample cloud_ref_sample_density(vec3 position, bool expensive, float lod)
     float base_cloud =
         cloud_ref_remap(low_frequency.r, -(1.0 - low_fbm), 1.0, 0.0, 1.0);
 
-    vec3 weather = texture(weather_texture, moving_weather_uv).rgb;
-    float cloud_type = clamp(weather.g, 0.0, 1.0);
-    float density_profile = cloud_ref_density_gradient(height_fraction, cloud_type);
-    base_cloud *= density_profile / max(height_fraction, 0.05);
+    float density_profile = cloud_ref_density_gradient(height_fraction, 1.0);
+    base_cloud *= density_profile / max(height_fraction, 0.0001);
 
-    float coverage_threshold = mix(0.78, 0.22, params.weather.x);
-    float weather_mask =
-        smoothstep(coverage_threshold - 0.18, coverage_threshold + 0.18, weather.r);
-    float coverage = weather_mask * params.weather.x;
+    vec3 weather = texture(weather_texture, moving_shape_uv).rgb;
+    float coverage = weather.r * params.weather.x;
     float base_with_coverage =
-        cloud_ref_remap(base_cloud, coverage_threshold, 1.0, 0.0, 1.0) * coverage;
+        cloud_ref_remap(base_cloud, coverage, 1.0, 0.0, 1.0) * coverage;
     float detail_density = 0.0;
 
     if (expensive) {
@@ -116,8 +106,7 @@ DensitySample cloud_ref_sample_density(vec3 position, bool expensive, float lod)
         float high_modifier =
             mix(high_fbm, 1.0 - high_fbm, clamp(height_fraction * 10.0, 0.0, 1.0));
         detail_density = high_modifier;
-        base_with_coverage -= high_modifier * (1.0 - base_with_coverage) *
-                              params.weather_feature_weights.w;
+        base_with_coverage -= high_modifier * (1.0 - base_with_coverage);
         base_with_coverage = cloud_ref_remap(base_with_coverage * 2.0,
                                              high_modifier * 0.2, 1.0, 0.0, 1.0);
     }
@@ -145,7 +134,7 @@ float cloud_ref_light_transmittance(vec3 start, float step_size, vec3 light_dir,
         }
         vec3 cone_pos = pos + cone_radius * NOISE_KERNEL[i] * float(i);
         DensitySample sample_data = cloud_ref_sample_density(cone_pos, density_sum > 0.3,
-                                                             float(i) / 16.0);
+                                                             float(i / 16));
         if (sample_data.density > 0.0) {
             transmittance *= exp(sample_data.density * sigma_ds);
             density_sum += sample_data.density;
@@ -153,14 +142,13 @@ float cloud_ref_light_transmittance(vec3 start, float step_size, vec3 light_dir,
         pos += ray_step;
         cone_radius += 1.0 / 6.0;
     }
-    float powder = params.shape_options.w > 0.5 ? (1.0 - exp(-2.0 * original_density)) : 1.0;
-    return mix(transmittance, transmittance * powder, clamp(light_dot_eye * 0.5 + 0.5, 0.0, 1.0));
+    return transmittance;
 }
 
 bool cloud_ref_shell_segment(vec3 origin, vec3 direction, out float start_t, out float end_t) {
     float outer_near = 0.0;
     float outer_far = 0.0;
-    if (!cloud_ref_ray_sphere(origin, direction, cloud_ref_outer_radius_km(), outer_near,
+    if (!cloud_ref_ray_sphere(origin, direction, cloud_ref_outer_radius(), outer_near,
                               outer_far)) {
         start_t = 0.0;
         end_t = 0.0;
@@ -169,19 +157,19 @@ bool cloud_ref_shell_segment(vec3 origin, vec3 direction, out float start_t, out
 
     float inner_near = 0.0;
     float inner_far = 0.0;
-    bool inner_hit = cloud_ref_ray_sphere(origin, direction, cloud_ref_inner_radius_km(),
+    bool inner_hit = cloud_ref_ray_sphere(origin, direction, cloud_ref_inner_radius(),
                                           inner_near, inner_far);
 
-    float camera_radius = length(origin);
+    float camera_radius = length(origin - cloud_ref_sphere_center());
     start_t = max(outer_near, 0.0);
     end_t = outer_far;
 
-    if (camera_radius < cloud_ref_inner_radius_km()) {
+    if (camera_radius < cloud_ref_inner_radius()) {
         if (!inner_hit || inner_far <= 0.0) {
             return false;
         }
         start_t = max(start_t, inner_far);
-    } else if (camera_radius < cloud_ref_outer_radius_km()) {
+    } else if (camera_radius < cloud_ref_outer_radius()) {
         start_t = 0.0;
         if (inner_hit && inner_near > 0.0) {
             end_t = min(end_t, inner_near);
@@ -192,7 +180,7 @@ bool cloud_ref_shell_segment(vec3 origin, vec3 direction, out float start_t, out
 
     float ground_near = 0.0;
     float ground_far = 0.0;
-    if (cloud_ref_ray_sphere(origin, direction, cloud_ref_planet_radius_km(), ground_near,
+    if (cloud_ref_ray_sphere(origin, direction, cloud_ref_planet_radius(), ground_near,
                              ground_far) &&
         ground_near > 0.0) {
         end_t = min(end_t, ground_near);
@@ -211,8 +199,7 @@ MarchResult cloud_ref_march(vec3 origin, vec3 direction, float start_t, float en
     int by = pixel.y & 3;
     vec3 pos = origin + direction * (start_t + ds * BAYER[by * 4 + bx]);
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
-    vec3 sun_color = mix(vec3(1.0, 0.62, 0.30), vec3(1.0, 0.96, 0.88),
-                         smoothstep(-0.02, 0.25, dot(sun_dir, cloud_ref_planet_up())));
+    vec3 sun_color = vec3(1.1, 1.1, 0.95) * max(params.sun_direction_intensity.w, 0.0);
     float light_dot_eye = dot(sun_dir, direction);
     float density_factor = max(params.weather.y, 0.0);
     float sigma_ds = -ds * density_factor;
@@ -227,7 +214,7 @@ MarchResult cloud_ref_march(vec3 origin, vec3 direction, float start_t, float en
         if (i >= max_steps) {
             break;
         }
-        DensitySample sample_data = cloud_ref_sample_density(pos, true, float(i) / 16.0);
+        DensitySample sample_data = cloud_ref_sample_density(pos, true, float(i / 16));
         if (sample_data.density > 0.0) {
             if (first_distance < 0.0) {
                 first_distance = length(pos - origin);
@@ -236,12 +223,12 @@ MarchResult cloud_ref_march(vec3 origin, vec3 direction, float start_t, float en
                 cloud_ref_light_transmittance(pos, ds * 0.1, sun_dir, sample_data.density,
                                               light_dot_eye);
             float scattering = cloud_ref_phase(light_dot_eye);
-            vec3 ambient = mix(params.cloud_color_bottom_horizon.rgb,
-                               params.cloud_color_top_shadow.rgb, sample_data.height_fraction);
+            vec3 ambient = params.cloud_color_bottom_horizon.rgb;
+            float powder_term =
+                params.shape_options.w > 0.5 ? (1.0 - exp(-2.0 * sample_data.density)) : 1.0;
             vec3 source = 0.6 *
                           mix(mix(ambient * 1.8, background, 0.2),
-                              scattering * sun_color * params.sun_direction_intensity.w,
-                              light_transmittance) *
+                              scattering * sun_color, powder_term * light_transmittance) *
                           sample_data.density;
             float d_transmittance = exp(sample_data.density * sigma_ds);
             vec3 integral = (source - source * d_transmittance) /

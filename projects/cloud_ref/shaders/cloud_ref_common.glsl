@@ -51,29 +51,35 @@ vec3 cloud_ref_view_direction(vec2 position) {
 }
 
 vec3 cloud_ref_planet_up() {
-    return normalize(params.camera_position_radius.xyz);
+    return vec3(0.0, 1.0, 0.0);
 }
 
-float cloud_ref_planet_radius_km() {
+float cloud_ref_planet_radius() {
     return params.camera_position_radius.w;
 }
 
-float cloud_ref_camera_altitude_km() {
-    return length(params.camera_position_radius.xyz) - cloud_ref_planet_radius_km();
+float cloud_ref_camera_altitude() {
+    return params.camera_position_radius.y;
 }
 
-float cloud_ref_inner_radius_km() {
-    return cloud_ref_planet_radius_km() + params.cloud_shell.x;
+vec3 cloud_ref_sphere_center() {
+    return vec3(params.camera_position_radius.x, -cloud_ref_planet_radius(),
+                params.camera_position_radius.z);
 }
 
-float cloud_ref_outer_radius_km() {
-    return cloud_ref_planet_radius_km() + params.cloud_shell.y;
+float cloud_ref_inner_radius() {
+    return cloud_ref_planet_radius() + params.cloud_shell.x;
+}
+
+float cloud_ref_outer_radius() {
+    return cloud_ref_inner_radius() + params.cloud_shell.y;
 }
 
 bool cloud_ref_ray_sphere(vec3 origin, vec3 direction, float radius, out float near_t,
                           out float far_t) {
-    float b = dot(origin, direction);
-    float c = dot(origin, origin) - radius * radius;
+    vec3 local_origin = origin - cloud_ref_sphere_center();
+    float b = dot(local_origin, direction);
+    float c = dot(local_origin, local_origin) - radius * radius;
     float h = b * b - c;
     if (h < 0.0) {
         near_t = 0.0;
