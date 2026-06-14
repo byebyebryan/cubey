@@ -1,16 +1,25 @@
 # Cloud Ref
 
 `cloud_ref` is the active cloud reboot target. It keeps the useful cloud camera,
-weather, and time controls, but replaces the legacy per-view raymarch with a
-texture-backed sky/cloud product that is composited over a lightweight
-atmosphere-style background.
+weather, and time controls, but the renderer is now scoped as a direct reference
+port of the MIT-licensed TerrainEngine-OpenGL volumetric cloud path:
 
-This first checkpoint is intentionally scoped to surface and high camera review.
-It uploads a deterministic 2D weather texture for broad cloud organization,
-renders a fixed 512x512 cloud product each frame, and composites radiance plus
-transmittance into the final image. The config records the intended 64-frame
-cache cadence, but tiled/triple-buffered updates and 3D shape/erosion textures
-are follow-up work after this baseline is visually useful.
+- one-time generated 128^3 Perlin-Worley base noise
+- one-time generated 32^3 Worley erosion/detail noise
+- generated 1024^2 weather coverage/type map
+- spherical shell cloud raymarch with height gradients, detail erosion, Beer
+  transmittance, Bayer jitter, and a short cone light march
+- fullscreen composite over the project-local sky/background
+
+The intent is to get a known, concrete volumetric reference running inside
+Cubey before reconciling it with the earlier `clouds_legacy` prototype. The
+Godot volumetric cloud demos remain useful follow-up references for caching and
+temporal architecture, but they are not part of this first direct port.
+
+Attribution: TerrainEngine-OpenGL is MIT licensed, copyright Federico Vaccaro.
+The TerrainEngine shaders also cite Sebastian Hillaire/Nubis-style tileable
+volume noise and NadirRoGue-style volumetric cloud references; preserve those
+comments when touching the ported shader code.
 
 Useful runs:
 
@@ -24,10 +33,15 @@ Useful runs:
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-weather-preset broken-cumulus
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-weather-preset storm-cells
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view weather
+./build/dev/projects/cloud_ref/cloud_ref --debug-view base-density
+./build/dev/projects/cloud_ref/cloud_ref --debug-view detail-density
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view density
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view transmittance
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view lighting
+./build/dev/projects/cloud_ref/cloud_ref --debug-view shadow
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view cloud-alpha
+./build/dev/projects/cloud_ref/cloud_ref --debug-view distance
+./build/dev/projects/cloud_ref/cloud_ref --debug-view steps
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view background
 ./build/dev/projects/cloud_ref/cloud_ref --headless --frames 2 --cloud-camera-mode surface --output outputs/cloud-ref-surface.png
 ./build/dev/projects/cloud_ref/cloud_ref --headless --frames 2 --cloud-camera-mode high --output outputs/cloud-ref-high.png
@@ -37,15 +51,15 @@ projects/cloud_ref/capture_review.sh outputs/cloud-ref-review
 Controls:
 
 - Left-drag: rotate the camera.
-- `D`: cycle final, weather, density, transmittance, lighting, cloud-alpha,
-  and background debug views.
+- `D`: cycle the reference diagnostic views.
 - Space: play/pause solar time.
 - `R`: reset camera, time, and cloud settings.
 
 Known limits:
 
-- Orbit and planet-scale cloud rendering are deliberately not solved here yet.
-- The cache product currently full-refreshes every frame; tile updates and
-  triple-buffer blending are the next architectural step.
-- The density model has one uploaded weather texture plus procedural detail.
-  Full Perlin-Worley and Worley erosion textures are not baked yet.
+- TerrainEngine god rays/bloom post-processing are intentionally not ported in
+  this batch.
+- Temporal reconstruction, tiled cache updates, and Godot-style update
+  scheduling are follow-up work after the reference shape/lighting is credible.
+- Orbit mode is a diagnostic preview, not a finished planet-scale weather
+  system.
