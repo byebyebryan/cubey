@@ -134,6 +134,10 @@ void test_transfer_helpers_describe_texture_and_readback_paths() {
             "volume texture config should support storage writes");
     require((volume.usage & VK_IMAGE_USAGE_SAMPLED_BIT) != 0,
             "volume texture config should support sampling");
+    require((volume.usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) != 0,
+            "volume texture config should support readback copies");
+    require((volume.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) != 0,
+            "volume texture config should support generated mip writes");
     require(volume.image_type == VK_IMAGE_TYPE_3D, "volume texture config should create 3D images");
     require(volume.view_type == VK_IMAGE_VIEW_TYPE_3D,
             "volume texture config should create 3D image views");

@@ -29,6 +29,9 @@ void validate_config(const Texture3DConfig& config) {
     if (config.extent.width == 0 || config.extent.height == 0 || config.extent.depth == 0) {
         throw std::runtime_error("texture 3D extent must be nonzero");
     }
+    if (config.mip_levels == 0) {
+        throw std::runtime_error("texture 3D mip level count must be nonzero");
+    }
     if (config.format == VK_FORMAT_UNDEFINED) {
         throw std::runtime_error("texture 3D format must be defined");
     }
@@ -86,6 +89,47 @@ void validate_config(const DepthTextureConfig& config) {
     return std::max(1U, extent >> mip_level);
 }
 
+void transition_color_mip(VkCommandBuffer command_buffer, VkImage image, std::uint32_t mip_level,
+                          VkImageLayout old_layout, VkImageLayout new_layout,
+                          VkAccessFlags src_access, VkAccessFlags dst_access,
+                          VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage) {
+    cubey::vulkan::transition_image_layout(
+        command_buffer, cubey::vulkan::ImageLayoutTransition{
+                            .image = image,
+                            .aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT,
+                            .old_layout = old_layout,
+                            .new_layout = new_layout,
+                            .src_access_mask = src_access,
+                            .dst_access_mask = dst_access,
+                            .src_stage_mask = src_stage,
+                            .dst_stage_mask = dst_stage,
+                            .base_mip_level = mip_level,
+                            .level_count = 1,
+                        });
+}
+
+[[nodiscard]] VkAccessFlags access_for_generated_mip_base_layout(VkImageLayout layout) {
+    switch (layout) {
+    case VK_IMAGE_LAYOUT_GENERAL:
+        return VK_ACCESS_SHADER_WRITE_BIT;
+    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+        return VK_ACCESS_SHADER_READ_BIT;
+    default:
+        return 0;
+    }
+}
+
+[[nodiscard]] VkPipelineStageFlags stage_for_generated_mip_base_layout(VkImageLayout layout) {
+    switch (layout) {
+    case VK_IMAGE_LAYOUT_GENERAL:
+        return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+        return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    default:
+        return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    }
+}
+
 } // namespace
 
 cubey::vulkan::ImageConfig texture_2d_image_config(const Texture2DConfig& config) {
@@ -111,7 +155,13 @@ cubey::vulkan::ImageConfig texture_2d_image_config(const Texture2DConfig& config
 
 cubey::vulkan::ImageConfig texture_3d_image_config(const Texture3DConfig& config) {
     validate_config(config);
-    return cubey::vulkan::storage_sampled_volume_image_config(config.extent, config.format);
+    cubey::vulkan::ImageConfig image_config =
+        cubey::vulkan::storage_sampled_volume_image_config(config.extent, config.format);
+    image_config.mip_levels = config.mip_levels;
+    if (config.mip_levels > 1) {
+        image_config.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
+    return image_config;
 }
 
 cubey::vulkan::ImageConfig texture_cube_image_config(const TextureCubeConfig& config) {
@@ -190,6 +240,17 @@ VkExtent2D texture_2d_mip_extent(VkExtent2D extent, std::uint32_t mip_level) {
     return {
         .width = mip_extent(extent.width, mip_level),
         .height = mip_extent(extent.height, mip_level),
+    };
+}
+
+VkExtent3D texture_3d_mip_extent(VkExtent3D extent, std::uint32_t mip_level) {
+    if (extent.width == 0 || extent.height == 0 || extent.depth == 0) {
+        throw std::runtime_error("texture 3D mip extent requires a nonzero base extent");
+    }
+    return {
+        .width = mip_extent(extent.width, mip_level),
+        .height = mip_extent(extent.height, mip_level),
+        .depth = mip_extent(extent.depth, mip_level),
     };
 }
 
@@ -273,6 +334,79 @@ const cubey::vulkan::Sampler& Texture3D::sampler() const {
         throw std::runtime_error("texture 3D has no sampler");
     }
     return sampler_.value();
+}
+
+void record_generate_texture_3d_mips(VkCommandBuffer command_buffer, const Texture3D& texture,
+                                     VkImageLayout level_zero_layout) {
+    if (command_buffer == VK_NULL_HANDLE) {
+        throw std::runtime_error("texture 3D mip generation requires a valid command buffer");
+    }
+    const std::uint32_t mip_levels = texture.mip_levels();
+    if (mip_levels <= 1) {
+        return;
+    }
+
+    const VkImage image = texture.handle();
+    transition_color_mip(command_buffer, image, 0, level_zero_layout,
+                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                         access_for_generated_mip_base_layout(level_zero_layout),
+                         VK_ACCESS_TRANSFER_READ_BIT,
+                         stage_for_generated_mip_base_layout(level_zero_layout),
+                         VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+    for (std::uint32_t mip = 1; mip < mip_levels; ++mip) {
+        transition_color_mip(command_buffer, image, mip, VK_IMAGE_LAYOUT_UNDEFINED,
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0,
+                             VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+        const VkExtent3D source_extent = texture_3d_mip_extent(texture.extent(), mip - 1U);
+        const VkExtent3D target_extent = texture_3d_mip_extent(texture.extent(), mip);
+        VkImageBlit blit{};
+        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.mipLevel = mip - 1U;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount = 1;
+        blit.srcOffsets[0] = {0, 0, 0};
+        blit.srcOffsets[1] = {static_cast<std::int32_t>(source_extent.width),
+                              static_cast<std::int32_t>(source_extent.height),
+                              static_cast<std::int32_t>(source_extent.depth)};
+        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.mipLevel = mip;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount = 1;
+        blit.dstOffsets[0] = {0, 0, 0};
+        blit.dstOffsets[1] = {static_cast<std::int32_t>(target_extent.width),
+                              static_cast<std::int32_t>(target_extent.height),
+                              static_cast<std::int32_t>(target_extent.depth)};
+
+        vkCmdBlitImage(command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image,
+                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+
+        transition_color_mip(command_buffer, image, mip - 1U,
+                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                             VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+        if (mip + 1U < mip_levels) {
+            transition_color_mip(command_buffer, image, mip,
+                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                 VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+                                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+        } else {
+            transition_color_mip(command_buffer, image, mip,
+                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                 VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                                 VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        }
+    }
 }
 
 TextureCube::TextureCube(const cubey::vulkan::Device& device, const TextureCubeConfig& config)

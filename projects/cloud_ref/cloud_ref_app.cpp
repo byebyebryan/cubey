@@ -127,11 +127,24 @@ std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_CLOUD_REF_SHADER_DIR) / filename;
 }
 
-[[nodiscard]] cubey::vulkan::SamplerConfig cloud_ref_repeat_sampler_config() {
+[[nodiscard]] std::uint32_t cloud_ref_mip_count(std::uint32_t size) {
+    std::uint32_t levels = 1;
+    while (size > 1U) {
+        size = std::max(1U, size / 2U);
+        ++levels;
+    }
+    return levels;
+}
+
+[[nodiscard]] cubey::vulkan::SamplerConfig cloud_ref_repeat_sampler_config(
+    std::uint32_t mip_levels = 1) {
     return {
         .min_filter = VK_FILTER_LINEAR,
         .mag_filter = VK_FILTER_LINEAR,
         .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .min_lod = 0.0F,
+        .max_lod = static_cast<float>(std::max(1U, mip_levels) - 1U),
     };
 }
 
@@ -376,11 +389,13 @@ cloud_ref_environment_lighting(const CloudsConfig& config,
 
 [[nodiscard]] cubey::render::Texture3DConfig cloud_ref_volume_texture_config(
     std::uint32_t size) {
+    const std::uint32_t mip_levels = cloud_ref_mip_count(size);
     return {
         .extent = {size, size, size},
+        .mip_levels = mip_levels,
         .format = kCloudRefNoiseFormat,
         .create_sampler = true,
-        .sampler = cloud_ref_repeat_sampler_config(),
+        .sampler = cloud_ref_repeat_sampler_config(mip_levels),
     };
 }
 
@@ -433,6 +448,67 @@ void generate_storage_texture(const cubey::vulkan::Device& device, cubey::vulkan
                                                                   groups));
                 recorder.transition_image_layout(
                     cubey::vulkan::finish_storage_image_write_for_sampling_transition(image));
+                commands.submit_and_wait();
+            },
+    }));
+}
+
+void generate_storage_volume_texture(const cubey::vulkan::Device& device,
+                                     cubey::vulkan::GpuRuntime& gpu, const char* label,
+                                     const std::filesystem::path& shader,
+                                     const cubey::render::Texture3D& texture,
+                                     cubey::render::ComputeDispatchGroups groups) {
+    const cubey::vulkan::ImageView storage_view(
+        device, cubey::vulkan::ImageViewConfig{
+                    .image = texture.handle(),
+                    .format = texture.format(),
+                    .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .view_type = VK_IMAGE_VIEW_TYPE_3D,
+                    .base_mip_level = 0,
+                    .level_count = 1,
+                });
+
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 0,
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        },
+    }};
+    const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings);
+    cubey::vulkan::DescriptorSetBundle descriptors(device, descriptor_info);
+    cubey::vulkan::DescriptorWriteBatch writes;
+    writes.storage_image(descriptors.set(), 0, storage_view.handle(), VK_IMAGE_LAYOUT_GENERAL);
+    writes.update(device);
+
+    const std::array<VkDescriptorSetLayout, 1> layouts{descriptors.layout()};
+    const cubey::render::ComputePipelineResource pipeline(
+        device, cubey::render::ComputePipelineResourceConfig{
+                    .shader_stage = cubey::render::compute_shader_file(shader),
+                    .descriptor_set_layouts = layouts,
+                });
+
+    static_cast<void>(gpu.submit_and_wait(cubey::vulkan::GpuWorkRequest{
+        .label = label,
+        .work =
+            [&texture, &pipeline, descriptor_set = descriptors.set(),
+             groups](cubey::vulkan::GpuOwnerContext& context) {
+                cubey::vulkan::ImmediateCommands commands(context);
+                const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
+                recorder.transition_image_layout(
+                    cubey::vulkan::begin_storage_image_write_transition(texture.handle()));
+                cubey::render::record_compute_pipeline_dispatch(
+                    recorder,
+                    cubey::render::compute_pipeline_dispatch_info(pipeline, descriptor_set,
+                                                                  groups));
+                if (texture.mip_levels() > 1U) {
+                    cubey::render::record_generate_texture_3d_mips(
+                        commands.command_buffer(), texture, VK_IMAGE_LAYOUT_GENERAL);
+                } else {
+                    recorder.transition_image_layout(
+                        cubey::vulkan::finish_storage_image_write_for_sampling_transition(
+                            texture.handle()));
+                }
                 commands.submit_and_wait();
             },
     }));
@@ -666,15 +742,14 @@ class CloudRefApp {
         detail_noise_.emplace(device, cloud_ref_volume_texture_config(kDetailNoiseSize));
         weather_texture_.emplace(device, cloud_ref_weather_texture_config());
 
-        generate_storage_texture(
+        generate_storage_volume_texture(
             device, gpu, "cloud_ref generate base noise",
-            shader_path("cloud_ref_perlin_worley.comp.spv"), base_noise_->handle(),
-            base_noise_->view(),
+            shader_path("cloud_ref_perlin_worley.comp.spv"), base_noise_.value(),
             cubey::render::ceil_dispatch_groups(kBaseNoiseSize, kBaseNoiseSize, kBaseNoiseSize,
                                                 kCloudRefVolumeGroupSize));
-        generate_storage_texture(
+        generate_storage_volume_texture(
             device, gpu, "cloud_ref generate detail noise", shader_path("cloud_ref_worley.comp.spv"),
-            detail_noise_->handle(), detail_noise_->view(),
+            detail_noise_.value(),
             cubey::render::ceil_dispatch_groups(kDetailNoiseSize, kDetailNoiseSize,
                                                 kDetailNoiseSize, kCloudRefVolumeGroupSize));
         generate_storage_texture(
