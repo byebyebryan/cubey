@@ -16,8 +16,10 @@
 #include <cubey/render/texture.h>
 #include <cubey/render/uniform_buffer.h>
 #include <cubey/vulkan/command_recorder.h>
-#include <cubey/vulkan/device.h>
+#include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/gpu_runtime.h>
+#include <cubey/vulkan/image_transitions.h>
+#include <cubey/vulkan/immediate_commands.h>
 #include <cubey/vulkan/sampler.h>
 
 #include <glm/gtc/constants.hpp>
@@ -34,7 +36,6 @@
 #include <string>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 #ifndef CUBEY_CLOUD_REF_SHADER_DIR
 #error "CUBEY_CLOUD_REF_SHADER_DIR must be defined by the cloud_ref CMake target"
@@ -47,22 +48,26 @@ using cubey::FrameTiming;
 
 constexpr float kDefaultFovyRadians = 62.0F * (glm::pi<float>() / 180.0F);
 constexpr float kCameraDragRadiansPerPixel = 0.006F;
-constexpr float kSurfaceMinPitchRadians = -1.35F;
+constexpr float kSurfaceMinPitchRadians = -1.50F;
 constexpr float kSurfaceMaxPitchRadians = 1.35F;
 constexpr float kCloudRefSunIntensityScale = 0.50F;
-constexpr std::uint32_t kCloudRefTextureSize = 512U;
-constexpr std::uint32_t kCloudRefUpdateFrames = 64U;
-constexpr std::uint32_t kWeatherTextureSize = 512U;
+constexpr std::uint32_t kBaseNoiseSize = 128U;
+constexpr std::uint32_t kDetailNoiseSize = 32U;
+constexpr std::uint32_t kWeatherTextureSize = 1024U;
+constexpr std::uint32_t kCloudRefComputeGroupSize = 16U;
+constexpr std::uint32_t kCloudRefVolumeGroupSize = 4U;
 constexpr VkFormat kCloudRefColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+constexpr VkFormat kCloudRefNoiseFormat = VK_FORMAT_R8G8B8A8_UNORM;
 constexpr std::uint32_t kCloudRefUniformBinding = 0;
-constexpr std::uint32_t kCloudRefWeatherBinding = 1;
+constexpr std::uint32_t kCloudRefOutputBinding = 1;
+constexpr std::uint32_t kCloudRefBaseNoiseBinding = 2;
+constexpr std::uint32_t kCloudRefDetailNoiseBinding = 3;
+constexpr std::uint32_t kCloudRefWeatherBinding = 4;
 constexpr std::uint32_t kCloudRefCompositeCloudBinding = 1;
 
-constexpr std::array<CloudsCameraMode, 4> kCloudRefCameraModes{
-    CloudsCameraMode::Surface,
-    CloudsCameraMode::SurfaceUp,
-    CloudsCameraMode::High,
-    CloudsCameraMode::HighOblique,
+constexpr std::array<CloudsCameraMode, 6> kCloudRefCameraModes{
+    CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
+    CloudsCameraMode::HighOblique, CloudsCameraMode::Orbit, CloudsCameraMode::OrbitTerminator,
 };
 constexpr std::array<CloudsQuality, 3> kCloudRefQualityModes{
     CloudsQuality::Quarter,
@@ -76,10 +81,12 @@ constexpr std::array<CloudsWeatherPreset, 5> kCloudRefWeatherPresets{
     CloudsWeatherPreset::StormCells,
     CloudsWeatherPreset::HighCirrus,
 };
-constexpr std::array<CloudsDebugView, 7> kCloudRefDebugViews{
+constexpr std::array<CloudsDebugView, 12> kCloudRefDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::Weather, CloudsDebugView::Density,
-    CloudsDebugView::Transmittance, CloudsDebugView::Lighting, CloudsDebugView::CloudAlpha,
-    CloudsDebugView::Background,
+    CloudsDebugView::Transmittance, CloudsDebugView::Lighting, CloudsDebugView::Shadow,
+    CloudsDebugView::Steps,        CloudsDebugView::Background, CloudsDebugView::CloudAlpha,
+    CloudsDebugView::Distance,     CloudsDebugView::BaseDensity,
+    CloudsDebugView::DetailDensity,
 };
 
 struct CloudRefFrameUniforms {
@@ -91,10 +98,13 @@ struct CloudRefFrameUniforms {
     cubey::math::Vec4 weather;
     cubey::math::Vec4 sun_direction_intensity;
     cubey::math::Vec4 ref_options;
+    cubey::math::Vec4 shape_options;
     cubey::math::Vec4 weather_feature_weights;
+    cubey::math::Vec4 cloud_color_top_shadow;
+    cubey::math::Vec4 cloud_color_bottom_horizon;
 };
 
-static_assert(sizeof(CloudRefFrameUniforms) == sizeof(float) * 36U);
+static_assert(sizeof(CloudRefFrameUniforms) == sizeof(float) * 48U);
 
 struct CloudRefViewBasis {
     cubey::math::Vec3 position_km{0.0F, 0.0F, 0.0F};
@@ -117,7 +127,15 @@ std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_CLOUD_REF_SHADER_DIR) / filename;
 }
 
-[[nodiscard]] cubey::render::MaterialDescriptorSetLayout cloud_ref_cache_set_layout() {
+[[nodiscard]] cubey::vulkan::SamplerConfig cloud_ref_repeat_sampler_config() {
+    return {
+        .min_filter = VK_FILTER_LINEAR,
+        .mag_filter = VK_FILTER_LINEAR,
+        .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+    };
+}
+
+[[nodiscard]] cubey::render::MaterialDescriptorSetLayout cloud_ref_march_set_layout() {
     return {
         .set = 0,
         .bindings =
@@ -125,12 +143,27 @@ std::filesystem::path shader_path(const char* filename) {
                 cubey::vulkan::DescriptorSetBindingConfig{
                     .binding = kCloudRefUniformBinding,
                     .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+                },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudRefOutputBinding,
+                    .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+                },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudRefBaseNoiseBinding,
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+                },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudRefDetailNoiseBinding,
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
                 },
                 cubey::vulkan::DescriptorSetBindingConfig{
                     .binding = kCloudRefWeatherBinding,
                     .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
                 },
             },
     };
@@ -155,13 +188,10 @@ std::filesystem::path shader_path(const char* filename) {
     };
 }
 
-[[nodiscard]] cubey::render::MaterialPassInfo cloud_ref_cache_pass_info() {
+[[nodiscard]] cubey::render::MaterialPassInfo cloud_ref_march_pass_info() {
     return {
-        .label = "cloud_ref_cache",
-        .descriptor_sets = {cloud_ref_cache_set_layout()},
-        .cull_mode = VK_CULL_MODE_NONE,
-        .depth_test = false,
-        .depth_write = false,
+        .label = "cloud_ref_march",
+        .descriptor_sets = {cloud_ref_march_set_layout()},
     };
 }
 
@@ -199,6 +229,19 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
     };
 }
 
+[[nodiscard]] VkExtent2D cloud_ref_product_extent(VkExtent2D target_extent,
+                                                  CloudsQuality quality) {
+    const CloudsQualityBudget budget = clouds_quality_budget(quality);
+    return {
+        .width = std::max(1U, static_cast<std::uint32_t>(
+                                  std::round(static_cast<float>(target_extent.width) *
+                                             budget.resolution_scale))),
+        .height = std::max(1U, static_cast<std::uint32_t>(
+                                   std::round(static_cast<float>(target_extent.height) *
+                                              budget.resolution_scale))),
+    };
+}
+
 [[nodiscard]] float cloud_ref_camera_base_pitch(CloudsCameraMode mode) {
     switch (mode) {
     case CloudsCameraMode::SurfaceUp:
@@ -207,6 +250,9 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
         return -0.18F;
     case CloudsCameraMode::HighOblique:
         return -0.42F;
+    case CloudsCameraMode::Orbit:
+    case CloudsCameraMode::OrbitTerminator:
+        return -1.08F;
     case CloudsCameraMode::Surface:
     default:
         return -0.06F;
@@ -217,6 +263,14 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
     const float base_pitch = cloud_ref_camera_base_pitch(mode);
     return std::clamp(base_pitch + pitch_offset, kSurfaceMinPitchRadians, kSurfaceMaxPitchRadians) -
            base_pitch;
+}
+
+[[nodiscard]] float cloud_ref_camera_shader_mode(CloudsCameraMode mode) {
+    return static_cast<float>(static_cast<std::uint32_t>(mode));
+}
+
+[[nodiscard]] float cloud_ref_cloud_style_value(CloudsCloudStyle style) {
+    return static_cast<float>(static_cast<std::uint32_t>(style));
 }
 
 [[nodiscard]] CloudRefViewBasis cloud_ref_view_basis(const CloudsConfig& config, float yaw,
@@ -237,24 +291,6 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
         .up = glm::normalize(glm::cross(right, forward)),
         .forward = forward,
     };
-}
-
-[[nodiscard]] float cloud_ref_camera_shader_mode(CloudsCameraMode mode) {
-    switch (mode) {
-    case CloudsCameraMode::SurfaceUp:
-        return 1.0F;
-    case CloudsCameraMode::High:
-        return 2.0F;
-    case CloudsCameraMode::HighOblique:
-        return 3.0F;
-    case CloudsCameraMode::Surface:
-    default:
-        return 0.0F;
-    }
-}
-
-[[nodiscard]] float cloud_ref_cloud_style_value(CloudsCloudStyle style) {
-    return static_cast<float>(static_cast<std::uint32_t>(style));
 }
 
 [[nodiscard]] cubey::render::AtmosphereEnvironmentSolarPosition
@@ -307,6 +343,8 @@ cloud_ref_environment_lighting(const CloudsConfig& config,
         cloud_ref_environment_lighting(config, solar_position);
     const float sun_intensity =
         std::min(lighting.sun_intensity * kCloudRefSunIntensityScale, 1.25F);
+    const cubey::math::Vec3 cloud_top_color{0.994F, 0.876F, 0.876F};
+    const cubey::math::Vec3 cloud_bottom_color{0.382F, 0.412F, 0.471F};
     return {
         .camera_right_aspect = {basis.right.x, basis.right.y, basis.right.z, aspect},
         .camera_up_tan_half_fovy = {basis.up.x, basis.up.y, basis.up.z, tan_half_fovy},
@@ -323,76 +361,87 @@ cloud_ref_environment_lighting(const CloudsConfig& config,
                                     sun_intensity},
         .ref_options = {static_cast<float>(static_cast<std::uint32_t>(config.debug_view)),
                         static_cast<float>(budget.view_steps),
-                        static_cast<float>(kCloudRefTextureSize),
-                        static_cast<float>(kCloudRefUpdateFrames)},
+                        static_cast<float>(budget.light_steps),
+                        static_cast<float>(target_extent.width)},
+        .shape_options = {config.crispiness, config.curliness, config.absorption,
+                          config.powder_enabled ? 1.0F : 0.0F},
         .weather_feature_weights = {config.weather_fronts, config.weather_cells,
                                     config.weather_streaks, config.detail_erosion},
+        .cloud_color_top_shadow = {cloud_top_color.x, cloud_top_color.y, cloud_top_color.z,
+                                   config.shadow_strength},
+        .cloud_color_bottom_horizon = {cloud_bottom_color.x, cloud_bottom_color.y,
+                                       cloud_bottom_color.z, config.horizon_strength},
     };
 }
 
-[[nodiscard]] float hash2(std::uint32_t x, std::uint32_t y, std::uint32_t seed) {
-    std::uint32_t value = x * 374761393U + y * 668265263U + seed * 1442695041U;
-    value = (value ^ (value >> 13U)) * 1274126177U;
-    return static_cast<float>(value ^ (value >> 16U)) / 4294967295.0F;
+[[nodiscard]] cubey::render::Texture3DConfig cloud_ref_volume_texture_config(
+    std::uint32_t size) {
+    return {
+        .extent = {size, size, size},
+        .format = kCloudRefNoiseFormat,
+        .create_sampler = true,
+        .sampler = cloud_ref_repeat_sampler_config(),
+    };
 }
 
-[[nodiscard]] float smooth_noise(float x, float y, std::uint32_t seed) {
-    const auto ix = static_cast<std::uint32_t>(std::floor(x));
-    const auto iy = static_cast<std::uint32_t>(std::floor(y));
-    const float fx = x - std::floor(x);
-    const float fy = y - std::floor(y);
-    const float sx = fx * fx * (3.0F - 2.0F * fx);
-    const float sy = fy * fy * (3.0F - 2.0F * fy);
-    const float a = hash2(ix, iy, seed);
-    const float b = hash2(ix + 1U, iy, seed);
-    const float c = hash2(ix, iy + 1U, seed);
-    const float d = hash2(ix + 1U, iy + 1U, seed);
-    return std::lerp(std::lerp(a, b, sx), std::lerp(c, d, sx), sy);
+[[nodiscard]] cubey::render::Texture2DConfig cloud_ref_weather_texture_config() {
+    return {
+        .extent = {kWeatherTextureSize, kWeatherTextureSize},
+        .format = kCloudRefNoiseFormat,
+        .usage = cubey::render::Texture2DUsage::StorageSampled,
+        .create_sampler = true,
+        .sampler = cloud_ref_repeat_sampler_config(),
+    };
 }
 
-[[nodiscard]] std::vector<std::uint8_t> generate_weather_texture_bytes() {
-    std::vector<std::uint8_t> bytes(kWeatherTextureSize * kWeatherTextureSize * 4U, 0U);
-    for (std::uint32_t y = 0; y < kWeatherTextureSize; ++y) {
-        for (std::uint32_t x = 0; x < kWeatherTextureSize; ++x) {
-            const float u = static_cast<float>(x) / static_cast<float>(kWeatherTextureSize);
-            const float v = static_cast<float>(y) / static_cast<float>(kWeatherTextureSize);
-            float broad = 0.0F;
-            float amplitude = 0.55F;
-            float frequency = 3.0F;
-            for (std::uint32_t octave = 0; octave < 5U; ++octave) {
-                broad += amplitude * smooth_noise(u * frequency, v * frequency, 17U + octave);
-                frequency *= 2.03F;
-                amplitude *= 0.52F;
-            }
-            broad = std::clamp(broad, 0.0F, 1.0F);
-            const float fronts = smooth_noise(u * 2.0F + v * 0.35F, v * 5.0F, 91U);
-            const float cells = smooth_noise(u * 13.0F, v * 13.0F, 137U);
-            const float detail = smooth_noise(u * 47.0F, v * 47.0F, 191U);
-            const std::size_t index =
-                (static_cast<std::size_t>(y) * kWeatherTextureSize + x) * 4U;
-            bytes[index + 0U] =
-                static_cast<std::uint8_t>(std::clamp(broad, 0.0F, 1.0F) * 255.0F);
-            bytes[index + 1U] =
-                static_cast<std::uint8_t>(std::clamp(fronts, 0.0F, 1.0F) * 255.0F);
-            bytes[index + 2U] =
-                static_cast<std::uint8_t>(std::clamp(cells, 0.0F, 1.0F) * 255.0F);
-            bytes[index + 3U] =
-                static_cast<std::uint8_t>(std::clamp(detail, 0.0F, 1.0F) * 255.0F);
-        }
-    }
-    return bytes;
+void generate_storage_texture(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                              const char* label, const std::filesystem::path& shader,
+                              VkImage image, VkImageView view,
+                              cubey::render::ComputeDispatchGroups groups) {
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = 0,
+            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        },
+    }};
+    const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings);
+    cubey::vulkan::DescriptorSetBundle descriptors(device, descriptor_info);
+    cubey::vulkan::DescriptorWriteBatch writes;
+    writes.storage_image(descriptors.set(), 0, view, VK_IMAGE_LAYOUT_GENERAL);
+    writes.update(device);
+
+    const std::array<VkDescriptorSetLayout, 1> layouts{descriptors.layout()};
+    const cubey::render::ComputePipelineResource pipeline(
+        device, cubey::render::ComputePipelineResourceConfig{
+                    .shader_stage = cubey::render::compute_shader_file(shader),
+                    .descriptor_set_layouts = layouts,
+                });
+
+    static_cast<void>(gpu.submit_and_wait(cubey::vulkan::GpuWorkRequest{
+        .label = label,
+        .work =
+            [image, &pipeline, descriptor_set = descriptors.set(),
+             groups](cubey::vulkan::GpuOwnerContext& context) {
+                cubey::vulkan::ImmediateCommands commands(context);
+                const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
+                recorder.transition_image_layout(
+                    cubey::vulkan::begin_storage_image_write_transition(image));
+                cubey::render::record_compute_pipeline_dispatch(
+                    recorder,
+                    cubey::render::compute_pipeline_dispatch_info(pipeline, descriptor_set,
+                                                                  groups));
+                recorder.transition_image_layout(
+                    cubey::vulkan::finish_storage_image_write_for_sampling_transition(image));
+                commands.submit_and_wait();
+            },
+    }));
 }
 
 class CloudRefApp {
   public:
     explicit CloudRefApp(RunConfig config)
-        : run_config_(std::move(config)), config_(clouds_config_from_run_config(run_config_)) {
-        if (config_.camera_mode == CloudsCameraMode::Orbit ||
-            config_.camera_mode == CloudsCameraMode::OrbitTerminator) {
-            config_.camera_mode = CloudsCameraMode::High;
-            config_.camera_altitude_m = clouds_default_camera_altitude_m(config_.camera_mode);
-        }
-    }
+        : run_config_(std::move(config)), config_(clouds_config_from_run_config(run_config_)) {}
 
     CloudRefApp(const CloudRefApp&) = delete;
     CloudRefApp& operator=(const CloudRefApp&) = delete;
@@ -453,7 +502,7 @@ class CloudRefApp {
                 .run_config = run_config_,
                 .app_name = "cloud_ref",
                 .ready_status = "rendering reference cloud project",
-                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
+                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
                 .close_on_escape = true,
@@ -464,7 +513,7 @@ class CloudRefApp {
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
         host_config.run_config = run_config_;
-        host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
+        host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
 
@@ -536,7 +585,7 @@ class CloudRefApp {
 
     void draw_ui() {
         ImGui::SetNextWindowPos(ImVec2(12.0F, 12.0F), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(390.0F, 520.0F), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(420.0F, 650.0F), ImGuiCond_FirstUseEver);
         if (!ImGui::Begin("Cloud Ref")) {
             ImGui::End();
             return;
@@ -554,15 +603,21 @@ class CloudRefApp {
                         clouds_weather_preset_name);
         draw_enum_combo("Quality", config_.quality, kCloudRefQualityModes, clouds_quality_name);
         draw_enum_combo("Debug", config_.debug_view, kCloudRefDebugViews, clouds_debug_view_name);
+        ImGui::Separator();
         ImGui::SliderFloat("Time", &config_.time.time_hours, 0.0F, 24.0F, "%.2f h");
         ImGui::SliderFloat("Coverage", &config_.coverage, 0.0F, 1.0F, "%.2f");
-        ImGui::SliderFloat("Density", &config_.density, 0.05F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Density", &config_.density, 0.0F, 0.08F, "%.3f");
+        ImGui::SliderFloat("Wind", &config_.wind_speed_mps, 0.0F, 900.0F, "%.0f m/s");
+        ImGui::SliderFloat("Crispiness", &config_.crispiness, 1.0F, 120.0F, "%.1f");
+        ImGui::SliderFloat("Curliness", &config_.curliness, 0.01F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Absorption", &config_.absorption, 0.0F, 1.5F, "%.2f");
+        ImGui::Checkbox("Powder", &config_.powder_enabled);
         ImGui::SliderFloat("Weather scale", &config_.weather_scale_km, 40.0F, 500.0F, "%.0f km");
         ImGui::Separator();
         ImGui::Text("FPS: %.1f / %.2f ms", latest_fps_, latest_frame_ms_);
-        ImGui::Text("Cloud product: %u x %u", kCloudRefTextureSize, kCloudRefTextureSize);
+        ImGui::Text("Base noise: %u^3", kBaseNoiseSize);
+        ImGui::Text("Detail noise: %u^3", kDetailNoiseSize);
         ImGui::Text("Weather texture: %u x %u", kWeatherTextureSize, kWeatherTextureSize);
-        ImGui::Text("Update frames target: %u", kCloudRefUpdateFrames);
         ImGui::End();
     }
 
@@ -590,11 +645,10 @@ class CloudRefApp {
     }
 
     void reset_config() {
-        const CloudsCameraMode camera_mode = config_.camera_mode;
         config_ = clouds_config_from_run_config(run_config_);
         if (std::find(kCloudRefCameraModes.begin(), kCloudRefCameraModes.end(),
                       config_.camera_mode) == kCloudRefCameraModes.end()) {
-            config_.camera_mode = camera_mode;
+            config_.camera_mode = CloudsCameraMode::Surface;
         }
         config_.camera_altitude_m = clouds_default_camera_altitude_m(config_.camera_mode);
         yaw_ = 0.0F;
@@ -604,38 +658,44 @@ class CloudRefApp {
 
     void create_global_resources(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu) {
-        if (weather_texture_.has_value()) {
+        if (base_noise_.has_value()) {
             return;
         }
-        weather_bytes_ = generate_weather_texture_bytes();
-        weather_texture_.emplace(cubey::render::create_uploaded_texture_2d(
-            device, gpu,
-            cubey::render::UploadedTexture2DConfig{
-                .extent = {kWeatherTextureSize, kWeatherTextureSize},
-                .mip_levels = 1U,
-                .format = VK_FORMAT_R8G8B8A8_UNORM,
-                .rgba8 = weather_bytes_,
-                .create_sampler = true,
-                .sampler =
-                    {
-                        .min_filter = VK_FILTER_LINEAR,
-                        .mag_filter = VK_FILTER_LINEAR,
-                        .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                    },
-            }));
+
+        base_noise_.emplace(device, cloud_ref_volume_texture_config(kBaseNoiseSize));
+        detail_noise_.emplace(device, cloud_ref_volume_texture_config(kDetailNoiseSize));
+        weather_texture_.emplace(device, cloud_ref_weather_texture_config());
+
+        generate_storage_texture(
+            device, gpu, "cloud_ref generate base noise",
+            shader_path("cloud_ref_perlin_worley.comp.spv"), base_noise_->handle(),
+            base_noise_->view(),
+            cubey::render::ceil_dispatch_groups(kBaseNoiseSize, kBaseNoiseSize, kBaseNoiseSize,
+                                                kCloudRefVolumeGroupSize));
+        generate_storage_texture(
+            device, gpu, "cloud_ref generate detail noise", shader_path("cloud_ref_worley.comp.spv"),
+            detail_noise_->handle(), detail_noise_->view(),
+            cubey::render::ceil_dispatch_groups(kDetailNoiseSize, kDetailNoiseSize,
+                                                kDetailNoiseSize, kCloudRefVolumeGroupSize));
+        generate_storage_texture(
+            device, gpu, "cloud_ref generate weather", shader_path("cloud_ref_weather.comp.spv"),
+            weather_texture_->handle(), weather_texture_->view(),
+            cubey::render::ceil_dispatch_groups(kWeatherTextureSize, kWeatherTextureSize,
+                                                kCloudRefComputeGroupSize));
     }
 
     void destroy_global_resources() {
         weather_texture_.reset();
-        weather_bytes_.clear();
+        detail_noise_.reset();
+        base_noise_.reset();
     }
 
     void destroy_swapchain_resources() {
         graph_executor_.clear();
         composite_sampler_.reset();
-        cache_material_.reset();
+        march_material_.reset();
         composite_material_.reset();
-        cache_pipeline_.reset();
+        march_pipeline_.reset();
         composite_pipeline_.reset();
         frame_uniforms_.reset();
     }
@@ -644,25 +704,18 @@ class CloudRefApp {
                          std::uint32_t frame_slot_count) {
         graph_executor_.resize(frame_slot_count);
         frame_uniforms_.emplace(device, frame_slot_count);
-        const VkExtent2D cloud_extent{kCloudRefTextureSize, kCloudRefTextureSize};
 
-        const cubey::render::MaterialPassInfo cache_pass = cloud_ref_cache_pass_info();
-        cache_material_.emplace(device, cubey::render::MaterialInstanceConfig{
-                                            .material_pass = cache_pass,
+        const cubey::render::MaterialPassInfo march_pass = cloud_ref_march_pass_info();
+        march_material_.emplace(device, cubey::render::MaterialInstanceConfig{
+                                            .material_pass = march_pass,
                                             .descriptor_set = 0,
                                             .set_count = frame_slot_count,
                                         });
-        const std::array<VkDescriptorSetLayout, 1> cache_layouts{cache_material_->layout()};
-        const std::array<cubey::render::ShaderStageFile, 2> cache_shaders{
-            cubey::render::vertex_shader_file(shader_path("cloud_ref.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("cloud_ref_cache.frag.spv")),
-        };
-        cache_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                            .extent = cloud_extent,
-                                            .color_format = kCloudRefColorFormat,
-                                            .shader_stage_files = cache_shaders,
-                                            .descriptor_set_layouts = cache_layouts,
-                                            .material_pass = cache_pass,
+        const std::array<VkDescriptorSetLayout, 1> march_layouts{march_material_->layout()};
+        march_pipeline_.emplace(device, cubey::render::ComputePipelineResourceConfig{
+                                            .shader_stage = cubey::render::compute_shader_file(
+                                                shader_path("cloud_ref_march.comp.spv")),
+                                            .descriptor_set_layouts = march_layouts,
                                         });
 
         const cubey::render::MaterialPassInfo composite_pass = cloud_ref_composite_pass_info();
@@ -691,6 +744,20 @@ class CloudRefApp {
                                             });
     }
 
+    [[nodiscard]] const cubey::render::Texture3D& base_noise() const {
+        if (!base_noise_.has_value()) {
+            throw std::runtime_error("cloud_ref base noise texture is not initialized");
+        }
+        return base_noise_.value();
+    }
+
+    [[nodiscard]] const cubey::render::Texture3D& detail_noise() const {
+        if (!detail_noise_.has_value()) {
+            throw std::runtime_error("cloud_ref detail noise texture is not initialized");
+        }
+        return detail_noise_.value();
+    }
+
     [[nodiscard]] const cubey::render::Texture2D& weather_texture() const {
         if (!weather_texture_.has_value()) {
             throw std::runtime_error("cloud_ref weather texture is not initialized");
@@ -713,11 +780,11 @@ class CloudRefApp {
         return frame_uniforms_.value();
     }
 
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& cache_pipeline() const {
-        if (!cache_pipeline_.has_value()) {
-            throw std::runtime_error("cloud_ref cache pipeline is not initialized");
+    [[nodiscard]] const cubey::render::ComputePipelineResource& march_pipeline() const {
+        if (!march_pipeline_.has_value()) {
+            throw std::runtime_error("cloud_ref march pipeline is not initialized");
         }
-        return cache_pipeline_.value();
+        return march_pipeline_.value();
     }
 
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& composite_pipeline() const {
@@ -727,11 +794,11 @@ class CloudRefApp {
         return composite_pipeline_.value();
     }
 
-    [[nodiscard]] const cubey::render::MaterialInstance& cache_material() const {
-        if (!cache_material_.has_value()) {
-            throw std::runtime_error("cloud_ref cache material is not initialized");
+    [[nodiscard]] const cubey::render::MaterialInstance& march_material() const {
+        if (!march_material_.has_value()) {
+            throw std::runtime_error("cloud_ref march material is not initialized");
         }
-        return cache_material_.value();
+        return march_material_.value();
     }
 
     [[nodiscard]] const cubey::render::MaterialInstance& composite_material() const {
@@ -747,19 +814,14 @@ class CloudRefApp {
             cloud_ref_frame_uniforms(config_, target_extent, yaw_, pitch_, elapsed_seconds_));
     }
 
-    void record_cache_draw(const cubey::vulkan::CommandRecorder& recorder,
-                           const cubey::render::ColorTargetView& target,
-                           cubey::render::FrameSlot frame_slot) const {
-        cubey::render::record_render_target_pass(
-            recorder, cubey::render::render_target_view(target),
-            cubey::render::RenderClearValues{
-                .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
-            },
-            [this, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
-                cubey::render::record_fullscreen_pipeline_draw(
-                    pass_recorder,
-                    {.pipeline = &cache_pipeline(), .descriptor_set = cache_material().set(frame_slot)});
-            });
+    void record_cloud_dispatch(const cubey::vulkan::CommandRecorder& recorder,
+                               VkDescriptorSet descriptor_set, VkExtent2D extent) const {
+        cubey::render::record_compute_pipeline_dispatch(
+            recorder,
+            cubey::render::compute_pipeline_dispatch_info(
+                march_pipeline(), descriptor_set,
+                cubey::render::ceil_dispatch_groups(extent.width, extent.height,
+                                                    kCloudRefComputeGroupSize)));
     }
 
     void record_composite_draw(const cubey::vulkan::CommandRecorder& recorder,
@@ -785,17 +847,16 @@ class CloudRefApp {
         const cubey::render::RenderGraphTextureHandle backbuffer =
             graph.import_color_target("backbuffer", target, cloud_ref_target_initial_state(mode),
                                       cloud_ref_target_final_state(mode));
-        const VkExtent2D cloud_extent{kCloudRefTextureSize, kCloudRefTextureSize};
+        const VkExtent2D cloud_extent = cloud_ref_product_extent(target.extent, config_.quality);
         const cubey::render::RenderGraphTextureHandle cloud_product =
             graph.create_texture(cloud_ref_color_texture_desc("cloud_ref product", cloud_extent));
-        graph.add_pass("cloud_ref cache", cubey::render::RenderGraphQueueDomain::Graphics)
-            .write_color(cloud_product)
-            .execute([this, cloud_product, frame_slot](
+        graph.add_pass("cloud_ref march", cubey::render::RenderGraphQueueDomain::Compute)
+            .write_storage_texture(cloud_product, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
+            .execute([this, cloud_product, frame_slot, cloud_extent](
                          const cubey::render::RenderGraphExecutionContext& context) {
-                record_cache_draw(context.recorder(),
-                                  cubey::render::resolved_color_target_view(context,
-                                                                            cloud_product),
-                                  frame_slot);
+                static_cast<void>(cloud_product);
+                record_cloud_dispatch(context.recorder(), march_material().set(frame_slot),
+                                      cloud_extent);
             });
         graph.add_pass("cloud_ref composite", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(cloud_product)
@@ -830,17 +891,24 @@ class CloudRefApp {
             frame_graph.graph,
             [this, &device, frame_slot,
              &frame_graph](const cubey::render::RenderGraphResourceSet& graph_resources) {
-                cubey::render::MaterialDescriptorWriter(cache_material().set(frame_slot))
+                const cubey::render::RenderGraphSampledTextureView cloud_product =
+                    cubey::render::resolved_sampled_texture_view(
+                        frame_graph.graph, graph_resources, frame_graph.cloud_product);
+                cubey::render::MaterialDescriptorWriter(march_material().set(frame_slot))
                     .uniform_buffer(kCloudRefUniformBinding,
                                     frame_uniforms().buffer(frame_slot).handle(),
                                     frame_uniforms().range())
+                    .storage_image(kCloudRefOutputBinding, cloud_product.view,
+                                   VK_IMAGE_LAYOUT_GENERAL)
+                    .combined_image_sampler(kCloudRefBaseNoiseBinding,
+                                            base_noise().sampler().handle(), base_noise().view())
+                    .combined_image_sampler(kCloudRefDetailNoiseBinding,
+                                            detail_noise().sampler().handle(),
+                                            detail_noise().view())
                     .combined_image_sampler(kCloudRefWeatherBinding,
                                             weather_texture().sampler().handle(),
                                             weather_texture().view())
                     .update(device);
-                const cubey::render::RenderGraphSampledTextureView cloud_product =
-                    cubey::render::resolved_sampled_texture_view(
-                        frame_graph.graph, graph_resources, frame_graph.cloud_product);
                 cubey::render::MaterialDescriptorWriter(composite_material().set(frame_slot))
                     .uniform_buffer(kCloudRefUniformBinding,
                                     frame_uniforms().buffer(frame_slot).handle(),
@@ -863,7 +931,8 @@ class CloudRefApp {
     void record_headless_target(cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
                                 const cubey::render::ColorTargetView& target,
                                 cubey::render::FrameSlot frame_slot) {
-        record_target(device, command_buffer, target, frame_slot, CloudRefTargetMode::ColorAttachment,
+        record_target(device, command_buffer, target, frame_slot,
+                      CloudRefTargetMode::ColorAttachment,
                       cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
                       "vkEndCommandBuffer cloud_ref headless");
     }
@@ -875,14 +944,15 @@ class CloudRefApp {
     float elapsed_seconds_ = 0.0F;
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
-    std::vector<std::uint8_t> weather_bytes_{};
+    std::optional<cubey::render::Texture3D> base_noise_{};
+    std::optional<cubey::render::Texture3D> detail_noise_{};
     std::optional<cubey::render::Texture2D> weather_texture_{};
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
     std::optional<cubey::vulkan::Sampler> composite_sampler_{};
     std::optional<cubey::render::FrameUniformBuffer<CloudRefFrameUniforms>> frame_uniforms_{};
-    std::optional<cubey::render::MaterialInstance> cache_material_{};
+    std::optional<cubey::render::MaterialInstance> march_material_{};
     std::optional<cubey::render::MaterialInstance> composite_material_{};
-    std::optional<cubey::render::GraphicsPipelineResource> cache_pipeline_{};
+    std::optional<cubey::render::ComputePipelineResource> march_pipeline_{};
     std::optional<cubey::render::GraphicsPipelineResource> composite_pipeline_{};
 };
 

@@ -9,8 +9,8 @@
 namespace cubey::projects::cloud_ref {
 
 inline constexpr float kCloudsDefaultPlanetRadiusM = 6371000.0F;
-inline constexpr float kCloudsDefaultBottomAltitudeM = 1500.0F;
-inline constexpr float kCloudsDefaultTopAltitudeM = 7500.0F;
+inline constexpr float kCloudsDefaultBottomAltitudeM = 5000.0F;
+inline constexpr float kCloudsDefaultTopAltitudeM = 22000.0F;
 
 enum class CloudsCameraMode : std::uint32_t {
     Surface = 0,
@@ -52,42 +52,18 @@ enum class CloudsDebugView : std::uint32_t {
     Shadow = 5,
     Steps = 6,
     Background = 7,
-    Atmosphere = 8,
-    Ground = 9,
-    GroundHit = 10,
     CloudAlpha = 11,
-    Shell = 12,
-    SurfaceShadow = 13,
-    Domain = 14,
     Distance = 15,
     BaseDensity = 16,
     DetailDensity = 17,
-    DensityLod = 18,
-    StepLength = 19,
-    LocalMarch = 20,
-    FarHorizon = 21,
-    CloudDepth = 22,
-    CloudConfidence = 23,
-    HorizonBlend = 24,
-    LocalVolume = 25,
-    HorizonLayer = 26,
-    WeatherComponents = 27,
 };
 
-inline constexpr std::array<CloudsDebugView, 28> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 12> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::Weather, CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting, CloudsDebugView::Shadow,
     CloudsDebugView::Steps,        CloudsDebugView::Background,
-    CloudsDebugView::Atmosphere,   CloudsDebugView::Ground,
-    CloudsDebugView::GroundHit,    CloudsDebugView::CloudAlpha,
-    CloudsDebugView::Shell,        CloudsDebugView::SurfaceShadow,
-    CloudsDebugView::Domain,       CloudsDebugView::Distance,
+    CloudsDebugView::CloudAlpha,   CloudsDebugView::Distance,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
-    CloudsDebugView::DensityLod,   CloudsDebugView::StepLength,
-    CloudsDebugView::LocalMarch,   CloudsDebugView::FarHorizon,
-    CloudsDebugView::CloudDepth,   CloudsDebugView::CloudConfidence,
-    CloudsDebugView::HorizonBlend, CloudsDebugView::LocalVolume,
-    CloudsDebugView::HorizonLayer, CloudsDebugView::WeatherComponents,
 };
 
 struct CloudsTimeConfig {
@@ -104,8 +80,8 @@ struct CloudsTimeConfig {
 };
 
 struct CloudsConfig {
-    CloudsCameraMode camera_mode = CloudsCameraMode::Surface;
-    CloudsQuality quality = CloudsQuality::Quarter;
+    CloudsCameraMode camera_mode = CloudsCameraMode::HighOblique;
+    CloudsQuality quality = CloudsQuality::Half;
     CloudsWeatherPreset weather_preset = CloudsWeatherPreset::BrokenCumulus;
     CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
     CloudsDebugView debug_view = CloudsDebugView::Final;
@@ -113,19 +89,23 @@ struct CloudsConfig {
     CloudsTimeConfig time{};
 
     float planet_radius_m = kCloudsDefaultPlanetRadiusM;
-    float camera_altitude_m = 1200.0F;
+    float camera_altitude_m = 28000.0F;
     float bottom_altitude_m = kCloudsDefaultBottomAltitudeM;
     float top_altitude_m = kCloudsDefaultTopAltitudeM;
-    float coverage = 0.58F;
-    float density = 1.18F;
-    float weather_scale_km = 170.0F;
-    float wind_speed_mps = 18.0F;
+    float coverage = 0.45F;
+    float density = 0.02F;
+    float weather_scale_km = 210.0F;
+    float wind_speed_mps = 450.0F;
     float shadow_strength = 0.65F;
     float horizon_strength = 0.75F;
     float weather_fronts = 1.0F;
     float weather_cells = 1.0F;
     float weather_streaks = 1.0F;
     float detail_erosion = 1.0F;
+    float crispiness = 40.0F;
+    float curliness = 0.10F;
+    float absorption = 0.35F;
+    bool powder_enabled = false;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;
 };

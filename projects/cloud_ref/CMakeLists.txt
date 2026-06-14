@@ -10,13 +10,17 @@ cubey_add_app_target(
         main.cpp
     SHADERS
         shaders/cloud_ref.vert
-        shaders/cloud_ref_cache.frag
         shaders/cloud_ref_composite.frag
+        shaders/cloud_ref_march.comp
+        shaders/cloud_ref_perlin_worley.comp
+        shaders/cloud_ref_weather.comp
+        shaders/cloud_ref_worley.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_ref_common.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_ref_noise_common.glsl"
 )
 
 if (BUILD_TESTING)

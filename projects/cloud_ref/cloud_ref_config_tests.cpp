@@ -53,46 +53,20 @@ void test_names_and_next_debug_view() {
                 cubey::projects::cloud_ref::CloudsDebugView::Steps,
             "cloud debug view should advance");
     require(cubey::projects::cloud_ref::next_clouds_debug_view(
-                cubey::projects::cloud_ref::CloudsDebugView::GroundHit) ==
+                cubey::projects::cloud_ref::CloudsDebugView::Background) ==
                 cubey::projects::cloud_ref::CloudsDebugView::CloudAlpha,
-            "cloud composition debug view should advance");
-    require(cubey::projects::cloud_ref::next_clouds_debug_view(
-                cubey::projects::cloud_ref::CloudsDebugView::Shell) ==
-                cubey::projects::cloud_ref::CloudsDebugView::SurfaceShadow,
-            "cloud debug view should include surface shadow");
-    require(cubey::projects::cloud_ref::next_clouds_debug_view(
-                cubey::projects::cloud_ref::CloudsDebugView::SurfaceShadow) ==
-                cubey::projects::cloud_ref::CloudsDebugView::Domain,
-            "cloud debug view should include domain diagnostics");
-    require(cubey::projects::cloud_ref::next_clouds_debug_view(
-                cubey::projects::cloud_ref::CloudsDebugView::Domain) ==
-                cubey::projects::cloud_ref::CloudsDebugView::Distance,
-            "cloud debug view should include distance diagnostics");
+            "cloud debug view should include cloud alpha");
     require(cubey::projects::cloud_ref::next_clouds_debug_view(
                 cubey::projects::cloud_ref::CloudsDebugView::Distance) ==
                 cubey::projects::cloud_ref::CloudsDebugView::BaseDensity,
             "cloud debug view should include base-density diagnostics");
     require(cubey::projects::cloud_ref::next_clouds_debug_view(
-                cubey::projects::cloud_ref::CloudsDebugView::FarHorizon) ==
-                cubey::projects::cloud_ref::CloudsDebugView::CloudDepth,
-            "cloud debug view should include cloud-depth diagnostics");
-    require(cubey::projects::cloud_ref::next_clouds_debug_view(
-                cubey::projects::cloud_ref::CloudsDebugView::HorizonBlend) ==
-                cubey::projects::cloud_ref::CloudsDebugView::LocalVolume,
-            "cloud debug view should include local-volume diagnostics");
-    require(cubey::projects::cloud_ref::next_clouds_debug_view(
-                cubey::projects::cloud_ref::CloudsDebugView::WeatherComponents) ==
+                cubey::projects::cloud_ref::CloudsDebugView::DetailDensity) ==
                 cubey::projects::cloud_ref::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::cloud_ref::clouds_debug_view_from_string("cloud-alpha") ==
                 cubey::projects::cloud_ref::CloudsDebugView::CloudAlpha,
             "cloud alpha debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("surface-shadow") ==
-                cubey::projects::cloud_ref::CloudsDebugView::SurfaceShadow,
-            "cloud surface shadow debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("domain") ==
-                cubey::projects::cloud_ref::CloudsDebugView::Domain,
-            "cloud domain debug view should parse");
     require(cubey::projects::cloud_ref::clouds_debug_view_from_string("distance") ==
                 cubey::projects::cloud_ref::CloudsDebugView::Distance,
             "cloud distance debug view should parse");
@@ -102,36 +76,6 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref::clouds_debug_view_from_string("detail-density") ==
                 cubey::projects::cloud_ref::CloudsDebugView::DetailDensity,
             "cloud detail-density debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("density-lod") ==
-                cubey::projects::cloud_ref::CloudsDebugView::DensityLod,
-            "cloud density-lod debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("step-length") ==
-                cubey::projects::cloud_ref::CloudsDebugView::StepLength,
-            "cloud step-length debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("local-march") ==
-                cubey::projects::cloud_ref::CloudsDebugView::LocalMarch,
-            "cloud local-march debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("far-horizon") ==
-                cubey::projects::cloud_ref::CloudsDebugView::FarHorizon,
-            "cloud far-horizon debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("cloud-depth") ==
-                cubey::projects::cloud_ref::CloudsDebugView::CloudDepth,
-            "cloud depth debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("cloud-confidence") ==
-                cubey::projects::cloud_ref::CloudsDebugView::CloudConfidence,
-            "cloud confidence debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("horizon-blend") ==
-                cubey::projects::cloud_ref::CloudsDebugView::HorizonBlend,
-            "cloud horizon blend debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("local-volume") ==
-                cubey::projects::cloud_ref::CloudsDebugView::LocalVolume,
-            "cloud local volume debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("horizon-layer") ==
-                cubey::projects::cloud_ref::CloudsDebugView::HorizonLayer,
-            "cloud horizon layer debug view should parse");
-    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("weather-components") ==
-                cubey::projects::cloud_ref::CloudsDebugView::WeatherComponents,
-            "cloud weather components debug view should parse");
 }
 
 void test_run_config_mapping() {
@@ -144,7 +88,7 @@ void test_run_config_mapping() {
     run_config.clouds.bottom_altitude_m = 2000.0F;
     run_config.clouds.top_altitude_m = 9000.0F;
     run_config.clouds.coverage = 0.75F;
-    run_config.clouds.density = 1.25F;
+    run_config.clouds.density = 0.025F;
     run_config.clouds.weather_scale_km = 240.0F;
     run_config.clouds.wind_speed_mps = 35.0F;
     run_config.clouds.shadow_strength = 0.8F;
@@ -178,6 +122,7 @@ void test_run_config_mapping() {
                      cubey::projects::cloud_ref::CloudsCameraMode::Orbit),
                  0.001F, "cloud camera altitude should follow camera mode default");
     require_near(config.coverage, 0.75F, 0.001F, "cloud coverage should map");
+    require_near(config.density, 0.025F, 0.001F, "cloud density should map");
     require_near(config.shadow_strength, 0.8F, 0.001F,
                  "cloud shadow strength should map");
     require_near(config.horizon_strength, 0.9F, 0.001F,
@@ -229,13 +174,13 @@ void test_weather_preset_defaults() {
             "overcast weather preset should map from run config");
     require(config.cloud_style == cubey::projects::cloud_ref::CloudsCloudStyle::OvercastStratus,
             "overcast weather preset should select stratus style");
-    require_near(config.coverage, 0.88F, 0.001F,
+    require_near(config.coverage, 0.72F, 0.001F,
                  "overcast weather preset should set coverage");
     require_near(config.weather_scale_km, 280.0F, 0.001F,
                  "overcast weather preset should set scale");
-    require_near(config.bottom_altitude_m, 1200.0F, 0.001F,
+    require_near(config.bottom_altitude_m, 3000.0F, 0.001F,
                  "overcast weather preset should set bottom altitude");
-    require_near(config.top_altitude_m, 5200.0F, 0.001F,
+    require_near(config.top_altitude_m, 12000.0F, 0.001F,
                  "overcast weather preset should set top altitude");
 
     run_config.clouds.coverage = 0.35F;
@@ -253,7 +198,7 @@ void test_weather_preset_defaults() {
             "high cirrus weather preset should map from run config");
     require(config.cloud_style == cubey::projects::cloud_ref::CloudsCloudStyle::HighCirrus,
             "high cirrus weather preset should select cloud style");
-    require_near(config.bottom_altitude_m, 7200.0F, 0.001F,
+    require_near(config.bottom_altitude_m, 11000.0F, 0.001F,
                  "high cirrus weather preset should set bottom altitude");
 }
 

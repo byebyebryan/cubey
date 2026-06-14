@@ -31,42 +31,44 @@ struct CloudsWeatherPresetSettings {
     CloudsWeatherPreset preset) {
     switch (preset) {
     case CloudsWeatherPreset::FairWeather:
-        return {.coverage = 0.28F,
-                .density = 0.78F,
+        return {.coverage = 0.30F,
+                .density = 0.016F,
                 .weather_scale_km = 260.0F,
-                .wind_speed_mps = 9.0F,
-                .bottom_altitude_m = 1800.0F,
-                .top_altitude_m = 5200.0F,
+                .wind_speed_mps = 260.0F,
+                .bottom_altitude_m = 5000.0F,
+                .top_altitude_m = 17000.0F,
                 .cloud_style = CloudsCloudStyle::FairWeather};
     case CloudsWeatherPreset::BrokenCumulus:
-        return {.coverage = 0.54F, .density = 1.10F, .weather_scale_km = 210.0F,
-                .wind_speed_mps = 18.0F,
-                .bottom_altitude_m = 1500.0F,
-                .top_altitude_m = 7500.0F,
+        return {.coverage = 0.45F,
+                .density = 0.020F,
+                .weather_scale_km = 210.0F,
+                .wind_speed_mps = 450.0F,
+                .bottom_altitude_m = 5000.0F,
+                .top_altitude_m = 22000.0F,
                 .cloud_style = CloudsCloudStyle::BrokenCumulus};
     case CloudsWeatherPreset::OvercastStratus:
-        return {.coverage = 0.88F,
-                .density = 0.95F,
+        return {.coverage = 0.72F,
+                .density = 0.018F,
                 .weather_scale_km = 280.0F,
-                .wind_speed_mps = 12.0F,
-                .bottom_altitude_m = 1200.0F,
-                .top_altitude_m = 5200.0F,
+                .wind_speed_mps = 320.0F,
+                .bottom_altitude_m = 3000.0F,
+                .top_altitude_m = 12000.0F,
                 .cloud_style = CloudsCloudStyle::OvercastStratus};
     case CloudsWeatherPreset::StormCells:
-        return {.coverage = 0.76F,
-                .density = 1.55F,
+        return {.coverage = 0.64F,
+                .density = 0.032F,
                 .weather_scale_km = 105.0F,
-                .wind_speed_mps = 32.0F,
-                .bottom_altitude_m = 900.0F,
-                .top_altitude_m = 10500.0F,
+                .wind_speed_mps = 650.0F,
+                .bottom_altitude_m = 2500.0F,
+                .top_altitude_m = 24000.0F,
                 .cloud_style = CloudsCloudStyle::StormCells};
     case CloudsWeatherPreset::HighCirrus:
-        return {.coverage = 0.46F,
-                .density = 0.42F,
+        return {.coverage = 0.36F,
+                .density = 0.010F,
                 .weather_scale_km = 360.0F,
-                .wind_speed_mps = 38.0F,
-                .bottom_altitude_m = 7200.0F,
-                .top_altitude_m = 12000.0F,
+                .wind_speed_mps = 700.0F,
+                .bottom_altitude_m = 11000.0F,
+                .top_altitude_m = 22000.0F,
                 .cloud_style = CloudsCloudStyle::HighCirrus};
     }
     return clouds_weather_preset_settings(CloudsWeatherPreset::BrokenCumulus);
@@ -212,26 +214,8 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "background") {
         return CloudsDebugView::Background;
     }
-    if (value == "atmosphere") {
-        return CloudsDebugView::Atmosphere;
-    }
-    if (value == "ground") {
-        return CloudsDebugView::Ground;
-    }
-    if (value == "ground-hit") {
-        return CloudsDebugView::GroundHit;
-    }
     if (value == "cloud-alpha") {
         return CloudsDebugView::CloudAlpha;
-    }
-    if (value == "shell") {
-        return CloudsDebugView::Shell;
-    }
-    if (value == "surface-shadow") {
-        return CloudsDebugView::SurfaceShadow;
-    }
-    if (value == "domain") {
-        return CloudsDebugView::Domain;
     }
     if (value == "distance") {
         return CloudsDebugView::Distance;
@@ -241,36 +225,6 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     }
     if (value == "detail-density") {
         return CloudsDebugView::DetailDensity;
-    }
-    if (value == "density-lod") {
-        return CloudsDebugView::DensityLod;
-    }
-    if (value == "step-length") {
-        return CloudsDebugView::StepLength;
-    }
-    if (value == "local-march") {
-        return CloudsDebugView::LocalMarch;
-    }
-    if (value == "far-horizon") {
-        return CloudsDebugView::FarHorizon;
-    }
-    if (value == "cloud-depth") {
-        return CloudsDebugView::CloudDepth;
-    }
-    if (value == "cloud-confidence") {
-        return CloudsDebugView::CloudConfidence;
-    }
-    if (value == "horizon-blend") {
-        return CloudsDebugView::HorizonBlend;
-    }
-    if (value == "local-volume") {
-        return CloudsDebugView::LocalVolume;
-    }
-    if (value == "horizon-layer") {
-        return CloudsDebugView::HorizonLayer;
-    }
-    if (value == "weather-components") {
-        return CloudsDebugView::WeatherComponents;
     }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
@@ -293,46 +247,14 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "steps";
     case CloudsDebugView::Background:
         return "background";
-    case CloudsDebugView::Atmosphere:
-        return "atmosphere";
-    case CloudsDebugView::Ground:
-        return "ground";
-    case CloudsDebugView::GroundHit:
-        return "ground-hit";
     case CloudsDebugView::CloudAlpha:
         return "cloud-alpha";
-    case CloudsDebugView::Shell:
-        return "shell";
-    case CloudsDebugView::SurfaceShadow:
-        return "surface-shadow";
-    case CloudsDebugView::Domain:
-        return "domain";
     case CloudsDebugView::Distance:
         return "distance";
     case CloudsDebugView::BaseDensity:
         return "base-density";
     case CloudsDebugView::DetailDensity:
         return "detail-density";
-    case CloudsDebugView::DensityLod:
-        return "density-lod";
-    case CloudsDebugView::StepLength:
-        return "step-length";
-    case CloudsDebugView::LocalMarch:
-        return "local-march";
-    case CloudsDebugView::FarHorizon:
-        return "far-horizon";
-    case CloudsDebugView::CloudDepth:
-        return "cloud-depth";
-    case CloudsDebugView::CloudConfidence:
-        return "cloud-confidence";
-    case CloudsDebugView::HorizonBlend:
-        return "horizon-blend";
-    case CloudsDebugView::LocalVolume:
-        return "local-volume";
-    case CloudsDebugView::HorizonLayer:
-        return "horizon-layer";
-    case CloudsDebugView::WeatherComponents:
-        return "weather-components";
     }
     return "final";
 }
@@ -348,11 +270,11 @@ CloudsDebugView next_clouds_debug_view(CloudsDebugView view) {
 CloudsQualityBudget clouds_quality_budget(CloudsQuality quality) {
     switch (quality) {
     case CloudsQuality::Quarter:
-        return {.view_steps = 24, .light_steps = 3, .resolution_scale = 0.25F};
+        return {.view_steps = 32, .light_steps = 3, .resolution_scale = 0.25F};
     case CloudsQuality::Half:
-        return {.view_steps = 28, .light_steps = 3, .resolution_scale = 0.5F};
+        return {.view_steps = 48, .light_steps = 4, .resolution_scale = 0.5F};
     case CloudsQuality::Full:
-        return {.view_steps = 48, .light_steps = 5, .resolution_scale = 1.0F};
+        return {.view_steps = 64, .light_steps = 6, .resolution_scale = 1.0F};
     }
     return {};
 }
@@ -548,6 +470,15 @@ void validate_clouds_config(const CloudsConfig& config) {
     if (!std::isfinite(config.detail_erosion) || config.detail_erosion < 0.0F ||
         config.detail_erosion > 1.0F) {
         throw std::runtime_error("cloud detail erosion must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.crispiness) || config.crispiness <= 0.0F) {
+        throw std::runtime_error("cloud crispiness must be finite and positive");
+    }
+    if (!std::isfinite(config.curliness) || config.curliness <= 0.0F) {
+        throw std::runtime_error("cloud curliness must be finite and positive");
+    }
+    if (!finite_nonnegative(config.absorption)) {
+        throw std::runtime_error("cloud absorption must be finite and nonnegative");
     }
 }
 

@@ -30,11 +30,17 @@ capture surface --cloud-camera-mode surface
 capture surface-up --cloud-camera-mode surface-up
 capture high --cloud-camera-mode high
 capture high-oblique --cloud-camera-mode high-oblique
+capture orbit-preview --cloud-camera-mode orbit
 capture weather --cloud-camera-mode surface --debug-view weather
+capture base-density --cloud-camera-mode surface --debug-view base-density
+capture detail-density --cloud-camera-mode surface --debug-view detail-density
 capture density --cloud-camera-mode surface --debug-view density
 capture transmittance --cloud-camera-mode surface --debug-view transmittance
 capture lighting --cloud-camera-mode surface --debug-view lighting
+capture shadow --cloud-camera-mode surface --debug-view shadow
 capture cloud-alpha --cloud-camera-mode surface --debug-view cloud-alpha
+capture distance --cloud-camera-mode surface --debug-view distance
+capture steps --cloud-camera-mode surface --debug-view steps
 capture background --cloud-camera-mode surface --debug-view background
 
 if command -v magick >/dev/null 2>&1; then
