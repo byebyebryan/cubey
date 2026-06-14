@@ -568,7 +568,8 @@ class CloudsApp {
         if (input.mouse_enabled() && input.mouse_button_down(cubey::input::MouseButton::Left)) {
             const cubey::input::PointerDelta delta =
                 input.mouse_button_delta(cubey::input::MouseButton::Left);
-            yaw_ -= static_cast<float>(delta.x) * kCameraDragRadiansPerPixel;
+            const float yaw_delta = static_cast<float>(delta.x) * kCameraDragRadiansPerPixel;
+            yaw_ += clouds_camera_mode_is_orbit(config_.camera_mode) ? -yaw_delta : yaw_delta;
             pitch_ = clouds_clamp_camera_pitch_offset(
                 config_.camera_mode,
                 pitch_ - static_cast<float>(delta.y) * kCameraDragRadiansPerPixel);
