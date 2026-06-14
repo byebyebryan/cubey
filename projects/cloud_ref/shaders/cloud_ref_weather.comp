@@ -16,10 +16,11 @@ void main() {
         return;
     }
 
-    vec2 uv = (vec2(pixel) + vec2(0.5)) / vec2(size);
-    float coverage = cloud_ref_fbm_2d(uv * 0.95 * 8.0 + vec2(2.7, 5.1), 4);
-    float cloud_type = cloud_ref_fbm_2d(uv * 3.0 * 8.0 + vec2(19.0, 3.0), 5);
-    float broad_front = cloud_ref_fbm_2d(vec2(uv.x * 2.0 + uv.y * 0.35, uv.y * 5.0), 3);
-    coverage = clamp(mix(coverage, broad_front, 0.25), 0.0, 1.0);
-    imageStore(out_weather, pixel, vec4(coverage, clamp(cloud_type, 0.0, 1.0), 0.0, 1.0));
+    vec2 uv = vec2(float(pixel.x) + 2.0, float(pixel.y)) / 1024.0;
+    vec2 shifted_uv = uv + vec2(5.5);
+
+    float cloud_type = clamp(
+        cloud_ref_perlin_noise_2d(shifted_uv, 100.0 * 3.0, 0.3, 0.7, 10), 0.0, 1.0);
+    float coverage = cloud_ref_perlin_noise_2d(uv, 100.0 * 0.95, 0.8, 0.5, 4);
+    imageStore(out_weather, pixel, vec4(clamp(coverage, 0.0, 1.0), cloud_type, 0.0, 1.0));
 }

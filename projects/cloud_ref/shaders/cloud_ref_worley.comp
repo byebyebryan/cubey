@@ -9,6 +9,22 @@
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 layout(rgba8, set = 0, binding = 0) uniform writeonly image3D out_volume;
 
+vec4 cloud_ref_stackable_detail_noise(ivec3 pixel) {
+    vec3 coord =
+        vec3(float(pixel.x) / 32.0, float(pixel.y) / 32.0, float(pixel.z) / 32.0);
+
+    float cell_count = 2.0;
+    float worley0 = 1.0 - cloud_ref_worley_noise_3d(coord, cell_count * 1.0);
+    float worley1 = 1.0 - cloud_ref_worley_noise_3d(coord, cell_count * 2.0);
+    float worley2 = 1.0 - cloud_ref_worley_noise_3d(coord, cell_count * 4.0);
+    float worley3 = 1.0 - cloud_ref_worley_noise_3d(coord, cell_count * 8.0);
+
+    float worley_fbm0 = worley0 * 0.625 + worley1 * 0.25 + worley2 * 0.125;
+    float worley_fbm1 = worley1 * 0.625 + worley2 * 0.25 + worley3 * 0.125;
+    float worley_fbm2 = worley2 * 0.75 + worley3 * 0.25;
+    return vec4(worley_fbm0, worley_fbm1, worley_fbm2, 1.0);
+}
+
 void main() {
     ivec3 pixel = ivec3(gl_GlobalInvocationID.xyz);
     ivec3 size = imageSize(out_volume);
@@ -16,14 +32,5 @@ void main() {
         return;
     }
 
-    vec3 coord = (vec3(pixel) + vec3(0.5)) / vec3(size);
-    float worley0 = 1.0 - cloud_ref_worley_3d(coord, 2.0);
-    float worley1 = 1.0 - cloud_ref_worley_3d(coord, 4.0);
-    float worley2 = 1.0 - cloud_ref_worley_3d(coord, 8.0);
-    float worley3 = 1.0 - cloud_ref_worley_3d(coord, 16.0);
-
-    float layer0 = worley0 * 0.625 + worley1 * 0.25 + worley2 * 0.125;
-    float layer1 = worley1 * 0.625 + worley2 * 0.25 + worley3 * 0.125;
-    float layer2 = worley2 * 0.75 + worley3 * 0.25;
-    imageStore(out_volume, pixel, vec4(layer0, layer1, layer2, 1.0));
+    imageStore(out_volume, pixel, cloud_ref_stackable_detail_noise(pixel));
 }
