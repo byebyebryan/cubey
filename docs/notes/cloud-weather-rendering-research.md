@@ -258,6 +258,41 @@ better temporal rejection are still valid follow-ups. They should refine a good
 distance-regime model, not act as the primary fix for far-field horizon
 streaking.
 
+## TerrainEngine Cloud Ref Port 2026-06-14
+
+`projects/cloud_ref` is now the direct TerrainEngine-OpenGL reference track,
+separate from the older `projects/clouds_legacy` prototype. The port is meant
+to be a known-good mechanical baseline rather than the final Cubey weather
+architecture.
+
+Landed mechanics:
+
+- generated 3D volume textures can now allocate mip chains and generate mips
+  after compute writes;
+- cloud_ref base/detail volume samplers use those mips, matching the OpenGL
+  source's `glGenerateMipmap(GL_TEXTURE_3D)` behavior;
+- Perlin-Worley, Worley, and weather map generation follow TerrainEngine's
+  source formulas instead of Cubey's earlier simplified value-noise model;
+- cloud_ref defaults use TerrainEngine's 600 km sphere radius, 800 m surface
+  camera, 5 km cloud base, 17 km cloud shell thickness, fixed sun direction,
+  source cloud colors, and full-resolution 64-step quality;
+- the raymarch uses the TerrainEngine local sphere-center model, source density
+  coverage/erosion math, Bayer jitter, Beer transmittance, and short cone light
+  march.
+
+Captured outputs:
+
+- original TerrainEngine app: `outputs/terrainengine-ref-capture/`;
+- current Cubey port: `outputs/cloud-ref-faithful-port/`.
+
+Current read: the source-space port produces coherent chunky cloud masses and
+does not show the old local-volume horizontal streaking as the dominant
+failure. It is still gray, visibly single-frame dithered, and missing
+TerrainEngine's water, skybox, bloom, god rays, and post chain. Treat future
+work in two branches: keep `cloud_ref` source-faithful for comparison, and use
+a separate production cloud/weather project to integrate shared atmosphere,
+ocean/planet scale, temporal reconstruction, and richer lighting.
+
 The eleventh checkpoint implements the first version of that distance-regime
 split. Cloud frame data moved from maxed-out push constants into a per-frame
 uniform buffer so the shader can carry explicit feature-isolation controls.

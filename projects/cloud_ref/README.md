@@ -55,6 +55,25 @@ and `frame-14s.png` as the current visual baseline: chunky coherent cumulus
 masses, strong sky/water interaction, visible post/resolution artifacts, and a
 source UI overlay.
 
+Current Cubey port checkpoint:
+
+- generated 3D base/detail noise now uses mip chains like the OpenGL source;
+- Perlin-Worley, Worley, and weather texture generation use source-aligned
+  formulas;
+- the default cloud shell uses the TerrainEngine coordinate model: 600 km
+  planet radius, camera height above the local ground plane, 5 km cloud base,
+  and 17 km cloud thickness;
+- cloud density, coverage, erosion, Beer transmittance, cone light march, and
+  source-style fixed sun direction are now closer to TerrainEngine than to the
+  earlier Cubey cloud prototype.
+
+Latest local comparison captures are in `outputs/cloud-ref-faithful-port/`.
+`surface.png`, `high.png`, and `high-oblique.png` show coherent source-like
+cloud masses without the old local-volume streaking failure, but they also show
+the current limitations: gray source-style lighting, single-frame Bayer/dither
+grain, and Cubey's placeholder sky/ground composite instead of TerrainEngine's
+water, skybox, bloom, god rays, and post pipeline.
+
 Controls:
 
 - Left-drag: rotate the camera.
@@ -66,8 +85,7 @@ Known limits:
 
 - `cloud_ref` is allowed to inherit TerrainEngine visual rough edges while it is
   serving as a fidelity baseline.
-- TerrainEngine god rays/bloom and cloud-distance outputs are optional only if
-  the default cloud shape, density, lighting, and composition already match the
-  source closely enough for comparison.
+- TerrainEngine water/skybox/post effects, god rays, bloom, and cloud-distance
+  outputs are not ported yet.
 - Orbit mode is a diagnostic preview, not a finished planet-scale weather
   system.
