@@ -267,14 +267,76 @@ weights, and detail erosion. The old composite-only vertical lower-sky blur was
 removed.
 
 The surface horizon now fades dense local-volume marching out of lower-sky
-grazing rays and replaces it with a dedicated low-frequency horizon layer. The
-standard quarter-quality review capture at
-`outputs/clouds-distance-split-final2-20260613-103748` shows the main surface
-row/streak artifact removed while high, high-oblique, and orbit views still
-retain cloud mass. The tradeoff is that the surface horizon is currently more
-subtle and less richly shaped than ideal. Treat the next visual pass as
-horizon-layer shape/lighting tuning, not as another temporal reconstruction
-pass.
+grazing rays and replaces it with a dedicated low-frequency horizon layer. This
+made the source easier to isolate, but current visual checks still show
+noticeable surface/high streaking, high-oblique horizon separation, and rough
+orbit readability. Treat the latest tuning as diagnostic, not as a solved
+cloud model. The remaining artifact should not be hidden by yet another final
+blur or one-off horizon filter.
+
+## Reference Reboot Pass 2026-06-13
+
+The newer reference checkout lives under `/home/bryan/code/ref`. The most
+useful projects for rebooting Cubey clouds are:
+
+- `/home/bryan/code/ref/TerrainEngine-OpenGL`
+- `/home/bryan/code/ref/godot-volumetric-cloud-demo`
+- `/home/bryan/code/ref/godot-volumetric-cloud-demo-v2`
+
+`TerrainEngine-OpenGL` is useful because it is C++/OpenGL and has a relatively
+direct fullscreen compute path. Its cloud renderer is built around classic
+Horizon/Decima-style ingredients:
+
+- precomputed 3D Perlin-Worley base shape texture;
+- precomputed 3D Worley erosion texture;
+- separate 2D weather map for broad coverage/type;
+- spherical cloud shell intersection for camera-inside, inside-layer, and
+  above-layer cases;
+- fixed 64-step view raymarch with Bayer ray-start jitter;
+- six-sample cone tracing toward the sun for light transmittance;
+- Beer transmittance, powder term, height-gradient cloud type profiles, early
+  exit, and distance fog into the sky background.
+
+The important lesson is not that Cubey should copy its exact tuning. The lesson
+is that the density model is texture-backed and stable before lighting and
+composition happen. Cubey's current inline value-noise weather and erosion path
+has too many coupled heuristics, so tuning composition keeps exposing raw
+domain artifacts.
+
+`godot-volumetric-cloud-demo` is the compact baseline. It raymarches the sky
+directly in a Godot sky shader, uses Perlin-Worley + Worley + weather textures,
+uses cloud-type height gradients, stacks multiple Henyey-Greenstein phase
+functions, and fades distant clouds into the sky near the horizon. It is useful
+as the smallest readable shader to port conceptually, but it still does the
+expensive sky march in the visible shader.
+
+`godot-volumetric-cloud-demo-v2` is the better architecture reference for
+Cubey. It moves the expensive march into a compute pass that writes an
+octahedral hemisphere cloud texture. It updates only one tile per frame,
+spreads a full sky update across a configurable number of frames, keeps three
+textures, and blends between old/new complete sky textures in the sky shader.
+The final sky shader only samples blended cloud textures, samples physical sky
+and transmittance LUTs, draws the sun disk, and fades clouds into the background
+near the horizon.
+
+This points to a reboot direction:
+
+- stop treating `projects/clouds/shaders/clouds.frag` as the final product;
+- add a texture-backed cloud model first: uploaded or generated
+  Perlin-Worley, Worley erosion, and 2D weather maps;
+- add a cached sky/cloud producer, likely hemisphere-octahedral at first, with
+  region/tile updates and triple-buffered blending;
+- keep the old per-view raymarch only as a diagnostic or close/local mode until
+  it proves useful;
+- make surface, high, and orbit consume the same cached cloud/sky product
+  before reintroducing local parallax details;
+- reuse the shared atmosphere sky/transmittance basis for lighting instead of
+  maintaining project-local sky hacks.
+
+The current uncommitted surface/orbit tuning should be considered disposable
+unless a small mechanical fix is independently valuable. The next real change
+should be a controlled prototype of the reference-style cached cloud product,
+not another incremental tweak to the current local horizon march.
 
 The remaining promotion blockers are now less about first visibility and more
 about renderer contracts:
