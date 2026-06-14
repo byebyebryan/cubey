@@ -126,7 +126,7 @@ float cloud_ref_starfield(vec3 direction) {
     return smoothstep(0.993, 1.0, stars);
 }
 
-vec3 cloud_ref_background(vec3 direction) {
+vec3 cloud_ref_sky_color(vec3 direction) {
     vec3 up = cloud_ref_planet_up();
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     float sun_elevation = dot(sun_dir, up);
@@ -147,11 +147,49 @@ vec3 cloud_ref_background(vec3 direction) {
     float sun_alignment = max(dot(direction, sun_dir), 0.0);
     sky += vec3(1.0, 0.82, 0.48) * pow(sun_alignment, 900.0) * day *
            params.sun_direction_intensity.w * 6.0;
+    sky += vec3(1.0, 0.50, 0.18) * pow(sun_alignment, 42.0) * day *
+           params.sun_direction_intensity.w * 0.45;
     sky += vec3(cloud_ref_starfield(direction)) * (1.0 - day) * 0.9;
+    return sky;
+}
+
+vec3 cloud_ref_water_context(vec3 direction) {
+    vec3 up = cloud_ref_planet_up();
+    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
+    float view_height = clamp(dot(direction, up), -1.0, 1.0);
+    float camera_height = max(cloud_ref_camera_altitude(), 1.0);
+    float plane_t = camera_height / max(-direction.y, 0.001);
+    vec2 water_position = params.camera_position_radius.xz + direction.xz * plane_t;
+    vec2 ripple_uv = water_position * 0.00018;
+    float broad = cloud_ref_value_noise(ripple_uv * 2.1);
+    float detail = cloud_ref_value_noise(ripple_uv * 11.0 + vec2(13.7, 5.1));
+    float wave = mix(broad, detail, 0.32);
+
+    vec3 reflection_dir = reflect(direction, up);
+    vec3 reflected_sky = cloud_ref_sky_color(reflection_dir);
+    vec3 deep_water = vec3(0.025, 0.100, 0.135);
+    vec3 shallow_haze = vec3(0.260, 0.380, 0.380);
+    float horizon = smoothstep(-0.28, -0.015, view_height);
+    float fresnel = pow(1.0 - clamp(dot(-direction, up), 0.0, 1.0), 5.0);
+    float glitter_mask = smoothstep(0.54, 0.92, wave);
+    float sun_glitter = pow(max(dot(reflection_dir, sun_dir), 0.0), 220.0) *
+                        (0.35 + 0.65 * glitter_mask);
+
+    vec3 water = mix(deep_water, reflected_sky, 0.18 + 0.52 * fresnel);
+    water = mix(water, shallow_haze, horizon * 0.45);
+    water += vec3(1.0, 0.82, 0.52) * sun_glitter * params.sun_direction_intensity.w * 5.0;
+    water += vec3(wave - 0.5) * 0.018;
+    return max(water, vec3(0.0));
+}
+
+vec3 cloud_ref_background(vec3 direction) {
+    vec3 up = cloud_ref_planet_up();
+    float view_height = clamp(dot(direction, up), -1.0, 1.0);
+    vec3 sky = cloud_ref_sky_color(direction);
 
     if (view_height < -0.015) {
-        vec3 ground = mix(vec3(0.030, 0.045, 0.048), vec3(0.18, 0.20, 0.16), day);
-        sky = mix(ground, sky, smoothstep(-0.06, 0.015, view_height));
+        vec3 water = cloud_ref_water_context(direction);
+        sky = mix(water, sky, smoothstep(-0.045, 0.018, view_height));
     }
     return sky;
 }
