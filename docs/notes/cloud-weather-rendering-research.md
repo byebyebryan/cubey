@@ -293,6 +293,21 @@ work in two branches: keep `cloud_ref` source-faithful for comparison, and use
 a separate production cloud/weather project to integrate shared atmosphere,
 ocean/planet scale, temporal reconstruction, and richer lighting.
 
+## Cloud Ref Presentation Checkpoint 2026-06-14
+
+`cloud_ref` now has a presentation-parity layer around the source-like volume
+path. It adds shader-only sky/water horizon context, a final-view alpha-aware
+cloud resolve, mild sun halo/contrast shaping, and a `raw-final` diagnostic that
+composites the raw cloud product over the same context without final resolve or
+post. The new review bundle is `outputs/cloud-ref-presentation-review/`.
+
+The checkpoint improves high and high-oblique readability substantially because
+cloud masses now sit over a water-colored scene instead of a flat placeholder.
+The straight `surface` camera remains a quiet horizon review angle; use
+`surface-up` to inspect surface cloud form. This is still not TerrainEngine's
+full presentation stack: real water rendering, skybox textures, bloom FBOs,
+god rays, and separate cloud-distance outputs remain unported.
+
 The eleventh checkpoint implements the first version of that distance-regime
 split. Cloud frame data moved from maxed-out push constants into a per-frame
 uniform buffer so the shader can carry explicit feature-isolation controls.

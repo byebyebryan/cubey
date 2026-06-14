@@ -44,6 +44,7 @@ Useful runs:
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view distance
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view steps
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view background
+./build/dev/projects/cloud_ref/cloud_ref --debug-view raw-final
 ./build/dev/projects/cloud_ref/cloud_ref --headless --frames 2 --cloud-camera-mode surface --output outputs/cloud-ref-surface.png
 ./build/dev/projects/cloud_ref/cloud_ref --headless --frames 2 --cloud-camera-mode high --output outputs/cloud-ref-high.png
 projects/cloud_ref/capture_review.sh outputs/cloud-ref-review
@@ -74,6 +75,12 @@ the current limitations: gray source-style lighting, single-frame Bayer/dither
 grain, and Cubey's placeholder sky/ground composite instead of TerrainEngine's
 water, skybox, bloom, god rays, and post pipeline.
 
+The presentation checkpoint in `outputs/cloud-ref-presentation-review/` adds a
+shader-only sky/water horizon context, a final-view cloud resolve, and mild
+source-style post shaping. `surface-up.png` is the best surface cloud framing;
+`surface.png` is intentionally a straight horizon review angle. `raw-final.png`
+shows the same composition before final resolve/post.
+
 Controls:
 
 - Left-drag: rotate the camera.
@@ -85,7 +92,8 @@ Known limits:
 
 - `cloud_ref` is allowed to inherit TerrainEngine visual rough edges while it is
   serving as a fidelity baseline.
-- TerrainEngine water/skybox/post effects, god rays, bloom, and cloud-distance
+- TerrainEngine water/skybox/post effects are approximated with shader-only
+  presentation context; real water, bloom FBOs, god rays, and cloud-distance
   outputs are not ported yet.
 - Orbit mode is a diagnostic preview, not a finished planet-scale weather
   system.
