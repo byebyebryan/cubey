@@ -364,3 +364,19 @@ about renderer contracts:
 Ocean should consume cloud reflection/background/shadow outputs. Planet should
 consume the same weather model at orbit and surface scale. Neither should embed
 the volumetric raymarch in a water, terrain, or PBR material shader.
+
+## TerrainEngine Port Checkpoint
+
+`projects/cloud_ref` now uses the TerrainEngine-style reference path rather
+than the earlier 2D weather-only checkpoint. It generates a 128^3
+Perlin-Worley base volume, a 32^3 Worley erosion volume, and a 1024^2 weather
+map at startup, then runs a compute cloud march into a radiance/transmittance
+product before fullscreen compositing. The port keeps the core TerrainEngine
+mechanics: spherical shell intersections, cloud-type height gradients, detail
+erosion, Bayer start jitter, Beer transmittance, and a short cone light march.
+
+The port is still a standalone reference, not the final cloud architecture.
+God rays/bloom, temporal reconstruction, tiled cache updates, and Godot-v2-style
+sky-cache blending remain follow-up work. The default camera is high-oblique so
+the generated cloud deck is visible immediately; surface/orbit modes are still
+diagnostic review angles.
