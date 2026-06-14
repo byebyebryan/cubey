@@ -338,6 +338,15 @@ unless a small mechanical fix is independently valuable. The next real change
 should be a controlled prototype of the reference-style cached cloud product,
 not another incremental tweak to the current local horizon march.
 
+The first reboot target is `projects/cloud_ref`. Its initial checkpoint is a
+small texture-backed cached-product baseline: uploaded deterministic 2D weather
+texture, fixed 512x512 cloud product, and final compositing over a lightweight
+sky/ground background. It intentionally limits review to surface and high
+camera modes before adding tiled/triple-buffered cache updates, 3D
+Perlin-Worley shape textures, Worley erosion textures, or orbit/planet-scale
+clouds. The older implementation is frozen in `projects/clouds_legacy` for
+side-by-side comparison.
+
 The remaining promotion blockers are now less about first visibility and more
 about renderer contracts:
 
