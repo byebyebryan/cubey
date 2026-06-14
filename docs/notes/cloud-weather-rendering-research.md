@@ -380,3 +380,20 @@ God rays/bloom, temporal reconstruction, tiled cache updates, and Godot-v2-style
 sky-cache blending remain follow-up work. The default camera is high-oblique so
 the generated cloud deck is visible immediately; surface/orbit modes are still
 diagnostic review angles.
+
+## TerrainEngine Fidelity Baseline
+
+The original TerrainEngine app now builds locally and has been captured under
+Xvfb/llvmpipe. Use `outputs/terrainengine-ref-capture/contact-sheet.png`,
+`frame-8s.png`, and `frame-14s.png` as the current source-look baseline. These
+captures show coherent chunky cumulus shape, high cloud contrast, strong
+water/sky interaction, and some low-resolution/post-process texture artifacts.
+Those artifacts should not be tuned away inside `cloud_ref` until the port is
+source-faithful enough to compare mechanically.
+
+The next `cloud_ref` work should prioritize fidelity over Cubey integration:
+TerrainEngine noise generation, mipmapped 3D textures, density/coverage math,
+camera-relative shell intersections, source-like lighting/fog/composition, and
+reference defaults. Cubey-specific atmosphere, ocean, planet, temporal cache,
+and weather-system changes should happen later in the production `cloud`
+project.

@@ -1,20 +1,21 @@
 # Cloud Ref
 
-`cloud_ref` is the active cloud reboot target. It keeps the useful cloud camera,
-weather, and time controls, but the renderer is now scoped as a direct reference
-port of the MIT-licensed TerrainEngine-OpenGL volumetric cloud path:
+`cloud_ref` is the active reference target for volumetric clouds. Its default
+path should stay deliberately close to the MIT-licensed TerrainEngine-OpenGL
+volumetric cloud renderer, even when that makes it less Cubey-native:
 
 - one-time generated 128^3 Perlin-Worley base noise
 - one-time generated 32^3 Worley erosion/detail noise
 - generated 1024^2 weather coverage/type map
 - spherical shell cloud raymarch with height gradients, detail erosion, Beer
   transmittance, Bayer jitter, and a short cone light march
-- fullscreen composite over the project-local sky/background
+- fullscreen composite over a source-like sky/background
 
-The intent is to get a known, concrete volumetric reference running inside
-Cubey before reconciling it with the earlier `clouds_legacy` prototype. The
-Godot volumetric cloud demos remain useful follow-up references for caching and
-temporal architecture, but they are not part of this first direct port.
+The intent is to keep a known, concrete volumetric reference running inside
+Cubey before building a production `cloud` project. Cubey-specific weather
+systems, ocean/planet integration, temporal cache updates, and shared atmosphere
+adaptation belong in that later project unless they are required to reproduce
+the TerrainEngine reference.
 
 Attribution: TerrainEngine-OpenGL is MIT licensed, copyright Federico Vaccaro.
 The TerrainEngine shaders also cite Sebastian Hillaire/Nubis-style tileable
@@ -48,6 +49,12 @@ Useful runs:
 projects/cloud_ref/capture_review.sh outputs/cloud-ref-review
 ```
 
+Reference captures from the original TerrainEngine app are kept in
+`outputs/terrainengine-ref-capture/`. Use `contact-sheet.png`, `frame-8s.png`,
+and `frame-14s.png` as the current visual baseline: chunky coherent cumulus
+masses, strong sky/water interaction, visible post/resolution artifacts, and a
+source UI overlay.
+
 Controls:
 
 - Left-drag: rotate the camera.
@@ -57,9 +64,10 @@ Controls:
 
 Known limits:
 
-- TerrainEngine god rays/bloom post-processing are intentionally not ported in
-  this batch.
-- Temporal reconstruction, tiled cache updates, and Godot-style update
-  scheduling are follow-up work after the reference shape/lighting is credible.
+- `cloud_ref` is allowed to inherit TerrainEngine visual rough edges while it is
+  serving as a fidelity baseline.
+- TerrainEngine god rays/bloom and cloud-distance outputs are optional only if
+  the default cloud shape, density, lighting, and composition already match the
+  source closely enough for comparison.
 - Orbit mode is a diagnostic preview, not a finished planet-scale weather
   system.
