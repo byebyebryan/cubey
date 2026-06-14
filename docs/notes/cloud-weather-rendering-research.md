@@ -37,7 +37,7 @@ clear-sky atmosphere remains the base for sun, moon, sky color, exposure, and
 environment lighting. Clouds are an additional weather layer with its own
 coverage, density, shape, lighting, and shadow controls.
 
-The first implementation should be a standalone `projects/clouds` pressure
+The first implementation should be a standalone `projects/clouds_legacy` pressure
 project. It should consume the shared atmosphere solar-clock and lighting
 foundation, but it should own cloud policy until the model is stable enough for
 promotion into shared renderer code.
@@ -130,7 +130,7 @@ internal cloud-style id passed through the existing push constant footprint. The
 raymarch pass and composite surface-shadow diagnostic share the same
 `clouds_model.glsl` density/weather implementation, with procedural fronts,
 cells, calm gaps, wind-aligned streaks, type-specific height profiles, and
-style-aware lighting. The added `projects/clouds/capture_review.sh` helper
+style-aware lighting. The added `projects/clouds_legacy/capture_review.sh` helper
 captures the standard surface/high/orbit/debug bundle before future tuning.
 
 The sixth checkpoint addresses the first proper-fix batch. The standalone
@@ -321,7 +321,7 @@ near the horizon.
 
 This points to a reboot direction:
 
-- stop treating `projects/clouds/shaders/clouds.frag` as the final product;
+- stop treating `projects/clouds_legacy/shaders/clouds.frag` as the final product;
 - add a texture-backed cloud model first: uploaded or generated
   Perlin-Worley, Worley erosion, and 2D weather maps;
 - add a cached sky/cloud producer, likely hemisphere-octahedral at first, with

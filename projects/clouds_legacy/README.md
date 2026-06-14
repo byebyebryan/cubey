@@ -1,10 +1,10 @@
-# Clouds
+# Clouds Legacy
 
-`clouds` is the standalone pressure project for planet-aware cloud and weather
-rendering. It keeps cloud policy separate from the clear-sky atmosphere project
-while consuming the same solar-clock and atmosphere scattering foundation.
+`clouds_legacy` is the frozen first-pass planet-aware cloud and weather
+prototype. It is kept as a known comparison target while the active cloud work
+reboots around texture-backed density and cached sky/cloud products.
 
-The current renderer is a v1 planet-aware cloud raymarch. Surface and high
+The legacy renderer is a v1 planet-aware cloud raymarch. Surface and high
 cameras use a capped spherical-shell local cloud segment with a distant horizon
 layer, while orbit cameras keep the full spherical planet-scale shell. The
 renderer writes a quality-scaled cloud product target with linear cloud
@@ -18,48 +18,48 @@ separation, distance/grazing/footprint detail LOD, cheap self-shadowing,
 prototype surface cloud shadows, and raw product debug views for the major
 fields. It deliberately does not integrate into ocean or planet yet; those
 projects should later consume cloud sky/reflection and shadow outputs after this
-standalone path is stable.
+new cached-cloud path is stable.
 
 Useful runs:
 
 ```sh
-./build/dev/projects/clouds/clouds
-./build/dev/projects/clouds/clouds --cloud-camera-mode surface
-./build/dev/projects/clouds/clouds --cloud-camera-mode surface-up
-./build/dev/projects/clouds/clouds --cloud-camera-mode high
-./build/dev/projects/clouds/clouds --cloud-camera-mode high-oblique
-./build/dev/projects/clouds/clouds --cloud-camera-mode orbit
-./build/dev/projects/clouds/clouds --cloud-camera-mode orbit-terminator
-./build/dev/projects/clouds/clouds --cloud-weather-preset fair-weather
-./build/dev/projects/clouds/clouds --cloud-weather-preset broken-cumulus
-./build/dev/projects/clouds/clouds --cloud-weather-preset overcast-stratus
-./build/dev/projects/clouds/clouds --cloud-weather-preset storm-cells
-./build/dev/projects/clouds/clouds --cloud-weather-preset high-cirrus
-./build/dev/projects/clouds/clouds --debug-view weather
-./build/dev/projects/clouds/clouds --debug-view density
-./build/dev/projects/clouds/clouds --debug-view shadow
-./build/dev/projects/clouds/clouds --debug-view ground-hit
-./build/dev/projects/clouds/clouds --debug-view cloud-alpha
-./build/dev/projects/clouds/clouds --debug-view shell
-./build/dev/projects/clouds/clouds --debug-view surface-shadow
-./build/dev/projects/clouds/clouds --debug-view domain
-./build/dev/projects/clouds/clouds --debug-view distance
-./build/dev/projects/clouds/clouds --debug-view base-density
-./build/dev/projects/clouds/clouds --debug-view detail-density
-./build/dev/projects/clouds/clouds --debug-view density-lod
-./build/dev/projects/clouds/clouds --debug-view step-length
-./build/dev/projects/clouds/clouds --debug-view local-march
-./build/dev/projects/clouds/clouds --debug-view far-horizon
-./build/dev/projects/clouds/clouds --debug-view cloud-depth
-./build/dev/projects/clouds/clouds --debug-view cloud-confidence
-./build/dev/projects/clouds/clouds --debug-view horizon-blend
-./build/dev/projects/clouds/clouds --cloud-shadow-strength 1.0
-./build/dev/projects/clouds/clouds --no-cloud-temporal
-./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode surface --output outputs/clouds-surface.png
-./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode high --output outputs/clouds-high.png
-./build/dev/projects/clouds/clouds --headless --frames 2 --cloud-camera-mode orbit --output outputs/clouds-orbit.png
-projects/clouds/capture_review.sh outputs/clouds-review
-./build/dev/projects/clouds/clouds --headless --capture video --frames 300 --fps 30 --cloud-camera-mode high --time-of-day-mode solar --time-speed-hours-per-second 0.05 --output outputs/clouds-high.mp4
+./build/dev/projects/clouds_legacy/clouds_legacy
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-camera-mode surface
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-camera-mode surface-up
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-camera-mode high
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-camera-mode high-oblique
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-camera-mode orbit
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-camera-mode orbit-terminator
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-weather-preset fair-weather
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-weather-preset broken-cumulus
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-weather-preset overcast-stratus
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-weather-preset storm-cells
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-weather-preset high-cirrus
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view weather
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view density
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view shadow
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view ground-hit
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view cloud-alpha
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view shell
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view surface-shadow
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view domain
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view distance
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view base-density
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view detail-density
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view density-lod
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view step-length
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view local-march
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view far-horizon
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view cloud-depth
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view cloud-confidence
+./build/dev/projects/clouds_legacy/clouds_legacy --debug-view horizon-blend
+./build/dev/projects/clouds_legacy/clouds_legacy --cloud-shadow-strength 1.0
+./build/dev/projects/clouds_legacy/clouds_legacy --no-cloud-temporal
+./build/dev/projects/clouds_legacy/clouds_legacy --headless --frames 2 --cloud-camera-mode surface --output outputs/clouds-surface.png
+./build/dev/projects/clouds_legacy/clouds_legacy --headless --frames 2 --cloud-camera-mode high --output outputs/clouds-high.png
+./build/dev/projects/clouds_legacy/clouds_legacy --headless --frames 2 --cloud-camera-mode orbit --output outputs/clouds-orbit.png
+projects/clouds_legacy/capture_review.sh outputs/clouds-review
+./build/dev/projects/clouds_legacy/clouds_legacy --headless --capture video --frames 300 --fps 30 --cloud-camera-mode high --time-of-day-mode solar --time-speed-hours-per-second 0.05 --output outputs/clouds-high.mp4
 ```
 
 Controls:
@@ -111,7 +111,7 @@ See
 [`docs/notes/cloud-weather-rendering-research.md`](../../docs/notes/cloud-weather-rendering-research.md)
 for the research context and promotion criteria.
 
-Use `projects/clouds/capture_review.sh outputs/clouds-review` to write the
+Use `projects/clouds_legacy/capture_review.sh outputs/clouds-review` to write the
 standard review bundle: surface, surface-up, high, high-oblique, orbit,
 orbit-terminator, temporal-off surface, weather, density, base-density,
 detail-density, density-lod, step-length, local-march, far-horizon,
@@ -120,7 +120,7 @@ is available the helper also writes `contact-sheet.png`.
 
 ## Known V1 Issues
 
-These are observed blockers before the clouds project should feed ocean or
+These are observed blockers before any cloud project should feed ocean or
 planet rendering:
 
 - Broad cloud-map seams have a first fix through a seam-safe spherical weather

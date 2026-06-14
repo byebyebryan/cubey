@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-APP="${APP:-${ROOT_DIR}/build/dev/projects/clouds/clouds}"
+APP="${APP:-${ROOT_DIR}/build/dev/projects/clouds_legacy/clouds_legacy}"
 OUT_DIR="${1:-${ROOT_DIR}/outputs/clouds-review-$(date +%Y%m%d-%H%M%S)}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"

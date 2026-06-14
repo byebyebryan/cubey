@@ -1,9 +1,9 @@
 cubey_add_app_target(
-    cubey_project_clouds
-    OUTPUT_NAME clouds
+    cubey_project_clouds_legacy
+    OUTPUT_NAME clouds_legacy
     SHADER_DEFINE CUBEY_CLOUDS_SHADER_DIR
-    WINDOWED_SMOKE_TEST clouds_reaches_glfw
-    WINDOWED_SMOKE_PATTERN "clouds: .*rendering planet-aware clouds project"
+    WINDOWED_SMOKE_TEST clouds_legacy_reaches_glfw
+    WINDOWED_SMOKE_PATTERN "clouds_legacy: .*rendering legacy planet-aware clouds project"
     SOURCES
         clouds_app.cpp
         clouds_config.cpp
@@ -24,32 +24,32 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
-    add_executable(cubey_project_clouds_tests
+    add_executable(cubey_project_clouds_legacy_tests
         clouds_config.cpp
         clouds_config_tests.cpp
     )
     target_include_directories(
-        cubey_project_clouds_tests
+        cubey_project_clouds_legacy_tests
         PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     target_link_libraries(
-        cubey_project_clouds_tests
+        cubey_project_clouds_legacy_tests
         PRIVATE
             cubey::core
             cubey::render
             cubey_project_options
             cubey_project_warnings
     )
-    add_test(NAME clouds_config_tests COMMAND cubey_project_clouds_tests)
+    add_test(NAME clouds_legacy_config_tests COMMAND cubey_project_clouds_legacy_tests)
 
-    set(CUBEY_CLOUDS_SURFACE_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/clouds-surface-headless.png"
+    set(CUBEY_CLOUDS_LEGACY_SURFACE_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/clouds-legacy-surface-headless.png"
     )
     cubey_add_png_smoke_test(
-        clouds_surface_headless_writes_png
-        cubey_project_clouds
-        "${CUBEY_CLOUDS_SURFACE_SMOKE_OUTPUT}"
+        clouds_legacy_surface_headless_writes_png
+        cubey_project_clouds_legacy
+        "${CUBEY_CLOUDS_LEGACY_SURFACE_SMOKE_OUTPUT}"
         --headless
         --frames
         2
@@ -57,19 +57,19 @@ if (BUILD_TESTING)
         surface
     )
     cubey_add_png_stats_test(
-        clouds_surface_headless_writes_png
-        "${CUBEY_CLOUDS_SURFACE_SMOKE_OUTPUT}"
+        clouds_legacy_surface_headless_writes_png
+        "${CUBEY_CLOUDS_LEGACY_SURFACE_SMOKE_OUTPUT}"
         0.005
         0.005
     )
 
-    set(CUBEY_CLOUDS_HIGH_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/clouds-high-headless.png"
+    set(CUBEY_CLOUDS_LEGACY_HIGH_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/clouds-legacy-high-headless.png"
     )
     cubey_add_png_smoke_test(
-        clouds_high_headless_writes_png
-        cubey_project_clouds
-        "${CUBEY_CLOUDS_HIGH_SMOKE_OUTPUT}"
+        clouds_legacy_high_headless_writes_png
+        cubey_project_clouds_legacy
+        "${CUBEY_CLOUDS_LEGACY_HIGH_SMOKE_OUTPUT}"
         --headless
         --frames
         2
@@ -77,19 +77,19 @@ if (BUILD_TESTING)
         high
     )
     cubey_add_png_stats_test(
-        clouds_high_headless_writes_png
-        "${CUBEY_CLOUDS_HIGH_SMOKE_OUTPUT}"
+        clouds_legacy_high_headless_writes_png
+        "${CUBEY_CLOUDS_LEGACY_HIGH_SMOKE_OUTPUT}"
         0.005
         0.005
     )
 
-    set(CUBEY_CLOUDS_ORBIT_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/clouds-orbit-headless.png"
+    set(CUBEY_CLOUDS_LEGACY_ORBIT_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/clouds-legacy-orbit-headless.png"
     )
     cubey_add_png_smoke_test(
-        clouds_orbit_headless_writes_png
-        cubey_project_clouds
-        "${CUBEY_CLOUDS_ORBIT_SMOKE_OUTPUT}"
+        clouds_legacy_orbit_headless_writes_png
+        cubey_project_clouds_legacy
+        "${CUBEY_CLOUDS_LEGACY_ORBIT_SMOKE_OUTPUT}"
         --headless
         --frames
         2
@@ -97,8 +97,8 @@ if (BUILD_TESTING)
         orbit
     )
     cubey_add_png_stats_test(
-        clouds_orbit_headless_writes_png
-        "${CUBEY_CLOUDS_ORBIT_SMOKE_OUTPUT}"
+        clouds_legacy_orbit_headless_writes_png
+        "${CUBEY_CLOUDS_LEGACY_ORBIT_SMOKE_OUTPUT}"
         0.005
         0.005
     )

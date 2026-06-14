@@ -509,8 +509,8 @@ class CloudsApp {
         return cubey::host::run_windowed_app(
             {
                 .run_config = run_config_,
-                .app_name = "clouds",
-                .ready_status = "rendering planet-aware clouds project",
+                .app_name = "clouds_legacy",
+                .ready_status = "rendering legacy planet-aware clouds project",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,

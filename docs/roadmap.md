@@ -528,7 +528,7 @@ Project checkpoints:
   simulation compute followed by fullscreen rendering; solver-internal barriers
   remain project-owned, while the compute-to-render boundary uses graph-owned
   buffer barriers and the backbuffer acquire/release path.
-- `projects/clouds` is the standalone planet-aware cloud/weather pressure
+- `projects/clouds_legacy` is the frozen standalone planet-aware cloud/weather pressure
   project. It renders a first spherical cloud shell with surface, high-altitude,
   and orbit camera modes before any ocean or planet integration. Its current
   checkpoint has seam-safe spherical weather, quality-scaled offscreen
