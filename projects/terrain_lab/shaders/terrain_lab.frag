@@ -77,9 +77,11 @@ vec3 material_color() {
     vec3 meadow = vec3(0.30, 0.39, 0.18);
     vec3 forest = vec3(0.11, 0.22, 0.12);
     vec3 snow = vec3(0.84, 0.86, 0.82);
+    vec3 sand = vec3(0.67, 0.56, 0.34);
     return rock * frag_material_a.x + soil * frag_material_a.y +
            scree * frag_material_a.z + meadow * frag_material_a.w +
-           forest * frag_material_b.x + snow * frag_material_b.y;
+           forest * frag_material_b.x + snow * frag_material_b.y +
+           sand * frag_material_b.w;
 }
 
 float strata_band_strength() {

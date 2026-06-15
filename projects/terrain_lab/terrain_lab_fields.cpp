@@ -302,14 +302,15 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
 
 [[nodiscard]] TerrainLabMaterialMask normalized_material_mask(float rock, float soil, float scree,
                                                               float meadow, float forest,
-                                                              float snow) {
+                                                              float snow, float sand) {
     rock = std::max(rock, 0.0F);
     soil = std::max(soil, 0.0F);
     scree = std::max(scree, 0.0F);
     meadow = std::max(meadow, 0.0F);
     forest = std::max(forest, 0.0F);
     snow = std::max(snow, 0.0F);
-    const float sum = rock + soil + scree + meadow + forest + snow;
+    sand = std::max(sand, 0.0F);
+    const float sum = rock + soil + scree + meadow + forest + snow + sand;
     if (sum <= 0.0F) {
         return {.soil = 1.0F};
     }
@@ -321,12 +322,13 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
         .meadow = meadow * inv_sum,
         .forest = forest * inv_sum,
         .snow = snow * inv_sum,
+        .sand = sand * inv_sum,
     };
 }
 
 [[nodiscard]] float material_entropy(const TerrainLabMaterialMask& mask) {
-    const std::array<float, 6> weights{
-        mask.rock, mask.soil, mask.scree, mask.meadow, mask.forest, mask.snow,
+    const std::array<float, 7> weights{
+        mask.rock, mask.soil, mask.scree, mask.meadow, mask.forest, mask.snow, mask.sand,
     };
     float entropy = 0.0F;
     for (const float weight : weights) {
@@ -728,7 +730,9 @@ void validate_material_mask(const TerrainLabMaterialMask& mask) {
     validate_normalized(mask.meadow, "terrain lab material masks must be normalized");
     validate_normalized(mask.forest, "terrain lab material masks must be normalized");
     validate_normalized(mask.snow, "terrain lab material masks must be normalized");
-    const float sum = mask.rock + mask.soil + mask.scree + mask.meadow + mask.forest + mask.snow;
+    validate_normalized(mask.sand, "terrain lab material masks must be normalized");
+    const float sum =
+        mask.rock + mask.soil + mask.scree + mask.meadow + mask.forest + mask.snow + mask.sand;
     if (std::abs(sum - 1.0F) > kMaterialMaskTolerance) {
         throw std::runtime_error("terrain lab material masks must sum to one");
     }
@@ -1140,7 +1144,7 @@ TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLa
             const float soil = (0.34F + deposition * 0.45F + (1.0F - slope_t) * 0.24F) *
                                (1.0F - snow * 0.75F) * lerp(0.82F, 1.16F, material_noise);
             const TerrainLabMaterialMask material =
-                normalized_material_mask(rock, soil, scree, meadow, forest, snow);
+                normalized_material_mask(rock, soil, scree, meadow, forest, snow, 0.0F);
             fields.material_masks[sample] = material;
 
             const float grass =
@@ -1342,7 +1346,7 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
             const float forest = wetness * deposition * (1.0F - slope_t) * 0.020F *
                                  lerp(0.50F, 1.20F, vegetation_patch);
             const TerrainLabMaterialMask material =
-                normalized_material_mask(rock, soil, scree, meadow, forest, 0.0F);
+                normalized_material_mask(rock, soil, scree, meadow, forest, 0.0F, 0.0F);
             fields.material_masks[sample] = material;
 
             const float grass =

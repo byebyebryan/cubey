@@ -25,6 +25,7 @@ struct TerrainLabMaterialMask {
     float meadow = 0.0F;
     float forest = 0.0F;
     float snow = 0.0F;
+    float sand = 0.0F;
 };
 
 struct TerrainLabFieldSummary {

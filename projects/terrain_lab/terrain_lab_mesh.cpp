@@ -281,7 +281,7 @@ TerrainLabMeshData make_terrain_lab_mesh(const TerrainLabFieldData& fields) {
                         fields.wetness[sample],
                     },
                 .material_a = {mask.rock, mask.soil, mask.scree, mask.meadow},
-                .material_b = {mask.forest, mask.snow, fields.deposition[sample], 0.0F},
+                .material_b = {mask.forest, mask.snow, fields.deposition[sample], mask.sand},
                 .vegetation =
                     {
                         fields.grass_density[sample],

@@ -39,7 +39,8 @@ void require_near(float value, float expected, float tolerance, const char* mess
 }
 
 float material_sum(const cubey::projects::terrain_lab::TerrainLabMaterialMask& mask) {
-    return mask.rock + mask.soil + mask.scree + mask.meadow + mask.forest + mask.snow;
+    return mask.rock + mask.soil + mask.scree + mask.meadow + mask.forest + mask.snow +
+           mask.sand;
 }
 
 struct FieldSampleStats {
@@ -56,6 +57,7 @@ struct FieldSampleStats {
     double meadow_sum = 0.0;
     double forest_sum = 0.0;
     double snow_sum = 0.0;
+    double sand_sum = 0.0;
     double grass_sum = 0.0;
     double shrub_sum = 0.0;
     double tree_sum = 0.0;
@@ -131,11 +133,13 @@ inspect_field_samples(const cubey::projects::terrain_lab::TerrainLabFieldData& f
         stats.meadow_sum += material.meadow;
         stats.forest_sum += material.forest;
         stats.snow_sum += material.snow;
+        stats.sand_sum += material.sand;
         stats.grass_sum += fields.grass_density[index];
         stats.shrub_sum += fields.shrub_density[index];
         stats.tree_sum += fields.tree_density[index];
         stats.saw_material_variation = stats.saw_material_variation || material.rock > 0.05F ||
-                                       material.forest > 0.05F || material.snow > 0.05F;
+                                       material.forest > 0.05F || material.snow > 0.05F ||
+                                       material.sand > 0.05F;
         stats.saw_tree_density = stats.saw_tree_density || fields.tree_density[index] > 0.01F;
         stats.saw_detail = stats.saw_detail || std::abs(fields.detail_height_m[index]) > 0.001F;
         stats.saw_process = stats.saw_process || std::abs(fields.process_delta_m[index]) > 0.001F;
@@ -863,6 +867,8 @@ int main() {
                  "terrain lab mesh should pack snow material");
     require_near(first_vertex.material_b.z, fields.deposition.front(), 0.001F,
                  "terrain lab mesh should pack deposition");
+    require_near(first_vertex.material_b.w, fields.material_masks.front().sand, 0.001F,
+                 "terrain lab mesh should pack sand");
     require_near(first_vertex.vegetation.x, fields.grass_density.front(), 0.001F,
                  "terrain lab mesh should pack grass density");
     require_near(first_vertex.vegetation.y, fields.shrub_density.front(), 0.001F,
