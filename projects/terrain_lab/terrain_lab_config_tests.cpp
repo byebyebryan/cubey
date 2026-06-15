@@ -241,6 +241,12 @@ int main() {
     require(terrain::terrain_lab_slice_preset_from_name("temperate_mountain_watershed") ==
                 terrain::TerrainLabSlicePreset::TemperateMountainWatershed,
             "terrain lab slice preset should accept underscore alias");
+    require(terrain::terrain_lab_slice_preset_from_name("desert-dunes") ==
+                terrain::TerrainLabSlicePreset::DesertDunes,
+            "terrain lab slice preset should parse desert dunes");
+    require(terrain::terrain_lab_slice_preset_from_name("desert_dunes") ==
+                terrain::TerrainLabSlicePreset::DesertDunes,
+            "terrain lab slice preset should accept desert dunes underscore alias");
 
     require(terrain::terrain_lab_camera_preset_from_name("") ==
                 terrain::TerrainLabCameraPreset::Orbit,
@@ -795,6 +801,58 @@ int main() {
     require(watershed_summary.sink_sample_ratio > 0.0F &&
                 watershed_summary.sink_sample_ratio < 0.50F,
             "terrain lab watershed drainage analysis should avoid sink-dominated terrain");
+
+    terrain::TerrainLabConfig dunes_config = small;
+    dunes_config.slice_preset = terrain::TerrainLabSlicePreset::DesertDunes;
+    const terrain::TerrainLabFieldData dunes_fields =
+        terrain::generate_terrain_lab_fields(dunes_config);
+    terrain::validate_terrain_lab_fields(dunes_fields);
+    require(dunes_fields.watershed_count == 1U,
+            "terrain lab dunes sentinel should use one diagnostic basin");
+    require(dunes_fields.max_channel_distance_m > dunes_fields.desc.cell_size_m,
+            "terrain lab dunes sentinel should track interdune distance range");
+    const FieldSampleStats dunes_stats = inspect_field_samples(dunes_fields);
+    const terrain::TerrainLabFieldSummary dunes_summary =
+        terrain::summarize_terrain_lab_fields(dunes_fields);
+    require(dunes_stats.saw_material_variation,
+            "terrain lab dunes sentinel should produce varied sand material masks");
+    require(dunes_stats.saw_detail, "terrain lab dunes sentinel should produce ripple detail");
+    require(dunes_stats.saw_process,
+            "terrain lab dunes sentinel should produce wind-process fields");
+    require(dunes_stats.saw_divide, "terrain lab dunes sentinel should expose dune crests");
+    require(dunes_stats.saw_channel,
+            "terrain lab dunes sentinel should expose weak interdune diagnostics");
+    require(dunes_stats.channel_count == 0U,
+            "terrain lab dunes sentinel should not promote interdunes to hydrology channels");
+    require(dunes_stats.non_channel_count > 16U,
+            "terrain lab dunes sentinel should produce enough non-channel samples");
+    require(dunes_stats.shrub_count > 8U,
+            "terrain lab dunes sentinel should produce sparse shrub samples");
+    const double inv_dunes_count = 1.0 / static_cast<double>(dunes_fields.sample_count());
+    const float dunes_mean_sand = static_cast<float>(dunes_stats.sand_sum * inv_dunes_count);
+    const float dunes_mean_forest = static_cast<float>(dunes_stats.forest_sum * inv_dunes_count);
+    const float dunes_mean_snow = static_cast<float>(dunes_stats.snow_sum * inv_dunes_count);
+    const float dunes_mean_shrub = static_cast<float>(dunes_stats.shrub_sum * inv_dunes_count);
+    require(dunes_mean_sand > 0.72F,
+            "terrain lab dunes sentinel should be dominated by sand material");
+    require(dunes_mean_forest < 0.001F,
+            "terrain lab dunes sentinel should keep forest material absent");
+    require(dunes_mean_snow < 0.001F,
+            "terrain lab dunes sentinel should keep snow material absent");
+    require(dunes_summary.mean_wetness < 0.08F,
+            "terrain lab dunes sentinel should stay hydro-light");
+    require(dunes_summary.mean_channel_influence > 0.0F &&
+                dunes_summary.mean_channel_influence < 0.18F,
+            "terrain lab dunes sentinel should keep channel influence diagnostic only");
+    require(dunes_summary.mean_tree_density == 0.0F,
+            "terrain lab dunes sentinel should not produce trees");
+    require(dunes_mean_shrub > 0.001F && dunes_mean_shrub < 0.040F,
+            "terrain lab dunes sentinel should keep shrubs sparse");
+    require(dunes_summary.sink_sample_count > 0U &&
+                dunes_summary.sink_sample_count < dunes_summary.sample_count,
+            "terrain lab dunes drainage analysis should expose bounded sink samples");
+    require(dunes_summary.sink_sample_ratio > 0.0F && dunes_summary.sink_sample_ratio < 0.50F,
+            "terrain lab dunes drainage analysis should avoid sink-dominated terrain");
 
     terrain::TerrainLabConfig other_seed = small;
     other_seed.seed += 1U;

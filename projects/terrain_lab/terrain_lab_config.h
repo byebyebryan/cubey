@@ -15,11 +15,13 @@ namespace cubey::projects::terrain_lab {
 enum class TerrainLabSlicePreset : std::uint32_t {
     AridMesaCanyon = 0,
     TemperateMountainWatershed = 1,
+    DesertDunes = 2,
 };
 
-inline constexpr std::array<TerrainLabSlicePreset, 2> kTerrainLabSlicePresets{
+inline constexpr std::array<TerrainLabSlicePreset, 3> kTerrainLabSlicePresets{
     TerrainLabSlicePreset::AridMesaCanyon,
     TerrainLabSlicePreset::TemperateMountainWatershed,
+    TerrainLabSlicePreset::DesertDunes,
 };
 
 enum class TerrainLabCameraPreset : std::uint32_t {
@@ -104,6 +106,8 @@ struct TerrainLabConfig {
         return "arid-mesa-canyon";
     case TerrainLabSlicePreset::TemperateMountainWatershed:
         return "temperate-mountain-watershed";
+    case TerrainLabSlicePreset::DesertDunes:
+        return "desert-dunes";
     }
     return "arid-mesa-canyon";
 }
