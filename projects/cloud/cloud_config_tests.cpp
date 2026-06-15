@@ -74,8 +74,12 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include cloud alpha");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::Distance) ==
+                cubey::projects::cloud::CloudsDebugView::MetadataDistance,
+            "cloud debug view should include metadata distance diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::MetadataDensity) ==
                 cubey::projects::cloud::CloudsDebugView::BaseDensity,
-            "cloud debug view should include base-density diagnostics");
+            "cloud debug view should include density diagnostics after metadata");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::DetailDensity) ==
                 cubey::projects::cloud::CloudsDebugView::Final,
@@ -98,6 +102,18 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud::clouds_debug_view_from_string("distance") ==
                 cubey::projects::cloud::CloudsDebugView::Distance,
             "cloud distance debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("metadata-distance") ==
+                cubey::projects::cloud::CloudsDebugView::MetadataDistance,
+            "cloud metadata distance debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("metadata-alpha") ==
+                cubey::projects::cloud::CloudsDebugView::MetadataAlpha,
+            "cloud metadata alpha debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("metadata-confidence") ==
+                cubey::projects::cloud::CloudsDebugView::MetadataConfidence,
+            "cloud metadata confidence debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("metadata-density") ==
+                cubey::projects::cloud::CloudsDebugView::MetadataDensity,
+            "cloud metadata density debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("base-density") ==
                 cubey::projects::cloud::CloudsDebugView::BaseDensity,
             "cloud base-density debug view should parse");

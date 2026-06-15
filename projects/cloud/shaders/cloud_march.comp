@@ -111,9 +111,12 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
         float high_modifier =
             mix(high_fbm, 1.0 - high_fbm, clamp(height_fraction * 10.0, 0.0, 1.0));
         detail_density = high_modifier;
-        base_with_coverage -= high_modifier * (1.0 - base_with_coverage);
-        base_with_coverage = cloud_remap(base_with_coverage * 2.0,
-                                             high_modifier * 0.2, 1.0, 0.0, 1.0);
+        float erosion_strength = clamp(params.weather_feature_weights.w, 0.0, 1.0);
+        float eroded = base_with_coverage -
+                       high_modifier * (1.0 - base_with_coverage) * erosion_strength;
+        float remapped =
+            cloud_remap(eroded * 2.0, high_modifier * 0.2, 1.0, 0.0, 1.0);
+        base_with_coverage = mix(base_with_coverage, remapped, erosion_strength);
     }
 
     float density = clamp(base_with_coverage, 0.0, 1.0);
@@ -299,13 +302,17 @@ MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
                                  (1.0 - exp(-sample_data.density * 4.0));
             float rim_phase =
                 cloud_rim_phase(light_dot_eye, light_transmittance, sample_data);
-            vec3 ambient_source = cloud_cloud_ambient(pos, direction, sample_data) * 0.42;
+            vec3 ambient_source = cloud_cloud_ambient(pos, direction, sample_data) * 0.42 *
+                                  params.lighting_strengths.x;
             vec3 direct_source =
                 sun_color * light_visibility * phase_response * powder_gain *
-                (0.24 + 0.58 * day + 0.30 * sun_elevation);
+                (0.24 + 0.58 * day + 0.30 * sun_elevation) *
+                params.lighting_strengths.y;
             vec3 multi_source = sun_color * body_scatter * (0.08 + 0.24 * day) *
-                                (0.45 + 0.55 * sample_data.height_fraction);
-            vec3 phase_source = sun_color * rim_phase * (0.70 + 0.65 * day);
+                                (0.45 + 0.55 * sample_data.height_fraction) *
+                                params.lighting_strengths.y;
+            vec3 phase_source = sun_color * rim_phase * (0.70 + 0.65 * day) *
+                                params.lighting_strengths.z;
             vec3 source = (ambient_source + direct_source + multi_source + phase_source) *
                           sample_data.density;
             float d_transmittance = exp(sample_data.density * sigma_ds);

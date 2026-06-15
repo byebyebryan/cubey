@@ -232,6 +232,18 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "distance") {
         return CloudsDebugView::Distance;
     }
+    if (value == "metadata-distance") {
+        return CloudsDebugView::MetadataDistance;
+    }
+    if (value == "metadata-alpha") {
+        return CloudsDebugView::MetadataAlpha;
+    }
+    if (value == "metadata-confidence") {
+        return CloudsDebugView::MetadataConfidence;
+    }
+    if (value == "metadata-density") {
+        return CloudsDebugView::MetadataDensity;
+    }
     if (value == "base-density") {
         return CloudsDebugView::BaseDensity;
     }
@@ -271,6 +283,14 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "cloud-alpha";
     case CloudsDebugView::Distance:
         return "distance";
+    case CloudsDebugView::MetadataDistance:
+        return "metadata-distance";
+    case CloudsDebugView::MetadataAlpha:
+        return "metadata-alpha";
+    case CloudsDebugView::MetadataConfidence:
+        return "metadata-confidence";
+    case CloudsDebugView::MetadataDensity:
+        return "metadata-density";
     case CloudsDebugView::BaseDensity:
         return "base-density";
     case CloudsDebugView::DetailDensity:

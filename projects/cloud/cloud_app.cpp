@@ -64,6 +64,7 @@ constexpr std::uint32_t kCloudDetailNoiseBinding = 3;
 constexpr std::uint32_t kCloudWeatherBinding = 4;
 constexpr std::uint32_t kCloudMetadataBinding = 5;
 constexpr std::uint32_t kCloudCompositeCloudBinding = 1;
+constexpr std::uint32_t kCloudCompositeMetadataBinding = 2;
 
 constexpr std::array<CloudsCameraMode, 6> kCloudCameraModes{
     CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
@@ -81,13 +82,17 @@ constexpr std::array<CloudsWeatherPreset, 5> kCloudWeatherPresets{
     CloudsWeatherPreset::StormCells,
     CloudsWeatherPreset::HighCirrus,
 };
-constexpr std::array<CloudsDebugView, 16> kCloudDebugViews{
+constexpr std::array<CloudsDebugView, 20> kCloudDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
     CloudsDebugView::Lighting,     CloudsDebugView::AmbientLight,
     CloudsDebugView::DirectLight,  CloudsDebugView::PhaseLight,
     CloudsDebugView::Shadow,       CloudsDebugView::Steps,    CloudsDebugView::Background,
     CloudsDebugView::CloudAlpha,   CloudsDebugView::Distance,
+    CloudsDebugView::MetadataDistance,
+    CloudsDebugView::MetadataAlpha,
+    CloudsDebugView::MetadataConfidence,
+    CloudsDebugView::MetadataDensity,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
 };
 
@@ -204,6 +209,11 @@ std::filesystem::path shader_path(const char* filename) {
                 },
                 cubey::vulkan::DescriptorSetBindingConfig{
                     .binding = kCloudCompositeCloudBinding,
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudCompositeMetadataBinding,
                     .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                     .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                 },
@@ -932,6 +942,7 @@ class CloudApp {
             });
         graph.add_pass("cloud composite", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(cloud_product)
+            .read_texture(cloud_metadata)
             .write_color(backbuffer)
             .execute([this, backbuffer, frame_slot](
                          const cubey::render::RenderGraphExecutionContext& context) {
@@ -994,6 +1005,9 @@ class CloudApp {
                     .combined_image_sampler(kCloudCompositeCloudBinding,
                                             composite_sampler().handle(), cloud_product.view,
                                             cloud_product.layout)
+                    .combined_image_sampler(kCloudCompositeMetadataBinding,
+                                            composite_sampler().handle(), cloud_metadata.view,
+                                            cloud_metadata.layout)
                     .update(device);
             });
     }
