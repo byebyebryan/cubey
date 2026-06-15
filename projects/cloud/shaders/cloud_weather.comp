@@ -1,0 +1,26 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+// TerrainEngine-OpenGL reference port.
+// Weather map channels: coverage, cloud type, spare detail, alpha.
+
+#include "cloud_noise_common.glsl"
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout(rgba8, set = 0, binding = 0) uniform writeonly image2D out_weather;
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(out_weather);
+    if (any(greaterThanEqual(pixel, size))) {
+        return;
+    }
+
+    vec2 uv = vec2(float(pixel.x) + 2.0, float(pixel.y)) / 1024.0;
+    vec2 shifted_uv = uv + vec2(5.5);
+
+    float cloud_type = clamp(
+        cloud_perlin_noise_2d(shifted_uv, 100.0 * 3.0, 0.3, 0.7, 10), 0.0, 1.0);
+    float coverage = cloud_perlin_noise_2d(uv, 100.0 * 0.95, 0.8, 0.5, 4);
+    imageStore(out_weather, pixel, vec4(clamp(coverage, 0.0, 1.0), cloud_type, 0.0, 1.0));
+}

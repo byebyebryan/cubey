@@ -528,21 +528,16 @@ Project checkpoints:
   simulation compute followed by fullscreen rendering; solver-internal barriers
   remain project-owned, while the compute-to-render boundary uses graph-owned
   buffer barriers and the backbuffer acquire/release path.
-- `projects/clouds_legacy` is the frozen standalone planet-aware cloud/weather pressure
-  project. It renders a first spherical cloud shell with surface, high-altitude,
-  and orbit camera modes before any ocean or planet integration. Its current
-  checkpoint has seam-safe spherical weather, quality-scaled offscreen
-  cloud-product/composite rendering, broken-cloud inspection tuning, explicit
-  composition diagnostics, prototype analytic surface shadows, high-view horizon
-  cloud fading, shared sky-background classification for non-ground rays,
-  temporal reconstruction, raw cloud-product debug passthrough, a capped
-  spherical-shell local march for surface/high cameras, local vertical
-  render-scale floors, final-view-aspect ray tracing for anisotropic cloud
-  targets, local horizon sample jitter/filtering, and base/detail density
-  diagnostics for local horizon artifacts. Its current blockers are rough
-  controls, residual raw surface/high horizontal streaking, no weather authoring
-  path, and no promoted renderer API for cloud radiance/transmittance/shadow
-  outputs used by ocean or planet consumers.
+- `projects/cloud` is the active standalone production cloud/weather project.
+  It starts from `cloud_ref`'s texture-backed coherent density path with
+  generated 3D base/detail noise, a generated 2D weather map, a spherical-shell
+  direct march, cloud product/composite passes, and diagnostics for raw density,
+  transmittance, lighting, distance, and steps. `projects/clouds_legacy` remains
+  the frozen planet-aware pressure project for surface/high/orbit integration
+  lessons, while `projects/cloud_ref_2` remains the cached-sky architecture
+  reference. Cloud outputs should not be integrated into ocean or planet until
+  the active project shows credible raw cloud masses without relying on cache,
+  temporal reconstruction, or final blur.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer

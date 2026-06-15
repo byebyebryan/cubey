@@ -61,6 +61,7 @@ Detailed current foundation notes live under
 Project-specific design stays beside the project:
 
 - [Atmosphere](../projects/atmosphere/README.md)
+- [Cloud](../projects/cloud/README.md)
 - [Cloud Ref](../projects/cloud_ref/README.md)
 - [Cloud Ref 2](../projects/cloud_ref_2/README.md)
 - [Clouds Legacy](../projects/clouds_legacy/README.md)

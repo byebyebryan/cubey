@@ -1,4 +1,5 @@
 add_subdirectory(atmosphere)
+add_subdirectory(cloud)
 add_subdirectory(cloud_ref)
 add_subdirectory(cloud_ref_2)
 add_subdirectory(clouds_legacy)
