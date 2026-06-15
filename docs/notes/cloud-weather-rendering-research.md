@@ -517,3 +517,17 @@ The useful acceptance check is therefore: cached and direct finals should read
 as the same cloud model, synthetic cache views should remain continuous, and
 diff views should be used to locate cache resolution/filter/update artifacts
 rather than to judge final visual quality directly.
+
+## Production Direction Promotion
+
+The reference passes have now been promoted into
+[`docs/architecture/cloud-rendering.md`](../architecture/cloud-rendering.md).
+That architecture note is the current direction for `projects/cloud`.
+
+Summary:
+
+- stop tuning `clouds_legacy` as a production base;
+- keep `cloud_ref` as the visual/density-shape reference;
+- keep `cloud_ref_2` as the cached-sky architecture reference;
+- start production cloud work with texture-backed coherent density and shared
+  atmosphere/config integration before adding the cached hemisphere path.

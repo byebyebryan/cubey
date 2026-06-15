@@ -45,6 +45,8 @@ Detailed current foundation notes live under
   terrain-field, sky/celestial, and ocean handoff direction.
 - [Ocean adjacent systems](architecture/ocean-adjacent-systems.md): atmosphere,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
+- [Cloud rendering](architecture/cloud-rendering.md): production cloud renderer
+  direction from the legacy, TerrainEngine, and Godot-v2 reference passes.
 - [glTF assets and PBR](architecture/gltf-assets.md): glTF import, PBR material
   contract, animation/deformation, texture upload, HDR environments, and viewer
   boundaries.
@@ -60,6 +62,7 @@ Project-specific design stays beside the project:
 
 - [Atmosphere](../projects/atmosphere/README.md)
 - [Cloud Ref](../projects/cloud_ref/README.md)
+- [Cloud Ref 2](../projects/cloud_ref_2/README.md)
 - [Clouds Legacy](../projects/clouds_legacy/README.md)
 - [Smoke 2D](../projects/fluid/smoke_2d/README.md)
 - [Water 2D](../projects/fluid/water_2d/README.md)

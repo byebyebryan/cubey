@@ -33,3 +33,6 @@ the detailed foundation notes under `docs/architecture/`.
   cost model, observed map-size tradeoffs, and optimization guardrails.
 - [Ocean visual capture recipes](ocean-visual-captures.md): repeatable ocean
   debug, cascade isolation, far-field, and reference comparison matrix.
+- [Cloud and weather rendering research](cloud-weather-rendering-research.md):
+  historical cloud research, reference-code passes, and checkpoints that led to
+  the current production direction in `docs/architecture/cloud-rendering.md`.
