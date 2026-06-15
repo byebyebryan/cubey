@@ -31,7 +31,15 @@ capture high-oblique --cloud-camera-mode high-oblique
 capture surface --cloud-camera-mode surface
 capture high --cloud-camera-mode high
 capture orbit-preview --cloud-camera-mode orbit
+capture surface-up-bayer --cloud-camera-mode surface-up --cloud-sampling-mode bayer
+capture surface-up-no-jitter --cloud-camera-mode surface-up --cloud-sampling-mode off
+capture high-oblique-bayer --cloud-camera-mode high-oblique --cloud-sampling-mode bayer
+capture high-oblique-no-jitter --cloud-camera-mode high-oblique --cloud-sampling-mode off
 capture raw-final --cloud-camera-mode surface-up --debug-view raw-final
+capture raw-final-bayer --cloud-camera-mode surface-up --debug-view raw-final \
+    --cloud-sampling-mode bayer
+capture raw-final-no-jitter --cloud-camera-mode surface-up --debug-view raw-final \
+    --cloud-sampling-mode off
 capture weather --cloud-camera-mode surface-up --debug-view weather
 capture base-density --cloud-camera-mode surface-up --debug-view base-density
 capture detail-density --cloud-camera-mode surface-up --debug-view detail-density

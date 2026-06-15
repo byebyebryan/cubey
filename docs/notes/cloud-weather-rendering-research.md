@@ -308,6 +308,28 @@ The straight `surface` camera remains a quiet horizon review angle; use
 full presentation stack: real water rendering, skybox textures, bloom FBOs,
 god rays, and separate cloud-distance outputs remain unported.
 
+## Production Cloud Sampling Checkpoint
+
+`projects/cloud` now exposes deterministic static ray-start sampling as a
+first-class control instead of baking Bayer jitter into the marcher. The default
+mode is screen-space interleaved-gradient jitter, with Bayer retained for
+reference comparison and `off` mapped to center-of-step sampling. A
+`clouds.jitter_strength` control blends any selected pattern back toward center
+sampling.
+
+The final composite resolve now reads the cloud metadata target as well as the
+cloud radiance/transmittance product. `final` resolves only across neighboring
+samples with compatible opacity, mean distance, and confidence, while
+`raw-final` remains an unfiltered view of the direct cloud product. This keeps
+the final view useful for presentation without hiding whether an artifact comes
+from the raw march.
+
+Use `projects/cloud/capture_review.sh` to compare `surface-up`, `high-oblique`,
+their Bayer/no-jitter variants, and raw-final variants in one bundle. If
+interleaved, Bayer, and off still share the same cloud-shape failure, treat the
+issue as density/weather or distance-regime architecture rather than sampling
+noise.
+
 The eleventh checkpoint implements the first version of that distance-regime
 split. Cloud frame data moved from maxed-out push constants into a per-frame
 uniform buffer so the shader can carry explicit feature-isolation controls.

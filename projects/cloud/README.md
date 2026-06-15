@@ -16,6 +16,8 @@ Current V1 scope:
 - shared `clouds.*` `RunConfig` options and hand-authored ImGui controls;
 - tunable ambient/direct/phase lighting, final contrast/saturation, sun glare,
   horizon glow, and alpha-aware final resolve strength;
+- configurable static ray-start sampling (`interleaved`, `bayer`, or `off`)
+  with jitter-strength control;
 - diagnostics for weather, base/detail density, density, transmittance,
   lighting, shadow, cloud alpha, distance, metadata distance/alpha/confidence,
   metadata density, steps, and background.
@@ -50,6 +52,9 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view steps
 ./build/dev/projects/cloud/cloud --cloud-ambient-strength 0.85 --cloud-direct-strength 1.25
 ./build/dev/projects/cloud/cloud --cloud-final-contrast 1.15 --cloud-resolve-strength 0.45
+./build/dev/projects/cloud/cloud --cloud-sampling-mode bayer
+./build/dev/projects/cloud/cloud --cloud-sampling-mode off
+./build/dev/projects/cloud/cloud --cloud-sampling-mode interleaved --cloud-jitter-strength 0.5
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode surface-up --output outputs/cloud-v1-surface-up.png
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode high-oblique --output outputs/cloud-v1-high-oblique.png
 projects/cloud/capture_review.sh outputs/cloud-v1-review
@@ -62,16 +67,19 @@ Controls:
 - Space: play/pause solar time.
 - `R`: reset camera, time, and cloud settings.
 - `Shape / Density`: base shape scale, detail erosion, and powder response.
+- `Sampling`: ray-start sampling mode and jitter amount.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
 - `Final Resolve`: alpha-aware smoothing amount plus final contrast,
-  saturation, horizon glow, and sun glare controls.
+  saturation, horizon glow, sun glare, and metadata-aware neighborhood resolve.
 
 Known deferrals:
 
 - No cached octahedral hemisphere path yet. `cloud_ref_2` remains the cache
   architecture reference for a later pass.
 - No temporal reconstruction yet. The raw direct signal must be credible first.
+- Static sampling controls are diagnostic and deterministic. A blue-noise or
+  temporal sampling path remains deferred until raw shape is stable.
 - No ocean, planet, terrain, or PBR integration yet. Future consumers should
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,

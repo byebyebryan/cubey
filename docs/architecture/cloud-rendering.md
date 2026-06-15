@@ -120,6 +120,9 @@ Initial scope:
   inputs;
 - tunable direct/ambient/phase lighting and final resolve controls so final
   image polish can be isolated from raw march quality;
+- deterministic static sampling controls for interleaved-gradient, Bayer, and
+  center-of-step ray starts, plus a metadata-aware final resolve that uses
+  opacity, mean distance, and confidence while leaving `raw-final` unfiltered;
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;
@@ -138,6 +141,7 @@ Deferred until the shape is credible:
 - cloud shadow consumption by ocean/terrain;
 - full cached octahedral sky blending;
 - temporal reconstruction beyond basic diagnostic toggles;
+- blue-noise/spatiotemporal sampling until a useful temporal path exists;
 - cirrus, storm, and multi-layer weather authoring beyond the first useful
   cumulus/broken-cloud model.
 
@@ -193,6 +197,8 @@ The first production milestone should be small and hard to fake:
 4. Add raw diagnostics and a repeatable capture script before tuning.
 5. Validate surface-up and high-oblique captures against `cloud_ref`, not
    `cloud_ref_2`.
+6. Keep sampling and resolve controls isolated so capture bundles can compare
+   default, Bayer, and no-jitter output before adding temporal accumulation.
 
 Acceptance for this milestone:
 
@@ -201,7 +207,7 @@ Acceptance for this milestone:
 - surface/high captures do not show the legacy horizontal streaking as the
   dominant artifact;
 - the project exposes enough controls to isolate density, detail erosion,
-  weather map, lighting, composition, and metadata output;
+  weather map, sampling, lighting, composition, and metadata output;
 - the implementation does not duplicate project-local atmosphere horizon logic.
 
 Only after that should the production project add the cached hemisphere path
