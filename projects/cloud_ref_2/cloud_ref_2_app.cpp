@@ -83,7 +83,7 @@ constexpr std::array<CloudsWeatherPreset, 5> kCloudRef2WeatherPresets{
     CloudsWeatherPreset::StormCells,
     CloudsWeatherPreset::HighCirrus,
 };
-constexpr std::array<CloudsDebugView, 21> kCloudRef2DebugViews{
+constexpr std::array<CloudsDebugView, 25> kCloudRef2DebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
     CloudsDebugView::RawCloudProduct,
     CloudsDebugView::Weather,
@@ -93,6 +93,9 @@ constexpr std::array<CloudsDebugView, 21> kCloudRef2DebugViews{
     CloudsDebugView::Shadow,       CloudsDebugView::Steps,
     CloudsDebugView::BlendFrom,    CloudsDebugView::BlendTo,
     CloudsDebugView::UpdateRegion, CloudsDebugView::OctUv,
+    CloudsDebugView::CacheDirection,
+    CloudsDebugView::CacheHorizon, CloudsDebugView::CacheChecker,
+    CloudsDebugView::CacheAlpha,
     CloudsDebugView::Background,   CloudsDebugView::CloudAlpha,
     CloudsDebugView::Distance,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
@@ -103,7 +106,6 @@ constexpr std::array<CloudsCacheFrames, 4> kCloudRef2CacheFrameModes{
     CloudsCacheFrames::Frames64,
     CloudsCacheFrames::Frames256,
 };
-constexpr std::array<std::uint32_t, 4> kCloudRef2CacheTextureSizes{256U, 512U, 768U, 1024U};
 
 struct CloudRef2FrameUniforms {
     cubey::math::Vec4 camera_right_aspect;
@@ -640,6 +642,7 @@ class CloudRef2App {
         }
         if (input.key_pressed(cubey::input::Key::D)) {
             config_.debug_view = next_cloud_ref_2_debug_view(config_.debug_view);
+            reset_cache_state();
         }
         if (input.key_pressed(cubey::input::Key::Space)) {
             config_.time.playing = !config_.time.playing;
@@ -691,19 +694,22 @@ class CloudRef2App {
         if (ImGui::Button(config_.time.playing ? "Pause" : "Play")) {
             config_.time.playing = !config_.time.playing;
         }
-        draw_enum_combo("Camera", config_.camera_mode, kCloudRef2CameraModes,
-                        clouds_camera_mode_name);
-        draw_enum_combo("Weather", config_.weather_preset, kCloudRef2WeatherPresets,
-                        clouds_weather_preset_name);
+        bool cache_dirty = false;
+        cache_dirty |= draw_enum_combo("Camera", config_.camera_mode, kCloudRef2CameraModes,
+                                       clouds_camera_mode_name);
+        cache_dirty |= draw_enum_combo("Weather", config_.weather_preset, kCloudRef2WeatherPresets,
+                                       clouds_weather_preset_name);
         draw_enum_combo("Quality", config_.quality, kCloudRef2QualityModes, clouds_quality_name);
-        draw_enum_combo("Debug", config_.debug_view, kCloudRef2DebugViews, clouds_debug_view_name);
-        draw_enum_combo("Cache frames", config_.cache_frames, kCloudRef2CacheFrameModes,
-                        clouds_cache_frames_name);
+        cache_dirty |=
+            draw_enum_combo("Debug", config_.debug_view, kCloudRef2DebugViews, clouds_debug_view_name);
+        cache_dirty |= draw_enum_combo("Cache frames", config_.cache_frames, kCloudRef2CacheFrameModes,
+                                       clouds_cache_frames_name);
         if (ImGui::BeginCombo("Cache size", std::to_string(config_.cache_texture_size).c_str())) {
-            for (std::uint32_t size : kCloudRef2CacheTextureSizes) {
+            for (std::uint32_t size : kCloudsCacheTextureSizes) {
                 const bool selected = size == config_.cache_texture_size;
                 if (ImGui::Selectable(std::to_string(size).c_str(), selected)) {
                     config_.cache_texture_size = size;
+                    cache_dirty = true;
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();
@@ -723,6 +729,9 @@ class CloudRef2App {
         ImGui::SliderFloat("Horizon fill", &config_.horizon_strength, 0.0F, 2.0F, "%.2f");
         ImGui::Checkbox("Powder", &config_.powder_enabled);
         ImGui::SliderFloat("Weather scale", &config_.weather_scale_km, 40.0F, 500.0F, "%.0f km");
+        if (cache_dirty) {
+            reset_cache_state();
+        }
         ImGui::Separator();
         ImGui::Text("FPS: %.1f / %.2f ms", latest_fps_, latest_frame_ms_);
         ImGui::Text("Base noise: %u^3", kBaseNoiseSize);
@@ -738,13 +747,15 @@ class CloudRef2App {
     }
 
     template <typename T, std::size_t N, typename NameFn>
-    void draw_enum_combo(const char* label, T& value, const std::array<T, N>& values,
+    bool draw_enum_combo(const char* label, T& value, const std::array<T, N>& values,
                          NameFn name_fn) {
+        bool changed = false;
         if (ImGui::BeginCombo(label, name_fn(value))) {
             for (T candidate : values) {
                 const bool selected = candidate == value;
                 if (ImGui::Selectable(name_fn(candidate), selected)) {
                     value = candidate;
+                    changed = true;
                     if constexpr (std::is_same_v<T, CloudsCameraMode>) {
                         config_.camera_altitude_m = clouds_default_camera_altitude_m(value);
                         pitch_ = cloud_ref_2_clamp_pitch(value, 0.0F);
@@ -758,6 +769,7 @@ class CloudRef2App {
             }
             ImGui::EndCombo();
         }
+        return changed;
     }
 
     void reset_config() {

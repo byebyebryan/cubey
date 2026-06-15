@@ -65,6 +65,7 @@ constexpr std::array<std::string_view, 6> kMilkyWayLayers{
 constexpr std::array<std::string_view, 6> kCloudCameraModes{
     "surface", "surface-up", "high", "high-oblique", "orbit", "orbit-terminator"};
 constexpr std::array<std::string_view, 3> kCloudQualities{"quarter", "half", "full"};
+constexpr std::array<std::string_view, 4> kCloudCacheFrames{"4", "16", "64", "256"};
 constexpr std::array<std::string_view, 10> kCloudWeatherPresets{
     "fair-weather",     "broken-cumulus", "overcast-stratus", "storm-cells",
     "high-cirrus",      "clear",          "scattered",        "inspection",
@@ -101,7 +102,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 197> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 199> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -512,6 +513,14 @@ constexpr std::array<ConfigOptionDescriptor, 197> kRunConfigOptions{
            "--cloud-weather-preset", "Weather Preset", "Clouds",
            "Cloud coverage, density, scale, and wind preset.", ConfigOptionType::Enum, no_range(),
            enum_choices(kCloudWeatherPresets)),
+    option(RunConfigOptionId::CloudCacheFrames, "clouds.cache_frames",
+           "--cloud-cache-frames", "Cache Frames", "Clouds",
+           "Frames used to refresh one complete cached cloud sky texture.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kCloudCacheFrames)),
+    option(RunConfigOptionId::CloudCacheTextureSize, "clouds.cache_texture_size",
+           "--cloud-cache-texture-size", "Cache Texture Size", "Clouds",
+           "Square cached cloud sky texture size in pixels.", ConfigOptionType::UInt32,
+           min_range(1.0)),
     option(RunConfigOptionId::CloudPlanetRadius, "clouds.planet_radius_m",
            "--cloud-planet-radius-m", "Planet Radius", "Clouds",
            "Planet radius used by the cloud shell in meters.", ConfigOptionType::Float,
@@ -1187,6 +1196,11 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::CloudWeatherPreset:
         return config.clouds.weather_preset.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.clouds.weather_preset);
+    case RunConfigOptionId::CloudCacheFrames:
+        return config.clouds.cache_frames.empty() ? nlohmann::json(nullptr)
+                                                  : nlohmann::json(config.clouds.cache_frames);
+    case RunConfigOptionId::CloudCacheTextureSize:
+        return optional_uint32(config.clouds.cache_texture_size);
     case RunConfigOptionId::CloudPlanetRadius:
         return optional_float(config.clouds.planet_radius_m);
     case RunConfigOptionId::CloudCameraAltitude:
@@ -1607,6 +1621,8 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<std::string>("camera_mode", options.camera_mode);
     adapter.writeField<std::string>("quality", options.quality);
     adapter.writeField<std::string>("weather_preset", options.weather_preset);
+    adapter.writeField<std::string>("cache_frames", options.cache_frames);
+    adapter.writeField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
     adapter.writeField<float>("planet_radius_m", options.planet_radius_m);
     adapter.writeField<float>("camera_altitude_m", options.camera_altitude_m);
     adapter.writeField<float>("bottom_altitude_m", options.bottom_altitude_m);
@@ -1630,6 +1646,8 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<std::string>("camera_mode", options.camera_mode);
     adapter.readField<std::string>("quality", options.quality);
     adapter.readField<std::string>("weather_preset", options.weather_preset);
+    adapter.readField<std::string>("cache_frames", options.cache_frames);
+    adapter.readField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
     adapter.readField<float>("planet_radius_m", options.planet_radius_m);
     adapter.readField<float>("camera_altitude_m", options.camera_altitude_m);
     adapter.readField<float>("bottom_altitude_m", options.bottom_altitude_m);
@@ -2220,6 +2238,14 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::CloudWeatherPreset:
         config.clouds.weather_preset = std::string(value);
+        break;
+    case RunConfigOptionId::CloudCacheFrames:
+        config.clouds.cache_frames = std::string(value);
+        break;
+    case RunConfigOptionId::CloudCacheTextureSize:
+        config.clouds.cache_texture_size =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.clouds.cache_texture_size, option);
         break;
     case RunConfigOptionId::CloudPlanetRadius:
         config.clouds.planet_radius_m = parse_config_float(value, option);

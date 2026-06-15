@@ -89,6 +89,26 @@ void test_names_and_next_debug_view() {
                 cubey::projects::cloud_ref_2::CloudsDebugView::OctUv,
             "cloud debug view should include oct-uv");
     require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
+                cubey::projects::cloud_ref_2::CloudsDebugView::OctUv) ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheDirection,
+            "cloud debug view should include cache-direction");
+    require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheDirection) ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheHorizon,
+            "cloud debug view should include cache-horizon");
+    require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheHorizon) ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheChecker,
+            "cloud debug view should include cache-checker");
+    require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheChecker) ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheAlpha,
+            "cloud debug view should include cache-alpha");
+    require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheAlpha) ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::Background,
+            "cloud debug view should return to background after cache diagnostics");
+    require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
                 cubey::projects::cloud_ref_2::CloudsDebugView::Background) ==
                 cubey::projects::cloud_ref_2::CloudsDebugView::CloudAlpha,
             "cloud debug view should include cloud alpha");
@@ -121,6 +141,18 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("oct-uv") ==
                 cubey::projects::cloud_ref_2::CloudsDebugView::OctUv,
             "oct-uv debug view should parse");
+    require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("cache-direction") ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheDirection,
+            "cache-direction debug view should parse");
+    require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("cache-horizon") ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheHorizon,
+            "cache-horizon debug view should parse");
+    require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("cache-checker") ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheChecker,
+            "cache-checker debug view should parse");
+    require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("cache-alpha") ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::CacheAlpha,
+            "cache-alpha debug view should parse");
     require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("ambient-light") ==
                 cubey::projects::cloud_ref_2::CloudsDebugView::AmbientLight,
             "cloud ambient light debug view should parse");
@@ -161,6 +193,9 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref_2::clouds_cache_update_region_size(
                 768U, cubey::projects::cloud_ref_2::CloudsCacheFrames::Frames64) == 96U,
             "768 texture with 64 frames should update 96-pixel regions");
+    require(cubey::projects::cloud_ref_2::clouds_cache_update_region_size(
+                1024U, cubey::projects::cloud_ref_2::CloudsCacheFrames::Frames16) == 256U,
+            "1024 texture with 16 frames should update 256-pixel regions");
 }
 
 void test_run_config_mapping() {
@@ -169,6 +204,8 @@ void test_run_config_mapping() {
     run_config.clouds.camera_mode = "orbit";
     run_config.clouds.quality = "quarter";
     run_config.clouds.weather_preset = "storm";
+    run_config.clouds.cache_frames = "16";
+    run_config.clouds.cache_texture_size = 1024U;
     run_config.clouds.planet_radius_m = 1000000.0F;
     run_config.clouds.bottom_altitude_m = 2000.0F;
     run_config.clouds.top_altitude_m = 9000.0F;
@@ -198,6 +235,10 @@ void test_run_config_mapping() {
             "cloud quality should map from run config");
     require(config.weather_preset == cubey::projects::cloud_ref_2::CloudsWeatherPreset::StormCells,
             "cloud weather preset should map from run config");
+    require(config.cache_frames == cubey::projects::cloud_ref_2::CloudsCacheFrames::Frames16,
+            "cloud cache frames should map from run config");
+    require(config.cache_texture_size == 1024U,
+            "cloud cache texture size should map from run config");
     require(config.cloud_style == cubey::projects::cloud_ref_2::CloudsCloudStyle::StormCells,
             "cloud weather preset should select cloud style");
     require(config.debug_view == cubey::projects::cloud_ref_2::CloudsDebugView::Density,
@@ -292,6 +333,8 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.camera_mode", "high");
     cubey::set_run_config_option_from_string(config, "clouds.quality", "full");
     cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
+    cubey::set_run_config_option_from_string(config, "clouds.cache_frames", "256");
+    cubey::set_run_config_option_from_string(config, "clouds.cache_texture_size", "512");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.wind_speed_mps", "22");
     cubey::set_run_config_option_from_string(config, "clouds.shadow_strength", "0.7");
@@ -307,6 +350,9 @@ void test_config_descriptors() {
     require(config.clouds.quality == "full", "cloud quality descriptor should set");
     require(config.clouds.weather_preset == "storm",
             "cloud weather preset descriptor should set");
+    require(config.clouds.cache_frames == "256", "cloud cache frames descriptor should set");
+    require(config.clouds.cache_texture_size == 512U,
+            "cloud cache texture size descriptor should set");
     require_near(config.clouds.coverage, 0.44F, 0.001F,
                  "cloud coverage descriptor should set");
     require_near(config.clouds.wind_speed_mps, 22.0F, 0.001F,

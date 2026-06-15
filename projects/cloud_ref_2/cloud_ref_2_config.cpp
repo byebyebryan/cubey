@@ -232,6 +232,18 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "oct-uv" || value == "octahedral-uv") {
         return CloudsDebugView::OctUv;
     }
+    if (value == "cache-direction") {
+        return CloudsDebugView::CacheDirection;
+    }
+    if (value == "cache-horizon") {
+        return CloudsDebugView::CacheHorizon;
+    }
+    if (value == "cache-checker") {
+        return CloudsDebugView::CacheChecker;
+    }
+    if (value == "cache-alpha") {
+        return CloudsDebugView::CacheAlpha;
+    }
     if (value == "shadow") {
         return CloudsDebugView::Shadow;
     }
@@ -286,6 +298,14 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "update-region";
     case CloudsDebugView::OctUv:
         return "oct-uv";
+    case CloudsDebugView::CacheDirection:
+        return "cache-direction";
+    case CloudsDebugView::CacheHorizon:
+        return "cache-horizon";
+    case CloudsDebugView::CacheChecker:
+        return "cache-checker";
+    case CloudsDebugView::CacheAlpha:
+        return "cache-alpha";
     case CloudsDebugView::Shadow:
         return "shadow";
     case CloudsDebugView::Steps:
@@ -413,6 +433,12 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (!run_config.clouds.weather_preset.empty()) {
         config.weather_preset =
             clouds_weather_preset_from_string(run_config.clouds.weather_preset);
+    }
+    if (!run_config.clouds.cache_frames.empty()) {
+        config.cache_frames = clouds_cache_frames_from_string(run_config.clouds.cache_frames);
+    }
+    if (run_config.clouds.cache_texture_size != 0U) {
+        config.cache_texture_size = run_config.clouds.cache_texture_size;
     }
     apply_clouds_weather_preset(config, config.weather_preset);
     if (!run_config.debug_view.empty()) {
@@ -584,6 +610,10 @@ void validate_clouds_config(const CloudsConfig& config) {
     }
     if (config.cache_texture_size == 0U) {
         throw std::runtime_error("cloud cache texture size must be positive");
+    }
+    if (std::find(kCloudsCacheTextureSizes.begin(), kCloudsCacheTextureSizes.end(),
+                  config.cache_texture_size) == kCloudsCacheTextureSizes.end()) {
+        throw std::runtime_error("cloud cache texture size must be one of 256, 512, 768, or 1024");
     }
     const std::uint32_t cache_grid = clouds_cache_frame_grid_size(config.cache_frames);
     if (config.cache_texture_size % cache_grid != 0U) {

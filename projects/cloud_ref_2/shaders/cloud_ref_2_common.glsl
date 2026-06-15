@@ -24,6 +24,10 @@ const int CLOUD_REF_2_DEBUG_BLEND_FROM = 22;
 const int CLOUD_REF_2_DEBUG_BLEND_TO = 23;
 const int CLOUD_REF_2_DEBUG_UPDATE_REGION = 24;
 const int CLOUD_REF_2_DEBUG_OCT_UV = 25;
+const int CLOUD_REF_2_DEBUG_CACHE_DIRECTION = 26;
+const int CLOUD_REF_2_DEBUG_CACHE_HORIZON = 27;
+const int CLOUD_REF_2_DEBUG_CACHE_CHECKER = 28;
+const int CLOUD_REF_2_DEBUG_CACHE_ALPHA = 29;
 
 layout(std140, set = 0, binding = 0) uniform CloudRef2Frame {
     vec4 camera_right_aspect;
@@ -67,20 +71,30 @@ vec2 cloud_ref_2_oct_wrap(vec2 value) {
 }
 
 vec2 cloud_ref_2_direction_to_oct_uv(vec3 direction) {
-    vec3 oct_space = normalize(vec3(direction.x, direction.z, direction.y));
+    vec3 encoded_direction = direction;
+    encoded_direction.y = max(0.0, encoded_direction.y);
+    if (dot(encoded_direction, encoded_direction) < 0.000001) {
+        encoded_direction = vec3(1.0, 0.0, 0.0);
+    }
+
+    vec3 oct_space = normalize(encoded_direction.xzy);
     oct_space /= max(abs(oct_space.x) + abs(oct_space.y) + abs(oct_space.z), 0.00001);
-    vec2 encoded = oct_space.z >= 0.0 ? oct_space.xy : cloud_ref_2_oct_wrap(oct_space.xy);
-    return encoded * 0.5 + 0.5;
+    oct_space.xy = oct_space.z >= 0.0 ? oct_space.xy : cloud_ref_2_oct_wrap(oct_space.xy);
+
+    vec2 encoded;
+    encoded.y = oct_space.y * 0.5 + 0.5;
+    encoded.x = oct_space.x * 0.5 + encoded.y;
+    encoded.y = oct_space.x * -0.5 + encoded.y;
+    return clamp(encoded, vec2(0.0), vec2(1.0));
 }
 
 vec3 cloud_ref_2_oct_uv_to_direction(vec2 uv) {
-    vec2 encoded = uv * 2.0 - 1.0;
-    vec3 oct_space = vec3(encoded.x, encoded.y, 1.0 - abs(encoded.x) - abs(encoded.y));
-    if (oct_space.z < 0.0) {
-        oct_space.xy = cloud_ref_2_oct_wrap(oct_space.xy);
-    }
-    oct_space = normalize(oct_space);
-    return normalize(vec3(oct_space.x, oct_space.z, oct_space.y));
+    vec3 oct_space;
+    oct_space.x = uv.x - uv.y;
+    oct_space.y = (uv.x + uv.y) - 1.0;
+    oct_space.z = 1.0 - abs(oct_space.x) - abs(oct_space.y);
+    oct_space.xy = oct_space.z >= 0.0 ? oct_space.xy : cloud_ref_2_oct_wrap(oct_space.xy);
+    return normalize(oct_space.xzy);
 }
 
 vec3 cloud_ref_2_planet_up() {

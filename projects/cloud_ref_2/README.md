@@ -16,11 +16,11 @@ textures:
 - after a full update cycle, the textures rotate and the composite blends from
   the previous complete sky to the newest complete sky.
 
-The initial port reuses Cubey-generated Perlin-Worley, Worley, and weather
-textures instead of importing the Godot `.bmp`/`.tga` assets. The shader ports
-the Godot v2 structure: octahedral sky cache, lower Earth-scale cloud shell,
-Schneider-style height gradients, weather-driven coverage/type, detail erosion,
-stacked HG phase, six light samples, and one distant light sample.
+This project is an architecture-validation reference, not a faithful Godot
+visual port. It reuses Cubey-generated Perlin-Worley, Worley, and weather
+textures instead of importing the Godot `.bmp`/`.tga` assets, and it uses a
+standalone sky/background approximation instead of Godot's sky/transmittance
+LUTs. `cloud_ref` remains the stronger density/shape visual reference.
 
 Useful runs:
 
@@ -34,14 +34,33 @@ Useful runs:
 ./build/dev/projects/cloud_ref_2/cloud_ref_2 --debug-view blend-to
 ./build/dev/projects/cloud_ref_2/cloud_ref_2 --debug-view update-region
 ./build/dev/projects/cloud_ref_2/cloud_ref_2 --debug-view oct-uv
+./build/dev/projects/cloud_ref_2/cloud_ref_2 --debug-view cache-direction
+./build/dev/projects/cloud_ref_2/cloud_ref_2 --debug-view cache-horizon
+./build/dev/projects/cloud_ref_2/cloud_ref_2 --debug-view cache-checker
+./build/dev/projects/cloud_ref_2/cloud_ref_2 --debug-view cache-alpha
 ./build/dev/projects/cloud_ref_2/cloud_ref_2 --debug-view density
+./build/dev/projects/cloud_ref_2/cloud_ref_2 --headless --frames 70 --cloud-cache-frames 16 --cloud-cache-texture-size 1024 --debug-view cache-checker --output outputs/cloud-ref-2-cache-checker.png
 ./build/dev/projects/cloud_ref_2/cloud_ref_2 --headless --frames 70 --cloud-camera-mode surface-up --output outputs/cloud-ref-2-surface-up.png
 projects/cloud_ref_2/capture_review.sh outputs/cloud-ref-2-review
+CACHE_MATRIX=1 projects/cloud_ref_2/capture_review.sh outputs/cloud-ref-2-cache-matrix
 ```
 
 For PNG/headless captures, `--frames` controls how many cache tile updates are
-recorded before the still is composited. Use at least `70` with the default
-64-frame cache cadence when you want a filled cache in the output image.
+recorded before the still is composited. Use at least one full cache cadence
+plus a small margin: for example `70` for the default `--cloud-cache-frames 64`.
+`--cloud-cache-frames` accepts `4`, `16`, `64`, and `256`; cache texture size is
+limited to `256`, `512`, `768`, or `1024`.
+
+Cache validation views:
+
+- `cache-direction`: decoded cache direction, useful for vertical or fold-line
+  distortion.
+- `cache-horizon`: synthetic horizon gradient, useful for horizon seam checks.
+- `cache-checker`: checker plus tile-grid overlay, useful for tile/update seams.
+- `cache-alpha`: synthetic transmittance channel check.
+
+The cached sky is an upper-hemisphere product. Below-horizon view rays are kept
+transparent in the composite path instead of sampling the clamped horizon cache.
 
 Controls:
 
@@ -56,9 +75,9 @@ Known limits:
 - The Godot source uses imported noise/weather textures and sky/transmittance
   LUTs; this port currently reuses Cubey-generated noise and Cubey's standalone
   sky/background approximation.
-- The current tuning proves the cache path and removes the old streaking
-  failure mode, but the surface views are still too smeared/overcast compared
-  with the stronger Godot screenshots.
+- Synthetic cache diagnostics are the primary acceptance check for the cached
+  sky architecture. If they are clean but final cloud views still repeat, treat
+  the remaining issue as density/noise/weather data rather than cache mechanics.
 - Orbit mode is a preview angle, not planet-scale cloud integration.
 
 Attribution: `godot-volumetric-cloud-demo-v2` is MIT licensed. The shader also

@@ -9,6 +9,9 @@ HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-70}"
 QUALITY="${QUALITY:-full}"
 PRESET="${PRESET:-broken-cumulus}"
+CACHE_FRAMES="${CACHE_FRAMES:-64}"
+CACHE_TEXTURE_SIZE="${CACHE_TEXTURE_SIZE:-768}"
+CACHE_MATRIX="${CACHE_MATRIX:-0}"
 
 mkdir -p "${OUT_DIR}"
 
@@ -22,6 +25,8 @@ capture() {
         --height "${HEIGHT}" \
         --cloud-quality "${QUALITY}" \
         --cloud-weather-preset "${PRESET}" \
+        --cloud-cache-frames "${CACHE_FRAMES}" \
+        --cloud-cache-texture-size "${CACHE_TEXTURE_SIZE}" \
         "$@" \
         --output "${OUT_DIR}/${name}.png"
 }
@@ -37,6 +42,10 @@ capture blend-from --cloud-camera-mode surface --debug-view blend-from
 capture blend-to --cloud-camera-mode surface --debug-view blend-to
 capture update-region --cloud-camera-mode surface --debug-view update-region
 capture oct-uv --cloud-camera-mode surface --debug-view oct-uv
+capture cache-direction --cloud-camera-mode surface --debug-view cache-direction
+capture cache-horizon --cloud-camera-mode surface --debug-view cache-horizon
+capture cache-checker --cloud-camera-mode surface --debug-view cache-checker
+capture cache-alpha --cloud-camera-mode surface --debug-view cache-alpha
 capture weather --cloud-camera-mode surface --debug-view weather
 capture base-density --cloud-camera-mode surface --debug-view base-density
 capture detail-density --cloud-camera-mode surface --debug-view detail-density
@@ -51,6 +60,20 @@ capture cloud-alpha --cloud-camera-mode surface --debug-view cloud-alpha
 capture distance --cloud-camera-mode surface --debug-view distance
 capture steps --cloud-camera-mode surface --debug-view steps
 capture background --cloud-camera-mode surface --debug-view background
+
+if [[ "${CACHE_MATRIX}" == "1" ]]; then
+    for camera in surface surface-up high high-oblique; do
+        for frames in 4 16 64; do
+            for size in 512 768 1024; do
+                capture "matrix-${camera}-${frames}f-${size}-checker" \
+                    --cloud-camera-mode "${camera}" \
+                    --cloud-cache-frames "${frames}" \
+                    --cloud-cache-texture-size "${size}" \
+                    --debug-view cache-checker
+            done
+        done
+    done
+fi
 
 if command -v magick >/dev/null 2>&1; then
     rm -f "${OUT_DIR}/contact-sheet.png"

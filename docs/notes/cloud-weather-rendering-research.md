@@ -465,3 +465,32 @@ and post stack carry much of the final image richness. Further `cloud_ref`
 constant tuning should be secondary to deciding whether the production cloud
 project needs a cached sky/cloud product, real weather layering, and shared
 atmosphere/ocean composition outputs.
+
+## Cloud Ref 2 Cache Validation Pass
+
+`projects/cloud_ref_2` is now scoped as a Godot-v2 cached-sky architecture
+validation target rather than a visual-fidelity port. The cache path uses
+Godot-style hemisphere octahedral encode/decode, explicit cache diagnostics, and
+CLI-configurable cache cadence/texture size. The unsafe direction-blind 3x3
+cache-space final resolve was removed because it could blur across oct folds and
+hide or amplify vertical artifacts.
+
+The new synthetic views isolate cache mechanics from cloud density:
+
+- `cache-direction` checks decoded direction continuity.
+- `cache-horizon` checks horizon/fold behavior.
+- `cache-checker` checks cache tile and update-grid seams.
+- `cache-alpha` checks the transmittance/alpha channel convention.
+
+Because the cache is upper-hemisphere only, the composite path now treats
+below-horizon rays as transparent cloud instead of sampling the clamped horizon
+cache. This prevents horizon cloud data from smearing through the lower half of
+surface-view captures.
+
+Use `projects/cloud_ref_2/capture_review.sh outputs/cloud-ref-2-review` for a
+normal review and `CACHE_MATRIX=1 projects/cloud_ref_2/capture_review.sh
+outputs/cloud-ref-2-cache-matrix` for the camera/cache cadence/cache size sweep.
+If synthetic cache views are clean while final cloud views still show repetition
+or smeared shape, classify the remaining problem as source texture/weather/density
+data rather than cached-sky architecture. Godot `.tga`/`.bmp` texture import and
+sky/transmittance LUT parity remain deferred.

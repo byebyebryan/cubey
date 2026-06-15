@@ -65,9 +65,13 @@ enum class CloudsDebugView : std::uint32_t {
     BlendTo = 23,
     UpdateRegion = 24,
     OctUv = 25,
+    CacheDirection = 26,
+    CacheHorizon = 27,
+    CacheChecker = 28,
+    CacheAlpha = 29,
 };
 
-inline constexpr std::array<CloudsDebugView, 21> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 25> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
     CloudsDebugView::RawCloudProduct,
     CloudsDebugView::Weather,      CloudsDebugView::Density,
@@ -76,8 +80,12 @@ inline constexpr std::array<CloudsDebugView, 21> kCloudsDebugViews{
     CloudsDebugView::PhaseLight,   CloudsDebugView::Shadow,
     CloudsDebugView::Steps,        CloudsDebugView::BlendFrom,
     CloudsDebugView::BlendTo,      CloudsDebugView::UpdateRegion,
-    CloudsDebugView::OctUv,        CloudsDebugView::Background,
-    CloudsDebugView::CloudAlpha,   CloudsDebugView::Distance,
+    CloudsDebugView::OctUv,
+    CloudsDebugView::CacheDirection,
+    CloudsDebugView::CacheHorizon, CloudsDebugView::CacheChecker,
+    CloudsDebugView::CacheAlpha,
+    CloudsDebugView::Background,   CloudsDebugView::CloudAlpha,
+    CloudsDebugView::Distance,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
 };
 
@@ -87,6 +95,8 @@ enum class CloudsCacheFrames : std::uint32_t {
     Frames64 = 64,
     Frames256 = 256,
 };
+
+inline constexpr std::array<std::uint32_t, 4> kCloudsCacheTextureSizes{256U, 512U, 768U, 1024U};
 
 struct CloudsTimeConfig {
     bool solar_clock = true;
