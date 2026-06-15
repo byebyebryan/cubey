@@ -44,6 +44,10 @@ capture phase-light --cloud-camera-mode surface-up --debug-view phase-light
 capture shadow --cloud-camera-mode surface-up --debug-view shadow
 capture cloud-alpha --cloud-camera-mode surface-up --debug-view cloud-alpha
 capture distance --cloud-camera-mode surface-up --debug-view distance
+capture metadata-distance --cloud-camera-mode surface-up --debug-view metadata-distance
+capture metadata-alpha --cloud-camera-mode surface-up --debug-view metadata-alpha
+capture metadata-confidence --cloud-camera-mode surface-up --debug-view metadata-confidence
+capture metadata-density --cloud-camera-mode surface-up --debug-view metadata-density
 capture steps --cloud-camera-mode surface-up --debug-view steps
 capture background --cloud-camera-mode surface-up --debug-view background
 

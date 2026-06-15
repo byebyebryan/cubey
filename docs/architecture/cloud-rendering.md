@@ -118,6 +118,8 @@ Initial scope:
 - cloud product target containing linear radiance and transmittance;
 - metadata target for mean distance, alpha/confidence, and any reconstruction
   inputs;
+- tunable direct/ambient/phase lighting and final resolve controls so final
+  image polish can be isolated from raw march quality;
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;
@@ -199,7 +201,7 @@ Acceptance for this milestone:
 - surface/high captures do not show the legacy horizontal streaking as the
   dominant artifact;
 - the project exposes enough controls to isolate density, detail erosion,
-  weather map, lighting, and composition;
+  weather map, lighting, composition, and metadata output;
 - the implementation does not duplicate project-local atmosphere horizon logic.
 
 Only after that should the production project add the cached hemisphere path

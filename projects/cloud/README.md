@@ -14,8 +14,11 @@ Current V1 scope:
 - separate cloud product and composite passes declared through
   `RenderGraphBuilder`;
 - shared `clouds.*` `RunConfig` options and hand-authored ImGui controls;
+- tunable ambient/direct/phase lighting, final contrast/saturation, sun glare,
+  horizon glow, and alpha-aware final resolve strength;
 - diagnostics for weather, base/detail density, density, transmittance,
-  lighting, shadow, cloud alpha, distance, steps, and background.
+  lighting, shadow, cloud alpha, distance, metadata distance/alpha/confidence,
+  metadata density, steps, and background.
 
 The first target is cloud shape: raw density and final captures should show
 coherent cloud masses without relying on cache, temporal reconstruction, or
@@ -40,7 +43,13 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view lighting
 ./build/dev/projects/cloud/cloud --debug-view cloud-alpha
 ./build/dev/projects/cloud/cloud --debug-view distance
+./build/dev/projects/cloud/cloud --debug-view metadata-distance
+./build/dev/projects/cloud/cloud --debug-view metadata-alpha
+./build/dev/projects/cloud/cloud --debug-view metadata-confidence
+./build/dev/projects/cloud/cloud --debug-view metadata-density
 ./build/dev/projects/cloud/cloud --debug-view steps
+./build/dev/projects/cloud/cloud --cloud-ambient-strength 0.85 --cloud-direct-strength 1.25
+./build/dev/projects/cloud/cloud --cloud-final-contrast 1.15 --cloud-resolve-strength 0.45
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode surface-up --output outputs/cloud-v1-surface-up.png
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode high-oblique --output outputs/cloud-v1-high-oblique.png
 projects/cloud/capture_review.sh outputs/cloud-v1-review
@@ -52,6 +61,11 @@ Controls:
 - `D`: cycle diagnostic views.
 - Space: play/pause solar time.
 - `R`: reset camera, time, and cloud settings.
+- `Shape / Density`: base shape scale, detail erosion, and powder response.
+- `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
+  fill controls.
+- `Final Resolve`: alpha-aware smoothing amount plus final contrast,
+  saturation, horizon glow, and sun glare controls.
 
 Known deferrals:
 
