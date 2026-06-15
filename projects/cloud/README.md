@@ -19,8 +19,8 @@ Current V1 scope:
 - configurable static ray-start sampling (`interleaved`, `bayer`, or `off`)
   with jitter-strength control;
 - diagnostics for weather, base/detail density, density, transmittance,
-  lighting, shadow, cloud alpha, distance, metadata distance/alpha/confidence,
-  metadata density, steps, and background.
+  cloud type, lighting, shadow, cloud alpha, distance, metadata
+  distance/alpha/confidence, metadata density, steps, and background.
 
 The first target is cloud shape: raw density and final captures should show
 coherent cloud masses without relying on cache, temporal reconstruction, or
@@ -40,6 +40,7 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view weather
 ./build/dev/projects/cloud/cloud --debug-view base-density
 ./build/dev/projects/cloud/cloud --debug-view detail-density
+./build/dev/projects/cloud/cloud --debug-view cloud-type
 ./build/dev/projects/cloud/cloud --debug-view density
 ./build/dev/projects/cloud/cloud --debug-view transmittance
 ./build/dev/projects/cloud/cloud --debug-view lighting
@@ -59,6 +60,9 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode high-oblique --output outputs/cloud-v1-high-oblique.png
 projects/cloud/capture_review.sh outputs/cloud-v1-review
 ```
+
+`capture_review.sh` also writes `diagnostic-crops/center-feature-contact.png`
+with center crops for final/raw/alpha/weather/cloud-type checks.
 
 Controls:
 
@@ -80,6 +84,9 @@ Known deferrals:
 - No temporal reconstruction yet. The raw direct signal must be credible first.
 - Static sampling controls are diagnostic and deterministic. A blue-noise or
   temporal sampling path remains deferred until raw shape is stable.
+- Cloud type is exposed as a diagnostic, but it does not yet drive production
+  shaping. Weather-scale top shear reduces vertical density slabs; broader
+  planar weather projection remains a likely future cleanup.
 - No ocean, planet, terrain, or PBR integration yet. Future consumers should
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,

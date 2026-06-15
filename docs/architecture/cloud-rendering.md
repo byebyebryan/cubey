@@ -114,6 +114,10 @@ Initial scope:
 
 - shared sky/celestial/atmosphere background and lighting input;
 - texture-backed cloud density: base volume, detail/erosion volume, weather map;
+- weather/type diagnostics so density artifacts can be traced before changing
+  production shaping;
+- scale-aware height shear to avoid view-aligned vertical slabs in cumulus
+  shapes;
 - one clear surface camera and one high camera before orbit polish;
 - cloud product target containing linear radiance and transmittance;
 - metadata target for mean distance, alpha/confidence, and any reconstruction

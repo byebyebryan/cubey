@@ -9,6 +9,7 @@ HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"
 QUALITY="${QUALITY:-full}"
 PRESET="${PRESET:-broken-cumulus}"
+CENTER_CROP_GEOMETRY="${CENTER_CROP_GEOMETRY:-520x330+370+270}"
 
 mkdir -p "${OUT_DIR}"
 
@@ -43,6 +44,7 @@ capture raw-final-no-jitter --cloud-camera-mode surface-up --debug-view raw-fina
 capture weather --cloud-camera-mode surface-up --debug-view weather
 capture base-density --cloud-camera-mode surface-up --debug-view base-density
 capture detail-density --cloud-camera-mode surface-up --debug-view detail-density
+capture cloud-type --cloud-camera-mode surface-up --debug-view cloud-type
 capture density --cloud-camera-mode surface-up --debug-view density
 capture transmittance --cloud-camera-mode surface-up --debug-view transmittance
 capture lighting --cloud-camera-mode surface-up --debug-view lighting
@@ -63,6 +65,22 @@ if command -v magick >/dev/null 2>&1; then
     rm -f "${OUT_DIR}/contact-sheet.png"
     magick montage "${OUT_DIR}"/*.png -geometry 320x180+8+8 -tile 2x \
         "${OUT_DIR}/contact-sheet.png"
+    crop_dir="${OUT_DIR}/diagnostic-crops"
+    mkdir -p "${crop_dir}"
+    crop_inputs=()
+    for name in surface-up raw-final cloud-alpha weather cloud-type density \
+        metadata-alpha metadata-distance metadata-confidence steps; do
+        if [[ -f "${OUT_DIR}/${name}.png" ]]; then
+            crop_path="${crop_dir}/${name}-center.png"
+            magick "${OUT_DIR}/${name}.png" -crop "${CENTER_CROP_GEOMETRY}" \
+                -resize 1560x990 "${crop_path}"
+            crop_inputs+=("${crop_path}")
+        fi
+    done
+    if (( ${#crop_inputs[@]} > 0 )); then
+        magick montage "${crop_inputs[@]}" -geometry 390x248+6+6 -tile 2x \
+            "${crop_dir}/center-feature-contact.png"
+    fi
 fi
 
 printf 'cloud captures written to %s\n' "${OUT_DIR}"

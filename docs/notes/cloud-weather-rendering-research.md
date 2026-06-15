@@ -330,6 +330,27 @@ interleaved, Bayer, and off still share the same cloud-shape failure, treat the
 issue as density/weather or distance-regime architecture rather than sampling
 noise.
 
+## Production Cloud Type Checkpoint
+
+The center-view tower artifact in `projects/cloud` was traced to the raw cloud
+product, not final resolve or atmosphere composition. The weather map already
+stored cloud type, but the production marcher did not expose it in diagnostics.
+A trial that used cloud type to lower isolated weather islands into flatter
+profiles made the cloud deck too sparse and was not retained. The added
+`cloud-type` diagnostic and capture-review center crops make this class of
+extrusion visible without editing shader code.
+
+The retained production fix is scale-aware top shear. The source reference uses
+a small fixed height-dependent wind offset, but in this port local positions are
+projected against planet radius, so that offset was too small to break vertical
+coherence. Scaling the top shear as a fraction of the weather domain breaks the
+straight tower silhouette while preserving reference coverage and cumulus height
+profile math.
+
+This is not a full weather-domain fix. Planar `position.xz` weather projection
+over the spherical cloud shell remains a likely cleanup once the local cloud
+shape is stable.
+
 The eleventh checkpoint implements the first version of that distance-regime
 split. Cloud frame data moved from maxed-out push constants into a per-frame
 uniform buffer so the shader can carry explicit feature-isolation controls.
