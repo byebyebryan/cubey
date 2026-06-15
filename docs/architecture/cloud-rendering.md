@@ -114,10 +114,13 @@ Initial scope:
 
 - shared sky/celestial/atmosphere background and lighting input;
 - texture-backed cloud density: base volume, detail/erosion volume, weather map;
-- weather/type diagnostics so density artifacts can be traced before changing
+- world-scale weather/type sampling where `clouds.weather_scale_km` means
+  approximate broad feature size rather than texture period;
+- raw weather/type diagnostics plus ray-marched visible density/type diagnostics
+  so map artifacts and visible artifacts can be separated before changing
   production shaping;
-- scale-aware height shear to avoid view-aligned vertical slabs in cumulus
-  shapes;
+- independent vertical shear control to avoid view-aligned slabs without making
+  weather scale do two jobs;
 - one clear surface camera and one high camera before orbit polish;
 - cloud product target containing linear radiance and transmittance;
 - metadata target for mean distance, alpha/confidence, and any reconstruction

@@ -11,6 +11,7 @@ Current V1 scope:
 - generated 1024^2 weather coverage/type map;
 - spherical shell raymarch with height gradients, detail erosion, Beer
   transmittance, powder response, and a short light march;
+- world-scale weather/type sampling with separate vertical shear control;
 - separate cloud product and composite passes declared through
   `RenderGraphBuilder`;
 - shared `clouds.*` `RunConfig` options and hand-authored ImGui controls;
@@ -19,8 +20,9 @@ Current V1 scope:
 - configurable static ray-start sampling (`interleaved`, `bayer`, or `off`)
   with jitter-strength control;
 - diagnostics for weather, base/detail density, density, transmittance,
-  cloud type, lighting, shadow, cloud alpha, distance, metadata
-  distance/alpha/confidence, metadata density, steps, and background.
+  cloud type, visible density/cloud type, lighting, shadow, cloud alpha,
+  distance, metadata distance/alpha/confidence, metadata density, steps, and
+  background.
 
 The first target is cloud shape: raw density and final captures should show
 coherent cloud masses without relying on cache, temporal reconstruction, or
@@ -42,6 +44,8 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view detail-density
 ./build/dev/projects/cloud/cloud --debug-view cloud-type
 ./build/dev/projects/cloud/cloud --debug-view density
+./build/dev/projects/cloud/cloud --debug-view visible-density
+./build/dev/projects/cloud/cloud --debug-view visible-cloud-type
 ./build/dev/projects/cloud/cloud --debug-view transmittance
 ./build/dev/projects/cloud/cloud --debug-view lighting
 ./build/dev/projects/cloud/cloud --debug-view cloud-alpha
@@ -53,6 +57,8 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view steps
 ./build/dev/projects/cloud/cloud --cloud-ambient-strength 0.85 --cloud-direct-strength 1.25
 ./build/dev/projects/cloud/cloud --cloud-final-contrast 1.15 --cloud-resolve-strength 0.45
+./build/dev/projects/cloud/cloud --cloud-weather-scale-km 85
+./build/dev/projects/cloud/cloud --cloud-vertical-shear-fraction 0.14
 ./build/dev/projects/cloud/cloud --cloud-sampling-mode bayer
 ./build/dev/projects/cloud/cloud --cloud-sampling-mode off
 ./build/dev/projects/cloud/cloud --cloud-sampling-mode interleaved --cloud-jitter-strength 0.5
@@ -62,7 +68,8 @@ projects/cloud/capture_review.sh outputs/cloud-v1-review
 ```
 
 `capture_review.sh` also writes `diagnostic-crops/center-feature-contact.png`
-with center crops for final/raw/alpha/weather/cloud-type checks.
+with resolution-scaled center crops for final/raw/alpha/weather/cloud-type and
+visible density/type checks.
 
 Controls:
 
@@ -70,7 +77,9 @@ Controls:
 - `D`: cycle diagnostic views.
 - Space: play/pause solar time.
 - `R`: reset camera, time, and cloud settings.
-- `Shape / Density`: base shape scale, detail erosion, and powder response.
+- `Weather scale`: approximate broad weather feature size in kilometers.
+- `Shape / Density`: base shape scale, vertical shear, detail erosion, and
+  powder response.
 - `Sampling`: ray-start sampling mode and jitter amount.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
@@ -84,9 +93,9 @@ Known deferrals:
 - No temporal reconstruction yet. The raw direct signal must be credible first.
 - Static sampling controls are diagnostic and deterministic. A blue-noise or
   temporal sampling path remains deferred until raw shape is stable.
-- Cloud type is exposed as a diagnostic, but it does not yet drive production
-  shaping. Weather-scale top shear reduces vertical density slabs; broader
-  planar weather projection remains a likely future cleanup.
+- Cloud type is exposed as raw and visible diagnostics, but it only drives the
+  current height gradient model. Planar `position.xz` weather projection remains
+  a likely future cleanup for planet-scale use.
 - No ocean, planet, terrain, or PBR integration yet. Future consumers should
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,

@@ -347,9 +347,18 @@ coherence. Scaling the top shear as a fraction of the weather domain breaks the
 straight tower silhouette while preserving reference coverage and cumulus height
 profile math.
 
-This is not a full weather-domain fix. Planar `position.xz` weather projection
-over the spherical cloud shell remains a likely cleanup once the local cloud
-shape is stable.
+The next production pass split that coupling. `clouds.weather_scale_km` now
+drives the horizontal weather/type sampling domain as an approximate broad
+feature size, while `clouds.vertical_shear_fraction` controls altitude-dependent
+wind shear. Weather and cloud-type diagnostics remain raw midpoint map probes;
+`visible-density` and `visible-cloud-type` raymarch the view ray to show the
+maximum visible density and density-weighted cloud type. This makes it clearer
+whether a problem lives in the authored weather map or in the visible density
+integration.
+
+Planar `position.xz` weather projection over the spherical cloud shell remains
+a likely cleanup once local cloud shape is stable and planet-scale handoff is
+ready.
 
 The eleventh checkpoint implements the first version of that distance-regime
 split. Cloud frame data moved from maxed-out push constants into a per-frame
