@@ -275,7 +275,7 @@ void test_weather_preset_defaults() {
             "overcast weather preset should select stratus style");
     require_near(config.coverage, 0.72F, 0.001F,
                  "overcast weather preset should set coverage");
-    require_near(config.weather_scale_km, 280.0F, 0.001F,
+    require_near(config.weather_scale_km, 115.0F, 0.001F,
                  "overcast weather preset should set scale");
     require_near(config.bottom_altitude_m, 3000.0F, 0.001F,
                  "overcast weather preset should set bottom altitude");
@@ -299,6 +299,8 @@ void test_weather_preset_defaults() {
             "high cirrus weather preset should select cloud style");
     require_near(config.bottom_altitude_m, 11000.0F, 0.001F,
                  "high cirrus weather preset should set bottom altitude");
+    require_near(config.weather_scale_km, 145.0F, 0.001F,
+                 "high cirrus weather preset should set scale");
 }
 
 void test_config_descriptors() {

@@ -124,7 +124,7 @@ struct CloudsConfig {
     float top_altitude_m = kCloudsDefaultTopAltitudeM;
     float coverage = 0.45F;
     float density = 0.02F;
-    float weather_scale_km = 210.0F;
+    float weather_scale_km = 85.0F;
     float vertical_shear_fraction = 0.14F;
     float wind_speed_mps = 450.0F;
     float shadow_strength = 0.82F;

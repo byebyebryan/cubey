@@ -338,6 +338,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.coverage",
         "clouds.density",
         "clouds.weather_scale_km",
+        "clouds.vertical_shear_fraction",
         "clouds.wind_speed_mps",
         "clouds.shadow_strength",
         "clouds.jitter_strength",
@@ -927,6 +928,8 @@ void test_run_config_parses_cloud_options() {
     std::string density_value = "1.25";
     std::string weather_scale_flag = "--cloud-weather-scale-km";
     std::string weather_scale_value = "260";
+    std::string vertical_shear_flag = "--cloud-vertical-shear-fraction";
+    std::string vertical_shear_value = "0.16";
     std::string wind_flag = "--cloud-wind-speed-mps";
     std::string wind_value = "32";
     std::string shadow_flag = "--cloud-shadow-strength";
@@ -934,7 +937,7 @@ void test_run_config_parses_cloud_options() {
     std::string jitter_flag = "--cloud-jitter-strength";
     std::string jitter_value = "0.25";
     std::string temporal_flag = "--no-cloud-temporal";
-    std::array<char*, 30> argv{
+    std::array<char*, 32> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -958,6 +961,8 @@ void test_run_config_parses_cloud_options() {
         density_value.data(),
         weather_scale_flag.data(),
         weather_scale_value.data(),
+        vertical_shear_flag.data(),
+        vertical_shear_value.data(),
         wind_flag.data(),
         wind_value.data(),
         shadow_flag.data(),
@@ -988,6 +993,8 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.density == 1.25F, "run config should parse cloud density");
     require(config.clouds.weather_scale_km == 260.0F,
             "run config should parse cloud weather scale");
+    require(config.clouds.vertical_shear_fraction == 0.16F,
+            "run config should parse cloud vertical shear fraction");
     require(config.clouds.wind_speed_mps == 32.0F, "run config should parse cloud wind speed");
     require(config.clouds.shadow_strength == 0.8F,
             "run config should parse cloud shadow strength");

@@ -6,6 +6,7 @@
 // Beer transmittance, Bayer jitter, and short cone light march.
 
 #include "cloud_common.glsl"
+#include "cloud_weather_common.glsl"
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 layout(rgba16f, set = 0, binding = 1) uniform writeonly image2D cloud_product;
@@ -94,6 +95,12 @@ vec2 cloud_project_uv(vec3 position) {
     return position.xz / cloud_inner_radius() + vec2(0.5);
 }
 
+vec2 cloud_weather_uv(vec3 position) {
+    float feature_scale_m = max(params.weather.z * 1000.0, 1.0);
+    float weather_period_m = feature_scale_m * CLOUD_WEATHER_FEATURE_DENSITY;
+    return position.xz / weather_period_m + vec2(0.5);
+}
+
 DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float height_fraction = cloud_height_fraction(position);
     if (height_fraction <= 0.0 || height_fraction >= 1.0) {
@@ -110,7 +117,8 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
         height_fraction * WIND_DIRECTION * top_offset + WIND_DIRECTION * params.weather.w;
     vec2 shape_uv = cloud_project_uv(position);
     vec2 moving_shape_uv = cloud_project_uv(position + animation);
-    vec3 weather = texture(weather_texture, moving_shape_uv).rgb;
+    vec2 moving_weather_uv = cloud_weather_uv(position + animation);
+    vec3 weather = texture(weather_texture, moving_weather_uv).rgb;
     float cloud_type = weather.g;
 
     vec4 low_frequency =
