@@ -18,8 +18,8 @@ The production renderer should combine:
 - the cached sky/cloud product architecture from the Godot-v2-style
   `cloud_ref_2`;
 - the integration contracts and scale pressure learned from `clouds_legacy`;
-- the shared atmosphere foundation for sun, moon, sky color, exposure, and
-  background classification.
+- shared sky, celestial, atmosphere, and exposure inputs for sun/moon light,
+  sky color, and background classification.
 
 Do not treat any one reference as the final renderer. `cloud_ref` is the best
 shape reference. `cloud_ref_2` is the best cache architecture reference.
@@ -112,7 +112,7 @@ first. It should not start inside ocean or planet.
 
 Initial scope:
 
-- shared atmosphere background and lighting input;
+- shared sky/celestial/atmosphere background and lighting input;
 - texture-backed cloud density: base volume, detail/erosion volume, weather map;
 - one clear surface camera and one high camera before orbit polish;
 - cloud product target containing linear radiance and transmittance;
@@ -121,7 +121,13 @@ Initial scope:
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;
-- hierarchical shared config/UI controls from the start.
+- shared `RunConfig` descriptors plus existing ImGui helper controls from the
+  start.
+
+Even while standalone, the project must keep planet handoff constraints visible:
+use meters, carry planet radius/cloud-shell metadata explicitly, keep camera GPU
+state camera-relative, and define weather coordinates so they can later map onto
+a planet frame, local tangent frame, or stable global weather address.
 
 Deferred until the shape is credible:
 
@@ -153,11 +159,12 @@ grading.
 ## Renderer Contract
 
 Clouds are a weather layer above clear-sky atmosphere. They should consume the
-shared environment state and emit reusable outputs:
+shared sky/celestial/atmosphere state and emit reusable outputs:
 
-- cloud radiance and view transmittance for background composition;
-- mean distance and alpha/confidence for reconstruction and depth-aware
-  composition;
+- cloud product RGB as linear cloud radiance and product alpha as view
+  transmittance for background composition;
+- mean distance, cloud opacity, and confidence in metadata/debug outputs for
+  reconstruction and depth-aware composition;
 - low-frequency cloud shadow factor for terrain/ocean;
 - optional sky/reflection or environment contribution for water/PBR consumers;
 - debug views for weather, base/detail density, lighting, shadow, cache,
@@ -166,13 +173,19 @@ shared environment state and emit reusable outputs:
 Ocean, planet, and glTF/PBR viewers should not own cloud raymarch code. They
 should sample cloud outputs or composed sky/environment products.
 
+V1 should use `RenderGraphBuilder` to make the cloud product and composite
+passes explicit. Descriptor sets, textures, material instances, and synchronization
+policy remain project-owned until at least two consumers need a shared cloud
+renderer contract.
+
 ## First Milestone
 
 The first production milestone should be small and hard to fake:
 
 1. Create `projects/cloud` as a new standalone project.
 2. Port or reuse the `cloud_ref` texture-backed density path, but wire it to
-   shared atmosphere background and shared config/UI from day one.
+   shared sky/celestial/atmosphere inputs and shared config descriptors from day
+   one.
 3. Render a cloud radiance/transmittance product and composite it in a separate
    pass.
 4. Add raw diagnostics and a repeatable capture script before tuning.
@@ -191,4 +204,3 @@ Acceptance for this milestone:
 
 Only after that should the production project add the cached hemisphere path
 from `cloud_ref_2`.
-

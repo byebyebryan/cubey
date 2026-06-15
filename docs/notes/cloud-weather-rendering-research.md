@@ -531,3 +531,10 @@ Summary:
 - keep `cloud_ref_2` as the cached-sky architecture reference;
 - start production cloud work with texture-backed coherent density and shared
   atmosphere/config integration before adding the cached hemisphere path.
+
+The post-review refinement is that clouds consume shared sky, celestial,
+atmosphere, and exposure inputs; they do not make atmosphere the owner of sun,
+moon, or planet-scale celestial policy. The first production project should also
+keep planet-frame compatibility, product alpha/transmittance semantics, and
+project-owned render-graph resources explicit before any shared cloud renderer
+promotion.
