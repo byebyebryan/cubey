@@ -18,9 +18,9 @@ layout(push_constant) uniform CloudRef2CachePush {
     vec4 cache_options;
 } cache_push;
 
-const vec4 STRATUS_GRADIENT = vec4(0.00, 0.10, 0.20, 0.30);
+const vec4 STRATUS_GRADIENT = vec4(0.02, 0.05, 0.09, 0.11);
 const vec4 STRATOCUMULUS_GRADIENT = vec4(0.02, 0.20, 0.48, 0.625);
-const vec4 CUMULUS_GRADIENT = vec4(0.00, 0.1625, 0.88, 0.98);
+const vec4 CUMULUS_GRADIENT = vec4(0.01, 0.0625, 0.78, 1.0);
 const vec3 WIND_DIRECTION = normalize(vec3(0.5, 0.0, 0.1));
 const float CLOUD_TOP_OFFSET = 750.0;
 const vec3 NOISE_KERNEL[6] = vec3[](
@@ -83,45 +83,51 @@ DensitySample cloud_ref_2_sample_density(vec3 position, bool expensive, float lo
         return DensitySample(0.0, 0.0, 0.0, 0.0, height_fraction);
     }
 
-    float crispiness = max(params.shape_options.x, 0.001);
-    float curliness = max(params.shape_options.y, 0.001);
-    vec3 animation =
-        height_fraction * WIND_DIRECTION * CLOUD_TOP_OFFSET + WIND_DIRECTION * params.weather.w;
-    vec2 shape_uv = cloud_ref_2_project_uv(position);
-    vec2 moving_shape_uv = cloud_ref_2_project_uv(position + animation);
+    vec3 local_position = position - cloud_ref_2_sphere_center();
+    vec3 animated_position = local_position;
+    animated_position.xz += WIND_DIRECTION.xz * params.weather.w * 0.6;
+    animated_position += height_fraction * WIND_DIRECTION * CLOUD_TOP_OFFSET;
 
-    vec4 low_frequency =
-        textureLod(base_noise_texture, vec3(shape_uv * crispiness, height_fraction), lod);
+    float base_scale = 0.00008 * max(params.shape_options.x / 40.0, 0.05);
+    vec4 low_frequency = textureLod(base_noise_texture, animated_position * base_scale, lod - 2.0);
     float low_fbm = dot(low_frequency.gba, vec3(0.625, 0.25, 0.125));
-    float base_cloud =
-        cloud_ref_2_remap(low_frequency.r, -(1.0 - low_fbm), 1.0, 0.0, 1.0);
+    float base_cloud = cloud_ref_2_remap(low_frequency.r, -(1.0 - low_fbm), 1.0, 0.0, 1.0);
 
-    float density_profile = cloud_ref_2_density_gradient(height_fraction, 1.0);
-    base_cloud *= density_profile / max(height_fraction, 0.0001);
-
-    vec3 weather = texture(weather_texture, moving_shape_uv).rgb;
-    float coverage = weather.r * params.weather.x;
+    float weather_scale = 1.0 / max(params.weather.z * 1000.0, 1.0);
+    vec2 weather_uv = local_position.xz * weather_scale + 0.5 +
+                      WIND_DIRECTION.xz * params.weather.w * weather_scale * 0.018;
+    vec3 weather = texture(weather_texture, weather_uv).rgb;
+    float cloud_type = weather.g;
+    float weather_coverage = clamp(params.weather.x * mix(0.72, 1.0, weather.r), 0.0, 1.0);
+    float density_profile = cloud_ref_2_density_gradient(height_fraction, cloud_type);
     float base_with_coverage =
-        cloud_ref_2_remap(base_cloud, coverage, 1.0, 0.0, 1.0) * coverage;
+        cloud_ref_2_remap(base_cloud * density_profile, 1.0 - weather_coverage * 1.35, 1.0,
+                          0.0, 1.0) *
+        weather_coverage;
     float detail_density = 0.0;
 
     if (expensive) {
-        vec3 detail =
-            textureLod(detail_noise_texture,
-                       vec3(moving_shape_uv * crispiness, height_fraction) * curliness, lod)
-                .rgb;
+        vec3 detail_position = animated_position;
+        detail_position.xz -= WIND_DIRECTION.xz * params.weather.w * 0.04;
+        detail_position.y -= params.weather.w * 0.04;
+        float detail_scale = 0.001 * max(params.shape_options.y, 0.05);
+        vec3 detail = textureLod(detail_noise_texture, detail_position * detail_scale, lod).rgb;
         float high_fbm = dot(detail, vec3(0.625, 0.25, 0.125));
-        float high_modifier =
-            mix(high_fbm, 1.0 - high_fbm, clamp(height_fraction * 10.0, 0.0, 1.0));
+        float high_modifier = mix(high_fbm, 1.0 - high_fbm,
+                                  clamp(height_fraction * 4.0, 0.0, 1.0));
         detail_density = high_modifier;
-        base_with_coverage -= high_modifier * (1.0 - base_with_coverage);
-        base_with_coverage = cloud_ref_2_remap(base_with_coverage * 2.0,
-                                             high_modifier * 0.2, 1.0, 0.0, 1.0);
+        base_with_coverage = cloud_ref_2_remap(base_with_coverage,
+                                               high_modifier * 0.14 *
+                                                   params.weather_feature_weights.w *
+                                                   height_fraction,
+                                               1.0,
+                                               0.0, 1.0);
     }
 
-    float density = clamp(base_with_coverage, 0.0, 1.0);
-    return DensitySample(density, clamp(base_cloud, 0.0, 1.0), detail_density, coverage,
-                         height_fraction);
+    float density =
+        pow(clamp(base_with_coverage, 0.0, 1.0), (1.0 - height_fraction) * 0.8 + 0.5);
+    return DensitySample(density, clamp(base_cloud, 0.0, 1.0), detail_density,
+                         weather_coverage, height_fraction);
 }
 
 float cloud_ref_2_light_transmittance(vec3 start, float step_size, vec3 light_dir,
@@ -149,6 +155,11 @@ float cloud_ref_2_light_transmittance(vec3 start, float step_size, vec3 light_di
         }
         pos += ray_step;
         cone_radius += 1.0 / 6.0;
+    }
+    DensitySample distant_sample = cloud_ref_2_sample_density(start + light_dir * ds * 18.0,
+                                                              true, 5.0);
+    if (distant_sample.density > 0.0) {
+        transmittance *= exp(distant_sample.density * sigma_ds);
     }
     return transmittance;
 }
@@ -191,9 +202,11 @@ vec3 cloud_ref_2_cloud_ambient(vec3 position, vec3 direction, DensitySample samp
 }
 
 float cloud_ref_2_direct_phase(float cos_theta) {
-    float forward = cloud_ref_2_hg(cos_theta, 0.58) * 5.0;
-    float backward = cloud_ref_2_hg(cos_theta, -0.20) * 1.4;
-    return clamp(0.64 + forward + backward, 0.55, 4.2);
+    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
+    float forward = cloud_ref_2_hg(cos_theta, 0.60);
+    float horizon_forward = cloud_ref_2_hg(cos_theta, 0.40 - 1.40 * sun_dir.y);
+    float backward = cloud_ref_2_hg(cos_theta, -0.20);
+    return clamp(max(max(forward, horizon_forward), backward) * 6.0, 0.45, 5.0);
 }
 
 float cloud_ref_2_rim_phase(float cos_theta, float light_transmittance,
@@ -369,7 +382,7 @@ void main() {
     int debug_view = int(params.ref_options.x + 0.5);
 
     if (cache_push.cache_options.x > 0.5) {
-        imageStore(cloud_product, pixel, vec4(background, 1.0));
+        imageStore(cloud_product, pixel, vec4(0.0, 0.0, 0.0, 1.0));
         return;
     }
 
@@ -378,6 +391,9 @@ void main() {
     bool has_segment = cloud_ref_2_shell_segment(origin, direction, start_t, end_t);
     if (!has_segment) {
         vec3 debug_color = debug_view == CLOUD_REF_2_DEBUG_BACKGROUND ? background : vec3(0.0);
+        if (debug_view == CLOUD_REF_2_DEBUG_STEPS) {
+            debug_color = vec3(0.08, 0.0, 0.0);
+        }
         imageStore(cloud_product, pixel,
                    vec4(debug_view == CLOUD_REF_2_DEBUG_FINAL ? vec3(0.0) : debug_color, 1.0));
         return;

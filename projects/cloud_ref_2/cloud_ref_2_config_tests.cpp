@@ -261,11 +261,11 @@ void test_weather_preset_defaults() {
             "overcast weather preset should select stratus style");
     require_near(config.coverage, 0.72F, 0.001F,
                  "overcast weather preset should set coverage");
-    require_near(config.weather_scale_km, 280.0F, 0.001F,
+    require_near(config.weather_scale_km, 30.0F, 0.001F,
                  "overcast weather preset should set scale");
-    require_near(config.bottom_altitude_m, 3000.0F, 0.001F,
+    require_near(config.bottom_altitude_m, 900.0F, 0.001F,
                  "overcast weather preset should set bottom altitude");
-    require_near(config.top_altitude_m, 12000.0F, 0.001F,
+    require_near(config.top_altitude_m, 3200.0F, 0.001F,
                  "overcast weather preset should set top altitude");
 
     run_config.clouds.coverage = 0.35F;
@@ -283,7 +283,7 @@ void test_weather_preset_defaults() {
             "high cirrus weather preset should map from run config");
     require(config.cloud_style == cubey::projects::cloud_ref_2::CloudsCloudStyle::HighCirrus,
             "high cirrus weather preset should select cloud style");
-    require_near(config.bottom_altitude_m, 11000.0F, 0.001F,
+    require_near(config.bottom_altitude_m, 6000.0F, 0.001F,
                  "high cirrus weather preset should set bottom altitude");
 }
 

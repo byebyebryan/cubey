@@ -6,7 +6,7 @@ APP="${APP:-${ROOT_DIR}/build/dev/projects/cloud_ref_2/cloud_ref_2}"
 OUT_DIR="${1:-${ROOT_DIR}/outputs/cloud-ref-2-review-$(date +%Y%m%d-%H%M%S)}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
-FRAMES="${FRAMES:-2}"
+FRAMES="${FRAMES:-70}"
 QUALITY="${QUALITY:-full}"
 PRESET="${PRESET:-broken-cumulus}"
 
@@ -32,6 +32,11 @@ capture high --cloud-camera-mode high
 capture high-oblique --cloud-camera-mode high-oblique
 capture orbit-preview --cloud-camera-mode orbit
 capture raw-final --cloud-camera-mode surface --debug-view raw-final
+capture raw-cloud-product --cloud-camera-mode surface --debug-view raw-cloud-product
+capture blend-from --cloud-camera-mode surface --debug-view blend-from
+capture blend-to --cloud-camera-mode surface --debug-view blend-to
+capture update-region --cloud-camera-mode surface --debug-view update-region
+capture oct-uv --cloud-camera-mode surface --debug-view oct-uv
 capture weather --cloud-camera-mode surface --debug-view weather
 capture base-density --cloud-camera-mode surface --debug-view base-density
 capture detail-density --cloud-camera-mode surface --debug-view detail-density

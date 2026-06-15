@@ -8,9 +8,9 @@
 
 namespace cubey::projects::cloud_ref_2 {
 
-inline constexpr float kCloudsDefaultPlanetRadiusM = 600000.0F;
-inline constexpr float kCloudsDefaultBottomAltitudeM = 5000.0F;
-inline constexpr float kCloudsDefaultTopAltitudeM = 22000.0F;
+inline constexpr float kCloudsDefaultPlanetRadiusM = 6000000.0F;
+inline constexpr float kCloudsDefaultBottomAltitudeM = 1500.0F;
+inline constexpr float kCloudsDefaultTopAltitudeM = 4000.0F;
 
 enum class CloudsCameraMode : std::uint32_t {
     Surface = 0,
@@ -118,8 +118,8 @@ struct CloudsConfig {
     float top_altitude_m = kCloudsDefaultTopAltitudeM;
     float coverage = 0.45F;
     float density = 0.02F;
-    float weather_scale_km = 210.0F;
-    float wind_speed_mps = 450.0F;
+    float weather_scale_km = 18.0F;
+    float wind_speed_mps = 35.0F;
     float shadow_strength = 0.82F;
     float horizon_strength = 0.62F;
     float weather_fronts = 1.0F;

@@ -949,6 +949,7 @@ class CloudRef2App {
         cache_update_texture_ = 0U;
         cache_blend_from_texture_ = 1U;
         cache_blend_to_texture_ = 2U;
+        cache_completed_cycles_ = 0U;
         cache_frames_ = config_.cache_frames;
     }
 
@@ -961,7 +962,7 @@ class CloudRef2App {
             clouds_cache_update_region_size(texture_size, config_.cache_frames);
         const std::uint32_t tile = std::min(cache_update_tile_, frames_to_update - 1U);
         return {
-            .blend_amount = cache_initialized_
+            .blend_amount = cache_initialized_ && cache_completed_cycles_ > 0U
                                 ? std::clamp(static_cast<float>(cache_update_tile_) /
                                                  static_cast<float>(frames_to_update),
                                              0.0F, 1.0F)
@@ -1093,10 +1094,16 @@ class CloudRef2App {
 
         const std::uint32_t completed_texture = cache_update_texture_;
         const std::uint32_t reusable_texture = cache_blend_from_texture_;
-        cache_blend_from_texture_ = cache_blend_to_texture_;
-        cache_blend_to_texture_ = completed_texture;
+        if (cache_completed_cycles_ == 0U) {
+            cache_blend_from_texture_ = completed_texture;
+            cache_blend_to_texture_ = completed_texture;
+        } else {
+            cache_blend_from_texture_ = cache_blend_to_texture_;
+            cache_blend_to_texture_ = completed_texture;
+        }
         cache_update_texture_ = reusable_texture;
         cache_update_tile_ = 0U;
+        ++cache_completed_cycles_;
     }
 
     void record_cache_update(const cubey::vulkan::CommandRecorder& recorder,
@@ -1160,9 +1167,7 @@ class CloudRef2App {
                        cubey::render::RenderGraphCommandBufferMode command_buffer_mode,
                        const char* label) {
         ensure_cache_textures(device);
-        const CloudRef2CacheUniformState cache_state = cache_uniform_state();
-        upload_uniforms(frame_slot, target.extent, cache_state);
-        update_composite_descriptor(device, frame_slot);
+        upload_uniforms(frame_slot, target.extent, cache_uniform_state());
         const CloudRef2FrameGraph frame_graph = build_frame_graph(target, frame_slot, mode);
         const auto record_graph = [this, &device, command_buffer, frame_slot,
                                    &frame_graph]() {
@@ -1176,17 +1181,28 @@ class CloudRef2App {
                 },
                 frame_graph.graph);
         };
+        const auto record_cache_updates = [this, &device, &target,
+                                           frame_slot](const cubey::vulkan::CommandRecorder&
+                                                           recorder) {
+            const std::uint32_t update_count =
+                run_config_.headless ? std::max(1U, run_config_.frames) : 1U;
+            for (std::uint32_t update = 0; update < update_count; ++update) {
+                record_cache_update(recorder, frame_slot, cache_uniform_state());
+            }
+            upload_uniforms(frame_slot, target.extent, cache_uniform_state());
+            update_composite_descriptor(device, frame_slot);
+        };
 
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
         if (command_buffer_mode == cubey::render::RenderGraphCommandBufferMode::BeginAndEnd) {
             recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            record_cache_update(recorder, frame_slot, cache_state);
+            record_cache_updates(recorder);
             record_graph();
             recorder.end(label != nullptr ? label : "vkEndCommandBuffer cloud_ref_2");
             return;
         }
 
-        record_cache_update(recorder, frame_slot, cache_state);
+        record_cache_updates(recorder);
         record_graph();
     }
 
@@ -1236,6 +1252,7 @@ class CloudRef2App {
     std::uint32_t cache_update_texture_ = 0U;
     std::uint32_t cache_blend_from_texture_ = 1U;
     std::uint32_t cache_blend_to_texture_ = 2U;
+    std::uint32_t cache_completed_cycles_ = 0U;
     bool cache_initialized_ = false;
 };
 

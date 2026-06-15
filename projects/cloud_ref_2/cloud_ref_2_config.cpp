@@ -33,42 +33,42 @@ struct CloudsWeatherPresetSettings {
     case CloudsWeatherPreset::FairWeather:
         return {.coverage = 0.30F,
                 .density = 0.016F,
-                .weather_scale_km = 260.0F,
-                .wind_speed_mps = 260.0F,
-                .bottom_altitude_m = 5000.0F,
-                .top_altitude_m = 17000.0F,
+                .weather_scale_km = 24.0F,
+                .wind_speed_mps = 20.0F,
+                .bottom_altitude_m = 1500.0F,
+                .top_altitude_m = 3800.0F,
                 .cloud_style = CloudsCloudStyle::FairWeather};
     case CloudsWeatherPreset::BrokenCumulus:
         return {.coverage = 0.45F,
                 .density = 0.020F,
-                .weather_scale_km = 210.0F,
-                .wind_speed_mps = 450.0F,
-                .bottom_altitude_m = 5000.0F,
-                .top_altitude_m = 22000.0F,
+                .weather_scale_km = 18.0F,
+                .wind_speed_mps = 35.0F,
+                .bottom_altitude_m = 1500.0F,
+                .top_altitude_m = 4000.0F,
                 .cloud_style = CloudsCloudStyle::BrokenCumulus};
     case CloudsWeatherPreset::OvercastStratus:
         return {.coverage = 0.72F,
                 .density = 0.018F,
-                .weather_scale_km = 280.0F,
-                .wind_speed_mps = 320.0F,
-                .bottom_altitude_m = 3000.0F,
-                .top_altitude_m = 12000.0F,
+                .weather_scale_km = 30.0F,
+                .wind_speed_mps = 28.0F,
+                .bottom_altitude_m = 900.0F,
+                .top_altitude_m = 3200.0F,
                 .cloud_style = CloudsCloudStyle::OvercastStratus};
     case CloudsWeatherPreset::StormCells:
         return {.coverage = 0.64F,
                 .density = 0.032F,
-                .weather_scale_km = 105.0F,
-                .wind_speed_mps = 650.0F,
-                .bottom_altitude_m = 2500.0F,
-                .top_altitude_m = 24000.0F,
+                .weather_scale_km = 14.0F,
+                .wind_speed_mps = 60.0F,
+                .bottom_altitude_m = 900.0F,
+                .top_altitude_m = 6000.0F,
                 .cloud_style = CloudsCloudStyle::StormCells};
     case CloudsWeatherPreset::HighCirrus:
         return {.coverage = 0.36F,
                 .density = 0.010F,
-                .weather_scale_km = 360.0F,
-                .wind_speed_mps = 700.0F,
-                .bottom_altitude_m = 11000.0F,
-                .top_altitude_m = 22000.0F,
+                .weather_scale_km = 40.0F,
+                .wind_speed_mps = 90.0F,
+                .bottom_altitude_m = 6000.0F,
+                .top_altitude_m = 9000.0F,
                 .cloud_style = CloudsCloudStyle::HighCirrus};
     }
     return clouds_weather_preset_settings(CloudsWeatherPreset::BrokenCumulus);

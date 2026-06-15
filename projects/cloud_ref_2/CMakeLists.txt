@@ -53,7 +53,7 @@ if (BUILD_TESTING)
         "${CUBEY_CLOUD_REF_2_SURFACE_SMOKE_OUTPUT}"
         --headless
         --frames
-        2
+        70
         --cloud-camera-mode
         surface
     )
@@ -73,7 +73,7 @@ if (BUILD_TESTING)
         "${CUBEY_CLOUD_REF_2_HIGH_SMOKE_OUTPUT}"
         --headless
         --frames
-        2
+        70
         --cloud-camera-mode
         high
     )
