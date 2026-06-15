@@ -19,6 +19,7 @@ const vec4 STRATOCUMULUS_GRADIENT = vec4(0.02, 0.20, 0.48, 0.625);
 const vec4 CUMULUS_GRADIENT = vec4(0.00, 0.1625, 0.88, 0.98);
 const vec3 WIND_DIRECTION = normalize(vec3(0.5, 0.0, 0.1));
 const float CLOUD_TOP_OFFSET = 750.0;
+const float CLOUD_TOP_OFFSET_WEATHER_FRACTION = 0.14;
 const vec3 NOISE_KERNEL[6] = vec3[](
     vec3(0.38051305, 0.92453449, -0.02111345),
     vec3(-0.50625799, -0.03590792, -0.86163418),
@@ -37,6 +38,7 @@ struct DensitySample {
     float base_density;
     float detail_density;
     float weather;
+    float cloud_type;
     float height_fraction;
 };
 
@@ -96,15 +98,21 @@ vec2 cloud_project_uv(vec3 position) {
 DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float height_fraction = cloud_height_fraction(position);
     if (height_fraction <= 0.0 || height_fraction >= 1.0) {
-        return DensitySample(0.0, 0.0, 0.0, 0.0, height_fraction);
+        return DensitySample(0.0, 0.0, 0.0, 0.0, 0.0, height_fraction);
     }
 
     float crispiness = max(params.shape_options.x, 0.001);
     float curliness = max(params.shape_options.y, 0.001);
+    // The reference 750 m top offset is too small once local positions are
+    // projected against planet radius, so scale shear with the weather domain.
+    float top_offset = max(CLOUD_TOP_OFFSET, params.weather.z * 1000.0 *
+                                                 CLOUD_TOP_OFFSET_WEATHER_FRACTION);
     vec3 animation =
-        height_fraction * WIND_DIRECTION * CLOUD_TOP_OFFSET + WIND_DIRECTION * params.weather.w;
+        height_fraction * WIND_DIRECTION * top_offset + WIND_DIRECTION * params.weather.w;
     vec2 shape_uv = cloud_project_uv(position);
     vec2 moving_shape_uv = cloud_project_uv(position + animation);
+    vec3 weather = texture(weather_texture, moving_shape_uv).rgb;
+    float cloud_type = weather.g;
 
     vec4 low_frequency =
         textureLod(base_noise_texture, vec3(shape_uv * crispiness, height_fraction), lod);
@@ -115,7 +123,6 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float density_profile = cloud_density_gradient(height_fraction, 1.0);
     base_cloud *= density_profile / max(height_fraction, 0.0001);
 
-    vec3 weather = texture(weather_texture, moving_shape_uv).rgb;
     float coverage = weather.r * params.weather.x;
     float base_with_coverage =
         cloud_remap(base_cloud, coverage, 1.0, 0.0, 1.0) * coverage;
@@ -140,7 +147,7 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
 
     float density = clamp(base_with_coverage, 0.0, 1.0);
     return DensitySample(density, clamp(base_cloud, 0.0, 1.0), detail_density, coverage,
-                         height_fraction);
+                         cloud_type, height_fraction);
 }
 
 float cloud_light_transmittance(vec3 start, float step_size, vec3 light_dir,
@@ -411,6 +418,7 @@ void main() {
     if (debug_view == CLOUD_DEBUG_WEATHER ||
         debug_view == CLOUD_DEBUG_BASE_DENSITY ||
         debug_view == CLOUD_DEBUG_DETAIL_DENSITY ||
+        debug_view == CLOUD_DEBUG_CLOUD_TYPE ||
         debug_view == CLOUD_DEBUG_DENSITY) {
         vec3 mid = origin + direction * mix(start_t, end_t, 0.5);
         DensitySample sample_data = cloud_sample_density(mid, true, 0.0);
@@ -420,6 +428,8 @@ void main() {
             debug_color = vec3(sample_data.base_density);
         } else if (debug_view == CLOUD_DEBUG_DETAIL_DENSITY) {
             debug_color = vec3(sample_data.detail_density);
+        } else if (debug_view == CLOUD_DEBUG_CLOUD_TYPE) {
+            debug_color = vec3(sample_data.cloud_type);
         } else {
             debug_color = vec3(sample_data.density);
         }

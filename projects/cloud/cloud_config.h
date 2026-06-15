@@ -76,9 +76,10 @@ enum class CloudsDebugView : std::uint32_t {
     MetadataAlpha = 22,
     MetadataConfidence = 23,
     MetadataDensity = 24,
+    CloudType = 25,
 };
 
-inline constexpr std::array<CloudsDebugView, 20> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 21> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
     CloudsDebugView::Weather,      CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting,
@@ -91,6 +92,7 @@ inline constexpr std::array<CloudsDebugView, 20> kCloudsDebugViews{
     CloudsDebugView::MetadataConfidence,
     CloudsDebugView::MetadataDensity,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
+    CloudsDebugView::CloudType,
 };
 
 struct CloudsTimeConfig {

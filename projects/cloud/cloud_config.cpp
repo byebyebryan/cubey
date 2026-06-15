@@ -275,6 +275,9 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "detail-density") {
         return CloudsDebugView::DetailDensity;
     }
+    if (value == "cloud-type") {
+        return CloudsDebugView::CloudType;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -320,6 +323,8 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "base-density";
     case CloudsDebugView::DetailDensity:
         return "detail-density";
+    case CloudsDebugView::CloudType:
+        return "cloud-type";
     }
     return "final";
 }

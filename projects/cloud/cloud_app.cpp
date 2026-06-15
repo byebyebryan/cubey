@@ -87,7 +87,7 @@ constexpr std::array<CloudsSamplingMode, 3> kCloudSamplingModes{
     CloudsSamplingMode::Bayer,
     CloudsSamplingMode::Off,
 };
-constexpr std::array<CloudsDebugView, 20> kCloudDebugViews{
+constexpr std::array<CloudsDebugView, 21> kCloudDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
     CloudsDebugView::Lighting,     CloudsDebugView::AmbientLight,
@@ -99,6 +99,7 @@ constexpr std::array<CloudsDebugView, 20> kCloudDebugViews{
     CloudsDebugView::MetadataConfidence,
     CloudsDebugView::MetadataDensity,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
+    CloudsDebugView::CloudType,
 };
 
 struct CloudFrameUniforms {
