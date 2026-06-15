@@ -9,7 +9,21 @@ HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"
 QUALITY="${QUALITY:-full}"
 PRESET="${PRESET:-broken-cumulus}"
-CENTER_CROP_GEOMETRY="${CENTER_CROP_GEOMETRY:-520x330+370+270}"
+CENTER_CROP_GEOMETRY="${CENTER_CROP_GEOMETRY:-}"
+
+if [[ -z "${CENTER_CROP_GEOMETRY}" ]]; then
+    crop_w=$(( WIDTH * 41 / 100 ))
+    crop_h=$(( HEIGHT * 46 / 100 ))
+    crop_x=$(( WIDTH * 29 / 100 ))
+    crop_y=$(( HEIGHT * 38 / 100 ))
+    if (( crop_w < 1 )); then
+        crop_w=1
+    fi
+    if (( crop_h < 1 )); then
+        crop_h=1
+    fi
+    CENTER_CROP_GEOMETRY="${crop_w}x${crop_h}+${crop_x}+${crop_y}"
+fi
 
 mkdir -p "${OUT_DIR}"
 
@@ -46,6 +60,8 @@ capture base-density --cloud-camera-mode surface-up --debug-view base-density
 capture detail-density --cloud-camera-mode surface-up --debug-view detail-density
 capture cloud-type --cloud-camera-mode surface-up --debug-view cloud-type
 capture density --cloud-camera-mode surface-up --debug-view density
+capture visible-density --cloud-camera-mode surface-up --debug-view visible-density
+capture visible-cloud-type --cloud-camera-mode surface-up --debug-view visible-cloud-type
 capture transmittance --cloud-camera-mode surface-up --debug-view transmittance
 capture lighting --cloud-camera-mode surface-up --debug-view lighting
 capture ambient-light --cloud-camera-mode surface-up --debug-view ambient-light
@@ -69,6 +85,7 @@ if command -v magick >/dev/null 2>&1; then
     mkdir -p "${crop_dir}"
     crop_inputs=()
     for name in surface-up raw-final cloud-alpha weather cloud-type density \
+        visible-density visible-cloud-type \
         metadata-alpha metadata-distance metadata-confidence steps; do
         if [[ -f "${OUT_DIR}/${name}.png" ]]; then
             crop_path="${crop_dir}/${name}-center.png"
