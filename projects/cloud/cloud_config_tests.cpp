@@ -99,6 +99,14 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include cloud-type diagnostics after detail density");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::CloudType) ==
+                cubey::projects::cloud::CloudsDebugView::VisibleDensity,
+            "cloud debug view should include visible-density diagnostics after cloud type");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::VisibleDensity) ==
+                cubey::projects::cloud::CloudsDebugView::VisibleCloudType,
+            "cloud debug view should include visible cloud-type diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::VisibleCloudType) ==
                 cubey::projects::cloud::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::cloud::clouds_debug_view_from_string("cloud-alpha") ==
@@ -140,6 +148,12 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud::clouds_debug_view_from_string("cloud-type") ==
                 cubey::projects::cloud::CloudsDebugView::CloudType,
             "cloud type debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("visible-density") ==
+                cubey::projects::cloud::CloudsDebugView::VisibleDensity,
+            "visible density debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("visible-cloud-type") ==
+                cubey::projects::cloud::CloudsDebugView::VisibleCloudType,
+            "visible cloud type debug view should parse");
 }
 
 void test_run_config_mapping() {
