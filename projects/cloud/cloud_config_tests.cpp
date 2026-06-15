@@ -155,6 +155,7 @@ void test_run_config_mapping() {
     run_config.clouds.coverage = 0.75F;
     run_config.clouds.density = 0.025F;
     run_config.clouds.weather_scale_km = 240.0F;
+    run_config.clouds.vertical_shear_fraction = 0.18F;
     run_config.clouds.wind_speed_mps = 35.0F;
     run_config.clouds.shadow_strength = 0.8F;
     run_config.clouds.horizon_strength = 0.9F;
@@ -199,6 +200,10 @@ void test_run_config_mapping() {
                  0.001F, "cloud camera altitude should follow camera mode default");
     require_near(config.coverage, 0.75F, 0.001F, "cloud coverage should map");
     require_near(config.density, 0.025F, 0.001F, "cloud density should map");
+    require_near(config.weather_scale_km, 240.0F, 0.001F,
+                 "cloud weather scale should map");
+    require_near(config.vertical_shear_fraction, 0.18F, 0.001F,
+                 "cloud vertical shear should map");
     require_near(config.shadow_strength, 0.8F, 0.001F,
                  "cloud shadow strength should map");
     require_near(config.horizon_strength, 0.9F, 0.001F,
@@ -303,6 +308,8 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
     cubey::set_run_config_option_from_string(config, "clouds.sampling_mode", "bayer");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
+    cubey::set_run_config_option_from_string(config, "clouds.weather_scale_km", "120");
+    cubey::set_run_config_option_from_string(config, "clouds.vertical_shear_fraction", "0.20");
     cubey::set_run_config_option_from_string(config, "clouds.wind_speed_mps", "22");
     cubey::set_run_config_option_from_string(config, "clouds.shadow_strength", "0.7");
     cubey::set_run_config_option_from_string(config, "clouds.horizon_strength", "0.8");
@@ -330,6 +337,10 @@ void test_config_descriptors() {
             "cloud sampling mode descriptor should set");
     require_near(config.clouds.coverage, 0.44F, 0.001F,
                  "cloud coverage descriptor should set");
+    require_near(config.clouds.weather_scale_km, 120.0F, 0.001F,
+                 "cloud weather scale descriptor should set");
+    require_near(config.clouds.vertical_shear_fraction, 0.20F, 0.001F,
+                 "cloud vertical shear descriptor should set");
     require_near(config.clouds.wind_speed_mps, 22.0F, 0.001F,
                  "cloud wind descriptor should set");
     require_near(config.clouds.shadow_strength, 0.7F, 0.001F,

@@ -157,6 +157,7 @@ enum class RunConfigOptionId {
     CloudCoverage,
     CloudDensity,
     CloudWeatherScale,
+    CloudVerticalShearFraction,
     CloudWindSpeed,
     CloudShadowStrength,
     CloudHorizonStrength,

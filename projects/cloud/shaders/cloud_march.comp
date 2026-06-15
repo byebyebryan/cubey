@@ -19,7 +19,6 @@ const vec4 STRATOCUMULUS_GRADIENT = vec4(0.02, 0.20, 0.48, 0.625);
 const vec4 CUMULUS_GRADIENT = vec4(0.00, 0.1625, 0.88, 0.98);
 const vec3 WIND_DIRECTION = normalize(vec3(0.5, 0.0, 0.1));
 const float CLOUD_TOP_OFFSET = 750.0;
-const float CLOUD_TOP_OFFSET_WEATHER_FRACTION = 0.14;
 const vec3 NOISE_KERNEL[6] = vec3[](
     vec3(0.38051305, 0.92453449, -0.02111345),
     vec3(-0.50625799, -0.03590792, -0.86163418),
@@ -103,10 +102,10 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
 
     float crispiness = max(params.shape_options.x, 0.001);
     float curliness = max(params.shape_options.y, 0.001);
-    // The reference 750 m top offset is too small once local positions are
-    // projected against planet radius, so scale shear with the weather domain.
-    float top_offset = max(CLOUD_TOP_OFFSET, params.weather.z * 1000.0 *
-                                                 CLOUD_TOP_OFFSET_WEATHER_FRACTION);
+    // Keep top shear tied to the broad weather feature size, but expose the
+    // fraction separately so weather scale can mean horizontal structure.
+    float top_offset =
+        max(CLOUD_TOP_OFFSET, params.weather.z * 1000.0 * params.cloud_shell.z);
     vec3 animation =
         height_fraction * WIND_DIRECTION * top_offset + WIND_DIRECTION * params.weather.w;
     vec2 shape_uv = cloud_project_uv(position);

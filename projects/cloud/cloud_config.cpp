@@ -21,6 +21,7 @@ struct CloudsWeatherPresetSettings {
     float coverage = 0.0F;
     float density = 0.0F;
     float weather_scale_km = 0.0F;
+    float vertical_shear_fraction = 0.14F;
     float wind_speed_mps = 0.0F;
     float bottom_altitude_m = kCloudsDefaultBottomAltitudeM;
     float top_altitude_m = kCloudsDefaultTopAltitudeM;
@@ -82,6 +83,7 @@ void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset prese
     config.coverage = settings.coverage;
     config.density = settings.density;
     config.weather_scale_km = settings.weather_scale_km;
+    config.vertical_shear_fraction = settings.vertical_shear_fraction;
     config.wind_speed_mps = settings.wind_speed_mps;
     config.bottom_altitude_m = settings.bottom_altitude_m;
     config.top_altitude_m = settings.top_altitude_m;
@@ -410,6 +412,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (run_config_float_is_set(run_config.clouds.weather_scale_km)) {
         config.weather_scale_km = run_config.clouds.weather_scale_km;
     }
+    if (run_config_float_is_set(run_config.clouds.vertical_shear_fraction)) {
+        config.vertical_shear_fraction = run_config.clouds.vertical_shear_fraction;
+    }
     if (run_config_float_is_set(run_config.clouds.wind_speed_mps)) {
         config.wind_speed_mps = run_config.clouds.wind_speed_mps;
     }
@@ -543,6 +548,10 @@ void validate_clouds_config(const CloudsConfig& config) {
     }
     if (!finite_positive(config.weather_scale_km)) {
         throw std::runtime_error("cloud weather scale must be finite and positive");
+    }
+    if (!std::isfinite(config.vertical_shear_fraction) ||
+        config.vertical_shear_fraction < 0.0F || config.vertical_shear_fraction > 0.5F) {
+        throw std::runtime_error("cloud vertical shear fraction must be finite and in [0, 0.5]");
     }
     if (!finite_nonnegative(config.wind_speed_mps)) {
         throw std::runtime_error("cloud wind speed must be finite and nonnegative");

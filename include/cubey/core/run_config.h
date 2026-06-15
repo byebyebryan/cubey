@@ -239,6 +239,7 @@ struct RunConfig {
         float coverage = kRunConfigUnsetFloat;
         float density = kRunConfigUnsetFloat;
         float weather_scale_km = kRunConfigUnsetFloat;
+        float vertical_shear_fraction = kRunConfigUnsetFloat;
         float wind_speed_mps = kRunConfigUnsetFloat;
         float shadow_strength = kRunConfigUnsetFloat;
         float horizon_strength = kRunConfigUnsetFloat;

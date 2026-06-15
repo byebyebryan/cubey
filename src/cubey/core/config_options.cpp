@@ -105,7 +105,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 210> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 211> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -556,8 +556,12 @@ constexpr std::array<ConfigOptionDescriptor, 210> kRunConfigOptions{
            min_range(0.0)),
     option(RunConfigOptionId::CloudWeatherScale, "clouds.weather_scale_km",
            "--cloud-weather-scale-km", "Weather Scale", "Clouds",
-           "World-space scale of the low-frequency cloud weather map in kilometers.",
+           "Approximate broad cloud weather feature size in kilometers.",
            ConfigOptionType::Float, min_range(0.001)),
+    option(RunConfigOptionId::CloudVerticalShearFraction, "clouds.vertical_shear_fraction",
+           "--cloud-vertical-shear-fraction", "Vertical Shear", "Clouds",
+           "Fraction of weather feature size used for altitude-dependent cloud shear.",
+           ConfigOptionType::Float, bounded_range(0.0, 0.5)),
     option(RunConfigOptionId::CloudWindSpeed, "clouds.wind_speed_mps", "--cloud-wind-speed-mps",
            "Wind Speed", "Clouds", "Cloud weather-map wind speed in meters per second.",
            ConfigOptionType::Float, min_range(0.0)),
@@ -1268,6 +1272,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.density);
     case RunConfigOptionId::CloudWeatherScale:
         return optional_float(config.clouds.weather_scale_km);
+    case RunConfigOptionId::CloudVerticalShearFraction:
+        return optional_float(config.clouds.vertical_shear_fraction);
     case RunConfigOptionId::CloudWindSpeed:
         return optional_float(config.clouds.wind_speed_mps);
     case RunConfigOptionId::CloudShadowStrength:
@@ -1703,6 +1709,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("coverage", options.coverage);
     adapter.writeField<float>("density", options.density);
     adapter.writeField<float>("weather_scale_km", options.weather_scale_km);
+    adapter.writeField<float>("vertical_shear_fraction", options.vertical_shear_fraction);
     adapter.writeField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.writeField<float>("shadow_strength", options.shadow_strength);
     adapter.writeField<float>("horizon_strength", options.horizon_strength);
@@ -1739,6 +1746,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("coverage", options.coverage);
     adapter.readField<float>("density", options.density);
     adapter.readField<float>("weather_scale_km", options.weather_scale_km);
+    adapter.readField<float>("vertical_shear_fraction", options.vertical_shear_fraction);
     adapter.readField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.readField<float>("shadow_strength", options.shadow_strength);
     adapter.readField<float>("horizon_strength", options.horizon_strength);
@@ -2373,6 +2381,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudWeatherScale:
         config.clouds.weather_scale_km = parse_config_float(value, option);
         validate_range(config.clouds.weather_scale_km, option);
+        break;
+    case RunConfigOptionId::CloudVerticalShearFraction:
+        config.clouds.vertical_shear_fraction = parse_config_float(value, option);
+        validate_range(config.clouds.vertical_shear_fraction, option);
         break;
     case RunConfigOptionId::CloudWindSpeed:
         config.clouds.wind_speed_mps = parse_config_float(value, option);

@@ -359,7 +359,8 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
         .camera_position_radius = {basis.position.x, basis.position.y, basis.position.z,
                                    config.planet_radius_m},
         .cloud_shell = {config.bottom_altitude_m,
-                        config.top_altitude_m - config.bottom_altitude_m, 0.0F,
+                        config.top_altitude_m - config.bottom_altitude_m,
+                        config.vertical_shear_fraction,
                         cloud_cloud_style_value(config.cloud_style)},
         .weather = {config.coverage, config.density, config.weather_scale_km,
                     elapsed_seconds * config.wind_speed_mps},
@@ -691,6 +692,8 @@ class CloudApp {
         if (ImGui::CollapsingHeader("Shape / Density", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::SliderFloat("Crispiness", &config_.crispiness, 1.0F, 120.0F, "%.1f");
             ImGui::SliderFloat("Curliness", &config_.curliness, 0.01F, 3.0F, "%.2f");
+            ImGui::SliderFloat("Vertical shear", &config_.vertical_shear_fraction, 0.0F, 0.5F,
+                               "%.2f");
             ImGui::SliderFloat("Detail erosion", &config_.detail_erosion, 0.0F, 1.0F, "%.2f");
             ImGui::Checkbox("Powder", &config_.powder_enabled);
         }
