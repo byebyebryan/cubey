@@ -68,6 +68,20 @@ struct DesertDuneSampleFeatures {
     float channel_distance_m = 0.0F;
 };
 
+struct AlpineGlacialSampleFeatures {
+    float glacier_floor = 0.0F;
+    float valley_wall = 0.0F;
+    float hanging_valley = 0.0F;
+    float moraine_influence = 0.0F;
+    float cirque_influence = 0.0F;
+    float ridge_influence = 0.0F;
+    float valley_influence = 0.0F;
+    float basin_influence = 0.0F;
+    float divide_influence = 0.0F;
+    float channel_influence = 0.0F;
+    float channel_distance_m = 0.0F;
+};
+
 [[nodiscard]] float saturate(float value) {
     return std::clamp(value, 0.0F, 1.0F);
 }
@@ -519,6 +533,63 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
         .divide_influence = saturate(crest * 0.42F + dune_profile * 0.12F),
         .channel_influence = channel,
         .channel_distance_m = std::max(channel_distance_m, 0.0F),
+    };
+}
+
+[[nodiscard]] AlpineGlacialSampleFeatures
+alpine_glacial_features_at(Point2 p, const TerrainLabGridDesc& desc,
+                           const TerrainLabConfig& config) {
+    const float phase = random01(config.seed, 31U, 1401U) * 6.28318530718F;
+    const float center =
+        std::sin((p.z * 2.15F) + phase) * 0.10F +
+        fbm((p.x * 1.9F) - 6.0F, (p.z * 1.9F) + 8.0F, config.seed + 3301U, 4) * 0.055F;
+    const float distance = std::abs(p.x - center);
+    const float downstream = smoothstep(-0.96F, 0.88F, p.z);
+    const float width = lerp(0.18F, 0.32F, downstream);
+    const float floor = 1.0F - smoothstep(width * 0.72F, width * 1.34F, distance);
+    const float wall =
+        smoothstep(width * 0.86F, width * 1.28F, distance) *
+        (1.0F - smoothstep(width * 1.38F, width * 2.30F, distance));
+    const float ridge =
+        smoothstep(width * 1.52F, width * 2.70F, distance) *
+        (0.72F +
+         smoothstep(0.24F, 0.90F,
+                    fbm((p.x * 4.6F) + 3.0F, (p.z * 4.6F) - 7.0F, config.seed + 3307U, 4) *
+                            0.5F +
+                        0.5F) *
+             0.28F);
+    const float cirque =
+        (1.0F - smoothstep(0.36F, 0.88F, length({p.x - center, p.z + 0.76F}))) *
+        smoothstep(-0.98F, -0.54F, p.z);
+
+    const float left_line = center - 0.58F - (p.z + 0.10F) * 0.36F;
+    const float right_line = center + 0.54F + (p.z - 0.04F) * 0.32F;
+    const float left_hanging =
+        (1.0F - smoothstep(0.035F, 0.17F, std::abs(p.x - left_line))) *
+        smoothstep(-0.72F, -0.22F, p.z) * (1.0F - smoothstep(0.02F, 0.42F, p.z));
+    const float right_hanging =
+        (1.0F - smoothstep(0.035F, 0.16F, std::abs(p.x - right_line))) *
+        smoothstep(-0.42F, 0.18F, p.z) * (1.0F - smoothstep(0.46F, 0.82F, p.z));
+    const float hanging = saturate(left_hanging + right_hanging * 0.86F);
+    const float moraine =
+        floor * smoothstep(-0.12F, 0.36F, p.z) *
+            (1.0F - smoothstep(0.58F, 0.92F, p.z)) +
+        wall * smoothstep(0.42F, 0.86F, downstream) * 0.30F;
+    const float basin = saturate(floor * 0.58F + smoothstep(0.24F, 0.90F, downstream) * 0.18F);
+    const float channel = saturate(floor * 0.58F + hanging * 0.22F);
+    return {
+        .glacier_floor = saturate(floor),
+        .valley_wall = saturate(wall),
+        .hanging_valley = hanging,
+        .moraine_influence = saturate(moraine),
+        .cirque_influence = saturate(cirque),
+        .ridge_influence = saturate(ridge + wall * 0.32F + cirque * 0.20F),
+        .valley_influence = saturate(floor * 0.78F + hanging * 0.30F),
+        .basin_influence = basin,
+        .divide_influence = saturate(ridge * 0.58F + wall * 0.16F + (1.0F - floor) * 0.08F),
+        .channel_influence = channel,
+        .channel_distance_m =
+            std::max(distance * std::max(half_extent_x_m(desc), half_extent_z_m(desc)), 0.0F),
     };
 }
 
@@ -1598,6 +1669,188 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
     return fields;
 }
 
+TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig& config) {
+    validate_terrain_lab_config(config);
+    TerrainLabFieldData fields = make_empty_terrain_lab_fields(config);
+    const std::size_t count = fields.sample_count();
+    const float alpine_elevation_scale_m = config.elevation_scale_m * 0.86F;
+    fields.watershed_count = 1U;
+    fields.max_channel_distance_m = 0.0F;
+
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const Point2 p = normalized_sample(fields.desc, x, y);
+            const AlpineGlacialSampleFeatures features =
+                alpine_glacial_features_at(p, fields.desc, config);
+            const float headwater = saturate((1.0F - p.z) * 0.5F);
+            const float broad =
+                fbm((p.x * 1.2F) + 2.0F, (p.z * 1.2F) - 4.0F, config.seed + 3401U, 5);
+            const float structure =
+                ((headwater * 0.54F) + (features.ridge_influence * 0.48F) +
+                 (features.cirque_influence * 0.18F) + (features.valley_wall * 0.18F) +
+                 (broad * 0.13F) - (features.glacier_floor * 0.34F) -
+                 (features.hanging_valley * 0.11F) - (features.basin_influence * 0.08F) - 0.06F) *
+                alpine_elevation_scale_m * config.structure_strength;
+
+            fields.ridge_influence[sample] = features.ridge_influence;
+            fields.valley_influence[sample] = features.valley_influence;
+            fields.basin_influence[sample] = features.basin_influence;
+            fields.divide_influence[sample] = features.divide_influence;
+            fields.channel_influence[sample] = features.channel_influence;
+            fields.channel_distance_m[sample] = features.channel_distance_m;
+            fields.max_channel_distance_m =
+                std::max(fields.max_channel_distance_m, features.channel_distance_m);
+            fields.structure_height_m[sample] = structure;
+            fields.height_m[sample] = structure;
+        }
+    }
+
+    std::vector<float> temp_slope;
+    std::vector<float> temp_curvature;
+    float temp_max_slope = 0.0F;
+    float temp_max_curvature = 0.0F;
+    compute_slope_and_curvature(fields.desc, fields.structure_height_m, temp_slope, temp_curvature,
+                                temp_max_slope, temp_max_curvature);
+
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const Point2 p = normalized_sample(fields.desc, x, y);
+            const AlpineGlacialSampleFeatures features =
+                alpine_glacial_features_at(p, fields.desc, config);
+            const float slope_t = smoothstep(0.06F, 0.42F, temp_slope[sample]);
+            const float glacial_carve =
+                (features.glacier_floor * 0.085F + features.hanging_valley * 0.026F) *
+                alpine_elevation_scale_m * config.process_strength;
+            const float wall_polish = features.valley_wall * smoothstep(0.15F, 0.58F, slope_t) *
+                                      alpine_elevation_scale_m * 0.032F *
+                                      config.process_strength;
+            const float moraine_deposit =
+                features.moraine_influence * (1.0F - slope_t * 0.55F) *
+                alpine_elevation_scale_m * 0.060F * config.process_strength;
+            const float cirque_scour = features.cirque_influence * alpine_elevation_scale_m *
+                                       0.030F * config.process_strength;
+            fields.process_delta_m[sample] =
+                -glacial_carve - wall_polish - cirque_scour + moraine_deposit;
+            fields.height_m[sample] =
+                fields.structure_height_m[sample] + fields.process_delta_m[sample];
+        }
+    }
+    relax_steep_process_slopes(config, fields);
+    update_height_range(fields);
+
+    const float process_height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const Point2 p = normalized_sample(fields.desc, x, y);
+            const AlpineGlacialSampleFeatures features =
+                alpine_glacial_features_at(p, fields.desc, config);
+            const float elevation_t =
+                saturate((fields.height_m[sample] - fields.min_height_m) / process_height_span);
+            const float ridge_detail =
+                fbm((p.x * 19.0F) - 8.0F, (p.z * 19.0F) + 10.0F, config.seed + 3411U, 4) *
+                fields.ridge_influence[sample] * 0.014F;
+            const float wall_groove =
+                fbm((p.x * 28.0F) + 13.0F, (p.z * 28.0F) - 17.0F, config.seed + 3417U, 3) *
+                features.valley_wall * 0.007F;
+            const float moraine_roughness =
+                fbm((p.x * 15.0F) - 21.0F, (p.z * 15.0F) + 25.0F, config.seed + 3421U, 3) *
+                features.moraine_influence * 0.006F;
+            const float snow_smoothing = features.glacier_floor * smoothstep(0.46F, 0.86F, elevation_t);
+            const float detail = (ridge_detail + wall_groove + moraine_roughness) *
+                                 alpine_elevation_scale_m * config.detail_strength *
+                                 (1.0F - snow_smoothing * 0.50F);
+            fields.detail_height_m[sample] = detail;
+            fields.height_m[sample] += detail;
+        }
+    }
+
+    update_height_range(fields);
+    compute_slope_and_curvature(fields.desc, fields.height_m, fields.slope, fields.curvature,
+                                fields.max_slope, fields.max_abs_curvature);
+    compute_flow_fields(fields.desc, fields.height_m, fields.slope, fields.flow_direction,
+                        fields.flow_accumulation, fields.stream_power, fields.max_flow_accumulation,
+                        fields.max_stream_power);
+
+    const float height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
+    const float inv_log_count =
+        1.0F / std::log1p(static_cast<float>(std::max<std::size_t>(count, 1U)));
+    fields.max_wetness = 0.0F;
+    fields.max_deposition = 0.0F;
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const Point2 p = normalized_sample(fields.desc, x, y);
+            const AlpineGlacialSampleFeatures features =
+                alpine_glacial_features_at(p, fields.desc, config);
+            const float elevation_t =
+                saturate((fields.height_m[sample] - fields.min_height_m) / height_span);
+            const float slope_t = smoothstep(0.06F, 0.48F, fields.slope[sample]);
+            const float flow_t = std::log1p(fields.flow_accumulation[sample]) * inv_log_count;
+            const float wetness = saturate((fields.channel_influence[sample] * 0.18F) +
+                                           (features.glacier_floor * 0.10F) +
+                                           (features.basin_influence * 0.06F) +
+                                           (flow_t * 0.08F));
+            const float deposition =
+                saturate((features.moraine_influence * 0.58F) +
+                         (features.glacier_floor * (1.0F - slope_t) * 0.20F) +
+                         (fields.channel_influence[sample] * 0.12F));
+            fields.wetness[sample] = wetness;
+            fields.deposition[sample] = deposition;
+            fields.max_wetness = std::max(fields.max_wetness, wetness);
+            fields.max_deposition = std::max(fields.max_deposition, deposition);
+
+            const float material_noise =
+                fbm((p.x * 7.0F) - 4.0F, (p.z * 7.0F) + 6.0F, config.seed + 3431U, 4) * 0.5F +
+                0.5F;
+            const float scree_patch =
+                fbm((p.x * 13.0F) + 18.0F, (p.z * 13.0F) - 12.0F, config.seed + 3433U, 3) *
+                    0.5F +
+                0.5F;
+            const float snow =
+                (smoothstep(0.54F, 0.88F, elevation_t) * (1.0F - slope_t * 0.45F) +
+                 features.glacier_floor * smoothstep(0.30F, 0.76F, elevation_t) * 0.46F +
+                 features.cirque_influence * 0.36F) *
+                lerp(0.78F, 1.18F, material_noise);
+            const float rock = (slope_t * 0.82F + fields.ridge_influence[sample] * 0.30F +
+                                features.valley_wall * 0.24F) *
+                               (1.0F - snow * 0.58F) * lerp(0.82F, 1.22F, material_noise);
+            const float scree = smoothstep(0.28F, 0.78F, slope_t) *
+                                (1.0F - smoothstep(0.78F, 1.0F, slope_t)) *
+                                (features.valley_wall * 0.46F + fields.ridge_influence[sample] * 0.22F +
+                                 features.moraine_influence * 0.30F) *
+                                (1.0F - snow * 0.45F) * lerp(0.72F, 1.30F, scree_patch);
+            const float soil =
+                (0.20F + deposition * 0.52F + (1.0F - slope_t) * 0.14F) *
+                (1.0F - snow * 0.78F);
+            const float meadow = wetness * (1.0F - slope_t) * (1.0F - snow * 0.86F) *
+                                 (0.28F + features.glacier_floor * 0.20F);
+            const float forest = smoothstep(0.18F, 0.46F, wetness) * (1.0F - slope_t) *
+                                 (1.0F - smoothstep(0.42F, 0.72F, elevation_t)) *
+                                 (1.0F - snow) * 0.26F;
+            const TerrainLabMaterialMask material =
+                normalized_material_mask(rock, soil, scree, meadow, forest, snow, 0.0F);
+            fields.material_masks[sample] = material;
+
+            const float grass =
+                saturate((material.meadow * 0.55F + material.soil * 0.18F) * (1.0F - snow));
+            const float shrub = saturate((material.soil * 0.18F + material.scree * 0.10F) *
+                                         (1.0F - slope_t) * (1.0F - elevation_t * 0.70F));
+            const float tree = saturate(material.forest * 0.60F);
+            fields.grass_density[sample] = grass;
+            fields.shrub_density[sample] = shrub;
+            fields.tree_density[sample] = tree;
+            fields.canopy_height_m[sample] =
+                tree <= 0.0F ? 0.0F : tree * lerp(2.0F, 10.0F, wetness);
+        }
+    }
+
+    validate_terrain_lab_fields(fields);
+    return fields;
+}
+
 TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) {
     validate_terrain_lab_config(config);
     switch (config.slice_preset) {
@@ -1607,6 +1860,8 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
         return generate_temperate_mountain_watershed_fields(config);
     case TerrainLabSlicePreset::DesertDunes:
         return generate_desert_dunes_fields(config);
+    case TerrainLabSlicePreset::AlpineGlacialValley:
+        return generate_alpine_glacial_valley_fields(config);
     }
     return generate_arid_mesa_canyon_fields(config);
 }

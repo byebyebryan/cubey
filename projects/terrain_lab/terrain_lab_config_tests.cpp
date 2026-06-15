@@ -247,6 +247,12 @@ int main() {
     require(terrain::terrain_lab_slice_preset_from_name("desert_dunes") ==
                 terrain::TerrainLabSlicePreset::DesertDunes,
             "terrain lab slice preset should accept desert dunes underscore alias");
+    require(terrain::terrain_lab_slice_preset_from_name("alpine-glacial-valley") ==
+                terrain::TerrainLabSlicePreset::AlpineGlacialValley,
+            "terrain lab slice preset should parse alpine glacial valley");
+    require(terrain::terrain_lab_slice_preset_from_name("alpine_glacial_valley") ==
+                terrain::TerrainLabSlicePreset::AlpineGlacialValley,
+            "terrain lab slice preset should accept alpine glacial valley underscore alias");
 
     require(terrain::terrain_lab_camera_preset_from_name("") ==
                 terrain::TerrainLabCameraPreset::Orbit,
@@ -853,6 +859,75 @@ int main() {
             "terrain lab dunes drainage analysis should expose bounded sink samples");
     require(dunes_summary.sink_sample_ratio > 0.0F && dunes_summary.sink_sample_ratio < 0.50F,
             "terrain lab dunes drainage analysis should avoid sink-dominated terrain");
+
+    terrain::TerrainLabConfig glacial_config = small;
+    glacial_config.slice_preset = terrain::TerrainLabSlicePreset::AlpineGlacialValley;
+    const terrain::TerrainLabFieldData glacial_fields =
+        terrain::generate_terrain_lab_fields(glacial_config);
+    terrain::validate_terrain_lab_fields(glacial_fields);
+    require(glacial_fields.watershed_count == 1U,
+            "terrain lab glacial sentinel should use one diagnostic basin");
+    require(glacial_fields.max_channel_distance_m > glacial_fields.desc.cell_size_m,
+            "terrain lab glacial sentinel should track trunk-valley distance range");
+    const FieldSampleStats glacial_stats = inspect_field_samples(glacial_fields);
+    const terrain::TerrainLabFieldSummary glacial_summary =
+        terrain::summarize_terrain_lab_fields(glacial_fields);
+    require(glacial_stats.saw_material_variation,
+            "terrain lab glacial sentinel should produce varied material masks");
+    require(glacial_stats.saw_detail, "terrain lab glacial sentinel should produce terrain detail");
+    require(glacial_stats.saw_process,
+            "terrain lab glacial sentinel should produce glacial process fields");
+    require(glacial_stats.saw_divide, "terrain lab glacial sentinel should expose high divides");
+    require(glacial_stats.saw_channel,
+            "terrain lab glacial sentinel should expose trunk-valley diagnostics");
+    require(glacial_stats.channel_count > 16U,
+            "terrain lab glacial sentinel should produce enough trunk-valley samples");
+    require(glacial_stats.non_channel_count > 16U,
+            "terrain lab glacial sentinel should produce enough non-channel samples");
+    require(glacial_stats.divide_count > 16U,
+            "terrain lab glacial sentinel should produce enough divide samples");
+    require(glacial_stats.ridge_count > 16U,
+            "terrain lab glacial sentinel should produce enough ridge samples");
+    const double inv_glacial_count = 1.0 / static_cast<double>(glacial_fields.sample_count());
+    const float glacial_rock_scree_snow =
+        static_cast<float>((glacial_stats.rock_sum + glacial_stats.scree_sum +
+                            glacial_stats.snow_sum) *
+                           inv_glacial_count);
+    const float glacial_mean_forest =
+        static_cast<float>(glacial_stats.forest_sum * inv_glacial_count);
+    const float glacial_mean_sand = static_cast<float>(glacial_stats.sand_sum * inv_glacial_count);
+    const float glacial_mean_channel_height = static_cast<float>(
+        glacial_stats.channel_height_sum / static_cast<double>(glacial_stats.channel_count));
+    const float glacial_mean_divide_height = static_cast<float>(
+        glacial_stats.divide_height_sum / static_cast<double>(glacial_stats.divide_count));
+    const float glacial_mean_channel_deposition =
+        static_cast<float>(glacial_stats.channel_deposition_sum /
+                           static_cast<double>(glacial_stats.channel_count));
+    const float glacial_mean_non_channel_deposition =
+        static_cast<float>(glacial_stats.non_channel_deposition_sum /
+                           static_cast<double>(glacial_stats.non_channel_count));
+    require(glacial_rock_scree_snow > 0.62F,
+            "terrain lab glacial sentinel should be dominated by rock, scree, and snow/ice");
+    require(glacial_mean_forest < 0.04F,
+            "terrain lab glacial sentinel should keep forest material limited");
+    require(glacial_mean_sand < 0.001F,
+            "terrain lab glacial sentinel should not use sand material");
+    require(glacial_mean_divide_height > glacial_mean_channel_height + 20.0F,
+            "terrain lab glacial sentinel should keep divides above the trunk valley");
+    require(glacial_mean_channel_deposition > glacial_mean_non_channel_deposition,
+            "terrain lab glacial sentinel should concentrate moraine/deposition in valleys");
+    require(glacial_summary.mean_wetness > 0.05F && glacial_summary.mean_wetness < 0.35F,
+            "terrain lab glacial sentinel should expose moderate meltwater wetness");
+    require(glacial_summary.mean_tree_density < 0.05F,
+            "terrain lab glacial sentinel should keep tree density limited");
+    require(glacial_summary.mean_channel_flow_accumulation >
+                glacial_summary.mean_non_channel_flow_accumulation,
+            "terrain lab glacial sentinel should keep trunk valleys aligned with flow diagnostics");
+    require(glacial_summary.sink_sample_count > 0U &&
+                glacial_summary.sink_sample_count < glacial_summary.sample_count,
+            "terrain lab glacial drainage analysis should expose bounded sink samples");
+    require(glacial_summary.sink_sample_ratio > 0.0F && glacial_summary.sink_sample_ratio < 0.50F,
+            "terrain lab glacial drainage analysis should avoid sink-dominated terrain");
 
     terrain::TerrainLabConfig other_seed = small;
     other_seed.seed += 1U;
