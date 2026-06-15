@@ -36,6 +36,10 @@ capture surface-up --cloud-camera-mode surface-up
 capture high --cloud-camera-mode high
 capture high-oblique --cloud-camera-mode high-oblique
 capture orbit-preview --cloud-camera-mode orbit
+capture validation-cached-static --cloud-camera-mode surface-up --cloud-render-path cached --cloud-wind-speed-mps 0
+capture validation-direct-static --cloud-camera-mode surface-up --cloud-render-path direct --cloud-wind-speed-mps 0
+capture validation-diff-static --cloud-camera-mode surface-up --cloud-render-path diff --cloud-wind-speed-mps 0
+capture validation-alpha-diff-static --cloud-camera-mode surface-up --cloud-render-path alpha-diff --cloud-wind-speed-mps 0
 capture raw-final --cloud-camera-mode surface --debug-view raw-final
 capture raw-cloud-product --cloud-camera-mode surface --debug-view raw-cloud-product
 capture blend-from --cloud-camera-mode surface --debug-view blend-from

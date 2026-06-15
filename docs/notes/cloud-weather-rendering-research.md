@@ -494,3 +494,26 @@ If synthetic cache views are clean while final cloud views still show repetition
 or smeared shape, classify the remaining problem as source texture/weather/density
 data rather than cached-sky architecture. Godot `.tga`/`.bmp` texture import and
 sky/transmittance LUT parity remain deferred.
+
+## Cloud Ref 2 Direct Validation Path
+
+`cloud_ref_2` now has a direct composite render path that evaluates the same
+march function used by the cache compute shader against the current screen ray.
+This is a validation oracle for the cached sky architecture, not a proposed
+runtime path. The default `cached` mode still samples the persistent
+octahedral sky product; `direct` bypasses the cache; `diff` and `alpha-diff`
+show amplified cached-vs-direct cloud product differences before final grading.
+
+Interpret the diff views carefully:
+
+- disable cloud motion with `--cloud-wind-speed-mps 0` for strict comparisons;
+- moving-cloud captures compare a multi-frame cached update against the current
+  direct frame, so they will show temporal mismatch;
+- sharp cloud edges can differ even in static captures because the cached path
+  is a filtered finite-resolution octahedral texture while the direct path
+  evaluates the exact screen ray.
+
+The useful acceptance check is therefore: cached and direct finals should read
+as the same cloud model, synthetic cache views should remain continuous, and
+diff views should be used to locate cache resolution/filter/update artifacts
+rather than to judge final visual quality directly.

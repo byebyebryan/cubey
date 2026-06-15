@@ -39,6 +39,9 @@ Useful runs:
 ./build/dev/projects/cloud_ref_2/cloud_ref_2 --debug-view cache-checker
 ./build/dev/projects/cloud_ref_2/cloud_ref_2 --debug-view cache-alpha
 ./build/dev/projects/cloud_ref_2/cloud_ref_2 --debug-view density
+./build/dev/projects/cloud_ref_2/cloud_ref_2 --cloud-render-path direct
+./build/dev/projects/cloud_ref_2/cloud_ref_2 --cloud-render-path diff --cloud-wind-speed-mps 0
+./build/dev/projects/cloud_ref_2/cloud_ref_2 --cloud-render-path alpha-diff --cloud-wind-speed-mps 0
 ./build/dev/projects/cloud_ref_2/cloud_ref_2 --headless --frames 70 --cloud-cache-frames 16 --cloud-cache-texture-size 1024 --debug-view cache-checker --output outputs/cloud-ref-2-cache-checker.png
 ./build/dev/projects/cloud_ref_2/cloud_ref_2 --headless --frames 70 --cloud-camera-mode surface-up --output outputs/cloud-ref-2-surface-up.png
 projects/cloud_ref_2/capture_review.sh outputs/cloud-ref-2-review
@@ -61,6 +64,22 @@ Cache validation views:
 
 The cached sky is an upper-hemisphere product. Below-horizon view rays are kept
 transparent in the composite path instead of sampling the clamped horizon cache.
+
+Render paths:
+
+- `cached`: default path; composite samples the persistent cached sky product.
+- `direct`: composite raymarches the current screen ray using the same density
+  and lighting function as the cache compute shader.
+- `diff`: amplified RGB plus alpha difference between cached and direct cloud
+  products before final grading.
+- `alpha-diff`: amplified transmittance/alpha difference only.
+
+Use `--cloud-wind-speed-mps 0` when treating `diff` or `alpha-diff` as a
+strict validation capture. With moving clouds, the cached path intentionally
+contains data produced over a tile update cycle, while `direct` evaluates the
+current frame. Some nonzero diff is also expected around sharp cloud edges
+because the cached path samples a finite-resolution filtered octahedral texture
+and the direct path samples the exact screen ray.
 
 Controls:
 
