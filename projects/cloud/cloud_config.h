@@ -43,6 +43,18 @@ enum class CloudsCloudStyle : std::uint32_t {
     HighCirrus = 4,
 };
 
+enum class CloudsSamplingMode : std::uint32_t {
+    Interleaved = 0,
+    Bayer = 1,
+    Off = 2,
+};
+
+inline constexpr std::array<CloudsSamplingMode, 3> kCloudsSamplingModes{
+    CloudsSamplingMode::Interleaved,
+    CloudsSamplingMode::Bayer,
+    CloudsSamplingMode::Off,
+};
+
 enum class CloudsDebugView : std::uint32_t {
     Final = 0,
     Weather = 1,
@@ -99,6 +111,7 @@ struct CloudsConfig {
     CloudsQuality quality = CloudsQuality::Full;
     CloudsWeatherPreset weather_preset = CloudsWeatherPreset::BrokenCumulus;
     CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
+    CloudsSamplingMode sampling_mode = CloudsSamplingMode::Interleaved;
     CloudsDebugView debug_view = CloudsDebugView::Final;
     bool temporal_enabled = true;
     CloudsTimeConfig time{};
@@ -128,6 +141,7 @@ struct CloudsConfig {
     float resolve_strength = 0.58F;
     float horizon_glow_strength = 0.90F;
     float sun_glare_strength = 1.0F;
+    float jitter_strength = 1.0F;
     bool powder_enabled = true;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;
@@ -146,6 +160,8 @@ struct CloudsQualityBudget {
 [[nodiscard]] CloudsWeatherPreset clouds_weather_preset_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_weather_preset_name(CloudsWeatherPreset preset);
 void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset preset);
+[[nodiscard]] CloudsSamplingMode clouds_sampling_mode_from_string(std::string_view value);
+[[nodiscard]] const char* clouds_sampling_mode_name(CloudsSamplingMode mode);
 [[nodiscard]] CloudsDebugView clouds_debug_view_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_debug_view_name(CloudsDebugView view);
 [[nodiscard]] CloudsDebugView next_clouds_debug_view(CloudsDebugView view);

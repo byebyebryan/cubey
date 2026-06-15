@@ -172,6 +172,8 @@ enum class RunConfigOptionId {
     CloudResolveStrength,
     CloudHorizonGlowStrength,
     CloudSunGlareStrength,
+    CloudSamplingMode,
+    CloudJitterStrength,
     CloudTemporal,
     CloudLocalVolume,
     CloudHorizonLayer,

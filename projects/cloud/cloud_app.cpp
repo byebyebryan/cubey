@@ -82,6 +82,11 @@ constexpr std::array<CloudsWeatherPreset, 5> kCloudWeatherPresets{
     CloudsWeatherPreset::StormCells,
     CloudsWeatherPreset::HighCirrus,
 };
+constexpr std::array<CloudsSamplingMode, 3> kCloudSamplingModes{
+    CloudsSamplingMode::Interleaved,
+    CloudsSamplingMode::Bayer,
+    CloudsSamplingMode::Off,
+};
 constexpr std::array<CloudsDebugView, 20> kCloudDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
@@ -111,9 +116,10 @@ struct CloudFrameUniforms {
     cubey::math::Vec4 cloud_color_bottom_horizon;
     cubey::math::Vec4 lighting_strengths;
     cubey::math::Vec4 composite_options;
+    cubey::math::Vec4 sampling_options;
 };
 
-static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 56U);
+static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 60U);
 
 struct CloudViewBasis {
     cubey::math::Vec3 position{0.0F, 0.0F, 0.0F};
@@ -306,6 +312,10 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     return static_cast<float>(static_cast<std::uint32_t>(style));
 }
 
+[[nodiscard]] float cloud_sampling_mode_value(CloudsSamplingMode mode) {
+    return static_cast<float>(static_cast<std::uint32_t>(mode));
+}
+
 [[nodiscard]] CloudViewBasis cloud_view_basis(const CloudsConfig& config, float yaw,
                                                      float pitch_offset) {
     const cubey::math::Vec3 surface_up{0.0F, 1.0F, 0.0F};
@@ -369,6 +379,8 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
                                config.phase_strength, config.sun_glare_strength},
         .composite_options = {config.resolve_strength, config.final_contrast,
                               config.final_saturation, config.horizon_glow_strength},
+        .sampling_options = {cloud_sampling_mode_value(config.sampling_mode),
+                             config.jitter_strength, 0.0F, 0.0F},
     };
 }
 
@@ -670,6 +682,11 @@ class CloudApp {
         ImGui::SliderFloat("Density", &config_.density, 0.0F, 0.08F, "%.3f");
         ImGui::SliderFloat("Wind", &config_.wind_speed_mps, 0.0F, 900.0F, "%.0f m/s");
         ImGui::SliderFloat("Weather scale", &config_.weather_scale_km, 40.0F, 500.0F, "%.0f km");
+        if (ImGui::CollapsingHeader("Sampling", ImGuiTreeNodeFlags_DefaultOpen)) {
+            draw_enum_combo("Sampling mode", config_.sampling_mode, kCloudSamplingModes,
+                            clouds_sampling_mode_name);
+            ImGui::SliderFloat("Jitter", &config_.jitter_strength, 0.0F, 1.0F, "%.2f");
+        }
         if (ImGui::CollapsingHeader("Shape / Density", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::SliderFloat("Crispiness", &config_.crispiness, 1.0F, 120.0F, "%.1f");
             ImGui::SliderFloat("Curliness", &config_.curliness, 0.01F, 3.0F, "%.2f");

@@ -189,6 +189,31 @@ const char* clouds_weather_preset_name(CloudsWeatherPreset preset) {
     return "broken-cumulus";
 }
 
+CloudsSamplingMode clouds_sampling_mode_from_string(std::string_view value) {
+    if (value.empty() || value == "interleaved") {
+        return CloudsSamplingMode::Interleaved;
+    }
+    if (value == "bayer") {
+        return CloudsSamplingMode::Bayer;
+    }
+    if (value == "off" || value == "center") {
+        return CloudsSamplingMode::Off;
+    }
+    throw std::runtime_error("unknown cloud sampling mode: " + std::string(value));
+}
+
+const char* clouds_sampling_mode_name(CloudsSamplingMode mode) {
+    switch (mode) {
+    case CloudsSamplingMode::Interleaved:
+        return "interleaved";
+    case CloudsSamplingMode::Bayer:
+        return "bayer";
+    case CloudsSamplingMode::Off:
+        return "off";
+    }
+    return "interleaved";
+}
+
 CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value.empty() || value == "final") {
         return CloudsDebugView::Final;
@@ -353,6 +378,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
             clouds_weather_preset_from_string(run_config.clouds.weather_preset);
     }
     apply_clouds_weather_preset(config, config.weather_preset);
+    if (!run_config.clouds.sampling_mode.empty()) {
+        config.sampling_mode = clouds_sampling_mode_from_string(run_config.clouds.sampling_mode);
+    }
     if (!run_config.debug_view.empty()) {
         config.debug_view = clouds_debug_view_from_string(run_config.debug_view);
     }
@@ -421,6 +449,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     }
     if (run_config_float_is_set(run_config.clouds.sun_glare_strength)) {
         config.sun_glare_strength = run_config.clouds.sun_glare_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.jitter_strength)) {
+        config.jitter_strength = run_config.clouds.jitter_strength;
     }
     if (run_config.clouds.temporal >= 0) {
         config.temporal_enabled = run_config.clouds.temporal != 0;
@@ -575,6 +606,10 @@ void validate_clouds_config(const CloudsConfig& config) {
     if (!std::isfinite(config.sun_glare_strength) || config.sun_glare_strength < 0.0F ||
         config.sun_glare_strength > 3.0F) {
         throw std::runtime_error("cloud sun glare strength must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.jitter_strength) || config.jitter_strength < 0.0F ||
+        config.jitter_strength > 1.0F) {
+        throw std::runtime_error("cloud jitter strength must be finite and in [0, 1]");
     }
 }
 

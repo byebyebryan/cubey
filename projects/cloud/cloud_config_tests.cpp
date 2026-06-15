@@ -48,6 +48,19 @@ void test_names_and_next_debug_view() {
                 cubey::projects::cloud::CloudsWeatherPreset::BrokenCumulus) ==
                 std::string_view("broken-cumulus"),
             "weather preset name should use canonical spelling");
+    require(cubey::projects::cloud::clouds_sampling_mode_from_string("interleaved") ==
+                cubey::projects::cloud::CloudsSamplingMode::Interleaved,
+            "interleaved sampling mode should parse");
+    require(cubey::projects::cloud::clouds_sampling_mode_from_string("bayer") ==
+                cubey::projects::cloud::CloudsSamplingMode::Bayer,
+            "bayer sampling mode should parse");
+    require(cubey::projects::cloud::clouds_sampling_mode_from_string("off") ==
+                cubey::projects::cloud::CloudsSamplingMode::Off,
+            "off sampling mode should parse");
+    require(cubey::projects::cloud::clouds_sampling_mode_name(
+                cubey::projects::cloud::CloudsSamplingMode::Interleaved) ==
+                std::string_view("interleaved"),
+            "sampling mode name should use canonical spelling");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::Final) ==
                 cubey::projects::cloud::CloudsDebugView::RawFinal,
@@ -128,6 +141,7 @@ void test_run_config_mapping() {
     run_config.clouds.camera_mode = "orbit";
     run_config.clouds.quality = "quarter";
     run_config.clouds.weather_preset = "storm";
+    run_config.clouds.sampling_mode = "bayer";
     run_config.clouds.planet_radius_m = 1000000.0F;
     run_config.clouds.bottom_altitude_m = 2000.0F;
     run_config.clouds.top_altitude_m = 9000.0F;
@@ -149,6 +163,7 @@ void test_run_config_mapping() {
     run_config.clouds.resolve_strength = 0.45F;
     run_config.clouds.horizon_glow_strength = 0.80F;
     run_config.clouds.sun_glare_strength = 1.35F;
+    run_config.clouds.jitter_strength = 0.25F;
     run_config.clouds.temporal = 0;
     run_config.clouds.local_volume = 0;
     run_config.clouds.horizon_layer = 1;
@@ -167,6 +182,8 @@ void test_run_config_mapping() {
             "cloud weather preset should map from run config");
     require(config.cloud_style == cubey::projects::cloud::CloudsCloudStyle::StormCells,
             "cloud weather preset should select cloud style");
+    require(config.sampling_mode == cubey::projects::cloud::CloudsSamplingMode::Bayer,
+            "cloud sampling mode should map from run config");
     require(config.debug_view == cubey::projects::cloud::CloudsDebugView::Density,
             "cloud debug view should map from common debug config");
     require_near(config.camera_altitude_m,
@@ -203,6 +220,8 @@ void test_run_config_mapping() {
                  "cloud horizon glow strength should map");
     require_near(config.sun_glare_strength, 1.35F, 0.001F,
                  "cloud sun glare strength should map");
+    require_near(config.jitter_strength, 0.25F, 0.001F,
+                 "cloud jitter strength should map");
     require(!config.temporal_enabled, "cloud temporal option should map");
     require(!config.local_volume_enabled, "cloud local volume option should map");
     require(config.horizon_layer_enabled, "cloud horizon layer option should map");
@@ -275,6 +294,7 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.camera_mode", "high");
     cubey::set_run_config_option_from_string(config, "clouds.quality", "full");
     cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
+    cubey::set_run_config_option_from_string(config, "clouds.sampling_mode", "bayer");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.wind_speed_mps", "22");
     cubey::set_run_config_option_from_string(config, "clouds.shadow_strength", "0.7");
@@ -291,6 +311,7 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.resolve_strength", "0.45");
     cubey::set_run_config_option_from_string(config, "clouds.horizon_glow_strength", "0.80");
     cubey::set_run_config_option_from_string(config, "clouds.sun_glare_strength", "1.35");
+    cubey::set_run_config_option_from_string(config, "clouds.jitter_strength", "0.25");
     cubey::set_run_config_option_from_string(config, "clouds.temporal", "false");
     cubey::set_run_config_option_from_string(config, "clouds.local_volume", "false");
     cubey::set_run_config_option_from_string(config, "clouds.horizon_layer", "true");
@@ -298,6 +319,8 @@ void test_config_descriptors() {
     require(config.clouds.quality == "full", "cloud quality descriptor should set");
     require(config.clouds.weather_preset == "storm",
             "cloud weather preset descriptor should set");
+    require(config.clouds.sampling_mode == "bayer",
+            "cloud sampling mode descriptor should set");
     require_near(config.clouds.coverage, 0.44F, 0.001F,
                  "cloud coverage descriptor should set");
     require_near(config.clouds.wind_speed_mps, 22.0F, 0.001F,
@@ -330,6 +353,8 @@ void test_config_descriptors() {
                  "cloud horizon glow descriptor should set");
     require_near(config.clouds.sun_glare_strength, 1.35F, 0.001F,
                  "cloud sun glare descriptor should set");
+    require_near(config.clouds.jitter_strength, 0.25F, 0.001F,
+                 "cloud jitter strength descriptor should set");
     require(config.clouds.temporal == 0, "cloud temporal descriptor should set");
     require(config.clouds.local_volume == 0, "cloud local volume descriptor should set");
     require(config.clouds.horizon_layer == 1, "cloud horizon layer descriptor should set");

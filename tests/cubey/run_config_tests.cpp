@@ -330,6 +330,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "atmosphere.moon",
         "clouds.camera_mode",
         "clouds.quality",
+        "clouds.sampling_mode",
         "clouds.planet_radius_m",
         "clouds.camera_altitude_m",
         "clouds.bottom_altitude_m",
@@ -339,6 +340,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.weather_scale_km",
         "clouds.wind_speed_mps",
         "clouds.shadow_strength",
+        "clouds.jitter_strength",
         "clouds.temporal",
         "smoke.injectors",
         "smoke.pressure_iterations",
@@ -476,9 +478,11 @@ void test_run_config_loads_json_config_file() {
     "camera_mode": "high",
     "quality": "full",
     "weather_preset": "inspection",
+    "sampling_mode": "bayer",
     "coverage": 0.62,
     "wind_speed_mps": 24.0,
     "shadow_strength": 0.75,
+    "jitter_strength": 0.25,
     "temporal": false
   }
 })");
@@ -532,8 +536,10 @@ void test_run_config_loads_json_config_file() {
             "config file should set atmosphere controls");
     require(config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
                 config.clouds.weather_preset == "inspection" &&
+                config.clouds.sampling_mode == "bayer" &&
                 config.clouds.coverage == 0.62F && config.clouds.wind_speed_mps == 24.0F &&
-                config.clouds.shadow_strength == 0.75F && config.clouds.temporal == 0,
+                config.clouds.shadow_strength == 0.75F &&
+                config.clouds.jitter_strength == 0.25F && config.clouds.temporal == 0,
             "config file should set cloud controls");
 }
 
@@ -905,6 +911,8 @@ void test_run_config_parses_cloud_options() {
     std::string quality_value = "full";
     std::string weather_preset_flag = "--cloud-weather-preset";
     std::string weather_preset_value = "storm";
+    std::string sampling_mode_flag = "--cloud-sampling-mode";
+    std::string sampling_mode_value = "bayer";
     std::string planet_radius_flag = "--cloud-planet-radius-m";
     std::string planet_radius_value = "6000000";
     std::string camera_altitude_flag = "--cloud-camera-altitude-m";
@@ -923,8 +931,10 @@ void test_run_config_parses_cloud_options() {
     std::string wind_value = "32";
     std::string shadow_flag = "--cloud-shadow-strength";
     std::string shadow_value = "0.8";
+    std::string jitter_flag = "--cloud-jitter-strength";
+    std::string jitter_value = "0.25";
     std::string temporal_flag = "--no-cloud-temporal";
-    std::array<char*, 26> argv{
+    std::array<char*, 30> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -932,6 +942,8 @@ void test_run_config_parses_cloud_options() {
         quality_value.data(),
         weather_preset_flag.data(),
         weather_preset_value.data(),
+        sampling_mode_flag.data(),
+        sampling_mode_value.data(),
         planet_radius_flag.data(),
         planet_radius_value.data(),
         camera_altitude_flag.data(),
@@ -950,6 +962,8 @@ void test_run_config_parses_cloud_options() {
         wind_value.data(),
         shadow_flag.data(),
         shadow_value.data(),
+        jitter_flag.data(),
+        jitter_value.data(),
         temporal_flag.data(),
     };
 
@@ -960,6 +974,8 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.quality == "full", "run config should parse cloud quality");
     require(config.clouds.weather_preset == "storm",
             "run config should parse cloud weather preset");
+    require(config.clouds.sampling_mode == "bayer",
+            "run config should parse cloud sampling mode");
     require(config.clouds.planet_radius_m == 6000000.0F,
             "run config should parse cloud planet radius");
     require(config.clouds.camera_altitude_m == 16000.0F,
@@ -975,6 +991,8 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.wind_speed_mps == 32.0F, "run config should parse cloud wind speed");
     require(config.clouds.shadow_strength == 0.8F,
             "run config should parse cloud shadow strength");
+    require(config.clouds.jitter_strength == 0.25F,
+            "run config should parse cloud jitter strength");
     require(config.clouds.temporal == 0, "run config should parse negative cloud temporal flag");
 }
 

@@ -231,6 +231,7 @@ struct RunConfig {
         std::string cache_frames{};
         std::uint32_t cache_texture_size = 0;
         std::string render_path{};
+        std::string sampling_mode{};
         float planet_radius_m = kRunConfigUnsetFloat;
         float camera_altitude_m = kRunConfigUnsetFloat;
         float bottom_altitude_m = kRunConfigUnsetFloat;
@@ -253,6 +254,7 @@ struct RunConfig {
         float resolve_strength = kRunConfigUnsetFloat;
         float horizon_glow_strength = kRunConfigUnsetFloat;
         float sun_glare_strength = kRunConfigUnsetFloat;
+        float jitter_strength = kRunConfigUnsetFloat;
         int temporal = -1;
         int local_volume = -1;
         int horizon_layer = -1;
