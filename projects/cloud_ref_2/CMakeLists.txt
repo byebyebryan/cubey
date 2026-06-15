@@ -21,6 +21,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_ref_2_common.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_ref_2_march_shared.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_ref_2_noise_common.glsl"
 )
 
