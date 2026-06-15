@@ -29,6 +29,11 @@ const int CLOUD_REF_2_DEBUG_CACHE_HORIZON = 27;
 const int CLOUD_REF_2_DEBUG_CACHE_CHECKER = 28;
 const int CLOUD_REF_2_DEBUG_CACHE_ALPHA = 29;
 
+const int CLOUD_REF_2_RENDER_PATH_CACHED = 0;
+const int CLOUD_REF_2_RENDER_PATH_DIRECT = 1;
+const int CLOUD_REF_2_RENDER_PATH_DIFF = 2;
+const int CLOUD_REF_2_RENDER_PATH_ALPHA_DIFF = 3;
+
 layout(std140, set = 0, binding = 0) uniform CloudRef2Frame {
     vec4 camera_right_aspect;
     vec4 camera_up_tan_half_fovy;

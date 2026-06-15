@@ -66,6 +66,9 @@ constexpr std::uint32_t kCloudRef2DetailNoiseBinding = 3;
 constexpr std::uint32_t kCloudRef2WeatherBinding = 4;
 constexpr std::uint32_t kCloudRef2CompositeBlendFromBinding = 1;
 constexpr std::uint32_t kCloudRef2CompositeBlendToBinding = 2;
+constexpr std::uint32_t kCloudRef2CompositeBaseNoiseBinding = 3;
+constexpr std::uint32_t kCloudRef2CompositeDetailNoiseBinding = 4;
+constexpr std::uint32_t kCloudRef2CompositeWeatherBinding = 5;
 
 constexpr std::array<CloudsCameraMode, 6> kCloudRef2CameraModes{
     CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
@@ -105,6 +108,12 @@ constexpr std::array<CloudsCacheFrames, 4> kCloudRef2CacheFrameModes{
     CloudsCacheFrames::Frames16,
     CloudsCacheFrames::Frames64,
     CloudsCacheFrames::Frames256,
+};
+constexpr std::array<CloudsRenderPath, 4> kCloudRef2RenderPaths{
+    CloudsRenderPath::Cached,
+    CloudsRenderPath::Direct,
+    CloudsRenderPath::Diff,
+    CloudsRenderPath::AlphaDiff,
 };
 
 struct CloudRef2FrameUniforms {
@@ -237,6 +246,21 @@ std::filesystem::path shader_path(const char* filename) {
                     .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                     .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                 },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudRef2CompositeBaseNoiseBinding,
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudRef2CompositeDetailNoiseBinding,
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudRef2CompositeWeatherBinding,
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                },
             },
     };
 }
@@ -354,7 +378,7 @@ cloud_ref_2_target_final_state(CloudRef2TargetMode mode) {
         .ref_options = {static_cast<float>(static_cast<std::uint32_t>(config.debug_view)),
                         static_cast<float>(budget.view_steps),
                         static_cast<float>(budget.light_steps),
-                        static_cast<float>(target_extent.width)},
+                        static_cast<float>(static_cast<std::uint32_t>(config.render_path))},
         .shape_options = {config.crispiness, config.curliness, config.absorption,
                           config.powder_enabled ? 1.0F : 0.0F},
         .weather_feature_weights = {config.weather_fronts, config.weather_cells,
@@ -700,6 +724,8 @@ class CloudRef2App {
         cache_dirty |= draw_enum_combo("Weather", config_.weather_preset, kCloudRef2WeatherPresets,
                                        clouds_weather_preset_name);
         draw_enum_combo("Quality", config_.quality, kCloudRef2QualityModes, clouds_quality_name);
+        draw_enum_combo("Render path", config_.render_path, kCloudRef2RenderPaths,
+                        clouds_render_path_name);
         cache_dirty |=
             draw_enum_combo("Debug", config_.debug_view, kCloudRef2DebugViews, clouds_debug_view_name);
         cache_dirty |= draw_enum_combo("Cache frames", config_.cache_frames, kCloudRef2CacheFrameModes,
@@ -1037,6 +1063,12 @@ class CloudRef2App {
             .combined_image_sampler(kCloudRef2CompositeBlendToBinding,
                                     blend_to.sampler().handle(), blend_to.view(),
                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .combined_image_sampler(kCloudRef2CompositeBaseNoiseBinding,
+                                    base_noise().sampler().handle(), base_noise().view())
+            .combined_image_sampler(kCloudRef2CompositeDetailNoiseBinding,
+                                    detail_noise().sampler().handle(), detail_noise().view())
+            .combined_image_sampler(kCloudRef2CompositeWeatherBinding,
+                                    weather_texture().sampler().handle(), weather_texture().view())
             .update(device);
     }
 

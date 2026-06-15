@@ -98,6 +98,13 @@ enum class CloudsCacheFrames : std::uint32_t {
 
 inline constexpr std::array<std::uint32_t, 4> kCloudsCacheTextureSizes{256U, 512U, 768U, 1024U};
 
+enum class CloudsRenderPath : std::uint32_t {
+    Cached = 0,
+    Direct = 1,
+    Diff = 2,
+    AlphaDiff = 3,
+};
+
 struct CloudsTimeConfig {
     bool solar_clock = true;
     bool playing = true;
@@ -119,6 +126,7 @@ struct CloudsConfig {
     CloudsDebugView debug_view = CloudsDebugView::Final;
     CloudsCacheFrames cache_frames = CloudsCacheFrames::Frames64;
     std::uint32_t cache_texture_size = 768;
+    CloudsRenderPath render_path = CloudsRenderPath::Cached;
     bool temporal_enabled = true;
     CloudsTimeConfig time{};
 
@@ -166,6 +174,8 @@ void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset prese
 [[nodiscard]] std::uint32_t clouds_cache_frame_grid_size(CloudsCacheFrames frames);
 [[nodiscard]] std::uint32_t clouds_cache_update_region_size(std::uint32_t texture_size,
                                                             CloudsCacheFrames frames);
+[[nodiscard]] CloudsRenderPath clouds_render_path_from_string(std::string_view value);
+[[nodiscard]] const char* clouds_render_path_name(CloudsRenderPath path);
 [[nodiscard]] CloudsQualityBudget clouds_quality_budget(CloudsQuality quality);
 [[nodiscard]] float clouds_default_camera_altitude_m(CloudsCameraMode mode);
 [[nodiscard]] CloudsConfig clouds_config_from_run_config(const RunConfig& run_config);

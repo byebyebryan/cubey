@@ -196,6 +196,16 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref_2::clouds_cache_update_region_size(
                 1024U, cubey::projects::cloud_ref_2::CloudsCacheFrames::Frames16) == 256U,
             "1024 texture with 16 frames should update 256-pixel regions");
+    require(cubey::projects::cloud_ref_2::clouds_render_path_from_string("direct") ==
+                cubey::projects::cloud_ref_2::CloudsRenderPath::Direct,
+            "direct render path should parse");
+    require(cubey::projects::cloud_ref_2::clouds_render_path_from_string("alpha-diff") ==
+                cubey::projects::cloud_ref_2::CloudsRenderPath::AlphaDiff,
+            "alpha-diff render path should parse");
+    require(cubey::projects::cloud_ref_2::clouds_render_path_name(
+                cubey::projects::cloud_ref_2::CloudsRenderPath::Diff) ==
+                std::string_view("diff"),
+            "render path name should be canonical");
 }
 
 void test_run_config_mapping() {
@@ -206,6 +216,7 @@ void test_run_config_mapping() {
     run_config.clouds.weather_preset = "storm";
     run_config.clouds.cache_frames = "16";
     run_config.clouds.cache_texture_size = 1024U;
+    run_config.clouds.render_path = "diff";
     run_config.clouds.planet_radius_m = 1000000.0F;
     run_config.clouds.bottom_altitude_m = 2000.0F;
     run_config.clouds.top_altitude_m = 9000.0F;
@@ -239,6 +250,8 @@ void test_run_config_mapping() {
             "cloud cache frames should map from run config");
     require(config.cache_texture_size == 1024U,
             "cloud cache texture size should map from run config");
+    require(config.render_path == cubey::projects::cloud_ref_2::CloudsRenderPath::Diff,
+            "cloud render path should map from run config");
     require(config.cloud_style == cubey::projects::cloud_ref_2::CloudsCloudStyle::StormCells,
             "cloud weather preset should select cloud style");
     require(config.debug_view == cubey::projects::cloud_ref_2::CloudsDebugView::Density,
@@ -335,6 +348,7 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
     cubey::set_run_config_option_from_string(config, "clouds.cache_frames", "256");
     cubey::set_run_config_option_from_string(config, "clouds.cache_texture_size", "512");
+    cubey::set_run_config_option_from_string(config, "clouds.render_path", "alpha-diff");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.wind_speed_mps", "22");
     cubey::set_run_config_option_from_string(config, "clouds.shadow_strength", "0.7");
@@ -353,6 +367,8 @@ void test_config_descriptors() {
     require(config.clouds.cache_frames == "256", "cloud cache frames descriptor should set");
     require(config.clouds.cache_texture_size == 512U,
             "cloud cache texture size descriptor should set");
+    require(config.clouds.render_path == "alpha-diff",
+            "cloud render path descriptor should set");
     require_near(config.clouds.coverage, 0.44F, 0.001F,
                  "cloud coverage descriptor should set");
     require_near(config.clouds.wind_speed_mps, 22.0F, 0.001F,

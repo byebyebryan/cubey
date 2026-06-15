@@ -1,7 +1,10 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
-#include "cloud_ref_2_common.glsl"
+#define CLOUD_REF_2_BASE_NOISE_BINDING 3
+#define CLOUD_REF_2_DETAIL_NOISE_BINDING 4
+#define CLOUD_REF_2_WEATHER_BINDING 5
+#include "cloud_ref_2_march_shared.glsl"
 
 layout(set = 0, binding = 1) uniform sampler2D cloud_blend_from_texture;
 layout(set = 0, binding = 2) uniform sampler2D cloud_blend_to_texture;
@@ -23,6 +26,26 @@ bool cloud_ref_2_inside_update_region(vec2 oct_uv) {
            pixel.y >= region_min.y && pixel.y < region_max.y;
 }
 
+ivec2 cloud_ref_2_cache_product_pixel(vec2 oct_uv) {
+    int cache_size = max(int(params.cache_status.y + 0.5), 1);
+    return clamp(ivec2(floor(oct_uv * float(cache_size))), ivec2(0), ivec2(cache_size - 1));
+}
+
+vec4 cloud_ref_2_cached_product(vec3 direction, vec2 oct_uv) {
+    if (direction.y < 0.0) {
+        return vec4(0.0, 0.0, 0.0, 1.0);
+    }
+    return cloud_ref_2_sample_blended_cloud(oct_uv);
+}
+
+vec4 cloud_ref_2_direct_product(int debug_view, vec3 direction, vec2 oct_uv, vec3 background) {
+    if (direction.y < 0.0) {
+        return cloud_ref_2_empty_cloud_product(debug_view, background);
+    }
+    return cloud_ref_2_cloud_product(debug_view, params.camera_position_radius.xyz, direction,
+                                     oct_uv, background, cloud_ref_2_cache_product_pixel(oct_uv));
+}
+
 vec3 cloud_ref_2_final_post(vec3 color, vec3 direction, float cloud_alpha) {
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     float sun_alignment = max(dot(direction, sun_dir), 0.0);
@@ -42,16 +65,31 @@ vec3 cloud_ref_2_final_post(vec3 color, vec3 direction, float cloud_alpha) {
 
 void main() {
     int debug_view = int(params.ref_options.x + 0.5);
+    int render_path = int(params.ref_options.w + 0.5);
     bool final_view = debug_view == CLOUD_REF_2_DEBUG_FINAL;
     bool raw_final_view = debug_view == CLOUD_REF_2_DEBUG_RAW_FINAL;
     vec3 direction = cloud_ref_2_view_direction(frag_position);
     vec2 oct_uv = cloud_ref_2_direction_to_oct_uv(direction);
     vec3 background = cloud_ref_2_background(direction);
-    bool above_horizon = direction.y >= 0.0;
-    vec4 blend_from = above_horizon ? texture(cloud_blend_from_texture, oct_uv)
-                                    : vec4(0.0, 0.0, 0.0, 1.0);
-    vec4 blend_to = above_horizon ? texture(cloud_blend_to_texture, oct_uv) : blend_from;
-    vec4 cloud = above_horizon ? cloud_ref_2_sample_blended_cloud(oct_uv) : blend_from;
+    vec4 blend_from = direction.y >= 0.0 ? texture(cloud_blend_from_texture, oct_uv)
+                                         : vec4(0.0, 0.0, 0.0, 1.0);
+    vec4 blend_to = direction.y >= 0.0 ? texture(cloud_blend_to_texture, oct_uv) : blend_from;
+    vec4 cached_cloud = cloud_ref_2_cached_product(direction, oct_uv);
+    vec4 direct_cloud = cloud_ref_2_direct_product(debug_view, direction, oct_uv, background);
+
+    if (render_path == CLOUD_REF_2_RENDER_PATH_DIFF) {
+        vec3 rgb_diff = abs(cached_cloud.rgb - direct_cloud.rgb) * 8.0;
+        float alpha_diff = abs(cached_cloud.a - direct_cloud.a);
+        out_color = vec4(cloud_ref_2_tonemap(rgb_diff + vec3(alpha_diff * 2.0)), 1.0);
+        return;
+    }
+    if (render_path == CLOUD_REF_2_RENDER_PATH_ALPHA_DIFF) {
+        float alpha_diff = abs(cached_cloud.a - direct_cloud.a);
+        out_color = vec4(cloud_ref_2_tonemap(vec3(alpha_diff * 8.0)), 1.0);
+        return;
+    }
+
+    vec4 cloud = render_path == CLOUD_REF_2_RENDER_PATH_DIRECT ? direct_cloud : cached_cloud;
     vec3 color = background * clamp(cloud.a, 0.0, 1.0) + cloud.rgb;
     if (debug_view == CLOUD_REF_2_DEBUG_BACKGROUND) {
         color = background;

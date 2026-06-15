@@ -149,6 +149,7 @@ enum class RunConfigOptionId {
     CloudWeatherPreset,
     CloudCacheFrames,
     CloudCacheTextureSize,
+    CloudRenderPath,
     CloudPlanetRadius,
     CloudCameraAltitude,
     CloudBottomAltitude,

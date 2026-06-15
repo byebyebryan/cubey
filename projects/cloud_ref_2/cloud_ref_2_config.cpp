@@ -389,6 +389,36 @@ std::uint32_t clouds_cache_update_region_size(std::uint32_t texture_size,
     return texture_size / grid;
 }
 
+CloudsRenderPath clouds_render_path_from_string(std::string_view value) {
+    if (value.empty() || value == "cached") {
+        return CloudsRenderPath::Cached;
+    }
+    if (value == "direct") {
+        return CloudsRenderPath::Direct;
+    }
+    if (value == "diff") {
+        return CloudsRenderPath::Diff;
+    }
+    if (value == "alpha-diff" || value == "alphadiff") {
+        return CloudsRenderPath::AlphaDiff;
+    }
+    throw std::runtime_error("unknown cloud render path: " + std::string(value));
+}
+
+const char* clouds_render_path_name(CloudsRenderPath path) {
+    switch (path) {
+    case CloudsRenderPath::Cached:
+        return "cached";
+    case CloudsRenderPath::Direct:
+        return "direct";
+    case CloudsRenderPath::Diff:
+        return "diff";
+    case CloudsRenderPath::AlphaDiff:
+        return "alpha-diff";
+    }
+    return "cached";
+}
+
 CloudsQualityBudget clouds_quality_budget(CloudsQuality quality) {
     switch (quality) {
     case CloudsQuality::Quarter:
@@ -439,6 +469,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     }
     if (run_config.clouds.cache_texture_size != 0U) {
         config.cache_texture_size = run_config.clouds.cache_texture_size;
+    }
+    if (!run_config.clouds.render_path.empty()) {
+        config.render_path = clouds_render_path_from_string(run_config.clouds.render_path);
     }
     apply_clouds_weather_preset(config, config.weather_preset);
     if (!run_config.debug_view.empty()) {

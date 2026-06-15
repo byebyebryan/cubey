@@ -230,6 +230,7 @@ struct RunConfig {
         std::string weather_preset{};
         std::string cache_frames{};
         std::uint32_t cache_texture_size = 0;
+        std::string render_path{};
         float planet_radius_m = kRunConfigUnsetFloat;
         float camera_altitude_m = kRunConfigUnsetFloat;
         float bottom_altitude_m = kRunConfigUnsetFloat;
