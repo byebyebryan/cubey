@@ -33,6 +33,8 @@ layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 weather_feature_weights;
     vec4 cloud_color_top_shadow;
     vec4 cloud_color_bottom_horizon;
+    vec4 lighting_strengths;
+    vec4 composite_options;
 } params;
 
 float cloud_saturate(float value) {

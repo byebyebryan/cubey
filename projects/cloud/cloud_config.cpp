@@ -378,6 +378,30 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (run_config_float_is_set(run_config.clouds.detail_erosion)) {
         config.detail_erosion = run_config.clouds.detail_erosion;
     }
+    if (run_config_float_is_set(run_config.clouds.ambient_strength)) {
+        config.ambient_strength = run_config.clouds.ambient_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.direct_strength)) {
+        config.direct_strength = run_config.clouds.direct_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.phase_strength)) {
+        config.phase_strength = run_config.clouds.phase_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.final_contrast)) {
+        config.final_contrast = run_config.clouds.final_contrast;
+    }
+    if (run_config_float_is_set(run_config.clouds.final_saturation)) {
+        config.final_saturation = run_config.clouds.final_saturation;
+    }
+    if (run_config_float_is_set(run_config.clouds.resolve_strength)) {
+        config.resolve_strength = run_config.clouds.resolve_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.horizon_glow_strength)) {
+        config.horizon_glow_strength = run_config.clouds.horizon_glow_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.sun_glare_strength)) {
+        config.sun_glare_strength = run_config.clouds.sun_glare_strength;
+    }
     if (run_config.clouds.temporal >= 0) {
         config.temporal_enabled = run_config.clouds.temporal != 0;
     }
@@ -499,6 +523,38 @@ void validate_clouds_config(const CloudsConfig& config) {
     }
     if (!finite_nonnegative(config.absorption)) {
         throw std::runtime_error("cloud absorption must be finite and nonnegative");
+    }
+    if (!std::isfinite(config.ambient_strength) || config.ambient_strength < 0.0F ||
+        config.ambient_strength > 3.0F) {
+        throw std::runtime_error("cloud ambient strength must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.direct_strength) || config.direct_strength < 0.0F ||
+        config.direct_strength > 3.0F) {
+        throw std::runtime_error("cloud direct strength must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.phase_strength) || config.phase_strength < 0.0F ||
+        config.phase_strength > 3.0F) {
+        throw std::runtime_error("cloud phase strength must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.final_contrast) || config.final_contrast < 0.0F ||
+        config.final_contrast > 3.0F) {
+        throw std::runtime_error("cloud final contrast must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.final_saturation) || config.final_saturation < 0.0F ||
+        config.final_saturation > 3.0F) {
+        throw std::runtime_error("cloud final saturation must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.resolve_strength) || config.resolve_strength < 0.0F ||
+        config.resolve_strength > 1.0F) {
+        throw std::runtime_error("cloud resolve strength must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.horizon_glow_strength) ||
+        config.horizon_glow_strength < 0.0F || config.horizon_glow_strength > 3.0F) {
+        throw std::runtime_error("cloud horizon glow strength must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.sun_glare_strength) || config.sun_glare_strength < 0.0F ||
+        config.sun_glare_strength > 3.0F) {
+        throw std::runtime_error("cloud sun glare strength must be finite and in [0, 3]");
     }
 }
 

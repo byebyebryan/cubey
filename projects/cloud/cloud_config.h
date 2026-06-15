@@ -112,6 +112,14 @@ struct CloudsConfig {
     float crispiness = 40.0F;
     float curliness = 0.10F;
     float absorption = 0.28F;
+    float ambient_strength = 0.88F;
+    float direct_strength = 1.15F;
+    float phase_strength = 1.08F;
+    float final_contrast = 1.12F;
+    float final_saturation = 1.08F;
+    float resolve_strength = 0.58F;
+    float horizon_glow_strength = 0.90F;
+    float sun_glare_strength = 1.0F;
     bool powder_enabled = true;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;

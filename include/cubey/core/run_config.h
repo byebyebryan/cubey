@@ -245,6 +245,14 @@ struct RunConfig {
         float weather_cells = kRunConfigUnsetFloat;
         float weather_streaks = kRunConfigUnsetFloat;
         float detail_erosion = kRunConfigUnsetFloat;
+        float ambient_strength = kRunConfigUnsetFloat;
+        float direct_strength = kRunConfigUnsetFloat;
+        float phase_strength = kRunConfigUnsetFloat;
+        float final_contrast = kRunConfigUnsetFloat;
+        float final_saturation = kRunConfigUnsetFloat;
+        float resolve_strength = kRunConfigUnsetFloat;
+        float horizon_glow_strength = kRunConfigUnsetFloat;
+        float sun_glare_strength = kRunConfigUnsetFloat;
         int temporal = -1;
         int local_volume = -1;
         int horizon_layer = -1;

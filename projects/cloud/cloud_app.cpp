@@ -104,9 +104,11 @@ struct CloudFrameUniforms {
     cubey::math::Vec4 weather_feature_weights;
     cubey::math::Vec4 cloud_color_top_shadow;
     cubey::math::Vec4 cloud_color_bottom_horizon;
+    cubey::math::Vec4 lighting_strengths;
+    cubey::math::Vec4 composite_options;
 };
 
-static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 48U);
+static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 56U);
 
 struct CloudViewBasis {
     cubey::math::Vec3 position{0.0F, 0.0F, 0.0F};
@@ -353,6 +355,10 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
                                    config.shadow_strength},
         .cloud_color_bottom_horizon = {cloud_bottom_color.x, cloud_bottom_color.y,
                                        cloud_bottom_color.z, config.horizon_strength},
+        .lighting_strengths = {config.ambient_strength, config.direct_strength,
+                               config.phase_strength, config.sun_glare_strength},
+        .composite_options = {config.resolve_strength, config.final_contrast,
+                              config.final_saturation, config.horizon_glow_strength},
     };
 }
 
@@ -653,13 +659,29 @@ class CloudApp {
         ImGui::SliderFloat("Coverage", &config_.coverage, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Density", &config_.density, 0.0F, 0.08F, "%.3f");
         ImGui::SliderFloat("Wind", &config_.wind_speed_mps, 0.0F, 900.0F, "%.0f m/s");
-        ImGui::SliderFloat("Crispiness", &config_.crispiness, 1.0F, 120.0F, "%.1f");
-        ImGui::SliderFloat("Curliness", &config_.curliness, 0.01F, 3.0F, "%.2f");
-        ImGui::SliderFloat("Absorption", &config_.absorption, 0.0F, 1.5F, "%.2f");
-        ImGui::SliderFloat("Shadow strength", &config_.shadow_strength, 0.0F, 2.0F, "%.2f");
-        ImGui::SliderFloat("Horizon fill", &config_.horizon_strength, 0.0F, 2.0F, "%.2f");
-        ImGui::Checkbox("Powder", &config_.powder_enabled);
         ImGui::SliderFloat("Weather scale", &config_.weather_scale_km, 40.0F, 500.0F, "%.0f km");
+        if (ImGui::CollapsingHeader("Shape / Density", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::SliderFloat("Crispiness", &config_.crispiness, 1.0F, 120.0F, "%.1f");
+            ImGui::SliderFloat("Curliness", &config_.curliness, 0.01F, 3.0F, "%.2f");
+            ImGui::SliderFloat("Detail erosion", &config_.detail_erosion, 0.0F, 1.0F, "%.2f");
+            ImGui::Checkbox("Powder", &config_.powder_enabled);
+        }
+        if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::SliderFloat("Ambient", &config_.ambient_strength, 0.0F, 3.0F, "%.2f");
+            ImGui::SliderFloat("Direct", &config_.direct_strength, 0.0F, 3.0F, "%.2f");
+            ImGui::SliderFloat("Phase / rim", &config_.phase_strength, 0.0F, 3.0F, "%.2f");
+            ImGui::SliderFloat("Absorption", &config_.absorption, 0.0F, 1.5F, "%.2f");
+            ImGui::SliderFloat("Shadow strength", &config_.shadow_strength, 0.0F, 2.0F, "%.2f");
+            ImGui::SliderFloat("Horizon fill", &config_.horizon_strength, 0.0F, 2.0F, "%.2f");
+        }
+        if (ImGui::CollapsingHeader("Final Resolve", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::SliderFloat("Resolve", &config_.resolve_strength, 0.0F, 1.0F, "%.2f");
+            ImGui::SliderFloat("Contrast", &config_.final_contrast, 0.0F, 3.0F, "%.2f");
+            ImGui::SliderFloat("Saturation", &config_.final_saturation, 0.0F, 3.0F, "%.2f");
+            ImGui::SliderFloat("Horizon glow", &config_.horizon_glow_strength, 0.0F, 3.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Sun glare", &config_.sun_glare_strength, 0.0F, 3.0F, "%.2f");
+        }
         ImGui::Separator();
         ImGui::Text("FPS: %.1f / %.2f ms", latest_fps_, latest_frame_ms_);
         ImGui::Text("Base noise: %u^3", kBaseNoiseSize);

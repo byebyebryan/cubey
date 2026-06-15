@@ -104,7 +104,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 200> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 208> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -579,6 +579,38 @@ constexpr std::array<ConfigOptionDescriptor, 200> kRunConfigOptions{
            "--cloud-detail-erosion", "Detail Erosion", "Clouds",
            "Feature-isolation weight for high-frequency cloud erosion.", ConfigOptionType::Float,
            bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudAmbientStrength, "clouds.ambient_strength",
+           "--cloud-ambient-strength", "Ambient Strength", "Clouds",
+           "Cloud ambient-light multiplier used by the production cloud renderer.",
+           ConfigOptionType::Float, bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudDirectStrength, "clouds.direct_strength",
+           "--cloud-direct-strength", "Direct Strength", "Clouds",
+           "Cloud direct sun-light multiplier used by the production cloud renderer.",
+           ConfigOptionType::Float, bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudPhaseStrength, "clouds.phase_strength",
+           "--cloud-phase-strength", "Phase Strength", "Clouds",
+           "Cloud forward/rim phase-light multiplier used by the production cloud renderer.",
+           ConfigOptionType::Float, bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudFinalContrast, "clouds.final_contrast",
+           "--cloud-final-contrast", "Final Contrast", "Clouds",
+           "Final cloud composite contrast multiplier.", ConfigOptionType::Float,
+           bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudFinalSaturation, "clouds.final_saturation",
+           "--cloud-final-saturation", "Final Saturation", "Clouds",
+           "Final cloud composite saturation multiplier.", ConfigOptionType::Float,
+           bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudResolveStrength, "clouds.resolve_strength",
+           "--cloud-resolve-strength", "Resolve Strength", "Clouds",
+           "Amount of alpha-aware cloud product resolve in final view.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudHorizonGlowStrength, "clouds.horizon_glow_strength",
+           "--cloud-horizon-glow-strength", "Horizon Glow", "Clouds",
+           "Final composite horizon fill/glow multiplier.", ConfigOptionType::Float,
+           bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudSunGlareStrength, "clouds.sun_glare_strength",
+           "--cloud-sun-glare-strength", "Sun Glare", "Clouds",
+           "Final composite sun halo and glare multiplier.", ConfigOptionType::Float,
+           bounded_range(0.0, 3.0)),
     option(RunConfigOptionId::CloudTemporal, "clouds.temporal", "--cloud-temporal",
            "Temporal", "Clouds", "Enable temporal reconstruction for the cloud product.",
            ConfigOptionType::Bool, no_range(), {}, "--no-cloud-temporal"),
@@ -1238,6 +1270,22 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.weather_streaks);
     case RunConfigOptionId::CloudDetailErosion:
         return optional_float(config.clouds.detail_erosion);
+    case RunConfigOptionId::CloudAmbientStrength:
+        return optional_float(config.clouds.ambient_strength);
+    case RunConfigOptionId::CloudDirectStrength:
+        return optional_float(config.clouds.direct_strength);
+    case RunConfigOptionId::CloudPhaseStrength:
+        return optional_float(config.clouds.phase_strength);
+    case RunConfigOptionId::CloudFinalContrast:
+        return optional_float(config.clouds.final_contrast);
+    case RunConfigOptionId::CloudFinalSaturation:
+        return optional_float(config.clouds.final_saturation);
+    case RunConfigOptionId::CloudResolveStrength:
+        return optional_float(config.clouds.resolve_strength);
+    case RunConfigOptionId::CloudHorizonGlowStrength:
+        return optional_float(config.clouds.horizon_glow_strength);
+    case RunConfigOptionId::CloudSunGlareStrength:
+        return optional_float(config.clouds.sun_glare_strength);
     case RunConfigOptionId::CloudTemporal:
         return optional_bool(config.clouds.temporal);
     case RunConfigOptionId::CloudLocalVolume:
@@ -2316,6 +2364,38 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudDetailErosion:
         config.clouds.detail_erosion = parse_config_float(value, option);
         validate_range(config.clouds.detail_erosion, option);
+        break;
+    case RunConfigOptionId::CloudAmbientStrength:
+        config.clouds.ambient_strength = parse_config_float(value, option);
+        validate_range(config.clouds.ambient_strength, option);
+        break;
+    case RunConfigOptionId::CloudDirectStrength:
+        config.clouds.direct_strength = parse_config_float(value, option);
+        validate_range(config.clouds.direct_strength, option);
+        break;
+    case RunConfigOptionId::CloudPhaseStrength:
+        config.clouds.phase_strength = parse_config_float(value, option);
+        validate_range(config.clouds.phase_strength, option);
+        break;
+    case RunConfigOptionId::CloudFinalContrast:
+        config.clouds.final_contrast = parse_config_float(value, option);
+        validate_range(config.clouds.final_contrast, option);
+        break;
+    case RunConfigOptionId::CloudFinalSaturation:
+        config.clouds.final_saturation = parse_config_float(value, option);
+        validate_range(config.clouds.final_saturation, option);
+        break;
+    case RunConfigOptionId::CloudResolveStrength:
+        config.clouds.resolve_strength = parse_config_float(value, option);
+        validate_range(config.clouds.resolve_strength, option);
+        break;
+    case RunConfigOptionId::CloudHorizonGlowStrength:
+        config.clouds.horizon_glow_strength = parse_config_float(value, option);
+        validate_range(config.clouds.horizon_glow_strength, option);
+        break;
+    case RunConfigOptionId::CloudSunGlareStrength:
+        config.clouds.sun_glare_strength = parse_config_float(value, option);
+        validate_range(config.clouds.sun_glare_strength, option);
         break;
     case RunConfigOptionId::CloudTemporal:
         config.clouds.temporal = parse_config_bool(value, option) ? 1 : 0;

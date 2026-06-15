@@ -125,6 +125,14 @@ void test_run_config_mapping() {
     run_config.clouds.weather_cells = 0.5F;
     run_config.clouds.weather_streaks = 0.75F;
     run_config.clouds.detail_erosion = 0.35F;
+    run_config.clouds.ambient_strength = 0.85F;
+    run_config.clouds.direct_strength = 1.25F;
+    run_config.clouds.phase_strength = 1.10F;
+    run_config.clouds.final_contrast = 1.15F;
+    run_config.clouds.final_saturation = 1.05F;
+    run_config.clouds.resolve_strength = 0.45F;
+    run_config.clouds.horizon_glow_strength = 0.80F;
+    run_config.clouds.sun_glare_strength = 1.35F;
     run_config.clouds.temporal = 0;
     run_config.clouds.local_volume = 0;
     run_config.clouds.horizon_layer = 1;
@@ -163,6 +171,22 @@ void test_run_config_mapping() {
                  "cloud weather streaks should map");
     require_near(config.detail_erosion, 0.35F, 0.001F,
                  "cloud detail erosion should map");
+    require_near(config.ambient_strength, 0.85F, 0.001F,
+                 "cloud ambient strength should map");
+    require_near(config.direct_strength, 1.25F, 0.001F,
+                 "cloud direct strength should map");
+    require_near(config.phase_strength, 1.10F, 0.001F,
+                 "cloud phase strength should map");
+    require_near(config.final_contrast, 1.15F, 0.001F,
+                 "cloud final contrast should map");
+    require_near(config.final_saturation, 1.05F, 0.001F,
+                 "cloud final saturation should map");
+    require_near(config.resolve_strength, 0.45F, 0.001F,
+                 "cloud resolve strength should map");
+    require_near(config.horizon_glow_strength, 0.80F, 0.001F,
+                 "cloud horizon glow strength should map");
+    require_near(config.sun_glare_strength, 1.35F, 0.001F,
+                 "cloud sun glare strength should map");
     require(!config.temporal_enabled, "cloud temporal option should map");
     require(!config.local_volume_enabled, "cloud local volume option should map");
     require(config.horizon_layer_enabled, "cloud horizon layer option should map");
@@ -243,6 +267,14 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.weather_cells", "0.4");
     cubey::set_run_config_option_from_string(config, "clouds.weather_streaks", "0.6");
     cubey::set_run_config_option_from_string(config, "clouds.detail_erosion", "0.5");
+    cubey::set_run_config_option_from_string(config, "clouds.ambient_strength", "0.85");
+    cubey::set_run_config_option_from_string(config, "clouds.direct_strength", "1.25");
+    cubey::set_run_config_option_from_string(config, "clouds.phase_strength", "1.10");
+    cubey::set_run_config_option_from_string(config, "clouds.final_contrast", "1.15");
+    cubey::set_run_config_option_from_string(config, "clouds.final_saturation", "1.05");
+    cubey::set_run_config_option_from_string(config, "clouds.resolve_strength", "0.45");
+    cubey::set_run_config_option_from_string(config, "clouds.horizon_glow_strength", "0.80");
+    cubey::set_run_config_option_from_string(config, "clouds.sun_glare_strength", "1.35");
     cubey::set_run_config_option_from_string(config, "clouds.temporal", "false");
     cubey::set_run_config_option_from_string(config, "clouds.local_volume", "false");
     cubey::set_run_config_option_from_string(config, "clouds.horizon_layer", "true");
@@ -266,6 +298,22 @@ void test_config_descriptors() {
                  "cloud weather streaks descriptor should set");
     require_near(config.clouds.detail_erosion, 0.5F, 0.001F,
                  "cloud detail erosion descriptor should set");
+    require_near(config.clouds.ambient_strength, 0.85F, 0.001F,
+                 "cloud ambient strength descriptor should set");
+    require_near(config.clouds.direct_strength, 1.25F, 0.001F,
+                 "cloud direct strength descriptor should set");
+    require_near(config.clouds.phase_strength, 1.10F, 0.001F,
+                 "cloud phase strength descriptor should set");
+    require_near(config.clouds.final_contrast, 1.15F, 0.001F,
+                 "cloud final contrast descriptor should set");
+    require_near(config.clouds.final_saturation, 1.05F, 0.001F,
+                 "cloud final saturation descriptor should set");
+    require_near(config.clouds.resolve_strength, 0.45F, 0.001F,
+                 "cloud resolve strength descriptor should set");
+    require_near(config.clouds.horizon_glow_strength, 0.80F, 0.001F,
+                 "cloud horizon glow descriptor should set");
+    require_near(config.clouds.sun_glare_strength, 1.35F, 0.001F,
+                 "cloud sun glare descriptor should set");
     require(config.clouds.temporal == 0, "cloud temporal descriptor should set");
     require(config.clouds.local_volume == 0, "cloud local volume descriptor should set");
     require(config.clouds.horizon_layer == 1, "cloud horizon layer descriptor should set");
