@@ -1398,6 +1398,22 @@ void test_run_config_rejects_invalid_ocean_controls() {
         },
         "run config should reject unsupported Terrain Lab slice selection");
 
+    std::string terrain_lab_dunes_value = "desert-dunes";
+    std::array<char*, 3> terrain_lab_dunes_argv{program.data(), terrain_lab_slice_flag.data(),
+                                                terrain_lab_dunes_value.data()};
+    const cubey::RunConfig terrain_lab_dunes_config = cubey::parse_run_config(
+        static_cast<int>(terrain_lab_dunes_argv.size()), terrain_lab_dunes_argv.data());
+    require(terrain_lab_dunes_config.terrain_lab.slice_preset == "desert-dunes",
+            "run config should parse desert dunes Terrain Lab slice");
+
+    std::string terrain_lab_glacial_value = "alpine-glacial-valley";
+    std::array<char*, 3> terrain_lab_glacial_argv{program.data(), terrain_lab_slice_flag.data(),
+                                                  terrain_lab_glacial_value.data()};
+    const cubey::RunConfig terrain_lab_glacial_config = cubey::parse_run_config(
+        static_cast<int>(terrain_lab_glacial_argv.size()), terrain_lab_glacial_argv.data());
+    require(terrain_lab_glacial_config.terrain_lab.slice_preset == "alpine-glacial-valley",
+            "run config should parse alpine glacial Terrain Lab slice");
+
     std::string terrain_lab_camera_flag = "--terrain-lab-camera-preset";
     std::string terrain_lab_camera_value = "telephoto";
     std::array<char*, 3> terrain_lab_camera_argv{program.data(), terrain_lab_camera_flag.data(),

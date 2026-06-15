@@ -89,12 +89,19 @@ vegetation masks without forcing the arid slice into a quadrant-style layout.
 Coastal work can reconnect later through `procedural_terrain` once the general
 terrain field model is stronger.
 
-The next representative slices are desert dunes and an alpine glacial valley.
-They are intentionally sentinel slices: enough feature/process/material behavior
-to test the terrain model, not finished environments. Hydrology remains
-analysis-only for this batch. Flow direction, accumulation, stream power, and
-sink diagnostics can expose whether terrain is coherent, but no droplet solver
-or destructive hydraulic erosion pass should become default terrain shaping yet.
+Two representative sentinel slices are also available:
+
+- `--terrain-lab-slice desert-dunes`: wind-shaped dune crests, slip faces,
+  interdune flats, sand-dominant materials, sparse shrubs, and diagnostic-only
+  flow fields.
+- `--terrain-lab-slice alpine-glacial-valley`: U-shaped trunk valley, high
+  ridges, cirque/headwall influence, moraine/deposition bands, snow/ice masks,
+  and moderate meltwater diagnostics.
+
+Hydrology remains analysis-only for this batch. Flow direction, accumulation,
+stream power, and sink diagnostics can expose whether terrain is coherent, but
+no droplet solver or destructive hydraulic erosion pass should become default
+terrain shaping yet.
 
 ## Current Workbench
 
@@ -112,6 +119,7 @@ Generated CPU fields include:
 - ridge, valley, and basin influence fields;
 - watershed id, divide influence, channel influence, and channel distance;
 - material masks for rock, soil, scree, meadow, forest, and snow;
+- sand material masks for slices that need explicit wind-blown sediment;
 - grass, shrub, tree, and canopy-height density fields.
 
 Field summaries also expose naturalization diagnostics for channel/divide
@@ -164,6 +172,8 @@ Useful run commands:
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view flow-accumulation --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view feature-graph --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice temperate-mountain-watershed --debug-view watershed --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice desert-dunes --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice alpine-glacial-valley --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --headless --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab-material.png
 ```
@@ -182,6 +192,10 @@ mkdir -p outputs/terrain_lab
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view flow-accumulation --width 1280 --height 720 --output outputs/terrain_lab/flow-accumulation.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view noise-off --width 1280 --height 720 --output outputs/terrain_lab/noise-off.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-watershed --debug-view watershed --width 1280 --height 720 --output outputs/terrain_lab/watershed-temperate.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes-material.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --width 1280 --height 720 --output outputs/terrain_lab/alpine-glacial-valley.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/alpine-glacial-valley-material.png
 ```
 
 `outputs/` is ignored by Git; these captures are local review artifacts.
@@ -191,12 +205,13 @@ mkdir -p outputs/terrain_lab
 Current status: CPU field foundation plus a minimal standalone visual workbench.
 The default generator now targets an arid mesa canyon with mesa benches, canyon
 rims, dry washes, talus/scree response, sparse scrub density, and low wetness.
-The older deterministic four-basin temperate watershed core remains as an
-explicit slice fixture with divide, channel, and watershed-id fields. The
+The deterministic four-basin temperate watershed, desert dunes, and alpine
+glacial valley sentinels remain available as explicit slice fixtures. The
 workbench has deterministic mesh extraction, field/debug shading, windowed and
-headless render paths, PNG smoke coverage, and shader/debug-view sync tests.
+headless render paths, PNG smoke coverage, shader/debug-view sync tests, and
+analysis-only drainage guardrails.
 
 Still out of scope for the current slice: live ImGui editing, runtime
 regeneration, a true drainage graph with stream connectivity guarantees, tiled
-or clipmap terrain rendering, foliage/proxy dressing, atmosphere-backed
-lighting, and adapters into `planet`, `ocean`, or `procedural_terrain`.
+or clipmap terrain rendering, full foliage assets, atmosphere-backed lighting,
+and adapters into `planet`, `ocean`, or `procedural_terrain`.

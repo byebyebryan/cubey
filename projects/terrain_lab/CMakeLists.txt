@@ -118,4 +118,44 @@ if (BUILD_TESTING)
         0.00001
         0.00005
     )
+
+    set(CUBEY_TERRAIN_LAB_DUNES_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-desert-dunes.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_lab_desert_dunes_writes_png
+        cubey_project_terrain_lab
+        "${CUBEY_TERRAIN_LAB_DUNES_SMOKE_OUTPUT}"
+        --headless
+        --grid-width 65
+        --grid-height 65
+        --terrain-lab-slice
+        desert-dunes
+    )
+    cubey_add_png_stats_test(
+        terrain_lab_desert_dunes_writes_png
+        "${CUBEY_TERRAIN_LAB_DUNES_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
+    set(CUBEY_TERRAIN_LAB_GLACIAL_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-alpine-glacial-valley.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_lab_alpine_glacial_valley_writes_png
+        cubey_project_terrain_lab
+        "${CUBEY_TERRAIN_LAB_GLACIAL_SMOKE_OUTPUT}"
+        --headless
+        --grid-width 65
+        --grid-height 65
+        --terrain-lab-slice
+        alpine-glacial-valley
+    )
+    cubey_add_png_stats_test(
+        terrain_lab_alpine_glacial_valley_writes_png
+        "${CUBEY_TERRAIN_LAB_GLACIAL_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
 endif()

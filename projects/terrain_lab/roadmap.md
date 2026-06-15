@@ -200,9 +200,10 @@ Current implementation notes:
 - generated fields include mesa/rim/divide influence, dry canyon and side-wash
   channels, low wetness, no snow, rock/scree/soil-heavy material masks, sparse
   scrub density, and very low tree density;
-- the next representative work should add desert dunes and alpine glacial valley
-  as minimal sentinels, while keeping hydrology analysis-only and avoiding a toy
-  erosion solver.
+- desert dunes and alpine glacial valley are available as minimal sentinel
+  slices, while hydrology remains analysis-only and avoids a toy erosion solver;
+- the material vocabulary now includes sand for wind-shaped terrain, while snow
+  continues to stand in for snow/ice in the glacial sentinel.
 
 Success criteria:
 
