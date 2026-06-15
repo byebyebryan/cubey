@@ -141,6 +141,20 @@ single-handedly carving every valley. Those fields guide structure, process,
 material, and diagnostic rendering, while richer drainage connectivity remains a
 later refinement.
 
+The sentinel slice set should prevent overfitting this model to canyon terrain.
+The first representative set is:
+
+- arid mesa canyon, for strata, rims, benches, dry washes, and sparse scrub;
+- temperate mountain watershed, for wetter drainage, basins, forest/meadow, and
+  divide-channel relationships;
+- desert dunes, for wind-shaped terrain where hydrology should be diagnostic
+  rather than causal;
+- alpine glacial valley, for U-shaped valley structure, moraine/deposition,
+  snow/ice masks, and ice-shaped relief.
+
+These slices are probes for the shared field vocabulary. They are not a
+commitment to finish several production biomes in parallel.
+
 ### Process Passes
 
 Process passes should be small, named, and inspectable. Early passes can be
@@ -154,6 +168,15 @@ process-informed approximations rather than expensive simulations:
 
 Each process pass should expose a debug field or contribution so the project can
 tell whether the final terrain shape is caused by structure, process, or detail.
+
+Hydrology stays analysis-first until drainage topology is strong. The project
+may compute flow directions, accumulation, stream power, sink diagnostics, and
+channel/non-channel comparisons for every slice. It should not add particle
+droplet solvers, discharge/momentum simulation, or destructive hydraulic
+erosion as default terrain shaping until those diagnostics are already credible
+and a sandboxed prototype visibly improves multiple slices. A weak solver would
+be worse than no solver because it would make downstream materials and biomes
+trust false river-like artifacts.
 
 ### Detail Layer
 
@@ -258,6 +281,12 @@ workbench slice rather than a physically complete landscape model.
 
 Useful starting points for coherent terrain generation:
 
+- `~/code/ref/SimpleHydrology`: useful reference for process state and visual
+  diagnostics, especially discharge/momentum/deposition fields and vegetation
+  feedback. Use it as design pressure, not as code to port directly.
+- `~/code/ref/TerrainEngine-OpenGL`: useful reference for terrain presentation,
+  camera-centered tiles, tessellation, fog/water context, and material blending.
+  Do not copy its shader-noise displacement as the generation model.
 - Hydrology-driven procedural terrain generation by Genevaux et al.:
   https://www.semanticscholar.org/paper/Terrain-generation-using-procedural-models-based-on-G%C3%A9nevaux-Galin/84ae6bc48dc8297ff3bf2cb24df0ed8afd21e8a0
 - Large-scale terrain from uplift and fluvial erosion by Cordonnier et al.:

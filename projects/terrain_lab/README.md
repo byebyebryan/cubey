@@ -89,6 +89,13 @@ vegetation masks without forcing the arid slice into a quadrant-style layout.
 Coastal work can reconnect later through `procedural_terrain` once the general
 terrain field model is stronger.
 
+The next representative slices are desert dunes and an alpine glacial valley.
+They are intentionally sentinel slices: enough feature/process/material behavior
+to test the terrain model, not finished environments. Hydrology remains
+analysis-only for this batch. Flow direction, accumulation, stream power, and
+sink diagnostics can expose whether terrain is coherent, but no droplet solver
+or destructive hydraulic erosion pass should become default terrain shaping yet.
+
 ## Current Workbench
 
 `TerrainLabConfig` reads common grid width, grid height, slice-preset, and

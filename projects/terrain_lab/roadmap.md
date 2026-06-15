@@ -176,7 +176,7 @@ Success criteria:
 
 ## Phase 6: Additional Terrain Slices
 
-Status: active for arid mesa canyon.
+Status: active as sentinel slices for model pressure.
 
 Candidate slices:
 
@@ -200,8 +200,17 @@ Current implementation notes:
 - generated fields include mesa/rim/divide influence, dry canyon and side-wash
   channels, low wetness, no snow, rock/scree/soil-heavy material masks, sparse
   scrub density, and very low tree density;
-- the next arid work should be visual tuning and slice-specific process controls
-  before adding another biome.
+- the next representative work should add desert dunes and alpine glacial valley
+  as minimal sentinels, while keeping hydrology analysis-only and avoiding a toy
+  erosion solver.
+
+Success criteria:
+
+- dunes remain readable with flow ignored as a shaping force;
+- glacial terrain reads through valley shape, snow/ice, and deposition rather
+  than river carving;
+- shared fields remain useful across all four sentinels without becoming
+  water-centric.
 
 ## Phase 7: Integration Adapters
 
