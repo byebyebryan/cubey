@@ -45,6 +45,8 @@ struct TerrainLabFieldSummary {
     float divide_channel_height_gap_m = 0.0F;
     float mean_channel_flow_accumulation = 0.0F;
     float mean_non_channel_flow_accumulation = 0.0F;
+    float mean_channel_stream_power = 0.0F;
+    float mean_non_channel_stream_power = 0.0F;
     float mean_wetness = 0.0F;
     float mean_tree_density = 0.0F;
     float mean_material_entropy = 0.0F;
@@ -52,6 +54,8 @@ struct TerrainLabFieldSummary {
     float mean_divide_influence = 0.0F;
     float mean_channel_influence = 0.0F;
     float max_channel_distance_m = 0.0F;
+    std::size_t sink_sample_count = 0;
+    float sink_sample_ratio = 0.0F;
 };
 
 struct TerrainLabFieldData {

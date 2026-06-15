@@ -901,7 +901,9 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
     double channel_sum = 0.0;
     double channel_height_sum = 0.0;
     double channel_flow_sum = 0.0;
+    double channel_stream_power_sum = 0.0;
     double non_channel_flow_sum = 0.0;
+    double non_channel_stream_power_sum = 0.0;
     double divide_height_sum = 0.0;
     double edge_step_sum = 0.0;
     std::size_t edge_step_count = 0;
@@ -916,15 +918,20 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
         if (fields.channel_influence[sample] > 0.45F) {
             channel_height_sum += fields.height_m[sample];
             channel_flow_sum += fields.flow_accumulation[sample];
+            channel_stream_power_sum += fields.stream_power[sample];
             ++summary.channel_sample_count;
         }
         if (fields.channel_influence[sample] < 0.05F && fields.divide_influence[sample] < 0.25F) {
             non_channel_flow_sum += fields.flow_accumulation[sample];
+            non_channel_stream_power_sum += fields.stream_power[sample];
             ++summary.non_channel_sample_count;
         }
         if (fields.divide_influence[sample] > 0.55F && fields.channel_influence[sample] < 0.20F) {
             divide_height_sum += fields.height_m[sample];
             ++summary.divide_sample_count;
+        }
+        if (fields.flow_direction[sample] == kFlowSinkDirection) {
+            ++summary.sink_sample_count;
         }
     }
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
@@ -972,10 +979,16 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
         const double inv_channel = 1.0 / static_cast<double>(summary.channel_sample_count);
         summary.mean_channel_height_m = static_cast<float>(channel_height_sum * inv_channel);
         summary.mean_channel_flow_accumulation = static_cast<float>(channel_flow_sum * inv_channel);
+        summary.mean_channel_stream_power =
+            static_cast<float>(channel_stream_power_sum * inv_channel);
     }
     if (summary.non_channel_sample_count > 0U) {
-        summary.mean_non_channel_flow_accumulation = static_cast<float>(
-            non_channel_flow_sum / static_cast<double>(summary.non_channel_sample_count));
+        const double inv_non_channel =
+            1.0 / static_cast<double>(summary.non_channel_sample_count);
+        summary.mean_non_channel_flow_accumulation =
+            static_cast<float>(non_channel_flow_sum * inv_non_channel);
+        summary.mean_non_channel_stream_power =
+            static_cast<float>(non_channel_stream_power_sum * inv_non_channel);
     }
     if (summary.divide_sample_count > 0U) {
         summary.mean_divide_height_m = static_cast<float>(
@@ -987,6 +1000,8 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
         summary.mean_edge_step_m =
             static_cast<float>(edge_step_sum / static_cast<double>(edge_step_count));
     }
+    summary.sink_sample_ratio =
+        static_cast<float>(static_cast<double>(summary.sink_sample_count) * inv_count);
     return summary;
 }
 

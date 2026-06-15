@@ -650,6 +650,11 @@ int main() {
     require_near(summary.mean_non_channel_flow_accumulation,
                  summary_repeat.mean_non_channel_flow_accumulation, 0.001F,
                  "terrain lab non-channel flow summary should be repeatable");
+    require_near(summary.mean_channel_stream_power, summary_repeat.mean_channel_stream_power,
+                 0.001F, "terrain lab channel stream-power summary should be repeatable");
+    require_near(summary.mean_non_channel_stream_power,
+                 summary_repeat.mean_non_channel_stream_power, 0.001F,
+                 "terrain lab non-channel stream-power summary should be repeatable");
     require_near(summary.mean_wetness, summary_repeat.mean_wetness, 0.001F,
                  "terrain lab wetness summary should be repeatable");
     require_near(summary.mean_tree_density, summary_repeat.mean_tree_density, 0.001F,
@@ -666,6 +671,10 @@ int main() {
             "terrain lab divide sample count should be repeatable");
     require(summary.watershed_count == summary_repeat.watershed_count,
             "terrain lab watershed summary should be repeatable");
+    require(summary.sink_sample_count == summary_repeat.sink_sample_count,
+            "terrain lab sink sample count should be repeatable");
+    require_near(summary.sink_sample_ratio, summary_repeat.sink_sample_ratio, 0.001F,
+                 "terrain lab sink sample ratio should be repeatable");
     require_near(summary.mean_divide_influence, summary_repeat.mean_divide_influence, 0.001F,
                  "terrain lab divide summary should be repeatable");
     require_near(summary.mean_channel_influence, summary_repeat.mean_channel_influence, 0.001F,
@@ -690,6 +699,10 @@ int main() {
             "terrain lab summary should expose material mask diversity");
     require(summary.mean_edge_step_m >= 0.0F && summary.mean_edge_step_m < summary.height_span_m,
             "terrain lab summary should expose bounded edge discontinuity");
+    require(summary.sink_sample_count > 0U && summary.sink_sample_count < summary.sample_count,
+            "terrain lab drainage analysis should expose bounded sink samples");
+    require(summary.sink_sample_ratio > 0.0F && summary.sink_sample_ratio < 0.50F,
+            "terrain lab drainage analysis should avoid sink-dominated terrain");
     require(summary.mean_divide_influence > 0.0F,
             "terrain lab summary should include divide coverage");
     require(summary.mean_channel_influence > 0.0F,
@@ -773,6 +786,15 @@ int main() {
     require(watershed_summary.mean_channel_flow_accumulation >
                 watershed_summary.mean_non_channel_flow_accumulation,
             "terrain lab watershed summary should expose channel-flow alignment");
+    require(watershed_summary.mean_channel_stream_power >=
+                watershed_summary.mean_non_channel_stream_power,
+            "terrain lab watershed summary should expose channel stream-power alignment");
+    require(watershed_summary.sink_sample_count > 0U &&
+                watershed_summary.sink_sample_count < watershed_summary.sample_count,
+            "terrain lab watershed drainage analysis should expose bounded sink samples");
+    require(watershed_summary.sink_sample_ratio > 0.0F &&
+                watershed_summary.sink_sample_ratio < 0.50F,
+            "terrain lab watershed drainage analysis should avoid sink-dominated terrain");
 
     terrain::TerrainLabConfig other_seed = small;
     other_seed.seed += 1U;
