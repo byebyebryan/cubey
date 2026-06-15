@@ -10,6 +10,7 @@ cubey_add_app_target(
         main.cpp
     SHADERS
         shaders/cloud_ref_2.vert
+        shaders/cloud_ref_2_cache.comp
         shaders/cloud_ref_2_composite.frag
         shaders/cloud_ref_2_march.comp
         shaders/cloud_ref_2_perlin_worley.comp

@@ -53,6 +53,10 @@ void test_names_and_next_debug_view() {
                 cubey::projects::cloud_ref_2::CloudsDebugView::RawFinal,
             "cloud debug view should expose raw final after final");
     require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
+                cubey::projects::cloud_ref_2::CloudsDebugView::RawFinal) ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::RawCloudProduct,
+            "cloud debug view should expose raw cached product");
+    require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
                 cubey::projects::cloud_ref_2::CloudsDebugView::Lighting) ==
                 cubey::projects::cloud_ref_2::CloudsDebugView::AmbientLight,
             "cloud debug view should include ambient-light diagnostics");
@@ -68,6 +72,22 @@ void test_names_and_next_debug_view() {
                 cubey::projects::cloud_ref_2::CloudsDebugView::Shadow) ==
                 cubey::projects::cloud_ref_2::CloudsDebugView::Steps,
             "cloud debug view should advance after shadow");
+    require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
+                cubey::projects::cloud_ref_2::CloudsDebugView::Steps) ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::BlendFrom,
+            "cloud debug view should include blend-from");
+    require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
+                cubey::projects::cloud_ref_2::CloudsDebugView::BlendFrom) ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::BlendTo,
+            "cloud debug view should include blend-to");
+    require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
+                cubey::projects::cloud_ref_2::CloudsDebugView::BlendTo) ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::UpdateRegion,
+            "cloud debug view should include update-region");
+    require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
+                cubey::projects::cloud_ref_2::CloudsDebugView::UpdateRegion) ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::OctUv,
+            "cloud debug view should include oct-uv");
     require(cubey::projects::cloud_ref_2::next_clouds_debug_view(
                 cubey::projects::cloud_ref_2::CloudsDebugView::Background) ==
                 cubey::projects::cloud_ref_2::CloudsDebugView::CloudAlpha,
@@ -86,6 +106,21 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("raw-final") ==
                 cubey::projects::cloud_ref_2::CloudsDebugView::RawFinal,
             "raw final debug view should parse");
+    require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("raw-cloud-product") ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::RawCloudProduct,
+            "raw cloud product debug view should parse");
+    require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("blend-from") ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::BlendFrom,
+            "blend-from debug view should parse");
+    require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("blend-to") ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::BlendTo,
+            "blend-to debug view should parse");
+    require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("update-region") ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::UpdateRegion,
+            "update-region debug view should parse");
+    require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("oct-uv") ==
+                cubey::projects::cloud_ref_2::CloudsDebugView::OctUv,
+            "oct-uv debug view should parse");
     require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("ambient-light") ==
                 cubey::projects::cloud_ref_2::CloudsDebugView::AmbientLight,
             "cloud ambient light debug view should parse");
@@ -104,6 +139,28 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref_2::clouds_debug_view_from_string("detail-density") ==
                 cubey::projects::cloud_ref_2::CloudsDebugView::DetailDensity,
             "cloud detail-density debug view should parse");
+    require(cubey::projects::cloud_ref_2::clouds_cache_frames_from_string("4") ==
+                cubey::projects::cloud_ref_2::CloudsCacheFrames::Frames4,
+            "4-frame cache cadence should parse");
+    require(cubey::projects::cloud_ref_2::clouds_cache_frames_from_string("16-frames") ==
+                cubey::projects::cloud_ref_2::CloudsCacheFrames::Frames16,
+            "16-frame cache cadence should parse");
+    require(cubey::projects::cloud_ref_2::clouds_cache_frames_from_string("") ==
+                cubey::projects::cloud_ref_2::CloudsCacheFrames::Frames64,
+            "empty cache cadence should use 64-frame default");
+    require(cubey::projects::cloud_ref_2::clouds_cache_frames_name(
+                cubey::projects::cloud_ref_2::CloudsCacheFrames::Frames256) ==
+                std::string_view("256"),
+            "cache frame name should be canonical");
+    require(cubey::projects::cloud_ref_2::clouds_cache_frames_value(
+                cubey::projects::cloud_ref_2::CloudsCacheFrames::Frames64) == 64U,
+            "cache frame value should expose numeric count");
+    require(cubey::projects::cloud_ref_2::clouds_cache_frame_grid_size(
+                cubey::projects::cloud_ref_2::CloudsCacheFrames::Frames64) == 8U,
+            "64-frame cache should use 8x8 update grid");
+    require(cubey::projects::cloud_ref_2::clouds_cache_update_region_size(
+                768U, cubey::projects::cloud_ref_2::CloudsCacheFrames::Frames64) == 96U,
+            "768 texture with 64 frames should update 96-pixel regions");
 }
 
 void test_run_config_mapping() {

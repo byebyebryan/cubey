@@ -60,17 +60,32 @@ enum class CloudsDebugView : std::uint32_t {
     AmbientLight = 18,
     DirectLight = 19,
     PhaseLight = 20,
+    RawCloudProduct = 21,
+    BlendFrom = 22,
+    BlendTo = 23,
+    UpdateRegion = 24,
+    OctUv = 25,
 };
 
-inline constexpr std::array<CloudsDebugView, 16> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 21> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
+    CloudsDebugView::RawCloudProduct,
     CloudsDebugView::Weather,      CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting,
     CloudsDebugView::AmbientLight, CloudsDebugView::DirectLight,
     CloudsDebugView::PhaseLight,   CloudsDebugView::Shadow,
-    CloudsDebugView::Steps,        CloudsDebugView::Background,
+    CloudsDebugView::Steps,        CloudsDebugView::BlendFrom,
+    CloudsDebugView::BlendTo,      CloudsDebugView::UpdateRegion,
+    CloudsDebugView::OctUv,        CloudsDebugView::Background,
     CloudsDebugView::CloudAlpha,   CloudsDebugView::Distance,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
+};
+
+enum class CloudsCacheFrames : std::uint32_t {
+    Frames4 = 4,
+    Frames16 = 16,
+    Frames64 = 64,
+    Frames256 = 256,
 };
 
 struct CloudsTimeConfig {
@@ -92,6 +107,8 @@ struct CloudsConfig {
     CloudsWeatherPreset weather_preset = CloudsWeatherPreset::BrokenCumulus;
     CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
     CloudsDebugView debug_view = CloudsDebugView::Final;
+    CloudsCacheFrames cache_frames = CloudsCacheFrames::Frames64;
+    std::uint32_t cache_texture_size = 768;
     bool temporal_enabled = true;
     CloudsTimeConfig time{};
 
@@ -133,6 +150,12 @@ void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset prese
 [[nodiscard]] CloudsDebugView clouds_debug_view_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_debug_view_name(CloudsDebugView view);
 [[nodiscard]] CloudsDebugView next_clouds_debug_view(CloudsDebugView view);
+[[nodiscard]] CloudsCacheFrames clouds_cache_frames_from_string(std::string_view value);
+[[nodiscard]] const char* clouds_cache_frames_name(CloudsCacheFrames frames);
+[[nodiscard]] std::uint32_t clouds_cache_frames_value(CloudsCacheFrames frames);
+[[nodiscard]] std::uint32_t clouds_cache_frame_grid_size(CloudsCacheFrames frames);
+[[nodiscard]] std::uint32_t clouds_cache_update_region_size(std::uint32_t texture_size,
+                                                            CloudsCacheFrames frames);
 [[nodiscard]] CloudsQualityBudget clouds_quality_budget(CloudsQuality quality);
 [[nodiscard]] float clouds_default_camera_altitude_m(CloudsCameraMode mode);
 [[nodiscard]] CloudsConfig clouds_config_from_run_config(const RunConfig& run_config);

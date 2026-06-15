@@ -19,6 +19,11 @@ const int CLOUD_REF_2_DEBUG_DETAIL_DENSITY = 17;
 const int CLOUD_REF_2_DEBUG_AMBIENT_LIGHT = 18;
 const int CLOUD_REF_2_DEBUG_DIRECT_LIGHT = 19;
 const int CLOUD_REF_2_DEBUG_PHASE_LIGHT = 20;
+const int CLOUD_REF_2_DEBUG_RAW_CLOUD_PRODUCT = 21;
+const int CLOUD_REF_2_DEBUG_BLEND_FROM = 22;
+const int CLOUD_REF_2_DEBUG_BLEND_TO = 23;
+const int CLOUD_REF_2_DEBUG_UPDATE_REGION = 24;
+const int CLOUD_REF_2_DEBUG_OCT_UV = 25;
 
 layout(std140, set = 0, binding = 0) uniform CloudRef2Frame {
     vec4 camera_right_aspect;
@@ -33,6 +38,8 @@ layout(std140, set = 0, binding = 0) uniform CloudRef2Frame {
     vec4 weather_feature_weights;
     vec4 cloud_color_top_shadow;
     vec4 cloud_color_bottom_horizon;
+    vec4 cache_status;
+    vec4 cache_region;
 } params;
 
 float cloud_ref_2_saturate(float value) {
@@ -52,6 +59,28 @@ vec3 cloud_ref_2_view_direction(vec2 position) {
     float tan_half_fovy = params.camera_up_tan_half_fovy.w;
     return normalize(forward + right * (position.x * aspect * tan_half_fovy) -
                      up * (position.y * tan_half_fovy));
+}
+
+vec2 cloud_ref_2_oct_wrap(vec2 value) {
+    return (1.0 - abs(value.yx)) * vec2(value.x >= 0.0 ? 1.0 : -1.0,
+                                        value.y >= 0.0 ? 1.0 : -1.0);
+}
+
+vec2 cloud_ref_2_direction_to_oct_uv(vec3 direction) {
+    vec3 oct_space = normalize(vec3(direction.x, direction.z, direction.y));
+    oct_space /= max(abs(oct_space.x) + abs(oct_space.y) + abs(oct_space.z), 0.00001);
+    vec2 encoded = oct_space.z >= 0.0 ? oct_space.xy : cloud_ref_2_oct_wrap(oct_space.xy);
+    return encoded * 0.5 + 0.5;
+}
+
+vec3 cloud_ref_2_oct_uv_to_direction(vec2 uv) {
+    vec2 encoded = uv * 2.0 - 1.0;
+    vec3 oct_space = vec3(encoded.x, encoded.y, 1.0 - abs(encoded.x) - abs(encoded.y));
+    if (oct_space.z < 0.0) {
+        oct_space.xy = cloud_ref_2_oct_wrap(oct_space.xy);
+    }
+    oct_space = normalize(oct_space);
+    return normalize(vec3(oct_space.x, oct_space.z, oct_space.y));
 }
 
 vec3 cloud_ref_2_planet_up() {

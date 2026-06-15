@@ -217,6 +217,21 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "phase-light") {
         return CloudsDebugView::PhaseLight;
     }
+    if (value == "raw-cloud-product") {
+        return CloudsDebugView::RawCloudProduct;
+    }
+    if (value == "blend-from") {
+        return CloudsDebugView::BlendFrom;
+    }
+    if (value == "blend-to") {
+        return CloudsDebugView::BlendTo;
+    }
+    if (value == "update-region") {
+        return CloudsDebugView::UpdateRegion;
+    }
+    if (value == "oct-uv" || value == "octahedral-uv") {
+        return CloudsDebugView::OctUv;
+    }
     if (value == "shadow") {
         return CloudsDebugView::Shadow;
     }
@@ -261,6 +276,16 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "direct-light";
     case CloudsDebugView::PhaseLight:
         return "phase-light";
+    case CloudsDebugView::RawCloudProduct:
+        return "raw-cloud-product";
+    case CloudsDebugView::BlendFrom:
+        return "blend-from";
+    case CloudsDebugView::BlendTo:
+        return "blend-to";
+    case CloudsDebugView::UpdateRegion:
+        return "update-region";
+    case CloudsDebugView::OctUv:
+        return "oct-uv";
     case CloudsDebugView::Shadow:
         return "shadow";
     case CloudsDebugView::Steps:
@@ -285,6 +310,63 @@ CloudsDebugView next_clouds_debug_view(CloudsDebugView view) {
         return kCloudsDebugViews.front();
     }
     return *std::next(it);
+}
+
+CloudsCacheFrames clouds_cache_frames_from_string(std::string_view value) {
+    if (value == "4" || value == "4-frames") {
+        return CloudsCacheFrames::Frames4;
+    }
+    if (value == "16" || value == "16-frames") {
+        return CloudsCacheFrames::Frames16;
+    }
+    if (value.empty() || value == "64" || value == "64-frames") {
+        return CloudsCacheFrames::Frames64;
+    }
+    if (value == "256" || value == "256-frames") {
+        return CloudsCacheFrames::Frames256;
+    }
+    throw std::runtime_error("unknown cloud cache frame count: " + std::string(value));
+}
+
+const char* clouds_cache_frames_name(CloudsCacheFrames frames) {
+    switch (frames) {
+    case CloudsCacheFrames::Frames4:
+        return "4";
+    case CloudsCacheFrames::Frames16:
+        return "16";
+    case CloudsCacheFrames::Frames64:
+        return "64";
+    case CloudsCacheFrames::Frames256:
+        return "256";
+    }
+    return "64";
+}
+
+std::uint32_t clouds_cache_frames_value(CloudsCacheFrames frames) {
+    return static_cast<std::uint32_t>(frames);
+}
+
+std::uint32_t clouds_cache_frame_grid_size(CloudsCacheFrames frames) {
+    switch (frames) {
+    case CloudsCacheFrames::Frames4:
+        return 2U;
+    case CloudsCacheFrames::Frames16:
+        return 4U;
+    case CloudsCacheFrames::Frames64:
+        return 8U;
+    case CloudsCacheFrames::Frames256:
+        return 16U;
+    }
+    return 8U;
+}
+
+std::uint32_t clouds_cache_update_region_size(std::uint32_t texture_size,
+                                              CloudsCacheFrames frames) {
+    const std::uint32_t grid = clouds_cache_frame_grid_size(frames);
+    if (grid == 0U || texture_size == 0U || texture_size % grid != 0U) {
+        throw std::runtime_error("cloud cache texture size must divide evenly by update grid");
+    }
+    return texture_size / grid;
 }
 
 CloudsQualityBudget clouds_quality_budget(CloudsQuality quality) {
@@ -499,6 +581,13 @@ void validate_clouds_config(const CloudsConfig& config) {
     }
     if (!finite_nonnegative(config.absorption)) {
         throw std::runtime_error("cloud absorption must be finite and nonnegative");
+    }
+    if (config.cache_texture_size == 0U) {
+        throw std::runtime_error("cloud cache texture size must be positive");
+    }
+    const std::uint32_t cache_grid = clouds_cache_frame_grid_size(config.cache_frames);
+    if (config.cache_texture_size % cache_grid != 0U) {
+        throw std::runtime_error("cloud cache texture size must divide evenly by update grid");
     }
 }
 
