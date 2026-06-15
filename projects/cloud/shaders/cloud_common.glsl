@@ -24,6 +24,10 @@ const int CLOUD_DEBUG_METADATA_ALPHA = 22;
 const int CLOUD_DEBUG_METADATA_CONFIDENCE = 23;
 const int CLOUD_DEBUG_METADATA_DENSITY = 24;
 
+const int CLOUD_SAMPLING_INTERLEAVED = 0;
+const int CLOUD_SAMPLING_BAYER = 1;
+const int CLOUD_SAMPLING_OFF = 2;
+
 layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 camera_right_aspect;
     vec4 camera_up_tan_half_fovy;

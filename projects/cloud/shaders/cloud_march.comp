@@ -54,6 +54,25 @@ struct MarchResult {
     vec3 phase_light;
 };
 
+float cloud_interleaved_gradient_noise(ivec2 pixel) {
+    vec2 p = vec2(pixel);
+    return fract(52.9829189 * fract(0.06711056 * p.x + 0.00583715 * p.y));
+}
+
+float cloud_ray_jitter(ivec2 pixel) {
+    int mode = int(params.sampling_options.x + 0.5);
+    float strength = clamp(params.sampling_options.y, 0.0, 1.0);
+    float jitter = 0.5;
+    if (mode == CLOUD_SAMPLING_INTERLEAVED) {
+        jitter = cloud_interleaved_gradient_noise(pixel);
+    } else if (mode == CLOUD_SAMPLING_BAYER) {
+        jitter = BAYER[(pixel.y & 3) * 4 + (pixel.x & 3)];
+    } else if (mode == CLOUD_SAMPLING_OFF) {
+        jitter = 0.5;
+    }
+    return mix(0.5, jitter, strength);
+}
+
 float cloud_height_fraction(vec3 position) {
     return (length(position - cloud_sphere_center()) - cloud_inner_radius()) /
            max(cloud_outer_radius() - cloud_inner_radius(), 0.001);
@@ -255,9 +274,7 @@ MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
     float length_km = max(end_t - start_t, 0.001);
     float ds = length_km / float(max_steps);
     vec3 step_vec = direction * ds;
-    int bx = pixel.x & 3;
-    int by = pixel.y & 3;
-    vec3 pos = origin + direction * (start_t + ds * BAYER[by * 4 + bx]);
+    vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel));
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     vec3 sun_color = vec3(1.20, 1.12, 0.92) * max(params.sun_direction_intensity.w, 0.0);
     float light_dot_eye = dot(sun_dir, direction);
