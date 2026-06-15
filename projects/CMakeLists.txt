@@ -1,5 +1,6 @@
 add_subdirectory(atmosphere)
 add_subdirectory(cloud_ref)
+add_subdirectory(cloud_ref_2)
 add_subdirectory(clouds_legacy)
 add_subdirectory(fluid)
 add_subdirectory(fractal_2d)
