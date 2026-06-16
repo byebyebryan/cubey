@@ -1028,7 +1028,8 @@ int main() {
     require(glacial_stats.channel_count > 16U,
             "terrain lab glacial sentinel should produce enough trunk-valley samples");
     require(glacial_stats.non_channel_count > 16U,
-            "terrain lab glacial sentinel should produce enough non-channel samples");
+            "terrain lab glacial sentinel should produce enough non-channel samples: " +
+                std::to_string(glacial_stats.non_channel_count));
     require(glacial_stats.divide_count > 16U,
             "terrain lab glacial sentinel should produce enough divide samples");
     require(glacial_stats.ridge_count > 16U,
@@ -1051,6 +1052,72 @@ int main() {
     const float glacial_mean_non_channel_deposition =
         static_cast<float>(glacial_stats.non_channel_deposition_sum /
                            static_cast<double>(glacial_stats.non_channel_count));
+    std::size_t glacial_driver_ridge_count = 0;
+    std::size_t glacial_driver_valley_count = 0;
+    std::size_t glacial_driver_high_relief_count = 0;
+    std::size_t glacial_driver_low_relief_count = 0;
+    std::size_t glacial_driver_non_valley_count = 0;
+    double glacial_driver_ridge_relief_sum = 0.0;
+    double glacial_driver_valley_relief_sum = 0.0;
+    double glacial_driver_valley_process_sum = 0.0;
+    double glacial_driver_non_valley_process_sum = 0.0;
+    double glacial_driver_high_relief_height_sum = 0.0;
+    double glacial_driver_low_relief_height_sum = 0.0;
+    for (std::size_t index = 0; index < glacial_fields.sample_count(); ++index) {
+        const float relief = glacial_fields.driver_relief_potential[index];
+        const float process = glacial_fields.driver_process_potential[index];
+        if (glacial_fields.ridge_influence[index] > 0.45F &&
+            glacial_fields.channel_influence[index] < 0.35F) {
+            glacial_driver_ridge_relief_sum += relief;
+            ++glacial_driver_ridge_count;
+        }
+        if (glacial_fields.channel_influence[index] > 0.45F ||
+            glacial_fields.valley_influence[index] > 0.58F) {
+            glacial_driver_valley_relief_sum += relief;
+            glacial_driver_valley_process_sum += process;
+            ++glacial_driver_valley_count;
+        }
+        if (glacial_fields.channel_influence[index] < 0.05F &&
+            glacial_fields.valley_influence[index] < 0.25F) {
+            glacial_driver_non_valley_process_sum += process;
+            ++glacial_driver_non_valley_count;
+        }
+        if (relief > 0.58F) {
+            glacial_driver_high_relief_height_sum += glacial_fields.height_m[index];
+            ++glacial_driver_high_relief_count;
+        }
+        if (relief < 0.36F) {
+            glacial_driver_low_relief_height_sum += glacial_fields.height_m[index];
+            ++glacial_driver_low_relief_count;
+        }
+    }
+    require(glacial_driver_ridge_count > 16U && glacial_driver_valley_count > 16U,
+            "terrain lab glacial driver should produce enough ridge and valley samples");
+    require(glacial_driver_high_relief_count > 16U && glacial_driver_low_relief_count > 16U,
+            "terrain lab glacial driver should produce high and low relief samples");
+    require(glacial_driver_non_valley_count > 16U,
+            "terrain lab glacial driver should produce non-valley comparison samples");
+    const float glacial_mean_ridge_driver_relief = static_cast<float>(
+        glacial_driver_ridge_relief_sum / static_cast<double>(glacial_driver_ridge_count));
+    const float glacial_mean_valley_driver_relief = static_cast<float>(
+        glacial_driver_valley_relief_sum / static_cast<double>(glacial_driver_valley_count));
+    const float glacial_mean_valley_driver_process = static_cast<float>(
+        glacial_driver_valley_process_sum / static_cast<double>(glacial_driver_valley_count));
+    const float glacial_mean_non_valley_driver_process =
+        static_cast<float>(glacial_driver_non_valley_process_sum /
+                           static_cast<double>(glacial_driver_non_valley_count));
+    const float glacial_mean_high_relief_height =
+        static_cast<float>(glacial_driver_high_relief_height_sum /
+                           static_cast<double>(glacial_driver_high_relief_count));
+    const float glacial_mean_low_relief_height =
+        static_cast<float>(glacial_driver_low_relief_height_sum /
+                           static_cast<double>(glacial_driver_low_relief_count));
+    require(glacial_mean_ridge_driver_relief > glacial_mean_valley_driver_relief + 0.05F,
+            "terrain lab glacial ridges should derive from higher relief driver values");
+    require(glacial_mean_valley_driver_process > glacial_mean_non_valley_driver_process + 0.02F,
+            "terrain lab glacial valley process should derive from higher process driver values");
+    require(glacial_mean_high_relief_height > glacial_mean_low_relief_height + 20.0F,
+            "terrain lab glacial height should follow the relief driver");
     require(glacial_rock_scree_snow > 0.62F,
             "terrain lab glacial sentinel should be dominated by rock, scree, and snow/ice");
     require(glacial_mean_forest < 0.04F,
