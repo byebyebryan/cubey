@@ -69,6 +69,17 @@ struct DesertDuneSampleFeatures {
     float channel_distance_m = 0.0F;
 };
 
+struct DesertDuneDriver {
+    float base_potential = 0.0F;
+    float relief_potential = 0.0F;
+    float process_potential = 0.0F;
+    float selection_mask = 0.0F;
+    float crest_source = 0.0F;
+    float interdune_source = 0.0F;
+    float dune_u = 0.0F;
+    float dune_v = 0.0F;
+};
+
 struct AlpineGlacialSampleFeatures {
     float glacier_floor = 0.0F;
     float valley_wall = 0.0F;
@@ -498,8 +509,7 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
     };
 }
 
-[[nodiscard]] DesertDuneSampleFeatures
-desert_dune_features_at(Point2 p, const TerrainLabGridDesc& desc, const TerrainLabConfig& config) {
+[[nodiscard]] DesertDuneDriver desert_dune_driver_at(Point2 p, const TerrainLabConfig& config) {
     const float angle = lerp(0.32F, 0.68F, random01(config.seed, 21U, 1201U));
     const Point2 wind{std::cos(angle), std::sin(angle)};
     const Point2 cross{-wind.z, wind.x};
@@ -511,43 +521,73 @@ desert_dune_features_at(Point2 p, const TerrainLabGridDesc& desc, const TerrainL
         fbm((p.x * 1.30F) + 6.0F, (p.z * 1.30F) - 7.0F, config.seed + 3103U, 4) * 0.18F;
     const float dune_u = downwind + warp_down;
     const float dune_v = lateral + warp_lateral;
-    const float field_mask =
-        smoothstep(0.04F, 0.30F, 1.0F - length({p.x * 0.72F + 0.08F, p.z * 0.88F - 0.06F}));
-    const float broad =
-        fbm((dune_u * 0.85F) + 1.7F, (dune_v * 0.85F) - 3.2F, config.seed + 3107U, 5) * 0.5F + 0.5F;
-    const float lowland =
-        fbm((dune_u * 1.65F) + 0.4F, (dune_v * 1.35F) + 3.2F, config.seed + 3113U, 4) * 0.5F + 0.5F;
+
+    const float sheet_shape =
+        smoothstep(0.02F, 0.30F, 1.0F - length({p.x * 0.70F + 0.08F, p.z * 0.84F - 0.06F}));
+    const float supply_noise =
+        fbm((dune_u * 0.92F) + 1.7F, (dune_v * 0.84F) - 3.2F, config.seed + 3107U, 5) * 0.5F + 0.5F;
+    const float base_noise =
+        fbm((dune_u * 0.54F) - 2.1F, (dune_v * 0.62F) + 4.8F, config.seed + 3109U, 4) * 0.5F + 0.5F;
+    const float selection = saturate(sheet_shape * lerp(0.78F, 1.10F, supply_noise));
+    const float base = saturate((sheet_shape * 0.60F) + (base_noise * 0.28F) + (selection * 0.20F));
+
+    const float mound_a =
+        fbm((dune_u * 1.26F) + 5.7F, (dune_v * 1.18F) - 6.1F, config.seed + 3127U, 5) * 0.5F + 0.5F;
+    const float mound_b =
+        fbm((dune_u * 1.72F) - 3.4F, (dune_v * 1.58F) + 7.6F, config.seed + 3129U, 4) * 0.5F + 0.5F;
+    const float billow =
+        smoothstep(0.20F, 0.84F, mound_a) * 0.62F + smoothstep(0.28F, 0.86F, mound_b) * 0.38F;
     const float roll_source =
-        fbm((dune_u * 1.55F) - 4.0F, (dune_v * 1.20F) + 8.5F, config.seed + 3119U, 5);
+        fbm((dune_u * 1.52F) - 4.0F, (dune_v * 1.16F) + 8.5F, config.seed + 3119U, 5);
     const float roll_secondary =
-        fbm((dune_u * 2.45F) + 2.1F, (dune_v * 1.85F) - 8.2F, config.seed + 3121U, 4);
-    const float rolling_ridges = std::max(ridge_profile(roll_source * 1.18F, 2.15F),
-                                          ridge_profile(roll_secondary * 1.28F, 2.35F) * 0.32F);
-    const float mound_source =
-        fbm((dune_u * 1.55F) + 5.7F, (dune_v * 1.55F) - 6.1F, config.seed + 3127U, 5) * 0.5F + 0.5F;
-    const float mounds = smoothstep(0.24F, 0.86F, mound_source);
-    const float roll =
-        saturate((broad * 0.34F) + (lowland * 0.32F) + (rolling_ridges * 0.16F) + (mounds * 0.36F));
-    const float dune_body = smoothstep(0.30F, 0.82F, roll) * field_mask;
-    const float crest =
-        smoothstep(0.58F, 0.92F, rolling_ridges) * smoothstep(0.50F, 0.82F, roll) * field_mask;
-    const float slip_face =
-        smoothstep(0.54F, 0.86F, roll) *
-        smoothstep(0.05F, 0.70F,
-                   fbm((dune_u * 2.10F) - 7.0F, (dune_v * 2.10F) + 9.0F, config.seed + 3131U, 4) *
-                           0.5F +
-                       0.5F) *
-        field_mask * 0.66F;
-    const float interdune =
-        saturate((1.0F - smoothstep(0.22F, 0.58F, roll)) * lerp(0.62F, 1.0F, field_mask));
-    const float wind_shadow =
-        saturate(slip_face * 0.72F + crest * 0.20F) *
-        smoothstep(0.22F, 0.80F,
-                   fbm((dune_u * 4.0F) - 7.0F, (dune_v * 4.0F) + 9.0F, config.seed + 3137U, 3) *
-                           0.5F +
-                       0.5F);
+        fbm((dune_u * 2.18F) + 2.1F, (dune_v * 1.74F) - 8.2F, config.seed + 3121U, 4);
+    const float soft_ridge = std::max(ridge_profile(roll_source * 1.05F, 1.72F),
+                                      ridge_profile(roll_secondary * 1.16F, 1.95F) * 0.26F);
+    const float relief = saturate(
+        ((billow * 0.58F) + (soft_ridge * 0.27F) + (base * 0.18F) + (supply_noise * 0.10F)) *
+        selection);
+
+    const float lee_source =
+        fbm((dune_u * 2.04F) - 7.0F, (dune_v * 1.84F) + 9.0F, config.seed + 3131U, 4) * 0.5F + 0.5F;
+    const float transport = smoothstep(
+        0.18F, 0.86F,
+        fbm((dune_u * 0.92F) + 8.0F, (dune_v * 1.08F) - 10.0F, config.seed + 3135U, 4) * 0.5F +
+            0.5F);
+    const float crest_source =
+        smoothstep(0.54F, 0.86F, soft_ridge) * smoothstep(0.44F, 0.82F, relief) * selection;
+    const float interdune_source =
+        saturate((1.0F - smoothstep(0.22F, 0.58F, relief)) * lerp(0.50F, 1.0F, selection));
+    const float process =
+        saturate((crest_source * 0.28F) + (lee_source * smoothstep(0.36F, 0.82F, relief) * 0.34F) +
+                 (transport * 0.22F) + (interdune_source * 0.10F)) *
+        selection;
+
+    return {
+        .base_potential = base,
+        .relief_potential = relief,
+        .process_potential = process,
+        .selection_mask = selection,
+        .crest_source = crest_source,
+        .interdune_source = interdune_source,
+        .dune_u = dune_u,
+        .dune_v = dune_v,
+    };
+}
+
+[[nodiscard]] DesertDuneSampleFeatures
+desert_dune_features_at(Point2 p, const TerrainLabGridDesc& desc, const TerrainLabConfig& config) {
+    const DesertDuneDriver driver = desert_dune_driver_at(p, config);
+    const float dune_body =
+        smoothstep(0.24F, 0.76F, driver.relief_potential) * driver.selection_mask;
+    const float crest = driver.crest_source;
+    const float slip_face = smoothstep(0.48F, 0.84F, driver.relief_potential) *
+                            smoothstep(0.36F, 0.82F, driver.process_potential) *
+                            driver.selection_mask * 0.78F;
+    const float interdune = driver.interdune_source;
+    const float wind_shadow = saturate(slip_face * 0.68F + crest * 0.18F) *
+                              smoothstep(0.20F, 0.82F, driver.process_potential);
     const float broad_low =
-        1.0F - smoothstep(0.42F, 1.22F, length({p.x * 0.78F + 0.10F, p.z * 0.94F - 0.12F}));
+        saturate((1.0F - driver.base_potential) * 0.74F + (1.0F - driver.selection_mask) * 0.26F);
     const float channel =
         saturate(interdune * 0.12F + broad_low * 0.20F +
                  smoothstep(0.56F, 0.86F, interdune) * 0.12F + wind_shadow * 0.03F);
@@ -1634,17 +1674,21 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
             const std::size_t sample = fields.index(x, y);
             const Point2 p = normalized_sample(fields.desc, x, y);
+            const DesertDuneDriver driver = desert_dune_driver_at(p, config);
             const DesertDuneSampleFeatures features =
                 desert_dune_features_at(p, fields.desc, config);
-            const float broad =
-                fbm((p.x * 1.1F) - 4.0F, (p.z * 1.1F) + 6.0F, config.seed + 3201U, 5);
             const float dune_body =
                 saturate(features.dune_body * 0.86F + features.slip_face * 0.10F);
             const float structure =
-                ((dune_body * 0.78F) + (features.wind_shadow * 0.04F) + (broad * 0.05F) -
-                 (features.interdune_flat * 0.06F) + (p.z * 0.026F) - 0.05F) *
+                ((driver.base_potential * 0.18F) + (driver.relief_potential * 0.70F) +
+                 (dune_body * 0.16F) + (driver.process_potential * 0.045F) -
+                 (features.interdune_flat * 0.075F) + (p.z * 0.018F) - 0.10F) *
                 dune_elevation_scale_m * config.structure_strength;
 
+            fields.driver_base_potential[sample] = driver.base_potential;
+            fields.driver_relief_potential[sample] = driver.relief_potential;
+            fields.driver_process_potential[sample] = driver.process_potential;
+            fields.driver_selection_mask[sample] = driver.selection_mask;
             fields.ridge_influence[sample] = features.ridge_influence;
             fields.valley_influence[sample] = features.valley_influence;
             fields.basin_influence[sample] = features.basin_influence;
@@ -1667,13 +1711,16 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
 
     for (std::size_t sample = 0; sample < count; ++sample) {
         const float slope_t = smoothstep(0.015F, 0.22F, temp_slope[sample]);
-        const float lee_deposit = fields.ridge_influence[sample] * (1.0F - slope_t) *
-                                  dune_elevation_scale_m * 0.020F * config.process_strength;
-        const float interdune_fill = fields.basin_influence[sample] * (1.0F - slope_t) *
+        const float lee_deposit = fields.driver_process_potential[sample] *
+                                  fields.ridge_influence[sample] * (1.0F - slope_t) *
+                                  dune_elevation_scale_m * 0.024F * config.process_strength;
+        const float interdune_fill = fields.basin_influence[sample] *
+                                     fields.driver_selection_mask[sample] * (1.0F - slope_t) *
                                      dune_elevation_scale_m * 0.010F * config.process_strength;
         const float wind_scour = fields.valley_influence[sample] *
+                                 fields.driver_process_potential[sample] *
                                  smoothstep(0.02F, 0.28F, slope_t) * dune_elevation_scale_m *
-                                 0.010F * config.process_strength;
+                                 0.012F * config.process_strength;
         fields.process_delta_m[sample] = lee_deposit + interdune_fill - wind_scour;
         fields.height_m[sample] =
             fields.structure_height_m[sample] + fields.process_delta_m[sample];
@@ -1686,6 +1733,7 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
             const std::size_t sample = fields.index(x, y);
             const Point2 p = normalized_sample(fields.desc, x, y);
+            const DesertDuneDriver driver = desert_dune_driver_at(p, config);
             const DesertDuneSampleFeatures features =
                 desert_dune_features_at(p, fields.desc, config);
             const float elevation_t =
@@ -1694,18 +1742,21 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
                 fbm((p.x * 15.0F) + 7.0F, (p.z * 15.0F) - 3.0F, config.seed + 3211U, 3) * 0.5F +
                 0.5F;
             const float ripple_gate =
-                smoothstep(0.16F, 0.72F, features.dune_body + features.slip_face * 0.32F) *
+                smoothstep(0.16F, 0.72F,
+                           driver.relief_potential + driver.process_potential * 0.20F) *
                 lerp(0.40F, 1.0F, ripple_noise);
             const float ripple =
-                std::sin(((p.x * 18.0F) + (p.z * 13.0F)) +
-                         fbm((p.x * 11.0F) + 9.0F, (p.z * 11.0F) - 5.0F, config.seed + 3213U, 3) *
-                             3.0F) *
+                std::sin(((driver.dune_u * 18.0F) + (driver.dune_v * 11.0F)) +
+                         fbm((driver.dune_u * 11.0F) + 9.0F, (driver.dune_v * 11.0F) - 5.0F,
+                             config.seed + 3213U, 3) *
+                             2.4F) *
                 0.00045F * ripple_gate;
-            const float crest_break =
-                fbm((p.x * 23.0F) - 11.0F, (p.z * 23.0F) + 13.0F, config.seed + 3217U, 3) *
-                features.dune_crest * 0.0014F;
+            const float crest_break = fbm((driver.dune_u * 23.0F) - 11.0F,
+                                          (driver.dune_v * 18.0F) + 13.0F, config.seed + 3217U, 3) *
+                                      features.dune_crest * 0.0014F;
             const float interdune_crust =
-                fbm((p.x * 12.0F) + 19.0F, (p.z * 12.0F) - 17.0F, config.seed + 3221U, 3) *
+                fbm((driver.dune_u * 12.0F) + 19.0F, (driver.dune_v * 12.0F) - 17.0F,
+                    config.seed + 3221U, 3) *
                 features.interdune_flat * 0.0016F;
             const float detail =
                 (ripple * (0.50F + elevation_t * 0.50F) + crest_break + interdune_crust) *
@@ -1730,15 +1781,16 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
             const std::size_t sample = fields.index(x, y);
             const Point2 p = normalized_sample(fields.desc, x, y);
+            const DesertDuneDriver driver = desert_dune_driver_at(p, config);
             const DesertDuneSampleFeatures features =
                 desert_dune_features_at(p, fields.desc, config);
             const float slope_t = smoothstep(0.018F, 0.26F, fields.slope[sample]);
             const float flow_t = std::log1p(fields.flow_accumulation[sample]) * inv_log_count;
-            const float wetness =
-                saturate((features.interdune_flat * 0.028F) +
-                         (fields.basin_influence[sample] * 0.018F) + (flow_t * 0.012F));
+            const float wetness = saturate((features.interdune_flat * 0.028F) +
+                                           (fields.basin_influence[sample] * 0.018F) +
+                                           (driver.selection_mask * flow_t * 0.012F));
             const float deposition =
-                saturate((features.slip_face * 0.30F) + (features.interdune_flat * 0.36F) +
+                saturate((driver.process_potential * 0.38F) + (features.interdune_flat * 0.28F) +
                          (features.wind_shadow * 0.20F)) *
                 (1.0F - slope_t * 0.38F);
             fields.wetness[sample] = wetness;
@@ -1751,11 +1803,11 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
             const float crust_patch =
                 fbm((p.x * 10.0F) - 15.0F, (p.z * 10.0F) + 21.0F, config.seed + 3233U, 3) * 0.5F +
                 0.5F;
-            const float sand = (1.15F + deposition * 0.60F + features.dune_crest * 0.22F) *
+            const float sand = (1.15F + deposition * 0.60F + driver.relief_potential * 0.20F) *
                                lerp(0.86F, 1.16F, material_noise);
             const float soil = (features.interdune_flat * 0.18F + wetness * 0.42F) *
                                lerp(0.78F, 1.20F, crust_patch);
-            const float scree = slope_t * features.slip_face * 0.10F;
+            const float scree = slope_t * driver.process_potential * features.slip_face * 0.12F;
             const float rock = slope_t * features.wind_shadow * 0.035F;
             const float meadow = wetness * features.interdune_flat * 0.05F;
             const TerrainLabMaterialMask material =
@@ -1768,9 +1820,9 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
             const float grass =
                 saturate((material.soil * 0.08F + material.meadow * 0.22F) * wetness);
             const float shrub_patch = smoothstep(0.28F, 0.58F, vegetation_patch);
-            const float shrub =
-                saturate((features.interdune_flat * 0.024F + material.soil * 0.018F + 0.016F) *
-                         shrub_patch * (1.0F - slope_t));
+            const float shrub = saturate((features.interdune_flat * 0.024F +
+                                          material.soil * 0.018F + driver.selection_mask * 0.016F) *
+                                         shrub_patch * (1.0F - slope_t));
             fields.grass_density[sample] = grass;
             fields.shrub_density[sample] = shrub;
             fields.tree_density[sample] = 0.0F;

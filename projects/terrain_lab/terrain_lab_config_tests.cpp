@@ -863,11 +863,73 @@ int main() {
             "terrain lab dunes sentinel should produce enough non-channel samples");
     require(dunes_stats.shrub_count > 8U,
             "terrain lab dunes sentinel should produce sparse shrub samples");
+    std::size_t dune_driver_selected_count = 0;
+    std::size_t dune_driver_unselected_count = 0;
+    std::size_t dune_driver_ridge_count = 0;
+    std::size_t dune_driver_valley_count = 0;
+    std::size_t dune_driver_high_relief_count = 0;
+    std::size_t dune_driver_low_relief_count = 0;
+    double dune_driver_selection_sum = 0.0;
+    double dune_driver_ridge_relief_sum = 0.0;
+    double dune_driver_valley_relief_sum = 0.0;
+    double dune_driver_high_relief_height_sum = 0.0;
+    double dune_driver_low_relief_height_sum = 0.0;
+    for (std::size_t index = 0; index < dunes_fields.sample_count(); ++index) {
+        const float selection = dunes_fields.driver_selection_mask[index];
+        const float relief = dunes_fields.driver_relief_potential[index];
+        dune_driver_selection_sum += selection;
+        if (selection > 0.20F) {
+            ++dune_driver_selected_count;
+        }
+        if (selection < 0.05F) {
+            ++dune_driver_unselected_count;
+        }
+        if (dunes_fields.ridge_influence[index] > 0.22F) {
+            dune_driver_ridge_relief_sum += relief;
+            ++dune_driver_ridge_count;
+        }
+        if (dunes_fields.valley_influence[index] > 0.45F) {
+            dune_driver_valley_relief_sum += relief;
+            ++dune_driver_valley_count;
+        }
+        if (selection > 0.20F && relief > 0.56F) {
+            dune_driver_high_relief_height_sum += dunes_fields.height_m[index];
+            ++dune_driver_high_relief_count;
+        }
+        if (selection > 0.20F && relief < 0.30F) {
+            dune_driver_low_relief_height_sum += dunes_fields.height_m[index];
+            ++dune_driver_low_relief_count;
+        }
+    }
     const double inv_dunes_count = 1.0 / static_cast<double>(dunes_fields.sample_count());
     const float dunes_mean_sand = static_cast<float>(dunes_stats.sand_sum * inv_dunes_count);
     const float dunes_mean_forest = static_cast<float>(dunes_stats.forest_sum * inv_dunes_count);
     const float dunes_mean_snow = static_cast<float>(dunes_stats.snow_sum * inv_dunes_count);
     const float dunes_mean_shrub = static_cast<float>(dunes_stats.shrub_sum * inv_dunes_count);
+    const float dunes_mean_driver_selection =
+        static_cast<float>(dune_driver_selection_sum * inv_dunes_count);
+    require(dune_driver_selected_count > dunes_fields.sample_count() / 4U,
+            "terrain lab dunes driver should select a broad sand field");
+    require(dune_driver_unselected_count > 16U,
+            "terrain lab dunes driver should leave some samples outside the sand field");
+    require(dunes_mean_driver_selection > 0.25F && dunes_mean_driver_selection < 0.90F,
+            "terrain lab dunes driver selection should be bounded");
+    require(dune_driver_ridge_count > 16U && dune_driver_valley_count > 16U,
+            "terrain lab dunes driver should produce enough ridge and valley samples");
+    require(dune_driver_high_relief_count > 16U && dune_driver_low_relief_count > 16U,
+            "terrain lab dunes driver should produce high and low relief samples");
+    const float dunes_mean_ridge_driver_relief = static_cast<float>(
+        dune_driver_ridge_relief_sum / static_cast<double>(dune_driver_ridge_count));
+    const float dunes_mean_valley_driver_relief = static_cast<float>(
+        dune_driver_valley_relief_sum / static_cast<double>(dune_driver_valley_count));
+    const float dunes_mean_high_relief_height = static_cast<float>(
+        dune_driver_high_relief_height_sum / static_cast<double>(dune_driver_high_relief_count));
+    const float dunes_mean_low_relief_height = static_cast<float>(
+        dune_driver_low_relief_height_sum / static_cast<double>(dune_driver_low_relief_count));
+    require(dunes_mean_ridge_driver_relief > dunes_mean_valley_driver_relief + 0.08F,
+            "terrain lab dune ridges should derive from higher relief driver values");
+    require(dunes_mean_high_relief_height > dunes_mean_low_relief_height + 20.0F,
+            "terrain lab dune height should follow the relief driver");
     require(dunes_mean_sand > 0.72F,
             "terrain lab dunes sentinel should be dominated by sand material");
     require(dunes_mean_forest < 0.001F,
