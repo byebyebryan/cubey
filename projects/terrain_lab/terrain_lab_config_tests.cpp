@@ -64,6 +64,7 @@ struct FieldSampleStats {
     double channel_height_sum = 0.0;
     double channel_soil_sum = 0.0;
     double channel_scree_sum = 0.0;
+    double ridge_height_sum = 0.0;
     double ridge_rock_sum = 0.0;
     double ridge_soil_sum = 0.0;
     double ridge_scree_sum = 0.0;
@@ -171,6 +172,7 @@ inspect_field_samples(const cubey::projects::terrain_lab::TerrainLabFieldData& f
             ++stats.divide_count;
         }
         if (fields.ridge_influence[index] > 0.45F && fields.channel_influence[index] < 0.35F) {
+            stats.ridge_height_sum += fields.height_m[index];
             stats.ridge_rock_sum += material.rock;
             stats.ridge_soil_sum += material.soil;
             stats.ridge_scree_sum += material.scree;
@@ -900,6 +902,8 @@ int main() {
         glacial_stats.channel_height_sum / static_cast<double>(glacial_stats.channel_count));
     const float glacial_mean_divide_height = static_cast<float>(
         glacial_stats.divide_height_sum / static_cast<double>(glacial_stats.divide_count));
+    const float glacial_mean_ridge_height = static_cast<float>(
+        glacial_stats.ridge_height_sum / static_cast<double>(glacial_stats.ridge_count));
     const float glacial_mean_channel_deposition =
         static_cast<float>(glacial_stats.channel_deposition_sum /
                            static_cast<double>(glacial_stats.channel_count));
@@ -914,6 +918,8 @@ int main() {
             "terrain lab glacial sentinel should not use sand material");
     require(glacial_mean_divide_height > glacial_mean_channel_height + 20.0F,
             "terrain lab glacial sentinel should keep divides above the trunk valley");
+    require(glacial_mean_ridge_height > glacial_mean_channel_height + 55.0F,
+            "terrain lab glacial sentinel should keep alpine ridges well above the trunk valley");
     require(glacial_mean_channel_deposition > glacial_mean_non_channel_deposition,
             "terrain lab glacial sentinel should concentrate moraine/deposition in valleys");
     require(glacial_summary.mean_wetness > 0.05F && glacial_summary.mean_wetness < 0.35F,
