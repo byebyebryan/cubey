@@ -773,6 +773,10 @@ int main() {
     require(arid_mean_high_relief_height > arid_mean_channel_height + 8.0F,
             "terrain lab arid canyon height should keep high-relief walls above wash floors");
     std::array<bool, 4> arid_channel_quadrants{false, false, false, false};
+    constexpr std::size_t kAridNetworkBinCount = 8U;
+    std::array<bool, kAridNetworkBinCount> arid_channel_x_bins{};
+    std::array<bool, kAridNetworkBinCount> arid_channel_z_bins{};
+    std::array<bool, 8> arid_channel_flow_directions{};
     std::size_t arid_network_channel_count = 0;
     double arid_network_x_sum = 0.0;
     double arid_network_z_sum = 0.0;
@@ -802,13 +806,38 @@ int main() {
         const std::size_t quadrant =
             (x >= fields.desc.width / 2U ? 1U : 0U) + (y >= fields.desc.height / 2U ? 2U : 0U);
         arid_channel_quadrants[quadrant] = true;
+        const std::size_t x_bin = std::min(kAridNetworkBinCount - 1U,
+                                           static_cast<std::size_t>(x) *
+                                               kAridNetworkBinCount / fields.desc.width);
+        const std::size_t z_bin = std::min(kAridNetworkBinCount - 1U,
+                                           static_cast<std::size_t>(y) *
+                                               kAridNetworkBinCount / fields.desc.height);
+        arid_channel_x_bins[x_bin] = true;
+        arid_channel_z_bins[z_bin] = true;
+        const std::uint8_t flow_direction = fields.flow_direction[index];
+        if (flow_direction < arid_channel_flow_directions.size()) {
+            arid_channel_flow_directions[flow_direction] = true;
+        }
     }
     const std::uint32_t arid_channel_quadrant_count = static_cast<std::uint32_t>(
         std::count(arid_channel_quadrants.begin(), arid_channel_quadrants.end(), true));
+    const std::uint32_t arid_channel_x_bin_count = static_cast<std::uint32_t>(
+        std::count(arid_channel_x_bins.begin(), arid_channel_x_bins.end(), true));
+    const std::uint32_t arid_channel_z_bin_count = static_cast<std::uint32_t>(
+        std::count(arid_channel_z_bins.begin(), arid_channel_z_bins.end(), true));
+    const std::uint32_t arid_channel_flow_direction_count = static_cast<std::uint32_t>(
+        std::count(arid_channel_flow_directions.begin(), arid_channel_flow_directions.end(), true));
     require(arid_network_channel_count > 16U,
             "terrain lab arid network should expose enough routed channel samples");
     require(arid_channel_quadrant_count >= 3U,
             "terrain lab arid network should span multiple crop quadrants");
+    require(arid_channel_x_bin_count >= 4U && arid_channel_z_bin_count >= 4U,
+            "terrain lab arid network should span routing bins (x=" +
+                std::to_string(arid_channel_x_bin_count) +
+                ", z=" + std::to_string(arid_channel_z_bin_count) + ")");
+    require(arid_channel_flow_direction_count >= 4U,
+            "terrain lab arid network should use multiple downstream directions (directions=" +
+                std::to_string(arid_channel_flow_direction_count) + ")");
     const double line_denominator =
         static_cast<double>(arid_network_channel_count) * arid_network_zz_sum -
         arid_network_z_sum * arid_network_z_sum;
@@ -840,6 +869,85 @@ int main() {
         static_cast<float>(residual_sum / static_cast<double>(arid_network_channel_count));
     require(arid_network_mean_line_residual > 0.055F,
             "terrain lab arid network should not fit one regular centerline");
+    std::size_t arid_direction_transition_count = 0;
+    for (std::uint32_t y = 1U; y + 1U < fields.desc.height; ++y) {
+        for (std::uint32_t x = 1U; x + 1U < fields.desc.width; ++x) {
+            const std::size_t index =
+                static_cast<std::size_t>(y) * fields.desc.width + static_cast<std::size_t>(x);
+            if (fields.channel_influence[index] <= 0.35F || fields.flow_direction[index] >= 8U) {
+                continue;
+            }
+            bool saw_other_direction = false;
+            for (int dy = -1; dy <= 1 && !saw_other_direction; ++dy) {
+                for (int dx = -1; dx <= 1; ++dx) {
+                    if (dx == 0 && dy == 0) {
+                        continue;
+                    }
+                    const auto neighbor_x = static_cast<std::uint32_t>(static_cast<int>(x) + dx);
+                    const auto neighbor_y = static_cast<std::uint32_t>(static_cast<int>(y) + dy);
+                    const std::size_t neighbor_index = static_cast<std::size_t>(neighbor_y) *
+                                                           fields.desc.width +
+                                                       static_cast<std::size_t>(neighbor_x);
+                    if (fields.channel_influence[neighbor_index] > 0.30F &&
+                        fields.flow_direction[neighbor_index] < 8U &&
+                        fields.flow_direction[neighbor_index] != fields.flow_direction[index]) {
+                        saw_other_direction = true;
+                        break;
+                    }
+                }
+            }
+            if (saw_other_direction) {
+                ++arid_direction_transition_count;
+            }
+        }
+    }
+    require(arid_direction_transition_count > arid_network_channel_count / 12U,
+            "terrain lab arid network should turn through local direction changes (transitions=" +
+                std::to_string(arid_direction_transition_count) +
+                ", samples=" + std::to_string(arid_network_channel_count) + ")");
+    constexpr std::size_t kAridCoarseNetworkSize = 16U;
+    std::array<bool, kAridCoarseNetworkSize * kAridCoarseNetworkSize> arid_coarse_network{};
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        if (fields.channel_influence[index] <= 0.35F) {
+            continue;
+        }
+        const auto x = static_cast<std::uint32_t>(index % fields.desc.width);
+        const auto y = static_cast<std::uint32_t>(index / fields.desc.width);
+        const std::size_t coarse_x = std::min(kAridCoarseNetworkSize - 1U,
+                                              static_cast<std::size_t>(x) *
+                                                  kAridCoarseNetworkSize / fields.desc.width);
+        const std::size_t coarse_y = std::min(kAridCoarseNetworkSize - 1U,
+                                              static_cast<std::size_t>(y) *
+                                                  kAridCoarseNetworkSize / fields.desc.height);
+        arid_coarse_network[coarse_y * kAridCoarseNetworkSize + coarse_x] = true;
+    }
+    std::size_t arid_coarse_terminal_count = 0;
+    std::size_t arid_coarse_junction_count = 0;
+    for (std::size_t y = 1U; y + 1U < kAridCoarseNetworkSize; ++y) {
+        for (std::size_t x = 1U; x + 1U < kAridCoarseNetworkSize; ++x) {
+            const std::size_t index = y * kAridCoarseNetworkSize + x;
+            if (!arid_coarse_network[index]) {
+                continue;
+            }
+            const std::uint32_t cardinal_neighbor_count =
+                static_cast<std::uint32_t>(arid_coarse_network[index - 1U] ? 1U : 0U) +
+                static_cast<std::uint32_t>(arid_coarse_network[index + 1U] ? 1U : 0U) +
+                static_cast<std::uint32_t>(
+                    arid_coarse_network[index - kAridCoarseNetworkSize] ? 1U : 0U) +
+                static_cast<std::uint32_t>(
+                    arid_coarse_network[index + kAridCoarseNetworkSize] ? 1U : 0U);
+            if (cardinal_neighbor_count <= 1U) {
+                ++arid_coarse_terminal_count;
+            }
+            if (cardinal_neighbor_count >= 3U) {
+                ++arid_coarse_junction_count;
+            }
+        }
+    }
+    require(arid_coarse_terminal_count > 0U && arid_coarse_junction_count > 0U,
+            "terrain lab arid network should read as a coarse canyon system (terminals=" +
+                std::to_string(arid_coarse_terminal_count) +
+                ", junctions=" + std::to_string(arid_coarse_junction_count) + ")");
 
     const terrain::TerrainLabFieldData fields_repeat = terrain::generate_terrain_lab_fields(small);
     const terrain::TerrainLabFieldSummary summary = terrain::summarize_terrain_lab_fields(fields);
