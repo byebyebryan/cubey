@@ -522,14 +522,12 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
     const float dune_u = downwind + warp_down;
     const float dune_v = lateral + warp_lateral;
 
-    const float sheet_shape =
-        smoothstep(0.02F, 0.30F, 1.0F - length({p.x * 0.70F + 0.08F, p.z * 0.84F - 0.06F}));
     const float supply_noise =
         fbm((dune_u * 0.92F) + 1.7F, (dune_v * 0.84F) - 3.2F, config.seed + 3107U, 5) * 0.5F + 0.5F;
     const float base_noise =
         fbm((dune_u * 0.54F) - 2.1F, (dune_v * 0.62F) + 4.8F, config.seed + 3109U, 4) * 0.5F + 0.5F;
-    const float selection = saturate(sheet_shape * lerp(0.78F, 1.10F, supply_noise));
-    const float base = saturate((sheet_shape * 0.60F) + (base_noise * 0.28F) + (selection * 0.20F));
+    const float selection = 1.0F;
+    const float base = saturate(0.34F + (supply_noise * 0.36F) + (base_noise * 0.30F));
 
     const float mound_a =
         fbm((dune_u * 1.26F) + 5.7F, (dune_v * 1.18F) - 6.1F, config.seed + 3127U, 5) * 0.5F + 0.5F;

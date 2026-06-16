@@ -864,7 +864,6 @@ int main() {
     require(dunes_stats.shrub_count > 8U,
             "terrain lab dunes sentinel should produce sparse shrub samples");
     std::size_t dune_driver_selected_count = 0;
-    std::size_t dune_driver_unselected_count = 0;
     std::size_t dune_driver_ridge_count = 0;
     std::size_t dune_driver_valley_count = 0;
     std::size_t dune_driver_high_relief_count = 0;
@@ -880,9 +879,6 @@ int main() {
         dune_driver_selection_sum += selection;
         if (selection > 0.20F) {
             ++dune_driver_selected_count;
-        }
-        if (selection < 0.05F) {
-            ++dune_driver_unselected_count;
         }
         if (dunes_fields.ridge_influence[index] > 0.22F) {
             dune_driver_ridge_relief_sum += relief;
@@ -908,12 +904,10 @@ int main() {
     const float dunes_mean_shrub = static_cast<float>(dunes_stats.shrub_sum * inv_dunes_count);
     const float dunes_mean_driver_selection =
         static_cast<float>(dune_driver_selection_sum * inv_dunes_count);
-    require(dune_driver_selected_count > dunes_fields.sample_count() / 4U,
-            "terrain lab dunes driver should select a broad sand field");
-    require(dune_driver_unselected_count > 16U,
-            "terrain lab dunes driver should leave some samples outside the sand field");
-    require(dunes_mean_driver_selection > 0.25F && dunes_mean_driver_selection < 0.90F,
-            "terrain lab dunes driver selection should be bounded");
+    require(dune_driver_selected_count == dunes_fields.sample_count(),
+            "terrain lab dunes driver should use the whole local patch as the sand field");
+    require_near(dunes_mean_driver_selection, 1.0F, 0.001F,
+                 "terrain lab dunes driver selection should not add a local footprint mask");
     require(dune_driver_ridge_count > 16U && dune_driver_valley_count > 16U,
             "terrain lab dunes driver should produce enough ridge and valley samples");
     require(dune_driver_high_relief_count > 16U && dune_driver_low_relief_count > 16U,
