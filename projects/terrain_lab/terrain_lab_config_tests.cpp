@@ -667,11 +667,14 @@ int main() {
     require(arid_stats.channel_count > 16U,
             "terrain lab arid slice should produce enough channel samples");
     require(arid_stats.non_channel_count > 16U,
-            "terrain lab arid slice should produce enough non-channel samples");
+            "terrain lab arid slice should produce enough non-channel samples: " +
+                std::to_string(arid_stats.non_channel_count));
     require(arid_stats.divide_count > 16U,
-            "terrain lab arid slice should produce enough mesa divide samples");
+            "terrain lab arid slice should produce enough mesa divide samples: " +
+                std::to_string(arid_stats.divide_count));
     require(arid_stats.ridge_count > 16U,
-            "terrain lab arid slice should produce enough rim and wall samples");
+            "terrain lab arid slice should produce enough rim and wall samples: " +
+                std::to_string(arid_stats.ridge_count));
     require(arid_stats.channel_count < fields.sample_count() / 5U,
             "terrain lab arid slice should keep secondary washes subordinate");
     const double inv_arid_count = 1.0 / static_cast<double>(fields.sample_count());
@@ -769,6 +772,74 @@ int main() {
             "terrain lab arid washes should derive from higher process driver values");
     require(arid_mean_high_relief_height > arid_mean_channel_height + 8.0F,
             "terrain lab arid canyon height should keep high-relief walls above wash floors");
+    std::array<bool, 4> arid_channel_quadrants{false, false, false, false};
+    std::size_t arid_network_channel_count = 0;
+    double arid_network_x_sum = 0.0;
+    double arid_network_z_sum = 0.0;
+    double arid_network_xz_sum = 0.0;
+    double arid_network_zz_sum = 0.0;
+    const float arid_half_x =
+        static_cast<float>(fields.desc.width - 1U) * fields.desc.cell_size_m * 0.5F;
+    const float arid_half_z =
+        static_cast<float>(fields.desc.height - 1U) * fields.desc.cell_size_m * 0.5F;
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        if (fields.channel_influence[index] <= 0.30F) {
+            continue;
+        }
+        const auto x = static_cast<std::uint32_t>(index % fields.desc.width);
+        const auto y = static_cast<std::uint32_t>(index / fields.desc.width);
+        const float nx = arid_half_x == 0.0F
+                             ? 0.0F
+                             : terrain::terrain_lab_grid_sample_x_m(fields.desc, x) / arid_half_x;
+        const float nz = arid_half_z == 0.0F
+                             ? 0.0F
+                             : terrain::terrain_lab_grid_sample_z_m(fields.desc, y) / arid_half_z;
+        arid_network_x_sum += nx;
+        arid_network_z_sum += nz;
+        arid_network_xz_sum += nx * nz;
+        arid_network_zz_sum += nz * nz;
+        ++arid_network_channel_count;
+        const std::size_t quadrant =
+            (x >= fields.desc.width / 2U ? 1U : 0U) + (y >= fields.desc.height / 2U ? 2U : 0U);
+        arid_channel_quadrants[quadrant] = true;
+    }
+    const std::uint32_t arid_channel_quadrant_count = static_cast<std::uint32_t>(
+        std::count(arid_channel_quadrants.begin(), arid_channel_quadrants.end(), true));
+    require(arid_network_channel_count > 32U,
+            "terrain lab arid network should expose enough routed channel samples");
+    require(arid_channel_quadrant_count >= 3U,
+            "terrain lab arid network should span multiple crop quadrants");
+    const double line_denominator =
+        static_cast<double>(arid_network_channel_count) * arid_network_zz_sum -
+        arid_network_z_sum * arid_network_z_sum;
+    require(std::abs(line_denominator) > 0.00001,
+            "terrain lab arid network should not collapse to one horizontal band");
+    const double fitted_slope =
+        ((static_cast<double>(arid_network_channel_count) * arid_network_xz_sum) -
+         (arid_network_z_sum * arid_network_x_sum)) /
+        line_denominator;
+    const double fitted_intercept = (arid_network_x_sum - fitted_slope * arid_network_z_sum) /
+                                    static_cast<double>(arid_network_channel_count);
+    double residual_sum = 0.0;
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        if (fields.channel_influence[index] <= 0.30F) {
+            continue;
+        }
+        const auto x = static_cast<std::uint32_t>(index % fields.desc.width);
+        const auto y = static_cast<std::uint32_t>(index / fields.desc.width);
+        const float nx = arid_half_x == 0.0F
+                             ? 0.0F
+                             : terrain::terrain_lab_grid_sample_x_m(fields.desc, x) / arid_half_x;
+        const float nz = arid_half_z == 0.0F
+                             ? 0.0F
+                             : terrain::terrain_lab_grid_sample_z_m(fields.desc, y) / arid_half_z;
+        residual_sum +=
+            std::abs(static_cast<double>(nx) - ((fitted_slope * nz) + fitted_intercept));
+    }
+    const float arid_network_mean_line_residual =
+        static_cast<float>(residual_sum / static_cast<double>(arid_network_channel_count));
+    require(arid_network_mean_line_residual > 0.055F,
+            "terrain lab arid network should not fit one regular centerline");
 
     const terrain::TerrainLabFieldData fields_repeat = terrain::generate_terrain_lab_fields(small);
     const terrain::TerrainLabFieldSummary summary = terrain::summarize_terrain_lab_fields(fields);
