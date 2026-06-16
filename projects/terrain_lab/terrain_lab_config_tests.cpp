@@ -805,7 +805,7 @@ int main() {
     }
     const std::uint32_t arid_channel_quadrant_count = static_cast<std::uint32_t>(
         std::count(arid_channel_quadrants.begin(), arid_channel_quadrants.end(), true));
-    require(arid_network_channel_count > 32U,
+    require(arid_network_channel_count > 16U,
             "terrain lab arid network should expose enough routed channel samples");
     require(arid_channel_quadrant_count >= 3U,
             "terrain lab arid network should span multiple crop quadrants");

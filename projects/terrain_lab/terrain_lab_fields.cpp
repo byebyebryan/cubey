@@ -980,6 +980,49 @@ void compute_arid_channel_distance(const TerrainLabGridDesc& desc,
     }
 }
 
+void smooth_arid_channel_network(const TerrainLabGridDesc& desc, std::vector<float>& channel,
+                                 std::vector<float>& incision) {
+    std::vector<float> next_channel = channel;
+    std::vector<float> next_incision = incision;
+    for (std::uint32_t iteration = 0; iteration < 2U; ++iteration) {
+        for (std::uint32_t y = 0; y < desc.height; ++y) {
+            for (std::uint32_t x = 0; x < desc.width; ++x) {
+                const std::size_t sample = grid_index(x, y, desc.width);
+                float channel_sum = channel[sample] * 2.0F;
+                float incision_sum = incision[sample] * 2.0F;
+                float neighbor_count = 2.0F;
+                float neighbor_channel_max = channel[sample];
+                float neighbor_incision_max = incision[sample];
+                for (std::uint8_t direction = 0U; direction < kFlowSinkDirection; ++direction) {
+                    const auto nx = static_cast<std::int32_t>(x) + kFlowDx[direction];
+                    const auto ny = static_cast<std::int32_t>(y) + kFlowDy[direction];
+                    if (nx < 0 || ny < 0 || nx >= static_cast<std::int32_t>(desc.width) ||
+                        ny >= static_cast<std::int32_t>(desc.height)) {
+                        continue;
+                    }
+                    const std::size_t neighbor = grid_index(
+                        static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny), desc.width);
+                    channel_sum += channel[neighbor];
+                    incision_sum += incision[neighbor];
+                    neighbor_count += 1.0F;
+                    neighbor_channel_max = std::max(neighbor_channel_max, channel[neighbor]);
+                    neighbor_incision_max = std::max(neighbor_incision_max, incision[neighbor]);
+                }
+                const float channel_blur = channel_sum / neighbor_count;
+                const float incision_blur = incision_sum / neighbor_count;
+                next_channel[sample] =
+                    saturate(std::max(channel[sample] * 0.86F, channel_blur * 0.94F) +
+                             neighbor_channel_max * 0.08F);
+                next_incision[sample] =
+                    saturate(std::max(incision[sample] * 0.88F, incision_blur * 0.90F) +
+                             neighbor_incision_max * 0.06F);
+            }
+        }
+        channel.swap(next_channel);
+        incision.swap(next_incision);
+    }
+}
+
 [[nodiscard]] AridRegionalCanyonFields
 build_arid_regional_canyon_fields(const TerrainLabConfig& config,
                                   const TerrainLabGridDesc& visible_desc) {
@@ -991,9 +1034,9 @@ build_arid_regional_canyon_fields(const TerrainLabConfig& config,
             const std::size_t sample = grid_index(x, y, region.desc.width);
             const Point2 p = normalized_sample(region.desc, x, y);
             const float warp_x =
-                fbm((p.x * 1.05F) - 7.0F, (p.z * 1.05F) + 4.0F, config.seed + 2501U, 4) * 0.16F;
+                fbm((p.x * 1.05F) - 7.0F, (p.z * 1.05F) + 4.0F, config.seed + 2501U, 4) * 0.24F;
             const float warp_z =
-                fbm((p.x * 1.10F) + 6.0F, (p.z * 1.10F) - 3.0F, config.seed + 2503U, 4) * 0.13F;
+                fbm((p.x * 1.10F) + 6.0F, (p.z * 1.10F) - 3.0F, config.seed + 2503U, 4) * 0.20F;
             const Point2 q{p.x + warp_x, p.z + warp_z};
             const float downstream_tilt = saturate((1.0F - q.z) * 0.5F);
             const float cross_tilt = q.x * 0.08F;
@@ -1013,8 +1056,8 @@ build_arid_regional_canyon_fields(const TerrainLabConfig& config,
                 saturate(0.30F + downstream_tilt * 0.24F +
                          smoothstep(-0.38F, 0.86F, broad) * 0.30F + resistance * 0.12F);
             const float macro_height =
-                ((downstream_tilt * 0.66F) + (broad * 0.16F) + (broad_secondary * 0.075F) +
-                 (resistance * 0.060F) + cross_tilt - 0.08F) *
+                ((downstream_tilt * 0.50F) + (broad * 0.25F) + (broad_secondary * 0.14F) +
+                 (resistance * 0.070F) + cross_tilt * 0.70F - 0.08F) *
                 arid_elevation_scale_m;
 
             region.macro_height_m[sample] = macro_height;
@@ -1064,6 +1107,7 @@ build_arid_regional_canyon_fields(const TerrainLabConfig& config,
         region.incision[sample] = incision;
     }
 
+    smooth_arid_channel_network(region.desc, region.wash, region.incision);
     compute_arid_channel_distance(region.desc, region.wash, region.channel_distance_m);
 
     for (std::size_t sample = 0; sample < count; ++sample) {
@@ -1256,10 +1300,13 @@ generate_arid_mesa_network_slice(const TerrainLabConfig& config,
                          plateau * (0.06F + region.base_potential[regional_sample] * 0.06F));
             const float divide = saturate(rim * 0.90F + canyon_wall * 0.24F + bench * 0.34F +
                                           plateau_divide * 0.72F + (1.0F - valley) * 0.08F);
+            const float driver_relief =
+                saturate(region.relief_potential[regional_sample] * (1.0F - channel * 0.76F) +
+                         ridge * 0.42F + rim * 0.18F);
 
             slice.drivers[visible_sample] = {
                 .base_potential = region.base_potential[regional_sample],
-                .relief_potential = region.relief_potential[regional_sample],
+                .relief_potential = driver_relief,
                 .process_potential = region.process_potential[regional_sample],
                 .selection_mask = 1.0F,
                 .canyon_floor_source = canyon_floor,
