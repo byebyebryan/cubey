@@ -57,21 +57,31 @@ enum class TerrainLabDebugView : std::uint32_t {
     Watershed = 17,
     Channel = 18,
     Divide = 19,
+    Driver = 20,
 };
 
-inline constexpr std::array<TerrainLabDebugView, 20> kTerrainLabDebugViews{
-    TerrainLabDebugView::Final,       TerrainLabDebugView::Height,
-    TerrainLabDebugView::Structure,   TerrainLabDebugView::Process,
-    TerrainLabDebugView::Detail,      TerrainLabDebugView::Slope,
-    TerrainLabDebugView::Curvature,   TerrainLabDebugView::FlowDirection,
+inline constexpr std::array<TerrainLabDebugView, 21> kTerrainLabDebugViews{
+    TerrainLabDebugView::Final,
+    TerrainLabDebugView::Height,
+    TerrainLabDebugView::Structure,
+    TerrainLabDebugView::Process,
+    TerrainLabDebugView::Detail,
+    TerrainLabDebugView::Slope,
+    TerrainLabDebugView::Curvature,
+    TerrainLabDebugView::FlowDirection,
     TerrainLabDebugView::FlowAccumulation,
-    TerrainLabDebugView::StreamPower, TerrainLabDebugView::Wetness,
-    TerrainLabDebugView::Deposition,  TerrainLabDebugView::Material,
+    TerrainLabDebugView::StreamPower,
+    TerrainLabDebugView::Wetness,
+    TerrainLabDebugView::Deposition,
+    TerrainLabDebugView::Material,
     TerrainLabDebugView::BiomeDensity,
     TerrainLabDebugView::CanopyHeight,
-    TerrainLabDebugView::NoiseOff,    TerrainLabDebugView::FeatureGraph,
-    TerrainLabDebugView::Watershed,   TerrainLabDebugView::Channel,
+    TerrainLabDebugView::NoiseOff,
+    TerrainLabDebugView::FeatureGraph,
+    TerrainLabDebugView::Watershed,
+    TerrainLabDebugView::Channel,
     TerrainLabDebugView::Divide,
+    TerrainLabDebugView::Driver,
 };
 
 inline constexpr std::uint32_t kTerrainLabDefaultGridWidth = 257U;
@@ -101,8 +111,7 @@ struct TerrainLabConfig {
     friend bool operator==(const TerrainLabConfig&, const TerrainLabConfig&) = default;
 };
 
-[[nodiscard]] inline const char* terrain_lab_slice_preset_name(
-    TerrainLabSlicePreset preset) {
+[[nodiscard]] inline const char* terrain_lab_slice_preset_name(TerrainLabSlicePreset preset) {
     switch (preset) {
     case TerrainLabSlicePreset::AridMesaCanyon:
         return "arid-mesa-canyon";
@@ -158,6 +167,8 @@ struct TerrainLabConfig {
         return "channel";
     case TerrainLabDebugView::Divide:
         return "divide";
+    case TerrainLabDebugView::Driver:
+        return "driver";
     }
     return "final";
 }
@@ -187,8 +198,8 @@ struct TerrainLabConfig {
     return true;
 }
 
-[[nodiscard]] inline TerrainLabSlicePreset terrain_lab_slice_preset_from_name(
-    std::string_view name) {
+[[nodiscard]] inline TerrainLabSlicePreset
+terrain_lab_slice_preset_from_name(std::string_view name) {
     if (name.empty()) {
         return TerrainLabSlicePreset::AridMesaCanyon;
     }
@@ -200,8 +211,7 @@ struct TerrainLabConfig {
     throw std::runtime_error("unknown terrain lab slice preset: " + std::string(name));
 }
 
-[[nodiscard]] inline TerrainLabDebugView terrain_lab_debug_view_from_name(
-    std::string_view name) {
+[[nodiscard]] inline TerrainLabDebugView terrain_lab_debug_view_from_name(std::string_view name) {
     if (name.empty()) {
         return TerrainLabDebugView::Final;
     }
@@ -226,8 +236,7 @@ terrain_lab_camera_preset_from_name(std::string_view name) {
     throw std::runtime_error("unknown terrain lab camera preset: " + std::string(name));
 }
 
-[[nodiscard]] inline TerrainLabDebugView next_terrain_lab_debug_view(
-    TerrainLabDebugView view) {
+[[nodiscard]] inline TerrainLabDebugView next_terrain_lab_debug_view(TerrainLabDebugView view) {
     for (std::size_t index = 0; index < kTerrainLabDebugViews.size(); ++index) {
         if (kTerrainLabDebugViews[index] == view) {
             return kTerrainLabDebugViews[(index + 1U) % kTerrainLabDebugViews.size()];
@@ -264,8 +273,7 @@ inline void validate_terrain_lab_config(const TerrainLabConfig& config) {
     }
 }
 
-[[nodiscard]] inline TerrainLabConfig terrain_lab_config_from_run_config(
-    const RunConfig& config) {
+[[nodiscard]] inline TerrainLabConfig terrain_lab_config_from_run_config(const RunConfig& config) {
     TerrainLabConfig terrain;
     if (config.grid.width != 0U) {
         terrain.grid_width = config.grid.width;

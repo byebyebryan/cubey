@@ -39,8 +39,7 @@ void require_near(float value, float expected, float tolerance, const char* mess
 }
 
 float material_sum(const cubey::projects::terrain_lab::TerrainLabMaterialMask& mask) {
-    return mask.rock + mask.soil + mask.scree + mask.meadow + mask.forest + mask.snow +
-           mask.sand;
+    return mask.rock + mask.soil + mask.scree + mask.meadow + mask.forest + mask.snow + mask.sand;
 }
 
 struct FieldSampleStats {
@@ -90,6 +89,18 @@ inspect_field_samples(const cubey::projects::terrain_lab::TerrainLabFieldData& f
     stats.saw_watershed.assign(fields.watershed_count, false);
     for (std::size_t index = 0; index < fields.sample_count(); ++index) {
         require(std::isfinite(fields.height_m[index]), "terrain lab height should be finite");
+        require(fields.driver_base_potential[index] >= 0.0F &&
+                    fields.driver_base_potential[index] <= 1.0F,
+                "terrain lab driver base should be normalized");
+        require(fields.driver_relief_potential[index] >= 0.0F &&
+                    fields.driver_relief_potential[index] <= 1.0F,
+                "terrain lab driver relief should be normalized");
+        require(fields.driver_process_potential[index] >= 0.0F &&
+                    fields.driver_process_potential[index] <= 1.0F,
+                "terrain lab driver process should be normalized");
+        require(fields.driver_selection_mask[index] >= 0.0F &&
+                    fields.driver_selection_mask[index] <= 1.0F,
+                "terrain lab driver selection should be normalized");
         require(std::isfinite(fields.structure_height_m[index]),
                 "terrain lab structure should be finite");
         require(std::isfinite(fields.process_delta_m[index]),
@@ -304,6 +315,9 @@ int main() {
     require(terrain::terrain_lab_debug_view_from_name("divide") ==
                 terrain::TerrainLabDebugView::Divide,
             "terrain lab divide debug view should parse");
+    require(terrain::terrain_lab_debug_view_from_name("driver") ==
+                terrain::TerrainLabDebugView::Driver,
+            "terrain lab driver debug view should parse");
     require(terrain::next_terrain_lab_debug_view(terrain::TerrainLabDebugView::Detail) ==
                 terrain::TerrainLabDebugView::Slope,
             "terrain lab debug view cycle should enter geometry views after detail");
@@ -311,6 +325,9 @@ int main() {
                 terrain::TerrainLabDebugView::FeatureGraph,
             "terrain lab debug view cycle should enter watershed diagnostics after noise-off");
     require(terrain::next_terrain_lab_debug_view(terrain::TerrainLabDebugView::Divide) ==
+                terrain::TerrainLabDebugView::Driver,
+            "terrain lab debug view cycle should enter driver diagnostics after divide");
+    require(terrain::next_terrain_lab_debug_view(terrain::TerrainLabDebugView::Driver) ==
                 terrain::TerrainLabDebugView::Final,
             "terrain lab debug view cycle should wrap");
 
@@ -357,6 +374,8 @@ int main() {
                                   terrain::TerrainLabDebugView::Channel, "CHANNEL");
     require_shader_debug_constant(terrain_lab_fragment_shader, terrain::TerrainLabDebugView::Divide,
                                   "DIVIDE");
+    require_shader_debug_constant(terrain_lab_fragment_shader, terrain::TerrainLabDebugView::Driver,
+                                  "DRIVER");
     require_contains(terrain_lab_fragment_shader, "strata_band_strength");
     require_contains(terrain_lab_fragment_shader, "caprock_strength");
     require_contains(terrain_lab_fragment_shader, "talus_proxy");
@@ -511,6 +530,14 @@ int main() {
 
     require(fields.height_m.size() == fields.sample_count(),
             "terrain lab height field size mismatch");
+    require(fields.driver_base_potential.size() == fields.sample_count(),
+            "terrain lab driver base field size mismatch");
+    require(fields.driver_relief_potential.size() == fields.sample_count(),
+            "terrain lab driver relief field size mismatch");
+    require(fields.driver_process_potential.size() == fields.sample_count(),
+            "terrain lab driver process field size mismatch");
+    require(fields.driver_selection_mask.size() == fields.sample_count(),
+            "terrain lab driver selection field size mismatch");
     require(fields.structure_height_m.size() == fields.sample_count(),
             "terrain lab structure field size mismatch");
     require(fields.process_delta_m.size() == fields.sample_count(),
@@ -891,10 +918,9 @@ int main() {
     require(glacial_stats.ridge_count > 16U,
             "terrain lab glacial sentinel should produce enough ridge samples");
     const double inv_glacial_count = 1.0 / static_cast<double>(glacial_fields.sample_count());
-    const float glacial_rock_scree_snow =
-        static_cast<float>((glacial_stats.rock_sum + glacial_stats.scree_sum +
-                            glacial_stats.snow_sum) *
-                           inv_glacial_count);
+    const float glacial_rock_scree_snow = static_cast<float>(
+        (glacial_stats.rock_sum + glacial_stats.scree_sum + glacial_stats.snow_sum) *
+        inv_glacial_count);
     const float glacial_mean_forest =
         static_cast<float>(glacial_stats.forest_sum * inv_glacial_count);
     const float glacial_mean_sand = static_cast<float>(glacial_stats.sand_sum * inv_glacial_count);
@@ -904,9 +930,8 @@ int main() {
         glacial_stats.divide_height_sum / static_cast<double>(glacial_stats.divide_count));
     const float glacial_mean_ridge_height = static_cast<float>(
         glacial_stats.ridge_height_sum / static_cast<double>(glacial_stats.ridge_count));
-    const float glacial_mean_channel_deposition =
-        static_cast<float>(glacial_stats.channel_deposition_sum /
-                           static_cast<double>(glacial_stats.channel_count));
+    const float glacial_mean_channel_deposition = static_cast<float>(
+        glacial_stats.channel_deposition_sum / static_cast<double>(glacial_stats.channel_count));
     const float glacial_mean_non_channel_deposition =
         static_cast<float>(glacial_stats.non_channel_deposition_sum /
                            static_cast<double>(glacial_stats.non_channel_count));
@@ -1058,6 +1083,14 @@ int main() {
                  0.001F, "terrain lab mesh should pack raw watershed id");
     require_near(first_vertex.feature_tags.w, static_cast<float>(fields.watershed_count), 0.001F,
                  "terrain lab mesh should pack watershed count");
+    require_near(first_vertex.drivers.x, fields.driver_base_potential.front(), 0.001F,
+                 "terrain lab mesh should pack driver base potential");
+    require_near(first_vertex.drivers.y, fields.driver_relief_potential.front(), 0.001F,
+                 "terrain lab mesh should pack driver relief potential");
+    require_near(first_vertex.drivers.z, fields.driver_process_potential.front(), 0.001F,
+                 "terrain lab mesh should pack driver process potential");
+    require_near(first_vertex.drivers.w, fields.driver_selection_mask.front(), 0.001F,
+                 "terrain lab mesh should pack driver selection mask");
 
     const std::size_t center_index = fields.index(fields.desc.width / 2U, fields.desc.height / 2U);
     require_near(mesh.vertices[center_index].position.x, 0.0F, 0.001F,

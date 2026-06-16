@@ -18,6 +18,7 @@ layout(location = 6) in vec4 frag_material_b;
 layout(location = 7) in vec4 frag_vegetation;
 layout(location = 8) in vec4 frag_influences;
 layout(location = 9) in vec4 frag_feature_tags;
+layout(location = 10) in vec4 frag_drivers;
 
 layout(location = 0) out vec4 out_color;
 
@@ -41,6 +42,7 @@ const uint TERRAIN_LAB_VIEW_FEATURE_GRAPH = 16u;
 const uint TERRAIN_LAB_VIEW_WATERSHED = 17u;
 const uint TERRAIN_LAB_VIEW_CHANNEL = 18u;
 const uint TERRAIN_LAB_VIEW_DIVIDE = 19u;
+const uint TERRAIN_LAB_VIEW_DRIVER = 20u;
 
 vec3 ramp3(float t, vec3 a, vec3 b, vec3 c) {
     t = clamp(t, 0.0, 1.0);
@@ -209,6 +211,7 @@ void main() {
     float divide_t = clamp(frag_influences.z, 0.0, 1.0);
     float channel_t = clamp(frag_influences.w, 0.0, 1.0);
     float channel_distance_t = clamp(frag_feature_tags.y, 0.0, 1.0);
+    float driver_selection_t = clamp(frag_drivers.w, 0.0, 1.0);
     vec3 basin_color = watershed_color(frag_feature_tags.x);
 
     vec3 color = final_color();
@@ -263,6 +266,9 @@ void main() {
     } else if (debug_view == TERRAIN_LAB_VIEW_DIVIDE) {
         color = ramp3(divide_t, vec3(0.10, 0.12, 0.13), vec3(0.58, 0.42, 0.21),
                       vec3(0.95, 0.82, 0.45));
+    } else if (debug_view == TERRAIN_LAB_VIEW_DRIVER) {
+        color = clamp(frag_drivers.xyz, vec3(0.0), vec3(1.0)) *
+                (0.35 + 0.65 * driver_selection_t);
     }
 
     out_color = vec4(color, 1.0);

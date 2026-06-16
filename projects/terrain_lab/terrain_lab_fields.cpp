@@ -385,6 +385,10 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
 
     const std::size_t count = fields.sample_count();
     fields.height_m.assign(count, 0.0F);
+    fields.driver_base_potential.assign(count, 0.0F);
+    fields.driver_relief_potential.assign(count, 0.0F);
+    fields.driver_process_potential.assign(count, 0.0F);
+    fields.driver_selection_mask.assign(count, 0.0F);
     fields.structure_height_m.assign(count, 0.0F);
     fields.process_delta_m.assign(count, 0.0F);
     fields.detail_height_m.assign(count, 0.0F);
@@ -494,56 +498,43 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
     };
 }
 
-[[nodiscard]] DesertDuneSampleFeatures desert_dune_features_at(Point2 p,
-                                                               const TerrainLabGridDesc& desc,
-                                                               const TerrainLabConfig& config) {
+[[nodiscard]] DesertDuneSampleFeatures
+desert_dune_features_at(Point2 p, const TerrainLabGridDesc& desc, const TerrainLabConfig& config) {
     const float angle = lerp(0.32F, 0.68F, random01(config.seed, 21U, 1201U));
     const Point2 wind{std::cos(angle), std::sin(angle)};
     const Point2 cross{-wind.z, wind.x};
     const float downwind = dot(p, wind);
     const float lateral = dot(p, cross);
     const float warp_down =
-        fbm((p.x * 1.15F) - 3.0F, (p.z * 1.15F) + 4.0F, config.seed + 3101U, 4) *
-        0.22F;
+        fbm((p.x * 1.15F) - 3.0F, (p.z * 1.15F) + 4.0F, config.seed + 3101U, 4) * 0.22F;
     const float warp_lateral =
-        fbm((p.x * 1.30F) + 6.0F, (p.z * 1.30F) - 7.0F, config.seed + 3103U, 4) *
-        0.18F;
+        fbm((p.x * 1.30F) + 6.0F, (p.z * 1.30F) - 7.0F, config.seed + 3103U, 4) * 0.18F;
     const float dune_u = downwind + warp_down;
     const float dune_v = lateral + warp_lateral;
     const float field_mask =
-        smoothstep(0.04F, 0.30F,
-                   1.0F - length({p.x * 0.72F + 0.08F, p.z * 0.88F - 0.06F}));
+        smoothstep(0.04F, 0.30F, 1.0F - length({p.x * 0.72F + 0.08F, p.z * 0.88F - 0.06F}));
     const float broad =
-        fbm((dune_u * 0.85F) + 1.7F, (dune_v * 0.85F) - 3.2F, config.seed + 3107U, 5) *
-            0.5F +
-        0.5F;
+        fbm((dune_u * 0.85F) + 1.7F, (dune_v * 0.85F) - 3.2F, config.seed + 3107U, 5) * 0.5F + 0.5F;
     const float lowland =
-        fbm((dune_u * 1.65F) + 0.4F, (dune_v * 1.35F) + 3.2F, config.seed + 3113U, 4) *
-            0.5F +
-        0.5F;
+        fbm((dune_u * 1.65F) + 0.4F, (dune_v * 1.35F) + 3.2F, config.seed + 3113U, 4) * 0.5F + 0.5F;
     const float roll_source =
         fbm((dune_u * 1.55F) - 4.0F, (dune_v * 1.20F) + 8.5F, config.seed + 3119U, 5);
     const float roll_secondary =
         fbm((dune_u * 2.45F) + 2.1F, (dune_v * 1.85F) - 8.2F, config.seed + 3121U, 4);
-    const float rolling_ridges =
-        std::max(ridge_profile(roll_source * 1.18F, 2.15F),
-                 ridge_profile(roll_secondary * 1.28F, 2.35F) * 0.32F);
+    const float rolling_ridges = std::max(ridge_profile(roll_source * 1.18F, 2.15F),
+                                          ridge_profile(roll_secondary * 1.28F, 2.35F) * 0.32F);
     const float mound_source =
-        fbm((dune_u * 1.55F) + 5.7F, (dune_v * 1.55F) - 6.1F, config.seed + 3127U, 5) *
-            0.5F +
-        0.5F;
+        fbm((dune_u * 1.55F) + 5.7F, (dune_v * 1.55F) - 6.1F, config.seed + 3127U, 5) * 0.5F + 0.5F;
     const float mounds = smoothstep(0.24F, 0.86F, mound_source);
-    const float roll = saturate((broad * 0.34F) + (lowland * 0.32F) +
-                                (rolling_ridges * 0.16F) + (mounds * 0.36F));
+    const float roll =
+        saturate((broad * 0.34F) + (lowland * 0.32F) + (rolling_ridges * 0.16F) + (mounds * 0.36F));
     const float dune_body = smoothstep(0.30F, 0.82F, roll) * field_mask;
     const float crest =
-        smoothstep(0.58F, 0.92F, rolling_ridges) * smoothstep(0.50F, 0.82F, roll) *
-        field_mask;
+        smoothstep(0.58F, 0.92F, rolling_ridges) * smoothstep(0.50F, 0.82F, roll) * field_mask;
     const float slip_face =
         smoothstep(0.54F, 0.86F, roll) *
         smoothstep(0.05F, 0.70F,
-                   fbm((dune_u * 2.10F) - 7.0F, (dune_v * 2.10F) + 9.0F,
-                       config.seed + 3131U, 4) *
+                   fbm((dune_u * 2.10F) - 7.0F, (dune_v * 2.10F) + 9.0F, config.seed + 3131U, 4) *
                            0.5F +
                        0.5F) *
         field_mask * 0.66F;
@@ -595,21 +586,17 @@ alpine_glacial_features_at(Point2 p, const TerrainLabGridDesc& desc,
     const float right_spine_distance = std::abs(p.x - right_spine);
     const float rear_spine_distance = std::abs(p.x - rear_spine);
     const float ridge_noise =
-        fbm((p.x * 4.8F) - 9.0F, (p.z * 4.8F) + 5.0F, config.seed + 3305U, 4) *
-            0.5F +
-        0.5F;
-    const float left_spur =
-        (1.0F - smoothstep(0.05F, 0.34F, left_spine_distance)) *
-        smoothstep(-0.96F, -0.42F, p.z) * (1.0F - smoothstep(0.34F, 0.86F, p.z));
-    const float right_spur =
-        (1.0F - smoothstep(0.05F, 0.32F, right_spine_distance)) *
-        smoothstep(-0.72F, -0.14F, p.z) * (1.0F - smoothstep(0.54F, 0.92F, p.z));
+        fbm((p.x * 4.8F) - 9.0F, (p.z * 4.8F) + 5.0F, config.seed + 3305U, 4) * 0.5F + 0.5F;
+    const float left_spur = (1.0F - smoothstep(0.05F, 0.34F, left_spine_distance)) *
+                            smoothstep(-0.96F, -0.42F, p.z) *
+                            (1.0F - smoothstep(0.34F, 0.86F, p.z));
+    const float right_spur = (1.0F - smoothstep(0.05F, 0.32F, right_spine_distance)) *
+                             smoothstep(-0.72F, -0.14F, p.z) *
+                             (1.0F - smoothstep(0.54F, 0.92F, p.z));
     const float rear_spur =
-        (1.0F - smoothstep(0.04F, 0.30F, rear_spine_distance)) *
-        smoothstep(0.10F, 0.48F, p.z);
-    const float ridge_spine =
-        saturate(std::max(left_spur, std::max(right_spur, rear_spur)) *
-                 lerp(0.86F, 1.16F, ridge_noise));
+        (1.0F - smoothstep(0.04F, 0.30F, rear_spine_distance)) * smoothstep(0.10F, 0.48F, p.z);
+    const float ridge_spine = saturate(std::max(left_spur, std::max(right_spur, rear_spur)) *
+                                       lerp(0.86F, 1.16F, ridge_noise));
     const float cliff =
         saturate((smoothstep(0.10F, 0.21F, left_spine_distance) *
                       (1.0F - smoothstep(0.23F, 0.46F, left_spine_distance)) * left_spur +
@@ -627,43 +614,34 @@ alpine_glacial_features_at(Point2 p, const TerrainLabGridDesc& desc,
         return saturate(core * 0.86F + shoulder * 0.18F) * weight;
     };
     const float peak_noise =
-        fbm((p.x * 5.4F) + 11.0F, (p.z * 5.4F) - 13.0F, config.seed + 3303U, 4) *
-            0.5F +
-        0.5F;
+        fbm((p.x * 5.4F) + 11.0F, (p.z * 5.4F) - 13.0F, config.seed + 3303U, 4) * 0.5F + 0.5F;
     const float left_peak = peak_at(-0.62F, -0.44F, 0.50F, 0.50F, -0.16F, 1.00F);
     const float right_peak = peak_at(0.60F, -0.10F, 0.46F, 0.54F, 0.18F, 0.94F);
     const float rear_peak = peak_at(0.34F, 0.48F, 0.56F, 0.48F, 0.10F, 0.78F);
-    const float peak =
-        saturate(std::max(left_peak, std::max(right_peak, rear_peak)) *
-                 (1.0F - floor * 0.78F) * lerp(0.86F, 1.14F, peak_noise));
-    const float ridge =
-        saturate((smoothstep(width * 1.56F, width * 2.90F, distance) *
-                  (0.34F +
-                   smoothstep(0.24F, 0.90F,
-                              fbm((p.x * 4.6F) + 3.0F, (p.z * 4.6F) - 7.0F,
-                                  config.seed + 3307U, 4) *
-                                      0.5F +
-                                  0.5F) *
-                       0.18F)) +
-                 ridge_spine * 0.74F + cliff * 0.32F + peak * 0.88F);
-    const float cirque =
-        (1.0F - smoothstep(0.36F, 0.88F, length({p.x - center, p.z + 0.76F}))) *
-        smoothstep(-0.98F, -0.54F, p.z);
+    const float peak = saturate(std::max(left_peak, std::max(right_peak, rear_peak)) *
+                                (1.0F - floor * 0.78F) * lerp(0.86F, 1.14F, peak_noise));
+    const float ridge = saturate(
+        (smoothstep(width * 1.56F, width * 2.90F, distance) *
+         (0.34F +
+          smoothstep(0.24F, 0.90F,
+                     fbm((p.x * 4.6F) + 3.0F, (p.z * 4.6F) - 7.0F, config.seed + 3307U, 4) * 0.5F +
+                         0.5F) *
+              0.18F)) +
+        ridge_spine * 0.74F + cliff * 0.32F + peak * 0.88F);
+    const float cirque = (1.0F - smoothstep(0.36F, 0.88F, length({p.x - center, p.z + 0.76F}))) *
+                         smoothstep(-0.98F, -0.54F, p.z);
 
     const float left_line = center - 0.58F - (p.z + 0.10F) * 0.36F;
     const float right_line = center + 0.54F + (p.z - 0.04F) * 0.32F;
-    const float left_hanging =
-        (1.0F - smoothstep(0.080F, 0.28F, std::abs(p.x - left_line))) *
-        smoothstep(-0.72F, -0.22F, p.z) * (1.0F - smoothstep(0.02F, 0.42F, p.z)) *
-        0.46F;
-    const float right_hanging =
-        (1.0F - smoothstep(0.075F, 0.26F, std::abs(p.x - right_line))) *
-        smoothstep(-0.42F, 0.18F, p.z) * (1.0F - smoothstep(0.46F, 0.82F, p.z)) *
-        0.40F;
+    const float left_hanging = (1.0F - smoothstep(0.080F, 0.28F, std::abs(p.x - left_line))) *
+                               smoothstep(-0.72F, -0.22F, p.z) *
+                               (1.0F - smoothstep(0.02F, 0.42F, p.z)) * 0.46F;
+    const float right_hanging = (1.0F - smoothstep(0.075F, 0.26F, std::abs(p.x - right_line))) *
+                                smoothstep(-0.42F, 0.18F, p.z) *
+                                (1.0F - smoothstep(0.46F, 0.82F, p.z)) * 0.40F;
     const float hanging = saturate(left_hanging + right_hanging * 0.86F);
     const float moraine =
-        floor * smoothstep(-0.12F, 0.36F, p.z) *
-            (1.0F - smoothstep(0.58F, 0.92F, p.z)) +
+        floor * smoothstep(-0.12F, 0.36F, p.z) * (1.0F - smoothstep(0.58F, 0.92F, p.z)) +
         cliff * smoothstep(0.42F, 0.86F, downstream) * 0.18F;
     const float basin = saturate(floor * 0.58F + smoothstep(0.24F, 0.90F, downstream) * 0.18F);
     const float channel = saturate(floor * 0.52F + hanging * 0.12F);
@@ -934,6 +912,27 @@ void update_height_range(TerrainLabFieldData& fields) {
     }
 }
 
+void populate_fallback_driver_fields(TerrainLabFieldData& fields) {
+    const bool has_explicit_driver =
+        std::any_of(fields.driver_selection_mask.begin(), fields.driver_selection_mask.end(),
+                    [](float value) { return value > 0.0F; });
+    if (has_explicit_driver) {
+        return;
+    }
+
+    const float height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
+    for (std::size_t sample = 0; sample < fields.sample_count(); ++sample) {
+        const float height_t =
+            saturate((fields.height_m[sample] - fields.min_height_m) / height_span);
+        fields.driver_base_potential[sample] = height_t;
+        fields.driver_relief_potential[sample] = fields.ridge_influence[sample];
+        fields.driver_process_potential[sample] =
+            saturate((fields.channel_influence[sample] * 0.35F) +
+                     (fields.deposition[sample] * 0.40F) + (fields.wetness[sample] * 0.25F));
+        fields.driver_selection_mask[sample] = 1.0F;
+    }
+}
+
 void validate_finite(float value, const char* message) {
     if (!std::isfinite(value)) {
         throw std::runtime_error(message);
@@ -1015,6 +1014,14 @@ void validate_terrain_lab_fields(const TerrainLabFieldData& fields) {
         }
     };
     require_size(fields.height_m.size(), "terrain lab height field size mismatch");
+    require_size(fields.driver_base_potential.size(),
+                 "terrain lab driver base field size mismatch");
+    require_size(fields.driver_relief_potential.size(),
+                 "terrain lab driver relief field size mismatch");
+    require_size(fields.driver_process_potential.size(),
+                 "terrain lab driver process field size mismatch");
+    require_size(fields.driver_selection_mask.size(),
+                 "terrain lab driver selection field size mismatch");
     require_size(fields.structure_height_m.size(), "terrain lab structure field size mismatch");
     require_size(fields.process_delta_m.size(), "terrain lab process field size mismatch");
     require_size(fields.detail_height_m.size(), "terrain lab detail field size mismatch");
@@ -1050,6 +1057,14 @@ void validate_terrain_lab_fields(const TerrainLabFieldData& fields) {
 
     for (std::size_t sample = 0; sample < count; ++sample) {
         validate_finite(fields.height_m[sample], "terrain lab height must be finite");
+        validate_normalized(fields.driver_base_potential[sample],
+                            "terrain lab driver base must be normalized");
+        validate_normalized(fields.driver_relief_potential[sample],
+                            "terrain lab driver relief must be normalized");
+        validate_normalized(fields.driver_process_potential[sample],
+                            "terrain lab driver process must be normalized");
+        validate_normalized(fields.driver_selection_mask[sample],
+                            "terrain lab driver selection must be normalized");
         validate_finite(fields.structure_height_m[sample],
                         "terrain lab structure height must be finite");
         validate_finite(fields.process_delta_m[sample], "terrain lab process delta must be finite");
@@ -1207,8 +1222,7 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
             static_cast<float>(channel_stream_power_sum * inv_channel);
     }
     if (summary.non_channel_sample_count > 0U) {
-        const double inv_non_channel =
-            1.0 / static_cast<double>(summary.non_channel_sample_count);
+        const double inv_non_channel = 1.0 / static_cast<double>(summary.non_channel_sample_count);
         summary.mean_non_channel_flow_accumulation =
             static_cast<float>(non_channel_flow_sum * inv_non_channel);
         summary.mean_non_channel_stream_power =
@@ -1400,6 +1414,7 @@ TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLa
         }
     }
 
+    populate_fallback_driver_fields(fields);
     validate_terrain_lab_fields(fields);
     return fields;
 }
@@ -1602,6 +1617,7 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
         }
     }
 
+    populate_fallback_driver_fields(fields);
     validate_terrain_lab_fields(fields);
     return fields;
 }
@@ -1675,8 +1691,7 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
             const float elevation_t =
                 saturate((fields.height_m[sample] - fields.min_height_m) / process_height_span);
             const float ripple_noise =
-                fbm((p.x * 15.0F) + 7.0F, (p.z * 15.0F) - 3.0F, config.seed + 3211U, 3) *
-                    0.5F +
+                fbm((p.x * 15.0F) + 7.0F, (p.z * 15.0F) - 3.0F, config.seed + 3211U, 3) * 0.5F +
                 0.5F;
             const float ripple_gate =
                 smoothstep(0.16F, 0.72F, features.dune_body + features.slip_face * 0.32F) *
@@ -1692,9 +1707,9 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
             const float interdune_crust =
                 fbm((p.x * 12.0F) + 19.0F, (p.z * 12.0F) - 17.0F, config.seed + 3221U, 3) *
                 features.interdune_flat * 0.0016F;
-            const float detail = (ripple * (0.50F + elevation_t * 0.50F) + crest_break +
-                                  interdune_crust) *
-                                 dune_elevation_scale_m * config.detail_strength;
+            const float detail =
+                (ripple * (0.50F + elevation_t * 0.50F) + crest_break + interdune_crust) *
+                dune_elevation_scale_m * config.detail_strength;
             fields.detail_height_m[sample] = detail;
             fields.height_m[sample] += detail;
         }
@@ -1719,9 +1734,9 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
                 desert_dune_features_at(p, fields.desc, config);
             const float slope_t = smoothstep(0.018F, 0.26F, fields.slope[sample]);
             const float flow_t = std::log1p(fields.flow_accumulation[sample]) * inv_log_count;
-            const float wetness = saturate((features.interdune_flat * 0.028F) +
-                                           (fields.basin_influence[sample] * 0.018F) +
-                                           (flow_t * 0.012F));
+            const float wetness =
+                saturate((features.interdune_flat * 0.028F) +
+                         (fields.basin_influence[sample] * 0.018F) + (flow_t * 0.012F));
             const float deposition =
                 saturate((features.slip_face * 0.30F) + (features.interdune_flat * 0.36F) +
                          (features.wind_shadow * 0.20F)) *
@@ -1732,11 +1747,9 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
             fields.max_deposition = std::max(fields.max_deposition, deposition);
 
             const float material_noise =
-                fbm((p.x * 7.0F) + 5.0F, (p.z * 7.0F) - 9.0F, config.seed + 3231U, 4) * 0.5F +
-                0.5F;
+                fbm((p.x * 7.0F) + 5.0F, (p.z * 7.0F) - 9.0F, config.seed + 3231U, 4) * 0.5F + 0.5F;
             const float crust_patch =
-                fbm((p.x * 10.0F) - 15.0F, (p.z * 10.0F) + 21.0F, config.seed + 3233U, 3) *
-                    0.5F +
+                fbm((p.x * 10.0F) - 15.0F, (p.z * 10.0F) + 21.0F, config.seed + 3233U, 3) * 0.5F +
                 0.5F;
             const float sand = (1.15F + deposition * 0.60F + features.dune_crest * 0.22F) *
                                lerp(0.86F, 1.16F, material_noise);
@@ -1757,8 +1770,7 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
             const float shrub_patch = smoothstep(0.28F, 0.58F, vegetation_patch);
             const float shrub =
                 saturate((features.interdune_flat * 0.024F + material.soil * 0.018F + 0.016F) *
-                         shrub_patch *
-                         (1.0F - slope_t));
+                         shrub_patch * (1.0F - slope_t));
             fields.grass_density[sample] = grass;
             fields.shrub_density[sample] = shrub;
             fields.tree_density[sample] = 0.0F;
@@ -1766,6 +1778,7 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
         }
     }
 
+    populate_fallback_driver_fields(fields);
     validate_terrain_lab_fields(fields);
     return fields;
 }
@@ -1826,11 +1839,10 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
                 (features.glacier_floor * 0.034F + features.hanging_valley * 0.012F) *
                 alpine_elevation_scale_m * config.process_strength;
             const float wall_polish = features.valley_wall * smoothstep(0.15F, 0.58F, slope_t) *
-                                      alpine_elevation_scale_m * 0.010F *
-                                      config.process_strength;
-            const float moraine_deposit =
-                features.moraine_influence * (1.0F - slope_t * 0.55F) *
-                alpine_elevation_scale_m * 0.060F * config.process_strength;
+                                      alpine_elevation_scale_m * 0.010F * config.process_strength;
+            const float moraine_deposit = features.moraine_influence * (1.0F - slope_t * 0.55F) *
+                                          alpine_elevation_scale_m * 0.060F *
+                                          config.process_strength;
             const float cirque_scour = features.cirque_influence * alpine_elevation_scale_m *
                                        0.030F * config.process_strength;
             fields.process_delta_m[sample] =
@@ -1898,23 +1910,19 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
             const float flow_t = std::log1p(fields.flow_accumulation[sample]) * inv_log_count;
             const float wetness = saturate((fields.channel_influence[sample] * 0.18F) +
                                            (features.glacier_floor * 0.10F) +
-                                           (features.basin_influence * 0.06F) +
-                                           (flow_t * 0.08F));
-            const float deposition =
-                saturate((features.moraine_influence * 0.58F) +
-                         (features.glacier_floor * (1.0F - slope_t) * 0.20F) +
-                         (fields.channel_influence[sample] * 0.12F));
+                                           (features.basin_influence * 0.06F) + (flow_t * 0.08F));
+            const float deposition = saturate((features.moraine_influence * 0.58F) +
+                                              (features.glacier_floor * (1.0F - slope_t) * 0.20F) +
+                                              (fields.channel_influence[sample] * 0.12F));
             fields.wetness[sample] = wetness;
             fields.deposition[sample] = deposition;
             fields.max_wetness = std::max(fields.max_wetness, wetness);
             fields.max_deposition = std::max(fields.max_deposition, deposition);
 
             const float material_noise =
-                fbm((p.x * 7.0F) - 4.0F, (p.z * 7.0F) + 6.0F, config.seed + 3431U, 4) * 0.5F +
-                0.5F;
+                fbm((p.x * 7.0F) - 4.0F, (p.z * 7.0F) + 6.0F, config.seed + 3431U, 4) * 0.5F + 0.5F;
             const float scree_patch =
-                fbm((p.x * 13.0F) + 18.0F, (p.z * 13.0F) - 12.0F, config.seed + 3433U, 3) *
-                    0.5F +
+                fbm((p.x * 13.0F) + 18.0F, (p.z * 13.0F) - 12.0F, config.seed + 3433U, 3) * 0.5F +
                 0.5F;
             const float snow =
                 (smoothstep(0.54F, 0.88F, elevation_t) * (1.0F - slope_t * 0.45F) +
@@ -1924,20 +1932,18 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
             const float rock = (slope_t * 0.82F + fields.ridge_influence[sample] * 0.30F +
                                 features.valley_wall * 0.24F + features.peak_influence * 0.18F) *
                                (1.0F - snow * 0.58F) * lerp(0.82F, 1.22F, material_noise);
-            const float scree = smoothstep(0.28F, 0.78F, slope_t) *
-                                (1.0F - smoothstep(0.78F, 1.0F, slope_t)) *
-                                (features.valley_wall * 0.46F + fields.ridge_influence[sample] * 0.22F +
-                                 features.moraine_influence * 0.30F +
-                                 features.peak_influence * 0.14F) *
-                                (1.0F - snow * 0.45F) * lerp(0.72F, 1.30F, scree_patch);
+            const float scree =
+                smoothstep(0.28F, 0.78F, slope_t) * (1.0F - smoothstep(0.78F, 1.0F, slope_t)) *
+                (features.valley_wall * 0.46F + fields.ridge_influence[sample] * 0.22F +
+                 features.moraine_influence * 0.30F + features.peak_influence * 0.14F) *
+                (1.0F - snow * 0.45F) * lerp(0.72F, 1.30F, scree_patch);
             const float soil =
-                (0.20F + deposition * 0.52F + (1.0F - slope_t) * 0.14F) *
-                (1.0F - snow * 0.78F);
+                (0.20F + deposition * 0.52F + (1.0F - slope_t) * 0.14F) * (1.0F - snow * 0.78F);
             const float meadow = wetness * (1.0F - slope_t) * (1.0F - snow * 0.86F) *
                                  (0.28F + features.glacier_floor * 0.20F);
             const float forest = smoothstep(0.18F, 0.46F, wetness) * (1.0F - slope_t) *
-                                 (1.0F - smoothstep(0.42F, 0.72F, elevation_t)) *
-                                 (1.0F - snow) * 0.26F;
+                                 (1.0F - smoothstep(0.42F, 0.72F, elevation_t)) * (1.0F - snow) *
+                                 0.26F;
             const TerrainLabMaterialMask material =
                 normalized_material_mask(rock, soil, scree, meadow, forest, snow, 0.0F);
             fields.material_masks[sample] = material;
@@ -1955,6 +1961,7 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
         }
     }
 
+    populate_fallback_driver_fields(fields);
     validate_terrain_lab_fields(fields);
     return fields;
 }

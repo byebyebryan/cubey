@@ -61,6 +61,10 @@ struct TerrainLabFieldSummary {
 struct TerrainLabFieldData {
     TerrainLabGridDesc desc{};
     std::vector<float> height_m{};
+    std::vector<float> driver_base_potential{};
+    std::vector<float> driver_relief_potential{};
+    std::vector<float> driver_process_potential{};
+    std::vector<float> driver_selection_mask{};
     std::vector<float> structure_height_m{};
     std::vector<float> process_delta_m{};
     std::vector<float> detail_height_m{};
@@ -99,13 +103,11 @@ struct TerrainLabFieldData {
 };
 
 [[nodiscard]] std::size_t terrain_lab_sample_count(const TerrainLabGridDesc& desc);
-[[nodiscard]] float terrain_lab_grid_sample_x_m(const TerrainLabGridDesc& desc,
-                                                std::uint32_t x);
-[[nodiscard]] float terrain_lab_grid_sample_z_m(const TerrainLabGridDesc& desc,
-                                                std::uint32_t y);
+[[nodiscard]] float terrain_lab_grid_sample_x_m(const TerrainLabGridDesc& desc, std::uint32_t x);
+[[nodiscard]] float terrain_lab_grid_sample_z_m(const TerrainLabGridDesc& desc, std::uint32_t y);
 void validate_terrain_lab_fields(const TerrainLabFieldData& fields);
-[[nodiscard]] TerrainLabFieldSummary summarize_terrain_lab_fields(
-    const TerrainLabFieldData& fields);
+[[nodiscard]] TerrainLabFieldSummary
+summarize_terrain_lab_fields(const TerrainLabFieldData& fields);
 [[nodiscard]] TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config);
 
 } // namespace cubey::projects::terrain_lab

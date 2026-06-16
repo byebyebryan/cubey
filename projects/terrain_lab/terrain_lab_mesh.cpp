@@ -71,6 +71,7 @@ namespace {
         .vegetation = vegetation,
         .influences = {0.0F, 0.0F, 0.0F, 0.0F},
         .feature_tags = {0.0F, 0.0F, -1.0F, -1.0F},
+        .drivers = {0.0F, 0.0F, 0.0F, 0.0F},
     };
 }
 
@@ -195,8 +196,7 @@ cubey::render::MeshConfig TerrainLabMeshData::mesh_config() const {
 cubey::render::VertexInputLayout terrain_lab_vertex_input_layout() {
     return {
         .vertex_bindings = {cubey::render::vertex_input_binding(
-            0, static_cast<std::uint32_t>(sizeof(TerrainLabVertex)),
-            VK_VERTEX_INPUT_RATE_VERTEX)},
+            0, static_cast<std::uint32_t>(sizeof(TerrainLabVertex)), VK_VERTEX_INPUT_RATE_VERTEX)},
         .attributes =
             {
                 cubey::render::vertex_input_attribute(
@@ -229,6 +229,9 @@ cubey::render::VertexInputLayout terrain_lab_vertex_input_layout() {
                 cubey::render::vertex_input_attribute(
                     9, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
                     offset_of(offsetof(TerrainLabVertex, feature_tags))),
+                cubey::render::vertex_input_attribute(
+                    10, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
+                    offset_of(offsetof(TerrainLabVertex, drivers))),
             },
     };
 }
@@ -254,8 +257,7 @@ TerrainLabMeshData make_terrain_lab_mesh(const TerrainLabFieldData& fields) {
             const float world_x = terrain_lab_grid_sample_x_m(fields.desc, x);
             const std::size_t sample = fields.index(x, y);
             const TerrainLabMaterialMask mask = fields.material_masks[sample];
-            const float height_t =
-                (fields.height_m[sample] - fields.min_height_m) / height_range;
+            const float height_t = (fields.height_m[sample] - fields.min_height_m) / height_range;
             mesh.vertices.push_back({
                 .position = {world_x, fields.height_m[sample], world_z},
                 .normal = terrain_lab_normal_at(fields, x, y),
@@ -303,14 +305,20 @@ TerrainLabMeshData make_terrain_lab_mesh(const TerrainLabFieldData& fields) {
                         static_cast<float>(fields.watershed_id[sample]),
                         static_cast<float>(fields.watershed_count),
                     },
+                .drivers =
+                    {
+                        fields.driver_base_potential[sample],
+                        fields.driver_relief_potential[sample],
+                        fields.driver_process_potential[sample],
+                        fields.driver_selection_mask[sample],
+                    },
             });
         }
     }
     mesh.terrain_vertex_count = mesh.vertices.size();
 
-    const std::size_t quad_count =
-        static_cast<std::size_t>(fields.desc.width - 1U) *
-        static_cast<std::size_t>(fields.desc.height - 1U);
+    const std::size_t quad_count = static_cast<std::size_t>(fields.desc.width - 1U) *
+                                   static_cast<std::size_t>(fields.desc.height - 1U);
     if (quad_count > std::numeric_limits<std::uint32_t>::max() / 6U) {
         throw std::runtime_error("terrain lab mesh exceeds uint32 index range");
     }
