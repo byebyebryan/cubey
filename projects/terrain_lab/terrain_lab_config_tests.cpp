@@ -38,6 +38,10 @@ void require_near(float value, float expected, float tolerance, const char* mess
     require(value >= expected - tolerance && value <= expected + tolerance, message);
 }
 
+void require_near(float value, float expected, float tolerance, const std::string& message) {
+    require(value >= expected - tolerance && value <= expected + tolerance, message);
+}
+
 float material_sum(const cubey::projects::terrain_lab::TerrainLabMaterialMask& mask) {
     return mask.rock + mask.soil + mask.scree + mask.meadow + mask.forest + mask.snow + mask.sand;
 }
@@ -191,6 +195,58 @@ inspect_field_samples(const cubey::projects::terrain_lab::TerrainLabFieldData& f
         }
     }
     return stats;
+}
+
+struct DriverFieldStats {
+    float min_base = 0.0F;
+    float max_base = 0.0F;
+    float min_relief = 0.0F;
+    float max_relief = 0.0F;
+    float min_process = 0.0F;
+    float max_process = 0.0F;
+    float min_selection = 0.0F;
+    float max_selection = 0.0F;
+};
+
+DriverFieldStats
+inspect_driver_fields(const cubey::projects::terrain_lab::TerrainLabFieldData& fields) {
+    require(fields.sample_count() > 0U, "terrain lab driver fields require samples");
+    DriverFieldStats stats{
+        .min_base = fields.driver_base_potential.front(),
+        .max_base = fields.driver_base_potential.front(),
+        .min_relief = fields.driver_relief_potential.front(),
+        .max_relief = fields.driver_relief_potential.front(),
+        .min_process = fields.driver_process_potential.front(),
+        .max_process = fields.driver_process_potential.front(),
+        .min_selection = fields.driver_selection_mask.front(),
+        .max_selection = fields.driver_selection_mask.front(),
+    };
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        stats.min_base = std::min(stats.min_base, fields.driver_base_potential[index]);
+        stats.max_base = std::max(stats.max_base, fields.driver_base_potential[index]);
+        stats.min_relief = std::min(stats.min_relief, fields.driver_relief_potential[index]);
+        stats.max_relief = std::max(stats.max_relief, fields.driver_relief_potential[index]);
+        stats.min_process = std::min(stats.min_process, fields.driver_process_potential[index]);
+        stats.max_process = std::max(stats.max_process, fields.driver_process_potential[index]);
+        stats.min_selection = std::min(stats.min_selection, fields.driver_selection_mask[index]);
+        stats.max_selection = std::max(stats.max_selection, fields.driver_selection_mask[index]);
+    }
+    return stats;
+}
+
+void require_slice_driver_guardrails(
+    const cubey::projects::terrain_lab::TerrainLabFieldData& fields, const char* slice_name) {
+    const DriverFieldStats stats = inspect_driver_fields(fields);
+    require_near(stats.min_selection, 1.0F, 0.001F,
+                 std::string(slice_name) + " driver selection should use the whole patch");
+    require_near(stats.max_selection, 1.0F, 0.001F,
+                 std::string(slice_name) + " driver selection should not add a footprint");
+    require(stats.max_base - stats.min_base > 0.005F,
+            std::string(slice_name) + " driver base should be inspectable");
+    require(stats.max_relief - stats.min_relief > 0.005F,
+            std::string(slice_name) + " driver relief should be inspectable");
+    require(stats.max_process - stats.min_process > 0.001F,
+            std::string(slice_name) + " driver process should be inspectable");
 }
 
 std::string read_text_file(const std::filesystem::path& path) {
@@ -516,6 +572,7 @@ int main() {
     small.cell_size_m = 64.0F;
     const terrain::TerrainLabFieldData fields = terrain::generate_terrain_lab_fields(small);
     terrain::validate_terrain_lab_fields(fields);
+    require_slice_driver_guardrails(fields, "terrain lab arid slice");
     const float half_extent =
         static_cast<float>(fields.desc.width - 1U) * fields.desc.cell_size_m * 0.5F;
     require(fields.sample_count() == 65U * 65U, "terrain lab fields should match grid dimensions");
@@ -754,6 +811,7 @@ int main() {
     const terrain::TerrainLabFieldData watershed_fields =
         terrain::generate_terrain_lab_fields(watershed_config);
     terrain::validate_terrain_lab_fields(watershed_fields);
+    require_slice_driver_guardrails(watershed_fields, "terrain lab watershed fixture");
     require(watershed_fields.watershed_count == 4U,
             "terrain lab watershed fixture should expose four basins");
     require(watershed_fields.max_channel_distance_m > watershed_fields.desc.cell_size_m,
@@ -842,6 +900,7 @@ int main() {
     const terrain::TerrainLabFieldData dunes_fields =
         terrain::generate_terrain_lab_fields(dunes_config);
     terrain::validate_terrain_lab_fields(dunes_fields);
+    require_slice_driver_guardrails(dunes_fields, "terrain lab dunes sentinel");
     require(dunes_fields.watershed_count == 1U,
             "terrain lab dunes sentinel should use one diagnostic basin");
     require(dunes_fields.max_channel_distance_m > dunes_fields.desc.cell_size_m,
@@ -950,6 +1009,7 @@ int main() {
     const terrain::TerrainLabFieldData glacial_fields =
         terrain::generate_terrain_lab_fields(glacial_config);
     terrain::validate_terrain_lab_fields(glacial_fields);
+    require_slice_driver_guardrails(glacial_fields, "terrain lab glacial sentinel");
     require(glacial_fields.watershed_count == 1U,
             "terrain lab glacial sentinel should use one diagnostic basin");
     require(glacial_fields.max_channel_distance_m > glacial_fields.desc.cell_size_m,
