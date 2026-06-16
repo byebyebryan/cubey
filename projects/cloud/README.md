@@ -18,8 +18,9 @@ Current V1 scope:
 - shared `clouds.*` `RunConfig` options and hand-authored ImGui controls;
 - tunable ambient/direct/phase lighting, final contrast/saturation, sun glare,
   horizon glow, and alpha-aware final resolve strength;
-- configurable static ray-start sampling (`interleaved`, `bayer`, or `off`)
-  with jitter-strength control;
+- configurable static ray-start sampling (`bayer`, `interleaved`, or `off`)
+  with jitter-strength control. The default matches the reference Bayer
+  ray-start pattern to break up march-step banding;
 - diagnostics for weather, weather edge, weather bias, base/detail density,
   density, transmittance, cloud type, visible density/cloud type, lighting,
   shadow, cloud alpha, distance, metadata distance/alpha/confidence, metadata

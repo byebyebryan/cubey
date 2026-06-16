@@ -303,10 +303,30 @@ void test_weather_preset_defaults() {
     cubey::RunConfig run_config{};
     cubey::projects::cloud::CloudsConfig config =
         cubey::projects::cloud::clouds_config_from_run_config(run_config);
+    require(config.sampling_mode == cubey::projects::cloud::CloudsSamplingMode::Bayer,
+            "default sampling should use Bayer ray starts");
+    require_near(config.jitter_strength, 1.0F, 0.001F,
+                 "default jitter should match reference Bayer strength");
     require_near(config.weather_influence, 0.0F, 0.001F,
                  "default weather influence should preserve local scatter");
     require_near(config.vertical_shear_fraction, 0.0F, 0.001F,
                  "default vertical shear should be opt-in");
+    require_near(config.horizon_strength, 0.48F, 0.001F,
+                 "default horizon fill should be restrained");
+    require_near(config.ambient_strength, 0.82F, 0.001F,
+                 "default ambient strength should leave room for contrast");
+    require_near(config.direct_strength, 1.28F, 0.001F,
+                 "default direct light should add cloud contrast");
+    require_near(config.phase_strength, 1.14F, 0.001F,
+                 "default phase light should add edge color");
+    require_near(config.final_contrast, 1.17F, 0.001F,
+                 "default final contrast should avoid grey wash");
+    require_near(config.final_saturation, 1.12F, 0.001F,
+                 "default final saturation should keep sky color");
+    require_near(config.resolve_strength, 0.48F, 0.001F,
+                 "default resolve should preserve density detail");
+    require_near(config.horizon_glow_strength, 0.55F, 0.001F,
+                 "default horizon glow should be restrained");
 
     run_config.clouds.weather_preset = "overcast";
 

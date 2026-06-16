@@ -143,6 +143,8 @@ Initial scope:
 - deterministic static sampling controls for interleaved-gradient, Bayer, and
   center-of-step ray starts, plus a metadata-aware final resolve that uses
   opacity, mean distance, and confidence while leaving `raw-final` unfiltered;
+- Bayer ray-start jitter should remain the default static anti-banding path
+  until temporal reprojection or blue-noise sampling is available;
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;

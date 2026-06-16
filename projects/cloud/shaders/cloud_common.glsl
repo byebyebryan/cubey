@@ -188,15 +188,15 @@ vec3 cloud_water_context(vec3 direction) {
     vec3 reflection_dir = reflect(direction, up);
     vec3 reflected_sky = cloud_sky_color(reflection_dir);
     vec3 deep_water = vec3(0.025, 0.100, 0.135);
-    vec3 shallow_haze = vec3(0.260, 0.380, 0.380);
-    float horizon = smoothstep(-0.28, -0.015, view_height);
+    vec3 shallow_haze = vec3(0.420, 0.540, 0.560);
+    float horizon = smoothstep(-0.42, -0.010, view_height);
     float fresnel = pow(1.0 - clamp(dot(-direction, up), 0.0, 1.0), 5.0);
     float glitter_mask = smoothstep(0.54, 0.92, wave);
     float sun_glitter = pow(max(dot(reflection_dir, sun_dir), 0.0), 220.0) *
                         (0.35 + 0.65 * glitter_mask);
 
     vec3 water = mix(deep_water, reflected_sky, 0.18 + 0.52 * fresnel);
-    water = mix(water, shallow_haze, horizon * 0.45);
+    water = mix(water, shallow_haze, horizon * 0.68);
     water += vec3(1.0, 0.82, 0.52) * sun_glitter * params.sun_direction_intensity.w * 5.0;
     water += vec3(wave - 0.5) * 0.018;
     return max(water, vec3(0.0));
@@ -209,7 +209,7 @@ vec3 cloud_background(vec3 direction) {
 
     if (view_height < -0.015) {
         vec3 water = cloud_water_context(direction);
-        sky = mix(water, sky, smoothstep(-0.045, 0.018, view_height));
+        sky = mix(water, sky, smoothstep(-0.075, 0.045, view_height));
     }
     return sky;
 }
