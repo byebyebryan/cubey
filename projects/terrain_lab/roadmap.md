@@ -212,9 +212,11 @@ Current implementation notes:
   scrub density, and very low tree density;
 - desert dunes use explicit wind/sand/relief driver fields instead of locally
   authored dune streaks;
-- arid mesa canyon and alpine glacial valley now seed explicit base, relief,
-  process, and full-patch selection drivers before feature masks and process
-  response;
+- arid mesa canyon should replace its visible-patch line guide with a hidden
+  regional drainage-network driver, then crop a local canyon window from that
+  system;
+- alpine glacial valley now seeds explicit base, relief, process, and
+  full-patch selection drivers before feature masks and process response;
 - hydrology remains analysis-only and avoids a toy erosion solver;
 - the material vocabulary now includes sand for wind-shaped terrain, while snow
   continues to stand in for snow/ice in the glacial sentinel.
@@ -226,6 +228,8 @@ Success criteria:
   driver fields rather than hand-placed streaks or lines;
 - driver debug views do not expose centered disks, ellipses, quadrants, or
   other artificial slice footprints;
+- arid channels read as a canyon system with trunk and tributary structure, not
+  one regular centerline across the patch;
 - glacial terrain reads through valley shape, snow/ice, and deposition rather
   than river carving;
 - shared fields remain useful across all four sentinels without becoming

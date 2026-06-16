@@ -152,15 +152,18 @@ The feature graph does not have to be geologically complete. It only has to
 carry enough structure that valleys, ridges, water, and materials line up in the
 rendered result.
 
-The current arid core is still a lightweight local-basin model rather than a
-full geomorphology graph. It now exposes explicit base, relief, process, and
-full-patch selection drivers before deriving mesa divide/rim influence, canyon
-floor, dry washes, talus, and bench masks. The temperate watershed fixture emits
-four deterministic basin ids plus soft divide and channel-guide influences. Both
-paths recompute stronger channel influence from initial flow accumulation, so
-guide channels bias drainage instead of single-handedly carving every valley.
-Those fields guide structure, process, material, and diagnostic rendering, while
-richer drainage connectivity remains a later refinement.
+The arid core should be regional and network-first. It should build a hidden
+macro region larger than the final view, route drainage through base elevation,
+runoff, relief, and erosion-resistance fields, then select a local canyon window
+from that network. Canyon floors, tributaries, walls, rims, benches, and talus
+should come from channel accumulation, stream power, incision depth, and
+distance-to-network rather than from an authored line across the visible patch.
+The temperate watershed fixture emits four deterministic basin ids plus soft
+divide and channel-guide influences. Both paths recompute stronger channel
+influence from initial flow accumulation, so guide channels bias drainage
+instead of single-handedly carving every valley. Those fields guide structure,
+process, material, and diagnostic rendering, while richer drainage connectivity
+remains a later refinement.
 
 The arid, dunes, and alpine sentinels now have explicit driver fields. They are
 still visual pressure tests rather than production terrain systems, but the

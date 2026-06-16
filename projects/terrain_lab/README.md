@@ -78,6 +78,9 @@ The active first slice is an arid mesa canyon:
 - 4-16 km local region.
 - Mesa benches, canyon rims, dry washes, and valley floors generated before
   detail noise.
+- Canyon systems should come from a hidden broader macro region: base terrain,
+  runoff, resistance, routed drainage, stream power, and incision choose the
+  local trunk/tributary window instead of a line authored across the patch.
 - Flow accumulation and channel fields used as dry-wash structure rather than
   a wet river network.
 - Slope-driven rock, soil, scree, sparse meadow/scrub, and no-snow material
