@@ -2,7 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 // TerrainEngine-OpenGL reference port.
-// Weather map channels: coverage, cloud type, spare detail, alpha.
+// Weather map channels: authored coverage, cloud type, edge breakup, local scatter.
 
 #include "cloud_noise_common.glsl"
 #include "cloud_weather_common.glsl"
@@ -94,5 +94,6 @@ void main() {
     float edge_breakup =
         clamp(mix(secondary, max(weighted_cells, weighted_streaks), 0.48), 0.0, 1.0);
     imageStore(out_weather, pixel,
-               vec4(clamp(coverage, 0.0, 1.0), cloud_type, edge_breakup, 1.0));
+               vec4(clamp(coverage, 0.0, 1.0), cloud_type, edge_breakup,
+                    clamp(broad, 0.0, 1.0)));
 }

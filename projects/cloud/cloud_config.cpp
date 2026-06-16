@@ -21,7 +21,7 @@ struct CloudsWeatherPresetSettings {
     float coverage = 0.0F;
     float density = 0.0F;
     float weather_scale_km = 0.0F;
-    float vertical_shear_fraction = 0.14F;
+    float vertical_shear_fraction = 0.0F;
     float wind_speed_mps = 0.0F;
     float bottom_altitude_m = kCloudsDefaultBottomAltitudeM;
     float top_altitude_m = kCloudsDefaultTopAltitudeM;
@@ -34,7 +34,7 @@ struct CloudsWeatherPresetSettings {
     case CloudsWeatherPreset::FairWeather:
         return {.coverage = 0.30F,
                 .density = 0.016F,
-                .weather_scale_km = 105.0F,
+                .weather_scale_km = 260.0F,
                 .wind_speed_mps = 260.0F,
                 .bottom_altitude_m = 5000.0F,
                 .top_altitude_m = 17000.0F,
@@ -42,7 +42,7 @@ struct CloudsWeatherPresetSettings {
     case CloudsWeatherPreset::BrokenCumulus:
         return {.coverage = 0.45F,
                 .density = 0.020F,
-                .weather_scale_km = 85.0F,
+                .weather_scale_km = 210.0F,
                 .wind_speed_mps = 450.0F,
                 .bottom_altitude_m = 5000.0F,
                 .top_altitude_m = 22000.0F,
@@ -50,7 +50,7 @@ struct CloudsWeatherPresetSettings {
     case CloudsWeatherPreset::OvercastStratus:
         return {.coverage = 0.72F,
                 .density = 0.018F,
-                .weather_scale_km = 115.0F,
+                .weather_scale_km = 280.0F,
                 .wind_speed_mps = 320.0F,
                 .bottom_altitude_m = 3000.0F,
                 .top_altitude_m = 12000.0F,
@@ -58,7 +58,7 @@ struct CloudsWeatherPresetSettings {
     case CloudsWeatherPreset::StormCells:
         return {.coverage = 0.64F,
                 .density = 0.032F,
-                .weather_scale_km = 42.0F,
+                .weather_scale_km = 105.0F,
                 .wind_speed_mps = 650.0F,
                 .bottom_altitude_m = 2500.0F,
                 .top_altitude_m = 24000.0F,
@@ -66,7 +66,7 @@ struct CloudsWeatherPresetSettings {
     case CloudsWeatherPreset::HighCirrus:
         return {.coverage = 0.36F,
                 .density = 0.010F,
-                .weather_scale_km = 145.0F,
+                .weather_scale_km = 360.0F,
                 .wind_speed_mps = 700.0F,
                 .bottom_altitude_m = 11000.0F,
                 .top_altitude_m = 22000.0F,

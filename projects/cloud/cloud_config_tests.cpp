@@ -301,10 +301,16 @@ void test_camera_preset_defaults() {
 
 void test_weather_preset_defaults() {
     cubey::RunConfig run_config{};
-    run_config.clouds.weather_preset = "overcast";
-
     cubey::projects::cloud::CloudsConfig config =
         cubey::projects::cloud::clouds_config_from_run_config(run_config);
+    require_near(config.weather_influence, 0.0F, 0.001F,
+                 "default weather influence should preserve local scatter");
+    require_near(config.vertical_shear_fraction, 0.0F, 0.001F,
+                 "default vertical shear should be opt-in");
+
+    run_config.clouds.weather_preset = "overcast";
+
+    config = cubey::projects::cloud::clouds_config_from_run_config(run_config);
     require(config.weather_preset ==
                 cubey::projects::cloud::CloudsWeatherPreset::OvercastStratus,
             "overcast weather preset should map from run config");
@@ -312,8 +318,10 @@ void test_weather_preset_defaults() {
             "overcast weather preset should select stratus style");
     require_near(config.coverage, 0.72F, 0.001F,
                  "overcast weather preset should set coverage");
-    require_near(config.weather_scale_km, 115.0F, 0.001F,
+    require_near(config.weather_scale_km, 280.0F, 0.001F,
                  "overcast weather preset should set scale");
+    require_near(config.vertical_shear_fraction, 0.0F, 0.001F,
+                 "overcast weather preset should keep vertical shear opt-in");
     require_near(config.bottom_altitude_m, 3000.0F, 0.001F,
                  "overcast weather preset should set bottom altitude");
     require_near(config.top_altitude_m, 12000.0F, 0.001F,
@@ -336,7 +344,7 @@ void test_weather_preset_defaults() {
             "high cirrus weather preset should select cloud style");
     require_near(config.bottom_altitude_m, 11000.0F, 0.001F,
                  "high cirrus weather preset should set bottom altitude");
-    require_near(config.weather_scale_km, 145.0F, 0.001F,
+    require_near(config.weather_scale_km, 360.0F, 0.001F,
                  "high cirrus weather preset should set scale");
 }
 

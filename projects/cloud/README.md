@@ -8,11 +8,11 @@ Current V1 scope:
 
 - generated 128^3 Perlin-Worley base noise;
 - generated 32^3 Worley erosion/detail noise;
-- generated 1024^2 weather map with coverage, cloud type, and edge-breakup
-  channels that bias the local 3D density field;
+- generated 1024^2 weather map with authored coverage, cloud type,
+  edge-breakup, and local-scatter channels that bias the local 3D density field;
 - spherical shell raymarch with height gradients, detail erosion, Beer
   transmittance, powder response, and a short light march;
-- world-scale weather/type sampling with separate vertical shear control;
+- world-scale weather/type sampling with separate opt-in vertical shear control;
 - separate cloud product and composite passes declared through
   `RenderGraphBuilder`;
 - shared `clouds.*` `RunConfig` options and hand-authored ImGui controls;
@@ -62,8 +62,8 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --cloud-final-contrast 1.15 --cloud-resolve-strength 0.45
 ./build/dev/projects/cloud/cloud --cloud-weather-scale-km 85
 ./build/dev/projects/cloud/cloud --cloud-weather-softness 0.22
-./build/dev/projects/cloud/cloud --cloud-weather-influence 0.35
 ./build/dev/projects/cloud/cloud --cloud-weather-influence 0
+./build/dev/projects/cloud/cloud --cloud-weather-influence 0.35
 ./build/dev/projects/cloud/cloud --cloud-weather-influence 1
 ./build/dev/projects/cloud/cloud --cloud-vertical-shear-fraction 0.14
 ./build/dev/projects/cloud/cloud --cloud-sampling-mode bayer
@@ -89,7 +89,8 @@ Controls:
   powder response.
 - `Weather softness`: damps broad weather contrast before local density shaping.
 - `Weather influence`: controls how strongly the broad weather map biases local
-  shape thresholds, cloud type, and edge erosion.
+  shape thresholds, cloud type, and edge erosion. The default is `0`, preserving
+  the local noise-scattered baseline while authored weather remains opt-in.
 - `Sampling`: ray-start sampling mode and jitter amount.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.

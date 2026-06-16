@@ -124,12 +124,13 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
         height_fraction * WIND_DIRECTION * top_offset + WIND_DIRECTION * params.weather.w;
     vec2 shape_uv = cloud_project_uv(position);
     vec2 moving_shape_uv = cloud_project_uv(position + animation);
-    vec2 moving_weather_uv = cloud_weather_uv(position + animation);
-    vec3 weather = texture(weather_texture, moving_weather_uv).rgb;
-    float raw_weather = clamp(weather.r, 0.0, 1.0);
+    vec4 local_weather = texture(weather_texture, moving_shape_uv);
+    vec4 authored_weather_sample = texture(weather_texture, cloud_weather_uv(position + animation));
+    float authored_weather = clamp(authored_weather_sample.r, 0.0, 1.0);
+    float local_scatter = clamp(local_weather.a, 0.0, 1.0);
     float weather_influence = clamp(params.sampling_options.w, 0.0, 1.0);
-    float cloud_type = mix(0.62, weather.g, weather_influence);
-    float weather_edge = weather.b;
+    float cloud_type = mix(1.0, authored_weather_sample.g, weather_influence);
+    float weather_edge = authored_weather_sample.b;
 
     vec4 low_frequency =
         textureLod(base_noise_texture, vec3(shape_uv * crispiness, height_fraction), lod);
@@ -142,13 +143,11 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
 
     float global_coverage = clamp(params.weather.x, 0.0, 1.0);
     float softness = clamp(params.sampling_options.z, 0.02, 0.60);
-    float softened_weather = mix(raw_weather, 0.5, softness);
-    float weather_bias = mix(0.5, softened_weather, weather_influence);
-    float local_coverage = clamp(global_coverage * mix(0.28, 1.42, weather_bias), 0.0, 1.0);
-    float coverage_threshold = clamp(1.0 - local_coverage * 1.25, 0.04, 0.96);
-    float coverage_gain = mix(0.72, 1.12, local_coverage);
+    float softened_authored_weather = mix(authored_weather, 0.5, softness);
+    float weather_bias = mix(local_scatter, softened_authored_weather, weather_influence);
+    float local_coverage = clamp(global_coverage * weather_bias, 0.0, 1.0);
     float base_with_coverage =
-        cloud_remap(base_cloud, coverage_threshold, 1.0, 0.0, 1.0) * coverage_gain;
+        cloud_remap(base_cloud, local_coverage, 1.0, 0.0, 1.0) * local_coverage;
     float detail_density = 0.0;
 
     if (expensive) {
@@ -162,7 +161,9 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
         detail_density = high_modifier;
         float edge_bias = mix(0.5, weather_edge, weather_influence);
         float erosion_strength =
-            clamp(params.weather_feature_weights.w * mix(0.72, 1.18, edge_bias), 0.0, 1.0);
+            mix(1.0,
+                clamp(params.weather_feature_weights.w * mix(0.72, 1.18, edge_bias), 0.0, 1.0),
+                weather_influence);
         float eroded = base_with_coverage -
                        high_modifier * (1.0 - base_with_coverage) * erosion_strength;
         float remapped =
@@ -171,8 +172,9 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     }
 
     float density = clamp(base_with_coverage, 0.0, 1.0);
-    return DensitySample(density, clamp(base_cloud, 0.0, 1.0), detail_density, raw_weather,
-                         cloud_type, weather_edge, weather_bias, height_fraction);
+    return DensitySample(density, clamp(base_cloud, 0.0, 1.0), detail_density,
+                         authored_weather, cloud_type, weather_edge, weather_bias,
+                         height_fraction);
 }
 
 float cloud_light_transmittance(vec3 start, float step_size, vec3 light_dir,

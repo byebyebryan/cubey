@@ -69,8 +69,10 @@ Keep these ideas:
   over local density instead of as final opacity masks;
 - cloud-type height gradients and coverage/density shaping;
 - separate authored weather channels for broad coverage, cloud type, and edge
-  softness/breakup, with an explicit influence control that can fade back to
-  local noise-driven scatter;
+  softness/breakup, plus a local scatter channel so the influence control can
+  fade back to the old noise-driven scatter;
+- default production tuning should preserve the local scatter endpoint until
+  authored weather shapes are proven better than the old random distribution;
 - spherical cloud-shell intersections;
 - Beer transmittance, powder/edge response, and a short light march;
 - source-like debug views for weather, base density, detail density, density,
@@ -130,8 +132,8 @@ Initial scope:
 - raw weather/type diagnostics plus ray-marched visible density/type diagnostics
   so map artifacts and visible artifacts can be separated before changing
   production shaping;
-- independent vertical shear control to avoid view-aligned slabs without making
-  weather scale do two jobs;
+- independent, opt-in vertical shear control so broad weather scale does not
+  smear local cloud cells into slabs;
 - one clear surface camera and one high camera before orbit polish;
 - cloud product target containing linear radiance and transmittance;
 - metadata target for mean distance, alpha/confidence, and any reconstruction
