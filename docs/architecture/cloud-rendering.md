@@ -145,6 +145,10 @@ Initial scope:
   opacity, mean distance, and confidence while leaving `raw-final` unfiltered;
 - Bayer ray-start jitter should remain the default static anti-banding path
   until temporal reprojection or blue-noise sampling is available;
+- active cloud now has a compute temporal resolve for the final view: the ray
+  march writes current product/metadata, a ping-pong history pass reprojects by
+  mean cloud distance, clamps against the current neighborhood, and resets on
+  incompatible cloud parameter changes;
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;

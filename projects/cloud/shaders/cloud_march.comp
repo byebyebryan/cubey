@@ -68,14 +68,25 @@ float cloud_interleaved_gradient_noise(ivec2 pixel) {
     return fract(52.9829189 * fract(0.06711056 * p.x + 0.00583715 * p.y));
 }
 
+ivec2 cloud_temporal_pixel(ivec2 pixel) {
+    if (params.temporal_options.y < 0.5) {
+        return pixel;
+    }
+    int frame = int(params.temporal_options.x + 0.5);
+    ivec2 offset = ivec2((frame * 5) & 3, (frame * 3) & 3);
+    return pixel + offset;
+}
+
 float cloud_ray_jitter(ivec2 pixel) {
     int mode = int(params.sampling_options.x + 0.5);
     float strength = clamp(params.sampling_options.y, 0.0, 1.0);
+    ivec2 temporal_pixel = cloud_temporal_pixel(pixel);
     float jitter = 0.5;
     if (mode == CLOUD_SAMPLING_INTERLEAVED) {
-        jitter = cloud_interleaved_gradient_noise(pixel);
+        jitter = cloud_interleaved_gradient_noise(
+            temporal_pixel + ivec2(int(params.temporal_options.x + 0.5) * 17, 0));
     } else if (mode == CLOUD_SAMPLING_BAYER) {
-        jitter = BAYER[(pixel.y & 3) * 4 + (pixel.x & 3)];
+        jitter = BAYER[(temporal_pixel.y & 3) * 4 + (temporal_pixel.x & 3)];
     } else if (mode == CLOUD_SAMPLING_OFF) {
         jitter = 0.5;
     }
