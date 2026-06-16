@@ -717,6 +717,58 @@ int main() {
             "terrain lab arid canyon should retain exposed rock and scree walls");
     require(arid_mean_ridge_rock_scree > arid_mean_channel_scree + 0.10F,
             "terrain lab arid canyon should favor talus and rock on walls over wash floors");
+    std::size_t arid_driver_ridge_count = 0;
+    std::size_t arid_driver_channel_count = 0;
+    std::size_t arid_driver_non_channel_count = 0;
+    std::size_t arid_driver_high_relief_count = 0;
+    double arid_driver_ridge_relief_sum = 0.0;
+    double arid_driver_channel_relief_sum = 0.0;
+    double arid_driver_channel_process_sum = 0.0;
+    double arid_driver_non_channel_process_sum = 0.0;
+    double arid_driver_high_relief_height_sum = 0.0;
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        const float relief = fields.driver_relief_potential[index];
+        const float process = fields.driver_process_potential[index];
+        if (fields.ridge_influence[index] > 0.45F && fields.channel_influence[index] < 0.35F) {
+            arid_driver_ridge_relief_sum += relief;
+            ++arid_driver_ridge_count;
+        }
+        if (fields.channel_influence[index] > 0.45F) {
+            arid_driver_channel_relief_sum += relief;
+            arid_driver_channel_process_sum += process;
+            ++arid_driver_channel_count;
+        }
+        if (fields.channel_influence[index] < 0.05F && fields.divide_influence[index] < 0.25F) {
+            arid_driver_non_channel_process_sum += process;
+            ++arid_driver_non_channel_count;
+        }
+        if (relief > 0.38F) {
+            arid_driver_high_relief_height_sum += fields.height_m[index];
+            ++arid_driver_high_relief_count;
+        }
+    }
+    require(arid_driver_ridge_count > 16U && arid_driver_channel_count > 16U,
+            "terrain lab arid driver should produce enough ridge and channel samples");
+    require(arid_driver_non_channel_count > 16U,
+            "terrain lab arid driver should produce enough non-channel comparison samples");
+    require(arid_driver_high_relief_count > 16U,
+            "terrain lab arid driver should produce enough high-relief samples");
+    const float arid_mean_ridge_driver_relief = static_cast<float>(
+        arid_driver_ridge_relief_sum / static_cast<double>(arid_driver_ridge_count));
+    const float arid_mean_channel_driver_relief = static_cast<float>(
+        arid_driver_channel_relief_sum / static_cast<double>(arid_driver_channel_count));
+    const float arid_mean_channel_driver_process = static_cast<float>(
+        arid_driver_channel_process_sum / static_cast<double>(arid_driver_channel_count));
+    const float arid_mean_non_channel_driver_process = static_cast<float>(
+        arid_driver_non_channel_process_sum / static_cast<double>(arid_driver_non_channel_count));
+    const float arid_mean_high_relief_height = static_cast<float>(
+        arid_driver_high_relief_height_sum / static_cast<double>(arid_driver_high_relief_count));
+    require(arid_mean_ridge_driver_relief > arid_mean_channel_driver_relief + 0.04F,
+            "terrain lab arid canyon walls should derive from higher relief driver values");
+    require(arid_mean_channel_driver_process > arid_mean_non_channel_driver_process + 0.03F,
+            "terrain lab arid washes should derive from higher process driver values");
+    require(arid_mean_high_relief_height > arid_mean_channel_height + 8.0F,
+            "terrain lab arid canyon height should keep high-relief walls above wash floors");
 
     const terrain::TerrainLabFieldData fields_repeat = terrain::generate_terrain_lab_fields(small);
     const terrain::TerrainLabFieldSummary summary = terrain::summarize_terrain_lab_fields(fields);
