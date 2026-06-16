@@ -141,6 +141,13 @@ feature masks are derived. The feature graph remains useful when a terrain type
 needs explicit topology, such as watershed ownership or drainage paths, but it
 should sit downstream of the driver fields rather than replace them.
 
+For sentinel slice presets, the local patch is the region mask. Driver selection
+should not add centered disks, ellipses, quadrant gates, vignetted islands, or
+other composition-shaped footprints unless that boundary is the landform under
+test. Internal masks are still expected, but they should represent terrain state
+or process: snowline, ice support, sand supply, talus, wetness, vegetation, lava
+flow, channels, deposition, or exposure.
+
 The feature graph does not have to be geologically complete. It only has to
 carry enough structure that valleys, ridges, water, and materials line up in the
 rendered result.
@@ -174,6 +181,10 @@ The first representative set is:
 
 These slices are probes for the shared field vocabulary. They are not a
 commitment to finish several production biomes in parallel.
+
+The required visual review for each slice is final view plus driver view. The
+driver view should explain the landforms without revealing an artificial region
+footprint.
 
 ### Process Passes
 

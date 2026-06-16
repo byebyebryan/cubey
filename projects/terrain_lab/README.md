@@ -27,6 +27,12 @@ driver fields rather than hand-authored local features. High-frequency noise is
 only a detail layer controlled by larger terrain fields. The terrain should
 remain legible when that detail layer is disabled.
 
+For biome and landform sentinel slices, the test patch itself is the slice
+boundary. Driver selection should not add a centered disk, ellipse, quadrant
+layout, or other demo footprint. Internal masks are valid when they describe
+terrain state or process, such as snow, ice, wetness, talus, sand supply,
+vegetation density, channels, or deposition.
+
 See [design.md](design.md) for the generation model and [roadmap.md](roadmap.md)
 for the planned slice sequence.
 
@@ -197,12 +203,14 @@ mkdir -p outputs/terrain_lab
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view slope --width 1280 --height 720 --output outputs/terrain_lab/slope.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view flow-accumulation --width 1280 --height 720 --output outputs/terrain_lab/flow-accumulation.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view noise-off --width 1280 --height 720 --output outputs/terrain_lab/noise-off.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/driver.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-watershed --debug-view watershed --width 1280 --height 720 --output outputs/terrain_lab/watershed-temperate.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes-material.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes-driver.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --width 1280 --height 720 --output outputs/terrain_lab/alpine-glacial-valley.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/alpine-glacial-valley-material.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/alpine-glacial-valley-driver.png
 ```
 
 `outputs/` is ignored by Git; these captures are local review artifacts.

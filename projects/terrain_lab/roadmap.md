@@ -184,6 +184,10 @@ should be treated as temporary scaffolding. A slice passes this phase when its
 main landforms can be inspected through named driver fields before feature masks,
 height, materials, and detail are applied.
 
+Mask rule: for sentinel slices, the local patch is the biome boundary. Driver
+selection should be full-patch unless the slice explicitly tests a physical
+boundary. Internal masks should encode terrain/process state, not crop the demo.
+
 Candidate slices:
 
 - arid mesa canyon: strata, cliffs, dry washes, talus, sparse vegetation;
@@ -219,6 +223,8 @@ Success criteria:
 - dunes remain readable with flow ignored as a shaping force;
 - dune crests, slip faces, and interdune flats are derived from inspectable
   driver fields rather than hand-placed streaks or lines;
+- driver debug views do not expose centered disks, ellipses, quadrants, or
+  other artificial slice footprints;
 - glacial terrain reads through valley shape, snow/ice, and deposition rather
   than river carving;
 - shared fields remain useful across all four sentinels without becoming
