@@ -149,6 +149,9 @@ Initial scope:
   march writes current product/metadata, a ping-pong history pass reprojects by
   mean cloud distance, clamps against the current neighborhood, and resets on
   incompatible cloud parameter changes;
+- the default standalone background is atmosphere-only. The earlier water proxy
+  remains available as `clouds.background_mode = water-context` for ocean
+  inspection captures, but it should not be part of the baseline cloud read;
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;

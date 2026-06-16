@@ -24,6 +24,8 @@ Current V1 scope:
 - temporal cloud product/metadata history for the final view, with
   metadata-aware reprojection and current-neighborhood clamping to reduce
   residual raymarch banding;
+- standalone background modes: atmosphere-only by default, plus an opt-in
+  `water-context` proxy for ocean-adjacent inspection shots;
 - diagnostics for weather, weather edge, weather bias, base/detail density,
   density, transmittance, cloud type, visible density/cloud type, lighting,
   shadow, cloud alpha, distance, metadata distance/alpha/confidence, metadata

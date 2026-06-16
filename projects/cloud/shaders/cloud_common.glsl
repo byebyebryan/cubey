@@ -33,6 +33,9 @@ const int CLOUD_SAMPLING_INTERLEAVED = 0;
 const int CLOUD_SAMPLING_BAYER = 1;
 const int CLOUD_SAMPLING_OFF = 2;
 
+const int CLOUD_BACKGROUND_ATMOSPHERE = 0;
+const int CLOUD_BACKGROUND_WATER_CONTEXT = 1;
+
 layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 camera_right_aspect;
     vec4 camera_up_tan_half_fovy;
@@ -50,6 +53,7 @@ layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 composite_options;
     vec4 sampling_options;
     vec4 temporal_options;
+    vec4 background_options;
 } params;
 
 float cloud_saturate(float value) {
@@ -207,8 +211,9 @@ vec3 cloud_background(vec3 direction) {
     vec3 up = cloud_planet_up();
     float view_height = clamp(dot(direction, up), -1.0, 1.0);
     vec3 sky = cloud_sky_color(direction);
+    int background_mode = int(params.background_options.x + 0.5);
 
-    if (view_height < -0.015) {
+    if (background_mode == CLOUD_BACKGROUND_WATER_CONTEXT && view_height < -0.015) {
         vec3 water = cloud_water_context(direction);
         sky = mix(water, sky, smoothstep(-0.075, 0.045, view_height));
     }

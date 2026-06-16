@@ -61,6 +61,16 @@ void test_names_and_next_debug_view() {
                 cubey::projects::cloud::CloudsSamplingMode::Interleaved) ==
                 std::string_view("interleaved"),
             "sampling mode name should use canonical spelling");
+    require(cubey::projects::cloud::clouds_background_mode_from_string("atmosphere") ==
+                cubey::projects::cloud::CloudsBackgroundMode::Atmosphere,
+            "atmosphere background mode should parse");
+    require(cubey::projects::cloud::clouds_background_mode_from_string("water-context") ==
+                cubey::projects::cloud::CloudsBackgroundMode::WaterContext,
+            "water context background mode should parse");
+    require(cubey::projects::cloud::clouds_background_mode_name(
+                cubey::projects::cloud::CloudsBackgroundMode::WaterContext) ==
+                std::string_view("water-context"),
+            "background mode name should use canonical spelling");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::Final) ==
                 cubey::projects::cloud::CloudsDebugView::RawFinal,
@@ -180,6 +190,7 @@ void test_run_config_mapping() {
     run_config.clouds.quality = "quarter";
     run_config.clouds.weather_preset = "storm";
     run_config.clouds.sampling_mode = "bayer";
+    run_config.clouds.background_mode = "water-context";
     run_config.clouds.planet_radius_m = 1000000.0F;
     run_config.clouds.bottom_altitude_m = 2000.0F;
     run_config.clouds.top_altitude_m = 9000.0F;
@@ -225,6 +236,8 @@ void test_run_config_mapping() {
             "cloud weather preset should select cloud style");
     require(config.sampling_mode == cubey::projects::cloud::CloudsSamplingMode::Bayer,
             "cloud sampling mode should map from run config");
+    require(config.background_mode == cubey::projects::cloud::CloudsBackgroundMode::WaterContext,
+            "cloud background mode should map from run config");
     require(config.debug_view == cubey::projects::cloud::CloudsDebugView::Density,
             "cloud debug view should map from common debug config");
     require_near(config.camera_altitude_m,
@@ -305,6 +318,8 @@ void test_weather_preset_defaults() {
         cubey::projects::cloud::clouds_config_from_run_config(run_config);
     require(config.sampling_mode == cubey::projects::cloud::CloudsSamplingMode::Bayer,
             "default sampling should use Bayer ray starts");
+    require(config.background_mode == cubey::projects::cloud::CloudsBackgroundMode::Atmosphere,
+            "default background should use atmosphere only");
     require_near(config.jitter_strength, 1.0F, 0.001F,
                  "default jitter should match reference Bayer strength");
     require_near(config.weather_influence, 0.0F, 0.001F,
@@ -374,6 +389,7 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.quality", "full");
     cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
     cubey::set_run_config_option_from_string(config, "clouds.sampling_mode", "bayer");
+    cubey::set_run_config_option_from_string(config, "clouds.background_mode", "water-context");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.weather_scale_km", "120");
     cubey::set_run_config_option_from_string(config, "clouds.vertical_shear_fraction", "0.20");
@@ -404,6 +420,8 @@ void test_config_descriptors() {
             "cloud weather preset descriptor should set");
     require(config.clouds.sampling_mode == "bayer",
             "cloud sampling mode descriptor should set");
+    require(config.clouds.background_mode == "water-context",
+            "cloud background mode descriptor should set");
     require_near(config.clouds.coverage, 0.44F, 0.001F,
                  "cloud coverage descriptor should set");
     require_near(config.clouds.weather_scale_km, 120.0F, 0.001F,

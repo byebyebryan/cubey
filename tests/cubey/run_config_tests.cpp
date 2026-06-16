@@ -331,6 +331,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.camera_mode",
         "clouds.quality",
         "clouds.sampling_mode",
+        "clouds.background_mode",
         "clouds.planet_radius_m",
         "clouds.camera_altitude_m",
         "clouds.bottom_altitude_m",
@@ -480,6 +481,7 @@ void test_run_config_loads_json_config_file() {
     "quality": "full",
     "weather_preset": "inspection",
     "sampling_mode": "bayer",
+    "background_mode": "water-context",
     "coverage": 0.62,
     "wind_speed_mps": 24.0,
     "shadow_strength": 0.75,
@@ -538,6 +540,7 @@ void test_run_config_loads_json_config_file() {
     require(config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
                 config.clouds.weather_preset == "inspection" &&
                 config.clouds.sampling_mode == "bayer" &&
+                config.clouds.background_mode == "water-context" &&
                 config.clouds.coverage == 0.62F && config.clouds.wind_speed_mps == 24.0F &&
                 config.clouds.shadow_strength == 0.75F &&
                 config.clouds.jitter_strength == 0.25F && config.clouds.temporal == 0,
@@ -914,6 +917,8 @@ void test_run_config_parses_cloud_options() {
     std::string weather_preset_value = "storm";
     std::string sampling_mode_flag = "--cloud-sampling-mode";
     std::string sampling_mode_value = "bayer";
+    std::string background_mode_flag = "--cloud-background-mode";
+    std::string background_mode_value = "water-context";
     std::string planet_radius_flag = "--cloud-planet-radius-m";
     std::string planet_radius_value = "6000000";
     std::string camera_altitude_flag = "--cloud-camera-altitude-m";
@@ -937,7 +942,7 @@ void test_run_config_parses_cloud_options() {
     std::string jitter_flag = "--cloud-jitter-strength";
     std::string jitter_value = "0.25";
     std::string temporal_flag = "--no-cloud-temporal";
-    std::array<char*, 32> argv{
+    std::array<char*, 34> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -947,6 +952,8 @@ void test_run_config_parses_cloud_options() {
         weather_preset_value.data(),
         sampling_mode_flag.data(),
         sampling_mode_value.data(),
+        background_mode_flag.data(),
+        background_mode_value.data(),
         planet_radius_flag.data(),
         planet_radius_value.data(),
         camera_altitude_flag.data(),
@@ -981,6 +988,8 @@ void test_run_config_parses_cloud_options() {
             "run config should parse cloud weather preset");
     require(config.clouds.sampling_mode == "bayer",
             "run config should parse cloud sampling mode");
+    require(config.clouds.background_mode == "water-context",
+            "run config should parse cloud background mode");
     require(config.clouds.planet_radius_m == 6000000.0F,
             "run config should parse cloud planet radius");
     require(config.clouds.camera_altitude_m == 16000.0F,

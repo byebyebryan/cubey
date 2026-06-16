@@ -216,6 +216,26 @@ const char* clouds_sampling_mode_name(CloudsSamplingMode mode) {
     return "interleaved";
 }
 
+CloudsBackgroundMode clouds_background_mode_from_string(std::string_view value) {
+    if (value.empty() || value == "atmosphere" || value == "sky") {
+        return CloudsBackgroundMode::Atmosphere;
+    }
+    if (value == "water-context" || value == "water") {
+        return CloudsBackgroundMode::WaterContext;
+    }
+    throw std::runtime_error("unknown cloud background mode: " + std::string(value));
+}
+
+const char* clouds_background_mode_name(CloudsBackgroundMode mode) {
+    switch (mode) {
+    case CloudsBackgroundMode::Atmosphere:
+        return "atmosphere";
+    case CloudsBackgroundMode::WaterContext:
+        return "water-context";
+    }
+    return "atmosphere";
+}
+
 CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value.empty() || value == "final") {
         return CloudsDebugView::Final;
@@ -407,6 +427,10 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     apply_clouds_weather_preset(config, config.weather_preset);
     if (!run_config.clouds.sampling_mode.empty()) {
         config.sampling_mode = clouds_sampling_mode_from_string(run_config.clouds.sampling_mode);
+    }
+    if (!run_config.clouds.background_mode.empty()) {
+        config.background_mode =
+            clouds_background_mode_from_string(run_config.clouds.background_mode);
     }
     if (!run_config.debug_view.empty()) {
         config.debug_view = clouds_debug_view_from_string(run_config.debug_view);

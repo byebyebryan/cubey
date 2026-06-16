@@ -69,6 +69,7 @@ constexpr std::array<std::string_view, 4> kCloudCacheFrames{"4", "16", "64", "25
 constexpr std::array<std::string_view, 4> kCloudRenderPaths{
     "cached", "direct", "diff", "alpha-diff"};
 constexpr std::array<std::string_view, 3> kCloudSamplingModes{"interleaved", "bayer", "off"};
+constexpr std::array<std::string_view, 2> kCloudBackgroundModes{"atmosphere", "water-context"};
 constexpr std::array<std::string_view, 10> kCloudWeatherPresets{
     "fair-weather",     "broken-cumulus", "overcast-stratus", "storm-cells",
     "high-cirrus",      "clear",          "scattered",        "inspection",
@@ -105,7 +106,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 213> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 214> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -532,6 +533,10 @@ constexpr std::array<ConfigOptionDescriptor, 213> kRunConfigOptions{
            "--cloud-sampling-mode", "Sampling Mode", "Clouds",
            "Cloud ray-start sampling mode: interleaved, bayer, or off.",
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudSamplingModes)),
+    option(RunConfigOptionId::CloudBackgroundMode, "clouds.background_mode",
+           "--cloud-background-mode", "Background Mode", "Clouds",
+           "Standalone cloud background mode: atmosphere or water-context.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudBackgroundModes)),
     option(RunConfigOptionId::CloudPlanetRadius, "clouds.planet_radius_m",
            "--cloud-planet-radius-m", "Planet Radius", "Clouds",
            "Planet radius used by the cloud shell in meters.", ConfigOptionType::Float,
@@ -1266,6 +1271,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::CloudSamplingMode:
         return config.clouds.sampling_mode.empty() ? nlohmann::json(nullptr)
                                                    : nlohmann::json(config.clouds.sampling_mode);
+    case RunConfigOptionId::CloudBackgroundMode:
+        return config.clouds.background_mode.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.clouds.background_mode);
     case RunConfigOptionId::CloudPlanetRadius:
         return optional_float(config.clouds.planet_radius_m);
     case RunConfigOptionId::CloudCameraAltitude:
@@ -1714,6 +1723,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
     adapter.writeField<std::string>("render_path", options.render_path);
     adapter.writeField<std::string>("sampling_mode", options.sampling_mode);
+    adapter.writeField<std::string>("background_mode", options.background_mode);
     adapter.writeField<float>("planet_radius_m", options.planet_radius_m);
     adapter.writeField<float>("camera_altitude_m", options.camera_altitude_m);
     adapter.writeField<float>("bottom_altitude_m", options.bottom_altitude_m);
@@ -1753,6 +1763,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
     adapter.readField<std::string>("render_path", options.render_path);
     adapter.readField<std::string>("sampling_mode", options.sampling_mode);
+    adapter.readField<std::string>("background_mode", options.background_mode);
     adapter.readField<float>("planet_radius_m", options.planet_radius_m);
     adapter.readField<float>("camera_altitude_m", options.camera_altitude_m);
     adapter.readField<float>("bottom_altitude_m", options.bottom_altitude_m);
@@ -2369,6 +2380,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::CloudSamplingMode:
         config.clouds.sampling_mode = std::string(value);
+        break;
+    case RunConfigOptionId::CloudBackgroundMode:
+        config.clouds.background_mode = std::string(value);
         break;
     case RunConfigOptionId::CloudPlanetRadius:
         config.clouds.planet_radius_m = parse_config_float(value, option);

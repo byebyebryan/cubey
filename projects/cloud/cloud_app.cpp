@@ -95,6 +95,10 @@ constexpr std::array<CloudsSamplingMode, 3> kCloudSamplingModes{
     CloudsSamplingMode::Bayer,
     CloudsSamplingMode::Off,
 };
+constexpr std::array<CloudsBackgroundMode, 2> kCloudBackgroundModes{
+    CloudsBackgroundMode::Atmosphere,
+    CloudsBackgroundMode::WaterContext,
+};
 constexpr std::array<CloudsDebugView, 25> kCloudDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
@@ -130,9 +134,10 @@ struct CloudFrameUniforms {
     cubey::math::Vec4 composite_options;
     cubey::math::Vec4 sampling_options;
     cubey::math::Vec4 temporal_options;
+    cubey::math::Vec4 background_options;
 };
 
-static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 64U);
+static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 68U);
 
 struct CloudTemporalUniforms {
     cubey::math::Vec4 current_camera_right_aspect;
@@ -422,6 +427,10 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     return static_cast<float>(static_cast<std::uint32_t>(mode));
 }
 
+[[nodiscard]] float cloud_background_mode_value(CloudsBackgroundMode mode) {
+    return static_cast<float>(static_cast<std::uint32_t>(mode));
+}
+
 [[nodiscard]] CloudViewBasis cloud_view_basis(const CloudsConfig& config, float yaw,
                                                      float pitch_offset) {
     const cubey::math::Vec3 surface_up{0.0F, 1.0F, 0.0F};
@@ -489,7 +498,8 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
            cloud_near(previous.cloud_color_bottom_horizon, current.cloud_color_bottom_horizon) &&
            cloud_near(previous.lighting_strengths, current.lighting_strengths) &&
            cloud_near(previous.composite_options, current.composite_options) &&
-           cloud_near(previous.sampling_options, current.sampling_options);
+           cloud_near(previous.sampling_options, current.sampling_options) &&
+           cloud_near(previous.background_options, current.background_options);
 }
 
 [[nodiscard]] CloudFrameUniforms cloud_frame_uniforms(const CloudsConfig& config,
@@ -542,6 +552,8 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
                              config.temporal_enabled ? 1.0F : 0.0F,
                              0.18F,
                              0.0F},
+        .background_options = {cloud_background_mode_value(config.background_mode), 0.0F,
+                               0.0F, 0.0F},
     };
 }
 
@@ -860,6 +872,8 @@ class CloudApp {
                         clouds_weather_preset_name);
         draw_enum_combo("Quality", config_.quality, kCloudQualityModes, clouds_quality_name);
         draw_enum_combo("Debug", config_.debug_view, kCloudDebugViews, clouds_debug_view_name);
+        draw_enum_combo("Background", config_.background_mode, kCloudBackgroundModes,
+                        clouds_background_mode_name);
         ImGui::Separator();
         ImGui::SliderFloat("Time", &config_.time.time_hours, 0.0F, 24.0F, "%.2f h");
         ImGui::SliderFloat("Coverage", &config_.coverage, 0.0F, 1.0F, "%.2f");

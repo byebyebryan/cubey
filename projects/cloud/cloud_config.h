@@ -55,6 +55,16 @@ inline constexpr std::array<CloudsSamplingMode, 3> kCloudsSamplingModes{
     CloudsSamplingMode::Off,
 };
 
+enum class CloudsBackgroundMode : std::uint32_t {
+    Atmosphere = 0,
+    WaterContext = 1,
+};
+
+inline constexpr std::array<CloudsBackgroundMode, 2> kCloudsBackgroundModes{
+    CloudsBackgroundMode::Atmosphere,
+    CloudsBackgroundMode::WaterContext,
+};
+
 enum class CloudsDebugView : std::uint32_t {
     Final = 0,
     Weather = 1,
@@ -122,6 +132,7 @@ struct CloudsConfig {
     CloudsWeatherPreset weather_preset = CloudsWeatherPreset::BrokenCumulus;
     CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
     CloudsSamplingMode sampling_mode = CloudsSamplingMode::Bayer;
+    CloudsBackgroundMode background_mode = CloudsBackgroundMode::Atmosphere;
     CloudsDebugView debug_view = CloudsDebugView::Final;
     bool temporal_enabled = true;
     CloudsTimeConfig time{};
@@ -175,6 +186,8 @@ struct CloudsQualityBudget {
 void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset preset);
 [[nodiscard]] CloudsSamplingMode clouds_sampling_mode_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_sampling_mode_name(CloudsSamplingMode mode);
+[[nodiscard]] CloudsBackgroundMode clouds_background_mode_from_string(std::string_view value);
+[[nodiscard]] const char* clouds_background_mode_name(CloudsBackgroundMode mode);
 [[nodiscard]] CloudsDebugView clouds_debug_view_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_debug_view_name(CloudsDebugView view);
 [[nodiscard]] CloudsDebugView next_clouds_debug_view(CloudsDebugView view);
