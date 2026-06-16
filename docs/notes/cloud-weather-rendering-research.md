@@ -227,7 +227,8 @@ patterns Cubey should keep or adopt:
 - separate local/world clouds from skybox-style clouds instead of forcing one
   path to solve all distances;
 - use cloud-map/LUT style authoring for broad coverage/type before high
-  frequency erosion;
+  frequency erosion, but keep local 3D noise responsible for visible cloud
+  placement and silhouette detail;
 - blur or filter cloud shadow maps separately because shadow integration often
   uses far fewer steps than the main view march.
 

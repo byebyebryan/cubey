@@ -100,7 +100,7 @@ constexpr std::array<CloudsDebugView, 25> kCloudDebugViews{
     CloudsDebugView::MetadataDensity,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
     CloudsDebugView::CloudType,
-    CloudsDebugView::WeatherEdge,   CloudsDebugView::WeatherMask,
+    CloudsDebugView::WeatherEdge,   CloudsDebugView::WeatherBias,
     CloudsDebugView::VisibleDensity,
     CloudsDebugView::VisibleCloudType,
 };
@@ -409,7 +409,8 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
         .composite_options = {config.resolve_strength, config.final_contrast,
                               config.final_saturation, config.horizon_glow_strength},
         .sampling_options = {cloud_sampling_mode_value(config.sampling_mode),
-                             config.jitter_strength, config.weather_softness, 0.0F},
+                             config.jitter_strength, config.weather_softness,
+                             config.weather_influence},
     };
 }
 
@@ -735,6 +736,8 @@ class CloudApp {
             ImGui::SliderFloat("Vertical shear", &config_.vertical_shear_fraction, 0.0F, 0.5F,
                                "%.2f");
             ImGui::SliderFloat("Weather softness", &config_.weather_softness, 0.02F, 0.60F,
+                               "%.2f");
+            ImGui::SliderFloat("Weather influence", &config_.weather_influence, 0.0F, 1.0F,
                                "%.2f");
             ImGui::SliderFloat("Detail erosion", &config_.detail_erosion, 0.0F, 1.0F, "%.2f");
             ImGui::Checkbox("Powder", &config_.powder_enabled);

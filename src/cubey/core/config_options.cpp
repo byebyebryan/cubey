@@ -105,7 +105,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 212> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 213> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -586,8 +586,12 @@ constexpr std::array<ConfigOptionDescriptor, 212> kRunConfigOptions{
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudWeatherSoftness, "clouds.weather_softness",
            "--cloud-weather-softness", "Weather Softness", "Clouds",
-           "Softness of broad cloud coverage transitions.", ConfigOptionType::Float,
+           "Softness of broad weather bias transitions.", ConfigOptionType::Float,
            bounded_range(0.02, 0.6)),
+    option(RunConfigOptionId::CloudWeatherInfluence, "clouds.weather_influence",
+           "--cloud-weather-influence", "Weather Influence", "Clouds",
+           "How strongly the broad weather map biases local cloud density.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudDetailErosion, "clouds.detail_erosion",
            "--cloud-detail-erosion", "Detail Erosion", "Clouds",
            "Feature-isolation weight for high-frequency cloud erosion.", ConfigOptionType::Float,
@@ -1292,6 +1296,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.weather_streaks);
     case RunConfigOptionId::CloudWeatherSoftness:
         return optional_float(config.clouds.weather_softness);
+    case RunConfigOptionId::CloudWeatherInfluence:
+        return optional_float(config.clouds.weather_influence);
     case RunConfigOptionId::CloudDetailErosion:
         return optional_float(config.clouds.detail_erosion);
     case RunConfigOptionId::CloudAmbientStrength:
@@ -1723,6 +1729,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("weather_cells", options.weather_cells);
     adapter.writeField<float>("weather_streaks", options.weather_streaks);
     adapter.writeField<float>("weather_softness", options.weather_softness);
+    adapter.writeField<float>("weather_influence", options.weather_influence);
     adapter.writeField<float>("detail_erosion", options.detail_erosion);
     adapter.writeField<float>("ambient_strength", options.ambient_strength);
     adapter.writeField<float>("direct_strength", options.direct_strength);
@@ -1761,6 +1768,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("weather_cells", options.weather_cells);
     adapter.readField<float>("weather_streaks", options.weather_streaks);
     adapter.readField<float>("weather_softness", options.weather_softness);
+    adapter.readField<float>("weather_influence", options.weather_influence);
     adapter.readField<float>("detail_erosion", options.detail_erosion);
     adapter.readField<float>("ambient_strength", options.ambient_strength);
     adapter.readField<float>("direct_strength", options.direct_strength);
@@ -2421,6 +2429,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudWeatherSoftness:
         config.clouds.weather_softness = parse_config_float(value, option);
         validate_range(config.clouds.weather_softness, option);
+        break;
+    case RunConfigOptionId::CloudWeatherInfluence:
+        config.clouds.weather_influence = parse_config_float(value, option);
+        validate_range(config.clouds.weather_influence, option);
         break;
     case RunConfigOptionId::CloudDetailErosion:
         config.clouds.detail_erosion = parse_config_float(value, option);

@@ -65,14 +65,16 @@ Keep these ideas:
 
 - generated or uploaded 3D Perlin-Worley base noise;
 - generated or uploaded 3D Worley/detail erosion noise;
-- 2D weather maps for broad coverage/type control;
+- 2D weather maps for broad coverage/type control, applied as parameter bias
+  over local density instead of as final opacity masks;
 - cloud-type height gradients and coverage/density shaping;
 - separate authored weather channels for broad coverage, cloud type, and edge
-  softness/breakup;
+  softness/breakup, with an explicit influence control that can fade back to
+  local noise-driven scatter;
 - spherical cloud-shell intersections;
 - Beer transmittance, powder/edge response, and a short light march;
 - source-like debug views for weather, base density, detail density, density,
-  weather mask, lighting, transmittance, shadow, distance, and step count.
+  weather bias, lighting, transmittance, shadow, distance, and step count.
 
 Do not overfit these parts:
 
@@ -87,8 +89,10 @@ is the density/weather model, not the cache.
 
 The production weather model should stay authoring-oriented for now. It should
 not pretend to simulate meteorology, but it also should not collapse cloud state
-to one scalar coverage knob. The minimum useful contract is coverage, type, edge
-softness, and erosion as separate inputs before lighting and composition.
+to one scalar coverage knob or directly cut out final density. The minimum
+useful contract is coverage, type, edge softness, and erosion as separate
+parameter biases over the local 3D density field before lighting and
+composition.
 
 ## Lessons From Cloud Ref 2
 

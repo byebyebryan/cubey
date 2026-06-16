@@ -165,6 +165,7 @@ enum class RunConfigOptionId {
     CloudWeatherCells,
     CloudWeatherStreaks,
     CloudWeatherSoftness,
+    CloudWeatherInfluence,
     CloudDetailErosion,
     CloudAmbientStrength,
     CloudDirectStrength,

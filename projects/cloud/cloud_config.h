@@ -80,7 +80,7 @@ enum class CloudsDebugView : std::uint32_t {
     VisibleDensity = 26,
     VisibleCloudType = 27,
     WeatherEdge = 28,
-    WeatherMask = 29,
+    WeatherBias = 29,
 };
 
 inline constexpr std::array<CloudsDebugView, 25> kCloudsDebugViews{
@@ -98,7 +98,7 @@ inline constexpr std::array<CloudsDebugView, 25> kCloudsDebugViews{
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
     CloudsDebugView::CloudType,
     CloudsDebugView::WeatherEdge,
-    CloudsDebugView::WeatherMask,
+    CloudsDebugView::WeatherBias,
     CloudsDebugView::VisibleDensity,
     CloudsDebugView::VisibleCloudType,
 };
@@ -141,6 +141,7 @@ struct CloudsConfig {
     float weather_cells = 1.0F;
     float weather_streaks = 1.0F;
     float weather_softness = 0.22F;
+    float weather_influence = 0.35F;
     float detail_erosion = 1.0F;
     float crispiness = 40.0F;
     float curliness = 0.10F;
