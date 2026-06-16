@@ -158,6 +158,20 @@ runoff, relief, and erosion-resistance fields, then select a local canyon window
 from that network. Canyon floors, tributaries, walls, rims, benches, and talus
 should come from channel accumulation, stream power, incision depth, and
 distance-to-network rather than from an authored line across the visible patch.
+The current arid correction targets the routing layer, not a wholesale driver
+swap. Eight-neighbor raster routing is allowed as a compatibility/debug output,
+but it should not be the visible canyon skeleton because grid directions create
+straight sections and sharp diagonal/orthogonal turns. The preferred driver is a
+continuous drainage field and extracted trunk/tributary corridors over the
+regional macro terrain.
+
+Processed noise and Voronoi-like fields may support uplift, runoff, lithology,
+resistance, fracture tendency, basin partitioning, and sidewall detail. They are
+not the main canyon path source. L-system or rewriting approaches are useful as
+research context for branching structures, but they should not become the arid
+canyon driver unless constrained by drainage, slope, source, and base-level
+rules.
+
 The temperate watershed fixture emits four deterministic basin ids plus soft
 divide and channel-guide influences. Both paths recompute stronger channel
 influence from initial flow accumulation, so guide channels bias drainage

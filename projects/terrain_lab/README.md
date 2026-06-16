@@ -116,6 +116,13 @@ stream power, and sink diagnostics can expose whether terrain is coherent, but
 no droplet solver or destructive hydraulic erosion pass should become default
 terrain shaping yet.
 
+The arid canyon driver is being corrected at the routing and corridor layer.
+Eight-neighbor flow can remain as a compact diagnostic direction, but visible
+canyon geometry should come from continuous drainage and traced regional
+trunk/tributary corridors. Noise, Voronoi-like cells, and L-system-style
+branching are research/support tools, not the primary canyon skeleton for this
+slice.
+
 ## Current Workbench
 
 `TerrainLabConfig` reads common grid width, grid height, slice-preset, and

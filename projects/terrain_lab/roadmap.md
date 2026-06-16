@@ -215,6 +215,10 @@ Current implementation notes:
 - arid mesa canyon should replace its visible-patch line guide with a hidden
   regional drainage-network driver, then crop a local canyon window from that
   system;
+- arid canyon routing should move from D8-shaped raster channels toward
+  continuous flow directions and traced trunk/tributary corridors, while keeping
+  processed noise and Voronoi-like fields as support layers rather than primary
+  canyon skeletons;
 - alpine glacial valley now seeds explicit base, relief, process, and
   full-patch selection drivers before feature masks and process response;
 - hydrology remains analysis-only and avoids a toy erosion solver;
