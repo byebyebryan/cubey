@@ -99,8 +99,16 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include cloud-type diagnostics after detail density");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::CloudType) ==
+                cubey::projects::cloud::CloudsDebugView::WeatherEdge,
+            "cloud debug view should include weather edge diagnostics after cloud type");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::WeatherEdge) ==
+                cubey::projects::cloud::CloudsDebugView::WeatherMask,
+            "cloud debug view should include weather mask diagnostics after edge");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::WeatherMask) ==
                 cubey::projects::cloud::CloudsDebugView::VisibleDensity,
-            "cloud debug view should include visible-density diagnostics after cloud type");
+            "cloud debug view should include visible-density diagnostics after weather mask");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::VisibleDensity) ==
                 cubey::projects::cloud::CloudsDebugView::VisibleCloudType,
@@ -148,6 +156,12 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud::clouds_debug_view_from_string("cloud-type") ==
                 cubey::projects::cloud::CloudsDebugView::CloudType,
             "cloud type debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("weather-edge") ==
+                cubey::projects::cloud::CloudsDebugView::WeatherEdge,
+            "weather edge debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("weather-mask") ==
+                cubey::projects::cloud::CloudsDebugView::WeatherMask,
+            "weather mask debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("visible-density") ==
                 cubey::projects::cloud::CloudsDebugView::VisibleDensity,
             "visible density debug view should parse");
@@ -176,6 +190,7 @@ void test_run_config_mapping() {
     run_config.clouds.weather_fronts = 0.25F;
     run_config.clouds.weather_cells = 0.5F;
     run_config.clouds.weather_streaks = 0.75F;
+    run_config.clouds.weather_softness = 0.28F;
     run_config.clouds.detail_erosion = 0.35F;
     run_config.clouds.ambient_strength = 0.85F;
     run_config.clouds.direct_strength = 1.25F;
@@ -228,6 +243,8 @@ void test_run_config_mapping() {
                  "cloud weather cells should map");
     require_near(config.weather_streaks, 0.75F, 0.001F,
                  "cloud weather streaks should map");
+    require_near(config.weather_softness, 0.28F, 0.001F,
+                 "cloud weather softness should map");
     require_near(config.detail_erosion, 0.35F, 0.001F,
                  "cloud detail erosion should map");
     require_near(config.ambient_strength, 0.85F, 0.001F,
@@ -332,6 +349,7 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.weather_fronts", "0.2");
     cubey::set_run_config_option_from_string(config, "clouds.weather_cells", "0.4");
     cubey::set_run_config_option_from_string(config, "clouds.weather_streaks", "0.6");
+    cubey::set_run_config_option_from_string(config, "clouds.weather_softness", "0.3");
     cubey::set_run_config_option_from_string(config, "clouds.detail_erosion", "0.5");
     cubey::set_run_config_option_from_string(config, "clouds.ambient_strength", "0.85");
     cubey::set_run_config_option_from_string(config, "clouds.direct_strength", "1.25");
@@ -369,6 +387,8 @@ void test_config_descriptors() {
                  "cloud weather cells descriptor should set");
     require_near(config.clouds.weather_streaks, 0.6F, 0.001F,
                  "cloud weather streaks descriptor should set");
+    require_near(config.clouds.weather_softness, 0.3F, 0.001F,
+                 "cloud weather softness descriptor should set");
     require_near(config.clouds.detail_erosion, 0.5F, 0.001F,
                  "cloud detail erosion descriptor should set");
     require_near(config.clouds.ambient_strength, 0.85F, 0.001F,

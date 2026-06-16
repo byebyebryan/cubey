@@ -8,7 +8,8 @@ Current V1 scope:
 
 - generated 128^3 Perlin-Worley base noise;
 - generated 32^3 Worley erosion/detail noise;
-- generated 1024^2 weather coverage/type map;
+- generated 1024^2 weather map with coverage, cloud type, and edge-breakup
+  channels;
 - spherical shell raymarch with height gradients, detail erosion, Beer
   transmittance, powder response, and a short light march;
 - world-scale weather/type sampling with separate vertical shear control;
@@ -19,10 +20,10 @@ Current V1 scope:
   horizon glow, and alpha-aware final resolve strength;
 - configurable static ray-start sampling (`interleaved`, `bayer`, or `off`)
   with jitter-strength control;
-- diagnostics for weather, base/detail density, density, transmittance,
-  cloud type, visible density/cloud type, lighting, shadow, cloud alpha,
-  distance, metadata distance/alpha/confidence, metadata density, steps, and
-  background.
+- diagnostics for weather, weather edge, weather mask, base/detail density,
+  density, transmittance, cloud type, visible density/cloud type, lighting,
+  shadow, cloud alpha, distance, metadata distance/alpha/confidence, metadata
+  density, steps, and background.
 
 The first target is cloud shape: raw density and final captures should show
 coherent cloud masses without relying on cache, temporal reconstruction, or
@@ -43,6 +44,8 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view base-density
 ./build/dev/projects/cloud/cloud --debug-view detail-density
 ./build/dev/projects/cloud/cloud --debug-view cloud-type
+./build/dev/projects/cloud/cloud --debug-view weather-edge
+./build/dev/projects/cloud/cloud --debug-view weather-mask
 ./build/dev/projects/cloud/cloud --debug-view density
 ./build/dev/projects/cloud/cloud --debug-view visible-density
 ./build/dev/projects/cloud/cloud --debug-view visible-cloud-type
@@ -58,6 +61,7 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --cloud-ambient-strength 0.85 --cloud-direct-strength 1.25
 ./build/dev/projects/cloud/cloud --cloud-final-contrast 1.15 --cloud-resolve-strength 0.45
 ./build/dev/projects/cloud/cloud --cloud-weather-scale-km 85
+./build/dev/projects/cloud/cloud --cloud-weather-softness 0.22
 ./build/dev/projects/cloud/cloud --cloud-vertical-shear-fraction 0.14
 ./build/dev/projects/cloud/cloud --cloud-sampling-mode bayer
 ./build/dev/projects/cloud/cloud --cloud-sampling-mode off
@@ -68,8 +72,8 @@ projects/cloud/capture_review.sh outputs/cloud-v1-review
 ```
 
 `capture_review.sh` also writes `diagnostic-crops/center-feature-contact.png`
-with resolution-scaled center crops for final/raw/alpha/weather/cloud-type and
-visible density/type checks.
+with resolution-scaled center crops for final/raw/alpha/weather/weather-edge,
+weather-mask, cloud-type, and visible density/type checks.
 
 Controls:
 
@@ -80,6 +84,8 @@ Controls:
 - `Weather scale`: approximate broad weather feature size in kilometers.
 - `Shape / Density`: base shape scale, vertical shear, detail erosion, and
   powder response.
+- `Weather softness`: smooths broad weather-mask transitions before density
+  erosion.
 - `Sampling`: ray-start sampling mode and jitter amount.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
@@ -93,9 +99,12 @@ Known deferrals:
 - No temporal reconstruction yet. The raw direct signal must be credible first.
 - Static sampling controls are diagnostic and deterministic. A blue-noise or
   temporal sampling path remains deferred until raw shape is stable.
-- Cloud type is exposed as raw and visible diagnostics, but it only drives the
-  current height gradient model. Planar `position.xz` weather projection remains
+- Cloud type is exposed as raw and visible diagnostics, and drives the current
+  height gradient model. Planar `position.xz` weather projection remains
   a likely future cleanup for planet-scale use.
+- Orbit final output remains a distance-regime diagnostic. The weather and
+  weather-mask views show authored shell structure, but orbit-scale visible
+  cloud density still needs a dedicated shell/cache path.
 - No ocean, planet, terrain, or PBR integration yet. Future consumers should
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,

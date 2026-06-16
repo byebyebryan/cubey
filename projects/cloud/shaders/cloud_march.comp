@@ -39,6 +39,8 @@ struct DensitySample {
     float detail_density;
     float weather;
     float cloud_type;
+    float weather_edge;
+    float weather_mask;
     float height_fraction;
 };
 
@@ -109,7 +111,7 @@ vec2 cloud_weather_uv(vec3 position) {
 DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float height_fraction = cloud_height_fraction(position);
     if (height_fraction <= 0.0 || height_fraction >= 1.0) {
-        return DensitySample(0.0, 0.0, 0.0, 0.0, 0.0, height_fraction);
+        return DensitySample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, height_fraction);
     }
 
     float crispiness = max(params.shape_options.x, 0.001);
@@ -125,6 +127,7 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     vec2 moving_weather_uv = cloud_weather_uv(position + animation);
     vec3 weather = texture(weather_texture, moving_weather_uv).rgb;
     float cloud_type = weather.g;
+    float weather_edge = weather.b;
 
     vec4 low_frequency =
         textureLod(base_noise_texture, vec3(shape_uv * crispiness, height_fraction), lod);
@@ -132,13 +135,21 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float base_cloud =
         cloud_remap(low_frequency.r, -(1.0 - low_fbm), 1.0, 0.0, 1.0);
 
-    float density_profile = cloud_density_gradient(height_fraction, 1.0);
+    float density_profile = cloud_density_gradient(height_fraction, cloud_type);
     base_cloud *= density_profile / max(height_fraction, 0.0001);
 
     float raw_weather = weather.r;
-    float coverage = raw_weather * params.weather.x;
+    float global_coverage = clamp(params.weather.x, 0.0, 1.0);
+    float threshold = mix(0.50, 0.08, global_coverage);
+    float softness = clamp(params.sampling_options.z, 0.02, 0.60);
+    float edge_softness = softness * mix(0.90, 1.80, weather_edge);
+    float weather_mask =
+        smoothstep(threshold - edge_softness * 0.5, threshold + edge_softness * 0.5,
+                   raw_weather);
+    float local_coverage = clamp(global_coverage * mix(0.85, 1.22, raw_weather), 0.0, 1.0);
     float base_with_coverage =
-        cloud_remap(base_cloud, coverage, 1.0, 0.0, 1.0) * coverage;
+        cloud_remap(base_cloud, 1.0 - local_coverage * 1.25, 1.0, 0.0, 1.0) *
+        weather_mask * local_coverage;
     float detail_density = 0.0;
 
     if (expensive) {
@@ -160,7 +171,7 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
 
     float density = clamp(base_with_coverage, 0.0, 1.0);
     return DensitySample(density, clamp(base_cloud, 0.0, 1.0), detail_density, raw_weather,
-                         cloud_type, height_fraction);
+                         cloud_type, weather_edge, weather_mask, height_fraction);
 }
 
 float cloud_light_transmittance(vec3 start, float step_size, vec3 light_dir,
@@ -465,10 +476,12 @@ void main() {
                           ? vec3(ray_fields.max_density)
                           : vec3(ray_fields.weighted_cloud_type);
     } else if (debug_view == CLOUD_DEBUG_WEATHER ||
-        debug_view == CLOUD_DEBUG_BASE_DENSITY ||
-        debug_view == CLOUD_DEBUG_DETAIL_DENSITY ||
-        debug_view == CLOUD_DEBUG_CLOUD_TYPE ||
-        debug_view == CLOUD_DEBUG_DENSITY) {
+               debug_view == CLOUD_DEBUG_BASE_DENSITY ||
+               debug_view == CLOUD_DEBUG_DETAIL_DENSITY ||
+               debug_view == CLOUD_DEBUG_CLOUD_TYPE ||
+               debug_view == CLOUD_DEBUG_WEATHER_EDGE ||
+               debug_view == CLOUD_DEBUG_WEATHER_MASK ||
+               debug_view == CLOUD_DEBUG_DENSITY) {
         vec3 mid = origin + direction * mix(start_t, end_t, 0.5);
         DensitySample sample_data = cloud_sample_density(mid, true, 0.0);
         if (debug_view == CLOUD_DEBUG_WEATHER) {
@@ -479,6 +492,10 @@ void main() {
             debug_color = vec3(sample_data.detail_density);
         } else if (debug_view == CLOUD_DEBUG_CLOUD_TYPE) {
             debug_color = vec3(sample_data.cloud_type);
+        } else if (debug_view == CLOUD_DEBUG_WEATHER_EDGE) {
+            debug_color = vec3(sample_data.weather_edge);
+        } else if (debug_view == CLOUD_DEBUG_WEATHER_MASK) {
+            debug_color = vec3(sample_data.weather_mask);
         } else {
             debug_color = vec3(sample_data.density);
         }

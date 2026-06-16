@@ -79,9 +79,11 @@ enum class CloudsDebugView : std::uint32_t {
     CloudType = 25,
     VisibleDensity = 26,
     VisibleCloudType = 27,
+    WeatherEdge = 28,
+    WeatherMask = 29,
 };
 
-inline constexpr std::array<CloudsDebugView, 23> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 25> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
     CloudsDebugView::Weather,      CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting,
@@ -95,6 +97,8 @@ inline constexpr std::array<CloudsDebugView, 23> kCloudsDebugViews{
     CloudsDebugView::MetadataDensity,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
     CloudsDebugView::CloudType,
+    CloudsDebugView::WeatherEdge,
+    CloudsDebugView::WeatherMask,
     CloudsDebugView::VisibleDensity,
     CloudsDebugView::VisibleCloudType,
 };
@@ -117,7 +121,7 @@ struct CloudsConfig {
     CloudsQuality quality = CloudsQuality::Full;
     CloudsWeatherPreset weather_preset = CloudsWeatherPreset::BrokenCumulus;
     CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
-    CloudsSamplingMode sampling_mode = CloudsSamplingMode::Interleaved;
+    CloudsSamplingMode sampling_mode = CloudsSamplingMode::Off;
     CloudsDebugView debug_view = CloudsDebugView::Final;
     bool temporal_enabled = true;
     CloudsTimeConfig time{};
@@ -136,6 +140,7 @@ struct CloudsConfig {
     float weather_fronts = 1.0F;
     float weather_cells = 1.0F;
     float weather_streaks = 1.0F;
+    float weather_softness = 0.22F;
     float detail_erosion = 1.0F;
     float crispiness = 40.0F;
     float curliness = 0.10F;
@@ -148,7 +153,7 @@ struct CloudsConfig {
     float resolve_strength = 0.58F;
     float horizon_glow_strength = 0.90F;
     float sun_glare_strength = 1.0F;
-    float jitter_strength = 1.0F;
+    float jitter_strength = 0.25F;
     bool powder_enabled = true;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;

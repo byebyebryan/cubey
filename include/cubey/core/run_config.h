@@ -246,6 +246,7 @@ struct RunConfig {
         float weather_fronts = kRunConfigUnsetFloat;
         float weather_cells = kRunConfigUnsetFloat;
         float weather_streaks = kRunConfigUnsetFloat;
+        float weather_softness = kRunConfigUnsetFloat;
         float detail_erosion = kRunConfigUnsetFloat;
         float ambient_strength = kRunConfigUnsetFloat;
         float direct_strength = kRunConfigUnsetFloat;

@@ -87,7 +87,7 @@ constexpr std::array<CloudsSamplingMode, 3> kCloudSamplingModes{
     CloudsSamplingMode::Bayer,
     CloudsSamplingMode::Off,
 };
-constexpr std::array<CloudsDebugView, 23> kCloudDebugViews{
+constexpr std::array<CloudsDebugView, 25> kCloudDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
     CloudsDebugView::Lighting,     CloudsDebugView::AmbientLight,
@@ -100,6 +100,7 @@ constexpr std::array<CloudsDebugView, 23> kCloudDebugViews{
     CloudsDebugView::MetadataDensity,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
     CloudsDebugView::CloudType,
+    CloudsDebugView::WeatherEdge,   CloudsDebugView::WeatherMask,
     CloudsDebugView::VisibleDensity,
     CloudsDebugView::VisibleCloudType,
 };
@@ -123,6 +124,15 @@ struct CloudFrameUniforms {
 };
 
 static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 60U);
+
+struct CloudWeatherPushConstants {
+    float fronts = 1.0F;
+    float cells = 1.0F;
+    float streaks = 1.0F;
+    float cloud_style = 1.0F;
+};
+
+static_assert(sizeof(CloudWeatherPushConstants) == sizeof(float) * 4U);
 
 struct CloudViewBasis {
     cubey::math::Vec3 position{0.0F, 0.0F, 0.0F};
@@ -341,6 +351,21 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     return glm::normalize(cubey::math::Vec3{-0.5F, 0.5F, 1.0F});
 }
 
+[[nodiscard]] CloudWeatherPushConstants cloud_weather_push_constants(const CloudsConfig& config) {
+    return {
+        .fronts = config.weather_fronts,
+        .cells = config.weather_cells,
+        .streaks = config.weather_streaks,
+        .cloud_style = cloud_cloud_style_value(config.cloud_style),
+    };
+}
+
+[[nodiscard]] bool cloud_weather_generation_equal(const CloudWeatherPushConstants& lhs,
+                                                  const CloudWeatherPushConstants& rhs) {
+    return lhs.fronts == rhs.fronts && lhs.cells == rhs.cells && lhs.streaks == rhs.streaks &&
+           lhs.cloud_style == rhs.cloud_style;
+}
+
 [[nodiscard]] CloudFrameUniforms cloud_frame_uniforms(const CloudsConfig& config,
                                                             VkExtent2D target_extent,
                                                             float yaw, float pitch,
@@ -384,7 +409,7 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
         .composite_options = {config.resolve_strength, config.final_contrast,
                               config.final_saturation, config.horizon_glow_strength},
         .sampling_options = {cloud_sampling_mode_value(config.sampling_mode),
-                             config.jitter_strength, 0.0F, 0.0F},
+                             config.jitter_strength, config.weather_softness, 0.0F},
     };
 }
 
@@ -413,6 +438,7 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
 void generate_storage_texture(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
                               const char* label, const std::filesystem::path& shader,
                               VkImage image, VkImageView view,
+                              CloudWeatherPushConstants push_constants,
                               cubey::render::ComputeDispatchGroups groups) {
     const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
         cubey::vulkan::DescriptorSetBindingConfig{
@@ -428,16 +454,23 @@ void generate_storage_texture(const cubey::vulkan::Device& device, cubey::vulkan
     writes.update(device);
 
     const std::array<VkDescriptorSetLayout, 1> layouts{descriptors.layout()};
+    const VkPushConstantRange push_constant_range{
+        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+        .offset = 0,
+        .size = sizeof(CloudWeatherPushConstants),
+    };
+    const std::array<VkPushConstantRange, 1> push_constant_ranges{push_constant_range};
     const cubey::render::ComputePipelineResource pipeline(
         device, cubey::render::ComputePipelineResourceConfig{
                     .shader_stage = cubey::render::compute_shader_file(shader),
                     .descriptor_set_layouts = layouts,
+                    .push_constants = push_constant_ranges,
                 });
 
     static_cast<void>(gpu.submit_and_wait(cubey::vulkan::GpuWorkRequest{
         .label = label,
         .work =
-            [image, &pipeline, descriptor_set = descriptors.set(),
+            [image, &pipeline, descriptor_set = descriptors.set(), push_constants,
              groups](cubey::vulkan::GpuOwnerContext& context) {
                 cubey::vulkan::ImmediateCommands commands(context);
                 const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
@@ -446,7 +479,8 @@ void generate_storage_texture(const cubey::vulkan::Device& device, cubey::vulkan
                 cubey::render::record_compute_pipeline_dispatch(
                     recorder,
                     cubey::render::compute_pipeline_dispatch_info(pipeline, descriptor_set,
-                                                                  groups));
+                                                                  groups),
+                    VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
                 recorder.transition_image_layout(
                     cubey::vulkan::finish_storage_image_write_for_sampling_transition(image));
                 commands.submit_and_wait();
@@ -553,6 +587,7 @@ class CloudApp {
         callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) { draw_ui(); };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
+            refresh_weather_texture_if_needed(context.device(), context.gpu());
             record_windowed_frame(context.device(), frame.command_buffer,
                                   cubey::render::swapchain_color_target_view(context.swapchain(),
                                                                              frame.image_index),
@@ -606,6 +641,7 @@ class CloudApp {
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
             update_headless_time(frame);
+            refresh_weather_texture_if_needed(context.device(), context.gpu());
             record_headless_target(context.device(), command_buffer, target, frame.frame_slot);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
@@ -661,6 +697,8 @@ class CloudApp {
     }
 
     void draw_ui() {
+        const CloudWeatherPushConstants before_weather =
+            cloud_weather_push_constants(config_);
         ImGui::SetNextWindowPos(ImVec2(12.0F, 12.0F), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(420.0F, 650.0F), ImGuiCond_FirstUseEver);
         if (!ImGui::Begin("Cloud")) {
@@ -696,6 +734,8 @@ class CloudApp {
             ImGui::SliderFloat("Curliness", &config_.curliness, 0.01F, 3.0F, "%.2f");
             ImGui::SliderFloat("Vertical shear", &config_.vertical_shear_fraction, 0.0F, 0.5F,
                                "%.2f");
+            ImGui::SliderFloat("Weather softness", &config_.weather_softness, 0.02F, 0.60F,
+                               "%.2f");
             ImGui::SliderFloat("Detail erosion", &config_.detail_erosion, 0.0F, 1.0F, "%.2f");
             ImGui::Checkbox("Powder", &config_.powder_enabled);
         }
@@ -721,6 +761,11 @@ class CloudApp {
         ImGui::Text("Detail noise: %u^3", kDetailNoiseSize);
         ImGui::Text("Weather texture: %u x %u", kWeatherTextureSize, kWeatherTextureSize);
         ImGui::End();
+        const CloudWeatherPushConstants after_weather =
+            cloud_weather_push_constants(config_);
+        if (!cloud_weather_generation_equal(before_weather, after_weather)) {
+            weather_texture_dirty_ = true;
+        }
     }
 
     template <typename T, std::size_t N, typename NameFn>
@@ -781,14 +826,38 @@ class CloudApp {
         generate_storage_texture(
             device, gpu, "cloud generate weather", shader_path("cloud_weather.comp.spv"),
             weather_texture_->handle(), weather_texture_->view(),
+            cloud_weather_push_constants(config_),
             cubey::render::ceil_dispatch_groups(kWeatherTextureSize, kWeatherTextureSize,
                                                 kCloudComputeGroupSize));
+        last_weather_generation_ = cloud_weather_push_constants(config_);
+        weather_texture_dirty_ = false;
     }
 
     void destroy_global_resources() {
         weather_texture_.reset();
         detail_noise_.reset();
         base_noise_.reset();
+        weather_texture_dirty_ = true;
+        last_weather_generation_.reset();
+    }
+
+    void refresh_weather_texture_if_needed(const cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& gpu) {
+        if (!weather_texture_.has_value()) {
+            return;
+        }
+        const CloudWeatherPushConstants current = cloud_weather_push_constants(config_);
+        if (!weather_texture_dirty_ && last_weather_generation_.has_value() &&
+            cloud_weather_generation_equal(last_weather_generation_.value(), current)) {
+            return;
+        }
+        generate_storage_texture(
+            device, gpu, "cloud regenerate weather", shader_path("cloud_weather.comp.spv"),
+            weather_texture_->handle(), weather_texture_->view(), current,
+            cubey::render::ceil_dispatch_groups(kWeatherTextureSize, kWeatherTextureSize,
+                                                kCloudComputeGroupSize));
+        last_weather_generation_ = current;
+        weather_texture_dirty_ = false;
     }
 
     void destroy_swapchain_resources() {
@@ -1062,6 +1131,8 @@ class CloudApp {
     std::optional<cubey::render::Texture3D> base_noise_{};
     std::optional<cubey::render::Texture3D> detail_noise_{};
     std::optional<cubey::render::Texture2D> weather_texture_{};
+    std::optional<CloudWeatherPushConstants> last_weather_generation_{};
+    bool weather_texture_dirty_ = true;
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
     std::optional<cubey::vulkan::Sampler> composite_sampler_{};
     std::optional<cubey::render::FrameUniformBuffer<CloudFrameUniforms>> frame_uniforms_{};

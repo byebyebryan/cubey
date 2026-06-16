@@ -46,6 +46,10 @@ capture high-oblique --cloud-camera-mode high-oblique
 capture surface --cloud-camera-mode surface
 capture high --cloud-camera-mode high
 capture orbit-preview --cloud-camera-mode orbit
+capture high-oblique-weather --cloud-camera-mode high-oblique --debug-view weather
+capture high-oblique-weather-mask --cloud-camera-mode high-oblique --debug-view weather-mask
+capture orbit-weather --cloud-camera-mode orbit --debug-view weather
+capture orbit-weather-mask --cloud-camera-mode orbit --debug-view weather-mask
 capture surface-up-bayer --cloud-camera-mode surface-up --cloud-sampling-mode bayer
 capture surface-up-no-jitter --cloud-camera-mode surface-up --cloud-sampling-mode off
 capture high-oblique-bayer --cloud-camera-mode high-oblique --cloud-sampling-mode bayer
@@ -56,6 +60,8 @@ capture raw-final-bayer --cloud-camera-mode surface-up --debug-view raw-final \
 capture raw-final-no-jitter --cloud-camera-mode surface-up --debug-view raw-final \
     --cloud-sampling-mode off
 capture weather --cloud-camera-mode surface-up --debug-view weather
+capture weather-edge --cloud-camera-mode surface-up --debug-view weather-edge
+capture weather-mask --cloud-camera-mode surface-up --debug-view weather-mask
 capture base-density --cloud-camera-mode surface-up --debug-view base-density
 capture detail-density --cloud-camera-mode surface-up --debug-view detail-density
 capture cloud-type --cloud-camera-mode surface-up --debug-view cloud-type
@@ -84,8 +90,8 @@ if command -v magick >/dev/null 2>&1; then
     crop_dir="${OUT_DIR}/diagnostic-crops"
     mkdir -p "${crop_dir}"
     crop_inputs=()
-    for name in surface-up raw-final cloud-alpha weather cloud-type density \
-        visible-density visible-cloud-type \
+    for name in surface-up raw-final cloud-alpha weather weather-edge weather-mask \
+        cloud-type density visible-density visible-cloud-type \
         metadata-alpha metadata-distance metadata-confidence steps; do
         if [[ -f "${OUT_DIR}/${name}.png" ]]; then
             crop_path="${crop_dir}/${name}-center.png"

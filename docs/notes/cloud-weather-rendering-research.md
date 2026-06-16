@@ -360,6 +360,31 @@ Planar `position.xz` weather projection over the spherical cloud shell remains
 a likely cleanup once local cloud shape is stable and planet-scale handoff is
 ready.
 
+## Production Weather Authoring Checkpoint
+
+The current production `cloud` weather map is useful but too blunt as a final
+authoring model. It stores coverage and type, but the marcher mostly treats the
+weather sample as a single scalar coverage gate. That explains the abrupt
+transition between dense cloud cover and clear sky: broad weather, edge
+softness, cloud type, and high-frequency erosion are coupled into one remap.
+
+The references point to a bounded next step rather than a full meteorological
+simulation:
+
+- `TerrainEngine-OpenGL` / `cloud_ref`: generated 2D coverage/type maps are a
+  good baseline, but direct scalar coverage remapping is not enough.
+- Godot / `cloud_ref_2`: cloud type should drive the height-density profile.
+- `clouds_legacy`: broad, front, cell, streak, and calm components are useful
+  weather-authoring ideas even though the renderer should not be copied back.
+- Unity/HDRP-style systems separate coverage, type/profile, rain/extinction,
+  max height, and erosion/shape curves before lighting.
+
+The production direction is therefore a small authoring texture, not "real
+weather": coverage in R, cloud type in G, edge breakup/softness in B, and a
+reserved alpha channel. Debug views should expose both the authored channels and
+the post-threshold coverage mask so tuning failures are visible before final
+composition hides them.
+
 The eleventh checkpoint implements the first version of that distance-regime
 split. Cloud frame data moved from maxed-out push constants into a per-frame
 uniform buffer so the shader can carry explicit feature-isolation controls.

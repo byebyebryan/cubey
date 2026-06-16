@@ -280,6 +280,12 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "cloud-type") {
         return CloudsDebugView::CloudType;
     }
+    if (value == "weather-edge") {
+        return CloudsDebugView::WeatherEdge;
+    }
+    if (value == "weather-mask") {
+        return CloudsDebugView::WeatherMask;
+    }
     if (value == "visible-density") {
         return CloudsDebugView::VisibleDensity;
     }
@@ -333,6 +339,10 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "detail-density";
     case CloudsDebugView::CloudType:
         return "cloud-type";
+    case CloudsDebugView::WeatherEdge:
+        return "weather-edge";
+    case CloudsDebugView::WeatherMask:
+        return "weather-mask";
     case CloudsDebugView::VisibleDensity:
         return "visible-density";
     case CloudsDebugView::VisibleCloudType:
@@ -442,6 +452,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     }
     if (run_config_float_is_set(run_config.clouds.weather_streaks)) {
         config.weather_streaks = run_config.clouds.weather_streaks;
+    }
+    if (run_config_float_is_set(run_config.clouds.weather_softness)) {
+        config.weather_softness = run_config.clouds.weather_softness;
     }
     if (run_config_float_is_set(run_config.clouds.detail_erosion)) {
         config.detail_erosion = run_config.clouds.detail_erosion;
@@ -585,6 +598,10 @@ void validate_clouds_config(const CloudsConfig& config) {
     if (!std::isfinite(config.weather_streaks) || config.weather_streaks < 0.0F ||
         config.weather_streaks > 1.0F) {
         throw std::runtime_error("cloud weather streaks must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.weather_softness) || config.weather_softness < 0.02F ||
+        config.weather_softness > 0.60F) {
+        throw std::runtime_error("cloud weather softness must be finite and in [0.02, 0.6]");
     }
     if (!std::isfinite(config.detail_erosion) || config.detail_erosion < 0.0F ||
         config.detail_erosion > 1.0F) {

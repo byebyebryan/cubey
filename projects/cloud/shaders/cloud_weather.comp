@@ -9,6 +9,30 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 layout(rgba8, set = 0, binding = 0) uniform writeonly image2D out_weather;
+layout(push_constant) uniform CloudWeatherGeneration {
+    float fronts;
+    float cells;
+    float streaks;
+    float cloud_style;
+} weather_params;
+
+float cloud_select_style(float fair_weather, float broken_cumulus, float overcast_stratus,
+                         float storm_cells, float high_cirrus) {
+    int style = int(clamp(weather_params.cloud_style, 0.0, 4.0) + 0.5);
+    if (style == 0) {
+        return fair_weather;
+    }
+    if (style == 2) {
+        return overcast_stratus;
+    }
+    if (style == 3) {
+        return storm_cells;
+    }
+    if (style == 4) {
+        return high_cirrus;
+    }
+    return broken_cumulus;
+}
 
 void main() {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
@@ -20,12 +44,55 @@ void main() {
     vec2 uv = vec2(float(pixel.x) + 2.0, float(pixel.y)) / 1024.0;
     vec2 shifted_uv = uv + vec2(5.5);
 
-    float cloud_type =
+    float type_noise =
         clamp(cloud_perlin_noise_2d(shifted_uv, CLOUD_WEATHER_TYPE_SCALE,
                                     CLOUD_WEATHER_TYPE_FREQUENCY, 0.7, 10),
               0.0, 1.0);
-    float coverage =
+    float broad =
         cloud_perlin_noise_2d(uv, CLOUD_WEATHER_COVERAGE_SCALE,
                               CLOUD_WEATHER_COVERAGE_FREQUENCY, 0.5, 4);
-    imageStore(out_weather, pixel, vec4(clamp(coverage, 0.0, 1.0), cloud_type, 0.0, 1.0));
+    float secondary =
+        cloud_perlin_noise_2d(uv + vec2(3.7, 11.4), CLOUD_WEATHER_COVERAGE_SCALE * 1.35,
+                              CLOUD_WEATHER_COVERAGE_FREQUENCY * 0.74, 0.55, 4);
+    float cell_seed =
+        cloud_perlin_noise_2d(uv + vec2(19.0, 5.0), CLOUD_WEATHER_COVERAGE_SCALE * 2.15,
+                              CLOUD_WEATHER_COVERAGE_FREQUENCY * 0.92, 0.5, 4);
+    float front_wave =
+        0.5 + 0.5 * sin(dot(uv, normalize(vec2(0.62, -0.77))) * 68.0 + secondary * 4.8);
+    float fronts = smoothstep(0.24, 0.84, mix(front_wave, broad, 0.50));
+    float cells = smoothstep(0.46, 0.86, cell_seed) * mix(0.72, 1.18, secondary);
+    float streak_phase =
+        dot(uv, normalize(vec2(0.86, 0.50))) * 230.0 + secondary * 5.0;
+    float streaks = smoothstep(0.38, 0.94,
+                               (0.5 + 0.5 * sin(streak_phase)) * mix(0.68, 1.15, broad));
+    float calm = smoothstep(
+        0.62, 0.90,
+        cloud_perlin_noise_2d(uv + vec2(29.0, 17.0), CLOUD_WEATHER_COVERAGE_SCALE * 0.48,
+                              CLOUD_WEATHER_COVERAGE_FREQUENCY * 0.62, 0.55, 4));
+
+    float front_weight = clamp(weather_params.fronts, 0.0, 1.0);
+    float cell_weight = clamp(weather_params.cells, 0.0, 1.0);
+    float streak_weight = clamp(weather_params.streaks, 0.0, 1.0);
+    float weighted_fronts = mix(broad, fronts, front_weight);
+    float weighted_cells = mix(broad, cells, cell_weight);
+    float weighted_streaks = mix(broad, streaks, streak_weight);
+
+    float fair_weather = mix(broad, weighted_cells, 0.30) * (1.0 - calm * 0.46);
+    float broken_cumulus =
+        mix(mix(broad, weighted_fronts, 0.42), weighted_cells, 0.30) * (1.0 - calm * 0.28);
+    float overcast_stratus = mix(weighted_fronts, broad, 0.28) * (1.0 - calm * 0.12);
+    float storm_cells = max(weighted_fronts * 0.86, weighted_cells * 1.10) *
+                        (1.0 - calm * 0.20);
+    float high_cirrus = mix(weighted_streaks, weighted_fronts, 0.18) *
+                        (1.0 - calm * 0.22);
+    float coverage =
+        cloud_select_style(fair_weather, broken_cumulus, overcast_stratus, storm_cells,
+                           high_cirrus);
+
+    float style_type = cloud_select_style(0.42, 0.62, 0.16, 0.82, 0.10);
+    float cloud_type = clamp(mix(type_noise, style_type, 0.42), 0.0, 1.0);
+    float edge_breakup =
+        clamp(mix(secondary, max(weighted_cells, weighted_streaks), 0.48), 0.0, 1.0);
+    imageStore(out_weather, pixel,
+               vec4(clamp(coverage, 0.0, 1.0), cloud_type, edge_breakup, 1.0));
 }
