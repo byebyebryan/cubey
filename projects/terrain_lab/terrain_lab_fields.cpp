@@ -74,6 +74,38 @@ struct AridMesaDriver {
     float channel_distance_norm = 0.0F;
 };
 
+struct AridRegionalCanyonFields {
+    TerrainLabGridDesc desc{};
+    std::vector<float> macro_height_m{};
+    std::vector<float> base_potential{};
+    std::vector<float> relief_potential{};
+    std::vector<float> process_potential{};
+    std::vector<float> runoff{};
+    std::vector<float> resistance{};
+    std::vector<float> plateau{};
+    std::vector<float> canyon_floor{};
+    std::vector<float> canyon_broad{};
+    std::vector<float> canyon_wall{};
+    std::vector<float> wash{};
+    std::vector<float> rim{};
+    std::vector<float> bench{};
+    std::vector<float> talus{};
+    std::vector<float> broad{};
+    std::vector<float> bench_noise{};
+    std::vector<float> channel_distance_m{};
+    std::vector<float> incision{};
+};
+
+struct AridCanyonCrop {
+    std::uint32_t offset_x = 0;
+    std::uint32_t offset_y = 0;
+};
+
+struct AridMesaSliceFields {
+    std::vector<AridMesaDriver> drivers{};
+    std::vector<AridMesaSampleFeatures> features{};
+};
+
 struct DesertDuneSampleFeatures {
     float dune_body = 0.0F;
     float dune_crest = 0.0F;
@@ -457,135 +489,6 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
     return fields;
 }
 
-[[nodiscard]] AridMesaDriver arid_mesa_driver_at(Point2 p, const TerrainLabConfig& config) {
-    const float phase = random01(config.seed, 11U, 701U) * 6.28318530718F;
-    const float canyon_noise =
-        fbm((p.x * 2.4F) - 3.0F, (p.z * 2.4F) + 5.0F, config.seed + 2609U, 4);
-    const float canyon_center = lerp(-0.10F, 0.06F, random01(config.seed, 11U, 709U)) +
-                                (p.z * 0.18F) + std::sin((p.z * 2.20F) + phase) * 0.045F +
-                                canyon_noise * 0.035F;
-    const float canyon_distance = std::abs(p.x - canyon_center);
-    const float downstream = smoothstep(-0.95F, 0.92F, p.z);
-    const float canyon_floor =
-        (1.0F - smoothstep(0.046F, 0.165F, canyon_distance)) * lerp(0.82F, 1.0F, downstream);
-    const float canyon_broad = 1.0F - smoothstep(0.18F, 0.64F, canyon_distance);
-    const float canyon_wall = smoothstep(0.068F, 0.20F, canyon_distance) *
-                              (1.0F - smoothstep(0.26F, 0.48F, canyon_distance));
-    const float rim_influence = smoothstep(0.14F, 0.28F, canyon_distance) *
-                                (1.0F - smoothstep(0.30F, 0.50F, canyon_distance));
-    const float bench_influence = smoothstep(0.30F, 0.50F, canyon_distance) *
-                                  (1.0F - smoothstep(0.62F, 0.88F, canyon_distance));
-    const float talus_influence = smoothstep(0.12F, 0.24F, canyon_distance) *
-                                  (1.0F - smoothstep(0.28F, 0.46F, canyon_distance));
-
-    const float left_t = smoothstep(-0.78F, -0.18F, p.z) * (1.0F - smoothstep(-0.05F, 0.24F, p.z));
-    const float left_join_t = saturate((p.z + 0.78F) / 0.72F);
-    const float left_wash_center =
-        canyon_center - (0.46F * (1.0F - left_join_t)) +
-        std::sin(left_join_t * 3.14159265359F) * 0.070F +
-        fbm((p.x * 3.7F) - 2.0F, (p.z * 3.7F) + 4.0F, config.seed + 2611U, 3) * 0.026F;
-    const float left_side_gate =
-        1.0F - smoothstep(canyon_center - 0.04F, canyon_center + 0.08F, p.x);
-    const float left_distance = std::abs(p.x - left_wash_center);
-    const float left_wash =
-        (1.0F - smoothstep(0.030F, 0.130F, left_distance)) * left_t * left_side_gate;
-
-    const float right_t = smoothstep(-0.22F, 0.42F, p.z) * (1.0F - smoothstep(0.54F, 0.84F, p.z));
-    const float right_join_t = saturate((p.z + 0.22F) / 0.76F);
-    const float right_wash_center =
-        canyon_center + (0.48F * (1.0F - right_join_t)) -
-        std::sin(right_join_t * 3.14159265359F) * 0.060F +
-        fbm((p.x * 3.9F) + 6.0F, (p.z * 3.9F) - 9.0F, config.seed + 2613U, 3) * 0.024F;
-    const float right_side_gate = smoothstep(canyon_center - 0.08F, canyon_center + 0.04F, p.x);
-    const float right_distance = std::abs(p.x - right_wash_center);
-    const float right_wash =
-        (1.0F - smoothstep(0.030F, 0.125F, right_distance)) * right_t * right_side_gate;
-
-    const float wash_patch = smoothstep(
-        0.18F, 0.80F,
-        fbm((p.x * 5.2F) + 4.0F, (p.z * 5.2F) - 8.0F, config.seed + 2617U, 4) * 0.5F + 0.5F);
-    const float wash_influence =
-        saturate(std::max(left_wash, right_wash) * lerp(0.46F, 0.72F, wash_patch));
-    const float wash_distance = std::min(left_distance, right_distance);
-    const float channel_distance_norm = std::min(canyon_distance, wash_distance);
-
-    const float broad = fbm((p.x * 1.18F) - 6.0F, (p.z * 1.18F) + 2.0F, config.seed + 2701U, 5);
-    const float bench_noise =
-        fbm((p.x * 3.4F) + 11.0F, (p.z * 3.4F) - 5.0F, config.seed + 2707U, 4);
-    const float high_desert_tilt = (1.0F - p.z) * 0.5F;
-    const float plateau_noise =
-        fbm((p.x * 1.35F) + 9.0F, (p.z * 1.35F) - 3.0F, config.seed + 2621U, 4) * 0.5F + 0.5F;
-    const float plateau = saturate((1.0F - canyon_broad * 0.58F - wash_influence * 0.08F) *
-                                   lerp(0.78F, 1.08F, plateau_noise));
-    const float base =
-        saturate((plateau * 0.44F) + (high_desert_tilt * 0.20F) + (plateau_noise * 0.20F) +
-                 (smoothstep(-0.32F, 0.86F, broad) * 0.16F));
-    const float relief =
-        saturate((canyon_wall * 0.46F) + (rim_influence * 0.30F) + (bench_influence * 0.14F) +
-                 (talus_influence * 0.10F) + (plateau * 0.06F));
-    const float process =
-        saturate((canyon_floor * 0.34F) + (wash_influence * 0.30F) + (talus_influence * 0.18F) +
-                 (canyon_broad * 0.10F) + ((1.0F - plateau) * 0.08F));
-
-    return {
-        .base_potential = base,
-        .relief_potential = relief,
-        .process_potential = process,
-        .selection_mask = 1.0F,
-        .canyon_floor_source = saturate(canyon_floor),
-        .canyon_broad_source = saturate(canyon_broad),
-        .canyon_wall_source = saturate(canyon_wall),
-        .wash_source = wash_influence,
-        .plateau_source = plateau,
-        .rim_source = saturate(rim_influence),
-        .bench_source = saturate(bench_influence),
-        .talus_source = saturate(talus_influence),
-        .plateau_noise_source = plateau_noise,
-        .broad_source = broad,
-        .bench_noise_source = bench_noise,
-        .channel_distance_norm = channel_distance_norm,
-    };
-}
-
-[[nodiscard]] AridMesaSampleFeatures arid_mesa_features_at(Point2 p, const TerrainLabGridDesc& desc,
-                                                           const TerrainLabConfig& config) {
-    const AridMesaDriver driver = arid_mesa_driver_at(p, config);
-    const float extent_m = std::max(half_extent_x_m(desc), half_extent_z_m(desc));
-    const float canyon_floor = driver.canyon_floor_source;
-    const float canyon_broad = driver.canyon_broad_source;
-    const float canyon_wall = driver.canyon_wall_source;
-    const float wash_influence = driver.wash_source;
-    const float plateau = driver.plateau_source;
-    const float rim_influence = driver.rim_source;
-    const float bench_influence = driver.bench_source;
-    const float talus_influence = driver.talus_source;
-    const float plateau_noise = driver.plateau_noise_source;
-    const float channel = saturate(std::max(canyon_floor, wash_influence * 0.22F));
-    const float valley = saturate((canyon_broad * 0.80F) + (wash_influence * 0.10F));
-    const float basin = saturate((canyon_floor * 0.76F) + (wash_influence * 0.04F));
-    const float ridge =
-        saturate((canyon_wall * 0.72F) + (rim_influence * 0.42F) + (bench_influence * 0.12F) +
-                 plateau * (0.08F + plateau_noise * 0.06F));
-    const float divide = saturate((plateau * 0.28F) + (rim_influence * 0.50F) +
-                                  (bench_influence * 0.26F) + (1.0F - valley) * 0.10F);
-
-    return {
-        .canyon_floor = saturate(canyon_floor),
-        .canyon_wall = saturate(canyon_wall),
-        .wash_influence = wash_influence,
-        .plateau_influence = plateau,
-        .rim_influence = saturate(rim_influence),
-        .bench_influence = saturate(bench_influence),
-        .talus_influence = saturate(talus_influence),
-        .ridge_influence = ridge,
-        .valley_influence = valley,
-        .basin_influence = basin,
-        .divide_influence = divide,
-        .channel_influence = channel,
-        .channel_distance_m = std::max(driver.channel_distance_norm * extent_m, 0.0F),
-    };
-}
-
 [[nodiscard]] DesertDuneDriver desert_dune_driver_at(Point2 p, const TerrainLabConfig& config) {
     const float angle = lerp(0.32F, 0.68F, random01(config.seed, 21U, 1201U));
     const Point2 wind{std::cos(angle), std::sin(angle)};
@@ -966,6 +869,431 @@ void derive_flow_aligned_channels(const TerrainLabConfig& config, TerrainLabFiel
         smoothed.swap(next);
     }
     fields.channel_influence = std::move(smoothed);
+}
+
+[[nodiscard]] std::uint32_t arid_regional_extent_for_visible(std::uint32_t visible_extent) {
+    constexpr std::uint32_t kAridRegionalMaxExtent = 769U;
+    const std::uint32_t expanded = visible_extent <= ((kAridRegionalMaxExtent - 1U) / 3U) + 1U
+                                       ? ((visible_extent - 1U) * 3U) + 1U
+                                       : kAridRegionalMaxExtent;
+    return std::max(visible_extent, expanded);
+}
+
+[[nodiscard]] AridRegionalCanyonFields
+make_empty_arid_regional_canyon_fields(const TerrainLabConfig& config,
+                                       const TerrainLabGridDesc& visible_desc) {
+    AridRegionalCanyonFields region;
+    region.desc = {
+        .seed = config.seed,
+        .width = arid_regional_extent_for_visible(visible_desc.width),
+        .height = arid_regional_extent_for_visible(visible_desc.height),
+        .cell_size_m = visible_desc.cell_size_m,
+        .origin_x_m = 0.0F,
+        .origin_z_m = 0.0F,
+    };
+
+    const std::size_t count = terrain_lab_sample_count(region.desc);
+    region.macro_height_m.assign(count, 0.0F);
+    region.base_potential.assign(count, 0.0F);
+    region.relief_potential.assign(count, 0.0F);
+    region.process_potential.assign(count, 0.0F);
+    region.runoff.assign(count, 0.0F);
+    region.resistance.assign(count, 0.0F);
+    region.plateau.assign(count, 0.0F);
+    region.canyon_floor.assign(count, 0.0F);
+    region.canyon_broad.assign(count, 0.0F);
+    region.canyon_wall.assign(count, 0.0F);
+    region.wash.assign(count, 0.0F);
+    region.rim.assign(count, 0.0F);
+    region.bench.assign(count, 0.0F);
+    region.talus.assign(count, 0.0F);
+    region.broad.assign(count, 0.0F);
+    region.bench_noise.assign(count, 0.0F);
+    region.channel_distance_m.assign(count, 0.0F);
+    region.incision.assign(count, 0.0F);
+    return region;
+}
+
+void compute_arid_channel_distance(const TerrainLabGridDesc& desc,
+                                   const std::vector<float>& channel_strength,
+                                   std::vector<float>& distance_m) {
+    const std::size_t count = terrain_lab_sample_count(desc);
+    const float inf = std::numeric_limits<float>::max() * 0.25F;
+    distance_m.assign(count, inf);
+    for (std::size_t sample = 0; sample < count; ++sample) {
+        if (channel_strength[sample] > 0.32F) {
+            distance_m[sample] = 0.0F;
+        }
+    }
+
+    const float axial = desc.cell_size_m;
+    const float diagonal = desc.cell_size_m * 1.41421356F;
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const std::size_t sample = grid_index(x, y, desc.width);
+            float best = distance_m[sample];
+            if (x > 0U) {
+                best = std::min(best, distance_m[grid_index(x - 1U, y, desc.width)] + axial);
+            }
+            if (y > 0U) {
+                best = std::min(best, distance_m[grid_index(x, y - 1U, desc.width)] + axial);
+                if (x > 0U) {
+                    best = std::min(best,
+                                    distance_m[grid_index(x - 1U, y - 1U, desc.width)] + diagonal);
+                }
+                if (x + 1U < desc.width) {
+                    best = std::min(best,
+                                    distance_m[grid_index(x + 1U, y - 1U, desc.width)] + diagonal);
+                }
+            }
+            distance_m[sample] = best;
+        }
+    }
+
+    for (std::uint32_t y = desc.height; y-- > 0U;) {
+        for (std::uint32_t x = desc.width; x-- > 0U;) {
+            const std::size_t sample = grid_index(x, y, desc.width);
+            float best = distance_m[sample];
+            if (x + 1U < desc.width) {
+                best = std::min(best, distance_m[grid_index(x + 1U, y, desc.width)] + axial);
+            }
+            if (y + 1U < desc.height) {
+                best = std::min(best, distance_m[grid_index(x, y + 1U, desc.width)] + axial);
+                if (x > 0U) {
+                    best = std::min(best,
+                                    distance_m[grid_index(x - 1U, y + 1U, desc.width)] + diagonal);
+                }
+                if (x + 1U < desc.width) {
+                    best = std::min(best,
+                                    distance_m[grid_index(x + 1U, y + 1U, desc.width)] + diagonal);
+                }
+            }
+            distance_m[sample] = best;
+        }
+    }
+
+    const float fallback_distance = std::max(half_extent_x_m(desc), half_extent_z_m(desc)) * 2.0F;
+    for (float& distance : distance_m) {
+        if (!std::isfinite(distance) || distance >= inf * 0.5F) {
+            distance = fallback_distance;
+        }
+    }
+}
+
+[[nodiscard]] AridRegionalCanyonFields
+build_arid_regional_canyon_fields(const TerrainLabConfig& config,
+                                  const TerrainLabGridDesc& visible_desc) {
+    AridRegionalCanyonFields region = make_empty_arid_regional_canyon_fields(config, visible_desc);
+    const float arid_elevation_scale_m = config.elevation_scale_m * 0.62F;
+
+    for (std::uint32_t y = 0; y < region.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < region.desc.width; ++x) {
+            const std::size_t sample = grid_index(x, y, region.desc.width);
+            const Point2 p = normalized_sample(region.desc, x, y);
+            const float warp_x =
+                fbm((p.x * 1.05F) - 7.0F, (p.z * 1.05F) + 4.0F, config.seed + 2501U, 4) * 0.16F;
+            const float warp_z =
+                fbm((p.x * 1.10F) + 6.0F, (p.z * 1.10F) - 3.0F, config.seed + 2503U, 4) * 0.13F;
+            const Point2 q{p.x + warp_x, p.z + warp_z};
+            const float downstream_tilt = saturate((1.0F - q.z) * 0.5F);
+            const float cross_tilt = q.x * 0.08F;
+            const float broad =
+                fbm((q.x * 1.05F) - 6.0F, (q.z * 1.05F) + 2.0F, config.seed + 2701U, 5);
+            const float broad_secondary =
+                fbm((q.x * 1.80F) + 11.0F, (q.z * 1.45F) - 5.0F, config.seed + 2703U, 4);
+            const float lithology =
+                fbm((q.x * 2.20F) - 13.0F, (q.z * 1.90F) + 17.0F, config.seed + 2705U, 4) * 0.5F +
+                0.5F;
+            const float runoff =
+                saturate(0.38F + smoothstep(-0.42F, 0.74F, broad) * 0.24F +
+                         smoothstep(0.18F, 0.86F, broad_secondary * 0.5F + 0.5F) * 0.16F);
+            const float resistance = saturate(0.30F + lithology * 0.44F +
+                                              smoothstep(-0.24F, 0.82F, broad_secondary) * 0.14F);
+            const float plateau =
+                saturate(0.30F + downstream_tilt * 0.24F +
+                         smoothstep(-0.38F, 0.86F, broad) * 0.30F + resistance * 0.12F);
+            const float macro_height =
+                ((downstream_tilt * 0.66F) + (broad * 0.16F) + (broad_secondary * 0.075F) +
+                 (resistance * 0.060F) + cross_tilt - 0.08F) *
+                arid_elevation_scale_m;
+
+            region.macro_height_m[sample] = macro_height;
+            region.base_potential[sample] =
+                saturate(plateau * 0.60F + downstream_tilt * 0.18F + (broad * 0.5F + 0.5F) * 0.22F);
+            region.runoff[sample] = runoff;
+            region.resistance[sample] = resistance;
+            region.plateau[sample] = plateau;
+            region.broad[sample] = broad;
+            region.bench_noise[sample] = broad_secondary;
+        }
+    }
+
+    std::vector<float> slope;
+    std::vector<float> curvature;
+    std::vector<std::uint8_t> flow_direction;
+    std::vector<float> flow_accumulation;
+    std::vector<float> stream_power;
+    float max_slope = 0.0F;
+    float max_abs_curvature = 0.0F;
+    float max_flow_accumulation = 0.0F;
+    float max_stream_power = 0.0F;
+    compute_slope_and_curvature(region.desc, region.macro_height_m, slope, curvature, max_slope,
+                                max_abs_curvature);
+    compute_flow_fields(region.desc, region.macro_height_m, slope, flow_direction,
+                        flow_accumulation, stream_power, max_flow_accumulation, max_stream_power);
+
+    const std::size_t count = terrain_lab_sample_count(region.desc);
+    const float inv_log_count =
+        1.0F / std::log1p(static_cast<float>(std::max<std::size_t>(count, 1U)));
+    const float inv_max_stream = max_stream_power > 0.0F ? 1.0F / max_stream_power : 0.0F;
+    for (std::size_t sample = 0; sample < count; ++sample) {
+        const float flow_t = std::log1p(flow_accumulation[sample]) * inv_log_count;
+        const float stream_t = saturate(stream_power[sample] * inv_max_stream);
+        const float slope_t = smoothstep(0.015F, 0.24F, slope[sample]);
+        const float runoff = region.runoff[sample];
+        const float resistance = region.resistance[sample];
+        const float network_source = saturate((flow_t * 0.66F) + (stream_t * 0.28F) +
+                                              (runoff * 0.12F) - (resistance * 0.08F));
+        const float trunk = smoothstep(0.38F, 0.70F, network_source);
+        const float tributary = smoothstep(0.24F, 0.58F, network_source) *
+                                smoothstep(0.030F, 0.22F, slope[sample]) * (0.42F + runoff * 0.34F);
+        const float wash = saturate(std::max(trunk, tributary * 0.64F));
+        const float incision = saturate((trunk * 0.54F) + (stream_t * 0.30F) + (slope_t * 0.18F) +
+                                        (runoff * 0.08F) - (resistance * 0.16F));
+        region.wash[sample] = wash;
+        region.incision[sample] = incision;
+    }
+
+    compute_arid_channel_distance(region.desc, region.wash, region.channel_distance_m);
+
+    for (std::size_t sample = 0; sample < count; ++sample) {
+        const float incision = region.incision[sample];
+        const float distance = region.channel_distance_m[sample];
+        const float wall_width_m = lerp(120.0F, 520.0F, incision);
+        const float rim_width_m = wall_width_m * 1.82F;
+        const float channel = region.wash[sample];
+        const float canyon_floor = smoothstep(0.34F, 0.78F, channel);
+        const float canyon_broad =
+            saturate((1.0F - smoothstep(wall_width_m * 0.90F, wall_width_m * 3.20F, distance)) *
+                     (0.52F + incision * 0.48F));
+        const float canyon_wall =
+            smoothstep(wall_width_m * 0.30F, wall_width_m * 1.08F, distance) *
+            (1.0F - smoothstep(wall_width_m * 1.12F, wall_width_m * 2.28F, distance)) *
+            smoothstep(0.10F, 0.70F, incision);
+        const float rim = smoothstep(wall_width_m * 1.08F, rim_width_m, distance) *
+                          (1.0F - smoothstep(rim_width_m, rim_width_m * 1.92F, distance)) *
+                          smoothstep(0.12F, 0.82F, incision);
+        const float bench_band = std::sin((distance / std::max(wall_width_m, 1.0F)) * 5.80F +
+                                          region.bench_noise[sample] * 2.40F) *
+                                     0.5F +
+                                 0.5F;
+        const float bench = smoothstep(0.48F, 0.78F, bench_band) * (1.0F - canyon_floor * 0.72F) *
+                            smoothstep(wall_width_m * 0.75F, rim_width_m * 1.62F, distance) *
+                            smoothstep(0.10F, 0.72F, incision);
+        const float talus = canyon_wall * smoothstep(0.20F, 0.74F, incision) *
+                            (1.0F - smoothstep(0.76F, 1.0F, canyon_floor));
+        const float wall_source = saturate(canyon_wall * 1.45F + rim * 0.16F);
+        region.canyon_floor[sample] = saturate(canyon_floor);
+        region.canyon_broad[sample] = saturate(canyon_broad);
+        region.canyon_wall[sample] = wall_source;
+        region.rim[sample] = saturate(rim);
+        region.bench[sample] = saturate(bench);
+        region.talus[sample] = saturate(talus);
+        const float wall_incision = incision * (1.0F - smoothstep(0.30F, 0.82F, channel));
+        region.relief_potential[sample] =
+            saturate((wall_source * 0.64F) + (rim * 0.44F) + (bench * 0.18F) + (talus * 0.18F) +
+                     (wall_incision * 0.34F) + smoothstep(0.05F, 0.30F, wall_incision) * 0.36F);
+        region.process_potential[sample] =
+            saturate((channel * 0.36F) + (canyon_floor * 0.22F) + (talus * 0.16F) +
+                     (canyon_broad * 0.12F) + (incision * 0.18F));
+    }
+
+    return region;
+}
+
+[[nodiscard]] std::vector<std::uint32_t> arid_crop_candidates(std::uint32_t max_offset,
+                                                              std::uint32_t visible_extent) {
+    std::vector<std::uint32_t> candidates;
+    const std::uint32_t step = std::max<std::uint32_t>(8U, visible_extent / 6U);
+    for (std::uint32_t offset = 0; offset < max_offset; offset += step) {
+        candidates.push_back(offset);
+    }
+    candidates.push_back(max_offset);
+    std::sort(candidates.begin(), candidates.end());
+    candidates.erase(std::unique(candidates.begin(), candidates.end()), candidates.end());
+    return candidates;
+}
+
+[[nodiscard]] float score_arid_canyon_crop(const AridRegionalCanyonFields& region,
+                                           const TerrainLabGridDesc& visible_desc,
+                                           AridCanyonCrop crop) {
+    const std::uint32_t stride = std::max<std::uint32_t>(1U, visible_desc.width / 48U);
+    std::array<bool, 4> saw_quadrant{false, false, false, false};
+    double channel_sum = 0.0;
+    double strong_channel_sum = 0.0;
+    double wall_sum = 0.0;
+    double edge_channel_sum = 0.0;
+    std::uint32_t channel_count = 0;
+    std::uint32_t sample_count = 0;
+    std::uint32_t min_channel_x = visible_desc.width;
+    std::uint32_t max_channel_x = 0U;
+    std::uint32_t min_channel_y = visible_desc.height;
+    std::uint32_t max_channel_y = 0U;
+
+    for (std::uint32_t y = 0; y < visible_desc.height; y += stride) {
+        for (std::uint32_t x = 0; x < visible_desc.width; x += stride) {
+            const std::size_t sample =
+                grid_index(crop.offset_x + x, crop.offset_y + y, region.desc.width);
+            const float channel = region.wash[sample];
+            const float wall = region.canyon_wall[sample] + region.rim[sample];
+            const bool edge = x < stride * 2U || y < stride * 2U ||
+                              x + stride * 2U >= visible_desc.width ||
+                              y + stride * 2U >= visible_desc.height;
+            channel_sum += channel;
+            strong_channel_sum += smoothstep(0.52F, 0.86F, channel);
+            wall_sum += wall;
+            if (edge) {
+                edge_channel_sum += channel;
+            }
+            if (channel > 0.30F) {
+                ++channel_count;
+                min_channel_x = std::min(min_channel_x, x);
+                max_channel_x = std::max(max_channel_x, x);
+                min_channel_y = std::min(min_channel_y, y);
+                max_channel_y = std::max(max_channel_y, y);
+                const std::size_t quadrant = (x >= visible_desc.width / 2U ? 1U : 0U) +
+                                             (y >= visible_desc.height / 2U ? 2U : 0U);
+                saw_quadrant[quadrant] = true;
+            }
+            ++sample_count;
+        }
+    }
+
+    const float inv_samples = sample_count == 0U ? 0.0F : 1.0F / static_cast<float>(sample_count);
+    const float channel_fraction = static_cast<float>(channel_count) * inv_samples;
+    const float x_spread =
+        channel_count == 0U
+            ? 0.0F
+            : static_cast<float>(max_channel_x - min_channel_x) /
+                  static_cast<float>(std::max<std::uint32_t>(visible_desc.width - 1U, 1U));
+    const float y_spread =
+        channel_count == 0U
+            ? 0.0F
+            : static_cast<float>(max_channel_y - min_channel_y) /
+                  static_cast<float>(std::max<std::uint32_t>(visible_desc.height - 1U, 1U));
+    const std::uint32_t quadrant_count =
+        static_cast<std::uint32_t>(std::count(saw_quadrant.begin(), saw_quadrant.end(), true));
+
+    return static_cast<float>((channel_sum * 0.12) + (strong_channel_sum * 0.90) +
+                              (wall_sum * 0.10) - (edge_channel_sum * 0.28)) +
+           static_cast<float>(quadrant_count) * 18.0F + x_spread * 18.0F + y_spread * 10.0F -
+           std::abs(channel_fraction - 0.12F) * 120.0F;
+}
+
+[[nodiscard]] AridCanyonCrop select_arid_canyon_crop(const AridRegionalCanyonFields& region,
+                                                     const TerrainLabGridDesc& visible_desc) {
+    const std::uint32_t max_x =
+        region.desc.width > visible_desc.width ? region.desc.width - visible_desc.width : 0U;
+    const std::uint32_t max_y =
+        region.desc.height > visible_desc.height ? region.desc.height - visible_desc.height : 0U;
+    const std::vector<std::uint32_t> x_candidates = arid_crop_candidates(max_x, visible_desc.width);
+    const std::vector<std::uint32_t> y_candidates =
+        arid_crop_candidates(max_y, visible_desc.height);
+
+    AridCanyonCrop best{};
+    float best_score = -std::numeric_limits<float>::max();
+    for (const std::uint32_t y : y_candidates) {
+        for (const std::uint32_t x : x_candidates) {
+            const AridCanyonCrop crop{.offset_x = x, .offset_y = y};
+            const float score = score_arid_canyon_crop(region, visible_desc, crop);
+            if (score > best_score) {
+                best = crop;
+                best_score = score;
+            }
+        }
+    }
+    return best;
+}
+
+[[nodiscard]] AridMesaSliceFields
+generate_arid_mesa_network_slice(const TerrainLabConfig& config,
+                                 const TerrainLabGridDesc& visible_desc) {
+    const AridRegionalCanyonFields region = build_arid_regional_canyon_fields(config, visible_desc);
+    const AridCanyonCrop crop = select_arid_canyon_crop(region, visible_desc);
+    AridMesaSliceFields slice;
+    const std::size_t visible_count = terrain_lab_sample_count(visible_desc);
+    slice.drivers.assign(visible_count, {});
+    slice.features.assign(visible_count, {});
+    const float distance_scale_m =
+        std::max(half_extent_x_m(visible_desc), half_extent_z_m(visible_desc));
+
+    for (std::uint32_t y = 0; y < visible_desc.height; ++y) {
+        for (std::uint32_t x = 0; x < visible_desc.width; ++x) {
+            const std::size_t visible_sample = grid_index(x, y, visible_desc.width);
+            const std::size_t regional_sample =
+                grid_index(crop.offset_x + x, crop.offset_y + y, region.desc.width);
+            const float canyon_floor = region.canyon_floor[regional_sample];
+            const float canyon_broad = region.canyon_broad[regional_sample];
+            const float canyon_wall = region.canyon_wall[regional_sample];
+            const float wash = region.wash[regional_sample];
+            const float plateau = region.plateau[regional_sample];
+            const float rim = region.rim[regional_sample];
+            const float bench = region.bench[regional_sample];
+            const float talus = region.talus[regional_sample];
+            const float distance_norm =
+                distance_scale_m <= 0.0F
+                    ? 0.0F
+                    : saturate(region.channel_distance_m[regional_sample] / distance_scale_m);
+            const float channel = saturate(std::max(canyon_floor, wash * 0.48F));
+            const float valley = saturate(canyon_broad * 0.76F + wash * 0.16F);
+            const float basin = saturate(canyon_floor * 0.72F + wash * 0.12F);
+            const float plateau_divide =
+                smoothstep(0.48F, 0.82F, plateau) * (1.0F - smoothstep(0.18F, 0.70F, valley));
+            const float relief_driver = region.relief_potential[regional_sample];
+            const float ridge =
+                saturate(canyon_wall * 1.02F + rim * 0.70F + bench * 0.22F +
+                         plateau_divide * 0.72F + smoothstep(0.10F, 0.36F, relief_driver) * 0.56F +
+                         plateau * (0.06F + region.base_potential[regional_sample] * 0.06F));
+            const float divide = saturate(rim * 0.90F + canyon_wall * 0.24F + bench * 0.34F +
+                                          plateau_divide * 0.72F + (1.0F - valley) * 0.08F);
+
+            slice.drivers[visible_sample] = {
+                .base_potential = region.base_potential[regional_sample],
+                .relief_potential = region.relief_potential[regional_sample],
+                .process_potential = region.process_potential[regional_sample],
+                .selection_mask = 1.0F,
+                .canyon_floor_source = canyon_floor,
+                .canyon_broad_source = canyon_broad,
+                .canyon_wall_source = canyon_wall,
+                .wash_source = wash,
+                .plateau_source = plateau,
+                .rim_source = rim,
+                .bench_source = bench,
+                .talus_source = talus,
+                .plateau_noise_source = region.base_potential[regional_sample],
+                .broad_source = region.broad[regional_sample],
+                .bench_noise_source = region.bench_noise[regional_sample],
+                .channel_distance_norm = distance_norm,
+            };
+            slice.features[visible_sample] = {
+                .canyon_floor = canyon_floor,
+                .canyon_wall = canyon_wall,
+                .wash_influence = wash,
+                .plateau_influence = plateau,
+                .rim_influence = rim,
+                .bench_influence = bench,
+                .talus_influence = talus,
+                .ridge_influence = ridge,
+                .valley_influence = valley,
+                .basin_influence = basin,
+                .divide_influence = divide,
+                .channel_influence = channel,
+                .channel_distance_m = region.channel_distance_m[regional_sample],
+            };
+        }
+    }
+
+    return slice;
 }
 
 void relax_steep_process_slopes(const TerrainLabConfig& config, TerrainLabFieldData& fields) {
@@ -1407,7 +1735,6 @@ TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLa
     compute_flow_fields(fields.desc, fields.structure_height_m, temp_slope, temp_direction,
                         temp_accumulation, temp_stream_power, temp_max_accumulation,
                         temp_max_stream_power);
-    derive_flow_aligned_channels(config, fields, temp_accumulation, temp_slope);
 
     const float inv_log_count =
         1.0F / std::log1p(static_cast<float>(std::max<std::size_t>(count, 1U)));
@@ -1541,13 +1868,14 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
     const float arid_elevation_scale_m = config.elevation_scale_m * 0.62F;
     fields.watershed_count = 1U;
     fields.max_channel_distance_m = 0.0F;
+    const AridMesaSliceFields arid_slice = generate_arid_mesa_network_slice(config, fields.desc);
 
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
             const std::size_t sample = fields.index(x, y);
             const Point2 p = normalized_sample(fields.desc, x, y);
-            const AridMesaDriver driver = arid_mesa_driver_at(p, config);
-            const AridMesaSampleFeatures features = arid_mesa_features_at(p, fields.desc, config);
+            const AridMesaDriver& driver = arid_slice.drivers[sample];
+            const AridMesaSampleFeatures& features = arid_slice.features[sample];
             const float high_desert_tilt = (1.0F - p.z) * 0.5F;
             const float mesa_bench =
                 smoothstep(-0.18F, 0.78F, driver.broad_source + features.plateau_influence * 0.62F);
@@ -1631,7 +1959,7 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
             const std::size_t sample = fields.index(x, y);
             const Point2 p = normalized_sample(fields.desc, x, y);
-            const AridMesaSampleFeatures features = arid_mesa_features_at(p, fields.desc, config);
+            const AridMesaSampleFeatures& features = arid_slice.features[sample];
             const float elevation_t =
                 saturate((fields.height_m[sample] - fields.min_height_m) / process_height_span);
             const float exposed = saturate(
@@ -1674,7 +2002,7 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
             const std::size_t sample = fields.index(x, y);
             const Point2 p = normalized_sample(fields.desc, x, y);
-            const AridMesaSampleFeatures features = arid_mesa_features_at(p, fields.desc, config);
+            const AridMesaSampleFeatures& features = arid_slice.features[sample];
             const float elevation_t =
                 saturate((fields.height_m[sample] - fields.min_height_m) / height_span);
             const float slope_t = smoothstep(0.05F, 0.52F, fields.slope[sample]);
@@ -1703,17 +2031,20 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
             const float high = smoothstep(0.80F, 0.98F, elevation_t);
             const float rock =
                 ((slope_t * 0.82F) + (features.canyon_wall * 0.72F) +
-                 (features.rim_influence * 0.38F) + (fields.ridge_influence[sample] * 0.22F)) *
+                 (features.rim_influence * 0.64F) + (fields.ridge_influence[sample] * 1.05F)) *
                 (1.0F - dry_wash * 0.62F) * lerp(0.84F, 1.20F, material_noise);
+            const float ridge_exposure =
+                fields.ridge_influence[sample] * (1.0F - smoothstep(0.18F, 0.74F, dry_wash));
             const float scree = smoothstep(0.18F, 0.72F, slope_t) *
-                                (1.0F - smoothstep(0.78F, 1.0F, slope_t)) *
-                                (0.30F + features.talus_influence * 0.58F +
-                                 features.canyon_wall * 0.36F + dry_wash * 0.08F) *
-                                (1.0F - dry_wash * 0.50F) * lerp(0.76F, 1.28F, scree_patch);
-            const float soil = (0.42F + deposition * 0.54F + (1.0F - slope_t) * 0.22F +
+                                    (1.0F - smoothstep(0.78F, 1.0F, slope_t)) *
+                                    (0.30F + features.talus_influence * 0.58F +
+                                     features.canyon_wall * 0.36F + dry_wash * 0.08F) *
+                                    (1.0F - dry_wash * 0.50F) * lerp(0.76F, 1.28F, scree_patch) +
+                                ridge_exposure * 0.26F;
+            const float soil = (0.24F + deposition * 0.78F + (1.0F - slope_t) * 0.14F +
                                 features.plateau_influence * 0.14F +
-                                features.bench_influence * 0.14F + dry_wash * 0.70F) *
-                               lerp(0.86F, 1.18F, material_noise);
+                                features.bench_influence * 0.08F + dry_wash * 1.58F) *
+                               (1.0F - ridge_exposure * 0.64F) * lerp(0.86F, 1.18F, material_noise);
             const float meadow =
                 wetness * (1.0F - slope_t) * (0.40F + dry_wash * 0.18F) * (1.0F - high * 0.40F);
             const float forest = wetness * deposition * (1.0F - slope_t) * 0.020F *
