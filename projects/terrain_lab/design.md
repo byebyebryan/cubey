@@ -26,6 +26,8 @@ Terrain should be coherent before it is detailed.
 The generator should first establish the structure of a region:
 
 - high-level intent, such as temperate mountain watershed or arid canyon;
+- coherent driver fields, such as broad land support, relief potential,
+  process potential, and feature selection masks;
 - landform graph, such as ridges, basins, watersheds, stream paths, or strata;
 - scalar fields derived from that graph, such as elevation potential,
   resistance, flow, wetness, and deposition;
@@ -37,6 +39,14 @@ The generator should first establish the structure of a region:
 Detail noise, shader displacement, color breakup, rocks, grass patches, and
 small cracks belong at the end of the pipeline. They should not be the source of
 the terrain's main shape.
+
+The pivot for the next batch is to make the coherent source explicit. Procedural
+noise and randomness are still valid inputs, but the generator should not author
+isolated local primitives like "one canyon line", "one ridge line", or a set of
+manual dune streaks as the primary shape. Instead, each slice should first build
+named driver fields over the whole region, then derive feature masks, height,
+materials, and detail from those fields. A feature can still be sparse or
+directional, but it must be traceable back to a coherent source field.
 
 ## Spatial Scope
 
@@ -80,6 +90,10 @@ Candidate feature data:
 
 Initial scalar fields:
 
+- driver base potential;
+- driver relief potential;
+- driver process potential;
+- driver selection mask;
 - height;
 - structure, process, and detail height contributions;
 - slope;
@@ -103,8 +117,8 @@ The preferred pipeline is:
 
 ```text
 1. Resolve region intent
-2. Build feature graph
-3. Rasterize feature influence fields
+2. Build coherent driver fields
+3. Derive feature influence fields
 4. Compose initial terrain fields
 5. Run process passes
 6. Classify materials and biome-density fields
@@ -119,13 +133,13 @@ temperate mountain watershed, arid mesa canyon, alpine glacial valley, dunes,
 volcanic field, wetland, or coastal shelf. It should not be a grab bag of noise
 settings.
 
-### Feature Graph
+### Driver Fields And Feature Graph
 
-The feature graph is the main guardrail against incoherent terrain. For the
-active arid mesa slice, it should describe mesa benches, canyon rims, dry wash
-paths, and local interfluves before final height detail is applied. For the
-temperate watershed fixture, it should describe ridge hierarchy, basin
-ownership, and drainage paths before final height detail is applied.
+Coherent driver fields are the main guardrail against incoherent terrain. For a
+slice, they should describe the broad support and process sources before local
+feature masks are derived. The feature graph remains useful when a terrain type
+needs explicit topology, such as watershed ownership or drainage paths, but it
+should sit downstream of the driver fields rather than replace them.
 
 The feature graph does not have to be geologically complete. It only has to
 carry enough structure that valleys, ridges, water, and materials line up in the
@@ -140,6 +154,12 @@ from initial flow accumulation, so guide channels bias drainage instead of
 single-handedly carving every valley. Those fields guide structure, process,
 material, and diagnostic rendering, while richer drainage connectivity remains a
 later refinement.
+
+The arid and alpine sentinels still contain authored guide lines and local
+feature placements. They are useful visual pressure tests, but they should be
+treated as migration debt. The desert dunes slice is the first correction target:
+its dunes should come from wind/sand/relief driver fields across the region, not
+from manually positioned streaks.
 
 The sentinel slice set should prevent overfitting this model to canyon terrain.
 The first representative set is:

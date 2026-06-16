@@ -178,6 +178,12 @@ Success criteria:
 
 Status: active as sentinel slices for model pressure.
 
+Pivot note: slices should now prove that coherent source fields can drive the
+terrain. Procedural randomness remains valid, but isolated authored features
+should be treated as temporary scaffolding. A slice passes this phase when its
+main landforms can be inspected through named driver fields before feature masks,
+height, materials, and detail are applied.
+
 Candidate slices:
 
 - arid mesa canyon: strata, cliffs, dry washes, talus, sparse vegetation;
@@ -200,14 +206,19 @@ Current implementation notes:
 - generated fields include mesa/rim/divide influence, dry canyon and side-wash
   channels, low wetness, no snow, rock/scree/soil-heavy material masks, sparse
   scrub density, and very low tree density;
-- desert dunes and alpine glacial valley are available as minimal sentinel
-  slices, while hydrology remains analysis-only and avoids a toy erosion solver;
+- desert dunes are the first correction target for explicit wind/sand/relief
+  driver fields instead of locally authored dune streaks;
+- alpine glacial valley remains available as a minimal sentinel slice, but its
+  current guide-line ridges are known debt until an alpine driver migration;
+- hydrology remains analysis-only and avoids a toy erosion solver;
 - the material vocabulary now includes sand for wind-shaped terrain, while snow
   continues to stand in for snow/ice in the glacial sentinel.
 
 Success criteria:
 
 - dunes remain readable with flow ignored as a shaping force;
+- dune crests, slip faces, and interdune flats are derived from inspectable
+  driver fields rather than hand-placed streaks or lines;
 - glacial terrain reads through valley shape, snow/ice, and deposition rather
   than river carving;
 - shared fields remain useful across all four sentinels without becoming

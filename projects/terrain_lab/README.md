@@ -19,12 +19,13 @@ is added.
 The core rule is:
 
 ```text
-region intent -> feature graph -> scalar fields -> process pass -> material and biome fields -> render detail
+region intent -> coherent driver fields -> feature masks -> process pass -> material and biome fields -> render detail
 ```
 
-High-frequency procedural noise is still useful, but only as a detail layer
-controlled by larger terrain fields. The terrain should remain legible when
-that detail layer is disabled.
+Procedural noise and randomness are still useful, but they should feed coherent
+driver fields rather than hand-authored local features. High-frequency noise is
+only a detail layer controlled by larger terrain fields. The terrain should
+remain legible when that detail layer is disabled.
 
 See [design.md](design.md) for the generation model and [roadmap.md](roadmap.md)
 for the planned slice sequence.
@@ -50,8 +51,8 @@ Terrain Lab should stay distinct from the existing terrain-adjacent projects:
 - Keep deterministic CPU/reference generation available for tests, summaries,
   and debug views even when the renderer later uses GPU displacement.
 - Export explicit fields that other projects can consume: height, normal,
-  slope, curvature, flow, wetness, sediment/deposition, material masks, and
-  future vegetation density.
+  source drivers, slope, curvature, flow, wetness, sediment/deposition,
+  material masks, and future vegetation density.
 - Keep local and planet-scale concerns separate until the local terrain
   contract is strong enough to adapt into `planet` local detail or streaming.
 
@@ -93,10 +94,12 @@ Two representative sentinel slices are also available:
 
 - `--terrain-lab-slice desert-dunes`: wind-shaped dune crests, slip faces,
   interdune flats, sand-dominant materials, sparse shrubs, and diagnostic-only
-  flow fields.
+  flow fields. This is the first slice being migrated to explicit coherent
+  driver fields instead of locally authored dune streaks.
 - `--terrain-lab-slice alpine-glacial-valley`: U-shaped trunk valley, high
   ridges, cirque/headwall influence, moraine/deposition bands, snow/ice masks,
-  and moderate meltwater diagnostics.
+  and moderate meltwater diagnostics. Its current guide-line structure remains
+  a sentinel pressure test rather than the final driver-field model.
 
 Hydrology remains analysis-only for this batch. Flow direction, accumulation,
 stream power, and sink diagnostics can expose whether terrain is coherent, but
@@ -111,6 +114,7 @@ coast-oriented `terrain.*` flags to `procedural_terrain`.
 
 Generated CPU fields include:
 
+- driver base, relief, process, and selection fields;
 - height;
 - structure, process, and detail height contributions;
 - slope and curvature;
@@ -152,6 +156,7 @@ Supported debug views:
 - `biome-density`
 - `canopy-height`
 - `noise-off`
+- `driver`
 - `feature-graph`
 - `watershed`
 - `channel`
@@ -171,6 +176,7 @@ Useful run commands:
 ./build/dev/projects/terrain_lab/terrain_lab --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view flow-accumulation --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view feature-graph --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --debug-view driver --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice temperate-mountain-watershed --debug-view watershed --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice desert-dunes --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice alpine-glacial-valley --frames 300 --width 1280 --height 720
@@ -194,6 +200,7 @@ mkdir -p outputs/terrain_lab
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-watershed --debug-view watershed --width 1280 --height 720 --output outputs/terrain_lab/watershed-temperate.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes-material.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes-driver.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --width 1280 --height 720 --output outputs/terrain_lab/alpine-glacial-valley.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/alpine-glacial-valley-material.png
 ```
