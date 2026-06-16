@@ -152,21 +152,20 @@ The feature graph does not have to be geologically complete. It only has to
 carry enough structure that valleys, ridges, water, and materials line up in the
 rendered result.
 
-The current arid core is still a rasterized feature model rather than a full
-geomorphology graph. It emits a single local basin, soft mesa divide/rim
-influence, a sinuous canyon floor, and dry side-wash guide channels. The
-temperate watershed fixture emits four deterministic basin ids plus soft divide
-and channel-guide influences. Both paths recompute stronger channel influence
-from initial flow accumulation, so guide channels bias drainage instead of
-single-handedly carving every valley. Those fields guide structure, process,
-material, and diagnostic rendering, while richer drainage connectivity remains a
-later refinement.
+The current arid core is still a lightweight local-basin model rather than a
+full geomorphology graph. It now exposes explicit base, relief, process, and
+full-patch selection drivers before deriving mesa divide/rim influence, canyon
+floor, dry washes, talus, and bench masks. The temperate watershed fixture emits
+four deterministic basin ids plus soft divide and channel-guide influences. Both
+paths recompute stronger channel influence from initial flow accumulation, so
+guide channels bias drainage instead of single-handedly carving every valley.
+Those fields guide structure, process, material, and diagnostic rendering, while
+richer drainage connectivity remains a later refinement.
 
-The arid and alpine sentinels still contain authored guide lines and local
-feature placements. They are useful visual pressure tests, but they should be
-treated as migration debt. The desert dunes slice is the first correction target:
-its dunes should come from wind/sand/relief driver fields across the region, not
-from manually positioned streaks.
+The arid, dunes, and alpine sentinels now have explicit driver fields. They are
+still visual pressure tests rather than production terrain systems, but the
+driver view should show coherent terrain causes instead of post-hoc height or
+feature fallback.
 
 The sentinel slice set should prevent overfitting this model to canyon terrain.
 The first representative set is:

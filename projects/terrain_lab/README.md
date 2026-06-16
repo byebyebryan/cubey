@@ -104,8 +104,9 @@ Two representative sentinel slices are also available:
   driver fields instead of locally authored dune streaks.
 - `--terrain-lab-slice alpine-glacial-valley`: U-shaped trunk valley, high
   ridges, cirque/headwall influence, moraine/deposition bands, snow/ice masks,
-  and moderate meltwater diagnostics. Its current guide-line structure remains
-  a sentinel pressure test rather than the final driver-field model.
+  and moderate meltwater diagnostics. It now exports explicit base, relief, and
+  process drivers so the driver view can explain the valley and ridge layout
+  without relying on a post-hoc fallback.
 
 Hydrology remains analysis-only for this batch. Flow direction, accumulation,
 stream power, and sink diagnostics can expose whether terrain is coherent, but

@@ -210,10 +210,11 @@ Current implementation notes:
 - generated fields include mesa/rim/divide influence, dry canyon and side-wash
   channels, low wetness, no snow, rock/scree/soil-heavy material masks, sparse
   scrub density, and very low tree density;
-- desert dunes are the first correction target for explicit wind/sand/relief
-  driver fields instead of locally authored dune streaks;
-- alpine glacial valley remains available as a minimal sentinel slice, but its
-  current guide-line ridges are known debt until an alpine driver migration;
+- desert dunes use explicit wind/sand/relief driver fields instead of locally
+  authored dune streaks;
+- arid mesa canyon and alpine glacial valley now seed explicit base, relief,
+  process, and full-patch selection drivers before feature masks and process
+  response;
 - hydrology remains analysis-only and avoids a toy erosion solver;
 - the material vocabulary now includes sand for wind-shaped terrain, while snow
   continues to stand in for snow/ice in the glacial sentinel.
