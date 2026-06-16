@@ -118,6 +118,23 @@ struct FlowCandidate {
     float slope = 0.0F;
 };
 
+struct AridDrainageTracePoint {
+    float x = 0.0F;
+    float y = 0.0F;
+    float strength = 0.0F;
+    float incision = 0.0F;
+};
+
+struct AridDrainageTrace {
+    std::vector<AridDrainageTracePoint> points{};
+    float strength = 0.0F;
+};
+
+struct AridTraceSeedCandidate {
+    std::size_t sample = 0;
+    float score = 0.0F;
+};
+
 struct AridCanyonCrop {
     std::uint32_t offset_x = 0;
     std::uint32_t offset_y = 0;
@@ -973,6 +990,305 @@ void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float
     }
 }
 
+[[nodiscard]] float squared_distance_cells(std::size_t lhs, std::size_t rhs,
+                                           const TerrainLabGridDesc& desc) {
+    const float lx = static_cast<float>(lhs % desc.width);
+    const float ly = static_cast<float>(lhs / desc.width);
+    const float rx = static_cast<float>(rhs % desc.width);
+    const float ry = static_cast<float>(rhs / desc.width);
+    const float dx = lx - rx;
+    const float dy = ly - ry;
+    return (dx * dx) + (dy * dy);
+}
+
+[[nodiscard]] std::vector<std::size_t>
+select_arid_trace_seeds(const TerrainLabGridDesc& desc, const std::vector<float>& network_source,
+                        const std::vector<float>& incision_source) {
+    std::vector<AridTraceSeedCandidate> candidates;
+    const std::uint32_t margin = std::min<std::uint32_t>(
+        4U, std::min(desc.width > 1U ? desc.width - 1U : 0U, desc.height > 1U ? desc.height - 1U : 0U));
+    for (std::uint32_t y = margin; y + margin < desc.height; ++y) {
+        for (std::uint32_t x = margin; x + margin < desc.width; ++x) {
+            const std::size_t sample = grid_index(x, y, desc.width);
+            const float source = network_source[sample];
+            if (source < 0.26F) {
+                continue;
+            }
+            bool local_peak = true;
+            for (std::uint8_t direction = 0U; direction < kFlowSinkDirection; ++direction) {
+                std::uint32_t nx = 0;
+                std::uint32_t ny = 0;
+                if (!flow_neighbor(desc, x, y, direction, nx, ny)) {
+                    continue;
+                }
+                if (network_source[grid_index(nx, ny, desc.width)] > source + 0.018F) {
+                    local_peak = false;
+                    break;
+                }
+            }
+            if (!local_peak && source < 0.46F) {
+                continue;
+            }
+            candidates.push_back({
+                .sample = sample,
+                .score = source * 0.80F + incision_source[sample] * 0.20F,
+            });
+        }
+    }
+
+    if (candidates.empty()) {
+        for (std::size_t sample = 0; sample < network_source.size(); ++sample) {
+            if (network_source[sample] > 0.18F) {
+                candidates.push_back({
+                    .sample = sample,
+                    .score = network_source[sample] * 0.80F + incision_source[sample] * 0.20F,
+                });
+            }
+        }
+    }
+
+    std::sort(candidates.begin(), candidates.end(),
+              [](const AridTraceSeedCandidate& lhs, const AridTraceSeedCandidate& rhs) {
+                  return lhs.score > rhs.score;
+              });
+
+    std::vector<std::size_t> seeds;
+    const float min_distance = static_cast<float>(
+        std::max<std::uint32_t>(10U, std::min(desc.width, desc.height) / 18U));
+    const float min_distance_sq = min_distance * min_distance;
+    constexpr std::size_t kMaxAridTraceSeeds = 28U;
+    for (const AridTraceSeedCandidate& candidate : candidates) {
+        bool too_close = false;
+        for (const std::size_t seed : seeds) {
+            if (squared_distance_cells(candidate.sample, seed, desc) < min_distance_sq) {
+                too_close = true;
+                break;
+            }
+        }
+        if (too_close) {
+            continue;
+        }
+        seeds.push_back(candidate.sample);
+        if (seeds.size() >= kMaxAridTraceSeeds) {
+            break;
+        }
+    }
+    return seeds;
+}
+
+[[nodiscard]] AridDrainageTrace
+trace_arid_drainage_corridor(const TerrainLabGridDesc& desc, const FlowRoutingData& routing,
+                             const std::vector<float>& network_source,
+                             const std::vector<float>& incision_source, std::uint64_t seed,
+                             std::size_t start) {
+    AridDrainageTrace trace;
+    std::vector<std::size_t> visited;
+    std::size_t current = start;
+    const std::uint32_t max_steps = std::min<std::uint32_t>(360U, desc.width + desc.height);
+    float strength_sum = 0.0F;
+
+    for (std::uint32_t step = 0; step < max_steps; ++step) {
+        if (current == kNoFlowReceiver ||
+            std::find(visited.begin(), visited.end(), current) != visited.end()) {
+            break;
+        }
+        visited.push_back(current);
+
+        const auto x = static_cast<std::uint32_t>(current % desc.width);
+        const auto y = static_cast<std::uint32_t>(current / desc.width);
+        const FlowReceiver& receiver = routing.receivers[current];
+        const float strength = network_source[current];
+        const float incision = incision_source[current];
+        const float rough =
+            fbm((static_cast<float>(x) * 0.037F) + 31.0F,
+                (static_cast<float>(y) * 0.037F) - 17.0F, seed + 4901U, 3);
+        const float lateral = rough * 0.46F * smoothstep(0.24F, 0.78F, strength);
+        const float px = static_cast<float>(x) - receiver.vector_y * lateral;
+        const float py = static_cast<float>(y) + receiver.vector_x * lateral;
+        trace.points.push_back({
+            .x = px,
+            .y = py,
+            .strength = strength,
+            .incision = incision,
+        });
+        strength_sum += strength;
+
+        if (receiver.first == kNoFlowReceiver) {
+            break;
+        }
+        const std::size_t next = receiver.first;
+        if (step > 6U && network_source[next] < 0.13F && strength < 0.36F) {
+            break;
+        }
+        current = next;
+    }
+
+    if (!trace.points.empty()) {
+        trace.strength = strength_sum / static_cast<float>(trace.points.size());
+    }
+    return trace;
+}
+
+void smooth_arid_drainage_trace(AridDrainageTrace& trace) {
+    if (trace.points.size() < 4U) {
+        return;
+    }
+    for (std::uint32_t iteration = 0; iteration < 3U; ++iteration) {
+        std::vector<AridDrainageTracePoint> next = trace.points;
+        for (std::size_t index = 1; index + 1U < trace.points.size(); ++index) {
+            const AridDrainageTracePoint& prev = trace.points[index - 1U];
+            const AridDrainageTracePoint& cur = trace.points[index];
+            const AridDrainageTracePoint& post = trace.points[index + 1U];
+            next[index].x = prev.x * 0.23F + cur.x * 0.54F + post.x * 0.23F;
+            next[index].y = prev.y * 0.23F + cur.y * 0.54F + post.y * 0.23F;
+            next[index].strength =
+                saturate(prev.strength * 0.18F + cur.strength * 0.64F + post.strength * 0.18F);
+            next[index].incision =
+                saturate(prev.incision * 0.18F + cur.incision * 0.64F + post.incision * 0.18F);
+        }
+        trace.points.swap(next);
+    }
+}
+
+[[nodiscard]] float point_segment_distance_cells(float px, float py, const AridDrainageTracePoint& a,
+                                                 const AridDrainageTracePoint& b,
+                                                 float& segment_t) {
+    const float abx = b.x - a.x;
+    const float aby = b.y - a.y;
+    const float apx = px - a.x;
+    const float apy = py - a.y;
+    const float ab_len_sq = (abx * abx) + (aby * aby);
+    segment_t = ab_len_sq <= 0.000001F ? 0.0F : saturate(((apx * abx) + (apy * aby)) / ab_len_sq);
+    const float cx = a.x + abx * segment_t;
+    const float cy = a.y + aby * segment_t;
+    const float dx = px - cx;
+    const float dy = py - cy;
+    return std::sqrt((dx * dx) + (dy * dy));
+}
+
+[[nodiscard]] std::vector<AridDrainageTrace>
+trace_arid_drainage_corridors(const TerrainLabGridDesc& desc, const FlowRoutingData& routing,
+                              const std::vector<float>& network_source,
+                              const std::vector<float>& incision_source, std::uint64_t seed) {
+    std::vector<AridDrainageTrace> traces;
+    std::vector<std::uint8_t> covered(terrain_lab_sample_count(desc), 0U);
+    const std::vector<std::size_t> seeds =
+        select_arid_trace_seeds(desc, network_source, incision_source);
+    for (const std::size_t start : seeds) {
+        if (covered[start] > 1U && network_source[start] < 0.58F) {
+            continue;
+        }
+        AridDrainageTrace trace =
+            trace_arid_drainage_corridor(desc, routing, network_source, incision_source, seed, start);
+        if (trace.points.size() < 7U || trace.strength < 0.20F) {
+            continue;
+        }
+        smooth_arid_drainage_trace(trace);
+        std::size_t covered_steps = 0;
+        for (const AridDrainageTracePoint& point : trace.points) {
+            const auto x = static_cast<std::int32_t>(std::round(point.x));
+            const auto y = static_cast<std::int32_t>(std::round(point.y));
+            if (x < 0 || y < 0 || x >= static_cast<std::int32_t>(desc.width) ||
+                y >= static_cast<std::int32_t>(desc.height)) {
+                continue;
+            }
+            if (covered[grid_index(static_cast<std::uint32_t>(x),
+                                   static_cast<std::uint32_t>(y), desc.width)] > 0U) {
+                ++covered_steps;
+            }
+        }
+        if (covered_steps + 4U >= trace.points.size() && trace.strength < 0.62F) {
+            continue;
+        }
+        for (const AridDrainageTracePoint& point : trace.points) {
+            const auto x = static_cast<std::int32_t>(std::round(point.x));
+            const auto y = static_cast<std::int32_t>(std::round(point.y));
+            if (x < 0 || y < 0 || x >= static_cast<std::int32_t>(desc.width) ||
+                y >= static_cast<std::int32_t>(desc.height)) {
+                continue;
+            }
+            std::uint8_t& value =
+                covered[grid_index(static_cast<std::uint32_t>(x),
+                                   static_cast<std::uint32_t>(y), desc.width)];
+            value = static_cast<std::uint8_t>(std::min<std::uint32_t>(value + 1U, 255U));
+        }
+        traces.push_back(std::move(trace));
+    }
+    return traces;
+}
+
+[[nodiscard]] bool rasterize_arid_drainage_corridors(const TerrainLabGridDesc& desc,
+                                                     const std::vector<AridDrainageTrace>& traces,
+                                                     std::vector<float>& wash,
+                                                     std::vector<float>& incision,
+                                                     std::vector<float>& channel_distance_m) {
+    if (traces.empty()) {
+        return false;
+    }
+
+    const std::size_t count = terrain_lab_sample_count(desc);
+    const float fallback_distance = std::max(half_extent_x_m(desc), half_extent_z_m(desc)) * 2.0F;
+    wash.assign(count, 0.0F);
+    incision.assign(count, 0.0F);
+    channel_distance_m.assign(count, fallback_distance);
+
+    for (const AridDrainageTrace& trace : traces) {
+        if (trace.points.size() < 2U) {
+            continue;
+        }
+        for (std::size_t index = 0; index + 1U < trace.points.size(); ++index) {
+            const AridDrainageTracePoint& a = trace.points[index];
+            const AridDrainageTracePoint& b = trace.points[index + 1U];
+            const float segment_strength = saturate(std::max(a.strength, b.strength) * 0.78F +
+                                                    trace.strength * 0.22F);
+            const float segment_incision = saturate(std::max(a.incision, b.incision) * 0.82F +
+                                                    segment_strength * 0.18F);
+            const float core_width_m = lerp(72.0F, 310.0F, smoothstep(0.22F, 0.82F, segment_strength));
+            const float influence_radius_cells =
+                std::ceil((core_width_m * 2.65F) / std::max(desc.cell_size_m, 1.0F));
+            const float min_x = std::min(a.x, b.x) - influence_radius_cells;
+            const float max_x = std::max(a.x, b.x) + influence_radius_cells;
+            const float min_y = std::min(a.y, b.y) - influence_radius_cells;
+            const float max_y = std::max(a.y, b.y) + influence_radius_cells;
+            const std::uint32_t x0 =
+                static_cast<std::uint32_t>(std::max(0.0F, std::floor(min_x)));
+            const std::uint32_t y0 =
+                static_cast<std::uint32_t>(std::max(0.0F, std::floor(min_y)));
+            const std::uint32_t x1 = static_cast<std::uint32_t>(
+                std::min(static_cast<float>(desc.width - 1U), std::ceil(max_x)));
+            const std::uint32_t y1 = static_cast<std::uint32_t>(
+                std::min(static_cast<float>(desc.height - 1U), std::ceil(max_y)));
+
+            for (std::uint32_t y = y0; y <= y1; ++y) {
+                for (std::uint32_t x = x0; x <= x1; ++x) {
+                    float segment_t = 0.0F;
+                    const float distance_cells = point_segment_distance_cells(
+                        static_cast<float>(x), static_cast<float>(y), a, b, segment_t);
+                    const float distance_m = distance_cells * desc.cell_size_m;
+                    const float local_strength =
+                        saturate(lerp(a.strength, b.strength, segment_t) * 0.70F +
+                                 segment_strength * 0.30F);
+                    const float core =
+                        1.0F - smoothstep(core_width_m * 0.12F, core_width_m, distance_m);
+                    const float broad =
+                        1.0F - smoothstep(core_width_m * 0.75F, core_width_m * 2.55F, distance_m);
+                    const float channel =
+                        saturate(core * (0.48F + local_strength * 0.58F) +
+                                 broad * local_strength * 0.18F);
+                    const float incision_value =
+                        saturate(core * (0.32F + segment_incision * 0.70F) +
+                                 broad * segment_incision * 0.24F);
+                    const std::size_t sample = grid_index(x, y, desc.width);
+                    wash[sample] = std::max(wash[sample], channel);
+                    incision[sample] = std::max(incision[sample], incision_value);
+                    channel_distance_m[sample] = std::min(channel_distance_m[sample], distance_m);
+                }
+            }
+        }
+    }
+    return true;
+}
+
 void derive_flow_aligned_channels(const TerrainLabConfig& config, TerrainLabFieldData& fields,
                                   const std::vector<float>& flow_accumulation,
                                   const std::vector<float>& slope) {
@@ -1243,6 +1559,7 @@ build_arid_regional_canyon_fields(const TerrainLabConfig& config,
     std::vector<std::uint8_t> flow_direction;
     std::vector<float> flow_accumulation;
     std::vector<float> stream_power;
+    FlowRoutingData flow_routing;
     float max_slope = 0.0F;
     float max_abs_curvature = 0.0F;
     float max_flow_accumulation = 0.0F;
@@ -1250,9 +1567,12 @@ build_arid_regional_canyon_fields(const TerrainLabConfig& config,
     compute_slope_and_curvature(region.desc, region.macro_height_m, slope, curvature, max_slope,
                                 max_abs_curvature);
     compute_flow_fields(region.desc, region.macro_height_m, slope, flow_direction,
-                        flow_accumulation, stream_power, max_flow_accumulation, max_stream_power);
+                        flow_accumulation, stream_power, max_flow_accumulation, max_stream_power,
+                        &flow_routing);
 
     const std::size_t count = terrain_lab_sample_count(region.desc);
+    std::vector<float> network_source(count, 0.0F);
+    std::vector<float> incision_source(count, 0.0F);
     const float inv_log_count =
         1.0F / std::log1p(static_cast<float>(std::max<std::size_t>(count, 1U)));
     const float inv_max_stream = max_stream_power > 0.0F ? 1.0F / max_stream_power : 0.0F;
@@ -1262,20 +1582,29 @@ build_arid_regional_canyon_fields(const TerrainLabConfig& config,
         const float slope_t = smoothstep(0.015F, 0.24F, slope[sample]);
         const float runoff = region.runoff[sample];
         const float resistance = region.resistance[sample];
-        const float network_source = saturate((flow_t * 0.66F) + (stream_t * 0.28F) +
-                                              (runoff * 0.12F) - (resistance * 0.08F));
-        const float trunk = smoothstep(0.38F, 0.70F, network_source);
-        const float tributary = smoothstep(0.24F, 0.58F, network_source) *
+        const float source = saturate((flow_t * 0.66F) + (stream_t * 0.28F) +
+                                      (runoff * 0.12F) - (resistance * 0.08F));
+        const float trunk = smoothstep(0.38F, 0.70F, source);
+        const float tributary = smoothstep(0.24F, 0.58F, source) *
                                 smoothstep(0.030F, 0.22F, slope[sample]) * (0.42F + runoff * 0.34F);
         const float wash = saturate(std::max(trunk, tributary * 0.64F));
         const float incision = saturate((trunk * 0.54F) + (stream_t * 0.30F) + (slope_t * 0.18F) +
                                         (runoff * 0.08F) - (resistance * 0.16F));
+        network_source[sample] = source;
+        incision_source[sample] = incision;
         region.wash[sample] = wash;
         region.incision[sample] = incision;
     }
 
-    smooth_arid_channel_network(region.desc, region.wash, region.incision);
-    compute_arid_channel_distance(region.desc, region.wash, region.channel_distance_m);
+    const std::vector<AridDrainageTrace> traces = trace_arid_drainage_corridors(
+        region.desc, flow_routing, network_source, incision_source, config.seed);
+    if (rasterize_arid_drainage_corridors(region.desc, traces, region.wash, region.incision,
+                                          region.channel_distance_m)) {
+        smooth_arid_channel_network(region.desc, region.wash, region.incision);
+    } else {
+        smooth_arid_channel_network(region.desc, region.wash, region.incision);
+        compute_arid_channel_distance(region.desc, region.wash, region.channel_distance_m);
+    }
 
     for (std::size_t sample = 0; sample < count; ++sample) {
         const float incision = region.incision[sample];
