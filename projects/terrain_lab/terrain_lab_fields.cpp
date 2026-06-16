@@ -21,9 +21,11 @@ struct Point2 {
 constexpr float kMaterialMaskTolerance = 0.001F;
 constexpr std::uint8_t kFlowSinkDirection = 8U;
 constexpr std::uint32_t kTerrainLabWatershedCount = 4U;
+constexpr std::size_t kNoFlowReceiver = std::numeric_limits<std::size_t>::max();
 
 constexpr std::array<std::int32_t, 8> kFlowDx{-1, 0, 1, -1, 1, -1, 0, 1};
 constexpr std::array<std::int32_t, 8> kFlowDy{-1, -1, -1, 0, 0, 1, 1, 1};
+constexpr std::array<std::uint8_t, 8> kFlowFacetRing{4U, 2U, 1U, 0U, 3U, 5U, 6U, 7U};
 
 struct WatershedBasinFeature {
     Point2 center{};
@@ -94,6 +96,26 @@ struct AridRegionalCanyonFields {
     std::vector<float> bench_noise{};
     std::vector<float> channel_distance_m{};
     std::vector<float> incision{};
+};
+
+struct FlowReceiver {
+    std::size_t first = kNoFlowReceiver;
+    std::size_t second = kNoFlowReceiver;
+    float first_weight = 0.0F;
+    float second_weight = 0.0F;
+    std::uint8_t first_direction = kFlowSinkDirection;
+    std::uint8_t second_direction = kFlowSinkDirection;
+    float vector_x = 0.0F;
+    float vector_y = 0.0F;
+};
+
+struct FlowRoutingData {
+    std::vector<FlowReceiver> receivers{};
+};
+
+struct FlowCandidate {
+    FlowReceiver receiver{};
+    float slope = 0.0F;
 };
 
 struct AridCanyonCrop {
@@ -735,42 +757,190 @@ void compute_slope_and_curvature(const TerrainLabGridDesc& desc, const std::vect
     }
 }
 
-void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float>& height,
-                         const std::vector<float>& slope, std::vector<std::uint8_t>& flow_direction,
-                         std::vector<float>& flow_accumulation, std::vector<float>& stream_power,
-                         float& max_flow_accumulation, float& max_stream_power) {
+[[nodiscard]] bool flow_neighbor(const TerrainLabGridDesc& desc, std::uint32_t x, std::uint32_t y,
+                                 std::uint8_t direction, std::uint32_t& nx,
+                                 std::uint32_t& ny) {
+    const auto ix = static_cast<std::int32_t>(x) + kFlowDx[direction];
+    const auto iy = static_cast<std::int32_t>(y) + kFlowDy[direction];
+    if (ix < 0 || iy < 0 || ix >= static_cast<std::int32_t>(desc.width) ||
+        iy >= static_cast<std::int32_t>(desc.height)) {
+        return false;
+    }
+    nx = static_cast<std::uint32_t>(ix);
+    ny = static_cast<std::uint32_t>(iy);
+    return true;
+}
+
+[[nodiscard]] float direction_distance_cells(std::uint8_t direction) {
+    return (kFlowDx[direction] != 0 && kFlowDy[direction] != 0) ? 1.41421356F : 1.0F;
+}
+
+[[nodiscard]] FlowCandidate single_flow_candidate(const TerrainLabGridDesc& desc,
+                                                  const std::vector<float>& height,
+                                                  std::uint32_t x, std::uint32_t y,
+                                                  std::uint8_t direction) {
+    std::uint32_t nx = 0;
+    std::uint32_t ny = 0;
+    if (!flow_neighbor(desc, x, y, direction, nx, ny)) {
+        return {};
+    }
+
+    const std::size_t sample = grid_index(x, y, desc.width);
+    const std::size_t receiver = grid_index(nx, ny, desc.width);
+    const float distance = direction_distance_cells(direction);
+    const float slope = (height[sample] - height[receiver]) / (distance * desc.cell_size_m);
+    if (slope <= 0.0F) {
+        return {};
+    }
+
+    FlowCandidate candidate;
+    candidate.slope = slope;
+    candidate.receiver.first = receiver;
+    candidate.receiver.first_weight = 1.0F;
+    candidate.receiver.first_direction = direction;
+    candidate.receiver.vector_x = static_cast<float>(kFlowDx[direction]) / distance;
+    candidate.receiver.vector_y = static_cast<float>(kFlowDy[direction]) / distance;
+    return candidate;
+}
+
+[[nodiscard]] FlowCandidate triangular_flow_candidate(const TerrainLabGridDesc& desc,
+                                                      const std::vector<float>& height,
+                                                      std::uint32_t x, std::uint32_t y,
+                                                      std::uint8_t first_direction,
+                                                      std::uint8_t second_direction) {
+    std::uint32_t ax = 0;
+    std::uint32_t ay = 0;
+    std::uint32_t bx = 0;
+    std::uint32_t by = 0;
+    const bool has_a = flow_neighbor(desc, x, y, first_direction, ax, ay);
+    const bool has_b = flow_neighbor(desc, x, y, second_direction, bx, by);
+    if (!has_a && !has_b) {
+        return {};
+    }
+    if (!has_a) {
+        return single_flow_candidate(desc, height, x, y, second_direction);
+    }
+    if (!has_b) {
+        return single_flow_candidate(desc, height, x, y, first_direction);
+    }
+
+    const std::size_t sample = grid_index(x, y, desc.width);
+    const std::size_t receiver_a = grid_index(ax, ay, desc.width);
+    const std::size_t receiver_b = grid_index(bx, by, desc.width);
+    const float ax_m = static_cast<float>(kFlowDx[first_direction]) * desc.cell_size_m;
+    const float ay_m = static_cast<float>(kFlowDy[first_direction]) * desc.cell_size_m;
+    const float bx_m = static_cast<float>(kFlowDx[second_direction]) * desc.cell_size_m;
+    const float by_m = static_cast<float>(kFlowDy[second_direction]) * desc.cell_size_m;
+    const float det = (ax_m * by_m) - (bx_m * ay_m);
+    if (std::abs(det) < 0.000001F) {
+        const FlowCandidate a = single_flow_candidate(desc, height, x, y, first_direction);
+        const FlowCandidate b = single_flow_candidate(desc, height, x, y, second_direction);
+        return a.slope >= b.slope ? a : b;
+    }
+
+    const float da = height[receiver_a] - height[sample];
+    const float db = height[receiver_b] - height[sample];
+    const float gradient_x = ((da * by_m) - (db * ay_m)) / det;
+    const float gradient_y = ((ax_m * db) - (bx_m * da)) / det;
+    const float down_x = -gradient_x;
+    const float down_y = -gradient_y;
+    const float bary_a = ((down_x * by_m) - (bx_m * down_y)) / det;
+    const float bary_b = ((ax_m * down_y) - (down_x * ay_m)) / det;
+    const float plane_slope = std::sqrt((down_x * down_x) + (down_y * down_y));
+
+    const bool inside_facet = bary_a >= -0.0001F && bary_b >= -0.0001F &&
+                              plane_slope > 0.0F;
+    if (!inside_facet) {
+        const FlowCandidate a = single_flow_candidate(desc, height, x, y, first_direction);
+        const FlowCandidate b = single_flow_candidate(desc, height, x, y, second_direction);
+        return a.slope >= b.slope ? a : b;
+    }
+
+    const bool a_descends = height[receiver_a] < height[sample];
+    const bool b_descends = height[receiver_b] < height[sample];
+    if (!a_descends && !b_descends) {
+        return {};
+    }
+    if (!a_descends) {
+        return single_flow_candidate(desc, height, x, y, second_direction);
+    }
+    if (!b_descends) {
+        return single_flow_candidate(desc, height, x, y, first_direction);
+    }
+
+    const float bary_sum = std::max(bary_a + bary_b, 0.000001F);
+    const float weight_a = saturate(bary_a / bary_sum);
+    const float weight_b = 1.0F - weight_a;
+    FlowCandidate candidate;
+    candidate.slope = plane_slope;
+    candidate.receiver.first = receiver_a;
+    candidate.receiver.second = receiver_b;
+    candidate.receiver.first_weight = weight_a;
+    candidate.receiver.second_weight = weight_b;
+    candidate.receiver.first_direction = first_direction;
+    candidate.receiver.second_direction = second_direction;
+    if (weight_b > weight_a) {
+        std::swap(candidate.receiver.first, candidate.receiver.second);
+        std::swap(candidate.receiver.first_weight, candidate.receiver.second_weight);
+        std::swap(candidate.receiver.first_direction, candidate.receiver.second_direction);
+    }
+    const float vector_x =
+        (static_cast<float>(kFlowDx[candidate.receiver.first_direction]) *
+         candidate.receiver.first_weight) +
+        (static_cast<float>(kFlowDx[candidate.receiver.second_direction]) *
+         candidate.receiver.second_weight);
+    const float vector_y =
+        (static_cast<float>(kFlowDy[candidate.receiver.first_direction]) *
+         candidate.receiver.first_weight) +
+        (static_cast<float>(kFlowDy[candidate.receiver.second_direction]) *
+         candidate.receiver.second_weight);
+    const float vector_length = std::sqrt((vector_x * vector_x) + (vector_y * vector_y));
+    if (vector_length > 0.0F) {
+        candidate.receiver.vector_x = vector_x / vector_length;
+        candidate.receiver.vector_y = vector_y / vector_length;
+    }
+    return candidate;
+}
+
+[[nodiscard]] FlowRoutingData compute_flow_routing(const TerrainLabGridDesc& desc,
+                                                   const std::vector<float>& height,
+                                                   std::vector<std::uint8_t>& flow_direction) {
     const std::size_t count = terrain_lab_sample_count(desc);
+    FlowRoutingData routing;
+    routing.receivers.assign(count, {});
     flow_direction.assign(count, kFlowSinkDirection);
-    flow_accumulation.assign(count, 1.0F);
-    stream_power.assign(count, 0.0F);
 
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
-            const std::size_t sample = grid_index(x, y, desc.width);
-            float best_drop = 0.0F;
-            std::uint8_t best_direction = kFlowSinkDirection;
-            for (std::uint8_t direction = 0U; direction < kFlowSinkDirection; ++direction) {
-                const auto nx = static_cast<std::int32_t>(x) + kFlowDx[direction];
-                const auto ny = static_cast<std::int32_t>(y) + kFlowDy[direction];
-                if (nx < 0 || ny < 0 || nx >= static_cast<std::int32_t>(desc.width) ||
-                    ny >= static_cast<std::int32_t>(desc.height)) {
-                    continue;
-                }
-                const float distance =
-                    (kFlowDx[direction] != 0 && kFlowDy[direction] != 0) ? 1.41421356F : 1.0F;
-                const float drop =
-                    (height[sample] -
-                     height[grid_index(static_cast<std::uint32_t>(nx),
-                                       static_cast<std::uint32_t>(ny), desc.width)]) /
-                    distance;
-                if (drop > best_drop) {
-                    best_drop = drop;
-                    best_direction = direction;
+            FlowCandidate best;
+            for (std::size_t facet = 0; facet < kFlowFacetRing.size(); ++facet) {
+                const std::uint8_t first_direction = kFlowFacetRing[facet];
+                const std::uint8_t second_direction =
+                    kFlowFacetRing[(facet + 1U) % kFlowFacetRing.size()];
+                const FlowCandidate candidate =
+                    triangular_flow_candidate(desc, height, x, y, first_direction, second_direction);
+                if (candidate.slope > best.slope) {
+                    best = candidate;
                 }
             }
-            flow_direction[sample] = best_direction;
+            const std::size_t sample = grid_index(x, y, desc.width);
+            routing.receivers[sample] = best.receiver;
+            flow_direction[sample] = best.receiver.first_direction;
         }
     }
+
+    return routing;
+}
+
+void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float>& height,
+                         const std::vector<float>& slope, std::vector<std::uint8_t>& flow_direction,
+                         std::vector<float>& flow_accumulation, std::vector<float>& stream_power,
+                         float& max_flow_accumulation, float& max_stream_power,
+                         FlowRoutingData* routing_output = nullptr) {
+    const std::size_t count = terrain_lab_sample_count(desc);
+    FlowRoutingData routing = compute_flow_routing(desc, height, flow_direction);
+    flow_accumulation.assign(count, 1.0F);
+    stream_power.assign(count, 0.0F);
 
     std::vector<std::size_t> order(count);
     std::iota(order.begin(), order.end(), 0U);
@@ -778,20 +948,14 @@ void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float
               [&height](std::size_t lhs, std::size_t rhs) { return height[lhs] > height[rhs]; });
 
     for (const std::size_t sample : order) {
-        const std::uint8_t direction = flow_direction[sample];
-        if (direction >= kFlowSinkDirection) {
-            continue;
+        const FlowReceiver& receiver = routing.receivers[sample];
+        if (receiver.first != kNoFlowReceiver && receiver.first_weight > 0.0F) {
+            flow_accumulation[receiver.first] += flow_accumulation[sample] * receiver.first_weight;
         }
-        const std::uint32_t x = static_cast<std::uint32_t>(sample % desc.width);
-        const std::uint32_t y = static_cast<std::uint32_t>(sample / desc.width);
-        const auto nx = static_cast<std::int32_t>(x) + kFlowDx[direction];
-        const auto ny = static_cast<std::int32_t>(y) + kFlowDy[direction];
-        if (nx < 0 || ny < 0 || nx >= static_cast<std::int32_t>(desc.width) ||
-            ny >= static_cast<std::int32_t>(desc.height)) {
-            continue;
+        if (receiver.second != kNoFlowReceiver && receiver.second_weight > 0.0F) {
+            flow_accumulation[receiver.second] +=
+                flow_accumulation[sample] * receiver.second_weight;
         }
-        flow_accumulation[grid_index(static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny),
-                                     desc.width)] += flow_accumulation[sample];
     }
 
     max_flow_accumulation = 0.0F;
@@ -803,6 +967,9 @@ void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float
         const float flow_t = std::log1p(flow_accumulation[sample]) * inv_log_count;
         stream_power[sample] = flow_t * slope[sample];
         max_stream_power = std::max(max_stream_power, stream_power[sample]);
+    }
+    if (routing_output != nullptr) {
+        *routing_output = std::move(routing);
     }
 }
 
