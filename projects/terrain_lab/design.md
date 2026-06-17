@@ -48,6 +48,20 @@ named driver fields over the whole region, then derive feature masks, height,
 materials, and detail from those fields. A feature can still be sparse or
 directional, but it must be traceable back to a coherent source field.
 
+The unit of reuse is a landform driver rather than a biome preset. Biome slices
+are validation recipes that combine:
+
+- source fields, such as base elevation, relief, runoff, resistance, sand
+  supply, wind exposure, and ice support;
+- feature drivers, such as ridge systems, river trunks and tributaries, basins
+  and plains, dune crests and interdunes, and glacial valley floors;
+- process modifiers, such as incision, deposition, talus, slope relaxation,
+  wetness, snow, and material response.
+
+A new biome should usually add a missing driver or modifier before it adds
+slice-specific shaping. If a slice needs a local exception, that exception
+should stay small and visible in the driver/debug fields.
+
 ## Spatial Scope
 
 Start with a local tangent-plane heightfield.
@@ -140,6 +154,19 @@ slice, they should describe the broad support and process sources before local
 feature masks are derived. The feature graph remains useful when a terrain type
 needs explicit topology, such as drainage paths or local region ids, but it
 should sit downstream of the driver fields rather than replace them.
+
+The shared driver vocabulary is intentionally small:
+
+- base potential: broad land support or accumulation source;
+- relief potential: where height contrast, ridges, walls, crests, or peaks are
+  allowed to emerge;
+- process potential: where routing, incision, deposition, wind transport, ice,
+  talus, or other process response should be strongest;
+- selection mask: the physical region under test. For current sentinel slices
+  this is the full local patch.
+
+Feature-specific sources can be richer, but they should map back to this common
+vocabulary before height, materials, or debug rendering consume them.
 
 For sentinel slice presets, the local patch is the region mask. Driver selection
 should not add centered disks, ellipses, quadrant gates, vignetted islands, or

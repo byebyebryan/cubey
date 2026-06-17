@@ -48,6 +48,9 @@ Current implementation notes:
 - coast-oriented `terrain.*` flags remain outside Terrain Lab;
 - CPU fields cover height, contribution, slope, curvature, drainage, wetness,
   deposition, material, vegetation-density, drainage-region, and influence data.
+- next foundation work should organize generation around reusable source fields,
+  feature drivers, and process modifiers. Biome and landform slices remain the
+  visual/test fixtures that prove those drivers compose.
 
 ## Phase 2: Temperate Mountain River Reference
 
@@ -208,6 +211,11 @@ terrain. Procedural randomness remains valid, but isolated authored features
 should be treated as temporary scaffolding. A slice passes this phase when its
 main landforms can be inspected through named driver fields before feature masks,
 height, materials, and detail are applied.
+
+Driver note: new slice work should normally start by identifying the missing
+source, feature-driver, or process-modifier vocabulary it needs. A biome should
+compose drivers such as ridges, rivers, basins/plains, dunes, glacial support,
+and material response rather than invent a complete slice-local shaping stack.
 
 Mask rule: for sentinel slices, the local patch is the biome boundary. Driver
 selection should be full-patch unless the slice explicitly tests a physical

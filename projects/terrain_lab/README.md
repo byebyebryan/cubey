@@ -27,6 +27,13 @@ driver fields rather than hand-authored local features. High-frequency noise is
 only a detail layer controlled by larger terrain fields. The terrain should
 remain legible when that detail layer is disabled.
 
+The working unit is now a reusable landform driver, not a finished biome.
+Representative slices should pressure-test shared sources such as relief,
+runoff, resistance, sand supply, and ice support; feature drivers such as
+ridges, rivers, basins, dunes, and glacial valleys; and process modifiers such
+as incision, deposition, talus, wetness, and material response. Biomes are later
+recipes that combine those pieces.
+
 For biome and landform sentinel slices, the test patch itself is the slice
 boundary. Driver selection should not add a centered disk, ellipse, quadrant
 layout, or other demo footprint. Internal masks are valid when they describe
@@ -53,8 +60,8 @@ Terrain Lab should stay distinct from the existing terrain-adjacent projects:
 
 - Build terrain from coherent region structure: ridges, basins, river/drainage
   networks, strata, climate, and material response.
-- Work slice by slice, starting with one terrain type that can be made credible
-  before broadening to more biomes.
+- Work driver by driver, using narrow sentinel slices to verify each source,
+  feature, and modifier before broadening to more biomes.
 - Keep deterministic CPU/reference generation available for tests, summaries,
   and debug views even when the renderer later uses GPU displacement.
 - Export explicit fields that other projects can consume: height, normal,
