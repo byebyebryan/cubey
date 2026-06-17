@@ -664,3 +664,83 @@ Implementation should add `clouds.distance_mode = auto|local|orbit-shell|blend-d
 and a small set of altitude/detail controls. The acceptance target is not final
 planet integration; it is removing the obvious high/orbit dome boundary while
 preserving the current surface view.
+
+## Orbit Weather/Planet-Scale Reference Pass 2026-06-17
+
+The next problem is no longer just local cloud quality. Orbit captures still
+read too much like procedural noise over a toy sphere instead of coherent
+planet-scale weather. The practical target is a model where broad coverage and
+cloud organization come from a planet-space weather product, and local
+volumetric noise only sculpts that product.
+
+New reference checkouts under `/home/bryan/code/ref`:
+
+- `Skybolt`: <https://github.com/Prograda/Skybolt>
+- `godot-volumetric-clouds`: <https://github.com/kb173/godot-volumetric-clouds>
+- `godot-planet-fly-through-cloud-volume`:
+  <https://github.com/appxmod/godot-planet-fly-through-cloud-volume>
+- `volumetric_cloud_atmosphere_scattering`:
+  <https://github.com/leoawen/volumetric_cloud_atmosphere_scattering>
+
+Skybolt is the primary reference because it is explicitly built for clouds seen
+from the planet surface, outer space, and the transition between them:
+<https://prograda.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/>.
+The relevant local code paths are:
+
+- `/home/bryan/code/ref/Skybolt/Assets/Core/Shaders/Clouds.h`
+- `/home/bryan/code/ref/Skybolt/Assets/Core/Shaders/VolumeClouds.frag`
+- `/home/bryan/code/ref/Skybolt/Assets/Core/Shaders/CloudShadows.h`
+- `/home/bryan/code/ref/Skybolt/Assets/Core/Shaders/AtmosphericScatteringWithClouds.h`
+- `/home/bryan/code/ref/Skybolt/Assets/Globe/Environment/Cloud/cloud_combined_README.txt`
+
+Important Skybolt lessons:
+
+- Planet-scale coverage is sampled from a global cloud coverage map in spherical
+  planet-relative UVs. The included map is based on NASA Blue Marble Clouds.
+- Detail coverage is a repeated high-frequency modulation layer. It is not the
+  source of the macro layout.
+- The density hull is formed from base coverage, height profile, and detail
+  coverage. Expensive 3D volume noise is only sampled once the low-resolution
+  hull says the ray is inside possible cloud.
+- Detail modulation preserves mean coverage across scales. This is exactly the
+  behavior we want to avoid the "coverage becomes either nothing or a solid cap"
+  failure mode.
+- The high/orbit path can fall back to a low-resolution global alpha/color
+  evaluation from coverage mip levels rather than fully raymarching every distant
+  cloud feature.
+- The same global coverage product also feeds cloud shadow and sky occlusion,
+  including atmosphere in-scattering occlusion.
+- Seam handling matters for equirectangular U wrap. Skybolt explicitly guards
+  LOD calculation across the seam.
+
+The Godot references are useful secondary checks, not primary architecture
+targets:
+
+- `godot-volumetric-clouds` uses a weather texture whose channels drive density,
+  rain/darkness, and type/scale. This matches the direction that weather should
+  control local density parameters rather than directly draw final cloud opacity.
+- `godot-planet-fly-through-cloud-volume` has useful shell intersection,
+  blue-noise jitter, and fly-through mechanics, but the shader is less clear as a
+  weather organization reference.
+- `volumetric_cloud_atmosphere_scattering` is useful as a compact WebGL/Three.js
+  planetary prototype with weather, TAA, and atmosphere composition ideas. It is
+  not yet as trustworthy as Skybolt for coverage architecture.
+
+Implementation implications for `projects/cloud`:
+
+- Add explicit orbit weather debug views before changing lighting: global
+  coverage, detail modulation, density hull, low-res orbit alpha, and
+  local-vs-orbit blend.
+- Introduce a planet-space weather sampler separate from the surface-local 3D
+  density sampler. It should return coverage, type/height, density scale, and
+  erosion/detail strength.
+- Build orbit clouds from coverage/hull first, then apply constrained detail
+  erosion. Do not let repeated 3D noise define the planet-scale pattern.
+- Use the same orbit weather product as the future source of broad cloud shadows
+  and sky occlusion.
+- Keep the current surface-local raymarch stable while building the orbit shell.
+  The direct orbit shell remains a checkpoint before any cached sky product.
+
+Acceptance target for the next batch: the `orbit-coverage` and `orbit-hull`
+diagnostics should already read like coherent weather masses from high/orbit
+views before cloud lighting, aerial perspective, or post-processing are judged.
