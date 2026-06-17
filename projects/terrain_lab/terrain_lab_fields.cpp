@@ -924,64 +924,85 @@ void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float
             const std::size_t sample = grid_index(x, y, desc.width);
             const Point2 p = normalized_sample(desc, x, y);
             const float warp_x =
-                fbm((p.x * 0.92F) - 8.0F, (p.z * 0.92F) + 6.0F, config.seed + 3601U, 4) * 0.22F;
+                fbm((p.x * 1.16F) - 8.0F, (p.z * 1.06F) + 6.0F, config.seed + 3601U, 4) * 0.16F;
             const float warp_z =
-                fbm((p.x * 0.88F) + 7.0F, (p.z * 0.88F) - 9.0F, config.seed + 3603U, 4) * 0.18F;
+                fbm((p.x * 1.08F) + 7.0F, (p.z * 1.12F) - 9.0F, config.seed + 3603U, 4) * 0.15F;
             const Point2 q{p.x + warp_x, p.z + warp_z};
-            const float massif =
-                fbm((q.x * 0.38F) + 2.0F, (q.z * 0.34F) - 4.0F, config.seed + 3605U, 5) *
-                    0.5F +
-                0.5F;
-            const float range =
-                fbm((q.x * 0.78F) - 11.0F, (q.z * 0.68F) + 13.0F, config.seed + 3607U, 4) *
-                    0.5F +
-                0.5F;
-            const float range_core =
-                ridge_profile(fbm((q.x * 0.54F) + 17.0F, (q.z * 0.48F) - 19.0F,
+            const Point2 qa{(q.x * 0.86F) + (q.z * 0.42F),
+                            (q.z * 0.86F) - (q.x * 0.42F)};
+            const Point2 qb{(q.z * 0.94F) - (q.x * 0.36F),
+                            (q.x * 0.94F) + (q.z * 0.36F)};
+            const float broad_uplift =
+                smoothstep(0.18F, 0.82F,
+                           fbm((q.x * 1.05F) + 2.0F, (q.z * 0.96F) - 4.0F,
+                               config.seed + 3605U, 5) *
+                                   0.5F +
+                               0.5F);
+            const float rolling_uplift =
+                smoothstep(0.20F, 0.80F,
+                           fbm((q.x * 1.72F) - 11.0F, (q.z * 1.46F) + 13.0F,
+                               config.seed + 3607U, 5) *
+                                   0.5F +
+                               0.5F);
+            const float broad_ridge_a =
+                ridge_profile(fbm((qa.x * 1.16F) + 17.0F, (qa.z * 0.60F) - 19.0F,
                                   config.seed + 3609U, 5) *
-                                  1.02F,
+                                  1.10F,
                               1.55F);
-            const float belt =
-                smoothstep(0.24F, 0.80F, massif * 0.42F + range_core * 0.40F + range * 0.18F);
-            const float relief_gate = smoothstep(0.34F, 0.80F, belt);
+            const float broad_ridge_b =
+                ridge_profile(fbm((qb.x * 1.08F) - 23.0F, (qb.z * 0.66F) + 29.0F,
+                                  config.seed + 3610U, 5) *
+                                  1.12F,
+                              1.70F);
+            const float range_core =
+                saturate(std::max(broad_ridge_a, broad_ridge_b * 0.88F) * 0.74F +
+                         std::min(broad_ridge_a, broad_ridge_b) * 0.22F);
+            const float mountain_body =
+                smoothstep(0.22F, 0.82F,
+                           broad_uplift * 0.34F + rolling_uplift * 0.26F +
+                               range_core * 0.40F);
+            const float relief_gate = smoothstep(0.18F, 0.72F, mountain_body);
             const float summit =
-                ridge_profile(fbm((q.x * 0.86F) - 23.0F, (q.z * 0.78F) + 29.0F,
-                                  config.seed + 3621U, 4) *
-                                  1.08F,
+                ridge_profile(fbm((q.x * 1.62F) + 31.0F, (q.z * 1.48F) - 27.0F,
+                                  config.seed + 3621U, 5) *
+                                  1.15F,
                               2.05F) *
-                smoothstep(0.50F, 0.90F, belt);
+                smoothstep(0.28F, 0.82F, mountain_body);
             const float fold_a =
-                ridge_profile(fbm((q.x * 1.24F) - 15.0F, (q.z * 1.08F) + 19.0F,
+                ridge_profile(fbm((qa.x * 2.10F) - 15.0F, (qa.z * 0.92F) + 19.0F,
                                   config.seed + 3611U, 5) *
                                   1.12F,
-                              2.35F);
+                              2.25F);
             const float fold_b =
-                ridge_profile(fbm((q.x * 2.18F) + 21.0F, (q.z * 1.92F) - 23.0F,
+                ridge_profile(fbm((qb.x * 2.62F) + 21.0F, (qb.z * 1.18F) - 23.0F,
                                   config.seed + 3613U, 4) *
                                   1.18F,
                               2.65F) *
-                0.38F;
+                0.46F;
             const float fold = std::max(fold_a, fold_b) * relief_gate;
             const float rough =
-                fbm((q.x * 1.42F) + 5.0F, (q.z * 1.32F) - 7.0F, config.seed + 3617U, 4) *
+                fbm((q.x * 2.10F) + 5.0F, (q.z * 1.92F) - 7.0F, config.seed + 3617U, 4) *
                     0.5F +
                 0.5F;
             const float fine =
-                fbm((q.x * 3.10F) - 3.0F, (q.z * 2.80F) + 8.0F, config.seed + 3619U, 3) *
+                fbm((q.x * 3.40F) - 3.0F, (q.z * 3.05F) + 8.0F, config.seed + 3619U, 3) *
                     0.5F +
                 0.5F;
 
-            const float uplift = saturate(0.08F + belt * 0.70F + range_core * 0.12F +
-                                          summit * 0.18F + rough * 0.03F);
+            const float uplift = saturate(0.16F + mountain_body * 0.54F + range_core * 0.15F +
+                                          rolling_uplift * 0.06F + summit * 0.18F +
+                                          rough * 0.03F);
             const float base =
-                saturate(0.12F + belt * 0.70F + range_core * 0.14F + massif * 0.08F +
-                         summit * 0.10F + rough * 0.04F);
+                saturate(0.16F + mountain_body * 0.54F + broad_uplift * 0.18F +
+                         rolling_uplift * 0.08F + range_core * 0.11F + summit * 0.09F +
+                         rough * 0.04F);
             const float relief = saturate(fold * 0.46F + rough * relief_gate * 0.14F +
                                           fine * relief_gate * 0.06F + summit * 0.32F +
-                                          range_core * 0.20F + belt * 0.12F);
+                                          range_core * 0.22F + mountain_body * 0.10F);
             const float height_norm =
-                (belt - 0.24F) * 0.58F + range_core * 0.18F + uplift * 0.20F +
-                summit * 0.42F + fold * 0.24F + (rough - 0.5F) * relief_gate * 0.055F +
+                (mountain_body - 0.28F) * 0.50F + range_core * 0.22F +
+                rolling_uplift * 0.12F + uplift * 0.18F + summit * 0.42F + fold * 0.25F +
+                (rough - 0.5F) * relief_gate * 0.055F +
                 (fine - 0.5F) * relief_gate * 0.025F - 0.30F;
 
             mountain.base_potential[sample] = base;

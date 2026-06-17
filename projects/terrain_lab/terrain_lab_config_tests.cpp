@@ -1811,10 +1811,28 @@ int main() {
     double mountain_driver_low_relief_height_sum = 0.0;
     std::array<bool, 5> mountain_ridge_x_bins{};
     std::array<bool, 5> mountain_ridge_y_bins{};
+    std::array<std::size_t, 4> mountain_high_relief_quadrants{};
+    double mountain_relief_weight_sum = 0.0;
+    double mountain_relief_weighted_x_sum = 0.0;
+    double mountain_relief_weighted_y_sum = 0.0;
+    const float mountain_half_x =
+        static_cast<float>(mountain_fields.desc.width - 1U) * mountain_fields.desc.cell_size_m *
+        0.5F;
+    const float mountain_half_y =
+        static_cast<float>(mountain_fields.desc.height - 1U) * mountain_fields.desc.cell_size_m *
+        0.5F;
     for (std::size_t index = 0; index < mountain_fields.sample_count(); ++index) {
         const float relief = mountain_fields.driver_relief_potential[index];
         const auto x = static_cast<std::uint32_t>(index % mountain_fields.desc.width);
         const auto y = static_cast<std::uint32_t>(index / mountain_fields.desc.width);
+        const float nx = mountain_half_x == 0.0F
+                             ? 0.0F
+                             : terrain::terrain_lab_grid_sample_x_m(mountain_fields.desc, x) /
+                                   mountain_half_x;
+        const float ny = mountain_half_y == 0.0F
+                             ? 0.0F
+                             : terrain::terrain_lab_grid_sample_z_m(mountain_fields.desc, y) /
+                                   mountain_half_y;
         if (mountain_fields.ridge_influence[index] > 0.48F &&
             mountain_fields.channel_influence[index] < 0.32F) {
             mountain_driver_ridge_relief_sum += relief;
@@ -1843,6 +1861,16 @@ int main() {
             mountain_driver_low_relief_height_sum += mountain_fields.height_m[index];
             ++mountain_driver_low_relief_count;
         }
+        if (relief > 0.62F) {
+            const std::size_t quadrant =
+                (x >= mountain_fields.desc.width / 2U ? 1U : 0U) +
+                (y >= mountain_fields.desc.height / 2U ? 2U : 0U);
+            ++mountain_high_relief_quadrants[quadrant];
+        }
+        const double relief_weight = std::max(static_cast<double>(relief) - 0.54, 0.0);
+        mountain_relief_weight_sum += relief_weight;
+        mountain_relief_weighted_x_sum += static_cast<double>(nx) * relief_weight;
+        mountain_relief_weighted_y_sum += static_cast<double>(ny) * relief_weight;
     }
     const auto mountain_ridge_x_bin_count =
         static_cast<std::size_t>(std::count(mountain_ridge_x_bins.begin(),
@@ -1850,6 +1878,19 @@ int main() {
     const auto mountain_ridge_y_bin_count =
         static_cast<std::size_t>(std::count(mountain_ridge_y_bins.begin(),
                                             mountain_ridge_y_bins.end(), true));
+    std::size_t mountain_high_relief_count = 0;
+    std::size_t mountain_high_relief_max_quadrant_count = 0;
+    for (const std::size_t quadrant_count : mountain_high_relief_quadrants) {
+        mountain_high_relief_count += quadrant_count;
+        mountain_high_relief_max_quadrant_count =
+            std::max(mountain_high_relief_max_quadrant_count, quadrant_count);
+    }
+    std::size_t mountain_high_relief_quadrant_count = 0;
+    for (const std::size_t quadrant_count : mountain_high_relief_quadrants) {
+        if (quadrant_count * 10U > mountain_high_relief_count) {
+            ++mountain_high_relief_quadrant_count;
+        }
+    }
     require(mountain_driver_ridge_count > 16U && mountain_driver_valley_count > 16U,
             "terrain lab mountain ridge driver should produce enough ridge and valley samples");
     require(mountain_driver_high_relief_count > 16U &&
@@ -1857,6 +1898,21 @@ int main() {
             "terrain lab mountain ridge driver should produce high and low relief samples");
     require(mountain_ridge_x_bin_count >= 3U && mountain_ridge_y_bin_count >= 3U,
             "terrain lab mountain ridge driver should distribute ridges across the patch");
+    require(mountain_high_relief_count > 32U,
+            "terrain lab mountain source should produce enough high-relief samples");
+    require(mountain_high_relief_quadrant_count >= 3U,
+            "terrain lab mountain source should not collapse high relief into one quadrant");
+    require(mountain_high_relief_max_quadrant_count * 5U < mountain_high_relief_count * 3U,
+            "terrain lab mountain source should avoid a dominant high-relief quadrant");
+    require(mountain_relief_weight_sum > 0.001,
+            "terrain lab mountain source should have measurable relief weight");
+    const float mountain_relief_center_x =
+        static_cast<float>(mountain_relief_weighted_x_sum / mountain_relief_weight_sum);
+    const float mountain_relief_center_y =
+        static_cast<float>(mountain_relief_weighted_y_sum / mountain_relief_weight_sum);
+    require(std::abs(mountain_relief_center_x) < 0.45F &&
+                std::abs(mountain_relief_center_y) < 0.45F,
+            "terrain lab mountain source should keep relief center away from patch corners");
     const float mountain_mean_ridge_driver_relief = static_cast<float>(
         mountain_driver_ridge_relief_sum / static_cast<double>(mountain_driver_ridge_count));
     const float mountain_mean_valley_driver_relief = static_cast<float>(

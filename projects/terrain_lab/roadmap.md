@@ -225,6 +225,12 @@ find valleys and ridge support, and slope/curvature response derives cliffs,
 peaks, shoulders, and scree. A fixed central valley with left/right ridge bands
 is no longer an acceptable success criterion.
 
+Mountain-source rule: the driver must first read as mountain terrain before any
+ridge, cliff, material, or glacial dressing is applied. A valid local mountain
+patch can contain rolling ridges, broad uplift, and several peak supports, but
+should not start from a corner/quadrant mass or a single hand-authored range
+line that downstream features merely decorate.
+
 Driver note: new slice work should normally start by identifying the missing
 source, feature-driver, or process-modifier vocabulary it needs. A biome should
 compose drivers such as ridges, rivers, basins/plains, dunes, glacial support,
@@ -285,6 +291,8 @@ Success criteria:
   than river carving;
 - mountain ridge terrain reads through broad range support, distributed ridges,
   peaks, cliffs, and scree rather than glacial valley dressing;
+- mountain high relief is distributed by source fields across the patch instead
+  of being concentrated in one corner/quadrant;
 - shared fields remain useful across all five sentinels without becoming
   water-centric.
 
