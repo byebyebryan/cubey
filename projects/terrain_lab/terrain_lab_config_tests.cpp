@@ -1891,6 +1891,14 @@ int main() {
     require(mountain_summary.sink_sample_ratio > 0.0F &&
                 mountain_summary.sink_sample_ratio < 0.50F,
             "terrain lab mountain ridge drainage analysis should avoid sink-dominated terrain");
+    require(glacial_summary.mean_wetness > mountain_summary.mean_wetness + 0.015F,
+            "terrain lab glacial valley should stay wetter than the mountain ridge sentinel");
+    require(glacial_summary.mean_channel_influence > mountain_summary.mean_channel_influence,
+            "terrain lab glacial valley should expose stronger valley/channel influence");
+    require(mountain_summary.height_span_m > glacial_summary.height_span_m + 25.0F,
+            "terrain lab mountain ridge sentinel should keep larger relief than glacial valley");
+    require(mountain_rock_scree_snow > glacial_rock_scree_snow + 0.02F,
+            "terrain lab mountain ridge sentinel should be colder/rockier than glacial valley");
 
     terrain::TerrainLabConfig other_seed = small;
     other_seed.seed += 1U;
