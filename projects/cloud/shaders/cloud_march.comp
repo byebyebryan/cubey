@@ -436,19 +436,19 @@ MarchResult cloud_mix_results(MarchResult local_result, MarchResult orbit_result
 
 DensitySample cloud_orbit_density_sample(vec3 position) {
     float detail_strength = clamp(params.distance_options.w, 0.0, 1.0);
-    DensitySample broad = cloud_sample_density(position, false, 4.0);
-    if (detail_strength <= 0.001) {
-        broad.density *= params.orbit_options.z;
-        return broad;
-    }
-    DensitySample detailed = cloud_sample_density(position, true, 2.5);
-    broad.density = mix(broad.density, detailed.density, detail_strength) *
-                    params.orbit_options.z;
-    broad.detail_density = detailed.detail_density * detail_strength;
-    broad.cloud_type = mix(broad.cloud_type, detailed.cloud_type, detail_strength);
-    broad.weather_edge = mix(broad.weather_edge, detailed.weather_edge, detail_strength);
-    broad.weather_bias = mix(broad.weather_bias, detailed.weather_bias, detail_strength);
-    return broad;
+    OrbitWeatherSample orbit = cloud_orbit_weather_sample(position);
+    float base_hull = orbit.coverage * orbit.height_multiplier;
+    float detailed_hull = mix(base_hull, orbit.hull, detail_strength);
+    float density = clamp(detailed_hull, 0.0, 1.0) * params.orbit_options.z;
+    float height_fraction = cloud_height_fraction(position);
+    return DensitySample(density,
+                         base_hull,
+                         orbit.detail * detail_strength,
+                         orbit.coverage,
+                         orbit.cloud_type,
+                         orbit.weather_edge,
+                         detailed_hull,
+                         height_fraction);
 }
 
 MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, float end_t,
