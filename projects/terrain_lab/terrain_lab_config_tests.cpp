@@ -92,6 +92,9 @@ struct RiverHierarchyStats {
     std::size_t low_order_count = 0;
     std::size_t high_order_count = 0;
     std::size_t water_sample_count = 0;
+    std::size_t wet_component_sample_count = 0;
+    std::size_t wet_component_count = 0;
+    std::size_t largest_wet_component_count = 0;
     float min_active_width_m = 0.0F;
     float max_active_width_m = 0.0F;
     double low_order_width_sum = 0.0;
@@ -103,11 +106,17 @@ struct RiverHierarchyStats {
 RiverHierarchyStats
 inspect_river_hierarchy(const cubey::projects::terrain_lab::TerrainLabFieldData& fields) {
     RiverHierarchyStats stats;
+    std::vector<std::uint8_t> wet_component_mask(fields.sample_count(), 0U);
     const auto high_order_floor =
         static_cast<std::uint8_t>(fields.max_stream_order > 1U ? fields.max_stream_order - 1U : 1U);
     for (std::size_t index = 0; index < fields.sample_count(); ++index) {
         if (fields.water_presence[index] > 0.01F) {
             ++stats.water_sample_count;
+        }
+        if (fields.water_presence[index] > 0.08F &&
+            fields.river_width_m[index] > fields.desc.cell_size_m * 0.05F) {
+            wet_component_mask[index] = 1U;
+            ++stats.wet_component_sample_count;
         }
         if (fields.river_width_m[index] > fields.desc.cell_size_m * 0.05F) {
             if (stats.active_count == 0U) {
@@ -132,6 +141,50 @@ inspect_river_hierarchy(const cubey::projects::terrain_lab::TerrainLabFieldData&
             stats.high_order_discharge_sum += fields.river_discharge[index];
             ++stats.high_order_count;
         }
+    }
+
+    std::vector<std::uint8_t> visited(fields.sample_count(), 0U);
+    std::vector<std::size_t> stack;
+    for (std::size_t start = 0; start < fields.sample_count(); ++start) {
+        if (wet_component_mask[start] == 0U || visited[start] != 0U) {
+            continue;
+        }
+        ++stats.wet_component_count;
+        std::size_t component_count = 0;
+        stack.clear();
+        stack.push_back(start);
+        visited[start] = 1U;
+        while (!stack.empty()) {
+            const std::size_t sample = stack.back();
+            stack.pop_back();
+            ++component_count;
+
+            const auto x = static_cast<std::uint32_t>(sample % fields.desc.width);
+            const auto y = static_cast<std::uint32_t>(sample / fields.desc.width);
+            for (int dy = -1; dy <= 1; ++dy) {
+                for (int dx = -1; dx <= 1; ++dx) {
+                    if (dx == 0 && dy == 0) {
+                        continue;
+                    }
+                    const auto nx = static_cast<std::int32_t>(x) + dx;
+                    const auto ny = static_cast<std::int32_t>(y) + dy;
+                    if (nx < 0 || ny < 0 || nx >= static_cast<std::int32_t>(fields.desc.width) ||
+                        ny >= static_cast<std::int32_t>(fields.desc.height)) {
+                        continue;
+                    }
+                    const std::size_t neighbor =
+                        static_cast<std::size_t>(ny) * fields.desc.width +
+                        static_cast<std::size_t>(nx);
+                    if (wet_component_mask[neighbor] == 0U || visited[neighbor] != 0U) {
+                        continue;
+                    }
+                    visited[neighbor] = 1U;
+                    stack.push_back(neighbor);
+                }
+            }
+        }
+        stats.largest_wet_component_count =
+            std::max(stats.largest_wet_component_count, component_count);
     }
     return stats;
 }
@@ -1252,10 +1305,19 @@ int main() {
             "terrain lab temperate river summary should expose widened trunk rivers");
     require(river_summary.max_valley_width_m > river_summary.max_river_width_m * 5.0F,
             "terrain lab temperate river summary should expose broad valley corridors");
-    require(river_summary.mean_water_presence > 0.03F,
-            "terrain lab temperate river summary should expose wet river presence");
-    require(river_hierarchy_stats.water_sample_count > river_fields.sample_count() / 9U,
+    require(river_summary.mean_water_presence > 0.02F,
+            "terrain lab temperate river summary should expose wet river presence (mean=" +
+                std::to_string(river_summary.mean_water_presence) + ")");
+    require(river_hierarchy_stats.water_sample_count > river_fields.sample_count() / 16U,
             "terrain lab temperate river should contain enough wet river samples");
+    require(river_hierarchy_stats.wet_component_count > 0U,
+            "terrain lab temperate river should produce wet river components");
+    require(river_hierarchy_stats.largest_wet_component_count >
+                river_hierarchy_stats.wet_component_sample_count / 4U,
+            "terrain lab temperate river should be dominated by connected wet paths (largest=" +
+                std::to_string(river_hierarchy_stats.largest_wet_component_count) +
+                ", wet=" + std::to_string(river_hierarchy_stats.wet_component_sample_count) +
+                ", components=" + std::to_string(river_hierarchy_stats.wet_component_count) + ")");
     require(river_hierarchy_stats.low_order_count > 16U && river_hierarchy_stats.high_order_count > 0U,
             "terrain lab temperate river should expose low and high stream orders");
     const float river_low_order_width =

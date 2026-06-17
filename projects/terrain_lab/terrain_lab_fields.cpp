@@ -127,6 +127,7 @@ struct RiverDerivationParams {
     float max_width_m = 48.0F;
     float valley_width_multiplier = 5.0F;
     float stream_threshold = 0.28F;
+    bool prune_disconnected_fragments = false;
 };
 
 struct AridCanyonCrop {
@@ -984,6 +985,212 @@ void merge_stream_order(std::uint8_t incoming_order, std::size_t receiver,
     }
 }
 
+[[nodiscard]] std::vector<float> make_river_routing_height(const TerrainLabFieldData& fields) {
+    std::vector<float> routing_height(fields.sample_count(), 0.0F);
+    constexpr float kBaseLevelGrade = 0.045F;
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        const float downstream_z_m = terrain_lab_grid_sample_z_m(fields.desc, y);
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const float macro_height = fields.structure_height_m[sample] + fields.process_delta_m[sample];
+            const float base_height =
+                std::isfinite(macro_height) ? macro_height : fields.height_m[sample];
+            routing_height[sample] = base_height - downstream_z_m * kBaseLevelGrade;
+        }
+    }
+    return routing_height;
+}
+
+[[nodiscard]] float river_stream_score(const TerrainLabFieldData& fields,
+                                       std::size_t sample,
+                                       float discharge_t,
+                                       float stream_t) {
+    return saturate(discharge_t * 0.70F + fields.channel_influence[sample] * 0.34F +
+                    stream_t * 0.16F - fields.divide_influence[sample] * 0.12F);
+}
+
+[[nodiscard]] std::vector<float>
+derive_connected_river_activation(const TerrainLabFieldData& fields,
+                                  const FlowRoutingData& routing,
+                                  RiverDerivationParams params,
+                                  const std::vector<float>& stream_score,
+                                  const std::vector<float>& discharge_t,
+                                  const std::vector<float>& order_t) {
+    const std::size_t count = fields.sample_count();
+    std::vector<float> activation(count, 0.0F);
+    const std::uint32_t max_steps = std::max<std::uint32_t>(
+        1U, std::min<std::uint32_t>(fields.desc.width + fields.desc.height, 768U));
+
+    for (std::size_t seed = 0; seed < count; ++seed) {
+        const float strong_score =
+            smoothstep(params.stream_threshold + 0.12F, params.stream_threshold + 0.32F,
+                       stream_score[seed]);
+        const float discharge_seed =
+            smoothstep(0.52F, 0.78F, discharge_t[seed]) * (0.42F + order_t[seed] * 0.44F);
+        const float ordered_seed =
+            fields.stream_order[seed] >= 2U ? (0.18F + order_t[seed] * 0.42F) : 0.0F;
+        float carry = std::max({strong_score, discharge_seed, ordered_seed});
+        if (carry <= 0.08F) {
+            continue;
+        }
+
+        std::size_t current = seed;
+        for (std::uint32_t step = 0; step < max_steps && current != kNoFlowReceiver; ++step) {
+            activation[current] = std::max(activation[current], carry);
+
+            const FlowReceiver& receiver = routing.receivers[current];
+            if (receiver.first == kNoFlowReceiver || receiver.first_weight <= 0.0F ||
+                receiver.first == current) {
+                break;
+            }
+
+            const std::size_t next = receiver.first;
+            const float weak_score =
+                smoothstep(params.stream_threshold - 0.16F, params.stream_threshold + 0.10F,
+                           stream_score[next]);
+            const float ordered =
+                fields.stream_order[next] >= 2U ? (0.24F + order_t[next] * 0.36F) : 0.0F;
+            const float downstream_discharge = smoothstep(0.34F, 0.68F, discharge_t[next]) * 0.72F;
+            carry = std::max({carry * 0.992F, weak_score * 0.82F, ordered, downstream_discharge});
+            if (carry <= 0.035F && stream_score[next] < params.stream_threshold - 0.18F) {
+                break;
+            }
+            current = next;
+        }
+    }
+
+    return activation;
+}
+
+void prune_short_river_fragments(const TerrainLabGridDesc& desc, std::vector<float>& activation) {
+    const std::size_t count = terrain_lab_sample_count(desc);
+    std::vector<std::uint8_t> visited(count, 0U);
+    std::vector<std::size_t> stack;
+    std::vector<std::size_t> component;
+    const std::size_t min_component_size =
+        std::max<std::size_t>(24U, static_cast<std::size_t>(std::min(desc.width, desc.height)) / 4U);
+
+    for (std::size_t start = 0; start < count; ++start) {
+        if (visited[start] != 0U || activation[start] <= 0.12F) {
+            continue;
+        }
+
+        stack.clear();
+        component.clear();
+        stack.push_back(start);
+        visited[start] = 1U;
+        bool touches_edge = false;
+
+        while (!stack.empty()) {
+            const std::size_t sample = stack.back();
+            stack.pop_back();
+            component.push_back(sample);
+
+            const auto x = static_cast<std::uint32_t>(sample % desc.width);
+            const auto y = static_cast<std::uint32_t>(sample / desc.width);
+            touches_edge = touches_edge || x == 0U || y == 0U || x + 1U == desc.width ||
+                           y + 1U == desc.height;
+
+            for (std::uint8_t direction = 0U; direction < kFlowSinkDirection; ++direction) {
+                std::uint32_t nx = 0;
+                std::uint32_t ny = 0;
+                if (!flow_neighbor(desc, x, y, direction, nx, ny)) {
+                    continue;
+                }
+                const std::size_t neighbor = grid_index(nx, ny, desc.width);
+                if (visited[neighbor] != 0U || activation[neighbor] <= 0.12F) {
+                    continue;
+                }
+                visited[neighbor] = 1U;
+                stack.push_back(neighbor);
+            }
+        }
+
+        const bool keep = component.size() >= min_component_size ||
+                          (touches_edge && component.size() >= min_component_size / 2U);
+        if (!keep) {
+            for (const std::size_t sample : component) {
+                activation[sample] = 0.0F;
+            }
+        }
+    }
+
+    for (float& value : activation) {
+        if (value < 0.12F) {
+            value = 0.0F;
+        }
+    }
+}
+
+void widen_connected_river_activation(const TerrainLabGridDesc& desc, std::vector<float>& activation) {
+    for (std::uint32_t iteration = 0; iteration < 2U; ++iteration) {
+        std::vector<float> next = activation;
+        const float neighbor_scale = iteration == 0U ? 0.62F : 0.38F;
+        for (std::uint32_t y = 0; y < desc.height; ++y) {
+            for (std::uint32_t x = 0; x < desc.width; ++x) {
+                const std::size_t sample = grid_index(x, y, desc.width);
+                for (std::uint8_t direction = 0U; direction < kFlowSinkDirection; ++direction) {
+                    std::uint32_t nx = 0;
+                    std::uint32_t ny = 0;
+                    if (!flow_neighbor(desc, x, y, direction, nx, ny)) {
+                        continue;
+                    }
+                    const std::size_t neighbor = grid_index(nx, ny, desc.width);
+                    next[sample] =
+                        std::max(next[sample], activation[neighbor] * neighbor_scale);
+                }
+            }
+        }
+        activation.swap(next);
+    }
+}
+
+void prune_tiny_visible_river_fragments(const TerrainLabGridDesc& desc,
+                                        std::vector<float>& activation) {
+    const std::size_t count = terrain_lab_sample_count(desc);
+    std::vector<std::uint8_t> visited(count, 0U);
+    std::vector<std::size_t> stack;
+    std::vector<std::size_t> component;
+
+    for (std::size_t start = 0; start < count; ++start) {
+        if (visited[start] != 0U || activation[start] <= 0.08F) {
+            continue;
+        }
+
+        stack.clear();
+        component.clear();
+        stack.push_back(start);
+        visited[start] = 1U;
+        while (!stack.empty()) {
+            const std::size_t sample = stack.back();
+            stack.pop_back();
+            component.push_back(sample);
+
+            const auto x = static_cast<std::uint32_t>(sample % desc.width);
+            const auto y = static_cast<std::uint32_t>(sample / desc.width);
+            for (std::uint8_t direction = 0U; direction < kFlowSinkDirection; ++direction) {
+                std::uint32_t nx = 0;
+                std::uint32_t ny = 0;
+                if (!flow_neighbor(desc, x, y, direction, nx, ny)) {
+                    continue;
+                }
+                const std::size_t neighbor = grid_index(nx, ny, desc.width);
+                if (visited[neighbor] != 0U || activation[neighbor] <= 0.08F) {
+                    continue;
+                }
+                visited[neighbor] = 1U;
+                stack.push_back(neighbor);
+            }
+        }
+
+        if (component.size() <= 6U) {
+            for (const std::size_t sample : component) {
+                activation[sample] = 0.0F;
+            }
+        }
+    }
+}
+
 void derive_river_network_fields(TerrainLabFieldData& fields, RiverDerivationParams params) {
     const std::size_t count = fields.sample_count();
     fields.river_discharge.assign(count, 0.0F);
@@ -1000,7 +1207,9 @@ void derive_river_network_fields(TerrainLabFieldData& fields, RiverDerivationPar
     }
 
     std::vector<std::uint8_t> river_flow_direction;
-    FlowRoutingData routing = compute_flow_routing(fields.desc, fields.height_m, river_flow_direction);
+    const std::vector<float> river_routing_height = make_river_routing_height(fields);
+    FlowRoutingData routing =
+        compute_flow_routing(fields.desc, river_routing_height, river_flow_direction);
     for (std::size_t sample = 0; sample < count; ++sample) {
         const float local_runoff =
             saturate(0.36F + fields.channel_influence[sample] * 0.28F +
@@ -1013,9 +1222,10 @@ void derive_river_network_fields(TerrainLabFieldData& fields, RiverDerivationPar
 
     std::vector<std::size_t> order(count);
     std::iota(order.begin(), order.end(), 0U);
-    std::sort(order.begin(), order.end(), [&fields](std::size_t lhs, std::size_t rhs) {
-        return fields.height_m[lhs] > fields.height_m[rhs];
-    });
+    std::sort(order.begin(), order.end(),
+              [&river_routing_height](std::size_t lhs, std::size_t rhs) {
+                  return river_routing_height[lhs] > river_routing_height[rhs];
+              });
 
     for (const std::size_t sample : order) {
         const FlowReceiver& receiver = routing.receivers[sample];
@@ -1039,12 +1249,15 @@ void derive_river_network_fields(TerrainLabFieldData& fields, RiverDerivationPar
 
     std::vector<std::uint8_t> max_upstream_order(count, 0U);
     std::vector<std::uint8_t> equal_upstream_order_count(count, 0U);
+    std::vector<float> discharge_t_values(count, 0.0F);
+    std::vector<float> stream_score_values(count, 0.0F);
     for (const std::size_t sample : order) {
         const float discharge_t = std::log1p(fields.river_discharge[sample]) * inv_log_max_discharge;
         const float stream_t = saturate(fields.stream_power[sample] * inv_max_stream);
         const float stream_score =
-            saturate(discharge_t * 0.70F + fields.channel_influence[sample] * 0.34F +
-                     stream_t * 0.16F - fields.divide_influence[sample] * 0.12F);
+            river_stream_score(fields, sample, discharge_t, stream_t);
+        discharge_t_values[sample] = discharge_t;
+        stream_score_values[sample] = stream_score;
         std::uint8_t sample_order = max_upstream_order[sample];
         if (sample_order > 0U && equal_upstream_order_count[sample] >= 2U) {
             sample_order = static_cast<std::uint8_t>(std::min<std::uint32_t>(
@@ -1065,17 +1278,29 @@ void derive_river_network_fields(TerrainLabFieldData& fields, RiverDerivationPar
 
     const float stream_order_denominator =
         fields.max_stream_order <= 1U ? 1.0F : static_cast<float>(fields.max_stream_order);
+    std::vector<float> order_t_values(count, 0.0F);
     for (std::size_t sample = 0; sample < count; ++sample) {
-        const float discharge_t = std::log1p(fields.river_discharge[sample]) * inv_log_max_discharge;
-        const float order_t =
+        order_t_values[sample] =
             static_cast<float>(fields.stream_order[sample]) / stream_order_denominator;
+    }
+    std::vector<float> river_activation = derive_connected_river_activation(
+        fields, routing, params, stream_score_values, discharge_t_values, order_t_values);
+    if (params.prune_disconnected_fragments) {
+        prune_short_river_fragments(fields.desc, river_activation);
+        widen_connected_river_activation(fields.desc, river_activation);
+        prune_tiny_visible_river_fragments(fields.desc, river_activation);
+    }
+    for (std::size_t sample = 0; sample < count; ++sample) {
+        const float discharge_t = discharge_t_values[sample];
+        const float order_t = order_t_values[sample];
         const float stream_t = saturate(fields.stream_power[sample] * inv_max_stream);
         const float stream_score =
-            saturate(discharge_t * 0.70F + fields.channel_influence[sample] * 0.34F +
-                     stream_t * 0.16F - fields.divide_influence[sample] * 0.12F);
-        const float active_stream =
+            river_stream_score(fields, sample, discharge_t, stream_t);
+        const float local_active =
             smoothstep(params.stream_threshold - 0.08F, params.stream_threshold + 0.18F,
                        stream_score);
+        const float active_stream =
+            saturate(std::max(river_activation[sample], local_active * 0.12F));
         const float slope_t = smoothstep(0.030F, 0.42F, fields.slope[sample]);
         const float hierarchy_t = saturate(discharge_t * 0.66F + order_t * 0.34F);
         const float river_width =
@@ -2464,11 +2689,12 @@ TerrainLabFieldData generate_temperate_mountain_river_fields(const TerrainLabCon
     derive_river_network_fields(fields,
                                 {
                                     .runoff_scale = 1.0F,
-                                    .water_presence_scale = 1.20F,
+                                    .water_presence_scale = 1.55F,
                                     .min_width_m = fields.desc.cell_size_m * 0.20F,
                                     .max_width_m = fields.desc.cell_size_m * 1.90F,
                                     .valley_width_multiplier = 5.8F,
                                     .stream_threshold = 0.28F,
+                                    .prune_disconnected_fragments = true,
                                 });
 
     const float height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);

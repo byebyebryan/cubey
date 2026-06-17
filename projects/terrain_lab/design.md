@@ -179,9 +179,10 @@ rules.
 The old temperate watershed fixture was removed because the fixed four-basin
 layout read as an artificial quadrant/H composition. The temperate river slice is
 now the first wet river reference: it treats the local patch as one drainage
-region, derives channels from routed terrain, and uses the river hierarchy to
-guide structure, process, material, wetness, vegetation, and diagnostic
-rendering.
+region, derives channels from routed terrain, and renders visible water from a
+connected downstream activation pass rather than from isolated per-cell channel
+scores. The river hierarchy should guide structure, process, material, wetness,
+vegetation, and diagnostic rendering.
 
 The arid, dunes, and alpine sentinels now have explicit driver fields. They are
 still visual pressure tests rather than production terrain systems, but the
