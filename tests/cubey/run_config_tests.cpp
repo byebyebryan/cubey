@@ -332,6 +332,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.quality",
         "clouds.sampling_mode",
         "clouds.background_mode",
+        "clouds.distance_mode",
         "clouds.planet_radius_m",
         "clouds.camera_altitude_m",
         "clouds.bottom_altitude_m",
@@ -343,6 +344,12 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.wind_speed_mps",
         "clouds.shadow_strength",
         "clouds.jitter_strength",
+        "clouds.orbit_transition_start_m",
+        "clouds.orbit_transition_end_m",
+        "clouds.far_shell_start_m",
+        "clouds.far_shell_end_m",
+        "clouds.orbit_detail_strength",
+        "clouds.orbit_density_scale",
         "clouds.temporal",
         "smoke.injectors",
         "smoke.pressure_iterations",
@@ -919,6 +926,8 @@ void test_run_config_parses_cloud_options() {
     std::string sampling_mode_value = "bayer";
     std::string background_mode_flag = "--cloud-background-mode";
     std::string background_mode_value = "water-context";
+    std::string distance_mode_flag = "--cloud-distance-mode";
+    std::string distance_mode_value = "orbit-shell";
     std::string planet_radius_flag = "--cloud-planet-radius-m";
     std::string planet_radius_value = "6000000";
     std::string camera_altitude_flag = "--cloud-camera-altitude-m";
@@ -941,8 +950,20 @@ void test_run_config_parses_cloud_options() {
     std::string shadow_value = "0.8";
     std::string jitter_flag = "--cloud-jitter-strength";
     std::string jitter_value = "0.25";
+    std::string orbit_start_flag = "--cloud-orbit-transition-start-m";
+    std::string orbit_start_value = "14000";
+    std::string orbit_end_flag = "--cloud-orbit-transition-end-m";
+    std::string orbit_end_value = "70000";
+    std::string far_start_flag = "--cloud-far-shell-start-m";
+    std::string far_start_value = "36000";
+    std::string far_end_flag = "--cloud-far-shell-end-m";
+    std::string far_end_value = "180000";
+    std::string orbit_detail_flag = "--cloud-orbit-detail-strength";
+    std::string orbit_detail_value = "0.22";
+    std::string orbit_density_flag = "--cloud-orbit-density-scale";
+    std::string orbit_density_value = "1.10";
     std::string temporal_flag = "--no-cloud-temporal";
-    std::array<char*, 34> argv{
+    std::array<char*, 48> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -954,6 +975,8 @@ void test_run_config_parses_cloud_options() {
         sampling_mode_value.data(),
         background_mode_flag.data(),
         background_mode_value.data(),
+        distance_mode_flag.data(),
+        distance_mode_value.data(),
         planet_radius_flag.data(),
         planet_radius_value.data(),
         camera_altitude_flag.data(),
@@ -976,6 +999,18 @@ void test_run_config_parses_cloud_options() {
         shadow_value.data(),
         jitter_flag.data(),
         jitter_value.data(),
+        orbit_start_flag.data(),
+        orbit_start_value.data(),
+        orbit_end_flag.data(),
+        orbit_end_value.data(),
+        far_start_flag.data(),
+        far_start_value.data(),
+        far_end_flag.data(),
+        far_end_value.data(),
+        orbit_detail_flag.data(),
+        orbit_detail_value.data(),
+        orbit_density_flag.data(),
+        orbit_density_value.data(),
         temporal_flag.data(),
     };
 
@@ -990,6 +1025,8 @@ void test_run_config_parses_cloud_options() {
             "run config should parse cloud sampling mode");
     require(config.clouds.background_mode == "water-context",
             "run config should parse cloud background mode");
+    require(config.clouds.distance_mode == "orbit-shell",
+            "run config should parse cloud distance mode");
     require(config.clouds.planet_radius_m == 6000000.0F,
             "run config should parse cloud planet radius");
     require(config.clouds.camera_altitude_m == 16000.0F,
@@ -1009,6 +1046,18 @@ void test_run_config_parses_cloud_options() {
             "run config should parse cloud shadow strength");
     require(config.clouds.jitter_strength == 0.25F,
             "run config should parse cloud jitter strength");
+    require(config.clouds.orbit_transition_start_m == 14000.0F,
+            "run config should parse cloud orbit transition start");
+    require(config.clouds.orbit_transition_end_m == 70000.0F,
+            "run config should parse cloud orbit transition end");
+    require(config.clouds.far_shell_start_m == 36000.0F,
+            "run config should parse cloud far shell start");
+    require(config.clouds.far_shell_end_m == 180000.0F,
+            "run config should parse cloud far shell end");
+    require(config.clouds.orbit_detail_strength == 0.22F,
+            "run config should parse cloud orbit detail strength");
+    require(config.clouds.orbit_density_scale == 1.10F,
+            "run config should parse cloud orbit density scale");
     require(config.clouds.temporal == 0, "run config should parse negative cloud temporal flag");
 }
 

@@ -236,6 +236,36 @@ const char* clouds_background_mode_name(CloudsBackgroundMode mode) {
     return "atmosphere";
 }
 
+CloudsDistanceMode clouds_distance_mode_from_string(std::string_view value) {
+    if (value.empty() || value == "auto") {
+        return CloudsDistanceMode::Auto;
+    }
+    if (value == "local") {
+        return CloudsDistanceMode::Local;
+    }
+    if (value == "orbit-shell" || value == "orbit") {
+        return CloudsDistanceMode::OrbitShell;
+    }
+    if (value == "blend-debug") {
+        return CloudsDistanceMode::BlendDebug;
+    }
+    throw std::runtime_error("unknown cloud distance mode: " + std::string(value));
+}
+
+const char* clouds_distance_mode_name(CloudsDistanceMode mode) {
+    switch (mode) {
+    case CloudsDistanceMode::Auto:
+        return "auto";
+    case CloudsDistanceMode::Local:
+        return "local";
+    case CloudsDistanceMode::OrbitShell:
+        return "orbit-shell";
+    case CloudsDistanceMode::BlendDebug:
+        return "blend-debug";
+    }
+    return "auto";
+}
+
 CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value.empty() || value == "final") {
         return CloudsDebugView::Final;
@@ -312,6 +342,18 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "visible-cloud-type") {
         return CloudsDebugView::VisibleCloudType;
     }
+    if (value == "distance-regime") {
+        return CloudsDebugView::DistanceRegime;
+    }
+    if (value == "local-alpha") {
+        return CloudsDebugView::LocalAlpha;
+    }
+    if (value == "orbit-alpha") {
+        return CloudsDebugView::OrbitAlpha;
+    }
+    if (value == "orbit-weather") {
+        return CloudsDebugView::OrbitWeather;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -367,6 +409,14 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "visible-density";
     case CloudsDebugView::VisibleCloudType:
         return "visible-cloud-type";
+    case CloudsDebugView::DistanceRegime:
+        return "distance-regime";
+    case CloudsDebugView::LocalAlpha:
+        return "local-alpha";
+    case CloudsDebugView::OrbitAlpha:
+        return "orbit-alpha";
+    case CloudsDebugView::OrbitWeather:
+        return "orbit-weather";
     }
     return "final";
 }
@@ -431,6 +481,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (!run_config.clouds.background_mode.empty()) {
         config.background_mode =
             clouds_background_mode_from_string(run_config.clouds.background_mode);
+    }
+    if (!run_config.clouds.distance_mode.empty()) {
+        config.distance_mode = clouds_distance_mode_from_string(run_config.clouds.distance_mode);
     }
     if (!run_config.debug_view.empty()) {
         config.debug_view = clouds_debug_view_from_string(run_config.debug_view);
@@ -512,6 +565,24 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     }
     if (run_config_float_is_set(run_config.clouds.jitter_strength)) {
         config.jitter_strength = run_config.clouds.jitter_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.orbit_transition_start_m)) {
+        config.orbit_transition_start_m = run_config.clouds.orbit_transition_start_m;
+    }
+    if (run_config_float_is_set(run_config.clouds.orbit_transition_end_m)) {
+        config.orbit_transition_end_m = run_config.clouds.orbit_transition_end_m;
+    }
+    if (run_config_float_is_set(run_config.clouds.far_shell_start_m)) {
+        config.far_shell_start_m = run_config.clouds.far_shell_start_m;
+    }
+    if (run_config_float_is_set(run_config.clouds.far_shell_end_m)) {
+        config.far_shell_end_m = run_config.clouds.far_shell_end_m;
+    }
+    if (run_config_float_is_set(run_config.clouds.orbit_detail_strength)) {
+        config.orbit_detail_strength = run_config.clouds.orbit_detail_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.orbit_density_scale)) {
+        config.orbit_density_scale = run_config.clouds.orbit_density_scale;
     }
     if (run_config.clouds.temporal >= 0) {
         config.temporal_enabled = run_config.clouds.temporal != 0;
@@ -682,6 +753,25 @@ void validate_clouds_config(const CloudsConfig& config) {
     if (!std::isfinite(config.jitter_strength) || config.jitter_strength < 0.0F ||
         config.jitter_strength > 1.0F) {
         throw std::runtime_error("cloud jitter strength must be finite and in [0, 1]");
+    }
+    if (!finite_nonnegative(config.orbit_transition_start_m) ||
+        !finite_nonnegative(config.orbit_transition_end_m) ||
+        config.orbit_transition_end_m <= config.orbit_transition_start_m) {
+        throw std::runtime_error(
+            "cloud orbit transition range must be finite and increasing");
+    }
+    if (!finite_nonnegative(config.far_shell_start_m) ||
+        !finite_nonnegative(config.far_shell_end_m) ||
+        config.far_shell_end_m <= config.far_shell_start_m) {
+        throw std::runtime_error("cloud far shell range must be finite and increasing");
+    }
+    if (!std::isfinite(config.orbit_detail_strength) ||
+        config.orbit_detail_strength < 0.0F || config.orbit_detail_strength > 1.0F) {
+        throw std::runtime_error("cloud orbit detail strength must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.orbit_density_scale) || config.orbit_density_scale < 0.0F ||
+        config.orbit_density_scale > 2.0F) {
+        throw std::runtime_error("cloud orbit density scale must be finite and in [0, 2]");
     }
 }
 

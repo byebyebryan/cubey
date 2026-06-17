@@ -28,6 +28,10 @@ const int CLOUD_DEBUG_VISIBLE_DENSITY = 26;
 const int CLOUD_DEBUG_VISIBLE_CLOUD_TYPE = 27;
 const int CLOUD_DEBUG_WEATHER_EDGE = 28;
 const int CLOUD_DEBUG_WEATHER_BIAS = 29;
+const int CLOUD_DEBUG_DISTANCE_REGIME = 30;
+const int CLOUD_DEBUG_LOCAL_ALPHA = 31;
+const int CLOUD_DEBUG_ORBIT_ALPHA = 32;
+const int CLOUD_DEBUG_ORBIT_WEATHER = 33;
 
 const int CLOUD_SAMPLING_INTERLEAVED = 0;
 const int CLOUD_SAMPLING_BAYER = 1;
@@ -35,6 +39,11 @@ const int CLOUD_SAMPLING_OFF = 2;
 
 const int CLOUD_BACKGROUND_ATMOSPHERE = 0;
 const int CLOUD_BACKGROUND_WATER_CONTEXT = 1;
+
+const int CLOUD_DISTANCE_AUTO = 0;
+const int CLOUD_DISTANCE_LOCAL = 1;
+const int CLOUD_DISTANCE_ORBIT_SHELL = 2;
+const int CLOUD_DISTANCE_BLEND_DEBUG = 3;
 
 layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 camera_right_aspect;
@@ -54,6 +63,8 @@ layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 sampling_options;
     vec4 temporal_options;
     vec4 background_options;
+    vec4 distance_options;
+    vec4 orbit_options;
 } params;
 
 float cloud_saturate(float value) {

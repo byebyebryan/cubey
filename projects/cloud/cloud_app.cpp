@@ -99,7 +99,13 @@ constexpr std::array<CloudsBackgroundMode, 2> kCloudBackgroundModes{
     CloudsBackgroundMode::Atmosphere,
     CloudsBackgroundMode::WaterContext,
 };
-constexpr std::array<CloudsDebugView, 25> kCloudDebugViews{
+constexpr std::array<CloudsDistanceMode, 4> kCloudDistanceModes{
+    CloudsDistanceMode::Auto,
+    CloudsDistanceMode::Local,
+    CloudsDistanceMode::OrbitShell,
+    CloudsDistanceMode::BlendDebug,
+};
+constexpr std::array<CloudsDebugView, 29> kCloudDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
     CloudsDebugView::Lighting,     CloudsDebugView::AmbientLight,
@@ -115,6 +121,10 @@ constexpr std::array<CloudsDebugView, 25> kCloudDebugViews{
     CloudsDebugView::WeatherEdge,   CloudsDebugView::WeatherBias,
     CloudsDebugView::VisibleDensity,
     CloudsDebugView::VisibleCloudType,
+    CloudsDebugView::DistanceRegime,
+    CloudsDebugView::LocalAlpha,
+    CloudsDebugView::OrbitAlpha,
+    CloudsDebugView::OrbitWeather,
 };
 
 struct CloudFrameUniforms {
@@ -135,9 +145,11 @@ struct CloudFrameUniforms {
     cubey::math::Vec4 sampling_options;
     cubey::math::Vec4 temporal_options;
     cubey::math::Vec4 background_options;
+    cubey::math::Vec4 distance_options;
+    cubey::math::Vec4 orbit_options;
 };
 
-static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 68U);
+static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 76U);
 
 struct CloudTemporalUniforms {
     cubey::math::Vec4 current_camera_right_aspect;
@@ -431,6 +443,10 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     return static_cast<float>(static_cast<std::uint32_t>(mode));
 }
 
+[[nodiscard]] float cloud_distance_mode_value(CloudsDistanceMode mode) {
+    return static_cast<float>(static_cast<std::uint32_t>(mode));
+}
+
 [[nodiscard]] CloudViewBasis cloud_view_basis(const CloudsConfig& config, float yaw,
                                                      float pitch_offset) {
     const cubey::math::Vec3 surface_up{0.0F, 1.0F, 0.0F};
@@ -499,7 +515,9 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
            cloud_near(previous.lighting_strengths, current.lighting_strengths) &&
            cloud_near(previous.composite_options, current.composite_options) &&
            cloud_near(previous.sampling_options, current.sampling_options) &&
-           cloud_near(previous.background_options, current.background_options);
+           cloud_near(previous.background_options, current.background_options) &&
+           cloud_near(previous.distance_options, current.distance_options) &&
+           cloud_near(previous.orbit_options, current.orbit_options);
 }
 
 [[nodiscard]] CloudFrameUniforms cloud_frame_uniforms(const CloudsConfig& config,
@@ -554,6 +572,12 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
                              0.0F},
         .background_options = {cloud_background_mode_value(config.background_mode), 0.0F,
                                0.0F, 0.0F},
+        .distance_options = {cloud_distance_mode_value(config.distance_mode),
+                             config.orbit_transition_start_m,
+                             config.orbit_transition_end_m,
+                             config.orbit_detail_strength},
+        .orbit_options = {config.far_shell_start_m, config.far_shell_end_m,
+                          config.orbit_density_scale, 0.0F},
     };
 }
 
@@ -874,6 +898,8 @@ class CloudApp {
         draw_enum_combo("Debug", config_.debug_view, kCloudDebugViews, clouds_debug_view_name);
         draw_enum_combo("Background", config_.background_mode, kCloudBackgroundModes,
                         clouds_background_mode_name);
+        draw_enum_combo("Distance", config_.distance_mode, kCloudDistanceModes,
+                        clouds_distance_mode_name);
         ImGui::Separator();
         ImGui::SliderFloat("Time", &config_.time.time_hours, 0.0F, 24.0F, "%.2f h");
         ImGui::SliderFloat("Coverage", &config_.coverage, 0.0F, 1.0F, "%.2f");
@@ -884,6 +910,24 @@ class CloudApp {
             draw_enum_combo("Sampling mode", config_.sampling_mode, kCloudSamplingModes,
                             clouds_sampling_mode_name);
             ImGui::SliderFloat("Jitter", &config_.jitter_strength, 0.0F, 1.0F, "%.2f");
+        }
+        if (ImGui::CollapsingHeader("Distance Regime", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::SliderFloat("Orbit blend start", &config_.orbit_transition_start_m, 0.0F,
+                               120000.0F, "%.0f m");
+            ImGui::SliderFloat("Orbit blend end", &config_.orbit_transition_end_m, 1000.0F,
+                               240000.0F, "%.0f m");
+            ImGui::SliderFloat("Far shell start", &config_.far_shell_start_m, 0.0F, 400000.0F,
+                               "%.0f m");
+            ImGui::SliderFloat("Far shell end", &config_.far_shell_end_m, 1000.0F, 900000.0F,
+                               "%.0f m");
+            ImGui::SliderFloat("Orbit detail", &config_.orbit_detail_strength, 0.0F, 1.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Orbit density", &config_.orbit_density_scale, 0.0F, 2.0F,
+                               "%.2f");
+            config_.orbit_transition_end_m =
+                std::max(config_.orbit_transition_end_m, config_.orbit_transition_start_m + 1.0F);
+            config_.far_shell_end_m =
+                std::max(config_.far_shell_end_m, config_.far_shell_start_m + 1.0F);
         }
         if (ImGui::CollapsingHeader("Shape / Density", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::SliderFloat("Crispiness", &config_.crispiness, 1.0F, 120.0F, "%.1f");

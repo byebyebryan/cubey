@@ -70,6 +70,8 @@ constexpr std::array<std::string_view, 4> kCloudRenderPaths{
     "cached", "direct", "diff", "alpha-diff"};
 constexpr std::array<std::string_view, 3> kCloudSamplingModes{"interleaved", "bayer", "off"};
 constexpr std::array<std::string_view, 2> kCloudBackgroundModes{"atmosphere", "water-context"};
+constexpr std::array<std::string_view, 4> kCloudDistanceModes{"auto", "local", "orbit-shell",
+                                                              "blend-debug"};
 constexpr std::array<std::string_view, 10> kCloudWeatherPresets{
     "fair-weather",     "broken-cumulus", "overcast-stratus", "storm-cells",
     "high-cirrus",      "clear",          "scattered",        "inspection",
@@ -106,7 +108,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 214> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 221> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -537,6 +539,10 @@ constexpr std::array<ConfigOptionDescriptor, 214> kRunConfigOptions{
            "--cloud-background-mode", "Background Mode", "Clouds",
            "Standalone cloud background mode: atmosphere or water-context.",
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudBackgroundModes)),
+    option(RunConfigOptionId::CloudDistanceMode, "clouds.distance_mode",
+           "--cloud-distance-mode", "Distance Mode", "Clouds",
+           "Cloud distance regime: auto, local, orbit-shell, or blend-debug.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudDistanceModes)),
     option(RunConfigOptionId::CloudPlanetRadius, "clouds.planet_radius_m",
            "--cloud-planet-radius-m", "Planet Radius", "Clouds",
            "Planet radius used by the cloud shell in meters.", ConfigOptionType::Float,
@@ -637,6 +643,30 @@ constexpr std::array<ConfigOptionDescriptor, 214> kRunConfigOptions{
            "--cloud-jitter-strength", "Jitter Strength", "Clouds",
            "Cloud ray-start jitter amount applied by the selected sampling mode.",
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudOrbitTransitionStart, "clouds.orbit_transition_start_m",
+           "--cloud-orbit-transition-start-m", "Orbit Transition Start", "Clouds",
+           "Camera altitude where the broad orbit cloud shell starts blending in.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::CloudOrbitTransitionEnd, "clouds.orbit_transition_end_m",
+           "--cloud-orbit-transition-end-m", "Orbit Transition End", "Clouds",
+           "Camera altitude where the broad orbit cloud shell fully replaces local clouds.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::CloudFarShellStart, "clouds.far_shell_start_m",
+           "--cloud-far-shell-start-m", "Far Shell Start", "Clouds",
+           "View-ray distance where high-altitude rays start preferring the orbit shell.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::CloudFarShellEnd, "clouds.far_shell_end_m",
+           "--cloud-far-shell-end-m", "Far Shell End", "Clouds",
+           "View-ray distance where high-altitude rays fully prefer the orbit shell.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::CloudOrbitDetailStrength, "clouds.orbit_detail_strength",
+           "--cloud-orbit-detail-strength", "Orbit Detail", "Clouds",
+           "Amount of high-frequency detail retained by the broad orbit shell.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudOrbitDensityScale, "clouds.orbit_density_scale",
+           "--cloud-orbit-density-scale", "Orbit Density", "Clouds",
+           "Density multiplier for the broad orbit cloud shell.", ConfigOptionType::Float,
+           bounded_range(0.0, 2.0)),
     option(RunConfigOptionId::CloudTemporal, "clouds.temporal", "--cloud-temporal",
            "Temporal", "Clouds", "Enable temporal reconstruction for the cloud product.",
            ConfigOptionType::Bool, no_range(), {}, "--no-cloud-temporal"),
@@ -1275,6 +1305,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.clouds.background_mode.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.clouds.background_mode);
+    case RunConfigOptionId::CloudDistanceMode:
+        return config.clouds.distance_mode.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.clouds.distance_mode);
     case RunConfigOptionId::CloudPlanetRadius:
         return optional_float(config.clouds.planet_radius_m);
     case RunConfigOptionId::CloudCameraAltitude:
@@ -1327,6 +1361,18 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.sun_glare_strength);
     case RunConfigOptionId::CloudJitterStrength:
         return optional_float(config.clouds.jitter_strength);
+    case RunConfigOptionId::CloudOrbitTransitionStart:
+        return optional_float(config.clouds.orbit_transition_start_m);
+    case RunConfigOptionId::CloudOrbitTransitionEnd:
+        return optional_float(config.clouds.orbit_transition_end_m);
+    case RunConfigOptionId::CloudFarShellStart:
+        return optional_float(config.clouds.far_shell_start_m);
+    case RunConfigOptionId::CloudFarShellEnd:
+        return optional_float(config.clouds.far_shell_end_m);
+    case RunConfigOptionId::CloudOrbitDetailStrength:
+        return optional_float(config.clouds.orbit_detail_strength);
+    case RunConfigOptionId::CloudOrbitDensityScale:
+        return optional_float(config.clouds.orbit_density_scale);
     case RunConfigOptionId::CloudTemporal:
         return optional_bool(config.clouds.temporal);
     case RunConfigOptionId::CloudLocalVolume:
@@ -2384,6 +2430,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudBackgroundMode:
         config.clouds.background_mode = std::string(value);
         break;
+    case RunConfigOptionId::CloudDistanceMode:
+        config.clouds.distance_mode = std::string(value);
+        break;
     case RunConfigOptionId::CloudPlanetRadius:
         config.clouds.planet_radius_m = parse_config_float(value, option);
         validate_range(config.clouds.planet_radius_m, option);
@@ -2487,6 +2536,30 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudJitterStrength:
         config.clouds.jitter_strength = parse_config_float(value, option);
         validate_range(config.clouds.jitter_strength, option);
+        break;
+    case RunConfigOptionId::CloudOrbitTransitionStart:
+        config.clouds.orbit_transition_start_m = parse_config_float(value, option);
+        validate_range(config.clouds.orbit_transition_start_m, option);
+        break;
+    case RunConfigOptionId::CloudOrbitTransitionEnd:
+        config.clouds.orbit_transition_end_m = parse_config_float(value, option);
+        validate_range(config.clouds.orbit_transition_end_m, option);
+        break;
+    case RunConfigOptionId::CloudFarShellStart:
+        config.clouds.far_shell_start_m = parse_config_float(value, option);
+        validate_range(config.clouds.far_shell_start_m, option);
+        break;
+    case RunConfigOptionId::CloudFarShellEnd:
+        config.clouds.far_shell_end_m = parse_config_float(value, option);
+        validate_range(config.clouds.far_shell_end_m, option);
+        break;
+    case RunConfigOptionId::CloudOrbitDetailStrength:
+        config.clouds.orbit_detail_strength = parse_config_float(value, option);
+        validate_range(config.clouds.orbit_detail_strength, option);
+        break;
+    case RunConfigOptionId::CloudOrbitDensityScale:
+        config.clouds.orbit_density_scale = parse_config_float(value, option);
+        validate_range(config.clouds.orbit_density_scale, option);
         break;
     case RunConfigOptionId::CloudTemporal:
         config.clouds.temporal = parse_config_bool(value, option) ? 1 : 0;

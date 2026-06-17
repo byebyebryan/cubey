@@ -65,6 +65,20 @@ inline constexpr std::array<CloudsBackgroundMode, 2> kCloudsBackgroundModes{
     CloudsBackgroundMode::WaterContext,
 };
 
+enum class CloudsDistanceMode : std::uint32_t {
+    Auto = 0,
+    Local = 1,
+    OrbitShell = 2,
+    BlendDebug = 3,
+};
+
+inline constexpr std::array<CloudsDistanceMode, 4> kCloudsDistanceModes{
+    CloudsDistanceMode::Auto,
+    CloudsDistanceMode::Local,
+    CloudsDistanceMode::OrbitShell,
+    CloudsDistanceMode::BlendDebug,
+};
+
 enum class CloudsDebugView : std::uint32_t {
     Final = 0,
     Weather = 1,
@@ -91,9 +105,13 @@ enum class CloudsDebugView : std::uint32_t {
     VisibleCloudType = 27,
     WeatherEdge = 28,
     WeatherBias = 29,
+    DistanceRegime = 30,
+    LocalAlpha = 31,
+    OrbitAlpha = 32,
+    OrbitWeather = 33,
 };
 
-inline constexpr std::array<CloudsDebugView, 25> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 29> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
     CloudsDebugView::Weather,      CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting,
@@ -111,6 +129,10 @@ inline constexpr std::array<CloudsDebugView, 25> kCloudsDebugViews{
     CloudsDebugView::WeatherBias,
     CloudsDebugView::VisibleDensity,
     CloudsDebugView::VisibleCloudType,
+    CloudsDebugView::DistanceRegime,
+    CloudsDebugView::LocalAlpha,
+    CloudsDebugView::OrbitAlpha,
+    CloudsDebugView::OrbitWeather,
 };
 
 struct CloudsTimeConfig {
@@ -133,6 +155,7 @@ struct CloudsConfig {
     CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
     CloudsSamplingMode sampling_mode = CloudsSamplingMode::Bayer;
     CloudsBackgroundMode background_mode = CloudsBackgroundMode::Atmosphere;
+    CloudsDistanceMode distance_mode = CloudsDistanceMode::Auto;
     CloudsDebugView debug_view = CloudsDebugView::Final;
     bool temporal_enabled = true;
     CloudsTimeConfig time{};
@@ -166,6 +189,12 @@ struct CloudsConfig {
     float horizon_glow_strength = 0.55F;
     float sun_glare_strength = 1.0F;
     float jitter_strength = 1.0F;
+    float orbit_transition_start_m = 16000.0F;
+    float orbit_transition_end_m = 80000.0F;
+    float far_shell_start_m = 45000.0F;
+    float far_shell_end_m = 220000.0F;
+    float orbit_detail_strength = 0.18F;
+    float orbit_density_scale = 0.85F;
     bool powder_enabled = true;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;
@@ -188,6 +217,8 @@ void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset prese
 [[nodiscard]] const char* clouds_sampling_mode_name(CloudsSamplingMode mode);
 [[nodiscard]] CloudsBackgroundMode clouds_background_mode_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_background_mode_name(CloudsBackgroundMode mode);
+[[nodiscard]] CloudsDistanceMode clouds_distance_mode_from_string(std::string_view value);
+[[nodiscard]] const char* clouds_distance_mode_name(CloudsDistanceMode mode);
 [[nodiscard]] CloudsDebugView clouds_debug_view_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_debug_view_name(CloudsDebugView view);
 [[nodiscard]] CloudsDebugView next_clouds_debug_view(CloudsDebugView view);

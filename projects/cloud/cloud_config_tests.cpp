@@ -71,6 +71,19 @@ void test_names_and_next_debug_view() {
                 cubey::projects::cloud::CloudsBackgroundMode::WaterContext) ==
                 std::string_view("water-context"),
             "background mode name should use canonical spelling");
+    require(cubey::projects::cloud::clouds_distance_mode_from_string("auto") ==
+                cubey::projects::cloud::CloudsDistanceMode::Auto,
+            "auto distance mode should parse");
+    require(cubey::projects::cloud::clouds_distance_mode_from_string("local") ==
+                cubey::projects::cloud::CloudsDistanceMode::Local,
+            "local distance mode should parse");
+    require(cubey::projects::cloud::clouds_distance_mode_from_string("orbit-shell") ==
+                cubey::projects::cloud::CloudsDistanceMode::OrbitShell,
+            "orbit shell distance mode should parse");
+    require(cubey::projects::cloud::clouds_distance_mode_name(
+                cubey::projects::cloud::CloudsDistanceMode::BlendDebug) ==
+                std::string_view("blend-debug"),
+            "distance mode name should use canonical spelling");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::Final) ==
                 cubey::projects::cloud::CloudsDebugView::RawFinal,
@@ -125,6 +138,18 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include visible cloud-type diagnostics");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::VisibleCloudType) ==
+                cubey::projects::cloud::CloudsDebugView::DistanceRegime,
+            "cloud debug view should include distance-regime diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::DistanceRegime) ==
+                cubey::projects::cloud::CloudsDebugView::LocalAlpha,
+            "cloud debug view should include local alpha diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::OrbitAlpha) ==
+                cubey::projects::cloud::CloudsDebugView::OrbitWeather,
+            "cloud debug view should include orbit weather diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::OrbitWeather) ==
                 cubey::projects::cloud::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::cloud::clouds_debug_view_from_string("cloud-alpha") ==
@@ -181,6 +206,18 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud::clouds_debug_view_from_string("visible-cloud-type") ==
                 cubey::projects::cloud::CloudsDebugView::VisibleCloudType,
             "visible cloud type debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("distance-regime") ==
+                cubey::projects::cloud::CloudsDebugView::DistanceRegime,
+            "distance regime debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("local-alpha") ==
+                cubey::projects::cloud::CloudsDebugView::LocalAlpha,
+            "local alpha debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-alpha") ==
+                cubey::projects::cloud::CloudsDebugView::OrbitAlpha,
+            "orbit alpha debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-weather") ==
+                cubey::projects::cloud::CloudsDebugView::OrbitWeather,
+            "orbit weather debug view should parse");
 }
 
 void test_run_config_mapping() {
@@ -191,6 +228,7 @@ void test_run_config_mapping() {
     run_config.clouds.weather_preset = "storm";
     run_config.clouds.sampling_mode = "bayer";
     run_config.clouds.background_mode = "water-context";
+    run_config.clouds.distance_mode = "orbit-shell";
     run_config.clouds.planet_radius_m = 1000000.0F;
     run_config.clouds.bottom_altitude_m = 2000.0F;
     run_config.clouds.top_altitude_m = 9000.0F;
@@ -216,6 +254,12 @@ void test_run_config_mapping() {
     run_config.clouds.horizon_glow_strength = 0.80F;
     run_config.clouds.sun_glare_strength = 1.35F;
     run_config.clouds.jitter_strength = 0.25F;
+    run_config.clouds.orbit_transition_start_m = 14000.0F;
+    run_config.clouds.orbit_transition_end_m = 70000.0F;
+    run_config.clouds.far_shell_start_m = 36000.0F;
+    run_config.clouds.far_shell_end_m = 180000.0F;
+    run_config.clouds.orbit_detail_strength = 0.22F;
+    run_config.clouds.orbit_density_scale = 1.10F;
     run_config.clouds.temporal = 0;
     run_config.clouds.local_volume = 0;
     run_config.clouds.horizon_layer = 1;
@@ -238,6 +282,8 @@ void test_run_config_mapping() {
             "cloud sampling mode should map from run config");
     require(config.background_mode == cubey::projects::cloud::CloudsBackgroundMode::WaterContext,
             "cloud background mode should map from run config");
+    require(config.distance_mode == cubey::projects::cloud::CloudsDistanceMode::OrbitShell,
+            "cloud distance mode should map from run config");
     require(config.debug_view == cubey::projects::cloud::CloudsDebugView::Density,
             "cloud debug view should map from common debug config");
     require_near(config.camera_altitude_m,
@@ -284,6 +330,18 @@ void test_run_config_mapping() {
                  "cloud sun glare strength should map");
     require_near(config.jitter_strength, 0.25F, 0.001F,
                  "cloud jitter strength should map");
+    require_near(config.orbit_transition_start_m, 14000.0F, 0.001F,
+                 "cloud orbit transition start should map");
+    require_near(config.orbit_transition_end_m, 70000.0F, 0.001F,
+                 "cloud orbit transition end should map");
+    require_near(config.far_shell_start_m, 36000.0F, 0.001F,
+                 "cloud far shell start should map");
+    require_near(config.far_shell_end_m, 180000.0F, 0.001F,
+                 "cloud far shell end should map");
+    require_near(config.orbit_detail_strength, 0.22F, 0.001F,
+                 "cloud orbit detail strength should map");
+    require_near(config.orbit_density_scale, 1.10F, 0.001F,
+                 "cloud orbit density scale should map");
     require(!config.temporal_enabled, "cloud temporal option should map");
     require(!config.local_volume_enabled, "cloud local volume option should map");
     require(config.horizon_layer_enabled, "cloud horizon layer option should map");
@@ -320,6 +378,8 @@ void test_weather_preset_defaults() {
             "default sampling should use Bayer ray starts");
     require(config.background_mode == cubey::projects::cloud::CloudsBackgroundMode::Atmosphere,
             "default background should use atmosphere only");
+    require(config.distance_mode == cubey::projects::cloud::CloudsDistanceMode::Auto,
+            "default distance mode should be auto");
     require_near(config.jitter_strength, 1.0F, 0.001F,
                  "default jitter should match reference Bayer strength");
     require_near(config.weather_influence, 0.0F, 0.001F,
@@ -342,6 +402,18 @@ void test_weather_preset_defaults() {
                  "default resolve should preserve density detail");
     require_near(config.horizon_glow_strength, 0.55F, 0.001F,
                  "default horizon glow should be restrained");
+    require_near(config.orbit_transition_start_m, 16000.0F, 0.001F,
+                 "default orbit transition start should match high camera handoff");
+    require_near(config.orbit_transition_end_m, 80000.0F, 0.001F,
+                 "default orbit transition end should match high camera handoff");
+    require_near(config.far_shell_start_m, 45000.0F, 0.001F,
+                 "default far shell start should be high-view scale");
+    require_near(config.far_shell_end_m, 220000.0F, 0.001F,
+                 "default far shell end should be high-view scale");
+    require_near(config.orbit_detail_strength, 0.18F, 0.001F,
+                 "default orbit detail should suppress high-frequency erosion");
+    require_near(config.orbit_density_scale, 0.85F, 0.001F,
+                 "default orbit density should be restrained");
 
     run_config.clouds.weather_preset = "overcast";
 
@@ -390,6 +462,7 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
     cubey::set_run_config_option_from_string(config, "clouds.sampling_mode", "bayer");
     cubey::set_run_config_option_from_string(config, "clouds.background_mode", "water-context");
+    cubey::set_run_config_option_from_string(config, "clouds.distance_mode", "blend-debug");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.weather_scale_km", "120");
     cubey::set_run_config_option_from_string(config, "clouds.vertical_shear_fraction", "0.20");
@@ -411,6 +484,12 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.horizon_glow_strength", "0.80");
     cubey::set_run_config_option_from_string(config, "clouds.sun_glare_strength", "1.35");
     cubey::set_run_config_option_from_string(config, "clouds.jitter_strength", "0.25");
+    cubey::set_run_config_option_from_string(config, "clouds.orbit_transition_start_m", "14000");
+    cubey::set_run_config_option_from_string(config, "clouds.orbit_transition_end_m", "70000");
+    cubey::set_run_config_option_from_string(config, "clouds.far_shell_start_m", "36000");
+    cubey::set_run_config_option_from_string(config, "clouds.far_shell_end_m", "180000");
+    cubey::set_run_config_option_from_string(config, "clouds.orbit_detail_strength", "0.22");
+    cubey::set_run_config_option_from_string(config, "clouds.orbit_density_scale", "1.10");
     cubey::set_run_config_option_from_string(config, "clouds.temporal", "false");
     cubey::set_run_config_option_from_string(config, "clouds.local_volume", "false");
     cubey::set_run_config_option_from_string(config, "clouds.horizon_layer", "true");
@@ -422,6 +501,8 @@ void test_config_descriptors() {
             "cloud sampling mode descriptor should set");
     require(config.clouds.background_mode == "water-context",
             "cloud background mode descriptor should set");
+    require(config.clouds.distance_mode == "blend-debug",
+            "cloud distance mode descriptor should set");
     require_near(config.clouds.coverage, 0.44F, 0.001F,
                  "cloud coverage descriptor should set");
     require_near(config.clouds.weather_scale_km, 120.0F, 0.001F,
@@ -464,6 +545,18 @@ void test_config_descriptors() {
                  "cloud sun glare descriptor should set");
     require_near(config.clouds.jitter_strength, 0.25F, 0.001F,
                  "cloud jitter strength descriptor should set");
+    require_near(config.clouds.orbit_transition_start_m, 14000.0F, 0.001F,
+                 "cloud orbit transition start descriptor should set");
+    require_near(config.clouds.orbit_transition_end_m, 70000.0F, 0.001F,
+                 "cloud orbit transition end descriptor should set");
+    require_near(config.clouds.far_shell_start_m, 36000.0F, 0.001F,
+                 "cloud far shell start descriptor should set");
+    require_near(config.clouds.far_shell_end_m, 180000.0F, 0.001F,
+                 "cloud far shell end descriptor should set");
+    require_near(config.clouds.orbit_detail_strength, 0.22F, 0.001F,
+                 "cloud orbit detail strength descriptor should set");
+    require_near(config.clouds.orbit_density_scale, 1.10F, 0.001F,
+                 "cloud orbit density scale descriptor should set");
     require(config.clouds.temporal == 0, "cloud temporal descriptor should set");
     require(config.clouds.local_volume == 0, "cloud local volume descriptor should set");
     require(config.clouds.horizon_layer == 1, "cloud horizon layer descriptor should set");

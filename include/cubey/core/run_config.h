@@ -233,6 +233,7 @@ struct RunConfig {
         std::string render_path{};
         std::string sampling_mode{};
         std::string background_mode{};
+        std::string distance_mode{};
         float planet_radius_m = kRunConfigUnsetFloat;
         float camera_altitude_m = kRunConfigUnsetFloat;
         float bottom_altitude_m = kRunConfigUnsetFloat;
@@ -259,6 +260,12 @@ struct RunConfig {
         float horizon_glow_strength = kRunConfigUnsetFloat;
         float sun_glare_strength = kRunConfigUnsetFloat;
         float jitter_strength = kRunConfigUnsetFloat;
+        float orbit_transition_start_m = kRunConfigUnsetFloat;
+        float orbit_transition_end_m = kRunConfigUnsetFloat;
+        float far_shell_start_m = kRunConfigUnsetFloat;
+        float far_shell_end_m = kRunConfigUnsetFloat;
+        float orbit_detail_strength = kRunConfigUnsetFloat;
+        float orbit_density_scale = kRunConfigUnsetFloat;
         int temporal = -1;
         int local_volume = -1;
         int horizon_layer = -1;
