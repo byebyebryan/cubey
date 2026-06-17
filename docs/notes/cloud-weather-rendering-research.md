@@ -616,3 +616,51 @@ moon, or planet-scale celestial policy. The first production project should also
 keep planet-frame compatibility, product alpha/transmittance semantics, and
 project-owned render-graph resources explicit before any shared cloud renderer
 promotion.
+
+## Production Distance Regime Checkpoint 2026-06-16
+
+The current production `projects/cloud` surface view is credible enough to stop
+treating every high-view artifact as a local raymarch tuning problem. High and
+orbit captures reveal a separate failure mode: the visible dome/circular cloud
+boundary is the projected footprint of the same spherical cloud-shell segment
+that works for surface views. The artifact appears in cloud alpha/distance
+diagnostics rather than in the background, so it should be fixed as a
+distance-regime problem.
+
+External references line up with that read:
+
+- Unreal Volumetric Clouds targets ground, flying, and outer-space views, but
+  keeps cloud tracing quality, shadow tracing, sky atmosphere, and aerial
+  perspective as separate scalable systems:
+  <https://dev.epicgames.com/documentation/unreal-engine/volumetric-cloud-component-in-unreal-engine?lang=en-US>
+- Unity HDRP clouds split cloud maps, volume shaping, erosion, temporal
+  accumulation, and quality controls instead of driving all distances from one
+  final opacity heuristic:
+  <https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.0/manual/understand-clouds.html>
+- Horizon/Nubis emphasizes authorable weather plus density fields and strict
+  performance budgets before lighting/post can make clouds look rich:
+  <https://www.guerrilla-games.com/read/the-real-time-volumetric-cloudscapes-of-horizon-zero-dawn>
+- Frostbite frames clouds as one weather layer inside a dynamic sky and
+  atmosphere system, not as a skybox or material-local effect:
+  <https://www.ea.com/frostbite/news/physically-based-sky-atmosphere-and-cloud-rendering>
+- Skybolt is the closest surface-to-space pressure case: it uses a spherical
+  cloud shell, global coverage map, procedural detail, aerial perspective, and
+  cloud shadow/occlusion products for planetwide clouds:
+  <https://prograda.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/>
+
+The next production pass should therefore keep the surface-local volume stable
+and add an explicit high/orbit regime:
+
+- surface/near/overhead: keep the current local volumetric raymarch for real
+  parallax, thickness, and shape;
+- high/orbit: add a broad shell evaluator that samples the existing weather map
+  and low-frequency density with suppressed erosion and a cheaper sample budget;
+- transition: expose an explicit local-vs-orbit blend diagnostic rather than
+  hiding the handoff in color grading;
+- cache: defer the full octahedral cached-sky product until the direct broad
+  shell path reads correctly.
+
+Implementation should add `clouds.distance_mode = auto|local|orbit-shell|blend-debug`
+and a small set of altitude/detail controls. The acceptance target is not final
+planet integration; it is removing the obvious high/orbit dome boundary while
+preserving the current surface view.
