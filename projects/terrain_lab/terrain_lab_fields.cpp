@@ -928,43 +928,61 @@ void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float
             const float warp_z =
                 fbm((p.x * 0.88F) + 7.0F, (p.z * 0.88F) - 9.0F, config.seed + 3603U, 4) * 0.18F;
             const Point2 q{p.x + warp_x, p.z + warp_z};
-            const float belt_a =
-                fbm((q.x * 0.78F) + 2.0F, (q.z * 0.78F) - 4.0F, config.seed + 3605U, 5) *
+            const float massif =
+                fbm((q.x * 0.38F) + 2.0F, (q.z * 0.34F) - 4.0F, config.seed + 3605U, 5) *
                     0.5F +
                 0.5F;
-            const float belt_b =
-                fbm((q.x * 1.36F) - 11.0F, (q.z * 1.18F) + 13.0F, config.seed + 3607U, 4) *
+            const float range =
+                fbm((q.x * 0.78F) - 11.0F, (q.z * 0.68F) + 13.0F, config.seed + 3607U, 4) *
                     0.5F +
                 0.5F;
-            const float belt = smoothstep(0.36F, 0.78F, belt_a * 0.68F + belt_b * 0.32F);
+            const float range_core =
+                ridge_profile(fbm((q.x * 0.54F) + 17.0F, (q.z * 0.48F) - 19.0F,
+                                  config.seed + 3609U, 5) *
+                                  1.02F,
+                              1.55F);
+            const float belt =
+                smoothstep(0.24F, 0.80F, massif * 0.42F + range_core * 0.40F + range * 0.18F);
+            const float relief_gate = smoothstep(0.34F, 0.80F, belt);
+            const float summit =
+                ridge_profile(fbm((q.x * 0.86F) - 23.0F, (q.z * 0.78F) + 29.0F,
+                                  config.seed + 3621U, 4) *
+                                  1.08F,
+                              2.05F) *
+                smoothstep(0.50F, 0.90F, belt);
             const float fold_a =
-                ridge_profile(fbm((q.x * 1.85F) - 15.0F, (q.z * 1.55F) + 19.0F,
+                ridge_profile(fbm((q.x * 1.24F) - 15.0F, (q.z * 1.08F) + 19.0F,
                                   config.seed + 3611U, 5) *
-                                  1.22F,
-                              2.05F);
+                                  1.12F,
+                              2.35F);
             const float fold_b =
-                ridge_profile(fbm((q.x * 3.45F) + 21.0F, (q.z * 2.80F) - 23.0F,
+                ridge_profile(fbm((q.x * 2.18F) + 21.0F, (q.z * 1.92F) - 23.0F,
                                   config.seed + 3613U, 4) *
-                                  1.28F,
-                              2.45F) *
-                0.50F;
-            const float fold = std::max(fold_a, fold_b);
+                                  1.18F,
+                              2.65F) *
+                0.38F;
+            const float fold = std::max(fold_a, fold_b) * relief_gate;
             const float rough =
-                fbm((q.x * 2.25F) + 5.0F, (q.z * 2.05F) - 7.0F, config.seed + 3617U, 4) *
+                fbm((q.x * 1.42F) + 5.0F, (q.z * 1.32F) - 7.0F, config.seed + 3617U, 4) *
                     0.5F +
                 0.5F;
             const float fine =
-                fbm((q.x * 5.10F) - 3.0F, (q.z * 4.80F) + 8.0F, config.seed + 3619U, 3) *
+                fbm((q.x * 3.10F) - 3.0F, (q.z * 2.80F) + 8.0F, config.seed + 3619U, 3) *
                     0.5F +
                 0.5F;
 
-            const float uplift = saturate(0.16F + belt * 0.58F + fold * 0.24F + rough * 0.08F);
-            const float base = saturate(0.18F + uplift * 0.66F + rough * 0.16F);
-            const float relief = saturate(fold * 0.48F + rough * 0.20F + fine * 0.12F +
-                                          belt * 0.24F);
+            const float uplift = saturate(0.08F + belt * 0.70F + range_core * 0.12F +
+                                          summit * 0.18F + rough * 0.03F);
+            const float base =
+                saturate(0.12F + belt * 0.70F + range_core * 0.14F + massif * 0.08F +
+                         summit * 0.10F + rough * 0.04F);
+            const float relief = saturate(fold * 0.46F + rough * relief_gate * 0.14F +
+                                          fine * relief_gate * 0.06F + summit * 0.32F +
+                                          range_core * 0.20F + belt * 0.12F);
             const float height_norm =
-                base * 0.28F + uplift * 0.34F + fold * 0.38F + (rough - 0.5F) * 0.13F +
-                (fine - 0.5F) * 0.08F - 0.30F;
+                (belt - 0.24F) * 0.58F + range_core * 0.18F + uplift * 0.20F +
+                summit * 0.42F + fold * 0.24F + (rough - 0.5F) * relief_gate * 0.055F +
+                (fine - 0.5F) * relief_gate * 0.025F - 0.30F;
 
             mountain.base_potential[sample] = base;
             mountain.relief_potential[sample] = relief;
@@ -972,6 +990,25 @@ void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float
             mountain.provisional_height_m[sample] = height_norm * elevation_scale_m;
         }
     }
+
+    std::vector<float> macro_smoothed = mountain.provisional_height_m;
+    for (std::uint32_t iteration = 0; iteration < 2U; ++iteration) {
+        std::vector<float> next = macro_smoothed;
+        for (std::uint32_t y = 1U; y + 1U < desc.height; ++y) {
+            for (std::uint32_t x = 1U; x + 1U < desc.width; ++x) {
+                const std::size_t sample = grid_index(x, y, desc.width);
+                const float cross =
+                    (macro_smoothed[grid_index(x - 1U, y, desc.width)] +
+                     macro_smoothed[grid_index(x + 1U, y, desc.width)] +
+                     macro_smoothed[grid_index(x, y - 1U, desc.width)] +
+                     macro_smoothed[grid_index(x, y + 1U, desc.width)]) *
+                    0.25F;
+                next[sample] = lerp(macro_smoothed[sample], cross, 0.30F);
+            }
+        }
+        macro_smoothed.swap(next);
+    }
+    mountain.provisional_height_m.swap(macro_smoothed);
 
     std::vector<float> slope;
     std::vector<float> curvature;
@@ -999,8 +1036,8 @@ void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float
             float local_max = mountain.provisional_height_m[sample];
             float local_sum = 0.0F;
             float local_count = 0.0F;
-            for (std::int32_t oy = -2; oy <= 2; ++oy) {
-                for (std::int32_t ox = -2; ox <= 2; ++ox) {
+            for (std::int32_t oy = -4; oy <= 4; ++oy) {
+                for (std::int32_t ox = -4; ox <= 4; ++ox) {
                     const auto nx = static_cast<std::int32_t>(x) + ox;
                     const auto ny = static_cast<std::int32_t>(y) + oy;
                     if (nx < 0 || ny < 0 || nx >= static_cast<std::int32_t>(desc.width) ||
@@ -1032,20 +1069,24 @@ void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float
             const float convex = smoothstep(curvature_scale_m * 0.18F, curvature_scale_m * 2.20F,
                                             -curvature[sample]);
             const float valley =
-                saturate(smoothstep(0.18F, 0.56F, flow_t) * (0.66F + stream_t * 0.40F) +
-                         smoothstep(0.18F, 0.58F, stream_t) * 0.34F +
-                         (1.0F - local_position) * smoothstep(0.22F, 0.58F, flow_t) * 0.18F);
+                saturate(smoothstep(0.28F, 0.68F, flow_t) * (0.52F + stream_t * 0.32F) +
+                         smoothstep(0.26F, 0.66F, stream_t) * 0.22F +
+                         (1.0F - local_position) * smoothstep(0.32F, 0.72F, flow_t) * 0.13F) *
+                (1.0F - mountain.relief_potential[sample] * 0.08F);
             const float divide =
                 saturate((1.0F - flow_t * 0.78F) *
-                         (local_relief * 0.46F + convex * 0.32F + local_position * 0.18F +
-                          mountain.uplift_source[sample] * 0.12F));
+                         (local_relief * 0.36F + convex * 0.24F + local_position * 0.14F +
+                          mountain.uplift_source[sample] * 0.16F +
+                          mountain.relief_potential[sample] * 0.24F));
             const float ridge =
-                saturate((divide * 0.58F + mountain.relief_potential[sample] * 0.28F +
-                          prominence * 0.16F) *
-                         (1.0F - valley * 0.42F));
+                saturate((divide * 0.48F + mountain.relief_potential[sample] * 0.34F +
+                          prominence * 0.12F + mountain.base_potential[sample] * 0.10F) *
+                         (1.0F - valley * 0.34F));
             const float crest =
-                saturate(ridge * smoothstep(0.56F, 0.88F, local_position) *
-                         (0.72F + convex * 0.42F));
+                saturate((ridge * smoothstep(0.50F, 0.86F, local_position) +
+                          mountain.relief_potential[sample] * 0.12F *
+                              smoothstep(0.58F, 0.90F, mountain.base_potential[sample])) *
+                         (0.70F + convex * 0.42F));
             const float shoulder =
                 saturate((local_relief * 0.42F + ridge * 0.32F + slope_t * 0.14F -
                           crest * 0.10F) *
@@ -1054,8 +1095,11 @@ void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float
                 saturate(slope_t * (local_relief * 0.54F + ridge * 0.28F + convex * 0.16F) *
                          (1.0F - valley * 0.32F));
             const float peak =
-                saturate(crest * (0.58F + convex * 0.30F + mountain.uplift_source[sample] * 0.18F) *
-                         smoothstep(0.48F, 0.86F, mountain.base_potential[sample]));
+                saturate((crest * (0.58F + convex * 0.30F + mountain.uplift_source[sample] * 0.18F) +
+                          mountain.relief_potential[sample] * 0.16F *
+                              smoothstep(0.62F, 0.92F, mountain.base_potential[sample])) *
+                         smoothstep(0.46F, 0.86F, mountain.base_potential[sample]) *
+                         (1.0F - valley * 0.24F));
             const float scree =
                 saturate((cliff * 0.45F + shoulder * 0.28F + slope_t * 0.18F) *
                          (1.0F - valley * 0.55F) * (1.0F - peak * 0.18F));
@@ -1077,7 +1121,7 @@ void compute_flow_fields(const TerrainLabGridDesc& desc, const std::vector<float
             mountain.relief_potential[sample] = relief;
             mountain.process_potential[sample] = process;
             mountain.provisional_height_m[sample] +=
-                (ridge * 0.26F + peak * 0.20F + cliff * 0.08F - valley * 0.16F) *
+                (ridge * 0.28F + peak * 0.24F + cliff * 0.04F - valley * 0.025F) *
                 elevation_scale_m;
         }
     }
@@ -1170,8 +1214,8 @@ alpine_glacial_features_at(Point2 p, const TerrainLabGridDesc& desc,
         .valley_influence = saturate(floor * 0.78F + hanging * 0.30F),
         .basin_influence = basin,
         .divide_influence =
-            saturate(smoothstep(0.30F, 0.74F,
-                                ridge * 0.44F + driver.crest_source * 0.30F +
+            saturate(smoothstep(0.20F, 0.60F,
+                                ridge * 0.50F + driver.crest_source * 0.32F +
                                     peak * 0.24F + cliff * 0.18F) *
                      (1.0F - floor * 0.34F)),
         .channel_influence = channel,
@@ -3990,9 +4034,9 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
                 alpine_glacial_features_at(p, fields.desc, config, driver);
             const float structure =
                 mountain.provisional_height_m[sample] +
-                ((features.ridge_influence * 0.18F) + (features.peak_influence * 0.22F) +
-                 (features.valley_wall * 0.12F) + (features.cirque_influence * 0.08F) -
-                 (features.glacier_floor * 0.12F) - (features.hanging_valley * 0.04F) -
+                ((features.ridge_influence * 0.10F) + (features.peak_influence * 0.14F) +
+                 (features.valley_wall * 0.07F) + (features.cirque_influence * 0.06F) -
+                 (features.glacier_floor * 0.035F) - (features.hanging_valley * 0.015F) -
                  (features.basin_influence * 0.04F)) *
                     alpine_elevation_scale_m * config.structure_strength;
 
@@ -4031,8 +4075,8 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
                 alpine_glacial_features_at(p, fields.desc, config, driver);
             const float slope_t = smoothstep(0.06F, 0.42F, temp_slope[sample]);
             const float glacial_carve =
-                (driver.ice_accumulation * 0.026F + features.glacier_floor * 0.022F +
-                 features.hanging_valley * 0.012F) *
+                (driver.ice_accumulation * 0.012F + features.glacier_floor * 0.010F +
+                 features.hanging_valley * 0.006F) *
                 alpine_elevation_scale_m * config.process_strength;
             const float wall_polish = driver.cliff_source * smoothstep(0.15F, 0.58F, slope_t) *
                                       alpine_elevation_scale_m * 0.010F * config.process_strength;
@@ -4068,17 +4112,17 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
             const float elevation_t =
                 saturate((fields.height_m[sample] - fields.min_height_m) / process_height_span);
             const float ridge_detail =
-                fbm((p.x * 19.0F) - 8.0F, (p.z * 19.0F) + 10.0F, config.seed + 3411U, 4) *
-                fields.ridge_influence[sample] * 0.014F;
+                fbm((p.x * 13.0F) - 8.0F, (p.z * 13.0F) + 10.0F, config.seed + 3411U, 4) *
+                fields.ridge_influence[sample] * 0.010F;
             const float peak_detail =
-                fbm((p.x * 24.0F) + 5.0F, (p.z * 24.0F) - 9.0F, config.seed + 3413U, 4) *
-                features.peak_influence * 0.018F;
+                fbm((p.x * 16.0F) + 5.0F, (p.z * 16.0F) - 9.0F, config.seed + 3413U, 4) *
+                features.peak_influence * 0.012F;
             const float wall_groove =
-                fbm((p.x * 28.0F) + 13.0F, (p.z * 28.0F) - 17.0F, config.seed + 3417U, 3) *
-                features.valley_wall * 0.007F;
+                fbm((p.x * 16.0F) + 13.0F, (p.z * 16.0F) - 17.0F, config.seed + 3417U, 3) *
+                features.valley_wall * 0.005F;
             const float moraine_roughness =
-                fbm((p.x * 15.0F) - 21.0F, (p.z * 15.0F) + 25.0F, config.seed + 3421U, 3) *
-                features.moraine_influence * 0.006F;
+                fbm((p.x * 9.0F) - 21.0F, (p.z * 9.0F) + 25.0F, config.seed + 3421U, 3) *
+                features.moraine_influence * 0.004F;
             const float snow_smoothing =
                 (features.glacier_floor * 0.82F + features.peak_influence * 0.28F) *
                 smoothstep(0.46F, 0.86F, elevation_t);
