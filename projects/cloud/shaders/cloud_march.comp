@@ -471,8 +471,13 @@ MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, 
     float alpha = 1.0 - transmittance;
     color = max(color * 1.70 - vec3(0.08 * alpha), vec3(0.0));
     if (first_distance > 0.0) {
+        float altitude_fog_gate =
+            1.0 - smoothstep(params.distance_options.y,
+                             max(params.distance_options.z * 2.0,
+                                 params.distance_options.y + 1.0),
+                             cloud_camera_altitude());
         float fog = 1.0 - exp(-first_distance * 0.000028 *
-                              params.cloud_color_bottom_horizon.w);
+                              params.cloud_color_bottom_horizon.w * altitude_fog_gate);
         color = mix(color, background * alpha, clamp(fog, 0.0, 1.0));
     }
     float mean_distance = distance_weight_sum > 0.0
