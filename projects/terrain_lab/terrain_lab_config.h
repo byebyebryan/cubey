@@ -110,7 +110,7 @@ struct TerrainLabConfig {
     float structure_strength = kTerrainLabDefaultStructureStrength;
     float process_strength = kTerrainLabDefaultProcessStrength;
     float detail_strength = kTerrainLabDefaultDetailStrength;
-    TerrainLabSlicePreset slice_preset = TerrainLabSlicePreset::AridMesaCanyon;
+    TerrainLabSlicePreset slice_preset = TerrainLabSlicePreset::TemperateMountainWatershed;
     TerrainLabCameraPreset camera_preset = TerrainLabCameraPreset::Orbit;
     TerrainLabDebugView debug_view = TerrainLabDebugView::Final;
 
@@ -213,7 +213,7 @@ struct TerrainLabConfig {
 [[nodiscard]] inline TerrainLabSlicePreset
 terrain_lab_slice_preset_from_name(std::string_view name) {
     if (name.empty()) {
-        return TerrainLabSlicePreset::AridMesaCanyon;
+        return TerrainLabSlicePreset::TemperateMountainWatershed;
     }
     for (const TerrainLabSlicePreset preset : kTerrainLabSlicePresets) {
         if (terrain_lab_name_matches(name, terrain_lab_slice_preset_name(preset))) {

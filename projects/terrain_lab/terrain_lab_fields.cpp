@@ -135,6 +135,15 @@ struct AridTraceSeedCandidate {
     float score = 0.0F;
 };
 
+struct RiverDerivationParams {
+    float runoff_scale = 1.0F;
+    float water_presence_scale = 1.0F;
+    float min_width_m = 4.0F;
+    float max_width_m = 48.0F;
+    float valley_width_multiplier = 5.0F;
+    float stream_threshold = 0.28F;
+};
+
 struct AridCanyonCrop {
     std::uint32_t offset_x = 0;
     std::uint32_t offset_y = 0;
@@ -1079,6 +1088,134 @@ select_arid_trace_seeds(const TerrainLabGridDesc& desc, const std::vector<float>
         }
     }
     return seeds;
+}
+
+void merge_stream_order(std::uint8_t incoming_order, std::size_t receiver,
+                        std::vector<std::uint8_t>& max_order,
+                        std::vector<std::uint8_t>& equal_order_count) {
+    if (receiver == kNoFlowReceiver || incoming_order == 0U) {
+        return;
+    }
+    if (incoming_order > max_order[receiver]) {
+        max_order[receiver] = incoming_order;
+        equal_order_count[receiver] = 1U;
+        return;
+    }
+    if (incoming_order == max_order[receiver] &&
+        equal_order_count[receiver] < std::numeric_limits<std::uint8_t>::max()) {
+        ++equal_order_count[receiver];
+    }
+}
+
+void derive_river_network_fields(TerrainLabFieldData& fields, RiverDerivationParams params) {
+    const std::size_t count = fields.sample_count();
+    fields.river_discharge.assign(count, 0.0F);
+    fields.stream_order.assign(count, 0U);
+    fields.river_width_m.assign(count, 0.0F);
+    fields.valley_width_m.assign(count, 0.0F);
+    fields.water_presence.assign(count, 0.0F);
+    fields.max_river_discharge = 0.0F;
+    fields.max_stream_order = 0U;
+    fields.max_river_width_m = 0.0F;
+    fields.max_valley_width_m = 0.0F;
+    if (count == 0U) {
+        return;
+    }
+
+    std::vector<std::uint8_t> river_flow_direction;
+    FlowRoutingData routing = compute_flow_routing(fields.desc, fields.height_m, river_flow_direction);
+    for (std::size_t sample = 0; sample < count; ++sample) {
+        const float local_runoff =
+            saturate(0.36F + fields.channel_influence[sample] * 0.28F +
+                     fields.valley_influence[sample] * 0.18F +
+                     fields.basin_influence[sample] * 0.12F +
+                     fields.driver_process_potential[sample] * 0.10F -
+                     fields.divide_influence[sample] * 0.12F);
+        fields.river_discharge[sample] = std::max(0.01F, local_runoff * params.runoff_scale);
+    }
+
+    std::vector<std::size_t> order(count);
+    std::iota(order.begin(), order.end(), 0U);
+    std::sort(order.begin(), order.end(), [&fields](std::size_t lhs, std::size_t rhs) {
+        return fields.height_m[lhs] > fields.height_m[rhs];
+    });
+
+    for (const std::size_t sample : order) {
+        const FlowReceiver& receiver = routing.receivers[sample];
+        if (receiver.first != kNoFlowReceiver && receiver.first_weight > 0.0F) {
+            fields.river_discharge[receiver.first] +=
+                fields.river_discharge[sample] * receiver.first_weight;
+        }
+        if (receiver.second != kNoFlowReceiver && receiver.second_weight > 0.0F) {
+            fields.river_discharge[receiver.second] +=
+                fields.river_discharge[sample] * receiver.second_weight;
+        }
+    }
+
+    for (const float discharge : fields.river_discharge) {
+        fields.max_river_discharge = std::max(fields.max_river_discharge, discharge);
+    }
+    const float inv_log_max_discharge =
+        fields.max_river_discharge <= 0.0F ? 0.0F : 1.0F / std::log1p(fields.max_river_discharge);
+    const float inv_max_stream =
+        fields.max_stream_power <= 0.0F ? 0.0F : 1.0F / fields.max_stream_power;
+
+    std::vector<std::uint8_t> max_upstream_order(count, 0U);
+    std::vector<std::uint8_t> equal_upstream_order_count(count, 0U);
+    for (const std::size_t sample : order) {
+        const float discharge_t = std::log1p(fields.river_discharge[sample]) * inv_log_max_discharge;
+        const float stream_t = saturate(fields.stream_power[sample] * inv_max_stream);
+        const float stream_score =
+            saturate(discharge_t * 0.70F + fields.channel_influence[sample] * 0.34F +
+                     stream_t * 0.16F - fields.divide_influence[sample] * 0.12F);
+        std::uint8_t sample_order = max_upstream_order[sample];
+        if (sample_order > 0U && equal_upstream_order_count[sample] >= 2U) {
+            sample_order = static_cast<std::uint8_t>(std::min<std::uint32_t>(
+                static_cast<std::uint32_t>(sample_order) + 1U,
+                static_cast<std::uint32_t>(std::numeric_limits<std::uint8_t>::max())));
+        }
+        if (sample_order == 0U && stream_score > params.stream_threshold) {
+            sample_order = 1U;
+        }
+        fields.stream_order[sample] = sample_order;
+        fields.max_stream_order =
+            std::max(fields.max_stream_order, static_cast<std::uint32_t>(sample_order));
+
+        const FlowReceiver& receiver = routing.receivers[sample];
+        merge_stream_order(sample_order, receiver.first, max_upstream_order,
+                           equal_upstream_order_count);
+    }
+
+    const float stream_order_denominator =
+        fields.max_stream_order <= 1U ? 1.0F : static_cast<float>(fields.max_stream_order);
+    for (std::size_t sample = 0; sample < count; ++sample) {
+        const float discharge_t = std::log1p(fields.river_discharge[sample]) * inv_log_max_discharge;
+        const float order_t =
+            static_cast<float>(fields.stream_order[sample]) / stream_order_denominator;
+        const float stream_t = saturate(fields.stream_power[sample] * inv_max_stream);
+        const float stream_score =
+            saturate(discharge_t * 0.70F + fields.channel_influence[sample] * 0.34F +
+                     stream_t * 0.16F - fields.divide_influence[sample] * 0.12F);
+        const float active_stream =
+            smoothstep(params.stream_threshold - 0.08F, params.stream_threshold + 0.18F,
+                       stream_score);
+        const float slope_t = smoothstep(0.030F, 0.42F, fields.slope[sample]);
+        const float hierarchy_t = saturate(discharge_t * 0.66F + order_t * 0.34F);
+        const float river_width =
+            active_stream * lerp(params.min_width_m, params.max_width_m, hierarchy_t);
+        const float valley_width =
+            river_width * lerp(params.valley_width_multiplier * 0.72F,
+                               params.valley_width_multiplier * 1.45F, 1.0F - slope_t);
+        const float water =
+            saturate(params.water_presence_scale * active_stream *
+                     (discharge_t * 0.72F + order_t * 0.28F) * (1.0F - slope_t * 0.28F));
+
+        fields.river_width_m[sample] = river_width;
+        fields.valley_width_m[sample] = valley_width;
+        fields.water_presence[sample] = water;
+        fields.max_river_width_m = std::max(fields.max_river_width_m, river_width);
+        fields.max_valley_width_m = std::max(fields.max_valley_width_m, valley_width);
+    }
 }
 
 [[nodiscard]] AridDrainageTrace
@@ -2368,6 +2505,15 @@ TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLa
     compute_flow_fields(fields.desc, fields.height_m, fields.slope, fields.flow_direction,
                         fields.flow_accumulation, fields.stream_power, fields.max_flow_accumulation,
                         fields.max_stream_power);
+    derive_river_network_fields(fields,
+                                {
+                                    .runoff_scale = 1.0F,
+                                    .water_presence_scale = 1.0F,
+                                    .min_width_m = fields.desc.cell_size_m * 0.20F,
+                                    .max_width_m = fields.desc.cell_size_m * 1.90F,
+                                    .valley_width_multiplier = 5.8F,
+                                    .stream_threshold = 0.28F,
+                                });
 
     const float height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
     fields.max_wetness = 0.0F;
@@ -2381,14 +2527,22 @@ TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLa
             const float slope_t = smoothstep(0.05F, 0.46F, fields.slope[sample]);
             const float flow_t = std::log1p(fields.flow_accumulation[sample]) * inv_log_count;
             const float channel = fields.channel_influence[sample];
+            const float river_t =
+                fields.max_river_width_m <= 0.0F
+                    ? 0.0F
+                    : saturate(fields.river_width_m[sample] / fields.max_river_width_m);
+            const float water = fields.water_presence[sample];
             const float divide = fields.divide_influence[sample];
             const float valley =
                 saturate((fields.valley_influence[sample] * 0.32F) + (channel * 0.78F));
-            const float wetness = saturate((flow_t * 0.50F) + (valley * 0.30F) + (channel * 0.20F) +
-                                           ((1.0F - slope_t) * 0.14F) - (divide * 0.08F));
+            const float wetness =
+                saturate((flow_t * 0.38F) + (valley * 0.22F) + (channel * 0.16F) +
+                         (river_t * 0.22F) + (water * 0.30F) +
+                         ((1.0F - slope_t) * 0.12F) - (divide * 0.08F));
             const float deposition =
                 saturate(wetness * (1.0F - slope_t) *
-                         (0.14F + fields.basin_influence[sample] * 0.24F + channel * 0.72F));
+                         (0.12F + fields.basin_influence[sample] * 0.22F + channel * 0.42F +
+                          river_t * 0.40F + water * 0.26F));
             fields.wetness[sample] = wetness;
             fields.deposition[sample] = deposition;
             fields.max_wetness = std::max(fields.max_wetness, wetness);
@@ -2405,15 +2559,19 @@ TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLa
                                lerp(0.74F, 1.12F, material_noise);
             const float rock = ((slope_t * lerp(0.66F, 0.88F, scree_patch)) +
                                 fields.ridge_influence[sample] * 0.18F + divide * 0.12F) *
-                               (1.0F - snow) * (1.0F - channel * 0.28F);
+                               (1.0F - snow) * (1.0F - channel * 0.22F) *
+                               (1.0F - water * 0.56F);
             const float scree = smoothstep(0.30F, 0.78F, slope_t) * (1.0F - wetness * 0.55F) *
-                                (1.0F - channel * 0.26F) * (1.0F - snow) *
+                                (1.0F - channel * 0.22F) * (1.0F - water * 0.48F) *
+                                (1.0F - snow) *
                                 lerp(0.70F, 1.28F, scree_patch);
-            const float meadow = wetness * (1.0F - slope_t) * (1.0F - high * 0.55F) *
-                                 (0.58F + channel * 0.26F + material_noise * 0.34F);
+            const float meadow =
+                wetness * (1.0F - slope_t) * (1.0F - high * 0.55F) *
+                (0.52F + channel * 0.18F + river_t * 0.26F + material_noise * 0.32F);
             const float forest = smoothstep(0.26F, 0.72F, wetness) * (1.0F - slope_t) *
                                  (1.0F - high) * (1.0F - deposition * 0.35F) *
-                                 (1.0F - channel * 0.28F) * lerp(0.48F, 1.34F, vegetation_patch);
+                                 (1.0F - channel * 0.20F) * (1.0F - water * 0.72F) *
+                                 lerp(0.48F, 1.34F, vegetation_patch);
             const float soil = (0.34F + deposition * 0.45F + (1.0F - slope_t) * 0.24F) *
                                (1.0F - snow * 0.75F) * lerp(0.82F, 1.16F, material_noise);
             const TerrainLabMaterialMask material =
@@ -2572,6 +2730,15 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
     compute_flow_fields(fields.desc, fields.height_m, fields.slope, fields.flow_direction,
                         fields.flow_accumulation, fields.stream_power, fields.max_flow_accumulation,
                         fields.max_stream_power);
+    derive_river_network_fields(fields,
+                                {
+                                    .runoff_scale = 0.42F,
+                                    .water_presence_scale = 0.0F,
+                                    .min_width_m = fields.desc.cell_size_m * 0.28F,
+                                    .max_width_m = fields.desc.cell_size_m * 2.45F,
+                                    .valley_width_multiplier = 7.2F,
+                                    .stream_threshold = 0.30F,
+                                });
 
     const float height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
     fields.max_wetness = 0.0F;
@@ -2759,6 +2926,15 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
     compute_flow_fields(fields.desc, fields.height_m, fields.slope, fields.flow_direction,
                         fields.flow_accumulation, fields.stream_power, fields.max_flow_accumulation,
                         fields.max_stream_power);
+    derive_river_network_fields(fields,
+                                {
+                                    .runoff_scale = 0.12F,
+                                    .water_presence_scale = 0.0F,
+                                    .min_width_m = fields.desc.cell_size_m * 0.08F,
+                                    .max_width_m = fields.desc.cell_size_m * 0.44F,
+                                    .valley_width_multiplier = 2.0F,
+                                    .stream_threshold = 0.42F,
+                                });
 
     const float inv_log_count =
         1.0F / std::log1p(static_cast<float>(std::max<std::size_t>(count, 1U)));
@@ -2935,6 +3111,15 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
     compute_flow_fields(fields.desc, fields.height_m, fields.slope, fields.flow_direction,
                         fields.flow_accumulation, fields.stream_power, fields.max_flow_accumulation,
                         fields.max_stream_power);
+    derive_river_network_fields(fields,
+                                {
+                                    .runoff_scale = 0.70F,
+                                    .water_presence_scale = 0.28F,
+                                    .min_width_m = fields.desc.cell_size_m * 0.14F,
+                                    .max_width_m = fields.desc.cell_size_m * 1.05F,
+                                    .valley_width_multiplier = 3.5F,
+                                    .stream_threshold = 0.34F,
+                                });
 
     const float height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
     const float inv_log_count =
@@ -3023,7 +3208,7 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
     case TerrainLabSlicePreset::AlpineGlacialValley:
         return generate_alpine_glacial_valley_fields(config);
     }
-    return generate_arid_mesa_canyon_fields(config);
+    return generate_temperate_mountain_watershed_fields(config);
 }
 
 } // namespace cubey::projects::terrain_lab

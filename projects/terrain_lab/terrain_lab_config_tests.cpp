@@ -287,8 +287,8 @@ int main() {
                  "terrain lab default cell size should be stable");
     require_near(defaults.elevation_scale_m, terrain::kTerrainLabDefaultElevationScaleMeters,
                  0.001F, "terrain lab default elevation scale should be stable");
-    require(defaults.slice_preset == terrain::TerrainLabSlicePreset::AridMesaCanyon,
-            "terrain lab should default to the arid mesa slice");
+    require(defaults.slice_preset == terrain::TerrainLabSlicePreset::TemperateMountainWatershed,
+            "terrain lab should default to the river watershed reference slice");
     require(defaults.camera_preset == terrain::TerrainLabCameraPreset::Orbit,
             "terrain lab should default to the orbit camera");
     require(defaults.debug_view == terrain::TerrainLabDebugView::Final,
@@ -296,8 +296,8 @@ int main() {
     terrain::validate_terrain_lab_config(defaults);
 
     require(terrain::terrain_lab_slice_preset_from_name("") ==
-                terrain::TerrainLabSlicePreset::AridMesaCanyon,
-            "empty terrain lab slice preset should use arid mesa");
+                terrain::TerrainLabSlicePreset::TemperateMountainWatershed,
+            "empty terrain lab slice preset should use the river watershed reference");
     require(terrain::terrain_lab_slice_preset_from_name("arid-mesa-canyon") ==
                 terrain::TerrainLabSlicePreset::AridMesaCanyon,
             "terrain lab slice preset should parse arid mesa");
@@ -588,6 +588,7 @@ int main() {
     require(rejected, "terrain lab should reject invalid detail strength");
 
     terrain::TerrainLabConfig small = defaults;
+    small.slice_preset = terrain::TerrainLabSlicePreset::AridMesaCanyon;
     small.grid_width = 65U;
     small.grid_height = 65U;
     small.cell_size_m = 64.0F;

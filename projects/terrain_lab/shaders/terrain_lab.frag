@@ -148,6 +148,9 @@ vec3 final_color() {
     color = mix(color, vec3(0.16, 0.27, 0.21), clamp(frag_hydrology.w, 0.0, 1.0) * 0.10);
     color = mix(color, vec3(0.46, 0.38, 0.23), channel * 0.12);
     color = mix(color, vec3(0.44, 0.38, 0.25), clamp(frag_material_b.z, 0.0, 1.0) * 0.11);
+    float water = clamp(frag_river.w, 0.0, 1.0);
+    color = mix(color, vec3(0.07, 0.26, 0.32), smoothstep(0.08, 0.34, water) * 0.66);
+    color = mix(color, vec3(0.22, 0.34, 0.24), smoothstep(0.02, 0.18, water) * 0.16);
 
     float talus_density = clamp(frag_material_a.z * 0.72 + frag_material_a.x * 0.16, 0.0, 0.56);
     float talus_proxy =
