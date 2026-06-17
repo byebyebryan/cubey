@@ -91,11 +91,17 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode surface-up --output outputs/cloud-v1-surface-up.png
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode high-oblique --output outputs/cloud-v1-high-oblique.png
 projects/cloud/capture_review.sh outputs/cloud-v1-review
+DEEP=1 projects/cloud/capture_review.sh outputs/cloud-v1-review-deep
 ```
 
-`capture_review.sh` also writes `diagnostic-crops/center-feature-contact.png`
-with resolution-scaled center crops for final/raw/alpha/weather/weather-edge,
-weather-bias, cloud-type, visible density/type, and distance-regime checks.
+`capture_review.sh` defaults to a focused shape/regime review: final camera
+views, local/orbit alpha, distance-regime checks, orbit coverage/detail/hull,
+and a small surface-local density set. `DEEP=1` adds secondary tuning captures
+such as sampling comparisons, metadata, lighting breakdowns, weather-influence
+sweeps, and explicitly named `orbit-local-weather` diagnostics for the old
+surface-local weather projection. The script also writes
+`diagnostic-crops/center-feature-contact.png` with resolution-scaled center
+crops for the active review set.
 
 Controls:
 
