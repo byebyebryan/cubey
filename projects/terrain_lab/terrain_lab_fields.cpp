@@ -203,9 +203,22 @@ struct AlpineGlacialDriver {
     float ice_accumulation = 0.0F;
     float valley_source = 0.0F;
     float ridge_source = 0.0F;
+    float crest_source = 0.0F;
+    float shoulder_source = 0.0F;
     float cliff_source = 0.0F;
     float peak_source = 0.0F;
+    float scree_source = 0.0F;
     float moraine_source = 0.0F;
+};
+
+struct MountainRidgeDriver {
+    float valley_floor = 0.0F;
+    float crest_source = 0.0F;
+    float shoulder_source = 0.0F;
+    float relief_potential = 0.0F;
+    float cliff_source = 0.0F;
+    float peak_source = 0.0F;
+    float scree_source = 0.0F;
 };
 
 [[nodiscard]] float saturate(float value) {
@@ -552,8 +565,71 @@ desert_dune_features_at(Point2 p, const TerrainLabGridDesc& desc, const TerrainL
     };
 }
 
+[[nodiscard]] MountainRidgeDriver mountain_ridge_driver_at(Point2 p,
+                                                           const TerrainLabConfig& config) {
+    const float warp_x =
+        fbm((p.x * 1.22F) - 8.0F, (p.z * 1.22F) + 6.0F, config.seed + 3601U, 4) * 0.16F;
+    const float warp_z =
+        fbm((p.x * 1.08F) + 7.0F, (p.z * 1.08F) - 9.0F, config.seed + 3603U, 4) * 0.12F;
+    const Point2 q{p.x + warp_x, p.z + warp_z};
+    const float headwall = saturate((1.0F - p.z) * 0.5F);
+    const float valley_bend =
+        std::sin((q.z * 2.35F) + random01(config.seed, 31U, 1701U) * 6.28318530718F) * 0.10F +
+        fbm((q.x * 1.15F) + 3.0F, (q.z * 1.15F) - 5.0F, config.seed + 3605U, 4) * 0.055F;
+    const float valley_center = valley_bend;
+    const float valley_distance = std::abs(q.x - valley_center);
+    const float valley_floor = 1.0F - smoothstep(0.12F, 0.46F, valley_distance);
+    const float spacing_noise =
+        fbm((q.x * 1.40F) - 11.0F, (q.z * 1.18F) + 13.0F, config.seed + 3607U, 4) * 0.5F + 0.5F;
+    const float crest_spacing = lerp(0.42F, 0.62F, spacing_noise) + headwall * 0.06F;
+    const float left_crest_center = valley_center - crest_spacing;
+    const float right_crest_center = valley_center + crest_spacing * lerp(0.92F, 1.12F, spacing_noise);
+    const float left_distance = std::abs(q.x - left_crest_center);
+    const float right_distance = std::abs(q.x - right_crest_center);
+    const float paired_crest =
+        std::max(1.0F - smoothstep(0.035F, 0.20F, left_distance),
+                 1.0F - smoothstep(0.035F, 0.20F, right_distance));
+    const float paired_shoulder =
+        std::max(1.0F - smoothstep(0.16F, 0.52F, left_distance),
+                 1.0F - smoothstep(0.16F, 0.52F, right_distance));
+    const float spur_noise_a =
+        fbm((q.x * 2.65F) - 15.0F, (q.z * 2.10F) + 19.0F, config.seed + 3611U, 5);
+    const float spur_noise_b =
+        fbm((q.x * 4.20F) + 21.0F, (q.z * 3.20F) - 23.0F, config.seed + 3613U, 4);
+    const float spur_crest =
+        std::max(ridge_profile(spur_noise_a * 1.12F, 1.90F),
+                 ridge_profile(spur_noise_b * 1.18F, 2.20F) * 0.46F) *
+        smoothstep(0.18F, 0.72F, valley_distance);
+    const float crest = saturate(paired_crest * 0.78F + spur_crest * 0.32F);
+    const float shoulder = saturate(paired_shoulder * 0.64F +
+                                    smoothstep(0.26F, 0.88F, valley_distance) * 0.28F +
+                                    crest * 0.18F);
+    const float cliff =
+        saturate(smoothstep(0.40F, 0.82F, crest + shoulder * 0.28F) *
+                 (1.0F - smoothstep(0.55F, 0.96F, valley_floor)) *
+                 (0.68F + spur_crest * 0.30F));
+    const float peak =
+        saturate(smoothstep(0.54F, 0.92F, crest) * (0.55F + headwall * 0.24F + spur_crest * 0.20F));
+    const float scree =
+        saturate((cliff * 0.50F + shoulder * 0.28F + crest * 0.16F) *
+                 (1.0F - smoothstep(0.58F, 0.94F, valley_floor)));
+    const float relief =
+        saturate(crest * 0.46F + shoulder * 0.30F + cliff * 0.16F + peak * 0.10F +
+                 headwall * 0.08F);
+    return {
+        .valley_floor = saturate(valley_floor),
+        .crest_source = crest,
+        .shoulder_source = shoulder,
+        .relief_potential = relief,
+        .cliff_source = cliff,
+        .peak_source = peak,
+        .scree_source = scree,
+    };
+}
+
 [[nodiscard]] AlpineGlacialDriver alpine_glacial_driver_at(Point2 p,
                                                            const TerrainLabConfig& config) {
+    const MountainRidgeDriver mountain = mountain_ridge_driver_at(p, config);
     const float warp_x =
         fbm((p.x * 1.35F) - 6.0F, (p.z * 1.35F) + 8.0F, config.seed + 3301U, 4) * 0.18F;
     const float warp_z =
@@ -563,35 +639,29 @@ desert_dune_features_at(Point2 p, const TerrainLabGridDesc& desc, const TerrainL
     const float base_noise =
         fbm((q.x * 0.94F) + 2.0F, (q.z * 0.94F) - 4.0F, config.seed + 3401U, 5) * 0.5F + 0.5F;
     const float base = saturate(0.24F + headwall * 0.42F + base_noise * 0.34F);
-    const float side_lift = smoothstep(
-        0.12F, 0.82F,
-        std::abs(q.x) +
-            fbm((q.x * 1.7F) + 3.0F, (q.z * 1.7F) - 5.0F, config.seed + 3305U, 4) * 0.16F);
-    const float ridge_noise_a =
-        fbm((q.x * 2.15F) - 9.0F, (q.z * 1.75F) + 5.0F, config.seed + 3307U, 5);
-    const float ridge_noise_b =
-        fbm((q.x * 3.55F) + 11.0F, (q.z * 2.80F) - 13.0F, config.seed + 3309U, 4);
-    const float ridged = std::max(ridge_profile(ridge_noise_a * 1.12F, 1.82F),
-                                  ridge_profile(ridge_noise_b * 1.20F, 2.18F) * 0.42F);
     const float relief =
-        saturate(base * 0.18F + side_lift * 0.32F + ridged * 0.42F + headwall * 0.10F);
+        saturate(base * 0.16F + mountain.relief_potential * 0.72F + headwall * 0.12F);
     const float low_relief = 1.0F - smoothstep(0.32F, 0.76F, relief);
     const float ice_noise =
         fbm((q.x * 1.62F) + 13.0F, (q.z * 1.62F) - 17.0F, config.seed + 3311U, 4) * 0.5F + 0.5F;
     const float ice = saturate(headwall * 0.34F + low_relief * 0.42F + base * 0.16F +
                                smoothstep(0.34F, 0.78F, ice_noise) * 0.16F);
-    const float valley = saturate(ice * 0.58F + low_relief * 0.38F - side_lift * 0.08F);
-    const float ridge = saturate(relief * (1.0F - valley * 0.52F) + ridged * 0.30F);
-    const float cliff =
-        saturate(smoothstep(0.44F, 0.82F, relief) * (1.0F - smoothstep(0.56F, 0.92F, valley)) *
-                 (0.52F + ridged * 0.48F));
-    const float peak = saturate(smoothstep(0.62F, 0.90F, relief) * (0.45F + ridged * 0.55F) *
-                                (1.0F - valley * 0.72F));
+    const float valley =
+        saturate(ice * 0.44F + mountain.valley_floor * 0.50F + low_relief * 0.20F -
+                 mountain.crest_source * 0.14F - mountain.shoulder_source * 0.08F);
+    const float ridge = saturate(mountain.crest_source * 0.58F +
+                                 mountain.shoulder_source * 0.42F +
+                                 relief * (1.0F - valley * 0.44F));
+    const float cliff = mountain.cliff_source * (1.0F - valley * 0.34F);
+    const float peak =
+        saturate(mountain.peak_source * (0.74F + headwall * 0.20F) * (1.0F - valley * 0.68F));
     const float moraine_band =
         smoothstep(-0.16F, 0.34F, p.z) * (1.0F - smoothstep(0.58F, 0.92F, p.z));
     const float moraine = saturate(valley * moraine_band * (0.46F + ice * 0.34F) +
                                    cliff * smoothstep(0.42F, 0.86F, p.z) * 0.14F);
-    const float process = saturate(ice * 0.48F + moraine * 0.30F + cliff * 0.14F + valley * 0.10F);
+    const float process =
+        saturate(ice * 0.44F + moraine * 0.28F + cliff * 0.14F +
+                 mountain.scree_source * 0.10F + valley * 0.10F);
     return {
         .base_potential = base,
         .relief_potential = relief,
@@ -600,8 +670,11 @@ desert_dune_features_at(Point2 p, const TerrainLabGridDesc& desc, const TerrainL
         .ice_accumulation = ice,
         .valley_source = valley,
         .ridge_source = ridge,
+        .crest_source = mountain.crest_source,
+        .shoulder_source = mountain.shoulder_source,
         .cliff_source = cliff,
         .peak_source = peak,
+        .scree_source = mountain.scree_source,
         .moraine_source = moraine,
     };
 }
@@ -611,9 +684,10 @@ alpine_glacial_features_at(Point2 p, const TerrainLabGridDesc& desc,
                            const TerrainLabConfig& config) {
     const AlpineGlacialDriver driver = alpine_glacial_driver_at(p, config);
     const float floor = smoothstep(0.50F, 0.86F, driver.valley_source);
-    const float cliff = driver.cliff_source;
+    const float cliff = saturate(driver.cliff_source + driver.shoulder_source * 0.12F);
     const float peak = driver.peak_source;
-    const float ridge = driver.ridge_source;
+    const float ridge =
+        saturate(driver.ridge_source + driver.crest_source * 0.26F + driver.shoulder_source * 0.14F);
     const float cirque =
         saturate(driver.ice_accumulation * smoothstep(0.58F, 0.92F, driver.base_potential) *
                  (1.0F - smoothstep(0.62F, 0.92F, driver.relief_potential)));
@@ -636,11 +710,15 @@ alpine_glacial_features_at(Point2 p, const TerrainLabGridDesc& desc,
         .moraine_influence = saturate(moraine),
         .cirque_influence = saturate(cirque),
         .peak_influence = peak,
-        .ridge_influence = saturate((ridge + cirque * 0.16F) * (1.0F - floor * 0.30F)),
+        .ridge_influence =
+            saturate((ridge + cirque * 0.16F + driver.crest_source * 0.18F) *
+                     (1.0F - floor * 0.30F)),
         .valley_influence = saturate(floor * 0.78F + hanging * 0.30F),
         .basin_influence = basin,
         .divide_influence =
-            saturate(smoothstep(0.30F, 0.74F, ridge * 0.50F + peak * 0.30F + cliff * 0.18F) *
+            saturate(smoothstep(0.30F, 0.74F,
+                                ridge * 0.44F + driver.crest_source * 0.30F +
+                                    peak * 0.24F + cliff * 0.18F) *
                      (1.0F - floor * 0.34F)),
         .channel_influence = channel,
         .channel_distance_m = std::max(channel_distance_m, 0.0F),
@@ -1773,6 +1851,9 @@ void derive_arid_canyon_features_from_river_hierarchy(
     for (std::size_t sample = 0; sample < count; ++sample) {
         AridMesaSampleFeatures& features = arid_slice.features[sample];
         AridMesaDriver& driver = arid_slice.drivers[sample];
+        const float regional_ridge = features.ridge_influence;
+        const float regional_divide = features.divide_influence;
+        const float regional_basin = features.basin_influence;
         const float width_t = saturate(fields.river_width_m[sample] / fields.max_river_width_m);
         const float valley_width_t =
             saturate(fields.valley_width_m[sample] / fields.max_valley_width_m);
@@ -1824,13 +1905,16 @@ void derive_arid_canyon_features_from_river_hierarchy(
             smoothstep(0.48F, 0.82F, features.plateau_influence) *
             (1.0F - smoothstep(0.16F, 0.66F, canyon_broad));
         const float channel = saturate(std::max(canyon_floor, axis * 0.74F));
+        const float mesa_divide =
+            saturate(std::max(regional_divide * 0.54F, plateau_divide * 0.92F) *
+                     (1.0F - smoothstep(0.22F, 0.78F, channel)));
         const float valley = saturate(canyon_broad * 0.78F + channel * 0.18F);
         const float wall_source = saturate(canyon_wall * 1.22F + rim * 0.20F);
         const float ridge = saturate(wall_source * 0.92F + rim * 0.66F + bench * 0.22F +
-                                     plateau_divide * 0.54F);
+                                     mesa_divide * 0.44F + regional_ridge * 0.28F);
         const float divide =
             saturate(rim * 0.84F + wall_source * 0.22F + bench * 0.24F +
-                     plateau_divide * 0.64F + (1.0F - valley) * 0.06F);
+                     mesa_divide * 0.82F + (1.0F - valley) * 0.06F);
 
         features.canyon_floor = saturate(canyon_floor);
         features.canyon_wall = wall_source;
@@ -1839,7 +1923,8 @@ void derive_arid_canyon_features_from_river_hierarchy(
         features.bench_influence = saturate(bench);
         features.talus_influence = saturate(talus);
         features.valley_influence = valley;
-        features.basin_influence = saturate(canyon_floor * 0.66F + canyon_broad * 0.18F);
+        features.basin_influence =
+            saturate(canyon_floor * 0.66F + canyon_broad * 0.18F + regional_basin * 0.10F);
         features.ridge_influence = ridge;
         features.divide_influence = divide;
         features.channel_influence = channel;
@@ -3764,13 +3849,19 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
                 alpine_elevation_scale_m * config.process_strength;
             const float wall_polish = driver.cliff_source * smoothstep(0.15F, 0.58F, slope_t) *
                                       alpine_elevation_scale_m * 0.010F * config.process_strength;
-            const float moraine_deposit = driver.moraine_source * (1.0F - slope_t * 0.55F) *
-                                          alpine_elevation_scale_m * 0.060F *
-                                          config.process_strength;
+            const float scree_deposit = driver.scree_source *
+                                        smoothstep(0.18F, 0.62F, slope_t) *
+                                        (1.0F - smoothstep(0.74F, 1.0F, slope_t)) *
+                                        alpine_elevation_scale_m * 0.024F *
+                                        config.process_strength;
+            const float moraine_deposit =
+                (driver.moraine_source * (1.0F - slope_t * 0.55F) +
+                 driver.shoulder_source * 0.08F) *
+                alpine_elevation_scale_m * 0.060F * config.process_strength;
             const float cirque_scour = features.cirque_influence * alpine_elevation_scale_m *
                                        0.030F * config.process_strength;
             fields.process_delta_m[sample] =
-                -glacial_carve - wall_polish - cirque_scour + moraine_deposit;
+                -glacial_carve - wall_polish - cirque_scour + moraine_deposit + scree_deposit;
             fields.height_m[sample] =
                 fields.structure_height_m[sample] + fields.process_delta_m[sample];
         }
@@ -3865,13 +3956,15 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
                  features.glacier_floor * smoothstep(0.30F, 0.76F, elevation_t) * 0.46F +
                  features.cirque_influence * 0.36F + features.peak_influence * 0.42F) *
                 lerp(0.78F, 1.18F, material_noise);
-            const float rock = (slope_t * 0.82F + fields.ridge_influence[sample] * 0.30F +
-                                features.valley_wall * 0.24F + features.peak_influence * 0.18F) *
+            const float rock = (slope_t * 0.78F + fields.ridge_influence[sample] * 0.28F +
+                                features.valley_wall * 0.22F + features.peak_influence * 0.18F +
+                                driver.crest_source * 0.18F) *
                                (1.0F - snow * 0.58F) * lerp(0.82F, 1.22F, material_noise);
             const float scree =
                 smoothstep(0.28F, 0.78F, slope_t) * (1.0F - smoothstep(0.78F, 1.0F, slope_t)) *
                 (features.valley_wall * 0.46F + fields.ridge_influence[sample] * 0.22F +
-                 features.moraine_influence * 0.30F + features.peak_influence * 0.14F) *
+                 features.moraine_influence * 0.30F + features.peak_influence * 0.14F +
+                 driver.scree_source * 0.34F) *
                 (1.0F - snow * 0.45F) * lerp(0.72F, 1.30F, scree_patch);
             const float soil =
                 (0.20F + deposition * 0.52F + (1.0F - slope_t) * 0.14F) * (1.0F - snow * 0.78F);
