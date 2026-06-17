@@ -47,6 +47,11 @@ struct TerrainLabFieldSummary {
     float mean_non_channel_flow_accumulation = 0.0F;
     float mean_channel_stream_power = 0.0F;
     float mean_non_channel_stream_power = 0.0F;
+    float max_river_discharge = 0.0F;
+    std::uint32_t max_stream_order = 0;
+    float max_river_width_m = 0.0F;
+    float max_valley_width_m = 0.0F;
+    float mean_water_presence = 0.0F;
     float mean_wetness = 0.0F;
     float mean_tree_density = 0.0F;
     float mean_material_entropy = 0.0F;
@@ -73,6 +78,11 @@ struct TerrainLabFieldData {
     std::vector<std::uint8_t> flow_direction{};
     std::vector<float> flow_accumulation{};
     std::vector<float> stream_power{};
+    std::vector<float> river_discharge{};
+    std::vector<std::uint8_t> stream_order{};
+    std::vector<float> river_width_m{};
+    std::vector<float> valley_width_m{};
+    std::vector<float> water_presence{};
     std::vector<float> wetness{};
     std::vector<float> deposition{};
     std::vector<TerrainLabMaterialMask> material_masks{};
@@ -93,6 +103,10 @@ struct TerrainLabFieldData {
     float max_abs_curvature = 0.0F;
     float max_flow_accumulation = 0.0F;
     float max_stream_power = 0.0F;
+    float max_river_discharge = 0.0F;
+    std::uint32_t max_stream_order = 0;
+    float max_river_width_m = 0.0F;
+    float max_valley_width_m = 0.0F;
     float max_wetness = 0.0F;
     float max_deposition = 0.0F;
     float max_channel_distance_m = 0.0F;

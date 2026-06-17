@@ -47,20 +47,23 @@ enum class TerrainLabDebugView : std::uint32_t {
     FlowDirection = 7,
     FlowAccumulation = 8,
     StreamPower = 9,
-    Wetness = 10,
-    Deposition = 11,
-    Material = 12,
-    BiomeDensity = 13,
-    CanopyHeight = 14,
-    NoiseOff = 15,
-    FeatureGraph = 16,
-    Watershed = 17,
-    Channel = 18,
-    Divide = 19,
-    Driver = 20,
+    RiverNetwork = 10,
+    RiverWidth = 11,
+    WaterPresence = 12,
+    Wetness = 13,
+    Deposition = 14,
+    Material = 15,
+    BiomeDensity = 16,
+    CanopyHeight = 17,
+    NoiseOff = 18,
+    FeatureGraph = 19,
+    Watershed = 20,
+    Channel = 21,
+    Divide = 22,
+    Driver = 23,
 };
 
-inline constexpr std::array<TerrainLabDebugView, 21> kTerrainLabDebugViews{
+inline constexpr std::array<TerrainLabDebugView, 24> kTerrainLabDebugViews{
     TerrainLabDebugView::Final,
     TerrainLabDebugView::Height,
     TerrainLabDebugView::Structure,
@@ -71,6 +74,9 @@ inline constexpr std::array<TerrainLabDebugView, 21> kTerrainLabDebugViews{
     TerrainLabDebugView::FlowDirection,
     TerrainLabDebugView::FlowAccumulation,
     TerrainLabDebugView::StreamPower,
+    TerrainLabDebugView::RiverNetwork,
+    TerrainLabDebugView::RiverWidth,
+    TerrainLabDebugView::WaterPresence,
     TerrainLabDebugView::Wetness,
     TerrainLabDebugView::Deposition,
     TerrainLabDebugView::Material,
@@ -147,6 +153,12 @@ struct TerrainLabConfig {
         return "flow-accumulation";
     case TerrainLabDebugView::StreamPower:
         return "stream-power";
+    case TerrainLabDebugView::RiverNetwork:
+        return "river-network";
+    case TerrainLabDebugView::RiverWidth:
+        return "river-width";
+    case TerrainLabDebugView::WaterPresence:
+        return "water-presence";
     case TerrainLabDebugView::Wetness:
         return "wetness";
     case TerrainLabDebugView::Deposition:

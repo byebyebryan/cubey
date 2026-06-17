@@ -350,6 +350,15 @@ int main() {
     require(terrain::terrain_lab_debug_view_from_name("stream-power") ==
                 terrain::TerrainLabDebugView::StreamPower,
             "terrain lab stream power debug view should parse");
+    require(terrain::terrain_lab_debug_view_from_name("river-network") ==
+                terrain::TerrainLabDebugView::RiverNetwork,
+            "terrain lab river network debug view should parse");
+    require(terrain::terrain_lab_debug_view_from_name("river_width") ==
+                terrain::TerrainLabDebugView::RiverWidth,
+            "terrain lab river width debug view should parse underscore alias");
+    require(terrain::terrain_lab_debug_view_from_name("water-presence") ==
+                terrain::TerrainLabDebugView::WaterPresence,
+            "terrain lab water presence debug view should parse");
     require(terrain::terrain_lab_debug_view_from_name("biome-density") ==
                 terrain::TerrainLabDebugView::BiomeDensity,
             "terrain lab biome density debug view should parse");
@@ -377,6 +386,12 @@ int main() {
     require(terrain::next_terrain_lab_debug_view(terrain::TerrainLabDebugView::Detail) ==
                 terrain::TerrainLabDebugView::Slope,
             "terrain lab debug view cycle should enter geometry views after detail");
+    require(terrain::next_terrain_lab_debug_view(terrain::TerrainLabDebugView::StreamPower) ==
+                terrain::TerrainLabDebugView::RiverNetwork,
+            "terrain lab debug view cycle should enter river diagnostics after stream power");
+    require(terrain::next_terrain_lab_debug_view(terrain::TerrainLabDebugView::WaterPresence) ==
+                terrain::TerrainLabDebugView::Wetness,
+            "terrain lab debug view cycle should leave river diagnostics for wetness");
     require(terrain::next_terrain_lab_debug_view(terrain::TerrainLabDebugView::NoiseOff) ==
                 terrain::TerrainLabDebugView::FeatureGraph,
             "terrain lab debug view cycle should enter watershed diagnostics after noise-off");
@@ -410,6 +425,12 @@ int main() {
                                   "FLOW_ACCUMULATION");
     require_shader_debug_constant(terrain_lab_fragment_shader,
                                   terrain::TerrainLabDebugView::StreamPower, "STREAM_POWER");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::RiverNetwork, "RIVER_NETWORK");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::RiverWidth, "RIVER_WIDTH");
+    require_shader_debug_constant(terrain_lab_fragment_shader,
+                                  terrain::TerrainLabDebugView::WaterPresence, "WATER_PRESENCE");
     require_shader_debug_constant(terrain_lab_fragment_shader,
                                   terrain::TerrainLabDebugView::Wetness, "WETNESS");
     require_shader_debug_constant(terrain_lab_fragment_shader,
@@ -610,6 +631,16 @@ int main() {
             "terrain lab flow accumulation field size mismatch");
     require(fields.stream_power.size() == fields.sample_count(),
             "terrain lab stream power field size mismatch");
+    require(fields.river_discharge.size() == fields.sample_count(),
+            "terrain lab river discharge field size mismatch");
+    require(fields.stream_order.size() == fields.sample_count(),
+            "terrain lab stream order field size mismatch");
+    require(fields.river_width_m.size() == fields.sample_count(),
+            "terrain lab river width field size mismatch");
+    require(fields.valley_width_m.size() == fields.sample_count(),
+            "terrain lab valley width field size mismatch");
+    require(fields.water_presence.size() == fields.sample_count(),
+            "terrain lab water presence field size mismatch");
     require(fields.wetness.size() == fields.sample_count(),
             "terrain lab wetness field size mismatch");
     require(fields.deposition.size() == fields.sample_count(),
@@ -984,6 +1015,16 @@ int main() {
     require_near(summary.mean_non_channel_stream_power,
                  summary_repeat.mean_non_channel_stream_power, 0.001F,
                  "terrain lab non-channel stream-power summary should be repeatable");
+    require_near(summary.max_river_discharge, summary_repeat.max_river_discharge, 0.001F,
+                 "terrain lab river discharge summary should be repeatable");
+    require(summary.max_stream_order == summary_repeat.max_stream_order,
+            "terrain lab stream-order summary should be repeatable");
+    require_near(summary.max_river_width_m, summary_repeat.max_river_width_m, 0.001F,
+                 "terrain lab river width summary should be repeatable");
+    require_near(summary.max_valley_width_m, summary_repeat.max_valley_width_m, 0.001F,
+                 "terrain lab valley width summary should be repeatable");
+    require_near(summary.mean_water_presence, summary_repeat.mean_water_presence, 0.001F,
+                 "terrain lab water-presence summary should be repeatable");
     require_near(summary.mean_wetness, summary_repeat.mean_wetness, 0.001F,
                  "terrain lab wetness summary should be repeatable");
     require_near(summary.mean_tree_density, summary_repeat.mean_tree_density, 0.001F,
@@ -1505,6 +1546,17 @@ int main() {
                  "terrain lab mesh should pack driver process potential");
     require_near(first_vertex.drivers.w, fields.driver_selection_mask.front(), 0.001F,
                  "terrain lab mesh should pack driver selection mask");
+    const float stream_order_denominator =
+        fields.max_stream_order <= 1U ? 1.0F : static_cast<float>(fields.max_stream_order);
+    require_near(first_vertex.river.x, fields.river_discharge.front(), 0.001F,
+                 "terrain lab mesh should pack river discharge");
+    require_near(first_vertex.river.y,
+                 static_cast<float>(fields.stream_order.front()) / stream_order_denominator,
+                 0.001F, "terrain lab mesh should pack normalized stream order");
+    require_near(first_vertex.river.z, fields.river_width_m.front(), 0.001F,
+                 "terrain lab mesh should pack river width");
+    require_near(first_vertex.river.w, fields.water_presence.front(), 0.001F,
+                 "terrain lab mesh should pack water presence");
 
     const std::size_t center_index = fields.index(fields.desc.width / 2U, fields.desc.height / 2U);
     require_near(mesh.vertices[center_index].position.x, 0.0F, 0.001F,

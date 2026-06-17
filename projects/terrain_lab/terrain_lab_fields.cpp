@@ -511,6 +511,11 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
     fields.flow_direction.assign(count, kFlowSinkDirection);
     fields.flow_accumulation.assign(count, 1.0F);
     fields.stream_power.assign(count, 0.0F);
+    fields.river_discharge.assign(count, 0.0F);
+    fields.stream_order.assign(count, 0U);
+    fields.river_width_m.assign(count, 0.0F);
+    fields.valley_width_m.assign(count, 0.0F);
+    fields.water_presence.assign(count, 0.0F);
     fields.wetness.assign(count, 0.0F);
     fields.deposition.assign(count, 0.0F);
     fields.material_masks.assign(count, {});
@@ -2017,6 +2022,12 @@ void validate_terrain_lab_fields(const TerrainLabFieldData& fields) {
     require_size(fields.flow_accumulation.size(),
                  "terrain lab flow accumulation field size mismatch");
     require_size(fields.stream_power.size(), "terrain lab stream power field size mismatch");
+    require_size(fields.river_discharge.size(), "terrain lab river discharge field size mismatch");
+    require_size(fields.stream_order.size(), "terrain lab stream order field size mismatch");
+    require_size(fields.river_width_m.size(), "terrain lab river width field size mismatch");
+    require_size(fields.valley_width_m.size(), "terrain lab valley width field size mismatch");
+    require_size(fields.water_presence.size(),
+                 "terrain lab water presence field size mismatch");
     require_size(fields.wetness.size(), "terrain lab wetness field size mismatch");
     require_size(fields.deposition.size(), "terrain lab deposition field size mismatch");
     require_size(fields.material_masks.size(), "terrain lab material field size mismatch");
@@ -2040,6 +2051,13 @@ void validate_terrain_lab_fields(const TerrainLabFieldData& fields) {
     if (fields.max_channel_distance_m < 0.0F) {
         throw std::runtime_error("terrain lab max channel distance must be nonnegative");
     }
+    validate_finite(fields.max_river_discharge, "terrain lab max river discharge must be finite");
+    validate_finite(fields.max_river_width_m, "terrain lab max river width must be finite");
+    validate_finite(fields.max_valley_width_m, "terrain lab max valley width must be finite");
+    if (fields.max_river_discharge < 0.0F || fields.max_river_width_m < 0.0F ||
+        fields.max_valley_width_m < 0.0F) {
+        throw std::runtime_error("terrain lab river ranges must be nonnegative");
+    }
 
     for (std::size_t sample = 0; sample < count; ++sample) {
         validate_finite(fields.height_m[sample], "terrain lab height must be finite");
@@ -2060,6 +2078,12 @@ void validate_terrain_lab_fields(const TerrainLabFieldData& fields) {
         validate_finite(fields.flow_accumulation[sample],
                         "terrain lab flow accumulation must be finite");
         validate_finite(fields.stream_power[sample], "terrain lab stream power must be finite");
+        validate_finite(fields.river_discharge[sample],
+                        "terrain lab river discharge must be finite");
+        validate_finite(fields.river_width_m[sample], "terrain lab river width must be finite");
+        validate_finite(fields.valley_width_m[sample], "terrain lab valley width must be finite");
+        validate_normalized(fields.water_presence[sample],
+                            "terrain lab water presence must be normalized");
         validate_normalized(fields.wetness[sample], "terrain lab wetness must be normalized");
         validate_normalized(fields.deposition[sample], "terrain lab deposition must be normalized");
         validate_normalized(fields.grass_density[sample],
@@ -2093,6 +2117,10 @@ void validate_terrain_lab_fields(const TerrainLabFieldData& fields) {
         if (fields.stream_power[sample] < 0.0F) {
             throw std::runtime_error("terrain lab stream power must be nonnegative");
         }
+        if (fields.river_discharge[sample] < 0.0F || fields.river_width_m[sample] < 0.0F ||
+            fields.valley_width_m[sample] < 0.0F) {
+            throw std::runtime_error("terrain lab river fields must be nonnegative");
+        }
         if (fields.flow_direction[sample] > kFlowSinkDirection) {
             throw std::runtime_error("terrain lab flow direction must be valid");
         }
@@ -2112,6 +2140,10 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
         .max_height_m = fields.max_height_m,
         .height_span_m = fields.max_height_m - fields.min_height_m,
         .max_flow_accumulation = fields.max_flow_accumulation,
+        .max_river_discharge = fields.max_river_discharge,
+        .max_stream_order = fields.max_stream_order,
+        .max_river_width_m = fields.max_river_width_m,
+        .max_valley_width_m = fields.max_valley_width_m,
         .max_channel_distance_m = fields.max_channel_distance_m,
     };
     if (summary.sample_count == 0U) {
@@ -2120,6 +2152,7 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
     double height_sum = 0.0;
     double slope_sum = 0.0;
     double wetness_sum = 0.0;
+    double water_presence_sum = 0.0;
     double tree_sum = 0.0;
     double material_entropy_sum = 0.0;
     double divide_sum = 0.0;
@@ -2136,6 +2169,7 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
         height_sum += fields.height_m[sample];
         slope_sum += fields.slope[sample];
         wetness_sum += fields.wetness[sample];
+        water_presence_sum += fields.water_presence[sample];
         tree_sum += fields.tree_density[sample];
         material_entropy_sum += material_entropy(fields.material_masks[sample]);
         divide_sum += fields.divide_influence[sample];
@@ -2196,6 +2230,7 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
     summary.mean_height_m = static_cast<float>(height_sum * inv_count);
     summary.mean_slope = static_cast<float>(slope_sum * inv_count);
     summary.mean_wetness = static_cast<float>(wetness_sum * inv_count);
+    summary.mean_water_presence = static_cast<float>(water_presence_sum * inv_count);
     summary.mean_tree_density = static_cast<float>(tree_sum * inv_count);
     summary.mean_material_entropy = static_cast<float>(material_entropy_sum * inv_count);
     summary.mean_divide_influence = static_cast<float>(divide_sum * inv_count);

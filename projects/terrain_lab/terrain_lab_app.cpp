@@ -57,6 +57,7 @@ struct TerrainLabRenderRanges {
     float max_abs_detail_m = 1.0F;
     float max_abs_noise_off_m = 1.0F;
     float max_canopy_height_m = 1.0F;
+    float max_river_width_m = 1.0F;
 };
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
@@ -117,6 +118,8 @@ struct TerrainLabRenderRanges {
                      std::abs(fields.structure_height_m[sample] + fields.process_delta_m[sample]));
         ranges.max_canopy_height_m =
             std::max(ranges.max_canopy_height_m, fields.canopy_height_m[sample]);
+        ranges.max_river_width_m =
+            std::max(ranges.max_river_width_m, fields.river_width_m[sample]);
     }
     return ranges;
 }
@@ -320,8 +323,8 @@ class TerrainLabApp {
                 {
                     std::max(fields_.max_flow_accumulation, 1.0F),
                     std::max(fields_.max_stream_power, 0.001F),
+                    std::max(ranges_.max_river_width_m, 1.0F),
                     std::max(ranges_.max_canopy_height_m, 1.0F),
-                    1.0F,
                 },
         };
     }

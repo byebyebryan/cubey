@@ -23,6 +23,7 @@ struct TerrainLabVertex {
     cubey::math::Vec4 influences{};
     cubey::math::Vec4 feature_tags{};
     cubey::math::Vec4 drivers{};
+    cubey::math::Vec4 river{};
 };
 
 struct TerrainLabMeshData {

@@ -19,6 +19,7 @@ layout(location = 7) in vec4 frag_vegetation;
 layout(location = 8) in vec4 frag_influences;
 layout(location = 9) in vec4 frag_feature_tags;
 layout(location = 10) in vec4 frag_drivers;
+layout(location = 11) in vec4 frag_river;
 
 layout(location = 0) out vec4 out_color;
 
@@ -32,17 +33,20 @@ const uint TERRAIN_LAB_VIEW_CURVATURE = 6u;
 const uint TERRAIN_LAB_VIEW_FLOW_DIRECTION = 7u;
 const uint TERRAIN_LAB_VIEW_FLOW_ACCUMULATION = 8u;
 const uint TERRAIN_LAB_VIEW_STREAM_POWER = 9u;
-const uint TERRAIN_LAB_VIEW_WETNESS = 10u;
-const uint TERRAIN_LAB_VIEW_DEPOSITION = 11u;
-const uint TERRAIN_LAB_VIEW_MATERIAL = 12u;
-const uint TERRAIN_LAB_VIEW_BIOME_DENSITY = 13u;
-const uint TERRAIN_LAB_VIEW_CANOPY_HEIGHT = 14u;
-const uint TERRAIN_LAB_VIEW_NOISE_OFF = 15u;
-const uint TERRAIN_LAB_VIEW_FEATURE_GRAPH = 16u;
-const uint TERRAIN_LAB_VIEW_WATERSHED = 17u;
-const uint TERRAIN_LAB_VIEW_CHANNEL = 18u;
-const uint TERRAIN_LAB_VIEW_DIVIDE = 19u;
-const uint TERRAIN_LAB_VIEW_DRIVER = 20u;
+const uint TERRAIN_LAB_VIEW_RIVER_NETWORK = 10u;
+const uint TERRAIN_LAB_VIEW_RIVER_WIDTH = 11u;
+const uint TERRAIN_LAB_VIEW_WATER_PRESENCE = 12u;
+const uint TERRAIN_LAB_VIEW_WETNESS = 13u;
+const uint TERRAIN_LAB_VIEW_DEPOSITION = 14u;
+const uint TERRAIN_LAB_VIEW_MATERIAL = 15u;
+const uint TERRAIN_LAB_VIEW_BIOME_DENSITY = 16u;
+const uint TERRAIN_LAB_VIEW_CANOPY_HEIGHT = 17u;
+const uint TERRAIN_LAB_VIEW_NOISE_OFF = 18u;
+const uint TERRAIN_LAB_VIEW_FEATURE_GRAPH = 19u;
+const uint TERRAIN_LAB_VIEW_WATERSHED = 20u;
+const uint TERRAIN_LAB_VIEW_CHANNEL = 21u;
+const uint TERRAIN_LAB_VIEW_DIVIDE = 22u;
+const uint TERRAIN_LAB_VIEW_DRIVER = 23u;
 
 vec3 ramp3(float t, vec3 a, vec3 b, vec3 c) {
     t = clamp(t, 0.0, 1.0);
@@ -207,7 +211,8 @@ void main() {
     float flow_t = log(1.0 + max(frag_hydrology.y, 0.0)) /
                    max(log(1.0 + pc.hydrology_ranges.x), 0.001);
     float stream_t = clamp(frag_hydrology.z / max(pc.hydrology_ranges.y, 0.001), 0.0, 1.0);
-    float canopy_t = clamp(frag_vegetation.w / max(pc.hydrology_ranges.z, 0.001), 0.0, 1.0);
+    float river_width_t = clamp(frag_river.z / max(pc.hydrology_ranges.z, 0.001), 0.0, 1.0);
+    float canopy_t = clamp(frag_vegetation.w / max(pc.hydrology_ranges.w, 0.001), 0.0, 1.0);
     float divide_t = clamp(frag_influences.z, 0.0, 1.0);
     float channel_t = clamp(frag_influences.w, 0.0, 1.0);
     float channel_distance_t = clamp(frag_feature_tags.y, 0.0, 1.0);
@@ -237,6 +242,17 @@ void main() {
     } else if (debug_view == TERRAIN_LAB_VIEW_STREAM_POWER) {
         color = ramp3(stream_t, vec3(0.12, 0.10, 0.08), vec3(0.46, 0.29, 0.14),
                       vec3(0.94, 0.76, 0.32));
+    } else if (debug_view == TERRAIN_LAB_VIEW_RIVER_NETWORK) {
+        color = basin_color * 0.42;
+        color = mix(color, vec3(0.10, 0.44, 0.72), flow_t * 0.55);
+        color = mix(color, vec3(0.77, 0.92, 0.96), clamp(frag_river.y, 0.0, 1.0));
+        color = mix(color, vec3(0.06, 0.18, 0.30), clamp(frag_river.w, 0.0, 1.0) * 0.45);
+    } else if (debug_view == TERRAIN_LAB_VIEW_RIVER_WIDTH) {
+        color = ramp3(river_width_t, vec3(0.10, 0.10, 0.12), vec3(0.14, 0.42, 0.58),
+                      vec3(0.78, 0.94, 0.92));
+    } else if (debug_view == TERRAIN_LAB_VIEW_WATER_PRESENCE) {
+        color = ramp3(clamp(frag_river.w, 0.0, 1.0), vec3(0.18, 0.15, 0.10),
+                      vec3(0.10, 0.42, 0.48), vec3(0.64, 0.88, 0.92));
     } else if (debug_view == TERRAIN_LAB_VIEW_WETNESS) {
         color = ramp3(frag_hydrology.w, vec3(0.52, 0.42, 0.24), vec3(0.19, 0.48, 0.42),
                       vec3(0.68, 0.88, 0.86));

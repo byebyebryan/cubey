@@ -72,6 +72,7 @@ namespace {
         .influences = {0.0F, 0.0F, 0.0F, 0.0F},
         .feature_tags = {0.0F, 0.0F, -1.0F, -1.0F},
         .drivers = {0.0F, 0.0F, 0.0F, 0.0F},
+        .river = {0.0F, 0.0F, 0.0F, 0.0F},
     };
 }
 
@@ -232,6 +233,9 @@ cubey::render::VertexInputLayout terrain_lab_vertex_input_layout() {
                 cubey::render::vertex_input_attribute(
                     10, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
                     offset_of(offsetof(TerrainLabVertex, drivers))),
+                cubey::render::vertex_input_attribute(
+                    11, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
+                    offset_of(offsetof(TerrainLabVertex, river))),
             },
     };
 }
@@ -249,6 +253,8 @@ TerrainLabMeshData make_terrain_lab_mesh(const TerrainLabFieldData& fields) {
     const float watershed_denominator =
         fields.watershed_count <= 1U ? 1.0F : static_cast<float>(fields.watershed_count - 1U);
     const float channel_distance_range = std::max(fields.max_channel_distance_m, 0.001F);
+    const float stream_order_denominator =
+        fields.max_stream_order <= 1U ? 1.0F : static_cast<float>(fields.max_stream_order);
     TerrainLabMeshData mesh;
     mesh.vertices.reserve(fields.sample_count());
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
@@ -311,6 +317,13 @@ TerrainLabMeshData make_terrain_lab_mesh(const TerrainLabFieldData& fields) {
                         fields.driver_relief_potential[sample],
                         fields.driver_process_potential[sample],
                         fields.driver_selection_mask[sample],
+                    },
+                .river =
+                    {
+                        fields.river_discharge[sample],
+                        static_cast<float>(fields.stream_order[sample]) / stream_order_denominator,
+                        fields.river_width_m[sample],
+                        fields.water_presence[sample],
                     },
             });
         }
