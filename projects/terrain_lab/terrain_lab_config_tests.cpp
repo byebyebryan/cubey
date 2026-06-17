@@ -95,6 +95,8 @@ struct RiverHierarchyStats {
     std::size_t wet_component_sample_count = 0;
     std::size_t wet_component_count = 0;
     std::size_t largest_wet_component_count = 0;
+    std::uint32_t largest_wet_component_x_span = 0;
+    std::uint32_t largest_wet_component_y_span = 0;
     float min_active_width_m = 0.0F;
     float max_active_width_m = 0.0F;
     double low_order_width_sum = 0.0;
@@ -151,6 +153,10 @@ inspect_river_hierarchy(const cubey::projects::terrain_lab::TerrainLabFieldData&
         }
         ++stats.wet_component_count;
         std::size_t component_count = 0;
+        auto min_x = fields.desc.width;
+        std::uint32_t max_x = 0U;
+        auto min_y = fields.desc.height;
+        std::uint32_t max_y = 0U;
         stack.clear();
         stack.push_back(start);
         visited[start] = 1U;
@@ -161,6 +167,10 @@ inspect_river_hierarchy(const cubey::projects::terrain_lab::TerrainLabFieldData&
 
             const auto x = static_cast<std::uint32_t>(sample % fields.desc.width);
             const auto y = static_cast<std::uint32_t>(sample / fields.desc.width);
+            min_x = std::min(min_x, x);
+            max_x = std::max(max_x, x);
+            min_y = std::min(min_y, y);
+            max_y = std::max(max_y, y);
             for (int dy = -1; dy <= 1; ++dy) {
                 for (int dx = -1; dx <= 1; ++dx) {
                     if (dx == 0 && dy == 0) {
@@ -183,8 +193,11 @@ inspect_river_hierarchy(const cubey::projects::terrain_lab::TerrainLabFieldData&
                 }
             }
         }
-        stats.largest_wet_component_count =
-            std::max(stats.largest_wet_component_count, component_count);
+        if (component_count > stats.largest_wet_component_count) {
+            stats.largest_wet_component_count = component_count;
+            stats.largest_wet_component_x_span = max_x >= min_x ? max_x - min_x + 1U : 0U;
+            stats.largest_wet_component_y_span = max_y >= min_y ? max_y - min_y + 1U : 0U;
+        }
     }
     return stats;
 }
@@ -1305,10 +1318,10 @@ int main() {
             "terrain lab temperate river summary should expose widened trunk rivers");
     require(river_summary.max_valley_width_m > river_summary.max_river_width_m * 5.0F,
             "terrain lab temperate river summary should expose broad valley corridors");
-    require(river_summary.mean_water_presence > 0.02F,
+    require(river_summary.mean_water_presence > 0.008F,
             "terrain lab temperate river summary should expose wet river presence (mean=" +
                 std::to_string(river_summary.mean_water_presence) + ")");
-    require(river_hierarchy_stats.water_sample_count > river_fields.sample_count() / 16U,
+    require(river_hierarchy_stats.water_sample_count > river_fields.sample_count() / 36U,
             "terrain lab temperate river should contain enough wet river samples");
     require(river_hierarchy_stats.wet_component_count > 0U,
             "terrain lab temperate river should produce wet river components");
@@ -1318,6 +1331,12 @@ int main() {
                 std::to_string(river_hierarchy_stats.largest_wet_component_count) +
                 ", wet=" + std::to_string(river_hierarchy_stats.wet_component_sample_count) +
                 ", components=" + std::to_string(river_hierarchy_stats.wet_component_count) + ")");
+    require(std::max(river_hierarchy_stats.largest_wet_component_x_span,
+                     river_hierarchy_stats.largest_wet_component_y_span) >
+                std::min(river_fields.desc.width, river_fields.desc.height) / 3U,
+            "terrain lab temperate river should expose a long visible trunk (x_span=" +
+                std::to_string(river_hierarchy_stats.largest_wet_component_x_span) +
+                ", y_span=" + std::to_string(river_hierarchy_stats.largest_wet_component_y_span) + ")");
     require(river_hierarchy_stats.low_order_count > 16U && river_hierarchy_stats.high_order_count > 0U,
             "terrain lab temperate river should expose low and high stream orders");
     const float river_low_order_width =

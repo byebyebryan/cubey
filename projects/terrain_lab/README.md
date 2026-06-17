@@ -83,8 +83,9 @@ The active target is now a temperate mountain river reference:
   wetland, coast, or glacial variants consume it.
 - Discharge, stream order, channel width, valley width, and water presence
   derived from flow, runoff, slope, and slice climate.
-- Visible rivers are selected from connected routed activation, with tiny
-  disconnected fragments pruned before water is rendered.
+- Visible rivers are selected from trunk-first routed activation: one long
+  main stem is extracted from the discharge tree, then only substantial
+  tributaries are attached before water is rendered.
 - Wetness, deposition, material response, and vegetation fields driven by the
   river hierarchy rather than by a generic channel mask alone.
 - Simple static water presence is allowed for visual readability, but animated

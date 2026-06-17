@@ -127,7 +127,15 @@ struct RiverDerivationParams {
     float max_width_m = 48.0F;
     float valley_width_multiplier = 5.0F;
     float stream_threshold = 0.28F;
+    float local_active_scale = 0.12F;
+    bool extract_visible_trunks = false;
     bool prune_disconnected_fragments = false;
+};
+
+struct RiverBranchCandidate {
+    std::size_t sample = 0;
+    std::size_t anchor_index = 0;
+    float score = 0.0F;
 };
 
 struct AridCanyonCrop {
@@ -987,7 +995,7 @@ void merge_stream_order(std::uint8_t incoming_order, std::size_t receiver,
 
 [[nodiscard]] std::vector<float> make_river_routing_height(const TerrainLabFieldData& fields) {
     std::vector<float> routing_height(fields.sample_count(), 0.0F);
-    constexpr float kBaseLevelGrade = 0.045F;
+    constexpr float kBaseLevelGrade = 0.140F;
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
         const float downstream_z_m = terrain_lab_grid_sample_z_m(fields.desc, y);
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
@@ -1056,6 +1064,300 @@ derive_connected_river_activation(const TerrainLabFieldData& fields,
                 break;
             }
             current = next;
+        }
+    }
+
+    return activation;
+}
+
+[[nodiscard]] std::vector<std::vector<std::size_t>>
+build_upstream_contributors(const FlowRoutingData& routing, std::size_t count) {
+    std::vector<std::vector<std::size_t>> upstream(count);
+    for (std::size_t sample = 0; sample < count; ++sample) {
+        const FlowReceiver& receiver = routing.receivers[sample];
+        if (receiver.first != kNoFlowReceiver && receiver.first < count &&
+            receiver.first_weight > 0.0F && receiver.first != sample) {
+            upstream[receiver.first].push_back(sample);
+        }
+        if (receiver.second != kNoFlowReceiver && receiver.second < count &&
+            receiver.second != receiver.first && receiver.second_weight > 0.28F &&
+            receiver.second != sample) {
+            upstream[receiver.second].push_back(sample);
+        }
+    }
+    return upstream;
+}
+
+[[nodiscard]] float river_skeleton_score(const std::vector<float>& stream_score,
+                                         const std::vector<float>& discharge_t,
+                                         const std::vector<float>& order_t,
+                                         std::size_t sample) {
+    return saturate(discharge_t[sample] * 0.66F + stream_score[sample] * 0.22F +
+                    order_t[sample] * 0.30F);
+}
+
+[[nodiscard]] std::vector<std::size_t> trace_best_upstream_path(
+    const std::vector<std::vector<std::size_t>>& upstream,
+    const std::vector<float>& stream_score,
+    const std::vector<float>& discharge_t,
+    const std::vector<float>& order_t,
+    std::size_t start,
+    float min_score,
+    std::uint32_t max_steps,
+    const std::vector<std::uint8_t>* blocked = nullptr) {
+    std::vector<std::size_t> path;
+    if (start == kNoFlowReceiver || start >= upstream.size()) {
+        return path;
+    }
+
+    std::vector<std::uint8_t> visited(upstream.size(), 0U);
+    std::size_t current = start;
+    for (std::uint32_t step = 0; step < max_steps && current != kNoFlowReceiver; ++step) {
+        path.push_back(current);
+        visited[current] = 1U;
+
+        std::size_t best = kNoFlowReceiver;
+        float best_score = -1.0F;
+        for (const std::size_t donor : upstream[current]) {
+            if (donor >= upstream.size() || visited[donor] != 0U) {
+                continue;
+            }
+            if (blocked != nullptr && (*blocked)[donor] != 0U) {
+                continue;
+            }
+            const float score = river_skeleton_score(stream_score, discharge_t, order_t, donor);
+            if (score > best_score) {
+                best_score = score;
+                best = donor;
+            }
+        }
+
+        if (best == kNoFlowReceiver || best_score < min_score) {
+            break;
+        }
+        current = best;
+    }
+
+    return path;
+}
+
+[[nodiscard]] std::vector<std::size_t> trace_downstream_path(const FlowRoutingData& routing,
+                                                             std::size_t start,
+                                                             std::uint32_t max_steps) {
+    std::vector<std::size_t> path;
+    if (start == kNoFlowReceiver || start >= routing.receivers.size()) {
+        return path;
+    }
+
+    std::vector<std::uint8_t> visited(routing.receivers.size(), 0U);
+    std::size_t current = start;
+    for (std::uint32_t step = 0; step < max_steps && current != kNoFlowReceiver; ++step) {
+        path.push_back(current);
+        visited[current] = 1U;
+
+        const FlowReceiver& receiver = routing.receivers[current];
+        if (receiver.first == kNoFlowReceiver || receiver.first_weight <= 0.0F ||
+            receiver.first == current || visited[receiver.first] != 0U) {
+            break;
+        }
+        current = receiver.first;
+    }
+
+    return path;
+}
+
+[[nodiscard]] std::vector<std::size_t> select_primary_downstream_trunk(
+    const TerrainLabGridDesc& desc,
+    const FlowRoutingData& routing,
+    const std::vector<float>& stream_score,
+    const std::vector<float>& discharge_t,
+    const std::vector<float>& order_t) {
+    std::vector<RiverBranchCandidate> candidates;
+    const float inv_height =
+        desc.height <= 1U ? 0.0F : 1.0F / static_cast<float>(desc.height - 1U);
+    const std::uint32_t edge_margin =
+        std::max<std::uint32_t>(3U, std::min(desc.width, desc.height) / 18U);
+    for (std::size_t sample = 0; sample < discharge_t.size(); ++sample) {
+        const auto x = static_cast<std::uint32_t>(sample % desc.width);
+        const auto y = static_cast<std::uint32_t>(sample / desc.width);
+        if (x < edge_margin || x + edge_margin >= desc.width) {
+            continue;
+        }
+        const float upstream_t = 1.0F - static_cast<float>(y) * inv_height;
+        const float score = river_skeleton_score(stream_score, discharge_t, order_t, sample) +
+                            upstream_t * 0.55F;
+        if (score < 0.16F) {
+            continue;
+        }
+        candidates.push_back({
+            .sample = sample,
+            .score = score,
+        });
+    }
+
+    if (candidates.empty()) {
+        for (std::size_t sample = 0; sample < discharge_t.size(); ++sample) {
+            candidates.push_back({
+                .sample = sample,
+                .score = river_skeleton_score(stream_score, discharge_t, order_t, sample),
+            });
+        }
+    }
+
+    std::sort(candidates.begin(), candidates.end(),
+              [](const RiverBranchCandidate& lhs, const RiverBranchCandidate& rhs) {
+                  return lhs.score > rhs.score;
+              });
+    if (candidates.size() > 2048U) {
+        candidates.resize(2048U);
+    }
+
+    const std::uint32_t max_steps =
+        std::max<std::uint32_t>(1U, std::min<std::uint32_t>(desc.width + desc.height, 768U));
+    const float inv_min_extent =
+        1.0F / static_cast<float>(std::max<std::uint32_t>(1U, std::min(desc.width, desc.height)));
+    std::vector<std::size_t> best_path;
+    float best_score = -1.0F;
+    for (const RiverBranchCandidate& candidate : candidates) {
+        std::vector<std::size_t> path = trace_downstream_path(routing, candidate.sample, max_steps);
+        if (path.size() < 8U) {
+            continue;
+        }
+        const std::size_t outlet = path.back();
+        std::size_t edge_count = 0;
+        for (const std::size_t sample : path) {
+            const auto x = static_cast<std::uint32_t>(sample % desc.width);
+            const auto y = static_cast<std::uint32_t>(sample / desc.width);
+            if (x < edge_margin || x + edge_margin >= desc.width ||
+                (y < edge_margin && sample != path.front())) {
+                ++edge_count;
+            }
+        }
+        const float edge_t = static_cast<float>(edge_count) / static_cast<float>(path.size());
+        const float length_t = saturate(static_cast<float>(path.size()) * inv_min_extent);
+        const float score = length_t * 1.20F + discharge_t[outlet] * 0.48F +
+                            order_t[outlet] * 0.24F + candidate.score * 0.12F -
+                            edge_t * 0.90F;
+        if (score > best_score) {
+            best_score = score;
+            best_path = std::move(path);
+        }
+    }
+
+    std::reverse(best_path.begin(), best_path.end());
+    return best_path;
+}
+
+void paint_river_path(const std::vector<std::size_t>& path,
+                      std::vector<float>& activation,
+                      float base_strength,
+                      float headwater_scale) {
+    if (path.empty()) {
+        return;
+    }
+    const float denominator = path.size() <= 1U ? 1.0F : static_cast<float>(path.size() - 1U);
+    for (std::size_t index = 0; index < path.size(); ++index) {
+        const float t = static_cast<float>(index) / denominator;
+        const float strength = base_strength * lerp(1.0F, headwater_scale, t);
+        activation[path[index]] = std::max(activation[path[index]], saturate(strength));
+    }
+}
+
+[[nodiscard]] std::vector<float> derive_trunk_river_activation(
+    const TerrainLabFieldData& fields,
+    const FlowRoutingData& routing,
+    const std::vector<float>& stream_score,
+    const std::vector<float>& discharge_t,
+    const std::vector<float>& order_t) {
+    const std::size_t count = fields.sample_count();
+    std::vector<float> activation(count, 0.0F);
+    const std::vector<std::vector<std::size_t>> upstream =
+        build_upstream_contributors(routing, count);
+    std::vector<std::size_t> main_path =
+        select_primary_downstream_trunk(fields.desc, routing, stream_score, discharge_t, order_t);
+    const std::size_t min_main_length =
+        std::max<std::size_t>(
+            16U,
+            static_cast<std::size_t>(std::min(fields.desc.width, fields.desc.height)) / 5U);
+    if (main_path.size() < min_main_length) {
+        return activation;
+    }
+
+    paint_river_path(main_path, activation, 1.0F, 0.88F);
+
+    std::vector<std::uint8_t> on_trunk(count, 0U);
+    for (const std::size_t sample : main_path) {
+        on_trunk[sample] = 1U;
+    }
+
+    std::vector<RiverBranchCandidate> branch_candidates;
+    const std::size_t branch_start_margin =
+        std::max<std::size_t>(2U, main_path.size() / 12U);
+    for (std::size_t anchor_index = branch_start_margin;
+         anchor_index + branch_start_margin < main_path.size(); ++anchor_index) {
+        const std::size_t anchor = main_path[anchor_index];
+        for (const std::size_t donor : upstream[anchor]) {
+            if (donor >= count || on_trunk[donor] != 0U) {
+                continue;
+            }
+            const float score = river_skeleton_score(stream_score, discharge_t, order_t, donor);
+            if (score < 0.48F) {
+                continue;
+            }
+            branch_candidates.push_back({
+                .sample = donor,
+                .anchor_index = anchor_index,
+                .score = score,
+            });
+        }
+    }
+
+    std::sort(branch_candidates.begin(), branch_candidates.end(),
+              [](const RiverBranchCandidate& lhs, const RiverBranchCandidate& rhs) {
+                  return lhs.score > rhs.score;
+              });
+
+    const std::size_t max_branches = std::max<std::size_t>(
+        2U, static_cast<std::size_t>(std::min(fields.desc.width, fields.desc.height)) / 64U +
+                1U);
+    const std::size_t min_anchor_spacing = std::max<std::size_t>(8U, main_path.size() / 5U);
+    const std::size_t min_branch_length =
+        std::max<std::size_t>(
+            8U,
+            static_cast<std::size_t>(std::min(fields.desc.width, fields.desc.height)) / 14U);
+    const std::uint32_t max_branch_steps =
+        std::max<std::uint32_t>(
+            8U, std::min<std::uint32_t>((fields.desc.width + fields.desc.height) / 3U, 256U));
+    std::vector<std::size_t> accepted_anchors;
+    std::size_t accepted_branch_count = 0;
+    for (const RiverBranchCandidate& candidate : branch_candidates) {
+        bool too_close = false;
+        for (const std::size_t anchor : accepted_anchors) {
+            const std::size_t distance =
+                candidate.anchor_index > anchor ? candidate.anchor_index - anchor
+                                                : anchor - candidate.anchor_index;
+            if (distance < min_anchor_spacing) {
+                too_close = true;
+                break;
+            }
+        }
+        if (too_close) {
+            continue;
+        }
+
+        std::vector<std::size_t> branch_path =
+            trace_best_upstream_path(upstream, stream_score, discharge_t, order_t,
+                                     candidate.sample, 0.34F, max_branch_steps, &on_trunk);
+        if (branch_path.size() < min_branch_length) {
+            continue;
+        }
+
+        const float branch_strength = lerp(0.48F, 0.66F, candidate.score);
+        paint_river_path(branch_path, activation, branch_strength, 0.62F);
+        accepted_anchors.push_back(candidate.anchor_index);
+        ++accepted_branch_count;
+        if (accepted_branch_count >= max_branches) {
+            break;
         }
     }
 
@@ -1283,8 +1585,12 @@ void derive_river_network_fields(TerrainLabFieldData& fields, RiverDerivationPar
         order_t_values[sample] =
             static_cast<float>(fields.stream_order[sample]) / stream_order_denominator;
     }
-    std::vector<float> river_activation = derive_connected_river_activation(
-        fields, routing, params, stream_score_values, discharge_t_values, order_t_values);
+    std::vector<float> river_activation =
+        params.extract_visible_trunks
+            ? derive_trunk_river_activation(fields, routing, stream_score_values, discharge_t_values,
+                                            order_t_values)
+            : derive_connected_river_activation(fields, routing, params, stream_score_values,
+                                                discharge_t_values, order_t_values);
     if (params.prune_disconnected_fragments) {
         prune_short_river_fragments(fields.desc, river_activation);
         widen_connected_river_activation(fields.desc, river_activation);
@@ -1300,7 +1606,7 @@ void derive_river_network_fields(TerrainLabFieldData& fields, RiverDerivationPar
             smoothstep(params.stream_threshold - 0.08F, params.stream_threshold + 0.18F,
                        stream_score);
         const float active_stream =
-            saturate(std::max(river_activation[sample], local_active * 0.12F));
+            saturate(std::max(river_activation[sample], local_active * params.local_active_scale));
         const float slope_t = smoothstep(0.030F, 0.42F, fields.slope[sample]);
         const float hierarchy_t = saturate(discharge_t * 0.66F + order_t * 0.34F);
         const float river_width =
@@ -2694,6 +3000,8 @@ TerrainLabFieldData generate_temperate_mountain_river_fields(const TerrainLabCon
                                     .max_width_m = fields.desc.cell_size_m * 1.90F,
                                     .valley_width_multiplier = 5.8F,
                                     .stream_threshold = 0.28F,
+                                    .local_active_scale = 0.0F,
+                                    .extract_visible_trunks = true,
                                     .prune_disconnected_fragments = true,
                                 });
 

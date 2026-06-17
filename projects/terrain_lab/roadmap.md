@@ -53,7 +53,7 @@ Current implementation notes:
 
 Status: the authored four-basin watershed fixture has been removed; the active
 temperate reference is now one local drainage region with flow-derived channels
-and connected visible river activation.
+and trunk-first visible river activation.
 
 Goal: prove one coherent inland terrain slice.
 
@@ -82,14 +82,13 @@ Current implementation notes:
 
 - a coherent height/driver field is routed first; channel influence and channel
   distance are derived from flow instead of an authored watershed guide;
-- visible water uses a mild downstream base-level grade, downstream tracing,
-  component pruning, and light widening so rivers read as connected ribbons
-  instead of scattered stream fragments;
+- visible water uses a mild downstream base-level grade, longest-path trunk
+  extraction, sparse tributary attachment, component pruning, and light widening
+  so rivers read as main stems rather than scattered stream fragments;
 - a small slope-relaxation pass smooths harsh process artifacts while preserving
   structure/process/detail contribution accounting;
 - tests compare channel samples against non-channel terrain and divide samples
-  against channels, and compare visible wet river components for connected-path
-  dominance;
+  against channels, and require the visible wet component to span a long trunk;
 - `--terrain-lab-slice temperate-mountain-rivers` is the canonical wet river
   reference; the old `temperate-mountain-watershed` name remains only as a
   compatibility alias.
