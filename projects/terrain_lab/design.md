@@ -217,6 +217,12 @@ driver view should show coherent terrain causes instead of post-hoc height or
 feature fallback. Dunes keep hydrology diagnostic; alpine can use river fields
 as support until meltwater becomes a focused target.
 
+The next two driver blockers are canyon ownership and mountain/ridge structure.
+Arid canyon should become a dry, high-incision expression of the shared river
+hierarchy instead of a slice-local canyon skeleton with river fields applied
+afterward. Alpine should grow a mountain driver that exposes crest, shoulder,
+valley-spacing, cliff, and scree support before glacial details consume it.
+
 The sentinel slice set should prevent overfitting this model to canyon terrain.
 The first representative set is:
 

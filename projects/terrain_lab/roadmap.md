@@ -185,6 +185,11 @@ Status: active.
 Goal: make rivers the shared drainage abstraction before continuing canyon
 styling.
 
+Current blocker: the arid canyon slice still reads weaker than the temperate
+river reference because canyon features are too much of a slice-local skeleton.
+The next correction is to make the river hierarchy own the visible dry wash,
+canyon floor, wall, rim, and talus fields.
+
 Deliverables:
 
 - discharge proxy from runoff-weighted contributing area;
@@ -211,6 +216,11 @@ terrain. Procedural randomness remains valid, but isolated authored features
 should be treated as temporary scaffolding. A slice passes this phase when its
 main landforms can be inspected through named driver fields before feature masks,
 height, materials, and detail are applied.
+
+Current blocker: alpine glacial valley proves the need for a stronger mountain
+and ridge driver. Its ridges are still too dependent on ridged noise and broad
+side-lift, so closer inspection does not yet read as a coherent mountain
+structure.
 
 Driver note: new slice work should normally start by identifying the missing
 source, feature-driver, or process-modifier vocabulary it needs. A biome should
