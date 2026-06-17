@@ -16,8 +16,9 @@ ocean renderer through small data and shader contracts:
 
 - `projects/atmosphere`: clear-sky scattering, atmosphere debug disks, and
   horizon aerial perspective.
-- `projects/clouds`: planet-aware cloud/weather rendering, cloud shadows, and
-  scale-specific sky/cloud output for later ocean and planet integration.
+- `projects/cloud`: production cloud/weather renderer, starting from
+  texture-backed coherent density before later cloud shadows and scale-specific
+  sky/cloud output for ocean and planet integration.
 - `projects/procedural_terrain`: heightfield terrain, bathymetry, shoreline
   masks, material masks, and terrain/scene depth rendering.
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
@@ -62,8 +63,9 @@ First useful scope:
 Clouds should stay separate from the clear-sky shader. Treat them as an
 additional layer with its own weather map, coverage, density, lighting, and
 shadow controls rather than folding cloud noise into the base atmosphere pass.
-The first cloud implementation belongs in `projects/clouds`, where it can prove
-surface, above-cloud, and orbit behavior before any shared renderer promotion.
+The first cloud implementation is frozen in `projects/clouds_legacy`, where it
+proved surface, above-cloud, and orbit pressure before any shared renderer
+promotion. Active production cloud work now lives in `projects/cloud`.
 
 Ocean integration target:
 
@@ -224,7 +226,7 @@ outside that helper.
    the same shoreline/bathymetry contract.
 6. Continue `projects/planet` as the planet-frame, LOD, local sky, and
    celestial owner before trying to make ocean itself planet-scale.
-7. Build `projects/clouds` as a standalone planet-aware weather/cloud renderer
+7. Continue `projects/cloud` as the standalone production weather/cloud renderer
    and integrate its outputs only after surface/high/orbit captures are stable.
 
 This sequence keeps each project independently useful while aiming every slice

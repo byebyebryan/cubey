@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <type_traits>
+#include <vector>
 
 namespace {
 
@@ -125,6 +126,41 @@ void test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info() {
             "dynamic graphics pipeline info should accept pipeline resource config output");
     require(pipeline_info.create_info().pDynamicState != nullptr,
             "dynamic graphics pipeline info should use dynamic viewport state");
+}
+
+void test_render_pipeline_resource_preserves_multi_color_formats() {
+    const VkPipelineShaderStageCreateInfo fragment_stage = cubey::vulkan::shader_stage(
+        VK_SHADER_STAGE_FRAGMENT_BIT, reinterpret_cast<VkShaderModule>(0x45));
+    const std::array<VkPipelineShaderStageCreateInfo, 1> shader_stages{
+        fragment_stage,
+    };
+    const std::vector<VkFormat> color_formats{
+        VK_FORMAT_R16G16B16A16_SFLOAT,
+        VK_FORMAT_R16G16B16A16_SFLOAT,
+    };
+    const cubey::render::GraphicsPipelineResourceConfig config{
+        .extent = {640, 360},
+        .color_formats = color_formats,
+        .shader_stages = shader_stages,
+        .material_pass =
+            cubey::render::MaterialPassInfo{
+                .label = "multi color fullscreen",
+            },
+    };
+
+    const cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config =
+        cubey::render::dynamic_graphics_pipeline_config(config,
+                                                        reinterpret_cast<VkPipelineLayout>(0x46));
+    const cubey::vulkan::DynamicGraphicsPipelineInfo pipeline_info(pipeline_config);
+    const auto* rendering_info =
+        static_cast<const VkPipelineRenderingCreateInfo*>(pipeline_info.create_info().pNext);
+
+    require(pipeline_config.color_formats.size() == color_formats.size(),
+            "pipeline resource config should preserve multi-color count");
+    require(rendering_info->colorAttachmentCount == color_formats.size(),
+            "pipeline resource output should describe every color attachment");
+    require(pipeline_info.create_info().pColorBlendState->attachmentCount == color_formats.size(),
+            "pipeline resource output should describe every color blend attachment");
 }
 
 void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape() {

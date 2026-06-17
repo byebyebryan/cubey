@@ -1,0 +1,43 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+// TerrainEngine-OpenGL reference port.
+// Core path lives in cloud_ref_2_march_shared.glsl so cache and direct
+// validation paths evaluate the same cloud field.
+
+#include "cloud_ref_2_march_shared.glsl"
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+layout(rgba16f, set = 0, binding = 1) uniform writeonly image2D cloud_product;
+
+layout(push_constant) uniform CloudRef2CachePush {
+    vec4 update_region;
+    vec4 cache_options;
+} cache_push;
+
+void main() {
+    ivec2 local_pixel = ivec2(gl_GlobalInvocationID.xy);
+    int region_size = int(cache_push.update_region.z + 0.5);
+    if (local_pixel.x >= region_size || local_pixel.y >= region_size) {
+        return;
+    }
+
+    ivec2 pixel = ivec2(cache_push.update_region.xy) + local_pixel;
+    ivec2 size = imageSize(cloud_product);
+    if (any(greaterThanEqual(pixel, size))) {
+        return;
+    }
+
+    if (cache_push.cache_options.x > 0.5) {
+        imageStore(cloud_product, pixel, vec4(0.0, 0.0, 0.0, 1.0));
+        return;
+    }
+
+    vec2 uv = (vec2(pixel) + vec2(0.5)) / vec2(size);
+    vec3 origin = params.camera_position_radius.xyz;
+    vec3 direction = cloud_ref_2_oct_uv_to_direction(uv);
+    vec3 background = cloud_ref_2_background(direction);
+    int debug_view = int(params.ref_options.x + 0.5);
+    vec4 product = cloud_ref_2_cloud_product(debug_view, origin, direction, uv, background, pixel);
+    imageStore(cloud_product, pixel, product);
+}

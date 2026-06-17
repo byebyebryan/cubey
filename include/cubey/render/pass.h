@@ -194,15 +194,29 @@ template <typename RecordCallback>
 void record_present_render_target(const cubey::vulkan::CommandRecorder& recorder,
                                   const RenderTargetView& target,
                                   RecordCallback&& record_callback) {
-    recorder.transition_image_layout(
-        cubey::vulkan::begin_color_attachment_transition(target.color.image));
+    if (target.colors.empty()) {
+        recorder.transition_image_layout(
+            cubey::vulkan::begin_color_attachment_transition(target.color.image));
+    } else {
+        for (const ColorTargetView& color : target.colors) {
+            recorder.transition_image_layout(
+                cubey::vulkan::begin_color_attachment_transition(color.image));
+        }
+    }
     if (target.depth.has_value()) {
         recorder.transition_image_layout(
             cubey::vulkan::begin_depth_attachment_transition(target.depth->image));
     }
     std::forward<RecordCallback>(record_callback)(recorder);
-    recorder.transition_image_layout(
-        cubey::vulkan::finish_color_attachment_for_present_transition(target.color.image));
+    if (target.colors.empty()) {
+        recorder.transition_image_layout(
+            cubey::vulkan::finish_color_attachment_for_present_transition(target.color.image));
+    } else {
+        for (const ColorTargetView& color : target.colors) {
+            recorder.transition_image_layout(
+                cubey::vulkan::finish_color_attachment_for_present_transition(color.image));
+        }
+    }
 }
 
 template <typename RecordCallback>

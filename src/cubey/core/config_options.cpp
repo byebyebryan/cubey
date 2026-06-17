@@ -65,6 +65,13 @@ constexpr std::array<std::string_view, 6> kMilkyWayLayers{
 constexpr std::array<std::string_view, 6> kCloudCameraModes{
     "surface", "surface-up", "high", "high-oblique", "orbit", "orbit-terminator"};
 constexpr std::array<std::string_view, 3> kCloudQualities{"quarter", "half", "full"};
+constexpr std::array<std::string_view, 4> kCloudCacheFrames{"4", "16", "64", "256"};
+constexpr std::array<std::string_view, 4> kCloudRenderPaths{
+    "cached", "direct", "diff", "alpha-diff"};
+constexpr std::array<std::string_view, 3> kCloudSamplingModes{"interleaved", "bayer", "off"};
+constexpr std::array<std::string_view, 2> kCloudBackgroundModes{"atmosphere", "water-context"};
+constexpr std::array<std::string_view, 4> kCloudDistanceModes{"auto", "local", "orbit-shell",
+                                                              "blend-debug"};
 constexpr std::array<std::string_view, 10> kCloudWeatherPresets{
     "fair-weather",     "broken-cumulus", "overcast-stratus", "storm-cells",
     "high-cirrus",      "clear",          "scattered",        "inspection",
@@ -113,7 +120,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 192> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 223> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -532,6 +539,30 @@ constexpr std::array<ConfigOptionDescriptor, 192> kRunConfigOptions{
            "--cloud-weather-preset", "Weather Preset", "Clouds",
            "Cloud coverage, density, scale, and wind preset.", ConfigOptionType::Enum, no_range(),
            enum_choices(kCloudWeatherPresets)),
+    option(RunConfigOptionId::CloudCacheFrames, "clouds.cache_frames",
+           "--cloud-cache-frames", "Cache Frames", "Clouds",
+           "Frames used to refresh one complete cached cloud sky texture.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kCloudCacheFrames)),
+    option(RunConfigOptionId::CloudCacheTextureSize, "clouds.cache_texture_size",
+           "--cloud-cache-texture-size", "Cache Texture Size", "Clouds",
+           "Square cached cloud sky texture size in pixels.", ConfigOptionType::UInt32,
+           min_range(1.0)),
+    option(RunConfigOptionId::CloudRenderPath, "clouds.render_path",
+           "--cloud-render-path", "Render Path", "Clouds",
+           "Cloud validation render path: cached, direct, diff, or alpha-diff.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudRenderPaths)),
+    option(RunConfigOptionId::CloudSamplingMode, "clouds.sampling_mode",
+           "--cloud-sampling-mode", "Sampling Mode", "Clouds",
+           "Cloud ray-start sampling mode: interleaved, bayer, or off.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudSamplingModes)),
+    option(RunConfigOptionId::CloudBackgroundMode, "clouds.background_mode",
+           "--cloud-background-mode", "Background Mode", "Clouds",
+           "Standalone cloud background mode: atmosphere or water-context.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudBackgroundModes)),
+    option(RunConfigOptionId::CloudDistanceMode, "clouds.distance_mode",
+           "--cloud-distance-mode", "Distance Mode", "Clouds",
+           "Cloud distance regime: auto, local, orbit-shell, or blend-debug.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudDistanceModes)),
     option(RunConfigOptionId::CloudPlanetRadius, "clouds.planet_radius_m",
            "--cloud-planet-radius-m", "Planet Radius", "Clouds",
            "Planet radius used by the cloud shell in meters.", ConfigOptionType::Float,
@@ -556,8 +587,12 @@ constexpr std::array<ConfigOptionDescriptor, 192> kRunConfigOptions{
            min_range(0.0)),
     option(RunConfigOptionId::CloudWeatherScale, "clouds.weather_scale_km",
            "--cloud-weather-scale-km", "Weather Scale", "Clouds",
-           "World-space scale of the low-frequency cloud weather map in kilometers.",
+           "Approximate broad cloud weather feature size in kilometers.",
            ConfigOptionType::Float, min_range(0.001)),
+    option(RunConfigOptionId::CloudVerticalShearFraction, "clouds.vertical_shear_fraction",
+           "--cloud-vertical-shear-fraction", "Vertical Shear", "Clouds",
+           "Fraction of weather feature size used for altitude-dependent cloud shear.",
+           ConfigOptionType::Float, bounded_range(0.0, 0.5)),
     option(RunConfigOptionId::CloudWindSpeed, "clouds.wind_speed_mps", "--cloud-wind-speed-mps",
            "Wind Speed", "Clouds", "Cloud weather-map wind speed in meters per second.",
            ConfigOptionType::Float, min_range(0.0)),
@@ -565,9 +600,102 @@ constexpr std::array<ConfigOptionDescriptor, 192> kRunConfigOptions{
            "--cloud-shadow-strength", "Shadow Strength", "Clouds",
            "Strength of prototype cloud shadows on the standalone cloud ground proxy.",
            ConfigOptionType::Float, bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudHorizonStrength, "clouds.horizon_strength",
+           "--cloud-horizon-strength", "Horizon Strength", "Clouds",
+           "Strength of the dedicated far-horizon cloud layer.", ConfigOptionType::Float,
+           bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudWeatherFronts, "clouds.weather_fronts",
+           "--cloud-weather-fronts", "Weather Fronts", "Clouds",
+           "Feature-isolation weight for frontal cloud structures.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudWeatherCells, "clouds.weather_cells", "--cloud-weather-cells",
+           "Weather Cells", "Clouds", "Feature-isolation weight for cellular cloud structures.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudWeatherStreaks, "clouds.weather_streaks",
+           "--cloud-weather-streaks", "Weather Streaks", "Clouds",
+           "Feature-isolation weight for wind-aligned streak structures.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudWeatherSoftness, "clouds.weather_softness",
+           "--cloud-weather-softness", "Weather Softness", "Clouds",
+           "Softness of broad weather bias transitions.", ConfigOptionType::Float,
+           bounded_range(0.02, 0.6)),
+    option(RunConfigOptionId::CloudWeatherInfluence, "clouds.weather_influence",
+           "--cloud-weather-influence", "Weather Influence", "Clouds",
+           "How strongly the broad weather map biases local cloud density.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudDetailErosion, "clouds.detail_erosion",
+           "--cloud-detail-erosion", "Detail Erosion", "Clouds",
+           "Feature-isolation weight for high-frequency cloud erosion.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudAmbientStrength, "clouds.ambient_strength",
+           "--cloud-ambient-strength", "Ambient Strength", "Clouds",
+           "Cloud ambient-light multiplier used by the production cloud renderer.",
+           ConfigOptionType::Float, bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudDirectStrength, "clouds.direct_strength",
+           "--cloud-direct-strength", "Direct Strength", "Clouds",
+           "Cloud direct sun-light multiplier used by the production cloud renderer.",
+           ConfigOptionType::Float, bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudPhaseStrength, "clouds.phase_strength",
+           "--cloud-phase-strength", "Phase Strength", "Clouds",
+           "Cloud forward/rim phase-light multiplier used by the production cloud renderer.",
+           ConfigOptionType::Float, bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudFinalContrast, "clouds.final_contrast",
+           "--cloud-final-contrast", "Final Contrast", "Clouds",
+           "Final cloud composite contrast multiplier.", ConfigOptionType::Float,
+           bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudFinalSaturation, "clouds.final_saturation",
+           "--cloud-final-saturation", "Final Saturation", "Clouds",
+           "Final cloud composite saturation multiplier.", ConfigOptionType::Float,
+           bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudResolveStrength, "clouds.resolve_strength",
+           "--cloud-resolve-strength", "Resolve Strength", "Clouds",
+           "Amount of alpha-aware cloud product resolve in final view.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudHorizonGlowStrength, "clouds.horizon_glow_strength",
+           "--cloud-horizon-glow-strength", "Horizon Glow", "Clouds",
+           "Final composite horizon fill/glow multiplier.", ConfigOptionType::Float,
+           bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudSunGlareStrength, "clouds.sun_glare_strength",
+           "--cloud-sun-glare-strength", "Sun Glare", "Clouds",
+           "Final composite sun halo and glare multiplier.", ConfigOptionType::Float,
+           bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudJitterStrength, "clouds.jitter_strength",
+           "--cloud-jitter-strength", "Jitter Strength", "Clouds",
+           "Cloud ray-start jitter amount applied by the selected sampling mode.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudOrbitTransitionStart, "clouds.orbit_transition_start_m",
+           "--cloud-orbit-transition-start-m", "Orbit Transition Start", "Clouds",
+           "Camera altitude where the broad orbit cloud shell starts blending in.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::CloudOrbitTransitionEnd, "clouds.orbit_transition_end_m",
+           "--cloud-orbit-transition-end-m", "Orbit Transition End", "Clouds",
+           "Camera altitude where the broad orbit cloud shell fully replaces local clouds.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::CloudFarShellStart, "clouds.far_shell_start_m",
+           "--cloud-far-shell-start-m", "Far Shell Start", "Clouds",
+           "View-ray distance where high-altitude rays start preferring the orbit shell.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::CloudFarShellEnd, "clouds.far_shell_end_m",
+           "--cloud-far-shell-end-m", "Far Shell End", "Clouds",
+           "View-ray distance where high-altitude rays fully prefer the orbit shell.",
+           ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::CloudOrbitDetailStrength, "clouds.orbit_detail_strength",
+           "--cloud-orbit-detail-strength", "Orbit Detail", "Clouds",
+           "Amount of high-frequency detail retained by the broad orbit shell.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudOrbitDensityScale, "clouds.orbit_density_scale",
+           "--cloud-orbit-density-scale", "Orbit Density", "Clouds",
+           "Density multiplier for the broad orbit cloud shell.", ConfigOptionType::Float,
+           bounded_range(0.0, 2.0)),
     option(RunConfigOptionId::CloudTemporal, "clouds.temporal", "--cloud-temporal",
            "Temporal", "Clouds", "Enable temporal reconstruction for the cloud product.",
            ConfigOptionType::Bool, no_range(), {}, "--no-cloud-temporal"),
+    option(RunConfigOptionId::CloudLocalVolume, "clouds.local_volume", "--cloud-local-volume",
+           "Local Volume", "Clouds", "Enable near and overhead volumetric cloud marching.",
+           ConfigOptionType::Bool, no_range(), {}, "--no-cloud-local-volume"),
+    option(RunConfigOptionId::CloudHorizonLayer, "clouds.horizon_layer", "--cloud-horizon-layer",
+           "Horizon Layer", "Clouds", "Enable the dedicated far-horizon cloud layer.",
+           ConfigOptionType::Bool, no_range(), {}, "--no-cloud-horizon-layer"),
     option(RunConfigOptionId::SmokeInjectors, "smoke.injectors", "--smoke-injectors", "Injectors",
            "Smoke 2D", "Number of built-in smoke injectors.", ConfigOptionType::UInt32,
            min_range(1.0)),
@@ -1190,6 +1318,25 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::CloudWeatherPreset:
         return config.clouds.weather_preset.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.clouds.weather_preset);
+    case RunConfigOptionId::CloudCacheFrames:
+        return config.clouds.cache_frames.empty() ? nlohmann::json(nullptr)
+                                                  : nlohmann::json(config.clouds.cache_frames);
+    case RunConfigOptionId::CloudCacheTextureSize:
+        return optional_uint32(config.clouds.cache_texture_size);
+    case RunConfigOptionId::CloudRenderPath:
+        return config.clouds.render_path.empty() ? nlohmann::json(nullptr)
+                                                 : nlohmann::json(config.clouds.render_path);
+    case RunConfigOptionId::CloudSamplingMode:
+        return config.clouds.sampling_mode.empty() ? nlohmann::json(nullptr)
+                                                   : nlohmann::json(config.clouds.sampling_mode);
+    case RunConfigOptionId::CloudBackgroundMode:
+        return config.clouds.background_mode.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.clouds.background_mode);
+    case RunConfigOptionId::CloudDistanceMode:
+        return config.clouds.distance_mode.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.clouds.distance_mode);
     case RunConfigOptionId::CloudPlanetRadius:
         return optional_float(config.clouds.planet_radius_m);
     case RunConfigOptionId::CloudCameraAltitude:
@@ -1204,12 +1351,62 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.density);
     case RunConfigOptionId::CloudWeatherScale:
         return optional_float(config.clouds.weather_scale_km);
+    case RunConfigOptionId::CloudVerticalShearFraction:
+        return optional_float(config.clouds.vertical_shear_fraction);
     case RunConfigOptionId::CloudWindSpeed:
         return optional_float(config.clouds.wind_speed_mps);
     case RunConfigOptionId::CloudShadowStrength:
         return optional_float(config.clouds.shadow_strength);
+    case RunConfigOptionId::CloudHorizonStrength:
+        return optional_float(config.clouds.horizon_strength);
+    case RunConfigOptionId::CloudWeatherFronts:
+        return optional_float(config.clouds.weather_fronts);
+    case RunConfigOptionId::CloudWeatherCells:
+        return optional_float(config.clouds.weather_cells);
+    case RunConfigOptionId::CloudWeatherStreaks:
+        return optional_float(config.clouds.weather_streaks);
+    case RunConfigOptionId::CloudWeatherSoftness:
+        return optional_float(config.clouds.weather_softness);
+    case RunConfigOptionId::CloudWeatherInfluence:
+        return optional_float(config.clouds.weather_influence);
+    case RunConfigOptionId::CloudDetailErosion:
+        return optional_float(config.clouds.detail_erosion);
+    case RunConfigOptionId::CloudAmbientStrength:
+        return optional_float(config.clouds.ambient_strength);
+    case RunConfigOptionId::CloudDirectStrength:
+        return optional_float(config.clouds.direct_strength);
+    case RunConfigOptionId::CloudPhaseStrength:
+        return optional_float(config.clouds.phase_strength);
+    case RunConfigOptionId::CloudFinalContrast:
+        return optional_float(config.clouds.final_contrast);
+    case RunConfigOptionId::CloudFinalSaturation:
+        return optional_float(config.clouds.final_saturation);
+    case RunConfigOptionId::CloudResolveStrength:
+        return optional_float(config.clouds.resolve_strength);
+    case RunConfigOptionId::CloudHorizonGlowStrength:
+        return optional_float(config.clouds.horizon_glow_strength);
+    case RunConfigOptionId::CloudSunGlareStrength:
+        return optional_float(config.clouds.sun_glare_strength);
+    case RunConfigOptionId::CloudJitterStrength:
+        return optional_float(config.clouds.jitter_strength);
+    case RunConfigOptionId::CloudOrbitTransitionStart:
+        return optional_float(config.clouds.orbit_transition_start_m);
+    case RunConfigOptionId::CloudOrbitTransitionEnd:
+        return optional_float(config.clouds.orbit_transition_end_m);
+    case RunConfigOptionId::CloudFarShellStart:
+        return optional_float(config.clouds.far_shell_start_m);
+    case RunConfigOptionId::CloudFarShellEnd:
+        return optional_float(config.clouds.far_shell_end_m);
+    case RunConfigOptionId::CloudOrbitDetailStrength:
+        return optional_float(config.clouds.orbit_detail_strength);
+    case RunConfigOptionId::CloudOrbitDensityScale:
+        return optional_float(config.clouds.orbit_density_scale);
     case RunConfigOptionId::CloudTemporal:
         return optional_bool(config.clouds.temporal);
+    case RunConfigOptionId::CloudLocalVolume:
+        return optional_bool(config.clouds.local_volume);
+    case RunConfigOptionId::CloudHorizonLayer:
+        return optional_bool(config.clouds.horizon_layer);
     case RunConfigOptionId::SmokeInjectors:
         return optional_uint32(config.smoke.injectors);
     case RunConfigOptionId::SmokePressureIterations:
@@ -1604,6 +1801,11 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<std::string>("camera_mode", options.camera_mode);
     adapter.writeField<std::string>("quality", options.quality);
     adapter.writeField<std::string>("weather_preset", options.weather_preset);
+    adapter.writeField<std::string>("cache_frames", options.cache_frames);
+    adapter.writeField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
+    adapter.writeField<std::string>("render_path", options.render_path);
+    adapter.writeField<std::string>("sampling_mode", options.sampling_mode);
+    adapter.writeField<std::string>("background_mode", options.background_mode);
     adapter.writeField<float>("planet_radius_m", options.planet_radius_m);
     adapter.writeField<float>("camera_altitude_m", options.camera_altitude_m);
     adapter.writeField<float>("bottom_altitude_m", options.bottom_altitude_m);
@@ -1611,15 +1813,39 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("coverage", options.coverage);
     adapter.writeField<float>("density", options.density);
     adapter.writeField<float>("weather_scale_km", options.weather_scale_km);
+    adapter.writeField<float>("vertical_shear_fraction", options.vertical_shear_fraction);
     adapter.writeField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.writeField<float>("shadow_strength", options.shadow_strength);
+    adapter.writeField<float>("horizon_strength", options.horizon_strength);
+    adapter.writeField<float>("weather_fronts", options.weather_fronts);
+    adapter.writeField<float>("weather_cells", options.weather_cells);
+    adapter.writeField<float>("weather_streaks", options.weather_streaks);
+    adapter.writeField<float>("weather_softness", options.weather_softness);
+    adapter.writeField<float>("weather_influence", options.weather_influence);
+    adapter.writeField<float>("detail_erosion", options.detail_erosion);
+    adapter.writeField<float>("ambient_strength", options.ambient_strength);
+    adapter.writeField<float>("direct_strength", options.direct_strength);
+    adapter.writeField<float>("phase_strength", options.phase_strength);
+    adapter.writeField<float>("final_contrast", options.final_contrast);
+    adapter.writeField<float>("final_saturation", options.final_saturation);
+    adapter.writeField<float>("resolve_strength", options.resolve_strength);
+    adapter.writeField<float>("horizon_glow_strength", options.horizon_glow_strength);
+    adapter.writeField<float>("sun_glare_strength", options.sun_glare_strength);
+    adapter.writeField<float>("jitter_strength", options.jitter_strength);
     adapter.writeField<int>("temporal", options.temporal);
+    adapter.writeField<int>("local_volume", options.local_volume);
+    adapter.writeField<int>("horizon_layer", options.horizon_layer);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) {
     adapter.readField<std::string>("camera_mode", options.camera_mode);
     adapter.readField<std::string>("quality", options.quality);
     adapter.readField<std::string>("weather_preset", options.weather_preset);
+    adapter.readField<std::string>("cache_frames", options.cache_frames);
+    adapter.readField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
+    adapter.readField<std::string>("render_path", options.render_path);
+    adapter.readField<std::string>("sampling_mode", options.sampling_mode);
+    adapter.readField<std::string>("background_mode", options.background_mode);
     adapter.readField<float>("planet_radius_m", options.planet_radius_m);
     adapter.readField<float>("camera_altitude_m", options.camera_altitude_m);
     adapter.readField<float>("bottom_altitude_m", options.bottom_altitude_m);
@@ -1627,9 +1853,28 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("coverage", options.coverage);
     adapter.readField<float>("density", options.density);
     adapter.readField<float>("weather_scale_km", options.weather_scale_km);
+    adapter.readField<float>("vertical_shear_fraction", options.vertical_shear_fraction);
     adapter.readField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.readField<float>("shadow_strength", options.shadow_strength);
+    adapter.readField<float>("horizon_strength", options.horizon_strength);
+    adapter.readField<float>("weather_fronts", options.weather_fronts);
+    adapter.readField<float>("weather_cells", options.weather_cells);
+    adapter.readField<float>("weather_streaks", options.weather_streaks);
+    adapter.readField<float>("weather_softness", options.weather_softness);
+    adapter.readField<float>("weather_influence", options.weather_influence);
+    adapter.readField<float>("detail_erosion", options.detail_erosion);
+    adapter.readField<float>("ambient_strength", options.ambient_strength);
+    adapter.readField<float>("direct_strength", options.direct_strength);
+    adapter.readField<float>("phase_strength", options.phase_strength);
+    adapter.readField<float>("final_contrast", options.final_contrast);
+    adapter.readField<float>("final_saturation", options.final_saturation);
+    adapter.readField<float>("resolve_strength", options.resolve_strength);
+    adapter.readField<float>("horizon_glow_strength", options.horizon_glow_strength);
+    adapter.readField<float>("sun_glare_strength", options.sun_glare_strength);
+    adapter.readField<float>("jitter_strength", options.jitter_strength);
     adapter.readField<int>("temporal", options.temporal);
+    adapter.readField<int>("local_volume", options.local_volume);
+    adapter.readField<int>("horizon_layer", options.horizon_layer);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig& config) {
@@ -2212,6 +2457,26 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudWeatherPreset:
         config.clouds.weather_preset = std::string(value);
         break;
+    case RunConfigOptionId::CloudCacheFrames:
+        config.clouds.cache_frames = std::string(value);
+        break;
+    case RunConfigOptionId::CloudCacheTextureSize:
+        config.clouds.cache_texture_size =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.clouds.cache_texture_size, option);
+        break;
+    case RunConfigOptionId::CloudRenderPath:
+        config.clouds.render_path = std::string(value);
+        break;
+    case RunConfigOptionId::CloudSamplingMode:
+        config.clouds.sampling_mode = std::string(value);
+        break;
+    case RunConfigOptionId::CloudBackgroundMode:
+        config.clouds.background_mode = std::string(value);
+        break;
+    case RunConfigOptionId::CloudDistanceMode:
+        config.clouds.distance_mode = std::string(value);
+        break;
     case RunConfigOptionId::CloudPlanetRadius:
         config.clouds.planet_radius_m = parse_config_float(value, option);
         validate_range(config.clouds.planet_radius_m, option);
@@ -2240,6 +2505,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.clouds.weather_scale_km = parse_config_float(value, option);
         validate_range(config.clouds.weather_scale_km, option);
         break;
+    case RunConfigOptionId::CloudVerticalShearFraction:
+        config.clouds.vertical_shear_fraction = parse_config_float(value, option);
+        validate_range(config.clouds.vertical_shear_fraction, option);
+        break;
     case RunConfigOptionId::CloudWindSpeed:
         config.clouds.wind_speed_mps = parse_config_float(value, option);
         validate_range(config.clouds.wind_speed_mps, option);
@@ -2248,8 +2517,102 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.clouds.shadow_strength = parse_config_float(value, option);
         validate_range(config.clouds.shadow_strength, option);
         break;
+    case RunConfigOptionId::CloudHorizonStrength:
+        config.clouds.horizon_strength = parse_config_float(value, option);
+        validate_range(config.clouds.horizon_strength, option);
+        break;
+    case RunConfigOptionId::CloudWeatherFronts:
+        config.clouds.weather_fronts = parse_config_float(value, option);
+        validate_range(config.clouds.weather_fronts, option);
+        break;
+    case RunConfigOptionId::CloudWeatherCells:
+        config.clouds.weather_cells = parse_config_float(value, option);
+        validate_range(config.clouds.weather_cells, option);
+        break;
+    case RunConfigOptionId::CloudWeatherStreaks:
+        config.clouds.weather_streaks = parse_config_float(value, option);
+        validate_range(config.clouds.weather_streaks, option);
+        break;
+    case RunConfigOptionId::CloudWeatherSoftness:
+        config.clouds.weather_softness = parse_config_float(value, option);
+        validate_range(config.clouds.weather_softness, option);
+        break;
+    case RunConfigOptionId::CloudWeatherInfluence:
+        config.clouds.weather_influence = parse_config_float(value, option);
+        validate_range(config.clouds.weather_influence, option);
+        break;
+    case RunConfigOptionId::CloudDetailErosion:
+        config.clouds.detail_erosion = parse_config_float(value, option);
+        validate_range(config.clouds.detail_erosion, option);
+        break;
+    case RunConfigOptionId::CloudAmbientStrength:
+        config.clouds.ambient_strength = parse_config_float(value, option);
+        validate_range(config.clouds.ambient_strength, option);
+        break;
+    case RunConfigOptionId::CloudDirectStrength:
+        config.clouds.direct_strength = parse_config_float(value, option);
+        validate_range(config.clouds.direct_strength, option);
+        break;
+    case RunConfigOptionId::CloudPhaseStrength:
+        config.clouds.phase_strength = parse_config_float(value, option);
+        validate_range(config.clouds.phase_strength, option);
+        break;
+    case RunConfigOptionId::CloudFinalContrast:
+        config.clouds.final_contrast = parse_config_float(value, option);
+        validate_range(config.clouds.final_contrast, option);
+        break;
+    case RunConfigOptionId::CloudFinalSaturation:
+        config.clouds.final_saturation = parse_config_float(value, option);
+        validate_range(config.clouds.final_saturation, option);
+        break;
+    case RunConfigOptionId::CloudResolveStrength:
+        config.clouds.resolve_strength = parse_config_float(value, option);
+        validate_range(config.clouds.resolve_strength, option);
+        break;
+    case RunConfigOptionId::CloudHorizonGlowStrength:
+        config.clouds.horizon_glow_strength = parse_config_float(value, option);
+        validate_range(config.clouds.horizon_glow_strength, option);
+        break;
+    case RunConfigOptionId::CloudSunGlareStrength:
+        config.clouds.sun_glare_strength = parse_config_float(value, option);
+        validate_range(config.clouds.sun_glare_strength, option);
+        break;
+    case RunConfigOptionId::CloudJitterStrength:
+        config.clouds.jitter_strength = parse_config_float(value, option);
+        validate_range(config.clouds.jitter_strength, option);
+        break;
+    case RunConfigOptionId::CloudOrbitTransitionStart:
+        config.clouds.orbit_transition_start_m = parse_config_float(value, option);
+        validate_range(config.clouds.orbit_transition_start_m, option);
+        break;
+    case RunConfigOptionId::CloudOrbitTransitionEnd:
+        config.clouds.orbit_transition_end_m = parse_config_float(value, option);
+        validate_range(config.clouds.orbit_transition_end_m, option);
+        break;
+    case RunConfigOptionId::CloudFarShellStart:
+        config.clouds.far_shell_start_m = parse_config_float(value, option);
+        validate_range(config.clouds.far_shell_start_m, option);
+        break;
+    case RunConfigOptionId::CloudFarShellEnd:
+        config.clouds.far_shell_end_m = parse_config_float(value, option);
+        validate_range(config.clouds.far_shell_end_m, option);
+        break;
+    case RunConfigOptionId::CloudOrbitDetailStrength:
+        config.clouds.orbit_detail_strength = parse_config_float(value, option);
+        validate_range(config.clouds.orbit_detail_strength, option);
+        break;
+    case RunConfigOptionId::CloudOrbitDensityScale:
+        config.clouds.orbit_density_scale = parse_config_float(value, option);
+        validate_range(config.clouds.orbit_density_scale, option);
+        break;
     case RunConfigOptionId::CloudTemporal:
         config.clouds.temporal = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::CloudLocalVolume:
+        config.clouds.local_volume = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::CloudHorizonLayer:
+        config.clouds.horizon_layer = parse_config_bool(value, option) ? 1 : 0;
         break;
     case RunConfigOptionId::SmokeInjectors:
         config.smoke.injectors = parse_number<std::uint32_t>(value, option, "unsigned integer");

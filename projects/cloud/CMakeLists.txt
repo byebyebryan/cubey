@@ -1,0 +1,86 @@
+cubey_add_app_target(
+    cubey_project_cloud
+    OUTPUT_NAME cloud
+    SHADER_DEFINE CUBEY_CLOUD_SHADER_DIR
+    WINDOWED_SMOKE_TEST cloud_reaches_glfw
+    WINDOWED_SMOKE_PATTERN "cloud: .*rendering production cloud project"
+    SOURCES
+        cloud_app.cpp
+        cloud_config.cpp
+        main.cpp
+    SHADERS
+        shaders/cloud.vert
+        shaders/cloud_composite.frag
+        shaders/cloud_march.comp
+        shaders/cloud_perlin_worley.comp
+        shaders/cloud_temporal.comp
+        shaders/cloud_weather.comp
+        shaders/cloud_worley.comp
+    SHADER_INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+        "${CMAKE_SOURCE_DIR}/shaders"
+    SHADER_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_common.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_noise_common.glsl"
+)
+
+if (BUILD_TESTING)
+    add_executable(cubey_project_cloud_tests
+        cloud_config.cpp
+        cloud_config_tests.cpp
+    )
+    target_include_directories(
+        cubey_project_cloud_tests
+        PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+    target_link_libraries(
+        cubey_project_cloud_tests
+        PRIVATE
+            cubey::core
+            cubey::render
+            cubey_project_options
+            cubey_project_warnings
+    )
+    add_test(NAME cloud_config_tests COMMAND cubey_project_cloud_tests)
+
+    set(CUBEY_CLOUD_SURFACE_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/cloud-surface-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        cloud_surface_headless_writes_png
+        cubey_project_cloud
+        "${CUBEY_CLOUD_SURFACE_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        2
+        --cloud-camera-mode
+        surface
+    )
+    cubey_add_png_stats_test(
+        cloud_surface_headless_writes_png
+        "${CUBEY_CLOUD_SURFACE_SMOKE_OUTPUT}"
+        0.005
+        0.005
+    )
+
+    set(CUBEY_CLOUD_HIGH_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/cloud-high-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        cloud_high_headless_writes_png
+        cubey_project_cloud
+        "${CUBEY_CLOUD_HIGH_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        2
+        --cloud-camera-mode
+        high
+    )
+    cubey_add_png_stats_test(
+        cloud_high_headless_writes_png
+        "${CUBEY_CLOUD_HIGH_SMOKE_OUTPUT}"
+        0.005
+        0.005
+    )
+endif()

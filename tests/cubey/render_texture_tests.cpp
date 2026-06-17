@@ -42,6 +42,7 @@ void test_texture_2d_config_maps_storage_sampled_usage() {
 void test_texture_3d_config_maps_storage_sampled_volume_usage() {
     const cubey::render::Texture3DConfig config{
         .extent = {32, 24, 16},
+        .mip_levels = 5,
         .format = VK_FORMAT_R32G32B32A32_SFLOAT,
         .create_sampler = true,
         .sampler =
@@ -56,13 +57,21 @@ void test_texture_3d_config_maps_storage_sampled_volume_usage() {
     require(image_config.extent.depth == 16, "texture 3D config should preserve depth");
     require(image_config.format == VK_FORMAT_R32G32B32A32_SFLOAT,
             "texture 3D config should preserve format");
+    require(image_config.mip_levels == 5, "texture 3D config should preserve mip count");
     require((image_config.usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0,
             "texture 3D should support storage writes");
     require((image_config.usage & VK_IMAGE_USAGE_SAMPLED_BIT) != 0,
             "texture 3D should support sampling");
+    require((image_config.usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) != 0,
+            "texture 3D mips should support transfer reads");
+    require((image_config.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) != 0,
+            "texture 3D mips should support transfer writes");
     require(image_config.image_type == VK_IMAGE_TYPE_3D, "texture 3D should request a 3D image");
     require(image_config.view_type == VK_IMAGE_VIEW_TYPE_3D,
             "texture 3D should request a 3D image view");
+    const VkExtent3D mip3 = cubey::render::texture_3d_mip_extent({32, 24, 16}, 3);
+    require(mip3.width == 4 && mip3.height == 3 && mip3.depth == 2,
+            "3D mip extent should halve each axis and clamp later");
 
     static_assert(!std::is_copy_constructible_v<cubey::render::Texture3D>);
     static_assert(std::is_move_constructible_v<cubey::render::Texture3D>);

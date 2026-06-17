@@ -243,7 +243,7 @@ ImageConfig storage_sampled_volume_image_config(VkExtent3D extent, VkFormat form
         .extent = extent,
         .format = format,
         .usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
         .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
         .image_type = VK_IMAGE_TYPE_3D,
         .view_type = VK_IMAGE_VIEW_TYPE_3D,

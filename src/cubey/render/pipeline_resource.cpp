@@ -65,6 +65,7 @@ dynamic_graphics_pipeline_config(const GraphicsPipelineResourceConfig& config,
     cubey::vulkan::DynamicGraphicsPipelineConfig pipeline_config;
     pipeline_config.layout = layout;
     pipeline_config.color_format = config.color_format;
+    pipeline_config.color_formats = config.color_formats;
     pipeline_config.depth_format = config.depth_format;
     pipeline_config.shader_stages = config.shader_stages;
     pipeline_config.vertex_bindings = config.vertex_bindings;
@@ -84,6 +85,7 @@ GraphicsPipelineResource::GraphicsPipelineResource(
     create(device, GraphicsPipelineResourceConfig{
                        .extent = config.extent,
                        .color_format = config.color_format,
+                       .color_formats = config.color_formats,
                        .depth_format = config.depth_format,
                        .shader_stages = shader_program.stages(),
                        .vertex_bindings = config.vertex_bindings,

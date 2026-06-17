@@ -8,6 +8,8 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
+#include <vector>
 
 namespace cubey::render {
 
@@ -29,6 +31,7 @@ struct DepthTargetView {
 
 struct RenderTargetView {
     ColorTargetView color;
+    std::vector<ColorTargetView> colors{};
     std::optional<DepthTargetView> depth;
 };
 
@@ -52,6 +55,9 @@ struct RenderTargetAttachmentOps {
 [[nodiscard]] DepthTargetView depth_target_view(const DepthTexture& texture);
 [[nodiscard]] RenderTargetView render_target_view(ColorTargetView color);
 [[nodiscard]] RenderTargetView render_target_view(ColorTargetView color, DepthTargetView depth);
+[[nodiscard]] RenderTargetView render_target_view(std::span<const ColorTargetView> colors);
+[[nodiscard]] RenderTargetView render_target_view(std::span<const ColorTargetView> colors,
+                                                  DepthTargetView depth);
 
 class RenderTargetRenderingInfo {
   public:
@@ -67,12 +73,15 @@ class RenderTargetRenderingInfo {
         return info_;
     }
     [[nodiscard]] const VkRenderingAttachmentInfo& color_attachment() const {
-        return color_attachment_;
+        return color_attachments_.front();
+    }
+    [[nodiscard]] std::span<const VkRenderingAttachmentInfo> color_attachments() const {
+        return color_attachments_;
     }
     [[nodiscard]] const VkRenderingAttachmentInfo& depth_attachment() const;
 
   private:
-    VkRenderingAttachmentInfo color_attachment_{};
+    std::vector<VkRenderingAttachmentInfo> color_attachments_{};
     std::optional<VkRenderingAttachmentInfo> depth_attachment_;
     VkRenderingInfo info_{};
 };

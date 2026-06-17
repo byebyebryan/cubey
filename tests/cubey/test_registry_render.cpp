@@ -152,11 +152,13 @@ void test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape()
 void test_render_pipeline_resource_builds_compute_pipeline_info();
 void test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info();
 void test_render_pipeline_resource_helpers_build_file_recipe_config();
+void test_render_pipeline_resource_preserves_multi_color_formats();
 void test_render_resource_handles_are_hashable_keys();
 void test_render_resource_registry_round_trips_mesh_and_material_info();
 void test_render_resource_registry_tracks_handle_lifetime_and_labels();
 void test_render_resource_table_resolves_move_only_resources_by_handle();
 void test_render_target_rendering_info_describes_dynamic_rendering();
+void test_render_target_rendering_info_describes_multiple_color_attachments();
 void test_render_target_views_describe_color_only_targets();
 void test_shadow_depth_pass_info_declares_depth_only_state();
 void test_view_ray_basis_packs_camera_axes_for_shader_contract();
@@ -243,6 +245,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_pipeline_resource_allows_vertexless_fullscreen_pipeline_shape),
         CUBEY_TEST(test_render_pipeline_resource_builds_compute_pipeline_info),
         CUBEY_TEST(test_render_pipeline_resource_helpers_build_file_recipe_config),
+        CUBEY_TEST(test_render_pipeline_resource_preserves_multi_color_formats),
         CUBEY_TEST(test_indexed_mesh_config_describes_u16_geometry),
         CUBEY_TEST(test_indexed_mesh_config_describes_u32_geometry),
         CUBEY_TEST(test_indexed_mesh_config_allows_storage_capable_vertex_buffers),
@@ -326,6 +329,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_shadow_depth_pass_info_declares_depth_only_state),
         CUBEY_TEST(test_render_target_views_describe_color_only_targets),
         CUBEY_TEST(test_render_target_rendering_info_describes_dynamic_rendering),
+        CUBEY_TEST(test_render_target_rendering_info_describes_multiple_color_attachments),
         CUBEY_TEST(test_view_ray_basis_packs_camera_axes_for_shader_contract),
         CUBEY_TEST(test_view_ray_basis_reconstructs_fullscreen_ray_directions),
         CUBEY_TEST(test_view_ray_basis_rejects_invalid_projection_inputs),

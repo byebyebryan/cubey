@@ -31,6 +31,7 @@ struct Texture2DConfig {
 
 struct Texture3DConfig {
     VkExtent3D extent{1, 1, 1};
+    std::uint32_t mip_levels = 1;
     VkFormat format = VK_FORMAT_UNDEFINED;
     bool create_sampler = false;
     cubey::vulkan::SamplerConfig sampler;
@@ -98,6 +99,7 @@ depth_texture_image_config(const DepthTextureConfig& config);
 [[nodiscard]] TextureFormatLayout texture_format_layout(VkFormat format);
 [[nodiscard]] std::size_t texture_format_byte_size(VkFormat format);
 [[nodiscard]] VkExtent2D texture_2d_mip_extent(VkExtent2D extent, std::uint32_t mip_level);
+[[nodiscard]] VkExtent3D texture_3d_mip_extent(VkExtent3D extent, std::uint32_t mip_level);
 [[nodiscard]] std::size_t texture_2d_byte_size(VkExtent2D extent, std::uint32_t mip_levels,
                                                VkFormat format);
 [[nodiscard]] std::uint32_t texture_cube_mip_extent(std::uint32_t extent, std::uint32_t mip_level);
@@ -159,6 +161,9 @@ class Texture3D {
     [[nodiscard]] VkExtent3D extent() const {
         return image_.extent();
     }
+    [[nodiscard]] std::uint32_t mip_levels() const {
+        return image_.mip_levels();
+    }
     [[nodiscard]] bool has_sampler() const {
         return sampler_.has_value();
     }
@@ -171,6 +176,9 @@ class Texture3D {
     cubey::vulkan::Image image_;
     std::optional<cubey::vulkan::Sampler> sampler_;
 };
+
+void record_generate_texture_3d_mips(VkCommandBuffer command_buffer, const Texture3D& texture,
+                                     VkImageLayout level_zero_layout);
 
 class TextureCube {
   public:

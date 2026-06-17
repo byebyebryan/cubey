@@ -333,6 +333,9 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "atmosphere.moon",
         "clouds.camera_mode",
         "clouds.quality",
+        "clouds.sampling_mode",
+        "clouds.background_mode",
+        "clouds.distance_mode",
         "clouds.planet_radius_m",
         "clouds.camera_altitude_m",
         "clouds.bottom_altitude_m",
@@ -340,8 +343,16 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.coverage",
         "clouds.density",
         "clouds.weather_scale_km",
+        "clouds.vertical_shear_fraction",
         "clouds.wind_speed_mps",
         "clouds.shadow_strength",
+        "clouds.jitter_strength",
+        "clouds.orbit_transition_start_m",
+        "clouds.orbit_transition_end_m",
+        "clouds.far_shell_start_m",
+        "clouds.far_shell_end_m",
+        "clouds.orbit_detail_strength",
+        "clouds.orbit_density_scale",
         "clouds.temporal",
         "smoke.injectors",
         "smoke.pressure_iterations",
@@ -483,9 +494,12 @@ void test_run_config_loads_json_config_file() {
     "camera_mode": "high",
     "quality": "full",
     "weather_preset": "inspection",
+    "sampling_mode": "bayer",
+    "background_mode": "water-context",
     "coverage": 0.62,
     "wind_speed_mps": 24.0,
     "shadow_strength": 0.75,
+    "jitter_strength": 0.25,
     "temporal": false
   }
 })");
@@ -543,8 +557,11 @@ void test_run_config_loads_json_config_file() {
             "config file should set atmosphere controls");
     require(config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
                 config.clouds.weather_preset == "inspection" &&
+                config.clouds.sampling_mode == "bayer" &&
+                config.clouds.background_mode == "water-context" &&
                 config.clouds.coverage == 0.62F && config.clouds.wind_speed_mps == 24.0F &&
-                config.clouds.shadow_strength == 0.75F && config.clouds.temporal == 0,
+                config.clouds.shadow_strength == 0.75F &&
+                config.clouds.jitter_strength == 0.25F && config.clouds.temporal == 0,
             "config file should set cloud controls");
 }
 
@@ -942,6 +959,12 @@ void test_run_config_parses_cloud_options() {
     std::string quality_value = "full";
     std::string weather_preset_flag = "--cloud-weather-preset";
     std::string weather_preset_value = "storm";
+    std::string sampling_mode_flag = "--cloud-sampling-mode";
+    std::string sampling_mode_value = "bayer";
+    std::string background_mode_flag = "--cloud-background-mode";
+    std::string background_mode_value = "water-context";
+    std::string distance_mode_flag = "--cloud-distance-mode";
+    std::string distance_mode_value = "orbit-shell";
     std::string planet_radius_flag = "--cloud-planet-radius-m";
     std::string planet_radius_value = "6000000";
     std::string camera_altitude_flag = "--cloud-camera-altitude-m";
@@ -956,12 +979,28 @@ void test_run_config_parses_cloud_options() {
     std::string density_value = "1.25";
     std::string weather_scale_flag = "--cloud-weather-scale-km";
     std::string weather_scale_value = "260";
+    std::string vertical_shear_flag = "--cloud-vertical-shear-fraction";
+    std::string vertical_shear_value = "0.16";
     std::string wind_flag = "--cloud-wind-speed-mps";
     std::string wind_value = "32";
     std::string shadow_flag = "--cloud-shadow-strength";
     std::string shadow_value = "0.8";
+    std::string jitter_flag = "--cloud-jitter-strength";
+    std::string jitter_value = "0.25";
+    std::string orbit_start_flag = "--cloud-orbit-transition-start-m";
+    std::string orbit_start_value = "14000";
+    std::string orbit_end_flag = "--cloud-orbit-transition-end-m";
+    std::string orbit_end_value = "70000";
+    std::string far_start_flag = "--cloud-far-shell-start-m";
+    std::string far_start_value = "36000";
+    std::string far_end_flag = "--cloud-far-shell-end-m";
+    std::string far_end_value = "180000";
+    std::string orbit_detail_flag = "--cloud-orbit-detail-strength";
+    std::string orbit_detail_value = "0.22";
+    std::string orbit_density_flag = "--cloud-orbit-density-scale";
+    std::string orbit_density_value = "1.10";
     std::string temporal_flag = "--no-cloud-temporal";
-    std::array<char*, 26> argv{
+    std::array<char*, 48> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -969,6 +1008,12 @@ void test_run_config_parses_cloud_options() {
         quality_value.data(),
         weather_preset_flag.data(),
         weather_preset_value.data(),
+        sampling_mode_flag.data(),
+        sampling_mode_value.data(),
+        background_mode_flag.data(),
+        background_mode_value.data(),
+        distance_mode_flag.data(),
+        distance_mode_value.data(),
         planet_radius_flag.data(),
         planet_radius_value.data(),
         camera_altitude_flag.data(),
@@ -983,10 +1028,26 @@ void test_run_config_parses_cloud_options() {
         density_value.data(),
         weather_scale_flag.data(),
         weather_scale_value.data(),
+        vertical_shear_flag.data(),
+        vertical_shear_value.data(),
         wind_flag.data(),
         wind_value.data(),
         shadow_flag.data(),
         shadow_value.data(),
+        jitter_flag.data(),
+        jitter_value.data(),
+        orbit_start_flag.data(),
+        orbit_start_value.data(),
+        orbit_end_flag.data(),
+        orbit_end_value.data(),
+        far_start_flag.data(),
+        far_start_value.data(),
+        far_end_flag.data(),
+        far_end_value.data(),
+        orbit_detail_flag.data(),
+        orbit_detail_value.data(),
+        orbit_density_flag.data(),
+        orbit_density_value.data(),
         temporal_flag.data(),
     };
 
@@ -997,6 +1058,12 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.quality == "full", "run config should parse cloud quality");
     require(config.clouds.weather_preset == "storm",
             "run config should parse cloud weather preset");
+    require(config.clouds.sampling_mode == "bayer",
+            "run config should parse cloud sampling mode");
+    require(config.clouds.background_mode == "water-context",
+            "run config should parse cloud background mode");
+    require(config.clouds.distance_mode == "orbit-shell",
+            "run config should parse cloud distance mode");
     require(config.clouds.planet_radius_m == 6000000.0F,
             "run config should parse cloud planet radius");
     require(config.clouds.camera_altitude_m == 16000.0F,
@@ -1009,9 +1076,25 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.density == 1.25F, "run config should parse cloud density");
     require(config.clouds.weather_scale_km == 260.0F,
             "run config should parse cloud weather scale");
+    require(config.clouds.vertical_shear_fraction == 0.16F,
+            "run config should parse cloud vertical shear fraction");
     require(config.clouds.wind_speed_mps == 32.0F, "run config should parse cloud wind speed");
     require(config.clouds.shadow_strength == 0.8F,
             "run config should parse cloud shadow strength");
+    require(config.clouds.jitter_strength == 0.25F,
+            "run config should parse cloud jitter strength");
+    require(config.clouds.orbit_transition_start_m == 14000.0F,
+            "run config should parse cloud orbit transition start");
+    require(config.clouds.orbit_transition_end_m == 70000.0F,
+            "run config should parse cloud orbit transition end");
+    require(config.clouds.far_shell_start_m == 36000.0F,
+            "run config should parse cloud far shell start");
+    require(config.clouds.far_shell_end_m == 180000.0F,
+            "run config should parse cloud far shell end");
+    require(config.clouds.orbit_detail_strength == 0.22F,
+            "run config should parse cloud orbit detail strength");
+    require(config.clouds.orbit_density_scale == 1.10F,
+            "run config should parse cloud orbit density scale");
     require(config.clouds.temporal == 0, "run config should parse negative cloud temporal flag");
 }
 

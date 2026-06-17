@@ -192,3 +192,34 @@ void test_pipeline_helpers_describe_depth_only_dynamic_graphics_pipeline_setup()
     require(info.create_info().pColorBlendState->pAttachments == nullptr,
             "depth-only pipeline should not point at color blend attachments");
 }
+
+void test_pipeline_helpers_describe_multi_color_dynamic_graphics_pipeline_setup() {
+    const VkPipelineShaderStageCreateInfo fragment_stage = cubey::vulkan::shader_stage(
+        VK_SHADER_STAGE_FRAGMENT_BIT, reinterpret_cast<VkShaderModule>(0x60));
+    const std::array<VkFormat, 2> color_formats{
+        VK_FORMAT_R16G16B16A16_SFLOAT,
+        VK_FORMAT_R16G16B16A16_SFLOAT,
+    };
+
+    cubey::vulkan::DynamicGraphicsPipelineConfig config;
+    config.layout = reinterpret_cast<VkPipelineLayout>(0x70);
+    config.color_formats = {color_formats.begin(), color_formats.end()};
+    config.shader_stages = {&fragment_stage, 1};
+
+    const cubey::vulkan::DynamicGraphicsPipelineInfo info(config);
+    const auto* rendering_info =
+        static_cast<const VkPipelineRenderingCreateInfo*>(info.create_info().pNext);
+
+    require(rendering_info->colorAttachmentCount == color_formats.size(),
+            "multi-color pipeline should describe every color attachment");
+    require(rendering_info->pColorAttachmentFormats[0] == color_formats[0],
+            "multi-color pipeline should preserve first format");
+    require(rendering_info->pColorAttachmentFormats[1] == color_formats[1],
+            "multi-color pipeline should preserve second format");
+    require(info.create_info().pColorBlendState->attachmentCount == color_formats.size(),
+            "multi-color pipeline should describe blend state for every attachment");
+    require(info.create_info().pColorBlendState->pAttachments[1].colorWriteMask ==
+                (VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                 VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT),
+            "multi-color pipeline should use full color write masks");
+}
