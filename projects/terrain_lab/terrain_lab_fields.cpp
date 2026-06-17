@@ -322,12 +322,12 @@ using cubey::procedural::smoothstep;
         x, z,
         {
             .seed = coherent_noise_seed(seed),
-            .frequency = 1.0F,
+            .frequency = 0.72F,
             .noise_type = cubey::procedural::CoherentNoiseType::OpenSimplex2,
             .fractal_type = cubey::procedural::CoherentFractalType::Fbm,
             .octaves = octaves,
             .lacunarity = 2.03F,
-            .gain = 0.52F,
+            .gain = 0.46F,
         });
 }
 
@@ -531,10 +531,21 @@ void assign_driver_fields(TerrainLabFieldData& fields, std::size_t sample,
     const float roll_secondary =
         dune_source_fbm((dune_u * 2.18F) + 2.1F, (dune_v * 1.74F) - 8.2F,
                         config.seed + 3121U, 4, config);
-    const float soft_ridge = std::max(ridge_profile(roll_source * 1.05F, 1.72F),
-                                      ridge_profile(roll_secondary * 1.16F, 1.95F) * 0.26F);
+    const bool fastnoise_source = config.noise_source == TerrainLabNoiseSource::FastNoiseLite;
+    const float primary_ridge = ridge_profile(roll_source * (fastnoise_source ? 0.82F : 1.05F),
+                                              fastnoise_source ? 1.30F : 1.72F);
+    const float secondary_ridge =
+        ridge_profile(roll_secondary * (fastnoise_source ? 0.88F : 1.16F),
+                      fastnoise_source ? 1.50F : 1.95F) *
+        (fastnoise_source ? 0.12F : 0.26F);
+    const float soft_ridge = std::max(primary_ridge, secondary_ridge);
+    const float billow_weight = fastnoise_source ? 0.72F : 0.58F;
+    const float ridge_weight = fastnoise_source ? 0.12F : 0.27F;
+    const float base_weight = fastnoise_source ? 0.15F : 0.18F;
+    const float supply_weight = fastnoise_source ? 0.07F : 0.10F;
     const float relief = saturate(
-        ((billow * 0.58F) + (soft_ridge * 0.27F) + (base * 0.18F) + (supply_noise * 0.10F)) *
+        ((billow * billow_weight) + (soft_ridge * ridge_weight) + (base * base_weight) +
+         (supply_noise * supply_weight)) *
         selection);
 
     const float lee_source = dune_source_unit_fbm((dune_u * 2.04F) - 7.0F,
@@ -545,12 +556,19 @@ void assign_driver_fields(TerrainLabFieldData& fields, std::size_t sample,
         dune_source_unit_fbm((dune_u * 0.92F) + 8.0F, (dune_v * 1.08F) - 10.0F,
                              config.seed + 3135U, 4, config));
     const float crest_source =
-        smoothstep(0.54F, 0.86F, soft_ridge) * smoothstep(0.44F, 0.82F, relief) * selection;
+        smoothstep(fastnoise_source ? 0.66F : 0.54F, fastnoise_source ? 0.94F : 0.86F,
+                   soft_ridge) *
+        smoothstep(fastnoise_source ? 0.52F : 0.44F, fastnoise_source ? 0.90F : 0.82F,
+                   relief) *
+        (fastnoise_source ? 0.58F : 1.0F) * selection;
     const float interdune_source =
         saturate((1.0F - smoothstep(0.22F, 0.58F, relief)) * lerp(0.50F, 1.0F, selection));
     const float process =
-        saturate((crest_source * 0.28F) + (lee_source * smoothstep(0.36F, 0.82F, relief) * 0.34F) +
-                 (transport * 0.22F) + (interdune_source * 0.10F)) *
+        saturate((crest_source * (fastnoise_source ? 0.18F : 0.28F)) +
+                 (lee_source * smoothstep(0.36F, 0.82F, relief) *
+                  (fastnoise_source ? 0.24F : 0.34F)) +
+                 (transport * (fastnoise_source ? 0.25F : 0.22F)) +
+                 (interdune_source * 0.10F)) *
         selection;
 
     return {
