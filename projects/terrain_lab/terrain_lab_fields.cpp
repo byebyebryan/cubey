@@ -18,6 +18,13 @@ struct Point2 {
     float z = 0.0F;
 };
 
+struct TerrainDriverSample {
+    float base_potential = 0.0F;
+    float relief_potential = 0.0F;
+    float process_potential = 0.0F;
+    float selection_mask = 1.0F;
+};
+
 constexpr float kMaterialMaskTolerance = 0.001F;
 constexpr std::uint8_t kFlowSinkDirection = 8U;
 constexpr std::size_t kNoFlowReceiver = std::numeric_limits<std::size_t>::max();
@@ -226,6 +233,18 @@ struct AlpineGlacialDriver {
     return std::pow(std::max(1.0F - std::abs(value), 0.0F), sharpness);
 }
 
+[[nodiscard]] TerrainDriverSample terrain_driver_sample(float base_potential,
+                                                        float relief_potential,
+                                                        float process_potential,
+                                                        float selection_mask) {
+    return {
+        .base_potential = saturate(base_potential),
+        .relief_potential = saturate(relief_potential),
+        .process_potential = saturate(process_potential),
+        .selection_mask = saturate(selection_mask),
+    };
+}
+
 [[nodiscard]] std::uint32_t hash_u32(std::int32_t x, std::int32_t y, std::uint64_t seed) {
     std::uint64_t value = seed;
     value ^= static_cast<std::uint32_t>(x) + 0x9e37'79b9U + (value << 6U) + (value >> 2U);
@@ -426,6 +445,14 @@ struct AlpineGlacialDriver {
     fields.channel_influence.assign(count, 0.0F);
     fields.channel_distance_m.assign(count, 0.0F);
     return fields;
+}
+
+void assign_driver_fields(TerrainLabFieldData& fields, std::size_t sample,
+                          TerrainDriverSample driver) {
+    fields.driver_base_potential[sample] = driver.base_potential;
+    fields.driver_relief_potential[sample] = driver.relief_potential;
+    fields.driver_process_potential[sample] = driver.process_potential;
+    fields.driver_selection_mask[sample] = driver.selection_mask;
 }
 
 [[nodiscard]] DesertDuneDriver desert_dune_driver_at(Point2 p, const TerrainLabConfig& config) {
@@ -2517,24 +2544,12 @@ void update_height_range(TerrainLabFieldData& fields) {
     }
 }
 
-void populate_fallback_driver_fields(TerrainLabFieldData& fields) {
+void require_driver_fields_populated(const TerrainLabFieldData& fields) {
     const bool has_explicit_driver =
         std::any_of(fields.driver_selection_mask.begin(), fields.driver_selection_mask.end(),
                     [](float value) { return value > 0.0F; });
-    if (has_explicit_driver) {
-        return;
-    }
-
-    const float height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
-    for (std::size_t sample = 0; sample < fields.sample_count(); ++sample) {
-        const float height_t =
-            saturate((fields.height_m[sample] - fields.min_height_m) / height_span);
-        fields.driver_base_potential[sample] = height_t;
-        fields.driver_relief_potential[sample] = fields.ridge_influence[sample];
-        fields.driver_process_potential[sample] =
-            saturate((fields.channel_influence[sample] * 0.35F) +
-                     (fields.deposition[sample] * 0.40F) + (fields.wetness[sample] * 0.25F));
-        fields.driver_selection_mask[sample] = 1.0F;
+    if (!has_explicit_driver) {
+        throw std::runtime_error("terrain lab slice must populate driver fields explicitly");
     }
 }
 
@@ -2905,11 +2920,20 @@ TerrainLabFieldData generate_temperate_mountain_river_fields(const TerrainLabCon
                 saturate((valley_source * 0.24F) + (1.0F - ridge) * 0.08F);
             const float headwater = saturate((1.0F - p.z) * 0.5F);
             const float broad = fbm(p.x * 1.3F - 3.0F, p.z * 1.3F + 5.0F, config.seed + 101U, 5);
+            const float broad_t = saturate((broad * 0.5F) + 0.5F);
+            const TerrainDriverSample driver = terrain_driver_sample(
+                (headwater * 0.38F) + ((1.0F - basin_source) * 0.14F) + (broad_t * 0.22F) +
+                    (ridge_source * 0.10F),
+                ridge,
+                (valley_source * 0.34F) + (basin * 0.16F) + ((1.0F - divide) * 0.12F) +
+                    (broad_t * 0.08F),
+                1.0F);
             const float structure =
                 ((headwater * 0.46F) + (ridge * 0.42F) + (divide * 0.05F) + (broad * 0.18F) -
                  (basin * 0.16F) - (valley * 0.16F) - 0.12F) *
                 config.elevation_scale_m * config.structure_strength;
 
+            assign_driver_fields(fields, sample, driver);
             fields.ridge_influence[sample] = ridge;
             fields.valley_influence[sample] = valley;
             fields.basin_influence[sample] = basin;
@@ -2946,6 +2970,9 @@ TerrainLabFieldData generate_temperate_mountain_river_fields(const TerrainLabCon
         const float channel = fields.channel_influence[sample];
         const float divide = fields.divide_influence[sample];
         const float process_channel = saturate((flow_t * 0.44F) + (channel * 0.48F));
+        fields.driver_process_potential[sample] =
+            saturate((fields.driver_process_potential[sample] * 0.42F) +
+                     (process_channel * 0.48F) + (fields.basin_influence[sample] * 0.10F));
         const float valley =
             saturate((fields.valley_influence[sample] * 0.34F) + (channel * 0.58F));
         const float valley_cut = valley * smoothstep(0.08F, 0.76F, process_channel) *
@@ -3082,7 +3109,7 @@ TerrainLabFieldData generate_temperate_mountain_river_fields(const TerrainLabCon
         }
     }
 
-    populate_fallback_driver_fields(fields);
+    require_driver_fields_populated(fields);
     validate_terrain_lab_fields(fields);
     return fields;
 }
@@ -3118,10 +3145,11 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
                  0.08F) *
                 arid_elevation_scale_m * config.structure_strength;
 
-            fields.driver_base_potential[sample] = driver.base_potential;
-            fields.driver_relief_potential[sample] = driver.relief_potential;
-            fields.driver_process_potential[sample] = driver.process_potential;
-            fields.driver_selection_mask[sample] = driver.selection_mask;
+            assign_driver_fields(fields, sample,
+                                 terrain_driver_sample(driver.base_potential,
+                                                       driver.relief_potential,
+                                                       driver.process_potential,
+                                                       driver.selection_mask));
             fields.ridge_influence[sample] = features.ridge_influence;
             fields.valley_influence[sample] = features.valley_influence;
             fields.basin_influence[sample] = features.basin_influence;
@@ -3315,6 +3343,7 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
         }
     }
 
+    require_driver_fields_populated(fields);
     validate_terrain_lab_fields(fields);
     return fields;
 }
@@ -3342,10 +3371,11 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
                  (features.interdune_flat * 0.075F) + (p.z * 0.018F) - 0.10F) *
                 dune_elevation_scale_m * config.structure_strength;
 
-            fields.driver_base_potential[sample] = driver.base_potential;
-            fields.driver_relief_potential[sample] = driver.relief_potential;
-            fields.driver_process_potential[sample] = driver.process_potential;
-            fields.driver_selection_mask[sample] = driver.selection_mask;
+            assign_driver_fields(fields, sample,
+                                 terrain_driver_sample(driver.base_potential,
+                                                       driver.relief_potential,
+                                                       driver.process_potential,
+                                                       driver.selection_mask));
             fields.ridge_influence[sample] = features.ridge_influence;
             fields.valley_influence[sample] = features.valley_influence;
             fields.basin_influence[sample] = features.basin_influence;
@@ -3496,7 +3526,7 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
         }
     }
 
-    populate_fallback_driver_fields(fields);
+    require_driver_fields_populated(fields);
     validate_terrain_lab_fields(fields);
     return fields;
 }
@@ -3524,10 +3554,11 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
                  (features.basin_influence * 0.04F) - 0.08F) *
                 alpine_elevation_scale_m * config.structure_strength;
 
-            fields.driver_base_potential[sample] = driver.base_potential;
-            fields.driver_relief_potential[sample] = driver.relief_potential;
-            fields.driver_process_potential[sample] = driver.process_potential;
-            fields.driver_selection_mask[sample] = driver.selection_mask;
+            assign_driver_fields(fields, sample,
+                                 terrain_driver_sample(driver.base_potential,
+                                                       driver.relief_potential,
+                                                       driver.process_potential,
+                                                       driver.selection_mask));
             fields.ridge_influence[sample] = features.ridge_influence;
             fields.valley_influence[sample] = features.valley_influence;
             fields.basin_influence[sample] = features.basin_influence;
@@ -3695,6 +3726,7 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
         }
     }
 
+    require_driver_fields_populated(fields);
     validate_terrain_lab_fields(fields);
     return fields;
 }
