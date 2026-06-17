@@ -10,6 +10,8 @@ than the root design and roadmap.
   commits, and transform manager direction.
 - [Fluid simulation direction](fluid-simulation.md): project direction for
   2D/2.5D/3D fluid work.
+- [Procedural generation foundation](procedural-generation.md): shared source
+  field, operator, and process-driver direction for procedural assets.
 - [Ocean rendering](ocean-rendering.md):
   active/reference/legacy ocean split, reference-derived wave core, feature
   donor boundaries, and breaking-wave tradeoffs.

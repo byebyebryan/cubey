@@ -50,6 +50,11 @@ Current projects:
   cube-sphere LOD, procedural terrain fields, local-detail diagnostics,
   shared sky/celestial state, physical atmosphere preview, HDR post, and
   headless visual smoke coverage.
+- `terrain_lab`: local terrain generation workbench with deterministic CPU
+  fields, temperate mountain rivers, arid mesa canyon, and sentinel biome slices,
+  heightfield mesh rendering,
+  field/debug views, material and biome masks, headless visual smoke coverage,
+  and future adapters into planet, ocean, or environment projects.
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, pressure projection, debug views, and
   deterministic headless capture output.
@@ -98,6 +103,7 @@ Authoritative current docs:
 - [Entity and component foundation](docs/architecture/entity-component-foundation.md)
 - [Host and engine](docs/architecture/host-engine.md)
 - [Threading and async](docs/architecture/threading-and-async.md)
+- [Procedural generation foundation](docs/architecture/procedural-generation.md)
 - [glTF assets and PBR](docs/architecture/gltf-assets.md)
 - [Animation and deformation](docs/architecture/animation-deformation.md)
 - [Fluid simulation direction](docs/architecture/fluid-simulation.md)
@@ -119,6 +125,7 @@ Project-local docs:
 - [Fire 3D](projects/fluid/fire_3d/README.md)
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
 - [Planet](projects/planet/README.md)
+- [Terrain Lab](projects/terrain_lab/README.md)
 - [Ocean](projects/ocean/README.md)
 - [Procedural Terrain](projects/procedural_terrain/README.md)
 

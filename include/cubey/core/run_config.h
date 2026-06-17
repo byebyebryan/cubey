@@ -190,6 +190,11 @@ struct RunConfig {
         bool seed_set = false;
     };
 
+    struct TerrainLabOptions {
+        std::string slice_preset{};
+        std::string camera_preset{};
+    };
+
     struct AtmosphereOptions {
         std::string preset{};
         std::string time_of_day_mode{};
@@ -284,6 +289,7 @@ struct RunConfig {
     PbrOptions pbr{};
     GltfOptions gltf{};
     TerrainOptions terrain{};
+    TerrainLabOptions terrain_lab{};
     AtmosphereOptions atmosphere{};
     CloudOptions clouds{};
     std::uint32_t frames = 0;

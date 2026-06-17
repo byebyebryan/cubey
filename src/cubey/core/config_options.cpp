@@ -83,6 +83,18 @@ constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip"
                                                               "pic/flip"};
 constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-faces", "tiled",
                                                            "tiled-faces"};
+constexpr std::array<std::string_view, 6> kTerrainLabSlicePresets{
+    "arid-mesa-canyon",
+    "temperate-mountain-rivers",
+    "desert-dunes",
+    "alpine-glacial-valley",
+    "mountain-ridges-peaks",
+    "temperate-mountain-watershed",
+};
+constexpr std::array<std::string_view, 2> kTerrainLabCameraPresets{
+    "orbit",
+    "profile",
+};
 constexpr double kPlanetMaxPatchResolution = 128.0;
 constexpr double kPlanetMaxLiveLodLevel = 12.0;
 constexpr double kPlanetMaxLocalDetailLodLevels = 8.0;
@@ -108,7 +120,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 221> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 223> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -410,6 +422,14 @@ constexpr std::array<ConfigOptionDescriptor, 221> kRunConfigOptions{
            "--terrain-water-surface", "Water Surface", "Terrain",
            "Enable the terrain water surface.", ConfigOptionType::Bool, no_range(), {},
            "--no-terrain-water-surface"),
+    option(RunConfigOptionId::TerrainLabSlicePreset, "terrain_lab.slice_preset",
+           "--terrain-lab-slice", "Slice Preset", "Terrain Lab",
+           "Terrain Lab biome slice preset.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kTerrainLabSlicePresets)),
+    option(RunConfigOptionId::TerrainLabCameraPreset, "terrain_lab.camera_preset",
+           "--terrain-lab-camera-preset", "Camera Preset", "Terrain Lab",
+           "Initial Terrain Lab review camera framing.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kTerrainLabCameraPresets)),
     option(RunConfigOptionId::AtmospherePreset, "atmosphere.preset", "--atmosphere-preset",
            "Preset", "Atmosphere", "Atmosphere preset name.", ConfigOptionType::String),
     option(RunConfigOptionId::AtmosphereTimeOfDayMode, "atmosphere.time_of_day_mode",
@@ -1219,6 +1239,14 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.terrain.valleys);
     case RunConfigOptionId::TerrainWaterSurface:
         return optional_bool(config.terrain.water_surface);
+    case RunConfigOptionId::TerrainLabSlicePreset:
+        return config.terrain_lab.slice_preset.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain_lab.slice_preset);
+    case RunConfigOptionId::TerrainLabCameraPreset:
+        return config.terrain_lab.camera_preset.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain_lab.camera_preset);
     case RunConfigOptionId::AtmospherePreset:
         return config.atmosphere.preset;
     case RunConfigOptionId::AtmosphereTimeOfDayMode:
@@ -1693,6 +1721,14 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<int>("water_surface", options.water_surface);
 }
 
+inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainLabOptions& options) {
+    adapter.writeField<std::string>("slice_preset", options.slice_preset);
+}
+
+inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainLabOptions& options) {
+    adapter.readField<std::string>("slice_preset", options.slice_preset);
+}
+
 inline void serialize(JsonAdapter& adapter, const RunConfig::AtmosphereOptions& options) {
     adapter.writeField<std::string>("preset", options.preset);
     adapter.writeField<std::string>("time_of_day_mode", options.time_of_day_mode);
@@ -1861,6 +1897,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig& config) {
     adapter.writeField<RunConfig::OceanOptions>("ocean", config.ocean);
     adapter.writeField<RunConfig::PlanetOptions>("planet", config.planet);
     adapter.writeField<RunConfig::TerrainOptions>("terrain", config.terrain);
+    adapter.writeField<RunConfig::TerrainLabOptions>("terrain_lab", config.terrain_lab);
     adapter.writeField<RunConfig::AtmosphereOptions>("atmosphere", config.atmosphere);
     adapter.writeField<RunConfig::CloudOptions>("clouds", config.clouds);
 }
@@ -1885,6 +1922,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig& config) {
     adapter.readField<RunConfig::OceanOptions>("ocean", config.ocean);
     adapter.readField<RunConfig::PlanetOptions>("planet", config.planet);
     adapter.readField<RunConfig::TerrainOptions>("terrain", config.terrain);
+    adapter.readField<RunConfig::TerrainLabOptions>("terrain_lab", config.terrain_lab);
     adapter.readField<RunConfig::AtmosphereOptions>("atmosphere", config.atmosphere);
     adapter.readField<RunConfig::CloudOptions>("clouds", config.clouds);
 
@@ -2286,6 +2324,12 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainWaterSurface:
         config.terrain.water_surface = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::TerrainLabSlicePreset:
+        config.terrain_lab.slice_preset = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainLabCameraPreset:
+        config.terrain_lab.camera_preset = std::string(value);
         break;
     case RunConfigOptionId::AtmospherePreset:
         config.atmosphere.preset = std::string(value);
