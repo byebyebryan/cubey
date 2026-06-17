@@ -103,6 +103,7 @@ Authoritative current docs:
 - [Entity and component foundation](docs/architecture/entity-component-foundation.md)
 - [Host and engine](docs/architecture/host-engine.md)
 - [Threading and async](docs/architecture/threading-and-async.md)
+- [Procedural generation foundation](docs/architecture/procedural-generation.md)
 - [glTF assets and PBR](docs/architecture/gltf-assets.md)
 - [Animation and deformation](docs/architecture/animation-deformation.md)
 - [Fluid simulation direction](docs/architecture/fluid-simulation.md)

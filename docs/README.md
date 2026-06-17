@@ -35,6 +35,9 @@ Detailed current foundation notes live under
   GPU work, ownership, and future threading boundaries.
 - [Fluid simulation direction](architecture/fluid-simulation.md): project
   direction for 2D/2.5D/3D fluid work.
+- [Procedural generation foundation](architecture/procedural-generation.md):
+  shared source field, operator, and process-driver direction for procedural
+  assets.
 - [Ocean rendering](architecture/ocean-rendering.md):
   active/reference/legacy ocean split, reference-derived wave
   core, feature donor boundaries, and breaking-wave tradeoffs.

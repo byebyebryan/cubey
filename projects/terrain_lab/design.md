@@ -62,6 +62,12 @@ A new biome should usually add a missing driver or modifier before it adds
 slice-specific shaping. If a slice needs a local exception, that exception
 should stay small and visible in the driver/debug fields.
 
+This lesson is broader than terrain. Cubey already uses procedural assets in
+planet detail, clouds, fluids, generated textures, ocean-adjacent fields, and
+environment rendering. Once a terrain helper becomes a reusable source field,
+operator, or process utility, it should be considered for a shared procedural
+foundation rather than copied across projects.
+
 ## Spatial Scope
 
 Start with a local tangent-plane heightfield.

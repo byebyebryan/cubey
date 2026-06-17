@@ -51,6 +51,8 @@ Current implementation notes:
 - next foundation work should organize generation around reusable source fields,
   feature drivers, and process modifiers. Biome and landform slices remain the
   visual/test fixtures that prove those drivers compose.
+- reusable noise, field-processing, and hydrology helpers should move toward a
+  shared procedural foundation once they are useful outside Terrain Lab.
 
 ## Phase 2: Temperate Mountain River Reference
 

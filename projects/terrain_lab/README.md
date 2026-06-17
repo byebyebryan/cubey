@@ -117,9 +117,8 @@ Three representative sentinel slices are also available:
   driver fields instead of locally authored dune streaks.
 - `--terrain-lab-slice alpine-glacial-valley`: U-shaped trunk valley,
   cirque/headwall influence, moraine/deposition bands, snow/ice masks, and
-  moderate meltwater diagnostics. It consumes the shared mountain driver, but
-  should be judged as a valley/process slice rather than the mountain-shape
-  proof.
+  moderate meltwater diagnostics. It owns a valley-first source with flanking
+  mountain-wall contrast rather than reusing the mountain-range driver.
 - `--terrain-lab-slice mountain-ridges-peaks`: a hydro-light mountain landform
   sentinel for broad range support, ridges, crests, peaks, cliffs, scree, and
   rock/snow material response. It owns the mountain-driver visual review that
