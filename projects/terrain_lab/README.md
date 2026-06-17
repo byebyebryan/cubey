@@ -33,8 +33,9 @@ layout, or other demo footprint. Internal masks are valid when they describe
 terrain state or process, such as snow, ice, wetness, talus, sand supply,
 vegetation density, channels, or deposition.
 
-See [design.md](design.md) for the generation model and [roadmap.md](roadmap.md)
-for the planned slice sequence.
+See [design.md](design.md) for the generation model,
+[river_research.md](river_research.md) for the river-network pivot, and
+[roadmap.md](roadmap.md) for the planned slice sequence.
 
 ## Project Role
 
@@ -50,15 +51,15 @@ Terrain Lab should stay distinct from the existing terrain-adjacent projects:
 
 ## Goals
 
-- Build terrain from coherent region structure: ridges, basins, watersheds,
-  strata, climate, and material response.
+- Build terrain from coherent region structure: ridges, basins, river/drainage
+  networks, strata, climate, and material response.
 - Work slice by slice, starting with one terrain type that can be made credible
   before broadening to more biomes.
 - Keep deterministic CPU/reference generation available for tests, summaries,
   and debug views even when the renderer later uses GPU displacement.
 - Export explicit fields that other projects can consume: height, normal,
-  source drivers, slope, curvature, flow, wetness, sediment/deposition,
-  material masks, and future vegetation density.
+  source drivers, slope, curvature, flow, river hierarchy, wetness,
+  sediment/deposition, material masks, and future vegetation density.
 - Keep local and planet-scale concerns separate until the local terrain
   contract is strong enough to adapt into `planet` local detail or streaming.
 
@@ -71,31 +72,28 @@ Terrain Lab should stay distinct from the existing terrain-adjacent projects:
 - A physically complete erosion simulator. The first passes should be
   process-informed and testable before they become heavy simulations.
 
-## First Target Slice
+## Active Target Slice
 
-The active first slice is an arid mesa canyon:
+The active target is now a temperate mountain river/watershed reference:
 
 - 4-16 km local region.
-- Mesa benches, canyon rims, dry washes, and valley floors generated before
-  detail noise.
-- Canyon systems should come from a hidden broader macro region: base terrain,
-  runoff, resistance, routed drainage, stream power, and incision choose the
-  local trunk/tributary window instead of a line authored across the patch.
-- Flow accumulation and channel fields used as dry-wash structure rather than
-  a wet river network.
-- Slope-driven rock, soil, scree, sparse meadow/scrub, and no-snow material
-  response.
-- Grass, shrub, and very sparse tree density fields as data outputs, not a full
+- River/drainage network generated as shared terrain structure before canyon,
+  wetland, coast, or glacial variants consume it.
+- Discharge, stream order, channel width, valley width, and water presence
+  derived from flow, runoff, slope, and slice climate.
+- Wetness, deposition, material response, and vegetation fields driven by the
+  river hierarchy rather than by a generic channel mask alone.
+- Simple static water presence is allowed for visual readability, but animated
+  water rendering remains out of scope.
+- Grass, shrub, tree, and canopy density fields remain data outputs, not a full
   foliage renderer.
-- Final-view readability dressing for strata, caprock, talus speckle, dry-wash
-  floors, and sparse scrub proxies driven by existing fields.
 - Headless and windowed debug views for height, slope, flow, feature graph,
-  material, and vegetation-density fields.
+  river hierarchy, material, and vegetation-density fields.
 
-The earlier temperate mountain watershed remains available as an explicit
-fixture with `--terrain-lab-slice temperate-mountain-watershed`. It is useful
-for validating watershed ids, divide fields, channel-flow alignment, and wetter
-vegetation masks without forcing the arid slice into a quadrant-style layout.
+The arid mesa canyon remains available with
+`--terrain-lab-slice arid-mesa-canyon`. It should consume the same river fields
+as a dry, high-incision expression: water presence should be zero, while
+discharge/order drive dry-wash width, canyon floors, walls, rims, and talus.
 Coastal work can reconnect later through `procedural_terrain` once the general
 terrain field model is stronger.
 
@@ -111,17 +109,11 @@ Two representative sentinel slices are also available:
   process drivers so the driver view can explain the valley and ridge layout
   without relying on a post-hoc fallback.
 
-Hydrology remains analysis-only for this batch. Flow direction, accumulation,
-stream power, and sink diagnostics can expose whether terrain is coherent, but
-no droplet solver or destructive hydraulic erosion pass should become default
-terrain shaping yet.
-
-The arid canyon driver is being corrected at the routing and corridor layer.
-Eight-neighbor flow can remain as a compact diagnostic direction, but visible
-canyon geometry should come from continuous drainage and traced regional
-trunk/tributary corridors. Noise, Voronoi-like cells, and L-system-style
-branching are research/support tools, not the primary canyon skeleton for this
-slice.
+Hydrology is now a first-class terrain structure, but still not a heavy erosion
+solver. Flow direction, accumulation, stream power, discharge proxy, stream
+order, channel width, water presence, and sink diagnostics should expose whether
+terrain is coherent before any droplet or destructive hydraulic erosion pass is
+considered.
 
 ## Current Workbench
 
@@ -136,6 +128,7 @@ Generated CPU fields include:
 - structure, process, and detail height contributions;
 - slope and curvature;
 - flow direction, flow accumulation, and stream power;
+- river discharge, stream order, river width, valley width, and water presence;
 - wetness and deposition;
 - ridge, valley, and basin influence fields;
 - watershed id, divide influence, channel influence, and channel distance;
@@ -167,6 +160,9 @@ Supported debug views:
 - `flow-direction`
 - `flow-accumulation`
 - `stream-power`
+- `river-network`
+- `river-width`
+- `water-presence`
 - `wetness`
 - `deposition`
 - `material`
@@ -191,6 +187,9 @@ Useful run commands:
 
 ```sh
 ./build/dev/projects/terrain_lab/terrain_lab --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --debug-view river-network --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --debug-view river-width --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --debug-view water-presence --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view flow-accumulation --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view feature-graph --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view driver --frames 300 --width 1280 --height 720
@@ -206,6 +205,9 @@ Useful local review output commands:
 ```sh
 mkdir -p outputs/terrain_lab
 ./build/dev/projects/terrain_lab/terrain_lab --headless --width 1280 --height 720 --output outputs/terrain_lab/final.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view river-network --width 1280 --height 720 --output outputs/terrain_lab/river-network.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view river-width --width 1280 --height 720 --output outputs/terrain_lab/river-width.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view water-presence --width 1280 --height 720 --output outputs/terrain_lab/water-presence.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-camera-preset profile --width 1280 --height 720 --output outputs/terrain_lab/final-profile.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view feature-graph --width 1280 --height 720 --output outputs/terrain_lab/feature-graph.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view channel --width 1280 --height 720 --output outputs/terrain_lab/channel.png
@@ -229,15 +231,16 @@ mkdir -p outputs/terrain_lab
 ## Status
 
 Current status: CPU field foundation plus a minimal standalone visual workbench.
-The default generator now targets an arid mesa canyon with mesa benches, canyon
-rims, dry washes, talus/scree response, sparse scrub density, and low wetness.
-The deterministic four-basin temperate watershed, desert dunes, and alpine
-glacial valley sentinels remain available as explicit slice fixtures. The
+The default generator now targets a temperate mountain river/watershed reference
+so drainage hierarchy can mature before canyon-specific styling. The arid mesa
+canyon, desert dunes, and alpine glacial valley sentinels remain available as
+explicit slice fixtures. The
 workbench has deterministic mesh extraction, field/debug shading, windowed and
 headless render paths, PNG smoke coverage, shader/debug-view sync tests, and
 analysis-only drainage guardrails.
 
 Still out of scope for the current slice: live ImGui editing, runtime
-regeneration, a true drainage graph with stream connectivity guarantees, tiled
-or clipmap terrain rendering, full foliage assets, atmosphere-backed lighting,
-and adapters into `planet`, `ocean`, or `procedural_terrain`.
+regeneration, particle hydraulic erosion, meander simulation, lakes, animated
+water rendering, tiled or clipmap terrain rendering, full foliage assets,
+atmosphere-backed lighting, and adapters into `planet`, `ocean`, or
+`procedural_terrain`.

@@ -174,7 +174,31 @@ Success criteria:
 - future foliage renderer requirements are captured as data contracts rather
   than hidden in rendering code.
 
-## Phase 6: Additional Terrain Slices
+## Phase 6: River/Drainage Network Reference
+
+Status: active.
+
+Goal: make rivers the shared drainage abstraction before continuing canyon
+styling.
+
+Deliverables:
+
+- discharge proxy from runoff-weighted contributing area;
+- stream order;
+- river/channel width and valley width fields;
+- slice-specific water presence;
+- debug views for river network, width, and water presence;
+- tests proving stream hierarchy, width variation, and wet/dry slice behavior.
+
+Success criteria:
+
+- temperate watershed reads as a river/drainage reference without needing a
+  separate canyon interpretation;
+- higher-order/discharge channels are wider than tributaries on average;
+- arid canyon reuses the river hierarchy as dry washes with zero water presence;
+- dunes and alpine remain valid sentinel slices without becoming water-centric.
+
+## Phase 7: Additional Terrain Slices
 
 Status: active as sentinel slices for model pressure.
 
@@ -205,23 +229,19 @@ same mechanism.
 
 Current implementation notes:
 
-- arid mesa canyon is the default slice and owns the first non-watershed
-  terrain identity;
+- temperate mountain watershed is the default slice while the river hierarchy is
+  being established;
+- arid mesa canyon remains the first dry/incised consumer of river fields;
 - generated fields include mesa/rim/divide influence, dry canyon and side-wash
   channels, low wetness, no snow, rock/scree/soil-heavy material masks, sparse
   scrub density, and very low tree density;
 - desert dunes use explicit wind/sand/relief driver fields instead of locally
   authored dune streaks;
-- arid mesa canyon should replace its visible-patch line guide with a hidden
-  regional drainage-network driver, then crop a local canyon window from that
-  system;
-- arid canyon routing should move from D8-shaped raster channels toward
-  continuous flow directions and traced trunk/tributary corridors, while keeping
-  processed noise and Voronoi-like fields as support layers rather than primary
-  canyon skeletons;
+- arid canyon routing should reuse shared river hierarchy and derive dry wash,
+  canyon floor, wall width, and incision from discharge/order/slope/resistance;
 - alpine glacial valley now seeds explicit base, relief, process, and
   full-patch selection drivers before feature masks and process response;
-- hydrology remains analysis-only and avoids a toy erosion solver;
+- hydrology is now structure-first but still avoids a toy erosion solver;
 - the material vocabulary now includes sand for wind-shaped terrain, while snow
   continues to stand in for snow/ice in the glacial sentinel.
 
@@ -239,7 +259,7 @@ Success criteria:
 - shared fields remain useful across all four sentinels without becoming
   water-centric.
 
-## Phase 7: Integration Adapters
+## Phase 8: Integration Adapters
 
 Goal: let mature Terrain Lab fields feed the rest of Cubey.
 

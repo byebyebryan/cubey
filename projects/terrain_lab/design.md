@@ -152,18 +152,22 @@ The feature graph does not have to be geologically complete. It only has to
 carry enough structure that valleys, ridges, water, and materials line up in the
 rendered result.
 
-The arid core should be regional and network-first. It should build a hidden
-macro region larger than the final view, route drainage through base elevation,
-runoff, relief, and erosion-resistance fields, then select a local canyon window
-from that network. Canyon floors, tributaries, walls, rims, benches, and talus
-should come from channel accumulation, stream power, incision depth, and
-distance-to-network rather than from an authored line across the visible patch.
-The current arid correction targets the routing layer, not a wholesale driver
-swap. Eight-neighbor raster routing is allowed as a compatibility/debug output,
-but it should not be the visible canyon skeleton because grid directions create
-straight sections and sharp diagonal/orthogonal turns. The preferred driver is a
-continuous drainage field and extracted trunk/tributary corridors over the
-regional macro terrain.
+The shared drainage core should become river-first. It should derive a river
+network from base elevation, runoff, relief, and erosion-resistance fields, then
+expose discharge, stream order, channel width, valley width, and water presence
+as named fields. Canyons should consume that network as an arid, high-incision
+variant rather than own a separate canyon-specific skeleton.
+
+The arid core should still be regional and network-first. It should build a
+hidden macro region larger than the final view, route drainage through base
+elevation, runoff, relief, and erosion-resistance fields, then select a local
+canyon window from that network. Canyon floors, tributaries, walls, rims,
+benches, and talus should come from river hierarchy, stream power, incision
+depth, and distance-to-network rather than from an authored line across the
+visible patch. Eight-neighbor raster routing is allowed as a compact
+compatibility/debug output, but it should not be the visible river or canyon
+skeleton because grid directions create straight sections and sharp
+diagonal/orthogonal turns.
 
 Processed noise and Voronoi-like fields may support uplift, runoff, lithology,
 resistance, fracture tendency, basin partitioning, and sidewall detail. They are
@@ -172,17 +176,16 @@ research context for branching structures, but they should not become the arid
 canyon driver unless constrained by drainage, slope, source, and base-level
 rules.
 
-The temperate watershed fixture emits four deterministic basin ids plus soft
-divide and channel-guide influences. Both paths recompute stronger channel
-influence from initial flow accumulation, so guide channels bias drainage
-instead of single-handedly carving every valley. Those fields guide structure,
-process, material, and diagnostic rendering, while richer drainage connectivity
-remains a later refinement.
+The temperate watershed fixture is the first river reference slice. It emits
+four deterministic basin ids plus soft divide and channel-guide influences, then
+derives river hierarchy from the routed drainage. Those fields should guide
+structure, process, material, wetness, vegetation, and diagnostic rendering.
 
 The arid, dunes, and alpine sentinels now have explicit driver fields. They are
 still visual pressure tests rather than production terrain systems, but the
 driver view should show coherent terrain causes instead of post-hoc height or
-feature fallback.
+feature fallback. Dunes keep hydrology diagnostic; alpine can use river fields
+as support until meltwater becomes a focused target.
 
 The sentinel slice set should prevent overfitting this model to canyon terrain.
 The first representative set is:
@@ -216,14 +219,15 @@ process-informed approximations rather than expensive simulations:
 Each process pass should expose a debug field or contribution so the project can
 tell whether the final terrain shape is caused by structure, process, or detail.
 
-Hydrology stays analysis-first until drainage topology is strong. The project
-may compute flow directions, accumulation, stream power, sink diagnostics, and
-channel/non-channel comparisons for every slice. It should not add particle
-droplet solvers, discharge/momentum simulation, or destructive hydraulic
-erosion as default terrain shaping until those diagnostics are already credible
-and a sandboxed prototype visibly improves multiple slices. A weak solver would
-be worse than no solver because it would make downstream materials and biomes
-trust false river-like artifacts.
+Hydrology is now structure-first but still simulation-light. The project may
+compute flow directions, accumulation, discharge proxy, stream order, stream
+power, sink diagnostics, channel width, water presence, and channel/non-channel
+comparisons for every slice. It should not add particle droplet solvers,
+discharge/momentum simulation, or destructive hydraulic erosion as default
+terrain shaping until those diagnostics are already credible and a sandboxed
+prototype visibly improves multiple slices. A weak solver would be worse than no
+solver because it would make downstream materials and biomes trust false
+river-like artifacts.
 
 ### Detail Layer
 
