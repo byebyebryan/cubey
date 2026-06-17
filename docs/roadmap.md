@@ -17,6 +17,8 @@ framework layers and foundation rules,
 `cubey::render` contracts above Vulkan,
 [render graph direction](architecture/render-graph.md) for current and future
 pass/resource graph vocabulary,
+[procedural generation foundation](architecture/procedural-generation.md) for
+shared source-field, noise, and operator direction,
 [host and engine](architecture/host-engine.md) for the GLFW/windowed host and
 scoped engine ownership path, and
 [threading and async design](architecture/threading-and-async.md) for the
@@ -128,6 +130,12 @@ Current checkpoint:
 - Reusable `cubey::math` wraps GLM matrix/vector/quaternion types and the
   current Vulkan transform/projection conventions used by the shared
   transform/camera helpers and cube examples.
+- Reusable `cubey::procedural` now provides the first CPU-side procedural
+  foundation slice: local 2D scalar fields, centered grid sampling,
+  deterministic 2D value-noise/FBM/ridged-FBM, scalar operators, field
+  normalization, and weighted 3x3 blur. Terrain Lab consumes the shared
+  scalar/noise helpers so future terrain, planet, ocean-adjacent, cloud, and
+  fluid drivers do not grow separate copies of the same source-field utilities.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets, including shared include
   directories and dependency tracking. Reusable `cubey::vulkan::read_spirv_file`

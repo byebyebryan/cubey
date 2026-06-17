@@ -53,6 +53,33 @@ hydrology, start with:
 The first integration pass should favor small, deterministic, testable utilities
 over a full node graph, full hydraulic simulator, or heavy erosion pipeline.
 
+## Current Foundation Slice
+
+The first shared CPU-side layer lives under `include/cubey/procedural` and is
+compiled into `cubey::core`:
+
+- `Grid2DDesc` and `ScalarField2D` provide local 2D scalar-field storage,
+  centered sample coordinates, bounds-checked indexing, and field summaries.
+- `operators.h` provides scalar helpers (`saturate`, `lerp`, `smoothstep`) plus
+  first-pass field operators (`box_blur_3x3`, `normalize_to_unit`).
+- `noise.h` provides deterministic 2D hash/value-noise, FBM, and ridged FBM
+  with explicit octave/lacunarity/gain/seed-stride configuration.
+
+Terrain Lab now consumes this shared layer for its scalar helpers and
+deterministic FBM source. That adoption is intentionally conservative: it
+removes duplicated hash/noise/operator code without changing the visual driver
+model in the same batch.
+
+Next shared candidates should come from repeated project-local code or from a
+specific reference-backed driver need, not from speculative API surface. Likely
+near-term candidates are:
+
+- reusable slope/curvature and local-relief operators;
+- terrain-oriented ridge/terrace/remap composition helpers;
+- flow-routing and accumulation data structures after a deeper SimpleHydrology
+  pass;
+- explicit source-field recipes for mountain range, river, and dune drivers.
+
 ## Adoption Rule
 
 Promote a helper from a project into `cubey::procedural` only when it is:
