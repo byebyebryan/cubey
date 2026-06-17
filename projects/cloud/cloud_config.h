@@ -108,10 +108,12 @@ enum class CloudsDebugView : std::uint32_t {
     DistanceRegime = 30,
     LocalAlpha = 31,
     OrbitAlpha = 32,
-    OrbitWeather = 33,
+    OrbitCoverage = 33,
+    OrbitDetail = 34,
+    OrbitHull = 35,
 };
 
-inline constexpr std::array<CloudsDebugView, 29> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 31> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
     CloudsDebugView::Weather,      CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting,
@@ -132,7 +134,9 @@ inline constexpr std::array<CloudsDebugView, 29> kCloudsDebugViews{
     CloudsDebugView::DistanceRegime,
     CloudsDebugView::LocalAlpha,
     CloudsDebugView::OrbitAlpha,
-    CloudsDebugView::OrbitWeather,
+    CloudsDebugView::OrbitCoverage,
+    CloudsDebugView::OrbitDetail,
+    CloudsDebugView::OrbitHull,
 };
 
 struct CloudsTimeConfig {

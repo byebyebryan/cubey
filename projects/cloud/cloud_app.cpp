@@ -105,7 +105,7 @@ constexpr std::array<CloudsDistanceMode, 4> kCloudDistanceModes{
     CloudsDistanceMode::OrbitShell,
     CloudsDistanceMode::BlendDebug,
 };
-constexpr std::array<CloudsDebugView, 29> kCloudDebugViews{
+constexpr std::array<CloudsDebugView, 31> kCloudDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
     CloudsDebugView::Lighting,     CloudsDebugView::AmbientLight,
@@ -124,7 +124,9 @@ constexpr std::array<CloudsDebugView, 29> kCloudDebugViews{
     CloudsDebugView::DistanceRegime,
     CloudsDebugView::LocalAlpha,
     CloudsDebugView::OrbitAlpha,
-    CloudsDebugView::OrbitWeather,
+    CloudsDebugView::OrbitCoverage,
+    CloudsDebugView::OrbitDetail,
+    CloudsDebugView::OrbitHull,
 };
 
 struct CloudFrameUniforms {

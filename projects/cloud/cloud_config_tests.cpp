@@ -146,10 +146,18 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include local alpha diagnostics");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::OrbitAlpha) ==
-                cubey::projects::cloud::CloudsDebugView::OrbitWeather,
-            "cloud debug view should include orbit weather diagnostics");
+                cubey::projects::cloud::CloudsDebugView::OrbitCoverage,
+            "cloud debug view should include orbit coverage diagnostics");
     require(cubey::projects::cloud::next_clouds_debug_view(
-                cubey::projects::cloud::CloudsDebugView::OrbitWeather) ==
+                cubey::projects::cloud::CloudsDebugView::OrbitCoverage) ==
+                cubey::projects::cloud::CloudsDebugView::OrbitDetail,
+            "cloud debug view should include orbit detail diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::OrbitDetail) ==
+                cubey::projects::cloud::CloudsDebugView::OrbitHull,
+            "cloud debug view should include orbit hull diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::OrbitHull) ==
                 cubey::projects::cloud::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::cloud::clouds_debug_view_from_string("cloud-alpha") ==
@@ -216,8 +224,17 @@ void test_names_and_next_debug_view() {
                 cubey::projects::cloud::CloudsDebugView::OrbitAlpha,
             "orbit alpha debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-weather") ==
-                cubey::projects::cloud::CloudsDebugView::OrbitWeather,
-            "orbit weather debug view should parse");
+                cubey::projects::cloud::CloudsDebugView::OrbitCoverage,
+            "orbit weather debug alias should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-coverage") ==
+                cubey::projects::cloud::CloudsDebugView::OrbitCoverage,
+            "orbit coverage debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-detail") ==
+                cubey::projects::cloud::CloudsDebugView::OrbitDetail,
+            "orbit detail debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-hull") ==
+                cubey::projects::cloud::CloudsDebugView::OrbitHull,
+            "orbit hull debug view should parse");
 }
 
 void test_run_config_mapping() {

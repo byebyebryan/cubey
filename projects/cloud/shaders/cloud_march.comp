@@ -44,6 +44,15 @@ struct DensitySample {
     float height_fraction;
 };
 
+struct OrbitWeatherSample {
+    float coverage;
+    float detail;
+    float hull;
+    float cloud_type;
+    float weather_edge;
+    float height_multiplier;
+};
+
 struct MarchResult {
     vec3 radiance;
     float transmittance;
@@ -107,6 +116,60 @@ float cloud_density_gradient(float height_fraction, float cloud_type) {
                     cumulus * CUMULUS_GRADIENT;
     return smoothstep(gradient.x, gradient.y, height_fraction) -
            smoothstep(gradient.z, gradient.w, height_fraction);
+}
+
+float cloud_coverage_modulation(float coverage, float detail, float filter_width) {
+    float width = clamp(filter_width, 0.001, 1.0);
+    float f = 1.0 - clamp(coverage, 0.0, 1.0);
+    return clamp(cloud_remap(detail * (1.0 - width) + width, f, f + width, 0.0, 1.0),
+                 0.0, 1.0);
+}
+
+vec4 cloud_orbit_triplanar_weather(vec3 planet_normal, float scale, vec2 wind) {
+    vec3 n = normalize(planet_normal);
+    vec3 weights = pow(abs(n), vec3(4.0));
+    weights /= max(weights.x + weights.y + weights.z, 0.0001);
+    vec2 uv_x = n.yz * scale + vec2(0.17, 0.61) + wind;
+    vec2 uv_y = n.xz * scale + vec2(0.53, 0.23) + wind.yx;
+    vec2 uv_z = n.xy * scale + vec2(0.31, 0.79) - wind;
+    vec4 sx = texture(weather_texture, uv_x);
+    vec4 sy = texture(weather_texture, uv_y);
+    vec4 sz = texture(weather_texture, uv_z);
+    return sx * weights.x + sy * weights.y + sz * weights.z;
+}
+
+OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
+    float height_fraction = cloud_height_fraction(position);
+    if (height_fraction <= 0.0 || height_fraction >= 1.0) {
+        return OrbitWeatherSample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    }
+
+    vec3 normal = normalize(position - cloud_sphere_center());
+    float wind_fraction =
+        params.weather.w / max(cloud_planet_radius() * 2.0 * CLOUD_PI, 1.0);
+    vec2 wind = WIND_DIRECTION.xz * wind_fraction;
+    vec4 broad = cloud_orbit_triplanar_weather(normal, 0.055, wind);
+    vec4 detail = cloud_orbit_triplanar_weather(normal, 0.18, wind * 2.3 + vec2(0.19, -0.11));
+
+    float global_coverage = clamp(params.weather.x, 0.0, 1.0);
+    float softness = clamp(params.sampling_options.z, 0.02, 0.60);
+    float broad_field = clamp(mix(broad.r, broad.a, 0.28), 0.0, 1.0);
+    float threshold = clamp(1.0 - global_coverage * 0.92, 0.02, 0.98);
+    float coverage = smoothstep(threshold - softness * 0.36,
+                                threshold + softness * 0.54,
+                                broad_field);
+    coverage = mix(coverage, broad_field * global_coverage, 0.16);
+
+    float detail_field = clamp(mix(detail.b, detail.r, 0.35), 0.0, 1.0);
+    float cloud_type = clamp(mix(broad.g, detail.g, 0.25), 0.0, 1.0);
+    float height_multiplier = max(cloud_density_gradient(height_fraction, cloud_type), 0.0);
+    float hull = cloud_coverage_modulation(coverage * height_multiplier, detail_field, 0.58);
+    return OrbitWeatherSample(clamp(coverage, 0.0, 1.0),
+                              detail_field,
+                              clamp(hull, 0.0, 1.0),
+                              cloud_type,
+                              clamp(detail.b, 0.0, 1.0),
+                              height_multiplier);
 }
 
 vec2 cloud_project_uv(vec3 position) {
@@ -661,7 +724,9 @@ void main() {
                        debug_view == CLOUD_DEBUG_DISTANCE_REGIME;
     bool needs_orbit = orbit_blend > 0.001 ||
                        debug_view == CLOUD_DEBUG_ORBIT_ALPHA ||
-                       debug_view == CLOUD_DEBUG_ORBIT_WEATHER ||
+                       debug_view == CLOUD_DEBUG_ORBIT_COVERAGE ||
+                       debug_view == CLOUD_DEBUG_ORBIT_DETAIL ||
+                       debug_view == CLOUD_DEBUG_ORBIT_HULL ||
                        debug_view == CLOUD_DEBUG_DISTANCE_REGIME;
     MarchResult local_result = cloud_empty_result();
     MarchResult orbit_result = cloud_empty_result();
@@ -682,10 +747,18 @@ void main() {
         debug_color = vec3(local_result.alpha);
     } else if (debug_view == CLOUD_DEBUG_ORBIT_ALPHA) {
         debug_color = vec3(orbit_result.alpha);
-    } else if (debug_view == CLOUD_DEBUG_ORBIT_WEATHER) {
+    } else if (debug_view == CLOUD_DEBUG_ORBIT_COVERAGE ||
+               debug_view == CLOUD_DEBUG_ORBIT_DETAIL ||
+               debug_view == CLOUD_DEBUG_ORBIT_HULL) {
         vec3 mid = origin + direction * mix(start_t, end_t, 0.5);
-        DensitySample sample_data = cloud_orbit_density_sample(mid);
-        debug_color = vec3(sample_data.weather_bias);
+        OrbitWeatherSample sample_data = cloud_orbit_weather_sample(mid);
+        if (debug_view == CLOUD_DEBUG_ORBIT_COVERAGE) {
+            debug_color = vec3(sample_data.coverage);
+        } else if (debug_view == CLOUD_DEBUG_ORBIT_DETAIL) {
+            debug_color = vec3(sample_data.detail);
+        } else {
+            debug_color = vec3(sample_data.hull);
+        }
     } else if (debug_view == CLOUD_DEBUG_VISIBLE_DENSITY ||
         debug_view == CLOUD_DEBUG_VISIBLE_CLOUD_TYPE) {
         DebugRayFields ray_fields =

@@ -51,10 +51,15 @@ capture high-oblique-distance-regime --cloud-camera-mode high-oblique \
     --debug-view distance-regime
 capture high-oblique-local-alpha --cloud-camera-mode high-oblique --debug-view local-alpha
 capture high-oblique-orbit-alpha --cloud-camera-mode high-oblique --debug-view orbit-alpha
-capture high-oblique-orbit-weather --cloud-camera-mode high-oblique --debug-view orbit-weather
+capture high-oblique-orbit-coverage --cloud-camera-mode high-oblique \
+    --debug-view orbit-coverage
+capture high-oblique-orbit-detail --cloud-camera-mode high-oblique --debug-view orbit-detail
+capture high-oblique-orbit-hull --cloud-camera-mode high-oblique --debug-view orbit-hull
 capture orbit-distance-regime --cloud-camera-mode orbit --debug-view distance-regime
 capture orbit-alpha --cloud-camera-mode orbit --debug-view orbit-alpha
-capture orbit-weather-shell --cloud-camera-mode orbit --debug-view orbit-weather
+capture orbit-coverage --cloud-camera-mode orbit --debug-view orbit-coverage
+capture orbit-detail --cloud-camera-mode orbit --debug-view orbit-detail
+capture orbit-hull --cloud-camera-mode orbit --debug-view orbit-hull
 capture high-oblique-weather --cloud-camera-mode high-oblique --debug-view weather
 capture high-oblique-weather-bias --cloud-camera-mode high-oblique --debug-view weather-bias
 capture orbit-weather --cloud-camera-mode orbit --debug-view weather
@@ -110,7 +115,8 @@ if command -v magick >/dev/null 2>&1; then
         cloud-type density visible-density visible-cloud-type \
         metadata-alpha metadata-distance metadata-confidence steps \
         high-oblique-distance-regime high-oblique-local-alpha high-oblique-orbit-alpha \
-        orbit-distance-regime orbit-alpha orbit-weather-shell; do
+        high-oblique-orbit-coverage high-oblique-orbit-detail high-oblique-orbit-hull \
+        orbit-distance-regime orbit-alpha orbit-coverage orbit-detail orbit-hull; do
         if [[ -f "${OUT_DIR}/${name}.png" ]]; then
             crop_path="${crop_dir}/${name}-center.png"
             magick "${OUT_DIR}/${name}.png" -crop "${CENTER_CROP_GEOMETRY}" \

@@ -31,8 +31,8 @@ Current V1 scope:
 - diagnostics for weather, weather edge, weather bias, base/detail density,
   density, transmittance, cloud type, visible density/cloud type, lighting,
   shadow, cloud alpha, distance, distance regime, local/orbit alpha, orbit
-  weather, metadata distance/alpha/confidence, metadata density, steps, and
-  background.
+  coverage/detail/hull, metadata distance/alpha/confidence, metadata density,
+  steps, and background.
 
 The first target is cloud shape: raw density and final captures should show
 coherent cloud masses without relying on cache, temporal reconstruction, or
@@ -64,7 +64,9 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view distance-regime
 ./build/dev/projects/cloud/cloud --debug-view local-alpha
 ./build/dev/projects/cloud/cloud --debug-view orbit-alpha
-./build/dev/projects/cloud/cloud --debug-view orbit-weather
+./build/dev/projects/cloud/cloud --debug-view orbit-coverage
+./build/dev/projects/cloud/cloud --debug-view orbit-detail
+./build/dev/projects/cloud/cloud --debug-view orbit-hull
 ./build/dev/projects/cloud/cloud --debug-view distance
 ./build/dev/projects/cloud/cloud --debug-view metadata-distance
 ./build/dev/projects/cloud/cloud --debug-view metadata-alpha
@@ -85,7 +87,7 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --cloud-distance-mode local
 ./build/dev/projects/cloud/cloud --cloud-distance-mode orbit-shell
 ./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --debug-view distance-regime
-./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --debug-view orbit-weather
+./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --debug-view orbit-coverage
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode surface-up --output outputs/cloud-v1-surface-up.png
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode high-oblique --output outputs/cloud-v1-high-oblique.png
 projects/cloud/capture_review.sh outputs/cloud-v1-review

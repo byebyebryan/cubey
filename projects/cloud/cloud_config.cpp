@@ -351,8 +351,14 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "orbit-alpha") {
         return CloudsDebugView::OrbitAlpha;
     }
-    if (value == "orbit-weather") {
-        return CloudsDebugView::OrbitWeather;
+    if (value == "orbit-weather" || value == "orbit-coverage") {
+        return CloudsDebugView::OrbitCoverage;
+    }
+    if (value == "orbit-detail") {
+        return CloudsDebugView::OrbitDetail;
+    }
+    if (value == "orbit-hull") {
+        return CloudsDebugView::OrbitHull;
     }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
@@ -415,8 +421,12 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "local-alpha";
     case CloudsDebugView::OrbitAlpha:
         return "orbit-alpha";
-    case CloudsDebugView::OrbitWeather:
-        return "orbit-weather";
+    case CloudsDebugView::OrbitCoverage:
+        return "orbit-coverage";
+    case CloudsDebugView::OrbitDetail:
+        return "orbit-detail";
+    case CloudsDebugView::OrbitHull:
+        return "orbit-hull";
     }
     return "final";
 }
