@@ -414,16 +414,30 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
         return -0.42F;
     case CloudsCameraMode::Orbit:
     case CloudsCameraMode::OrbitTerminator:
-        return -1.08F;
+        return -glm::half_pi<float>();
     case CloudsCameraMode::Surface:
     default:
         return -0.06F;
     }
 }
 
+[[nodiscard]] float cloud_min_pitch(CloudsCameraMode mode) {
+    switch (mode) {
+    case CloudsCameraMode::Orbit:
+    case CloudsCameraMode::OrbitTerminator:
+        return -glm::half_pi<float>();
+    case CloudsCameraMode::Surface:
+    case CloudsCameraMode::SurfaceUp:
+    case CloudsCameraMode::High:
+    case CloudsCameraMode::HighOblique:
+    default:
+        return kSurfaceMinPitchRadians;
+    }
+}
+
 [[nodiscard]] float cloud_clamp_pitch(CloudsCameraMode mode, float pitch_offset) {
     const float base_pitch = cloud_camera_base_pitch(mode);
-    return std::clamp(base_pitch + pitch_offset, kSurfaceMinPitchRadians, kSurfaceMaxPitchRadians) -
+    return std::clamp(base_pitch + pitch_offset, cloud_min_pitch(mode), kSurfaceMaxPitchRadians) -
            base_pitch;
 }
 

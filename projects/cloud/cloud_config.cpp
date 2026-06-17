@@ -452,9 +452,9 @@ float clouds_default_camera_altitude_m(CloudsCameraMode mode) {
     case CloudsCameraMode::HighOblique:
         return 28000.0F;
     case CloudsCameraMode::Orbit:
-        return 3200000.0F;
+        return 730000.0F;
     case CloudsCameraMode::OrbitTerminator:
-        return 3200000.0F;
+        return 730000.0F;
     }
     return 1200.0F;
 }

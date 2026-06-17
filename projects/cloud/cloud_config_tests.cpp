@@ -350,6 +350,15 @@ void test_run_config_mapping() {
 }
 
 void test_camera_preset_defaults() {
+    require_near(cubey::projects::cloud::clouds_default_camera_altitude_m(
+                     cubey::projects::cloud::CloudsCameraMode::Orbit),
+                 730000.0F, 0.001F,
+                 "orbit default should frame the toy planet for capture review");
+    require_near(cubey::projects::cloud::clouds_default_camera_altitude_m(
+                     cubey::projects::cloud::CloudsCameraMode::OrbitTerminator),
+                 730000.0F, 0.001F,
+                 "orbit terminator default should frame the toy planet for capture review");
+
     cubey::RunConfig run_config{};
     run_config.clouds.camera_mode = "orbit-terminator";
 
@@ -412,8 +421,8 @@ void test_weather_preset_defaults() {
                  "default far shell end should be high-view scale");
     require_near(config.orbit_detail_strength, 0.18F, 0.001F,
                  "default orbit detail should suppress high-frequency erosion");
-    require_near(config.orbit_density_scale, 0.85F, 0.001F,
-                 "default orbit density should be restrained");
+    require_near(config.orbit_density_scale, 0.02F, 0.001F,
+                 "default orbit density should reveal the toy planet in orbit captures");
 
     run_config.clouds.weather_preset = "overcast";
 

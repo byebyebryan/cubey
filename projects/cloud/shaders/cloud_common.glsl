@@ -218,6 +218,42 @@ vec3 cloud_water_context(vec3 direction) {
     return max(water, vec3(0.0));
 }
 
+bool cloud_orbit_planet_background(vec3 direction, out vec3 planet_color) {
+    planet_color = vec3(0.0);
+    int camera_mode = int(params.camera_forward_mode.w + 0.5);
+    if (camera_mode < 4) {
+        return false;
+    }
+
+    float planet_near = 0.0;
+    float planet_far = 0.0;
+    vec3 origin = params.camera_position_radius.xyz;
+    if (!cloud_ray_sphere(origin, direction, cloud_planet_radius(), planet_near,
+                          planet_far) ||
+        planet_far <= 0.0) {
+        return false;
+    }
+
+    float hit_t = planet_near > 0.0 ? planet_near : planet_far;
+    vec3 surface_position = origin + direction * hit_t;
+    vec3 surface_normal = normalize(surface_position - cloud_sphere_center());
+    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
+    float light = max(dot(surface_normal, sun_dir), 0.0);
+    float day = smoothstep(-0.08, 0.22, dot(surface_normal, sun_dir)) *
+                params.sun_direction_intensity.w;
+
+    vec3 deep_ocean = vec3(0.010, 0.085, 0.235);
+    vec3 mid_ocean = vec3(0.020, 0.180, 0.420);
+    vec3 ocean = mix(deep_ocean, mid_ocean, 0.58 + 0.22 * surface_normal.y);
+
+    float rim = pow(1.0 - max(dot(-direction, surface_normal), 0.0), 2.4);
+    vec3 rim_tint = vec3(0.18, 0.42, 0.74) * rim * 0.18;
+    float ambient = 0.16 + 0.26 * day;
+    float diffuse = (0.18 + 0.82 * light) * day;
+    planet_color = ocean * (ambient + diffuse) + rim_tint;
+    return true;
+}
+
 vec3 cloud_background(vec3 direction) {
     vec3 up = cloud_planet_up();
     float view_height = clamp(dot(direction, up), -1.0, 1.0);
@@ -227,6 +263,10 @@ vec3 cloud_background(vec3 direction) {
     if (background_mode == CLOUD_BACKGROUND_WATER_CONTEXT && view_height < -0.015) {
         vec3 water = cloud_water_context(direction);
         sky = mix(water, sky, smoothstep(-0.075, 0.045, view_height));
+    }
+    vec3 planet = vec3(0.0);
+    if (cloud_orbit_planet_background(direction, planet)) {
+        sky = planet;
     }
     return sky;
 }
