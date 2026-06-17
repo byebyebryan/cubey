@@ -53,6 +53,19 @@ hydrology, start with:
 The first integration pass should favor small, deterministic, testable utilities
 over a full node graph, full hydraulic simulator, or heavy erosion pipeline.
 
+For coherent noise specifically, Cubey should use FastNoiseLite as the first
+shared dependency. It is small, MIT-licensed, header-only for C++, has matching
+GLSL/HLSL ports for later shader parity, and covers the immediate source-field
+needs: OpenSimplex, Perlin, value, cellular/Voronoi, fractal variants, and
+domain warping. FastNoise2 remains worth a later spike if CPU-side field
+generation needs SIMD throughput or a node-graph representation, but it is too
+large for the first foundation step.
+
+The initial FastNoiseLite integration should be wrapped by `cubey::procedural`
+instead of exposed directly to projects. Existing hash/value-noise functions
+remain available as a legacy deterministic backend so old captures and tests do
+not silently change.
+
 ## Current Foundation Slice
 
 The first shared CPU-side layer lives under `include/cubey/procedural` and is
@@ -69,6 +82,11 @@ Terrain Lab now consumes this shared layer for its scalar helpers and
 deterministic FBM source. That adoption is intentionally conservative: it
 removes duplicated hash/noise/operator code without changing the visual driver
 model in the same batch.
+
+The next noise step is to add a Cubey wrapper around FastNoiseLite and adopt it
+only through explicit project options at first. Terrain Lab's desert dune slice
+is the first pressure test because it depends heavily on coherent, warped
+source fields and has already shown the limits of one-off authored streaks.
 
 Next shared candidates should come from repeated project-local code or from a
 specific reference-backed driver need, not from speculative API surface. Likely
