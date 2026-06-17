@@ -20,6 +20,8 @@ void test_math_quaternion_helpers_match_rotation_matrices();
 void test_profile_recorder_skips_warmup_and_records_spans();
 void test_profile_recorder_writes_csv_summary_and_trace_outputs();
 void test_procedural_box_blur_preserves_dimensions_and_smooths_impulse();
+void test_procedural_coherent_noise_wraps_fastnoise_lite();
+void test_procedural_legacy_noise_golden_values_are_stable();
 void test_procedural_noise_is_deterministic_and_bounded();
 void test_procedural_scalar_field_indexes_centered_samples();
 void test_procedural_scalar_field_summarizes_and_normalizes();
@@ -134,6 +136,8 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_scalar_field_summarizes_and_normalizes),
         CUBEY_TEST(test_procedural_box_blur_preserves_dimensions_and_smooths_impulse),
         CUBEY_TEST(test_procedural_noise_is_deterministic_and_bounded),
+        CUBEY_TEST(test_procedural_legacy_noise_golden_values_are_stable),
+        CUBEY_TEST(test_procedural_coherent_noise_wraps_fastnoise_lite),
         CUBEY_TEST(test_gltf_animation_wraps_looping_playback_time),
         CUBEY_TEST(test_gltf_animation_samples_linear_translation),
         CUBEY_TEST(test_gltf_animation_samples_step_scale),

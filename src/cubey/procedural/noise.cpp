@@ -2,10 +2,167 @@
 
 #include <cubey/procedural/operators.h>
 
+#include <FastNoiseLite.h>
+
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
 namespace cubey::procedural {
+namespace {
+
+[[nodiscard]] FastNoiseLite::NoiseType to_fast_noise_type(CoherentNoiseType type) {
+    switch (type) {
+    case CoherentNoiseType::OpenSimplex2:
+        return FastNoiseLite::NoiseType_OpenSimplex2;
+    case CoherentNoiseType::OpenSimplex2S:
+        return FastNoiseLite::NoiseType_OpenSimplex2S;
+    case CoherentNoiseType::Cellular:
+        return FastNoiseLite::NoiseType_Cellular;
+    case CoherentNoiseType::Perlin:
+        return FastNoiseLite::NoiseType_Perlin;
+    case CoherentNoiseType::ValueCubic:
+        return FastNoiseLite::NoiseType_ValueCubic;
+    case CoherentNoiseType::Value:
+        return FastNoiseLite::NoiseType_Value;
+    }
+    return FastNoiseLite::NoiseType_OpenSimplex2;
+}
+
+[[nodiscard]] FastNoiseLite::FractalType to_fast_fractal_type(CoherentFractalType type) {
+    switch (type) {
+    case CoherentFractalType::None:
+        return FastNoiseLite::FractalType_None;
+    case CoherentFractalType::Fbm:
+        return FastNoiseLite::FractalType_FBm;
+    case CoherentFractalType::Ridged:
+        return FastNoiseLite::FractalType_Ridged;
+    case CoherentFractalType::PingPong:
+        return FastNoiseLite::FractalType_PingPong;
+    }
+    return FastNoiseLite::FractalType_None;
+}
+
+[[nodiscard]] FastNoiseLite::CellularDistanceFunction
+to_fast_cellular_distance(CoherentCellularDistance distance) {
+    switch (distance) {
+    case CoherentCellularDistance::Euclidean:
+        return FastNoiseLite::CellularDistanceFunction_Euclidean;
+    case CoherentCellularDistance::EuclideanSquared:
+        return FastNoiseLite::CellularDistanceFunction_EuclideanSq;
+    case CoherentCellularDistance::Manhattan:
+        return FastNoiseLite::CellularDistanceFunction_Manhattan;
+    case CoherentCellularDistance::Hybrid:
+        return FastNoiseLite::CellularDistanceFunction_Hybrid;
+    }
+    return FastNoiseLite::CellularDistanceFunction_EuclideanSq;
+}
+
+[[nodiscard]] FastNoiseLite::CellularReturnType
+to_fast_cellular_return(CoherentCellularReturn return_type) {
+    switch (return_type) {
+    case CoherentCellularReturn::CellValue:
+        return FastNoiseLite::CellularReturnType_CellValue;
+    case CoherentCellularReturn::Distance:
+        return FastNoiseLite::CellularReturnType_Distance;
+    case CoherentCellularReturn::Distance2:
+        return FastNoiseLite::CellularReturnType_Distance2;
+    case CoherentCellularReturn::Distance2Add:
+        return FastNoiseLite::CellularReturnType_Distance2Add;
+    case CoherentCellularReturn::Distance2Sub:
+        return FastNoiseLite::CellularReturnType_Distance2Sub;
+    case CoherentCellularReturn::Distance2Mul:
+        return FastNoiseLite::CellularReturnType_Distance2Mul;
+    case CoherentCellularReturn::Distance2Div:
+        return FastNoiseLite::CellularReturnType_Distance2Div;
+    }
+    return FastNoiseLite::CellularReturnType_Distance;
+}
+
+[[nodiscard]] FastNoiseLite::DomainWarpType to_fast_domain_warp_type(
+    CoherentDomainWarpType type) {
+    switch (type) {
+    case CoherentDomainWarpType::OpenSimplex2:
+        return FastNoiseLite::DomainWarpType_OpenSimplex2;
+    case CoherentDomainWarpType::OpenSimplex2Reduced:
+        return FastNoiseLite::DomainWarpType_OpenSimplex2Reduced;
+    case CoherentDomainWarpType::BasicGrid:
+        return FastNoiseLite::DomainWarpType_BasicGrid;
+    }
+    return FastNoiseLite::DomainWarpType_OpenSimplex2;
+}
+
+[[nodiscard]] FastNoiseLite::FractalType to_fast_domain_warp_fractal_type(
+    CoherentDomainWarpFractalType type) {
+    switch (type) {
+    case CoherentDomainWarpFractalType::None:
+        return FastNoiseLite::FractalType_None;
+    case CoherentDomainWarpFractalType::Progressive:
+        return FastNoiseLite::FractalType_DomainWarpProgressive;
+    case CoherentDomainWarpFractalType::Independent:
+        return FastNoiseLite::FractalType_DomainWarpIndependent;
+    }
+    return FastNoiseLite::FractalType_None;
+}
+
+[[nodiscard]] int octave_count(std::uint32_t octaves) {
+    return static_cast<int>(std::max<std::uint32_t>(octaves, 1U));
+}
+
+[[nodiscard]] FastNoiseLite make_noise(const CoherentNoiseConfig& config) {
+    FastNoiseLite noise(static_cast<int>(config.seed));
+    noise.SetFrequency(config.frequency);
+    noise.SetNoiseType(to_fast_noise_type(config.noise_type));
+    noise.SetFractalType(to_fast_fractal_type(config.fractal_type));
+    noise.SetFractalOctaves(octave_count(config.octaves));
+    noise.SetFractalLacunarity(config.lacunarity);
+    noise.SetFractalGain(config.gain);
+    noise.SetFractalWeightedStrength(config.weighted_strength);
+    noise.SetFractalPingPongStrength(config.ping_pong_strength);
+    noise.SetCellularDistanceFunction(to_fast_cellular_distance(config.cellular_distance));
+    noise.SetCellularReturnType(to_fast_cellular_return(config.cellular_return));
+    noise.SetCellularJitter(config.cellular_jitter);
+    return noise;
+}
+
+[[nodiscard]] FastNoiseLite make_domain_warp_noise(const CoherentDomainWarpConfig& config) {
+    FastNoiseLite noise(static_cast<int>(config.seed));
+    noise.SetFrequency(config.frequency);
+    noise.SetDomainWarpType(to_fast_domain_warp_type(config.warp_type));
+    noise.SetDomainWarpAmp(config.amplitude);
+    noise.SetFractalType(to_fast_domain_warp_fractal_type(config.fractal_type));
+    noise.SetFractalOctaves(octave_count(config.octaves));
+    noise.SetFractalLacunarity(config.lacunarity);
+    noise.SetFractalGain(config.gain);
+    noise.SetFractalWeightedStrength(config.weighted_strength);
+    noise.SetFractalPingPongStrength(config.ping_pong_strength);
+    return noise;
+}
+
+} // namespace
+
+float sample_coherent_noise_2d(float x, float y, const CoherentNoiseConfig& config) {
+    FastNoiseLite noise = make_noise(config);
+    return noise.GetNoise(x, y);
+}
+
+float sample_coherent_noise_3d(float x, float y, float z, const CoherentNoiseConfig& config) {
+    FastNoiseLite noise = make_noise(config);
+    return noise.GetNoise(x, y, z);
+}
+
+CoherentWarp2D domain_warp_2d(float x, float y, const CoherentDomainWarpConfig& config) {
+    FastNoiseLite noise = make_domain_warp_noise(config);
+    noise.DomainWarp(x, y);
+    return {.x = x, .y = y};
+}
+
+CoherentWarp3D domain_warp_3d(float x, float y, float z,
+                              const CoherentDomainWarpConfig& config) {
+    FastNoiseLite noise = make_domain_warp_noise(config);
+    noise.DomainWarp(x, y, z);
+    return {.x = x, .y = y, .z = z};
+}
 
 std::uint32_t hash_u32(std::int32_t x, std::int32_t y, std::uint64_t seed) {
     std::uint64_t value = seed;
