@@ -13,6 +13,8 @@ Current V1 scope:
 - spherical shell raymarch with height gradients, detail erosion, Beer
   transmittance, powder response, and a short light march;
 - world-scale weather/type sampling with separate opt-in vertical shear control;
+- sphere-continuous orbit weather coverage/detail/hull, generated from
+  planet-normal procedural fields instead of projecting the local weather map;
 - separate cloud product and composite passes declared through
   `RenderGraphBuilder`;
 - shared `clouds.*` `RunConfig` options and hand-authored ImGui controls;
@@ -95,8 +97,8 @@ DEEP=1 projects/cloud/capture_review.sh outputs/cloud-v1-review-deep
 ```
 
 `capture_review.sh` defaults to a focused shape/regime review: final camera
-views, local/orbit alpha, distance-regime checks, orbit coverage/detail/hull,
-and a small surface-local density set. `DEEP=1` adds secondary tuning captures
+views, local/orbit alpha, distance-regime checks, orbit procedural
+coverage/detail/hull, and a small surface-local density set. `DEEP=1` adds secondary tuning captures
 such as sampling comparisons, metadata, lighting breakdowns, weather-influence
 sweeps, and explicitly named `orbit-local-weather` diagnostics for the old
 surface-local weather projection. The script also writes
