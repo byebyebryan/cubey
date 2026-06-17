@@ -1664,6 +1664,10 @@ void derive_river_network_fields(TerrainLabFieldData& fields, RiverDerivationPar
     };
 }
 
+void compute_channel_distance(const TerrainLabGridDesc& desc,
+                              const std::vector<float>& channel_influence,
+                              std::vector<float>& channel_distance_m);
+
 void apply_arid_river_hierarchy_carving(const TerrainLabConfig& config, TerrainLabFieldData& fields,
                                         float arid_elevation_scale_m) {
     if (fields.max_river_width_m <= 0.0F || fields.max_valley_width_m <= 0.0F) {
@@ -1708,6 +1712,160 @@ void apply_arid_river_hierarchy_carving(const TerrainLabConfig& config, TerrainL
             saturate(std::max(fields.ridge_influence[sample], wall_band * (0.48F + order_t * 0.34F)));
         fields.divide_influence[sample] =
             saturate(std::max(fields.divide_influence[sample], wall_band * 0.26F));
+    }
+}
+
+void spread_hierarchy_field(const TerrainLabGridDesc& desc, std::vector<float>& field,
+                            std::uint32_t iterations, float neighbor_scale) {
+    for (std::uint32_t iteration = 0; iteration < iterations; ++iteration) {
+        std::vector<float> next = field;
+        for (std::uint32_t y = 0; y < desc.height; ++y) {
+            for (std::uint32_t x = 0; x < desc.width; ++x) {
+                const std::size_t sample = grid_index(x, y, desc.width);
+                for (std::uint8_t direction = 0U; direction < kFlowSinkDirection; ++direction) {
+                    std::uint32_t nx = 0;
+                    std::uint32_t ny = 0;
+                    if (!flow_neighbor(desc, x, y, direction, nx, ny)) {
+                        continue;
+                    }
+                    const std::size_t neighbor = grid_index(nx, ny, desc.width);
+                    next[sample] = std::max(next[sample], field[neighbor] * neighbor_scale);
+                }
+            }
+        }
+        field.swap(next);
+        neighbor_scale *= 0.90F;
+    }
+}
+
+void derive_arid_canyon_features_from_river_hierarchy(
+    TerrainLabFieldData& fields, AridMesaSliceFields& arid_slice) {
+    if (fields.max_river_discharge <= 0.0F || fields.max_river_width_m <= 0.0F ||
+        fields.max_valley_width_m <= 0.0F) {
+        return;
+    }
+
+    const std::size_t count = fields.sample_count();
+    std::vector<float> river_axis(count, 0.0F);
+    std::vector<float> river_hierarchy(count, 0.0F);
+    const float inv_log_max_discharge = 1.0F / std::log1p(fields.max_river_discharge);
+    const float stream_order_denominator =
+        fields.max_stream_order <= 1U ? 1.0F : static_cast<float>(fields.max_stream_order);
+    for (std::size_t sample = 0; sample < count; ++sample) {
+        const float width_t = saturate(fields.river_width_m[sample] / fields.max_river_width_m);
+        const float order_t =
+            static_cast<float>(fields.stream_order[sample]) / stream_order_denominator;
+        const float discharge_t =
+            std::log1p(fields.river_discharge[sample]) * inv_log_max_discharge;
+        river_axis[sample] =
+            saturate(smoothstep(0.04F, 0.34F, width_t) * 0.76F + order_t * 0.22F +
+                     discharge_t * 0.18F);
+        river_hierarchy[sample] =
+            saturate(river_axis[sample] * 0.58F + order_t * 0.26F + discharge_t * 0.26F);
+    }
+    widen_connected_river_activation(fields.desc, river_axis);
+    spread_hierarchy_field(fields.desc, river_hierarchy, 4U, 0.76F);
+    compute_channel_distance(fields.desc, river_axis, fields.channel_distance_m);
+    fields.max_channel_distance_m =
+        *std::max_element(fields.channel_distance_m.begin(), fields.channel_distance_m.end());
+
+    const float distance_scale_m = std::max(half_extent_x_m(fields.desc), half_extent_z_m(fields.desc));
+    for (std::size_t sample = 0; sample < count; ++sample) {
+        AridMesaSampleFeatures& features = arid_slice.features[sample];
+        AridMesaDriver& driver = arid_slice.drivers[sample];
+        const float width_t = saturate(fields.river_width_m[sample] / fields.max_river_width_m);
+        const float valley_width_t =
+            saturate(fields.valley_width_m[sample] / fields.max_valley_width_m);
+        const float order_t =
+            static_cast<float>(fields.stream_order[sample]) / stream_order_denominator;
+        const float discharge_t =
+            std::log1p(fields.river_discharge[sample]) * inv_log_max_discharge;
+        const float hierarchy = river_hierarchy[sample];
+        const float axis = river_axis[sample];
+        const float distance_m = fields.channel_distance_m[sample];
+        const float channel_width_m =
+            std::max(fields.desc.cell_size_m * 0.72F, fields.river_width_m[sample] * 1.20F);
+        const float valley_width_m =
+            std::max(fields.desc.cell_size_m * 3.0F, fields.valley_width_m[sample] * 0.92F);
+        const float incision =
+            saturate(hierarchy * 0.46F + order_t * 0.22F + discharge_t * 0.22F + width_t * 0.18F);
+        const float canyon_floor =
+            smoothstep(0.36F, 0.84F, axis) *
+            (1.0F - smoothstep(channel_width_m * 1.10F, channel_width_m * 2.85F, distance_m));
+        const float canyon_broad =
+            saturate((1.0F - smoothstep(channel_width_m * 1.55F, valley_width_m * 1.65F,
+                                         distance_m)) *
+                     (0.40F + incision * 0.50F + valley_width_t * 0.18F));
+        const float canyon_wall =
+            smoothstep(channel_width_m * 1.15F, valley_width_m * 0.54F, distance_m) *
+            (1.0F - smoothstep(valley_width_m * 0.62F, valley_width_m * 1.28F, distance_m)) *
+            smoothstep(0.12F, 0.78F, hierarchy + incision * 0.22F);
+        const float rim =
+            smoothstep(valley_width_m * 0.56F, valley_width_m * 1.10F, distance_m) *
+            (1.0F - smoothstep(valley_width_m * 1.14F, valley_width_m * 2.25F, distance_m)) *
+            smoothstep(0.20F, 0.88F, incision);
+        const float bench_phase =
+            std::sin((distance_m / std::max(fields.desc.cell_size_m * 1.5F, channel_width_m)) *
+                         3.90F +
+                     driver.bench_noise_source * 2.10F) *
+                0.5F +
+            0.5F;
+        const float bench = smoothstep(0.50F, 0.80F, bench_phase) *
+                            smoothstep(channel_width_m * 1.35F, valley_width_m * 1.22F,
+                                       distance_m) *
+                            (1.0F - smoothstep(valley_width_m * 1.35F,
+                                                valley_width_m * 2.20F, distance_m)) *
+                            smoothstep(0.18F, 0.82F, incision);
+        const float talus =
+            canyon_wall * smoothstep(0.22F, 0.76F, incision) *
+            (1.0F - smoothstep(0.70F, 1.0F, canyon_floor)) *
+            (0.62F + smoothstep(0.18F, 0.58F, valley_width_t) * 0.38F);
+        const float plateau_divide =
+            smoothstep(0.48F, 0.82F, features.plateau_influence) *
+            (1.0F - smoothstep(0.16F, 0.66F, canyon_broad));
+        const float channel = saturate(std::max(canyon_floor, axis * 0.74F));
+        const float valley = saturate(canyon_broad * 0.78F + channel * 0.18F);
+        const float wall_source = saturate(canyon_wall * 1.22F + rim * 0.20F);
+        const float ridge = saturate(wall_source * 0.92F + rim * 0.66F + bench * 0.22F +
+                                     plateau_divide * 0.54F);
+        const float divide =
+            saturate(rim * 0.84F + wall_source * 0.22F + bench * 0.24F +
+                     plateau_divide * 0.64F + (1.0F - valley) * 0.06F);
+
+        features.canyon_floor = saturate(canyon_floor);
+        features.canyon_wall = wall_source;
+        features.wash_influence = axis;
+        features.rim_influence = saturate(rim);
+        features.bench_influence = saturate(bench);
+        features.talus_influence = saturate(talus);
+        features.valley_influence = valley;
+        features.basin_influence = saturate(canyon_floor * 0.66F + canyon_broad * 0.18F);
+        features.ridge_influence = ridge;
+        features.divide_influence = divide;
+        features.channel_influence = channel;
+        features.channel_distance_m = distance_m;
+
+        driver.relief_potential =
+            saturate(ridge * 0.62F + wall_source * 0.30F + rim * 0.26F);
+        driver.process_potential =
+            saturate(channel * 0.34F + incision * 0.34F + talus * 0.16F + canyon_broad * 0.14F);
+        driver.canyon_floor_source = features.canyon_floor;
+        driver.canyon_broad_source = canyon_broad;
+        driver.canyon_wall_source = wall_source;
+        driver.wash_source = axis;
+        driver.rim_source = features.rim_influence;
+        driver.bench_source = features.bench_influence;
+        driver.talus_source = features.talus_influence;
+        driver.channel_distance_norm =
+            distance_scale_m <= 0.0F ? 0.0F : saturate(distance_m / distance_scale_m);
+
+        fields.channel_influence[sample] = channel;
+        fields.valley_influence[sample] = valley;
+        fields.basin_influence[sample] = features.basin_influence;
+        fields.ridge_influence[sample] = ridge;
+        fields.divide_influence[sample] = divide;
+        fields.driver_relief_potential[sample] = driver.relief_potential;
+        fields.driver_process_potential[sample] = driver.process_potential;
     }
 }
 
@@ -2317,6 +2475,7 @@ build_arid_regional_canyon_fields(const TerrainLabConfig& config,
     std::array<bool, 4> saw_quadrant{false, false, false, false};
     double channel_sum = 0.0;
     double strong_channel_sum = 0.0;
+    double interior_channel_sum = 0.0;
     double wall_sum = 0.0;
     double edge_channel_sum = 0.0;
     std::uint32_t channel_count = 0;
@@ -2335,8 +2494,17 @@ build_arid_regional_canyon_fields(const TerrainLabConfig& config,
             const bool edge = x < stride * 2U || y < stride * 2U ||
                               x + stride * 2U >= visible_desc.width ||
                               y + stride * 2U >= visible_desc.height;
+            const std::uint32_t edge_distance = std::min(
+                std::min(x, y),
+                std::min(visible_desc.width - 1U - x, visible_desc.height - 1U - y));
+            const float edge_distance_t =
+                static_cast<float>(edge_distance) /
+                static_cast<float>(std::max<std::uint32_t>(
+                    1U, std::min(visible_desc.width, visible_desc.height)));
+            const float interior_t = smoothstep(0.08F, 0.28F, edge_distance_t);
             channel_sum += channel;
             strong_channel_sum += smoothstep(0.52F, 0.86F, channel);
+            interior_channel_sum += channel * interior_t;
             wall_sum += wall;
             if (edge) {
                 edge_channel_sum += channel;
@@ -2370,8 +2538,9 @@ build_arid_regional_canyon_fields(const TerrainLabConfig& config,
     const std::uint32_t quadrant_count =
         static_cast<std::uint32_t>(std::count(saw_quadrant.begin(), saw_quadrant.end(), true));
 
-    return static_cast<float>((channel_sum * 0.12) + (strong_channel_sum * 0.90) +
-                              (wall_sum * 0.10) - (edge_channel_sum * 0.28)) +
+    return static_cast<float>((channel_sum * 0.08) + (strong_channel_sum * 0.62) +
+                              (interior_channel_sum * 0.54) + (wall_sum * 0.10) -
+                              (edge_channel_sum * 0.92)) +
            static_cast<float>(quadrant_count) * 18.0F + x_spread * 18.0F + y_spread * 10.0F -
            std::abs(channel_fraction - 0.12F) * 120.0F;
 }
@@ -3121,7 +3290,7 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
     const float arid_elevation_scale_m = config.elevation_scale_m * 0.62F;
     fields.drainage_region_count = 1U;
     fields.max_channel_distance_m = 0.0F;
-    const AridMesaSliceFields arid_slice = generate_arid_mesa_network_slice(config, fields.desc);
+    AridMesaSliceFields arid_slice = generate_arid_mesa_network_slice(config, fields.desc);
 
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
@@ -3249,6 +3418,7 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
                         fields.flow_accumulation, fields.stream_power, fields.max_flow_accumulation,
                         fields.max_stream_power);
     derive_river_network_fields(fields, arid_river_derivation_params(fields.desc));
+    derive_arid_canyon_features_from_river_hierarchy(fields, arid_slice);
     apply_arid_river_hierarchy_carving(config, fields, arid_elevation_scale_m);
     update_height_range(fields);
     compute_slope_and_curvature(fields.desc, fields.height_m, fields.slope, fields.curvature,
@@ -3257,6 +3427,7 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
                         fields.flow_accumulation, fields.stream_power, fields.max_flow_accumulation,
                         fields.max_stream_power);
     derive_river_network_fields(fields, arid_river_derivation_params(fields.desc));
+    derive_arid_canyon_features_from_river_hierarchy(fields, arid_slice);
 
     const float height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
     fields.max_wetness = 0.0F;
