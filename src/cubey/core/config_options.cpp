@@ -95,6 +95,10 @@ constexpr std::array<std::string_view, 2> kTerrainLabCameraPresets{
     "orbit",
     "profile",
 };
+constexpr std::array<std::string_view, 2> kTerrainLabNoiseSources{
+    "legacy-value",
+    "fastnoise-lite",
+};
 constexpr double kPlanetMaxPatchResolution = 128.0;
 constexpr double kPlanetMaxLiveLodLevel = 12.0;
 constexpr double kPlanetMaxLocalDetailLodLevels = 8.0;
@@ -120,7 +124,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 223> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 224> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -430,6 +434,10 @@ constexpr std::array<ConfigOptionDescriptor, 223> kRunConfigOptions{
            "--terrain-lab-camera-preset", "Camera Preset", "Terrain Lab",
            "Initial Terrain Lab review camera framing.", ConfigOptionType::Enum, no_range(),
            enum_choices(kTerrainLabCameraPresets)),
+    option(RunConfigOptionId::TerrainLabNoiseSource, "terrain_lab.noise_source",
+           "--terrain-lab-noise-source", "Noise Source", "Terrain Lab",
+           "Terrain Lab CPU source-field noise backend.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kTerrainLabNoiseSources)),
     option(RunConfigOptionId::AtmospherePreset, "atmosphere.preset", "--atmosphere-preset",
            "Preset", "Atmosphere", "Atmosphere preset name.", ConfigOptionType::String),
     option(RunConfigOptionId::AtmosphereTimeOfDayMode, "atmosphere.time_of_day_mode",
@@ -1247,6 +1255,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.terrain_lab.camera_preset.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.terrain_lab.camera_preset);
+    case RunConfigOptionId::TerrainLabNoiseSource:
+        return config.terrain_lab.noise_source.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain_lab.noise_source);
     case RunConfigOptionId::AtmospherePreset:
         return config.atmosphere.preset;
     case RunConfigOptionId::AtmosphereTimeOfDayMode:
@@ -1723,10 +1735,14 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainLabOptions& options) {
     adapter.writeField<std::string>("slice_preset", options.slice_preset);
+    adapter.writeField<std::string>("camera_preset", options.camera_preset);
+    adapter.writeField<std::string>("noise_source", options.noise_source);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainLabOptions& options) {
     adapter.readField<std::string>("slice_preset", options.slice_preset);
+    adapter.readField<std::string>("camera_preset", options.camera_preset);
+    adapter.readField<std::string>("noise_source", options.noise_source);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::AtmosphereOptions& options) {
@@ -2330,6 +2346,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainLabCameraPreset:
         config.terrain_lab.camera_preset = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainLabNoiseSource:
+        config.terrain_lab.noise_source = std::string(value);
         break;
     case RunConfigOptionId::AtmospherePreset:
         config.atmosphere.preset = std::string(value);

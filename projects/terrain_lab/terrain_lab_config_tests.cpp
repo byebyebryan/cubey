@@ -440,6 +440,8 @@ int main() {
             "terrain lab should default to the temperate river reference slice");
     require(defaults.camera_preset == terrain::TerrainLabCameraPreset::Orbit,
             "terrain lab should default to the orbit camera");
+    require(defaults.noise_source == terrain::TerrainLabNoiseSource::LegacyValue,
+            "terrain lab should default to the legacy value noise source");
     require(defaults.debug_view == terrain::TerrainLabDebugView::Final,
             "terrain lab should default to final debug view");
     terrain::validate_terrain_lab_config(defaults);
@@ -490,6 +492,22 @@ int main() {
     require(terrain::terrain_lab_camera_preset_from_name("profile") ==
                 terrain::TerrainLabCameraPreset::Profile,
             "terrain lab camera preset should parse profile");
+
+    require(terrain::terrain_lab_noise_source_from_name("") ==
+                terrain::TerrainLabNoiseSource::LegacyValue,
+            "empty terrain lab noise source should use legacy value noise");
+    require(terrain::terrain_lab_noise_source_from_name("legacy-value") ==
+                terrain::TerrainLabNoiseSource::LegacyValue,
+            "terrain lab noise source should parse legacy value");
+    require(terrain::terrain_lab_noise_source_from_name("legacy_value") ==
+                terrain::TerrainLabNoiseSource::LegacyValue,
+            "terrain lab noise source should accept legacy underscore alias");
+    require(terrain::terrain_lab_noise_source_from_name("fastnoise-lite") ==
+                terrain::TerrainLabNoiseSource::FastNoiseLite,
+            "terrain lab noise source should parse FastNoiseLite");
+    require(terrain::terrain_lab_noise_source_from_name("fastnoise_lite") ==
+                terrain::TerrainLabNoiseSource::FastNoiseLite,
+            "terrain lab noise source should accept FastNoiseLite underscore alias");
 
     require(terrain::terrain_lab_debug_view_from_name("") == terrain::TerrainLabDebugView::Final,
             "empty terrain lab debug view should use final");
@@ -643,12 +661,21 @@ int main() {
     }
     require(rejected, "terrain lab should reject unknown camera presets");
 
+    rejected = false;
+    try {
+        static_cast<void>(terrain::terrain_lab_noise_source_from_name("shader-noise"));
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "terrain lab should reject unknown noise sources");
+
     cubey::RunConfig run_config;
     run_config.grid.width = 65;
     run_config.grid.height = 33;
     run_config.debug_view = "wetness";
     run_config.terrain_lab.slice_preset = "temperate-mountain-rivers";
     run_config.terrain_lab.camera_preset = "profile";
+    run_config.terrain_lab.noise_source = "fastnoise-lite";
     run_config.terrain.seed = 77U;
     run_config.terrain.seed_set = true;
     run_config.terrain.cell_size = 6.0F;
@@ -666,6 +693,8 @@ int main() {
             "terrain lab should read slice preset from common run config");
     require(from_run_config.camera_preset == terrain::TerrainLabCameraPreset::Profile,
             "terrain lab should read camera preset from common run config");
+    require(from_run_config.noise_source == terrain::TerrainLabNoiseSource::FastNoiseLite,
+            "terrain lab should read noise source from common run config");
     require(from_run_config.seed == terrain::kTerrainLabDefaultSeed,
             "terrain lab should not read coast-oriented terrain seed flags");
     require_near(from_run_config.cell_size_m, terrain::kTerrainLabDefaultCellSizeMeters, 0.001F,
@@ -1612,6 +1641,24 @@ int main() {
             "terrain lab dunes drainage analysis should expose bounded sink samples");
     require(dunes_summary.sink_sample_ratio > 0.0F && dunes_summary.sink_sample_ratio < 0.50F,
             "terrain lab dunes drainage analysis should avoid sink-dominated terrain");
+
+    terrain::TerrainLabConfig fastnoise_dunes_config = dunes_config;
+    fastnoise_dunes_config.noise_source = terrain::TerrainLabNoiseSource::FastNoiseLite;
+    const terrain::TerrainLabFieldData fastnoise_dunes_fields =
+        terrain::generate_terrain_lab_fields(fastnoise_dunes_config);
+    terrain::validate_terrain_lab_fields(fastnoise_dunes_fields);
+    require_slice_driver_guardrails(fastnoise_dunes_fields,
+                                    "terrain lab FastNoiseLite dunes sentinel");
+    double fastnoise_dune_driver_delta_sum = 0.0;
+    for (std::size_t index = 0; index < dunes_fields.sample_count(); ++index) {
+        fastnoise_dune_driver_delta_sum += std::abs(
+            static_cast<double>(fastnoise_dunes_fields.driver_relief_potential[index]) -
+            static_cast<double>(dunes_fields.driver_relief_potential[index]));
+    }
+    const float fastnoise_dune_mean_driver_delta = static_cast<float>(
+        fastnoise_dune_driver_delta_sum / static_cast<double>(dunes_fields.sample_count()));
+    require(fastnoise_dune_mean_driver_delta > 0.01F,
+            "terrain lab FastNoiseLite dunes source should differ from legacy value noise");
 
     terrain::TerrainLabConfig glacial_config = small;
     glacial_config.slice_preset = terrain::TerrainLabSlicePreset::AlpineGlacialValley;

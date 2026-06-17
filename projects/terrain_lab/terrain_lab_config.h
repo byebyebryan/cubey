@@ -38,6 +38,16 @@ inline constexpr std::array<TerrainLabCameraPreset, 2> kTerrainLabCameraPresets{
     TerrainLabCameraPreset::Profile,
 };
 
+enum class TerrainLabNoiseSource : std::uint32_t {
+    LegacyValue = 0,
+    FastNoiseLite = 1,
+};
+
+inline constexpr std::array<TerrainLabNoiseSource, 2> kTerrainLabNoiseSources{
+    TerrainLabNoiseSource::LegacyValue,
+    TerrainLabNoiseSource::FastNoiseLite,
+};
+
 enum class TerrainLabDebugView : std::uint32_t {
     Final = 0,
     Height = 1,
@@ -114,6 +124,7 @@ struct TerrainLabConfig {
     float detail_strength = kTerrainLabDefaultDetailStrength;
     TerrainLabSlicePreset slice_preset = TerrainLabSlicePreset::TemperateMountainRivers;
     TerrainLabCameraPreset camera_preset = TerrainLabCameraPreset::Orbit;
+    TerrainLabNoiseSource noise_source = TerrainLabNoiseSource::LegacyValue;
     TerrainLabDebugView debug_view = TerrainLabDebugView::Final;
 
     friend bool operator==(const TerrainLabConfig&, const TerrainLabConfig&) = default;
@@ -199,6 +210,16 @@ struct TerrainLabConfig {
     return "orbit";
 }
 
+[[nodiscard]] inline const char* terrain_lab_noise_source_name(TerrainLabNoiseSource source) {
+    switch (source) {
+    case TerrainLabNoiseSource::LegacyValue:
+        return "legacy-value";
+    case TerrainLabNoiseSource::FastNoiseLite:
+        return "fastnoise-lite";
+    }
+    return "legacy-value";
+}
+
 [[nodiscard]] inline bool terrain_lab_name_matches(std::string_view value,
                                                    std::string_view canonical) {
     if (value.size() != canonical.size()) {
@@ -258,6 +279,19 @@ terrain_lab_camera_preset_from_name(std::string_view name) {
     throw std::runtime_error("unknown terrain lab camera preset: " + std::string(name));
 }
 
+[[nodiscard]] inline TerrainLabNoiseSource terrain_lab_noise_source_from_name(
+    std::string_view name) {
+    if (name.empty()) {
+        return TerrainLabNoiseSource::LegacyValue;
+    }
+    for (const TerrainLabNoiseSource source : kTerrainLabNoiseSources) {
+        if (terrain_lab_name_matches(name, terrain_lab_noise_source_name(source))) {
+            return source;
+        }
+    }
+    throw std::runtime_error("unknown terrain lab noise source: " + std::string(name));
+}
+
 [[nodiscard]] inline TerrainLabDebugView next_terrain_lab_debug_view(TerrainLabDebugView view) {
     for (std::size_t index = 0; index < kTerrainLabDebugViews.size(); ++index) {
         if (kTerrainLabDebugViews[index] == view) {
@@ -306,6 +340,7 @@ inline void validate_terrain_lab_config(const TerrainLabConfig& config) {
     terrain.debug_view = terrain_lab_debug_view_from_name(config.debug_view);
     terrain.slice_preset = terrain_lab_slice_preset_from_name(config.terrain_lab.slice_preset);
     terrain.camera_preset = terrain_lab_camera_preset_from_name(config.terrain_lab.camera_preset);
+    terrain.noise_source = terrain_lab_noise_source_from_name(config.terrain_lab.noise_source);
     validate_terrain_lab_config(terrain);
     return terrain;
 }

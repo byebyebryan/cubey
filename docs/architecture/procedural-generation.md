@@ -75,18 +75,15 @@ compiled into `cubey::core`:
   centered sample coordinates, bounds-checked indexing, and field summaries.
 - `operators.h` provides scalar helpers (`saturate`, `lerp`, `smoothstep`) plus
   first-pass field operators (`box_blur_3x3`, `normalize_to_unit`).
-- `noise.h` provides deterministic 2D hash/value-noise, FBM, and ridged FBM
+- `noise.h` provides Cubey-wrapped FastNoiseLite coherent noise/domain-warp
+  sampling plus deterministic legacy 2D hash/value-noise, FBM, and ridged FBM
   with explicit octave/lacunarity/gain/seed-stride configuration.
 
 Terrain Lab now consumes this shared layer for its scalar helpers and
-deterministic FBM source. That adoption is intentionally conservative: it
-removes duplicated hash/noise/operator code without changing the visual driver
-model in the same batch.
-
-The next noise step is to add a Cubey wrapper around FastNoiseLite and adopt it
-only through explicit project options at first. Terrain Lab's desert dune slice
-is the first pressure test because it depends heavily on coherent, warped
-source fields and has already shown the limits of one-off authored streaks.
+deterministic FBM source. It also exposes an opt-in FastNoiseLite backend for
+the desert dune source driver. That adoption remains intentionally
+conservative: default captures keep the legacy backend, while the new coherent
+noise path can be inspected explicitly.
 
 Next shared candidates should come from repeated project-local code or from a
 specific reference-backed driver need, not from speculative API surface. Likely

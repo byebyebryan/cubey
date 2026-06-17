@@ -308,6 +308,35 @@ using cubey::procedural::smoothstep;
     return cubey::procedural::fbm_2d(x, z, seed, {.octaves = octaves});
 }
 
+[[nodiscard]] std::int32_t coherent_noise_seed(std::uint64_t seed) {
+    return static_cast<std::int32_t>(seed & 0x7fff'ffffULL);
+}
+
+[[nodiscard]] float dune_source_fbm(float x, float z, std::uint64_t seed,
+                                    std::uint32_t octaves,
+                                    const TerrainLabConfig& config) {
+    if (config.noise_source != TerrainLabNoiseSource::FastNoiseLite) {
+        return fbm(x, z, seed, octaves);
+    }
+    return cubey::procedural::sample_coherent_noise_2d(
+        x, z,
+        {
+            .seed = coherent_noise_seed(seed),
+            .frequency = 1.0F,
+            .noise_type = cubey::procedural::CoherentNoiseType::OpenSimplex2,
+            .fractal_type = cubey::procedural::CoherentFractalType::Fbm,
+            .octaves = octaves,
+            .lacunarity = 2.03F,
+            .gain = 0.52F,
+        });
+}
+
+[[nodiscard]] float dune_source_unit_fbm(float x, float z, std::uint64_t seed,
+                                         std::uint32_t octaves,
+                                         const TerrainLabConfig& config) {
+    return dune_source_fbm(x, z, seed, octaves, config) * 0.5F + 0.5F;
+}
+
 [[nodiscard]] float half_extent_x_m(const TerrainLabGridDesc& desc) {
     return static_cast<float>(desc.width - 1U) * desc.cell_size_m * 0.5F;
 }
@@ -469,41 +498,52 @@ void assign_driver_fields(TerrainLabFieldData& fields, std::size_t sample,
     const float downwind = dot(p, wind);
     const float lateral = dot(p, cross);
     const float warp_down =
-        fbm((p.x * 1.15F) - 3.0F, (p.z * 1.15F) + 4.0F, config.seed + 3101U, 4) * 0.22F;
+        dune_source_fbm((p.x * 1.15F) - 3.0F, (p.z * 1.15F) + 4.0F, config.seed + 3101U, 4,
+                        config) *
+        0.22F;
     const float warp_lateral =
-        fbm((p.x * 1.30F) + 6.0F, (p.z * 1.30F) - 7.0F, config.seed + 3103U, 4) * 0.18F;
+        dune_source_fbm((p.x * 1.30F) + 6.0F, (p.z * 1.30F) - 7.0F, config.seed + 3103U, 4,
+                        config) *
+        0.18F;
     const float dune_u = downwind + warp_down;
     const float dune_v = lateral + warp_lateral;
 
-    const float supply_noise =
-        fbm((dune_u * 0.92F) + 1.7F, (dune_v * 0.84F) - 3.2F, config.seed + 3107U, 5) * 0.5F + 0.5F;
-    const float base_noise =
-        fbm((dune_u * 0.54F) - 2.1F, (dune_v * 0.62F) + 4.8F, config.seed + 3109U, 4) * 0.5F + 0.5F;
+    const float supply_noise = dune_source_unit_fbm((dune_u * 0.92F) + 1.7F,
+                                                   (dune_v * 0.84F) - 3.2F,
+                                                   config.seed + 3107U, 5, config);
+    const float base_noise = dune_source_unit_fbm((dune_u * 0.54F) - 2.1F,
+                                                 (dune_v * 0.62F) + 4.8F,
+                                                 config.seed + 3109U, 4, config);
     const float selection = 1.0F;
     const float base = saturate(0.34F + (supply_noise * 0.36F) + (base_noise * 0.30F));
 
-    const float mound_a =
-        fbm((dune_u * 1.26F) + 5.7F, (dune_v * 1.18F) - 6.1F, config.seed + 3127U, 5) * 0.5F + 0.5F;
-    const float mound_b =
-        fbm((dune_u * 1.72F) - 3.4F, (dune_v * 1.58F) + 7.6F, config.seed + 3129U, 4) * 0.5F + 0.5F;
+    const float mound_a = dune_source_unit_fbm((dune_u * 1.26F) + 5.7F,
+                                              (dune_v * 1.18F) - 6.1F,
+                                              config.seed + 3127U, 5, config);
+    const float mound_b = dune_source_unit_fbm((dune_u * 1.72F) - 3.4F,
+                                              (dune_v * 1.58F) + 7.6F,
+                                              config.seed + 3129U, 4, config);
     const float billow =
         smoothstep(0.20F, 0.84F, mound_a) * 0.62F + smoothstep(0.28F, 0.86F, mound_b) * 0.38F;
     const float roll_source =
-        fbm((dune_u * 1.52F) - 4.0F, (dune_v * 1.16F) + 8.5F, config.seed + 3119U, 5);
+        dune_source_fbm((dune_u * 1.52F) - 4.0F, (dune_v * 1.16F) + 8.5F,
+                        config.seed + 3119U, 5, config);
     const float roll_secondary =
-        fbm((dune_u * 2.18F) + 2.1F, (dune_v * 1.74F) - 8.2F, config.seed + 3121U, 4);
+        dune_source_fbm((dune_u * 2.18F) + 2.1F, (dune_v * 1.74F) - 8.2F,
+                        config.seed + 3121U, 4, config);
     const float soft_ridge = std::max(ridge_profile(roll_source * 1.05F, 1.72F),
                                       ridge_profile(roll_secondary * 1.16F, 1.95F) * 0.26F);
     const float relief = saturate(
         ((billow * 0.58F) + (soft_ridge * 0.27F) + (base * 0.18F) + (supply_noise * 0.10F)) *
         selection);
 
-    const float lee_source =
-        fbm((dune_u * 2.04F) - 7.0F, (dune_v * 1.84F) + 9.0F, config.seed + 3131U, 4) * 0.5F + 0.5F;
+    const float lee_source = dune_source_unit_fbm((dune_u * 2.04F) - 7.0F,
+                                                 (dune_v * 1.84F) + 9.0F,
+                                                 config.seed + 3131U, 4, config);
     const float transport = smoothstep(
         0.18F, 0.86F,
-        fbm((dune_u * 0.92F) + 8.0F, (dune_v * 1.08F) - 10.0F, config.seed + 3135U, 4) * 0.5F +
-            0.5F);
+        dune_source_unit_fbm((dune_u * 0.92F) + 8.0F, (dune_v * 1.08F) - 10.0F,
+                             config.seed + 3135U, 4, config));
     const float crest_source =
         smoothstep(0.54F, 0.86F, soft_ridge) * smoothstep(0.44F, 0.82F, relief) * selection;
     const float interdune_source =
