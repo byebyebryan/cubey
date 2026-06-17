@@ -234,7 +234,9 @@ line that downstream features merely decorate.
 Glacial-source rule: the glacial slice should start from valley geometry, not
 from a general mountain range with a valley mask over it. Its source fields
 should place valley/channel samples near a coherent trough and use ridges,
-peaks, cliffs, and scree as wall and headwall contrast around that trough.
+peaks, cliffs, and scree as wall and headwall contrast around that trough. The
+trough should remain open along the downstream axis rather than becoming a
+closed basin/rim shape.
 
 Driver note: new slice work should normally start by identifying the missing
 source, feature-driver, or process-modifier vocabulary it needs. A biome should
@@ -295,6 +297,8 @@ Success criteria:
   than river carving;
 - glacial valley channels sit inside a coherent trough while ridges and peaks
   frame the trough as mountain-wall contrast;
+- glacial driver fields expose a longitudinal valley path, not the same broad
+  range silhouette as the mountain ridge slice;
 - mountain ridge terrain reads through broad range support, distributed ridges,
   peaks, cliffs, and scree rather than glacial valley dressing;
 - mountain high relief is distributed by source fields across the patch instead

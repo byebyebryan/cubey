@@ -1676,6 +1676,7 @@ int main() {
     double glacial_driver_low_relief_height_sum = 0.0;
     double glacial_channel_abs_x_sum = 0.0;
     double glacial_ridge_abs_x_sum = 0.0;
+    std::array<bool, 5> glacial_channel_y_bins{};
     const float glacial_half_x =
         static_cast<float>(glacial_fields.desc.width - 1U) * glacial_fields.desc.cell_size_m *
         0.5F;
@@ -1683,6 +1684,7 @@ int main() {
         const float relief = glacial_fields.driver_relief_potential[index];
         const float process = glacial_fields.driver_process_potential[index];
         const auto x = static_cast<std::uint32_t>(index % glacial_fields.desc.width);
+        const auto y = static_cast<std::uint32_t>(index / glacial_fields.desc.width);
         const float nx = glacial_half_x == 0.0F
                              ? 0.0F
                              : terrain::terrain_lab_grid_sample_x_m(glacial_fields.desc, x) /
@@ -1703,6 +1705,11 @@ int main() {
         if (glacial_fields.channel_influence[index] > 0.45F) {
             glacial_channel_abs_x_sum += std::abs(nx);
             ++glacial_axis_channel_count;
+            const std::size_t y_bin =
+                std::min<std::size_t>(glacial_channel_y_bins.size() - 1U,
+                                      static_cast<std::size_t>((y * glacial_channel_y_bins.size()) /
+                                                               glacial_fields.desc.height));
+            glacial_channel_y_bins[y_bin] = true;
         }
         if (glacial_fields.channel_influence[index] < 0.05F &&
             glacial_fields.valley_influence[index] < 0.25F) {
@@ -1726,6 +1733,11 @@ int main() {
             "terrain lab glacial driver should produce non-valley comparison samples");
     require(glacial_axis_channel_count > 16U && glacial_axis_ridge_count > 16U,
             "terrain lab glacial source should expose enough valley-axis and wall samples");
+    const auto glacial_channel_y_bin_count =
+        static_cast<std::size_t>(std::count(glacial_channel_y_bins.begin(),
+                                            glacial_channel_y_bins.end(), true));
+    require(glacial_channel_y_bin_count >= 4U,
+            "terrain lab glacial source should expose a longitudinal valley path");
     const float glacial_mean_ridge_driver_relief = static_cast<float>(
         glacial_driver_ridge_relief_sum / static_cast<double>(glacial_driver_ridge_count));
     const float glacial_mean_valley_driver_relief = static_cast<float>(
@@ -1780,7 +1792,11 @@ int main() {
             "terrain lab glacial sentinel should keep tree density limited");
     require(glacial_summary.mean_channel_flow_accumulation >
                 glacial_summary.mean_non_channel_flow_accumulation,
-            "terrain lab glacial sentinel should keep trunk valleys aligned with flow diagnostics");
+            "terrain lab glacial sentinel should keep trunk valleys aligned with flow diagnostics "
+            "(channel=" +
+                std::to_string(glacial_summary.mean_channel_flow_accumulation) +
+                ", non_channel=" +
+                std::to_string(glacial_summary.mean_non_channel_flow_accumulation) + ")");
     require(glacial_summary.sink_sample_count > 0U &&
                 glacial_summary.sink_sample_count < glacial_summary.sample_count,
             "terrain lab glacial drainage analysis should expose bounded sink samples");

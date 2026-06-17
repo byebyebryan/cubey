@@ -1246,21 +1246,20 @@ generate_alpine_glacial_driver_fields(const TerrainLabConfig& config,
             const float trough_width = alpine_glacial_trough_width(p.z);
             const float distance = std::abs(p.x - trough_axis);
             const float downstream_t = smoothstep(-0.78F, 0.82F, p.z);
-            const float downstream_gate =
-                smoothstep(-0.96F, -0.68F, p.z) * (1.0F - smoothstep(0.80F, 1.0F, p.z));
+            const float trough_open = smoothstep(-1.0F, -0.84F, p.z);
             const float trunk_trough =
                 (1.0F - smoothstep(trough_width * 0.72F, trough_width * 1.70F, distance)) *
-                downstream_gate;
+                trough_open;
             const float floor_core =
                 (1.0F - smoothstep(trough_width * 0.38F, trough_width * 0.88F, distance)) *
-                downstream_gate;
+                trough_open;
             const float valley = saturate(trunk_trough * 0.82F + floor_core * 0.18F);
             const float wall_band =
                 smoothstep(trough_width * 0.82F, trough_width * 1.45F, distance) *
                 (1.0F - smoothstep(trough_width * 2.00F, trough_width * 3.10F, distance)) *
-                downstream_gate;
+                trough_open;
             const float flank = smoothstep(trough_width * 1.05F, trough_width * 2.65F, distance);
-            const float headwall = saturate((1.0F - p.z) * 0.5F);
+            const float headwall = 1.0F - smoothstep(-0.94F, -0.42F, p.z);
             const float broad_uplift =
                 smoothstep(0.18F, 0.82F,
                            fbm((q.x * 1.04F) + 9.0F, (q.z * 0.96F) - 12.0F,
@@ -1432,9 +1431,10 @@ alpine_glacial_features_at(Point2 p, const TerrainLabGridDesc& desc,
                            const TerrainLabConfig& config, const AlpineGlacialDriver& driver) {
     const float trough_axis = alpine_glacial_trough_axis(p.z, config);
     const float trough_width = alpine_glacial_trough_width(p.z);
+    const float trough_open = smoothstep(-1.0F, -0.84F, p.z);
     const float trunk_trough =
         (1.0F - smoothstep(trough_width, trough_width * 2.35F, std::abs(p.x - trough_axis))) *
-        smoothstep(-0.94F, -0.64F, p.z) * (1.0F - smoothstep(0.80F, 1.0F, p.z)) *
+        trough_open *
         smoothstep(0.12F, 0.58F, driver.ice_accumulation + driver.valley_source * 0.42F);
     const float floor =
         saturate(std::max(smoothstep(0.30F, 0.70F,
@@ -1456,7 +1456,10 @@ alpine_glacial_features_at(Point2 p, const TerrainLabGridDesc& desc,
     const float moraine = saturate(driver.moraine_source + trunk_trough * (1.0F - floor * 0.36F) * 0.28F);
     const float basin =
         saturate(floor * 0.68F + moraine * 0.22F + driver.process_potential * 0.08F);
-    const float channel = saturate(floor * 0.74F + trunk_trough * 0.18F + hanging * 0.18F);
+    const float downstream_channel = smoothstep(-0.78F, 0.72F, p.z);
+    const float channel =
+        saturate(floor * lerp(0.34F, 0.72F, downstream_channel) + trunk_trough * 0.28F +
+                 hanging * 0.12F);
     const float channel_distance_m =
         (1.0F - floor) * std::max(half_extent_x_m(desc), half_extent_z_m(desc));
     return {
