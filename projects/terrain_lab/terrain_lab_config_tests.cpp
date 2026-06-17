@@ -944,6 +944,14 @@ int main() {
     double arid_driver_channel_process_sum = 0.0;
     double arid_driver_non_channel_process_sum = 0.0;
     double arid_driver_high_relief_height_sum = 0.0;
+    std::size_t arid_river_channel_count = 0;
+    std::size_t arid_river_non_channel_count = 0;
+    double arid_river_channel_width_sum = 0.0;
+    double arid_river_non_channel_width_sum = 0.0;
+    double arid_river_channel_order_sum = 0.0;
+    double arid_river_non_channel_order_sum = 0.0;
+    double arid_river_channel_discharge_sum = 0.0;
+    double arid_river_non_channel_discharge_sum = 0.0;
     for (std::size_t index = 0; index < fields.sample_count(); ++index) {
         const float relief = fields.driver_relief_potential[index];
         const float process = fields.driver_process_potential[index];
@@ -955,10 +963,18 @@ int main() {
             arid_driver_channel_relief_sum += relief;
             arid_driver_channel_process_sum += process;
             ++arid_driver_channel_count;
+            arid_river_channel_width_sum += fields.river_width_m[index];
+            arid_river_channel_order_sum += fields.stream_order[index];
+            arid_river_channel_discharge_sum += fields.river_discharge[index];
+            ++arid_river_channel_count;
         }
         if (fields.channel_influence[index] < 0.05F && fields.divide_influence[index] < 0.25F) {
             arid_driver_non_channel_process_sum += process;
             ++arid_driver_non_channel_count;
+            arid_river_non_channel_width_sum += fields.river_width_m[index];
+            arid_river_non_channel_order_sum += fields.stream_order[index];
+            arid_river_non_channel_discharge_sum += fields.river_discharge[index];
+            ++arid_river_non_channel_count;
         }
         if (relief > 0.38F) {
             arid_driver_high_relief_height_sum += fields.height_m[index];
@@ -971,6 +987,8 @@ int main() {
             "terrain lab arid driver should produce enough non-channel comparison samples");
     require(arid_driver_high_relief_count > 16U,
             "terrain lab arid driver should produce enough high-relief samples");
+    require(arid_river_channel_count > 16U && arid_river_non_channel_count > 16U,
+            "terrain lab arid river-derived canyon checks need enough comparison samples");
     const float arid_mean_ridge_driver_relief = static_cast<float>(
         arid_driver_ridge_relief_sum / static_cast<double>(arid_driver_ridge_count));
     const float arid_mean_channel_driver_relief = static_cast<float>(
@@ -981,12 +999,37 @@ int main() {
         arid_driver_non_channel_process_sum / static_cast<double>(arid_driver_non_channel_count));
     const float arid_mean_high_relief_height = static_cast<float>(
         arid_driver_high_relief_height_sum / static_cast<double>(arid_driver_high_relief_count));
+    const float arid_mean_channel_river_width =
+        static_cast<float>(arid_river_channel_width_sum /
+                           static_cast<double>(arid_river_channel_count));
+    const float arid_mean_non_channel_river_width =
+        static_cast<float>(arid_river_non_channel_width_sum /
+                           static_cast<double>(arid_river_non_channel_count));
+    const float arid_mean_channel_stream_order =
+        static_cast<float>(arid_river_channel_order_sum /
+                           static_cast<double>(arid_river_channel_count));
+    const float arid_mean_non_channel_stream_order =
+        static_cast<float>(arid_river_non_channel_order_sum /
+                           static_cast<double>(arid_river_non_channel_count));
+    const float arid_mean_channel_discharge =
+        static_cast<float>(arid_river_channel_discharge_sum /
+                           static_cast<double>(arid_river_channel_count));
+    const float arid_mean_non_channel_discharge =
+        static_cast<float>(arid_river_non_channel_discharge_sum /
+                           static_cast<double>(arid_river_non_channel_count));
     require(arid_mean_ridge_driver_relief > arid_mean_channel_driver_relief + 0.04F,
             "terrain lab arid canyon walls should derive from higher relief driver values");
     require(arid_mean_channel_driver_process > arid_mean_non_channel_driver_process + 0.03F,
             "terrain lab arid washes should derive from higher process driver values");
     require(arid_mean_high_relief_height > arid_mean_channel_height + 8.0F,
             "terrain lab arid canyon height should keep high-relief walls above wash floors");
+    require(arid_mean_channel_river_width >
+                arid_mean_non_channel_river_width + fields.desc.cell_size_m * 0.20F,
+            "terrain lab arid canyon channels should derive from wider river hierarchy");
+    require(arid_mean_channel_stream_order > arid_mean_non_channel_stream_order + 0.20F,
+            "terrain lab arid canyon channels should carry higher stream order");
+    require(arid_mean_channel_discharge > arid_mean_non_channel_discharge * 1.25F,
+            "terrain lab arid canyon channels should carry higher river discharge");
     std::array<bool, 4> arid_channel_quadrants{false, false, false, false};
     constexpr std::size_t kAridNetworkBinCount = 8U;
     std::array<bool, kAridNetworkBinCount> arid_channel_x_bins{};
@@ -1623,13 +1666,35 @@ int main() {
     double glacial_driver_non_valley_process_sum = 0.0;
     double glacial_driver_high_relief_height_sum = 0.0;
     double glacial_driver_low_relief_height_sum = 0.0;
+    std::size_t glacial_left_ridge_count = 0;
+    std::size_t glacial_right_ridge_count = 0;
+    std::size_t glacial_center_valley_count = 0;
+    double glacial_left_ridge_height_sum = 0.0;
+    double glacial_right_ridge_height_sum = 0.0;
+    double glacial_center_valley_height_sum = 0.0;
+    const float glacial_half_x =
+        static_cast<float>(glacial_fields.desc.width - 1U) * glacial_fields.desc.cell_size_m *
+        0.5F;
     for (std::size_t index = 0; index < glacial_fields.sample_count(); ++index) {
         const float relief = glacial_fields.driver_relief_potential[index];
         const float process = glacial_fields.driver_process_potential[index];
+        const auto x = static_cast<std::uint32_t>(index % glacial_fields.desc.width);
+        const float nx =
+            glacial_half_x == 0.0F
+                ? 0.0F
+                : terrain::terrain_lab_grid_sample_x_m(glacial_fields.desc, x) / glacial_half_x;
         if (glacial_fields.ridge_influence[index] > 0.45F &&
             glacial_fields.channel_influence[index] < 0.35F) {
             glacial_driver_ridge_relief_sum += relief;
             ++glacial_driver_ridge_count;
+            if (nx < -0.18F) {
+                glacial_left_ridge_height_sum += glacial_fields.height_m[index];
+                ++glacial_left_ridge_count;
+            }
+            if (nx > 0.18F) {
+                glacial_right_ridge_height_sum += glacial_fields.height_m[index];
+                ++glacial_right_ridge_count;
+            }
         }
         if (glacial_fields.channel_influence[index] > 0.45F ||
             glacial_fields.valley_influence[index] > 0.58F) {
@@ -1650,6 +1715,10 @@ int main() {
             glacial_driver_low_relief_height_sum += glacial_fields.height_m[index];
             ++glacial_driver_low_relief_count;
         }
+        if (std::abs(nx) < 0.24F && glacial_fields.valley_influence[index] > 0.45F) {
+            glacial_center_valley_height_sum += glacial_fields.height_m[index];
+            ++glacial_center_valley_count;
+        }
     }
     require(glacial_driver_ridge_count > 16U && glacial_driver_valley_count > 16U,
             "terrain lab glacial driver should produce enough ridge and valley samples");
@@ -1657,6 +1726,10 @@ int main() {
             "terrain lab glacial driver should produce high and low relief samples");
     require(glacial_driver_non_valley_count > 16U,
             "terrain lab glacial driver should produce non-valley comparison samples");
+    require(glacial_left_ridge_count > 16U && glacial_right_ridge_count > 16U,
+            "terrain lab glacial mountain driver should produce paired ridge bands");
+    require(glacial_center_valley_count > 16U,
+            "terrain lab glacial mountain driver should keep a central valley band");
     const float glacial_mean_ridge_driver_relief = static_cast<float>(
         glacial_driver_ridge_relief_sum / static_cast<double>(glacial_driver_ridge_count));
     const float glacial_mean_valley_driver_relief = static_cast<float>(
@@ -1672,12 +1745,24 @@ int main() {
     const float glacial_mean_low_relief_height =
         static_cast<float>(glacial_driver_low_relief_height_sum /
                            static_cast<double>(glacial_driver_low_relief_count));
+    const float glacial_mean_left_ridge_height =
+        static_cast<float>(glacial_left_ridge_height_sum /
+                           static_cast<double>(glacial_left_ridge_count));
+    const float glacial_mean_right_ridge_height =
+        static_cast<float>(glacial_right_ridge_height_sum /
+                           static_cast<double>(glacial_right_ridge_count));
+    const float glacial_mean_center_valley_height =
+        static_cast<float>(glacial_center_valley_height_sum /
+                           static_cast<double>(glacial_center_valley_count));
     require(glacial_mean_ridge_driver_relief > glacial_mean_valley_driver_relief + 0.05F,
             "terrain lab glacial ridges should derive from higher relief driver values");
     require(glacial_mean_valley_driver_process > glacial_mean_non_valley_driver_process + 0.02F,
             "terrain lab glacial valley process should derive from higher process driver values");
     require(glacial_mean_high_relief_height > glacial_mean_low_relief_height + 20.0F,
             "terrain lab glacial height should follow the relief driver");
+    require(glacial_mean_left_ridge_height > glacial_mean_center_valley_height + 30.0F &&
+                glacial_mean_right_ridge_height > glacial_mean_center_valley_height + 30.0F,
+            "terrain lab glacial paired ridges should stand above the central valley");
     require(glacial_rock_scree_snow > 0.62F,
             "terrain lab glacial sentinel should be dominated by rock, scree, and snow/ice");
     require(glacial_mean_forest < 0.04F,
