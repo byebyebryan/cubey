@@ -117,9 +117,10 @@ Two representative sentinel slices are also available:
   driver fields instead of locally authored dune streaks.
 - `--terrain-lab-slice alpine-glacial-valley`: U-shaped trunk valley, high
   ridges, cirque/headwall influence, moraine/deposition bands, snow/ice masks,
-  and moderate meltwater diagnostics. It now exports explicit base, relief, and
-  process drivers so the driver view can explain the valley and ridge layout
-  without relying on a post-hoc fallback.
+  and moderate meltwater diagnostics. It consumes an explicit mountain driver
+  built from uplift, relief, static flow/divide analysis, slope, and curvature
+  so the driver view can explain the valley and ridge layout without fixed
+  paired ridge bands.
 
 Hydrology is now a first-class terrain structure, but still not a heavy erosion
 solver. Flow direction, accumulation, stream power, discharge proxy, stream

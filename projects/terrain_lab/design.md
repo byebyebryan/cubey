@@ -220,8 +220,12 @@ as support until meltwater becomes a focused target.
 The next two driver blockers are canyon ownership and mountain/ridge structure.
 Arid canyon should become a dry, high-incision expression of the shared river
 hierarchy instead of a slice-local canyon skeleton with river fields applied
-afterward. Alpine should grow a mountain driver that exposes crest, shoulder,
-valley-spacing, cliff, and scree support before glacial details consume it.
+afterward. Alpine should consume a mountain driver rather than author the
+mountain topology itself. That driver starts from broad uplift, local relief,
+and resistance fields, then derives ridges, valleys, cliffs, peaks, and scree
+from provisional height, slope/curvature, divide support, and routed flow.
+Fixed "central valley plus two side ridges" layouts are a scaffolding smell, not
+a terrain model.
 
 The sentinel slice set should prevent overfitting this model to canyon terrain.
 The first representative set is:
@@ -369,8 +373,10 @@ workbench slice rather than a physically complete landscape model.
 Useful starting points for coherent terrain generation:
 
 - `~/code/ref/SimpleHydrology`: useful reference for process state and visual
-  diagnostics, especially discharge/momentum/deposition fields and vegetation
-  feedback. Use it as design pressure, not as code to port directly.
+  diagnostics, especially discharge/momentum/deposition fields, cascade-style
+  slope relaxation, and vegetation feedback. Use it as design pressure, not as
+  code to port directly; the first mountain pass uses static routing rather
+  than a particle droplet solver.
 - `~/code/ref/TerrainEngine-OpenGL`: useful reference for terrain presentation,
   camera-centered tiles, tessellation, fog/water context, and material blending.
   Do not copy its shader-noise displacement as the generation model.

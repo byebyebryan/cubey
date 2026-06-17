@@ -218,9 +218,11 @@ main landforms can be inspected through named driver fields before feature masks
 height, materials, and detail are applied.
 
 Current blocker: alpine glacial valley proves the need for a stronger mountain
-and ridge driver. Its ridges are still too dependent on ridged noise and broad
-side-lift, so closer inspection does not yet read as a coherent mountain
-structure.
+and ridge driver. Its ridges should come from a grid-level mountain field:
+broad uplift and relief build provisional height, static flow and divide
+analysis find valleys and ridge support, and slope/curvature response derives
+cliffs, peaks, shoulders, and scree. A fixed central valley with left/right
+ridge bands is no longer an acceptable success criterion.
 
 Driver note: new slice work should normally start by identifying the missing
 source, feature-driver, or process-modifier vocabulary it needs. A biome should
@@ -258,8 +260,8 @@ Current implementation notes:
   authored dune streaks;
 - arid canyon routing should reuse shared river hierarchy and derive dry wash,
   canyon floor, wall width, and incision from discharge/order/slope/resistance;
-- alpine glacial valley now seeds explicit base, relief, process, and
-  full-patch selection drivers before feature masks and process response;
+- alpine glacial valley consumes explicit mountain base, relief, process, and
+  full-patch selection drivers before feature masks and glacial response;
 - hydrology is now structure-first but still avoids a toy erosion solver;
 - the material vocabulary now includes sand for wind-shaped terrain, while snow
   continues to stand in for snow/ice in the glacial sentinel.
