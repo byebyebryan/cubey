@@ -1218,6 +1218,64 @@ void derive_river_network_fields(TerrainLabFieldData& fields, RiverDerivationPar
     }
 }
 
+[[nodiscard]] RiverDerivationParams arid_river_derivation_params(const TerrainLabGridDesc& desc) {
+    return {
+        .runoff_scale = 0.42F,
+        .water_presence_scale = 0.0F,
+        .min_width_m = desc.cell_size_m * 0.28F,
+        .max_width_m = desc.cell_size_m * 2.45F,
+        .valley_width_multiplier = 7.2F,
+        .stream_threshold = 0.30F,
+    };
+}
+
+void apply_arid_river_hierarchy_carving(const TerrainLabConfig& config, TerrainLabFieldData& fields,
+                                        float arid_elevation_scale_m) {
+    if (fields.max_river_width_m <= 0.0F || fields.max_valley_width_m <= 0.0F) {
+        return;
+    }
+    const float stream_order_denominator =
+        fields.max_stream_order <= 1U ? 1.0F : static_cast<float>(fields.max_stream_order);
+    for (std::size_t sample = 0; sample < fields.sample_count(); ++sample) {
+        const float width_t = saturate(fields.river_width_m[sample] / fields.max_river_width_m);
+        const float valley_width_t =
+            saturate(fields.valley_width_m[sample] / fields.max_valley_width_m);
+        const float order_t =
+            static_cast<float>(fields.stream_order[sample]) / stream_order_denominator;
+        const float dry_network =
+            saturate(fields.channel_influence[sample] * 0.54F +
+                     smoothstep(0.05F, 0.46F, width_t) * 0.42F + order_t * 0.18F);
+        if (dry_network <= 0.0F) {
+            continue;
+        }
+
+        const float slope_t = smoothstep(0.05F, 0.52F, fields.slope[sample]);
+        const float width_cut =
+            dry_network * smoothstep(0.06F, 0.64F, width_t) * (1.0F - slope_t * 0.24F) *
+            arid_elevation_scale_m * lerp(0.012F, 0.052F, width_t) * config.process_strength;
+        fields.process_delta_m[sample] -= width_cut;
+        fields.height_m[sample] -= width_cut;
+
+        const float wall_distance_m = fields.channel_distance_m[sample];
+        const float wall_width_m =
+            std::max(fields.desc.cell_size_m * 1.2F, fields.river_width_m[sample] * 2.8F);
+        const float wall_band =
+            smoothstep(wall_width_m * 0.70F, wall_width_m * 1.82F, wall_distance_m) *
+            (1.0F - smoothstep(wall_width_m * 1.92F, wall_width_m * 4.60F, wall_distance_m)) *
+            smoothstep(0.16F, 0.76F, dry_network);
+
+        fields.channel_influence[sample] =
+            saturate(std::max(fields.channel_influence[sample], dry_network * 0.86F));
+        fields.valley_influence[sample] =
+            saturate(std::max(fields.valley_influence[sample],
+                              dry_network * 0.62F + valley_width_t * 0.16F));
+        fields.ridge_influence[sample] =
+            saturate(std::max(fields.ridge_influence[sample], wall_band * (0.48F + order_t * 0.34F)));
+        fields.divide_influence[sample] =
+            saturate(std::max(fields.divide_influence[sample], wall_band * 0.26F));
+    }
+}
+
 [[nodiscard]] AridDrainageTrace
 trace_arid_drainage_corridor(const TerrainLabGridDesc& desc, const FlowRoutingData& routing,
                              const std::vector<float>& network_source,
@@ -1385,9 +1443,10 @@ trace_arid_drainage_corridors(const TerrainLabGridDesc& desc, const FlowRoutingD
                                                     trace.strength * 0.22F);
             const float segment_incision = saturate(std::max(a.incision, b.incision) * 0.82F +
                                                     segment_strength * 0.18F);
-            const float core_width_m = lerp(72.0F, 310.0F, smoothstep(0.22F, 0.82F, segment_strength));
+            const float segment_core_width_m =
+                lerp(54.0F, 360.0F, smoothstep(0.20F, 0.86F, segment_strength));
             const float influence_radius_cells =
-                std::ceil((core_width_m * 2.65F) / std::max(desc.cell_size_m, 1.0F));
+                std::ceil((segment_core_width_m * 2.85F) / std::max(desc.cell_size_m, 1.0F));
             const float min_x = std::min(a.x, b.x) - influence_radius_cells;
             const float max_x = std::max(a.x, b.x) + influence_radius_cells;
             const float min_y = std::min(a.y, b.y) - influence_radius_cells;
@@ -1410,6 +1469,13 @@ trace_arid_drainage_corridors(const TerrainLabGridDesc& desc, const FlowRoutingD
                     const float local_strength =
                         saturate(lerp(a.strength, b.strength, segment_t) * 0.70F +
                                  segment_strength * 0.30F);
+                    const float local_incision =
+                        saturate(lerp(a.incision, b.incision, segment_t) * 0.70F +
+                                 segment_incision * 0.30F);
+                    const float core_width_m =
+                        lerp(48.0F, segment_core_width_m,
+                             smoothstep(0.12F, 0.86F,
+                                        local_strength * 0.68F + local_incision * 0.32F));
                     const float core =
                         1.0F - smoothstep(core_width_m * 0.12F, core_width_m, distance_m);
                     const float broad =
@@ -2730,15 +2796,15 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
     compute_flow_fields(fields.desc, fields.height_m, fields.slope, fields.flow_direction,
                         fields.flow_accumulation, fields.stream_power, fields.max_flow_accumulation,
                         fields.max_stream_power);
-    derive_river_network_fields(fields,
-                                {
-                                    .runoff_scale = 0.42F,
-                                    .water_presence_scale = 0.0F,
-                                    .min_width_m = fields.desc.cell_size_m * 0.28F,
-                                    .max_width_m = fields.desc.cell_size_m * 2.45F,
-                                    .valley_width_multiplier = 7.2F,
-                                    .stream_threshold = 0.30F,
-                                });
+    derive_river_network_fields(fields, arid_river_derivation_params(fields.desc));
+    apply_arid_river_hierarchy_carving(config, fields, arid_elevation_scale_m);
+    update_height_range(fields);
+    compute_slope_and_curvature(fields.desc, fields.height_m, fields.slope, fields.curvature,
+                                fields.max_slope, fields.max_abs_curvature);
+    compute_flow_fields(fields.desc, fields.height_m, fields.slope, fields.flow_direction,
+                        fields.flow_accumulation, fields.stream_power, fields.max_flow_accumulation,
+                        fields.max_stream_power);
+    derive_river_network_fields(fields, arid_river_derivation_params(fields.desc));
 
     const float height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
     fields.max_wetness = 0.0F;
@@ -2753,13 +2819,26 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
             const float slope_t = smoothstep(0.05F, 0.52F, fields.slope[sample]);
             const float flow_t = std::log1p(fields.flow_accumulation[sample]) * inv_log_count;
             const float channel = fields.channel_influence[sample];
-            const float dry_wash = saturate((channel * 0.76F) + (features.wash_influence * 0.24F));
+            const float river_width_t =
+                fields.max_river_width_m <= 0.0F
+                    ? 0.0F
+                    : saturate(fields.river_width_m[sample] / fields.max_river_width_m);
+            const float river_order_t =
+                fields.max_stream_order <= 1U
+                    ? 0.0F
+                    : static_cast<float>(fields.stream_order[sample]) /
+                          static_cast<float>(fields.max_stream_order);
+            const float dry_wash =
+                saturate((channel * 0.58F) + (features.wash_influence * 0.18F) +
+                         river_width_t * 0.30F + river_order_t * 0.10F);
             const float wetness = saturate(
-                (flow_t * 0.16F) + (dry_wash * 0.11F) + (fields.basin_influence[sample] * 0.055F) +
+                (flow_t * 0.13F) + (dry_wash * 0.10F) + (river_width_t * 0.035F) +
+                (river_order_t * 0.018F) + (fields.basin_influence[sample] * 0.045F) +
                 ((1.0F - slope_t) * 0.025F) - (fields.divide_influence[sample] * 0.05F));
             const float deposition =
                 saturate((dry_wash * (1.0F - slope_t) * 0.38F) +
-                         (fields.basin_influence[sample] * 0.17F) + (flow_t * 0.035F));
+                         river_width_t * 0.075F + river_order_t * 0.035F +
+                         (fields.basin_influence[sample] * 0.14F) + (flow_t * 0.030F));
             fields.wetness[sample] = wetness;
             fields.deposition[sample] = deposition;
             fields.max_wetness = std::max(fields.max_wetness, wetness);
