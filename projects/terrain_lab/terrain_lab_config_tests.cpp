@@ -87,6 +87,59 @@ struct FieldSampleStats {
     std::size_t shrub_count = 0;
 };
 
+struct RiverHierarchyStats {
+    std::size_t active_count = 0;
+    std::size_t low_order_count = 0;
+    std::size_t high_order_count = 0;
+    std::size_t water_sample_count = 0;
+    float min_active_width_m = 0.0F;
+    float max_active_width_m = 0.0F;
+    double low_order_width_sum = 0.0;
+    double high_order_width_sum = 0.0;
+    double low_order_discharge_sum = 0.0;
+    double high_order_discharge_sum = 0.0;
+};
+
+RiverHierarchyStats
+inspect_river_hierarchy(const cubey::projects::terrain_lab::TerrainLabFieldData& fields) {
+    RiverHierarchyStats stats;
+    const auto high_order_floor =
+        static_cast<std::uint8_t>(fields.max_stream_order > 1U ? fields.max_stream_order - 1U : 1U);
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        if (fields.water_presence[index] > 0.01F) {
+            ++stats.water_sample_count;
+        }
+        if (fields.river_width_m[index] > fields.desc.cell_size_m * 0.05F) {
+            if (stats.active_count == 0U) {
+                stats.min_active_width_m = fields.river_width_m[index];
+                stats.max_active_width_m = fields.river_width_m[index];
+            } else {
+                stats.min_active_width_m =
+                    std::min(stats.min_active_width_m, fields.river_width_m[index]);
+                stats.max_active_width_m =
+                    std::max(stats.max_active_width_m, fields.river_width_m[index]);
+            }
+            ++stats.active_count;
+        }
+        if (fields.stream_order[index] == 1U && fields.river_width_m[index] > 0.0F) {
+            stats.low_order_width_sum += fields.river_width_m[index];
+            stats.low_order_discharge_sum += fields.river_discharge[index];
+            ++stats.low_order_count;
+        }
+        if (fields.max_stream_order > 1U && fields.stream_order[index] >= high_order_floor &&
+            fields.river_width_m[index] > 0.0F) {
+            stats.high_order_width_sum += fields.river_width_m[index];
+            stats.high_order_discharge_sum += fields.river_discharge[index];
+            ++stats.high_order_count;
+        }
+    }
+    return stats;
+}
+
+float mean_or_zero(double sum, std::size_t count) {
+    return count == 0U ? 0.0F : static_cast<float>(sum / static_cast<double>(count));
+}
+
 FieldSampleStats
 inspect_field_samples(const cubey::projects::terrain_lab::TerrainLabFieldData& fields) {
     FieldSampleStats stats;
@@ -686,6 +739,7 @@ int main() {
             "terrain lab deposition should be normalized");
 
     const FieldSampleStats arid_stats = inspect_field_samples(fields);
+    const RiverHierarchyStats arid_river_stats = inspect_river_hierarchy(fields);
     require(arid_stats.saw_material_variation,
             "terrain lab arid slice should produce varied material masks");
     require(arid_stats.saw_detail, "terrain lab arid slice should produce detail fields");
@@ -709,6 +763,33 @@ int main() {
                 std::to_string(arid_stats.ridge_count));
     require(arid_stats.channel_count < fields.sample_count() / 5U,
             "terrain lab arid slice should keep secondary washes subordinate");
+    require(fields.max_stream_order >= 3U,
+            "terrain lab arid slice should expose a hierarchical dry river network");
+    require(fields.max_river_width_m > fields.desc.cell_size_m * 1.5F,
+            "terrain lab arid slice should widen trunk channels");
+    require(fields.max_valley_width_m > fields.max_river_width_m * 4.0F,
+            "terrain lab arid slice should derive valley width from river hierarchy");
+    require(arid_river_stats.active_count > 64U,
+            "terrain lab arid slice should produce enough dry river samples");
+    require(arid_river_stats.low_order_count > 16U && arid_river_stats.high_order_count > 0U,
+            "terrain lab arid slice should expose low and high stream orders");
+    const float arid_low_order_width =
+        mean_or_zero(arid_river_stats.low_order_width_sum, arid_river_stats.low_order_count);
+    const float arid_high_order_width =
+        mean_or_zero(arid_river_stats.high_order_width_sum, arid_river_stats.high_order_count);
+    const float arid_low_order_discharge =
+        mean_or_zero(arid_river_stats.low_order_discharge_sum, arid_river_stats.low_order_count);
+    const float arid_high_order_discharge =
+        mean_or_zero(arid_river_stats.high_order_discharge_sum, arid_river_stats.high_order_count);
+    require(arid_high_order_width > arid_low_order_width + fields.desc.cell_size_m * 0.45F,
+            "terrain lab arid trunk channels should be wider than tributaries");
+    require(arid_high_order_discharge > arid_low_order_discharge * 2.0F,
+            "terrain lab arid trunk channels should carry more derived discharge");
+    require(arid_river_stats.max_active_width_m >
+                arid_river_stats.min_active_width_m + fields.desc.cell_size_m * 1.25F,
+            "terrain lab arid river widths should vary across the network");
+    require(arid_river_stats.water_sample_count == 0U,
+            "terrain lab arid canyon network should remain a dry river expression");
     const double inv_arid_count = 1.0 / static_cast<double>(fields.sample_count());
     const float arid_rock_scree_soil = static_cast<float>(
         (arid_stats.rock_sum + arid_stats.scree_sum + arid_stats.soil_sum) * inv_arid_count);
@@ -1064,6 +1145,8 @@ int main() {
                  "terrain lab summary should expose channel height");
     require(summary.mean_wetness < 0.30F,
             "terrain lab arid slice should stay drier than the watershed fixture");
+    require(summary.mean_water_presence == 0.0F,
+            "terrain lab arid summary should report no standing water");
     require(summary.mean_tree_density < 0.01F,
             "terrain lab arid slice should keep tree density sparse");
     require(summary.mean_material_entropy > 0.05F && summary.mean_material_entropy <= 1.0F,
@@ -1141,6 +1224,7 @@ int main() {
             "terrain lab watershed divides should remain higher than channels");
     const terrain::TerrainLabFieldSummary watershed_summary =
         terrain::summarize_terrain_lab_fields(watershed_fields);
+    const RiverHierarchyStats watershed_river_stats = inspect_river_hierarchy(watershed_fields);
     require(watershed_summary.watershed_count == 4U,
             "terrain lab watershed summary should count watershed basins");
     require(watershed_summary.channel_sample_count == watershed_stats.channel_count,
@@ -1161,6 +1245,36 @@ int main() {
     require(watershed_summary.mean_channel_stream_power >=
                 watershed_summary.mean_non_channel_stream_power,
             "terrain lab watershed summary should expose channel stream-power alignment");
+    require(watershed_summary.max_stream_order >= 3U,
+            "terrain lab watershed summary should expose hierarchical streams");
+    require(watershed_summary.max_river_width_m > watershed_fields.desc.cell_size_m * 1.4F,
+            "terrain lab watershed summary should expose widened trunk rivers");
+    require(watershed_summary.max_valley_width_m > watershed_summary.max_river_width_m * 5.0F,
+            "terrain lab watershed summary should expose broad valley corridors");
+    require(watershed_summary.mean_water_presence > 0.03F,
+            "terrain lab watershed summary should expose wet river presence");
+    require(watershed_river_stats.water_sample_count > watershed_fields.sample_count() / 6U,
+            "terrain lab watershed should contain enough wet river samples");
+    require(watershed_river_stats.low_order_count > 16U &&
+                watershed_river_stats.high_order_count > 0U,
+            "terrain lab watershed should expose low and high stream orders");
+    const float watershed_low_order_width =
+        mean_or_zero(watershed_river_stats.low_order_width_sum,
+                     watershed_river_stats.low_order_count);
+    const float watershed_high_order_width =
+        mean_or_zero(watershed_river_stats.high_order_width_sum,
+                     watershed_river_stats.high_order_count);
+    const float watershed_low_order_discharge =
+        mean_or_zero(watershed_river_stats.low_order_discharge_sum,
+                     watershed_river_stats.low_order_count);
+    const float watershed_high_order_discharge =
+        mean_or_zero(watershed_river_stats.high_order_discharge_sum,
+                     watershed_river_stats.high_order_count);
+    require(watershed_high_order_width >
+                watershed_low_order_width + watershed_fields.desc.cell_size_m * 0.35F,
+            "terrain lab watershed trunk rivers should be wider than tributaries");
+    require(watershed_high_order_discharge > watershed_low_order_discharge * 3.0F,
+            "terrain lab watershed trunk rivers should carry more derived discharge");
     require(watershed_summary.sink_sample_count > 0U &&
                 watershed_summary.sink_sample_count < watershed_summary.sample_count,
             "terrain lab watershed drainage analysis should expose bounded sink samples");
@@ -1264,6 +1378,8 @@ int main() {
             "terrain lab dunes sentinel should keep snow material absent");
     require(dunes_summary.mean_wetness < 0.08F,
             "terrain lab dunes sentinel should stay hydro-light");
+    require(dunes_summary.mean_water_presence == 0.0F,
+            "terrain lab dunes sentinel should not expose standing water");
     require(dunes_summary.mean_channel_influence > 0.0F &&
                 dunes_summary.mean_channel_influence < 0.18F,
             "terrain lab dunes sentinel should keep channel influence diagnostic only");
@@ -1405,6 +1521,13 @@ int main() {
             "terrain lab glacial sentinel should concentrate moraine/deposition in valleys");
     require(glacial_summary.mean_wetness > 0.05F && glacial_summary.mean_wetness < 0.35F,
             "terrain lab glacial sentinel should expose moderate meltwater wetness");
+    require(glacial_summary.max_stream_order >= 2U,
+            "terrain lab glacial sentinel should expose routed alpine channels");
+    require(glacial_summary.max_river_width_m > glacial_fields.desc.cell_size_m * 0.75F,
+            "terrain lab glacial sentinel should expose channel width diagnostics");
+    require(glacial_summary.mean_water_presence > 0.001F &&
+                glacial_summary.mean_water_presence < 0.03F,
+            "terrain lab glacial sentinel should expose limited alpine water presence");
     require(glacial_summary.mean_tree_density < 0.05F,
             "terrain lab glacial sentinel should keep tree density limited");
     require(glacial_summary.mean_channel_flow_accumulation >

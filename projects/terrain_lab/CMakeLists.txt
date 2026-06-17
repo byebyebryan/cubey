@@ -77,6 +77,66 @@ if (BUILD_TESTING)
         0.00005
     )
 
+    set(CUBEY_TERRAIN_LAB_RIVER_NETWORK_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-river-network.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_lab_river_network_writes_png
+        cubey_project_terrain_lab
+        "${CUBEY_TERRAIN_LAB_RIVER_NETWORK_SMOKE_OUTPUT}"
+        --headless
+        --grid-width 65
+        --grid-height 65
+        --debug-view
+        river-network
+    )
+    cubey_add_png_stats_test(
+        terrain_lab_river_network_writes_png
+        "${CUBEY_TERRAIN_LAB_RIVER_NETWORK_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
+    set(CUBEY_TERRAIN_LAB_RIVER_WIDTH_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-river-width.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_lab_river_width_writes_png
+        cubey_project_terrain_lab
+        "${CUBEY_TERRAIN_LAB_RIVER_WIDTH_SMOKE_OUTPUT}"
+        --headless
+        --grid-width 65
+        --grid-height 65
+        --debug-view
+        river-width
+    )
+    cubey_add_png_stats_test(
+        terrain_lab_river_width_writes_png
+        "${CUBEY_TERRAIN_LAB_RIVER_WIDTH_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
+    set(CUBEY_TERRAIN_LAB_WATER_PRESENCE_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-water-presence.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_lab_water_presence_writes_png
+        cubey_project_terrain_lab
+        "${CUBEY_TERRAIN_LAB_WATER_PRESENCE_SMOKE_OUTPUT}"
+        --headless
+        --grid-width 65
+        --grid-height 65
+        --debug-view
+        water-presence
+    )
+    cubey_add_png_stats_test(
+        terrain_lab_water_presence_writes_png
+        "${CUBEY_TERRAIN_LAB_WATER_PRESENCE_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
     set(CUBEY_TERRAIN_LAB_FEATURE_GRAPH_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-feature-graph.png"
     )
