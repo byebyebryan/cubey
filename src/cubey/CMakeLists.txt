@@ -49,6 +49,7 @@ target_link_libraries(
         glm::glm
     PRIVATE
         lazy::serializable::nlohmann-json
+        cubey_external_fastnoise_lite
         cubey_project_warnings
 )
 

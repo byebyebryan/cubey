@@ -120,6 +120,34 @@ target_include_directories(
 )
 
 FetchContent_Declare(
+    fastnoise_lite
+    GIT_REPOSITORY https://github.com/Auburn/FastNoiseLite.git
+    GIT_TAG        v1.1.1
+)
+FetchContent_GetProperties(fastnoise_lite)
+if (NOT fastnoise_lite_POPULATED)
+    cmake_policy(PUSH)
+    if (POLICY CMP0169)
+        cmake_policy(SET CMP0169 OLD)
+    endif()
+    FetchContent_Populate(fastnoise_lite)
+    cmake_policy(POP)
+endif()
+add_library(cubey_external_fastnoise_lite INTERFACE)
+target_include_directories(
+    cubey_external_fastnoise_lite
+    SYSTEM
+    INTERFACE
+        "${fastnoise_lite_SOURCE_DIR}/Cpp"
+)
+set(
+    CUBEY_FASTNOISE_LITE_GLSL_DIR
+    "${fastnoise_lite_SOURCE_DIR}/GLSL"
+    CACHE PATH "FastNoiseLite GLSL include directory for future shader-side procedural noise"
+    FORCE
+)
+
+FetchContent_Declare(
     basis_universal
     GIT_REPOSITORY https://github.com/BinomialLLC/basis_universal.git
     GIT_TAG        v2_1_0
