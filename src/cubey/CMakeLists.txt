@@ -23,6 +23,9 @@ add_library(cubey_core STATIC
     core/image_io.cpp
     core/jobs.cpp
     core/profiling.cpp
+    procedural/field_2d.cpp
+    procedural/noise.cpp
+    procedural/operators.cpp
 )
 add_library(cubey::core ALIAS cubey_core)
 

@@ -19,6 +19,10 @@ void test_math_helpers_match_vulkan_projection_conventions();
 void test_math_quaternion_helpers_match_rotation_matrices();
 void test_profile_recorder_skips_warmup_and_records_spans();
 void test_profile_recorder_writes_csv_summary_and_trace_outputs();
+void test_procedural_box_blur_preserves_dimensions_and_smooths_impulse();
+void test_procedural_noise_is_deterministic_and_bounded();
+void test_procedural_scalar_field_indexes_centered_samples();
+void test_procedural_scalar_field_summarizes_and_normalizes();
 void test_run_cli_app_sets_default_title_and_returns_runner_status();
 void test_active_project_ui_uses_shared_common_controls();
 void test_active_project_ui_raw_combo_exceptions_are_explicit();
@@ -126,6 +130,10 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_frame_clock_tracks_delta_elapsed_and_index),
         CUBEY_TEST(test_process_resource_stats_sampler_reports_memory),
         CUBEY_TEST(test_process_resource_stats_sampler_reports_cpu_after_second_sample),
+        CUBEY_TEST(test_procedural_scalar_field_indexes_centered_samples),
+        CUBEY_TEST(test_procedural_scalar_field_summarizes_and_normalizes),
+        CUBEY_TEST(test_procedural_box_blur_preserves_dimensions_and_smooths_impulse),
+        CUBEY_TEST(test_procedural_noise_is_deterministic_and_bounded),
         CUBEY_TEST(test_gltf_animation_wraps_looping_playback_time),
         CUBEY_TEST(test_gltf_animation_samples_linear_translation),
         CUBEY_TEST(test_gltf_animation_samples_step_scale),
