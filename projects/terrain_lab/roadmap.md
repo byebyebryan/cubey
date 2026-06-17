@@ -217,19 +217,24 @@ should be treated as temporary scaffolding. A slice passes this phase when its
 main landforms can be inspected through named driver fields before feature masks,
 height, materials, and detail are applied.
 
-Current blocker: mountain ridges/peaks should own the mountain-driver proof,
-while alpine glacial valley should own valley and glacial process response. The
-shared mountain driver should come from a grid-level mountain field: broad
-uplift and relief build provisional height, static flow and divide analysis
-find valleys and ridge support, and slope/curvature response derives cliffs,
-peaks, shoulders, and scree. A fixed central valley with left/right ridge bands
-is no longer an acceptable success criterion.
+Current blocker: mountain ridges/peaks should own a mountain-range driver,
+while alpine glacial valley should own a valley-first driver with mountains as
+contrast. The mountain driver should prove broad uplift, rolling ridges, peaks,
+cliffs, shoulders, and scree. The glacial driver should prove a coherent
+noise-warped trough, flanking mountain walls, headwall/cirque support, ice,
+moraine/deposition, and process response. Sharing one source between these
+slices hides the question each slice is supposed to answer.
 
 Mountain-source rule: the driver must first read as mountain terrain before any
 ridge, cliff, material, or glacial dressing is applied. A valid local mountain
 patch can contain rolling ridges, broad uplift, and several peak supports, but
 should not start from a corner/quadrant mass or a single hand-authored range
 line that downstream features merely decorate.
+
+Glacial-source rule: the glacial slice should start from valley geometry, not
+from a general mountain range with a valley mask over it. Its source fields
+should place valley/channel samples near a coherent trough and use ridges,
+peaks, cliffs, and scree as wall and headwall contrast around that trough.
 
 Driver note: new slice work should normally start by identifying the missing
 source, feature-driver, or process-modifier vocabulary it needs. A biome should
@@ -269,11 +274,10 @@ Current implementation notes:
   authored dune streaks;
 - arid canyon routing should reuse shared river hierarchy and derive dry wash,
   canyon floor, wall width, and incision from discharge/order/slope/resistance;
-- alpine glacial valley consumes explicit mountain base, relief, process, and
-  full-patch selection drivers before feature masks and glacial response, but
-  is judged as the valley/process slice;
-- mountain ridges/peaks consumes the same mountain driver as a hydro-light
-  landform sentinel for ridge/crest/peak/cliff/scree structure;
+- alpine glacial valley consumes its own valley-first source fields before
+  feature masks and glacial response;
+- mountain ridges/peaks consumes a separate mountain-range driver as a
+  hydro-light landform sentinel for ridge/crest/peak/cliff/scree structure;
 - hydrology is now structure-first but still avoids a toy erosion solver;
 - the material vocabulary now includes sand for wind-shaped terrain, while snow
   continues to stand in for snow/ice in the glacial sentinel.
@@ -289,6 +293,8 @@ Success criteria:
   one regular centerline across the patch;
 - glacial terrain reads through valley shape, snow/ice, and deposition rather
   than river carving;
+- glacial valley channels sit inside a coherent trough while ridges and peaks
+  frame the trough as mountain-wall contrast;
 - mountain ridge terrain reads through broad range support, distributed ridges,
   peaks, cliffs, and scree rather than glacial valley dressing;
 - mountain high relief is distributed by source fields across the patch instead
