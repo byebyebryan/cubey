@@ -217,12 +217,13 @@ should be treated as temporary scaffolding. A slice passes this phase when its
 main landforms can be inspected through named driver fields before feature masks,
 height, materials, and detail are applied.
 
-Current blocker: alpine glacial valley proves the need for a stronger mountain
-and ridge driver. Its ridges should come from a grid-level mountain field:
-broad uplift and relief build provisional height, static flow and divide
-analysis find valleys and ridge support, and slope/curvature response derives
-cliffs, peaks, shoulders, and scree. A fixed central valley with left/right
-ridge bands is no longer an acceptable success criterion.
+Current blocker: mountain ridges/peaks should own the mountain-driver proof,
+while alpine glacial valley should own valley and glacial process response. The
+shared mountain driver should come from a grid-level mountain field: broad
+uplift and relief build provisional height, static flow and divide analysis
+find valleys and ridge support, and slope/curvature response derives cliffs,
+peaks, shoulders, and scree. A fixed central valley with left/right ridge bands
+is no longer an acceptable success criterion.
 
 Driver note: new slice work should normally start by identifying the missing
 source, feature-driver, or process-modifier vocabulary it needs. A biome should
@@ -238,6 +239,8 @@ Candidate slices:
 - arid mesa canyon: strata, cliffs, dry washes, talus, sparse vegetation;
 - alpine glacial valley: U-shaped valleys, moraine/deposition, snow and ice
   fields;
+- mountain ridges/peaks: broad range support, ridges, crests, peaks, cliffs,
+  scree, and rock/snow material response without valley-process dominance;
 - dunes: wind direction, slip faces, interdune flats, sparse plants;
 - volcanic terrain: cones, lava flows, ash fields, rough basalt;
 - wetland: low relief, saturated soil, channels, reeds, ponds;
@@ -261,7 +264,10 @@ Current implementation notes:
 - arid canyon routing should reuse shared river hierarchy and derive dry wash,
   canyon floor, wall width, and incision from discharge/order/slope/resistance;
 - alpine glacial valley consumes explicit mountain base, relief, process, and
-  full-patch selection drivers before feature masks and glacial response;
+  full-patch selection drivers before feature masks and glacial response, but
+  is judged as the valley/process slice;
+- mountain ridges/peaks consumes the same mountain driver as a hydro-light
+  landform sentinel for ridge/crest/peak/cliff/scree structure;
 - hydrology is now structure-first but still avoids a toy erosion solver;
 - the material vocabulary now includes sand for wind-shaped terrain, while snow
   continues to stand in for snow/ice in the glacial sentinel.
@@ -277,7 +283,9 @@ Success criteria:
   one regular centerline across the patch;
 - glacial terrain reads through valley shape, snow/ice, and deposition rather
   than river carving;
-- shared fields remain useful across all four sentinels without becoming
+- mountain ridge terrain reads through broad range support, distributed ridges,
+  peaks, cliffs, and scree rather than glacial valley dressing;
+- shared fields remain useful across all five sentinels without becoming
   water-centric.
 
 ## Phase 8: Integration Adapters

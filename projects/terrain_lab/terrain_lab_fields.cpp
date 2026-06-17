@@ -4015,6 +4015,197 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
     return fields;
 }
 
+TerrainLabFieldData generate_mountain_ridges_peaks_fields(const TerrainLabConfig& config) {
+    validate_terrain_lab_config(config);
+    TerrainLabFieldData fields = make_empty_terrain_lab_fields(config);
+    const float mountain_elevation_scale_m = config.elevation_scale_m * 0.98F;
+    const MountainDriverFields mountain = generate_mountain_driver_fields(config, fields.desc);
+    fields.drainage_region_count = 1U;
+    fields.max_channel_distance_m = 0.0F;
+
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const MountainDriverSample driver = mountain_driver_sample_at(mountain, sample);
+            const float high_base = smoothstep(0.36F, 0.84F, driver.base_potential);
+            const float valley = saturate(driver.valley_source * 0.24F + (1.0F - high_base) * 0.035F);
+            const float ridge = saturate(driver.ridge_source * 0.72F +
+                                         driver.crest_source * 0.36F +
+                                         driver.peak_source * 0.22F);
+            const float divide = saturate(driver.crest_source * 0.54F + ridge * 0.38F +
+                                          driver.peak_source * 0.28F + high_base * 0.10F -
+                                          valley * 0.18F);
+            const float peak = smoothstep(0.28F, 0.78F, driver.peak_source);
+            const float cliff = saturate(driver.cliff_source * 0.72F +
+                                         driver.shoulder_source * 0.18F);
+            const float channel = saturate(driver.valley_source * 0.28F +
+                                           (1.0F - high_base) * 0.04F);
+            const float basin = saturate((1.0F - high_base) * 0.26F + valley * 0.18F);
+            const float structure =
+                mountain.provisional_height_m[sample] +
+                (ridge * 0.16F + divide * 0.10F + peak * 0.32F + cliff * 0.10F -
+                 valley * 0.020F) *
+                    mountain_elevation_scale_m * config.structure_strength;
+
+            assign_driver_fields(fields, sample,
+                                 terrain_driver_sample(driver.base_potential,
+                                                       driver.relief_potential,
+                                                       driver.process_potential,
+                                                       driver.selection_mask));
+            fields.ridge_influence[sample] = ridge;
+            fields.valley_influence[sample] = valley;
+            fields.basin_influence[sample] = basin;
+            fields.divide_influence[sample] = divide;
+            fields.channel_influence[sample] = channel;
+            fields.structure_height_m[sample] = structure;
+            fields.height_m[sample] = structure;
+        }
+    }
+
+    update_height_range(fields);
+    std::vector<float> structure_slope;
+    std::vector<float> structure_curvature;
+    float structure_max_slope = 0.0F;
+    float structure_max_abs_curvature = 0.0F;
+    compute_slope_and_curvature(fields.desc, fields.structure_height_m, structure_slope,
+                                structure_curvature, structure_max_slope,
+                                structure_max_abs_curvature);
+
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const MountainDriverSample driver = mountain_driver_sample_at(mountain, sample);
+            const float slope_t = smoothstep(0.08F, 0.58F, structure_slope[sample]);
+            const float scree_deposit =
+                driver.scree_source * smoothstep(0.18F, 0.64F, slope_t) *
+                (1.0F - smoothstep(0.78F, 1.0F, slope_t)) * mountain_elevation_scale_m * 0.030F *
+                config.process_strength;
+            const float cliff_scour =
+                driver.cliff_source * smoothstep(0.36F, 0.86F, slope_t) *
+                mountain_elevation_scale_m * 0.010F * config.process_strength;
+            const float valley_softening =
+                fields.valley_influence[sample] * mountain_elevation_scale_m * 0.006F *
+                config.process_strength;
+            fields.process_delta_m[sample] = scree_deposit - cliff_scour - valley_softening;
+            fields.height_m[sample] =
+                fields.structure_height_m[sample] + fields.process_delta_m[sample];
+        }
+    }
+
+    update_height_range(fields);
+    const float process_height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const Point2 p = normalized_sample(fields.desc, x, y);
+            const MountainDriverSample driver = mountain_driver_sample_at(mountain, sample);
+            const float elevation_t =
+                saturate((fields.height_m[sample] - fields.min_height_m) / process_height_span);
+            const float ridge_detail =
+                fbm((p.x * 12.0F) - 9.0F, (p.z * 11.0F) + 7.0F, config.seed + 3711U, 4) *
+                fields.ridge_influence[sample] * 0.014F;
+            const float peak_detail =
+                fbm((p.x * 18.0F) + 13.0F, (p.z * 17.0F) - 15.0F, config.seed + 3713U, 4) *
+                driver.peak_source * 0.018F;
+            const float cliff_detail =
+                fbm((p.x * 15.0F) - 19.0F, (p.z * 15.0F) + 21.0F, config.seed + 3717U, 3) *
+                driver.cliff_source * 0.008F;
+            const float snow_smoothing =
+                smoothstep(0.58F, 0.88F, elevation_t) * (0.34F + driver.peak_source * 0.26F);
+            const float detail = (ridge_detail + peak_detail + cliff_detail) *
+                                 mountain_elevation_scale_m * config.detail_strength *
+                                 (1.0F - snow_smoothing * 0.34F);
+            fields.detail_height_m[sample] = detail;
+            fields.height_m[sample] += detail;
+        }
+    }
+
+    update_height_range(fields);
+    compute_slope_and_curvature(fields.desc, fields.height_m, fields.slope, fields.curvature,
+                                fields.max_slope, fields.max_abs_curvature);
+    compute_flow_fields(fields.desc, fields.height_m, fields.slope, fields.flow_direction,
+                        fields.flow_accumulation, fields.stream_power, fields.max_flow_accumulation,
+                        fields.max_stream_power);
+    derive_river_network_fields(fields,
+                                {
+                                    .runoff_scale = 0.18F,
+                                    .water_presence_scale = 0.035F,
+                                    .min_width_m = fields.desc.cell_size_m * 0.08F,
+                                    .max_width_m = fields.desc.cell_size_m * 0.48F,
+                                    .valley_width_multiplier = 1.8F,
+                                    .stream_threshold = 0.60F,
+                                    .local_active_scale = 0.025F,
+                                });
+    compute_channel_distance(fields.desc, fields.channel_influence, fields.channel_distance_m);
+    fields.max_channel_distance_m = 0.0F;
+    for (const float distance : fields.channel_distance_m) {
+        fields.max_channel_distance_m = std::max(fields.max_channel_distance_m, distance);
+    }
+
+    const float height_span = std::max(fields.max_height_m - fields.min_height_m, 1.0F);
+    fields.max_wetness = 0.0F;
+    fields.max_deposition = 0.0F;
+    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
+        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
+            const std::size_t sample = fields.index(x, y);
+            const Point2 p = normalized_sample(fields.desc, x, y);
+            const MountainDriverSample driver = mountain_driver_sample_at(mountain, sample);
+            const float elevation_t =
+                saturate((fields.height_m[sample] - fields.min_height_m) / height_span);
+            const float slope_t = smoothstep(0.08F, 0.58F, fields.slope[sample]);
+            const float material_noise =
+                fbm((p.x * 6.0F) - 5.0F, (p.z * 6.0F) + 4.0F, config.seed + 3731U, 4) * 0.5F +
+                0.5F;
+            const float scree_patch =
+                fbm((p.x * 11.0F) + 18.0F, (p.z * 11.0F) - 13.0F, config.seed + 3733U, 3) * 0.5F +
+                0.5F;
+            const float snow =
+                (smoothstep(0.55F, 0.88F, elevation_t) * (1.0F - slope_t * 0.38F) +
+                 driver.peak_source * 0.42F + driver.crest_source * 0.16F) *
+                lerp(0.76F, 1.16F, material_noise);
+            const float rock =
+                (slope_t * 0.62F + fields.ridge_influence[sample] * 0.34F +
+                 driver.cliff_source * 0.24F + driver.peak_source * 0.22F) *
+                (1.0F - snow * 0.54F) * lerp(0.82F, 1.20F, material_noise);
+            const float scree =
+                smoothstep(0.18F, 0.72F, slope_t) * (1.0F - smoothstep(0.78F, 1.0F, slope_t)) *
+                (driver.scree_source * 0.44F + driver.shoulder_source * 0.18F +
+                 fields.ridge_influence[sample] * 0.16F + driver.cliff_source * 0.16F) *
+                (1.0F - snow * 0.46F) * lerp(0.72F, 1.30F, scree_patch);
+            const float soil =
+                (0.05F + fields.basin_influence[sample] * 0.14F +
+                 fields.valley_influence[sample] * 0.08F + (1.0F - slope_t) * 0.05F) *
+                (1.0F - snow * 0.86F);
+            const float meadow =
+                (fields.water_presence[sample] * 0.20F + fields.valley_influence[sample] * 0.06F) *
+                (1.0F - slope_t) * (1.0F - snow);
+            const TerrainLabMaterialMask material =
+                normalized_material_mask(rock, soil, scree, meadow, 0.0F, snow, 0.0F);
+            fields.material_masks[sample] = material;
+
+            const float wetness = saturate(fields.water_presence[sample] * 0.36F +
+                                           fields.valley_influence[sample] * 0.045F);
+            const float deposition = saturate(driver.scree_source * 0.30F +
+                                              fields.valley_influence[sample] * 0.04F +
+                                              fields.channel_influence[sample] * 0.03F);
+            fields.wetness[sample] = wetness;
+            fields.deposition[sample] = deposition;
+            fields.max_wetness = std::max(fields.max_wetness, wetness);
+            fields.max_deposition = std::max(fields.max_deposition, deposition);
+            fields.grass_density[sample] =
+                saturate(material.meadow * 0.35F + material.soil * 0.08F);
+            fields.shrub_density[sample] =
+                saturate(material.soil * 0.08F * (1.0F - slope_t) * (1.0F - elevation_t * 0.72F));
+            fields.tree_density[sample] = 0.0F;
+            fields.canopy_height_m[sample] = 0.0F;
+        }
+    }
+
+    require_driver_fields_populated(fields);
+    validate_terrain_lab_fields(fields);
+    return fields;
+}
+
 TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig& config) {
     validate_terrain_lab_config(config);
     TerrainLabFieldData fields = make_empty_terrain_lab_fields(config);
@@ -4240,6 +4431,8 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
         return generate_desert_dunes_fields(config);
     case TerrainLabSlicePreset::AlpineGlacialValley:
         return generate_alpine_glacial_valley_fields(config);
+    case TerrainLabSlicePreset::MountainRidgesPeaks:
+        return generate_mountain_ridges_peaks_fields(config);
     }
     return generate_temperate_mountain_river_fields(config);
 }

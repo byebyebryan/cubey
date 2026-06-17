@@ -474,6 +474,12 @@ int main() {
     require(terrain::terrain_lab_slice_preset_from_name("alpine_glacial_valley") ==
                 terrain::TerrainLabSlicePreset::AlpineGlacialValley,
             "terrain lab slice preset should accept alpine glacial valley underscore alias");
+    require(terrain::terrain_lab_slice_preset_from_name("mountain-ridges-peaks") ==
+                terrain::TerrainLabSlicePreset::MountainRidgesPeaks,
+            "terrain lab slice preset should parse mountain ridges and peaks");
+    require(terrain::terrain_lab_slice_preset_from_name("mountain_ridges_peaks") ==
+                terrain::TerrainLabSlicePreset::MountainRidgesPeaks,
+            "terrain lab slice preset should accept mountain ridges and peaks underscore alias");
 
     require(terrain::terrain_lab_camera_preset_from_name("") ==
                 terrain::TerrainLabCameraPreset::Orbit,
@@ -1666,27 +1672,13 @@ int main() {
     double glacial_driver_non_valley_process_sum = 0.0;
     double glacial_driver_high_relief_height_sum = 0.0;
     double glacial_driver_low_relief_height_sum = 0.0;
-    std::array<bool, 5> glacial_ridge_x_bins{};
-    std::array<bool, 5> glacial_ridge_y_bins{};
     for (std::size_t index = 0; index < glacial_fields.sample_count(); ++index) {
         const float relief = glacial_fields.driver_relief_potential[index];
         const float process = glacial_fields.driver_process_potential[index];
-        const auto x = static_cast<std::uint32_t>(index % glacial_fields.desc.width);
-        const auto y = static_cast<std::uint32_t>(index / glacial_fields.desc.width);
         if (glacial_fields.ridge_influence[index] > 0.45F &&
             glacial_fields.channel_influence[index] < 0.35F) {
             glacial_driver_ridge_relief_sum += relief;
             ++glacial_driver_ridge_count;
-            const std::size_t x_bin =
-                std::min<std::size_t>(glacial_ridge_x_bins.size() - 1U,
-                                      static_cast<std::size_t>((x * glacial_ridge_x_bins.size()) /
-                                                               glacial_fields.desc.width));
-            const std::size_t y_bin =
-                std::min<std::size_t>(glacial_ridge_y_bins.size() - 1U,
-                                      static_cast<std::size_t>((y * glacial_ridge_y_bins.size()) /
-                                                               glacial_fields.desc.height));
-            glacial_ridge_x_bins[x_bin] = true;
-            glacial_ridge_y_bins[y_bin] = true;
         }
         if (glacial_fields.channel_influence[index] > 0.45F ||
             glacial_fields.valley_influence[index] > 0.58F) {
@@ -1708,20 +1700,12 @@ int main() {
             ++glacial_driver_low_relief_count;
         }
     }
-    const auto glacial_ridge_x_bin_count =
-        static_cast<std::size_t>(std::count(glacial_ridge_x_bins.begin(),
-                                            glacial_ridge_x_bins.end(), true));
-    const auto glacial_ridge_y_bin_count =
-        static_cast<std::size_t>(std::count(glacial_ridge_y_bins.begin(),
-                                            glacial_ridge_y_bins.end(), true));
     require(glacial_driver_ridge_count > 16U && glacial_driver_valley_count > 16U,
             "terrain lab glacial driver should produce enough ridge and valley samples");
     require(glacial_driver_high_relief_count > 16U && glacial_driver_low_relief_count > 16U,
             "terrain lab glacial driver should produce high and low relief samples");
     require(glacial_driver_non_valley_count > 16U,
             "terrain lab glacial driver should produce non-valley comparison samples");
-    require(glacial_ridge_x_bin_count >= 3U && glacial_ridge_y_bin_count >= 3U,
-            "terrain lab glacial mountain driver should distribute ridges across the patch");
     const float glacial_mean_ridge_driver_relief = static_cast<float>(
         glacial_driver_ridge_relief_sum / static_cast<double>(glacial_driver_ridge_count));
     const float glacial_mean_valley_driver_relief = static_cast<float>(
@@ -1775,6 +1759,139 @@ int main() {
     require(glacial_summary.sink_sample_ratio > 0.0F && glacial_summary.sink_sample_ratio < 0.50F,
             "terrain lab glacial drainage analysis should avoid sink-dominated terrain");
 
+    terrain::TerrainLabConfig mountain_config = small;
+    mountain_config.slice_preset = terrain::TerrainLabSlicePreset::MountainRidgesPeaks;
+    const terrain::TerrainLabFieldData mountain_fields =
+        terrain::generate_terrain_lab_fields(mountain_config);
+    terrain::validate_terrain_lab_fields(mountain_fields);
+    require_slice_driver_guardrails(mountain_fields, "terrain lab mountain ridge sentinel");
+    require(mountain_fields.drainage_region_count == 1U,
+            "terrain lab mountain ridge sentinel should use one diagnostic basin");
+    require(mountain_fields.max_channel_distance_m > mountain_fields.desc.cell_size_m,
+            "terrain lab mountain ridge sentinel should track diagnostic channel distance");
+    const FieldSampleStats mountain_stats = inspect_field_samples(mountain_fields);
+    const terrain::TerrainLabFieldSummary mountain_summary =
+        terrain::summarize_terrain_lab_fields(mountain_fields);
+    require(mountain_stats.saw_material_variation,
+            "terrain lab mountain ridge sentinel should produce varied material masks");
+    require(mountain_stats.saw_detail,
+            "terrain lab mountain ridge sentinel should produce terrain detail");
+    require(mountain_stats.saw_process,
+            "terrain lab mountain ridge sentinel should produce scree/cliff process fields");
+    require(mountain_stats.saw_divide,
+            "terrain lab mountain ridge sentinel should expose divides");
+    require(mountain_stats.saw_channel,
+            "terrain lab mountain ridge sentinel should keep diagnostic valley channels");
+    require(mountain_stats.ridge_count > 16U,
+            "terrain lab mountain ridge sentinel should produce enough ridge samples");
+    require(mountain_stats.divide_count > 16U,
+            "terrain lab mountain ridge sentinel should produce enough divide samples");
+    require(mountain_stats.non_channel_count > 16U,
+            "terrain lab mountain ridge sentinel should produce enough non-channel samples");
+    const double inv_mountain_count = 1.0 / static_cast<double>(mountain_fields.sample_count());
+    const float mountain_rock_scree_snow = static_cast<float>(
+        (mountain_stats.rock_sum + mountain_stats.scree_sum + mountain_stats.snow_sum) *
+        inv_mountain_count);
+    const float mountain_mean_forest =
+        static_cast<float>(mountain_stats.forest_sum * inv_mountain_count);
+    const float mountain_mean_sand =
+        static_cast<float>(mountain_stats.sand_sum * inv_mountain_count);
+    const float mountain_mean_ridge_height = static_cast<float>(
+        mountain_stats.ridge_height_sum / static_cast<double>(mountain_stats.ridge_count));
+    const float mountain_mean_non_channel_height =
+        static_cast<float>(mountain_stats.non_channel_height_sum /
+                           static_cast<double>(mountain_stats.non_channel_count));
+    std::size_t mountain_driver_ridge_count = 0;
+    std::size_t mountain_driver_valley_count = 0;
+    std::size_t mountain_driver_high_relief_count = 0;
+    std::size_t mountain_driver_low_relief_count = 0;
+    double mountain_driver_ridge_relief_sum = 0.0;
+    double mountain_driver_valley_relief_sum = 0.0;
+    double mountain_driver_high_relief_height_sum = 0.0;
+    double mountain_driver_low_relief_height_sum = 0.0;
+    std::array<bool, 5> mountain_ridge_x_bins{};
+    std::array<bool, 5> mountain_ridge_y_bins{};
+    for (std::size_t index = 0; index < mountain_fields.sample_count(); ++index) {
+        const float relief = mountain_fields.driver_relief_potential[index];
+        const auto x = static_cast<std::uint32_t>(index % mountain_fields.desc.width);
+        const auto y = static_cast<std::uint32_t>(index / mountain_fields.desc.width);
+        if (mountain_fields.ridge_influence[index] > 0.48F &&
+            mountain_fields.channel_influence[index] < 0.32F) {
+            mountain_driver_ridge_relief_sum += relief;
+            ++mountain_driver_ridge_count;
+            const std::size_t x_bin =
+                std::min<std::size_t>(mountain_ridge_x_bins.size() - 1U,
+                                      static_cast<std::size_t>((x * mountain_ridge_x_bins.size()) /
+                                                               mountain_fields.desc.width));
+            const std::size_t y_bin =
+                std::min<std::size_t>(mountain_ridge_y_bins.size() - 1U,
+                                      static_cast<std::size_t>((y * mountain_ridge_y_bins.size()) /
+                                                               mountain_fields.desc.height));
+            mountain_ridge_x_bins[x_bin] = true;
+            mountain_ridge_y_bins[y_bin] = true;
+        }
+        if (mountain_fields.channel_influence[index] > 0.20F ||
+            mountain_fields.valley_influence[index] > 0.20F) {
+            mountain_driver_valley_relief_sum += relief;
+            ++mountain_driver_valley_count;
+        }
+        if (relief > 0.66F) {
+            mountain_driver_high_relief_height_sum += mountain_fields.height_m[index];
+            ++mountain_driver_high_relief_count;
+        }
+        if (relief < 0.48F) {
+            mountain_driver_low_relief_height_sum += mountain_fields.height_m[index];
+            ++mountain_driver_low_relief_count;
+        }
+    }
+    const auto mountain_ridge_x_bin_count =
+        static_cast<std::size_t>(std::count(mountain_ridge_x_bins.begin(),
+                                            mountain_ridge_x_bins.end(), true));
+    const auto mountain_ridge_y_bin_count =
+        static_cast<std::size_t>(std::count(mountain_ridge_y_bins.begin(),
+                                            mountain_ridge_y_bins.end(), true));
+    require(mountain_driver_ridge_count > 16U && mountain_driver_valley_count > 16U,
+            "terrain lab mountain ridge driver should produce enough ridge and valley samples");
+    require(mountain_driver_high_relief_count > 16U &&
+                mountain_driver_low_relief_count > 16U,
+            "terrain lab mountain ridge driver should produce high and low relief samples");
+    require(mountain_ridge_x_bin_count >= 3U && mountain_ridge_y_bin_count >= 3U,
+            "terrain lab mountain ridge driver should distribute ridges across the patch");
+    const float mountain_mean_ridge_driver_relief = static_cast<float>(
+        mountain_driver_ridge_relief_sum / static_cast<double>(mountain_driver_ridge_count));
+    const float mountain_mean_valley_driver_relief = static_cast<float>(
+        mountain_driver_valley_relief_sum / static_cast<double>(mountain_driver_valley_count));
+    const float mountain_mean_high_relief_height =
+        static_cast<float>(mountain_driver_high_relief_height_sum /
+                           static_cast<double>(mountain_driver_high_relief_count));
+    const float mountain_mean_low_relief_height =
+        static_cast<float>(mountain_driver_low_relief_height_sum /
+                           static_cast<double>(mountain_driver_low_relief_count));
+    require(mountain_mean_ridge_driver_relief > mountain_mean_valley_driver_relief + 0.06F,
+            "terrain lab mountain ridges should derive from higher relief driver values");
+    require(mountain_mean_high_relief_height > mountain_mean_low_relief_height + 60.0F,
+            "terrain lab mountain ridge height should follow the relief driver");
+    require(mountain_mean_ridge_height > mountain_mean_non_channel_height + 45.0F,
+            "terrain lab mountain ridges should stand above non-ridge terrain");
+    require(mountain_rock_scree_snow > 0.70F,
+            "terrain lab mountain ridge sentinel should be dominated by rock, scree, and snow");
+    require(mountain_mean_forest < 0.001F,
+            "terrain lab mountain ridge sentinel should not use forest material");
+    require(mountain_mean_sand < 0.001F,
+            "terrain lab mountain ridge sentinel should not use sand material");
+    require(mountain_summary.mean_wetness < 0.08F,
+            "terrain lab mountain ridge sentinel should stay hydro-light");
+    require(mountain_summary.mean_water_presence < 0.012F,
+            "terrain lab mountain ridge sentinel should expose only diagnostic water presence");
+    require(mountain_summary.mean_tree_density == 0.0F,
+            "terrain lab mountain ridge sentinel should not produce trees");
+    require(mountain_summary.sink_sample_count > 0U &&
+                mountain_summary.sink_sample_count < mountain_summary.sample_count,
+            "terrain lab mountain ridge drainage analysis should expose bounded sink samples");
+    require(mountain_summary.sink_sample_ratio > 0.0F &&
+                mountain_summary.sink_sample_ratio < 0.50F,
+            "terrain lab mountain ridge drainage analysis should avoid sink-dominated terrain");
+
     terrain::TerrainLabConfig other_seed = small;
     other_seed.seed += 1U;
     const terrain::TerrainLabFieldSummary other_summary =
@@ -1788,6 +1905,8 @@ int main() {
                                         100.0F);
     require_noise_off_driver_guardrails(dunes_config, "terrain lab dunes sentinel", 25.0F);
     require_noise_off_driver_guardrails(glacial_config, "terrain lab glacial sentinel", 100.0F);
+    require_noise_off_driver_guardrails(mountain_config, "terrain lab mountain ridge sentinel",
+                                        100.0F);
 
     const terrain::TerrainLabMeshData mesh = terrain::make_terrain_lab_mesh(fields);
     const std::size_t terrain_index_count = static_cast<std::size_t>(fields.desc.width - 1U) *

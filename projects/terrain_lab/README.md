@@ -109,18 +109,21 @@ discharge/order drive dry-wash width, canyon floors, walls, rims, and talus.
 Coastal work can reconnect later through `procedural_terrain` once the general
 terrain field model is stronger.
 
-Two representative sentinel slices are also available:
+Three representative sentinel slices are also available:
 
 - `--terrain-lab-slice desert-dunes`: wind-shaped dune crests, slip faces,
   interdune flats, sand-dominant materials, sparse shrubs, and diagnostic-only
   flow fields. This is the first slice being migrated to explicit coherent
   driver fields instead of locally authored dune streaks.
-- `--terrain-lab-slice alpine-glacial-valley`: U-shaped trunk valley, high
-  ridges, cirque/headwall influence, moraine/deposition bands, snow/ice masks,
-  and moderate meltwater diagnostics. It consumes an explicit mountain driver
-  built from uplift, relief, static flow/divide analysis, slope, and curvature
-  so the driver view can explain the valley and ridge layout without fixed
-  paired ridge bands.
+- `--terrain-lab-slice alpine-glacial-valley`: U-shaped trunk valley,
+  cirque/headwall influence, moraine/deposition bands, snow/ice masks, and
+  moderate meltwater diagnostics. It consumes the shared mountain driver, but
+  should be judged as a valley/process slice rather than the mountain-shape
+  proof.
+- `--terrain-lab-slice mountain-ridges-peaks`: a hydro-light mountain landform
+  sentinel for broad range support, ridges, crests, peaks, cliffs, scree, and
+  rock/snow material response. It owns the mountain-driver visual review that
+  glacial valley used to carry implicitly.
 
 Hydrology is now a first-class terrain structure, but still not a heavy erosion
 solver. Flow direction, accumulation, stream power, discharge proxy, stream
@@ -210,6 +213,7 @@ Useful run commands:
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice temperate-mountain-rivers --debug-view drainage-regions --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice desert-dunes --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice alpine-glacial-valley --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice mountain-ridges-peaks --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --headless --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab-material.png
 ```
@@ -227,6 +231,8 @@ mkdir -p outputs/terrain_lab/current
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/03-desert-dunes-driver.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --width 1280 --height 720 --output outputs/terrain_lab/current/04-alpine-glacial-valley-final.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/04-alpine-glacial-valley-driver.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice mountain-ridges-peaks --width 1280 --height 720 --output outputs/terrain_lab/current/05-mountain-ridges-peaks-final.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice mountain-ridges-peaks --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/05-mountain-ridges-peaks-driver.png
 ```
 
 `outputs/` is ignored by Git; `outputs/terrain_lab/current/` is disposable and
@@ -238,11 +244,11 @@ diagnostics in a named subdirectory when they need to be kept around.
 Current status: CPU field foundation plus a minimal standalone visual workbench.
 The default generator now targets a temperate mountain river reference with no
 fixed watershed quadrant fixture, so drainage hierarchy can mature before
-canyon-specific styling. The arid mesa canyon, desert dunes, and alpine glacial
-valley sentinels remain available as explicit slice fixtures. The
-workbench has deterministic mesh extraction, field/debug shading, windowed and
-headless render paths, PNG smoke coverage, shader/debug-view sync tests, and
-analysis-only drainage guardrails.
+canyon-specific styling. The arid mesa canyon, desert dunes, alpine glacial
+valley, and mountain ridges/peaks sentinels remain available as explicit slice
+fixtures. The workbench has deterministic mesh extraction, field/debug shading,
+windowed and headless render paths, PNG smoke coverage, shader/debug-view sync
+tests, and analysis-only drainage guardrails.
 
 Still out of scope for the current slice: live ImGui editing, runtime
 regeneration, particle hydraulic erosion, meander simulation, lakes, animated

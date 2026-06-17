@@ -17,13 +17,15 @@ enum class TerrainLabSlicePreset : std::uint32_t {
     TemperateMountainRivers = 1,
     DesertDunes = 2,
     AlpineGlacialValley = 3,
+    MountainRidgesPeaks = 4,
 };
 
-inline constexpr std::array<TerrainLabSlicePreset, 4> kTerrainLabSlicePresets{
+inline constexpr std::array<TerrainLabSlicePreset, 5> kTerrainLabSlicePresets{
     TerrainLabSlicePreset::AridMesaCanyon,
     TerrainLabSlicePreset::TemperateMountainRivers,
     TerrainLabSlicePreset::DesertDunes,
     TerrainLabSlicePreset::AlpineGlacialValley,
+    TerrainLabSlicePreset::MountainRidgesPeaks,
 };
 
 enum class TerrainLabCameraPreset : std::uint32_t {
@@ -127,6 +129,8 @@ struct TerrainLabConfig {
         return "desert-dunes";
     case TerrainLabSlicePreset::AlpineGlacialValley:
         return "alpine-glacial-valley";
+    case TerrainLabSlicePreset::MountainRidgesPeaks:
+        return "mountain-ridges-peaks";
     }
     return "arid-mesa-canyon";
 }

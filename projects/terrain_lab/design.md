@@ -220,12 +220,13 @@ as support until meltwater becomes a focused target.
 The next two driver blockers are canyon ownership and mountain/ridge structure.
 Arid canyon should become a dry, high-incision expression of the shared river
 hierarchy instead of a slice-local canyon skeleton with river fields applied
-afterward. Alpine should consume a mountain driver rather than author the
-mountain topology itself. That driver starts from broad uplift, local relief,
-and resistance fields, then derives ridges, valleys, cliffs, peaks, and scree
-from provisional height, slope/curvature, divide support, and routed flow.
-Fixed "central valley plus two side ridges" layouts are a scaffolding smell, not
-a terrain model.
+afterward. Mountain ridges/peaks should own the mountain-driver proof; alpine
+glacial valley should consume that driver as a valley/process slice rather than
+author the mountain topology itself. The shared driver starts from broad uplift,
+local relief, and resistance fields, then derives ridges, valleys, cliffs,
+peaks, and scree from provisional height, slope/curvature, divide support, and
+routed flow. Fixed "central valley plus two side ridges" layouts are a
+scaffolding smell, not a terrain model.
 
 The sentinel slice set should prevent overfitting this model to canyon terrain.
 The first representative set is:
@@ -235,6 +236,8 @@ The first representative set is:
   divide-channel relationships;
 - desert dunes, for wind-shaped terrain where hydrology should be diagnostic
   rather than causal;
+- mountain ridges/peaks, for broad range support, ridges, crests, peaks,
+  cliffs, scree, and rock/snow material response;
 - alpine glacial valley, for U-shaped valley structure, moraine/deposition,
   snow/ice masks, and ice-shaped relief.
 
