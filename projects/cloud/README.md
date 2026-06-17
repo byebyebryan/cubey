@@ -26,10 +26,13 @@ Current V1 scope:
   residual raymarch banding;
 - standalone background modes: atmosphere-only by default, plus an opt-in
   `water-context` proxy for ocean-adjacent inspection shots;
+- explicit distance regimes: surface/local volumetric marching, broad
+  high/orbit shell evaluation, and debug views for the local-vs-orbit blend;
 - diagnostics for weather, weather edge, weather bias, base/detail density,
   density, transmittance, cloud type, visible density/cloud type, lighting,
-  shadow, cloud alpha, distance, metadata distance/alpha/confidence, metadata
-  density, steps, and background.
+  shadow, cloud alpha, distance, distance regime, local/orbit alpha, orbit
+  weather, metadata distance/alpha/confidence, metadata density, steps, and
+  background.
 
 The first target is cloud shape: raw density and final captures should show
 coherent cloud masses without relying on cache, temporal reconstruction, or
@@ -58,6 +61,10 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view transmittance
 ./build/dev/projects/cloud/cloud --debug-view lighting
 ./build/dev/projects/cloud/cloud --debug-view cloud-alpha
+./build/dev/projects/cloud/cloud --debug-view distance-regime
+./build/dev/projects/cloud/cloud --debug-view local-alpha
+./build/dev/projects/cloud/cloud --debug-view orbit-alpha
+./build/dev/projects/cloud/cloud --debug-view orbit-weather
 ./build/dev/projects/cloud/cloud --debug-view distance
 ./build/dev/projects/cloud/cloud --debug-view metadata-distance
 ./build/dev/projects/cloud/cloud --debug-view metadata-alpha
@@ -75,6 +82,10 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --cloud-sampling-mode bayer
 ./build/dev/projects/cloud/cloud --cloud-sampling-mode off
 ./build/dev/projects/cloud/cloud --cloud-sampling-mode interleaved --cloud-jitter-strength 0.5
+./build/dev/projects/cloud/cloud --cloud-distance-mode local
+./build/dev/projects/cloud/cloud --cloud-distance-mode orbit-shell
+./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --debug-view distance-regime
+./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --debug-view orbit-weather
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode surface-up --output outputs/cloud-v1-surface-up.png
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode high-oblique --output outputs/cloud-v1-high-oblique.png
 projects/cloud/capture_review.sh outputs/cloud-v1-review
@@ -82,7 +93,7 @@ projects/cloud/capture_review.sh outputs/cloud-v1-review
 
 `capture_review.sh` also writes `diagnostic-crops/center-feature-contact.png`
 with resolution-scaled center crops for final/raw/alpha/weather/weather-edge,
-weather-bias, cloud-type, and visible density/type checks.
+weather-bias, cloud-type, visible density/type, and distance-regime checks.
 
 Controls:
 
@@ -98,6 +109,8 @@ Controls:
   shape thresholds, cloud type, and edge erosion. The default is `0`, preserving
   the local noise-scattered baseline while authored weather remains opt-in.
 - `Sampling`: ray-start sampling mode and jitter amount.
+- `Distance Regime`: local/orbit mode, altitude and ray-distance transition
+  ranges, broad-shell detail strength, and broad-shell density scale.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
 - `Final Resolve`: alpha-aware smoothing amount plus final contrast,
@@ -107,15 +120,17 @@ Known deferrals:
 
 - No cached octahedral hemisphere path yet. `cloud_ref_2` remains the cache
   architecture reference for a later pass.
-- No temporal reconstruction yet. The raw direct signal must be credible first.
+- Temporal reconstruction exists for final-view cleanup, but raw diagnostics
+  remain the source of truth when judging cloud shape.
 - Static sampling controls are diagnostic and deterministic. A blue-noise or
-  temporal sampling path remains deferred until raw shape is stable.
+  spatiotemporal blue-noise sampling path remains deferred until the direct
+  local/orbit regimes are stable.
 - Cloud type is exposed as raw and visible diagnostics, and drives the current
   height gradient model. Planar `position.xz` weather projection remains
   a likely future cleanup for planet-scale use.
-- Orbit final output remains a distance-regime diagnostic. The weather and
-  weather-bias views show authored shell structure, but orbit-scale visible
-  cloud density still needs a dedicated shell/cache path.
+- Orbit final output now uses the first broad shell path. It is still a
+  distance-regime prototype, not a finished planet weather layer or cached sky
+  product.
 - No ocean, planet, terrain, or PBR integration yet. Future consumers should
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,

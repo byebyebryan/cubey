@@ -152,6 +152,9 @@ Initial scope:
 - the default standalone background is atmosphere-only. The earlier water proxy
   remains available as `clouds.background_mode = water-context` for ocean
   inspection captures, but it should not be part of the baseline cloud read;
+- distance-regime controls are now explicit: `clouds.distance_mode` can force
+  local or orbit-shell behavior, while `auto` blends high and orbit views toward
+  a broad low-detail shell before the full cached sky product exists;
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;
@@ -166,7 +169,7 @@ a planet frame, local tangent frame, or stable global weather address.
 Deferred until the shape is credible:
 
 - ocean reflection integration;
-- planet-scale orbit weather art direction;
+- finished planet-scale orbit weather art direction;
 - cloud shadow consumption by ocean/terrain;
 - full cached octahedral sky blending;
 - temporal reconstruction beyond basic diagnostic toggles;
@@ -183,8 +186,9 @@ Use separate regimes:
 - near/overhead: bounded volumetric march with real parallax and thickness;
 - mid/far sky: cached hemisphere or shell product with low-frequency weather
   massing and controlled horizon fade;
-- orbit: broad weather map/shell view with suppressed fine erosion until a
-  planet-scale cloud layer exists;
+- orbit: broad weather map/shell view with suppressed fine erosion. The active
+  project now has a direct shell prototype; it is a bridge to, not a substitute
+  for, a future cached planet-scale cloud product;
 - high/cirrus: cheap layer or shell until real volumetric need appears.
 
 The transition between near volume and far cached/cloud-shell output should be
@@ -203,7 +207,7 @@ shared sky/celestial/atmosphere state and emit reusable outputs:
 - low-frequency cloud shadow factor for terrain/ocean;
 - optional sky/reflection or environment contribution for water/PBR consumers;
 - debug views for weather, base/detail density, lighting, shadow, cache,
-  distance, steps, and composition.
+  distance, local/orbit regime, steps, and composition.
 
 Ocean, planet, and glTF/PBR viewers should not own cloud raymarch code. They
 should sample cloud outputs or composed sky/environment products.
