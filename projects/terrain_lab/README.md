@@ -216,30 +216,21 @@ Useful run commands:
 Useful local review output commands:
 
 ```sh
-mkdir -p outputs/terrain_lab
-./build/dev/projects/terrain_lab/terrain_lab --headless --width 1280 --height 720 --output outputs/terrain_lab/final.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view river-network --width 1280 --height 720 --output outputs/terrain_lab/river-network.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view river-width --width 1280 --height 720 --output outputs/terrain_lab/river-width.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view water-presence --width 1280 --height 720 --output outputs/terrain_lab/water-presence.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-camera-preset profile --width 1280 --height 720 --output outputs/terrain_lab/final-profile.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view feature-graph --width 1280 --height 720 --output outputs/terrain_lab/feature-graph.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view channel --width 1280 --height 720 --output outputs/terrain_lab/channel.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/material.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view biome-density --width 1280 --height 720 --output outputs/terrain_lab/biome-density.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view slope --width 1280 --height 720 --output outputs/terrain_lab/slope.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view flow-accumulation --width 1280 --height 720 --output outputs/terrain_lab/flow-accumulation.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view noise-off --width 1280 --height 720 --output outputs/terrain_lab/noise-off.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/driver.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-rivers --debug-view drainage-regions --width 1280 --height 720 --output outputs/terrain_lab/drainage-regions.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes-material.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes-driver.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --width 1280 --height 720 --output outputs/terrain_lab/alpine-glacial-valley.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/alpine-glacial-valley-material.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/alpine-glacial-valley-driver.png
+rm -rf outputs/terrain_lab/current
+mkdir -p outputs/terrain_lab/current
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-rivers --width 1280 --height 720 --output outputs/terrain_lab/current/01-temperate-mountain-rivers-final.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-rivers --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/01-temperate-mountain-rivers-driver.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice arid-mesa-canyon --width 1280 --height 720 --output outputs/terrain_lab/current/02-arid-mesa-canyon-final.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice arid-mesa-canyon --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/02-arid-mesa-canyon-driver.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --width 1280 --height 720 --output outputs/terrain_lab/current/03-desert-dunes-final.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/03-desert-dunes-driver.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --width 1280 --height 720 --output outputs/terrain_lab/current/04-alpine-glacial-valley-final.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/04-alpine-glacial-valley-driver.png
 ```
 
-`outputs/` is ignored by Git; these captures are local review artifacts.
+`outputs/` is ignored by Git; `outputs/terrain_lab/current/` is disposable and
+should contain only the latest comparable final/driver review set. Put ad hoc
+diagnostics in a named subdirectory when they need to be kept around.
 
 ## Status
 
