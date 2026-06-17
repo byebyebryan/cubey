@@ -1666,35 +1666,27 @@ int main() {
     double glacial_driver_non_valley_process_sum = 0.0;
     double glacial_driver_high_relief_height_sum = 0.0;
     double glacial_driver_low_relief_height_sum = 0.0;
-    std::size_t glacial_left_ridge_count = 0;
-    std::size_t glacial_right_ridge_count = 0;
-    std::size_t glacial_center_valley_count = 0;
-    double glacial_left_ridge_height_sum = 0.0;
-    double glacial_right_ridge_height_sum = 0.0;
-    double glacial_center_valley_height_sum = 0.0;
-    const float glacial_half_x =
-        static_cast<float>(glacial_fields.desc.width - 1U) * glacial_fields.desc.cell_size_m *
-        0.5F;
+    std::array<bool, 5> glacial_ridge_x_bins{};
+    std::array<bool, 5> glacial_ridge_y_bins{};
     for (std::size_t index = 0; index < glacial_fields.sample_count(); ++index) {
         const float relief = glacial_fields.driver_relief_potential[index];
         const float process = glacial_fields.driver_process_potential[index];
         const auto x = static_cast<std::uint32_t>(index % glacial_fields.desc.width);
-        const float nx =
-            glacial_half_x == 0.0F
-                ? 0.0F
-                : terrain::terrain_lab_grid_sample_x_m(glacial_fields.desc, x) / glacial_half_x;
+        const auto y = static_cast<std::uint32_t>(index / glacial_fields.desc.width);
         if (glacial_fields.ridge_influence[index] > 0.45F &&
             glacial_fields.channel_influence[index] < 0.35F) {
             glacial_driver_ridge_relief_sum += relief;
             ++glacial_driver_ridge_count;
-            if (nx < -0.18F) {
-                glacial_left_ridge_height_sum += glacial_fields.height_m[index];
-                ++glacial_left_ridge_count;
-            }
-            if (nx > 0.18F) {
-                glacial_right_ridge_height_sum += glacial_fields.height_m[index];
-                ++glacial_right_ridge_count;
-            }
+            const std::size_t x_bin =
+                std::min<std::size_t>(glacial_ridge_x_bins.size() - 1U,
+                                      static_cast<std::size_t>((x * glacial_ridge_x_bins.size()) /
+                                                               glacial_fields.desc.width));
+            const std::size_t y_bin =
+                std::min<std::size_t>(glacial_ridge_y_bins.size() - 1U,
+                                      static_cast<std::size_t>((y * glacial_ridge_y_bins.size()) /
+                                                               glacial_fields.desc.height));
+            glacial_ridge_x_bins[x_bin] = true;
+            glacial_ridge_y_bins[y_bin] = true;
         }
         if (glacial_fields.channel_influence[index] > 0.45F ||
             glacial_fields.valley_influence[index] > 0.58F) {
@@ -1707,29 +1699,29 @@ int main() {
             glacial_driver_non_valley_process_sum += process;
             ++glacial_driver_non_valley_count;
         }
-        if (relief > 0.58F) {
+        if (relief > 0.65F) {
             glacial_driver_high_relief_height_sum += glacial_fields.height_m[index];
             ++glacial_driver_high_relief_count;
         }
-        if (relief < 0.36F) {
+        if (relief < 0.50F) {
             glacial_driver_low_relief_height_sum += glacial_fields.height_m[index];
             ++glacial_driver_low_relief_count;
         }
-        if (std::abs(nx) < 0.24F && glacial_fields.valley_influence[index] > 0.45F) {
-            glacial_center_valley_height_sum += glacial_fields.height_m[index];
-            ++glacial_center_valley_count;
-        }
     }
+    const auto glacial_ridge_x_bin_count =
+        static_cast<std::size_t>(std::count(glacial_ridge_x_bins.begin(),
+                                            glacial_ridge_x_bins.end(), true));
+    const auto glacial_ridge_y_bin_count =
+        static_cast<std::size_t>(std::count(glacial_ridge_y_bins.begin(),
+                                            glacial_ridge_y_bins.end(), true));
     require(glacial_driver_ridge_count > 16U && glacial_driver_valley_count > 16U,
             "terrain lab glacial driver should produce enough ridge and valley samples");
     require(glacial_driver_high_relief_count > 16U && glacial_driver_low_relief_count > 16U,
             "terrain lab glacial driver should produce high and low relief samples");
     require(glacial_driver_non_valley_count > 16U,
             "terrain lab glacial driver should produce non-valley comparison samples");
-    require(glacial_left_ridge_count > 16U && glacial_right_ridge_count > 16U,
-            "terrain lab glacial mountain driver should produce paired ridge bands");
-    require(glacial_center_valley_count > 16U,
-            "terrain lab glacial mountain driver should keep a central valley band");
+    require(glacial_ridge_x_bin_count >= 3U && glacial_ridge_y_bin_count >= 3U,
+            "terrain lab glacial mountain driver should distribute ridges across the patch");
     const float glacial_mean_ridge_driver_relief = static_cast<float>(
         glacial_driver_ridge_relief_sum / static_cast<double>(glacial_driver_ridge_count));
     const float glacial_mean_valley_driver_relief = static_cast<float>(
@@ -1745,24 +1737,12 @@ int main() {
     const float glacial_mean_low_relief_height =
         static_cast<float>(glacial_driver_low_relief_height_sum /
                            static_cast<double>(glacial_driver_low_relief_count));
-    const float glacial_mean_left_ridge_height =
-        static_cast<float>(glacial_left_ridge_height_sum /
-                           static_cast<double>(glacial_left_ridge_count));
-    const float glacial_mean_right_ridge_height =
-        static_cast<float>(glacial_right_ridge_height_sum /
-                           static_cast<double>(glacial_right_ridge_count));
-    const float glacial_mean_center_valley_height =
-        static_cast<float>(glacial_center_valley_height_sum /
-                           static_cast<double>(glacial_center_valley_count));
     require(glacial_mean_ridge_driver_relief > glacial_mean_valley_driver_relief + 0.05F,
             "terrain lab glacial ridges should derive from higher relief driver values");
     require(glacial_mean_valley_driver_process > glacial_mean_non_valley_driver_process + 0.02F,
             "terrain lab glacial valley process should derive from higher process driver values");
     require(glacial_mean_high_relief_height > glacial_mean_low_relief_height + 20.0F,
             "terrain lab glacial height should follow the relief driver");
-    require(glacial_mean_left_ridge_height > glacial_mean_center_valley_height + 30.0F &&
-                glacial_mean_right_ridge_height > glacial_mean_center_valley_height + 30.0F,
-            "terrain lab glacial paired ridges should stand above the central valley");
     require(glacial_rock_scree_snow > 0.62F,
             "terrain lab glacial sentinel should be dominated by rock, scree, and snow/ice");
     require(glacial_mean_forest < 0.04F,
