@@ -368,6 +368,36 @@ void require_slice_driver_guardrails(
             std::string(slice_name) + " driver process should be inspectable");
 }
 
+void require_noise_off_driver_guardrails(
+    cubey::projects::terrain_lab::TerrainLabConfig config, const char* slice_name,
+    float min_structure_span_m) {
+    namespace terrain = cubey::projects::terrain_lab;
+    config.detail_strength = 0.0F;
+    const terrain::TerrainLabFieldData fields = terrain::generate_terrain_lab_fields(config);
+    terrain::validate_terrain_lab_fields(fields);
+    require_slice_driver_guardrails(fields, slice_name);
+
+    float min_structure = fields.structure_height_m.front();
+    float max_structure = fields.structure_height_m.front();
+    bool all_detail_zero = true;
+    for (std::size_t index = 0; index < fields.sample_count(); ++index) {
+        min_structure = std::min(min_structure, fields.structure_height_m[index]);
+        max_structure = std::max(max_structure, fields.structure_height_m[index]);
+        all_detail_zero =
+            all_detail_zero && std::abs(fields.detail_height_m[index]) <= 0.001F;
+        require_near(fields.height_m[index],
+                     fields.structure_height_m[index] + fields.process_delta_m[index],
+                     0.001F, std::string(slice_name) +
+                                 " noise-off height should equal structure plus process");
+    }
+    require(all_detail_zero, std::string(slice_name) +
+                                 " detail can be disabled independently");
+    require(max_structure - min_structure > min_structure_span_m,
+            std::string(slice_name) + " noise-off structure should remain non-flat");
+    require(fields.max_flow_accumulation > 1.0F,
+            std::string(slice_name) + " noise-off fields should still route drainage");
+}
+
 std::string read_text_file(const std::filesystem::path& path) {
     std::ifstream stream(path);
     if (!stream) {
@@ -1290,6 +1320,72 @@ int main() {
             "terrain lab temperate river channels should carry more flow than non-channel terrain");
     require(river_mean_divide_height > river_mean_channel_height + 15.0F,
             "terrain lab temperate river divides should remain higher than channels");
+    std::size_t river_driver_ridge_count = 0;
+    std::size_t river_driver_channel_count = 0;
+    std::size_t river_driver_non_channel_count = 0;
+    std::size_t river_driver_high_relief_count = 0;
+    std::size_t river_driver_low_relief_count = 0;
+    double river_driver_ridge_relief_sum = 0.0;
+    double river_driver_channel_relief_sum = 0.0;
+    double river_driver_channel_process_sum = 0.0;
+    double river_driver_non_channel_process_sum = 0.0;
+    double river_driver_high_relief_height_sum = 0.0;
+    double river_driver_low_relief_height_sum = 0.0;
+    for (std::size_t index = 0; index < river_fields.sample_count(); ++index) {
+        const float relief = river_fields.driver_relief_potential[index];
+        const float process = river_fields.driver_process_potential[index];
+        if (river_fields.ridge_influence[index] > 0.42F &&
+            river_fields.channel_influence[index] < 0.35F) {
+            river_driver_ridge_relief_sum += relief;
+            ++river_driver_ridge_count;
+        }
+        if (river_fields.channel_influence[index] > 0.45F) {
+            river_driver_channel_relief_sum += relief;
+            river_driver_channel_process_sum += process;
+            ++river_driver_channel_count;
+        }
+        if (river_fields.channel_influence[index] < 0.05F &&
+            river_fields.valley_influence[index] < 0.25F) {
+            river_driver_non_channel_process_sum += process;
+            ++river_driver_non_channel_count;
+        }
+        if (relief > 0.42F) {
+            river_driver_high_relief_height_sum += river_fields.height_m[index];
+            ++river_driver_high_relief_count;
+        }
+        if (relief < 0.24F) {
+            river_driver_low_relief_height_sum += river_fields.height_m[index];
+            ++river_driver_low_relief_count;
+        }
+    }
+    require(river_driver_ridge_count > 16U && river_driver_channel_count > 16U,
+            "terrain lab temperate river driver should produce enough ridge and channel samples");
+    require(river_driver_non_channel_count > 16U,
+            "terrain lab temperate river driver should produce enough non-channel comparison samples");
+    require(river_driver_high_relief_count > 16U && river_driver_low_relief_count > 16U,
+            "terrain lab temperate river driver should produce high and low relief samples");
+    const float river_mean_ridge_driver_relief = static_cast<float>(
+        river_driver_ridge_relief_sum / static_cast<double>(river_driver_ridge_count));
+    const float river_mean_channel_driver_relief = static_cast<float>(
+        river_driver_channel_relief_sum / static_cast<double>(river_driver_channel_count));
+    const float river_mean_channel_driver_process = static_cast<float>(
+        river_driver_channel_process_sum / static_cast<double>(river_driver_channel_count));
+    const float river_mean_non_channel_driver_process =
+        static_cast<float>(river_driver_non_channel_process_sum /
+                           static_cast<double>(river_driver_non_channel_count));
+    const float river_mean_high_relief_height =
+        static_cast<float>(river_driver_high_relief_height_sum /
+                           static_cast<double>(river_driver_high_relief_count));
+    const float river_mean_low_relief_height =
+        static_cast<float>(river_driver_low_relief_height_sum /
+                           static_cast<double>(river_driver_low_relief_count));
+    require(river_mean_ridge_driver_relief > river_mean_channel_driver_relief + 0.04F,
+            "terrain lab temperate river ridges should derive from higher relief driver values");
+    require(river_mean_channel_driver_process >
+                river_mean_non_channel_driver_process + 0.02F,
+            "terrain lab temperate river channels should derive from higher process driver values");
+    require(river_mean_high_relief_height > river_mean_low_relief_height + 20.0F,
+            "terrain lab temperate river height should follow the relief driver");
     const terrain::TerrainLabFieldSummary river_summary =
         terrain::summarize_terrain_lab_fields(river_fields);
     const RiverHierarchyStats river_hierarchy_stats = inspect_river_hierarchy(river_fields);
@@ -1622,30 +1718,11 @@ int main() {
                 std::abs(other_summary.mean_wetness - summary.mean_wetness) > 0.00001F,
             "terrain lab seed should influence generated fields");
 
-    terrain::TerrainLabConfig no_detail = small;
-    no_detail.detail_strength = 0.0F;
-    const terrain::TerrainLabFieldData no_detail_fields =
-        terrain::generate_terrain_lab_fields(no_detail);
-    float min_no_detail_structure = no_detail_fields.structure_height_m.front();
-    float max_no_detail_structure = no_detail_fields.structure_height_m.front();
-    bool all_detail_zero = true;
-    for (std::size_t index = 0; index < no_detail_fields.sample_count(); ++index) {
-        min_no_detail_structure =
-            std::min(min_no_detail_structure, no_detail_fields.structure_height_m[index]);
-        max_no_detail_structure =
-            std::max(max_no_detail_structure, no_detail_fields.structure_height_m[index]);
-        all_detail_zero =
-            all_detail_zero && std::abs(no_detail_fields.detail_height_m[index]) <= 0.001F;
-        require_near(no_detail_fields.height_m[index],
-                     no_detail_fields.structure_height_m[index] +
-                         no_detail_fields.process_delta_m[index],
-                     0.001F, "terrain lab noise-off height should equal structure plus process");
-    }
-    require(all_detail_zero, "terrain lab detail can be disabled independently");
-    require(max_no_detail_structure - min_no_detail_structure > 100.0F,
-            "terrain lab noise-off structure should remain non-flat");
-    require(no_detail_fields.max_flow_accumulation > 1.0F,
-            "terrain lab noise-off fields should still have drainage structure");
+    require_noise_off_driver_guardrails(small, "terrain lab arid slice", 100.0F);
+    require_noise_off_driver_guardrails(river_config, "terrain lab temperate river fixture",
+                                        100.0F);
+    require_noise_off_driver_guardrails(dunes_config, "terrain lab dunes sentinel", 25.0F);
+    require_noise_off_driver_guardrails(glacial_config, "terrain lab glacial sentinel", 100.0F);
 
     const terrain::TerrainLabMeshData mesh = terrain::make_terrain_lab_mesh(fields);
     const std::size_t terrain_index_count = static_cast<std::size_t>(fields.desc.width - 1U) *
