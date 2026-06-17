@@ -113,6 +113,8 @@ Controls:
 - `Sampling`: ray-start sampling mode and jitter amount.
 - `Distance Regime`: local/orbit mode, altitude and ray-distance transition
   ranges, broad-shell detail strength, and broad-shell density scale.
+  Orbit shell diagnostics sample a planet-space coverage/detail/hull model
+  rather than the surface-local planar density field.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
 - `Final Resolve`: alpha-aware smoothing amount plus final contrast,
@@ -128,11 +130,11 @@ Known deferrals:
   spatiotemporal blue-noise sampling path remains deferred until the direct
   local/orbit regimes are stable.
 - Cloud type is exposed as raw and visible diagnostics, and drives the current
-  height gradient model. Planar `position.xz` weather projection remains
-  a likely future cleanup for planet-scale use.
-- Orbit final output now uses the first broad shell path. It is still a
-  distance-regime prototype, not a finished planet weather layer or cached sky
-  product.
+  height gradient model. The surface/local path still uses planar weather
+  projection; the orbit shell now uses a separate planet-space hull.
+- Orbit final output uses the first planet-space coverage/detail/hull path. It
+  is still a direct shell renderer, not a finished cached sky product or
+  asset-backed global weather map.
 - No ocean, planet, terrain, or PBR integration yet. Future consumers should
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,

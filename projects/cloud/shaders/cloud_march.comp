@@ -72,6 +72,12 @@ struct DebugRayFields {
     float weighted_cloud_type;
 };
 
+struct OrbitDebugFields {
+    float max_coverage;
+    float max_detail;
+    float max_hull;
+};
+
 float cloud_interleaved_gradient_noise(ivec2 pixel) {
     vec2 p = vec2(pixel);
     return fract(52.9829189 * fract(0.06711056 * p.x + 0.00583715 * p.y));
@@ -148,8 +154,8 @@ OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
     float wind_fraction =
         params.weather.w / max(cloud_planet_radius() * 2.0 * CLOUD_PI, 1.0);
     vec2 wind = WIND_DIRECTION.xz * wind_fraction;
-    vec4 broad = cloud_orbit_triplanar_weather(normal, 0.055, wind);
-    vec4 detail = cloud_orbit_triplanar_weather(normal, 0.18, wind * 2.3 + vec2(0.19, -0.11));
+    vec4 broad = cloud_orbit_triplanar_weather(normal, 0.12, wind);
+    vec4 detail = cloud_orbit_triplanar_weather(normal, 0.34, wind * 2.3 + vec2(0.19, -0.11));
 
     float global_coverage = clamp(params.weather.x, 0.0, 1.0);
     float softness = clamp(params.sampling_options.z, 0.02, 0.60);
@@ -163,7 +169,9 @@ OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
     float detail_field = clamp(mix(detail.b, detail.r, 0.35), 0.0, 1.0);
     float cloud_type = clamp(mix(broad.g, detail.g, 0.25), 0.0, 1.0);
     float height_multiplier = max(cloud_density_gradient(height_fraction, cloud_type), 0.0);
-    float hull = cloud_coverage_modulation(coverage * height_multiplier, detail_field, 0.58);
+    float base_hull = coverage * height_multiplier;
+    float eroded_hull = cloud_coverage_modulation(base_hull, detail_field, 0.72);
+    float hull = mix(base_hull, eroded_hull, 0.45);
     return OrbitWeatherSample(clamp(coverage, 0.0, 1.0),
                               detail_field,
                               clamp(hull, 0.0, 1.0),
@@ -693,6 +701,28 @@ DebugRayFields cloud_debug_ray_fields(vec3 origin, vec3 direction, float start_t
     return DebugRayFields(max_density, weighted_cloud_type);
 }
 
+OrbitDebugFields cloud_orbit_debug_ray_fields(vec3 origin, vec3 direction, float start_t,
+                                                  float end_t, ivec2 pixel) {
+    int max_steps = 16;
+    float length_km = max(end_t - start_t, 0.001);
+    float ds = length_km / float(max_steps);
+    vec3 step_vec = direction * ds;
+    vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel));
+    float max_coverage = 0.0;
+    float max_detail = 0.0;
+    float max_hull = 0.0;
+
+    for (int i = 0; i < 16; ++i) {
+        OrbitWeatherSample sample_data = cloud_orbit_weather_sample(pos);
+        max_coverage = max(max_coverage, sample_data.coverage);
+        max_detail = max(max_detail, sample_data.detail);
+        max_hull = max(max_hull, sample_data.hull);
+        pos += step_vec;
+    }
+
+    return OrbitDebugFields(max_coverage, max_detail, max_hull);
+}
+
 void main() {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size = imageSize(cloud_product);
@@ -750,14 +780,14 @@ void main() {
     } else if (debug_view == CLOUD_DEBUG_ORBIT_COVERAGE ||
                debug_view == CLOUD_DEBUG_ORBIT_DETAIL ||
                debug_view == CLOUD_DEBUG_ORBIT_HULL) {
-        vec3 mid = origin + direction * mix(start_t, end_t, 0.5);
-        OrbitWeatherSample sample_data = cloud_orbit_weather_sample(mid);
+        OrbitDebugFields ray_fields =
+            cloud_orbit_debug_ray_fields(origin, direction, start_t, end_t, pixel);
         if (debug_view == CLOUD_DEBUG_ORBIT_COVERAGE) {
-            debug_color = vec3(sample_data.coverage);
+            debug_color = vec3(ray_fields.max_coverage);
         } else if (debug_view == CLOUD_DEBUG_ORBIT_DETAIL) {
-            debug_color = vec3(sample_data.detail);
+            debug_color = vec3(ray_fields.max_detail);
         } else {
-            debug_color = vec3(sample_data.hull);
+            debug_color = vec3(ray_fields.max_hull);
         }
     } else if (debug_view == CLOUD_DEBUG_VISIBLE_DENSITY ||
         debug_view == CLOUD_DEBUG_VISIBLE_CLOUD_TYPE) {

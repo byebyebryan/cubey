@@ -197,7 +197,7 @@ struct CloudsConfig {
     float orbit_transition_end_m = 80000.0F;
     float far_shell_start_m = 45000.0F;
     float far_shell_end_m = 220000.0F;
-    float orbit_detail_strength = 0.18F;
+    float orbit_detail_strength = 0.10F;
     float orbit_density_scale = 0.02F;
     bool powder_enabled = true;
     bool local_volume_enabled = true;

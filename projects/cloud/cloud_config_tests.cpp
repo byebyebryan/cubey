@@ -436,7 +436,7 @@ void test_weather_preset_defaults() {
                  "default far shell start should be high-view scale");
     require_near(config.far_shell_end_m, 220000.0F, 0.001F,
                  "default far shell end should be high-view scale");
-    require_near(config.orbit_detail_strength, 0.18F, 0.001F,
+    require_near(config.orbit_detail_strength, 0.10F, 0.001F,
                  "default orbit detail should suppress high-frequency erosion");
     require_near(config.orbit_density_scale, 0.02F, 0.001F,
                  "default orbit density should reveal the toy planet in orbit captures");
