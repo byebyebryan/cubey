@@ -25,10 +25,10 @@ Terrain should be coherent before it is detailed.
 
 The generator should first establish the structure of a region:
 
-- high-level intent, such as temperate mountain watershed or arid canyon;
+- high-level intent, such as temperate mountain rivers or arid canyon;
 - coherent driver fields, such as broad land support, relief potential,
   process potential, and feature selection masks;
-- landform graph, such as ridges, basins, watersheds, stream paths, or strata;
+- landform graph, such as ridges, basins, stream paths, or strata;
 - scalar fields derived from that graph, such as elevation potential,
   resistance, flow, wetness, and deposition;
 - process passes that make fields agree, such as valley incision, talus,
@@ -53,8 +53,8 @@ directional, but it must be traceable back to a coherent source field.
 Start with a local tangent-plane heightfield.
 
 The first practical region size should be 4-16 km across. That is large enough
-for watersheds, ridges, valley hierarchy, and material transitions, while still
-small enough to reason about without planet curvature, global climate, or
+for ridges, river hierarchy, valley hierarchy, and material transitions, while
+still small enough to reason about without planet curvature, global climate, or
 streaming.
 
 The renderer may later use clipmaps or tiled meshes, but the first generator
@@ -83,7 +83,7 @@ Candidate region configuration:
 Candidate feature data:
 
 - ridge lines and ridge influence;
-- basin and watershed ids;
+- local drainage-region ids;
 - stream or drainage graph;
 - optional fault, strata, dune, or volcanic feature sets for later slices;
 - influence masks for plains, steep slopes, valley floors, and high relief.
@@ -104,7 +104,7 @@ Initial scalar fields:
 - wetness;
 - deposition or sediment;
 - ridge, valley, and basin influence;
-- watershed id, divide influence, channel influence, and channel distance;
+- drainage-region id, divide influence, channel influence, and channel distance;
 - material masks;
 - grass, shrub, tree, and canopy density fields.
 
@@ -129,7 +129,7 @@ The preferred pipeline is:
 ### Region Intent
 
 The slice preset should describe the landform goal in concrete terms:
-temperate mountain watershed, arid mesa canyon, alpine glacial valley, dunes,
+temperate mountain rivers, arid mesa canyon, alpine glacial valley, dunes,
 volcanic field, wetland, or coastal shelf. It should not be a grab bag of noise
 settings.
 
@@ -138,7 +138,7 @@ settings.
 Coherent driver fields are the main guardrail against incoherent terrain. For a
 slice, they should describe the broad support and process sources before local
 feature masks are derived. The feature graph remains useful when a terrain type
-needs explicit topology, such as watershed ownership or drainage paths, but it
+needs explicit topology, such as drainage paths or local region ids, but it
 should sit downstream of the driver fields rather than replace them.
 
 For sentinel slice presets, the local patch is the region mask. Driver selection
@@ -176,10 +176,12 @@ research context for branching structures, but they should not become the arid
 canyon driver unless constrained by drainage, slope, source, and base-level
 rules.
 
-The temperate watershed fixture is the first river reference slice. It emits
-four deterministic basin ids plus soft divide and channel-guide influences, then
-derives river hierarchy from the routed drainage. Those fields should guide
-structure, process, material, wetness, vegetation, and diagnostic rendering.
+The old temperate watershed fixture was removed because the fixed four-basin
+layout read as an artificial quadrant/H composition. The temperate river slice is
+now the first wet river reference: it treats the local patch as one drainage
+region, derives channels from routed terrain, and uses the river hierarchy to
+guide structure, process, material, wetness, vegetation, and diagnostic
+rendering.
 
 The arid, dunes, and alpine sentinels now have explicit driver fields. They are
 still visual pressure tests rather than production terrain systems, but the
@@ -191,7 +193,7 @@ The sentinel slice set should prevent overfitting this model to canyon terrain.
 The first representative set is:
 
 - arid mesa canyon, for strata, rims, benches, dry washes, and sparse scrub;
-- temperate mountain watershed, for wetter drainage, basins, forest/meadow, and
+- temperate mountain rivers, for wetter drainage, forest/meadow, and
   divide-channel relationships;
 - desert dunes, for wind-shaped terrain where hydrology should be diagnostic
   rather than causal;
@@ -306,7 +308,7 @@ mechanical checks:
 - deterministic output for a fixed seed and config;
 - finite field values;
 - normalized material and biome masks;
-- valid watershed ids, divide influence, channel influence, and channel
+- valid drainage-region ids, divide influence, channel influence, and channel
   distances;
 - valid flow directions;
 - no isolated negative drainage sinks unless the slice intentionally supports
@@ -317,10 +319,10 @@ mechanical checks:
 
 Headless captures should cover both final and diagnostic views. The current
 foundation validates deterministic CPU fields, mesh payload extraction, shader
-debug-view constants, a windowed startup smoke, default arid final,
-flow-accumulation, and feature-graph PNG captures, plus an explicit watershed
-PNG capture. UI editing, runtime regeneration, tiled rendering, and
-shader-displacement validation are still deferred.
+debug-view constants, a windowed startup smoke, default final,
+flow-accumulation, river diagnostics, and feature-graph PNG captures, plus an
+explicit drainage-region PNG capture. UI editing, runtime regeneration, tiled
+rendering, and shader-displacement validation are still deferred.
 
 Recent naturalization diagnostics also track channel/divide sample counts,
 divide-channel height separation, channel-flow alignment, material entropy, and

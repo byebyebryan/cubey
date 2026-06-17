@@ -250,8 +250,10 @@ TerrainLabMeshData make_terrain_lab_mesh(const TerrainLabFieldData& fields) {
     }
 
     const float height_range = std::max(fields.max_height_m - fields.min_height_m, 0.001F);
-    const float watershed_denominator =
-        fields.watershed_count <= 1U ? 1.0F : static_cast<float>(fields.watershed_count - 1U);
+    const float drainage_region_denominator = fields.drainage_region_count <= 1U
+                                                  ? 1.0F
+                                                  : static_cast<float>(
+                                                        fields.drainage_region_count - 1U);
     const float channel_distance_range = std::max(fields.max_channel_distance_m, 0.001F);
     const float stream_order_denominator =
         fields.max_stream_order <= 1U ? 1.0F : static_cast<float>(fields.max_stream_order);
@@ -306,10 +308,11 @@ TerrainLabMeshData make_terrain_lab_mesh(const TerrainLabFieldData& fields) {
                     },
                 .feature_tags =
                     {
-                        static_cast<float>(fields.watershed_id[sample]) / watershed_denominator,
+                        static_cast<float>(fields.drainage_region_id[sample]) /
+                            drainage_region_denominator,
                         fields.channel_distance_m[sample] / channel_distance_range,
-                        static_cast<float>(fields.watershed_id[sample]),
-                        static_cast<float>(fields.watershed_count),
+                        static_cast<float>(fields.drainage_region_id[sample]),
+                        static_cast<float>(fields.drainage_region_count),
                     },
                 .drivers =
                     {

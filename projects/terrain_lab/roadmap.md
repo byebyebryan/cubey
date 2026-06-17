@@ -47,12 +47,12 @@ Current implementation notes:
 - common `RunConfig` grid and debug-view inputs are accepted;
 - coast-oriented `terrain.*` flags remain outside Terrain Lab;
 - CPU fields cover height, contribution, slope, curvature, drainage, wetness,
-  deposition, material, vegetation-density, watershed, and influence data.
+  deposition, material, vegetation-density, drainage-region, and influence data.
 
-## Phase 2: Temperate Mountain Watershed Reference
+## Phase 2: Temperate Mountain River Reference
 
-Status: naturalized watershed core landed and retained as an explicit fixture;
-deeper graph and stream-network work remains.
+Status: the authored four-basin watershed fixture has been removed; the active
+temperate reference is now one local drainage region with flow-derived channels.
 
 Goal: prove one coherent inland terrain slice.
 
@@ -70,8 +70,8 @@ Deliverables:
 
 Success criteria:
 
-- streams connect from upper basins toward lower outlets unless a closed basin
-  is explicitly configured;
+- streams connect through routed terrain without a fixed quadrant or H-shaped
+  fixture;
 - valleys are lower and wetter than adjacent ridges;
 - steep exposed slopes favor rock/scree, while valley floors favor soil,
   meadow, or forest potential;
@@ -79,20 +79,17 @@ Success criteria:
 
 Current implementation notes:
 
-- a deterministic four-basin watershed raster produces watershed id, soft
-  divide influence, channel guide influence, and channel distance fields;
-- an initial flow solve derives the stronger channel influence used for
-  incision, wetness, deposition, and detail suppression;
+- a coherent height/driver field is routed first; channel influence and channel
+  distance are derived from flow instead of an authored watershed guide;
 - a small slope-relaxation pass smooths harsh process artifacts while preserving
   structure/process/detail contribution accounting;
 - tests compare channel samples against non-channel terrain and divide samples
   against channels;
-- `--terrain-lab-slice temperate-mountain-watershed` keeps this behavior
-  available for tests and comparison captures after the arid slice became the
-  default;
-- remaining work is a richer feature graph with stronger stream connectivity,
-  basin hierarchy, and slice-specific controls if the watershed slice becomes
-  active again.
+- `--terrain-lab-slice temperate-mountain-rivers` is the canonical wet river
+  reference; the old `temperate-mountain-watershed` name remains only as a
+  compatibility alias.
+- remaining work is a richer river driver with better stream connectivity,
+  side-channel structure, and slice-specific controls.
 
 ## Phase 3: Renderer Workbench
 
@@ -120,8 +117,8 @@ Current implementation notes:
 - windowed orbit inspection and headless PNG capture are registered;
 - final and flow-accumulation PNG smokes use conservative image stats to catch
   blank output;
-- feature-graph PNG smokes cover the default arid feature payload, while the
-  watershed PNG smoke pins the explicit watershed slice;
+- feature-graph and drainage-region PNG smokes cover the default terrain payload
+  without pinning an authored watershed slice;
 - fragment shader debug constants are checked against the C++ enum;
 - live ImGui controls, runtime regeneration, tiled meshes, and atmosphere-backed
   lighting are intentionally deferred.
@@ -192,7 +189,7 @@ Deliverables:
 
 Success criteria:
 
-- temperate watershed reads as a river/drainage reference without needing a
+- temperate mountain rivers read as a river/drainage reference without needing a
   separate canyon interpretation;
 - higher-order/discharge channels are wider than tributaries on average;
 - arid canyon reuses the river hierarchy as dry washes with zero water presence;
@@ -229,7 +226,7 @@ same mechanism.
 
 Current implementation notes:
 
-- temperate mountain watershed is the default slice while the river hierarchy is
+- temperate mountain rivers are the default slice while the river hierarchy is
   being established;
 - arid mesa canyon remains the first dry/incised consumer of river fields;
 - generated fields include mesa/rim/divide influence, dry canyon and side-wash

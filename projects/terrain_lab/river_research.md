@@ -45,7 +45,7 @@ credible.
 
 ## Slice Interpretation
 
-- Temperate mountain watershed: visible river reference slice with wet channels,
+- Temperate mountain rivers: visible river reference slice with wet channels,
   vegetation response, deposition, and simple static water presence.
 - Arid mesa canyon: dry river network expression. Water presence should be zero,
   while discharge/order still drive wash width, canyon floor, wall width, and

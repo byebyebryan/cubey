@@ -157,24 +157,24 @@ if (BUILD_TESTING)
         0.00005
     )
 
-    set(CUBEY_TERRAIN_LAB_WATERSHED_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-watershed.png"
+    set(CUBEY_TERRAIN_LAB_DRAINAGE_REGIONS_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-drainage-regions.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_watershed_writes_png
+        terrain_lab_drainage_regions_writes_png
         cubey_project_terrain_lab
-        "${CUBEY_TERRAIN_LAB_WATERSHED_SMOKE_OUTPUT}"
+        "${CUBEY_TERRAIN_LAB_DRAINAGE_REGIONS_SMOKE_OUTPUT}"
         --headless
         --grid-width 65
         --grid-height 65
         --terrain-lab-slice
-        temperate-mountain-watershed
+        temperate-mountain-rivers
         --debug-view
-        watershed
+        drainage-regions
     )
     cubey_add_png_stats_test(
-        terrain_lab_watershed_writes_png
-        "${CUBEY_TERRAIN_LAB_WATERSHED_SMOKE_OUTPUT}"
+        terrain_lab_drainage_regions_writes_png
+        "${CUBEY_TERRAIN_LAB_DRAINAGE_REGIONS_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )

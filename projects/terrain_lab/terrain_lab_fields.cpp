@@ -20,26 +20,11 @@ struct Point2 {
 
 constexpr float kMaterialMaskTolerance = 0.001F;
 constexpr std::uint8_t kFlowSinkDirection = 8U;
-constexpr std::uint32_t kTerrainLabWatershedCount = 4U;
 constexpr std::size_t kNoFlowReceiver = std::numeric_limits<std::size_t>::max();
 
 constexpr std::array<std::int32_t, 8> kFlowDx{-1, 0, 1, -1, 1, -1, 0, 1};
 constexpr std::array<std::int32_t, 8> kFlowDy{-1, -1, -1, 0, 0, 1, 1, 1};
 constexpr std::array<std::uint8_t, 8> kFlowFacetRing{4U, 2U, 1U, 0U, 3U, 5U, 6U, 7U};
-
-struct WatershedBasinFeature {
-    Point2 center{};
-    float outlet_x = 0.0F;
-    float bend_phase = 0.0F;
-    float tributary_side = 1.0F;
-};
-
-struct WatershedSampleFeatures {
-    std::uint32_t watershed_id = 0;
-    float divide_influence = 0.0F;
-    float channel_influence = 0.0F;
-    float channel_distance_m = 0.0F;
-};
 
 struct AridMesaSampleFeatures {
     float canyon_floor = 0.0F;
@@ -306,114 +291,6 @@ struct AlpineGlacialDriver {
     };
 }
 
-[[nodiscard]] Point2 warp_sample_for_watershed(Point2 p, const TerrainLabConfig& config) {
-    return {
-        .x = p.x + fbm((p.x * 1.6F) - 5.0F, (p.z * 1.6F) + 1.0F, config.seed + 1301U, 4) * 0.075F,
-        .z = p.z + fbm((p.x * 1.7F) + 3.0F, (p.z * 1.7F) - 6.0F, config.seed + 1303U, 4) * 0.060F,
-    };
-}
-
-[[nodiscard]] std::array<WatershedBasinFeature, kTerrainLabWatershedCount>
-watershed_basins(const TerrainLabConfig& config) {
-    std::array<WatershedBasinFeature, kTerrainLabWatershedCount> basins{};
-    for (std::uint32_t index = 0; index < kTerrainLabWatershedCount; ++index) {
-        const bool right = (index % 2U) != 0U;
-        const bool downstream = index >= 2U;
-        const float base_x = right ? 0.46F : -0.46F;
-        const float base_z = downstream ? 0.34F : -0.42F;
-        basins[index] = {
-            .center =
-                {
-                    base_x + lerp(-0.12F, 0.12F, random01(config.seed, index, 401U)),
-                    base_z + lerp(-0.10F, 0.10F, random01(config.seed, index, 409U)),
-                },
-            .outlet_x = base_x * 0.34F + lerp(-0.10F, 0.10F, random01(config.seed, index, 419U)),
-            .bend_phase = random01(config.seed, index, 431U) * 6.28318530718F,
-            .tributary_side = right ? -1.0F : 1.0F,
-        };
-    }
-    return basins;
-}
-
-[[nodiscard]] WatershedSampleFeatures
-watershed_features_at(Point2 p, const TerrainLabGridDesc& desc,
-                      const std::array<WatershedBasinFeature, kTerrainLabWatershedCount>& basins,
-                      const TerrainLabConfig& config) {
-    const Point2 warped = warp_sample_for_watershed(p, config);
-    float best_distance = std::numeric_limits<float>::max();
-    float second_distance = std::numeric_limits<float>::max();
-    std::uint32_t watershed_id = 0;
-    for (std::uint32_t index = 0; index < kTerrainLabWatershedCount; ++index) {
-        const Point2 offset{warped.x - basins[index].center.x, warped.z - basins[index].center.z};
-        const float warp =
-            fbm((warped.x * 2.1F) + static_cast<float>(index),
-                (warped.z * 2.1F) - static_cast<float>(index), config.seed + 1709U + index, 3) *
-            0.045F;
-        const float distance = (offset.x * offset.x * 0.96F) + (offset.z * offset.z * 0.78F) + warp;
-        if (distance < best_distance) {
-            second_distance = best_distance;
-            best_distance = distance;
-            watershed_id = index;
-        } else {
-            second_distance = std::min(second_distance, distance);
-        }
-    }
-
-    const WatershedBasinFeature basin = basins[watershed_id];
-    const float t = saturate((warped.z + 1.0F) * 0.5F);
-    const float main_channel_x = lerp(basin.center.x * 0.72F, basin.outlet_x, t) +
-                                 std::sin((t * 3.14159265359F) + basin.bend_phase) * 0.15F;
-    const float main_distance = std::abs(warped.x - main_channel_x);
-    const float main_channel =
-        (1.0F - smoothstep(0.026F, 0.18F, main_distance)) * smoothstep(-0.92F, -0.56F, warped.z);
-
-    const float tributary_center = main_channel_x + basin.tributary_side * (0.25F - (t * 0.13F));
-    const float tributary_line =
-        tributary_center + basin.tributary_side * (warped.z - basin.center.z) * 0.38F;
-    const float tributary_distance = std::abs(warped.x - tributary_line);
-    const float tributary_gate =
-        smoothstep(-0.72F, -0.05F, warped.z) * (1.0F - smoothstep(0.34F, 0.86F, warped.z));
-    const float tributary_channel =
-        (1.0F - smoothstep(0.02F, 0.14F, tributary_distance)) * tributary_gate * 0.52F;
-
-    const float divide_noise =
-        fbm((p.x * 4.8F) + 8.0F, (p.z * 4.8F) - 11.0F, config.seed + 1723U, 4) * 0.5F + 0.5F;
-    const float distance_gap = std::max(second_distance - best_distance, 0.0F);
-    const float divide_influence =
-        (1.0F - smoothstep(0.018F, 0.30F, distance_gap)) * lerp(0.58F, 0.86F, divide_noise);
-    const float channel_influence =
-        saturate((main_channel + tributary_channel) * (1.0F - divide_influence * 0.45F));
-    const float channel_distance_norm = std::min(main_distance, tributary_distance);
-    const float channel_distance_m =
-        channel_distance_norm * std::max(half_extent_x_m(desc), half_extent_z_m(desc));
-    return {
-        .watershed_id = watershed_id,
-        .divide_influence = saturate(divide_influence),
-        .channel_influence = channel_influence,
-        .channel_distance_m = std::max(channel_distance_m, 0.0F),
-    };
-}
-
-void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFieldData& fields) {
-    const std::array<WatershedBasinFeature, kTerrainLabWatershedCount> basins =
-        watershed_basins(config);
-    fields.watershed_count = kTerrainLabWatershedCount;
-    fields.max_channel_distance_m = 0.0F;
-    for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
-        for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
-            const std::size_t sample = fields.index(x, y);
-            const WatershedSampleFeatures features = watershed_features_at(
-                normalized_sample(fields.desc, x, y), fields.desc, basins, config);
-            fields.watershed_id[sample] = features.watershed_id;
-            fields.divide_influence[sample] = features.divide_influence;
-            fields.channel_influence[sample] = features.channel_influence;
-            fields.channel_distance_m[sample] = features.channel_distance_m;
-            fields.max_channel_distance_m =
-                std::max(fields.max_channel_distance_m, features.channel_distance_m);
-        }
-    }
-}
-
 [[nodiscard]] float ridge_influence(Point2 p, const TerrainLabConfig& config) {
     const float angle = lerp(-0.92F, -0.48F, random01(config.seed, 3U, 11U));
     const Point2 axis{std::cos(angle), std::sin(angle)};
@@ -535,7 +412,7 @@ void rasterize_watershed_features(const TerrainLabConfig& config, TerrainLabFiel
     fields.ridge_influence.assign(count, 0.0F);
     fields.valley_influence.assign(count, 0.0F);
     fields.basin_influence.assign(count, 0.0F);
-    fields.watershed_id.assign(count, 0U);
+    fields.drainage_region_id.assign(count, 0U);
     fields.divide_influence.assign(count, 0.0F);
     fields.channel_influence.assign(count, 0.0F);
     fields.channel_distance_m.assign(count, 0.0F);
@@ -1509,20 +1386,23 @@ void derive_flow_aligned_channels(const TerrainLabConfig& config, TerrainLabFiel
             const Point2 p = normalized_sample(fields.desc, x, y);
             const float guide = fields.channel_influence[sample];
             const float flow_t = std::log1p(flow_accumulation[sample]) * inv_log_count;
-            const float drainage = smoothstep(0.50F, 0.84F, flow_t);
+            const float drainage = smoothstep(0.44F, 0.76F, flow_t);
             const float slope_t = smoothstep(0.025F, 0.32F, slope[sample]);
             const float guide_bias = smoothstep(0.06F, 0.50F, guide);
             const float downstream = smoothstep(-0.92F, 0.78F, p.z);
             const float meander_noise =
                 fbm((p.x * 7.0F) + 2.0F, (p.z * 7.0F) - 4.0F, config.seed + 1913U, 4) * 0.5F + 0.5F;
-            const float drainage_channel = drainage *
-                                           (0.22F + guide_bias * 0.50F + downstream * 0.10F) *
-                                           (0.70F + slope_t * 0.22F);
+            const float unguided_bias = 1.0F - guide_bias;
+            const float drainage_channel =
+                drainage *
+                (0.34F + guide_bias * 0.48F + downstream * 0.12F + unguided_bias * meander_noise * 0.08F) *
+                (0.72F + slope_t * 0.24F);
             const float guided_channel =
                 guide_bias * (0.30F + drainage * 0.45F + meander_noise * 0.08F);
             const float divide_suppression = 1.0F - fields.divide_influence[sample] * 0.54F;
+            const float channel_gain = lerp(3.35F, 1.60F, guide_bias);
             const float channel =
-                saturate((drainage_channel + guided_channel) * divide_suppression * 1.60F);
+                saturate((drainage_channel + guided_channel) * divide_suppression * channel_gain);
             fields.channel_influence[sample] = channel;
             fields.valley_influence[sample] =
                 saturate(std::max(fields.valley_influence[sample] * 0.82F, channel * 0.70F));
@@ -1605,9 +1485,9 @@ make_empty_arid_regional_canyon_fields(const TerrainLabConfig& config,
     return region;
 }
 
-void compute_arid_channel_distance(const TerrainLabGridDesc& desc,
-                                   const std::vector<float>& channel_strength,
-                                   std::vector<float>& distance_m) {
+void compute_channel_distance(const TerrainLabGridDesc& desc,
+                              const std::vector<float>& channel_strength,
+                              std::vector<float>& distance_m) {
     const std::size_t count = terrain_lab_sample_count(desc);
     const float inf = std::numeric_limits<float>::max() * 0.25F;
     distance_m.assign(count, inf);
@@ -1811,7 +1691,7 @@ build_arid_regional_canyon_fields(const TerrainLabConfig& config,
         smooth_arid_channel_network(region.desc, region.wash, region.incision);
     } else {
         smooth_arid_channel_network(region.desc, region.wash, region.incision);
-        compute_arid_channel_distance(region.desc, region.wash, region.channel_distance_m);
+        compute_channel_distance(region.desc, region.wash, region.channel_distance_m);
     }
 
     for (std::size_t sample = 0; sample < count; ++sample) {
@@ -2241,13 +2121,14 @@ void validate_terrain_lab_fields(const TerrainLabFieldData& fields) {
     require_size(fields.ridge_influence.size(), "terrain lab ridge field size mismatch");
     require_size(fields.valley_influence.size(), "terrain lab valley field size mismatch");
     require_size(fields.basin_influence.size(), "terrain lab basin field size mismatch");
-    require_size(fields.watershed_id.size(), "terrain lab watershed field size mismatch");
+    require_size(fields.drainage_region_id.size(),
+                 "terrain lab drainage region field size mismatch");
     require_size(fields.divide_influence.size(), "terrain lab divide field size mismatch");
     require_size(fields.channel_influence.size(), "terrain lab channel field size mismatch");
     require_size(fields.channel_distance_m.size(),
                  "terrain lab channel distance field size mismatch");
-    if (fields.watershed_count == 0U) {
-        throw std::runtime_error("terrain lab fields require at least one watershed");
+    if (fields.drainage_region_count == 0U) {
+        throw std::runtime_error("terrain lab fields require at least one drainage region");
     }
     validate_finite(fields.max_channel_distance_m,
                     "terrain lab max channel distance must be finite");
@@ -2311,8 +2192,8 @@ void validate_terrain_lab_fields(const TerrainLabFieldData& fields) {
         if (fields.channel_distance_m[sample] < 0.0F) {
             throw std::runtime_error("terrain lab channel distance must be nonnegative");
         }
-        if (fields.watershed_id[sample] >= fields.watershed_count) {
-            throw std::runtime_error("terrain lab watershed id must be valid");
+        if (fields.drainage_region_id[sample] >= fields.drainage_region_count) {
+            throw std::runtime_error("terrain lab drainage region id must be valid");
         }
         if (fields.flow_accumulation[sample] < 0.0F) {
             throw std::runtime_error("terrain lab flow accumulation must be nonnegative");
@@ -2338,7 +2219,7 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
     validate_terrain_lab_fields(fields);
     TerrainLabFieldSummary summary{
         .sample_count = fields.sample_count(),
-        .watershed_count = fields.watershed_count,
+        .drainage_region_count = fields.drainage_region_count,
         .min_height_m = fields.min_height_m,
         .max_height_m = fields.max_height_m,
         .height_span_m = fields.max_height_m - fields.min_height_m,
@@ -2467,36 +2348,41 @@ TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& f
     return summary;
 }
 
-TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLabConfig& config) {
+TerrainLabFieldData generate_temperate_mountain_river_fields(const TerrainLabConfig& config) {
     validate_terrain_lab_config(config);
     TerrainLabFieldData fields = make_empty_terrain_lab_fields(config);
     const std::size_t count = fields.sample_count();
-
-    rasterize_watershed_features(config, fields);
+    fields.drainage_region_count = 1U;
 
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
         for (std::uint32_t x = 0; x < fields.desc.width; ++x) {
             const std::size_t sample = fields.index(x, y);
             const Point2 p = normalized_sample(fields.desc, x, y);
-            const float divide = fields.divide_influence[sample];
-            const float channel = fields.channel_influence[sample];
-            const float soft_divide = smoothstep(0.18F, 0.82F, divide);
+            const float ridge_source = ridge_influence(p, config);
+            const float basin_source = basin_influence(p, config);
+            const float valley_source = valley_influence(p, config);
+            const float divide_noise =
+                fbm((p.x * 3.8F) + 8.0F, (p.z * 3.8F) - 11.0F, config.seed + 1723U, 4) * 0.5F +
+                0.5F;
+            const float divide =
+                saturate((ridge_source * 0.62F) + ((1.0F - basin_source) * 0.10F) +
+                         smoothstep(0.56F, 0.90F, divide_noise) * 0.18F);
             const float ridge =
-                saturate((ridge_influence(p, config) * 0.56F) + (soft_divide * 0.14F));
-            const float basin =
-                saturate((basin_influence(p, config) * 0.58F) + (1.0F - soft_divide) * 0.10F);
+                saturate((ridge_source * 0.68F) + (divide * 0.16F));
+            const float basin = saturate((basin_source * 0.58F) + (1.0F - divide) * 0.08F);
             const float valley =
-                saturate((valley_influence(p, config) * 0.36F) + (channel * 0.32F));
+                saturate((valley_source * 0.24F) + (1.0F - ridge) * 0.08F);
             const float headwater = saturate((1.0F - p.z) * 0.5F);
             const float broad = fbm(p.x * 1.3F - 3.0F, p.z * 1.3F + 5.0F, config.seed + 101U, 5);
             const float structure =
-                ((headwater * 0.48F) + (ridge * 0.38F) + (soft_divide * 0.04F) + (broad * 0.16F) -
-                 (basin * 0.16F) - (valley * 0.18F) - (channel * 0.04F) - 0.12F) *
+                ((headwater * 0.46F) + (ridge * 0.42F) + (divide * 0.05F) + (broad * 0.18F) -
+                 (basin * 0.16F) - (valley * 0.16F) - 0.12F) *
                 config.elevation_scale_m * config.structure_strength;
 
             fields.ridge_influence[sample] = ridge;
             fields.valley_influence[sample] = valley;
             fields.basin_influence[sample] = basin;
+            fields.divide_influence[sample] = divide;
             fields.structure_height_m[sample] = structure;
             fields.height_m[sample] = structure;
         }
@@ -2516,6 +2402,10 @@ TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLa
     compute_flow_fields(fields.desc, fields.structure_height_m, temp_slope, temp_direction,
                         temp_accumulation, temp_stream_power, temp_max_accumulation,
                         temp_max_stream_power);
+    derive_flow_aligned_channels(config, fields, temp_accumulation, temp_slope);
+    compute_channel_distance(fields.desc, fields.channel_influence, fields.channel_distance_m);
+    fields.max_channel_distance_m =
+        *std::max_element(fields.channel_distance_m.begin(), fields.channel_distance_m.end());
 
     const float inv_log_count =
         1.0F / std::log1p(static_cast<float>(std::max<std::size_t>(count, 1U)));
@@ -2574,7 +2464,7 @@ TerrainLabFieldData generate_temperate_mountain_watershed_fields(const TerrainLa
     derive_river_network_fields(fields,
                                 {
                                     .runoff_scale = 1.0F,
-                                    .water_presence_scale = 1.0F,
+                                    .water_presence_scale = 1.20F,
                                     .min_width_m = fields.desc.cell_size_m * 0.20F,
                                     .max_width_m = fields.desc.cell_size_m * 1.90F,
                                     .valley_width_multiplier = 5.8F,
@@ -2668,7 +2558,7 @@ TerrainLabFieldData generate_arid_mesa_canyon_fields(const TerrainLabConfig& con
     TerrainLabFieldData fields = make_empty_terrain_lab_fields(config);
     const std::size_t count = fields.sample_count();
     const float arid_elevation_scale_m = config.elevation_scale_m * 0.62F;
-    fields.watershed_count = 1U;
+    fields.drainage_region_count = 1U;
     fields.max_channel_distance_m = 0.0F;
     const AridMesaSliceFields arid_slice = generate_arid_mesa_network_slice(config, fields.desc);
 
@@ -2900,7 +2790,7 @@ TerrainLabFieldData generate_desert_dunes_fields(const TerrainLabConfig& config)
     TerrainLabFieldData fields = make_empty_terrain_lab_fields(config);
     const std::size_t count = fields.sample_count();
     const float dune_elevation_scale_m = config.elevation_scale_m * 0.36F;
-    fields.watershed_count = 1U;
+    fields.drainage_region_count = 1U;
     fields.max_channel_distance_m = 0.0F;
 
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
@@ -3082,7 +2972,7 @@ TerrainLabFieldData generate_alpine_glacial_valley_fields(const TerrainLabConfig
     TerrainLabFieldData fields = make_empty_terrain_lab_fields(config);
     const std::size_t count = fields.sample_count();
     const float alpine_elevation_scale_m = config.elevation_scale_m * 0.86F;
-    fields.watershed_count = 1U;
+    fields.drainage_region_count = 1U;
     fields.max_channel_distance_m = 0.0F;
 
     for (std::uint32_t y = 0; y < fields.desc.height; ++y) {
@@ -3280,14 +3170,14 @@ TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config) 
     switch (config.slice_preset) {
     case TerrainLabSlicePreset::AridMesaCanyon:
         return generate_arid_mesa_canyon_fields(config);
-    case TerrainLabSlicePreset::TemperateMountainWatershed:
-        return generate_temperate_mountain_watershed_fields(config);
+    case TerrainLabSlicePreset::TemperateMountainRivers:
+        return generate_temperate_mountain_river_fields(config);
     case TerrainLabSlicePreset::DesertDunes:
         return generate_desert_dunes_fields(config);
     case TerrainLabSlicePreset::AlpineGlacialValley:
         return generate_alpine_glacial_valley_fields(config);
     }
-    return generate_temperate_mountain_watershed_fields(config);
+    return generate_temperate_mountain_river_fields(config);
 }
 
 } // namespace cubey::projects::terrain_lab

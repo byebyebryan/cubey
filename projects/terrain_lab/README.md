@@ -74,9 +74,11 @@ Terrain Lab should stay distinct from the existing terrain-adjacent projects:
 
 ## Active Target Slice
 
-The active target is now a temperate mountain river/watershed reference:
+The active target is now a temperate mountain river reference:
 
 - 4-16 km local region.
+- The visible patch is one local drainage region, not a fixed multi-basin
+  watershed fixture.
 - River/drainage network generated as shared terrain structure before canyon,
   wetland, coast, or glacial variants consume it.
 - Discharge, stream order, channel width, valley width, and water presence
@@ -131,7 +133,8 @@ Generated CPU fields include:
 - river discharge, stream order, river width, valley width, and water presence;
 - wetness and deposition;
 - ridge, valley, and basin influence fields;
-- watershed id, divide influence, channel influence, and channel distance;
+- local drainage-region id, divide influence, channel influence, and channel
+  distance;
 - material masks for rock, soil, scree, meadow, forest, and snow;
 - sand material masks for slices that need explicit wind-blown sediment;
 - grass, shrub, tree, and canopy-height density fields.
@@ -139,9 +142,9 @@ Generated CPU fields include:
 Field summaries also expose naturalization diagnostics for channel/divide
 sample counts, divide-channel height separation, channel-flow alignment,
 material entropy, and boundary edge steps. These are intended as iteration
-guardrails for terrain shaping. Some checks are more meaningful for the
-watershed fixture than for the arid default, where the divide field marks mesa
-rims and interfluves rather than basin ownership.
+guardrails for terrain shaping. The old authored watershed fixture has been
+removed; the temperate river slice now uses one local drainage region, while the
+arid default uses divide fields for mesa rims and interfluves.
 
 The renderer converts those fields into a CPU heightfield mesh and packs the
 main diagnostic payloads into vertex attributes. The current standalone app
@@ -171,7 +174,7 @@ Supported debug views:
 - `noise-off`
 - `driver`
 - `feature-graph`
-- `watershed`
+- `drainage-regions`
 - `channel`
 - `divide`
 
@@ -193,7 +196,7 @@ Useful run commands:
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view flow-accumulation --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view feature-graph --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --debug-view driver --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice temperate-mountain-watershed --debug-view watershed --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice temperate-mountain-rivers --debug-view drainage-regions --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice desert-dunes --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice alpine-glacial-valley --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --headless --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab.png
@@ -217,7 +220,7 @@ mkdir -p outputs/terrain_lab
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view flow-accumulation --width 1280 --height 720 --output outputs/terrain_lab/flow-accumulation.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view noise-off --width 1280 --height 720 --output outputs/terrain_lab/noise-off.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/driver.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-watershed --debug-view watershed --width 1280 --height 720 --output outputs/terrain_lab/watershed-temperate.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-rivers --debug-view drainage-regions --width 1280 --height 720 --output outputs/terrain_lab/drainage-regions.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view material --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes-material.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/desert-dunes-driver.png
@@ -231,10 +234,10 @@ mkdir -p outputs/terrain_lab
 ## Status
 
 Current status: CPU field foundation plus a minimal standalone visual workbench.
-The default generator now targets a temperate mountain river/watershed reference
-so drainage hierarchy can mature before canyon-specific styling. The arid mesa
-canyon, desert dunes, and alpine glacial valley sentinels remain available as
-explicit slice fixtures. The
+The default generator now targets a temperate mountain river reference with no
+fixed watershed quadrant fixture, so drainage hierarchy can mature before
+canyon-specific styling. The arid mesa canyon, desert dunes, and alpine glacial
+valley sentinels remain available as explicit slice fixtures. The
 workbench has deterministic mesh extraction, field/debug shading, windowed and
 headless render paths, PNG smoke coverage, shader/debug-view sync tests, and
 analysis-only drainage guardrails.

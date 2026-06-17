@@ -51,7 +51,8 @@ Current projects:
   shared sky/celestial state, physical atmosphere preview, HDR post, and
   headless visual smoke coverage.
 - `terrain_lab`: local terrain generation workbench with deterministic CPU
-  fields, arid mesa canyon and watershed slices, heightfield mesh rendering,
+  fields, temperate mountain rivers, arid mesa canyon, and sentinel biome slices,
+  heightfield mesh rendering,
   field/debug views, material and biome masks, headless visual smoke coverage,
   and future adapters into planet, ocean, or environment projects.
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,

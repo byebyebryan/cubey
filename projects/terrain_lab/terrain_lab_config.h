@@ -14,14 +14,14 @@ namespace cubey::projects::terrain_lab {
 
 enum class TerrainLabSlicePreset : std::uint32_t {
     AridMesaCanyon = 0,
-    TemperateMountainWatershed = 1,
+    TemperateMountainRivers = 1,
     DesertDunes = 2,
     AlpineGlacialValley = 3,
 };
 
 inline constexpr std::array<TerrainLabSlicePreset, 4> kTerrainLabSlicePresets{
     TerrainLabSlicePreset::AridMesaCanyon,
-    TerrainLabSlicePreset::TemperateMountainWatershed,
+    TerrainLabSlicePreset::TemperateMountainRivers,
     TerrainLabSlicePreset::DesertDunes,
     TerrainLabSlicePreset::AlpineGlacialValley,
 };
@@ -57,7 +57,7 @@ enum class TerrainLabDebugView : std::uint32_t {
     CanopyHeight = 17,
     NoiseOff = 18,
     FeatureGraph = 19,
-    Watershed = 20,
+    DrainageRegions = 20,
     Channel = 21,
     Divide = 22,
     Driver = 23,
@@ -84,7 +84,7 @@ inline constexpr std::array<TerrainLabDebugView, 24> kTerrainLabDebugViews{
     TerrainLabDebugView::CanopyHeight,
     TerrainLabDebugView::NoiseOff,
     TerrainLabDebugView::FeatureGraph,
-    TerrainLabDebugView::Watershed,
+    TerrainLabDebugView::DrainageRegions,
     TerrainLabDebugView::Channel,
     TerrainLabDebugView::Divide,
     TerrainLabDebugView::Driver,
@@ -110,7 +110,7 @@ struct TerrainLabConfig {
     float structure_strength = kTerrainLabDefaultStructureStrength;
     float process_strength = kTerrainLabDefaultProcessStrength;
     float detail_strength = kTerrainLabDefaultDetailStrength;
-    TerrainLabSlicePreset slice_preset = TerrainLabSlicePreset::TemperateMountainWatershed;
+    TerrainLabSlicePreset slice_preset = TerrainLabSlicePreset::TemperateMountainRivers;
     TerrainLabCameraPreset camera_preset = TerrainLabCameraPreset::Orbit;
     TerrainLabDebugView debug_view = TerrainLabDebugView::Final;
 
@@ -121,8 +121,8 @@ struct TerrainLabConfig {
     switch (preset) {
     case TerrainLabSlicePreset::AridMesaCanyon:
         return "arid-mesa-canyon";
-    case TerrainLabSlicePreset::TemperateMountainWatershed:
-        return "temperate-mountain-watershed";
+    case TerrainLabSlicePreset::TemperateMountainRivers:
+        return "temperate-mountain-rivers";
     case TerrainLabSlicePreset::DesertDunes:
         return "desert-dunes";
     case TerrainLabSlicePreset::AlpineGlacialValley:
@@ -173,8 +173,8 @@ struct TerrainLabConfig {
         return "noise-off";
     case TerrainLabDebugView::FeatureGraph:
         return "feature-graph";
-    case TerrainLabDebugView::Watershed:
-        return "watershed";
+    case TerrainLabDebugView::DrainageRegions:
+        return "drainage-regions";
     case TerrainLabDebugView::Channel:
         return "channel";
     case TerrainLabDebugView::Divide:
@@ -213,7 +213,10 @@ struct TerrainLabConfig {
 [[nodiscard]] inline TerrainLabSlicePreset
 terrain_lab_slice_preset_from_name(std::string_view name) {
     if (name.empty()) {
-        return TerrainLabSlicePreset::TemperateMountainWatershed;
+        return TerrainLabSlicePreset::TemperateMountainRivers;
+    }
+    if (terrain_lab_name_matches(name, "temperate-mountain-watershed")) {
+        return TerrainLabSlicePreset::TemperateMountainRivers;
     }
     for (const TerrainLabSlicePreset preset : kTerrainLabSlicePresets) {
         if (terrain_lab_name_matches(name, terrain_lab_slice_preset_name(preset))) {
@@ -226,6 +229,9 @@ terrain_lab_slice_preset_from_name(std::string_view name) {
 [[nodiscard]] inline TerrainLabDebugView terrain_lab_debug_view_from_name(std::string_view name) {
     if (name.empty()) {
         return TerrainLabDebugView::Final;
+    }
+    if (terrain_lab_name_matches(name, "watershed")) {
+        return TerrainLabDebugView::DrainageRegions;
     }
     for (const TerrainLabDebugView view : kTerrainLabDebugViews) {
         if (terrain_lab_name_matches(name, terrain_lab_debug_view_name(view))) {

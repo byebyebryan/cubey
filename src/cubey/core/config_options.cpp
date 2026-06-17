@@ -76,11 +76,12 @@ constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip"
                                                               "pic/flip"};
 constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-faces", "tiled",
                                                            "tiled-faces"};
-constexpr std::array<std::string_view, 4> kTerrainLabSlicePresets{
+constexpr std::array<std::string_view, 5> kTerrainLabSlicePresets{
     "arid-mesa-canyon",
-    "temperate-mountain-watershed",
+    "temperate-mountain-rivers",
     "desert-dunes",
     "alpine-glacial-valley",
+    "temperate-mountain-watershed",
 };
 constexpr std::array<std::string_view, 2> kTerrainLabCameraPresets{
     "orbit",
