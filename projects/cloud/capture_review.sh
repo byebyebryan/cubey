@@ -46,6 +46,15 @@ capture high-oblique --cloud-camera-mode high-oblique
 capture surface --cloud-camera-mode surface
 capture high --cloud-camera-mode high
 capture orbit-preview --cloud-camera-mode orbit
+capture orbit-terminator --cloud-camera-mode orbit-terminator
+capture high-oblique-distance-regime --cloud-camera-mode high-oblique \
+    --debug-view distance-regime
+capture high-oblique-local-alpha --cloud-camera-mode high-oblique --debug-view local-alpha
+capture high-oblique-orbit-alpha --cloud-camera-mode high-oblique --debug-view orbit-alpha
+capture high-oblique-orbit-weather --cloud-camera-mode high-oblique --debug-view orbit-weather
+capture orbit-distance-regime --cloud-camera-mode orbit --debug-view distance-regime
+capture orbit-alpha --cloud-camera-mode orbit --debug-view orbit-alpha
+capture orbit-weather-shell --cloud-camera-mode orbit --debug-view orbit-weather
 capture high-oblique-weather --cloud-camera-mode high-oblique --debug-view weather
 capture high-oblique-weather-bias --cloud-camera-mode high-oblique --debug-view weather-bias
 capture orbit-weather --cloud-camera-mode orbit --debug-view weather
@@ -79,6 +88,9 @@ capture direct-light --cloud-camera-mode surface-up --debug-view direct-light
 capture phase-light --cloud-camera-mode surface-up --debug-view phase-light
 capture shadow --cloud-camera-mode surface-up --debug-view shadow
 capture cloud-alpha --cloud-camera-mode surface-up --debug-view cloud-alpha
+capture local-alpha --cloud-camera-mode surface-up --debug-view local-alpha
+capture orbit-alpha-surface-up --cloud-camera-mode surface-up --debug-view orbit-alpha
+capture distance-regime --cloud-camera-mode surface-up --debug-view distance-regime
 capture distance --cloud-camera-mode surface-up --debug-view distance
 capture metadata-distance --cloud-camera-mode surface-up --debug-view metadata-distance
 capture metadata-alpha --cloud-camera-mode surface-up --debug-view metadata-alpha
@@ -96,7 +108,9 @@ if command -v magick >/dev/null 2>&1; then
     crop_inputs=()
     for name in surface-up raw-final cloud-alpha weather weather-edge weather-bias \
         cloud-type density visible-density visible-cloud-type \
-        metadata-alpha metadata-distance metadata-confidence steps; do
+        metadata-alpha metadata-distance metadata-confidence steps \
+        high-oblique-distance-regime high-oblique-local-alpha high-oblique-orbit-alpha \
+        orbit-distance-regime orbit-alpha orbit-weather-shell; do
         if [[ -f "${OUT_DIR}/${name}.png" ]]; then
             crop_path="${crop_dir}/${name}-center.png"
             magick "${OUT_DIR}/${name}.png" -crop "${CENTER_CROP_GEOMETRY}" \
