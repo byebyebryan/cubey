@@ -20,6 +20,9 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
 )
 
 if (BUILD_TESTING)

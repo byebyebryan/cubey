@@ -3,6 +3,7 @@
 
 #include "cubey/atmosphere.glsl"
 #include "cubey/color_space.glsl"
+#include "cubey/procedural/noise.glsl"
 
 const float ATMOSPHERE_SUN_INTENSITY = 22.0;
 const float ATMOSPHERE_MIN_TWILIGHT_SOFTNESS = 0.022;
@@ -193,33 +194,12 @@ vec3 twilight_radiance(vec3 ray_direction, vec3 sun_direction) {
     return (twilight_color * legacy_visibility + surface_twilight) * atmosphere.night_options.x;
 }
 
-float hash12(vec2 value) {
-    vec3 p = fract(vec3(value.xyx) * 0.1031);
-    p += dot(p, p.yzx + 33.33);
-    return fract((p.x + p.y) * p.z);
-}
-
-vec2 hash22(vec2 value) {
-    return vec2(hash12(value + 17.17), hash12(value + 71.31));
-}
-
-float value_noise(vec2 uv) {
-    vec2 cell = floor(uv);
-    vec2 local = fract(uv);
-    vec2 blend = local * local * (3.0 - 2.0 * local);
-    float a = hash12(cell);
-    float b = hash12(cell + vec2(1.0, 0.0));
-    float c = hash12(cell + vec2(0.0, 1.0));
-    float d = hash12(cell + vec2(1.0, 1.0));
-    return mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y);
-}
-
 float fbm2(vec2 uv) {
     float value = 0.0;
     float amplitude = 0.5;
     mat2 rotation = mat2(1.62, 1.11, -1.11, 1.62);
     for (int i = 0; i < 4; ++i) {
-        value += amplitude * (value_noise(uv) - 0.5);
+        value += amplitude * (cubey_proc_value_noise_pcg_2d(uv) - 0.5);
         uv = rotation * uv + vec2(19.17, 31.47);
         amplitude *= 0.5;
     }
@@ -356,19 +336,22 @@ vec3 star_cell_radiance(vec3 sky_direction, float cell_count, float probability,
     vec2 cell = floor(star_uv);
     vec2 local = fract(star_uv);
     vec2 seed = cell + vec2(face * 97.0, face * 53.0) + layer_seed;
-    float candidate = hash12(seed);
+    float candidate = cubey_proc_hash_pcg_2d(seed);
     if (candidate >= clamp(probability, 0.0, 0.35)) {
         return vec3(0.0);
     }
 
-    float magnitude = star_sample_magnitude(hash12(seed + 113.7), bright_magnitude,
-                                            faint_magnitude, magnitude_bias);
+    float magnitude = star_sample_magnitude(cubey_proc_hash_pcg_2d(seed + 113.7),
+                                            bright_magnitude, faint_magnitude, magnitude_bias);
     float magnitude_weight = star_magnitude_weight(magnitude, limiting_magnitude, 0.38);
     if (magnitude_weight <= 0.0) {
         return vec3(0.0);
     }
 
-    vec2 center = vec2(hash12(seed + 19.17), hash12(seed + 71.31)) * 0.78 + 0.11;
+    vec2 center = vec2(cubey_proc_hash_pcg_2d(seed + 19.17),
+                       cubey_proc_hash_pcg_2d(seed + 71.31)) *
+                      0.78 +
+                  0.11;
     float brightness_norm = clamp((faint_magnitude - magnitude) /
                                       max(faint_magnitude - bright_magnitude, 0.001),
                                   0.0, 1.0);
@@ -376,7 +359,7 @@ vec3 star_cell_radiance(vec3 sky_direction, float cell_count, float probability,
     float halo = halo_strength * pow(brightness_norm, 1.4);
     float star = star_point_spread(local, center, radius, halo);
     float radiance = star_magnitude_to_radiance(magnitude) * magnitude_weight;
-    return star_temperature_color(hash12(seed + 211.9)) * star * radiance;
+    return star_temperature_color(cubey_proc_hash_pcg_2d(seed + 211.9)) * star * radiance;
 }
 
 vec3 anchor_star_radiance(vec3 sky_direction, float limiting_magnitude) {

@@ -1,6 +1,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
+#include "cubey/procedural/random.glsl"
 #include "cubey/sky/sky_atmosphere.glsl"
 
 layout(location = 0) in vec2 frag_ndc;
@@ -45,16 +46,10 @@ float planet_occlusion(vec3 ray_direction) {
     return sphere_occlusion(ray_direction, celestial.camera_position_radius.w);
 }
 
-float hash13(vec3 p) {
-    p = fract(p * 0.1031);
-    p += dot(p, p.yzx + 33.33);
-    return fract((p.x + p.y) * p.z);
-}
-
 float star_field(vec3 ray_direction) {
     vec3 cell = floor(ray_direction * 900.0);
-    float star = smoothstep(0.9978, 1.0, hash13(cell));
-    float sparkle = 0.45 + 0.55 * hash13(cell + vec3(17.0, 37.0, 71.0));
+    float star = smoothstep(0.9978, 1.0, cubey_proc_hash_pcg_3d(cell));
+    float sparkle = 0.45 + 0.55 * cubey_proc_hash_pcg_3d(cell + vec3(17.0, 37.0, 71.0));
     return star * sparkle;
 }
 

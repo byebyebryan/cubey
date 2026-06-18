@@ -755,6 +755,8 @@ int main() {
         read_text_file(repo_root / "shaders/cubey/atmosphere.glsl");
     const std::string shader_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere.frag");
+    const std::string sky_shader_source =
+        read_text_file(repo_root / "shaders/cubey/sky/sky.frag");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
     const std::string render_cmake_source = read_text_file(repo_root / "src/cubey/CMakeLists.txt");
     require_contains(shared_environment_header, "struct AtmosphereEnvironmentFrameUniforms",
@@ -861,6 +863,26 @@ int main() {
                      "atmosphere shader should read frame data from a uniform buffer");
     require_contains(shader_source, "#include \"cubey/atmosphere.glsl\"",
                      "atmosphere shader should use the shared atmosphere helper include");
+    require_contains(shader_source, "#include \"cubey/procedural/noise.glsl\"",
+                     "atmosphere shader should use shared procedural noise helpers");
+    require_contains(shader_source, "cubey_proc_hash_pcg_2d",
+                     "atmosphere shader should use shared 2D PCG hashes for stars");
+    require_contains(shader_source, "cubey_proc_value_noise_pcg_2d",
+                     "atmosphere shader should use shared 2D value noise for moon breakup");
+    require_not_contains(shader_source, "float hash12",
+                         "atmosphere shader should not keep local 2D hash helpers");
+    require_not_contains(shader_source, "float value_noise",
+                         "atmosphere shader should not keep local value-noise helpers");
+    require_contains(sky_shader_source, "#include \"cubey/procedural/random.glsl\"",
+                     "sky shader should use shared procedural random helpers");
+    require_contains(sky_shader_source, "cubey_proc_hash_pcg_3d",
+                     "sky shader should use shared 3D PCG hashes for procedural stars");
+    require_not_contains(sky_shader_source, "float hash13",
+                         "sky shader should not keep local 3D hash helpers");
+    require_contains(cmake_source, "shaders/cubey/procedural/noise.glsl",
+                     "atmosphere build should track shared procedural noise dependency");
+    require_contains(cmake_source, "shaders/cubey/procedural/random.glsl",
+                     "atmosphere build should track shared procedural random dependency");
     require_contains(shared_helper_source, "cubey_atmosphere_rayleigh_phase",
                      "shared atmosphere include should define Rayleigh phase");
     require_contains(shared_helper_source, "cubey_atmosphere_mie_phase",
