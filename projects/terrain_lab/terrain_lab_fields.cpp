@@ -2,6 +2,7 @@
 
 #include <cubey/procedural/noise.h>
 #include <cubey/procedural/operators.h>
+#include <cubey/procedural/source_fields.h>
 
 #include <algorithm>
 #include <array>
@@ -309,33 +310,45 @@ using cubey::procedural::smoothstep;
     return cubey::procedural::fbm_2d(x, z, seed, {.octaves = octaves});
 }
 
-[[nodiscard]] std::int32_t coherent_noise_seed(std::uint64_t seed) {
-    return static_cast<std::int32_t>(seed & 0x7fff'ffffULL);
+[[nodiscard]] cubey::procedural::NoiseSource2D
+dune_noise_source(std::uint64_t seed, std::uint32_t octaves, const TerrainLabConfig& config,
+                  cubey::procedural::NoiseSource2DOutput output) {
+    if (config.noise_source != TerrainLabNoiseSource::FastNoiseLite) {
+        return {
+            .backend = cubey::procedural::NoiseSource2DBackend::LegacyFbm,
+            .output = output,
+            .seed = seed,
+            .legacy_fbm = {.octaves = octaves},
+        };
+    }
+    return {
+        .backend = cubey::procedural::NoiseSource2DBackend::CoherentNoise,
+        .output = output,
+        .seed = seed,
+        .coherent =
+            {
+                .frequency = 0.72F,
+                .noise_type = cubey::procedural::CoherentNoiseType::OpenSimplex2,
+                .fractal_type = cubey::procedural::CoherentFractalType::Fbm,
+                .octaves = octaves,
+                .lacunarity = 2.03F,
+                .gain = 0.46F,
+            },
+    };
 }
 
-[[nodiscard]] float dune_source_fbm(float x, float z, std::uint64_t seed,
-                                    std::uint32_t octaves,
+[[nodiscard]] float dune_source_fbm(float x, float z, std::uint64_t seed, std::uint32_t octaves,
                                     const TerrainLabConfig& config) {
-    if (config.noise_source != TerrainLabNoiseSource::FastNoiseLite) {
-        return fbm(x, z, seed, octaves);
-    }
-    return cubey::procedural::sample_coherent_noise_2d(
+    return cubey::procedural::sample_noise_source_2d(
         x, z,
-        {
-            .seed = coherent_noise_seed(seed),
-            .frequency = 0.72F,
-            .noise_type = cubey::procedural::CoherentNoiseType::OpenSimplex2,
-            .fractal_type = cubey::procedural::CoherentFractalType::Fbm,
-            .octaves = octaves,
-            .lacunarity = 2.03F,
-            .gain = 0.46F,
-        });
+        dune_noise_source(seed, octaves, config, cubey::procedural::NoiseSource2DOutput::Signed));
 }
 
 [[nodiscard]] float dune_source_unit_fbm(float x, float z, std::uint64_t seed,
-                                         std::uint32_t octaves,
-                                         const TerrainLabConfig& config) {
-    return dune_source_fbm(x, z, seed, octaves, config) * 0.5F + 0.5F;
+                                         std::uint32_t octaves, const TerrainLabConfig& config) {
+    return cubey::procedural::sample_noise_source_2d(
+        x, z,
+        dune_noise_source(seed, octaves, config, cubey::procedural::NoiseSource2DOutput::Unit));
 }
 
 [[nodiscard]] float half_extent_x_m(const TerrainLabGridDesc& desc) {
@@ -498,78 +511,64 @@ void assign_driver_fields(TerrainLabFieldData& fields, std::size_t sample,
     const Point2 cross{-wind.z, wind.x};
     const float downwind = dot(p, wind);
     const float lateral = dot(p, cross);
-    const float warp_down =
-        dune_source_fbm((p.x * 1.15F) - 3.0F, (p.z * 1.15F) + 4.0F, config.seed + 3101U, 4,
-                        config) *
-        0.22F;
-    const float warp_lateral =
-        dune_source_fbm((p.x * 1.30F) + 6.0F, (p.z * 1.30F) - 7.0F, config.seed + 3103U, 4,
-                        config) *
-        0.18F;
+    const float warp_down = dune_source_fbm((p.x * 1.15F) - 3.0F, (p.z * 1.15F) + 4.0F,
+                                            config.seed + 3101U, 4, config) *
+                            0.22F;
+    const float warp_lateral = dune_source_fbm((p.x * 1.30F) + 6.0F, (p.z * 1.30F) - 7.0F,
+                                               config.seed + 3103U, 4, config) *
+                               0.18F;
     const float dune_u = downwind + warp_down;
     const float dune_v = lateral + warp_lateral;
 
-    const float supply_noise = dune_source_unit_fbm((dune_u * 0.92F) + 1.7F,
-                                                   (dune_v * 0.84F) - 3.2F,
-                                                   config.seed + 3107U, 5, config);
-    const float base_noise = dune_source_unit_fbm((dune_u * 0.54F) - 2.1F,
-                                                 (dune_v * 0.62F) + 4.8F,
-                                                 config.seed + 3109U, 4, config);
+    const float supply_noise = dune_source_unit_fbm(
+        (dune_u * 0.92F) + 1.7F, (dune_v * 0.84F) - 3.2F, config.seed + 3107U, 5, config);
+    const float base_noise = dune_source_unit_fbm((dune_u * 0.54F) - 2.1F, (dune_v * 0.62F) + 4.8F,
+                                                  config.seed + 3109U, 4, config);
     const float selection = 1.0F;
     const float base = saturate(0.34F + (supply_noise * 0.36F) + (base_noise * 0.30F));
 
-    const float mound_a = dune_source_unit_fbm((dune_u * 1.26F) + 5.7F,
-                                              (dune_v * 1.18F) - 6.1F,
-                                              config.seed + 3127U, 5, config);
-    const float mound_b = dune_source_unit_fbm((dune_u * 1.72F) - 3.4F,
-                                              (dune_v * 1.58F) + 7.6F,
-                                              config.seed + 3129U, 4, config);
+    const float mound_a = dune_source_unit_fbm((dune_u * 1.26F) + 5.7F, (dune_v * 1.18F) - 6.1F,
+                                               config.seed + 3127U, 5, config);
+    const float mound_b = dune_source_unit_fbm((dune_u * 1.72F) - 3.4F, (dune_v * 1.58F) + 7.6F,
+                                               config.seed + 3129U, 4, config);
     const float billow =
         smoothstep(0.20F, 0.84F, mound_a) * 0.62F + smoothstep(0.28F, 0.86F, mound_b) * 0.38F;
-    const float roll_source =
-        dune_source_fbm((dune_u * 1.52F) - 4.0F, (dune_v * 1.16F) + 8.5F,
-                        config.seed + 3119U, 5, config);
-    const float roll_secondary =
-        dune_source_fbm((dune_u * 2.18F) + 2.1F, (dune_v * 1.74F) - 8.2F,
-                        config.seed + 3121U, 4, config);
+    const float roll_source = dune_source_fbm((dune_u * 1.52F) - 4.0F, (dune_v * 1.16F) + 8.5F,
+                                              config.seed + 3119U, 5, config);
+    const float roll_secondary = dune_source_fbm((dune_u * 2.18F) + 2.1F, (dune_v * 1.74F) - 8.2F,
+                                                 config.seed + 3121U, 4, config);
     const bool fastnoise_source = config.noise_source == TerrainLabNoiseSource::FastNoiseLite;
     const float primary_ridge = ridge_profile(roll_source * (fastnoise_source ? 0.82F : 1.05F),
                                               fastnoise_source ? 1.30F : 1.72F);
-    const float secondary_ridge =
-        ridge_profile(roll_secondary * (fastnoise_source ? 0.88F : 1.16F),
-                      fastnoise_source ? 1.50F : 1.95F) *
-        (fastnoise_source ? 0.12F : 0.26F);
+    const float secondary_ridge = ridge_profile(roll_secondary * (fastnoise_source ? 0.88F : 1.16F),
+                                                fastnoise_source ? 1.50F : 1.95F) *
+                                  (fastnoise_source ? 0.12F : 0.26F);
     const float soft_ridge = std::max(primary_ridge, secondary_ridge);
     const float billow_weight = fastnoise_source ? 0.72F : 0.58F;
     const float ridge_weight = fastnoise_source ? 0.12F : 0.27F;
     const float base_weight = fastnoise_source ? 0.15F : 0.18F;
     const float supply_weight = fastnoise_source ? 0.07F : 0.10F;
-    const float relief = saturate(
-        ((billow * billow_weight) + (soft_ridge * ridge_weight) + (base * base_weight) +
-         (supply_noise * supply_weight)) *
-        selection);
+    const float relief = saturate(((billow * billow_weight) + (soft_ridge * ridge_weight) +
+                                   (base * base_weight) + (supply_noise * supply_weight)) *
+                                  selection);
 
-    const float lee_source = dune_source_unit_fbm((dune_u * 2.04F) - 7.0F,
-                                                 (dune_v * 1.84F) + 9.0F,
-                                                 config.seed + 3131U, 4, config);
-    const float transport = smoothstep(
-        0.18F, 0.86F,
-        dune_source_unit_fbm((dune_u * 0.92F) + 8.0F, (dune_v * 1.08F) - 10.0F,
-                             config.seed + 3135U, 4, config));
+    const float lee_source = dune_source_unit_fbm((dune_u * 2.04F) - 7.0F, (dune_v * 1.84F) + 9.0F,
+                                                  config.seed + 3131U, 4, config);
+    const float transport =
+        smoothstep(0.18F, 0.86F,
+                   dune_source_unit_fbm((dune_u * 0.92F) + 8.0F, (dune_v * 1.08F) - 10.0F,
+                                        config.seed + 3135U, 4, config));
     const float crest_source =
-        smoothstep(fastnoise_source ? 0.66F : 0.54F, fastnoise_source ? 0.94F : 0.86F,
-                   soft_ridge) *
-        smoothstep(fastnoise_source ? 0.52F : 0.44F, fastnoise_source ? 0.90F : 0.82F,
-                   relief) *
+        smoothstep(fastnoise_source ? 0.66F : 0.54F, fastnoise_source ? 0.94F : 0.86F, soft_ridge) *
+        smoothstep(fastnoise_source ? 0.52F : 0.44F, fastnoise_source ? 0.90F : 0.82F, relief) *
         (fastnoise_source ? 0.58F : 1.0F) * selection;
     const float interdune_source =
         saturate((1.0F - smoothstep(0.22F, 0.58F, relief)) * lerp(0.50F, 1.0F, selection));
     const float process =
-        saturate((crest_source * (fastnoise_source ? 0.18F : 0.28F)) +
-                 (lee_source * smoothstep(0.36F, 0.82F, relief) *
-                  (fastnoise_source ? 0.24F : 0.34F)) +
-                 (transport * (fastnoise_source ? 0.25F : 0.22F)) +
-                 (interdune_source * 0.10F)) *
+        saturate(
+            (crest_source * (fastnoise_source ? 0.18F : 0.28F)) +
+            (lee_source * smoothstep(0.36F, 0.82F, relief) * (fastnoise_source ? 0.24F : 0.34F)) +
+            (transport * (fastnoise_source ? 0.25F : 0.22F)) + (interdune_source * 0.10F)) *
         selection;
 
     return {
