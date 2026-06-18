@@ -1,6 +1,7 @@
 #include <cubey/procedural/field_2d.h>
 #include <cubey/procedural/noise.h>
 #include <cubey/procedural/operators.h>
+#include <cubey/procedural/source_fields.h>
 
 #include "source_file_test_helpers.h"
 
@@ -98,13 +99,96 @@ void test_procedural_box_blur_preserves_dimensions_and_smooths_impulse() {
                  "box blur should renormalize weights at edges");
 }
 
+void test_procedural_field_composition_transforms_values() {
+    cubey::procedural::ScalarField2D field({.width = 2, .height = 2}, 0.0F);
+    field.at(0U, 0U) = -2.0F;
+    field.at(1U, 0U) = -0.5F;
+    field.at(0U, 1U) = 0.5F;
+    field.at(1U, 1U) = 2.0F;
+
+    const cubey::procedural::ScalarField2D clamped =
+        cubey::procedural::clamp_field(field, -1.0F, 1.0F);
+    require_near(clamped.at(0U, 0U), -1.0F, 0.0001F, "clamp should clamp low values");
+    require_near(clamped.at(1U, 1U), 1.0F, 0.0001F, "clamp should clamp high values");
+
+    const cubey::procedural::ScalarField2D remapped =
+        cubey::procedural::remap_field(field, -1.0F, 1.0F, 10.0F, 20.0F);
+    require_near(remapped.at(0U, 0U), 10.0F, 0.0001F, "remap should clamp below input range");
+    require_near(remapped.at(1U, 0U), 12.5F, 0.0001F, "remap should scale in-range values");
+    require_near(remapped.at(1U, 1U), 20.0F, 0.0001F, "remap should clamp above input range");
+
+    const cubey::procedural::ScalarField2D stepped =
+        cubey::procedural::smoothstep_field(field, -1.0F, 1.0F);
+    require_near(stepped.at(1U, 0U), 0.15625F, 0.0001F,
+                 "smoothstep field should apply scalar smoothstep");
+
+    const cubey::procedural::ScalarField2D inverted = cubey::procedural::invert_unit_field(stepped);
+    require_near(inverted.at(1U, 0U), 0.84375F, 0.0001F,
+                 "unit inversion should saturate and invert field samples");
+
+    const cubey::procedural::ScalarField2D ridged =
+        cubey::procedural::ridge_profile_field(field, 2.0F);
+    require_near(ridged.at(0U, 0U), 0.0F, 0.0001F,
+                 "ridge profile should clamp values outside the ridge");
+    require_near(ridged.at(0U, 1U), 0.25F, 0.0001F, "ridge profile should shape values near zero");
+}
+
+void test_procedural_field_composition_combines_matching_fields() {
+    cubey::procedural::ScalarField2D lhs({.width = 2, .height = 2}, 0.0F);
+    cubey::procedural::ScalarField2D rhs(lhs.desc(), 0.0F);
+    cubey::procedural::ScalarField2D mask(lhs.desc(), 0.0F);
+    lhs.at(0U, 0U) = 1.0F;
+    lhs.at(1U, 0U) = 2.0F;
+    lhs.at(0U, 1U) = 3.0F;
+    lhs.at(1U, 1U) = 4.0F;
+    rhs.at(0U, 0U) = 8.0F;
+    rhs.at(1U, 0U) = 6.0F;
+    rhs.at(0U, 1U) = 4.0F;
+    rhs.at(1U, 1U) = 2.0F;
+    mask.at(0U, 0U) = 0.0F;
+    mask.at(1U, 0U) = 0.25F;
+    mask.at(0U, 1U) = 0.75F;
+    mask.at(1U, 1U) = 1.0F;
+
+    require_near(cubey::procedural::add_fields(lhs, rhs).at(0U, 0U), 9.0F, 0.0001F,
+                 "add field should add samples");
+    require_near(cubey::procedural::subtract_fields(rhs, lhs).at(1U, 0U), 4.0F, 0.0001F,
+                 "subtract field should subtract samples");
+    require_near(cubey::procedural::multiply_fields(lhs, rhs).at(1U, 1U), 8.0F, 0.0001F,
+                 "multiply field should multiply samples");
+    require_near(cubey::procedural::min_fields(lhs, rhs).at(0U, 1U), 3.0F, 0.0001F,
+                 "min field should select smaller samples");
+    require_near(cubey::procedural::max_fields(lhs, rhs).at(0U, 1U), 4.0F, 0.0001F,
+                 "max field should select larger samples");
+
+    const cubey::procedural::ScalarField2D blended =
+        cubey::procedural::blend_fields(lhs, rhs, mask);
+    require(blended.desc().width == lhs.desc().width && blended.desc().height == lhs.desc().height,
+            "blend should preserve field dimensions");
+    require_near(blended.at(0U, 0U), 1.0F, 0.0001F, "blend mask zero should keep lhs");
+    require_near(blended.at(1U, 0U), 3.0F, 0.0001F, "blend mask should interpolate between fields");
+    require_near(blended.at(1U, 1U), 2.0F, 0.0001F, "blend mask one should keep rhs");
+}
+
+void test_procedural_field_composition_rejects_invalid_inputs() {
+    cubey::procedural::ScalarField2D field({.width = 2, .height = 2}, 0.0F);
+    cubey::procedural::ScalarField2D other_size({.width = 3, .height = 2}, 0.0F);
+    cubey::procedural::ScalarField2D other_origin({.width = 2, .height = 2, .origin_x = 1.0F},
+                                                  0.0F);
+
+    require_throws([&] { (void)cubey::procedural::add_fields(field, other_size); },
+                   "binary field operators should reject mismatched dimensions");
+    require_throws([&] { (void)cubey::procedural::blend_fields(field, other_origin, field); },
+                   "blend should reject mismatched descriptors");
+    require_throws([&] { (void)cubey::procedural::remap_field(field, 1.0F, 1.0F, 0.0F, 1.0F); },
+                   "remap should reject zero input range");
+}
+
 void test_procedural_slope_curvature_handles_flat_ramp_and_peak() {
-    const cubey::procedural::ScalarField2D flat({.width = 3, .height = 3, .cell_size = 2.0F},
-                                                7.0F);
+    const cubey::procedural::ScalarField2D flat({.width = 3, .height = 3, .cell_size = 2.0F}, 7.0F);
     const cubey::procedural::SlopeCurvature2D flat_analysis =
         cubey::procedural::compute_slope_curvature(flat);
-    require_near(flat_analysis.max_slope, 0.0F, 0.0001F,
-                 "flat field should have zero slope");
+    require_near(flat_analysis.max_slope, 0.0F, 0.0001F, "flat field should have zero slope");
     require_near(flat_analysis.max_abs_curvature, 0.0F, 0.0001F,
                  "flat field should have zero curvature");
 
@@ -214,20 +298,19 @@ void test_procedural_noise_is_deterministic_and_bounded() {
 }
 
 void test_procedural_legacy_noise_golden_values_are_stable() {
-    require_near(cubey::procedural::value_noise_2d(1.25F, -3.75F, 17U), -0.457798481F,
-                 0.000001F, "legacy value noise should keep stable samples");
+    require_near(cubey::procedural::value_noise_2d(1.25F, -3.75F, 17U), -0.457798481F, 0.000001F,
+                 "legacy value noise should keep stable samples");
     require_near(cubey::procedural::fbm_2d(2.4F, -0.7F, 42U, {.octaves = 5}), -0.063320771F,
                  0.000001F, "legacy fbm should keep stable samples");
-    require_near(cubey::procedural::ridged_fbm_2d(2.4F, -0.7F, 42U, {.octaves = 5}),
-                 0.877368033F, 0.000001F, "legacy ridged fbm should keep stable samples");
+    require_near(cubey::procedural::ridged_fbm_2d(2.4F, -0.7F, 42U, {.octaves = 5}), 0.877368033F,
+                 0.000001F, "legacy ridged fbm should keep stable samples");
 }
 
 void test_procedural_3d_noise_is_deterministic_and_stable() {
     const float first = cubey::procedural::value_noise_3d(1.25F, -3.75F, 0.5F, 17U);
     const float second = cubey::procedural::value_noise_3d(1.25F, -3.75F, 0.5F, 17U);
     require_near(first, second, 0.000001F, "3D value noise should be deterministic");
-    require(first >= -1.0F && first <= 1.0F,
-            "3D value noise should remain in signed unit range");
+    require(first >= -1.0F && first <= 1.0F, "3D value noise should remain in signed unit range");
 
     const float changed_seed = cubey::procedural::value_noise_3d(1.25F, -3.75F, 0.5F, 18U);
     require(std::fabs(first - changed_seed) > 0.000001F,
@@ -236,19 +319,17 @@ void test_procedural_3d_noise_is_deterministic_and_stable() {
     const float fbm = cubey::procedural::fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5});
     require(fbm >= -1.0F && fbm <= 1.0F, "3D fbm should remain in signed unit range");
 
-    const float ridged =
-        cubey::procedural::ridged_fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5});
+    const float ridged = cubey::procedural::ridged_fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5});
     require(ridged >= 0.0F && ridged <= 1.0F, "3D ridged fbm should remain in unit range");
 
     require_near(cubey::procedural::hash_to_unit(123456789U), 0.659940481F, 0.000001F,
                  "3D-compatible hash-to-unit should keep stable samples");
     require(cubey::procedural::hash_u32(-2, 7, 4, 19U) == 2469915974U,
             "3D-compatible hash should keep stable samples");
-    require_near(cubey::procedural::value_noise_3d(1.25F, -3.75F, 0.5F, 17U),
-                 0.302227825F, 0.000001F,
-                 "3D value noise should keep stable samples");
-    require_near(cubey::procedural::fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5}),
-                 -0.123893112F, 0.000001F, "3D fbm should keep stable samples");
+    require_near(cubey::procedural::value_noise_3d(1.25F, -3.75F, 0.5F, 17U), 0.302227825F,
+                 0.000001F, "3D value noise should keep stable samples");
+    require_near(cubey::procedural::fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5}), -0.123893112F,
+                 0.000001F, "3D fbm should keep stable samples");
     require_near(cubey::procedural::ridged_fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5}),
                  0.767563224F, 0.000001F, "3D ridged fbm should keep stable samples");
 }
@@ -326,8 +407,7 @@ void test_procedural_coherent_noise_wraps_fastnoise_lite() {
         cubey::procedural::domain_warp_2d(1.50F, -2.25F, warp);
     require_near(warp_a.x, warp_b.x, 0.000001F, "2D domain warp should be deterministic");
     require_near(warp_a.y, warp_b.y, 0.000001F, "2D domain warp should be deterministic");
-    require(std::fabs(warp_a.x - 1.50F) > 0.000001F ||
-                std::fabs(warp_a.y + 2.25F) > 0.000001F,
+    require(std::fabs(warp_a.x - 1.50F) > 0.000001F || std::fabs(warp_a.y + 2.25F) > 0.000001F,
             "2D domain warp should move at least one coordinate");
 
     CoherentDomainWarpConfig warp3 = warp;
@@ -337,4 +417,83 @@ void test_procedural_coherent_noise_wraps_fastnoise_lite() {
         cubey::procedural::domain_warp_3d(1.0F, 2.0F, 3.0F, warp3);
     require(std::isfinite(warped.x) && std::isfinite(warped.y) && std::isfinite(warped.z),
             "3D domain warp should produce finite coordinates");
+}
+
+void test_procedural_source_fields_wrap_legacy_noise_backends() {
+    cubey::procedural::NoiseSource2D config{
+        .backend = cubey::procedural::NoiseSource2DBackend::LegacyFbm,
+        .output = cubey::procedural::NoiseSource2DOutput::Signed,
+        .seed = 42U,
+        .legacy_fbm = {.octaves = 5},
+        .domain = {.x_scale = 1.5F, .y_scale = 0.75F, .x_offset = 2.0F, .y_offset = -3.0F},
+    };
+
+    const float expected_signed = cubey::procedural::fbm_2d(
+        (1.25F * 1.5F) + 2.0F, (-0.5F * 0.75F) - 3.0F, 42U, {.octaves = 5});
+    require_near(cubey::procedural::sample_noise_source_2d(1.25F, -0.5F, config), expected_signed,
+                 0.000001F, "legacy source should apply domain transform before sampling FBM");
+
+    config.output = cubey::procedural::NoiseSource2DOutput::Unit;
+    require_near(cubey::procedural::sample_noise_source_2d(1.25F, -0.5F, config),
+                 (expected_signed * 0.5F) + 0.5F, 0.000001F,
+                 "legacy source should map signed FBM to unit output");
+
+    config.backend = cubey::procedural::NoiseSource2DBackend::LegacyRidgedFbm;
+    config.output = cubey::procedural::NoiseSource2DOutput::Unit;
+    const float expected_ridged = cubey::procedural::ridged_fbm_2d(
+        (1.25F * 1.5F) + 2.0F, (-0.5F * 0.75F) - 3.0F, 42U, {.octaves = 5});
+    require_near(cubey::procedural::sample_noise_source_2d(1.25F, -0.5F, config), expected_ridged,
+                 0.000001F, "ridged legacy source should remain naturally unit range");
+}
+
+void test_procedural_source_fields_wrap_coherent_noise_backend() {
+    const cubey::procedural::NoiseSource2D source{
+        .backend = cubey::procedural::NoiseSource2DBackend::CoherentNoise,
+        .output = cubey::procedural::NoiseSource2DOutput::Unit,
+        .seed = 47U,
+        .coherent =
+            {
+                .frequency = 0.035F,
+                .noise_type = cubey::procedural::CoherentNoiseType::OpenSimplex2,
+                .fractal_type = cubey::procedural::CoherentFractalType::Fbm,
+                .octaves = 4,
+                .lacunarity = 2.08F,
+                .gain = 0.52F,
+                .weighted_strength = 0.18F,
+            },
+        .domain = {.x_scale = 0.8F, .y_scale = 1.2F, .x_offset = 5.0F, .y_offset = -2.0F},
+    };
+    cubey::procedural::CoherentNoiseConfig coherent = source.coherent;
+    coherent.seed = 47;
+    const float expected = cubey::procedural::sample_coherent_noise_2d(
+        (12.5F * 0.8F) + 5.0F, (-7.25F * 1.2F) - 2.0F, coherent);
+    require_near(cubey::procedural::sample_noise_source_2d(12.5F, -7.25F, source),
+                 (expected * 0.5F) + 0.5F, 0.000001F,
+                 "coherent source should use shared seed and domain transform");
+}
+
+void test_procedural_source_fields_fill_scalar_fields() {
+    const cubey::procedural::Grid2DDesc desc{
+        .width = 2,
+        .height = 2,
+        .cell_size = 2.0F,
+        .origin_x = 10.0F,
+        .origin_y = -4.0F,
+    };
+    const cubey::procedural::NoiseSource2D source{
+        .backend = cubey::procedural::NoiseSource2DBackend::LegacyFbm,
+        .output = cubey::procedural::NoiseSource2DOutput::Signed,
+        .seed = 17U,
+        .legacy_fbm = {.octaves = 3},
+        .domain = {.x_scale = 0.25F, .y_scale = 0.5F, .x_offset = 1.0F, .y_offset = -1.0F},
+    };
+    const cubey::procedural::ScalarField2D field =
+        cubey::procedural::sample_noise_source_field_2d(desc, source);
+
+    require(field.desc().width == desc.width && field.desc().height == desc.height,
+            "source field sampling should preserve grid dimensions");
+    const float x = cubey::procedural::grid_sample_x(desc, 1U);
+    const float y = cubey::procedural::grid_sample_y(desc, 0U);
+    require_near(field.at(1U, 0U), cubey::procedural::sample_noise_source_2d(x, y, source),
+                 0.000001F, "source field sampling should use centered grid coordinates");
 }

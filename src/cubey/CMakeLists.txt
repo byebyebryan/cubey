@@ -26,6 +26,7 @@ add_library(cubey_core STATIC
     procedural/field_2d.cpp
     procedural/noise.cpp
     procedural/operators.cpp
+    procedural/source_fields.cpp
 )
 add_library(cubey::core ALIAS cubey_core)
 

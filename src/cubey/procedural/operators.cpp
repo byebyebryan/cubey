@@ -2,8 +2,52 @@
 
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 
 namespace cubey::procedural {
+namespace {
+
+[[nodiscard]] bool same_desc(const Grid2DDesc& lhs, const Grid2DDesc& rhs) {
+    return lhs.width == rhs.width && lhs.height == rhs.height && lhs.cell_size == rhs.cell_size &&
+           lhs.origin_x == rhs.origin_x && lhs.origin_y == rhs.origin_y;
+}
+
+void require_same_desc(const ScalarField2D& lhs, const ScalarField2D& rhs) {
+    if (!same_desc(lhs.desc(), rhs.desc())) {
+        throw std::runtime_error("procedural scalar field descriptors must match");
+    }
+}
+
+template <typename Fn>
+[[nodiscard]] ScalarField2D transform_field(const ScalarField2D& field, Fn&& fn) {
+    ScalarField2D result(field.desc());
+    const std::span<const float> source = field.values();
+    std::span<float> target = result.values();
+    for (std::size_t index = 0; index < source.size(); ++index) {
+        target[index] = fn(source[index]);
+    }
+    return result;
+}
+
+template <typename Fn>
+[[nodiscard]] ScalarField2D combine_fields(const ScalarField2D& lhs, const ScalarField2D& rhs,
+                                           Fn&& fn) {
+    require_same_desc(lhs, rhs);
+    ScalarField2D result(lhs.desc());
+    const std::span<const float> lhs_values = lhs.values();
+    const std::span<const float> rhs_values = rhs.values();
+    std::span<float> target = result.values();
+    for (std::size_t index = 0; index < lhs_values.size(); ++index) {
+        target[index] = fn(lhs_values[index], rhs_values[index]);
+    }
+    return result;
+}
+
+} // namespace
+
+float ridge_profile(float value, float sharpness) {
+    return std::pow(std::max(1.0F - std::abs(value), 0.0F), sharpness);
+}
 
 ScalarField2D box_blur_3x3(const ScalarField2D& field) {
     ScalarField2D result(field.desc());
@@ -37,6 +81,72 @@ ScalarField2D box_blur_3x3(const ScalarField2D& field) {
     return result;
 }
 
+ScalarField2D clamp_field(const ScalarField2D& field, float min_value, float max_value) {
+    return transform_field(field, [min_value, max_value](float value) {
+        return std::clamp(value, min_value, max_value);
+    });
+}
+
+ScalarField2D remap_field(const ScalarField2D& field, float in_min, float in_max, float out_min,
+                          float out_max) {
+    if (in_min == in_max) {
+        throw std::runtime_error("procedural remap input range must be non-zero");
+    }
+    return transform_field(field, [in_min, in_max, out_min, out_max](float value) {
+        const float t = saturate((value - in_min) / (in_max - in_min));
+        return lerp(out_min, out_max, t);
+    });
+}
+
+ScalarField2D smoothstep_field(const ScalarField2D& field, float edge0, float edge1) {
+    return transform_field(field,
+                           [edge0, edge1](float value) { return smoothstep(edge0, edge1, value); });
+}
+
+ScalarField2D invert_unit_field(const ScalarField2D& field) {
+    return transform_field(field, [](float value) { return 1.0F - saturate(value); });
+}
+
+ScalarField2D ridge_profile_field(const ScalarField2D& field, float sharpness) {
+    return transform_field(field,
+                           [sharpness](float value) { return ridge_profile(value, sharpness); });
+}
+
+ScalarField2D add_fields(const ScalarField2D& lhs, const ScalarField2D& rhs) {
+    return combine_fields(lhs, rhs, [](float a, float b) { return a + b; });
+}
+
+ScalarField2D subtract_fields(const ScalarField2D& lhs, const ScalarField2D& rhs) {
+    return combine_fields(lhs, rhs, [](float a, float b) { return a - b; });
+}
+
+ScalarField2D multiply_fields(const ScalarField2D& lhs, const ScalarField2D& rhs) {
+    return combine_fields(lhs, rhs, [](float a, float b) { return a * b; });
+}
+
+ScalarField2D min_fields(const ScalarField2D& lhs, const ScalarField2D& rhs) {
+    return combine_fields(lhs, rhs, [](float a, float b) { return std::min(a, b); });
+}
+
+ScalarField2D max_fields(const ScalarField2D& lhs, const ScalarField2D& rhs) {
+    return combine_fields(lhs, rhs, [](float a, float b) { return std::max(a, b); });
+}
+
+ScalarField2D blend_fields(const ScalarField2D& lhs, const ScalarField2D& rhs,
+                           const ScalarField2D& mask) {
+    require_same_desc(lhs, rhs);
+    require_same_desc(lhs, mask);
+    ScalarField2D result(lhs.desc());
+    const std::span<const float> lhs_values = lhs.values();
+    const std::span<const float> rhs_values = rhs.values();
+    const std::span<const float> mask_values = mask.values();
+    std::span<float> target = result.values();
+    for (std::size_t index = 0; index < lhs_values.size(); ++index) {
+        target[index] = lerp(lhs_values[index], rhs_values[index], saturate(mask_values[index]));
+    }
+    return result;
+}
+
 SlopeCurvature2D compute_slope_curvature(const ScalarField2D& field) {
     const Grid2DDesc& desc = field.desc();
     SlopeCurvature2D result{
@@ -52,10 +162,8 @@ SlopeCurvature2D compute_slope_curvature(const ScalarField2D& field) {
             const std::uint32_t y1 = y + 1U >= desc.height ? y : y + 1U;
             const float span_x = static_cast<float>(x1 - x0) * desc.cell_size;
             const float span_y = static_cast<float>(y1 - y0) * desc.cell_size;
-            const float dhdx =
-                span_x == 0.0F ? 0.0F : (field.at(x1, y) - field.at(x0, y)) / span_x;
-            const float dhdy =
-                span_y == 0.0F ? 0.0F : (field.at(x, y1) - field.at(x, y0)) / span_y;
+            const float dhdx = span_x == 0.0F ? 0.0F : (field.at(x1, y) - field.at(x0, y)) / span_x;
+            const float dhdy = span_y == 0.0F ? 0.0F : (field.at(x, y1) - field.at(x, y0)) / span_y;
 
             const float slope = std::sqrt((dhdx * dhdx) + (dhdy * dhdy));
             result.slope.at(x, y) = slope;
@@ -102,12 +210,10 @@ LocalRelief2D compute_local_relief(const ScalarField2D& field, std::uint32_t rad
 
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         const std::uint32_t y0 = radius_samples > y ? 0U : y - radius_samples;
-        const std::uint32_t y1 =
-            y + std::min(radius_samples, (desc.height - 1U) - y);
+        const std::uint32_t y1 = y + std::min(radius_samples, (desc.height - 1U) - y);
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const std::uint32_t x0 = radius_samples > x ? 0U : x - radius_samples;
-            const std::uint32_t x1 =
-                x + std::min(radius_samples, (desc.width - 1U) - x);
+            const std::uint32_t x1 = x + std::min(radius_samples, (desc.width - 1U) - x);
 
             float local_min = field.at(x, y);
             float local_max = field.at(x, y);
