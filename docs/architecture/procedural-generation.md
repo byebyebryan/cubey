@@ -2,9 +2,11 @@
 
 Cubey uses procedural assets across terrain, planet detail, ocean-adjacent
 fields, fluids, clouds, atmosphere backdrops, generated textures, and validation
-scenes. Terrain Lab has made the shared problem clearer: procedural work should
-start from coherent source fields and reusable operators, not from slice-local
-hand-authored masks that are later dressed with materials or shader noise.
+scenes. Terrain Lab and `projects/procedural_terrain` have made the shared
+problem clearer, but they are experiments rather than API owners. Procedural
+work should start from coherent source fields and reusable operators, not from
+slice-local hand-authored masks that are later dressed with materials or shader
+noise.
 
 ## Direction
 
@@ -22,7 +24,8 @@ building blocks:
 
 The first shared layer should stay data-oriented and renderer-independent. It
 should not own Terrain Lab policy, planet LOD, ocean shoreline contracts,
-materials, foliage, or Vulkan resources.
+materials, foliage, or Vulkan resources. Early terrain project contracts can be
+deprecated or rebooted when they conflict with the cleaner foundation model.
 
 ## Consumer Taxonomy
 
@@ -46,11 +49,11 @@ stay project- or domain-owned unless the shared abstraction names the process
 being modeled, not just the visual result of one demo. Reference and legacy
 snapshots should not be deduplicated until the comparison value is gone.
 
-## Terrain Lessons
+## Experimental Terrain Lessons
 
-Terrain Lab should remain the visual pressure test for these pieces, but the
-pieces should not remain trapped inside Terrain Lab if two projects can use
-them. The current rule is:
+Terrain Lab should remain the visual pressure test for these pieces, and
+`projects/procedural_terrain` remains useful coastal/ocean-adjacent context.
+Neither project should define the shared contract. The current rule is:
 
 ```text
 source field -> reusable operators -> feature/process driver -> project recipe
@@ -87,6 +90,20 @@ The initial FastNoiseLite integration should be wrapped by `cubey::procedural`
 instead of exposed directly to projects. Existing hash/value-noise functions
 remain available as a legacy deterministic backend so old captures and tests do
 not silently change.
+
+A broader local reference pass over `~/code/ref/3DWorld`,
+`~/code/ref/Planet-Generator`, `~/code/ref/TerraForge3D`, and
+`~/code/ref/terrain-diffusion` is captured in
+`docs/notes/procedural-terrain-reference-review.md`. The stable conclusions are:
+
+- borrow code-centric concepts, not UI node graphs or whole engines;
+- treat procedural results as named field sets: height, masks, process fields,
+  material hints, climate or environment drivers, diagnostics, and summaries;
+- represent source construction as named layer stacks with masks, weights,
+  domain transforms, warp, distribution shaping, and stats;
+- make random-access tile or patch sampling part of the deterministic contract;
+- keep ML terrain generation out of the runtime foundation for now, while
+  borrowing its conditioning, climate-field, and quantile-remap ideas.
 
 ## Current Foundation Slice
 
@@ -169,11 +186,19 @@ The first proof consumer is the desert dune source selection, preserving the
 legacy default while making FastNoiseLite and warped FastNoiseLite explicit
 opt-ins.
 
-Next shared candidates should come from repeated project-local code or from a
-specific reference-backed driver need, not from speculative API surface. Likely
-near-term candidates are:
+Next shared candidates should come from repeated project-local code, broad
+procedural-rendering needs, or a specific reference-backed driver need, not from
+speculative API surface. Likely near-term candidates are:
 
-- terrain-oriented source-recipe helpers;
+- generic source-recipe helpers with explicit layer stacks, masks,
+  domain transforms, warp, distribution shaping, and field summaries;
+- named field-set containers for height, density, source masks, process fields,
+  material/biome hints, climate/environment fields, and debug exports;
+- deterministic tile or patch sampling descriptors that are independent of any
+  one renderer;
+- distribution/quantile-style remap helpers and histogram/percentile summaries;
+- Terrain Lab landform or biome mixer prototypes that compose named field
+  outputs before anything is promoted into core;
 - flow-routing and accumulation data structures after a deeper SimpleHydrology
   pass;
 - explicit source-field recipes for mountain range, river, and dune drivers.
@@ -181,6 +206,8 @@ near-term candidates are:
 Near-term non-goals:
 
 - no full procedural node graph;
+- no compatibility promise for early Terrain Lab or `procedural_terrain`
+  payloads;
 - no default switch from legacy Terrain Lab value noise to FastNoiseLite;
 - no FastNoiseLite GLSL migration before shader parity has its own focused
   review;

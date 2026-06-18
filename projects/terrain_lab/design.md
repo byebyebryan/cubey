@@ -403,6 +403,12 @@ workbench slice rather than a physically complete landscape model.
 
 Useful starting points for coherent terrain generation:
 
+- `docs/notes/procedural-terrain-reference-review.md`: current reference pass
+  over `~/code/ref/3DWorld`, `~/code/ref/Planet-Generator`,
+  `~/code/ref/TerraForge3D`, and `~/code/ref/terrain-diffusion`. The useful
+  direction is code-centric source recipes, field sets, tile contracts,
+  landform/biome mixers, and diagnostics, not a UI node graph or ML runtime
+  dependency.
 - `~/code/ref/SimpleHydrology`: useful reference for process state and visual
   diagnostics, especially discharge/momentum/deposition fields, cascade-style
   slope relaxation, and vegetation feedback. Use it as design pressure, not as

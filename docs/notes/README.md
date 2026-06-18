@@ -36,3 +36,7 @@ the detailed foundation notes under `docs/architecture/`.
 - [Cloud and weather rendering research](cloud-weather-rendering-research.md):
   historical cloud research, reference-code passes, and checkpoints that led to
   the current production direction in `docs/architecture/cloud-rendering.md`.
+- [Procedural terrain reference review](procedural-terrain-reference-review.md):
+  current pass over `3DWorld`, `Planet-Generator`, `TerraForge3D`, and
+  `terrain-diffusion`, with lessons for code-centric terrain recipes, field
+  sets, tile contracts, diagnostics, and ML non-goals.
