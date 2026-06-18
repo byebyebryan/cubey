@@ -234,6 +234,16 @@ peaks, and scree from provisional height, slope/curvature, divide support, and
 routed flow. Fixed "central valley plus two side ridges" layouts are a
 scaffolding smell, not a terrain model.
 
+The first field-operator batch promotes slope/curvature and local-relief scans
+into `cubey::procedural`, then routes Terrain Lab mountain and glacial analysis
+through those shared operators. The mountain-ridges/peaks sentinel now uses a
+broader uplift/fold source before layering peaks and scree, while alpine
+glacial valley keeps its separate valley/wall/process source. Review captures
+for this batch were written under
+`outputs/terrain_lab/field-operators-20260617-191435/`; they show a clearer
+mountain-vs-valley split, though mountain peaks remain intentionally rough for
+this foundation slice rather than a final mountain model.
+
 The sentinel slice set should prevent overfitting this model to canyon terrain.
 The first representative set is:
 

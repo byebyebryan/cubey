@@ -143,16 +143,23 @@ through one noise API:
   atlas features, and star placement should consume shared primitives only when
   the formulas match their current behavior.
 
-The first migration wave is a preserve-output refactor. It removes duplicated
-helper formulas where they already match, but it does not silently change
-screenshots, default Terrain Lab noise sources, active cloud volume generation,
-or planet terrain shaping constants.
+The first migration wave is mostly a preserve-output refactor. It removes
+duplicated helper formulas where they already match, but it does not silently
+change default Terrain Lab noise sources, active cloud volume generation, or
+planet terrain shaping constants.
+
+The first promoted field-analysis operators are reusable slope/curvature and
+local-relief scans for `ScalarField2D`. Terrain Lab now consumes those operators
+for terrain derivatives and for mountain/glacial local relief analysis. The
+mountain slice uses that shared analysis as the proof case for broad uplift,
+ridge, peak, cliff, and scree source fields; the glacial slice keeps a separate
+valley/process source shape and uses the shared operators only for wall and
+process cues.
 
 Next shared candidates should come from repeated project-local code or from a
 specific reference-backed driver need, not from speculative API surface. Likely
 near-term candidates are:
 
-- reusable slope/curvature and local-relief operators;
 - terrain-oriented ridge/terrace/remap composition helpers;
 - flow-routing and accumulation data structures after a deeper SimpleHydrology
   pass;

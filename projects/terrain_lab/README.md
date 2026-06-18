@@ -146,7 +146,8 @@ Generated CPU fields include:
 - driver base, relief, process, and selection fields;
 - height;
 - structure, process, and detail height contributions;
-- slope and curvature;
+- slope and curvature, derived through shared `cubey::procedural` field
+  operators;
 - flow direction, flow accumulation, and stream power;
 - river discharge, stream order, river width, valley width, and water presence;
 - wetness and deposition;
@@ -156,6 +157,11 @@ Generated CPU fields include:
 - material masks for rock, soil, scree, meadow, forest, and snow;
 - sand material masks for slices that need explicit wind-blown sediment;
 - grass, shrub, tree, and canopy-height density fields.
+
+Mountain and alpine-glacial driver shaping also consume shared local-relief
+field analysis. Mountain-ridges/peaks uses it to layer broad range support,
+ridges, peaks, cliffs, and scree; alpine-glacial-valley uses it for wall and
+process cues while keeping the valley source shape separate.
 
 Field summaries also expose naturalization diagnostics for channel/divide
 sample counts, divide-channel height separation, channel-flow alignment,
@@ -245,6 +251,8 @@ mkdir -p outputs/terrain_lab/current
 `outputs/` is ignored by Git; `outputs/terrain_lab/current/` is disposable and
 should contain only the latest comparable final/driver review set. Put ad hoc
 diagnostics in a named subdirectory when they need to be kept around.
+The field-operator migration review bundle is
+`outputs/terrain_lab/field-operators-20260617-191435/`.
 
 ## Status
 
