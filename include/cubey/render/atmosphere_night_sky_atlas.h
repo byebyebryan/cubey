@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cubey/procedural/artifact_metadata.h>
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -45,6 +47,7 @@ struct NightSkyAtlas {
     std::vector<float> rgba32f{};
     std::vector<NightSkyAtlasMip> mips{};
     NightSkyLayerView layer = NightSkyLayerView::Final;
+    cubey::procedural::ProceduralArtifactMetadata metadata{};
 };
 
 [[nodiscard]] std::uint32_t night_sky_atlas_mip_count(std::uint32_t extent);

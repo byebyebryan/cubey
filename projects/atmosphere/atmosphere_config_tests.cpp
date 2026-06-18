@@ -383,6 +383,32 @@ int main() {
                 "lunar atlas should include a complete mip chain");
         require(lunar_atlas_hash(atlas.rgba8) == lunar_atlas_hash(atlas_again.rgba8),
                 "lunar atlas generation should be deterministic");
+        cubey::procedural::validate_procedural_artifact_metadata(atlas.metadata);
+        require(atlas.metadata.generator == "cubey::render::generate_lunar_atlas",
+                "lunar atlas metadata should identify its generator");
+        require(atlas.metadata.formula_version == "atmosphere-lunar-atlas-v1",
+                "lunar atlas metadata should identify its formula version");
+        require(atlas.metadata.domain == "atmosphere.lunar_atlas",
+                "lunar atlas metadata should identify its domain");
+        require(atlas.metadata.seed == atlas_again.metadata.seed,
+                "lunar atlas metadata seed should be deterministic");
+        require(atlas.metadata.space == cubey::procedural::ProceduralDomainSpace::Atlas,
+                "lunar atlas metadata should use atlas domain space");
+        require(atlas.metadata.kind == cubey::procedural::ProceduralArtifactKind::Texture2D,
+                "lunar atlas metadata should identify a 2D texture");
+        require(atlas.metadata.format ==
+                    cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+                "lunar atlas metadata should identify RGBA8 payloads");
+        require(atlas.metadata.extent.width == atlas.width &&
+                    atlas.metadata.extent.height == atlas.height &&
+                    atlas.metadata.extent.faces == 1U &&
+                    atlas.metadata.extent.mip_levels == atlas.mip_levels,
+                "lunar atlas metadata should preserve dimensions and mip count");
+        require(atlas.metadata.content_hash == lunar_atlas_hash(atlas.rgba8),
+                "lunar atlas metadata hash should match atlas bytes");
+        require(cubey::procedural::procedural_artifact_sample_count(atlas.metadata.extent) ==
+                    atlas.rgba8.size() / 4U,
+                "lunar atlas metadata sample count should match RGBA texels");
         for (std::uint32_t mip = 0; mip < atlas.mip_levels; ++mip) {
             const LunarAtlasMip& level = atlas.mips.at(mip);
             require(level.width >= 1U && level.height >= 1U,
@@ -448,6 +474,34 @@ int main() {
                 "procedural night sky atlas variation should alter generated structure");
         require(night_sky_atlas_hash(atlas.rgba32f) != night_sky_atlas_hash(dust_layer.rgba32f),
                 "procedural diagnostic layers should differ from final output");
+        cubey::procedural::validate_procedural_artifact_metadata(atlas.metadata);
+        require(atlas.metadata.generator == "cubey::render::generate_night_sky_atlas",
+                "night sky atlas metadata should identify its generator");
+        require(atlas.metadata.formula_version == "atmosphere-night-sky-atlas-v1",
+                "night sky atlas metadata should identify its formula version");
+        require(atlas.metadata.domain == "atmosphere.night_sky_atlas",
+                "night sky atlas metadata should identify its domain");
+        require(atlas.metadata.seed == atlas_again.metadata.seed,
+                "night sky atlas metadata seed should be deterministic");
+        require(atlas.metadata.seed != varied.metadata.seed,
+                "night sky atlas metadata seed should track procedural variation");
+        require(atlas.metadata.space == cubey::procedural::ProceduralDomainSpace::Spherical,
+                "night sky atlas metadata should use spherical domain space");
+        require(atlas.metadata.kind == cubey::procedural::ProceduralArtifactKind::TextureCube,
+                "night sky atlas metadata should identify a cube texture");
+        require(atlas.metadata.format ==
+                    cubey::procedural::ProceduralArtifactValueFormat::Rgba32Float,
+                "night sky atlas metadata should identify RGBA32F payloads");
+        require(atlas.metadata.extent.width == atlas.extent &&
+                    atlas.metadata.extent.height == atlas.extent &&
+                    atlas.metadata.extent.faces == 6U &&
+                    atlas.metadata.extent.mip_levels == atlas.mip_levels,
+                "night sky atlas metadata should preserve dimensions, faces, and mip count");
+        require(atlas.metadata.content_hash == night_sky_atlas_hash(atlas.rgba32f),
+                "night sky atlas metadata hash should match atlas floats");
+        require(cubey::procedural::procedural_artifact_sample_count(atlas.metadata.extent) ==
+                    atlas.rgba32f.size() / 4U,
+                "night sky atlas metadata sample count should match RGBA texels");
         for (std::uint32_t mip = 0; mip < atlas.mip_levels; ++mip) {
             const NightSkyAtlasMip& level = atlas.mips.at(mip);
             require(level.extent >= 1U, "night sky atlas mip dimensions should be nonzero");

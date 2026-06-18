@@ -1,5 +1,7 @@
 #include <cubey/render/atmosphere_lunar_atlas.h>
 
+#include <cubey/procedural/seed.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -596,6 +598,23 @@ LunarAtlas generate_lunar_atlas(std::uint32_t extent) {
         height_extent = std::max(height_extent / 2U, 1U);
         append_mip(atlas, current, width, height_extent);
     }
+    atlas.metadata = cubey::procedural::ProceduralArtifactMetadata{
+        .name = "atmosphere lunar atlas",
+        .generator = "cubey::render::generate_lunar_atlas",
+        .formula_version = "atmosphere-lunar-atlas-v1",
+        .domain = "atmosphere.lunar_atlas",
+        .seed = cubey::procedural::stable_hash_string("atmosphere.lunar_atlas"),
+        .space = cubey::procedural::ProceduralDomainSpace::Atlas,
+        .kind = cubey::procedural::ProceduralArtifactKind::Texture2D,
+        .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+        .extent = {.width = extent,
+                   .height = extent,
+                   .depth = 1,
+                   .faces = 1,
+                   .mip_levels = mip_levels},
+        .content_hash = lunar_atlas_hash(atlas.rgba8),
+    };
+    cubey::procedural::validate_procedural_artifact_metadata(atlas.metadata);
     return atlas;
 }
 

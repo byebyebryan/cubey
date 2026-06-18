@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cubey/procedural/artifact_metadata.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -22,6 +24,7 @@ struct LunarAtlas {
     std::uint32_t mip_levels = 1;
     std::vector<std::uint8_t> rgba8{};
     std::vector<LunarAtlasMip> mips{};
+    cubey::procedural::ProceduralArtifactMetadata metadata{};
 };
 
 [[nodiscard]] std::uint32_t lunar_atlas_mip_count(std::uint32_t extent);

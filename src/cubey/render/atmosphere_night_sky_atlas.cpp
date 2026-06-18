@@ -557,6 +557,23 @@ NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::u
         }
     }
     build_mips(atlas);
+    atlas.metadata = cubey::procedural::ProceduralArtifactMetadata{
+        .name = "atmosphere night sky atlas",
+        .generator = "cubey::render::generate_night_sky_atlas",
+        .formula_version = "atmosphere-night-sky-atlas-v1",
+        .domain = "atmosphere.night_sky_atlas",
+        .seed = variation_seed,
+        .space = cubey::procedural::ProceduralDomainSpace::Spherical,
+        .kind = cubey::procedural::ProceduralArtifactKind::TextureCube,
+        .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba32Float,
+        .extent = {.width = extent,
+                   .height = extent,
+                   .depth = 1,
+                   .faces = 6,
+                   .mip_levels = atlas.mip_levels},
+        .content_hash = night_sky_atlas_hash(atlas.rgba32f),
+    };
+    cubey::procedural::validate_procedural_artifact_metadata(atlas.metadata);
     return atlas;
 }
 
