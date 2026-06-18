@@ -85,6 +85,25 @@ the desert dune source driver. That adoption remains intentionally
 conservative: default captures keep the legacy backend, while the new coherent
 noise path can be inspected explicitly.
 
+## Migration Tiers
+
+Procedural unification should move in tiers instead of forcing every project
+through one noise API:
+
+- CPU primitives live in `cubey::procedural`: deterministic hashes, value noise,
+  coherent noise wrappers, scalar fields, and renderer-independent operators.
+- Shader primitives live under `shaders/cubey/procedural`: small GLSL helpers for
+  repeated hash, value-noise, FBM, remap, and smoothing formulas.
+- Domain drivers remain project or domain code: terrain ridges/rivers/dunes,
+  cloud volume texture recipes, ocean foam breakup, fluid turbulence, lunar
+  atlas features, and star placement should consume shared primitives only when
+  the formulas match their current behavior.
+
+The first migration wave is a preserve-output refactor. It should remove
+duplicated helper formulas where they already match, but it should not silently
+change screenshots, default Terrain Lab noise sources, active cloud volume
+generation, or planet terrain shaping constants.
+
 Next shared candidates should come from repeated project-local code or from a
 specific reference-backed driver need, not from speculative API surface. Likely
 near-term candidates are:
@@ -94,6 +113,17 @@ near-term candidates are:
 - flow-routing and accumulation data structures after a deeper SimpleHydrology
   pass;
 - explicit source-field recipes for mountain range, river, and dune drivers.
+
+Near-term non-goals:
+
+- no full procedural node graph;
+- no default switch from legacy Terrain Lab value noise to FastNoiseLite;
+- no FastNoiseLite GLSL migration before shader parity has its own focused
+  review;
+- no deduplication of `cloud_ref`, `cloud_ref_2`, or `clouds_legacy` while they
+  are still useful as reference snapshots;
+- no promotion of physical hydrology, erosion, foliage, materials, streaming, or
+  Vulkan resource policy into `cubey::procedural`.
 
 ## Adoption Rule
 
