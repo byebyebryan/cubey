@@ -127,6 +127,13 @@ Likely follow-ups are generated asset metadata, shader parity checks, and
 volume/source recipes once projects start consuming the seed and domain
 vocabulary.
 
+The first metadata pass should stay in memory and record only the fields that
+make generated outputs comparable across active consumers: artifact name,
+generator identity, formula version, semantic domain, seed or variation
+identity, domain space, dimensions, mip/face layout, value format, and content
+hash. Atmosphere atlases are the lowest-risk first consumer because they already
+have deterministic CPU generation and atlas hash tests.
+
 This is intentionally not a visual migration batch. Active projects should keep
 their current formulas unless a focused follow-up proves parity or a better
 domain recipe.

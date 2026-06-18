@@ -222,7 +222,8 @@ procedural-rendering needs, or a specific reference-backed driver need, not from
 speculative API surface. Likely near-term candidates are:
 
 - generated asset and field-set export metadata so old and new procedural
-  outputs are easy to compare by seed, domain, dimensions, and formula version;
+  outputs are easy to compare by generator identity, formula version, seed,
+  semantic domain, dimensions, value format, mip/face layout, and content hash;
 - shader parity review for seed/hash/noise helpers before new GLSL migrations;
 - a future `SourceRecipe3D` or volume-field variant after the cloud/environment
   review proves the shape;
@@ -241,6 +242,8 @@ Near-term non-goals:
   milestone before the terrain reboot;
 - no migration of atmosphere, cloud, ocean, or fluid visual formulas in the seed
   and sample-domain batch;
+- no JSON sidecar or file export format for generated artifact metadata until
+  the in-memory metadata shape is proven by at least one active consumer;
 - no default switch from legacy Terrain Lab value noise to FastNoiseLite;
 - no FastNoiseLite GLSL migration before shader parity has its own focused
   review;
