@@ -310,10 +310,15 @@ using cubey::procedural::smoothstep;
     return cubey::procedural::fbm_2d(x, z, seed, {.octaves = octaves});
 }
 
+[[nodiscard]] bool is_fastnoise_dune_source(TerrainLabNoiseSource source) {
+    return source == TerrainLabNoiseSource::FastNoiseLite ||
+           source == TerrainLabNoiseSource::FastNoiseLiteWarped;
+}
+
 [[nodiscard]] cubey::procedural::NoiseSource2D
 dune_noise_source(std::uint64_t seed, std::uint32_t octaves, const TerrainLabConfig& config,
                   cubey::procedural::NoiseSource2DOutput output) {
-    if (config.noise_source != TerrainLabNoiseSource::FastNoiseLite) {
+    if (!is_fastnoise_dune_source(config.noise_source)) {
         return {
             .backend = cubey::procedural::NoiseSource2DBackend::LegacyFbm,
             .output = output,
@@ -321,6 +326,7 @@ dune_noise_source(std::uint64_t seed, std::uint32_t octaves, const TerrainLabCon
             .legacy_fbm = {.octaves = octaves},
         };
     }
+    const bool warped = config.noise_source == TerrainLabNoiseSource::FastNoiseLiteWarped;
     return {
         .backend = cubey::procedural::NoiseSource2DBackend::CoherentNoise,
         .output = output,
@@ -333,6 +339,22 @@ dune_noise_source(std::uint64_t seed, std::uint32_t octaves, const TerrainLabCon
                 .octaves = octaves,
                 .lacunarity = 2.03F,
                 .gain = 0.46F,
+            },
+        .warp =
+            {
+                .enabled = warped,
+                .seed_offset = 7001U,
+                .coherent =
+                    {
+                        .frequency = 0.48F,
+                        .warp_type = cubey::procedural::CoherentDomainWarpType::OpenSimplex2Reduced,
+                        .fractal_type =
+                            cubey::procedural::CoherentDomainWarpFractalType::Progressive,
+                        .octaves = 2,
+                        .lacunarity = 2.0F,
+                        .gain = 0.5F,
+                        .amplitude = 0.28F,
+                    },
             },
     };
 }
@@ -537,7 +559,7 @@ void assign_driver_fields(TerrainLabFieldData& fields, std::size_t sample,
                                               config.seed + 3119U, 5, config);
     const float roll_secondary = dune_source_fbm((dune_u * 2.18F) + 2.1F, (dune_v * 1.74F) - 8.2F,
                                                  config.seed + 3121U, 4, config);
-    const bool fastnoise_source = config.noise_source == TerrainLabNoiseSource::FastNoiseLite;
+    const bool fastnoise_source = is_fastnoise_dune_source(config.noise_source);
     const float primary_ridge = ridge_profile(roll_source * (fastnoise_source ? 0.82F : 1.05F),
                                               fastnoise_source ? 1.30F : 1.72F);
     const float secondary_ridge = ridge_profile(roll_secondary * (fastnoise_source ? 0.88F : 1.16F),

@@ -95,9 +95,10 @@ constexpr std::array<std::string_view, 2> kTerrainLabCameraPresets{
     "orbit",
     "profile",
 };
-constexpr std::array<std::string_view, 2> kTerrainLabNoiseSources{
+constexpr std::array<std::string_view, 3> kTerrainLabNoiseSources{
     "legacy-value",
     "fastnoise-lite",
+    "fastnoise-lite-warped",
 };
 constexpr double kPlanetMaxPatchResolution = 128.0;
 constexpr double kPlanetMaxLiveLodLevel = 12.0;

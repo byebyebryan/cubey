@@ -21,10 +21,8 @@ enum class TerrainLabSlicePreset : std::uint32_t {
 };
 
 inline constexpr std::array<TerrainLabSlicePreset, 5> kTerrainLabSlicePresets{
-    TerrainLabSlicePreset::AridMesaCanyon,
-    TerrainLabSlicePreset::TemperateMountainRivers,
-    TerrainLabSlicePreset::DesertDunes,
-    TerrainLabSlicePreset::AlpineGlacialValley,
+    TerrainLabSlicePreset::AridMesaCanyon,      TerrainLabSlicePreset::TemperateMountainRivers,
+    TerrainLabSlicePreset::DesertDunes,         TerrainLabSlicePreset::AlpineGlacialValley,
     TerrainLabSlicePreset::MountainRidgesPeaks,
 };
 
@@ -41,11 +39,13 @@ inline constexpr std::array<TerrainLabCameraPreset, 2> kTerrainLabCameraPresets{
 enum class TerrainLabNoiseSource : std::uint32_t {
     LegacyValue = 0,
     FastNoiseLite = 1,
+    FastNoiseLiteWarped = 2,
 };
 
-inline constexpr std::array<TerrainLabNoiseSource, 2> kTerrainLabNoiseSources{
+inline constexpr std::array<TerrainLabNoiseSource, 3> kTerrainLabNoiseSources{
     TerrainLabNoiseSource::LegacyValue,
     TerrainLabNoiseSource::FastNoiseLite,
+    TerrainLabNoiseSource::FastNoiseLiteWarped,
 };
 
 enum class TerrainLabDebugView : std::uint32_t {
@@ -216,6 +216,8 @@ struct TerrainLabConfig {
         return "legacy-value";
     case TerrainLabNoiseSource::FastNoiseLite:
         return "fastnoise-lite";
+    case TerrainLabNoiseSource::FastNoiseLiteWarped:
+        return "fastnoise-lite-warped";
     }
     return "legacy-value";
 }
@@ -279,8 +281,8 @@ terrain_lab_camera_preset_from_name(std::string_view name) {
     throw std::runtime_error("unknown terrain lab camera preset: " + std::string(name));
 }
 
-[[nodiscard]] inline TerrainLabNoiseSource terrain_lab_noise_source_from_name(
-    std::string_view name) {
+[[nodiscard]] inline TerrainLabNoiseSource
+terrain_lab_noise_source_from_name(std::string_view name) {
     if (name.empty()) {
         return TerrainLabNoiseSource::LegacyValue;
     }

@@ -1540,12 +1540,21 @@ void test_run_config_rejects_invalid_ocean_controls() {
         "run config should reject unsupported Terrain Lab noise source");
 
     std::string terrain_lab_fastnoise_value = "fastnoise-lite";
-    std::array<char*, 3> terrain_lab_fastnoise_argv{
-        program.data(), terrain_lab_noise_flag.data(), terrain_lab_fastnoise_value.data()};
+    std::array<char*, 3> terrain_lab_fastnoise_argv{program.data(), terrain_lab_noise_flag.data(),
+                                                    terrain_lab_fastnoise_value.data()};
     const cubey::RunConfig terrain_lab_fastnoise_config = cubey::parse_run_config(
         static_cast<int>(terrain_lab_fastnoise_argv.size()), terrain_lab_fastnoise_argv.data());
     require(terrain_lab_fastnoise_config.terrain_lab.noise_source == "fastnoise-lite",
             "run config should parse FastNoiseLite Terrain Lab noise source");
+
+    std::string terrain_lab_warped_fastnoise_value = "fastnoise-lite-warped";
+    std::array<char*, 3> terrain_lab_warped_fastnoise_argv{
+        program.data(), terrain_lab_noise_flag.data(), terrain_lab_warped_fastnoise_value.data()};
+    const cubey::RunConfig terrain_lab_warped_fastnoise_config =
+        cubey::parse_run_config(static_cast<int>(terrain_lab_warped_fastnoise_argv.size()),
+                                terrain_lab_warped_fastnoise_argv.data());
+    require(terrain_lab_warped_fastnoise_config.terrain_lab.noise_source == "fastnoise-lite-warped",
+            "run config should parse warped FastNoiseLite Terrain Lab noise source");
 }
 
 void test_run_config_parses_planet_controls() {

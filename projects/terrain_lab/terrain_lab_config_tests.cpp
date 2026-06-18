@@ -182,9 +182,8 @@ inspect_river_hierarchy(const cubey::projects::terrain_lab::TerrainLabFieldData&
                         ny >= static_cast<std::int32_t>(fields.desc.height)) {
                         continue;
                     }
-                    const std::size_t neighbor =
-                        static_cast<std::size_t>(ny) * fields.desc.width +
-                        static_cast<std::size_t>(nx);
+                    const std::size_t neighbor = static_cast<std::size_t>(ny) * fields.desc.width +
+                                                 static_cast<std::size_t>(nx);
                     if (wet_component_mask[neighbor] == 0U || visited[neighbor] != 0U) {
                         continue;
                     }
@@ -368,9 +367,8 @@ void require_slice_driver_guardrails(
             std::string(slice_name) + " driver process should be inspectable");
 }
 
-void require_noise_off_driver_guardrails(
-    cubey::projects::terrain_lab::TerrainLabConfig config, const char* slice_name,
-    float min_structure_span_m) {
+void require_noise_off_driver_guardrails(cubey::projects::terrain_lab::TerrainLabConfig config,
+                                         const char* slice_name, float min_structure_span_m) {
     namespace terrain = cubey::projects::terrain_lab;
     config.detail_strength = 0.0F;
     const terrain::TerrainLabFieldData fields = terrain::generate_terrain_lab_fields(config);
@@ -383,15 +381,13 @@ void require_noise_off_driver_guardrails(
     for (std::size_t index = 0; index < fields.sample_count(); ++index) {
         min_structure = std::min(min_structure, fields.structure_height_m[index]);
         max_structure = std::max(max_structure, fields.structure_height_m[index]);
-        all_detail_zero =
-            all_detail_zero && std::abs(fields.detail_height_m[index]) <= 0.001F;
+        all_detail_zero = all_detail_zero && std::abs(fields.detail_height_m[index]) <= 0.001F;
         require_near(fields.height_m[index],
-                     fields.structure_height_m[index] + fields.process_delta_m[index],
-                     0.001F, std::string(slice_name) +
-                                 " noise-off height should equal structure plus process");
+                     fields.structure_height_m[index] + fields.process_delta_m[index], 0.001F,
+                     std::string(slice_name) +
+                         " noise-off height should equal structure plus process");
     }
-    require(all_detail_zero, std::string(slice_name) +
-                                 " detail can be disabled independently");
+    require(all_detail_zero, std::string(slice_name) + " detail can be disabled independently");
     require(max_structure - min_structure > min_structure_span_m,
             std::string(slice_name) + " noise-off structure should remain non-flat");
     require(fields.max_flow_accumulation > 1.0F,
@@ -508,6 +504,12 @@ int main() {
     require(terrain::terrain_lab_noise_source_from_name("fastnoise_lite") ==
                 terrain::TerrainLabNoiseSource::FastNoiseLite,
             "terrain lab noise source should accept FastNoiseLite underscore alias");
+    require(terrain::terrain_lab_noise_source_from_name("fastnoise-lite-warped") ==
+                terrain::TerrainLabNoiseSource::FastNoiseLiteWarped,
+            "terrain lab noise source should parse warped FastNoiseLite");
+    require(terrain::terrain_lab_noise_source_from_name("fastnoise_lite_warped") ==
+                terrain::TerrainLabNoiseSource::FastNoiseLiteWarped,
+            "terrain lab noise source should accept warped FastNoiseLite underscore alias");
 
     require(terrain::terrain_lab_debug_view_from_name("") == terrain::TerrainLabDebugView::Final,
             "empty terrain lab debug view should use final");
@@ -625,7 +627,8 @@ int main() {
     require_shader_debug_constant(terrain_lab_fragment_shader,
                                   terrain::TerrainLabDebugView::FeatureGraph, "FEATURE_GRAPH");
     require_shader_debug_constant(terrain_lab_fragment_shader,
-                                  terrain::TerrainLabDebugView::DrainageRegions, "DRAINAGE_REGIONS");
+                                  terrain::TerrainLabDebugView::DrainageRegions,
+                                  "DRAINAGE_REGIONS");
     require_shader_debug_constant(terrain_lab_fragment_shader,
                                   terrain::TerrainLabDebugView::Channel, "CHANNEL");
     require_shader_debug_constant(terrain_lab_fragment_shader, terrain::TerrainLabDebugView::Divide,
@@ -675,7 +678,7 @@ int main() {
     run_config.debug_view = "wetness";
     run_config.terrain_lab.slice_preset = "temperate-mountain-rivers";
     run_config.terrain_lab.camera_preset = "profile";
-    run_config.terrain_lab.noise_source = "fastnoise-lite";
+    run_config.terrain_lab.noise_source = "fastnoise-lite-warped";
     run_config.terrain.seed = 77U;
     run_config.terrain.seed_set = true;
     run_config.terrain.cell_size = 6.0F;
@@ -688,12 +691,11 @@ int main() {
             "terrain lab should read grid height from common run config");
     require(from_run_config.debug_view == terrain::TerrainLabDebugView::Wetness,
             "terrain lab should read debug view from common run config");
-    require(from_run_config.slice_preset ==
-                terrain::TerrainLabSlicePreset::TemperateMountainRivers,
+    require(from_run_config.slice_preset == terrain::TerrainLabSlicePreset::TemperateMountainRivers,
             "terrain lab should read slice preset from common run config");
     require(from_run_config.camera_preset == terrain::TerrainLabCameraPreset::Profile,
             "terrain lab should read camera preset from common run config");
-    require(from_run_config.noise_source == terrain::TerrainLabNoiseSource::FastNoiseLite,
+    require(from_run_config.noise_source == terrain::TerrainLabNoiseSource::FastNoiseLiteWarped,
             "terrain lab should read noise source from common run config");
     require(from_run_config.seed == terrain::kTerrainLabDefaultSeed,
             "terrain lab should not read coast-oriented terrain seed flags");
@@ -860,7 +862,8 @@ int main() {
             "terrain lab channel field size mismatch");
     require(fields.channel_distance_m.size() == fields.sample_count(),
             "terrain lab channel distance field size mismatch");
-    require(fields.drainage_region_count == 1U, "terrain lab arid slice should use one local basin");
+    require(fields.drainage_region_count == 1U,
+            "terrain lab arid slice should use one local basin");
     require(fields.max_channel_distance_m > fields.desc.cell_size_m,
             "terrain lab feature graph should track channel distance range");
 
@@ -884,8 +887,8 @@ int main() {
     require(arid_stats.saw_divide, "terrain lab arid slice should produce mesa divide fields");
     require(arid_stats.saw_channel,
             "terrain lab arid slice should produce dry wash and canyon channel fields");
-    require(std::all_of(arid_stats.saw_drainage_region.begin(), arid_stats.saw_drainage_region.end(),
-                        [](bool saw) { return saw; }),
+    require(std::all_of(arid_stats.saw_drainage_region.begin(),
+                        arid_stats.saw_drainage_region.end(), [](bool saw) { return saw; }),
             "terrain lab arid slice should rasterize its local basin");
     require(arid_stats.channel_count > 16U,
             "terrain lab arid slice should produce enough channel samples");
@@ -1034,24 +1037,18 @@ int main() {
         arid_driver_non_channel_process_sum / static_cast<double>(arid_driver_non_channel_count));
     const float arid_mean_high_relief_height = static_cast<float>(
         arid_driver_high_relief_height_sum / static_cast<double>(arid_driver_high_relief_count));
-    const float arid_mean_channel_river_width =
-        static_cast<float>(arid_river_channel_width_sum /
-                           static_cast<double>(arid_river_channel_count));
-    const float arid_mean_non_channel_river_width =
-        static_cast<float>(arid_river_non_channel_width_sum /
-                           static_cast<double>(arid_river_non_channel_count));
-    const float arid_mean_channel_stream_order =
-        static_cast<float>(arid_river_channel_order_sum /
-                           static_cast<double>(arid_river_channel_count));
-    const float arid_mean_non_channel_stream_order =
-        static_cast<float>(arid_river_non_channel_order_sum /
-                           static_cast<double>(arid_river_non_channel_count));
-    const float arid_mean_channel_discharge =
-        static_cast<float>(arid_river_channel_discharge_sum /
-                           static_cast<double>(arid_river_channel_count));
-    const float arid_mean_non_channel_discharge =
-        static_cast<float>(arid_river_non_channel_discharge_sum /
-                           static_cast<double>(arid_river_non_channel_count));
+    const float arid_mean_channel_river_width = static_cast<float>(
+        arid_river_channel_width_sum / static_cast<double>(arid_river_channel_count));
+    const float arid_mean_non_channel_river_width = static_cast<float>(
+        arid_river_non_channel_width_sum / static_cast<double>(arid_river_non_channel_count));
+    const float arid_mean_channel_stream_order = static_cast<float>(
+        arid_river_channel_order_sum / static_cast<double>(arid_river_channel_count));
+    const float arid_mean_non_channel_stream_order = static_cast<float>(
+        arid_river_non_channel_order_sum / static_cast<double>(arid_river_non_channel_count));
+    const float arid_mean_channel_discharge = static_cast<float>(
+        arid_river_channel_discharge_sum / static_cast<double>(arid_river_channel_count));
+    const float arid_mean_non_channel_discharge = static_cast<float>(
+        arid_river_non_channel_discharge_sum / static_cast<double>(arid_river_non_channel_count));
     require(arid_mean_ridge_driver_relief > arid_mean_channel_driver_relief + 0.04F,
             "terrain lab arid canyon walls should derive from higher relief driver values");
     require(arid_mean_channel_driver_process > arid_mean_non_channel_driver_process + 0.03F,
@@ -1099,12 +1096,12 @@ int main() {
         const std::size_t quadrant =
             (x >= fields.desc.width / 2U ? 1U : 0U) + (y >= fields.desc.height / 2U ? 2U : 0U);
         arid_channel_quadrants[quadrant] = true;
-        const std::size_t x_bin = std::min(kAridNetworkBinCount - 1U,
-                                           static_cast<std::size_t>(x) *
-                                               kAridNetworkBinCount / fields.desc.width);
-        const std::size_t z_bin = std::min(kAridNetworkBinCount - 1U,
-                                           static_cast<std::size_t>(y) *
-                                               kAridNetworkBinCount / fields.desc.height);
+        const std::size_t x_bin =
+            std::min(kAridNetworkBinCount - 1U,
+                     static_cast<std::size_t>(x) * kAridNetworkBinCount / fields.desc.width);
+        const std::size_t z_bin =
+            std::min(kAridNetworkBinCount - 1U,
+                     static_cast<std::size_t>(y) * kAridNetworkBinCount / fields.desc.height);
         arid_channel_x_bins[x_bin] = true;
         arid_channel_z_bins[z_bin] = true;
         const std::uint8_t flow_direction = fields.flow_direction[index];
@@ -1178,9 +1175,9 @@ int main() {
                     }
                     const auto neighbor_x = static_cast<std::uint32_t>(static_cast<int>(x) + dx);
                     const auto neighbor_y = static_cast<std::uint32_t>(static_cast<int>(y) + dy);
-                    const std::size_t neighbor_index = static_cast<std::size_t>(neighbor_y) *
-                                                           fields.desc.width +
-                                                       static_cast<std::size_t>(neighbor_x);
+                    const std::size_t neighbor_index =
+                        static_cast<std::size_t>(neighbor_y) * fields.desc.width +
+                        static_cast<std::size_t>(neighbor_x);
                     if (fields.channel_influence[neighbor_index] > 0.30F &&
                         fields.flow_direction[neighbor_index] < 8U &&
                         fields.flow_direction[neighbor_index] != fields.flow_direction[index]) {
@@ -1206,12 +1203,12 @@ int main() {
         }
         const auto x = static_cast<std::uint32_t>(index % fields.desc.width);
         const auto y = static_cast<std::uint32_t>(index / fields.desc.width);
-        const std::size_t coarse_x = std::min(kAridCoarseNetworkSize - 1U,
-                                              static_cast<std::size_t>(x) *
-                                                  kAridCoarseNetworkSize / fields.desc.width);
-        const std::size_t coarse_y = std::min(kAridCoarseNetworkSize - 1U,
-                                              static_cast<std::size_t>(y) *
-                                                  kAridCoarseNetworkSize / fields.desc.height);
+        const std::size_t coarse_x =
+            std::min(kAridCoarseNetworkSize - 1U,
+                     static_cast<std::size_t>(x) * kAridCoarseNetworkSize / fields.desc.width);
+        const std::size_t coarse_y =
+            std::min(kAridCoarseNetworkSize - 1U,
+                     static_cast<std::size_t>(y) * kAridCoarseNetworkSize / fields.desc.height);
         arid_coarse_network[coarse_y * kAridCoarseNetworkSize + coarse_x] = true;
     }
     std::size_t arid_coarse_terminal_count = 0;
@@ -1313,7 +1310,8 @@ int main() {
                  "terrain lab channel summary should be repeatable");
     require_near(summary.max_channel_distance_m, summary_repeat.max_channel_distance_m, 0.001F,
                  "terrain lab channel distance summary should be repeatable");
-    require(summary.drainage_region_count == 1U, "terrain lab summary should count arid local basin");
+    require(summary.drainage_region_count == 1U,
+            "terrain lab summary should count arid local basin");
     require(summary.height_span_m > 100.0F, "terrain lab summary should expose height span");
     require(summary.channel_sample_count == arid_stats.channel_count,
             "terrain lab summary should expose channel sample count");
@@ -1365,8 +1363,8 @@ int main() {
             "terrain lab temperate river fixture should produce divide fields");
     require(river_stats.saw_channel,
             "terrain lab temperate river fixture should produce flow-derived channel fields");
-    require(std::all_of(river_stats.saw_drainage_region.begin(), river_stats.saw_drainage_region.end(),
-                        [](bool saw) { return saw; }),
+    require(std::all_of(river_stats.saw_drainage_region.begin(),
+                        river_stats.saw_drainage_region.end(), [](bool saw) { return saw; }),
             "terrain lab temperate river fixture should cover its local drainage region");
     require(river_stats.channel_count > 16U,
             "terrain lab temperate river fixture should produce enough channel samples");
@@ -1374,26 +1372,28 @@ int main() {
             "terrain lab temperate river fixture should produce enough non-channel samples");
     require(river_stats.divide_count > 16U,
             "terrain lab temperate river fixture should produce enough divide samples");
-    const float river_mean_channel_height =
-        static_cast<float>(river_stats.channel_height_sum / static_cast<double>(river_stats.channel_count));
-    const float river_mean_channel_wetness =
-        static_cast<float>(river_stats.channel_wetness_sum / static_cast<double>(river_stats.channel_count));
-    const float river_mean_channel_deposition =
-        static_cast<float>(river_stats.channel_deposition_sum / static_cast<double>(river_stats.channel_count));
-    const float river_mean_channel_flow =
-        static_cast<float>(river_stats.channel_flow_sum / static_cast<double>(river_stats.channel_count));
+    const float river_mean_channel_height = static_cast<float>(
+        river_stats.channel_height_sum / static_cast<double>(river_stats.channel_count));
+    const float river_mean_channel_wetness = static_cast<float>(
+        river_stats.channel_wetness_sum / static_cast<double>(river_stats.channel_count));
+    const float river_mean_channel_deposition = static_cast<float>(
+        river_stats.channel_deposition_sum / static_cast<double>(river_stats.channel_count));
+    const float river_mean_channel_flow = static_cast<float>(
+        river_stats.channel_flow_sum / static_cast<double>(river_stats.channel_count));
     const float river_mean_non_channel_wetness = static_cast<float>(
         river_stats.non_channel_wetness_sum / static_cast<double>(river_stats.non_channel_count));
-    const float river_mean_non_channel_deposition = static_cast<float>(
-        river_stats.non_channel_deposition_sum / static_cast<double>(river_stats.non_channel_count));
-    const float river_mean_non_channel_flow =
-        static_cast<float>(river_stats.non_channel_flow_sum / static_cast<double>(river_stats.non_channel_count));
-    const float river_mean_divide_height =
-        static_cast<float>(river_stats.divide_height_sum / static_cast<double>(river_stats.divide_count));
+    const float river_mean_non_channel_deposition =
+        static_cast<float>(river_stats.non_channel_deposition_sum /
+                           static_cast<double>(river_stats.non_channel_count));
+    const float river_mean_non_channel_flow = static_cast<float>(
+        river_stats.non_channel_flow_sum / static_cast<double>(river_stats.non_channel_count));
+    const float river_mean_divide_height = static_cast<float>(
+        river_stats.divide_height_sum / static_cast<double>(river_stats.divide_count));
     require(river_mean_channel_wetness > river_mean_non_channel_wetness + 0.04F,
             "terrain lab temperate river channels should be wetter than non-channel terrain");
     require(river_mean_channel_deposition > river_mean_non_channel_deposition + 0.02F,
-            "terrain lab temperate river channels should be more depositional than non-channel terrain");
+            "terrain lab temperate river channels should be more depositional than non-channel "
+            "terrain");
     require(river_mean_channel_flow > river_mean_non_channel_flow,
             "terrain lab temperate river channels should carry more flow than non-channel terrain");
     require(river_mean_divide_height > river_mean_channel_height + 15.0F,
@@ -1438,8 +1438,9 @@ int main() {
     }
     require(river_driver_ridge_count > 16U && river_driver_channel_count > 16U,
             "terrain lab temperate river driver should produce enough ridge and channel samples");
-    require(river_driver_non_channel_count > 16U,
-            "terrain lab temperate river driver should produce enough non-channel comparison samples");
+    require(
+        river_driver_non_channel_count > 16U,
+        "terrain lab temperate river driver should produce enough non-channel comparison samples");
     require(river_driver_high_relief_count > 16U && river_driver_low_relief_count > 16U,
             "terrain lab temperate river driver should produce high and low relief samples");
     const float river_mean_ridge_driver_relief = static_cast<float>(
@@ -1448,19 +1449,15 @@ int main() {
         river_driver_channel_relief_sum / static_cast<double>(river_driver_channel_count));
     const float river_mean_channel_driver_process = static_cast<float>(
         river_driver_channel_process_sum / static_cast<double>(river_driver_channel_count));
-    const float river_mean_non_channel_driver_process =
-        static_cast<float>(river_driver_non_channel_process_sum /
-                           static_cast<double>(river_driver_non_channel_count));
-    const float river_mean_high_relief_height =
-        static_cast<float>(river_driver_high_relief_height_sum /
-                           static_cast<double>(river_driver_high_relief_count));
-    const float river_mean_low_relief_height =
-        static_cast<float>(river_driver_low_relief_height_sum /
-                           static_cast<double>(river_driver_low_relief_count));
+    const float river_mean_non_channel_driver_process = static_cast<float>(
+        river_driver_non_channel_process_sum / static_cast<double>(river_driver_non_channel_count));
+    const float river_mean_high_relief_height = static_cast<float>(
+        river_driver_high_relief_height_sum / static_cast<double>(river_driver_high_relief_count));
+    const float river_mean_low_relief_height = static_cast<float>(
+        river_driver_low_relief_height_sum / static_cast<double>(river_driver_low_relief_count));
     require(river_mean_ridge_driver_relief > river_mean_channel_driver_relief + 0.04F,
             "terrain lab temperate river ridges should derive from higher relief driver values");
-    require(river_mean_channel_driver_process >
-                river_mean_non_channel_driver_process + 0.02F,
+    require(river_mean_channel_driver_process > river_mean_non_channel_driver_process + 0.02F,
             "terrain lab temperate river channels should derive from higher process driver values");
     require(river_mean_high_relief_height > river_mean_low_relief_height + 20.0F,
             "terrain lab temperate river height should follow the relief driver");
@@ -1509,18 +1506,19 @@ int main() {
                      river_hierarchy_stats.largest_wet_component_y_span) >
                 std::min(river_fields.desc.width, river_fields.desc.height) / 3U,
             "terrain lab temperate river should expose a long visible trunk (x_span=" +
-                std::to_string(river_hierarchy_stats.largest_wet_component_x_span) +
-                ", y_span=" + std::to_string(river_hierarchy_stats.largest_wet_component_y_span) + ")");
-    require(river_hierarchy_stats.low_order_count > 16U && river_hierarchy_stats.high_order_count > 0U,
+                std::to_string(river_hierarchy_stats.largest_wet_component_x_span) + ", y_span=" +
+                std::to_string(river_hierarchy_stats.largest_wet_component_y_span) + ")");
+    require(river_hierarchy_stats.low_order_count > 16U &&
+                river_hierarchy_stats.high_order_count > 0U,
             "terrain lab temperate river should expose low and high stream orders");
-    const float river_low_order_width =
-        mean_or_zero(river_hierarchy_stats.low_order_width_sum, river_hierarchy_stats.low_order_count);
-    const float river_high_order_width =
-        mean_or_zero(river_hierarchy_stats.high_order_width_sum, river_hierarchy_stats.high_order_count);
-    const float river_low_order_discharge =
-        mean_or_zero(river_hierarchy_stats.low_order_discharge_sum, river_hierarchy_stats.low_order_count);
-    const float river_high_order_discharge =
-        mean_or_zero(river_hierarchy_stats.high_order_discharge_sum, river_hierarchy_stats.high_order_count);
+    const float river_low_order_width = mean_or_zero(river_hierarchy_stats.low_order_width_sum,
+                                                     river_hierarchy_stats.low_order_count);
+    const float river_high_order_width = mean_or_zero(river_hierarchy_stats.high_order_width_sum,
+                                                      river_hierarchy_stats.high_order_count);
+    const float river_low_order_discharge = mean_or_zero(
+        river_hierarchy_stats.low_order_discharge_sum, river_hierarchy_stats.low_order_count);
+    const float river_high_order_discharge = mean_or_zero(
+        river_hierarchy_stats.high_order_discharge_sum, river_hierarchy_stats.high_order_count);
     require(river_high_order_width > river_low_order_width + river_fields.desc.cell_size_m * 0.35F,
             "terrain lab temperate river trunks should be wider than tributaries");
     require(river_high_order_discharge > river_low_order_discharge * 3.0F,
@@ -1651,14 +1649,34 @@ int main() {
                                     "terrain lab FastNoiseLite dunes sentinel");
     double fastnoise_dune_driver_delta_sum = 0.0;
     for (std::size_t index = 0; index < dunes_fields.sample_count(); ++index) {
-        fastnoise_dune_driver_delta_sum += std::abs(
-            static_cast<double>(fastnoise_dunes_fields.driver_relief_potential[index]) -
-            static_cast<double>(dunes_fields.driver_relief_potential[index]));
+        fastnoise_dune_driver_delta_sum +=
+            std::abs(static_cast<double>(fastnoise_dunes_fields.driver_relief_potential[index]) -
+                     static_cast<double>(dunes_fields.driver_relief_potential[index]));
     }
     const float fastnoise_dune_mean_driver_delta = static_cast<float>(
         fastnoise_dune_driver_delta_sum / static_cast<double>(dunes_fields.sample_count()));
     require(fastnoise_dune_mean_driver_delta > 0.01F,
             "terrain lab FastNoiseLite dunes source should differ from legacy value noise");
+
+    terrain::TerrainLabConfig warped_fastnoise_dunes_config = fastnoise_dunes_config;
+    warped_fastnoise_dunes_config.noise_source =
+        terrain::TerrainLabNoiseSource::FastNoiseLiteWarped;
+    const terrain::TerrainLabFieldData warped_fastnoise_dunes_fields =
+        terrain::generate_terrain_lab_fields(warped_fastnoise_dunes_config);
+    terrain::validate_terrain_lab_fields(warped_fastnoise_dunes_fields);
+    require_slice_driver_guardrails(warped_fastnoise_dunes_fields,
+                                    "terrain lab warped FastNoiseLite dunes sentinel");
+    double warped_fastnoise_dune_driver_delta_sum = 0.0;
+    for (std::size_t index = 0; index < dunes_fields.sample_count(); ++index) {
+        warped_fastnoise_dune_driver_delta_sum += std::abs(
+            static_cast<double>(warped_fastnoise_dunes_fields.driver_relief_potential[index]) -
+            static_cast<double>(fastnoise_dunes_fields.driver_relief_potential[index]));
+    }
+    const float warped_fastnoise_dune_mean_driver_delta = static_cast<float>(
+        warped_fastnoise_dune_driver_delta_sum / static_cast<double>(dunes_fields.sample_count()));
+    require(
+        warped_fastnoise_dune_mean_driver_delta > 0.001F,
+        "terrain lab warped FastNoiseLite dunes source should differ from unwarped FastNoiseLite");
 
     terrain::TerrainLabConfig glacial_config = small;
     glacial_config.slice_preset = terrain::TerrainLabSlicePreset::AlpineGlacialValley;
@@ -1725,17 +1743,16 @@ int main() {
     double glacial_ridge_abs_x_sum = 0.0;
     std::array<bool, 5> glacial_channel_y_bins{};
     const float glacial_half_x =
-        static_cast<float>(glacial_fields.desc.width - 1U) * glacial_fields.desc.cell_size_m *
-        0.5F;
+        static_cast<float>(glacial_fields.desc.width - 1U) * glacial_fields.desc.cell_size_m * 0.5F;
     for (std::size_t index = 0; index < glacial_fields.sample_count(); ++index) {
         const float relief = glacial_fields.driver_relief_potential[index];
         const float process = glacial_fields.driver_process_potential[index];
         const auto x = static_cast<std::uint32_t>(index % glacial_fields.desc.width);
         const auto y = static_cast<std::uint32_t>(index / glacial_fields.desc.width);
-        const float nx = glacial_half_x == 0.0F
-                             ? 0.0F
-                             : terrain::terrain_lab_grid_sample_x_m(glacial_fields.desc, x) /
-                                   glacial_half_x;
+        const float nx =
+            glacial_half_x == 0.0F
+                ? 0.0F
+                : terrain::terrain_lab_grid_sample_x_m(glacial_fields.desc, x) / glacial_half_x;
         if (glacial_fields.ridge_influence[index] > 0.45F &&
             glacial_fields.channel_influence[index] < 0.35F) {
             glacial_driver_ridge_relief_sum += relief;
@@ -1780,9 +1797,8 @@ int main() {
             "terrain lab glacial driver should produce non-valley comparison samples");
     require(glacial_axis_channel_count > 16U && glacial_axis_ridge_count > 16U,
             "terrain lab glacial source should expose enough valley-axis and wall samples");
-    const auto glacial_channel_y_bin_count =
-        static_cast<std::size_t>(std::count(glacial_channel_y_bins.begin(),
-                                            glacial_channel_y_bins.end(), true));
+    const auto glacial_channel_y_bin_count = static_cast<std::size_t>(
+        std::count(glacial_channel_y_bins.begin(), glacial_channel_y_bins.end(), true));
     require(glacial_channel_y_bin_count >= 4U,
             "terrain lab glacial source should expose a longitudinal valley path");
     const float glacial_mean_ridge_driver_relief = static_cast<float>(
@@ -1800,12 +1816,10 @@ int main() {
     const float glacial_mean_low_relief_height =
         static_cast<float>(glacial_driver_low_relief_height_sum /
                            static_cast<double>(glacial_driver_low_relief_count));
-    const float glacial_mean_channel_abs_x =
-        static_cast<float>(glacial_channel_abs_x_sum /
-                           static_cast<double>(glacial_axis_channel_count));
+    const float glacial_mean_channel_abs_x = static_cast<float>(
+        glacial_channel_abs_x_sum / static_cast<double>(glacial_axis_channel_count));
     const float glacial_mean_ridge_abs_x =
-        static_cast<float>(glacial_ridge_abs_x_sum /
-                           static_cast<double>(glacial_axis_ridge_count));
+        static_cast<float>(glacial_ridge_abs_x_sum / static_cast<double>(glacial_axis_ridge_count));
     require(glacial_mean_ridge_driver_relief > glacial_mean_valley_driver_relief + 0.05F,
             "terrain lab glacial ridges should derive from higher relief driver values");
     require(glacial_mean_valley_driver_process > glacial_mean_non_valley_driver_process + 0.02F,
@@ -1841,8 +1855,7 @@ int main() {
                 glacial_summary.mean_non_channel_flow_accumulation,
             "terrain lab glacial sentinel should keep trunk valleys aligned with flow diagnostics "
             "(channel=" +
-                std::to_string(glacial_summary.mean_channel_flow_accumulation) +
-                ", non_channel=" +
+                std::to_string(glacial_summary.mean_channel_flow_accumulation) + ", non_channel=" +
                 std::to_string(glacial_summary.mean_non_channel_flow_accumulation) + ")");
     require(glacial_summary.sink_sample_count > 0U &&
                 glacial_summary.sink_sample_count < glacial_summary.sample_count,
@@ -1869,8 +1882,7 @@ int main() {
             "terrain lab mountain ridge sentinel should produce terrain detail");
     require(mountain_stats.saw_process,
             "terrain lab mountain ridge sentinel should produce scree/cliff process fields");
-    require(mountain_stats.saw_divide,
-            "terrain lab mountain ridge sentinel should expose divides");
+    require(mountain_stats.saw_divide, "terrain lab mountain ridge sentinel should expose divides");
     require(mountain_stats.saw_channel,
             "terrain lab mountain ridge sentinel should keep diagnostic valley channels");
     require(mountain_stats.ridge_count > 16U,
@@ -1906,24 +1918,22 @@ int main() {
     double mountain_relief_weight_sum = 0.0;
     double mountain_relief_weighted_x_sum = 0.0;
     double mountain_relief_weighted_y_sum = 0.0;
-    const float mountain_half_x =
-        static_cast<float>(mountain_fields.desc.width - 1U) * mountain_fields.desc.cell_size_m *
-        0.5F;
-    const float mountain_half_y =
-        static_cast<float>(mountain_fields.desc.height - 1U) * mountain_fields.desc.cell_size_m *
-        0.5F;
+    const float mountain_half_x = static_cast<float>(mountain_fields.desc.width - 1U) *
+                                  mountain_fields.desc.cell_size_m * 0.5F;
+    const float mountain_half_y = static_cast<float>(mountain_fields.desc.height - 1U) *
+                                  mountain_fields.desc.cell_size_m * 0.5F;
     for (std::size_t index = 0; index < mountain_fields.sample_count(); ++index) {
         const float relief = mountain_fields.driver_relief_potential[index];
         const auto x = static_cast<std::uint32_t>(index % mountain_fields.desc.width);
         const auto y = static_cast<std::uint32_t>(index / mountain_fields.desc.width);
-        const float nx = mountain_half_x == 0.0F
-                             ? 0.0F
-                             : terrain::terrain_lab_grid_sample_x_m(mountain_fields.desc, x) /
-                                   mountain_half_x;
-        const float ny = mountain_half_y == 0.0F
-                             ? 0.0F
-                             : terrain::terrain_lab_grid_sample_z_m(mountain_fields.desc, y) /
-                                   mountain_half_y;
+        const float nx =
+            mountain_half_x == 0.0F
+                ? 0.0F
+                : terrain::terrain_lab_grid_sample_x_m(mountain_fields.desc, x) / mountain_half_x;
+        const float ny =
+            mountain_half_y == 0.0F
+                ? 0.0F
+                : terrain::terrain_lab_grid_sample_z_m(mountain_fields.desc, y) / mountain_half_y;
         if (mountain_fields.ridge_influence[index] > 0.48F &&
             mountain_fields.channel_influence[index] < 0.32F) {
             mountain_driver_ridge_relief_sum += relief;
@@ -1953,9 +1963,8 @@ int main() {
             ++mountain_driver_low_relief_count;
         }
         if (relief > 0.62F) {
-            const std::size_t quadrant =
-                (x >= mountain_fields.desc.width / 2U ? 1U : 0U) +
-                (y >= mountain_fields.desc.height / 2U ? 2U : 0U);
+            const std::size_t quadrant = (x >= mountain_fields.desc.width / 2U ? 1U : 0U) +
+                                         (y >= mountain_fields.desc.height / 2U ? 2U : 0U);
             ++mountain_high_relief_quadrants[quadrant];
         }
         const double relief_weight = std::max(static_cast<double>(relief) - 0.54, 0.0);
@@ -1963,12 +1972,10 @@ int main() {
         mountain_relief_weighted_x_sum += static_cast<double>(nx) * relief_weight;
         mountain_relief_weighted_y_sum += static_cast<double>(ny) * relief_weight;
     }
-    const auto mountain_ridge_x_bin_count =
-        static_cast<std::size_t>(std::count(mountain_ridge_x_bins.begin(),
-                                            mountain_ridge_x_bins.end(), true));
-    const auto mountain_ridge_y_bin_count =
-        static_cast<std::size_t>(std::count(mountain_ridge_y_bins.begin(),
-                                            mountain_ridge_y_bins.end(), true));
+    const auto mountain_ridge_x_bin_count = static_cast<std::size_t>(
+        std::count(mountain_ridge_x_bins.begin(), mountain_ridge_x_bins.end(), true));
+    const auto mountain_ridge_y_bin_count = static_cast<std::size_t>(
+        std::count(mountain_ridge_y_bins.begin(), mountain_ridge_y_bins.end(), true));
     std::size_t mountain_high_relief_count = 0;
     std::size_t mountain_high_relief_max_quadrant_count = 0;
     for (const std::size_t quadrant_count : mountain_high_relief_quadrants) {
@@ -1984,8 +1991,7 @@ int main() {
     }
     require(mountain_driver_ridge_count > 16U && mountain_driver_valley_count > 16U,
             "terrain lab mountain ridge driver should produce enough ridge and valley samples");
-    require(mountain_driver_high_relief_count > 16U &&
-                mountain_driver_low_relief_count > 16U,
+    require(mountain_driver_high_relief_count > 16U && mountain_driver_low_relief_count > 16U,
             "terrain lab mountain ridge driver should produce high and low relief samples");
     require(mountain_ridge_x_bin_count >= 3U && mountain_ridge_y_bin_count >= 3U,
             "terrain lab mountain ridge driver should distribute ridges across the patch");
@@ -2035,8 +2041,7 @@ int main() {
     require(mountain_summary.sink_sample_count > 0U &&
                 mountain_summary.sink_sample_count < mountain_summary.sample_count,
             "terrain lab mountain ridge drainage analysis should expose bounded sink samples");
-    require(mountain_summary.sink_sample_ratio > 0.0F &&
-                mountain_summary.sink_sample_ratio < 0.50F,
+    require(mountain_summary.sink_sample_ratio > 0.0F && mountain_summary.sink_sample_ratio < 0.50F,
             "terrain lab mountain ridge drainage analysis should avoid sink-dominated terrain");
     require(glacial_summary.mean_wetness > mountain_summary.mean_wetness + 0.015F,
             "terrain lab glacial valley should stay wetter than the mountain ridge sentinel");
@@ -2142,17 +2147,19 @@ int main() {
     require_near(first_vertex.influences.w, fields.channel_influence.front(), 0.001F,
                  "terrain lab mesh should pack channel influence");
     const float drainage_region_denominator =
-        fields.drainage_region_count <= 1U ? 1.0F : static_cast<float>(fields.drainage_region_count - 1U);
+        fields.drainage_region_count <= 1U ? 1.0F
+                                           : static_cast<float>(fields.drainage_region_count - 1U);
     require_near(first_vertex.feature_tags.x,
-                 static_cast<float>(fields.drainage_region_id.front()) / drainage_region_denominator, 0.001F,
-                 "terrain lab mesh should pack normalized drainage region id");
+                 static_cast<float>(fields.drainage_region_id.front()) /
+                     drainage_region_denominator,
+                 0.001F, "terrain lab mesh should pack normalized drainage region id");
     require_near(first_vertex.feature_tags.y,
                  fields.channel_distance_m.front() / fields.max_channel_distance_m, 0.001F,
                  "terrain lab mesh should pack normalized channel distance");
     require_near(first_vertex.feature_tags.z, static_cast<float>(fields.drainage_region_id.front()),
                  0.001F, "terrain lab mesh should pack raw drainage region id");
-    require_near(first_vertex.feature_tags.w, static_cast<float>(fields.drainage_region_count), 0.001F,
-                 "terrain lab mesh should pack drainage region count");
+    require_near(first_vertex.feature_tags.w, static_cast<float>(fields.drainage_region_count),
+                 0.001F, "terrain lab mesh should pack drainage region count");
     require_near(first_vertex.drivers.x, fields.driver_base_potential.front(), 0.001F,
                  "terrain lab mesh should pack driver base potential");
     require_near(first_vertex.drivers.y, fields.driver_relief_potential.front(), 0.001F,
@@ -2166,8 +2173,8 @@ int main() {
     require_near(first_vertex.river.x, fields.river_discharge.front(), 0.001F,
                  "terrain lab mesh should pack river discharge");
     require_near(first_vertex.river.y,
-                 static_cast<float>(fields.stream_order.front()) / stream_order_denominator,
-                 0.001F, "terrain lab mesh should pack normalized stream order");
+                 static_cast<float>(fields.stream_order.front()) / stream_order_denominator, 0.001F,
+                 "terrain lab mesh should pack normalized stream order");
     require_near(first_vertex.river.z, fields.river_width_m.front(), 0.001F,
                  "terrain lab mesh should pack river width");
     require_near(first_vertex.river.w, fields.water_presence.front(), 0.001F,
