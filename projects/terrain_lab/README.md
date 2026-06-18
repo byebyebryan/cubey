@@ -139,7 +139,9 @@ coast-oriented `terrain.*` flags to `procedural_terrain`.
 `--terrain-lab-noise-source fastnoise-lite` is an explicit CPU source-field
 experiment. The default remains `legacy-value`; the first opt-in consumer is
 the desert dune driver, so existing captures remain stable unless the backend is
-selected.
+selected. Dune source selection now goes through shared
+`cubey::procedural::NoiseSource2D`, keeping legacy FBM and FastNoiseLite behind
+the same deterministic source-field interface.
 
 Generated CPU fields include:
 
@@ -253,6 +255,8 @@ should contain only the latest comparable final/driver review set. Put ad hoc
 diagnostics in a named subdirectory when they need to be kept around.
 The field-operator migration review bundle is
 `outputs/terrain_lab/field-operators-20260617-191435/`.
+The source-field migration review bundle is
+`outputs/terrain_lab/source-fields-20260617-194345/`.
 
 ## Status
 

@@ -244,6 +244,12 @@ for this batch were written under
 mountain-vs-valley split, though mountain peaks remain intentionally rough for
 this foundation slice rather than a final mountain model.
 
+The source-field batch adds shared scalar-field composition and `NoiseSource2D`
+sampling. Desert dunes are the first proof consumer: legacy FBM remains the
+default source, FastNoiseLite remains opt-in, and both paths now share one
+procedural source-field interface. Review captures for this batch were written
+under `outputs/terrain_lab/source-fields-20260617-194345/`.
+
 The sentinel slice set should prevent overfitting this model to canyon terrain.
 The first representative set is:
 
