@@ -665,8 +665,8 @@ int main() {
                          "water render shader should use configurable surface shading");
         require_contains(render_shader, "params.foam_options",
                          "water render shader should use configurable foam shaping");
-        require_contains(render_shader, "value_noise",
-                         "water render shader should break up foam with procedural noise");
+        require_contains(render_shader, "cubey_proc_value_noise_pcg_2d",
+                         "water render shader should break up foam with shared procedural noise");
         require_contains(render_shader, "debug_mode == 7",
                          "water render shader should expose a foam debug view");
         require_contains(render_shader, "vec2 uv = vec2(screen_uv.x, 1.0 - screen_uv.y)",

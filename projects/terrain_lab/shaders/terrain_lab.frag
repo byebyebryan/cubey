@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "cubey/procedural/noise.glsl"
 
 layout(push_constant) uniform TerrainLabPushConstants {
     mat4 view_projection;
@@ -61,21 +64,6 @@ vec3 signed_ramp(float value, float max_abs_value) {
     return t < 0.0 ? mix(zero, negative, -t) : mix(zero, positive, t);
 }
 
-float hash21(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
-float value_noise2(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    float a = hash21(i);
-    float b = hash21(i + vec2(1.0, 0.0));
-    float c = hash21(i + vec2(0.0, 1.0));
-    float d = hash21(i + vec2(1.0, 1.0));
-    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-}
-
 vec3 material_color() {
     vec3 rock = vec3(0.37, 0.35, 0.31);
     vec3 soil = vec3(0.39, 0.30, 0.19);
@@ -91,7 +79,8 @@ vec3 material_color() {
 }
 
 float strata_band_strength() {
-    float strata_noise = (value_noise2(frag_world_position.xz * 0.0016) - 0.5) * 0.30;
+    float strata_noise =
+        (cubey_proc_value_noise_sindot_2d(frag_world_position.xz * 0.0016) - 0.5) * 0.30;
     float major_layer = fract(frag_world_position.y * 0.018 + strata_noise);
     float minor_layer = fract(frag_world_position.y * 0.057 + strata_noise * 1.7 + 0.23);
     float major = 1.0 - smoothstep(0.018, 0.078, abs(major_layer - 0.5));
@@ -109,13 +98,13 @@ float caprock_strength() {
 float sparse_spot(vec2 world_position, float cell_size_m, float density, float radius, float salt) {
     vec2 grid_position = world_position / cell_size_m;
     vec2 cell = floor(grid_position);
-    float selector = hash21(cell + vec2(salt, salt * 1.37));
+    float selector = cubey_proc_hash_sindot_2d(cell + vec2(salt, salt * 1.37));
     if (selector > density) {
         return 0.0;
     }
 
-    vec2 center = vec2(hash21(cell + vec2(7.1 + salt, 3.7)),
-                       hash21(cell + vec2(2.4, 9.2 + salt)));
+    vec2 center = vec2(cubey_proc_hash_sindot_2d(cell + vec2(7.1 + salt, 3.7)),
+                       cubey_proc_hash_sindot_2d(cell + vec2(2.4, 9.2 + salt)));
     center = mix(vec2(0.18), vec2(0.82), center);
     float distance_to_center = length(fract(grid_position) - center);
     return 1.0 - smoothstep(radius, radius + 0.045, distance_to_center);
@@ -123,8 +112,12 @@ float sparse_spot(vec2 world_position, float cell_size_m, float density, float r
 
 vec3 final_color() {
     vec3 color = material_color();
-    float grain = (value_noise2(frag_world_position.xz * 0.012) - 0.5) * 0.05;
-    grain += (value_noise2(frag_world_position.xz * 0.041 + vec2(19.0, -7.0)) - 0.5) * 0.035;
+    float grain = (cubey_proc_value_noise_sindot_2d(frag_world_position.xz * 0.012) - 0.5) *
+                  0.05;
+    grain +=
+        (cubey_proc_value_noise_sindot_2d(frag_world_position.xz * 0.041 + vec2(19.0, -7.0)) -
+         0.5) *
+        0.035;
     color *= 1.0 + grain;
     float proxy_geometry = frag_feature_tags.w < -0.5 ? 1.0 : 0.0;
     color = mix(color, vec3(0.16, 0.24, 0.09),
@@ -166,7 +159,9 @@ vec3 final_color() {
 
     float grass_mottle =
         smoothstep(0.10, 0.46, frag_vegetation.x) *
-        smoothstep(0.54, 0.92, value_noise2(frag_world_position.xz * 0.030 + vec2(5.0, -3.0)));
+        smoothstep(
+            0.54, 0.92,
+            cubey_proc_value_noise_sindot_2d(frag_world_position.xz * 0.030 + vec2(5.0, -3.0)));
     color = mix(color, vec3(0.24, 0.31, 0.14), grass_mottle * 0.12);
 
     vec3 normal = normalize(frag_normal);

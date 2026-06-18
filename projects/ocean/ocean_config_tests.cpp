@@ -1301,8 +1301,8 @@ int main() {
                          "fragment shader should include all regular normal/foam cascades");
         require_contains(fragment_shader, "return factor > 0.0;",
                          "fragment shader should allow far anti-repeat on any enabled slot");
-        require_contains(fragment_shader, "value_noise(position * 0.0011",
-                         "fragment shader should use stable world-space noise weights");
+        require_contains(fragment_shader, "cubey_proc_value_noise_pcg_2d(position * 0.0011",
+                         "fragment shader should use stable shared world-space noise weights");
         require_contains(fragment_shader, "float foam_breakup_weight",
                          "fragment shader should use distance-gated world-space foam breakup");
         require_not_contains(fragment_shader, "cascade != 4u",

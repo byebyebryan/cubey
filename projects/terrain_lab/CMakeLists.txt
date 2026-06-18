@@ -12,6 +12,11 @@ cubey_add_app_target(
     SHADERS
         shaders/terrain_lab.vert
         shaders/terrain_lab.frag
+    SHADER_INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/shaders"
+    SHADER_DEPENDS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
 )
 
 if (BUILD_TESTING)

@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/color_space.glsl"
+#include "cubey/procedural/noise.glsl"
 #include "water_2d_contract.glsl"
 #include "water_2d_grid.glsl"
 
@@ -50,23 +51,6 @@ float sample_v(vec2 uv, uint width, uint height) {
     return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
 
-float hash21(vec2 value) {
-    vec3 p3 = fract(vec3(value.xyx) * 0.1031);
-    p3 += dot(p3, p3.yzx + 33.33);
-    return fract((p3.x + p3.y) * p3.z);
-}
-
-float value_noise(vec2 uv) {
-    vec2 base = floor(uv);
-    vec2 f = fract(uv);
-    vec2 shaped = f * f * (3.0 - 2.0 * f);
-    float a = hash21(base);
-    float b = hash21(base + vec2(1.0, 0.0));
-    float c = hash21(base + vec2(0.0, 1.0));
-    float d = hash21(base + vec2(1.0, 1.0));
-    return mix(mix(a, b, shaped.x), mix(c, d, shaped.x), shaped.y);
-}
-
 vec3 scene_backdrop(vec2 screen_uv, vec2 solver_uv, uint width, uint height) {
     vec3 wall_bottom = vec3(0.108, 0.124, 0.140);
     vec3 wall_top = vec3(0.215, 0.238, 0.262);
@@ -96,7 +80,7 @@ float caustic_pattern(vec2 uv, float time) {
     float ribbons = sin((flow_a.x * 1.35 + flow_a.y * 1.70) * 6.28318);
     ribbons += sin((flow_b.x * 2.15 - flow_b.y * 1.10) * 6.28318);
     ribbons += sin((flow_a.x * -1.65 + flow_b.y * 2.40 + time * 0.35) * 6.28318);
-    float cells = value_noise(uv * 4.0 + vec2(time * 0.32, time * 0.21));
+    float cells = cubey_proc_value_noise_pcg_2d(uv * 4.0 + vec2(time * 0.32, time * 0.21));
     float signal = 0.5 + ribbons * 0.13 + cells * 0.34;
     return smoothstep(0.58, 0.92, signal);
 }
@@ -152,7 +136,8 @@ void main() {
         smoothstep(0.38, 1.16, speed * 0.78 + curvature_signal * 0.86 +
                                   gradient_strength * 0.12);
     float foam_noise =
-        value_noise(uv * vec2(width, height) * 0.22 + vec2(style_time * 0.24, -style_time * 0.18));
+        cubey_proc_value_noise_pcg_2d(uv * vec2(width, height) * 0.22 +
+                                      vec2(style_time * 0.24, -style_time * 0.18));
     float foam_breakup = clamp(params.foam_options.y, 0.0, 1.0);
     float breakup_mask = mix(1.0, smoothstep(0.22, 0.82,
                                              foam_noise + speed * 0.20 + curvature_signal * 0.16),
@@ -161,7 +146,8 @@ void main() {
     float foam = pow(clamp(foam_signal * breakup_mask, 0.0, 1.0), foam_sharpness) *
                  params.surface_options.z;
     float whitewater_noise =
-        value_noise(uv * vec2(width, height) * 0.46 + vec2(-style_time * 0.18, style_time * 0.30));
+        cubey_proc_value_noise_pcg_2d(uv * vec2(width, height) * 0.46 +
+                                      vec2(-style_time * 0.18, style_time * 0.30));
     float whitewater_signal =
         surface *
         smoothstep(0.50, 1.20, speed * 0.86 + curvature_signal * 0.95 +

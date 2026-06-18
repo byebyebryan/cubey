@@ -39,6 +39,8 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_2d/shaders/water_2d_contract.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/common/shaders/water_2d_grid.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
 )
 
 target_link_libraries(

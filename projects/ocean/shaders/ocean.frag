@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/color_space.glsl"
+#include "cubey/procedural/noise.glsl"
 
 layout(set = 0, binding = 0) uniform sampler2D displacement_cascade0_texture;
 layout(set = 0, binding = 1) uniform sampler2D displacement_cascade1_texture;
@@ -435,28 +436,11 @@ vec2 detail_anti_repeat_offset(uint cascade, uint domain) {
                         : vec2(-607.0 + slot * 89.0, 431.0 - slot * 127.0);
 }
 
-float hash12(vec2 value) {
-    vec3 p = fract(vec3(value.xyx) * 0.1031);
-    p += dot(p, p.yzx + 33.33);
-    return fract((p.x + p.y) * p.z);
-}
-
-float value_noise(vec2 value) {
-    vec2 cell = floor(value);
-    vec2 local = fract(value);
-    local = local * local * (3.0 - 2.0 * local);
-
-    float a = hash12(cell);
-    float b = hash12(cell + vec2(1.0, 0.0));
-    float c = hash12(cell + vec2(0.0, 1.0));
-    float d = hash12(cell + vec2(1.0, 1.0));
-    return mix(mix(a, b, local.x), mix(c, d, local.x), local.y);
-}
-
 vec2 detail_anti_repeat_weights(uint cascade, vec2 position, float factor) {
     float seed = float(cascade) * 19.37;
-    float first = value_noise(position * 0.0011 + vec2(seed, seed * 0.37));
-    float second = value_noise(position * 0.00073 + vec2(seed + 41.0, seed - 13.0));
+    float first = cubey_proc_value_noise_pcg_2d(position * 0.0011 + vec2(seed, seed * 0.37));
+    float second =
+        cubey_proc_value_noise_pcg_2d(position * 0.00073 + vec2(seed + 41.0, seed - 13.0));
     return factor * vec2(mix(0.38, 0.72, first), mix(0.28, 0.58, second));
 }
 
@@ -465,8 +449,8 @@ float foam_breakup_weight(uint cascade, vec2 position, float factor) {
         return 1.0;
     }
     float seed = float(cascade) * 31.19;
-    float broad = value_noise(position * 0.00041 + vec2(seed, seed * 0.53));
-    float mid = value_noise(position * 0.0017 + vec2(seed - 17.0, seed + 29.0));
+    float broad = cubey_proc_value_noise_pcg_2d(position * 0.00041 + vec2(seed, seed * 0.53));
+    float mid = cubey_proc_value_noise_pcg_2d(position * 0.0017 + vec2(seed - 17.0, seed + 29.0));
     float breakup = mix(0.58, 1.22, broad) * mix(0.82, 1.12, mid);
     return mix(1.0, breakup, factor);
 }
@@ -477,9 +461,10 @@ float ocean_far_reflection_variation(vec2 position, float far_material_energy) {
         return 1.0;
     }
     float time = ocean.camera_time.w;
-    float broad = value_noise(position / 5200.0 + vec2(19.0 + time * 0.00005, -7.0));
-    float mid = value_noise(rotate2(position, 0.57) / 1800.0 +
-                            vec2(-31.0, 23.0 - time * 0.00008));
+    float broad =
+        cubey_proc_value_noise_pcg_2d(position / 5200.0 + vec2(19.0 + time * 0.00005, -7.0));
+    float mid = cubey_proc_value_noise_pcg_2d(rotate2(position, 0.57) / 1800.0 +
+                                              vec2(-31.0, 23.0 - time * 0.00008));
     float signal = (broad * 0.65 + mid * 0.35) * 2.0 - 1.0;
     return clamp(1.0 + signal * strength, 0.65, 1.25);
 }

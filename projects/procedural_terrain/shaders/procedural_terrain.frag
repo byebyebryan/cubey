@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "cubey/procedural/noise.glsl"
 
 layout(push_constant) uniform TerrainPushConstants {
     mat4 view_projection;
@@ -49,21 +52,6 @@ vec3 signed_ramp(float value, float max_abs_value) {
     return t < 0.0 ? mix(zero, negative, -t) : mix(zero, positive, t);
 }
 
-float hash21(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
-float value_noise2(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    float a = hash21(i);
-    float b = hash21(i + vec2(1.0, 0.0));
-    float c = hash21(i + vec2(0.0, 1.0));
-    float d = hash21(i + vec2(1.0, 1.0));
-    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-}
-
 vec3 material_color(vec4 material) {
     vec3 sand = vec3(0.67, 0.58, 0.42);
     vec3 rock = vec3(0.38, 0.39, 0.37);
@@ -100,8 +88,11 @@ vec3 terrain_final_color() {
                          smoothstep(4.0, 82.0, water_depth));
     color = mix(color, submerged, water * 0.90);
 
-    float detail = ((value_noise2(frag_world_position.xz * 0.038) - 0.5) * 0.55) +
-                   ((value_noise2(frag_world_position.xz * 0.095 + vec2(17.0, -9.0)) - 0.5) *
+    float detail = ((cubey_proc_value_noise_sindot_2d(frag_world_position.xz * 0.038) - 0.5) *
+                    0.55) +
+                   ((cubey_proc_value_noise_sindot_2d(frag_world_position.xz * 0.095 +
+                                                       vec2(17.0, -9.0)) -
+                     0.5) *
                     0.24) +
                    (sin(frag_world_position.x * 0.027) * sin(frag_world_position.z * 0.023) *
                     0.10);
