@@ -134,9 +134,9 @@ Current checkpoint:
   slice: local 2D scalar fields, centered grid sampling, deterministic 2D/3D
   value-noise/FBM/ridged-FBM, scalar operators, field normalization, weighted
   3x3 blur, and matching small GLSL helper includes. Terrain Lab, procedural
-  terrain, planet, ocean, water, and active cloud now consume shared helpers
-  where their existing formulas match, while their domain drivers remain
-  project-owned.
+  terrain, planet, ocean, water, atmosphere/sky, and active cloud now consume
+  shared helpers where their existing formulas match, while their domain drivers
+  remain project-owned.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets, including shared include
   directories and dependency tracking. Reusable `cubey::vulkan::read_spirv_file`

@@ -102,8 +102,8 @@ compiled into `cubey::core`:
   sampling plus deterministic legacy 2D and 3D hash/value-noise, FBM, and
   ridged FBM with explicit octave/lacunarity/gain/seed-stride configuration.
 - `shaders/cubey/procedural` mirrors the small GLSL side of this layer with
-  shared remap/smoothing helpers and deterministic value-noise/FBM helpers for
-  formulas that already match existing project code.
+  shared remap/smoothing helpers, deterministic random/hash helpers, and
+  value-noise/FBM helpers for formulas that already match existing project code.
 
 Terrain Lab now consumes this shared layer for its scalar helpers and
 deterministic FBM source. It also exposes an opt-in FastNoiseLite backend for
@@ -120,6 +120,12 @@ through shared primitives where the formulas already matched:
   terrain field while keeping terrain shaping constants project-owned.
 - `projects/terrain_lab`, `projects/ocean`, and `projects/fluid/water_2d`
   consume shared GLSL value-noise helpers for matching shader breakup/noise.
+- `projects/fluid/water_2d` and `projects/fluid/water_3d` consume shared GLSL
+  uint hash-to-unit helpers for particle spawn jitter, emission randomness, and
+  deterministic transfer tie-breaks.
+- Shared atmosphere/sky shaders consume shared GLSL PCG hash and 2D value-noise
+  helpers for procedural stars and moon terminator breakup while keeping the
+  star population, moon lighting, and visibility recipes domain-owned.
 - `projects/cloud` uses the shared GLSL remap primitive in the active cloud
   common shaders while leaving source-aligned Perlin/Worley recipes intact.
 
@@ -131,7 +137,7 @@ through one noise API:
 - CPU primitives live in `cubey::procedural`: deterministic hashes, value noise,
   coherent noise wrappers, scalar fields, and renderer-independent operators.
 - Shader primitives live under `shaders/cubey/procedural`: small GLSL helpers for
-  repeated hash, value-noise, FBM, remap, and smoothing formulas.
+  repeated hash/random, value-noise, FBM, remap, and smoothing formulas.
 - Domain drivers remain project or domain code: terrain ridges/rivers/dunes,
   cloud volume texture recipes, ocean foam breakup, fluid turbulence, lunar
   atlas features, and star placement should consume shared primitives only when
@@ -158,6 +164,8 @@ Near-term non-goals:
 - no default switch from legacy Terrain Lab value noise to FastNoiseLite;
 - no FastNoiseLite GLSL migration before shader parity has its own focused
   review;
+- no CPU migration of generated atmosphere lunar/night-sky atlas noise until it
+  has its own golden-value or image-review pass;
 - no deduplication of `cloud_ref`, `cloud_ref_2`, or `clouds_legacy` while they
   are still useful as reference snapshots;
 - no promotion of physical hydrology, erosion, foliage, materials, streaming, or
