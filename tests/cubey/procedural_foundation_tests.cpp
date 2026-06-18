@@ -98,6 +98,78 @@ void test_procedural_box_blur_preserves_dimensions_and_smooths_impulse() {
                  "box blur should renormalize weights at edges");
 }
 
+void test_procedural_slope_curvature_handles_flat_ramp_and_peak() {
+    const cubey::procedural::ScalarField2D flat({.width = 3, .height = 3, .cell_size = 2.0F},
+                                                7.0F);
+    const cubey::procedural::SlopeCurvature2D flat_analysis =
+        cubey::procedural::compute_slope_curvature(flat);
+    require_near(flat_analysis.max_slope, 0.0F, 0.0001F,
+                 "flat field should have zero slope");
+    require_near(flat_analysis.max_abs_curvature, 0.0F, 0.0001F,
+                 "flat field should have zero curvature");
+
+    cubey::procedural::ScalarField2D ramp({.width = 3, .height = 3, .cell_size = 2.0F}, 0.0F);
+    for (std::uint32_t y = 0; y < ramp.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < ramp.desc().width; ++x) {
+            ramp.at(x, y) = static_cast<float>(x) * 4.0F;
+        }
+    }
+    const cubey::procedural::SlopeCurvature2D ramp_analysis =
+        cubey::procedural::compute_slope_curvature(ramp);
+    require_near(ramp_analysis.slope.at(1U, 1U), 2.0F, 0.0001F,
+                 "linear ramp slope should scale by cell size");
+    require_near(ramp_analysis.curvature.at(1U, 1U), 0.0F, 0.0001F,
+                 "linear ramp center should have zero curvature");
+
+    cubey::procedural::ScalarField2D peak({.width = 3, .height = 3, .cell_size = 1.0F}, 0.0F);
+    peak.at(1U, 1U) = 9.0F;
+    const cubey::procedural::SlopeCurvature2D peak_analysis =
+        cubey::procedural::compute_slope_curvature(peak);
+    require_near(peak_analysis.slope.at(1U, 1U), 0.0F, 0.0001F,
+                 "symmetric peak center should have zero centered slope");
+    require_near(peak_analysis.curvature.at(1U, 1U), -9.0F, 0.0001F,
+                 "peak center should be negative convex curvature");
+    require_near(peak_analysis.max_abs_curvature, 9.0F, 0.0001F,
+                 "peak curvature should drive max absolute curvature");
+}
+
+void test_procedural_local_relief_tracks_neighborhood_windows() {
+    cubey::procedural::ScalarField2D field({.width = 3, .height = 3, .cell_size = 1.0F}, 0.0F);
+    float value = 1.0F;
+    for (std::uint32_t y = 0; y < field.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < field.desc().width; ++x) {
+            field.at(x, y) = value;
+            value += 1.0F;
+        }
+    }
+
+    const cubey::procedural::LocalRelief2D relief =
+        cubey::procedural::compute_local_relief(field, 1U);
+    require_near(relief.local_min.at(1U, 1U), 1.0F, 0.0001F,
+                 "center relief window should see the field minimum");
+    require_near(relief.local_max.at(1U, 1U), 9.0F, 0.0001F,
+                 "center relief window should see the field maximum");
+    require_near(relief.local_mean.at(1U, 1U), 5.0F, 0.0001F,
+                 "center relief window should average the full 3x3 region");
+    require_near(relief.local_span.at(1U, 1U), 8.0F, 0.0001F,
+                 "center relief window should expose local span");
+    require_near(relief.local_min.at(0U, 0U), 1.0F, 0.0001F,
+                 "corner relief window should clamp to valid samples");
+    require_near(relief.local_max.at(0U, 0U), 5.0F, 0.0001F,
+                 "corner relief window should clamp to valid samples");
+    require_near(relief.local_mean.at(0U, 0U), 3.0F, 0.0001F,
+                 "corner relief window should average only valid samples");
+    require_near(relief.local_span.at(0U, 0U), 4.0F, 0.0001F,
+                 "corner relief window should expose clamped local span");
+
+    const cubey::procedural::LocalRelief2D radius_zero =
+        cubey::procedural::compute_local_relief(field, 0U);
+    require_near(radius_zero.local_mean.at(2U, 2U), 9.0F, 0.0001F,
+                 "zero-radius relief should preserve the source sample");
+    require_near(radius_zero.local_span.at(2U, 2U), 0.0F, 0.0001F,
+                 "zero-radius relief should have zero span");
+}
+
 void test_procedural_operators_include_smootherstep() {
     require_near(cubey::procedural::smootherstep01(-1.0F), 0.0F, 0.0001F,
                  "smootherstep should saturate below zero");
