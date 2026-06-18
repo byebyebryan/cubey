@@ -112,16 +112,21 @@ compiled into `cubey::core`:
 
 - `Grid2DDesc` and `ScalarField2D` provide local 2D scalar-field storage,
   centered sample coordinates, bounds-checked indexing, and field summaries.
+- `FieldSet2D` groups named scalar fields over one grid descriptor for generic
+  debug, process, climate/environment, terrain, cloud, and generated-texture
+  payloads.
 - `operators.h` provides scalar helpers (`saturate`, `lerp`, `smoothstep`,
   `smootherstep01`) plus field operators for blur, normalization,
   slope/curvature, local relief, remap/clamp, signed/unit conversion, power and
-  terrace shaping, ridge shaping, and field composition.
+  terrace shaping, ridge shaping, field composition, percentile summaries, and
+  percentile remapping.
 - `noise.h` provides Cubey-wrapped FastNoiseLite coherent noise/domain-warp
   sampling plus deterministic legacy 2D and 3D hash/value-noise, FBM, and
   ridged FBM with explicit octave/lacunarity/gain/seed-stride configuration.
-- `source_fields.h` wraps those samplers as deterministic 2D source-field
-  recipes that can fill `ScalarField2D` grids or sample individual coordinates
-  with an explicit domain transform and optional coherent domain warp.
+- `source_fields.h` wraps those samplers as deterministic 2D source fields and
+  layered `SourceRecipe2D` stacks that can fill `ScalarField2D` grids, carry
+  debug fields, apply masks/weights/blend modes, and optionally normalize final
+  output.
 - `shaders/cubey/procedural` mirrors the small GLSL side of this layer with
   shared remap/smoothing helpers, deterministic random/hash helpers, and
   value-noise/FBM helpers for formulas that already match existing project code.
@@ -130,7 +135,10 @@ Terrain Lab now consumes this shared layer for its scalar helpers and
 deterministic FBM source. It also exposes opt-in FastNoiseLite and warped
 FastNoiseLite backends for the desert dune source driver. That adoption remains
 intentionally conservative: default captures keep the legacy backend, while the
-new coherent noise paths can be inspected explicitly.
+new coherent noise paths can be inspected explicitly. Terrain Lab also exposes a
+diagnostic adapter from its experimental `TerrainLabFieldData` payload into a
+generic `FieldSet2D`; that bridge proves the foundation contract without
+freezing Terrain Lab's field layout.
 
 The first preserve-output migration wave also routes existing duplicate helpers
 through shared primitives where the formulas already matched:
@@ -186,19 +194,25 @@ The first proof consumer is the desert dune source selection, preserving the
 legacy default while making FastNoiseLite and warped FastNoiseLite explicit
 opt-ins.
 
+The first broader foundation batch promotes generic named field sets,
+distribution/percentile operators, and layered `SourceRecipe2D` composition.
+These are intentionally domain-neutral: Terrain Lab can adapt its current height
+and driver fields into them, but terrain-specific landform drivers, hydrology,
+materials, and foliage remain outside core.
+
 Next shared candidates should come from repeated project-local code, broad
 procedural-rendering needs, or a specific reference-backed driver need, not from
 speculative API surface. Likely near-term candidates are:
 
-- generic source-recipe helpers with explicit layer stacks, masks,
-  domain transforms, warp, distribution shaping, and field summaries;
-- named field-set containers for height, density, source masks, process fields,
-  material/biome hints, climate/environment fields, and debug exports;
 - deterministic tile or patch sampling descriptors that are independent of any
   one renderer;
-- distribution/quantile-style remap helpers and histogram/percentile summaries;
-- Terrain Lab landform or biome mixer prototypes that compose named field
-  outputs before anything is promoted into core;
+- a proof migration of one Terrain Lab source path onto `SourceRecipe2D`;
+- a cross-project review of atmosphere, cloud, ocean, fluid, and generated
+  texture consumers before adding terrain-only APIs;
+- field-set export/capture metadata so old and new procedural outputs are easy
+  to compare;
+- a future `SourceRecipe3D` or volume-field variant after the cloud/environment
+  review proves the shape;
 - flow-routing and accumulation data structures after a deeper SimpleHydrology
   pass;
 - explicit source-field recipes for mountain range, river, and dune drivers.

@@ -369,6 +369,13 @@ adapters:
 Until then, keep the project-local vocabulary clear and avoid prematurely moving
 terrain types into engine-level code.
 
+The first shared-procedural bridge is diagnostic only:
+`make_terrain_lab_field_set` adapts a small neutral subset of
+`TerrainLabFieldData` into `cubey::procedural::FieldSet2D` (`height`,
+driver potentials, `wetness`, and `water_presence`). This proves that Terrain
+Lab can feed the generic foundation without freezing the current Terrain Lab
+payload or promoting terrain-specific policy into core.
+
 ## Validation
 
 Terrain quality is partly visual, but the first project should still have
@@ -398,6 +405,9 @@ divide-channel height separation, channel-flow alignment, material entropy, and
 edge steps. These checks keep the generator honest during tuning, but visual
 review remains required because the current terrain is still an approximate
 workbench slice rather than a physically complete landscape model.
+
+The shared field-set bridge is covered by config tests: the adapter preserves
+grid metadata, sample counts, expected field names, and height summaries.
 
 ## References
 

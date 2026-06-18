@@ -208,7 +208,7 @@ Applicability to Cubey:
 
 ## Cubey Implications
 
-Near-term foundation candidates:
+Initial foundation pieces promoted from this review:
 
 1. `SourceRecipe2D` and eventually `SourceRecipe3D`: named layer stacks around
    existing `NoiseSource2D`, domain transforms, masks, first-layer-as-mask,
@@ -216,18 +216,23 @@ Near-term foundation candidates:
 2. `FieldSet2D`: a deterministic collection of named scalar fields plus
    summaries, intended for terrain height, cloud density, masks, water/process
    fields, material hints, climate or environment fields, and debug exports.
-3. A tile sampling contract: seed, world origin, extent, resolution, tile id,
+3. Distribution operators: quantile-like remap, histogram summaries, percentile
+   clamps, and target-range normalization.
+
+Remaining near-term candidates:
+
+1. A tile sampling contract: seed, world origin, extent, resolution, tile id,
    border policy, and stable sample coordinates that do not depend on one
    renderer.
-4. Distribution operators: quantile-like remap, histogram summaries, percentile
-   clamps, and target-range normalization.
-5. Terrain Lab biome or landform mixer prototype: compose named field bundles
-   or landform outputs with explicit masks and strengths before promoting
-   anything to core.
-6. Reference-backed mountain and river driver work: mountains should prove
-   broad uplift/ridge/peak structure; rivers should prove trunk, tributary,
-   discharge, valley width, and water/process fields.
-7. Export and capture improvements: stable per-field PNG/output directories and
+2. Terrain Lab biome or landform mixer prototype: compose named field sets or
+   landform outputs with explicit masks and strengths before promoting anything
+   terrain-specific to core.
+3. Cross-project review of atmosphere/environment, cloud, ocean, fluid, and
+   generated-texture consumers before adding terrain-only foundation APIs.
+4. Reference-backed mountain and river driver work: mountains should prove broad
+   uplift/ridge/peak structure; rivers should prove trunk, tributary, discharge,
+   valley width, and water/process fields.
+5. Export and capture improvements: stable per-field PNG/output directories and
    small metadata files so old and new captures are easy to compare.
 
 Non-goals for the next foundation slice:
