@@ -95,6 +95,15 @@ void test_procedural_box_blur_preserves_dimensions_and_smooths_impulse() {
                  "box blur should renormalize weights at edges");
 }
 
+void test_procedural_operators_include_smootherstep() {
+    require_near(cubey::procedural::smootherstep01(-1.0F), 0.0F, 0.0001F,
+                 "smootherstep should saturate below zero");
+    require_near(cubey::procedural::smootherstep01(0.5F), 0.5F, 0.0001F,
+                 "smootherstep midpoint should stay centered");
+    require_near(cubey::procedural::smootherstep01(2.0F), 1.0F, 0.0001F,
+                 "smootherstep should saturate above one");
+}
+
 void test_procedural_noise_is_deterministic_and_bounded() {
     const float first = cubey::procedural::value_noise_2d(1.25F, -3.75F, 17U);
     const float second = cubey::procedural::value_noise_2d(1.25F, -3.75F, 17U);

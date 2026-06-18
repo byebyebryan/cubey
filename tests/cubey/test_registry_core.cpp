@@ -24,6 +24,7 @@ void test_procedural_box_blur_preserves_dimensions_and_smooths_impulse();
 void test_procedural_coherent_noise_wraps_fastnoise_lite();
 void test_procedural_legacy_noise_golden_values_are_stable();
 void test_procedural_noise_is_deterministic_and_bounded();
+void test_procedural_operators_include_smootherstep();
 void test_procedural_scalar_field_indexes_centered_samples();
 void test_procedural_scalar_field_summarizes_and_normalizes();
 void test_run_cli_app_sets_default_title_and_returns_runner_status();
@@ -136,6 +137,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_scalar_field_indexes_centered_samples),
         CUBEY_TEST(test_procedural_scalar_field_summarizes_and_normalizes),
         CUBEY_TEST(test_procedural_box_blur_preserves_dimensions_and_smooths_impulse),
+        CUBEY_TEST(test_procedural_operators_include_smootherstep),
         CUBEY_TEST(test_procedural_noise_is_deterministic_and_bounded),
         CUBEY_TEST(test_procedural_legacy_noise_golden_values_are_stable),
         CUBEY_TEST(test_procedural_3d_noise_is_deterministic_and_stable),

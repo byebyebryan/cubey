@@ -1,5 +1,8 @@
 #include "planet_surface_field.h"
 
+#include <cubey/procedural/noise.h>
+#include <cubey/procedural/operators.h>
+
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -13,59 +16,13 @@ namespace {
 }
 
 [[nodiscard]] float smootherstep(float value) {
-    const float x = std::clamp(value, 0.0F, 1.0F);
-    return x * x * x * (x * (x * 6.0F - 15.0F) + 10.0F);
-}
-
-[[nodiscard]] std::uint32_t hash_u32(std::int32_t x, std::int32_t y, std::int32_t z,
-                                     std::uint32_t seed) {
-    std::uint32_t value = seed;
-    value ^= static_cast<std::uint32_t>(x) * 0x9e3779b9U;
-    value ^= static_cast<std::uint32_t>(y) * 0x85ebca6bU;
-    value ^= static_cast<std::uint32_t>(z) * 0xc2b2ae35U;
-    value ^= value >> 16U;
-    value *= 0x7feb352dU;
-    value ^= value >> 15U;
-    value *= 0x846ca68bU;
-    value ^= value >> 16U;
-    return value;
-}
-
-[[nodiscard]] float hash01(std::int32_t x, std::int32_t y, std::int32_t z, std::uint32_t seed) {
-    constexpr float kInv24Bit = 1.0F / 16777215.0F;
-    return static_cast<float>(hash_u32(x, y, z, seed) >> 8U) * kInv24Bit;
-}
-
-[[nodiscard]] float value_noise(cubey::math::Vec3 p, std::uint32_t seed) {
-    const auto x0 = static_cast<std::int32_t>(std::floor(p.x));
-    const auto y0 = static_cast<std::int32_t>(std::floor(p.y));
-    const auto z0 = static_cast<std::int32_t>(std::floor(p.z));
-    const float tx = smootherstep(p.x - static_cast<float>(x0));
-    const float ty = smootherstep(p.y - static_cast<float>(y0));
-    const float tz = smootherstep(p.z - static_cast<float>(z0));
-
-    const auto lattice = [seed](std::int32_t x, std::int32_t y, std::int32_t z) {
-        return hash01(x, y, z, seed) * 2.0F - 1.0F;
-    };
-    const float x00 = lerp(lattice(x0, y0, z0), lattice(x0 + 1, y0, z0), tx);
-    const float x10 = lerp(lattice(x0, y0 + 1, z0), lattice(x0 + 1, y0 + 1, z0), tx);
-    const float x01 = lerp(lattice(x0, y0, z0 + 1), lattice(x0 + 1, y0, z0 + 1), tx);
-    const float x11 = lerp(lattice(x0, y0 + 1, z0 + 1), lattice(x0 + 1, y0 + 1, z0 + 1), tx);
-    return lerp(lerp(x00, x10, ty), lerp(x01, x11, ty), tz);
+    return cubey::procedural::smootherstep01(value);
 }
 
 [[nodiscard]] float fbm(cubey::math::Vec3 p, std::uint32_t seed, std::uint32_t octaves) {
-    float amplitude = 0.5F;
-    float frequency = 1.0F;
-    float sum = 0.0F;
-    float weight = 0.0F;
-    for (std::uint32_t octave = 0; octave < octaves; ++octave) {
-        sum += value_noise(p * frequency, seed + octave * 1013U) * amplitude;
-        weight += amplitude;
-        frequency *= 2.03F;
-        amplitude *= 0.5F;
-    }
-    return weight > 0.0F ? sum / weight : 0.0F;
+    cubey::procedural::Fbm3DConfig config{};
+    config.octaves = octaves;
+    return cubey::procedural::fbm_3d(p.x, p.y, p.z, seed, config);
 }
 
 [[nodiscard]] double surface_radius_m(const PlanetConfig& config, float height_m) {

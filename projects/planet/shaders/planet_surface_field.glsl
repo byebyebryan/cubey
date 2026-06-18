@@ -1,3 +1,5 @@
+#include "cubey/procedural/noise.glsl"
+
 vec3 planet_surface_cube_face_point(uint face, float u, float v) {
     if (face == 0U) {
         return vec3(1.0, v, -u);
@@ -17,66 +19,8 @@ vec3 planet_surface_cube_face_point(uint face, float u, float v) {
     return vec3(-u, v, -1.0);
 }
 
-float planet_surface_lerp(float a, float b, float t) {
-    return a + (b - a) * t;
-}
-
-float planet_surface_smootherstep(float value) {
-    float x = clamp(value, 0.0, 1.0);
-    return x * x * x * (x * (x * 6.0 - 15.0) + 10.0);
-}
-
-uint planet_surface_hash_u32(ivec3 p, uint seed) {
-    uint value = seed;
-    value ^= uint(p.x) * 0x9e3779b9U;
-    value ^= uint(p.y) * 0x85ebca6bU;
-    value ^= uint(p.z) * 0xc2b2ae35U;
-    value ^= value >> 16U;
-    value *= 0x7feb352dU;
-    value ^= value >> 15U;
-    value *= 0x846ca68bU;
-    value ^= value >> 16U;
-    return value;
-}
-
-float planet_surface_hash01(ivec3 p, uint seed) {
-    return float(planet_surface_hash_u32(p, seed) >> 8U) / 16777215.0;
-}
-
-float planet_surface_value_noise(vec3 p, uint seed) {
-    ivec3 p0 = ivec3(floor(p));
-    vec3 t = vec3(planet_surface_smootherstep(p.x - float(p0.x)),
-                  planet_surface_smootherstep(p.y - float(p0.y)),
-                  planet_surface_smootherstep(p.z - float(p0.z)));
-
-    float x00 = planet_surface_lerp(
-        planet_surface_hash01(p0 + ivec3(0, 0, 0), seed) * 2.0 - 1.0,
-        planet_surface_hash01(p0 + ivec3(1, 0, 0), seed) * 2.0 - 1.0, t.x);
-    float x10 = planet_surface_lerp(
-        planet_surface_hash01(p0 + ivec3(0, 1, 0), seed) * 2.0 - 1.0,
-        planet_surface_hash01(p0 + ivec3(1, 1, 0), seed) * 2.0 - 1.0, t.x);
-    float x01 = planet_surface_lerp(
-        planet_surface_hash01(p0 + ivec3(0, 0, 1), seed) * 2.0 - 1.0,
-        planet_surface_hash01(p0 + ivec3(1, 0, 1), seed) * 2.0 - 1.0, t.x);
-    float x11 = planet_surface_lerp(
-        planet_surface_hash01(p0 + ivec3(0, 1, 1), seed) * 2.0 - 1.0,
-        planet_surface_hash01(p0 + ivec3(1, 1, 1), seed) * 2.0 - 1.0, t.x);
-    return planet_surface_lerp(planet_surface_lerp(x00, x10, t.y),
-                               planet_surface_lerp(x01, x11, t.y), t.z);
-}
-
 float planet_surface_fbm(vec3 p, uint seed, uint octaves) {
-    float amplitude = 0.5;
-    float frequency = 1.0;
-    float sum = 0.0;
-    float weight = 0.0;
-    for (uint octave = 0U; octave < octaves; ++octave) {
-        sum += planet_surface_value_noise(p * frequency, seed + octave * 1013U) * amplitude;
-        weight += amplitude;
-        frequency *= 2.03;
-        amplitude *= 0.5;
-    }
-    return weight > 0.0 ? sum / weight : 0.0;
+    return cubey_proc_fbm_3d(p, seed, octaves);
 }
 
 vec2 planet_surface_terrain_detail_strengths() {
@@ -128,7 +72,7 @@ float planet_surface_terrain_continent_mask(vec3 sphere_normal) {
     float breakup = planet_surface_fbm(p * 1.48 + vec3(-3.8, 5.0, 0.9), seed + 547U, 4U);
     float shelf = planet_surface_fbm(p * 3.05 + vec3(5.1, 2.8, -1.6), seed + 659U, 3U);
     float shape = continent * 0.78 + breakup * 0.25 + shelf * 0.08;
-    return planet_surface_smootherstep((shape + 0.18) / 0.46);
+    return cubey_proc_smootherstep01((shape + 0.18) / 0.46);
 }
 
 float planet_surface_terrain_mountain_belt(vec3 sphere_normal) {
@@ -136,7 +80,7 @@ float planet_surface_terrain_mountain_belt(vec3 sphere_normal) {
     uint seed = uint(surface_frame.terrain_options.z + 0.5);
     float belt = planet_surface_fbm(p * 1.08 + vec3(-6.5, 1.2, 3.7), seed + 811U, 5U);
     float fold = planet_surface_fbm(p * 2.35 + vec3(3.2, 6.4, -5.7), seed + 919U, 4U);
-    return planet_surface_smootherstep((belt * 0.72 + fold * 0.24 + 0.08) / 0.44);
+    return cubey_proc_smootherstep01((belt * 0.72 + fold * 0.24 + 0.08) / 0.44);
 }
 
 float planet_surface_terrain_valley_network(vec3 sphere_normal) {
@@ -155,8 +99,8 @@ PlanetTerrainFeatureContext planet_surface_terrain_feature_context(vec3 sphere_n
     }
     float continent_mask = planet_surface_terrain_continent_mask(sphere_normal);
     float mountain_belt = planet_surface_terrain_mountain_belt(sphere_normal);
-    float relief_gate = planet_surface_smootherstep((continent_mask - 0.24) / 0.54);
-    float plain_gate = planet_surface_smootherstep((continent_mask - 0.36) / 0.42) *
+    float relief_gate = cubey_proc_smootherstep01((continent_mask - 0.24) / 0.54);
+    float plain_gate = cubey_proc_smootherstep01((continent_mask - 0.36) / 0.42) *
                        (1.0 - smoothstep(0.30, 0.72, mountain_belt));
     return PlanetTerrainFeatureContext(
         planet_surface_terrain_domain_point(sphere_normal),
@@ -165,7 +109,7 @@ PlanetTerrainFeatureContext planet_surface_terrain_feature_context(vec3 sphere_n
         planet_surface_terrain_valley_network(sphere_normal),
         relief_gate,
         plain_gate,
-        planet_surface_smootherstep((continent_mask - 0.30) / 0.42));
+        cubey_proc_smootherstep01((continent_mask - 0.30) / 0.42));
 }
 
 PlanetSurfaceTerrainBands planet_surface_terrain_bands(vec3 sphere_normal) {
@@ -190,7 +134,7 @@ PlanetSurfaceTerrainBands planet_surface_terrain_bands(vec3 sphere_normal) {
                        planet_surface_terrain_ridge_profile(ridge_source_secondary, 2.3) * 0.52);
     float basin = planet_surface_fbm(p * 1.18 + vec3(5.7, 0.3, -6.1), seed + 73U, 4U);
     float valleys = features.valley_network;
-    float shelf = planet_surface_smootherstep((continent_mask - 0.05) / 0.46);
+    float shelf = cubey_proc_smootherstep01((continent_mask - 0.05) / 0.46);
     float relief_gate = features.relief_gate;
     float plain_gate = features.plain_gate;
     float ocean_floor_base = mix(-0.82, -0.12, shelf);
@@ -288,7 +232,7 @@ float planet_surface_normalized_slope(vec3 sphere_normal, vec3 normal) {
 
 float planet_surface_land_mask(float height_above_sea_m) {
     float height_scale = max(surface_frame.terrain_options.x, 1.0);
-    return planet_surface_smootherstep((height_above_sea_m / height_scale + 0.04) / 0.13);
+    return cubey_proc_smootherstep01((height_above_sea_m / height_scale + 0.04) / 0.13);
 }
 
 float planet_surface_temperature(vec3 sphere_normal, float normalized_elevation) {

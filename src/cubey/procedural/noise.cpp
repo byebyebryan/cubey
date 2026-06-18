@@ -109,11 +109,6 @@ to_fast_cellular_return(CoherentCellularReturn return_type) {
     return static_cast<int>(std::max<std::uint32_t>(octaves, 1U));
 }
 
-[[nodiscard]] float smootherstep01(float value) {
-    const float x = saturate(value);
-    return x * x * x * (x * (x * 6.0F - 15.0F) + 10.0F);
-}
-
 [[nodiscard]] FastNoiseLite make_noise(const CoherentNoiseConfig& config) {
     FastNoiseLite noise(static_cast<int>(config.seed));
     noise.SetFrequency(config.frequency);

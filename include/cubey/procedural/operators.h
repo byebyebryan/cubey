@@ -22,6 +22,11 @@ namespace cubey::procedural {
     return t * t * (3.0F - (2.0F * t));
 }
 
+[[nodiscard]] inline float smootherstep01(float value) {
+    const float t = saturate(value);
+    return t * t * t * (t * (t * 6.0F - 15.0F) + 10.0F);
+}
+
 [[nodiscard]] ScalarField2D box_blur_3x3(const ScalarField2D& field);
 void normalize_to_unit(ScalarField2D& field);
 

@@ -41,6 +41,8 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/sky_atmosphere.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_surface_field.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )
