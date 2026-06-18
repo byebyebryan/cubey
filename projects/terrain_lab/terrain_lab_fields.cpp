@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <limits>
 #include <numeric>
+#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -628,58 +629,42 @@ generate_alpine_glacial_driver_fields(const TerrainLabConfig& config,
 alpine_glacial_features_at(Point2 p, const TerrainLabGridDesc& desc, const TerrainLabConfig& config,
                            const AlpineGlacialDriver& driver);
 
+[[nodiscard]] cubey::procedural::Grid2DDesc procedural_grid_desc(const TerrainLabGridDesc& desc) {
+    return {
+        .width = desc.width,
+        .height = desc.height,
+        .cell_size = desc.cell_size_m,
+        .origin_x = desc.origin_x_m,
+        .origin_y = desc.origin_z_m,
+    };
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D
+terrain_lab_scalar_field(const TerrainLabGridDesc& desc, const std::vector<float>& values) {
+    cubey::procedural::ScalarField2D field(procedural_grid_desc(desc), 0.0F);
+    if (values.size() != field.sample_count()) {
+        throw std::runtime_error("terrain lab scalar field size mismatch");
+    }
+
+    std::copy(values.begin(), values.end(), field.values().begin());
+    return field;
+}
+
+[[nodiscard]] std::vector<float>
+terrain_lab_field_values(const cubey::procedural::ScalarField2D& field) {
+    const std::span<const float> values = field.values();
+    return {values.begin(), values.end()};
+}
+
 void compute_slope_and_curvature(const TerrainLabGridDesc& desc, const std::vector<float>& height,
                                  std::vector<float>& slope, std::vector<float>& curvature,
                                  float& max_slope, float& max_abs_curvature) {
-    max_slope = 0.0F;
-    max_abs_curvature = 0.0F;
-    slope.assign(height.size(), 0.0F);
-    curvature.assign(height.size(), 0.0F);
-
-    for (std::uint32_t y = 0; y < desc.height; ++y) {
-        for (std::uint32_t x = 0; x < desc.width; ++x) {
-            const std::uint32_t x0 = x == 0U ? x : x - 1U;
-            const std::uint32_t x1 = x + 1U >= desc.width ? x : x + 1U;
-            const std::uint32_t y0 = y == 0U ? y : y - 1U;
-            const std::uint32_t y1 = y + 1U >= desc.height ? y : y + 1U;
-            const float span_x = static_cast<float>(x1 - x0) * desc.cell_size_m;
-            const float span_z = static_cast<float>(y1 - y0) * desc.cell_size_m;
-            const float dhdx = span_x == 0.0F ? 0.0F
-                                              : (height[grid_index(x1, y, desc.width)] -
-                                                 height[grid_index(x0, y, desc.width)]) /
-                                                    span_x;
-            const float dhdz = span_z == 0.0F ? 0.0F
-                                              : (height[grid_index(x, y1, desc.width)] -
-                                                 height[grid_index(x, y0, desc.width)]) /
-                                                    span_z;
-            const std::size_t sample = grid_index(x, y, desc.width);
-            slope[sample] = std::sqrt((dhdx * dhdx) + (dhdz * dhdz));
-
-            const float center = height[sample];
-            float neighbor_sum = 0.0F;
-            float neighbor_count = 0.0F;
-            if (x > 0U) {
-                neighbor_sum += height[grid_index(x - 1U, y, desc.width)];
-                neighbor_count += 1.0F;
-            }
-            if (x + 1U < desc.width) {
-                neighbor_sum += height[grid_index(x + 1U, y, desc.width)];
-                neighbor_count += 1.0F;
-            }
-            if (y > 0U) {
-                neighbor_sum += height[grid_index(x, y - 1U, desc.width)];
-                neighbor_count += 1.0F;
-            }
-            if (y + 1U < desc.height) {
-                neighbor_sum += height[grid_index(x, y + 1U, desc.width)];
-                neighbor_count += 1.0F;
-            }
-            curvature[sample] =
-                neighbor_count == 0.0F ? 0.0F : ((neighbor_sum / neighbor_count) - center);
-            max_slope = std::max(max_slope, slope[sample]);
-            max_abs_curvature = std::max(max_abs_curvature, std::abs(curvature[sample]));
-        }
-    }
+    const cubey::procedural::SlopeCurvature2D analysis =
+        cubey::procedural::compute_slope_curvature(terrain_lab_scalar_field(desc, height));
+    slope = terrain_lab_field_values(analysis.slope);
+    curvature = terrain_lab_field_values(analysis.curvature);
+    max_slope = analysis.max_slope;
+    max_abs_curvature = analysis.max_abs_curvature;
 }
 
 [[nodiscard]] bool flow_neighbor(const TerrainLabGridDesc& desc, std::uint32_t x, std::uint32_t y,
@@ -974,16 +959,16 @@ make_empty_mountain_driver_fields(const TerrainLabGridDesc& desc) {
             const float summit = ridge_profile(fbm((q.x * 1.62F) + 31.0F, (q.z * 1.48F) - 27.0F,
                                                    config.seed + 3621U, 5) *
                                                    1.15F,
-                                               2.05F) *
+                                               1.72F) *
                                  smoothstep(0.28F, 0.82F, mountain_body);
             const float fold_a = ridge_profile(
-                fbm((qa.x * 2.10F) - 15.0F, (qa.z * 0.92F) + 19.0F, config.seed + 3611U, 5) * 1.12F,
-                2.25F);
+                fbm((qa.x * 1.72F) - 15.0F, (qa.z * 0.76F) + 19.0F, config.seed + 3611U, 5) * 1.06F,
+                1.82F);
             const float fold_b = ridge_profile(fbm((qb.x * 2.62F) + 21.0F, (qb.z * 1.18F) - 23.0F,
                                                    config.seed + 3613U, 4) *
-                                                   1.18F,
-                                               2.65F) *
-                                 0.46F;
+                                                   1.08F,
+                                               2.12F) *
+                                 0.36F;
             const float fold = std::max(fold_a, fold_b) * relief_gate;
             const float rough =
                 fbm((q.x * 2.10F) + 5.0F, (q.z * 1.92F) - 7.0F, config.seed + 3617U, 4) * 0.5F +
@@ -992,18 +977,18 @@ make_empty_mountain_driver_fields(const TerrainLabGridDesc& desc) {
                 fbm((q.x * 3.40F) - 3.0F, (q.z * 3.05F) + 8.0F, config.seed + 3619U, 3) * 0.5F +
                 0.5F;
 
-            const float uplift = saturate(0.16F + mountain_body * 0.54F + range_core * 0.15F +
-                                          rolling_uplift * 0.06F + summit * 0.18F + rough * 0.03F);
+            const float uplift = saturate(0.16F + mountain_body * 0.58F + range_core * 0.17F +
+                                          rolling_uplift * 0.08F + summit * 0.10F + rough * 0.02F);
             const float base = saturate(0.16F + mountain_body * 0.54F + broad_uplift * 0.18F +
                                         rolling_uplift * 0.08F + range_core * 0.11F +
-                                        summit * 0.09F + rough * 0.04F);
+                                        summit * 0.05F + rough * 0.03F);
             const float relief =
-                saturate(fold * 0.46F + rough * relief_gate * 0.14F + fine * relief_gate * 0.06F +
-                         summit * 0.32F + range_core * 0.22F + mountain_body * 0.10F);
+                saturate(fold * 0.38F + rough * relief_gate * 0.10F + fine * relief_gate * 0.04F +
+                         summit * 0.18F + range_core * 0.30F + mountain_body * 0.14F);
             const float height_norm = (mountain_body - 0.28F) * 0.50F + range_core * 0.22F +
-                                      rolling_uplift * 0.12F + uplift * 0.18F + summit * 0.42F +
-                                      fold * 0.25F + (rough - 0.5F) * relief_gate * 0.055F +
-                                      (fine - 0.5F) * relief_gate * 0.025F - 0.30F;
+                                      rolling_uplift * 0.16F + uplift * 0.20F + summit * 0.22F +
+                                      fold * 0.20F + (rough - 0.5F) * relief_gate * 0.040F +
+                                      (fine - 0.5F) * relief_gate * 0.016F - 0.30F;
 
             mountain.base_potential[sample] = base;
             mountain.relief_potential[sample] = relief;
@@ -1013,7 +998,7 @@ make_empty_mountain_driver_fields(const TerrainLabGridDesc& desc) {
     }
 
     std::vector<float> macro_smoothed = mountain.provisional_height_m;
-    for (std::uint32_t iteration = 0; iteration < 2U; ++iteration) {
+    for (std::uint32_t iteration = 0; iteration < 4U; ++iteration) {
         std::vector<float> next = macro_smoothed;
         for (std::uint32_t y = 1U; y + 1U < desc.height; ++y) {
             for (std::uint32_t x = 1U; x + 1U < desc.width; ++x) {
@@ -1023,7 +1008,7 @@ make_empty_mountain_driver_fields(const TerrainLabGridDesc& desc) {
                                      macro_smoothed[grid_index(x, y - 1U, desc.width)] +
                                      macro_smoothed[grid_index(x, y + 1U, desc.width)]) *
                                     0.25F;
-                next[sample] = lerp(macro_smoothed[sample], cross, 0.30F);
+                next[sample] = lerp(macro_smoothed[sample], cross, 0.38F);
             }
         }
         macro_smoothed.swap(next);
@@ -1035,14 +1020,21 @@ make_empty_mountain_driver_fields(const TerrainLabGridDesc& desc) {
     std::vector<std::uint8_t> flow_direction;
     std::vector<float> flow_accumulation;
     std::vector<float> stream_power;
-    float max_slope = 0.0F;
-    float max_abs_curvature = 0.0F;
     float max_flow_accumulation = 0.0F;
     float max_stream_power = 0.0F;
-    compute_slope_and_curvature(desc, mountain.provisional_height_m, slope, curvature, max_slope,
-                                max_abs_curvature);
+    const cubey::procedural::ScalarField2D provisional_height_field =
+        terrain_lab_scalar_field(desc, mountain.provisional_height_m);
+    const cubey::procedural::SlopeCurvature2D terrain_analysis =
+        cubey::procedural::compute_slope_curvature(provisional_height_field);
+    slope = terrain_lab_field_values(terrain_analysis.slope);
+    curvature = terrain_lab_field_values(terrain_analysis.curvature);
     compute_flow_fields(desc, mountain.provisional_height_m, slope, flow_direction,
                         flow_accumulation, stream_power, max_flow_accumulation, max_stream_power);
+    const cubey::procedural::LocalRelief2D local_relief_fields =
+        cubey::procedural::compute_local_relief(provisional_height_field, 4U);
+    const std::span<const float> local_min_values = local_relief_fields.local_min.values();
+    const std::span<const float> local_mean_values = local_relief_fields.local_mean.values();
+    const std::span<const float> local_span_values = local_relief_fields.local_span.values();
 
     const float inv_log_count =
         1.0F / std::log1p(static_cast<float>(std::max<std::size_t>(mountain.sample_count(), 1U)));
@@ -1052,34 +1044,13 @@ make_empty_mountain_driver_fields(const TerrainLabGridDesc& desc) {
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const std::size_t sample = grid_index(x, y, desc.width);
-            float local_min = mountain.provisional_height_m[sample];
-            float local_max = mountain.provisional_height_m[sample];
-            float local_sum = 0.0F;
-            float local_count = 0.0F;
-            for (std::int32_t oy = -4; oy <= 4; ++oy) {
-                for (std::int32_t ox = -4; ox <= 4; ++ox) {
-                    const auto nx = static_cast<std::int32_t>(x) + ox;
-                    const auto ny = static_cast<std::int32_t>(y) + oy;
-                    if (nx < 0 || ny < 0 || nx >= static_cast<std::int32_t>(desc.width) ||
-                        ny >= static_cast<std::int32_t>(desc.height)) {
-                        continue;
-                    }
-                    const float h = mountain.provisional_height_m[grid_index(
-                        static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny),
-                        desc.width)];
-                    local_min = std::min(local_min, h);
-                    local_max = std::max(local_max, h);
-                    local_sum += h;
-                    local_count += 1.0F;
-                }
-            }
-
             const float height = mountain.provisional_height_m[sample];
-            const float local_span = std::max(local_max - local_min, 0.0F);
+            const float local_min = local_min_values[sample];
+            const float local_span = local_span_values[sample];
             const float local_relief = saturate(local_span / relief_scale_m);
             const float local_position =
                 local_span <= 0.001F ? 0.5F : saturate((height - local_min) / local_span);
-            const float local_mean = local_count <= 0.0F ? height : local_sum / local_count;
+            const float local_mean = local_mean_values[sample];
             const float prominence =
                 saturate(((height - local_mean) / std::max(relief_scale_m * 0.42F, 1.0F)) + 0.50F);
             const float flow_t = std::log1p(flow_accumulation[sample]) * inv_log_count;
@@ -1099,8 +1070,8 @@ make_empty_mountain_driver_fields(const TerrainLabGridDesc& desc) {
                           mountain.uplift_source[sample] * 0.16F +
                           mountain.relief_potential[sample] * 0.24F));
             const float ridge =
-                saturate((divide * 0.48F + mountain.relief_potential[sample] * 0.34F +
-                          prominence * 0.12F + mountain.base_potential[sample] * 0.10F) *
+                saturate((divide * 0.54F + mountain.relief_potential[sample] * 0.38F +
+                          prominence * 0.12F + mountain.base_potential[sample] * 0.14F) *
                          (1.0F - valley * 0.34F));
             const float crest =
                 saturate((ridge * smoothstep(0.50F, 0.86F, local_position) +
@@ -1137,7 +1108,7 @@ make_empty_mountain_driver_fields(const TerrainLabGridDesc& desc) {
             mountain.relief_potential[sample] = relief;
             mountain.process_potential[sample] = process;
             mountain.provisional_height_m[sample] +=
-                (ridge * 0.28F + peak * 0.24F + cliff * 0.04F - valley * 0.025F) *
+                (ridge * 0.20F + peak * 0.12F + cliff * 0.03F - valley * 0.025F) *
                 elevation_scale_m;
         }
     }
@@ -1324,34 +1295,22 @@ generate_alpine_glacial_driver_fields(const TerrainLabConfig& config,
 
     std::vector<float> slope;
     std::vector<float> curvature;
-    float max_slope = 0.0F;
-    float max_abs_curvature = 0.0F;
-    compute_slope_and_curvature(desc, glacial.provisional_height_m, slope, curvature, max_slope,
-                                max_abs_curvature);
+    const cubey::procedural::ScalarField2D provisional_height_field =
+        terrain_lab_scalar_field(desc, glacial.provisional_height_m);
+    const cubey::procedural::SlopeCurvature2D terrain_analysis =
+        cubey::procedural::compute_slope_curvature(provisional_height_field);
+    slope = terrain_lab_field_values(terrain_analysis.slope);
+    curvature = terrain_lab_field_values(terrain_analysis.curvature);
+    const cubey::procedural::LocalRelief2D local_relief_fields =
+        cubey::procedural::compute_local_relief(provisional_height_field, 4U);
+    const std::span<const float> local_span_values = local_relief_fields.local_span.values();
     const float relief_scale_m = std::max(elevation_scale_m * 0.26F, 1.0F);
     const float curvature_scale_m = std::max(elevation_scale_m * 0.016F, 1.0F);
 
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const std::size_t sample = grid_index(x, y, desc.width);
-            float local_min = glacial.provisional_height_m[sample];
-            float local_max = glacial.provisional_height_m[sample];
-            for (std::int32_t oy = -4; oy <= 4; ++oy) {
-                for (std::int32_t ox = -4; ox <= 4; ++ox) {
-                    const auto nx = static_cast<std::int32_t>(x) + ox;
-                    const auto ny = static_cast<std::int32_t>(y) + oy;
-                    if (nx < 0 || ny < 0 || nx >= static_cast<std::int32_t>(desc.width) ||
-                        ny >= static_cast<std::int32_t>(desc.height)) {
-                        continue;
-                    }
-                    const float h = glacial.provisional_height_m[grid_index(
-                        static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny),
-                        desc.width)];
-                    local_min = std::min(local_min, h);
-                    local_max = std::max(local_max, h);
-                }
-            }
-            const float local_relief = saturate((local_max - local_min) / relief_scale_m);
+            const float local_relief = saturate(local_span_values[sample] / relief_scale_m);
             const float slope_t = smoothstep(0.035F, 0.38F, slope[sample]);
             const float convex = smoothstep(curvature_scale_m * 0.16F, curvature_scale_m * 1.90F,
                                             -curvature[sample]);
@@ -4185,21 +4144,21 @@ TerrainLabFieldData generate_mountain_ridges_peaks_fields(const TerrainLabConfig
             const MountainDriverSample driver = mountain_driver_sample_at(mountain, sample);
             const float high_base = smoothstep(0.36F, 0.84F, driver.base_potential);
             const float valley =
-                saturate(driver.valley_source * 0.14F + (1.0F - high_base) * 0.020F);
-            const float ridge = saturate(driver.ridge_source * 0.72F + driver.crest_source * 0.36F +
-                                         driver.peak_source * 0.30F);
+                saturate(driver.valley_source * 0.24F + (1.0F - high_base) * 0.045F);
+            const float ridge = saturate(driver.ridge_source * 0.80F + driver.crest_source * 0.40F +
+                                         driver.peak_source * 0.20F);
             const float divide =
-                saturate(driver.crest_source * 0.54F + ridge * 0.38F + driver.peak_source * 0.28F +
+                saturate(driver.crest_source * 0.54F + ridge * 0.40F + driver.peak_source * 0.18F +
                          high_base * 0.10F - valley * 0.18F);
             const float peak = smoothstep(0.28F, 0.78F, driver.peak_source);
             const float cliff =
                 saturate(driver.cliff_source * 0.72F + driver.shoulder_source * 0.18F);
             const float channel =
-                saturate(driver.valley_source * 0.30F + (1.0F - high_base) * 0.030F);
+                saturate(driver.valley_source * 0.46F + (1.0F - high_base) * 0.055F);
             const float basin = saturate((1.0F - high_base) * 0.26F + valley * 0.18F);
             const float structure =
-                mountain.provisional_height_m[sample] * 1.10F +
-                (ridge * 0.34F + divide * 0.18F + peak * 0.82F + cliff * 0.22F - valley * 0.008F) *
+                mountain.provisional_height_m[sample] * 1.18F +
+                (ridge * 0.30F + divide * 0.20F + peak * 0.38F + cliff * 0.14F - valley * 0.008F) *
                     mountain_elevation_scale_m * config.structure_strength;
 
             assign_driver_fields(
@@ -4258,8 +4217,8 @@ TerrainLabFieldData generate_mountain_ridges_peaks_fields(const TerrainLabConfig
                 fbm((p.x * 12.0F) - 9.0F, (p.z * 11.0F) + 7.0F, config.seed + 3711U, 4) *
                 fields.ridge_influence[sample] * 0.024F;
             const float peak_detail =
-                fbm((p.x * 18.0F) + 13.0F, (p.z * 17.0F) - 15.0F, config.seed + 3713U, 4) *
-                driver.peak_source * 0.034F;
+                fbm((p.x * 14.0F) + 13.0F, (p.z * 13.5F) - 15.0F, config.seed + 3713U, 4) *
+                driver.peak_source * 0.018F;
             const float cliff_detail =
                 fbm((p.x * 15.0F) - 19.0F, (p.z * 15.0F) + 21.0F, config.seed + 3717U, 3) *
                 driver.cliff_source * 0.014F;
