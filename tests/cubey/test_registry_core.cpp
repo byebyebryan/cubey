@@ -25,6 +25,8 @@ void test_procedural_coherent_noise_wraps_fastnoise_lite();
 void test_procedural_field_composition_combines_matching_fields();
 void test_procedural_field_composition_rejects_invalid_inputs();
 void test_procedural_field_composition_transforms_values();
+void test_procedural_field_sets_reject_invalid_fields();
+void test_procedural_field_sets_store_named_scalar_fields();
 void test_procedural_field_shaping_converts_and_terraces_unit_values();
 void test_procedural_legacy_noise_golden_values_are_stable();
 void test_procedural_local_relief_tracks_neighborhood_windows();
@@ -147,6 +149,8 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_process_resource_stats_sampler_reports_cpu_after_second_sample),
         CUBEY_TEST(test_procedural_scalar_field_indexes_centered_samples),
         CUBEY_TEST(test_procedural_scalar_field_summarizes_and_normalizes),
+        CUBEY_TEST(test_procedural_field_sets_store_named_scalar_fields),
+        CUBEY_TEST(test_procedural_field_sets_reject_invalid_fields),
         CUBEY_TEST(test_procedural_box_blur_preserves_dimensions_and_smooths_impulse),
         CUBEY_TEST(test_procedural_field_composition_transforms_values),
         CUBEY_TEST(test_procedural_field_shaping_converts_and_terraces_unit_values),

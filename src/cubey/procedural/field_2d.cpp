@@ -10,6 +10,11 @@ std::size_t sample_count(const Grid2DDesc& desc) {
     return static_cast<std::size_t>(desc.width) * static_cast<std::size_t>(desc.height);
 }
 
+bool same_grid_desc(const Grid2DDesc& lhs, const Grid2DDesc& rhs) {
+    return lhs.width == rhs.width && lhs.height == rhs.height && lhs.cell_size == rhs.cell_size &&
+           lhs.origin_x == rhs.origin_x && lhs.origin_y == rhs.origin_y;
+}
+
 std::size_t grid_index(std::uint32_t x, std::uint32_t y, std::uint32_t width) {
     return (static_cast<std::size_t>(y) * static_cast<std::size_t>(width)) + x;
 }

@@ -24,6 +24,7 @@ struct ScalarFieldStats {
 };
 
 [[nodiscard]] std::size_t sample_count(const Grid2DDesc& desc);
+[[nodiscard]] bool same_grid_desc(const Grid2DDesc& lhs, const Grid2DDesc& rhs);
 [[nodiscard]] std::size_t grid_index(std::uint32_t x, std::uint32_t y, std::uint32_t width);
 [[nodiscard]] std::size_t checked_grid_index(const Grid2DDesc& desc, std::uint32_t x,
                                              std::uint32_t y);

@@ -1,4 +1,5 @@
 #include <cubey/procedural/field_2d.h>
+#include <cubey/procedural/field_set_2d.h>
 #include <cubey/procedural/noise.h>
 #include <cubey/procedural/operators.h>
 #include <cubey/procedural/source_fields.h>
@@ -10,6 +11,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace {
 
@@ -85,6 +88,68 @@ void test_procedural_scalar_field_summarizes_and_normalizes() {
     cubey::procedural::normalize_to_unit(field);
     require_near(field.at(0U, 0U), 0.0F, 0.0001F, "normalization should map the minimum to zero");
     require_near(field.at(1U, 1U), 1.0F, 0.0001F, "normalization should map the maximum to one");
+}
+
+void test_procedural_field_sets_store_named_scalar_fields() {
+    const cubey::procedural::Grid2DDesc desc{
+        .width = 2,
+        .height = 2,
+        .cell_size = 4.0F,
+        .origin_x = 10.0F,
+        .origin_y = -6.0F,
+    };
+    cubey::procedural::ScalarField2D height(desc, 0.0F);
+    height.at(0U, 0U) = 1.0F;
+    height.at(1U, 0U) = 3.0F;
+    height.at(0U, 1U) = 5.0F;
+    height.at(1U, 1U) = 7.0F;
+    cubey::procedural::ScalarField2D wetness(desc, 0.25F);
+
+    cubey::procedural::FieldSet2D fields(desc);
+    require(fields.empty(), "new field set should start empty");
+    fields.add_field("height", height);
+    fields.add_field("wetness", wetness);
+
+    require(fields.field_count() == 2U, "field set should track field count");
+    require(fields.has_field("height"), "field set should report known names");
+    require(fields.try_field("missing") == nullptr, "field set should return null for missing names");
+    require_near(fields.field("height").at(1U, 1U), 7.0F, 0.0001F,
+                 "field set should expose named field samples");
+    fields.field("wetness").at(0U, 0U) = 0.5F;
+    require_near(fields.field("wetness").at(0U, 0U), 0.5F, 0.0001F,
+                 "field set should expose writable named fields");
+
+    const std::vector<std::string> names = fields.field_names();
+    require(names.size() == 2U && names[0] == "height" && names[1] == "wetness",
+            "field set should preserve insertion order for names");
+
+    const cubey::procedural::ScalarFieldStats stats = fields.summarize_field("height");
+    require_near(stats.min, 1.0F, 0.0001F, "field set summary should report min");
+    require_near(stats.max, 7.0F, 0.0001F, "field set summary should report max");
+    require_near(stats.mean, 4.0F, 0.0001F, "field set summary should report mean");
+}
+
+void test_procedural_field_sets_reject_invalid_fields() {
+    const cubey::procedural::Grid2DDesc desc{.width = 2, .height = 2};
+    cubey::procedural::FieldSet2D fields(desc);
+    cubey::procedural::ScalarField2D field(desc, 0.0F);
+    cubey::procedural::ScalarField2D other_size({.width = 3, .height = 2}, 0.0F);
+    cubey::procedural::ScalarField2D other_origin({.width = 2, .height = 2, .origin_x = 1.0F},
+                                                  0.0F);
+
+    require_throws([&] { cubey::procedural::FieldSet2D({.width = 0, .height = 2}); },
+                   "field set should reject zero-width descriptors");
+    require_throws([&] { fields.add_field("", field); },
+                   "field set should reject empty field names");
+    fields.add_field("height", field);
+    require_throws([&] { fields.add_field("height", field); },
+                   "field set should reject duplicate field names");
+    require_throws([&] { fields.add_field("other_size", other_size); },
+                   "field set should reject mismatched dimensions");
+    require_throws([&] { fields.add_field("other_origin", other_origin); },
+                   "field set should reject mismatched origins");
+    require_throws([&] { (void)fields.field("missing"); },
+                   "field set should reject missing required fields");
 }
 
 void test_procedural_box_blur_preserves_dimensions_and_smooths_impulse() {
