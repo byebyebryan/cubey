@@ -40,3 +40,6 @@ the detailed foundation notes under `docs/architecture/`.
   current pass over `3DWorld`, `Planet-Generator`, `TerraForge3D`, and
   `terrain-diffusion`, with lessons for code-centric terrain recipes, field
   sets, tile contracts, diagnostics, and ML non-goals.
+- [Procedural consumer inventory](procedural-consumer-inventory.md):
+  current inventory of atmosphere, cloud, ocean, fluid, planet, and future
+  terrain procedural consumers that should shape shared foundation work.
