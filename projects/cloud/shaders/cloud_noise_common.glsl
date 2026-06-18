@@ -1,6 +1,8 @@
 #ifndef CUBEY_CLOUD_NOISE_COMMON_GLSL
 #define CUBEY_CLOUD_NOISE_COMMON_GLSL
 
+#include "cubey/procedural/operators.glsl"
+
 // Source-aligned helper set from TerrainEngine-OpenGL's cloud noise shaders.
 // TerrainEngine credits Sebastien Hillaire's tileable volume noise work and
 // NadirRoGue/Nadir Roman Guerrero for the cloud noise references.
@@ -196,7 +198,7 @@ float cloud_glm_perlin_4d(vec4 position, vec4 rep) {
 }
 
 float cloud_remap(float value, float old_min, float old_max, float new_min, float new_max) {
-    return new_min + (((value - old_min) / (old_max - old_min)) * (new_max - new_min));
+    return cubey_proc_remap(value, old_min, old_max, new_min, new_max);
 }
 
 float cloud_worley_noise_3d(vec3 p, float cell_count) {

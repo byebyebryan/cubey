@@ -1,6 +1,8 @@
 #ifndef CUBEY_CLOUD_COMMON_GLSL
 #define CUBEY_CLOUD_COMMON_GLSL
 
+#include "cubey/procedural/operators.glsl"
+
 const float CLOUD_PI = 3.14159265359;
 
 const int CLOUD_DEBUG_FINAL = 0;
@@ -74,8 +76,8 @@ float cloud_saturate(float value) {
 }
 
 float cloud_remap(float value, float old_min, float old_max, float new_min, float new_max) {
-    return new_min + ((value - old_min) / max(old_max - old_min, 0.00001)) *
-                         (new_max - new_min);
+    return cubey_proc_remap(value, old_min, old_min + max(old_max - old_min, 0.00001),
+                            new_min, new_max);
 }
 
 vec3 cloud_view_direction(vec2 position) {

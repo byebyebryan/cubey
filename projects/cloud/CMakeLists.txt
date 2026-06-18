@@ -22,6 +22,7 @@ cubey_add_app_target(
     SHADER_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_common.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_noise_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
 )
 
 if (BUILD_TESTING)
