@@ -1340,6 +1340,44 @@ int main() {
     require(summary.mean_channel_influence > 0.0F,
             "terrain lab summary should include channel coverage");
 
+    const cubey::procedural::Grid2DDesc procedural_desc =
+        terrain::terrain_lab_grid_desc_to_procedural(fields.desc);
+    require(procedural_desc.width == fields.desc.width && procedural_desc.height == fields.desc.height,
+            "terrain lab procedural bridge should preserve grid dimensions");
+    require_near(procedural_desc.cell_size, fields.desc.cell_size_m, 0.001F,
+                 "terrain lab procedural bridge should preserve cell size");
+    require_near(procedural_desc.origin_x, fields.desc.origin_x_m, 0.001F,
+                 "terrain lab procedural bridge should preserve X origin");
+    require_near(procedural_desc.origin_y, fields.desc.origin_z_m, 0.001F,
+                 "terrain lab procedural bridge should map Z origin to procedural Y");
+
+    const cubey::procedural::FieldSet2D field_set = terrain::make_terrain_lab_field_set(fields);
+    require(cubey::procedural::same_grid_desc(field_set.desc(), procedural_desc),
+            "terrain lab field set should use the procedural grid descriptor");
+    require(field_set.field_count() == 7U,
+            "terrain lab field set should expose the neutral proof fields");
+    require(field_set.has_field("height") && field_set.has_field("driver_base") &&
+                field_set.has_field("driver_relief") && field_set.has_field("driver_process") &&
+                field_set.has_field("driver_selection") && field_set.has_field("wetness") &&
+                field_set.has_field("water_presence"),
+            "terrain lab field set should expose expected field names");
+    require(field_set.field("height").sample_count() == fields.sample_count(),
+            "terrain lab field set height should preserve sample count");
+    require_near(field_set.field("height").at(0U, 0U), fields.height_m.front(), 0.001F,
+                 "terrain lab field set height should copy terrain height samples");
+    require_near(field_set.field("driver_base").at(0U, 0U), fields.driver_base_potential.front(),
+                 0.001F, "terrain lab field set should copy driver base samples");
+    require_near(field_set.field("wetness").at(0U, 0U), fields.wetness.front(), 0.001F,
+                 "terrain lab field set should copy wetness samples");
+    const cubey::procedural::ScalarFieldStats height_stats =
+        field_set.summarize_field("height");
+    require_near(height_stats.min, summary.min_height_m, 0.001F,
+                 "terrain lab field set height summary should match terrain summary min");
+    require_near(height_stats.max, summary.max_height_m, 0.001F,
+                 "terrain lab field set height summary should match terrain summary max");
+    require_near(height_stats.mean, summary.mean_height_m, 0.001F,
+                 "terrain lab field set height summary should match terrain summary mean");
+
     terrain::TerrainLabConfig river_config = small;
     river_config.slice_preset = terrain::TerrainLabSlicePreset::TemperateMountainRivers;
     const terrain::TerrainLabFieldData river_fields =

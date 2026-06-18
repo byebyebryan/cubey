@@ -2,6 +2,8 @@
 
 #include "terrain_lab_config.h"
 
+#include <cubey/procedural/field_set_2d.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -120,6 +122,10 @@ struct TerrainLabFieldData {
 [[nodiscard]] float terrain_lab_grid_sample_x_m(const TerrainLabGridDesc& desc, std::uint32_t x);
 [[nodiscard]] float terrain_lab_grid_sample_z_m(const TerrainLabGridDesc& desc, std::uint32_t y);
 void validate_terrain_lab_fields(const TerrainLabFieldData& fields);
+[[nodiscard]] cubey::procedural::Grid2DDesc
+terrain_lab_grid_desc_to_procedural(const TerrainLabGridDesc& desc);
+[[nodiscard]] cubey::procedural::FieldSet2D
+make_terrain_lab_field_set(const TerrainLabFieldData& fields);
 [[nodiscard]] TerrainLabFieldSummary
 summarize_terrain_lab_fields(const TerrainLabFieldData& fields);
 [[nodiscard]] TerrainLabFieldData generate_terrain_lab_fields(const TerrainLabConfig& config);

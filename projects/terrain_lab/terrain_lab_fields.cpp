@@ -3393,6 +3393,51 @@ void validate_terrain_lab_fields(const TerrainLabFieldData& fields) {
     }
 }
 
+cubey::procedural::Grid2DDesc
+terrain_lab_grid_desc_to_procedural(const TerrainLabGridDesc& desc) {
+    if (desc.width == 0U || desc.height == 0U) {
+        throw std::runtime_error("terrain lab procedural grid bridge requires nonzero dimensions");
+    }
+    validate_finite(desc.cell_size_m, "terrain lab procedural grid bridge requires finite metadata");
+    validate_finite(desc.origin_x_m, "terrain lab procedural grid bridge requires finite metadata");
+    validate_finite(desc.origin_z_m, "terrain lab procedural grid bridge requires finite metadata");
+    if (desc.cell_size_m <= 0.0F) {
+        throw std::runtime_error("terrain lab procedural grid bridge requires positive cell size");
+    }
+    return cubey::procedural::Grid2DDesc{
+        .width = desc.width,
+        .height = desc.height,
+        .cell_size = desc.cell_size_m,
+        .origin_x = desc.origin_x_m,
+        .origin_y = desc.origin_z_m,
+    };
+}
+
+cubey::procedural::FieldSet2D make_terrain_lab_field_set(const TerrainLabFieldData& fields) {
+    validate_terrain_lab_fields(fields);
+    const cubey::procedural::Grid2DDesc desc = terrain_lab_grid_desc_to_procedural(fields.desc);
+    cubey::procedural::FieldSet2D field_set(desc);
+    const std::size_t count = cubey::procedural::sample_count(desc);
+
+    const auto add_field = [&](const char* name, std::span<const float> values) {
+        if (values.size() != count) {
+            throw std::runtime_error("terrain lab procedural field bridge size mismatch");
+        }
+        cubey::procedural::ScalarField2D field(desc, 0.0F);
+        std::copy(values.begin(), values.end(), field.values().begin());
+        field_set.add_field(name, field);
+    };
+
+    add_field("height", fields.height_m);
+    add_field("driver_base", fields.driver_base_potential);
+    add_field("driver_relief", fields.driver_relief_potential);
+    add_field("driver_process", fields.driver_process_potential);
+    add_field("driver_selection", fields.driver_selection_mask);
+    add_field("wetness", fields.wetness);
+    add_field("water_presence", fields.water_presence);
+    return field_set;
+}
+
 TerrainLabFieldSummary summarize_terrain_lab_fields(const TerrainLabFieldData& fields) {
     validate_terrain_lab_fields(fields);
     TerrainLabFieldSummary summary{
