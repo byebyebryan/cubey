@@ -17,6 +17,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
 )
 

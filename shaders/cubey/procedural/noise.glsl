@@ -2,6 +2,7 @@
 #define CUBEY_PROCEDURAL_NOISE_GLSL
 
 #include "cubey/procedural/operators.glsl"
+#include "cubey/procedural/random.glsl"
 
 float cubey_proc_hash_sindot_2d(vec2 value) {
     return fract(sin(dot(value, vec2(127.1, 311.7))) * 43758.5453);
@@ -18,12 +19,6 @@ float cubey_proc_value_noise_sindot_2d(vec2 value) {
     return mix(mix(a, b, shaped.x), mix(c, d, shaped.x), shaped.y);
 }
 
-float cubey_proc_hash_pcg_2d(vec2 value) {
-    vec3 p3 = fract(vec3(value.xyx) * 0.1031);
-    p3 += dot(p3, p3.yzx + 33.33);
-    return fract((p3.x + p3.y) * p3.z);
-}
-
 float cubey_proc_value_noise_pcg_2d(vec2 value) {
     vec2 cell = floor(value);
     vec2 local = fract(value);
@@ -33,15 +28,6 @@ float cubey_proc_value_noise_pcg_2d(vec2 value) {
     float c = cubey_proc_hash_pcg_2d(cell + vec2(0.0, 1.0));
     float d = cubey_proc_hash_pcg_2d(cell + vec2(1.0, 1.0));
     return mix(mix(a, b, shaped.x), mix(c, d, shaped.x), shaped.y);
-}
-
-uint cubey_proc_hash_u32(uint value) {
-    value ^= value >> 16U;
-    value *= 0x7feb352dU;
-    value ^= value >> 15U;
-    value *= 0x846ca68bU;
-    value ^= value >> 16U;
-    return value;
 }
 
 uint cubey_proc_hash_u32_3d(ivec3 p, uint seed) {

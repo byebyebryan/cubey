@@ -2,8 +2,11 @@
 #include <cubey/procedural/noise.h>
 #include <cubey/procedural/operators.h>
 
+#include "source_file_test_helpers.h"
+
 #include <array>
 #include <cmath>
+#include <filesystem>
 #include <stdexcept>
 
 namespace {
@@ -102,6 +105,23 @@ void test_procedural_operators_include_smootherstep() {
                  "smootherstep midpoint should stay centered");
     require_near(cubey::procedural::smootherstep01(2.0F), 1.0F, 0.0001F,
                  "smootherstep should saturate above one");
+}
+
+void test_procedural_shader_random_helpers_are_shared() {
+    const std::filesystem::path root{CUBEY_SOURCE_DIR};
+    const std::string random_source =
+        cubey::tests::read_source_file(root / "shaders/cubey/procedural/random.glsl");
+    const std::string noise_source =
+        cubey::tests::read_source_file(root / "shaders/cubey/procedural/noise.glsl");
+
+    cubey::tests::require_contains(random_source, "cubey_proc_hash01_u32",
+                                   "shader random helpers should expose uint hash-to-unit");
+    cubey::tests::require_contains(random_source, "cubey_proc_hash_pcg_2d",
+                                   "shader random helpers should expose shared 2D PCG hash");
+    cubey::tests::require_contains(random_source, "cubey_proc_hash_pcg_3d",
+                                   "shader random helpers should expose shared 3D PCG hash");
+    cubey::tests::require_contains(noise_source, "#include \"cubey/procedural/random.glsl\"",
+                                   "shader noise helpers should consume shared random helpers");
 }
 
 void test_procedural_noise_is_deterministic_and_bounded() {
