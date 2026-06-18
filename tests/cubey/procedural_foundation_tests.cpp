@@ -2,6 +2,7 @@
 #include <cubey/procedural/field_set_2d.h>
 #include <cubey/procedural/noise.h>
 #include <cubey/procedural/operators.h>
+#include <cubey/procedural/seed.h>
 #include <cubey/procedural/source_fields.h>
 
 #include "source_file_test_helpers.h"
@@ -448,6 +449,60 @@ void test_procedural_operators_include_smootherstep() {
                  "smootherstep midpoint should stay centered");
     require_near(cubey::procedural::smootherstep01(2.0F), 1.0F, 0.0001F,
                  "smootherstep should saturate above one");
+}
+
+void test_procedural_seed_domains_are_stable() {
+    require(cubey::procedural::stable_hash_string("") == 14695981039346656037ULL,
+            "stable string hash should keep the FNV offset basis for empty strings");
+    require(cubey::procedural::stable_hash_string("cubey") == 8786454520568773403ULL,
+            "stable string hash should keep golden values for project strings");
+    require(cubey::procedural::stable_hash_string("cloud.base-density") ==
+                12429434235878212328ULL,
+            "stable string hash should keep golden values for named procedural domains");
+    require(cubey::procedural::stable_hash_string("atmosphere.night-sky") ==
+                17705195627440025645ULL,
+            "stable string hash should keep golden values for atlas domains");
+
+    const std::uint64_t first = cubey::procedural::derive_seed(42U, "cloud.base-density");
+    const std::uint64_t second = cubey::procedural::derive_seed(42U, "cloud.base-density");
+    const std::uint64_t changed_domain = cubey::procedural::derive_seed(42U, "cloud.detail");
+    const std::uint64_t changed_seed = cubey::procedural::derive_seed(43U, "cloud.base-density");
+    require(first == second, "derived seeds should repeat for the same base seed and domain");
+    require(first != changed_domain, "derived seeds should separate named domains");
+    require(first != changed_seed, "derived seeds should include the base seed");
+
+    const std::uint64_t salted = cubey::procedural::derive_seed(42U, "cloud.base-density", 7U);
+    const std::uint64_t salted_repeat =
+        cubey::procedural::derive_seed(42U, "cloud.base-density", 7U);
+    const std::uint64_t changed_salt =
+        cubey::procedural::derive_seed(42U, "cloud.base-density", 8U);
+    require(salted == salted_repeat, "salted derived seeds should repeat");
+    require(salted != first, "salted derived seeds should differ from unsalted domains");
+    require(salted != changed_salt, "salted derived seeds should include the salt");
+}
+
+void test_procedural_seed_domain_random_is_stable_and_bounded() {
+    const float first = cubey::procedural::random01(77U, "fluid.emitter", 12U, 2U);
+    const float second = cubey::procedural::random01(77U, "fluid.emitter", 12U, 2U);
+    const float changed_index = cubey::procedural::random01(77U, "fluid.emitter", 13U, 2U);
+    const float changed_channel = cubey::procedural::random01(77U, "fluid.emitter", 12U, 3U);
+    const float changed_domain = cubey::procedural::random01(77U, "fluid.transfer", 12U, 2U);
+
+    require_near(first, second, 0.0F, "domain random should repeat exactly");
+    require(first >= 0.0F && first <= 1.0F, "domain random should stay in [0, 1]");
+    require(changed_index >= 0.0F && changed_index <= 1.0F,
+            "changed-index domain random should stay in [0, 1]");
+    require(changed_channel >= 0.0F && changed_channel <= 1.0F,
+            "changed-channel domain random should stay in [0, 1]");
+    require(changed_domain >= 0.0F && changed_domain <= 1.0F,
+            "changed-domain random should stay in [0, 1]");
+    require(first != changed_index, "domain random should include the index");
+    require(first != changed_channel, "domain random should include the channel");
+    require(first != changed_domain, "domain random should include the named domain");
+
+    require_near(cubey::procedural::random01(77U, 12U, 2U),
+                 cubey::procedural::random01(77U, 12U, 2U), 0.0F,
+                 "legacy random01 overload should remain stable");
 }
 
 void test_procedural_shader_random_helpers_are_shared() {

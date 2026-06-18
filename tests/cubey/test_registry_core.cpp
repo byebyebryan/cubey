@@ -35,6 +35,8 @@ void test_procedural_local_relief_tracks_neighborhood_windows();
 void test_procedural_noise_is_deterministic_and_bounded();
 void test_procedural_operators_include_smootherstep();
 void test_procedural_scalar_field_indexes_centered_samples();
+void test_procedural_seed_domain_random_is_stable_and_bounded();
+void test_procedural_seed_domains_are_stable();
 void test_procedural_shader_random_helpers_are_shared();
 void test_procedural_slope_curvature_handles_flat_ramp_and_peak();
 void test_procedural_source_fields_fill_scalar_fields();
@@ -167,6 +169,8 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_slope_curvature_handles_flat_ramp_and_peak),
         CUBEY_TEST(test_procedural_local_relief_tracks_neighborhood_windows),
         CUBEY_TEST(test_procedural_operators_include_smootherstep),
+        CUBEY_TEST(test_procedural_seed_domains_are_stable),
+        CUBEY_TEST(test_procedural_seed_domain_random_is_stable_and_bounded),
         CUBEY_TEST(test_procedural_shader_random_helpers_are_shared),
         CUBEY_TEST(test_procedural_noise_is_deterministic_and_bounded),
         CUBEY_TEST(test_procedural_legacy_noise_golden_values_are_stable),
