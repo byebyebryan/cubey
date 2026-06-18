@@ -2,6 +2,7 @@
 #include <cubey/procedural/field_set_2d.h>
 #include <cubey/procedural/noise.h>
 #include <cubey/procedural/operators.h>
+#include <cubey/procedural/sample_domain.h>
 #include <cubey/procedural/seed.h>
 #include <cubey/procedural/source_fields.h>
 
@@ -83,6 +84,86 @@ void test_procedural_scalar_field_indexes_centered_samples() {
                  "scalar field should expose writable indexed samples");
     require_throws([&field] { (void)field.at(5U, 0U); },
                    "scalar field should reject out-of-range samples");
+}
+
+void test_procedural_sample_domains_wrap_2d_grids() {
+    const cubey::procedural::SampleDomain2D domain{
+        .grid =
+            {
+                .width = 4,
+                .height = 3,
+                .cell_size = 2.5F,
+                .origin_x = 10.0F,
+                .origin_y = -20.0F,
+            },
+        .seed = 1234U,
+        .space = cubey::procedural::ProceduralDomainSpace::Atlas,
+    };
+
+    require(cubey::procedural::sample_count(domain) == 12U,
+            "2D sample domains should delegate sample count to the grid descriptor");
+    require_near(cubey::procedural::grid_sample_x(domain.grid, 0U), 6.25F, 0.0001F,
+                 "2D sample domains should keep centered grid x samples");
+    require_near(cubey::procedural::grid_sample_y(domain.grid, 2U), -17.5F, 0.0001F,
+                 "2D sample domains should keep centered grid y samples");
+    require(domain.seed == 1234U, "2D sample domains should preserve seed metadata");
+    require(domain.space == cubey::procedural::ProceduralDomainSpace::Atlas,
+            "2D sample domains should preserve semantic space metadata");
+
+    require_throws(
+        [] {
+            (void)cubey::procedural::sample_count(cubey::procedural::SampleDomain2D{
+                .grid = {.width = 0U, .height = 2U},
+            });
+        },
+        "2D sample domains should reject zero dimensions");
+}
+
+void test_procedural_sample_domains_index_3d_samples() {
+    const cubey::procedural::SampleDomain3D domain{
+        .width = 4,
+        .height = 3,
+        .depth = 2,
+        .cell_size = 2.0F,
+        .origin_x = 10.0F,
+        .origin_y = -4.0F,
+        .origin_z = 100.0F,
+        .seed = 9876U,
+        .space = cubey::procedural::ProceduralDomainSpace::Volume,
+    };
+
+    require(cubey::procedural::sample_count(domain) == 24U,
+            "3D sample domains should count width * height * depth samples");
+    require(cubey::procedural::sample_index(domain, 2U, 1U, 1U) == 18U,
+            "3D sample domains should use z-major layer then row-major indexing");
+    require_near(cubey::procedural::sample_domain_x(domain, 0U), 7.0F, 0.0001F,
+                 "3D sample domains should center x samples around origin");
+    require_near(cubey::procedural::sample_domain_x(domain, 3U), 13.0F, 0.0001F,
+                 "3D sample domains should center max x samples around origin");
+    require_near(cubey::procedural::sample_domain_y(domain, 0U), -6.0F, 0.0001F,
+                 "3D sample domains should center y samples around origin");
+    require_near(cubey::procedural::sample_domain_z(domain, 1U), 101.0F, 0.0001F,
+                 "3D sample domains should center z samples around origin");
+    require(domain.seed == 9876U, "3D sample domains should preserve seed metadata");
+    require(domain.space == cubey::procedural::ProceduralDomainSpace::Volume,
+            "3D sample domains should preserve semantic space metadata");
+}
+
+void test_procedural_sample_domains_reject_invalid_3d_samples() {
+    const cubey::procedural::SampleDomain3D domain{.width = 2, .height = 2, .depth = 2};
+    require_throws([&] { (void)cubey::procedural::sample_index(domain, 2U, 0U, 0U); },
+                   "3D sample domains should reject out-of-range x indexes");
+    require_throws([&] { (void)cubey::procedural::sample_domain_y(domain, 2U); },
+                   "3D sample domains should reject out-of-range coordinate indexes");
+    require_throws(
+        [] {
+            (void)cubey::procedural::sample_count(cubey::procedural::SampleDomain3D{
+                .width = 2U,
+                .height = 0U,
+                .depth = 2U,
+            });
+        },
+        "3D sample domains should reject zero dimensions");
 }
 
 void test_procedural_scalar_field_summarizes_and_normalizes() {
