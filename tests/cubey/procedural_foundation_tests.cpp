@@ -121,6 +121,37 @@ void test_procedural_legacy_noise_golden_values_are_stable() {
                  0.877368033F, 0.000001F, "legacy ridged fbm should keep stable samples");
 }
 
+void test_procedural_3d_noise_is_deterministic_and_stable() {
+    const float first = cubey::procedural::value_noise_3d(1.25F, -3.75F, 0.5F, 17U);
+    const float second = cubey::procedural::value_noise_3d(1.25F, -3.75F, 0.5F, 17U);
+    require_near(first, second, 0.000001F, "3D value noise should be deterministic");
+    require(first >= -1.0F && first <= 1.0F,
+            "3D value noise should remain in signed unit range");
+
+    const float changed_seed = cubey::procedural::value_noise_3d(1.25F, -3.75F, 0.5F, 18U);
+    require(std::fabs(first - changed_seed) > 0.000001F,
+            "3D value noise should vary when the seed changes");
+
+    const float fbm = cubey::procedural::fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5});
+    require(fbm >= -1.0F && fbm <= 1.0F, "3D fbm should remain in signed unit range");
+
+    const float ridged =
+        cubey::procedural::ridged_fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5});
+    require(ridged >= 0.0F && ridged <= 1.0F, "3D ridged fbm should remain in unit range");
+
+    require_near(cubey::procedural::hash_to_unit(123456789U), 0.659940481F, 0.000001F,
+                 "3D-compatible hash-to-unit should keep stable samples");
+    require(cubey::procedural::hash_u32(-2, 7, 4, 19U) == 2469915974U,
+            "3D-compatible hash should keep stable samples");
+    require_near(cubey::procedural::value_noise_3d(1.25F, -3.75F, 0.5F, 17U),
+                 0.302227825F, 0.000001F,
+                 "3D value noise should keep stable samples");
+    require_near(cubey::procedural::fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5}),
+                 -0.123893112F, 0.000001F, "3D fbm should keep stable samples");
+    require_near(cubey::procedural::ridged_fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5}),
+                 0.767563224F, 0.000001F, "3D ridged fbm should keep stable samples");
+}
+
 void test_procedural_coherent_noise_wraps_fastnoise_lite() {
     using cubey::procedural::CoherentCellularDistance;
     using cubey::procedural::CoherentCellularReturn;

@@ -109,6 +109,11 @@ to_fast_cellular_return(CoherentCellularReturn return_type) {
     return static_cast<int>(std::max<std::uint32_t>(octaves, 1U));
 }
 
+[[nodiscard]] float smootherstep01(float value) {
+    const float x = saturate(value);
+    return x * x * x * (x * (x * 6.0F - 15.0F) + 10.0F);
+}
+
 [[nodiscard]] FastNoiseLite make_noise(const CoherentNoiseConfig& config) {
     FastNoiseLite noise(static_cast<int>(config.seed));
     noise.SetFrequency(config.frequency);
@@ -176,6 +181,28 @@ std::uint32_t hash_u32(std::int32_t x, std::int32_t y, std::uint64_t seed) {
     return static_cast<std::uint32_t>(value);
 }
 
+std::uint32_t hash_u32(std::uint32_t value) {
+    value ^= value >> 16U;
+    value *= 0x7feb352dU;
+    value ^= value >> 15U;
+    value *= 0x846ca68bU;
+    value ^= value >> 16U;
+    return value;
+}
+
+std::uint32_t hash_u32(std::int32_t x, std::int32_t y, std::int32_t z, std::uint32_t seed) {
+    std::uint32_t value = seed;
+    value ^= static_cast<std::uint32_t>(x) * 0x9e3779b9U;
+    value ^= static_cast<std::uint32_t>(y) * 0x85ebca6bU;
+    value ^= static_cast<std::uint32_t>(z) * 0xc2b2ae35U;
+    return hash_u32(value);
+}
+
+float hash_to_unit(std::uint32_t value) {
+    constexpr float kInv24Bit = 1.0F / 16'777'215.0F;
+    return static_cast<float>(hash_u32(value) >> 8U) * kInv24Bit;
+}
+
 float random01(std::uint64_t seed, std::uint32_t index, std::uint32_t channel) {
     constexpr float kScale = 1.0F / static_cast<float>(std::numeric_limits<std::uint32_t>::max());
     return static_cast<float>(hash_u32(static_cast<std::int32_t>(index),
@@ -220,6 +247,52 @@ float fbm_2d(float x, float y, std::uint64_t seed, const Fbm2DConfig& config) {
 
 float ridged_fbm_2d(float x, float y, std::uint64_t seed, const Fbm2DConfig& config) {
     const float noise = fbm_2d(x, y, seed, config);
+    const float ridge = 1.0F - std::abs(noise);
+    return ridge * ridge;
+}
+
+float value_noise_3d(float x, float y, float z, std::uint32_t seed) {
+    const float floor_x = std::floor(x);
+    const float floor_y = std::floor(y);
+    const float floor_z = std::floor(z);
+    const auto x0 = static_cast<std::int32_t>(floor_x);
+    const auto y0 = static_cast<std::int32_t>(floor_y);
+    const auto z0 = static_cast<std::int32_t>(floor_z);
+    const float tx = smootherstep01(x - floor_x);
+    const float ty = smootherstep01(y - floor_y);
+    const float tz = smootherstep01(z - floor_z);
+
+    const auto corner = [seed](std::int32_t ix, std::int32_t iy, std::int32_t iz) {
+        constexpr float kInv24Bit = 1.0F / 16'777'215.0F;
+        return static_cast<float>(hash_u32(ix, iy, iz, seed) >> 8U) * kInv24Bit * 2.0F -
+               1.0F;
+    };
+
+    const float x00 = lerp(corner(x0, y0, z0), corner(x0 + 1, y0, z0), tx);
+    const float x10 = lerp(corner(x0, y0 + 1, z0), corner(x0 + 1, y0 + 1, z0), tx);
+    const float x01 = lerp(corner(x0, y0, z0 + 1), corner(x0 + 1, y0, z0 + 1), tx);
+    const float x11 = lerp(corner(x0, y0 + 1, z0 + 1), corner(x0 + 1, y0 + 1, z0 + 1), tx);
+    return lerp(lerp(x00, x10, ty), lerp(x01, x11, ty), tz);
+}
+
+float fbm_3d(float x, float y, float z, std::uint32_t seed, const Fbm3DConfig& config) {
+    float frequency = 1.0F;
+    float amplitude = config.initial_amplitude;
+    float sum = 0.0F;
+    float weight = 0.0F;
+    for (std::uint32_t octave = 0; octave < config.octaves; ++octave) {
+        sum += value_noise_3d(x * frequency, y * frequency, z * frequency,
+                              seed + octave * config.seed_stride) *
+               amplitude;
+        weight += amplitude;
+        frequency *= config.lacunarity;
+        amplitude *= config.gain;
+    }
+    return weight == 0.0F ? 0.0F : sum / weight;
+}
+
+float ridged_fbm_3d(float x, float y, float z, std::uint32_t seed, const Fbm3DConfig& config) {
+    const float noise = fbm_3d(x, y, z, seed, config);
     const float ridge = 1.0F - std::abs(noise);
     return ridge * ridge;
 }
