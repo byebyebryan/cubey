@@ -23,6 +23,7 @@ add_library(cubey_core STATIC
     core/image_io.cpp
     core/jobs.cpp
     core/profiling.cpp
+    procedural/artifact_metadata.cpp
     procedural/field_2d.cpp
     procedural/field_set_2d.cpp
     procedural/noise.cpp

@@ -1,3 +1,4 @@
+#include <cubey/procedural/artifact_metadata.h>
 #include <cubey/procedural/field_2d.h>
 #include <cubey/procedural/field_set_2d.h>
 #include <cubey/procedural/noise.h>
@@ -164,6 +165,95 @@ void test_procedural_sample_domains_reject_invalid_3d_samples() {
             });
         },
         "3D sample domains should reject zero dimensions");
+}
+
+void test_procedural_artifact_metadata_counts_mipped_samples() {
+    const cubey::procedural::ProceduralArtifactExtent extent{
+        .width = 8,
+        .height = 4,
+        .depth = 1,
+        .faces = 6,
+        .mip_levels = 4,
+    };
+
+    require(cubey::procedural::procedural_artifact_mip_dimension(8U, 0U) == 8U,
+            "artifact mip dimension should preserve base level");
+    require(cubey::procedural::procedural_artifact_mip_dimension(8U, 2U) == 2U,
+            "artifact mip dimension should halve each level");
+    require(cubey::procedural::procedural_artifact_mip_dimension(1U, 4U) == 1U,
+            "artifact mip dimension should clamp at one");
+    require(cubey::procedural::procedural_artifact_mip_sample_count(extent, 0U) == 192U,
+            "artifact mip sample count should include faces");
+    require(cubey::procedural::procedural_artifact_mip_sample_count(extent, 1U) == 48U,
+            "artifact mip sample count should shrink dimensions per mip");
+    require(cubey::procedural::procedural_artifact_sample_count(extent) == 258U,
+            "artifact sample count should include all mip levels");
+}
+
+void test_procedural_artifact_metadata_validates_identity_and_layout() {
+    const cubey::procedural::ProceduralArtifactMetadata metadata{
+        .name = "night sky atlas",
+        .generator = "cubey::render::generate_night_sky_atlas",
+        .formula_version = "atmosphere-night-sky-atlas-v1",
+        .domain = "atmosphere.night_sky_atlas",
+        .seed = 12345U,
+        .space = cubey::procedural::ProceduralDomainSpace::Spherical,
+        .kind = cubey::procedural::ProceduralArtifactKind::TextureCube,
+        .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba32Float,
+        .extent = {.width = 64, .height = 64, .depth = 1, .faces = 6, .mip_levels = 7},
+        .content_hash = 0x1234U,
+    };
+
+    cubey::procedural::validate_procedural_artifact_metadata(metadata);
+    require(metadata.space == cubey::procedural::ProceduralDomainSpace::Spherical,
+            "artifact metadata should preserve semantic domain space");
+    require(metadata.kind == cubey::procedural::ProceduralArtifactKind::TextureCube,
+            "artifact metadata should preserve artifact kind");
+    require(metadata.format == cubey::procedural::ProceduralArtifactValueFormat::Rgba32Float,
+            "artifact metadata should preserve value format");
+
+    require_throws(
+        [] {
+            cubey::procedural::validate_procedural_artifact_metadata(
+                cubey::procedural::ProceduralArtifactMetadata{
+                    .generator = "generator",
+                    .formula_version = "v1",
+                    .domain = "domain",
+                    .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+                });
+        },
+        "artifact metadata should reject empty names");
+    require_throws(
+        [] {
+            cubey::procedural::validate_procedural_artifact_metadata(
+                cubey::procedural::ProceduralArtifactMetadata{
+                    .name = "texture",
+                    .generator = "generator",
+                    .formula_version = "v1",
+                    .domain = "domain",
+                    .format = cubey::procedural::ProceduralArtifactValueFormat::Unknown,
+                });
+        },
+        "artifact metadata should reject unknown formats");
+    require_throws(
+        [] {
+            cubey::procedural::validate_procedural_artifact_metadata(
+                cubey::procedural::ProceduralArtifactMetadata{
+                    .name = "texture",
+                    .generator = "generator",
+                    .formula_version = "v1",
+                    .domain = "domain",
+                    .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+                    .extent = {.width = 1, .height = 1, .depth = 1, .faces = 0, .mip_levels = 1},
+                });
+        },
+        "artifact metadata should reject invalid extents");
+    require_throws(
+        [] {
+            (void)cubey::procedural::procedural_artifact_mip_sample_count(
+                {.width = 4, .height = 4, .depth = 1, .faces = 1, .mip_levels = 2}, 2U);
+        },
+        "artifact metadata should reject out-of-range mip levels");
 }
 
 void test_procedural_scalar_field_summarizes_and_normalizes() {
