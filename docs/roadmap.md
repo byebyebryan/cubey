@@ -130,12 +130,13 @@ Current checkpoint:
 - Reusable `cubey::math` wraps GLM matrix/vector/quaternion types and the
   current Vulkan transform/projection conventions used by the shared
   transform/camera helpers and cube examples.
-- Reusable `cubey::procedural` now provides the first CPU-side procedural
-  foundation slice: local 2D scalar fields, centered grid sampling,
-  deterministic 2D value-noise/FBM/ridged-FBM, scalar operators, field
-  normalization, and weighted 3x3 blur. Terrain Lab consumes the shared
-  scalar/noise helpers so future terrain, planet, ocean-adjacent, cloud, and
-  fluid drivers do not grow separate copies of the same source-field utilities.
+- Reusable `cubey::procedural` now provides the first procedural foundation
+  slice: local 2D scalar fields, centered grid sampling, deterministic 2D/3D
+  value-noise/FBM/ridged-FBM, scalar operators, field normalization, weighted
+  3x3 blur, and matching small GLSL helper includes. Terrain Lab, procedural
+  terrain, planet, ocean, water, and active cloud now consume shared helpers
+  where their existing formulas match, while their domain drivers remain
+  project-owned.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets, including shared include
   directories and dependency tracking. Reusable `cubey::vulkan::read_spirv_file`

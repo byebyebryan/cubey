@@ -73,17 +73,33 @@ compiled into `cubey::core`:
 
 - `Grid2DDesc` and `ScalarField2D` provide local 2D scalar-field storage,
   centered sample coordinates, bounds-checked indexing, and field summaries.
-- `operators.h` provides scalar helpers (`saturate`, `lerp`, `smoothstep`) plus
-  first-pass field operators (`box_blur_3x3`, `normalize_to_unit`).
+- `operators.h` provides scalar helpers (`saturate`, `lerp`, `smoothstep`,
+  `smootherstep01`) plus first-pass field operators (`box_blur_3x3`,
+  `normalize_to_unit`).
 - `noise.h` provides Cubey-wrapped FastNoiseLite coherent noise/domain-warp
-  sampling plus deterministic legacy 2D hash/value-noise, FBM, and ridged FBM
-  with explicit octave/lacunarity/gain/seed-stride configuration.
+  sampling plus deterministic legacy 2D and 3D hash/value-noise, FBM, and
+  ridged FBM with explicit octave/lacunarity/gain/seed-stride configuration.
+- `shaders/cubey/procedural` mirrors the small GLSL side of this layer with
+  shared remap/smoothing helpers and deterministic value-noise/FBM helpers for
+  formulas that already match existing project code.
 
 Terrain Lab now consumes this shared layer for its scalar helpers and
 deterministic FBM source. It also exposes an opt-in FastNoiseLite backend for
 the desert dune source driver. That adoption remains intentionally
 conservative: default captures keep the legacy backend, while the new coherent
 noise path can be inspected explicitly.
+
+The first preserve-output migration wave also routes existing duplicate helpers
+through shared primitives where the formulas already matched:
+
+- `projects/procedural_terrain` uses shared CPU scalar and deterministic FBM
+  helpers while preserving its current field output.
+- `projects/planet` uses shared deterministic 3D CPU and GLSL FBM for its
+  terrain field while keeping terrain shaping constants project-owned.
+- `projects/terrain_lab`, `projects/ocean`, and `projects/fluid/water_2d`
+  consume shared GLSL value-noise helpers for matching shader breakup/noise.
+- `projects/cloud` uses the shared GLSL remap primitive in the active cloud
+  common shaders while leaving source-aligned Perlin/Worley recipes intact.
 
 ## Migration Tiers
 
@@ -99,10 +115,10 @@ through one noise API:
   atlas features, and star placement should consume shared primitives only when
   the formulas match their current behavior.
 
-The first migration wave is a preserve-output refactor. It should remove
-duplicated helper formulas where they already match, but it should not silently
-change screenshots, default Terrain Lab noise sources, active cloud volume
-generation, or planet terrain shaping constants.
+The first migration wave is a preserve-output refactor. It removes duplicated
+helper formulas where they already match, but it does not silently change
+screenshots, default Terrain Lab noise sources, active cloud volume generation,
+or planet terrain shaping constants.
 
 Next shared candidates should come from repeated project-local code or from a
 specific reference-backed driver need, not from speculative API surface. Likely
