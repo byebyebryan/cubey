@@ -25,6 +25,12 @@ void require_contains(const std::string& haystack, const char* needle, const cha
     }
 }
 
+void require_not_contains(const std::string& haystack, const char* needle, const char* message) {
+    if (haystack.find(needle) != std::string::npos) {
+        throw std::runtime_error(message);
+    }
+}
+
 [[nodiscard]] std::string read_text_file(const std::filesystem::path& path) {
     std::ifstream file(path);
     if (!file) {
@@ -512,6 +518,12 @@ int main() {
                          "water reset shader should initialize particle positions");
         require_contains(reset_shader, "water_2d_contract.glsl",
                          "water reset shader should use the shared water shader contract");
+        require_contains(reset_shader, "cubey/procedural/random.glsl",
+                         "water reset shader should use shared procedural random helpers");
+        require_contains(reset_shader, "cubey_proc_hash01_u32",
+                         "water reset shader should share particle jitter hashing");
+        require_not_contains(reset_shader, "float hash11",
+                             "water reset shader should not keep local particle hash helpers");
         require_contains(reset_shader, "uint scenario",
                          "water reset shader should branch on scenario presets");
         require_contains(reset_shader, "obstacle_extents",
@@ -557,6 +569,12 @@ int main() {
                          "water bin build should scan only touched particle slots");
         require_contains(emit_shader, "WATER2D_HOSE_POOL_START",
                          "water emit shader should target the reserved hose particle range");
+        require_contains(emit_shader, "cubey/procedural/random.glsl",
+                         "water emit shader should use shared procedural random helpers");
+        require_contains(emit_shader, "cubey_proc_hash01_u32",
+                         "water emit shader should share particle emission hashing");
+        require_not_contains(emit_shader, "float hash11",
+                             "water emit shader should not keep local particle hash helpers");
         require_contains(emit_shader, "WATER2D_EMIT_CURSOR",
                          "water emit shader should use the ring cursor from dispatch constants");
         require_contains(emit_shader,
@@ -596,6 +614,12 @@ int main() {
                          "water grid-to-particle shader should scan only touched particle slots");
         require_contains(g2p_shader, "WATER2D_BINDING_CELL_PARTICLE_INDICES",
                          "water grid-to-particle shader should inspect neighbor particle bins");
+        require_contains(g2p_shader, "cubey/procedural/random.glsl",
+                         "water grid-to-particle shader should use shared random helpers");
+        require_contains(g2p_shader, "cubey_proc_hash01_u32",
+                         "water grid-to-particle shader should share tie-break hashing");
+        require_not_contains(g2p_shader, "float hash11",
+                             "water grid-to-particle shader should not keep local hash helpers");
         require_contains(g2p_shader, "separation_velocity",
                          "water grid-to-particle shader should add particle separation");
         require_contains(g2p_shader, "center_count <= target_particles_per_cell",

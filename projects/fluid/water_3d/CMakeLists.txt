@@ -71,6 +71,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/environment_lighting.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
 )
 
 target_link_libraries(

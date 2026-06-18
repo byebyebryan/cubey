@@ -1,6 +1,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
+#include "cubey/procedural/random.glsl"
 #include "water_2d_contract.glsl"
 #include "water_2d_grid.glsl"
 
@@ -157,15 +158,6 @@ mat2 affine_from_grid(vec2 position, vec2 particle_velocity, uint width, uint he
     return velocity_moment * safe_inverse_moment(distance_moment);
 }
 
-float hash11(uint value) {
-    value ^= value >> 16u;
-    value *= 0x7feb352du;
-    value ^= value >> 15u;
-    value *= 0x846ca68bu;
-    value ^= value >> 16u;
-    return float(value & 0x00ffffffu) / float(0x01000000u);
-}
-
 vec2 separation_velocity(uint particle_id, vec2 position, uint width, uint height,
                          uint max_particles_per_cell) {
     float radius = max(0.05, params.solve_options.x);
@@ -220,8 +212,10 @@ vec2 separation_velocity(uint particle_id, vec2 position, uint width, uint heigh
                 }
 
                 if (distance_squared <= 0.000001) {
-                    float angle = hash11((particle_id * 1664525u) ^ (other_id * 1013904223u)) *
-                                  6.2831853;
+                    float angle =
+                        cubey_proc_hash01_u32((particle_id * 1664525u) ^
+                                              (other_id * 1013904223u)) *
+                        6.2831853;
                     delta = vec2(cos(angle), sin(angle)) * 0.001;
                     distance_squared = dot(delta, delta);
                 }

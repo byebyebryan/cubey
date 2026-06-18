@@ -1,6 +1,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
+#include "cubey/procedural/random.glsl"
 #include "water_2d_contract.glsl"
 #include "water_2d_grid.glsl"
 
@@ -56,15 +57,6 @@ WATER2D_SIMULATION_PARAMS;
 
 const uint kWater2DWallCells = 2u;
 const uint kWater2DSpawnRelocationAttempts = 8u;
-
-float hash11(uint value) {
-    value ^= value >> 16u;
-    value *= 0x7feb352du;
-    value ^= value >> 15u;
-    value *= 0x846ca68bu;
-    value ^= value >> 16u;
-    return float(value & 0x00ffffffu) / float(0x01000000u);
-}
 
 bool obstacle_cell(vec2 uv, float width, float height) {
     uint shape = uint(params.obstacle_options.w + 0.5);
@@ -142,7 +134,9 @@ void main() {
         uint cy = (logical_cell / fill_cols) % fill_rows;
         uint strata = uint(ceil(sqrt(float(particles_per_cell))));
         vec2 jitter =
-            (vec2(hash11(id * 2u + 17u), hash11(id * 2u + 31u)) - vec2(0.5)) *
+            (vec2(cubey_proc_hash01_u32(id * 2u + 17u),
+                  cubey_proc_hash01_u32(id * 2u + 31u)) -
+             vec2(0.5)) *
             (0.22 / float(strata));
         uint start_x =
             scenario == 2u ? max(kWater2DWallCells, (width - fill_cols) / 2u) :
@@ -160,7 +154,8 @@ void main() {
         vec2 velocity = vec2(0.10 * release_edge, 0.0);
         if (scenario == 1u) {
             float vertical_variation =
-                sin((float(cy) / max(1.0, float(fill_rows))) * 6.28318 + hash11(id) * 0.4);
+                sin((float(cy) / max(1.0, float(fill_rows))) * 6.28318 +
+                    cubey_proc_hash01_u32(id) * 0.4);
             velocity = vec2(0.42 + 0.32 * release_edge, 0.06 * vertical_variation);
         } else if (scenario == 2u) {
             float wave = sin((float(cx) / max(1.0, float(fill_cols))) * 6.28318);

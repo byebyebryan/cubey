@@ -24,6 +24,12 @@ void require_contains(const std::string& haystack, const char* needle, const cha
     }
 }
 
+void require_not_contains(const std::string& haystack, const char* needle, const char* message) {
+    if (haystack.find(needle) != std::string::npos) {
+        throw std::runtime_error(message);
+    }
+}
+
 [[nodiscard]] std::size_t count_occurrences(const std::string& haystack, const char* needle) {
     std::size_t count = 0;
     std::size_t position = haystack.find(needle);
@@ -439,6 +445,12 @@ int main() {
                          "water 3D contract should expose rain droplet render scale");
         require_contains(reset_shader, "particle_affine.values[id * 3u + 2u]",
                          "water 3D reset should clear all APIC affine rows");
+        require_contains(reset_shader, "cubey/procedural/random.glsl",
+                         "water 3D reset should use shared procedural random helpers");
+        require_contains(reset_shader, "cubey_proc_hash01_u32",
+                         "water 3D reset should share particle jitter hashing");
+        require_not_contains(reset_shader, "float hash11",
+                             "water 3D reset should not keep local particle hash helpers");
         require_contains(reset_shader, "WATER3D_PARTICLE_STATE_LIQUID",
                          "water 3D reset should tag initial particles as bulk liquid");
         require_contains(reset_shader, "fill_start_from_center",
@@ -461,6 +473,12 @@ int main() {
                          "water 3D bin clearing should reset sorted scatter counters");
         require_contains(emit_shader, "WATER3D_EMITTER_POOL_START",
                          "water 3D emitter should target the shared inactive particle pool");
+        require_contains(emit_shader, "cubey/procedural/random.glsl",
+                         "water 3D emitter should use shared procedural random helpers");
+        require_contains(emit_shader, "cubey_proc_hash01_u32",
+                         "water 3D emitter should share particle emission hashing");
+        require_not_contains(emit_shader, "float hash11",
+                             "water 3D emitter should not keep local particle hash helpers");
         require_contains(emit_shader, "emit_hose",
                          "water 3D emitter should support hose particles");
         require_contains(emit_shader, "emit_rain",
