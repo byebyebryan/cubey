@@ -1,5 +1,8 @@
 #include "procedural_terrain_fields.h"
 
+#include <cubey/procedural/noise.h>
+#include <cubey/procedural/operators.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -20,75 +23,32 @@ struct Point2 {
     float y = 0.0F;
 };
 
-[[nodiscard]] float saturate(float value) {
-    return std::clamp(value, 0.0F, 1.0F);
-}
-
-[[nodiscard]] float smoothstep(float edge0, float edge1, float value) {
-    const float t = saturate((value - edge0) / (edge1 - edge0));
-    return t * t * (3.0F - (2.0F * t));
-}
-
-[[nodiscard]] float lerp(float a, float b, float t) {
-    return a + ((b - a) * t);
-}
-
-[[nodiscard]] std::uint32_t hash_u32(std::int32_t x, std::int32_t y, std::uint64_t seed) {
-    std::uint64_t value = seed;
-    value ^= static_cast<std::uint32_t>(x) + 0x9e37'79b9U + (value << 6U) + (value >> 2U);
-    value ^= static_cast<std::uint32_t>(y) + 0x85eb'ca6bU + (value << 6U) + (value >> 2U);
-    value ^= value >> 33U;
-    value *= 0xff51afd7ed558ccdULL;
-    value ^= value >> 33U;
-    value *= 0xc4ceb9fe1a85ec53ULL;
-    value ^= value >> 33U;
-    return static_cast<std::uint32_t>(value);
-}
-
-[[nodiscard]] float random01(std::uint64_t seed, std::uint32_t index, std::uint32_t channel) {
-    constexpr float kScale = 1.0F / static_cast<float>(std::numeric_limits<std::uint32_t>::max());
-    return static_cast<float>(hash_u32(static_cast<std::int32_t>(index),
-                                       static_cast<std::int32_t>(channel), seed)) *
-           kScale;
-}
-
-[[nodiscard]] float value_noise(float x, float y, std::uint64_t seed) {
-    const float floor_x = std::floor(x);
-    const float floor_y = std::floor(y);
-    const auto x0 = static_cast<std::int32_t>(floor_x);
-    const auto y0 = static_cast<std::int32_t>(floor_y);
-    const float tx = smoothstep(0.0F, 1.0F, x - floor_x);
-    const float ty = smoothstep(0.0F, 1.0F, y - floor_y);
-
-    const auto corner = [seed](std::int32_t ix, std::int32_t iy) {
-        constexpr float kScale =
-            1.0F / static_cast<float>(std::numeric_limits<std::uint32_t>::max());
-        return (static_cast<float>(hash_u32(ix, iy, seed)) * kScale * 2.0F) - 1.0F;
-    };
-
-    const float a = lerp(corner(x0, y0), corner(x0 + 1, y0), tx);
-    const float b = lerp(corner(x0, y0 + 1), corner(x0 + 1, y0 + 1), tx);
-    return lerp(a, b, ty);
-}
+using cubey::procedural::grid_index;
+using cubey::procedural::lerp;
+using cubey::procedural::random01;
+using cubey::procedural::saturate;
+using cubey::procedural::smoothstep;
 
 [[nodiscard]] float fbm(float x, float y, std::uint64_t seed, std::uint32_t octaves) {
-    float frequency = 1.0F;
-    float amplitude = 0.5F;
-    float sum = 0.0F;
-    float weight = 0.0F;
-    for (std::uint32_t octave = 0; octave < octaves; ++octave) {
-        sum += value_noise(x * frequency, y * frequency, seed + octave * 1013U) * amplitude;
-        weight += amplitude;
-        frequency *= 2.04F;
-        amplitude *= 0.52F;
-    }
-    return weight == 0.0F ? 0.0F : sum / weight;
+    const cubey::procedural::Fbm2DConfig config{
+        .octaves = octaves,
+        .lacunarity = 2.04F,
+        .gain = 0.52F,
+        .initial_amplitude = 0.5F,
+        .seed_stride = 1013U,
+    };
+    return cubey::procedural::fbm_2d(x, y, seed, config);
 }
 
 [[nodiscard]] float ridged(float x, float y, std::uint64_t seed) {
-    const float noise = fbm(x, y, seed, 4);
-    const float ridge = 1.0F - std::abs(noise);
-    return ridge * ridge;
+    constexpr cubey::procedural::Fbm2DConfig kConfig{
+        .octaves = 4,
+        .lacunarity = 2.04F,
+        .gain = 0.52F,
+        .initial_amplitude = 0.5F,
+        .seed_stride = 1013U,
+    };
+    return cubey::procedural::ridged_fbm_2d(x, y, seed, kConfig);
 }
 
 [[nodiscard]] float soft_mounds(float x, float y, std::uint64_t seed, std::uint32_t octaves) {
@@ -102,10 +62,6 @@ struct Point2 {
 
 [[nodiscard]] float dot(Point2 a, Point2 b) {
     return (a.x * b.x) + (a.y * b.y);
-}
-
-[[nodiscard]] std::size_t grid_index(std::uint32_t x, std::uint32_t y, std::uint32_t width) {
-    return static_cast<std::size_t>(y) * width + x;
 }
 
 [[nodiscard]] float terrain_axis_angle(const TerrainConfig& config) {
