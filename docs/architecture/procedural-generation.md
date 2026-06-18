@@ -24,6 +24,28 @@ The first shared layer should stay data-oriented and renderer-independent. It
 should not own Terrain Lab policy, planet LOD, ocean shoreline contracts,
 materials, foliage, or Vulkan resources.
 
+## Consumer Taxonomy
+
+Procedural consumers should be grouped by the role the randomness plays before
+code is promoted into shared helpers:
+
+- Coherent source fields: terrain height, macro terrain masks, cloud shape
+  fields, and similar signals where neighboring samples must relate spatially.
+- Stochastic hash/random helpers: deterministic per-particle jitter, star-cell
+  selection, tie-breakers, and sampling variation where continuity is not the
+  point.
+- Domain recipes: higher-level combinations such as dune shaping, river
+  drivers, moon terminator breakup, ocean foam, pyro turbulence, cloud volume
+  recipes, and Milky Way atlas construction.
+- Reference and legacy snapshots: code kept close to a paper, reference project,
+  or old renderer so it can still be compared directly.
+
+The migration rule differs by category. Shared hash and value-noise primitives
+can be migrated mechanically when formulas match exactly. Domain recipes should
+stay project- or domain-owned unless the shared abstraction names the process
+being modeled, not just the visual result of one demo. Reference and legacy
+snapshots should not be deduplicated until the comparison value is gone.
+
 ## Terrain Lessons
 
 Terrain Lab should remain the visual pressure test for these pieces, but the
