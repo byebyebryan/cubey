@@ -121,18 +121,16 @@ renderer-independent:
 
 - named seed derivation, so projects can stop scattering magic offsets;
 - 2D and 3D sample-domain descriptors, so generated assets can say whether a
-  grid is local, world, unit, atlas, volume, or spherical data.
+  grid is local, world, unit, atlas, volume, or spherical data;
+- generated artifact metadata, so in-memory procedural outputs can report their
+  generator, formula version, semantic domain, dimensions, format, seed, and
+  content hash.
 
-Likely follow-ups are generated asset metadata, shader parity checks, and
-volume/source recipes once projects start consuming the seed and domain
-vocabulary.
-
-The first metadata pass should stay in memory and record only the fields that
-make generated outputs comparable across active consumers: artifact name,
-generator identity, formula version, semantic domain, seed or variation
-identity, domain space, dimensions, mip/face layout, value format, and content
-hash. Atmosphere atlases are the lowest-risk first consumer because they already
-have deterministic CPU generation and atlas hash tests.
+The first metadata consumer is the atmosphere lunar/night-sky atlas pair because
+those atlases already have deterministic CPU generation and atlas hash tests.
+Likely follow-ups are cloud generated-volume/weather-map metadata, shader parity
+checks, field-set export metadata, and volume/source recipes once projects start
+consuming the seed and domain vocabulary.
 
 This is intentionally not a visual migration batch. Active projects should keep
 their current formulas unless a focused follow-up proves parity or a better

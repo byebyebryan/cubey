@@ -133,6 +133,9 @@ compiled into `cubey::core`:
   world, unit, atlas, volume, and spherical data. `SampleDomain2D` wraps
   `Grid2DDesc` with seed and domain-space metadata; `SampleDomain3D` adds
   centered volume coordinates and bounds-checked indexing.
+- `artifact_metadata.h` provides generated artifact identity, value format,
+  semantic domain, seed, extent, mip/face layout, and content-hash metadata for
+  in-memory comparison of procedural outputs.
 - `source_fields.h` wraps those samplers as deterministic 2D source fields and
   layered `SourceRecipe2D` stacks that can fill `ScalarField2D` grids, carry
   debug fields, apply masks/weights/blend modes, and optionally normalize final
@@ -209,22 +212,26 @@ These are intentionally domain-neutral: Terrain Lab can adapt its current height
 and driver fields into them, but terrain-specific landform drivers, hydrology,
 materials, and foliage remain outside core.
 
-The non-terrain foundation batch promotes named seed domains and semantic sample
-domains after reviewing active atmosphere, cloud, ocean, fluid, planet, and
-future terrain needs. This adds reusable address/metadata vocabulary without
-changing project formulas: atmosphere atlases, cloud density/weather volumes,
-ocean foam/detail, fluid jitter/turbulence, and future terrain tiles can now
-share seed and sample-domain language while keeping their domain recipes
-project-owned.
+The non-terrain foundation batches promote named seed domains, semantic sample
+domains, and generated artifact metadata after reviewing active atmosphere,
+cloud, ocean, fluid, planet, and future terrain needs. This adds reusable
+address/metadata vocabulary without changing project formulas: atmosphere
+atlases, cloud density/weather volumes, ocean foam/detail, fluid
+jitter/turbulence, and future terrain tiles can share seed, domain, and artifact
+identity language while keeping their domain recipes project-owned. The first
+metadata consumer is the generated atmosphere lunar/night-sky atlas pair, which
+now carries in-memory metadata and content hashes while preserving atlas bytes.
 
 Next shared candidates should come from repeated project-local code, broad
 procedural-rendering needs, or a specific reference-backed driver need, not from
 speculative API surface. Likely near-term candidates are:
 
-- generated asset and field-set export metadata so old and new procedural
-  outputs are easy to compare by generator identity, formula version, seed,
-  semantic domain, dimensions, value format, mip/face layout, and content hash;
 - shader parity review for seed/hash/noise helpers before new GLSL migrations;
+- cloud generated-volume and weather-map metadata adoption using the same
+  artifact contract once cloud texture generation is reviewed;
+- field-set export metadata so old and new procedural field outputs are easy to
+  compare by generator identity, formula version, seed, semantic domain,
+  dimensions, and content hash;
 - a future `SourceRecipe3D` or volume-field variant after the cloud/environment
   review proves the shape;
 - deterministic tile or patch descriptors after the terrain reboot defines the
@@ -243,7 +250,7 @@ Near-term non-goals:
 - no migration of atmosphere, cloud, ocean, or fluid visual formulas in the seed
   and sample-domain batch;
 - no JSON sidecar or file export format for generated artifact metadata until
-  the in-memory metadata shape is proven by at least one active consumer;
+  more than the atmosphere atlas consumer needs persistent metadata;
 - no default switch from legacy Terrain Lab value noise to FastNoiseLite;
 - no FastNoiseLite GLSL migration before shader parity has its own focused
   review;
