@@ -1,9 +1,12 @@
 #pragma once
 
+#include <cubey/procedural/field_set_2d.h>
 #include <cubey/procedural/field_2d.h>
 #include <cubey/procedural/noise.h>
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 namespace cubey::procedural {
 
@@ -41,8 +44,39 @@ struct NoiseSource2D {
     NoiseSource2DWarp warp{};
 };
 
+enum class SourceRecipeBlendMode2D {
+    Add,
+    Multiply,
+    Min,
+    Max,
+    Blend,
+};
+
+struct SourceRecipeLayer2D {
+    std::string name{};
+    bool enabled = true;
+    NoiseSource2D source{};
+    float weight = 1.0F;
+    SourceRecipeBlendMode2D blend_mode = SourceRecipeBlendMode2D::Add;
+    bool use_first_layer_as_mask = false;
+};
+
+struct SourceRecipe2D {
+    std::string name{};
+    std::vector<SourceRecipeLayer2D> layers{};
+    bool normalize_output_to_unit = false;
+};
+
+struct SourceRecipe2DResult {
+    ScalarField2D output{};
+    FieldSet2D debug_fields{};
+    ScalarFieldStats output_stats{};
+};
+
 [[nodiscard]] float sample_noise_source_2d(float x, float y, const NoiseSource2D& config);
 [[nodiscard]] ScalarField2D sample_noise_source_field_2d(Grid2DDesc desc,
                                                          const NoiseSource2D& config);
+[[nodiscard]] SourceRecipe2DResult sample_source_recipe_2d(Grid2DDesc desc,
+                                                           const SourceRecipe2D& recipe);
 
 } // namespace cubey::procedural

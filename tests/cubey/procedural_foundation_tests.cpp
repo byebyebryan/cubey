@@ -6,10 +6,12 @@
 
 #include "source_file_test_helpers.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -40,6 +42,16 @@ template <typename Fn> void require_throws(Fn&& fn, const char* message) {
         return;
     }
     throw std::runtime_error(message);
+}
+
+cubey::procedural::NoiseSource2D unit_legacy_source(std::uint64_t seed) {
+    return cubey::procedural::NoiseSource2D{
+        .backend = cubey::procedural::NoiseSource2DBackend::LegacyFbm,
+        .output = cubey::procedural::NoiseSource2DOutput::Unit,
+        .seed = seed,
+        .legacy_fbm = {.octaves = 4},
+        .domain = {.x_scale = 0.4F, .y_scale = 0.7F, .x_offset = 1.5F, .y_offset = -0.25F},
+    };
 }
 
 } // namespace
@@ -718,4 +730,155 @@ void test_procedural_source_fields_fill_scalar_fields() {
     const float y = cubey::procedural::grid_sample_y(desc, 0U);
     require_near(field.at(1U, 0U), cubey::procedural::sample_noise_source_2d(x, y, source),
                  0.000001F, "source field sampling should use centered grid coordinates");
+}
+
+void test_procedural_source_recipes_compose_layers_and_debug_fields() {
+    const cubey::procedural::Grid2DDesc desc{.width = 2, .height = 2, .cell_size = 1.0F};
+    const cubey::procedural::NoiseSource2D base_source = unit_legacy_source(11U);
+    const cubey::procedural::NoiseSource2D disabled_source = unit_legacy_source(12U);
+    const cubey::procedural::NoiseSource2D detail_source = unit_legacy_source(13U);
+    const cubey::procedural::SourceRecipe2D recipe{
+        .name = "masked-add",
+        .layers =
+            {
+                {.name = "base", .source = base_source},
+                {.name = "disabled", .enabled = false, .source = disabled_source},
+                {
+                    .name = "detail",
+                    .source = detail_source,
+                    .weight = 0.5F,
+                    .blend_mode = cubey::procedural::SourceRecipeBlendMode2D::Add,
+                    .use_first_layer_as_mask = true,
+                },
+            },
+    };
+
+    const cubey::procedural::SourceRecipe2DResult result =
+        cubey::procedural::sample_source_recipe_2d(desc, recipe);
+    require(result.output.desc().width == desc.width && result.output.desc().height == desc.height,
+            "source recipe should preserve grid dimensions");
+    require(result.debug_fields.field_count() == 3U,
+            "source recipe debug fields should include enabled layers plus output");
+    require(result.debug_fields.has_field("base"), "source recipe debug fields should include base");
+    require(!result.debug_fields.has_field("disabled"),
+            "source recipe debug fields should skip disabled layers");
+    require(result.debug_fields.has_field("detail"),
+            "source recipe debug fields should include detail");
+    require(result.debug_fields.has_field("output"),
+            "source recipe debug fields should include final output");
+
+    const float x = cubey::procedural::grid_sample_x(desc, 1U);
+    const float y = cubey::procedural::grid_sample_y(desc, 0U);
+    const float base = cubey::procedural::sample_noise_source_2d(x, y, base_source);
+    const float detail = cubey::procedural::sample_noise_source_2d(x, y, detail_source);
+    const float expected = base + (detail * 0.5F * cubey::procedural::saturate(base));
+    require_near(result.output.at(1U, 0U), expected, 0.000001F,
+                 "source recipe should add masked weighted detail");
+    require_near(result.debug_fields.field("output").at(1U, 0U), expected, 0.000001F,
+                 "source recipe debug output should match result output");
+    require_near(result.output_stats.mean, result.output.summarize().mean, 0.000001F,
+                 "source recipe should summarize output");
+}
+
+void test_procedural_source_recipes_apply_blend_modes() {
+    const cubey::procedural::Grid2DDesc desc{.width = 2, .height = 2, .cell_size = 1.0F};
+    const cubey::procedural::NoiseSource2D base_source = unit_legacy_source(21U);
+    const cubey::procedural::NoiseSource2D overlay_source = unit_legacy_source(22U);
+    const float x = cubey::procedural::grid_sample_x(desc, 0U);
+    const float y = cubey::procedural::grid_sample_y(desc, 1U);
+    const float base = cubey::procedural::sample_noise_source_2d(x, y, base_source);
+    const float overlay = cubey::procedural::sample_noise_source_2d(x, y, overlay_source);
+
+    const auto sample_mode = [&](cubey::procedural::SourceRecipeBlendMode2D mode) {
+        const cubey::procedural::SourceRecipe2D recipe{
+            .name = "blend-mode",
+            .layers =
+                {
+                    {.name = "base", .source = base_source},
+                    {.name = "overlay", .source = overlay_source, .weight = 0.25F, .blend_mode = mode},
+                },
+        };
+        return cubey::procedural::sample_source_recipe_2d(desc, recipe).output.at(0U, 1U);
+    };
+
+    require_near(sample_mode(cubey::procedural::SourceRecipeBlendMode2D::Blend),
+                 cubey::procedural::lerp(base, overlay, 0.25F), 0.000001F,
+                 "source recipe blend mode should interpolate toward overlay");
+    require_near(sample_mode(cubey::procedural::SourceRecipeBlendMode2D::Multiply),
+                 base * cubey::procedural::lerp(1.0F, overlay, 0.25F), 0.000001F,
+                 "source recipe multiply mode should interpolate multiplier strength");
+    require_near(sample_mode(cubey::procedural::SourceRecipeBlendMode2D::Min),
+                 cubey::procedural::lerp(base, std::min(base, overlay), 0.25F), 0.000001F,
+                 "source recipe min mode should interpolate toward the lower sample");
+    require_near(sample_mode(cubey::procedural::SourceRecipeBlendMode2D::Max),
+                 cubey::procedural::lerp(base, std::max(base, overlay), 0.25F), 0.000001F,
+                 "source recipe max mode should interpolate toward the higher sample");
+}
+
+void test_procedural_source_recipes_normalize_outputs() {
+    const cubey::procedural::Grid2DDesc desc{.width = 4, .height = 4, .cell_size = 1.0F};
+    cubey::procedural::NoiseSource2D source = unit_legacy_source(31U);
+    source.output = cubey::procedural::NoiseSource2DOutput::Signed;
+    const cubey::procedural::SourceRecipe2D recipe{
+        .name = "normalized",
+        .layers = {{.name = "base", .source = source}},
+        .normalize_output_to_unit = true,
+    };
+
+    const cubey::procedural::SourceRecipe2DResult result =
+        cubey::procedural::sample_source_recipe_2d(desc, recipe);
+    const cubey::procedural::ScalarFieldStats stats = result.output.summarize();
+    require_near(stats.min, 0.0F, 0.0001F, "normalized source recipe should map min to zero");
+    require_near(stats.max, 1.0F, 0.0001F, "normalized source recipe should map max to one");
+    require_near(result.output_stats.min, 0.0F, 0.0001F,
+                 "normalized source recipe stats should report normalized min");
+    require_near(result.output_stats.max, 1.0F, 0.0001F,
+                 "normalized source recipe stats should report normalized max");
+}
+
+void test_procedural_source_recipes_reject_invalid_layers() {
+    const cubey::procedural::Grid2DDesc desc{.width = 2, .height = 2};
+    const cubey::procedural::NoiseSource2D source = unit_legacy_source(41U);
+
+    require_throws([&] { (void)cubey::procedural::sample_source_recipe_2d(desc, {}); },
+                   "source recipe should reject empty layer lists");
+    require_throws(
+        [&] {
+            (void)cubey::procedural::sample_source_recipe_2d(
+                desc, {.layers = {{.name = "base", .enabled = false, .source = source}}});
+        },
+        "source recipe should reject recipes with no enabled layers");
+    require_throws(
+        [&] {
+            (void)cubey::procedural::sample_source_recipe_2d(
+                desc, {.layers = {{.name = "", .source = source}}});
+        },
+        "source recipe should reject empty layer names");
+    require_throws(
+        [&] {
+            (void)cubey::procedural::sample_source_recipe_2d(
+                desc, {.layers = {{.name = "output", .source = source}}});
+        },
+        "source recipe should reject reserved output layer names");
+    require_throws(
+        [&] {
+            (void)cubey::procedural::sample_source_recipe_2d(
+                desc,
+                {.layers = {{.name = "base", .source = source}, {.name = "base", .source = source}}});
+        },
+        "source recipe should reject duplicate layer names");
+    require_throws(
+        [&] {
+            (void)cubey::procedural::sample_source_recipe_2d(
+                desc,
+                {
+                    .layers =
+                        {{
+                            .name = "base",
+                            .source = source,
+                            .weight = std::numeric_limits<float>::quiet_NaN(),
+                        }},
+                });
+        },
+        "source recipe should reject non-finite layer weights");
 }

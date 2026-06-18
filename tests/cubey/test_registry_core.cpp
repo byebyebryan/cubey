@@ -41,6 +41,10 @@ void test_procedural_source_fields_fill_scalar_fields();
 void test_procedural_source_fields_apply_optional_domain_warp();
 void test_procedural_source_fields_wrap_coherent_noise_backend();
 void test_procedural_source_fields_wrap_legacy_noise_backends();
+void test_procedural_source_recipes_apply_blend_modes();
+void test_procedural_source_recipes_compose_layers_and_debug_fields();
+void test_procedural_source_recipes_normalize_outputs();
+void test_procedural_source_recipes_reject_invalid_layers();
 void test_procedural_scalar_field_summarizes_and_normalizes();
 void test_run_cli_app_sets_default_title_and_returns_runner_status();
 void test_active_project_ui_uses_shared_common_controls();
@@ -172,6 +176,10 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_source_fields_wrap_coherent_noise_backend),
         CUBEY_TEST(test_procedural_source_fields_apply_optional_domain_warp),
         CUBEY_TEST(test_procedural_source_fields_fill_scalar_fields),
+        CUBEY_TEST(test_procedural_source_recipes_compose_layers_and_debug_fields),
+        CUBEY_TEST(test_procedural_source_recipes_apply_blend_modes),
+        CUBEY_TEST(test_procedural_source_recipes_normalize_outputs),
+        CUBEY_TEST(test_procedural_source_recipes_reject_invalid_layers),
         CUBEY_TEST(test_gltf_animation_wraps_looping_playback_time),
         CUBEY_TEST(test_gltf_animation_samples_linear_translation),
         CUBEY_TEST(test_gltf_animation_samples_step_scale),
