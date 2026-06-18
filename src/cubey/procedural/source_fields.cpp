@@ -22,8 +22,16 @@ namespace {
 } // namespace
 
 float sample_noise_source_2d(float x, float y, const NoiseSource2D& config) {
-    const float sx = (x * config.domain.x_scale) + config.domain.x_offset;
-    const float sy = (y * config.domain.y_scale) + config.domain.y_offset;
+    float sx = (x * config.domain.x_scale) + config.domain.x_offset;
+    float sy = (y * config.domain.y_scale) + config.domain.y_offset;
+
+    if (config.warp.enabled) {
+        CoherentDomainWarpConfig warp = config.warp.coherent;
+        warp.seed = coherent_seed(config.seed + config.warp.seed_offset);
+        const CoherentWarp2D warped = domain_warp_2d(sx, sy, warp);
+        sx = warped.x;
+        sy = warped.y;
+    }
 
     float value = 0.0F;
     switch (config.backend) {

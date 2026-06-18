@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <stdexcept>
 
@@ -133,6 +134,48 @@ void test_procedural_field_composition_transforms_values() {
     require_near(ridged.at(0U, 1U), 0.25F, 0.0001F, "ridge profile should shape values near zero");
 }
 
+void test_procedural_field_shaping_converts_and_terraces_unit_values() {
+    require_near(cubey::procedural::signed_to_unit(-1.0F), 0.0F, 0.0001F,
+                 "signed-to-unit should map negative one to zero");
+    require_near(cubey::procedural::signed_to_unit(2.0F), 1.0F, 0.0001F,
+                 "signed-to-unit should saturate high values");
+    require_near(cubey::procedural::unit_to_signed(0.25F), -0.5F, 0.0001F,
+                 "unit-to-signed should remap unit values");
+    require_near(cubey::procedural::pow_unit(0.25F, 0.5F), 0.5F, 0.0001F,
+                 "pow-unit should apply exponent after saturation");
+    require_near(cubey::procedural::terrace_unit(0.32F, 4U, 0.0F), 0.0F, 0.0001F,
+                 "hard terrace should hold the lower step");
+    require_near(cubey::procedural::terrace_unit(0.34F, 4U, 0.0F), 1.0F / 3.0F, 0.0001F,
+                 "hard terrace should advance at interval boundaries");
+    require_near(cubey::procedural::terrace_unit(0.30F, 4U, 0.25F), 0.216F, 0.001F,
+                 "soft terrace should blend near the upper interval edge");
+
+    cubey::procedural::ScalarField2D field({.width = 2, .height = 2}, 0.0F);
+    field.at(0U, 0U) = -1.0F;
+    field.at(1U, 0U) = 0.0F;
+    field.at(0U, 1U) = 0.25F;
+    field.at(1U, 1U) = 1.0F;
+
+    const cubey::procedural::ScalarField2D unit = cubey::procedural::signed_to_unit_field(field);
+    require_near(unit.at(0U, 0U), 0.0F, 0.0001F,
+                 "signed-to-unit field should convert negative samples");
+    require_near(unit.at(1U, 0U), 0.5F, 0.0001F,
+                 "signed-to-unit field should convert zero samples");
+
+    const cubey::procedural::ScalarField2D signed_field =
+        cubey::procedural::unit_to_signed_field(unit);
+    require_near(signed_field.at(1U, 0U), 0.0F, 0.0001F,
+                 "unit-to-signed field should invert signed-to-unit around zero");
+
+    const cubey::procedural::ScalarField2D powered = cubey::procedural::pow_unit_field(unit, 2.0F);
+    require_near(powered.at(1U, 0U), 0.25F, 0.0001F, "pow-unit field should shape each sample");
+
+    const cubey::procedural::ScalarField2D terraced =
+        cubey::procedural::terrace_unit_field(unit, 4U, 0.0F);
+    require_near(terraced.at(1U, 0U), 1.0F / 3.0F, 0.0001F,
+                 "terrace field should quantize each sample");
+}
+
 void test_procedural_field_composition_combines_matching_fields() {
     cubey::procedural::ScalarField2D lhs({.width = 2, .height = 2}, 0.0F);
     cubey::procedural::ScalarField2D rhs(lhs.desc(), 0.0F);
@@ -182,6 +225,12 @@ void test_procedural_field_composition_rejects_invalid_inputs() {
                    "blend should reject mismatched descriptors");
     require_throws([&] { (void)cubey::procedural::remap_field(field, 1.0F, 1.0F, 0.0F, 1.0F); },
                    "remap should reject zero input range");
+    require_throws([&] { (void)cubey::procedural::pow_unit(0.5F, 0.0F); },
+                   "pow-unit should reject zero exponent");
+    require_throws([&] { (void)cubey::procedural::pow_unit_field(field, -1.0F); },
+                   "pow-unit field should reject negative exponents");
+    require_throws([&] { (void)cubey::procedural::terrace_unit(0.5F, 1U, 0.0F); },
+                   "terrace should reject a single step");
 }
 
 void test_procedural_slope_curvature_handles_flat_ramp_and_peak() {
@@ -470,6 +519,53 @@ void test_procedural_source_fields_wrap_coherent_noise_backend() {
     require_near(cubey::procedural::sample_noise_source_2d(12.5F, -7.25F, source),
                  (expected * 0.5F) + 0.5F, 0.000001F,
                  "coherent source should use shared seed and domain transform");
+}
+
+void test_procedural_source_fields_apply_optional_domain_warp() {
+    cubey::procedural::NoiseSource2D source{
+        .backend = cubey::procedural::NoiseSource2DBackend::LegacyFbm,
+        .output = cubey::procedural::NoiseSource2DOutput::Signed,
+        .seed = 31U,
+        .legacy_fbm = {.octaves = 4},
+        .domain = {.x_scale = 1.25F, .y_scale = 0.75F, .x_offset = 2.0F, .y_offset = -1.0F},
+        .warp =
+            {
+                .enabled = true,
+                .seed_offset = 19U,
+                .coherent =
+                    {
+                        .frequency = 0.08F,
+                        .warp_type = cubey::procedural::CoherentDomainWarpType::OpenSimplex2,
+                        .fractal_type =
+                            cubey::procedural::CoherentDomainWarpFractalType::Progressive,
+                        .octaves = 2,
+                        .lacunarity = 2.0F,
+                        .gain = 0.5F,
+                        .amplitude = 3.0F,
+                    },
+            },
+    };
+
+    const float sx = (4.0F * 1.25F) + 2.0F;
+    const float sy = (-2.0F * 0.75F) - 1.0F;
+    cubey::procedural::CoherentDomainWarpConfig warp = source.warp.coherent;
+    warp.seed = static_cast<std::int32_t>((source.seed + source.warp.seed_offset) & 0x7fff'ffffULL);
+    const cubey::procedural::CoherentWarp2D warped =
+        cubey::procedural::domain_warp_2d(sx, sy, warp);
+    const float expected =
+        cubey::procedural::fbm_2d(warped.x, warped.y, source.seed, {.octaves = 4});
+
+    const float first = cubey::procedural::sample_noise_source_2d(4.0F, -2.0F, source);
+    const float second = cubey::procedural::sample_noise_source_2d(4.0F, -2.0F, source);
+    require_near(first, expected, 0.000001F, "warped source should sample after domain warp");
+    require_near(first, second, 0.000001F, "warped source should remain deterministic");
+
+    source.warp.enabled = false;
+    const float unwarped = cubey::procedural::sample_noise_source_2d(4.0F, -2.0F, source);
+    require_near(unwarped, cubey::procedural::fbm_2d(sx, sy, source.seed, {.octaves = 4}),
+                 0.000001F, "disabled warp should preserve unwarped sampling");
+    require(std::fabs(first - unwarped) > 0.000001F,
+            "enabled warp should alter the sampled coordinates");
 }
 
 void test_procedural_source_fields_fill_scalar_fields() {

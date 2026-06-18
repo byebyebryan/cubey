@@ -45,8 +45,44 @@ template <typename Fn>
 
 } // namespace
 
+float signed_to_unit(float value) {
+    return saturate((value * 0.5F) + 0.5F);
+}
+
+float unit_to_signed(float value) {
+    return (saturate(value) * 2.0F) - 1.0F;
+}
+
+float pow_unit(float value, float exponent) {
+    if (!std::isfinite(exponent) || exponent <= 0.0F) {
+        throw std::runtime_error("procedural pow_unit exponent must be positive");
+    }
+    return std::pow(saturate(value), exponent);
+}
+
 float ridge_profile(float value, float sharpness) {
     return std::pow(std::max(1.0F - std::abs(value), 0.0F), sharpness);
+}
+
+float terrace_unit(float value, std::uint32_t steps, float blend) {
+    if (steps < 2U) {
+        throw std::runtime_error("procedural terrace steps must be at least 2");
+    }
+    const float t = saturate(value);
+    if (t >= 1.0F) {
+        return 1.0F;
+    }
+    const float interval_count = static_cast<float>(steps - 1U);
+    const float scaled = t * interval_count;
+    const float lower_index = std::floor(scaled);
+    const float fraction = scaled - lower_index;
+    const float lower = lower_index / interval_count;
+    const float upper = (lower_index + 1.0F) / interval_count;
+    const float transition = saturate(blend);
+    if (transition == 0.0F) {
+        return lower;
+    }
+    return lerp(lower, upper, smoothstep(1.0F - transition, 1.0F, fraction));
 }
 
 ScalarField2D box_blur_3x3(const ScalarField2D& field) {
@@ -107,9 +143,26 @@ ScalarField2D invert_unit_field(const ScalarField2D& field) {
     return transform_field(field, [](float value) { return 1.0F - saturate(value); });
 }
 
+ScalarField2D signed_to_unit_field(const ScalarField2D& field) {
+    return transform_field(field, [](float value) { return signed_to_unit(value); });
+}
+
+ScalarField2D unit_to_signed_field(const ScalarField2D& field) {
+    return transform_field(field, [](float value) { return unit_to_signed(value); });
+}
+
+ScalarField2D pow_unit_field(const ScalarField2D& field, float exponent) {
+    return transform_field(field, [exponent](float value) { return pow_unit(value, exponent); });
+}
+
 ScalarField2D ridge_profile_field(const ScalarField2D& field, float sharpness) {
     return transform_field(field,
                            [sharpness](float value) { return ridge_profile(value, sharpness); });
+}
+
+ScalarField2D terrace_unit_field(const ScalarField2D& field, std::uint32_t steps, float blend) {
+    return transform_field(
+        field, [steps, blend](float value) { return terrace_unit(value, steps, blend); });
 }
 
 ScalarField2D add_fields(const ScalarField2D& lhs, const ScalarField2D& rhs) {

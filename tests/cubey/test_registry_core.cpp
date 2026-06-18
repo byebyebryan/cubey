@@ -25,6 +25,7 @@ void test_procedural_coherent_noise_wraps_fastnoise_lite();
 void test_procedural_field_composition_combines_matching_fields();
 void test_procedural_field_composition_rejects_invalid_inputs();
 void test_procedural_field_composition_transforms_values();
+void test_procedural_field_shaping_converts_and_terraces_unit_values();
 void test_procedural_legacy_noise_golden_values_are_stable();
 void test_procedural_local_relief_tracks_neighborhood_windows();
 void test_procedural_noise_is_deterministic_and_bounded();
@@ -33,6 +34,7 @@ void test_procedural_scalar_field_indexes_centered_samples();
 void test_procedural_shader_random_helpers_are_shared();
 void test_procedural_slope_curvature_handles_flat_ramp_and_peak();
 void test_procedural_source_fields_fill_scalar_fields();
+void test_procedural_source_fields_apply_optional_domain_warp();
 void test_procedural_source_fields_wrap_coherent_noise_backend();
 void test_procedural_source_fields_wrap_legacy_noise_backends();
 void test_procedural_scalar_field_summarizes_and_normalizes();
@@ -147,6 +149,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_scalar_field_summarizes_and_normalizes),
         CUBEY_TEST(test_procedural_box_blur_preserves_dimensions_and_smooths_impulse),
         CUBEY_TEST(test_procedural_field_composition_transforms_values),
+        CUBEY_TEST(test_procedural_field_shaping_converts_and_terraces_unit_values),
         CUBEY_TEST(test_procedural_field_composition_combines_matching_fields),
         CUBEY_TEST(test_procedural_field_composition_rejects_invalid_inputs),
         CUBEY_TEST(test_procedural_slope_curvature_handles_flat_ramp_and_peak),
@@ -159,6 +162,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_coherent_noise_wraps_fastnoise_lite),
         CUBEY_TEST(test_procedural_source_fields_wrap_legacy_noise_backends),
         CUBEY_TEST(test_procedural_source_fields_wrap_coherent_noise_backend),
+        CUBEY_TEST(test_procedural_source_fields_apply_optional_domain_warp),
         CUBEY_TEST(test_procedural_source_fields_fill_scalar_fields),
         CUBEY_TEST(test_gltf_animation_wraps_looping_playback_time),
         CUBEY_TEST(test_gltf_animation_samples_linear_translation),

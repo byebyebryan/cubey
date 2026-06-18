@@ -14,6 +14,12 @@ struct FieldDomain2D {
     float y_offset = 0.0F;
 };
 
+struct NoiseSource2DWarp {
+    bool enabled = false;
+    std::uint64_t seed_offset = 7001U;
+    CoherentDomainWarpConfig coherent{};
+};
+
 enum class NoiseSource2DBackend {
     LegacyFbm,
     LegacyRidgedFbm,
@@ -32,6 +38,7 @@ struct NoiseSource2D {
     Fbm2DConfig legacy_fbm{};
     CoherentNoiseConfig coherent{};
     FieldDomain2D domain{};
+    NoiseSource2DWarp warp{};
 };
 
 [[nodiscard]] float sample_noise_source_2d(float x, float y, const NoiseSource2D& config);

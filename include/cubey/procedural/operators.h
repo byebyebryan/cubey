@@ -28,7 +28,11 @@ namespace cubey::procedural {
     return t * t * t * (t * (t * 6.0F - 15.0F) + 10.0F);
 }
 
+[[nodiscard]] float signed_to_unit(float value);
+[[nodiscard]] float unit_to_signed(float value);
+[[nodiscard]] float pow_unit(float value, float exponent);
 [[nodiscard]] float ridge_profile(float value, float sharpness);
+[[nodiscard]] float terrace_unit(float value, std::uint32_t steps, float blend);
 
 struct SlopeCurvature2D {
     ScalarField2D slope{};
@@ -51,7 +55,12 @@ struct LocalRelief2D {
                                         float out_min, float out_max);
 [[nodiscard]] ScalarField2D smoothstep_field(const ScalarField2D& field, float edge0, float edge1);
 [[nodiscard]] ScalarField2D invert_unit_field(const ScalarField2D& field);
+[[nodiscard]] ScalarField2D signed_to_unit_field(const ScalarField2D& field);
+[[nodiscard]] ScalarField2D unit_to_signed_field(const ScalarField2D& field);
+[[nodiscard]] ScalarField2D pow_unit_field(const ScalarField2D& field, float exponent);
 [[nodiscard]] ScalarField2D ridge_profile_field(const ScalarField2D& field, float sharpness);
+[[nodiscard]] ScalarField2D terrace_unit_field(const ScalarField2D& field, std::uint32_t steps,
+                                               float blend);
 [[nodiscard]] ScalarField2D add_fields(const ScalarField2D& lhs, const ScalarField2D& rhs);
 [[nodiscard]] ScalarField2D subtract_fields(const ScalarField2D& lhs, const ScalarField2D& rhs);
 [[nodiscard]] ScalarField2D multiply_fields(const ScalarField2D& lhs, const ScalarField2D& rhs);
