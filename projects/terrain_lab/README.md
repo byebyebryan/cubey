@@ -1,13 +1,19 @@
 # Terrain Lab
 
-`terrain_lab` is the standalone terrain generation workbench for Cubey. It
-exists because terrain is large enough to deserve its own project boundary
+Legacy status: `terrain_lab` is now a preserved terrain R&D snapshot. It should
+continue to build and remain useful as visual/reference evidence, but its
+current data model, presets, and field contracts are not the basis for the next
+shared procedural foundation or the planned terrain reboot.
+
+`terrain_lab` started as the standalone terrain generation workbench for Cubey.
+It exists because terrain is large enough to deserve its own project boundary
 instead of living only as a shoreline helper, a planet subroutine, or a shader
 detail stack.
 
-The project starts with deterministic CPU terrain fields and a small Vulkan
-workbench. The immediate goal is to implement narrow biome and landform slices
-that can be tested, inspected visually, and reused by other projects later.
+The project contains deterministic CPU terrain fields and a small Vulkan
+workbench. New foundation work should not expand this contract further; it
+should treat the project as a historical pressure test until a cleaner terrain
+project is started.
 
 ## Direction
 

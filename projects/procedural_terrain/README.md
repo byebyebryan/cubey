@@ -1,7 +1,12 @@
 # Procedural Terrain
 
-`procedural_terrain` is the standalone terrain and bathymetry data demo for
-future ocean shoreline work. It keeps the first terrain contract explicit:
+Legacy status: `procedural_terrain` is now a preserved coastal terrain and
+bathymetry experiment. It should continue to build and document the early
+terrain-ocean contract, but its current generator and payload shape should not
+define the shared procedural foundation or the planned terrain reboot.
+
+`procedural_terrain` started as the standalone terrain and bathymetry data demo
+for future ocean shoreline work. It keeps the first terrain contract explicit:
 positive-up terrain elevation, positive-down water depth, shoreline signed
 distance, and material masks for sand, rock, vegetation, and sediment. The
 default final view adds a visual sea-surface mesh over the same analytical

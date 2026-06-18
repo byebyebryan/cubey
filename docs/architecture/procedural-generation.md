@@ -51,9 +51,12 @@ snapshots should not be deduplicated until the comparison value is gone.
 
 ## Experimental Terrain Lessons
 
-Terrain Lab should remain the visual pressure test for these pieces, and
-`projects/procedural_terrain` remains useful coastal/ocean-adjacent context.
-Neither project should define the shared contract. The current rule is:
+Terrain Lab and `projects/procedural_terrain` are now legacy/reference
+experiments. They remain useful evidence for what worked, what failed, and what
+downstream terrain or shoreline consumers may need, but new foundation work
+should not migrate further toward their current contracts. The planned terrain
+reboot can consume the shared foundation later without inheriting either
+project's early payload shape. The current rule is:
 
 ```text
 source field -> reusable operators -> feature/process driver -> project recipe
@@ -131,14 +134,13 @@ compiled into `cubey::core`:
   shared remap/smoothing helpers, deterministic random/hash helpers, and
   value-noise/FBM helpers for formulas that already match existing project code.
 
-Terrain Lab now consumes this shared layer for its scalar helpers and
-deterministic FBM source. It also exposes opt-in FastNoiseLite and warped
-FastNoiseLite backends for the desert dune source driver. That adoption remains
-intentionally conservative: default captures keep the legacy backend, while the
-new coherent noise paths can be inspected explicitly. Terrain Lab also exposes a
-diagnostic adapter from its experimental `TerrainLabFieldData` payload into a
-generic `FieldSet2D`; that bridge proves the foundation contract without
-freezing Terrain Lab's field layout.
+Terrain Lab consumes this shared layer for its scalar helpers and deterministic
+FBM source. It also exposes opt-in FastNoiseLite and warped FastNoiseLite
+backends for the desert dune source driver. That adoption is now a preserved
+experiment rather than a migration template: default captures keep the legacy
+backend, the coherent noise paths can still be inspected explicitly, and the
+diagnostic adapter from `TerrainLabFieldData` into `FieldSet2D` remains useful
+evidence without freezing Terrain Lab's field layout.
 
 The first preserve-output migration wave also routes existing duplicate helpers
 through shared primitives where the formulas already matched:
@@ -204,9 +206,8 @@ Next shared candidates should come from repeated project-local code, broad
 procedural-rendering needs, or a specific reference-backed driver need, not from
 speculative API surface. Likely near-term candidates are:
 
-- deterministic tile or patch sampling descriptors that are independent of any
-  one renderer;
-- a proof migration of one Terrain Lab source path onto `SourceRecipe2D`;
+- deterministic tile, patch, atlas, and volume sampling descriptors that are
+  independent of any one renderer;
 - a cross-project review of atmosphere, cloud, ocean, fluid, and generated
   texture consumers before adding terrain-only APIs;
 - field-set export/capture metadata so old and new procedural outputs are easy
@@ -222,6 +223,8 @@ Near-term non-goals:
 - no full procedural node graph;
 - no compatibility promise for early Terrain Lab or `procedural_terrain`
   payloads;
+- no further Terrain Lab or `procedural_terrain` migration as a foundation
+  milestone before the terrain reboot;
 - no default switch from legacy Terrain Lab value noise to FastNoiseLite;
 - no FastNoiseLite GLSL migration before shader parity has its own focused
   review;

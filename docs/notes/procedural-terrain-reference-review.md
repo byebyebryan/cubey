@@ -22,13 +22,14 @@ Cubey now has the start of a shared procedural layer under
   warp;
 - small GLSL helper mirrors for repeated hash/noise/remap formulas.
 
-Terrain Lab and `projects/procedural_terrain` are current pressure tests, not
-contract owners. Both can be deprecated or rebooted if their early terrain
-payloads conflict with a cleaner shared foundation. They have already exposed
-the failure mode to avoid: hand-authored lines, disks, quadrants, and local masks
-can look acceptable in one camera view, but they do not scale into believable
-terrain systems. The foundation should therefore keep moving toward coherent
-source fields, named process fields, and inspectable drivers.
+Terrain Lab and `projects/procedural_terrain` are now legacy pressure tests, not
+contract owners. Both should keep compiling as reference snapshots, but their
+early terrain payloads should not shape the next shared foundation APIs. They
+have already exposed the failure mode to avoid: hand-authored lines, disks,
+quadrants, and local masks can look acceptable in one camera view, but they do
+not scale into believable terrain systems. The foundation should therefore keep
+moving toward coherent source fields, named process fields, and inspectable
+drivers.
 
 ## References Reviewed
 
@@ -224,15 +225,12 @@ Remaining near-term candidates:
 1. A tile sampling contract: seed, world origin, extent, resolution, tile id,
    border policy, and stable sample coordinates that do not depend on one
    renderer.
-2. Terrain Lab biome or landform mixer prototype: compose named field sets or
-   landform outputs with explicit masks and strengths before promoting anything
-   terrain-specific to core.
-3. Cross-project review of atmosphere/environment, cloud, ocean, fluid, and
+2. Cross-project review of atmosphere/environment, cloud, ocean, fluid, and
    generated-texture consumers before adding terrain-only foundation APIs.
-4. Reference-backed mountain and river driver work: mountains should prove broad
+3. Reference-backed mountain and river driver work: mountains should prove broad
    uplift/ridge/peak structure; rivers should prove trunk, tributary, discharge,
    valley width, and water/process fields.
-5. Export and capture improvements: stable per-field PNG/output directories and
+4. Export and capture improvements: stable per-field PNG/output directories and
    small metadata files so old and new captures are easy to compare.
 
 Non-goals for the next foundation slice:
