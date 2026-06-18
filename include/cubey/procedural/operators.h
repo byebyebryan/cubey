@@ -48,11 +48,32 @@ struct LocalRelief2D {
     ScalarField2D local_span{};
 };
 
+struct ScalarFieldDistribution {
+    ScalarFieldStats stats{};
+    float p01 = 0.0F;
+    float p05 = 0.0F;
+    float p10 = 0.0F;
+    float p25 = 0.0F;
+    float p50 = 0.0F;
+    float p75 = 0.0F;
+    float p90 = 0.0F;
+    float p95 = 0.0F;
+    float p99 = 0.0F;
+};
+
+[[nodiscard]] ScalarFieldDistribution
+summarize_scalar_field_distribution(std::span<const float> values);
+[[nodiscard]] ScalarFieldDistribution
+summarize_scalar_field_distribution(const ScalarField2D& field);
 [[nodiscard]] ScalarField2D box_blur_3x3(const ScalarField2D& field);
 [[nodiscard]] ScalarField2D clamp_field(const ScalarField2D& field, float min_value,
                                         float max_value);
 [[nodiscard]] ScalarField2D remap_field(const ScalarField2D& field, float in_min, float in_max,
                                         float out_min, float out_max);
+[[nodiscard]] ScalarField2D percentile_remap_field(const ScalarField2D& field,
+                                                   float low_percentile,
+                                                   float high_percentile, float out_min,
+                                                   float out_max);
 [[nodiscard]] ScalarField2D smoothstep_field(const ScalarField2D& field, float edge0, float edge1);
 [[nodiscard]] ScalarField2D invert_unit_field(const ScalarField2D& field);
 [[nodiscard]] ScalarField2D signed_to_unit_field(const ScalarField2D& field);

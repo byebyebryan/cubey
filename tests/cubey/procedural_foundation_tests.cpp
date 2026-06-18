@@ -199,6 +199,67 @@ void test_procedural_field_composition_transforms_values() {
     require_near(ridged.at(0U, 1U), 0.25F, 0.0001F, "ridge profile should shape values near zero");
 }
 
+void test_procedural_distribution_summarizes_percentiles() {
+    cubey::procedural::ScalarField2D field({.width = 5, .height = 1}, 0.0F);
+    field.at(0U, 0U) = 0.0F;
+    field.at(1U, 0U) = 10.0F;
+    field.at(2U, 0U) = 20.0F;
+    field.at(3U, 0U) = 30.0F;
+    field.at(4U, 0U) = 40.0F;
+
+    const cubey::procedural::ScalarFieldDistribution distribution =
+        cubey::procedural::summarize_scalar_field_distribution(field);
+    require_near(distribution.stats.min, 0.0F, 0.0001F,
+                 "distribution should include scalar field stats");
+    require_near(distribution.stats.max, 40.0F, 0.0001F,
+                 "distribution should include scalar field stats");
+    require_near(distribution.p01, 0.4F, 0.0001F, "distribution should interpolate p01");
+    require_near(distribution.p05, 2.0F, 0.0001F, "distribution should interpolate p05");
+    require_near(distribution.p10, 4.0F, 0.0001F, "distribution should interpolate p10");
+    require_near(distribution.p25, 10.0F, 0.0001F, "distribution should interpolate p25");
+    require_near(distribution.p50, 20.0F, 0.0001F, "distribution should interpolate p50");
+    require_near(distribution.p75, 30.0F, 0.0001F, "distribution should interpolate p75");
+    require_near(distribution.p90, 36.0F, 0.0001F, "distribution should interpolate p90");
+    require_near(distribution.p95, 38.0F, 0.0001F, "distribution should interpolate p95");
+    require_near(distribution.p99, 39.6F, 0.0001F, "distribution should interpolate p99");
+}
+
+void test_procedural_percentile_remap_shapes_distribution() {
+    cubey::procedural::ScalarField2D field({.width = 5, .height = 1}, 0.0F);
+    field.at(0U, 0U) = 0.0F;
+    field.at(1U, 0U) = 10.0F;
+    field.at(2U, 0U) = 20.0F;
+    field.at(3U, 0U) = 30.0F;
+    field.at(4U, 0U) = 40.0F;
+
+    const cubey::procedural::ScalarField2D remapped =
+        cubey::procedural::percentile_remap_field(field, 0.25F, 0.75F, -1.0F, 1.0F);
+    require_near(remapped.at(0U, 0U), -1.0F, 0.0001F,
+                 "percentile remap should clamp below the low percentile");
+    require_near(remapped.at(1U, 0U), -1.0F, 0.0001F,
+                 "percentile remap should map low percentile to output min");
+    require_near(remapped.at(2U, 0U), 0.0F, 0.0001F,
+                 "percentile remap should scale median into the output range");
+    require_near(remapped.at(3U, 0U), 1.0F, 0.0001F,
+                 "percentile remap should map high percentile to output max");
+    require_near(remapped.at(4U, 0U), 1.0F, 0.0001F,
+                 "percentile remap should clamp above the high percentile");
+
+    cubey::procedural::ScalarField2D flat({.width = 2, .height = 2}, 3.0F);
+    require_throws(
+        [&] { (void)cubey::procedural::percentile_remap_field(field, 0.5F, 0.5F, 0.0F, 1.0F); },
+        "percentile remap should reject equal percentiles");
+    require_throws(
+        [&] { (void)cubey::procedural::percentile_remap_field(field, -0.1F, 0.9F, 0.0F, 1.0F); },
+        "percentile remap should reject low percentiles below zero");
+    require_throws(
+        [&] { (void)cubey::procedural::percentile_remap_field(field, 0.1F, 1.1F, 0.0F, 1.0F); },
+        "percentile remap should reject high percentiles above one");
+    require_throws(
+        [&] { (void)cubey::procedural::percentile_remap_field(flat, 0.1F, 0.9F, 0.0F, 1.0F); },
+        "percentile remap should reject zero input span");
+}
+
 void test_procedural_field_shaping_converts_and_terraces_unit_values() {
     require_near(cubey::procedural::signed_to_unit(-1.0F), 0.0F, 0.0001F,
                  "signed-to-unit should map negative one to zero");

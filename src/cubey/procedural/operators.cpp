@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <vector>
 
 namespace cubey::procedural {
 namespace {
@@ -41,6 +42,25 @@ template <typename Fn>
         target[index] = fn(lhs_values[index], rhs_values[index]);
     }
     return result;
+}
+
+[[nodiscard]] float percentile_from_sorted(std::span<const float> sorted_values, float percentile) {
+    if (sorted_values.empty()) {
+        return 0.0F;
+    }
+    const float clamped = saturate(percentile);
+    const float position = clamped * static_cast<float>(sorted_values.size() - 1U);
+    const auto lower_index = static_cast<std::size_t>(std::floor(position));
+    const auto upper_index = static_cast<std::size_t>(std::ceil(position));
+    const float fraction = position - static_cast<float>(lower_index);
+    return lerp(sorted_values[lower_index], sorted_values[upper_index], fraction);
+}
+
+void require_percentile_range(float low_percentile, float high_percentile) {
+    if (!std::isfinite(low_percentile) || !std::isfinite(high_percentile) ||
+        low_percentile < 0.0F || high_percentile > 1.0F || low_percentile >= high_percentile) {
+        throw std::runtime_error("procedural percentile range must be finite and increasing");
+    }
 }
 
 } // namespace
@@ -163,6 +183,50 @@ ScalarField2D ridge_profile_field(const ScalarField2D& field, float sharpness) {
 ScalarField2D terrace_unit_field(const ScalarField2D& field, std::uint32_t steps, float blend) {
     return transform_field(
         field, [steps, blend](float value) { return terrace_unit(value, steps, blend); });
+}
+
+ScalarFieldDistribution summarize_scalar_field_distribution(std::span<const float> values) {
+    ScalarFieldDistribution result{
+        .stats = summarize_scalar_field(values),
+    };
+    if (values.empty()) {
+        return result;
+    }
+
+    std::vector<float> sorted(values.begin(), values.end());
+    std::sort(sorted.begin(), sorted.end());
+    result.p01 = percentile_from_sorted(sorted, 0.01F);
+    result.p05 = percentile_from_sorted(sorted, 0.05F);
+    result.p10 = percentile_from_sorted(sorted, 0.10F);
+    result.p25 = percentile_from_sorted(sorted, 0.25F);
+    result.p50 = percentile_from_sorted(sorted, 0.50F);
+    result.p75 = percentile_from_sorted(sorted, 0.75F);
+    result.p90 = percentile_from_sorted(sorted, 0.90F);
+    result.p95 = percentile_from_sorted(sorted, 0.95F);
+    result.p99 = percentile_from_sorted(sorted, 0.99F);
+    return result;
+}
+
+ScalarFieldDistribution summarize_scalar_field_distribution(const ScalarField2D& field) {
+    return summarize_scalar_field_distribution(field.values());
+}
+
+ScalarField2D percentile_remap_field(const ScalarField2D& field, float low_percentile,
+                                     float high_percentile, float out_min, float out_max) {
+    require_percentile_range(low_percentile, high_percentile);
+    const std::span<const float> values = field.values();
+    if (values.empty()) {
+        throw std::runtime_error("procedural percentile remap requires at least one sample");
+    }
+
+    std::vector<float> sorted(values.begin(), values.end());
+    std::sort(sorted.begin(), sorted.end());
+    const float in_min = percentile_from_sorted(sorted, low_percentile);
+    const float in_max = percentile_from_sorted(sorted, high_percentile);
+    if (in_min == in_max) {
+        throw std::runtime_error("procedural percentile remap input span must be non-zero");
+    }
+    return remap_field(field, in_min, in_max, out_min, out_max);
 }
 
 ScalarField2D add_fields(const ScalarField2D& lhs, const ScalarField2D& rhs) {
