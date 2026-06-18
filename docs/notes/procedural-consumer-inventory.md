@@ -114,15 +114,18 @@ Shared needs:
 The current terrain projects should not be further migrated to define this
 contract. They are reference snapshots until the terrain reboot starts.
 
-## Next Foundation Shape
+## Foundation Shape
 
-The next code-level primitives should be small and renderer-independent:
+The first code-level primitives from this inventory are small and
+renderer-independent:
 
-- named seed derivation, so projects stop scattering magic offsets;
+- named seed derivation, so projects can stop scattering magic offsets;
 - 2D and 3D sample-domain descriptors, so generated assets can say whether a
-  grid is local, world, atlas, volume, or spherical data;
-- later generated asset metadata, shader parity checks, and volume/source
-  recipes once the first two primitives are in place.
+  grid is local, world, unit, atlas, volume, or spherical data.
+
+Likely follow-ups are generated asset metadata, shader parity checks, and
+volume/source recipes once projects start consuming the seed and domain
+vocabulary.
 
 This is intentionally not a visual migration batch. Active projects should keep
 their current formulas unless a focused follow-up proves parity or a better

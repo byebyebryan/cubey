@@ -126,6 +126,13 @@ compiled into `cubey::core`:
 - `noise.h` provides Cubey-wrapped FastNoiseLite coherent noise/domain-warp
   sampling plus deterministic legacy 2D and 3D hash/value-noise, FBM, and
   ridged FBM with explicit octave/lacunarity/gain/seed-stride configuration.
+- `seed.h` provides fixed string hashing, named-domain seed derivation, and a
+  named-domain `random01` helper so projects can split procedural streams
+  without scattering magic seed offsets.
+- `sample_domain.h` provides semantic 2D and 3D sample descriptors for local,
+  world, unit, atlas, volume, and spherical data. `SampleDomain2D` wraps
+  `Grid2DDesc` with seed and domain-space metadata; `SampleDomain3D` adds
+  centered volume coordinates and bounds-checked indexing.
 - `source_fields.h` wraps those samplers as deterministic 2D source fields and
   layered `SourceRecipe2D` stacks that can fill `ScalarField2D` grids, carry
   debug fields, apply masks/weights/blend modes, and optionally normalize final
@@ -202,18 +209,25 @@ These are intentionally domain-neutral: Terrain Lab can adapt its current height
 and driver fields into them, but terrain-specific landform drivers, hydrology,
 materials, and foliage remain outside core.
 
+The non-terrain foundation batch promotes named seed domains and semantic sample
+domains after reviewing active atmosphere, cloud, ocean, fluid, planet, and
+future terrain needs. This adds reusable address/metadata vocabulary without
+changing project formulas: atmosphere atlases, cloud density/weather volumes,
+ocean foam/detail, fluid jitter/turbulence, and future terrain tiles can now
+share seed and sample-domain language while keeping their domain recipes
+project-owned.
+
 Next shared candidates should come from repeated project-local code, broad
 procedural-rendering needs, or a specific reference-backed driver need, not from
 speculative API surface. Likely near-term candidates are:
 
-- deterministic tile, patch, atlas, and volume sampling descriptors that are
-  independent of any one renderer;
-- a cross-project review of atmosphere, cloud, ocean, fluid, and generated
-  texture consumers before adding terrain-only APIs;
-- field-set export/capture metadata so old and new procedural outputs are easy
-  to compare;
+- generated asset and field-set export metadata so old and new procedural
+  outputs are easy to compare by seed, domain, dimensions, and formula version;
+- shader parity review for seed/hash/noise helpers before new GLSL migrations;
 - a future `SourceRecipe3D` or volume-field variant after the cloud/environment
   review proves the shape;
+- deterministic tile or patch descriptors after the terrain reboot defines the
+  minimum address contract it needs beyond generic sample domains;
 - flow-routing and accumulation data structures after a deeper SimpleHydrology
   pass;
 - explicit source-field recipes for mountain range, river, and dune drivers.
@@ -225,6 +239,8 @@ Near-term non-goals:
   payloads;
 - no further Terrain Lab or `procedural_terrain` migration as a foundation
   milestone before the terrain reboot;
+- no migration of atmosphere, cloud, ocean, or fluid visual formulas in the seed
+  and sample-domain batch;
 - no default switch from legacy Terrain Lab value noise to FastNoiseLite;
 - no FastNoiseLite GLSL migration before shader parity has its own focused
   review;
