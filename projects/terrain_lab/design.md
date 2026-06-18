@@ -250,6 +250,12 @@ default source, FastNoiseLite remains opt-in, and both paths now share one
 procedural source-field interface. Review captures for this batch were written
 under `outputs/terrain_lab/source-fields-20260617-194345/`.
 
+The source-warp batch extends that interface with optional coherent domain
+warping and unit-field shaping operators. Desert dunes add a separate
+`fastnoise-lite-warped` opt-in path so the stronger deformation can be reviewed
+without changing the legacy or plain FastNoiseLite captures. Review captures for
+this batch were written under `outputs/terrain_lab/source-warp-20260617-214539/`.
+
 The sentinel slice set should prevent overfitting this model to canyon terrain.
 The first representative set is:
 

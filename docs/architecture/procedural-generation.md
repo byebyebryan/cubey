@@ -97,23 +97,23 @@ compiled into `cubey::core`:
   centered sample coordinates, bounds-checked indexing, and field summaries.
 - `operators.h` provides scalar helpers (`saturate`, `lerp`, `smoothstep`,
   `smootherstep01`) plus field operators for blur, normalization,
-  slope/curvature, local relief, remap/clamp, ridge shaping, and field
-  composition.
+  slope/curvature, local relief, remap/clamp, signed/unit conversion, power and
+  terrace shaping, ridge shaping, and field composition.
 - `noise.h` provides Cubey-wrapped FastNoiseLite coherent noise/domain-warp
   sampling plus deterministic legacy 2D and 3D hash/value-noise, FBM, and
   ridged FBM with explicit octave/lacunarity/gain/seed-stride configuration.
 - `source_fields.h` wraps those samplers as deterministic 2D source-field
   recipes that can fill `ScalarField2D` grids or sample individual coordinates
-  with an explicit domain transform.
+  with an explicit domain transform and optional coherent domain warp.
 - `shaders/cubey/procedural` mirrors the small GLSL side of this layer with
   shared remap/smoothing helpers, deterministic random/hash helpers, and
   value-noise/FBM helpers for formulas that already match existing project code.
 
 Terrain Lab now consumes this shared layer for its scalar helpers and
-deterministic FBM source. It also exposes an opt-in FastNoiseLite backend for
-the desert dune source driver. That adoption remains intentionally
-conservative: default captures keep the legacy backend, while the new coherent
-noise path can be inspected explicitly.
+deterministic FBM source. It also exposes opt-in FastNoiseLite and warped
+FastNoiseLite backends for the desert dune source driver. That adoption remains
+intentionally conservative: default captures keep the legacy backend, while the
+new coherent noise paths can be inspected explicitly.
 
 The first preserve-output migration wave also routes existing duplicate helpers
 through shared primitives where the formulas already matched:
@@ -160,18 +160,20 @@ ridge, peak, cliff, and scree source fields; the glacial slice keeps a separate
 valley/process source shape and uses the shared operators only for wall and
 process cues.
 
-The source-field construction batch adds scalar-field composition and deterministic
-2D noise-source sampling. The goal is not a node graph; it is a small C++
+The source-field construction batches add scalar-field composition,
+deterministic 2D noise-source sampling, optional coherent source warping, and
+common unit-field shaping. The goal is not a node graph; it is a small C++
 reference layer that can sample deterministic 2D noise fields, remap/blend/shape
 them, and make Terrain Lab's source formulas easier to inspect and later share.
 The first proof consumer is the desert dune source selection, preserving the
-legacy default and the explicit FastNoiseLite opt-in.
+legacy default while making FastNoiseLite and warped FastNoiseLite explicit
+opt-ins.
 
 Next shared candidates should come from repeated project-local code or from a
 specific reference-backed driver need, not from speculative API surface. Likely
 near-term candidates are:
 
-- terrain-oriented terrace and source-recipe helpers;
+- terrain-oriented source-recipe helpers;
 - flow-routing and accumulation data structures after a deeper SimpleHydrology
   pass;
 - explicit source-field recipes for mountain range, river, and dune drivers.

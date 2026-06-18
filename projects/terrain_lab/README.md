@@ -136,12 +136,13 @@ considered.
 camera-preset, noise-source, and debug-view settings from `RunConfig`, while leaving
 coast-oriented `terrain.*` flags to `procedural_terrain`.
 
-`--terrain-lab-noise-source fastnoise-lite` is an explicit CPU source-field
-experiment. The default remains `legacy-value`; the first opt-in consumer is
+`--terrain-lab-noise-source fastnoise-lite` and
+`--terrain-lab-noise-source fastnoise-lite-warped` are explicit CPU source-field
+experiments. The default remains `legacy-value`; the first opt-in consumer is
 the desert dune driver, so existing captures remain stable unless the backend is
 selected. Dune source selection now goes through shared
-`cubey::procedural::NoiseSource2D`, keeping legacy FBM and FastNoiseLite behind
-the same deterministic source-field interface.
+`cubey::procedural::NoiseSource2D`, keeping legacy FBM, FastNoiseLite, and
+warped FastNoiseLite behind the same deterministic source-field interface.
 
 Generated CPU fields include:
 
@@ -225,6 +226,7 @@ Useful run commands:
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice temperate-mountain-rivers --debug-view drainage-regions --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice desert-dunes --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite-warped --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice alpine-glacial-valley --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice mountain-ridges-peaks --frames 300 --width 1280 --height 720
 ./build/dev/projects/terrain_lab/terrain_lab --headless --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab.png
@@ -244,6 +246,8 @@ mkdir -p outputs/terrain_lab/current
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/03-desert-dunes-driver.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite --width 1280 --height 720 --output outputs/terrain_lab/current/03b-desert-dunes-fastnoise-final.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/03b-desert-dunes-fastnoise-driver.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite-warped --width 1280 --height 720 --output outputs/terrain_lab/current/03c-desert-dunes-fastnoise-warped-final.png
+./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite-warped --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/03c-desert-dunes-fastnoise-warped-driver.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --width 1280 --height 720 --output outputs/terrain_lab/current/04-alpine-glacial-valley-final.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/04-alpine-glacial-valley-driver.png
 ./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice mountain-ridges-peaks --width 1280 --height 720 --output outputs/terrain_lab/current/05-mountain-ridges-peaks-final.png
@@ -257,6 +261,8 @@ The field-operator migration review bundle is
 `outputs/terrain_lab/field-operators-20260617-191435/`.
 The source-field migration review bundle is
 `outputs/terrain_lab/source-fields-20260617-194345/`.
+The source-warp and shaping review bundle is
+`outputs/terrain_lab/source-warp-20260617-214539/`.
 
 ## Status
 
