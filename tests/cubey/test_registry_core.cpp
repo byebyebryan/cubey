@@ -49,6 +49,7 @@ void test_procedural_scalar_field_indexes_centered_samples();
 void test_procedural_seed_domain_random_is_stable_and_bounded();
 void test_procedural_seed_domains_are_stable();
 void test_procedural_shader_3d_noise_helpers_match_glsl_contracts();
+void test_procedural_shader_fastnoise_lite_include_is_shared();
 void test_procedural_shader_hash_helpers_match_glsl_contracts();
 void test_procedural_shader_random_helpers_are_shared();
 void test_procedural_shader_scalar_helpers_match_glsl_contracts();
@@ -197,6 +198,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_seed_domains_are_stable),
         CUBEY_TEST(test_procedural_seed_domain_random_is_stable_and_bounded),
         CUBEY_TEST(test_procedural_shader_random_helpers_are_shared),
+        CUBEY_TEST(test_procedural_shader_fastnoise_lite_include_is_shared),
         CUBEY_TEST(test_procedural_shader_scalar_helpers_match_glsl_contracts),
         CUBEY_TEST(test_procedural_shader_hash_helpers_match_glsl_contracts),
         CUBEY_TEST(test_procedural_shader_3d_noise_helpers_match_glsl_contracts),

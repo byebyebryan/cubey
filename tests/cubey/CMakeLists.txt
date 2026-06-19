@@ -109,4 +109,19 @@ target_compile_definitions(
         CUBEY_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
 
+add_custom_target(cubey_procedural_shader_smoke)
+cubey_add_glsl_shaders(
+    cubey_procedural_shader_smoke
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/procedural_shader_smoke"
+    SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/procedural_include_smoke.comp"
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/fastnoise_lite.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
+        "${CUBEY_FASTNOISE_LITE_GLSL_DIR}/FastNoiseLite.glsl"
+)
+add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)
+
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)

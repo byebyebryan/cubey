@@ -1024,6 +1024,29 @@ void test_procedural_shader_random_helpers_are_shared() {
                                    "shader noise helpers should consume shared random helpers");
 }
 
+void test_procedural_shader_fastnoise_lite_include_is_shared() {
+    const std::filesystem::path root{CUBEY_SOURCE_DIR};
+    const std::string wrapper_source =
+        cubey::tests::read_source_file(root / "shaders/cubey/procedural/fastnoise_lite.glsl");
+    const std::string shader_cmake =
+        cubey::tests::read_source_file(root / "cmake/CubeyShaders.cmake");
+    const std::string test_cmake =
+        cubey::tests::read_source_file(root / "tests/cubey/CMakeLists.txt");
+
+    cubey::tests::require_contains(
+        wrapper_source, "#include \"FastNoiseLite.glsl\"",
+        "shared FastNoiseLite shader wrapper should include the upstream GLSL port");
+    cubey::tests::require_contains(
+        shader_cmake, "CUBEY_FASTNOISE_LITE_GLSL_DIR",
+        "shader compile helper should add the FastNoiseLite GLSL include directory");
+    cubey::tests::require_contains(
+        test_cmake, "cubey_procedural_shader_smoke",
+        "core test build should compile the procedural shader include smoke target");
+    cubey::tests::require_contains(
+        test_cmake, "procedural_include_smoke.comp",
+        "procedural shader smoke target should compile a concrete shader");
+}
+
 void test_procedural_noise_is_deterministic_and_bounded() {
     const float first = cubey::procedural::value_noise_2d(1.25F, -3.75F, 17U);
     const float second = cubey::procedural::value_noise_2d(1.25F, -3.75F, 17U);

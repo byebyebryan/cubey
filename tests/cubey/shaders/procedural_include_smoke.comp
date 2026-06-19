@@ -1,0 +1,27 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "cubey/procedural/fastnoise_lite.glsl"
+#include "cubey/procedural/noise.glsl"
+#include "cubey/procedural/operators.glsl"
+#include "cubey/procedural/random.glsl"
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, std430) buffer SmokeOutput {
+    float values[];
+} smoke_output;
+
+void main() {
+    fnl_state state = fnlCreateState(1337);
+    state.noise_type = FNL_NOISE_OPENSIMPLEX2;
+    state.fractal_type = FNL_FRACTAL_FBM;
+    state.frequency = 0.05;
+    state.octaves = 3;
+
+    float coherent_noise = fnlGetNoise3D(state, 1.25, -3.75, 0.5);
+    float legacy = cubey_proc_fbm_3d(vec3(0.25, 1.5, -0.75), 42U, 3U);
+    float hash = cubey_proc_hash01_u32(123456789U);
+    float shaped = cubey_proc_remap(cubey_proc_saturate(hash), 0.0, 1.0, -1.0, 1.0);
+    smoke_output.values[0] = coherent_noise + legacy + shaped;
+}
