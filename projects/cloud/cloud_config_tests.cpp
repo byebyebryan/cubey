@@ -1,6 +1,7 @@
 #include "cloud_config.h"
 
 #include <cubey/core/config_options.h>
+#include <cubey/procedural/seed.h>
 
 #include <cmath>
 #include <cstdlib>
@@ -481,6 +482,113 @@ void test_weather_preset_defaults() {
                  "high cirrus weather preset should set scale");
 }
 
+void test_generated_artifact_metadata() {
+    namespace cloud = cubey::projects::cloud;
+    namespace procedural = cubey::procedural;
+
+    require(cloud::kCloudsGeneratedArtifacts.size() == 3U,
+            "cloud generated artifact catalog should expose the materialized textures");
+    require(cloud::cloud_generated_volume_mip_count(1U) == 1U,
+            "cloud generated volume mip count should handle unit volumes");
+    require(cloud::cloud_generated_volume_mip_count(cloud::kCloudBaseNoiseSize) == 8U,
+            "cloud base noise volume should have a complete mip chain");
+    require(cloud::cloud_generated_volume_mip_count(cloud::kCloudDetailNoiseSize) == 6U,
+            "cloud detail noise volume should have a complete mip chain");
+
+    const procedural::ProceduralArtifactMetadata base =
+        cloud::clouds_generated_artifact_metadata(cloud::CloudsGeneratedArtifact::BaseNoiseVolume);
+    const procedural::ProceduralArtifactMetadata base_again =
+        cloud::clouds_generated_artifact_metadata(cloud::CloudsGeneratedArtifact::BaseNoiseVolume);
+    const procedural::ProceduralArtifactMetadata detail = cloud::clouds_generated_artifact_metadata(
+        cloud::CloudsGeneratedArtifact::DetailNoiseVolume);
+    const procedural::ProceduralArtifactMetadata weather =
+        cloud::clouds_generated_artifact_metadata(cloud::CloudsGeneratedArtifact::WeatherMap);
+
+    procedural::validate_procedural_artifact_metadata(base);
+    procedural::validate_procedural_artifact_metadata(detail);
+    procedural::validate_procedural_artifact_metadata(weather);
+
+    require(base.name == "cloud base density volume",
+            "cloud base volume metadata should name the payload");
+    require(base.generator == "cubey::projects::cloud::cloud_perlin_worley",
+            "cloud base volume metadata should identify the generator");
+    require(base.formula_version == "cloud-base-density-volume-v1",
+            "cloud base volume metadata should identify the formula version");
+    require(base.domain == "cloud.base_density_volume",
+            "cloud base volume metadata should identify the domain");
+    require(base.seed == base_again.seed,
+            "cloud base volume metadata seed should be deterministic");
+    require(base.seed == procedural::stable_hash_string("cloud.base_density_volume"),
+            "cloud base volume metadata should derive seed from its domain");
+    require(base.space == procedural::ProceduralDomainSpace::Volume,
+            "cloud base volume metadata should use volume space");
+    require(base.kind == procedural::ProceduralArtifactKind::Volume3D,
+            "cloud base volume metadata should identify a 3D volume");
+    require(base.format == procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+            "cloud base volume metadata should identify RGBA8 payloads");
+    require(base.extent.width == cloud::kCloudBaseNoiseSize &&
+                base.extent.height == cloud::kCloudBaseNoiseSize &&
+                base.extent.depth == cloud::kCloudBaseNoiseSize && base.extent.faces == 1U &&
+                base.extent.mip_levels ==
+                    cloud::cloud_generated_volume_mip_count(cloud::kCloudBaseNoiseSize),
+            "cloud base volume metadata should preserve extent and mip count");
+    require(base.content_hash == 0U,
+            "cloud base volume metadata should defer GPU content hashing");
+
+    require(detail.name == "cloud detail erosion volume",
+            "cloud detail volume metadata should name the payload");
+    require(detail.generator == "cubey::projects::cloud::cloud_worley",
+            "cloud detail volume metadata should identify the generator");
+    require(detail.formula_version == "cloud-detail-erosion-volume-v1",
+            "cloud detail volume metadata should identify the formula version");
+    require(detail.domain == "cloud.detail_erosion_volume",
+            "cloud detail volume metadata should identify the domain");
+    require(detail.seed == procedural::stable_hash_string("cloud.detail_erosion_volume"),
+            "cloud detail volume metadata should derive seed from its domain");
+    require(detail.seed != base.seed,
+            "cloud detail volume metadata should use a separate seed stream");
+    require(detail.space == procedural::ProceduralDomainSpace::Volume,
+            "cloud detail volume metadata should use volume space");
+    require(detail.kind == procedural::ProceduralArtifactKind::Volume3D,
+            "cloud detail volume metadata should identify a 3D volume");
+    require(detail.format == procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+            "cloud detail volume metadata should identify RGBA8 payloads");
+    require(detail.extent.width == cloud::kCloudDetailNoiseSize &&
+                detail.extent.height == cloud::kCloudDetailNoiseSize &&
+                detail.extent.depth == cloud::kCloudDetailNoiseSize && detail.extent.faces == 1U &&
+                detail.extent.mip_levels ==
+                    cloud::cloud_generated_volume_mip_count(cloud::kCloudDetailNoiseSize),
+            "cloud detail volume metadata should preserve extent and mip count");
+    require(detail.content_hash == 0U,
+            "cloud detail volume metadata should defer GPU content hashing");
+
+    require(weather.name == "cloud weather map",
+            "cloud weather map metadata should name the payload");
+    require(weather.generator == "cubey::projects::cloud::cloud_weather",
+            "cloud weather map metadata should identify the generator");
+    require(weather.formula_version == "cloud-weather-map-v1",
+            "cloud weather map metadata should identify the formula version");
+    require(weather.domain == "cloud.weather_map",
+            "cloud weather map metadata should identify the domain");
+    require(weather.seed == procedural::stable_hash_string("cloud.weather_map"),
+            "cloud weather map metadata should derive seed from its domain");
+    require(weather.seed != base.seed && weather.seed != detail.seed,
+            "cloud weather map metadata should use a separate seed stream");
+    require(weather.space == procedural::ProceduralDomainSpace::World,
+            "cloud weather map metadata should use world space");
+    require(weather.kind == procedural::ProceduralArtifactKind::Texture2D,
+            "cloud weather map metadata should identify a 2D texture");
+    require(weather.format == procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+            "cloud weather map metadata should identify RGBA8 payloads");
+    require(weather.extent.width == cloud::kCloudWeatherTextureSize &&
+                weather.extent.height == cloud::kCloudWeatherTextureSize &&
+                weather.extent.depth == 1U && weather.extent.faces == 1U &&
+                weather.extent.mip_levels == 1U,
+            "cloud weather map metadata should preserve extent and mip count");
+    require(weather.content_hash == 0U,
+            "cloud weather map metadata should defer GPU content hashing");
+}
+
 void test_config_descriptors() {
     cubey::RunConfig config{};
     cubey::set_run_config_option_from_string(config, "clouds.camera_mode", "high");
@@ -596,6 +704,7 @@ int main() {
         test_run_config_mapping();
         test_camera_preset_defaults();
         test_weather_preset_defaults();
+        test_generated_artifact_metadata();
         test_config_descriptors();
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
