@@ -27,6 +27,7 @@ add_library(cubey_core STATIC
     procedural/field_2d.cpp
     procedural/field_metadata.cpp
     procedural/field_set_2d.cpp
+    procedural/hash.cpp
     procedural/noise.cpp
     procedural/operators.cpp
     procedural/patch_domain.cpp

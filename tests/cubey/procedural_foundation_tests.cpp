@@ -2,6 +2,7 @@
 #include <cubey/procedural/field_2d.h>
 #include <cubey/procedural/field_metadata.h>
 #include <cubey/procedural/field_set_2d.h>
+#include <cubey/procedural/hash.h>
 #include <cubey/procedural/noise.h>
 #include <cubey/procedural/operators.h>
 #include <cubey/procedural/patch_domain.h>
@@ -167,6 +168,43 @@ void test_procedural_sample_domains_reject_invalid_3d_samples() {
             });
         },
         "3D sample domains should reject zero dimensions");
+}
+
+void test_procedural_hash_builder_encodes_stable_values() {
+    const std::array<std::uint8_t, 5> cubey_bytes{'c', 'u', 'b', 'e', 'y'};
+    require(cubey::procedural::procedural_hash_bytes({}) ==
+                cubey::procedural::kProceduralFnv1a64Offset,
+            "empty byte hashes should preserve the FNV offset");
+    require(cubey::procedural::procedural_hash_bytes(cubey_bytes) == 8786454520568773403ULL,
+            "byte hashes should match stable string FNV hashing");
+    require(cubey::procedural::procedural_hash_bytes(cubey_bytes) ==
+                cubey::procedural::stable_hash_string("cubey"),
+            "raw byte hashes should match stable_hash_string for ASCII text");
+
+    cubey::procedural::ProceduralHashBuilder string_hash;
+    string_hash.append_string("cubey");
+    require(string_hash.value() != cubey::procedural::procedural_hash_bytes(cubey_bytes),
+            "builder strings should include a length prefix");
+
+    cubey::procedural::ProceduralHashBuilder first;
+    first.append_u32(7U);
+    first.append_u64(0x1234'5678'9abc'def0ULL);
+    first.append_float32(1.5F);
+    first.append_string("domain");
+
+    cubey::procedural::ProceduralHashBuilder repeat;
+    repeat.append_u32(7U);
+    repeat.append_u64(0x1234'5678'9abc'def0ULL);
+    repeat.append_float32(1.5F);
+    repeat.append_string("domain");
+    require(first.value() == repeat.value(), "hash builders should repeat matching sequences");
+
+    cubey::procedural::ProceduralHashBuilder changed;
+    changed.append_u32(8U);
+    changed.append_u64(0x1234'5678'9abc'def0ULL);
+    changed.append_float32(1.5F);
+    changed.append_string("domain");
+    require(first.value() != changed.value(), "hash builders should include appended values");
 }
 
 void test_procedural_patch_domains_hash_addresses_and_seeds() {

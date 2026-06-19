@@ -32,6 +32,7 @@ void test_procedural_field_metadata_hashes_scalar_fields();
 void test_procedural_field_sets_reject_invalid_fields();
 void test_procedural_field_sets_store_named_scalar_fields();
 void test_procedural_field_shaping_converts_and_terraces_unit_values();
+void test_procedural_hash_builder_encodes_stable_values();
 void test_procedural_distribution_summarizes_percentiles();
 void test_procedural_percentile_remap_shapes_distribution();
 void test_procedural_legacy_noise_golden_values_are_stable();
@@ -171,6 +172,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_sample_domains_wrap_2d_grids),
         CUBEY_TEST(test_procedural_sample_domains_index_3d_samples),
         CUBEY_TEST(test_procedural_sample_domains_reject_invalid_3d_samples),
+        CUBEY_TEST(test_procedural_hash_builder_encodes_stable_values),
         CUBEY_TEST(test_procedural_patch_domains_hash_addresses_and_seeds),
         CUBEY_TEST(test_procedural_patch_domains_expand_bordered_sample_grids),
         CUBEY_TEST(test_procedural_artifact_metadata_counts_mipped_samples),
