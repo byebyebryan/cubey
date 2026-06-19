@@ -10,6 +10,9 @@ Current V1 scope:
 - generated 32^3 Worley erosion/detail noise;
 - generated 1024^2 weather map with authored coverage, cloud type,
   edge-breakup, and local-scatter channels that bias the local 3D density field;
+- generated artifact descriptors for the materialized base density volume,
+  detail erosion volume, and weather map, using the shared procedural metadata
+  contract;
 - spherical shell raymarch with height gradients, detail erosion, Beer
   transmittance, powder response, and a short light march;
 - world-scale weather/type sampling with separate opt-in vertical shear control;
@@ -147,6 +150,9 @@ Known deferrals:
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,
   and synchronization remain project-owned in V1.
+- Generated artifact metadata is descriptor-only for now. GPU content hashes,
+  readback/export metadata, and shader-only orbit coverage/detail/hull artifact
+  descriptors remain deferred.
 
 See
 [`docs/architecture/cloud-rendering.md`](../../docs/architecture/cloud-rendering.md)

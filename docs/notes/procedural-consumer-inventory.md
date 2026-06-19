@@ -45,9 +45,9 @@ Shared needs:
   origin, and semantic space;
 - stable named seed domains for base density, detail erosion, weather maps,
   orbit coverage/detail, and sampling jitter;
-- generated artifact metadata for the materialized base noise volume, detail
-  noise volume, and weather map; shader-evaluated orbit coverage/detail/hull
-  fields should stay out of the artifact catalog until they are materialized or
+- generated artifact metadata for the materialized base density volume, detail
+  erosion volume, and weather map; shader-evaluated orbit coverage/detail/hull
+  fields stay out of the artifact catalog until they are materialized or
   exportable;
 - future `SourceRecipe3D` or volume-field recipes after the cloud volume shapes
   are reviewed against the current renderer.
@@ -130,11 +130,12 @@ renderer-independent:
   generator, formula version, semantic domain, dimensions, format, seed, and
   content hash.
 
-The first metadata consumer is the atmosphere lunar/night-sky atlas pair because
-those atlases already have deterministic CPU generation and atlas hash tests.
-The next cloud metadata pass should cover only materialized generated textures,
-not shader-only orbit diagnostics. Likely follow-ups are shader parity checks,
-field-set export metadata, and volume/source recipes once projects start
+The first metadata consumers are the atmosphere lunar/night-sky atlas pair and
+the cloud generated texture descriptors. Atmosphere covers CPU-generated atlas
+bytes with content hashes; cloud covers GPU-generated base density, detail
+erosion, and weather textures with descriptor metadata and deferred content
+hashes. Likely follow-ups are shader parity checks, field-set export metadata,
+GPU readback/export metadata, and volume/source recipes once projects start
 consuming the seed and domain vocabulary.
 
 This is intentionally not a visual migration batch. Active projects should keep

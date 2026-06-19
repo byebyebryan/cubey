@@ -219,19 +219,20 @@ address/metadata vocabulary without changing project formulas: atmosphere
 atlases, cloud density/weather volumes, ocean foam/detail, fluid
 jitter/turbulence, and future terrain tiles can share seed, domain, and artifact
 identity language while keeping their domain recipes project-owned. The first
-metadata consumer is the generated atmosphere lunar/night-sky atlas pair, which
-now carries in-memory metadata and content hashes while preserving atlas bytes.
+metadata consumers are the generated atmosphere lunar/night-sky atlas pair and
+the production cloud generated texture catalog. Atmosphere atlases now carry
+in-memory metadata and content hashes while preserving atlas bytes. Cloud now
+exposes descriptor metadata for its GPU-generated base density volume, detail
+erosion volume, and weather map while leaving `content_hash = 0` until a
+readback/export path exists.
 
 Next shared candidates should come from repeated project-local code, broad
 procedural-rendering needs, or a specific reference-backed driver need, not from
 speculative API surface. Likely near-term candidates are:
 
 - shader parity review for seed/hash/noise helpers before new GLSL migrations;
-- cloud generated-volume and weather-map metadata adoption using the same
-  artifact contract; the first cloud pass should cover only materialized
-  generated textures (base noise volume, detail noise volume, and weather map)
-  while leaving shader-evaluated orbit coverage/detail/hull fields deferred
-  until they have an exportable artifact shape;
+- cloud GPU readback or export metadata so generated-volume and weather-map
+  descriptors can report content hashes instead of descriptor-only identity;
 - field-set export metadata so old and new procedural field outputs are easy to
   compare by generator identity, formula version, seed, semantic domain,
   dimensions, and content hash;
