@@ -113,13 +113,33 @@ float sun_elevation_degrees(vec3 sun_direction) {
 }
 
 float twilight_visibility(float sun_elevation) {
-    float astronomical_fade = smoothstep(-18.0, -6.0, sun_elevation);
+    float astronomical_fade = smoothstep(-24.0, -6.0, sun_elevation);
     float daylight_fade = 1.0 - smoothstep(-1.0, 4.0, sun_elevation);
     return astronomical_fade * daylight_fade;
 }
 
 float star_visibility(float sun_elevation) {
     return 1.0 - smoothstep(-18.0, -6.0, sun_elevation);
+}
+
+vec3 night_airglow_radiance(vec3 ray_direction, vec3 sun_direction) {
+    float sun_elevation = sun_elevation_degrees(sun_direction);
+    float night = star_visibility(sun_elevation);
+    if (night <= 0.0) {
+        return vec3(0.0);
+    }
+
+    float above_horizon = smoothstep(-0.045, 0.080, ray_direction.y);
+    float horizon = exp(-max(ray_direction.y, 0.0) / 0.26) * above_horizon;
+    float upper_sky = smoothstep(0.02, 0.82, ray_direction.y) * above_horizon;
+    float star_control = clamp(atmosphere.night_options.z, 0.0, 4.0);
+    float pollution = clamp(atmosphere.milky_way_options.z, 0.0, 1.0);
+
+    vec3 horizon_color = cubey_srgb_to_linear(vec3(0.020, 0.030, 0.072));
+    vec3 zenith_color = cubey_srgb_to_linear(vec3(0.008, 0.015, 0.048));
+    vec3 pollution_haze = cubey_srgb_to_linear(vec3(0.045, 0.034, 0.026)) * horizon * pollution;
+    vec3 airglow = mix(horizon_color, zenith_color, upper_sky) * (0.42 + 0.58 * star_control);
+    return (airglow + pollution_haze * 0.36) * night * above_horizon * 0.48;
 }
 
 float surface_airmass_star_visibility(float ray_up) {
@@ -470,7 +490,8 @@ vec3 render_milky_way_debug() {
 }
 
 vec3 night_sky_radiance(vec3 ray_direction, vec3 sun_direction) {
-    return twilight_radiance(ray_direction, sun_direction) +
+    return night_airglow_radiance(ray_direction, sun_direction) +
+           twilight_radiance(ray_direction, sun_direction) +
            procedural_star_radiance(ray_direction, sun_direction) +
            milky_way_radiance(ray_direction, sun_direction);
 }

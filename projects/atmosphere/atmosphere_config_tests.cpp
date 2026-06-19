@@ -961,6 +961,8 @@ int main() {
                      "atmosphere shader should include aerial perspective debug output");
     require_contains(shader_source, "twilight_radiance",
                      "atmosphere shader should include twilight radiance");
+    require_contains(shader_source, "night_airglow_radiance",
+                     "atmosphere shader should include a continuous night airglow fill");
     require_contains(shader_source, "safe_horizontal_direction",
                      "atmosphere shader should guard vertical twilight vectors");
     require_contains(shader_source, "procedural_star_radiance",
