@@ -80,7 +80,8 @@ constexpr std::array<CloudsQuality, 3> kCloudQualityModes{
     CloudsQuality::Half,
     CloudsQuality::Full,
 };
-constexpr std::array<CloudsWeatherPreset, 5> kCloudWeatherPresets{
+constexpr std::array<CloudsWeatherPreset, 6> kCloudWeatherPresets{
+    CloudsWeatherPreset::Clear,
     CloudsWeatherPreset::FairWeather,
     CloudsWeatherPreset::BrokenCumulus,
     CloudsWeatherPreset::OvercastStratus,

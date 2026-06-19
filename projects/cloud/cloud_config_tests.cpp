@@ -42,9 +42,16 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud::clouds_weather_preset_from_string("storm-cells") ==
                 cubey::projects::cloud::CloudsWeatherPreset::StormCells,
             "storm-cells weather preset should parse");
+    require(cubey::projects::cloud::clouds_weather_preset_from_string("clear") ==
+                cubey::projects::cloud::CloudsWeatherPreset::Clear,
+            "clear weather preset should parse");
     require(cubey::projects::cloud::clouds_weather_preset_from_string("storm") ==
                 cubey::projects::cloud::CloudsWeatherPreset::StormCells,
             "legacy storm weather preset should parse");
+    require(cubey::projects::cloud::clouds_weather_preset_name(
+                cubey::projects::cloud::CloudsWeatherPreset::Clear) ==
+                std::string_view("clear"),
+            "clear weather preset should name itself");
     require(cubey::projects::cloud::clouds_weather_preset_name(
                 cubey::projects::cloud::CloudsWeatherPreset::BrokenCumulus) ==
                 std::string_view("broken-cumulus"),
@@ -441,6 +448,22 @@ void test_weather_preset_defaults() {
                  "default orbit detail should suppress high-frequency erosion");
     require_near(config.orbit_density_scale, 0.02F, 0.001F,
                  "default orbit density should reveal the toy planet in orbit captures");
+
+    run_config.clouds.weather_preset = "clear";
+
+    config = cubey::projects::cloud::clouds_config_from_run_config(run_config);
+    require(config.weather_preset == cubey::projects::cloud::CloudsWeatherPreset::Clear,
+            "clear weather preset should map from run config");
+    require(config.cloud_style == cubey::projects::cloud::CloudsCloudStyle::FairWeather,
+            "clear weather preset should keep fair-weather cloud style");
+    require_near(config.coverage, 0.08F, 0.001F,
+                 "clear weather preset should reduce cloud coverage");
+    require_near(config.density, 0.007F, 0.001F,
+                 "clear weather preset should reduce cloud density");
+    require_near(config.horizon_strength, 0.18F, 0.001F,
+                 "clear weather preset should reduce horizon fill");
+    require_near(config.horizon_glow_strength, 0.24F, 0.001F,
+                 "clear weather preset should reduce final horizon glow");
 
     run_config.clouds.weather_preset = "overcast";
 

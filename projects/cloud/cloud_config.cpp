@@ -48,12 +48,24 @@ struct CloudsWeatherPresetSettings {
     float wind_speed_mps = 0.0F;
     float bottom_altitude_m = kCloudsDefaultBottomAltitudeM;
     float top_altitude_m = kCloudsDefaultTopAltitudeM;
+    float horizon_strength = 0.48F;
+    float horizon_glow_strength = 0.55F;
     CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
 };
 
 [[nodiscard]] CloudsWeatherPresetSettings clouds_weather_preset_settings(
     CloudsWeatherPreset preset) {
     switch (preset) {
+    case CloudsWeatherPreset::Clear:
+        return {.coverage = 0.08F,
+                .density = 0.007F,
+                .weather_scale_km = 420.0F,
+                .wind_speed_mps = 180.0F,
+                .bottom_altitude_m = 6500.0F,
+                .top_altitude_m = 16000.0F,
+                .horizon_strength = 0.18F,
+                .horizon_glow_strength = 0.24F,
+                .cloud_style = CloudsCloudStyle::FairWeather};
     case CloudsWeatherPreset::FairWeather:
         return {.coverage = 0.30F,
                 .density = 0.016F,
@@ -110,6 +122,8 @@ void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset prese
     config.wind_speed_mps = settings.wind_speed_mps;
     config.bottom_altitude_m = settings.bottom_altitude_m;
     config.top_altitude_m = settings.top_altitude_m;
+    config.horizon_strength = settings.horizon_strength;
+    config.horizon_glow_strength = settings.horizon_glow_strength;
     config.cloud_style = settings.cloud_style;
 }
 
@@ -179,7 +193,10 @@ const char* clouds_quality_name(CloudsQuality quality) {
 }
 
 CloudsWeatherPreset clouds_weather_preset_from_string(std::string_view value) {
-    if (value == "fair-weather" || value == "clear") {
+    if (value == "clear") {
+        return CloudsWeatherPreset::Clear;
+    }
+    if (value == "fair-weather") {
         return CloudsWeatherPreset::FairWeather;
     }
     if (value.empty() || value == "broken-cumulus" || value == "scattered" ||
@@ -200,6 +217,8 @@ CloudsWeatherPreset clouds_weather_preset_from_string(std::string_view value) {
 
 const char* clouds_weather_preset_name(CloudsWeatherPreset preset) {
     switch (preset) {
+    case CloudsWeatherPreset::Clear:
+        return "clear";
     case CloudsWeatherPreset::FairWeather:
         return "fair-weather";
     case CloudsWeatherPreset::BrokenCumulus:

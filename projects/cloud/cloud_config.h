@@ -38,6 +38,7 @@ enum class CloudsWeatherPreset : std::uint32_t {
     OvercastStratus = 2,
     StormCells = 3,
     HighCirrus = 4,
+    Clear = 5,
 };
 
 enum class CloudsCloudStyle : std::uint32_t {

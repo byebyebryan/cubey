@@ -50,6 +50,7 @@ Useful runs:
 ./build/dev/projects/cloud/cloud
 ./build/dev/projects/cloud/cloud --cloud-camera-mode surface-up
 ./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique
+./build/dev/projects/cloud/cloud --cloud-weather-preset clear
 ./build/dev/projects/cloud/cloud --cloud-weather-preset fair-weather
 ./build/dev/projects/cloud/cloud --cloud-weather-preset broken-cumulus
 ./build/dev/projects/cloud/cloud --cloud-weather-preset storm-cells

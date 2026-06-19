@@ -189,12 +189,15 @@ vec3 cloud_sky_color(vec3 direction) {
     float twilight = exp(-abs(sun_elevation) * 10.0);
 
     float surface_view = cloud_surface_view_factor();
+    float low_haze_weather =
+        surface_view * (1.0 - clamp(params.cloud_color_bottom_horizon.w / 0.48, 0.0, 1.0));
     vec3 zenith_day = mix(vec3(0.19, 0.45, 0.82),
                           vec3(0.105, 0.315, 0.610),
                           surface_view);
     vec3 horizon_day = mix(vec3(0.72, 0.86, 0.95),
                            vec3(0.360, 0.485, 0.560),
                            surface_view);
+    horizon_day = mix(horizon_day, vec3(0.180, 0.360, 0.560), low_haze_weather);
     vec3 zenith_night = vec3(0.004, 0.006, 0.014);
     vec3 horizon_night = vec3(0.020, 0.026, 0.045);
     float horizon = pow(1.0 - max(view_height, 0.0), 2.0);
