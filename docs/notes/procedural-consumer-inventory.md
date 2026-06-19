@@ -151,3 +151,8 @@ their current formulas unless a focused follow-up proves parity or a better
 domain recipe. The next cleanup pass should target shared hash and metadata
 plumbing in active atmosphere/cloud consumers while leaving legacy terrain
 experiments and planet terrain formulas untouched.
+
+That cleanup now routes active atmosphere atlas hashes, atmosphere atlas
+metadata, and cloud generated-artifact descriptors through shared hash and
+metadata builders. The visual formulas remain project-owned, and the legacy
+terrain projects plus planet terrain details remain outside this migration.

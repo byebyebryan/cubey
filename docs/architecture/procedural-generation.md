@@ -122,6 +122,8 @@ compiled into `cubey::core`:
   deterministic content hashes, so generated CPU-side field outputs can be
   compared by generator identity, formula version, seed, semantic domain, grid
   dimensions, and values.
+- `hash.h` provides the shared stable FNV-1a byte hash and typed hash builder
+  used by field, patch, atlas, and generated-artifact metadata contracts.
 - `operators.h` provides scalar helpers (`saturate`, `lerp`, `smoothstep`,
   `smootherstep01`) plus field operators for blur, normalization,
   slope/curvature, local relief, remap/clamp, signed/unit conversion, power and
@@ -142,7 +144,8 @@ compiled into `cubey::core`:
   planet patch sampling.
 - `artifact_metadata.h` provides generated artifact identity, value format,
   semantic domain, seed, extent, mip/face layout, and content-hash metadata for
-  in-memory comparison of procedural outputs.
+  in-memory comparison of procedural outputs, plus validated builders for
+  domain-derived identities and complete metadata records.
 - `source_fields.h` wraps those samplers as deterministic 2D source fields and
   layered `SourceRecipe2D` stacks that can fill `ScalarField2D` grids, carry
   debug fields, apply masks/weights/blend modes, and optionally normalize final
@@ -245,7 +248,10 @@ GPU-generated base density volume, detail erosion volume, and weather map while
 leaving `content_hash = 0` until a readback/export path exists. CPU-side scalar
 fields and field sets now have content hashes and artifact metadata; 2D patch
 domains now have address hashing, patch seed derivation, and border expansion
-contracts.
+contracts. The cleanup pass routes repeated active-consumer hashing and
+generated-artifact construction through shared helpers while keeping atmosphere
+atlas formulas, cloud volume/weather recipes, legacy terrain experiments, and
+planet terrain detail formulas project-owned.
 
 Next shared candidates should come from repeated project-local code, broad
 procedural-rendering needs, or a specific reference-backed driver need, not from
