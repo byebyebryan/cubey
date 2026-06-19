@@ -1,6 +1,6 @@
 #include "cloud_config.h"
 
-#include <cubey/procedural/seed.h>
+#include <cubey/procedural/artifact_metadata.h>
 
 #include <algorithm>
 #include <cmath>
@@ -23,22 +23,21 @@ namespace {
 [[nodiscard]] cubey::procedural::ProceduralArtifactMetadata cloud_volume_metadata(
     std::string name, std::string generator, std::string formula_version, std::string domain,
     std::uint32_t size) {
-    return cubey::procedural::ProceduralArtifactMetadata{
-        .name = std::move(name),
-        .generator = std::move(generator),
-        .formula_version = std::move(formula_version),
-        .domain = domain,
-        .seed = cubey::procedural::stable_hash_string(domain),
-        .space = cubey::procedural::ProceduralDomainSpace::Volume,
-        .kind = cubey::procedural::ProceduralArtifactKind::Volume3D,
-        .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
-        .extent = {.width = size,
-                   .height = size,
-                   .depth = size,
-                   .faces = 1U,
-                   .mip_levels = cloud_generated_volume_mip_count(size)},
-        .content_hash = 0U,
-    };
+    return cubey::procedural::make_procedural_artifact_metadata(
+        cubey::procedural::make_domain_procedural_artifact_identity(
+            std::move(name),
+            std::move(generator),
+            std::move(formula_version),
+            std::move(domain),
+            cubey::procedural::ProceduralDomainSpace::Volume),
+        cubey::procedural::ProceduralArtifactKind::Volume3D,
+        cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+        {.width = size,
+         .height = size,
+         .depth = size,
+         .faces = 1U,
+         .mip_levels = cloud_generated_volume_mip_count(size)},
+        0U);
 }
 
 struct CloudsWeatherPresetSettings {
@@ -490,22 +489,21 @@ cubey::procedural::ProceduralArtifactMetadata clouds_generated_artifact_metadata
                                      "cloud-detail-erosion-volume-v1",
                                      "cloud.detail_erosion_volume", kCloudDetailNoiseSize);
     case CloudsGeneratedArtifact::WeatherMap:
-        return cubey::procedural::ProceduralArtifactMetadata{
-            .name = "cloud weather map",
-            .generator = "cubey::projects::cloud::cloud_weather",
-            .formula_version = "cloud-weather-map-v1",
-            .domain = "cloud.weather_map",
-            .seed = cubey::procedural::stable_hash_string("cloud.weather_map"),
-            .space = cubey::procedural::ProceduralDomainSpace::World,
-            .kind = cubey::procedural::ProceduralArtifactKind::Texture2D,
-            .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
-            .extent = {.width = kCloudWeatherTextureSize,
-                       .height = kCloudWeatherTextureSize,
-                       .depth = 1U,
-                       .faces = 1U,
-                       .mip_levels = 1U},
-            .content_hash = 0U,
-        };
+        return cubey::procedural::make_procedural_artifact_metadata(
+            cubey::procedural::make_domain_procedural_artifact_identity(
+                "cloud weather map",
+                "cubey::projects::cloud::cloud_weather",
+                "cloud-weather-map-v1",
+                "cloud.weather_map",
+                cubey::procedural::ProceduralDomainSpace::World),
+            cubey::procedural::ProceduralArtifactKind::Texture2D,
+            cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+            {.width = kCloudWeatherTextureSize,
+             .height = kCloudWeatherTextureSize,
+             .depth = 1U,
+             .faces = 1U,
+             .mip_levels = 1U},
+            0U);
     }
 
     throw std::runtime_error("unknown cloud generated artifact");
