@@ -232,19 +232,26 @@ readback/export path exists.
 
 Next shared candidates should come from repeated project-local code, broad
 procedural-rendering needs, or a specific reference-backed driver need, not from
-speculative API surface. Likely near-term candidates are:
+speculative API surface.
+
+The foundation closure batch should close the low-risk contracts already implied
+by the current CPU-side layer:
+
+- field-set export metadata so old and new procedural field outputs are easy to
+  compare by generator identity, formula version, seed, semantic domain,
+  dimensions, and content hash;
+- deterministic tile or patch descriptors so future terrain and planet work can
+  sample local patches without inventing incompatible address and border
+  semantics.
+
+Remaining candidates after that closure batch are:
 
 - GPU-executed shader golden tests or FastNoiseLite GLSL parity before any
   future shader-side coherent-noise migration;
 - cloud GPU readback or export metadata so generated-volume and weather-map
   descriptors can report content hashes instead of descriptor-only identity;
-- field-set export metadata so old and new procedural field outputs are easy to
-  compare by generator identity, formula version, seed, semantic domain,
-  dimensions, and content hash;
 - a future `SourceRecipe3D` or volume-field variant after the cloud/environment
   review proves the shape;
-- deterministic tile or patch descriptors after the terrain reboot defines the
-  minimum address contract it needs beyond generic sample domains;
 - flow-routing and accumulation data structures after a deeper SimpleHydrology
   pass;
 - explicit source-field recipes for mountain range, river, and dune drivers.
