@@ -1,8 +1,10 @@
 #include <cubey/procedural/artifact_metadata.h>
 #include <cubey/procedural/field_2d.h>
+#include <cubey/procedural/field_metadata.h>
 #include <cubey/procedural/field_set_2d.h>
 #include <cubey/procedural/noise.h>
 #include <cubey/procedural/operators.h>
+#include <cubey/procedural/patch_domain.h>
 #include <cubey/procedural/sample_domain.h>
 #include <cubey/procedural/seed.h>
 #include <cubey/procedural/source_fields.h>
@@ -167,6 +169,98 @@ void test_procedural_sample_domains_reject_invalid_3d_samples() {
         "3D sample domains should reject zero dimensions");
 }
 
+void test_procedural_patch_domains_hash_addresses_and_seeds() {
+    const cubey::procedural::PatchAddress2D address{.x = 3, .y = -2, .level = 5};
+    const std::uint64_t first_hash = cubey::procedural::patch_address_hash(address);
+    const std::uint64_t repeat_hash = cubey::procedural::patch_address_hash(address);
+    require(first_hash == repeat_hash, "patch address hashes should repeat exactly");
+    require(first_hash !=
+                cubey::procedural::patch_address_hash({.x = 4, .y = -2, .level = 5}),
+            "patch address hashes should include x");
+    require(first_hash !=
+                cubey::procedural::patch_address_hash({.x = 3, .y = -1, .level = 5}),
+            "patch address hashes should include y");
+    require(first_hash !=
+                cubey::procedural::patch_address_hash({.x = 3, .y = -2, .level = 6}),
+            "patch address hashes should include level");
+
+    const std::uint64_t seed =
+        cubey::procedural::derive_patch_seed(42U, "terrain.height", address);
+    require(seed == cubey::procedural::derive_patch_seed(42U, "terrain.height", address),
+            "patch seeds should repeat for matching base seed, domain, and address");
+    require(seed != cubey::procedural::derive_patch_seed(43U, "terrain.height", address),
+            "patch seeds should include base seed");
+    require(seed != cubey::procedural::derive_patch_seed(42U, "terrain.moisture", address),
+            "patch seeds should include domain names");
+    require(seed !=
+                cubey::procedural::derive_patch_seed(
+                    42U, "terrain.height", {.x = 3, .y = -2, .level = 6}),
+            "patch seeds should include patch address hashes");
+}
+
+void test_procedural_patch_domains_expand_bordered_sample_grids() {
+    const cubey::procedural::PatchAddress2D address{.x = -7, .y = 11, .level = 2};
+    const std::uint64_t seed =
+        cubey::procedural::derive_patch_seed(1234U, "terrain.height", address);
+    const cubey::procedural::PatchDomain2D domain{
+        .address = address,
+        .interior_grid =
+            {
+                .width = 16,
+                .height = 8,
+                .cell_size = 4.0F,
+                .origin_x = 100.0F,
+                .origin_y = -40.0F,
+            },
+        .border_samples = 2,
+        .seed = seed,
+        .space = cubey::procedural::ProceduralDomainSpace::World,
+    };
+
+    cubey::procedural::validate_patch_domain(domain);
+    const cubey::procedural::Grid2DDesc sample_grid =
+        cubey::procedural::patch_sample_grid(domain);
+    require(sample_grid.width == 20U && sample_grid.height == 12U,
+            "patch sample grids should expand by border samples on each side");
+    require_near(sample_grid.cell_size, 4.0F, 0.0F,
+                 "patch sample grids should preserve cell size");
+    require_near(sample_grid.origin_x, 100.0F, 0.0F,
+                 "patch sample grids should preserve origin x");
+    require_near(sample_grid.origin_y, -40.0F, 0.0F,
+                 "patch sample grids should preserve origin y");
+
+    const cubey::procedural::SampleDomain2D sample_domain =
+        cubey::procedural::patch_sample_domain(domain);
+    require(sample_domain.grid.width == sample_grid.width &&
+                sample_domain.grid.height == sample_grid.height,
+            "patch sample domains should wrap the expanded grid");
+    require(sample_domain.seed == seed, "patch sample domains should preserve seeds");
+    require(sample_domain.space == cubey::procedural::ProceduralDomainSpace::World,
+            "patch sample domains should preserve spaces");
+    require(cubey::procedural::sample_count(sample_domain) == 240U,
+            "patch sample domains should count the expanded sample grid");
+
+    require_throws(
+        [] {
+            cubey::procedural::validate_patch_domain(cubey::procedural::PatchDomain2D{
+                .interior_grid = {.width = 0U, .height = 8U},
+            });
+        },
+        "patch domains should reject zero interior dimensions");
+    require_throws(
+        [] {
+            (void)cubey::procedural::patch_sample_grid(cubey::procedural::PatchDomain2D{
+                .interior_grid =
+                    {
+                        .width = std::numeric_limits<std::uint32_t>::max(),
+                        .height = 1U,
+                    },
+                .border_samples = 1U,
+            });
+        },
+        "patch domains should reject bordered grid overflow");
+}
+
 void test_procedural_artifact_metadata_counts_mipped_samples() {
     const cubey::procedural::ProceduralArtifactExtent extent{
         .width = 8,
@@ -254,6 +348,127 @@ void test_procedural_artifact_metadata_validates_identity_and_layout() {
                 {.width = 4, .height = 4, .depth = 1, .faces = 1, .mip_levels = 2}, 2U);
         },
         "artifact metadata should reject out-of-range mip levels");
+}
+
+void test_procedural_field_metadata_hashes_scalar_fields() {
+    const cubey::procedural::Grid2DDesc desc{
+        .width = 2,
+        .height = 2,
+        .cell_size = 3.0F,
+        .origin_x = 10.0F,
+        .origin_y = -5.0F,
+    };
+    cubey::procedural::ScalarField2D field(desc, 0.0F);
+    field.at(0U, 0U) = 1.0F;
+    field.at(1U, 0U) = 2.0F;
+    field.at(0U, 1U) = 3.0F;
+    field.at(1U, 1U) = 4.0F;
+
+    const std::uint64_t first_hash = cubey::procedural::scalar_field_content_hash(field);
+    const std::uint64_t repeat_hash = cubey::procedural::scalar_field_content_hash(field);
+    require(first_hash == repeat_hash, "scalar field hashes should repeat exactly");
+
+    cubey::procedural::ScalarField2D changed_value = field;
+    changed_value.at(1U, 1U) = 4.25F;
+    require(cubey::procedural::scalar_field_content_hash(changed_value) != first_hash,
+            "scalar field hashes should include sample values");
+
+    cubey::procedural::ScalarField2D changed_grid(
+        {.width = 2, .height = 2, .cell_size = 3.0F, .origin_x = 11.0F, .origin_y = -5.0F},
+        0.0F);
+    changed_grid.at(0U, 0U) = 1.0F;
+    changed_grid.at(1U, 0U) = 2.0F;
+    changed_grid.at(0U, 1U) = 3.0F;
+    changed_grid.at(1U, 1U) = 4.0F;
+    require(cubey::procedural::scalar_field_content_hash(changed_grid) != first_hash,
+            "scalar field hashes should include grid descriptors");
+
+    const cubey::procedural::ProceduralArtifactMetadata metadata =
+        cubey::procedural::make_scalar_field_artifact_metadata(
+            {
+                .name = "height",
+                .generator = "cubey::tests::field_metadata",
+                .formula_version = "field-metadata-test-v1",
+                .domain = "tests.height",
+                .seed = 77U,
+                .space = cubey::procedural::ProceduralDomainSpace::World,
+            },
+            field);
+    require(metadata.name == "height", "scalar field metadata should preserve names");
+    require(metadata.generator == "cubey::tests::field_metadata",
+            "scalar field metadata should preserve generators");
+    require(metadata.formula_version == "field-metadata-test-v1",
+            "scalar field metadata should preserve formula versions");
+    require(metadata.domain == "tests.height", "scalar field metadata should preserve domains");
+    require(metadata.seed == 77U, "scalar field metadata should preserve seeds");
+    require(metadata.space == cubey::procedural::ProceduralDomainSpace::World,
+            "scalar field metadata should preserve spaces");
+    require(metadata.kind == cubey::procedural::ProceduralArtifactKind::ScalarField2D,
+            "scalar field metadata should report scalar field kind");
+    require(metadata.format == cubey::procedural::ProceduralArtifactValueFormat::ScalarFloat32,
+            "scalar field metadata should report float scalar format");
+    require(metadata.extent.width == desc.width && metadata.extent.height == desc.height &&
+                metadata.extent.depth == 1U && metadata.extent.faces == 1U &&
+                metadata.extent.mip_levels == 1U,
+            "scalar field metadata should use 2D field extents");
+    require(metadata.content_hash == first_hash,
+            "scalar field metadata should include the content hash");
+}
+
+void test_procedural_field_metadata_hashes_field_sets_by_name() {
+    const cubey::procedural::Grid2DDesc desc{.width = 2, .height = 1, .cell_size = 2.0F};
+    cubey::procedural::ScalarField2D height(desc, 0.0F);
+    height.at(0U, 0U) = 10.0F;
+    height.at(1U, 0U) = 12.0F;
+    cubey::procedural::ScalarField2D wetness(desc, 0.0F);
+    wetness.at(0U, 0U) = 0.25F;
+    wetness.at(1U, 0U) = 0.75F;
+
+    cubey::procedural::FieldSet2D first(desc);
+    first.add_field("height", height);
+    first.add_field("wetness", wetness);
+
+    cubey::procedural::FieldSet2D reordered(desc);
+    reordered.add_field("wetness", wetness);
+    reordered.add_field("height", height);
+
+    const std::uint64_t first_hash = cubey::procedural::field_set_content_hash(first);
+    require(first_hash == cubey::procedural::field_set_content_hash(reordered),
+            "field set hashes should not depend on insertion order");
+
+    cubey::procedural::FieldSet2D renamed(desc);
+    renamed.add_field("height", height);
+    renamed.add_field("moisture", wetness);
+    require(cubey::procedural::field_set_content_hash(renamed) != first_hash,
+            "field set hashes should include field names");
+
+    cubey::procedural::ScalarField2D changed_wetness = wetness;
+    changed_wetness.at(1U, 0U) = 0.5F;
+    cubey::procedural::FieldSet2D changed(desc);
+    changed.add_field("height", height);
+    changed.add_field("wetness", changed_wetness);
+    require(cubey::procedural::field_set_content_hash(changed) != first_hash,
+            "field set hashes should include named field content");
+
+    const cubey::procedural::ProceduralArtifactMetadata metadata =
+        cubey::procedural::make_field_set_artifact_metadata(
+            {
+                .name = "terrain debug fields",
+                .generator = "cubey::tests::field_set_metadata",
+                .formula_version = "field-set-metadata-test-v1",
+                .domain = "tests.terrain_fields",
+                .seed = 99U,
+                .space = cubey::procedural::ProceduralDomainSpace::Local,
+            },
+            first);
+    require(metadata.kind == cubey::procedural::ProceduralArtifactKind::FieldSet2D,
+            "field set metadata should report field set kind");
+    require(metadata.format == cubey::procedural::ProceduralArtifactValueFormat::ScalarFloat32,
+            "field set metadata should report float scalar format");
+    require(metadata.extent.width == desc.width && metadata.extent.height == desc.height,
+            "field set metadata should use shared field-set extents");
+    require(metadata.content_hash == first_hash,
+            "field set metadata should include the content hash");
 }
 
 void test_procedural_scalar_field_summarizes_and_normalizes() {

@@ -27,6 +27,8 @@ void test_procedural_coherent_noise_wraps_fastnoise_lite();
 void test_procedural_field_composition_combines_matching_fields();
 void test_procedural_field_composition_rejects_invalid_inputs();
 void test_procedural_field_composition_transforms_values();
+void test_procedural_field_metadata_hashes_field_sets_by_name();
+void test_procedural_field_metadata_hashes_scalar_fields();
 void test_procedural_field_sets_reject_invalid_fields();
 void test_procedural_field_sets_store_named_scalar_fields();
 void test_procedural_field_shaping_converts_and_terraces_unit_values();
@@ -36,6 +38,8 @@ void test_procedural_legacy_noise_golden_values_are_stable();
 void test_procedural_local_relief_tracks_neighborhood_windows();
 void test_procedural_noise_is_deterministic_and_bounded();
 void test_procedural_operators_include_smootherstep();
+void test_procedural_patch_domains_expand_bordered_sample_grids();
+void test_procedural_patch_domains_hash_addresses_and_seeds();
 void test_procedural_sample_domains_index_3d_samples();
 void test_procedural_sample_domains_reject_invalid_3d_samples();
 void test_procedural_sample_domains_wrap_2d_grids();
@@ -167,8 +171,12 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_sample_domains_wrap_2d_grids),
         CUBEY_TEST(test_procedural_sample_domains_index_3d_samples),
         CUBEY_TEST(test_procedural_sample_domains_reject_invalid_3d_samples),
+        CUBEY_TEST(test_procedural_patch_domains_hash_addresses_and_seeds),
+        CUBEY_TEST(test_procedural_patch_domains_expand_bordered_sample_grids),
         CUBEY_TEST(test_procedural_artifact_metadata_counts_mipped_samples),
         CUBEY_TEST(test_procedural_artifact_metadata_validates_identity_and_layout),
+        CUBEY_TEST(test_procedural_field_metadata_hashes_scalar_fields),
+        CUBEY_TEST(test_procedural_field_metadata_hashes_field_sets_by_name),
         CUBEY_TEST(test_procedural_scalar_field_summarizes_and_normalizes),
         CUBEY_TEST(test_procedural_field_sets_store_named_scalar_fields),
         CUBEY_TEST(test_procedural_field_sets_reject_invalid_fields),
