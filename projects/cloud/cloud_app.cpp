@@ -51,9 +51,6 @@ constexpr float kDefaultFovyRadians = 62.0F * (glm::pi<float>() / 180.0F);
 constexpr float kCameraDragRadiansPerPixel = 0.006F;
 constexpr float kSurfaceMinPitchRadians = -1.50F;
 constexpr float kSurfaceMaxPitchRadians = 1.35F;
-constexpr std::uint32_t kBaseNoiseSize = 128U;
-constexpr std::uint32_t kDetailNoiseSize = 32U;
-constexpr std::uint32_t kWeatherTextureSize = 1024U;
 constexpr std::uint32_t kCloudComputeGroupSize = 16U;
 constexpr std::uint32_t kCloudVolumeGroupSize = 4U;
 constexpr VkFormat kCloudColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -206,15 +203,6 @@ struct CloudFrameGraph {
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_CLOUD_SHADER_DIR) / filename;
-}
-
-[[nodiscard]] std::uint32_t cloud_mip_count(std::uint32_t size) {
-    std::uint32_t levels = 1;
-    while (size > 1U) {
-        size = std::max(1U, size / 2U);
-        ++levels;
-    }
-    return levels;
 }
 
 [[nodiscard]] cubey::vulkan::SamplerConfig cloud_repeat_sampler_config(
@@ -599,7 +587,7 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
 
 [[nodiscard]] cubey::render::Texture3DConfig cloud_volume_texture_config(
     std::uint32_t size) {
-    const std::uint32_t mip_levels = cloud_mip_count(size);
+    const std::uint32_t mip_levels = cloud_generated_volume_mip_count(size);
     return {
         .extent = {size, size, size},
         .mip_levels = mip_levels,
@@ -611,7 +599,7 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
 
 [[nodiscard]] cubey::render::Texture2DConfig cloud_weather_texture_config() {
     return {
-        .extent = {kWeatherTextureSize, kWeatherTextureSize},
+        .extent = {kCloudWeatherTextureSize, kCloudWeatherTextureSize},
         .format = kCloudNoiseFormat,
         .usage = cubey::render::Texture2DUsage::StorageSampled,
         .create_sampler = true,
@@ -975,9 +963,10 @@ class CloudApp {
         }
         ImGui::Separator();
         ImGui::Text("FPS: %.1f / %.2f ms", latest_fps_, latest_frame_ms_);
-        ImGui::Text("Base noise: %u^3", kBaseNoiseSize);
-        ImGui::Text("Detail noise: %u^3", kDetailNoiseSize);
-        ImGui::Text("Weather texture: %u x %u", kWeatherTextureSize, kWeatherTextureSize);
+        ImGui::Text("Base noise: %u^3", kCloudBaseNoiseSize);
+        ImGui::Text("Detail noise: %u^3", kCloudDetailNoiseSize);
+        ImGui::Text("Weather texture: %u x %u", kCloudWeatherTextureSize,
+                    kCloudWeatherTextureSize);
         ImGui::End();
         const CloudWeatherPushConstants after_weather =
             cloud_weather_push_constants(config_);
@@ -1095,26 +1084,26 @@ class CloudApp {
             return;
         }
 
-        base_noise_.emplace(device, cloud_volume_texture_config(kBaseNoiseSize));
-        detail_noise_.emplace(device, cloud_volume_texture_config(kDetailNoiseSize));
+        base_noise_.emplace(device, cloud_volume_texture_config(kCloudBaseNoiseSize));
+        detail_noise_.emplace(device, cloud_volume_texture_config(kCloudDetailNoiseSize));
         weather_texture_.emplace(device, cloud_weather_texture_config());
 
         generate_storage_volume_texture(
             device, gpu, "cloud generate base noise",
             shader_path("cloud_perlin_worley.comp.spv"), base_noise_.value(),
-            cubey::render::ceil_dispatch_groups(kBaseNoiseSize, kBaseNoiseSize, kBaseNoiseSize,
-                                                kCloudVolumeGroupSize));
+            cubey::render::ceil_dispatch_groups(kCloudBaseNoiseSize, kCloudBaseNoiseSize,
+                                                kCloudBaseNoiseSize, kCloudVolumeGroupSize));
         generate_storage_volume_texture(
             device, gpu, "cloud generate detail noise", shader_path("cloud_worley.comp.spv"),
             detail_noise_.value(),
-            cubey::render::ceil_dispatch_groups(kDetailNoiseSize, kDetailNoiseSize,
-                                                kDetailNoiseSize, kCloudVolumeGroupSize));
+            cubey::render::ceil_dispatch_groups(kCloudDetailNoiseSize, kCloudDetailNoiseSize,
+                                                kCloudDetailNoiseSize, kCloudVolumeGroupSize));
         generate_storage_texture(
             device, gpu, "cloud generate weather", shader_path("cloud_weather.comp.spv"),
             weather_texture_->handle(), weather_texture_->view(),
             cloud_weather_push_constants(config_),
-            cubey::render::ceil_dispatch_groups(kWeatherTextureSize, kWeatherTextureSize,
-                                                kCloudComputeGroupSize));
+            cubey::render::ceil_dispatch_groups(kCloudWeatherTextureSize,
+                                                kCloudWeatherTextureSize, kCloudComputeGroupSize));
         last_weather_generation_ = cloud_weather_push_constants(config_);
         weather_texture_dirty_ = false;
     }
@@ -1140,8 +1129,8 @@ class CloudApp {
         generate_storage_texture(
             device, gpu, "cloud regenerate weather", shader_path("cloud_weather.comp.spv"),
             weather_texture_->handle(), weather_texture_->view(), current,
-            cubey::render::ceil_dispatch_groups(kWeatherTextureSize, kWeatherTextureSize,
-                                                kCloudComputeGroupSize));
+            cubey::render::ceil_dispatch_groups(kCloudWeatherTextureSize,
+                                                kCloudWeatherTextureSize, kCloudComputeGroupSize));
         last_weather_generation_ = current;
         weather_texture_dirty_ = false;
     }
