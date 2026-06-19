@@ -14,8 +14,15 @@ function(cubey_add_glsl_shaders target)
 
     find_program(GLSLANG_VALIDATOR_EXE glslangValidator REQUIRED)
 
+    set(shader_include_dirs ${CUBEY_SHADER_INCLUDE_DIRS})
+    list(APPEND shader_include_dirs "${CMAKE_SOURCE_DIR}/shaders")
+    if (CUBEY_FASTNOISE_LITE_GLSL_DIR)
+        list(APPEND shader_include_dirs "${CUBEY_FASTNOISE_LITE_GLSL_DIR}")
+    endif()
+    list(REMOVE_DUPLICATES shader_include_dirs)
+
     set(include_args)
-    foreach(include_dir IN LISTS CUBEY_SHADER_INCLUDE_DIRS)
+    foreach(include_dir IN LISTS shader_include_dirs)
         get_filename_component(include_path "${include_dir}" ABSOLUTE)
         list(APPEND include_args "-I${include_path}")
     endforeach()
