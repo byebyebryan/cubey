@@ -39,6 +39,7 @@ add_executable(cubey_core_tests
     pipeline_tests.cpp
     profiling_tests.cpp
     procedural_foundation_tests.cpp
+    procedural_shader_parity_tests.cpp
     project_gpu_services_tests.cpp
     project_runtime_tests.cpp
     queue_submit_tests.cpp
