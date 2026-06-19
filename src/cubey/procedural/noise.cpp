@@ -198,6 +198,11 @@ float hash_to_unit(std::uint32_t value) {
     return static_cast<float>(hash_u32(value) >> 8U) * kInv24Bit;
 }
 
+float hash_to_unit_masked_24(std::uint32_t value) {
+    constexpr float kInv24Bit = 1.0F / 16'777'216.0F;
+    return static_cast<float>(hash_u32(value) & 0x00ff'ffffU) * kInv24Bit;
+}
+
 float random01(std::uint64_t seed, std::uint32_t index, std::uint32_t channel) {
     constexpr float kScale = 1.0F / static_cast<float>(std::numeric_limits<std::uint32_t>::max());
     return static_cast<float>(hash_u32(static_cast<std::int32_t>(index),

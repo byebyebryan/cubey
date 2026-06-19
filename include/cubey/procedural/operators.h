@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <stdexcept>
 
 namespace cubey::procedural {
 
@@ -15,12 +16,24 @@ namespace cubey::procedural {
     return a + ((b - a) * t);
 }
 
+[[nodiscard]] inline float remap(float value, float old_min, float old_max, float new_min,
+                                 float new_max) {
+    if (old_min == old_max) {
+        throw std::runtime_error("procedural remap input range must be non-zero");
+    }
+    return new_min + (((value - old_min) / (old_max - old_min)) * (new_max - new_min));
+}
+
+[[nodiscard]] inline float smoothstep01(float value) {
+    const float t = saturate(value);
+    return t * t * (3.0F - (2.0F * t));
+}
+
 [[nodiscard]] inline float smoothstep(float edge0, float edge1, float value) {
     if (edge0 == edge1) {
         return value < edge0 ? 0.0F : 1.0F;
     }
-    const float t = saturate((value - edge0) / (edge1 - edge0));
-    return t * t * (3.0F - (2.0F * t));
+    return smoothstep01((value - edge0) / (edge1 - edge0));
 }
 
 [[nodiscard]] inline float smootherstep01(float value) {

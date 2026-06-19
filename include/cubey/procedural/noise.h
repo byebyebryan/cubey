@@ -119,6 +119,7 @@ struct Fbm3DConfig {
 [[nodiscard]] std::uint32_t hash_u32(std::int32_t x, std::int32_t y, std::int32_t z,
                                      std::uint32_t seed);
 [[nodiscard]] float hash_to_unit(std::uint32_t value);
+[[nodiscard]] float hash_to_unit_masked_24(std::uint32_t value);
 [[nodiscard]] float random01(std::uint64_t seed, std::uint32_t index, std::uint32_t channel);
 [[nodiscard]] float value_noise_2d(float x, float y, std::uint64_t seed);
 [[nodiscard]] float fbm_2d(float x, float y, std::uint64_t seed, const Fbm2DConfig& config = {});
