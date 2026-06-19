@@ -116,6 +116,14 @@ float cloud_surface_view_factor() {
     return 1.0 - smoothstep(transition_start, transition_end, cloud_camera_altitude());
 }
 
+float cloud_weather_haze_factor() {
+    float coverage = clamp(params.weather.x / 0.30, 0.0, 1.0);
+    float density = clamp(params.weather.y / 0.016, 0.0, 1.0);
+    float cloud_amount = sqrt(clamp(coverage * density, 0.0, 1.0));
+    float horizon_haze = clamp(params.cloud_color_bottom_horizon.w / 0.48, 0.0, 1.0);
+    return horizon_haze * cloud_amount;
+}
+
 vec3 cloud_sphere_center() {
     return vec3(params.camera_position_radius.x, -cloud_planet_radius(),
                 params.camera_position_radius.z);
@@ -189,8 +197,7 @@ vec3 cloud_sky_color(vec3 direction) {
     float twilight = exp(-abs(sun_elevation) * 10.0);
 
     float surface_view = cloud_surface_view_factor();
-    float low_haze_weather =
-        surface_view * (1.0 - clamp(params.cloud_color_bottom_horizon.w / 0.48, 0.0, 1.0));
+    float low_haze_weather = surface_view * (1.0 - cloud_weather_haze_factor());
     vec3 zenith_day = mix(vec3(0.19, 0.45, 0.82),
                           vec3(0.105, 0.315, 0.610),
                           surface_view);

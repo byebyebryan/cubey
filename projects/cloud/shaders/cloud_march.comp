@@ -743,8 +743,9 @@ MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
     phase_sum = max(phase_sum * radiance_scale, vec3(0.0));
     if (first_distance > 0.0) {
         float fog_scale = mix(1.0, 0.58, surface_view);
+        float surface_haze = mix(1.0, cloud_weather_haze_factor(), surface_view);
         float fog = 1.0 - exp(-first_distance * 0.00004 *
-                              params.cloud_color_bottom_horizon.w * fog_scale);
+                              params.cloud_color_bottom_horizon.w * fog_scale * surface_haze);
         color = mix(color, background * alpha, clamp(fog, 0.0, 1.0));
     }
     float mean_distance = distance_weight_sum > 0.0

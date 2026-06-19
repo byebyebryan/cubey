@@ -79,13 +79,14 @@ vec3 cloud_final_post(vec3 color, vec3 direction, float cloud_alpha) {
     float contrast = max(params.composite_options.y, 0.0);
     float saturation = max(params.composite_options.z, 0.0);
     float surface_view = cloud_surface_view_factor();
+    float surface_haze = mix(1.0, cloud_weather_haze_factor(), surface_view);
 
     color += vec3(1.0, 0.58, 0.22) * halo * (0.10 + 0.16 * cloud_alpha) *
              glare_strength * mix(1.0, 0.42, surface_view);
     color += vec3(1.0, 0.82, 0.50) * tight_glare * 1.25 * glare_strength *
              mix(1.0, 0.34, surface_view);
     color += vec3(0.10, 0.12, 0.13) * horizon * (1.0 - cloud_alpha) * 0.22 *
-             horizon_strength * mix(1.0, 0.54, surface_view);
+             horizon_strength * mix(1.0, 0.54, surface_view) * surface_haze;
     color *= mix(1.0, 0.74, surface_view);
     float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
     color = mix(vec3(luma), color, saturation * mix(1.0, 1.06, surface_view));
