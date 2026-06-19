@@ -1,10 +1,13 @@
 #include "cloud_config.h"
 
+#include <cubey/procedural/seed.h>
+
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace cubey::projects::cloud {
 namespace {
@@ -15,6 +18,27 @@ namespace {
 
 [[nodiscard]] bool finite_nonnegative(float value) {
     return std::isfinite(value) && value >= 0.0F;
+}
+
+[[nodiscard]] cubey::procedural::ProceduralArtifactMetadata cloud_volume_metadata(
+    std::string name, std::string generator, std::string formula_version, std::string domain,
+    std::uint32_t size) {
+    return cubey::procedural::ProceduralArtifactMetadata{
+        .name = std::move(name),
+        .generator = std::move(generator),
+        .formula_version = std::move(formula_version),
+        .domain = domain,
+        .seed = cubey::procedural::stable_hash_string(domain),
+        .space = cubey::procedural::ProceduralDomainSpace::Volume,
+        .kind = cubey::procedural::ProceduralArtifactKind::Volume3D,
+        .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+        .extent = {.width = size,
+                   .height = size,
+                   .depth = size,
+                   .faces = 1U,
+                   .mip_levels = cloud_generated_volume_mip_count(size)},
+        .content_hash = 0U,
+    };
 }
 
 struct CloudsWeatherPresetSettings {
@@ -437,6 +461,54 @@ CloudsDebugView next_clouds_debug_view(CloudsDebugView view) {
         return kCloudsDebugViews.front();
     }
     return *std::next(it);
+}
+
+std::uint32_t cloud_generated_volume_mip_count(std::uint32_t size) {
+    if (size == 0U) {
+        throw std::runtime_error("cloud generated volume size must be non-zero");
+    }
+
+    std::uint32_t mip_levels = 1U;
+    while (size > 1U) {
+        size /= 2U;
+        ++mip_levels;
+    }
+    return mip_levels;
+}
+
+cubey::procedural::ProceduralArtifactMetadata clouds_generated_artifact_metadata(
+    CloudsGeneratedArtifact artifact) {
+    switch (artifact) {
+    case CloudsGeneratedArtifact::BaseNoiseVolume:
+        return cloud_volume_metadata("cloud base density volume",
+                                     "cubey::projects::cloud::cloud_perlin_worley",
+                                     "cloud-base-density-volume-v1",
+                                     "cloud.base_density_volume", kCloudBaseNoiseSize);
+    case CloudsGeneratedArtifact::DetailNoiseVolume:
+        return cloud_volume_metadata("cloud detail erosion volume",
+                                     "cubey::projects::cloud::cloud_worley",
+                                     "cloud-detail-erosion-volume-v1",
+                                     "cloud.detail_erosion_volume", kCloudDetailNoiseSize);
+    case CloudsGeneratedArtifact::WeatherMap:
+        return cubey::procedural::ProceduralArtifactMetadata{
+            .name = "cloud weather map",
+            .generator = "cubey::projects::cloud::cloud_weather",
+            .formula_version = "cloud-weather-map-v1",
+            .domain = "cloud.weather_map",
+            .seed = cubey::procedural::stable_hash_string("cloud.weather_map"),
+            .space = cubey::procedural::ProceduralDomainSpace::World,
+            .kind = cubey::procedural::ProceduralArtifactKind::Texture2D,
+            .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+            .extent = {.width = kCloudWeatherTextureSize,
+                       .height = kCloudWeatherTextureSize,
+                       .depth = 1U,
+                       .faces = 1U,
+                       .mip_levels = 1U},
+            .content_hash = 0U,
+        };
+    }
+
+    throw std::runtime_error("unknown cloud generated artifact");
 }
 
 CloudsQualityBudget clouds_quality_budget(CloudsQuality quality) {

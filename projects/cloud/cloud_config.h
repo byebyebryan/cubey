@@ -1,16 +1,21 @@
 #pragma once
 
 #include <cubey/core/run_config.h>
+#include <cubey/procedural/artifact_metadata.h>
 #include <cubey/render/atmosphere_environment.h>
 
 #include <array>
 #include <cstdint>
+#include <string_view>
 
 namespace cubey::projects::cloud {
 
 inline constexpr float kCloudsDefaultPlanetRadiusM = 600000.0F;
 inline constexpr float kCloudsDefaultBottomAltitudeM = 5000.0F;
 inline constexpr float kCloudsDefaultTopAltitudeM = 22000.0F;
+inline constexpr std::uint32_t kCloudBaseNoiseSize = 128U;
+inline constexpr std::uint32_t kCloudDetailNoiseSize = 32U;
+inline constexpr std::uint32_t kCloudWeatherTextureSize = 1024U;
 
 enum class CloudsCameraMode : std::uint32_t {
     Surface = 0,
@@ -111,6 +116,18 @@ enum class CloudsDebugView : std::uint32_t {
     OrbitCoverage = 33,
     OrbitDetail = 34,
     OrbitHull = 35,
+};
+
+enum class CloudsGeneratedArtifact : std::uint32_t {
+    BaseNoiseVolume = 0,
+    DetailNoiseVolume = 1,
+    WeatherMap = 2,
+};
+
+inline constexpr std::array<CloudsGeneratedArtifact, 3> kCloudsGeneratedArtifacts{
+    CloudsGeneratedArtifact::BaseNoiseVolume,
+    CloudsGeneratedArtifact::DetailNoiseVolume,
+    CloudsGeneratedArtifact::WeatherMap,
 };
 
 inline constexpr std::array<CloudsDebugView, 31> kCloudsDebugViews{
@@ -227,6 +244,9 @@ void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset prese
 [[nodiscard]] const char* clouds_debug_view_name(CloudsDebugView view);
 [[nodiscard]] CloudsDebugView next_clouds_debug_view(CloudsDebugView view);
 [[nodiscard]] CloudsQualityBudget clouds_quality_budget(CloudsQuality quality);
+[[nodiscard]] std::uint32_t cloud_generated_volume_mip_count(std::uint32_t size);
+[[nodiscard]] cubey::procedural::ProceduralArtifactMetadata clouds_generated_artifact_metadata(
+    CloudsGeneratedArtifact artifact);
 [[nodiscard]] float clouds_default_camera_altitude_m(CloudsCameraMode mode);
 [[nodiscard]] CloudsConfig clouds_config_from_run_config(const RunConfig& run_config);
 void advance_clouds_time(CloudsConfig& config, double delta_seconds);
