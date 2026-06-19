@@ -32,6 +32,15 @@ struct ProceduralArtifactExtent {
     std::uint32_t mip_levels = 1;
 };
 
+struct ProceduralArtifactIdentity {
+    std::string name{};
+    std::string generator{};
+    std::string formula_version{};
+    std::string domain{};
+    std::uint64_t seed = 0;
+    ProceduralDomainSpace space = ProceduralDomainSpace::Local;
+};
+
 struct ProceduralArtifactMetadata {
     std::string name{};
     std::string generator{};

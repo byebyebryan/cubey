@@ -25,6 +25,7 @@ add_library(cubey_core STATIC
     core/profiling.cpp
     procedural/artifact_metadata.cpp
     procedural/field_2d.cpp
+    procedural/field_metadata.cpp
     procedural/field_set_2d.cpp
     procedural/noise.cpp
     procedural/operators.cpp
