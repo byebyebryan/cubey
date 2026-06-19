@@ -1,6 +1,8 @@
 #ifndef CUBEY_PROCEDURAL_OPERATORS_GLSL
 #define CUBEY_PROCEDURAL_OPERATORS_GLSL
 
+// Exact CPU parity contract: cubey::procedural scalar helpers mirror these
+// formulas for valid input ranges.
 float cubey_proc_saturate(float value) {
     return clamp(value, 0.0, 1.0);
 }

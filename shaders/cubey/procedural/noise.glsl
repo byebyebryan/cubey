@@ -4,6 +4,7 @@
 #include "cubey/procedural/operators.glsl"
 #include "cubey/procedural/random.glsl"
 
+// Shared shader visual formulas. These are not CPU procedural contracts yet.
 float cubey_proc_hash_sindot_2d(vec2 value) {
     return fract(sin(dot(value, vec2(127.1, 311.7))) * 43758.5453);
 }
@@ -30,6 +31,8 @@ float cubey_proc_value_noise_pcg_2d(vec2 value) {
     return mix(mix(a, b, shaped.x), mix(c, d, shaped.x), shaped.y);
 }
 
+// Exact CPU parity contract: cubey::procedural 3D legacy noise mirrors this
+// hash/value-noise/FBM family for matching seed and octave settings.
 uint cubey_proc_hash_u32_3d(ivec3 p, uint seed) {
     uint value = seed;
     value ^= uint(p.x) * 0x9e3779b9U;
