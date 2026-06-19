@@ -54,6 +54,26 @@ struct ProceduralArtifactMetadata {
     std::uint64_t content_hash = 0;
 };
 
+[[nodiscard]] ProceduralArtifactIdentity make_procedural_artifact_identity(
+    std::string name,
+    std::string generator,
+    std::string formula_version,
+    std::string domain,
+    std::uint64_t seed,
+    ProceduralDomainSpace space);
+[[nodiscard]] ProceduralArtifactIdentity make_domain_procedural_artifact_identity(
+    std::string name,
+    std::string generator,
+    std::string formula_version,
+    std::string domain,
+    ProceduralDomainSpace space);
+[[nodiscard]] ProceduralArtifactMetadata make_procedural_artifact_metadata(
+    ProceduralArtifactIdentity identity,
+    ProceduralArtifactKind kind,
+    ProceduralArtifactValueFormat format,
+    ProceduralArtifactExtent extent,
+    std::uint64_t content_hash = 0);
+
 void validate_procedural_artifact_extent(const ProceduralArtifactExtent& extent);
 void validate_procedural_artifact_metadata(const ProceduralArtifactMetadata& metadata);
 [[nodiscard]] std::uint32_t procedural_artifact_mip_dimension(std::uint32_t dimension,

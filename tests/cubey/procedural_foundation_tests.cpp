@@ -388,6 +388,84 @@ void test_procedural_artifact_metadata_validates_identity_and_layout() {
         "artifact metadata should reject out-of-range mip levels");
 }
 
+void test_procedural_artifact_metadata_builders_fill_identity_and_validate() {
+    const cubey::procedural::ProceduralArtifactIdentity domain_identity =
+        cubey::procedural::make_domain_procedural_artifact_identity(
+            "weather map",
+            "cubey::tests::metadata_builder",
+            "metadata-builder-test-v1",
+            "tests.weather",
+            cubey::procedural::ProceduralDomainSpace::Atlas);
+    require(domain_identity.name == "weather map", "domain identity should preserve names");
+    require(domain_identity.generator == "cubey::tests::metadata_builder",
+            "domain identity should preserve generators");
+    require(domain_identity.formula_version == "metadata-builder-test-v1",
+            "domain identity should preserve formula versions");
+    require(domain_identity.domain == "tests.weather", "domain identity should preserve domains");
+    require(domain_identity.seed == cubey::procedural::stable_hash_string("tests.weather"),
+            "domain identity should derive seeds from domain names");
+    require(domain_identity.space == cubey::procedural::ProceduralDomainSpace::Atlas,
+            "domain identity should preserve semantic spaces");
+
+    const cubey::procedural::ProceduralArtifactIdentity explicit_identity =
+        cubey::procedural::make_procedural_artifact_identity(
+            "density volume",
+            "cubey::tests::metadata_builder",
+            "metadata-builder-test-v1",
+            "tests.volume",
+            42U,
+            cubey::procedural::ProceduralDomainSpace::Volume);
+    require(explicit_identity.seed == 42U, "explicit identities should preserve supplied seeds");
+
+    const cubey::procedural::ProceduralArtifactMetadata metadata =
+        cubey::procedural::make_procedural_artifact_metadata(
+            domain_identity,
+            cubey::procedural::ProceduralArtifactKind::Texture2D,
+            cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+            {.width = 32, .height = 16, .depth = 1, .faces = 1, .mip_levels = 1},
+            0xfeedU);
+    require(metadata.name == "weather map", "metadata builders should preserve names");
+    require(metadata.kind == cubey::procedural::ProceduralArtifactKind::Texture2D,
+            "metadata builders should preserve kinds");
+    require(metadata.format == cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+            "metadata builders should preserve value formats");
+    require(metadata.extent.width == 32U && metadata.extent.height == 16U,
+            "metadata builders should preserve extents");
+    require(metadata.content_hash == 0xfeedU,
+            "metadata builders should preserve content hashes");
+    cubey::procedural::validate_procedural_artifact_metadata(metadata);
+
+    require_throws(
+        [] {
+            (void)cubey::procedural::make_procedural_artifact_metadata(
+                cubey::procedural::make_procedural_artifact_identity(
+                    "",
+                    "cubey::tests::metadata_builder",
+                    "metadata-builder-test-v1",
+                    "tests.invalid",
+                    1U,
+                    cubey::procedural::ProceduralDomainSpace::Local),
+                cubey::procedural::ProceduralArtifactKind::Texture2D,
+                cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+                {.width = 1, .height = 1, .depth = 1, .faces = 1, .mip_levels = 1});
+        },
+        "metadata builders should validate identity fields");
+    require_throws(
+        [] {
+            (void)cubey::procedural::make_procedural_artifact_metadata(
+                cubey::procedural::make_domain_procedural_artifact_identity(
+                    "invalid",
+                    "cubey::tests::metadata_builder",
+                    "metadata-builder-test-v1",
+                    "tests.invalid",
+                    cubey::procedural::ProceduralDomainSpace::Local),
+                cubey::procedural::ProceduralArtifactKind::Texture2D,
+                cubey::procedural::ProceduralArtifactValueFormat::Unknown,
+                {.width = 1, .height = 1, .depth = 1, .faces = 1, .mip_levels = 1});
+        },
+        "metadata builders should validate value formats");
+}
+
 void test_procedural_field_metadata_hashes_scalar_fields() {
     const cubey::procedural::Grid2DDesc desc{
         .width = 2,

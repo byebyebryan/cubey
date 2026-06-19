@@ -20,6 +20,7 @@ void test_math_quaternion_helpers_match_rotation_matrices();
 void test_profile_recorder_skips_warmup_and_records_spans();
 void test_profile_recorder_writes_csv_summary_and_trace_outputs();
 void test_procedural_3d_noise_is_deterministic_and_stable();
+void test_procedural_artifact_metadata_builders_fill_identity_and_validate();
 void test_procedural_artifact_metadata_counts_mipped_samples();
 void test_procedural_artifact_metadata_validates_identity_and_layout();
 void test_procedural_box_blur_preserves_dimensions_and_smooths_impulse();
@@ -177,6 +178,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_patch_domains_expand_bordered_sample_grids),
         CUBEY_TEST(test_procedural_artifact_metadata_counts_mipped_samples),
         CUBEY_TEST(test_procedural_artifact_metadata_validates_identity_and_layout),
+        CUBEY_TEST(test_procedural_artifact_metadata_builders_fill_identity_and_validate),
         CUBEY_TEST(test_procedural_field_metadata_hashes_scalar_fields),
         CUBEY_TEST(test_procedural_field_metadata_hashes_field_sets_by_name),
         CUBEY_TEST(test_procedural_scalar_field_summarizes_and_normalizes),

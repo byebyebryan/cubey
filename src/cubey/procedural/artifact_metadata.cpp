@@ -1,8 +1,62 @@
 #include <cubey/procedural/artifact_metadata.h>
 
+#include <cubey/procedural/seed.h>
+
 #include <stdexcept>
+#include <utility>
 
 namespace cubey::procedural {
+
+ProceduralArtifactIdentity make_procedural_artifact_identity(
+    std::string name,
+    std::string generator,
+    std::string formula_version,
+    std::string domain,
+    std::uint64_t seed,
+    ProceduralDomainSpace space) {
+    return ProceduralArtifactIdentity{
+        .name = std::move(name),
+        .generator = std::move(generator),
+        .formula_version = std::move(formula_version),
+        .domain = std::move(domain),
+        .seed = seed,
+        .space = space,
+    };
+}
+
+ProceduralArtifactIdentity make_domain_procedural_artifact_identity(
+    std::string name,
+    std::string generator,
+    std::string formula_version,
+    std::string domain,
+    ProceduralDomainSpace space) {
+    const std::uint64_t seed = stable_hash_string(domain);
+    return make_procedural_artifact_identity(std::move(name), std::move(generator),
+                                             std::move(formula_version), std::move(domain),
+                                             seed, space);
+}
+
+ProceduralArtifactMetadata make_procedural_artifact_metadata(
+    ProceduralArtifactIdentity identity,
+    ProceduralArtifactKind kind,
+    ProceduralArtifactValueFormat format,
+    ProceduralArtifactExtent extent,
+    std::uint64_t content_hash) {
+    ProceduralArtifactMetadata metadata{
+        .name = std::move(identity.name),
+        .generator = std::move(identity.generator),
+        .formula_version = std::move(identity.formula_version),
+        .domain = std::move(identity.domain),
+        .seed = identity.seed,
+        .space = identity.space,
+        .kind = kind,
+        .format = format,
+        .extent = extent,
+        .content_hash = content_hash,
+    };
+    validate_procedural_artifact_metadata(metadata);
+    return metadata;
+}
 
 void validate_procedural_artifact_extent(const ProceduralArtifactExtent& extent) {
     if (extent.width == 0U || extent.height == 0U || extent.depth == 0U ||

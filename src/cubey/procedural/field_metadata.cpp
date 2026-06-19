@@ -33,20 +33,9 @@ ProceduralArtifactMetadata make_field_metadata(ProceduralArtifactIdentity identi
                                                ProceduralArtifactKind kind,
                                                const Grid2DDesc& desc,
                                                std::uint64_t content_hash) {
-    ProceduralArtifactMetadata metadata{
-        .name = std::move(identity.name),
-        .generator = std::move(identity.generator),
-        .formula_version = std::move(identity.formula_version),
-        .domain = std::move(identity.domain),
-        .seed = identity.seed,
-        .space = identity.space,
-        .kind = kind,
-        .format = ProceduralArtifactValueFormat::ScalarFloat32,
-        .extent = field_extent(desc),
-        .content_hash = content_hash,
-    };
-    validate_procedural_artifact_metadata(metadata);
-    return metadata;
+    return make_procedural_artifact_metadata(std::move(identity), kind,
+                                             ProceduralArtifactValueFormat::ScalarFloat32,
+                                             field_extent(desc), content_hash);
 }
 
 } // namespace
