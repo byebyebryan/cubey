@@ -231,6 +231,8 @@ procedural-rendering needs, or a specific reference-backed driver need, not from
 speculative API surface. Likely near-term candidates are:
 
 - shader parity review for seed/hash/noise helpers before new GLSL migrations;
+  use `docs/notes/procedural-shader-parity.md` to decide whether a helper is an
+  exact CPU/GLSL contract, intentionally distinct, or shader-only vocabulary;
 - cloud GPU readback or export metadata so generated-volume and weather-map
   descriptors can report content hashes instead of descriptor-only identity;
 - field-set export metadata so old and new procedural field outputs are easy to

@@ -43,3 +43,5 @@ the detailed foundation notes under `docs/architecture/`.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.
+- [Procedural shader parity](procedural-shader-parity.md): current
+  CPU-vs-GLSL helper parity scope for shared procedural shader migrations.
