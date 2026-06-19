@@ -74,6 +74,18 @@ They are shared include helpers because several shaders use them, but they do
 not yet define a CPU procedural contract. Promote them only after a focused
 golden-value or visual migration pass proves the need.
 
+## FastNoiseLite GLSL Status
+
+`shaders/cubey/procedural/fastnoise_lite.glsl` is the shared shader include for
+the upstream FastNoiseLite GLSL port. It exists so future shader work can depend
+on one Cubey include path instead of project-local vendoring. The current
+coverage is compile-smoke only: a test shader includes FastNoiseLite and the
+shared procedural headers, instantiates `fnl_state`, and calls `fnlGetNoise3D`.
+
+That is not yet a numeric parity contract. FastNoiseLite C++ and GLSL should be
+promoted to a CPU/GPU contract only after a dedicated dispatch/readback fixture
+compares fixed samples against `cubey::procedural` on a real Vulkan device.
+
 ## Gate For Future Migrations
 
 New GLSL migrations should start by asking whether the helper belongs to one of
@@ -83,9 +95,8 @@ three buckets:
 - intentionally distinct legacy or shader contract;
 - shader-only visual formula.
 
-The next foundation pass may expose FastNoiseLite's GLSL include and add
-compile-time smoke coverage, but active cloud, ocean, atmosphere, and fluid
-shader formulas should not migrate to it until they have parity coverage or a
-specific visual-retuning commit. GPU-executed shader golden tests remain a
-separate follow-up because they need real-device dispatch and readback plumbing,
-not just shared include coverage.
+Active cloud, ocean, atmosphere, and fluid shader formulas should not migrate to
+FastNoiseLite GLSL until they have parity coverage or a specific visual-retuning
+commit. GPU-executed shader golden tests remain a separate follow-up because
+they need real-device dispatch and readback plumbing, not just shared include
+coverage.

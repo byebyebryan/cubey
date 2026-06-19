@@ -142,9 +142,9 @@ erosion, and weather textures with descriptor metadata and deferred content
 hashes. The foundation closure batch adds field-set export metadata and
 deterministic patch descriptors because those contracts are already implied by
 future terrain and planet consumers. GPU readback/export metadata, GPU-executed
-shader golden tests, FastNoiseLite GLSL parity, and volume/source recipes remain
-later follow-ups once projects start consuming the seed, domain, artifact, and
-patch vocabulary.
+shader golden tests, FastNoiseLite numeric parity, and volume/source recipes
+remain later follow-ups once projects start consuming the seed, domain,
+artifact, patch, and shader include vocabulary.
 
 This is intentionally not a visual migration batch. Active projects should keep
 their current formulas unless a focused follow-up proves parity or a better

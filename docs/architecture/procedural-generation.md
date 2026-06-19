@@ -153,6 +153,9 @@ compiled into `cubey::core`:
 - `shaders/cubey/procedural` mirrors the small GLSL side of this layer with
   shared remap/smoothing helpers, deterministic random/hash helpers, and
   value-noise/FBM helpers for formulas that already match existing project code.
+  It also exposes `fastnoise_lite.glsl` as the Cubey include point for the
+  upstream FastNoiseLite GLSL port, with build-time compile smoke coverage but
+  no active project migration yet.
   The first shader parity pass records exact CPU/GLSL contracts for scalar
   shaping, uint hashing, masked hash-to-unit conversion, and legacy 3D
   value-noise/FBM helpers, while keeping PCG and sin-dot shader helpers as
@@ -273,9 +276,8 @@ the current CPU-side layer:
 
 Remaining candidates after that closure batch are:
 
-- FastNoiseLite GLSL include plumbing and shader compile smoke coverage, then
-  GPU-executed shader golden tests before any future shader-side coherent-noise
-  migration;
+- GPU-executed shader golden tests before any future shader-side
+  coherent-noise migration;
 - cloud GPU readback or export metadata so generated-volume and weather-map
   descriptors can report content hashes instead of descriptor-only identity;
 - a future `SourceRecipe3D` or volume-field variant after the cloud/environment
