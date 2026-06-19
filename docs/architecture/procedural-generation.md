@@ -118,6 +118,10 @@ compiled into `cubey::core`:
 - `FieldSet2D` groups named scalar fields over one grid descriptor for generic
   debug, process, climate/environment, terrain, cloud, and generated-texture
   payloads.
+- `field_metadata.h` provides scalar-field and field-set artifact metadata plus
+  deterministic content hashes, so generated CPU-side field outputs can be
+  compared by generator identity, formula version, seed, semantic domain, grid
+  dimensions, and values.
 - `operators.h` provides scalar helpers (`saturate`, `lerp`, `smoothstep`,
   `smootherstep01`) plus field operators for blur, normalization,
   slope/curvature, local relief, remap/clamp, signed/unit conversion, power and
@@ -133,6 +137,9 @@ compiled into `cubey::core`:
   world, unit, atlas, volume, and spherical data. `SampleDomain2D` wraps
   `Grid2DDesc` with seed and domain-space metadata; `SampleDomain3D` adds
   centered volume coordinates and bounds-checked indexing.
+- `patch_domain.h` provides deterministic 2D patch addresses, patch seed
+  derivation, and bordered sample-grid/domain conversion for future terrain and
+  planet patch sampling.
 - `artifact_metadata.h` provides generated artifact identity, value format,
   semantic domain, seed, extent, mip/face layout, and content-hash metadata for
   in-memory comparison of procedural outputs.
@@ -217,25 +224,28 @@ and driver fields into them, but terrain-specific landform drivers, hydrology,
 materials, and foliage remain outside core.
 
 The non-terrain foundation batches promote named seed domains, semantic sample
-domains, and generated artifact metadata after reviewing active atmosphere,
-cloud, ocean, fluid, planet, and future terrain needs. This adds reusable
-address/metadata vocabulary without changing project formulas: atmosphere
-atlases, cloud density/weather volumes, ocean foam/detail, fluid
-jitter/turbulence, and future terrain tiles can share seed, domain, and artifact
-identity language while keeping their domain recipes project-owned. The first
-metadata consumers are the generated atmosphere lunar/night-sky atlas pair and
-the production cloud generated texture catalog. Atmosphere atlases now carry
-in-memory metadata and content hashes while preserving atlas bytes. Cloud now
-exposes descriptor metadata for its GPU-generated base density volume, detail
-erosion volume, and weather map while leaving `content_hash = 0` until a
-readback/export path exists.
+domains, generated artifact metadata, field output metadata, and deterministic
+patch domains after reviewing active atmosphere, cloud, ocean, fluid, planet,
+and future terrain needs. This adds reusable address/metadata vocabulary without
+changing project formulas: atmosphere atlases, cloud density/weather volumes,
+ocean foam/detail, fluid jitter/turbulence, and future terrain tiles can share
+seed, domain, patch, and artifact identity language while keeping their domain
+recipes project-owned. The first metadata consumers are the generated atmosphere
+lunar/night-sky atlas pair and the production cloud generated texture catalog.
+Atmosphere atlases now carry in-memory metadata and content hashes while
+preserving atlas bytes. Cloud now exposes descriptor metadata for its
+GPU-generated base density volume, detail erosion volume, and weather map while
+leaving `content_hash = 0` until a readback/export path exists. CPU-side scalar
+fields and field sets now have content hashes and artifact metadata; 2D patch
+domains now have address hashing, patch seed derivation, and border expansion
+contracts.
 
 Next shared candidates should come from repeated project-local code, broad
 procedural-rendering needs, or a specific reference-backed driver need, not from
 speculative API surface.
 
-The foundation closure batch should close the low-risk contracts already implied
-by the current CPU-side layer:
+The foundation closure batch closes the low-risk contracts already implied by
+the current CPU-side layer:
 
 - field-set export metadata so old and new procedural field outputs are easy to
   compare by generator identity, formula version, seed, semantic domain,
@@ -267,6 +277,8 @@ Near-term non-goals:
   and sample-domain batch;
 - no JSON sidecar or file export format for generated artifact metadata until
   more than the atmosphere atlas consumer needs persistent metadata;
+- no tile streaming, quadtree, or planet LOD policy in the deterministic patch
+  descriptor layer;
 - no default switch from legacy Terrain Lab value noise to FastNoiseLite;
 - no FastNoiseLite GLSL migration before a dedicated GPU or shader-side parity
   pass;
