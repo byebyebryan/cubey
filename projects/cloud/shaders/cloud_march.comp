@@ -734,12 +734,17 @@ MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
     }
 
     float alpha = 1.0 - transmittance;
-    color = max(color * 1.95 - vec3(0.12 * alpha), vec3(0.0));
-    ambient_sum = max(ambient_sum * 1.95, vec3(0.0));
-    direct_sum = max(direct_sum * 1.95, vec3(0.0));
-    phase_sum = max(phase_sum * 1.95, vec3(0.0));
+    float surface_view = cloud_surface_view_factor();
+    float radiance_scale = mix(1.95, 1.42, surface_view);
+    float shadow_lift = mix(0.12, 0.09, surface_view);
+    color = max(color * radiance_scale - vec3(shadow_lift * alpha), vec3(0.0));
+    ambient_sum = max(ambient_sum * radiance_scale, vec3(0.0));
+    direct_sum = max(direct_sum * radiance_scale, vec3(0.0));
+    phase_sum = max(phase_sum * radiance_scale, vec3(0.0));
     if (first_distance > 0.0) {
-        float fog = 1.0 - exp(-first_distance * 0.00004 * params.cloud_color_bottom_horizon.w);
+        float fog_scale = mix(1.0, 0.58, surface_view);
+        float fog = 1.0 - exp(-first_distance * 0.00004 *
+                              params.cloud_color_bottom_horizon.w * fog_scale);
         color = mix(color, background * alpha, clamp(fog, 0.0, 1.0));
     }
     float mean_distance = distance_weight_sum > 0.0

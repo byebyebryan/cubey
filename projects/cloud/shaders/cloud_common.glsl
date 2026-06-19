@@ -94,12 +94,26 @@ vec3 cloud_planet_up() {
     return vec3(0.0, 1.0, 0.0);
 }
 
+int cloud_camera_mode() {
+    return int(params.camera_forward_mode.w + 0.5);
+}
+
 float cloud_planet_radius() {
     return params.camera_position_radius.w;
 }
 
 float cloud_camera_altitude() {
     return params.camera_position_radius.y;
+}
+
+float cloud_surface_view_factor() {
+    if (cloud_camera_mode() >= 4) {
+        return 0.0;
+    }
+
+    float transition_start = max(params.distance_options.y, 1.0);
+    float transition_end = max(params.distance_options.z, transition_start + 1.0);
+    return 1.0 - smoothstep(transition_start, transition_end, cloud_camera_altitude());
 }
 
 vec3 cloud_sphere_center() {
@@ -174,8 +188,13 @@ vec3 cloud_sky_color(vec3 direction) {
     float day = smoothstep(-0.12, 0.08, sun_elevation);
     float twilight = exp(-abs(sun_elevation) * 10.0);
 
-    vec3 zenith_day = vec3(0.19, 0.45, 0.82);
-    vec3 horizon_day = vec3(0.72, 0.86, 0.95);
+    float surface_view = cloud_surface_view_factor();
+    vec3 zenith_day = mix(vec3(0.19, 0.45, 0.82),
+                          vec3(0.105, 0.315, 0.610),
+                          surface_view);
+    vec3 horizon_day = mix(vec3(0.72, 0.86, 0.95),
+                           vec3(0.360, 0.485, 0.560),
+                           surface_view);
     vec3 zenith_night = vec3(0.004, 0.006, 0.014);
     vec3 horizon_night = vec3(0.020, 0.026, 0.045);
     float horizon = pow(1.0 - max(view_height, 0.0), 2.0);
@@ -185,10 +204,11 @@ vec3 cloud_sky_color(vec3 direction) {
            pow(max(1.0 - abs(view_height), 0.0), 3.2) * 0.55;
 
     float sun_alignment = max(dot(direction, sun_dir), 0.0);
+    float glare_scale = mix(1.0, 0.38, surface_view);
     sky += vec3(1.0, 0.82, 0.48) * pow(sun_alignment, 900.0) * day *
-           params.sun_direction_intensity.w * 6.0;
+           params.sun_direction_intensity.w * 6.0 * glare_scale;
     sky += vec3(1.0, 0.50, 0.18) * pow(sun_alignment, 42.0) * day *
-           params.sun_direction_intensity.w * 0.45;
+           params.sun_direction_intensity.w * 0.45 * glare_scale;
     sky += vec3(cloud_starfield(direction)) * (1.0 - day) * 0.9;
     return sky;
 }
@@ -224,8 +244,7 @@ vec3 cloud_water_context(vec3 direction) {
 
 bool cloud_orbit_planet_background(vec3 direction, out vec3 planet_color) {
     planet_color = vec3(0.0);
-    int camera_mode = int(params.camera_forward_mode.w + 0.5);
-    if (camera_mode < 4) {
+    if (cloud_camera_mode() < 4) {
         return false;
     }
 
