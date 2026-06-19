@@ -24,6 +24,27 @@ The CPU side already has legacy 3D value noise and FBM formulas that match the
 GLSL 3D helpers. The CPU side now also exposes small scalar parity helpers and
 the GLSL-specific masked hash-to-unit conversion.
 
+## Current Ownership Buckets
+
+Treat active procedural shader code as four ownership classes before moving it
+into a shared include:
+
+- Shared parity contracts: `shaders/cubey/procedural/operators.glsl`,
+  `random.glsl`, and the exact 3D value-noise/FBM family in `noise.glsl`.
+- Shared shader vocabulary: PCG and sin-dot hash/value helpers used by multiple
+  shaders, but not yet promised as CPU contracts.
+- Domain-owned formulas: cloud volume/weather shaping, ocean spectrum/foam
+  breakup, atmosphere star and moon recipes, fluid turbulence, and project
+  diagnostics that encode a renderer or simulation decision.
+- Reference-owned formulas: `cloud_ref`, `cloud_ref_2`, `clouds_legacy`, and
+  other kept-close-to-source snapshots.
+
+Only the first bucket can be migrated mechanically. The second bucket needs a
+golden-value pass before becoming CPU/GPU API. The third bucket should stay
+project-owned unless a focused feature proves a reusable domain abstraction. The
+fourth bucket should not be deduplicated while it is still useful as reference
+evidence.
+
 ## Intentionally Distinct Helpers
 
 `cubey::procedural::hash_to_unit` and GLSL `cubey_proc_hash01_u32` are not the
@@ -62,6 +83,9 @@ three buckets:
 - intentionally distinct legacy or shader contract;
 - shader-only visual formula.
 
-FastNoiseLite GLSL parity, GPU-executed shader golden tests, and additional
-shader formula migrations remain follow-up work after this first CPU-mirrored
-parity pass.
+The next foundation pass may expose FastNoiseLite's GLSL include and add
+compile-time smoke coverage, but active cloud, ocean, atmosphere, and fluid
+shader formulas should not migrate to it until they have parity coverage or a
+specific visual-retuning commit. GPU-executed shader golden tests remain a
+separate follow-up because they need real-device dispatch and readback plumbing,
+not just shared include coverage.

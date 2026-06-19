@@ -157,6 +157,10 @@ compiled into `cubey::core`:
   shaping, uint hashing, masked hash-to-unit conversion, and legacy 3D
   value-noise/FBM helpers, while keeping PCG and sin-dot shader helpers as
   shader-only visual formulas for now.
+  Shader-side formulas are now classified before migration: exact parity
+  contracts may move mechanically, shared visual vocabulary needs a
+  golden-value pass before becoming CPU API, domain formulas stay project-owned,
+  and reference snapshots stay untouched while they remain useful comparisons.
 
 The near-term cleanup target is shared plumbing that active consumers already
 use: stable procedural hashing, generated artifact metadata construction, and
@@ -269,8 +273,9 @@ the current CPU-side layer:
 
 Remaining candidates after that closure batch are:
 
-- GPU-executed shader golden tests or FastNoiseLite GLSL parity before any
-  future shader-side coherent-noise migration;
+- FastNoiseLite GLSL include plumbing and shader compile smoke coverage, then
+  GPU-executed shader golden tests before any future shader-side coherent-noise
+  migration;
 - cloud GPU readback or export metadata so generated-volume and weather-map
   descriptors can report content hashes instead of descriptor-only identity;
 - a future `SourceRecipe3D` or volume-field variant after the cloud/environment
