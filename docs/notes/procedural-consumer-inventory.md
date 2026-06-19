@@ -148,4 +148,6 @@ patch vocabulary.
 
 This is intentionally not a visual migration batch. Active projects should keep
 their current formulas unless a focused follow-up proves parity or a better
-domain recipe.
+domain recipe. The next cleanup pass should target shared hash and metadata
+plumbing in active atmosphere/cloud consumers while leaving legacy terrain
+experiments and planet terrain formulas untouched.

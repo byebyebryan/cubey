@@ -155,6 +155,13 @@ compiled into `cubey::core`:
   value-noise/FBM helpers, while keeping PCG and sin-dot shader helpers as
   shader-only visual formulas for now.
 
+The near-term cleanup target is shared plumbing that active consumers already
+use: stable procedural hashing, generated artifact metadata construction, and
+the atmosphere/cloud descriptors that report those identities. This cleanup
+does not migrate Terrain Lab, `projects/procedural_terrain`, planet terrain
+detail formulas, or reference cloud snapshots; those remain legacy evidence or
+domain-owned formulas until a terrain reboot or focused parity pass needs them.
+
 Terrain Lab consumes this shared layer for its scalar helpers and deterministic
 FBM source. It also exposes opt-in FastNoiseLite and warped FastNoiseLite
 backends for the desert dune source driver. That adoption is now a preserved
