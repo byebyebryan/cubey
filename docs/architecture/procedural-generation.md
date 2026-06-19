@@ -143,6 +143,10 @@ compiled into `cubey::core`:
 - `shaders/cubey/procedural` mirrors the small GLSL side of this layer with
   shared remap/smoothing helpers, deterministic random/hash helpers, and
   value-noise/FBM helpers for formulas that already match existing project code.
+  The first shader parity pass records exact CPU/GLSL contracts for scalar
+  shaping, uint hashing, masked hash-to-unit conversion, and legacy 3D
+  value-noise/FBM helpers, while keeping PCG and sin-dot shader helpers as
+  shader-only visual formulas for now.
 
 Terrain Lab consumes this shared layer for its scalar helpers and deterministic
 FBM source. It also exposes opt-in FastNoiseLite and warped FastNoiseLite
@@ -230,9 +234,8 @@ Next shared candidates should come from repeated project-local code, broad
 procedural-rendering needs, or a specific reference-backed driver need, not from
 speculative API surface. Likely near-term candidates are:
 
-- shader parity review for seed/hash/noise helpers before new GLSL migrations;
-  use `docs/notes/procedural-shader-parity.md` to decide whether a helper is an
-  exact CPU/GLSL contract, intentionally distinct, or shader-only vocabulary;
+- GPU-executed shader golden tests or FastNoiseLite GLSL parity before any
+  future shader-side coherent-noise migration;
 - cloud GPU readback or export metadata so generated-volume and weather-map
   descriptors can report content hashes instead of descriptor-only identity;
 - field-set export metadata so old and new procedural field outputs are easy to
@@ -258,8 +261,8 @@ Near-term non-goals:
 - no JSON sidecar or file export format for generated artifact metadata until
   more than the atmosphere atlas consumer needs persistent metadata;
 - no default switch from legacy Terrain Lab value noise to FastNoiseLite;
-- no FastNoiseLite GLSL migration before shader parity has its own focused
-  review;
+- no FastNoiseLite GLSL migration before a dedicated GPU or shader-side parity
+  pass;
 - no CPU migration of generated atmosphere lunar/night-sky atlas noise until it
   has its own golden-value or image-review pass;
 - no deduplication of `cloud_ref`, `cloud_ref_2`, or `clouds_legacy` while they

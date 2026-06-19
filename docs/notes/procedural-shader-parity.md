@@ -2,16 +2,16 @@
 
 Date: 2026-06-18
 
-This note scopes the first parity pass between CPU-side `cubey::procedural`
+This note records the first parity pass between CPU-side `cubey::procedural`
 helpers and shared GLSL helpers under `shaders/cubey/procedural`.
 
 The goal is not to migrate more project formulas yet. The goal is to make it
 clear which helpers are safe cross-language contracts and which helpers are only
 shared shader vocabulary.
 
-## Parity Targets
+## Tested Parity Contracts
 
-These helpers should have exact CPU/GLSL parity tests:
+These helpers have CPU tests that mirror the GLSL formulas:
 
 - scalar shaping: saturate, remap, smoothstep01, and smootherstep01;
 - integer hash: `hash_u32(uint)`;
@@ -21,8 +21,8 @@ These helpers should have exact CPU/GLSL parity tests:
 - 3D FBM: `cubey_proc_fbm_3d`.
 
 The CPU side already has legacy 3D value noise and FBM formulas that match the
-GLSL 3D helpers. The missing CPU surface is small scalar naming around
-`smoothstep01`, `remap`, and the GLSL-specific masked hash-to-unit conversion.
+GLSL 3D helpers. The CPU side now also exposes small scalar parity helpers and
+the GLSL-specific masked hash-to-unit conversion.
 
 ## Intentionally Distinct Helpers
 
@@ -63,5 +63,5 @@ three buckets:
 - shader-only visual formula.
 
 FastNoiseLite GLSL parity, GPU-executed shader golden tests, and additional
-shader formula migrations are follow-up work after this first CPU-mirrored
+shader formula migrations remain follow-up work after this first CPU-mirrored
 parity pass.

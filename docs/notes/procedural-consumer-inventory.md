@@ -134,9 +134,10 @@ The first metadata consumers are the atmosphere lunar/night-sky atlas pair and
 the cloud generated texture descriptors. Atmosphere covers CPU-generated atlas
 bytes with content hashes; cloud covers GPU-generated base density, detail
 erosion, and weather textures with descriptor metadata and deferred content
-hashes. Likely follow-ups are shader parity checks, field-set export metadata,
-GPU readback/export metadata, and volume/source recipes once projects start
-consuming the seed and domain vocabulary.
+hashes. Likely follow-ups are field-set export metadata, GPU readback/export
+metadata, GPU-executed shader golden tests, FastNoiseLite GLSL parity, and
+volume/source recipes once projects start consuming the seed and domain
+vocabulary.
 
 This is intentionally not a visual migration batch. Active projects should keep
 their current formulas unless a focused follow-up proves parity or a better
