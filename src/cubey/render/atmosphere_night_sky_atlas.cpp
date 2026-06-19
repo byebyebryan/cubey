@@ -1,5 +1,8 @@
 #include <cubey/render/atmosphere_night_sky_atlas.h>
 
+#include <cubey/procedural/artifact_metadata.h>
+#include <cubey/procedural/hash.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -557,41 +560,29 @@ NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::u
         }
     }
     build_mips(atlas);
-    atlas.metadata = cubey::procedural::ProceduralArtifactMetadata{
-        .name = "atmosphere night sky atlas",
-        .generator = "cubey::render::generate_night_sky_atlas",
-        .formula_version = "atmosphere-night-sky-atlas-v1",
-        .domain = "atmosphere.night_sky_atlas",
-        .seed = variation_seed,
-        .space = cubey::procedural::ProceduralDomainSpace::Spherical,
-        .kind = cubey::procedural::ProceduralArtifactKind::TextureCube,
-        .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba32Float,
-        .extent = {.width = extent,
-                   .height = extent,
-                   .depth = 1,
-                   .faces = 6,
-                   .mip_levels = atlas.mip_levels},
-        .content_hash = night_sky_atlas_hash(atlas.rgba32f),
-    };
-    cubey::procedural::validate_procedural_artifact_metadata(atlas.metadata);
+    atlas.metadata = cubey::procedural::make_procedural_artifact_metadata(
+        cubey::procedural::make_procedural_artifact_identity(
+            "atmosphere night sky atlas",
+            "cubey::render::generate_night_sky_atlas",
+            "atmosphere-night-sky-atlas-v1",
+            "atmosphere.night_sky_atlas",
+            variation_seed,
+            cubey::procedural::ProceduralDomainSpace::Spherical),
+        cubey::procedural::ProceduralArtifactKind::TextureCube,
+        cubey::procedural::ProceduralArtifactValueFormat::Rgba32Float,
+        {.width = extent, .height = extent, .depth = 1, .faces = 6, .mip_levels = atlas.mip_levels},
+        night_sky_atlas_hash(atlas.rgba32f));
     return atlas;
 }
 
 std::uint64_t night_sky_atlas_hash(std::span<const float> values) {
-    std::uint64_t hash = 1469598103934665603ULL;
+    cubey::procedural::ProceduralHashBuilder hash(1469598103934665603ULL);
     for (const float value : values) {
         const std::uint32_t quantized =
             static_cast<std::uint32_t>(std::round(std::clamp(value, 0.0F, 16.0F) * 65535.0F));
-        hash ^= quantized & 0xffU;
-        hash *= 1099511628211ULL;
-        hash ^= (quantized >> 8U) & 0xffU;
-        hash *= 1099511628211ULL;
-        hash ^= (quantized >> 16U) & 0xffU;
-        hash *= 1099511628211ULL;
-        hash ^= (quantized >> 24U) & 0xffU;
-        hash *= 1099511628211ULL;
+        hash.append_u32(quantized);
     }
-    return hash;
+    return hash.value();
 }
 
 } // namespace cubey::render

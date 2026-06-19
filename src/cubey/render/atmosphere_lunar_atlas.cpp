@@ -1,6 +1,7 @@
 #include <cubey/render/atmosphere_lunar_atlas.h>
 
-#include <cubey/procedural/seed.h>
+#include <cubey/procedural/artifact_metadata.h>
+#include <cubey/procedural/hash.h>
 
 #include <algorithm>
 #include <array>
@@ -598,33 +599,22 @@ LunarAtlas generate_lunar_atlas(std::uint32_t extent) {
         height_extent = std::max(height_extent / 2U, 1U);
         append_mip(atlas, current, width, height_extent);
     }
-    atlas.metadata = cubey::procedural::ProceduralArtifactMetadata{
-        .name = "atmosphere lunar atlas",
-        .generator = "cubey::render::generate_lunar_atlas",
-        .formula_version = "atmosphere-lunar-atlas-v1",
-        .domain = "atmosphere.lunar_atlas",
-        .seed = cubey::procedural::stable_hash_string("atmosphere.lunar_atlas"),
-        .space = cubey::procedural::ProceduralDomainSpace::Atlas,
-        .kind = cubey::procedural::ProceduralArtifactKind::Texture2D,
-        .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
-        .extent = {.width = extent,
-                   .height = extent,
-                   .depth = 1,
-                   .faces = 1,
-                   .mip_levels = mip_levels},
-        .content_hash = lunar_atlas_hash(atlas.rgba8),
-    };
-    cubey::procedural::validate_procedural_artifact_metadata(atlas.metadata);
+    atlas.metadata = cubey::procedural::make_procedural_artifact_metadata(
+        cubey::procedural::make_domain_procedural_artifact_identity(
+            "atmosphere lunar atlas",
+            "cubey::render::generate_lunar_atlas",
+            "atmosphere-lunar-atlas-v1",
+            "atmosphere.lunar_atlas",
+            cubey::procedural::ProceduralDomainSpace::Atlas),
+        cubey::procedural::ProceduralArtifactKind::Texture2D,
+        cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+        {.width = extent, .height = extent, .depth = 1, .faces = 1, .mip_levels = mip_levels},
+        lunar_atlas_hash(atlas.rgba8));
     return atlas;
 }
 
 std::uint64_t lunar_atlas_hash(std::span<const std::uint8_t> bytes) {
-    std::uint64_t hash = 14'695'981'039'346'656'037ULL;
-    for (const std::uint8_t byte : bytes) {
-        hash ^= byte;
-        hash *= 1'099'511'628'211ULL;
-    }
-    return hash;
+    return cubey::procedural::procedural_hash_bytes(bytes);
 }
 
 } // namespace cubey::render
