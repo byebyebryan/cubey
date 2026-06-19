@@ -228,7 +228,10 @@ speculative API surface. Likely near-term candidates are:
 
 - shader parity review for seed/hash/noise helpers before new GLSL migrations;
 - cloud generated-volume and weather-map metadata adoption using the same
-  artifact contract once cloud texture generation is reviewed;
+  artifact contract; the first cloud pass should cover only materialized
+  generated textures (base noise volume, detail noise volume, and weather map)
+  while leaving shader-evaluated orbit coverage/detail/hull fields deferred
+  until they have an exportable artifact shape;
 - field-set export metadata so old and new procedural field outputs are easy to
   compare by generator identity, formula version, seed, semantic domain,
   dimensions, and content hash;
