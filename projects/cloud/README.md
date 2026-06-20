@@ -129,7 +129,9 @@ Controls:
   Orbit shell diagnostics sample a planet-space coverage/detail/hull model
   rather than the surface-local planar density field. The broad orbit weather
   frequencies derive from `Weather scale`, with fine detail constrained to edge
-  and hull erosion instead of owning the planet-scale layout.
+  and hull erosion instead of owning the planet-scale layout. The orbit shell
+  should read as sparse regional weather systems with visible fronts, cells,
+  streaks, and broken detail, not as a smooth planet-wide cap.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
 - `Final Resolve`: alpha-aware smoothing amount plus final contrast,
@@ -149,7 +151,8 @@ Known deferrals:
   projection; the orbit shell now uses a separate planet-space hull.
 - Orbit final output uses the first scale-aware planet-space
   coverage/detail/hull path. It is still a direct shell renderer, not a
-  finished cached sky product or asset-backed global weather map.
+  finished cached sky product or asset-backed global weather map; the current
+  procedural target is believable regional systems and orbit-visible detail.
 - No ocean, planet, terrain, or PBR integration yet. Future consumers should
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,

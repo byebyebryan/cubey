@@ -770,3 +770,28 @@ projection. It is not the final planet solution:
 The test surface now includes headless orbit final, orbit coverage, orbit
 detail, and orbit hull smoke/stat checks so broken orbit outputs are caught
 alongside the existing surface/high captures.
+
+## Orbit Detail Believability Target 2026-06-20
+
+The scale-aware orbit checkpoint fixed one mechanical problem, but it
+overcorrected toward smooth broad blobs. Real planet-scale cloud shots are
+sparser and more structured: broad weather systems are regional, and visible
+detail appears as fronts, bands, cells, streaks, curled edges, and broken cloud
+texture inside those systems.
+
+The next procedural pass should keep the broad weather gate, but make the orbit
+model layered:
+
+- broad systems: sparse regional masks driven by `clouds.coverage` and
+  `clouds.weather_scale_km`;
+- fronts/bands: mid-frequency ridged structure controlled by
+  `clouds.weather_fronts`;
+- cells: broken clustered patches controlled by `clouds.weather_cells`;
+- streaks: wind-sheared detail controlled by `clouds.weather_streaks`;
+- final hull: visibly shaped by `clouds.orbit_detail_strength`, not only
+  lightly eroded.
+
+This remains procedural v1. Do not introduce an asset-backed global cloud map in
+this batch. The acceptance read is that `orbit-coverage` stays sparse,
+`orbit-detail` is visibly rich, and `orbit-hull`/final no longer read as smooth
+weather blobs.
