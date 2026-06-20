@@ -93,7 +93,7 @@ void main() {
 
     float softness = clamp(orbit_params.softness, 0.04, 0.55);
     float global_coverage = clamp(orbit_params.coverage, 0.0, 1.0);
-    float threshold = clamp(0.82 - global_coverage * 0.60, 0.12, 0.86);
+    float threshold = clamp(0.30 - global_coverage * 0.24, 0.05, 0.70);
     float regional = smoothstep(threshold - softness * 0.72,
                                 threshold + softness * 0.50,
                                 broad);
@@ -135,20 +135,22 @@ void main() {
                        streaks * streak_weight * 0.18) /
                       total_weight;
 
-    float fine_a = cloud_orbit_noise(detailed, 4.2, vec3(0.11, 0.57, 0.79), 3);
+    float fine_a = cloud_orbit_noise(detailed, 2.2, vec3(0.11, 0.57, 0.79), 3);
     float fine_b =
-        cloud_orbit_noise(normalize(detailed + warp_a * 0.32), 7.8, vec3(0.67, 0.43, 0.29), 3);
+        cloud_orbit_noise(normalize(detailed + warp_a * 0.32), 4.0, vec3(0.67, 0.43, 0.29), 3);
     float micro =
-        cloud_orbit_noise(normalize(detailed - warp_b * 0.18), 12.5, vec3(0.03, 0.33, 0.91), 2);
+        cloud_orbit_noise(normalize(detailed - warp_b * 0.18), 7.0, vec3(0.03, 0.33, 0.91), 2);
     float detail = clamp(fine_a * 0.36 + fine_b * 0.42 + micro * 0.22, 0.0, 1.0);
+    float hole_field = smoothstep(0.62, 0.90, fine_b * 0.54 + micro * 0.46);
     float broken_detail =
-        smoothstep(0.28, 0.78, detail) * (1.0 - smoothstep(0.76, 0.96, micro) * 0.44);
+        smoothstep(0.24, 0.74, detail) * (1.0 - hole_field * 0.36);
     float edge_support =
         smoothstep(0.26, 0.76, structure * 0.58 + broken_detail * 0.42);
-    float regional_detail = mix(0.36, 1.0, edge_support);
+    float regional_detail = mix(0.54, 1.0, max(edge_support, smoothstep(0.30, 0.72, detail)));
     float coverage = regional * regional_detail;
     coverage += regional * smoothstep(0.64, 0.88, structure) * 0.20;
-    coverage += global_coverage * 0.10 * smoothstep(0.62, 0.86, cells * 0.62 + detail * 0.38);
+    coverage += global_coverage * 0.22 * smoothstep(0.42, 0.76, cells * 0.58 + detail * 0.42);
+    coverage *= 1.0 - hole_field * 0.28 * (1.0 - smoothstep(0.72, 0.94, structure));
     coverage = clamp(coverage, 0.0, 1.0);
 
     float type_noise = cloud_orbit_noise(detailed, 0.42, vec3(0.89, 0.13, 0.51), 4);
