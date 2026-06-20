@@ -316,7 +316,7 @@ OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
     float detail_strength = clamp(params.distance_options.w, 0.0, 1.0);
     float detail_field =
         mix(edge_noise * 0.52 + wave_breakup * 0.48, structure.combined,
-            0.58 + detail_strength * 0.22);
+            0.25 + detail_strength * 0.70);
     float type_field =
         mix(cloud_orbit_wave_field(warped_normal + wind * 0.050 + vec3(0.17, 0.41, 0.23),
                                    cloud_orbit_scaled_frequency(0.27)),
@@ -341,14 +341,14 @@ OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
                                    0.76 + softness * 0.08,
                                    detail_field);
     float structured_fill = max(max(broken_mask, detail_fill), base_fill * 0.28);
-    float system_fill = mix(base_fill, structured_fill, 0.78 + detail_strength * 0.18);
+    float system_fill = mix(base_fill, structured_fill, 0.18 + detail_strength * 0.75);
     float regional_gate = smoothstep(threshold - softness * 1.30,
                                      threshold + softness * 0.18,
                                      broad_field);
     float scattered =
         smoothstep(0.58, 0.84, structure.cells * 0.44 + edge_noise * 0.28 +
                                  structure.streaks * 0.18 + macro_c * 0.10) *
-        regional_gate * global_coverage * 0.14;
+        regional_gate * global_coverage * (detail_strength * 0.22);
     float coverage = clamp(envelope * system_fill + scattered, 0.0, 1.0);
 
     detail_field = clamp(detail_field, 0.0, 1.0);
@@ -356,12 +356,12 @@ OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
         clamp(mix(type_field, structure.fronts * 0.55 + detail_field * 0.45, 0.22), 0.0, 1.0);
     float height_multiplier = max(cloud_density_gradient(height_fraction, cloud_type), 0.0);
     float base_hull = coverage * height_multiplier;
-    float erosion_width = mix(0.70, 0.46, detail_strength);
+    float erosion_width = mix(0.76, 0.42, detail_strength);
     float eroded_hull = cloud_coverage_modulation(base_hull, detail_field, erosion_width);
     float detail_contrast = smoothstep(0.24, 0.82, detail_field);
     float textured_hull = clamp(base_hull * mix(0.38, 1.58, detail_contrast), 0.0, 1.0);
-    float structured_hull = mix(textured_hull, eroded_hull, 0.18 + detail_strength * 0.24);
-    float hull = mix(base_hull, structured_hull, 0.48 + detail_strength * 0.38);
+    float structured_hull = mix(textured_hull, eroded_hull, 0.10 + detail_strength * 0.34);
+    float hull = mix(base_hull, structured_hull, 0.28 + detail_strength * 0.62);
     return OrbitWeatherSample(clamp(coverage, 0.0, 1.0),
                               detail_field,
                               clamp(hull, 0.0, 1.0),
