@@ -10,15 +10,16 @@ Current V1 scope:
 - generated 32^3 Worley erosion/detail noise;
 - generated 1024^2 weather map with authored coverage, cloud type,
   edge-breakup, and local-scatter channels that bias the local 3D density field;
+- generated 2048 x 1024 orbit weather map with broad coverage, detail erosion,
+  cloud type, and hull-support channels for high/orbit views;
 - generated artifact descriptors for the materialized base density volume,
-  detail erosion volume, and weather map, using the shared procedural metadata
-  contract;
+  detail erosion volume, local weather map, and orbit weather map, using the
+  shared procedural metadata contract;
 - spherical shell raymarch with height gradients, detail erosion, Beer
   transmittance, powder response, and a short light march;
 - world-scale weather/type sampling with separate opt-in vertical shear control;
-- sphere-continuous orbit weather coverage/detail/hull, generated from
-  weather-scale-aware planet-normal procedural fields instead of projecting the
-  local weather map;
+- sphere-continuous orbit weather coverage/detail/hull, sampled from a
+  generated planet-space map instead of projecting the local weather map;
 - separate cloud product and composite passes declared through
   `RenderGraphBuilder`;
 - shared `clouds.*` `RunConfig` options and hand-authored ImGui controls;
@@ -149,17 +150,16 @@ Known deferrals:
 - Cloud type is exposed as raw and visible diagnostics, and drives the current
   height gradient model. The surface/local path still uses planar weather
   projection; the orbit shell now uses a separate planet-space hull.
-- Orbit final output uses the first scale-aware planet-space
-  coverage/detail/hull path. It is still a direct shell renderer, not a
-  finished cached sky product or asset-backed global weather map; the current
-  procedural target is believable regional systems and orbit-visible detail.
+- Orbit final output uses a generated planet-space coverage/detail/hull product.
+  It is still a direct shell renderer, not a finished cached sky product or
+  asset-backed global weather map; the current procedural target is believable
+  regional systems and orbit-visible detail.
 - No ocean, planet, terrain, or PBR integration yet. Future consumers should
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,
   and synchronization remain project-owned in V1.
 - Generated artifact metadata is descriptor-only for now. GPU content hashes,
-  readback/export metadata, and shader-only orbit coverage/detail/hull artifact
-  descriptors remain deferred.
+  readback/export metadata, and cached sky/cloud products remain deferred.
 
 See
 [`docs/architecture/cloud-rendering.md`](../../docs/architecture/cloud-rendering.md)

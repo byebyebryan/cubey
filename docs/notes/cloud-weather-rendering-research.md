@@ -795,3 +795,26 @@ This remains procedural v1. Do not introduce an asset-backed global cloud map in
 this batch. The acceptance read is that `orbit-coverage` stays sparse,
 `orbit-detail` is visibly rich, and `orbit-hull`/final no longer read as smooth
 weather blobs.
+
+## Orbit Weather Product Target 2026-06-20
+
+The direct orbit-shell formula still asks each raymarch sample to rediscover the
+same planet-scale organization from inline noise. That made the final image
+either too smooth and blob-like or too noisy without giving future consumers a
+reusable weather product.
+
+The next implementation should materialize a separate generated orbit weather
+map. It remains procedural and does not use a satellite asset, but it should
+behave like an authored planet-space cloud product:
+
+- broad coverage owns sparse regional weather placement;
+- fronts, cells, and streaks add mid-scale organization inside those regions;
+- detail erosion carves holes and texture without creating planet-wide overcast;
+- the orbit shell samples the product for coverage/detail/hull diagnostics;
+- the local surface weather texture stays separate so surface/high tuning is not
+  forced to share the same map projection.
+
+Acceptance target: orbit captures should gain visible satellite-scale detail
+without reintroducing square patch seams, longitude seams, or a full-planet
+storm cap. Surface and high captures should remain stable while this orbit path
+is proven.
