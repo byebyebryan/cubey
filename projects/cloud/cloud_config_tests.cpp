@@ -511,7 +511,7 @@ void test_generated_artifact_metadata() {
     namespace cloud = cubey::projects::cloud;
     namespace procedural = cubey::procedural;
 
-    require(cloud::kCloudsGeneratedArtifacts.size() == 3U,
+    require(cloud::kCloudsGeneratedArtifacts.size() == 4U,
             "cloud generated artifact catalog should expose the materialized textures");
     require(cloud::cloud_generated_volume_mip_count(1U) == 1U,
             "cloud generated volume mip count should handle unit volumes");
@@ -528,10 +528,14 @@ void test_generated_artifact_metadata() {
         cloud::CloudsGeneratedArtifact::DetailNoiseVolume);
     const procedural::ProceduralArtifactMetadata weather =
         cloud::clouds_generated_artifact_metadata(cloud::CloudsGeneratedArtifact::WeatherMap);
+    const procedural::ProceduralArtifactMetadata orbit_weather =
+        cloud::clouds_generated_artifact_metadata(
+            cloud::CloudsGeneratedArtifact::OrbitWeatherMap);
 
     procedural::validate_procedural_artifact_metadata(base);
     procedural::validate_procedural_artifact_metadata(detail);
     procedural::validate_procedural_artifact_metadata(weather);
+    procedural::validate_procedural_artifact_metadata(orbit_weather);
 
     require(base.name == "cloud base density volume",
             "cloud base volume metadata should name the payload");
@@ -612,6 +616,33 @@ void test_generated_artifact_metadata() {
             "cloud weather map metadata should preserve extent and mip count");
     require(weather.content_hash == 0U,
             "cloud weather map metadata should defer GPU content hashing");
+
+    require(orbit_weather.name == "cloud orbit weather map",
+            "cloud orbit weather map metadata should name the payload");
+    require(orbit_weather.generator == "cubey::projects::cloud::cloud_orbit_weather",
+            "cloud orbit weather map metadata should identify the generator");
+    require(orbit_weather.formula_version == "cloud-orbit-weather-map-v1",
+            "cloud orbit weather map metadata should identify the formula version");
+    require(orbit_weather.domain == "cloud.orbit_weather_map",
+            "cloud orbit weather map metadata should identify the domain");
+    require(orbit_weather.seed == procedural::stable_hash_string("cloud.orbit_weather_map"),
+            "cloud orbit weather map metadata should derive seed from its domain");
+    require(orbit_weather.seed != base.seed && orbit_weather.seed != detail.seed &&
+                orbit_weather.seed != weather.seed,
+            "cloud orbit weather map metadata should use a separate seed stream");
+    require(orbit_weather.space == procedural::ProceduralDomainSpace::World,
+            "cloud orbit weather map metadata should use world space");
+    require(orbit_weather.kind == procedural::ProceduralArtifactKind::Texture2D,
+            "cloud orbit weather map metadata should identify a 2D texture");
+    require(orbit_weather.format == procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+            "cloud orbit weather map metadata should identify RGBA8 payloads");
+    require(orbit_weather.extent.width == cloud::kCloudOrbitWeatherTextureWidth &&
+                orbit_weather.extent.height == cloud::kCloudOrbitWeatherTextureHeight &&
+                orbit_weather.extent.depth == 1U && orbit_weather.extent.faces == 1U &&
+                orbit_weather.extent.mip_levels == 1U,
+            "cloud orbit weather map metadata should preserve extent and mip count");
+    require(orbit_weather.content_hash == 0U,
+            "cloud orbit weather map metadata should defer GPU content hashing");
 }
 
 void test_config_descriptors() {

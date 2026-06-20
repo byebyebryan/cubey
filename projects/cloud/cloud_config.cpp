@@ -523,6 +523,22 @@ cubey::procedural::ProceduralArtifactMetadata clouds_generated_artifact_metadata
              .faces = 1U,
              .mip_levels = 1U},
             0U);
+    case CloudsGeneratedArtifact::OrbitWeatherMap:
+        return cubey::procedural::make_procedural_artifact_metadata(
+            cubey::procedural::make_domain_procedural_artifact_identity(
+                "cloud orbit weather map",
+                "cubey::projects::cloud::cloud_orbit_weather",
+                "cloud-orbit-weather-map-v1",
+                "cloud.orbit_weather_map",
+                cubey::procedural::ProceduralDomainSpace::World),
+            cubey::procedural::ProceduralArtifactKind::Texture2D,
+            cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+            {.width = kCloudOrbitWeatherTextureWidth,
+             .height = kCloudOrbitWeatherTextureHeight,
+             .depth = 1U,
+             .faces = 1U,
+             .mip_levels = 1U},
+            0U);
     }
 
     throw std::runtime_error("unknown cloud generated artifact");

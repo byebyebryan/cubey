@@ -61,6 +61,7 @@ constexpr std::uint32_t kCloudBaseNoiseBinding = 2;
 constexpr std::uint32_t kCloudDetailNoiseBinding = 3;
 constexpr std::uint32_t kCloudWeatherBinding = 4;
 constexpr std::uint32_t kCloudMetadataBinding = 5;
+constexpr std::uint32_t kCloudOrbitWeatherBinding = 6;
 constexpr std::uint32_t kCloudCompositeCloudBinding = 1;
 constexpr std::uint32_t kCloudCompositeMetadataBinding = 2;
 constexpr std::uint32_t kCloudTemporalCurrentCloudBinding = 0;
@@ -176,6 +177,19 @@ struct CloudWeatherPushConstants {
 
 static_assert(sizeof(CloudWeatherPushConstants) == sizeof(float) * 4U);
 
+struct CloudOrbitWeatherPushConstants {
+    float coverage = 0.45F;
+    float weather_scale_km = 120.0F;
+    float planet_radius_m = kCloudsDefaultPlanetRadiusM;
+    float softness = 0.22F;
+    float fronts = 1.0F;
+    float cells = 1.0F;
+    float streaks = 1.0F;
+    float cloud_style = 1.0F;
+};
+
+static_assert(sizeof(CloudOrbitWeatherPushConstants) == sizeof(float) * 8U);
+
 struct CloudViewBasis {
     cubey::math::Vec3 position{0.0F, 0.0F, 0.0F};
     cubey::math::Vec3 right{1.0F, 0.0F, 0.0F};
@@ -251,6 +265,11 @@ std::filesystem::path shader_path(const char* filename) {
                 cubey::vulkan::DescriptorSetBindingConfig{
                     .binding = kCloudMetadataBinding,
                     .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+                },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudOrbitWeatherBinding,
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                     .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
                 },
             },
@@ -483,9 +502,32 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     };
 }
 
+[[nodiscard]] CloudOrbitWeatherPushConstants
+cloud_orbit_weather_push_constants(const CloudsConfig& config) {
+    return {
+        .coverage = config.coverage,
+        .weather_scale_km = config.weather_scale_km,
+        .planet_radius_m = config.planet_radius_m,
+        .softness = config.weather_softness,
+        .fronts = config.weather_fronts,
+        .cells = config.weather_cells,
+        .streaks = config.weather_streaks,
+        .cloud_style = cloud_cloud_style_value(config.cloud_style),
+    };
+}
+
 [[nodiscard]] bool cloud_weather_generation_equal(const CloudWeatherPushConstants& lhs,
                                                   const CloudWeatherPushConstants& rhs) {
     return lhs.fronts == rhs.fronts && lhs.cells == rhs.cells && lhs.streaks == rhs.streaks &&
+           lhs.cloud_style == rhs.cloud_style;
+}
+
+[[nodiscard]] bool cloud_orbit_weather_generation_equal(
+    const CloudOrbitWeatherPushConstants& lhs,
+    const CloudOrbitWeatherPushConstants& rhs) {
+    return lhs.coverage == rhs.coverage && lhs.weather_scale_km == rhs.weather_scale_km &&
+           lhs.planet_radius_m == rhs.planet_radius_m && lhs.softness == rhs.softness &&
+           lhs.fronts == rhs.fronts && lhs.cells == rhs.cells && lhs.streaks == rhs.streaks &&
            lhs.cloud_style == rhs.cloud_style;
 }
 
@@ -608,6 +650,23 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     };
 }
 
+[[nodiscard]] cubey::vulkan::SamplerConfig cloud_orbit_weather_sampler_config() {
+    cubey::vulkan::SamplerConfig config = cloud_repeat_sampler_config();
+    config.address_mode_u = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    config.address_mode_v = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    return config;
+}
+
+[[nodiscard]] cubey::render::Texture2DConfig cloud_orbit_weather_texture_config() {
+    return {
+        .extent = {kCloudOrbitWeatherTextureWidth, kCloudOrbitWeatherTextureHeight},
+        .format = kCloudNoiseFormat,
+        .usage = cubey::render::Texture2DUsage::StorageSampled,
+        .create_sampler = true,
+        .sampler = cloud_orbit_weather_sampler_config(),
+    };
+}
+
 [[nodiscard]] cubey::render::Texture2DConfig cloud_history_texture_config(VkExtent2D extent) {
     return {
         .extent = extent,
@@ -618,10 +677,10 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     };
 }
 
+template <typename PushConstants>
 void generate_storage_texture(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
                               const char* label, const std::filesystem::path& shader,
-                              VkImage image, VkImageView view,
-                              CloudWeatherPushConstants push_constants,
+                              VkImage image, VkImageView view, PushConstants push_constants,
                               cubey::render::ComputeDispatchGroups groups) {
     const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
         cubey::vulkan::DescriptorSetBindingConfig{
@@ -640,7 +699,7 @@ void generate_storage_texture(const cubey::vulkan::Device& device, cubey::vulkan
     const VkPushConstantRange push_constant_range{
         .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
         .offset = 0,
-        .size = sizeof(CloudWeatherPushConstants),
+        .size = sizeof(PushConstants),
     };
     const std::array<VkPushConstantRange, 1> push_constant_ranges{push_constant_range};
     const cubey::render::ComputePipelineResource pipeline(
@@ -771,6 +830,7 @@ class CloudApp {
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
             refresh_weather_texture_if_needed(context.device(), context.gpu());
+            refresh_orbit_weather_texture_if_needed(context.device(), context.gpu());
             record_windowed_frame(context.device(), frame.command_buffer,
                                   cubey::render::swapchain_color_target_view(context.swapchain(),
                                                                              frame.image_index),
@@ -825,6 +885,7 @@ class CloudApp {
                                         const cubey::host::HeadlessRenderTarget& target) {
             update_headless_time(frame);
             refresh_weather_texture_if_needed(context.device(), context.gpu());
+            refresh_orbit_weather_texture_if_needed(context.device(), context.gpu());
             record_headless_target(context.device(), command_buffer, target, frame.frame_slot);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
@@ -882,6 +943,8 @@ class CloudApp {
     void draw_ui() {
         const CloudWeatherPushConstants before_weather =
             cloud_weather_push_constants(config_);
+        const CloudOrbitWeatherPushConstants before_orbit_weather =
+            cloud_orbit_weather_push_constants(config_);
         ImGui::SetNextWindowPos(ImVec2(12.0F, 12.0F), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(420.0F, 650.0F), ImGuiCond_FirstUseEver);
         if (!ImGui::Begin("Cloud")) {
@@ -968,11 +1031,18 @@ class CloudApp {
         ImGui::Text("Detail noise: %u^3", kCloudDetailNoiseSize);
         ImGui::Text("Weather texture: %u x %u", kCloudWeatherTextureSize,
                     kCloudWeatherTextureSize);
+        ImGui::Text("Orbit weather: %u x %u", kCloudOrbitWeatherTextureWidth,
+                    kCloudOrbitWeatherTextureHeight);
         ImGui::End();
         const CloudWeatherPushConstants after_weather =
             cloud_weather_push_constants(config_);
         if (!cloud_weather_generation_equal(before_weather, after_weather)) {
             weather_texture_dirty_ = true;
+        }
+        const CloudOrbitWeatherPushConstants after_orbit_weather =
+            cloud_orbit_weather_push_constants(config_);
+        if (!cloud_orbit_weather_generation_equal(before_orbit_weather, after_orbit_weather)) {
+            orbit_weather_texture_dirty_ = true;
         }
     }
 
@@ -1088,6 +1158,7 @@ class CloudApp {
         base_noise_.emplace(device, cloud_volume_texture_config(kCloudBaseNoiseSize));
         detail_noise_.emplace(device, cloud_volume_texture_config(kCloudDetailNoiseSize));
         weather_texture_.emplace(device, cloud_weather_texture_config());
+        orbit_weather_texture_.emplace(device, cloud_orbit_weather_texture_config());
 
         generate_storage_volume_texture(
             device, gpu, "cloud generate base noise",
@@ -1105,15 +1176,27 @@ class CloudApp {
             cloud_weather_push_constants(config_),
             cubey::render::ceil_dispatch_groups(kCloudWeatherTextureSize,
                                                 kCloudWeatherTextureSize, kCloudComputeGroupSize));
+        generate_storage_texture(
+            device, gpu, "cloud generate orbit weather",
+            shader_path("cloud_orbit_weather.comp.spv"), orbit_weather_texture_->handle(),
+            orbit_weather_texture_->view(), cloud_orbit_weather_push_constants(config_),
+            cubey::render::ceil_dispatch_groups(kCloudOrbitWeatherTextureWidth,
+                                                kCloudOrbitWeatherTextureHeight,
+                                                kCloudComputeGroupSize));
         last_weather_generation_ = cloud_weather_push_constants(config_);
+        last_orbit_weather_generation_ = cloud_orbit_weather_push_constants(config_);
         weather_texture_dirty_ = false;
+        orbit_weather_texture_dirty_ = false;
     }
 
     void destroy_global_resources() {
+        orbit_weather_texture_.reset();
         weather_texture_.reset();
         detail_noise_.reset();
         base_noise_.reset();
+        orbit_weather_texture_dirty_ = true;
         weather_texture_dirty_ = true;
+        last_orbit_weather_generation_.reset();
         last_weather_generation_.reset();
     }
 
@@ -1134,6 +1217,28 @@ class CloudApp {
                                                 kCloudWeatherTextureSize, kCloudComputeGroupSize));
         last_weather_generation_ = current;
         weather_texture_dirty_ = false;
+    }
+
+    void refresh_orbit_weather_texture_if_needed(const cubey::vulkan::Device& device,
+                                                 cubey::vulkan::GpuRuntime& gpu) {
+        if (!orbit_weather_texture_.has_value()) {
+            return;
+        }
+        const CloudOrbitWeatherPushConstants current = cloud_orbit_weather_push_constants(config_);
+        if (!orbit_weather_texture_dirty_ && last_orbit_weather_generation_.has_value() &&
+            cloud_orbit_weather_generation_equal(last_orbit_weather_generation_.value(),
+                                                 current)) {
+            return;
+        }
+        generate_storage_texture(
+            device, gpu, "cloud regenerate orbit weather",
+            shader_path("cloud_orbit_weather.comp.spv"), orbit_weather_texture_->handle(),
+            orbit_weather_texture_->view(), current,
+            cubey::render::ceil_dispatch_groups(kCloudOrbitWeatherTextureWidth,
+                                                kCloudOrbitWeatherTextureHeight,
+                                                kCloudComputeGroupSize));
+        last_orbit_weather_generation_ = current;
+        orbit_weather_texture_dirty_ = false;
     }
 
     void destroy_swapchain_resources() {
@@ -1234,6 +1339,13 @@ class CloudApp {
             throw std::runtime_error("cloud weather texture is not initialized");
         }
         return weather_texture_.value();
+    }
+
+    [[nodiscard]] const cubey::render::Texture2D& orbit_weather_texture() const {
+        if (!orbit_weather_texture_.has_value()) {
+            throw std::runtime_error("cloud orbit weather texture is not initialized");
+        }
+        return orbit_weather_texture_.value();
     }
 
     [[nodiscard]] const cubey::vulkan::Sampler& composite_sampler() const {
@@ -1560,6 +1672,9 @@ class CloudApp {
                                             weather_texture().view())
                     .storage_image(kCloudMetadataBinding, cloud_metadata.view,
                                    VK_IMAGE_LAYOUT_GENERAL)
+                    .combined_image_sampler(kCloudOrbitWeatherBinding,
+                                            orbit_weather_texture().sampler().handle(),
+                                            orbit_weather_texture().view())
                     .update(device);
                 if (frame_graph.temporal_pass_enabled) {
                     const cubey::render::RenderGraphSampledTextureView history_cloud_read =
@@ -1660,8 +1775,11 @@ class CloudApp {
     std::optional<cubey::render::Texture3D> base_noise_{};
     std::optional<cubey::render::Texture3D> detail_noise_{};
     std::optional<cubey::render::Texture2D> weather_texture_{};
+    std::optional<cubey::render::Texture2D> orbit_weather_texture_{};
     std::optional<CloudWeatherPushConstants> last_weather_generation_{};
+    std::optional<CloudOrbitWeatherPushConstants> last_orbit_weather_generation_{};
     bool weather_texture_dirty_ = true;
+    bool orbit_weather_texture_dirty_ = true;
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
     std::optional<cubey::vulkan::Sampler> composite_sampler_{};
     std::optional<cubey::render::FrameUniformBuffer<CloudFrameUniforms>> frame_uniforms_{};
