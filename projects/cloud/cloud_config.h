@@ -188,7 +188,7 @@ struct CloudsConfig {
     float top_altitude_m = kCloudsDefaultTopAltitudeM;
     float coverage = 0.45F;
     float density = 0.02F;
-    float weather_scale_km = 210.0F;
+    float weather_scale_km = 120.0F;
     float vertical_shear_fraction = 0.0F;
     float wind_speed_mps = 450.0F;
     float shadow_strength = 0.82F;
@@ -215,7 +215,7 @@ struct CloudsConfig {
     float orbit_transition_end_m = 80000.0F;
     float far_shell_start_m = 45000.0F;
     float far_shell_end_m = 220000.0F;
-    float orbit_detail_strength = 0.10F;
+    float orbit_detail_strength = 0.45F;
     float orbit_density_scale = 0.02F;
     bool powder_enabled = true;
     bool local_volume_enabled = true;

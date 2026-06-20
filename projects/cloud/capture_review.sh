@@ -47,6 +47,10 @@ capture high-oblique --cloud-camera-mode high-oblique
 capture surface --cloud-camera-mode surface
 capture high --cloud-camera-mode high
 capture orbit-preview --cloud-camera-mode orbit
+capture orbit-final-detail-off --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-detail-strength 0
+capture orbit-final-detail-strong --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-detail-strength 0.8
 capture orbit-terminator --cloud-camera-mode orbit-terminator
 capture high-oblique-distance-regime --cloud-camera-mode high-oblique \
     --debug-view distance-regime
@@ -119,6 +123,7 @@ if command -v magick >/dev/null 2>&1; then
     crop_names=(
         surface-up raw-final cloud-alpha weather weather-edge weather-bias
         cloud-type density visible-density visible-cloud-type
+        orbit-preview orbit-final-detail-off orbit-final-detail-strong
         high-oblique-distance-regime high-oblique-local-alpha high-oblique-orbit-alpha
         high-oblique-orbit-coverage high-oblique-orbit-detail high-oblique-orbit-hull
         orbit-distance-regime orbit-alpha orbit-coverage orbit-detail orbit-hull

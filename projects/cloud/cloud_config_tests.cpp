@@ -418,6 +418,8 @@ void test_weather_preset_defaults() {
                  "default jitter should match reference Bayer strength");
     require_near(config.weather_influence, 0.0F, 0.001F,
                  "default weather influence should preserve local scatter");
+    require_near(config.weather_scale_km, 120.0F, 0.001F,
+                 "default weather scale should keep orbit systems regional");
     require_near(config.vertical_shear_fraction, 0.0F, 0.001F,
                  "default vertical shear should be opt-in");
     require_near(config.horizon_strength, 0.48F, 0.001F,
@@ -444,8 +446,8 @@ void test_weather_preset_defaults() {
                  "default far shell start should be high-view scale");
     require_near(config.far_shell_end_m, 220000.0F, 0.001F,
                  "default far shell end should be high-view scale");
-    require_near(config.orbit_detail_strength, 0.10F, 0.001F,
-                 "default orbit detail should suppress high-frequency erosion");
+    require_near(config.orbit_detail_strength, 0.45F, 0.001F,
+                 "default orbit detail should preserve visible shell structure");
     require_near(config.orbit_density_scale, 0.02F, 0.001F,
                  "default orbit density should reveal the toy planet in orbit captures");
 
