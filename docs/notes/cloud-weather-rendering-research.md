@@ -744,3 +744,29 @@ Implementation implications for `projects/cloud`:
 Acceptance target for the next batch: the `orbit-coverage` and `orbit-hull`
 diagnostics should already read like coherent weather masses from high/orbit
 views before cloud lighting, aerial perspective, or post-processing are judged.
+
+## Orbit Weather Scale-Aware Checkpoint 2026-06-20
+
+`projects/cloud` now has the first direct implementation of the Skybolt-style
+coverage-first orbit rule without importing an asset-backed global cloud map.
+The orbit shell still samples procedural planet-normal fields, but the broad
+field, warp, texture breakup, and detail frequencies derive from
+`clouds.weather_scale_km` and the configured planet circumference. Detail noise
+is constrained toward edge and hull erosion, while the broad field owns the
+visible weather-system placement.
+
+This is a useful bridge for the standalone project because `Weather scale`
+finally affects orbit weather massing instead of only the surface-local weather
+projection. It is not the final planet solution:
+
+- the coverage product is still shader-only, so it cannot yet be reused by
+  cloud shadows, planet rendering, or ocean reflections;
+- there is still no authored or satellite-style global cloud map;
+- limb/max-projection artifacts in `orbit-coverage` and `orbit-hull` are
+  diagnostic limitations of the direct shell pass, not solved cache output;
+- the direct shell remains a checkpoint before a cached sky/cloud product or
+  reusable renderer contract.
+
+The test surface now includes headless orbit final, orbit coverage, orbit
+detail, and orbit hull smoke/stat checks so broken orbit outputs are caught
+alongside the existing surface/high captures.

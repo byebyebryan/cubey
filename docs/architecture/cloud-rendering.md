@@ -155,6 +155,10 @@ Initial scope:
 - distance-regime controls are now explicit: `clouds.distance_mode` can force
   local or orbit-shell behavior, while `auto` blends high and orbit views toward
   a broad low-detail shell before the full cached sky product exists;
+- orbit-shell weather is now sampled from planet-normal procedural fields whose
+  broad frequencies derive from `clouds.weather_scale_km`; detail/noise is
+  constrained to edge and hull erosion so it does not own planet-scale cloud
+  placement;
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;

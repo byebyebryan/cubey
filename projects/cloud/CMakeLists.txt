@@ -22,6 +22,7 @@ cubey_add_app_target(
     SHADER_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_common.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_noise_common.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_weather_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
 )
 
@@ -82,6 +83,100 @@ if (BUILD_TESTING)
         cloud_high_headless_writes_png
         "${CUBEY_CLOUD_HIGH_SMOKE_OUTPUT}"
         0.005
+        0.005
+    )
+
+    set(CUBEY_CLOUD_ORBIT_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/cloud-orbit-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        cloud_orbit_headless_writes_png
+        cubey_project_cloud
+        "${CUBEY_CLOUD_ORBIT_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        2
+        --cloud-camera-mode
+        orbit
+        --cloud-distance-mode
+        orbit-shell
+    )
+    cubey_add_png_stats_test(
+        cloud_orbit_headless_writes_png
+        "${CUBEY_CLOUD_ORBIT_SMOKE_OUTPUT}"
+        0.005
+        0.005
+    )
+
+    set(CUBEY_CLOUD_ORBIT_COVERAGE_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/cloud-orbit-coverage-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        cloud_orbit_coverage_headless_writes_png
+        cubey_project_cloud
+        "${CUBEY_CLOUD_ORBIT_COVERAGE_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        2
+        --cloud-camera-mode
+        orbit
+        --cloud-distance-mode
+        orbit-shell
+        --debug-view
+        orbit-coverage
+    )
+    cubey_add_png_stats_test(
+        cloud_orbit_coverage_headless_writes_png
+        "${CUBEY_CLOUD_ORBIT_COVERAGE_SMOKE_OUTPUT}"
+        0.002
+        0.005
+    )
+
+    set(CUBEY_CLOUD_ORBIT_DETAIL_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/cloud-orbit-detail-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        cloud_orbit_detail_headless_writes_png
+        cubey_project_cloud
+        "${CUBEY_CLOUD_ORBIT_DETAIL_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        2
+        --cloud-camera-mode
+        orbit
+        --cloud-distance-mode
+        orbit-shell
+        --debug-view
+        orbit-detail
+    )
+    cubey_add_png_stats_test(
+        cloud_orbit_detail_headless_writes_png
+        "${CUBEY_CLOUD_ORBIT_DETAIL_SMOKE_OUTPUT}"
+        0.005
+        0.005
+    )
+
+    set(CUBEY_CLOUD_ORBIT_HULL_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/cloud-orbit-hull-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        cloud_orbit_hull_headless_writes_png
+        cubey_project_cloud
+        "${CUBEY_CLOUD_ORBIT_HULL_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        2
+        --cloud-camera-mode
+        orbit
+        --cloud-distance-mode
+        orbit-shell
+        --debug-view
+        orbit-hull
+    )
+    cubey_add_png_stats_test(
+        cloud_orbit_hull_headless_writes_png
+        "${CUBEY_CLOUD_ORBIT_HULL_SMOKE_OUTPUT}"
+        0.002
         0.005
     )
 endif()

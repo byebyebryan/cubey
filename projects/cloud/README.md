@@ -17,7 +17,8 @@ Current V1 scope:
   transmittance, powder response, and a short light march;
 - world-scale weather/type sampling with separate opt-in vertical shear control;
 - sphere-continuous orbit weather coverage/detail/hull, generated from
-  planet-normal procedural fields instead of projecting the local weather map;
+  weather-scale-aware planet-normal procedural fields instead of projecting the
+  local weather map;
 - separate cloud product and composite passes declared through
   `RenderGraphBuilder`;
 - shared `clouds.*` `RunConfig` options and hand-authored ImGui controls;
@@ -126,7 +127,9 @@ Controls:
 - `Distance Regime`: local/orbit mode, altitude and ray-distance transition
   ranges, broad-shell detail strength, and broad-shell density scale.
   Orbit shell diagnostics sample a planet-space coverage/detail/hull model
-  rather than the surface-local planar density field.
+  rather than the surface-local planar density field. The broad orbit weather
+  frequencies derive from `Weather scale`, with fine detail constrained to edge
+  and hull erosion instead of owning the planet-scale layout.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
 - `Final Resolve`: alpha-aware smoothing amount plus final contrast,
@@ -144,9 +147,9 @@ Known deferrals:
 - Cloud type is exposed as raw and visible diagnostics, and drives the current
   height gradient model. The surface/local path still uses planar weather
   projection; the orbit shell now uses a separate planet-space hull.
-- Orbit final output uses the first planet-space coverage/detail/hull path. It
-  is still a direct shell renderer, not a finished cached sky product or
-  asset-backed global weather map.
+- Orbit final output uses the first scale-aware planet-space
+  coverage/detail/hull path. It is still a direct shell renderer, not a
+  finished cached sky product or asset-backed global weather map.
 - No ocean, planet, terrain, or PBR integration yet. Future consumers should
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,
