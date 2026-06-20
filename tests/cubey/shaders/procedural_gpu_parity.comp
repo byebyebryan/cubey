@@ -1,0 +1,34 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "cubey/procedural/fastnoise_lite.glsl"
+#include "cubey/procedural/noise.glsl"
+#include "cubey/procedural/random.glsl"
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, std430) buffer ParityOutput {
+    float values[];
+} parity_output;
+
+void main() {
+    fnl_state simplex = fnlCreateState(2024);
+    simplex.frequency = 0.015;
+    simplex.noise_type = FNL_NOISE_OPENSIMPLEX2;
+    simplex.fractal_type = FNL_FRACTAL_NONE;
+
+    fnl_state perlin_fbm = fnlCreateState(99);
+    perlin_fbm.frequency = 0.025;
+    perlin_fbm.noise_type = FNL_NOISE_PERLIN;
+    perlin_fbm.fractal_type = FNL_FRACTAL_FBM;
+    perlin_fbm.octaves = 4;
+    perlin_fbm.lacunarity = 2.1;
+    perlin_fbm.gain = 0.48;
+    perlin_fbm.weighted_strength = 0.13;
+
+    parity_output.values[0] = cubey_proc_hash01_u32(123456789U);
+    parity_output.values[1] = cubey_proc_value_noise_3d(vec3(1.25, -3.75, 0.5), 17U);
+    parity_output.values[2] = cubey_proc_fbm_3d(vec3(2.4, -0.7, 1.9), 42U, 5U);
+    parity_output.values[3] = fnlGetNoise3D(simplex, 12.5, -7.25, 3.5);
+    parity_output.values[4] = fnlGetNoise2D(perlin_fbm, 6.25, -2.75);
+}

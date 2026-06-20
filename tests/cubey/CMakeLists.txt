@@ -125,3 +125,37 @@ cubey_add_glsl_shaders(
 add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)
 
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)
+
+add_executable(cubey_procedural_gpu_parity_tests
+    procedural_gpu_parity_main.cpp
+)
+target_link_libraries(
+    cubey_procedural_gpu_parity_tests
+    PRIVATE
+        cubey::render
+        cubey_project_warnings
+)
+target_compile_definitions(
+    cubey_procedural_gpu_parity_tests
+    PRIVATE
+        CUBEY_PROCEDURAL_GPU_PARITY_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/procedural_gpu_parity"
+)
+cubey_add_glsl_shaders(
+    cubey_procedural_gpu_parity_tests
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/procedural_gpu_parity"
+    SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/procedural_gpu_parity.comp"
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/fastnoise_lite.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
+        "${CUBEY_FASTNOISE_LITE_GLSL_DIR}/FastNoiseLite.glsl"
+)
+add_test(NAME procedural_gpu_parity_tests COMMAND cubey_procedural_gpu_parity_tests)
+set_tests_properties(
+    procedural_gpu_parity_tests
+    PROPERTIES
+        TIMEOUT 20
+        SKIP_RETURN_CODE 77
+)
