@@ -74,17 +74,39 @@ They are shared include helpers because several shaders use them, but they do
 not yet define a CPU procedural contract. Promote them only after a focused
 golden-value or visual migration pass proves the need.
 
+## GPU-Executed Parity Contracts
+
+`procedural_gpu_parity_tests` dispatches a real Vulkan compute shader and reads
+back a storage buffer for fixed samples. It currently covers:
+
+- `cubey_proc_hash01_u32`;
+- `cubey_proc_value_noise_3d`;
+- `cubey_proc_fbm_3d`;
+- FastNoiseLite OpenSimplex2 3D via `fnlGetNoise3D`;
+- FastNoiseLite Perlin FBM 2D via `fnlGetNoise2D`.
+
+The legacy shared GLSL formulas use a `0.000001` tolerance. FastNoiseLite
+samples use `0.00001` to allow normal CPU/GPU floating-point variation while
+still catching formula/config drift. Run the gate with:
+
+```sh
+ctest --preset dev -R procedural_gpu_parity_tests --output-on-failure
+```
+
+The test skips with return code 77 when no suitable Vulkan device is available.
+
 ## FastNoiseLite GLSL Status
 
 `shaders/cubey/procedural/fastnoise_lite.glsl` is the shared shader include for
 the upstream FastNoiseLite GLSL port. It exists so future shader work can depend
-on one Cubey include path instead of project-local vendoring. The current
-coverage is compile-smoke only: a test shader includes FastNoiseLite and the
-shared procedural headers, instantiates `fnl_state`, and calls `fnlGetNoise3D`.
+on one Cubey include path instead of project-local vendoring. Compile-smoke
+coverage proves that shared include plumbing works, while
+`procedural_gpu_parity_tests` proves the initial numeric CPU/GPU contract for
+the FastNoiseLite cases listed above.
 
-That is not yet a numeric parity contract. FastNoiseLite C++ and GLSL should be
-promoted to a CPU/GPU contract only after a dedicated dispatch/readback fixture
-compares fixed samples against `cubey::procedural` on a real Vulkan device.
+That is still not a blanket migration license. Active project shaders should
+only migrate formulas that match the covered configurations or add new GPU
+samples first.
 
 ## Gate For Future Migrations
 
@@ -97,6 +119,4 @@ three buckets:
 
 Active cloud, ocean, atmosphere, and fluid shader formulas should not migrate to
 FastNoiseLite GLSL until they have parity coverage or a specific visual-retuning
-commit. GPU-executed shader golden tests remain a separate follow-up because
-they need real-device dispatch and readback plumbing, not just shared include
-coverage.
+commit. The GPU parity runner is now available for those future samples.
