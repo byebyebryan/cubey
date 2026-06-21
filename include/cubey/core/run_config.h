@@ -273,6 +273,8 @@ struct RunConfig {
         float far_shell_end_m = kRunConfigUnsetFloat;
         float orbit_detail_strength = kRunConfigUnsetFloat;
         float orbit_density_scale = kRunConfigUnsetFloat;
+        float orbit_motion_strength = kRunConfigUnsetFloat;
+        float orbit_shell_extinction = kRunConfigUnsetFloat;
         int temporal = -1;
         int local_volume = -1;
         int horizon_layer = -1;

@@ -733,6 +733,12 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (run_config_float_is_set(run_config.clouds.orbit_density_scale)) {
         config.orbit_density_scale = run_config.clouds.orbit_density_scale;
     }
+    if (run_config_float_is_set(run_config.clouds.orbit_motion_strength)) {
+        config.orbit_motion_strength = run_config.clouds.orbit_motion_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.orbit_shell_extinction)) {
+        config.orbit_shell_extinction = run_config.clouds.orbit_shell_extinction;
+    }
     if (run_config.clouds.temporal >= 0) {
         config.temporal_enabled = run_config.clouds.temporal != 0;
     }
@@ -921,6 +927,14 @@ void validate_clouds_config(const CloudsConfig& config) {
     if (!std::isfinite(config.orbit_density_scale) || config.orbit_density_scale < 0.0F ||
         config.orbit_density_scale > 2.0F) {
         throw std::runtime_error("cloud orbit density scale must be finite and in [0, 2]");
+    }
+    if (!std::isfinite(config.orbit_motion_strength) ||
+        config.orbit_motion_strength < 0.0F || config.orbit_motion_strength > 4.0F) {
+        throw std::runtime_error("cloud orbit motion strength must be finite and in [0, 4]");
+    }
+    if (!std::isfinite(config.orbit_shell_extinction) ||
+        config.orbit_shell_extinction < 0.0F || config.orbit_shell_extinction > 8.0F) {
+        throw std::runtime_error("cloud orbit shell extinction must be finite and in [0, 8]");
     }
 }
 

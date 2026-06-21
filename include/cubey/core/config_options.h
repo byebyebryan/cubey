@@ -189,6 +189,8 @@ enum class RunConfigOptionId {
     CloudFarShellEnd,
     CloudOrbitDetailStrength,
     CloudOrbitDensityScale,
+    CloudOrbitMotionStrength,
+    CloudOrbitShellExtinction,
     CloudTemporal,
     CloudLocalVolume,
     CloudHorizonLayer,

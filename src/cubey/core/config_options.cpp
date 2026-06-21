@@ -127,7 +127,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 225> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 227> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -702,6 +702,14 @@ constexpr std::array<ConfigOptionDescriptor, 225> kRunConfigOptions{
            "--cloud-orbit-density-scale", "Orbit Density", "Clouds",
            "Density multiplier for the broad orbit cloud shell.", ConfigOptionType::Float,
            bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudOrbitMotionStrength, "clouds.orbit_motion_strength",
+           "--cloud-orbit-motion-strength", "Orbit Motion", "Clouds",
+           "Motion multiplier for procedural orbit weather advection.", ConfigOptionType::Float,
+           bounded_range(0.0, 4.0)),
+    option(RunConfigOptionId::CloudOrbitShellExtinction, "clouds.orbit_shell_extinction",
+           "--cloud-orbit-shell-extinction", "Orbit Extinction", "Clouds",
+           "Extinction multiplier for cloud-top shell optical depth.", ConfigOptionType::Float,
+           bounded_range(0.0, 8.0)),
     option(RunConfigOptionId::CloudTemporal, "clouds.temporal", "--cloud-temporal",
            "Temporal", "Clouds", "Enable temporal reconstruction for the cloud product.",
            ConfigOptionType::Bool, no_range(), {}, "--no-cloud-temporal"),
@@ -1424,6 +1432,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.orbit_detail_strength);
     case RunConfigOptionId::CloudOrbitDensityScale:
         return optional_float(config.clouds.orbit_density_scale);
+    case RunConfigOptionId::CloudOrbitMotionStrength:
+        return optional_float(config.clouds.orbit_motion_strength);
+    case RunConfigOptionId::CloudOrbitShellExtinction:
+        return optional_float(config.clouds.orbit_shell_extinction);
     case RunConfigOptionId::CloudTemporal:
         return optional_bool(config.clouds.temporal);
     case RunConfigOptionId::CloudLocalVolume:
@@ -1861,6 +1873,8 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("horizon_glow_strength", options.horizon_glow_strength);
     adapter.writeField<float>("sun_glare_strength", options.sun_glare_strength);
     adapter.writeField<float>("jitter_strength", options.jitter_strength);
+    adapter.writeField<float>("orbit_motion_strength", options.orbit_motion_strength);
+    adapter.writeField<float>("orbit_shell_extinction", options.orbit_shell_extinction);
     adapter.writeField<int>("temporal", options.temporal);
     adapter.writeField<int>("local_volume", options.local_volume);
     adapter.writeField<int>("horizon_layer", options.horizon_layer);
@@ -1903,6 +1917,8 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("horizon_glow_strength", options.horizon_glow_strength);
     adapter.readField<float>("sun_glare_strength", options.sun_glare_strength);
     adapter.readField<float>("jitter_strength", options.jitter_strength);
+    adapter.readField<float>("orbit_motion_strength", options.orbit_motion_strength);
+    adapter.readField<float>("orbit_shell_extinction", options.orbit_shell_extinction);
     adapter.readField<int>("temporal", options.temporal);
     adapter.readField<int>("local_volume", options.local_volume);
     adapter.readField<int>("horizon_layer", options.horizon_layer);
@@ -2641,6 +2657,14 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudOrbitDensityScale:
         config.clouds.orbit_density_scale = parse_config_float(value, option);
         validate_range(config.clouds.orbit_density_scale, option);
+        break;
+    case RunConfigOptionId::CloudOrbitMotionStrength:
+        config.clouds.orbit_motion_strength = parse_config_float(value, option);
+        validate_range(config.clouds.orbit_motion_strength, option);
+        break;
+    case RunConfigOptionId::CloudOrbitShellExtinction:
+        config.clouds.orbit_shell_extinction = parse_config_float(value, option);
+        validate_range(config.clouds.orbit_shell_extinction, option);
         break;
     case RunConfigOptionId::CloudTemporal:
         config.clouds.temporal = parse_config_bool(value, option) ? 1 : 0;

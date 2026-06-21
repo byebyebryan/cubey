@@ -157,9 +157,10 @@ struct CloudFrameUniforms {
     cubey::math::Vec4 background_options;
     cubey::math::Vec4 distance_options;
     cubey::math::Vec4 orbit_options;
+    cubey::math::Vec4 orbit_shell_options;
 };
 
-static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 76U);
+static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 80U);
 
 struct CloudTemporalUniforms {
     cubey::math::Vec4 current_camera_right_aspect;
@@ -574,7 +575,8 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
            cloud_near(previous.sampling_options, current.sampling_options) &&
            cloud_near(previous.background_options, current.background_options) &&
            cloud_near(previous.distance_options, current.distance_options) &&
-           cloud_near(previous.orbit_options, current.orbit_options);
+           cloud_near(previous.orbit_options, current.orbit_options) &&
+           cloud_near(previous.orbit_shell_options, current.orbit_shell_options);
 }
 
 [[nodiscard]] CloudFrameUniforms cloud_frame_uniforms(const CloudsConfig& config,
@@ -636,6 +638,10 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
         .orbit_options = {config.far_shell_start_m, config.far_shell_end_m,
                           config.orbit_density_scale,
                           cloud_orbit_representation_value(config.orbit_representation)},
+        .orbit_shell_options = {config.orbit_motion_strength,
+                                config.orbit_shell_extinction,
+                                0.0F,
+                                0.0F},
     };
 }
 
@@ -985,6 +991,10 @@ class CloudApp {
             ImGui::SliderFloat("Orbit detail", &config_.orbit_detail_strength, 0.0F, 1.0F,
                                "%.2f");
             ImGui::SliderFloat("Orbit density", &config_.orbit_density_scale, 0.0F, 2.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Orbit motion", &config_.orbit_motion_strength, 0.0F, 4.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Orbit extinction", &config_.orbit_shell_extinction, 0.0F, 8.0F,
                                "%.2f");
             config_.orbit_transition_end_m =
                 std::max(config_.orbit_transition_end_m, config_.orbit_transition_start_m + 1.0F);

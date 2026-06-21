@@ -77,6 +77,7 @@ layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 background_options;
     vec4 distance_options;
     vec4 orbit_options;
+    vec4 orbit_shell_options;
 } params;
 
 float cloud_saturate(float value) {
