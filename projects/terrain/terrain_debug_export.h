@@ -16,6 +16,8 @@ enum class TerrainDebugView {
     FlowAccumulation,
     StreamOrder,
     RiverMask,
+    RiverTrunk,
+    Tributaries,
     Wetness,
     Deposition,
     Material,

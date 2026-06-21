@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <string>
 #include <stdexcept>
 #include <string_view>
 
@@ -44,6 +45,55 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return cubey::projects::terrain::terrain_product_field(product, name);
 }
 
+[[nodiscard]] std::size_t count_active_samples(const cubey::procedural::ScalarField2D& field,
+                                               float threshold) {
+    std::size_t count = 0U;
+    for (const float value : field.values()) {
+        if (value >= threshold) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+[[nodiscard]] std::size_t count_active_samples_with_neighbor(
+    const cubey::procedural::ScalarField2D& field, float threshold) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    std::size_t count = 0U;
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            if (field.at(x, y) < threshold) {
+                continue;
+            }
+            bool has_neighbor = false;
+            for (int oy = -1; oy <= 1 && !has_neighbor; ++oy) {
+                const int sy = static_cast<int>(y) + oy;
+                if (sy < 0 || sy >= static_cast<int>(desc.height)) {
+                    continue;
+                }
+                for (int ox = -1; ox <= 1; ++ox) {
+                    if (ox == 0 && oy == 0) {
+                        continue;
+                    }
+                    const int sx = static_cast<int>(x) + ox;
+                    if (sx < 0 || sx >= static_cast<int>(desc.width)) {
+                        continue;
+                    }
+                    if (field.at(static_cast<std::uint32_t>(sx),
+                                 static_cast<std::uint32_t>(sy)) >= threshold) {
+                        has_neighbor = true;
+                        break;
+                    }
+                }
+            }
+            if (has_neighbor) {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
 void test_terrain_region_config_defaults() {
     const cubey::projects::terrain::TerrainRegionConfig config{};
     require(config.grid_width == cubey::projects::terrain::kTerrainDefaultGridSize,
@@ -67,7 +117,7 @@ void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 20> required_fields{
+    const std::array<std::string_view, 22> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
         cubey::projects::terrain::kTerrainFieldBroadRelief,
@@ -80,6 +130,8 @@ void test_terrain_product_emits_required_fields() {
         cubey::projects::terrain::kTerrainFieldFlowAccumulation,
         cubey::projects::terrain::kTerrainFieldStreamOrder,
         cubey::projects::terrain::kTerrainFieldRiverMask,
+        cubey::projects::terrain::kTerrainFieldRiverTrunk,
+        cubey::projects::terrain::kTerrainFieldTributaries,
         cubey::projects::terrain::kTerrainFieldChannelWidth,
         cubey::projects::terrain::kTerrainFieldValleyWidth,
         cubey::projects::terrain::kTerrainFieldWetness,
@@ -159,6 +211,33 @@ void test_terrain_materials_and_vegetation_are_bounded() {
     }
 }
 
+void test_terrain_river_network_has_continuous_active_channels() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 129;
+    config.grid_height = 129;
+    const cubey::projects::terrain::TerrainRegionProduct product =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const auto& trunk = field(product, cubey::projects::terrain::kTerrainFieldRiverTrunk);
+    const auto& tributaries = field(product, cubey::projects::terrain::kTerrainFieldTributaries);
+    const auto& river_mask = field(product, cubey::projects::terrain::kTerrainFieldRiverMask);
+
+    const std::size_t trunk_count = count_active_samples(trunk, 0.45F);
+    const std::size_t tributary_count = count_active_samples(tributaries, 0.30F);
+    const std::size_t river_count = count_active_samples(river_mask, 0.30F);
+    require(trunk_count >= 24U, "terrain river trunk should include a meaningful active path");
+    require(tributary_count >= 8U, "terrain tributary field should include active branches");
+    require(river_count >= trunk_count,
+            "terrain river mask should include the active trunk samples");
+
+    const std::size_t connected_trunk_count = count_active_samples_with_neighbor(trunk, 0.45F);
+    const std::size_t connected_river_count = count_active_samples_with_neighbor(river_mask, 0.30F);
+    require(connected_trunk_count * 100U >= trunk_count * 90U,
+            "terrain river trunk samples should be locally continuous");
+    require(connected_river_count * 100U >= river_count * 80U,
+            "terrain river mask samples should be locally continuous");
+}
+
 void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("final") ==
                 cubey::projects::terrain::TerrainDebugView::Final,
@@ -166,6 +245,12 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("flow_accumulation") ==
                 cubey::projects::terrain::TerrainDebugView::FlowAccumulation,
             "terrain debug view should accept underscore aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("river_trunk") ==
+                cubey::projects::terrain::TerrainDebugView::RiverTrunk,
+            "terrain debug view should parse river trunk aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("tributaries") ==
+                cubey::projects::terrain::TerrainDebugView::Tributaries,
+            "terrain debug view should parse tributaries");
     require_throws(
         [] {
             static_cast<void>(
@@ -188,6 +273,32 @@ void test_terrain_debug_export_writes_png() {
     std::filesystem::remove(output);
 }
 
+void test_terrain_debug_export_writes_review_set() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 129;
+    config.grid_height = 129;
+    const cubey::projects::terrain::TerrainRegionProduct product =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const std::filesystem::path output_dir =
+        std::filesystem::temp_directory_path() / "cubey_terrain_debug_review_set_test";
+    std::filesystem::remove_all(output_dir);
+    cubey::projects::terrain::write_terrain_debug_review_pngs(product, output_dir);
+
+    require(!cubey::projects::terrain::terrain_debug_review_views().empty(),
+            "terrain debug review views should be listed");
+    for (const cubey::projects::terrain::TerrainDebugView view :
+         cubey::projects::terrain::terrain_debug_review_views()) {
+        const std::filesystem::path output =
+            output_dir / (std::string(cubey::projects::terrain::terrain_debug_view_name(view)) +
+                          ".png");
+        require(std::filesystem::file_size(output) > 64U,
+                "terrain debug review export should write each PNG");
+    }
+
+    std::filesystem::remove_all(output_dir);
+}
+
 } // namespace
 
 int main() {
@@ -196,6 +307,8 @@ int main() {
     test_terrain_product_has_useful_ranges();
     test_terrain_product_is_deterministic();
     test_terrain_materials_and_vegetation_are_bounded();
+    test_terrain_river_network_has_continuous_active_channels();
     test_terrain_debug_export_writes_png();
+    test_terrain_debug_export_writes_review_set();
     return 0;
 }

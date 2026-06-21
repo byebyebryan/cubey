@@ -32,7 +32,7 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 11> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 13> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::Height, "height"},
     DebugViewName{TerrainDebugView::Slope, "slope"},
@@ -40,13 +40,15 @@ inline constexpr std::array<DebugViewName, 11> kDebugViewNames{
     DebugViewName{TerrainDebugView::FlowAccumulation, "flow-accumulation"},
     DebugViewName{TerrainDebugView::StreamOrder, "stream-order"},
     DebugViewName{TerrainDebugView::RiverMask, "river-mask"},
+    DebugViewName{TerrainDebugView::RiverTrunk, "river-trunk"},
+    DebugViewName{TerrainDebugView::Tributaries, "tributaries"},
     DebugViewName{TerrainDebugView::Wetness, "wetness"},
     DebugViewName{TerrainDebugView::Deposition, "deposition"},
     DebugViewName{TerrainDebugView::Material, "material"},
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 11> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 13> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::Height,
     TerrainDebugView::Slope,
@@ -54,6 +56,8 @@ inline constexpr std::array<TerrainDebugView, 11> kTerrainDebugReviewViews{
     TerrainDebugView::FlowAccumulation,
     TerrainDebugView::StreamOrder,
     TerrainDebugView::RiverMask,
+    TerrainDebugView::RiverTrunk,
+    TerrainDebugView::Tributaries,
     TerrainDebugView::Wetness,
     TerrainDebugView::Deposition,
     TerrainDebugView::Material,
@@ -191,6 +195,10 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldStreamOrder);
     case TerrainDebugView::RiverMask:
         return terrain_product_field(product, kTerrainFieldRiverMask);
+    case TerrainDebugView::RiverTrunk:
+        return terrain_product_field(product, kTerrainFieldRiverTrunk);
+    case TerrainDebugView::Tributaries:
+        return terrain_product_field(product, kTerrainFieldTributaries);
     case TerrainDebugView::Wetness:
         return terrain_product_field(product, kTerrainFieldWetness);
     case TerrainDebugView::Deposition:

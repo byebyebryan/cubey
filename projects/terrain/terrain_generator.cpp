@@ -26,6 +26,8 @@ struct RiverFields {
     cubey::procedural::ScalarField2D flow_accumulation{};
     cubey::procedural::ScalarField2D stream_order{};
     cubey::procedural::ScalarField2D river_mask{};
+    cubey::procedural::ScalarField2D river_trunk{};
+    cubey::procedural::ScalarField2D tributaries{};
     cubey::procedural::ScalarField2D channel_width{};
     cubey::procedural::ScalarField2D valley_width{};
     cubey::procedural::ScalarField2D wetness{};
@@ -228,15 +230,27 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D make_drainage_routing_surface(
-    const cubey::procedural::ScalarField2D& height) {
+    const cubey::procedural::ScalarField2D& height, std::uint64_t seed) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
+    cubey::procedural::ScalarField2D smoothed = cubey::procedural::box_blur_3x3(height);
+    for (int pass = 0; pass < 17; ++pass) {
+        smoothed = cubey::procedural::box_blur_3x3(smoothed);
+    }
+    cubey::procedural::ScalarField2D drainage_shape =
+        unit_source_field(desc, seed + 707U, 0.00008F, 4U);
+    for (int pass = 0; pass < 17; ++pass) {
+        drainage_shape = cubey::procedural::box_blur_3x3(drainage_shape);
+    }
+
     cubey::procedural::ScalarField2D result(desc, 0.0F);
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         const float ny = static_cast<float>(y) / static_cast<float>(desc.height - 1U);
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const float nx = static_cast<float>(x) / static_cast<float>(desc.width - 1U);
-            const float base_level_fall = ((nx * 0.42F) + (ny * 0.72F)) * 760.0F;
-            result.at(x, y) = height.at(x, y) - base_level_fall;
+            const float base_level_fall = ((nx * 0.30F) + (ny * 0.70F)) * 4200.0F;
+            const float drainage_variation = (drainage_shape.at(x, y) - 0.5F) * 950.0F;
+            result.at(x, y) = (smoothed.at(x, y) * 0.16F) + drainage_variation -
+                              base_level_fall;
         }
     }
     return result;
@@ -263,16 +277,208 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return accumulation;
 }
 
+[[nodiscard]] std::vector<std::vector<int>> make_upstream_adjacency(
+    const std::vector<int>& downstream) {
+    std::vector<std::vector<int>> upstream(downstream.size());
+    for (std::size_t index = 0; index < downstream.size(); ++index) {
+        const int target = downstream[index];
+        if (target >= 0) {
+            upstream[static_cast<std::size_t>(target)].push_back(static_cast<int>(index));
+        }
+    }
+    return upstream;
+}
+
+[[nodiscard]] int select_main_channel_seed(const cubey::procedural::ScalarField2D& accumulation) {
+    int best_index = -1;
+    float best_accumulation = -1.0F;
+    for (std::size_t index = 0; index < accumulation.sample_count(); ++index) {
+        const float value = accumulation.values()[index];
+        if (value > best_accumulation) {
+            best_accumulation = value;
+            best_index = static_cast<int>(index);
+        }
+    }
+    return best_index;
+}
+
+[[nodiscard]] std::vector<int> trace_downstream_path(int start, const std::vector<int>& downstream) {
+    std::vector<int> path;
+    if (start < 0) {
+        return path;
+    }
+
+    std::vector<bool> visited(downstream.size(), false);
+    int current = start;
+    while (current >= 0 && !visited[static_cast<std::size_t>(current)]) {
+        visited[static_cast<std::size_t>(current)] = true;
+        path.push_back(current);
+        current = downstream[static_cast<std::size_t>(current)];
+    }
+    return path;
+}
+
+[[nodiscard]] int strongest_upstream_candidate(
+    int index, const std::vector<std::vector<int>>& upstream,
+    const cubey::procedural::ScalarField2D& accumulation, const std::vector<bool>& excluded) {
+    int best_index = -1;
+    float best_accumulation = -1.0F;
+    for (const int candidate : upstream[static_cast<std::size_t>(index)]) {
+        if (excluded[static_cast<std::size_t>(candidate)]) {
+            continue;
+        }
+        const float value = accumulation.values()[static_cast<std::size_t>(candidate)];
+        if (value > best_accumulation) {
+            best_accumulation = value;
+            best_index = candidate;
+        }
+    }
+    return best_index;
+}
+
+[[nodiscard]] std::vector<int> trace_strongest_upstream_path(
+    int start, const std::vector<std::vector<int>>& upstream,
+    const cubey::procedural::ScalarField2D& accumulation, float min_accumulation,
+    const std::vector<bool>& excluded) {
+    std::vector<int> path;
+    if (start < 0) {
+        return path;
+    }
+
+    std::vector<bool> visited(accumulation.sample_count(), false);
+    int current = start;
+    while (current >= 0 && !visited[static_cast<std::size_t>(current)]) {
+        const float value = accumulation.values()[static_cast<std::size_t>(current)];
+        if (value < min_accumulation) {
+            break;
+        }
+        visited[static_cast<std::size_t>(current)] = true;
+        path.push_back(current);
+        current = strongest_upstream_candidate(current, upstream, accumulation, excluded);
+    }
+    return path;
+}
+
+[[nodiscard]] std::vector<int> trace_main_trunk(
+    const cubey::procedural::ScalarField2D& accumulation,
+    const std::vector<std::vector<int>>& upstream, const std::vector<int>& downstream) {
+    const int seed = select_main_channel_seed(accumulation);
+    const std::vector<bool> no_exclusions(accumulation.sample_count(), false);
+    const std::vector<int> upstream_path =
+        trace_strongest_upstream_path(seed, upstream, accumulation, 1.0F, no_exclusions);
+    std::vector<int> downstream_path = trace_downstream_path(seed, downstream);
+    std::reverse(downstream_path.begin(), downstream_path.end());
+
+    std::vector<int> trunk = std::move(downstream_path);
+    const std::size_t upstream_start = trunk.empty() ? 0U : 1U;
+    for (std::size_t index = upstream_start; index < upstream_path.size(); ++index) {
+        trunk.push_back(upstream_path[index]);
+    }
+    return trunk;
+}
+
+void mark_path(cubey::procedural::ScalarField2D& field, const std::vector<int>& path, float value,
+               int radius) {
+    for (const int index : path) {
+        const auto uindex = static_cast<std::uint32_t>(index);
+        const int center_x = static_cast<int>(uindex % field.desc().width);
+        const int center_y = static_cast<int>(uindex / field.desc().width);
+        const float radius_scale = std::max(static_cast<float>(radius), 1.0F);
+        for (int oy = -radius; oy <= radius; ++oy) {
+            const int y = center_y + oy;
+            if (y < 0 || y >= static_cast<int>(field.desc().height)) {
+                continue;
+            }
+            for (int ox = -radius; ox <= radius; ++ox) {
+                const int x = center_x + ox;
+                if (x < 0 || x >= static_cast<int>(field.desc().width)) {
+                    continue;
+                }
+                const float distance = std::sqrt(static_cast<float>((ox * ox) + (oy * oy)));
+                if (distance > static_cast<float>(radius) + 0.25F) {
+                    continue;
+                }
+                const float influence = value * std::exp(-(distance * distance) /
+                                                         (radius_scale * radius_scale));
+                field.at(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)) =
+                    std::max(field.at(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)),
+                             influence);
+            }
+        }
+    }
+}
+
+void activate_river_network(RiverFields& fields, const std::vector<int>& downstream) {
+    const std::vector<std::vector<int>> upstream = make_upstream_adjacency(downstream);
+    const std::vector<int> trunk =
+        trace_main_trunk(fields.flow_accumulation, upstream, downstream);
+    mark_path(fields.river_trunk, trunk, 1.0F, 2);
+
+    std::vector<bool> active(fields.flow_accumulation.sample_count(), false);
+    for (const int index : trunk) {
+        active[static_cast<std::size_t>(index)] = true;
+    }
+
+    float trunk_accumulation = 1.0F;
+    for (const int index : trunk) {
+        trunk_accumulation =
+            std::max(trunk_accumulation,
+                     fields.flow_accumulation.values()[static_cast<std::size_t>(index)]);
+    }
+    const float min_tributary_accumulation = std::max(4.0F, trunk_accumulation * 0.018F);
+    const std::size_t max_tributary_count = std::max<std::size_t>(2U, trunk.size() / 18U);
+    std::size_t accepted_tributaries = 0U;
+
+    for (const int trunk_index : trunk) {
+        if (accepted_tributaries >= max_tributary_count) {
+            break;
+        }
+        std::vector<int> candidates = upstream[static_cast<std::size_t>(trunk_index)];
+        std::sort(candidates.begin(), candidates.end(), [&fields](int lhs, int rhs) {
+            return fields.flow_accumulation.values()[static_cast<std::size_t>(lhs)] >
+                   fields.flow_accumulation.values()[static_cast<std::size_t>(rhs)];
+        });
+
+        for (const int candidate : candidates) {
+            if (active[static_cast<std::size_t>(candidate)]) {
+                continue;
+            }
+            std::vector<int> branch = trace_strongest_upstream_path(
+                candidate, upstream, fields.flow_accumulation, min_tributary_accumulation, active);
+            if (branch.size() < 5U) {
+                continue;
+            }
+            mark_path(fields.tributaries, branch, 0.75F, 1);
+            for (const int index : branch) {
+                active[static_cast<std::size_t>(index)] = true;
+            }
+            ++accepted_tributaries;
+            break;
+        }
+    }
+
+    for (std::uint32_t y = 0; y < fields.river_mask.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < fields.river_mask.desc().width; ++x) {
+            fields.river_mask.at(x, y) =
+                std::max(fields.river_trunk.at(x, y), fields.tributaries.at(x, y));
+        }
+    }
+}
+
 [[nodiscard]] RiverFields make_river_fields(const cubey::procedural::ScalarField2D& height,
-                                            const cubey::procedural::ScalarField2D& slope) {
+                                            const cubey::procedural::ScalarField2D& slope,
+                                            std::uint64_t seed) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
-    const cubey::procedural::ScalarField2D routing_surface = make_drainage_routing_surface(height);
+    const cubey::procedural::ScalarField2D routing_surface =
+        make_drainage_routing_surface(height, seed);
     const FlowRoutingResult routing = route_steepest_descent(routing_surface);
     RiverFields fields{
         .flow_direction = routing.flow_direction,
         .flow_accumulation = accumulate_flow(routing_surface, routing.downstream),
         .stream_order = cubey::procedural::ScalarField2D(desc, 1.0F),
         .river_mask = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .river_trunk = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .tributaries = cubey::procedural::ScalarField2D(desc, 0.0F),
         .channel_width = cubey::procedural::ScalarField2D(desc, 0.0F),
         .valley_width = cubey::procedural::ScalarField2D(desc, 0.0F),
         .wetness = cubey::procedural::ScalarField2D(desc, 0.0F),
@@ -287,18 +493,28 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
             const float discharge =
                 log_max_accumulation <= 0.0F ? 0.0F : std::log1p(accumulation) /
                                                         log_max_accumulation;
-            const float river_strength = cubey::procedural::smoothstep(0.66F, 0.84F, discharge);
             const float order = 1.0F + (discharge > 0.42F ? 1.0F : 0.0F) +
                                 (discharge > 0.56F ? 1.0F : 0.0F) +
                                 (discharge > 0.70F ? 1.0F : 0.0F) +
                                 (discharge > 0.84F ? 1.0F : 0.0F);
             fields.stream_order.at(x, y) = order;
-            fields.river_mask.at(x, y) = river_strength;
+        }
+    }
+
+    activate_river_network(fields, routing.downstream);
+
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float accumulation = fields.flow_accumulation.at(x, y);
+            const float discharge =
+                log_max_accumulation <= 0.0F ? 0.0F : std::log1p(accumulation) /
+                                                        log_max_accumulation;
+            const float active_river = fields.river_mask.at(x, y);
             fields.channel_width.at(x, y) =
-                river_strength * cubey::procedural::lerp(3.0F, 42.0F, discharge * discharge);
+                active_river * cubey::procedural::lerp(5.0F, 58.0F, discharge * discharge);
             fields.valley_width.at(x, y) =
-                river_strength * cubey::procedural::lerp(45.0F, 310.0F,
-                                                         std::pow(discharge, 1.45F));
+                active_river * cubey::procedural::lerp(70.0F, 420.0F,
+                                                       std::pow(discharge, 1.35F));
         }
     }
 
@@ -355,6 +571,8 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
         .flow_accumulation = std::move(fields.flow_accumulation),
         .stream_order = std::move(fields.stream_order),
         .river_mask = std::move(fields.river_mask),
+        .river_trunk = std::move(fields.river_trunk),
+        .tributaries = std::move(fields.tributaries),
         .channel_width = std::move(fields.channel_width),
         .valley_width = std::move(fields.valley_width),
         .wetness = std::move(fields.wetness),
@@ -436,7 +654,7 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
         cubey::procedural::compute_slope_curvature(height);
     const cubey::procedural::LocalRelief2D local_relief =
         cubey::procedural::compute_local_relief(height, 4U);
-    RiverFields river_fields = make_river_fields(height, slope_curvature.slope);
+    RiverFields river_fields = make_river_fields(height, slope_curvature.slope, config.seed);
     cubey::procedural::ScalarField2D material_rock =
         make_material_field(height, slope_curvature.slope, river_fields.wetness, ridge_uplift,
                             kTerrainFieldMaterialRock);
@@ -463,6 +681,8 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
               std::move(river_fields.flow_accumulation));
     add_field(product.fields, kTerrainFieldStreamOrder, std::move(river_fields.stream_order));
     add_field(product.fields, kTerrainFieldRiverMask, std::move(river_fields.river_mask));
+    add_field(product.fields, kTerrainFieldRiverTrunk, std::move(river_fields.river_trunk));
+    add_field(product.fields, kTerrainFieldTributaries, std::move(river_fields.tributaries));
     add_field(product.fields, kTerrainFieldChannelWidth, std::move(river_fields.channel_width));
     add_field(product.fields, kTerrainFieldValleyWidth, std::move(river_fields.valley_width));
     add_field(product.fields, kTerrainFieldWetness, std::move(river_fields.wetness));
