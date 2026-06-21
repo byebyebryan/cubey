@@ -94,6 +94,56 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return count;
 }
 
+[[nodiscard]] std::size_t max_horizontal_active_run(const cubey::procedural::ScalarField2D& field,
+                                                    float threshold, std::uint32_t margin = 0U) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    std::size_t best = 0U;
+    const std::uint32_t x_begin = std::min(margin, desc.width);
+    const std::uint32_t x_end = desc.width > margin ? desc.width - margin : x_begin;
+    const std::uint32_t y_begin = std::min(margin, desc.height);
+    const std::uint32_t y_end = desc.height > margin ? desc.height - margin : y_begin;
+    for (std::uint32_t y = y_begin; y < y_end; ++y) {
+        std::size_t current = 0U;
+        for (std::uint32_t x = x_begin; x < x_end; ++x) {
+            if (field.at(x, y) >= threshold) {
+                ++current;
+                best = std::max(best, current);
+            } else {
+                current = 0U;
+            }
+        }
+    }
+    return best;
+}
+
+[[nodiscard]] std::size_t max_vertical_active_run(const cubey::procedural::ScalarField2D& field,
+                                                  float threshold, std::uint32_t margin = 0U) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    std::size_t best = 0U;
+    const std::uint32_t x_begin = std::min(margin, desc.width);
+    const std::uint32_t x_end = desc.width > margin ? desc.width - margin : x_begin;
+    const std::uint32_t y_begin = std::min(margin, desc.height);
+    const std::uint32_t y_end = desc.height > margin ? desc.height - margin : y_begin;
+    for (std::uint32_t x = x_begin; x < x_end; ++x) {
+        std::size_t current = 0U;
+        for (std::uint32_t y = y_begin; y < y_end; ++y) {
+            if (field.at(x, y) >= threshold) {
+                ++current;
+                best = std::max(best, current);
+            } else {
+                current = 0U;
+            }
+        }
+    }
+    return best;
+}
+
+[[nodiscard]] std::size_t max_axis_aligned_active_run(
+    const cubey::procedural::ScalarField2D& field, float threshold, std::uint32_t margin = 0U) {
+    return std::max(max_horizontal_active_run(field, threshold, margin),
+                    max_vertical_active_run(field, threshold, margin));
+}
+
 void test_terrain_region_config_defaults() {
     const cubey::projects::terrain::TerrainRegionConfig config{};
     require(config.grid_width == cubey::projects::terrain::kTerrainDefaultGridSize,
@@ -244,6 +294,28 @@ void test_terrain_river_network_has_continuous_active_channels() {
             "terrain river trunk samples should be locally continuous");
     require(connected_river_count * 100U >= river_count * 80U,
             "terrain river mask samples should be locally continuous");
+
+    const std::size_t trunk_core_count = count_active_samples(trunk, 0.80F);
+    const std::size_t trunk_soft_count = count_active_samples(trunk, 0.30F);
+    require(trunk_core_count > 0U, "terrain river trunk should retain a high-strength core");
+    require(trunk_soft_count * 10U >= trunk_core_count * 14U,
+            "terrain river trunk should rasterize as a soft channel band");
+}
+
+void test_terrain_river_core_avoids_long_grid_aligned_runs() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 513;
+    config.grid_height = 513;
+    const cubey::projects::terrain::TerrainRegionProduct product =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const auto& trunk = field(product, cubey::projects::terrain::kTerrainFieldRiverTrunk);
+    const auto& river_mask = field(product, cubey::projects::terrain::kTerrainFieldRiverMask);
+    constexpr std::uint32_t kInteriorMargin = 16U;
+    require(max_axis_aligned_active_run(trunk, 0.80F, kInteriorMargin) <= 18U,
+            "terrain river trunk should avoid long straight core runs");
+    require(max_axis_aligned_active_run(river_mask, 0.80F, kInteriorMargin) <= 24U,
+            "terrain river mask should avoid long straight high-strength runs");
 }
 
 void test_terrain_debug_export_writes_png() {
@@ -325,6 +397,7 @@ int main() {
     test_terrain_product_is_deterministic();
     test_terrain_materials_and_vegetation_are_bounded();
     test_terrain_river_network_has_continuous_active_channels();
+    test_terrain_river_core_avoids_long_grid_aligned_runs();
     test_terrain_debug_export_writes_png();
     test_terrain_debug_export_writes_review_set();
     return 0;
