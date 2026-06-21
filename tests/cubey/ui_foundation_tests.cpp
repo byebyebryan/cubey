@@ -61,7 +61,7 @@ void test_active_project_ui_uses_shared_common_controls() {
     constexpr std::array active_ui_files{
         "projects/atmosphere/atmosphere_ui.cpp",
         "projects/ocean/ocean_ui.cpp",
-        "projects/procedural_terrain/procedural_terrain_ui.cpp",
+        "projects/procedural_terrain_legacy/procedural_terrain_ui.cpp",
         "projects/fluid/sim/smoke_2d/smoke_2d_ui.cpp",
         "projects/fluid/sim/water_2d/water_2d_ui.cpp",
         "projects/fluid/sim/water_3d/water_3d_ui.cpp",
@@ -88,7 +88,7 @@ void test_active_project_ui_raw_combo_exceptions_are_explicit() {
     const std::string ocean =
         cubey::tests::read_source_file(source_root() / "projects/ocean/ocean_ui.cpp");
     const std::string terrain = cubey::tests::read_source_file(
-        source_root() / "projects/procedural_terrain/procedural_terrain_ui.cpp");
+        source_root() / "projects/procedural_terrain_legacy/procedural_terrain_ui.cpp");
 
     require(count_occurrences(ocean, "ImGui::BeginCombo") == 1U,
             "active ocean UI should only keep the custom cascade selector raw combo");
@@ -128,7 +128,7 @@ void test_active_project_ui_uses_shared_performance_panel() {
     constexpr std::array active_ui_files{
         "projects/atmosphere/atmosphere_ui.cpp",
         "projects/ocean/ocean_ui.cpp",
-        "projects/procedural_terrain/procedural_terrain_ui.cpp",
+        "projects/procedural_terrain_legacy/procedural_terrain_ui.cpp",
         "projects/fluid/sim/smoke_2d/smoke_2d_ui.cpp",
         "projects/fluid/sim/water_2d/water_2d_ui.cpp",
         "projects/fluid/sim/water_3d/water_3d_ui.cpp",
@@ -157,7 +157,7 @@ void test_active_project_ui_starts_low_noise_sections_collapsed() {
     require_section_default_collapsed("projects/atmosphere/atmosphere_ui.cpp", "Diagnostics",
                                       "atmosphere diagnostics should start collapsed");
 
-    require_section_default_collapsed("projects/procedural_terrain/procedural_terrain_ui.cpp",
+    require_section_default_collapsed("projects/procedural_terrain_legacy/procedural_terrain_ui.cpp",
                                       "Diagnostics", "terrain diagnostics should start collapsed");
 
     require_section_default_collapsed("projects/fluid/sim/smoke_2d/smoke_2d_ui.cpp", "Injectors",
