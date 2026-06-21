@@ -852,8 +852,10 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
 
     float base_hull = orbit.coverage;
     float filtered_hull = cloud_orbit_surface_mass(orbit, footprint);
+    float cloud_top_weight = smoothstep(0.16, 0.78, filtered_hull);
     float column_density = filtered_hull * max(params.orbit_options.z, 0.0) * 76.0;
     float alpha = 1.0 - exp(-column_density * cloud_orbit_shell_extinction());
+    alpha *= mix(0.94, 1.04, cloud_top_weight);
     alpha = clamp(alpha, 0.0, 0.985);
 
     float height = cloud_orbit_surface_height_field(shell_up, footprint);
@@ -879,13 +881,18 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
                   params.lighting_strengths.y;
     vec3 rim = sun_color * pow(max(light_dot_eye, 0.0), 5.0) *
                (0.10 + 0.26 * day) * params.lighting_strengths.z;
-    float view_grazing = 1.0 - abs(dot(shell_up, -direction));
+    float view_alignment = abs(dot(shell_up, -direction));
+    float view_grazing = 1.0 - view_alignment;
     vec3 limb_fill = cloud_sky_color(shell_up) * pow(max(view_grazing, 0.0), 2.0) *
-                     alpha * 0.10;
-    vec3 color = (ambient * 1.18 + direct * 1.32 + rim * 1.10) * alpha + limb_fill;
-    float limb_fade = smoothstep(0.018, 0.070, abs(dot(shell_up, -direction)));
-    alpha *= mix(0.65, 1.0, limb_fade);
-    color *= mix(0.65, 1.0, limb_fade);
+                     alpha * mix(0.045, 0.085, cloud_top_weight);
+    vec3 color = (ambient * mix(1.10, 1.24, cloud_top_weight) +
+                  direct * mix(1.18, 1.38, cloud_top_weight) +
+                  rim * mix(0.70, 1.00, cloud_top_weight)) *
+                     alpha +
+                 limb_fill;
+    float limb_fade = smoothstep(0.030, 0.110, view_alignment);
+    alpha *= mix(0.50, 1.0, limb_fade);
+    color *= mix(0.56, 1.0, limb_fade);
 
     return OrbitSurfaceSample(orbit.coverage, alpha, height, shadow, shell_normal,
                               max(color, vec3(0.0)), hit_t);
