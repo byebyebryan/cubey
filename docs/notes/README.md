@@ -14,9 +14,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Atmosphere rendering research](atmosphere-rendering-research.md): early
   notes on clear-sky scattering approaches and the first `projects/atmosphere`
   implementation direction.
-- [Celestial rendering research](celestial-rendering-research.md): current
-  planet-scale pivot from atmosphere-owned sun/moon disks to planet-owned
-  celestial bodies with atmosphere as a consumer.
+- [Celestial rendering research](celestial-rendering-research.md): historical
+  pivot note from atmosphere-owned sun/moon disks to planet-owned celestial
+  bodies with atmosphere as a consumer.
 - [Planet gap closure checkpoint](planet-gap-closure.md): current planet
   project state, missing foundation gaps, and the intended split-commit batch.
 - [Planet surface quality pass](planet-surface-quality.md): procedural terrain,
@@ -25,6 +25,9 @@ the detailed foundation notes under `docs/architecture/`.
   sample/tile vocabulary for later ocean, biome, cache, and streaming work.
 - [Planet atmosphere v1](planet-atmosphere-v1.md): immediate planet-local
   scattering, transmittance, and aerial-perspective direction.
+- [Sky and celestial current state](sky-celestial-current-state.md): current
+  ownership, render paths, and cleanup checklist for the `sky-rendering`
+  worktree.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling

@@ -281,13 +281,14 @@ Current implementation notes:
   same bounded near-field surface when the altitude-gated blend is active;
   `local-detail-final` keeps that handoff inspectable, and `local-detail-horizon`
   remains the full-range diagnostic.
-- Planet rendering has moved away from the shared atmosphere background/runtime
-  for now. The shared path was useful for ocean and atmosphere demos, but its
-  demo-oriented sky clock and inline celestial disks were the wrong source of
-  truth for planet orbit views. `projects/planet` now owns a local solar clock,
-  explicit sun/moon state, local sky pass, local limb glow, and derived surface
-  lighting. Repeatable headless captures can pin the local solar day, hour,
-  clock pause state, and startup camera mode through descriptor-backed
+- Planet rendering briefly moved away from the demo-oriented shared atmosphere
+  background/runtime so planet orbit views could own solar time, sun/moon state,
+  surface lighting, and body occlusion. The durable pieces have since been
+  promoted into shared `cubey::render` celestial and atmosphere foundation code:
+  `projects/planet` now adapts planet-scale frame and celestial inputs into the
+  default `unified-atmosphere` backend while keeping explicit moon body geometry
+  under planet control. Repeatable headless captures can pin the solar day,
+  hour, clock pause state, and startup camera mode through descriptor-backed
   `RunConfig` options.
 - The planet surface frame has moved out of push constants. Per-frame uniform
   data now carries view/projection, render origin, radius, terrain options,
@@ -295,21 +296,21 @@ Current implementation notes:
   distance, local sky light, and haze fields. Patch identity and screen-error
   remain per-instance data. This keeps room for planet-scale frame contracts
   without repeatedly repacking the 128-byte push constant budget.
-- Planet rendering now writes a project-owned sky/celestial pass and the surface
-  pass into an HDR transient scene color target, then uses the shared post pass
-  for exposure, tone mapping, and output encoding. This aligns planet with the
-  renderer-wide linear HDR contract while keeping ocean integration deferred.
-- The current atmosphere shader path is deliberately planet-local. The old
-  analytic mode remains a debug fallback, while the next stable path is a
-  direct single-scattering model with spherical atmosphere intersections,
-  Rayleigh/Mie vocabulary, sun transmittance, and surface aerial perspective.
-  Sky background and surface haze should consume the same project-local
-  `planet_atmosphere.glsl` helpers so surface view, orbit view, moon
-  visibility, and future ocean/cloud layers do not invent separate formulas.
-- Planet now models a minimal solar-system state directly: planet orbit around
-  the sun, planet self-rotation, and moon orbit around the planet. The sun is
-  still rendered by the local sky pass as a distant disk/glow, while the moon
-  is rendered as a depth-tested sphere on a camera-relative shell that
+- Planet rendering writes the unified atmosphere background, surface pass,
+  explicit celestial body pass, and post pass through an HDR transient scene
+  color target. This aligns planet with the renderer-wide linear HDR contract
+  while keeping ocean integration deferred.
+- The current atmosphere path uses the shared unified atmosphere as the default
+  sky backend and keeps the old analytic/legacy paths as debug fallbacks. The
+  landed v1 is a direct single-scattering model with spherical atmosphere
+  intersections, Rayleigh/Mie vocabulary, sun transmittance, and surface aerial
+  perspective. Sky background and surface haze should keep sharing the same
+  planet-scale scattering inputs so surface view, orbit view, moon visibility,
+  and future ocean/cloud layers do not invent separate formulas.
+- Planet now uses shared minimal solar-system state: planet orbit around the
+  sun, planet self-rotation, and moon orbit around the planet. The sun is still
+  rendered by the unified atmosphere background as a distant disk/glow, while
+  the moon is rendered as a depth-tested sphere on a camera-relative shell that
   preserves apparent angular size.
 - The current solar-system math is deliberately mean and Earth-like rather than
   ephemeris-driven. `PlanetSolarTime` is a 24h mean solar clock. The default

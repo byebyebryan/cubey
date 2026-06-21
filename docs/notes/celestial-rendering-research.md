@@ -4,6 +4,12 @@ This note captures the design pivot triggered by the planet orbit-view sun disk
 artifact. It is scratch context for the next implementation slice; the stable
 architecture belongs in `docs/architecture/planet-rendering.md`.
 
+Status: this is historical design context. The original recommendation to keep
+`CelestialSystem` project-local has since been superseded; celestial state now
+lives in shared `cubey::render` code and `projects/planet` adapts that shared
+state into planet-scale rendering. The current kickoff map for sky work lives in
+`docs/notes/sky-celestial-current-state.md`.
+
 ## Original Cubey Problem
 
 `projects/planet` previously used the shared atmosphere background in `SkyOnly`
@@ -16,9 +22,10 @@ though the planet surface should be the authority for what covers the sky.
 The tactical shader fix reduced one branch of that issue, but it did not solve
 the design problem. The atmosphere path was doing too much for planet scale:
 scattering, background, environment lighting, sun disk, moon disk, lunar atlas
-shading, stars, Milky Way, and some ground masking. The current planet path
-therefore starts from a project-local sky/celestial pass and treats any future
-planet-scale atmosphere as a consumer of resolved solar-system state.
+shading, stars, Milky Way, and some ground masking. The interim planet path
+therefore started from a project-local sky/celestial pass. The current path has
+promoted the durable pieces into shared celestial and unified-atmosphere code
+while keeping planet-scale ownership in the planet adapters.
 
 ## External Precedents
 
@@ -50,8 +57,10 @@ atmosphere should not be the source of truth for celestial bodies.
 
 ## Cubey Design Pivot
 
-Use a project-local `CelestialSystem` in `projects/planet` first. Promote only
-after another project needs the same model.
+The original recommendation was to use a project-local `CelestialSystem` in
+`projects/planet` first and promote it only after another project needed the
+same model. That promotion has happened: the current code uses shared
+`cubey::render::CelestialSystem` plus planet adapters.
 
 Recommended v1 data model:
 
@@ -80,12 +89,13 @@ from `CelestialSystem`.
 ## Render Contract
 
 The earlier composition idea was atmosphere first, then explicit celestial
-bodies. The current planet implementation takes a cleaner break: use a
-planet-local sky/celestial pass until a proper planet-scale atmosphere contract
-exists. The intended composition is now:
+bodies. The interim plan was to use a planet-local sky/celestial pass until a
+proper planet-scale atmosphere contract existed. The current implementation has
+landed that contract through the default `unified-atmosphere` backend plus
+planet-owned moon body rendering. The durable composition target is:
 
-1. planet-owned sky rendering for space, stars, sun disk/glow, and local limb
-   glow;
+1. unified atmosphere background rendering that consumes planet-owned frame and
+   celestial state for space, stars, sun disk/glow, and local limb behavior;
 2. opaque planet terrain/ocean/cloud-shadow receivers;
 3. explicit celestial body geometry, starting with a depth-tested moon sphere;
 4. later cloud layers, aerial perspective over scene depth, and post.
@@ -98,11 +108,13 @@ the planet/celestial renderer, not the atmosphere scattering shader.
 
 ## Implementation Implications
 
-- Do not make `projects/planet` depend on the shared atmosphere background or
-  sky clock while the planet-scale contract is still unsettled.
+- Historical warning: do not make `projects/planet` depend on a demo-oriented
+  atmosphere sky clock or inline celestial-body ownership. The current
+  `unified-atmosphere` backend is acceptable because it consumes planet-owned
+  frame and celestial inputs through adapters.
 - Keep `projects/atmosphere` free to show those disks as demo/debug features.
-- Move planet sun direction and time ownership into `CelestialSystem`; any
-  future atmosphere adapter should receive resolved sun inputs.
+- Keep sun direction and time ownership in shared `CelestialSystem`; atmosphere
+  adapters should receive resolved sun inputs.
 - Keep repeatable capture control outside the shader path. `RunConfig` can pin
   solar day/hour, pause the clock, and choose the initial orbit/surface camera
   mode for headless comparisons.
