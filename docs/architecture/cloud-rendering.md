@@ -165,10 +165,12 @@ Initial scope:
   truth; wind and slow domain warp should move broad systems without reseeding
   the noise field;
 - orbit visual direction should be judged against satellite/full-disk Earth
-  imagery, not against the current volume raymarch. The useful cues are sparse
+  imagery, not against the current volume raymarch. The useful cues are broken
   regional weather systems, spiral/frontal bands, cellular breakup inside cloud
-  masses, and large clear ocean windows. The volume path is an implementation
-  comparison only and is not an art target;
+  masses, and large clear ocean windows. Fuller coverage should fill totally
+  empty regions through the same weather fields rather than through a smooth
+  planet-wide cap. The volume path is an implementation comparison only and is
+  not an art target;
 - orbit shell detail should be filtered by pixel footprint and grazing angle so
   disk detail survives while limb/edge shimmer does not define the image;
 - the cloud-top shell should composite from column optical depth, not an

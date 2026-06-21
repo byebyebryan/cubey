@@ -46,8 +46,10 @@ Current V1 scope:
 The first target is cloud shape. Surface/local captures should preserve coherent
 volumetric cloud masses; orbit captures should be judged against satellite and
 full-disk Earth imagery, not against the volume raymarch comparison path. Orbit
-should show sparse regional systems, clear windows, fronts/streaks/cells, and
-filtered cloud-top detail rather than planet-wide procedural fill.
+should show broken regional systems with visible clear windows, fronts,
+streaks, cells, and filtered cloud-top detail. Fuller orbit coverage should
+come from the same weather fields filling empty regions, not from a smooth
+planet-wide procedural cap.
 
 Useful runs:
 
@@ -144,8 +146,8 @@ Controls:
   weather frequencies derive from `Weather scale`, with regional storm/dry
   masks owning the planet-scale layout and fine detail constrained to fronts,
   cells, streaks, edge breakup, and hull erosion. The orbit shell should read as
-  sparse regional weather systems with large clear windows, not as a smooth
-  planet-wide cap.
+  broken regional weather with large clear windows and fewer totally empty
+  regions, not as a smooth planet-wide cap.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
 - `Final Resolve`: alpha-aware smoothing amount plus final contrast,
