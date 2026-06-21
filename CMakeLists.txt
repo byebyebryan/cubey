@@ -348,7 +348,7 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
                 "${CMAKE_SOURCE_DIR}/projects/ocean"
                 "${CMAKE_SOURCE_DIR}/projects/pbr_furnace"
                 "${CMAKE_SOURCE_DIR}/projects/planet"
-                "${CMAKE_SOURCE_DIR}/projects/procedural_terrain"
+                "${CMAKE_SOURCE_DIR}/projects/procedural_terrain_legacy"
         )
     endif()
     add_test(

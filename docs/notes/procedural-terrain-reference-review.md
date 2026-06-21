@@ -22,7 +22,7 @@ Cubey now has the start of a shared procedural layer under
   warp;
 - small GLSL helper mirrors for repeated hash/noise/remap formulas.
 
-Terrain Lab and `projects/procedural_terrain` are now legacy pressure tests, not
+Terrain Lab and `projects/procedural_terrain_legacy` are now legacy pressure tests, not
 contract owners. Both should keep compiling as reference snapshots, but their
 early terrain payloads should not shape the next shared foundation APIs. They
 have already exposed the failure mode to avoid: hand-authored lines, disks,

@@ -1,11 +1,11 @@
-# Terrain Lab
+# Terrain Lab Legacy
 
-Legacy status: `terrain_lab` is now a preserved terrain R&D snapshot. It should
+Legacy status: `terrain_lab_legacy` is now a preserved terrain R&D snapshot. It should
 continue to build and remain useful as visual/reference evidence, but its
 current data model, presets, and field contracts are not the basis for the next
 shared procedural foundation or the planned terrain reboot.
 
-`terrain_lab` started as the standalone terrain generation workbench for Cubey.
+`terrain_lab_legacy` started as the standalone terrain generation workbench for Cubey.
 It exists because terrain is large enough to deserve its own project boundary
 instead of living only as a shoreline helper, a planet subroutine, or a shader
 detail stack.
@@ -56,8 +56,8 @@ Terrain Lab should stay distinct from the existing terrain-adjacent projects:
 
 | Project | Role |
 | --- | --- |
-| `terrain_lab` | Local terrain generation R&D, biome and landform slices, deterministic field vocabulary, debug rendering. |
-| `procedural_terrain` | Coastal terrain, bathymetry, shoreline signed distance, and the terrain-ocean data contract. |
+| `terrain_lab_legacy` | Local terrain generation R&D, biome and landform slices, deterministic field vocabulary, debug rendering. |
+| `procedural_terrain_legacy` | Coastal terrain, bathymetry, shoreline signed distance, and the terrain-ocean data contract. |
 | `planet` | Planet-scale frame, cube-sphere LOD, local-detail host, sky/celestial state, and eventual integration target. |
 | `ocean` | Water surface rendering that should consume terrain, bathymetry, and shoreline fields rather than own them. |
 | `atmosphere` | Shared sky, lighting, and environment backdrop that Terrain Lab can use without depending on planet scope. |
@@ -112,7 +112,7 @@ The arid mesa canyon remains available with
 `--terrain-lab-slice arid-mesa-canyon`. It should consume the same river fields
 as a dry, high-incision expression: water presence should be zero, while
 discharge/order drive dry-wash width, canyon floors, walls, rims, and talus.
-Coastal work can reconnect later through `procedural_terrain` once the general
+Coastal work can reconnect later through `procedural_terrain_legacy` once the general
 terrain field model is stronger.
 
 Three representative sentinel slices are also available:
@@ -140,7 +140,7 @@ considered.
 
 `TerrainLabConfig` reads common grid width, grid height, slice-preset,
 camera-preset, noise-source, and debug-view settings from `RunConfig`, while leaving
-coast-oriented `terrain.*` flags to `procedural_terrain`.
+coast-oriented `terrain.*` flags to `procedural_terrain_legacy`.
 
 `--terrain-lab-noise-source fastnoise-lite` and
 `--terrain-lab-noise-source fastnoise-lite-warped` are explicit CPU source-field
@@ -215,52 +215,52 @@ Useful validation commands:
 
 ```sh
 cmake --preset dev
-cmake --build --preset dev --target cubey_project_terrain_lab cubey_project_terrain_lab_tests cubey_png_stats
-ctest --preset dev -R terrain_lab --output-on-failure
+cmake --build --preset dev --target cubey_project_terrain_lab_legacy cubey_project_terrain_lab_legacy_tests cubey_png_stats
+ctest --preset dev -R terrain_lab_legacy --output-on-failure
 ```
 
 Useful run commands:
 
 ```sh
-./build/dev/projects/terrain_lab/terrain_lab --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --debug-view river-network --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --debug-view river-width --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --debug-view water-presence --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --debug-view flow-accumulation --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --debug-view feature-graph --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --debug-view driver --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice temperate-mountain-rivers --debug-view drainage-regions --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice desert-dunes --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite-warped --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice alpine-glacial-valley --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --terrain-lab-slice mountain-ridges-peaks --frames 300 --width 1280 --height 720
-./build/dev/projects/terrain_lab/terrain_lab --headless --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --debug-view material --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab-material.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --debug-view river-network --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --debug-view river-width --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --debug-view water-presence --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --debug-view flow-accumulation --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --debug-view feature-graph --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --debug-view driver --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --terrain-lab-slice temperate-mountain-rivers --debug-view drainage-regions --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --terrain-lab-slice desert-dunes --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite-warped --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --terrain-lab-slice alpine-glacial-valley --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --terrain-lab-slice mountain-ridges-peaks --frames 300 --width 1280 --height 720
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --debug-view material --grid-width 65 --grid-height 65 --output /tmp/cubey-terrain-lab-material.png
 ```
 
 Useful local review output commands:
 
 ```sh
-rm -rf outputs/terrain_lab/current
-mkdir -p outputs/terrain_lab/current
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-rivers --width 1280 --height 720 --output outputs/terrain_lab/current/01-temperate-mountain-rivers-final.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice temperate-mountain-rivers --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/01-temperate-mountain-rivers-driver.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice arid-mesa-canyon --width 1280 --height 720 --output outputs/terrain_lab/current/02-arid-mesa-canyon-final.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice arid-mesa-canyon --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/02-arid-mesa-canyon-driver.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --width 1280 --height 720 --output outputs/terrain_lab/current/03-desert-dunes-final.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/03-desert-dunes-driver.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite --width 1280 --height 720 --output outputs/terrain_lab/current/03b-desert-dunes-fastnoise-final.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/03b-desert-dunes-fastnoise-driver.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite-warped --width 1280 --height 720 --output outputs/terrain_lab/current/03c-desert-dunes-fastnoise-warped-final.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite-warped --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/03c-desert-dunes-fastnoise-warped-driver.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --width 1280 --height 720 --output outputs/terrain_lab/current/04-alpine-glacial-valley-final.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice alpine-glacial-valley --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/04-alpine-glacial-valley-driver.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice mountain-ridges-peaks --width 1280 --height 720 --output outputs/terrain_lab/current/05-mountain-ridges-peaks-final.png
-./build/dev/projects/terrain_lab/terrain_lab --headless --terrain-lab-slice mountain-ridges-peaks --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab/current/05-mountain-ridges-peaks-driver.png
+rm -rf outputs/terrain_lab_legacy/current
+mkdir -p outputs/terrain_lab_legacy/current
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice temperate-mountain-rivers --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/01-temperate-mountain-rivers-final.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice temperate-mountain-rivers --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/01-temperate-mountain-rivers-driver.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice arid-mesa-canyon --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/02-arid-mesa-canyon-final.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice arid-mesa-canyon --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/02-arid-mesa-canyon-driver.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice desert-dunes --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/03-desert-dunes-final.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice desert-dunes --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/03-desert-dunes-driver.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/03b-desert-dunes-fastnoise-final.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/03b-desert-dunes-fastnoise-driver.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite-warped --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/03c-desert-dunes-fastnoise-warped-final.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice desert-dunes --terrain-lab-noise-source fastnoise-lite-warped --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/03c-desert-dunes-fastnoise-warped-driver.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice alpine-glacial-valley --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/04-alpine-glacial-valley-final.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice alpine-glacial-valley --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/04-alpine-glacial-valley-driver.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice mountain-ridges-peaks --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/05-mountain-ridges-peaks-final.png
+./build/dev/projects/terrain_lab_legacy/terrain_lab_legacy --headless --terrain-lab-slice mountain-ridges-peaks --debug-view driver --width 1280 --height 720 --output outputs/terrain_lab_legacy/current/05-mountain-ridges-peaks-driver.png
 ```
 
-`outputs/` is ignored by Git; `outputs/terrain_lab/current/` is disposable and
+`outputs/` is ignored by Git; `outputs/terrain_lab_legacy/current/` is disposable and
 should contain only the latest comparable final/driver review set. Put ad hoc
 diagnostics in a named subdirectory when they need to be kept around.
 The field-operator migration review bundle is
@@ -285,4 +285,4 @@ Still out of scope for the current slice: live ImGui editing, runtime
 regeneration, particle hydraulic erosion, meander simulation, lakes, animated
 water rendering, tiled or clipmap terrain rendering, full foliage assets,
 atmosphere-backed lighting, and adapters into `planet`, `ocean`, or
-`procedural_terrain`.
+`procedural_terrain_legacy`.

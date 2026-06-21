@@ -1,9 +1,9 @@
 cubey_add_app_target(
-    cubey_project_terrain_lab
-    OUTPUT_NAME terrain_lab
+    cubey_project_terrain_lab_legacy
+    OUTPUT_NAME terrain_lab_legacy
     SHADER_DEFINE CUBEY_TERRAIN_LAB_SHADER_DIR
-    WINDOWED_SMOKE_TEST terrain_lab_reaches_glfw
-    WINDOWED_SMOKE_PATTERN "terrain_lab: .*rendering terrain lab"
+    WINDOWED_SMOKE_TEST terrain_lab_legacy_reaches_glfw
+    WINDOWED_SMOKE_PATTERN "terrain_lab_legacy: .*rendering legacy terrain lab"
     SOURCES
         main.cpp
         terrain_lab_app.cpp
@@ -21,54 +21,54 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
-    add_executable(cubey_project_terrain_lab_tests
+    add_executable(cubey_project_terrain_lab_legacy_tests
         terrain_lab_config_tests.cpp
         terrain_lab_fields.cpp
         terrain_lab_mesh.cpp
     )
     target_include_directories(
-        cubey_project_terrain_lab_tests
+        cubey_project_terrain_lab_legacy_tests
         PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     target_compile_definitions(
-        cubey_project_terrain_lab_tests
+        cubey_project_terrain_lab_legacy_tests
         PRIVATE
             CUBEY_TERRAIN_LAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
     )
     target_link_libraries(
-        cubey_project_terrain_lab_tests
+        cubey_project_terrain_lab_legacy_tests
         PRIVATE
             cubey::cubey
             cubey_project_options
             cubey_project_warnings
     )
-    add_test(NAME terrain_lab_config_tests COMMAND cubey_project_terrain_lab_tests)
+    add_test(NAME terrain_lab_legacy_config_tests COMMAND cubey_project_terrain_lab_legacy_tests)
 
     set(CUBEY_TERRAIN_LAB_HEADLESS_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-headless.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-headless.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_headless_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_headless_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_HEADLESS_SMOKE_OUTPUT}"
         --headless
         --grid-width 65
         --grid-height 65
     )
     cubey_add_png_stats_test(
-        terrain_lab_headless_writes_png
+        terrain_lab_legacy_headless_writes_png
         "${CUBEY_TERRAIN_LAB_HEADLESS_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )
 
     set(CUBEY_TERRAIN_LAB_FLOW_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-flow-accumulation.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-flow-accumulation.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_flow_accumulation_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_flow_accumulation_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_FLOW_SMOKE_OUTPUT}"
         --headless
         --grid-width 65
@@ -77,18 +77,18 @@ if (BUILD_TESTING)
         flow-accumulation
     )
     cubey_add_png_stats_test(
-        terrain_lab_flow_accumulation_writes_png
+        terrain_lab_legacy_flow_accumulation_writes_png
         "${CUBEY_TERRAIN_LAB_FLOW_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )
 
     set(CUBEY_TERRAIN_LAB_RIVER_NETWORK_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-river-network.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-river-network.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_river_network_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_river_network_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_RIVER_NETWORK_SMOKE_OUTPUT}"
         --headless
         --grid-width 65
@@ -97,18 +97,18 @@ if (BUILD_TESTING)
         river-network
     )
     cubey_add_png_stats_test(
-        terrain_lab_river_network_writes_png
+        terrain_lab_legacy_river_network_writes_png
         "${CUBEY_TERRAIN_LAB_RIVER_NETWORK_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )
 
     set(CUBEY_TERRAIN_LAB_RIVER_WIDTH_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-river-width.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-river-width.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_river_width_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_river_width_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_RIVER_WIDTH_SMOKE_OUTPUT}"
         --headless
         --grid-width 65
@@ -117,18 +117,18 @@ if (BUILD_TESTING)
         river-width
     )
     cubey_add_png_stats_test(
-        terrain_lab_river_width_writes_png
+        terrain_lab_legacy_river_width_writes_png
         "${CUBEY_TERRAIN_LAB_RIVER_WIDTH_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )
 
     set(CUBEY_TERRAIN_LAB_WATER_PRESENCE_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-water-presence.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-water-presence.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_water_presence_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_water_presence_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_WATER_PRESENCE_SMOKE_OUTPUT}"
         --headless
         --grid-width 65
@@ -137,18 +137,18 @@ if (BUILD_TESTING)
         water-presence
     )
     cubey_add_png_stats_test(
-        terrain_lab_water_presence_writes_png
+        terrain_lab_legacy_water_presence_writes_png
         "${CUBEY_TERRAIN_LAB_WATER_PRESENCE_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )
 
     set(CUBEY_TERRAIN_LAB_FEATURE_GRAPH_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-feature-graph.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-feature-graph.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_feature_graph_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_feature_graph_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_FEATURE_GRAPH_SMOKE_OUTPUT}"
         --headless
         --grid-width 65
@@ -157,18 +157,18 @@ if (BUILD_TESTING)
         feature-graph
     )
     cubey_add_png_stats_test(
-        terrain_lab_feature_graph_writes_png
+        terrain_lab_legacy_feature_graph_writes_png
         "${CUBEY_TERRAIN_LAB_FEATURE_GRAPH_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )
 
     set(CUBEY_TERRAIN_LAB_DRAINAGE_REGIONS_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-drainage-regions.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-drainage-regions.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_drainage_regions_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_drainage_regions_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_DRAINAGE_REGIONS_SMOKE_OUTPUT}"
         --headless
         --grid-width 65
@@ -179,18 +179,18 @@ if (BUILD_TESTING)
         drainage-regions
     )
     cubey_add_png_stats_test(
-        terrain_lab_drainage_regions_writes_png
+        terrain_lab_legacy_drainage_regions_writes_png
         "${CUBEY_TERRAIN_LAB_DRAINAGE_REGIONS_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )
 
     set(CUBEY_TERRAIN_LAB_DUNES_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-desert-dunes.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-desert-dunes.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_desert_dunes_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_desert_dunes_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_DUNES_SMOKE_OUTPUT}"
         --headless
         --grid-width 65
@@ -199,18 +199,18 @@ if (BUILD_TESTING)
         desert-dunes
     )
     cubey_add_png_stats_test(
-        terrain_lab_desert_dunes_writes_png
+        terrain_lab_legacy_desert_dunes_writes_png
         "${CUBEY_TERRAIN_LAB_DUNES_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )
 
     set(CUBEY_TERRAIN_LAB_FASTNOISE_DUNES_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-desert-dunes-fastnoise.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-desert-dunes-fastnoise.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_desert_dunes_fastnoise_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_desert_dunes_fastnoise_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_FASTNOISE_DUNES_SMOKE_OUTPUT}"
         --headless
         --grid-width
@@ -223,18 +223,18 @@ if (BUILD_TESTING)
         fastnoise-lite
     )
     cubey_add_png_stats_test(
-        terrain_lab_desert_dunes_fastnoise_writes_png
+        terrain_lab_legacy_desert_dunes_fastnoise_writes_png
         "${CUBEY_TERRAIN_LAB_FASTNOISE_DUNES_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )
 
     set(CUBEY_TERRAIN_LAB_FASTNOISE_WARPED_DUNES_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-desert-dunes-fastnoise-warped.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-desert-dunes-fastnoise-warped.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_desert_dunes_fastnoise_warped_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_desert_dunes_fastnoise_warped_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_FASTNOISE_WARPED_DUNES_SMOKE_OUTPUT}"
         --headless
         --grid-width
@@ -247,18 +247,18 @@ if (BUILD_TESTING)
         fastnoise-lite-warped
     )
     cubey_add_png_stats_test(
-        terrain_lab_desert_dunes_fastnoise_warped_writes_png
+        terrain_lab_legacy_desert_dunes_fastnoise_warped_writes_png
         "${CUBEY_TERRAIN_LAB_FASTNOISE_WARPED_DUNES_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )
 
     set(CUBEY_TERRAIN_LAB_GLACIAL_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-alpine-glacial-valley.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-alpine-glacial-valley.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_alpine_glacial_valley_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_alpine_glacial_valley_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_GLACIAL_SMOKE_OUTPUT}"
         --headless
         --grid-width 65
@@ -267,18 +267,18 @@ if (BUILD_TESTING)
         alpine-glacial-valley
     )
     cubey_add_png_stats_test(
-        terrain_lab_alpine_glacial_valley_writes_png
+        terrain_lab_legacy_alpine_glacial_valley_writes_png
         "${CUBEY_TERRAIN_LAB_GLACIAL_SMOKE_OUTPUT}"
         0.00001
         0.00005
     )
 
     set(CUBEY_TERRAIN_LAB_MOUNTAIN_RIDGES_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-mountain-ridges-peaks.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lab-legacy-mountain-ridges-peaks.png"
     )
     cubey_add_png_smoke_test(
-        terrain_lab_mountain_ridges_peaks_writes_png
-        cubey_project_terrain_lab
+        terrain_lab_legacy_mountain_ridges_peaks_writes_png
+        cubey_project_terrain_lab_legacy
         "${CUBEY_TERRAIN_LAB_MOUNTAIN_RIDGES_SMOKE_OUTPUT}"
         --headless
         --grid-width 65
@@ -287,7 +287,7 @@ if (BUILD_TESTING)
         mountain-ridges-peaks
     )
     cubey_add_png_stats_test(
-        terrain_lab_mountain_ridges_peaks_writes_png
+        terrain_lab_legacy_mountain_ridges_peaks_writes_png
         "${CUBEY_TERRAIN_LAB_MOUNTAIN_RIDGES_SMOKE_OUTPUT}"
         0.00001
         0.00005

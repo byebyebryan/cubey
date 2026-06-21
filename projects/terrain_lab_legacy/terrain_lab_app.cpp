@@ -188,8 +188,8 @@ class TerrainLabApp {
         return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
-                .app_name = "terrain_lab",
-                .ready_status = "rendering terrain lab",
+                .app_name = "terrain_lab_legacy",
+                .ready_status = "rendering legacy terrain lab",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,

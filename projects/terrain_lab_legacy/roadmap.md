@@ -11,7 +11,7 @@ Status: landed.
 Deliverables:
 
 - project-local docs;
-- explicit ownership boundary relative to `planet`, `procedural_terrain`,
+- explicit ownership boundary relative to `planet`, `procedural_terrain_legacy`,
   `ocean`, and `atmosphere`;
 - first target slice;
 - initial field vocabulary and validation expectations.
@@ -108,7 +108,7 @@ Goal: make field inspection fast enough for terrain iteration.
 
 Deliverables:
 
-- standalone `terrain_lab` app target;
+- standalone `terrain_lab_legacy` app target;
 - CPU heightfield mesh rendering;
 - material/debug view switching;
 - basic sun lighting and optional atmosphere backdrop;
@@ -260,7 +260,7 @@ Candidate slices:
 - volcanic terrain: cones, lava flows, ash fields, rough basalt;
 - wetland: low relief, saturated soil, channels, reeds, ponds;
 - coastal reconnection: beach, bluff, estuary, bathymetry handoff to
-  `procedural_terrain` and `ocean`.
+  `procedural_terrain_legacy` and `ocean`.
 
 Each slice should add only the feature/process vocabulary needed for that
 terrain type. Shared abstractions should wait until at least two slices need the

@@ -2,7 +2,7 @@
 
 Cubey uses procedural assets across terrain, planet detail, ocean-adjacent
 fields, fluids, clouds, atmosphere backdrops, generated textures, and validation
-scenes. Terrain Lab and `projects/procedural_terrain` have made the shared
+scenes. Terrain Lab and `projects/procedural_terrain_legacy` have made the shared
 problem clearer, but they are experiments rather than API owners. Procedural
 work should start from coherent source fields and reusable operators, not from
 slice-local hand-authored masks that are later dressed with materials or shader
@@ -51,7 +51,7 @@ snapshots should not be deduplicated until the comparison value is gone.
 
 ## Experimental Terrain Lessons
 
-Terrain Lab and `projects/procedural_terrain` are now legacy/reference
+Terrain Lab and `projects/procedural_terrain_legacy` are now legacy/reference
 experiments. They remain useful evidence for what worked, what failed, and what
 downstream terrain or shoreline consumers may need, but new foundation work
 should not migrate further toward their current contracts. The planned terrain
@@ -168,7 +168,7 @@ compiled into `cubey::core`:
 The near-term cleanup target is shared plumbing that active consumers already
 use: stable procedural hashing, generated artifact metadata construction, and
 the atmosphere/cloud descriptors that report those identities. This cleanup
-does not migrate Terrain Lab, `projects/procedural_terrain`, planet terrain
+does not migrate Terrain Lab, `projects/procedural_terrain_legacy`, planet terrain
 detail formulas, or reference cloud snapshots; those remain legacy evidence or
 domain-owned formulas until a terrain reboot or focused parity pass needs them.
 
@@ -183,11 +183,11 @@ evidence without freezing Terrain Lab's field layout.
 The first preserve-output migration wave also routes existing duplicate helpers
 through shared primitives where the formulas already matched:
 
-- `projects/procedural_terrain` uses shared CPU scalar and deterministic FBM
+- `projects/procedural_terrain_legacy` uses shared CPU scalar and deterministic FBM
   helpers while preserving its current field output.
 - `projects/planet` uses shared deterministic 3D CPU and GLSL FBM for its
   terrain field while keeping terrain shaping constants project-owned.
-- `projects/terrain_lab`, `projects/ocean`, and `projects/fluid/water_2d`
+- `projects/terrain_lab_legacy`, `projects/ocean`, and `projects/fluid/water_2d`
   consume shared GLSL value-noise helpers for matching shader breakup/noise.
 - `projects/fluid/water_2d` and `projects/fluid/water_3d` consume shared GLSL
   uint hash-to-unit helpers for particle spawn jitter, emission randomness, and
@@ -289,9 +289,9 @@ Remaining candidates after that closure batch are:
 Near-term non-goals:
 
 - no full procedural node graph;
-- no compatibility promise for early Terrain Lab or `procedural_terrain`
+- no compatibility promise for early Terrain Lab or `procedural_terrain_legacy`
   payloads;
-- no further Terrain Lab or `procedural_terrain` migration as a foundation
+- no further Terrain Lab or `procedural_terrain_legacy` migration as a foundation
   milestone before the terrain reboot;
 - no migration of atmosphere, cloud, ocean, or fluid visual formulas in the seed
   and sample-domain batch;

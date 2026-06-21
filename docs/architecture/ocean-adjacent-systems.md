@@ -19,7 +19,7 @@ ocean renderer through small data and shader contracts:
 - `projects/cloud`: production cloud/weather renderer, starting from
   texture-backed coherent density before later cloud shadows and scale-specific
   sky/cloud output for ocean and planet integration.
-- `projects/procedural_terrain`: heightfield terrain, bathymetry, shoreline
+- `projects/procedural_terrain_legacy`: heightfield terrain, bathymetry, shoreline
   masks, material masks, and terrain/scene depth rendering.
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
   flooding, sources, sinks, and later dynamic shoreline coupling.
@@ -119,7 +119,7 @@ Ocean integration target:
 - port legacy seafloor/refraction behavior only after the active wave core still
   matches or improves on the reference baseline.
 
-`projects/procedural_terrain` should stay rendering/data focused. Gameplay
+`projects/procedural_terrain_legacy` should stay rendering/data focused. Gameplay
 water movement, rainfall, sources, sinks, and flooding belong in
 `projects/fluid_25d`.
 
@@ -130,7 +130,7 @@ Current foundation checkpoint:
   material masks;
 - the shared packer uploads that contract as one `RGBA32F` texture with
   `height_m`, `water_depth_m`, `shore_sdf_m`, and `slope` in `R/G/B/A`;
-- `projects/procedural_terrain` exports its analytical fields through this
+- `projects/procedural_terrain_legacy` exports its analytical fields through this
   shared view, while `projects/ocean` can bind and inspect a diagnostic field
   texture through `terrain-depth`, `terrain-shore`, and `terrain-slope` debug
   views;
@@ -217,7 +217,7 @@ outside that helper.
 
 1. Build `projects/atmosphere` as a clear-sky scattering demo with headless
    capture output.
-2. Build `projects/procedural_terrain` as a terrain and bathymetry data demo.
+2. Build `projects/procedural_terrain_legacy` as a terrain and bathymetry data demo.
 3. Refine ocean/material lighting now that atmosphere background, reflection,
    fog, and light-energy coherence are in place.
 4. Integrate terrain scene color/depth plus bathymetry into ocean for shallow

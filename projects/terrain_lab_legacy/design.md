@@ -2,14 +2,14 @@
 
 This document captures the initial terrain direction before implementation. It
 is project-local by design: the work should be concrete enough to build and test
-inside `projects/terrain_lab`, but not broad enough to become the planet,
+inside `projects/terrain_lab_legacy`, but not broad enough to become the planet,
 ocean, or foliage system all at once.
 
 ## Problem Statement
 
 The earlier terrain work came from two useful but narrow pressures:
 
-- `procedural_terrain` grew from ocean and shoreline needs, so it leans toward
+- `procedural_terrain_legacy` grew from ocean and shoreline needs, so it leans toward
   islands, bathymetry, coast distance, and terrain-ocean fields.
 - `planet` needs scale, LOD, local detail, celestial context, atmosphere, and
   integration boundaries, so terrain there carries a lot of unrelated weight.
@@ -359,7 +359,7 @@ adapters:
 
 - `planet` can consume terrain slice ideas as local-detail residuals, patch
   summaries, or future tile payloads.
-- `procedural_terrain` can consume mature shoreline, bathymetry, and material
+- `procedural_terrain_legacy` can consume mature shoreline, bathymetry, and material
   fields where coastal slices overlap.
 - `ocean` can consume height, bathymetry, shoreline, and wetness outputs after
   those fields are stable.

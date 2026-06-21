@@ -3,7 +3,7 @@
 Date: 2026-06-18
 
 This note captures the non-terrain procedural consumers that should shape the
-next shared foundation work. `terrain_lab` and `projects/procedural_terrain`
+next shared foundation work. `terrain_lab_legacy` and `projects/procedural_terrain_legacy`
 remain useful legacy evidence, and the planned terrain reboot is still expected
 to become the largest consumer later, but near-term foundation APIs should be
 validated against the active rendering and simulation projects too.

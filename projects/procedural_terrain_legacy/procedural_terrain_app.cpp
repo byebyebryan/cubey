@@ -189,8 +189,8 @@ int ProceduralTerrainApp::run_windowed() {
     return cubey::host::run_windowed_app(
         {
             .run_config = config_,
-            .app_name = "procedural_terrain",
-            .ready_status = "rendering procedural terrain",
+            .app_name = "procedural_terrain_legacy",
+            .ready_status = "rendering legacy procedural terrain",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
             .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             .require_dynamic_rendering = true,

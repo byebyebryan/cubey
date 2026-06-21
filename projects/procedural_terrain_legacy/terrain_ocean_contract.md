@@ -1,6 +1,6 @@
 # Terrain-Ocean Field Contract
 
-`procedural_terrain` owns static terrain fields that downstream shoreline and
+`procedural_terrain_legacy` owns static terrain fields that downstream shoreline and
 ocean rendering can consume. Ocean systems own time-varying wave motion, foam,
 surface shading, and water simulation state.
 
