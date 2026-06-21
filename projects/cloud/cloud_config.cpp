@@ -733,6 +733,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (run_config_float_is_set(run_config.clouds.orbit_density_scale)) {
         config.orbit_density_scale = run_config.clouds.orbit_density_scale;
     }
+    if (run_config_float_is_set(run_config.clouds.orbit_fill)) {
+        config.orbit_fill = run_config.clouds.orbit_fill;
+    }
     if (run_config_float_is_set(run_config.clouds.orbit_motion_strength)) {
         config.orbit_motion_strength = run_config.clouds.orbit_motion_strength;
     }
@@ -927,6 +930,10 @@ void validate_clouds_config(const CloudsConfig& config) {
     if (!std::isfinite(config.orbit_density_scale) || config.orbit_density_scale < 0.0F ||
         config.orbit_density_scale > 2.0F) {
         throw std::runtime_error("cloud orbit density scale must be finite and in [0, 2]");
+    }
+    if (!std::isfinite(config.orbit_fill) || config.orbit_fill < 0.0F ||
+        config.orbit_fill > 2.0F) {
+        throw std::runtime_error("cloud orbit fill must be finite and in [0, 2]");
     }
     if (!std::isfinite(config.orbit_motion_strength) ||
         config.orbit_motion_strength < 0.0F || config.orbit_motion_strength > 4.0F) {

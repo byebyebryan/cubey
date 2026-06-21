@@ -169,8 +169,9 @@ Initial scope:
   regional weather systems, spiral/frontal bands, cellular breakup inside cloud
   masses, and large clear ocean windows. Fuller coverage should fill totally
   empty regions through the same weather fields rather than through a smooth
-  planet-wide cap. The volume path is an implementation comparison only and is
-  not an art target;
+  planet-wide cap; `clouds.orbit_fill` owns that bias so the coverage target
+  can be tuned without changing shader constants. The volume path is an
+  implementation comparison only and is not an art target;
 - orbit shell detail should be filtered by pixel footprint and grazing angle so
   disk detail survives while limb/edge shimmer does not define the image;
 - the cloud-top shell should composite from column optical depth, not an

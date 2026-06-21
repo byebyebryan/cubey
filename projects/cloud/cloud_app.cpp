@@ -640,7 +640,7 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
                           cloud_orbit_representation_value(config.orbit_representation)},
         .orbit_shell_options = {config.orbit_motion_strength,
                                 config.orbit_shell_extinction,
-                                0.0F,
+                                config.orbit_fill,
                                 0.0F},
     };
 }
@@ -992,6 +992,7 @@ class CloudApp {
                                "%.2f");
             ImGui::SliderFloat("Orbit density", &config_.orbit_density_scale, 0.0F, 2.0F,
                                "%.2f");
+            ImGui::SliderFloat("Orbit fill", &config_.orbit_fill, 0.0F, 2.0F, "%.2f");
             ImGui::SliderFloat("Orbit motion", &config_.orbit_motion_strength, 0.0F, 4.0F,
                                "%.2f");
             ImGui::SliderFloat("Orbit extinction", &config_.orbit_shell_extinction, 0.0F, 8.0F,

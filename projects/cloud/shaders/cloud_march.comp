@@ -164,6 +164,10 @@ float cloud_orbit_shell_extinction() {
     return max(params.orbit_shell_options.y, 0.0);
 }
 
+float cloud_orbit_fill() {
+    return clamp(params.orbit_shell_options.z, 0.0, 2.0);
+}
+
 vec3 cloud_orbit_tangent(vec3 normal) {
     vec3 tangent = WIND_DIRECTION - normal * dot(WIND_DIRECTION, normal);
     if (dot(tangent, tangent) < 0.0001) {
@@ -369,6 +373,7 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
     float macro_c =
         cloud_orbit_fbm(advected_normal * feature_count * 0.335 + wind * 0.075 +
                         vec3(8.1, 1.7, 4.2));
+    float orbit_fill = cloud_orbit_fill();
     float regional_seed =
         clamp(max(storm_track * 0.82, synoptic_system) +
                   smoothstep(0.52, 0.86, macro_a) * 0.26 +
@@ -376,15 +381,18 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
               0.0, 1.0);
     float regional_fill =
         clamp(regional_seed +
-                  smoothstep(0.30, 0.72, macro_a * 0.58 + macro_c * 0.42) * 0.48 +
-                  smoothstep(0.42, 0.78, macro_b) * 0.14,
+                  smoothstep(0.30, 0.72, macro_a * 0.58 + macro_c * 0.42) * 0.48 *
+                      orbit_fill +
+                  smoothstep(0.42, 0.78, macro_b) * 0.14 * orbit_fill,
               0.0, 1.0);
     float dry_slot = cloud_orbit_dry_slot_field(warped_normal, wind, feature_count);
     float clear_gate = 1.0 - smoothstep(0.60, 0.92, dry_slot) *
-                                 mix(0.50, 0.26, regional_fill);
+                                 mix(mix(0.82, 0.50, orbit_fill),
+                                     mix(0.44, 0.26, orbit_fill),
+                                     regional_fill);
     float broad_fill =
         smoothstep(0.28, 0.70, macro_a * 0.46 + macro_b * 0.20 + macro_c * 0.34) *
-        mix(0.18, 0.48, regional_fill);
+        mix(0.18, 0.48, regional_fill) * orbit_fill;
     float broad_field =
         clamp((synoptic_system * 0.52 + storm_track * macro_b * 0.30 +
                macro_a * macro_c * 0.18 + broad_fill) *
@@ -414,11 +422,14 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
               0.0, 1.0);
 
     float global_coverage = clamp(params.weather.x, 0.0, 1.0);
-    float orbit_coverage = clamp(global_coverage * 1.08, 0.0, 1.0);
+    float orbit_coverage = clamp(global_coverage * mix(0.94, 1.08, orbit_fill), 0.0, 1.0);
     float softness = clamp(params.sampling_options.z, 0.02, 0.60);
     float effective_coverage =
-        orbit_coverage * mix(0.82, 1.34, regional_fill);
-    float threshold = clamp(0.70 - effective_coverage * 0.36 - regional_fill * 0.13,
+        orbit_coverage *
+        mix(mix(0.48, 0.82, orbit_fill), mix(1.20, 1.34, orbit_fill), regional_fill);
+    float threshold = clamp(mix(0.80, 0.70, orbit_fill) -
+                                effective_coverage * mix(0.30, 0.36, orbit_fill) -
+                                regional_fill * mix(0.10, 0.13, orbit_fill),
                             0.38, 0.90);
     float envelope = smoothstep(threshold - softness * 0.26,
                                 threshold + softness * 0.54,
@@ -441,9 +452,10 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
     float broken_fill =
         smoothstep(0.20, 0.62, structure_field) *
         smoothstep(0.16, 0.64, regional_fill + broad_field * 0.42) *
-        orbit_coverage * 0.170 * clear_gate;
+        orbit_coverage * 0.170 * clear_gate * orbit_fill;
     float system_coverage =
-        envelope * mix(0.52, 0.98, broken) * mix(0.76, 1.0, regional_fill);
+        envelope * mix(mix(0.28, 0.52, orbit_fill), mix(0.96, 0.98, orbit_fill), broken) *
+        mix(mix(0.62, 0.76, orbit_fill), 1.0, regional_fill);
     float front_overlay =
         filament_gate * max(max(envelope, storm_track * 0.34), synoptic_system * 0.56) *
         (0.36 + 0.36 * edge_holes);
@@ -455,7 +467,11 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
               0.0, 1.0);
 
     float detail_field =
-        clamp(edge_detail * smoothstep(0.030, 0.44, coverage) * mix(0.90, 1.12, broken),
+        clamp(edge_detail *
+                  smoothstep(mix(0.035, 0.030, orbit_fill),
+                             mix(0.48, 0.44, orbit_fill),
+                             coverage) *
+                  mix(1.0, mix(0.90, 1.12, broken), orbit_fill),
               0.0,
               1.0);
     float type_field =

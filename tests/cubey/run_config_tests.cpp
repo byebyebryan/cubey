@@ -355,6 +355,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.far_shell_end_m",
         "clouds.orbit_detail_strength",
         "clouds.orbit_density_scale",
+        "clouds.orbit_fill",
         "clouds.temporal",
         "smoke.injectors",
         "smoke.pressure_iterations",
@@ -503,6 +504,7 @@ void test_run_config_loads_json_config_file() {
     "wind_speed_mps": 24.0,
     "shadow_strength": 0.75,
     "jitter_strength": 0.25,
+    "orbit_fill": 1.4,
     "temporal": false
   }
 })");
@@ -566,7 +568,8 @@ void test_run_config_loads_json_config_file() {
                 config.clouds.background_mode == "water-context" &&
                 config.clouds.coverage == 0.62F && config.clouds.wind_speed_mps == 24.0F &&
                 config.clouds.shadow_strength == 0.75F &&
-                config.clouds.jitter_strength == 0.25F && config.clouds.temporal == 0,
+                config.clouds.jitter_strength == 0.25F &&
+                config.clouds.orbit_fill == 1.4F && config.clouds.temporal == 0,
             "config file should set cloud controls");
 }
 
@@ -1019,8 +1022,10 @@ void test_run_config_parses_cloud_options() {
     std::string orbit_detail_value = "0.22";
     std::string orbit_density_flag = "--cloud-orbit-density-scale";
     std::string orbit_density_value = "1.10";
+    std::string orbit_fill_flag = "--cloud-orbit-fill";
+    std::string orbit_fill_value = "1.40";
     std::string temporal_flag = "--no-cloud-temporal";
-    std::array<char*, 48> argv{
+    std::array<char*, 50> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -1068,6 +1073,8 @@ void test_run_config_parses_cloud_options() {
         orbit_detail_value.data(),
         orbit_density_flag.data(),
         orbit_density_value.data(),
+        orbit_fill_flag.data(),
+        orbit_fill_value.data(),
         temporal_flag.data(),
     };
 
@@ -1115,6 +1122,7 @@ void test_run_config_parses_cloud_options() {
             "run config should parse cloud orbit detail strength");
     require(config.clouds.orbit_density_scale == 1.10F,
             "run config should parse cloud orbit density scale");
+    require(config.clouds.orbit_fill == 1.40F, "run config should parse cloud orbit fill");
     require(config.clouds.temporal == 0, "run config should parse negative cloud temporal flag");
 }
 

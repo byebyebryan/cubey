@@ -130,6 +130,10 @@ if [[ "${DEEP}" != "0" ]]; then
     capture high-oblique-weather-local --cloud-camera-mode high-oblique --cloud-weather-influence 0
     capture high-oblique-weather-authored --cloud-camera-mode high-oblique \
         --cloud-weather-influence 1
+    capture orbit-satellite-fill-off --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+        --cloud-orbit-representation surface-shell --cloud-orbit-fill 0
+    capture orbit-satellite-fill-strong --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+        --cloud-orbit-representation surface-shell --cloud-orbit-fill 1.5
     capture surface-up-bayer --cloud-camera-mode surface-up --cloud-sampling-mode bayer
     capture surface-up-no-jitter --cloud-camera-mode surface-up --cloud-sampling-mode off
     capture high-oblique-bayer --cloud-camera-mode high-oblique --cloud-sampling-mode bayer
@@ -176,6 +180,7 @@ if command -v magick >/dev/null 2>&1; then
     if [[ "${DEEP}" != "0" ]]; then
         crop_names+=(
             orbit-satellite-motion-start orbit-satellite-motion-later
+            orbit-satellite-fill-off orbit-satellite-fill-strong
             orbit-local-weather orbit-local-weather-bias
             metadata-alpha metadata-distance metadata-confidence metadata-density
             transmittance lighting ambient-light direct-light phase-light shadow

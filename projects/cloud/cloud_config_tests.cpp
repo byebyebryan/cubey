@@ -331,6 +331,7 @@ void test_run_config_mapping() {
     run_config.clouds.far_shell_end_m = 180000.0F;
     run_config.clouds.orbit_detail_strength = 0.22F;
     run_config.clouds.orbit_density_scale = 1.10F;
+    run_config.clouds.orbit_fill = 1.40F;
     run_config.clouds.orbit_motion_strength = 1.70F;
     run_config.clouds.orbit_shell_extinction = 3.60F;
     run_config.clouds.temporal = 0;
@@ -418,6 +419,7 @@ void test_run_config_mapping() {
                  "cloud orbit detail strength should map");
     require_near(config.orbit_density_scale, 1.10F, 0.001F,
                  "cloud orbit density scale should map");
+    require_near(config.orbit_fill, 1.40F, 0.001F, "cloud orbit fill should map");
     require_near(config.orbit_motion_strength, 1.70F, 0.001F,
                  "cloud orbit motion strength should map");
     require_near(config.orbit_shell_extinction, 3.60F, 0.001F,
@@ -508,6 +510,8 @@ void test_weather_preset_defaults() {
                  "default orbit detail should preserve visible shell structure");
     require_near(config.orbit_density_scale, 0.02F, 0.001F,
                  "default orbit density should reveal the toy planet in orbit captures");
+    require_near(config.orbit_fill, 1.0F, 0.001F,
+                 "default orbit fill should preserve the tuned orbit weather coverage");
     require_near(config.orbit_motion_strength, 1.0F, 0.001F,
                  "default orbit motion should be enabled");
     require_near(config.orbit_shell_extinction, 2.8F, 0.001F,
@@ -713,6 +717,7 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.far_shell_end_m", "180000");
     cubey::set_run_config_option_from_string(config, "clouds.orbit_detail_strength", "0.22");
     cubey::set_run_config_option_from_string(config, "clouds.orbit_density_scale", "1.10");
+    cubey::set_run_config_option_from_string(config, "clouds.orbit_fill", "1.40");
     cubey::set_run_config_option_from_string(config, "clouds.orbit_motion_strength", "1.70");
     cubey::set_run_config_option_from_string(config, "clouds.orbit_shell_extinction", "3.60");
     cubey::set_run_config_option_from_string(config, "clouds.temporal", "false");
@@ -784,6 +789,8 @@ void test_config_descriptors() {
                  "cloud orbit detail strength descriptor should set");
     require_near(config.clouds.orbit_density_scale, 1.10F, 0.001F,
                  "cloud orbit density scale descriptor should set");
+    require_near(config.clouds.orbit_fill, 1.40F, 0.001F,
+                 "cloud orbit fill descriptor should set");
     require_near(config.clouds.orbit_motion_strength, 1.70F, 0.001F,
                  "cloud orbit motion strength descriptor should set");
     require_near(config.clouds.orbit_shell_extinction, 3.60F, 0.001F,
