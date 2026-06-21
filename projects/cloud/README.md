@@ -1,8 +1,9 @@
 # Cloud
 
-`cloud` is the production volumetric cloud project. It starts from the
-texture-backed density path proven in `projects/cloud_ref`, while leaving
-`cloud_ref`, `cloud_ref_2`, and `clouds_legacy` intact as reference projects.
+`cloud` is the production cloud/weather project. It keeps the local volumetric
+density path proven in `projects/cloud_ref`, while using a filtered
+`surface-shell` path as the default orbit representation for satellite-style
+full-disk review.
 
 Current V1 scope:
 
@@ -31,7 +32,7 @@ Current V1 scope:
   residual raymarch banding;
 - standalone background modes: atmosphere-only by default, plus an opt-in
   `water-context` proxy for ocean-adjacent inspection shots;
-- explicit distance regimes: surface/local volumetric marching, broad
+- explicit distance regimes: surface/local volumetric marching, default
   high/orbit shell evaluation, and debug views for the local-vs-orbit blend;
 - diagnostics for weather, weather edge, weather bias, base/detail density,
   density, transmittance, cloud type, visible density/cloud type, lighting,
@@ -39,10 +40,9 @@ Current V1 scope:
   coverage/detail/hull, metadata distance/alpha/confidence, metadata density,
   steps, and background.
 
-The first target is cloud shape: raw density and final captures should show
-coherent cloud masses without relying on cache, temporal reconstruction, or
-final blur. Validate against `projects/cloud_ref`; do not tune this project
-toward `cloud_ref_2` visuals.
+The first target is cloud shape. Surface/local captures should preserve coherent
+volumetric cloud masses; orbit captures should be judged against satellite and
+full-disk Earth imagery, not against the volume raymarch comparison path.
 
 Useful runs:
 
@@ -92,6 +92,8 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --cloud-sampling-mode interleaved --cloud-jitter-strength 0.5
 ./build/dev/projects/cloud/cloud --cloud-distance-mode local
 ./build/dev/projects/cloud/cloud --cloud-distance-mode orbit-shell
+./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --cloud-orbit-representation volume
+./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --cloud-orbit-representation surface-shell
 ./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --debug-view distance-regime
 ./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --debug-view orbit-coverage
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode surface-up --output outputs/cloud-v1-surface-up.png
@@ -101,8 +103,9 @@ DEEP=1 projects/cloud/capture_review.sh outputs/cloud-v1-review-deep
 ```
 
 `capture_review.sh` defaults to a focused shape/regime review: final camera
-views, local/orbit alpha, distance-regime checks, orbit procedural
-coverage/detail/hull, and a small surface-local density set. `DEEP=1` adds secondary tuning captures
+views, shell-first orbit captures, volume comparison, local/orbit alpha,
+distance-regime checks, orbit procedural coverage/detail/hull, and a small
+surface-local density set. `DEEP=1` adds secondary tuning captures
 such as sampling comparisons, metadata, lighting breakdowns, weather-influence
 sweeps, and explicitly named `orbit-local-weather` diagnostics for the old
 surface-local weather projection. The script also writes

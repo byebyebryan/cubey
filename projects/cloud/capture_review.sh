@@ -48,15 +48,16 @@ capture surface-up --cloud-camera-mode surface-up
 capture high-oblique --cloud-camera-mode high-oblique
 capture surface --cloud-camera-mode surface
 capture high --cloud-camera-mode high
-capture orbit-preview --cloud-camera-mode orbit
+capture orbit-preview --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-representation surface-shell
 capture orbit-volume --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation volume
 capture orbit-shell-surface --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation surface-shell
 capture orbit-final-detail-off --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
-    --cloud-orbit-detail-strength 0
+    --cloud-orbit-representation surface-shell --cloud-orbit-detail-strength 0
 capture orbit-final-detail-strong --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
-    --cloud-orbit-detail-strength 0.8
+    --cloud-orbit-representation surface-shell --cloud-orbit-detail-strength 0.8
 capture orbit-terminator --cloud-camera-mode orbit-terminator
 capture orbit-shell-envelope --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation surface-shell --debug-view orbit-envelope

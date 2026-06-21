@@ -470,8 +470,8 @@ void test_weather_preset_defaults() {
     require(config.distance_mode == cubey::projects::cloud::CloudsDistanceMode::Auto,
             "default distance mode should be auto");
     require(config.orbit_representation ==
-                cubey::projects::cloud::CloudsOrbitRepresentation::VolumeRaymarch,
-            "default orbit representation should be volume raymarch");
+                cubey::projects::cloud::CloudsOrbitRepresentation::SurfaceShell,
+            "default orbit representation should be surface shell");
     require_near(config.jitter_strength, 1.0F, 0.001F,
                  "default jitter should match reference Bayer strength");
     require_near(config.weather_influence, 0.0F, 0.001F,

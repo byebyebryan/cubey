@@ -198,7 +198,7 @@ struct CloudsConfig {
     CloudsSamplingMode sampling_mode = CloudsSamplingMode::Bayer;
     CloudsBackgroundMode background_mode = CloudsBackgroundMode::Atmosphere;
     CloudsDistanceMode distance_mode = CloudsDistanceMode::Auto;
-    CloudsOrbitRepresentation orbit_representation = CloudsOrbitRepresentation::VolumeRaymarch;
+    CloudsOrbitRepresentation orbit_representation = CloudsOrbitRepresentation::SurfaceShell;
     CloudsDebugView debug_view = CloudsDebugView::Final;
     bool temporal_enabled = true;
     CloudsTimeConfig time{};
