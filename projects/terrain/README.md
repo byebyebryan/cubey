@@ -17,6 +17,11 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
+The current generator emits source fields, height/slope analysis, static
+drainage, river hierarchy proxies, wetness/deposition, material masks, and
+vegetation potential. The drainage pass is deliberately process-informed rather
+than a full hydraulic simulation.
+
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
 
