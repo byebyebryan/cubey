@@ -107,6 +107,8 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --cloud-orbit-representation surface-shell
 ./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --cloud-orbit-fill 0.5
 ./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --cloud-orbit-fill 1.5
+./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --cloud-far-shell-strength 0
+./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --cloud-far-shell-strength 1.5
 ./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --debug-view distance-regime
 ./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --debug-view orbit-coverage
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode surface-up --output outputs/cloud-v1-surface-up.png
@@ -119,9 +121,10 @@ DEEP=1 projects/cloud/capture_review.sh outputs/cloud-v1-review-deep
 views, satellite-named orbit captures, high-oblique transition, volume
 comparison, local/orbit alpha, distance-regime checks, ray-sampled orbit
 procedural coverage/detail/hull, shell-specific alpha/height/normal/shadow, and
-a small surface-local density set. `DEEP=1` adds secondary tuning captures such
-as sampling comparisons, metadata, lighting breakdowns, weather-influence
-sweeps, orbit-fill comparisons, satellite orbit motion, and explicitly named
+a small surface-local density set. The default set includes high-oblique
+far-shell strength comparisons and orbit-fill comparisons. `DEEP=1` adds
+secondary tuning captures such as sampling comparisons, metadata, lighting
+breakdowns, weather-influence sweeps, satellite orbit motion, and explicitly named
 `orbit-local-weather` diagnostics for the old surface-local weather projection.
 The script also writes
 `diagnostic-crops/center-feature-contact.png` with resolution-scaled center
@@ -150,7 +153,9 @@ Controls:
   cells, streaks, edge breakup, and hull erosion. The orbit shell should read as
   broken regional weather with large clear windows and fewer totally empty
   regions, not as a smooth planet-wide cap. `Orbit fill` biases that empty-space
-  fill while preserving the same weather/detail fields.
+  fill while preserving the same weather/detail fields. `Far shell strength`
+  controls how much broad shell cloud contributes behind local volume in
+  high-oblique views.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
 - `Final Resolve`: alpha-aware smoothing amount plus final contrast,
