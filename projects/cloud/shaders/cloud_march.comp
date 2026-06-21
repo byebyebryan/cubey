@@ -184,6 +184,35 @@ float cloud_orbit_feature_count() {
     return clamp(circumference_m / feature_scale_m, 4.0, 160.0);
 }
 
+float cloud_orbit_motion_strength() {
+    return clamp(params.orbit_shell_options.x, 0.0, 4.0);
+}
+
+float cloud_orbit_shell_extinction() {
+    return max(params.orbit_shell_options.y, 0.0);
+}
+
+vec3 cloud_orbit_tangent(vec3 normal) {
+    vec3 tangent = WIND_DIRECTION - normal * dot(WIND_DIRECTION, normal);
+    if (dot(tangent, tangent) < 0.0001) {
+        tangent = cross(normal, vec3(0.0, 1.0, 0.0));
+    }
+    if (dot(tangent, tangent) < 0.0001) {
+        tangent = cross(normal, vec3(0.0, 0.0, 1.0));
+    }
+    return normalize(tangent);
+}
+
+vec3 cloud_orbit_advected_normal(vec3 normal, float motion_phase) {
+    vec3 tangent = cloud_orbit_tangent(normal);
+    vec3 side = normalize(cross(normal, tangent));
+    float curl_a = cloud_orbit_fbm(normal * 3.1 + vec3(0.0, motion_phase * 0.17, 1.7));
+    float curl_b = cloud_orbit_fbm(normal * 5.7 - vec3(2.3, motion_phase * 0.11, 0.0));
+    vec3 drift = tangent * (motion_phase * 0.035) +
+                 side * ((curl_a - curl_b) * 0.028 * cloud_orbit_motion_strength());
+    return normalize(normal + drift);
+}
+
 float cloud_orbit_wave_field(vec3 p, float frequency) {
     float sum = 0.0;
     float weight = 0.0;
@@ -264,16 +293,13 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
     normal = normalize(normal);
     float circumference_m = max(cloud_planet_radius() * 2.0 * CLOUD_PI, 1.0);
     float feature_count = cloud_orbit_feature_count();
-    vec3 wind = WIND_DIRECTION * (params.weather.w / circumference_m) * feature_count;
-    vec3 warped_normal = normalize(normal + cloud_orbit_warp(normal, wind) * 0.22);
-    vec3 tangent_raw = WIND_DIRECTION - warped_normal * dot(WIND_DIRECTION, warped_normal);
-    if (dot(tangent_raw, tangent_raw) < 0.0001) {
-        tangent_raw = cross(warped_normal, vec3(0.0, 1.0, 0.0));
-    }
-    if (dot(tangent_raw, tangent_raw) < 0.0001) {
-        tangent_raw = cross(warped_normal, vec3(0.0, 0.0, 1.0));
-    }
-    vec3 tangent = normalize(tangent_raw);
+    float motion_phase = (params.weather.w / circumference_m) * feature_count *
+                         cloud_orbit_motion_strength();
+    vec3 wind = WIND_DIRECTION * motion_phase;
+    vec3 advected_normal = cloud_orbit_advected_normal(normal, motion_phase);
+    vec3 warped_normal =
+        normalize(advected_normal + cloud_orbit_warp(advected_normal, wind) * 0.24);
+    vec3 tangent = cloud_orbit_tangent(warped_normal);
     vec3 side = normalize(cross(warped_normal, tangent));
 
     float macro_a =
@@ -281,7 +307,8 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
     float macro_b =
         cloud_orbit_wave_field(warped_normal + wind * 0.020, feature_count * 0.175);
     float macro_c =
-        cloud_orbit_fbm(normal * feature_count * 0.245 + wind * 0.075 + vec3(8.1, 1.7, 4.2));
+        cloud_orbit_fbm(advected_normal * feature_count * 0.245 + wind * 0.075 +
+                        vec3(8.1, 1.7, 4.2));
     float broad_field = clamp(macro_a * 0.54 + macro_b * 0.28 + macro_c * 0.18, 0.0, 1.0);
 
     float front_field = cloud_orbit_front_field(warped_normal, tangent, side, wind, feature_count);
@@ -698,14 +725,7 @@ float cloud_orbit_surface_height_field(vec3 normal, float footprint) {
 }
 
 vec3 cloud_orbit_surface_normal(vec3 normal, float footprint) {
-    vec3 tangent = WIND_DIRECTION - normal * dot(WIND_DIRECTION, normal);
-    if (dot(tangent, tangent) < 0.0001) {
-        tangent = cross(normal, vec3(0.0, 1.0, 0.0));
-    }
-    if (dot(tangent, tangent) < 0.0001) {
-        tangent = cross(normal, vec3(0.0, 0.0, 1.0));
-    }
-    tangent = normalize(tangent);
+    vec3 tangent = cloud_orbit_tangent(normal);
     vec3 side = normalize(cross(normal, tangent));
 
     float eps = clamp(cloud_orbit_shell_pixel_angle() * 2.5, 0.0004, 0.006);
@@ -724,6 +744,39 @@ vec3 cloud_orbit_surface_normal(vec3 normal, float footprint) {
     return dot(n, normal) < 0.0 ? -n : n;
 }
 
+float cloud_orbit_surface_mass(OrbitWeatherSample orbit, float footprint) {
+    float detail_strength = clamp(params.distance_options.w, 0.0, 1.0);
+    float footprint_filter = smoothstep(1.0, 3.5, footprint);
+    float surface_detail =
+        max(cloud_coverage_modulation(orbit.coverage, orbit.detail, 0.34),
+            orbit.coverage * 0.58);
+    float detail_hull = mix(orbit.coverage, surface_detail, detail_strength * 0.78);
+    float filtered_hull = mix(detail_hull, orbit.coverage, footprint_filter * 0.35);
+    float mass = filtered_hull * (0.62 + 0.38 * orbit.coverage) *
+                 (0.78 + 0.22 * orbit.cloud_type);
+    return clamp(mass, 0.0, 1.0);
+}
+
+float cloud_orbit_surface_shadow(vec3 shell_up, vec3 sun_dir, float footprint, float day) {
+    vec3 sun_tangent = sun_dir - shell_up * dot(sun_dir, shell_up);
+    if (dot(sun_tangent, sun_tangent) < 0.0001 || day <= 0.0) {
+        return 1.0;
+    }
+    sun_tangent = normalize(sun_tangent);
+    float occlusion = 0.0;
+    for (int i = 1; i <= 4; ++i) {
+        float step_angle = 0.010 * float(i);
+        vec3 sample_normal = normalize(shell_up + sun_tangent * step_angle);
+        OrbitWeatherSample sample_orbit =
+            cloud_orbit_weather_sample_from_normal(sample_normal,
+                                                   cloud_orbit_shell_surface_height_fraction());
+        occlusion += cloud_orbit_surface_mass(sample_orbit, footprint);
+    }
+    occlusion *= 0.25;
+    float shadow_strength = clamp(params.cloud_color_top_shadow.w, 0.0, 1.0);
+    return clamp(1.0 - occlusion * shadow_strength * 0.46 * day, 0.40, 1.0);
+}
+
 OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
     vec3 hit_position = vec3(0.0);
     float hit_t = -1.0;
@@ -733,19 +786,13 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
 
     vec3 shell_up = normalize(hit_position - cloud_sphere_center());
     float footprint = cloud_orbit_shell_pixel_footprint(origin, hit_position);
-    float detail_strength = clamp(params.distance_options.w, 0.0, 1.0);
-    float footprint_filter = smoothstep(1.0, 3.5, footprint);
     OrbitWeatherSample orbit =
         cloud_orbit_weather_sample_from_normal(shell_up, cloud_orbit_shell_surface_height_fraction());
 
     float base_hull = orbit.coverage;
-    float surface_detail =
-        max(cloud_coverage_modulation(orbit.coverage, orbit.detail, 0.34),
-            orbit.coverage * 0.55);
-    float detail_hull = mix(base_hull, surface_detail, detail_strength * 0.75);
-    float filtered_hull = mix(detail_hull, base_hull, footprint_filter * 0.35);
-    float opacity_scale = clamp(params.orbit_options.z * 48.0, 0.0, 1.0);
-    float alpha = smoothstep(0.012, 0.38, filtered_hull) * opacity_scale;
+    float filtered_hull = cloud_orbit_surface_mass(orbit, footprint);
+    float column_density = filtered_hull * max(params.orbit_options.z, 0.0) * 58.0;
+    float alpha = 1.0 - exp(-column_density * cloud_orbit_shell_extinction());
     alpha = clamp(alpha, 0.0, 0.96);
 
     float height = cloud_orbit_surface_height_field(shell_up, footprint);
@@ -757,10 +804,7 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
     float ndotl = max(dot(shell_normal, sun_dir), 0.0);
     float light_dot_eye = dot(sun_dir, direction);
     float phase_response = cloud_direct_phase(light_dot_eye);
-    float density_shadow = smoothstep(0.36, 0.88, orbit.coverage * 0.62 + orbit.detail * 0.38);
-    float shadow = 1.0 - density_shadow * clamp(params.cloud_color_top_shadow.w, 0.0, 1.0) *
-                           0.32 * day;
-    shadow = clamp(shadow, 0.42, 1.0);
+    float shadow = cloud_orbit_surface_shadow(shell_up, sun_dir, footprint, day);
 
     DensitySample density_sample =
         DensitySample(max(alpha, 0.001), base_hull, orbit.detail, orbit.coverage,
