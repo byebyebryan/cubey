@@ -4,6 +4,7 @@
 
 #include <cubey/core/math.h>
 #include <cubey/core/run_config.h>
+#include <cubey/render/celestial_body_frame.h>
 #include <cubey/render/celestial_system.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/material.h>
