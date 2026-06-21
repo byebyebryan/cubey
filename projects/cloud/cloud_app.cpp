@@ -51,6 +51,7 @@ constexpr float kDefaultFovyRadians = 62.0F * (glm::pi<float>() / 180.0F);
 constexpr float kCameraDragRadiansPerPixel = 0.006F;
 constexpr float kSurfaceMinPitchRadians = -1.50F;
 constexpr float kSurfaceMaxPitchRadians = 1.35F;
+constexpr float kOrbitMaxLatitudeRadians = 1.30F;
 constexpr std::uint32_t kCloudComputeGroupSize = 16U;
 constexpr std::uint32_t kCloudVolumeGroupSize = 4U;
 constexpr VkFormat kCloudColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -414,6 +415,19 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     };
 }
 
+[[nodiscard]] bool cloud_camera_mode_is_orbit(CloudsCameraMode mode) {
+    return mode == CloudsCameraMode::Orbit || mode == CloudsCameraMode::OrbitTerminator;
+}
+
+[[nodiscard]] cubey::math::Vec3 safe_normalize(cubey::math::Vec3 value,
+                                               cubey::math::Vec3 fallback) {
+    const float len2 = glm::dot(value, value);
+    if (len2 <= 0.0000001F) {
+        return fallback;
+    }
+    return value * glm::inversesqrt(len2);
+}
+
 [[nodiscard]] float cloud_camera_base_pitch(CloudsCameraMode mode) {
     switch (mode) {
     case CloudsCameraMode::SurfaceUp:
@@ -424,7 +438,7 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
         return -0.42F;
     case CloudsCameraMode::Orbit:
     case CloudsCameraMode::OrbitTerminator:
-        return -glm::half_pi<float>();
+        return 0.50F;
     case CloudsCameraMode::Surface:
     default:
         return -0.06F;
@@ -435,7 +449,7 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     switch (mode) {
     case CloudsCameraMode::Orbit:
     case CloudsCameraMode::OrbitTerminator:
-        return -glm::half_pi<float>();
+        return -kOrbitMaxLatitudeRadians;
     case CloudsCameraMode::Surface:
     case CloudsCameraMode::SurfaceUp:
     case CloudsCameraMode::High:
@@ -447,8 +461,9 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
 
 [[nodiscard]] float cloud_clamp_pitch(CloudsCameraMode mode, float pitch_offset) {
     const float base_pitch = cloud_camera_base_pitch(mode);
-    return std::clamp(base_pitch + pitch_offset, cloud_min_pitch(mode), kSurfaceMaxPitchRadians) -
-           base_pitch;
+    const float max_pitch =
+        cloud_camera_mode_is_orbit(mode) ? kOrbitMaxLatitudeRadians : kSurfaceMaxPitchRadians;
+    return std::clamp(base_pitch + pitch_offset, cloud_min_pitch(mode), max_pitch) - base_pitch;
 }
 
 [[nodiscard]] float cloud_camera_shader_mode(CloudsCameraMode mode) {
@@ -474,6 +489,30 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
 [[nodiscard]] CloudViewBasis cloud_view_basis(const CloudsConfig& config, float yaw,
                                                      float pitch_offset) {
     const cubey::math::Vec3 surface_up{0.0F, 1.0F, 0.0F};
+    if (cloud_camera_mode_is_orbit(config.camera_mode)) {
+        const float orbit_pitch =
+            std::clamp(cloud_camera_base_pitch(config.camera_mode) + pitch_offset,
+                       -kOrbitMaxLatitudeRadians, kOrbitMaxLatitudeRadians);
+        const float camera_radius = config.planet_radius_m + config.camera_altitude_m;
+        const cubey::math::Vec3 planet_center{0.0F, -config.planet_radius_m, 0.0F};
+        const cubey::math::Vec3 radial{
+            std::sin(yaw) * std::cos(orbit_pitch),
+            std::sin(orbit_pitch),
+            std::cos(yaw) * std::cos(orbit_pitch),
+        };
+        const cubey::math::Vec3 position = planet_center + radial * camera_radius;
+        const cubey::math::Vec3 forward =
+            safe_normalize(planet_center - position, {0.0F, -1.0F, 0.0F});
+        const cubey::math::Vec3 right =
+            safe_normalize(glm::cross(forward, surface_up), {1.0F, 0.0F, 0.0F});
+        return {
+            .position = position,
+            .right = right,
+            .up = safe_normalize(glm::cross(right, forward), {0.0F, 1.0F, 0.0F}),
+            .forward = forward,
+        };
+    }
+
     const float yaw_sin = std::sin(yaw);
     const float yaw_cos = std::cos(yaw);
     const cubey::math::Vec3 flat_forward{yaw_sin, 0.0F, -yaw_cos};
@@ -910,10 +949,12 @@ class CloudApp {
         if (input.mouse_enabled() && input.mouse_button_down(cubey::input::MouseButton::Left)) {
             const cubey::input::PointerDelta delta =
                 input.mouse_button_delta(cubey::input::MouseButton::Left);
-            yaw_ += static_cast<float>(delta.x) * kCameraDragRadiansPerPixel;
-            pitch_ = cloud_clamp_pitch(
-                config_.camera_mode,
-                pitch_ - static_cast<float>(delta.y) * kCameraDragRadiansPerPixel);
+            const bool orbit_camera = cloud_camera_mode_is_orbit(config_.camera_mode);
+            const float yaw_delta = static_cast<float>(delta.x) * kCameraDragRadiansPerPixel;
+            const float pitch_delta = static_cast<float>(delta.y) * kCameraDragRadiansPerPixel;
+            yaw_ += orbit_camera ? -yaw_delta : yaw_delta;
+            pitch_ = cloud_clamp_pitch(config_.camera_mode,
+                                       pitch_ + (orbit_camera ? pitch_delta : -pitch_delta));
         }
         advance_clouds_time(config_, timing.delta_seconds);
         elapsed_seconds_ += static_cast<float>(timing.delta_seconds);

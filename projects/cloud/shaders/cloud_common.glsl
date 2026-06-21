@@ -103,7 +103,12 @@ float cloud_planet_radius() {
 }
 
 float cloud_camera_altitude() {
-    return params.camera_position_radius.y;
+    float radius = cloud_planet_radius();
+    vec3 center = cloud_camera_mode() >= 4
+                      ? vec3(0.0, -radius, 0.0)
+                      : vec3(params.camera_position_radius.x, -radius,
+                             params.camera_position_radius.z);
+    return length(params.camera_position_radius.xyz - center) - radius;
 }
 
 float cloud_surface_view_factor() {
@@ -125,6 +130,9 @@ float cloud_weather_haze_factor() {
 }
 
 vec3 cloud_sphere_center() {
+    if (cloud_camera_mode() >= 4) {
+        return vec3(0.0, -cloud_planet_radius(), 0.0);
+    }
     return vec3(params.camera_position_radius.x, -cloud_planet_radius(),
                 params.camera_position_radius.z);
 }
