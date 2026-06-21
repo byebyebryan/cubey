@@ -1,12 +1,22 @@
 #include "terrain_generator.h"
+#include "terrain_debug_export.h"
 
 #include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <string_view>
 
 namespace {
+
+struct TerrainCliConfig {
+    cubey::projects::terrain::TerrainRegionConfig terrain{};
+    cubey::projects::terrain::TerrainDebugView debug_view =
+        cubey::projects::terrain::TerrainDebugView::Final;
+    std::filesystem::path output_path{};
+    bool headless = false;
+};
 
 [[nodiscard]] std::string_view require_value(int& index, int argc, char** argv,
                                              std::string_view option) {
@@ -56,22 +66,30 @@ namespace {
     }
 }
 
-[[nodiscard]] cubey::projects::terrain::TerrainRegionConfig parse_config(int argc, char** argv) {
-    cubey::projects::terrain::TerrainRegionConfig config{};
+[[nodiscard]] TerrainCliConfig parse_config(int argc, char** argv) {
+    TerrainCliConfig config{};
     for (int index = 1; index < argc; ++index) {
         const std::string_view arg(argv[index]);
         if (arg == "--seed") {
-            config.seed = parse_u64(require_value(index, argc, argv, arg), arg);
+            config.terrain.seed = parse_u64(require_value(index, argc, argv, arg), arg);
         } else if (arg == "--grid-size") {
             const std::uint32_t size = parse_u32(require_value(index, argc, argv, arg), arg);
-            config.grid_width = size;
-            config.grid_height = size;
+            config.terrain.grid_width = size;
+            config.terrain.grid_height = size;
         } else if (arg == "--grid-width") {
-            config.grid_width = parse_u32(require_value(index, argc, argv, arg), arg);
+            config.terrain.grid_width = parse_u32(require_value(index, argc, argv, arg), arg);
         } else if (arg == "--grid-height") {
-            config.grid_height = parse_u32(require_value(index, argc, argv, arg), arg);
+            config.terrain.grid_height = parse_u32(require_value(index, argc, argv, arg), arg);
         } else if (arg == "--cell-size") {
-            config.cell_size_m = parse_float(require_value(index, argc, argv, arg), arg);
+            config.terrain.cell_size_m = parse_float(require_value(index, argc, argv, arg), arg);
+        } else if (arg == "--headless") {
+            config.headless = true;
+        } else if (arg == "--terrain-debug-view") {
+            config.debug_view = cubey::projects::terrain::terrain_debug_view_from_name(
+                require_value(index, argc, argv, arg));
+        } else if (arg == "--output") {
+            config.output_path = std::filesystem::path{
+                std::string(require_value(index, argc, argv, arg))};
         } else {
             throw std::runtime_error("unknown argument: " + std::string(arg));
         }
@@ -83,11 +101,24 @@ namespace {
 
 int main(int argc, char** argv) {
     try {
+        const TerrainCliConfig cli_config = parse_config(argc, argv);
         const cubey::projects::terrain::TerrainRegionProduct product =
-            cubey::projects::terrain::generate_terrain_region(parse_config(argc, argv));
+            cubey::projects::terrain::generate_terrain_region(cli_config.terrain);
+        if (cli_config.headless || !cli_config.output_path.empty()) {
+            if (cli_config.output_path.empty()) {
+                throw std::runtime_error("terrain headless export requires --output");
+            }
+            cubey::projects::terrain::write_terrain_debug_png(product, cli_config.debug_view,
+                                                              cli_config.output_path);
+        }
         std::cout << "terrain: generated product '" << product.config.recipe_id << "' "
                   << product.fields.desc().width << "x" << product.fields.desc().height
-                  << " fields=" << product.fields.field_count() << '\n';
+                  << " fields=" << product.fields.field_count();
+        if (!cli_config.output_path.empty()) {
+            std::cout << " wrote " << cli_config.output_path.string() << " view="
+                      << cubey::projects::terrain::terrain_debug_view_name(cli_config.debug_view);
+        }
+        std::cout << '\n';
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {
         std::cerr << "terrain: " << error.what() << '\n';

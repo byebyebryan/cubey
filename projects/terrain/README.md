@@ -32,4 +32,6 @@ cmake --build --preset dev --target cubey_project_terrain cubey_project_terrain_
 ctest --preset dev -R terrain --output-on-failure
 
 ./build/dev/projects/terrain/terrain
+./build/dev/projects/terrain/terrain --headless --terrain-debug-view final --output outputs/terrain/current/final.png
+./build/dev/projects/terrain/terrain --headless --terrain-debug-view flow-accumulation --grid-size 129 --output outputs/terrain/current/flow-accumulation.png
 ```

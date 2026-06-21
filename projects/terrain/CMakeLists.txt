@@ -1,5 +1,6 @@
 add_executable(cubey_project_terrain
     main.cpp
+    terrain_debug_export.cpp
     terrain_generator.cpp
     terrain_product.cpp
 )
@@ -14,6 +15,7 @@ target_link_libraries(
 
 if (BUILD_TESTING)
     add_executable(cubey_project_terrain_tests
+        terrain_debug_export.cpp
         terrain_generator.cpp
         terrain_product.cpp
         terrain_tests.cpp
