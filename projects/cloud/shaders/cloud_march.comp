@@ -292,6 +292,10 @@ float cloud_orbit_dry_slot_field(vec3 normal, vec3 wind, float feature_count) {
     return clamp(planetary * 0.46 + wave * 0.34 + ridge * 0.20, 0.0, 1.0);
 }
 
+float cloud_orbit_shell_detail_filter(float footprint) {
+    return smoothstep(0.70, 2.80, footprint);
+}
+
 float cloud_orbit_spiral_system(vec3 normal, vec3 center, float radius,
                                 float handedness, vec3 wind, float feature_count) {
     center = normalize(center);
@@ -337,7 +341,8 @@ float cloud_orbit_synoptic_systems(vec3 normal, vec3 wind, float feature_count) 
 }
 
 OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
-                                                          float height_fraction) {
+                                                          float height_fraction,
+                                                          float footprint) {
     if (height_fraction <= 0.0 || height_fraction >= 1.0) {
         return OrbitWeatherSample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     }
@@ -383,6 +388,13 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
     float streak_field =
         cloud_orbit_streak_field(warped_normal, tangent, side, wind, feature_count);
     float micro_field = cloud_orbit_micro_field(warped_normal, wind, feature_count);
+    float detail_visibility = 1.0 - cloud_orbit_shell_detail_filter(footprint);
+    front_field = mix(front_field * 0.72, front_field, detail_visibility);
+    cell_field =
+        mix(smoothstep(0.18, 0.78, cell_field) * 0.82, cell_field, detail_visibility);
+    streak_field = mix(streak_field * 0.58, streak_field, detail_visibility);
+    micro_field =
+        mix(smoothstep(0.34, 0.82, micro_field) * 0.56, micro_field, detail_visibility);
     float structure_field =
         clamp(front_field * 0.38 + cell_field * 0.23 + streak_field * 0.27 +
                   smoothstep(0.34, 0.78, micro_field) * 0.12 +
@@ -446,6 +458,11 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
                               cloud_type,
                               detail_field,
                               height_multiplier);
+}
+
+OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
+                                                          float height_fraction) {
+    return cloud_orbit_weather_sample_from_normal(normal, height_fraction, 0.0);
 }
 
 OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
@@ -801,11 +818,13 @@ float cloud_orbit_shell_pixel_footprint(vec3 origin, vec3 position) {
 
 float cloud_orbit_surface_height_field(vec3 normal, float footprint) {
     OrbitWeatherSample orbit =
-        cloud_orbit_weather_sample_from_normal(normal, cloud_orbit_shell_surface_height_fraction());
-    float footprint_filter = smoothstep(1.0, 3.5, footprint);
+        cloud_orbit_weather_sample_from_normal(normal,
+                                               cloud_orbit_shell_surface_height_fraction(),
+                                               footprint);
+    float footprint_filter = cloud_orbit_shell_detail_filter(footprint);
     float surface_detail = cloud_coverage_modulation(orbit.coverage, orbit.detail, 0.38);
     float detail_height = mix(orbit.coverage, surface_detail, 0.62);
-    return clamp(mix(detail_height, orbit.coverage, footprint_filter * 0.35), 0.0, 1.0);
+    return clamp(mix(detail_height, orbit.coverage, footprint_filter * 0.58), 0.0, 1.0);
 }
 
 vec3 cloud_orbit_surface_normal(vec3 normal, float footprint) {
@@ -830,12 +849,12 @@ vec3 cloud_orbit_surface_normal(vec3 normal, float footprint) {
 
 float cloud_orbit_surface_mass(OrbitWeatherSample orbit, float footprint) {
     float detail_strength = clamp(params.distance_options.w, 0.0, 1.0);
-    float footprint_filter = smoothstep(1.0, 3.5, footprint);
+    float footprint_filter = cloud_orbit_shell_detail_filter(footprint);
     float surface_detail =
         max(cloud_coverage_modulation(orbit.coverage, orbit.detail, 0.34),
             orbit.coverage * 0.58);
     float detail_hull = mix(orbit.coverage, surface_detail, detail_strength * 0.78);
-    float filtered_hull = mix(detail_hull, orbit.coverage, footprint_filter * 0.35);
+    float filtered_hull = mix(detail_hull, orbit.coverage, footprint_filter * 0.62);
     float mass = filtered_hull * (0.62 + 0.38 * orbit.coverage) *
                  (0.78 + 0.22 * orbit.cloud_type);
     return clamp(mass, 0.0, 1.0);
@@ -853,7 +872,8 @@ float cloud_orbit_surface_shadow(vec3 shell_up, vec3 sun_dir, float footprint, f
         vec3 sample_normal = normalize(shell_up + sun_tangent * step_angle);
         OrbitWeatherSample sample_orbit =
             cloud_orbit_weather_sample_from_normal(sample_normal,
-                                                   cloud_orbit_shell_surface_height_fraction());
+                                                   cloud_orbit_shell_surface_height_fraction(),
+                                                   footprint);
         occlusion += cloud_orbit_surface_mass(sample_orbit, footprint);
     }
     occlusion *= 0.25;
@@ -870,19 +890,25 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
 
     vec3 shell_up = normalize(hit_position - cloud_sphere_center());
     float footprint = cloud_orbit_shell_pixel_footprint(origin, hit_position);
+    float view_alignment = abs(dot(shell_up, -direction));
+    float grazing_footprint =
+        (1.0 - smoothstep(0.08, 0.32, view_alignment)) * 2.40;
+    float shell_footprint = max(footprint, grazing_footprint);
     OrbitWeatherSample orbit =
-        cloud_orbit_weather_sample_from_normal(shell_up, cloud_orbit_shell_surface_height_fraction());
+        cloud_orbit_weather_sample_from_normal(shell_up,
+                                               cloud_orbit_shell_surface_height_fraction(),
+                                               shell_footprint);
 
     float base_hull = orbit.coverage;
-    float filtered_hull = cloud_orbit_surface_mass(orbit, footprint);
+    float filtered_hull = cloud_orbit_surface_mass(orbit, shell_footprint);
     float cloud_top_weight = smoothstep(0.16, 0.78, filtered_hull);
     float column_density = filtered_hull * max(params.orbit_options.z, 0.0) * 76.0;
     float alpha = 1.0 - exp(-column_density * cloud_orbit_shell_extinction());
     alpha *= mix(0.94, 1.04, cloud_top_weight);
     alpha = clamp(alpha, 0.0, 0.985);
 
-    float height = cloud_orbit_surface_height_field(shell_up, footprint);
-    vec3 shell_normal = cloud_orbit_surface_normal(shell_up, footprint);
+    float height = cloud_orbit_surface_height_field(shell_up, shell_footprint);
+    vec3 shell_normal = cloud_orbit_surface_normal(shell_up, shell_footprint);
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     float sun_elevation = dot(sun_dir, shell_up);
     float day = smoothstep(-0.18, 0.10, sun_elevation) *
@@ -890,7 +916,7 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
     float ndotl = max(dot(shell_normal, sun_dir), 0.0);
     float light_dot_eye = dot(sun_dir, direction);
     float phase_response = cloud_direct_phase(light_dot_eye);
-    float shadow = cloud_orbit_surface_shadow(shell_up, sun_dir, footprint, day);
+    float shadow = cloud_orbit_surface_shadow(shell_up, sun_dir, shell_footprint, day);
 
     DensitySample density_sample =
         DensitySample(max(alpha, 0.001), base_hull, orbit.detail, orbit.coverage,
@@ -904,7 +930,6 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
                   params.lighting_strengths.y;
     vec3 rim = sun_color * pow(max(light_dot_eye, 0.0), 5.0) *
                (0.10 + 0.26 * day) * params.lighting_strengths.z;
-    float view_alignment = abs(dot(shell_up, -direction));
     float view_grazing = 1.0 - view_alignment;
     vec3 limb_fill = cloud_sky_color(shell_up) * pow(max(view_grazing, 0.0), 2.0) *
                      alpha * mix(0.045, 0.085, cloud_top_weight);
