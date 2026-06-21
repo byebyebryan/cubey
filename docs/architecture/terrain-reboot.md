@@ -106,8 +106,8 @@ fields such as:
   and detail contribution;
 - normal, slope, curvature, and local relief;
 - flow direction, flow accumulation, stream order, and discharge proxy;
-- river mask, water presence, channel width, valley width, and lake/wetland
-  masks when available;
+- river mask, active trunk, tributaries, water presence, channel width, valley
+  width, and lake/wetland masks when available;
 - wetness, sediment/deposition, incision, talus, snow/ice, or sand supply
   fields as process outputs;
 - material masks and dominant material;
@@ -151,8 +151,8 @@ The first slice should include headless diagnostics before GUI polish:
 - final shaded capture;
 - height, slope, curvature, and local relief views;
 - source/driver field views;
-- flow accumulation, stream order, discharge, river width, wetness, and
-  deposition views;
+- flow accumulation, stream order, river mask, trunk, tributaries, river width,
+  wetness, and deposition views;
 - material and vegetation-potential views;
 - JSON or text summaries for seed, recipe, ranges, coverage, and hashes.
 
@@ -216,6 +216,30 @@ Visual tests should follow:
 - capture directories that clearly separate current reboot outputs from legacy
   terrain outputs.
 
+## Current Implementation Checkpoint
+
+The reboot now has a CPU/reference `projects/terrain` product generator and
+headless PNG review path. The current slice is `temperate-mountain-river` over a
+local region, with deterministic source fields, height/slope analysis, static
+flow accumulation, active river trunk and tributary masks, wetness/deposition,
+material masks, vegetation potential, summaries, and tests.
+
+The river driver intentionally moved away from a single authored line. It routes
+over a coherent low-frequency drainage potential derived from the terrain seed,
+then extracts a main channel from the strongest routed catchment and paints soft
+trunk/tributary product fields. This is a useful midpoint because downstream
+fields can consume a connected river product, but it is not a complete hydrology
+solution.
+
+Known limitations:
+
+- D8 routing still leaves angular channel segments in close inspection.
+- The drainage pass does not yet perform real depression fill, breach routing,
+  erosion, or lake/wetland resolution.
+- Tributary selection is intentionally conservative and should be replaced by a
+  more explicit network extraction pass once the route model improves.
+- The final PNG is an inspectable debug composition, not the target renderer.
+
 ## Deferred
 
 Keep the first implementation narrow. Defer:
@@ -229,20 +253,16 @@ Keep the first implementation narrow. Defer:
 - migration of legacy Terrain Lab or procedural-terrain payloads into shared
   foundation APIs.
 
-## Next Implementation Batch
+## Next Implementation Batches
 
-The first implementation batch should be documentation and product-contract
-oriented:
+The next terrain batches should improve the underlying drivers before adding
+more biome labels:
 
-1. Add `projects/terrain` with a minimal README and no sprawling feature matrix.
-2. Define the first terrain config and product structs around `FieldSet2D`.
-3. Add a deterministic headless generator for one local region.
-4. Implement the first broad elevation/ridge source fields.
-5. Add a small static hydrology pass or adapter spike for flow accumulation and
-   stream order.
-6. Write unit tests for deterministic fields and range summaries.
-7. Add debug exports before investing in final visual polish.
-
-That gives the reboot a known-good midpoint: a reproducible terrain product that
-can be inspected, tested, and later consumed by planet, ocean, foliage, and
-renderer code.
+1. Replace or augment the current D8 channel path with vectorized/smoothed
+   channel extraction, so rivers do not read as grid stair-steps.
+2. Evaluate a small depression-fill or breach-routing pass from the hydrology
+   references before adding lakes, canyons, or wider river systems.
+3. Split mountain/ridge drivers into explicit terrain products instead of
+   treating mountains as only material response over height noise.
+4. Add capture summaries or manifest metadata for the review set so image
+   artifacts can be compared without relying only on manual inspection.

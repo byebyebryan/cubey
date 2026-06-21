@@ -18,9 +18,9 @@ rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
 The current generator emits source fields, height/slope analysis, static
-drainage, river hierarchy proxies, wetness/deposition, material masks, and
-vegetation potential. The drainage pass is deliberately process-informed rather
-than a full hydraulic simulation.
+drainage, active river trunk and tributary fields, wetness/deposition, material
+masks, and vegetation potential. The drainage pass is deliberately
+process-informed rather than a full hydraulic simulation.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -36,3 +36,34 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain --headless --terrain-debug-view flow-accumulation --grid-size 129 --output outputs/terrain/current/flow-accumulation.png
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --terrain-debug-view all --terrain-output-dir outputs/terrain/current
 ```
+
+## Current Review Outputs
+
+Use `--terrain-debug-view all --terrain-output-dir outputs/terrain/current` for
+the standard review set. The current local review images are generated at
+`513x513`, large enough to inspect the field structure rather than just a tiny
+thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
+review artifact.
+
+The review set includes:
+
+- `final.png`
+- `height.png`
+- `slope.png`
+- `ridge-uplift.png`
+- `flow-accumulation.png`
+- `stream-order.png`
+- `river-mask.png`
+- `river-trunk.png`
+- `tributaries.png`
+- `wetness.png`
+- `deposition.png`
+- `material.png`
+- `vegetation.png`
+
+The active river fields come from a coherent low-frequency drainage potential
+plus routed flow accumulation. `river-mask` is the combined product of the soft
+`river-trunk` and `tributaries` fields. The current D8 routing still leaves
+visible angular segments; smoothing/vectorizing the extracted channel path or
+adding a stronger depression-fill/breach hydrology pass is a later quality
+target.
