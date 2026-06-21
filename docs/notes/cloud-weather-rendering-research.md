@@ -824,3 +824,28 @@ Acceptance target: orbit captures should gain visible satellite-scale detail
 without reintroducing square patch seams, longitude seams, or a full-planet
 storm cap. Surface and high captures should remain stable while this orbit path
 is proven.
+
+## Direct Orbit Detail Checkpoint 2026-06-20
+
+`projects/cloud` now keeps orbit weather as a direct sphere-space procedural
+field. The generated 2D orbit-weather texture path was removed after the first
+attempt failed the believability target: it avoided repeated per-sample formula
+work, but it exposed map/projection discontinuities and still read too bare from
+orbit.
+
+The active shader path separates the layers that matter for orbit read:
+
+- broad coverage gates sparse regional systems from `clouds.coverage` and
+  `clouds.weather_scale_km`;
+- fronts, cells, streaks, and micro wisps are evaluated directly from the
+  planet normal, so they have no longitude seam or 2D texture boundary;
+- detail is used as hull erosion, not as a second planet-wide coverage mask;
+- the surface/local path still owns the 3D base/detail volume sampling and local
+  weather texture.
+
+The current capture checkpoint is
+`outputs/cloud-procedural-orbit-review/`. It looks better than the failed texture
+product because square patch seams are gone and orbit final has more small-scale
+breakup. Remaining work is still visual rather than solved architecture:
+high-oblique transition quality, limb/debug-ray artifacts, and physically
+believable satellite-scale cloud organization are not finished.

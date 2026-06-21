@@ -14,7 +14,6 @@ layout(set = 0, binding = 2) uniform sampler3D base_noise_texture;
 layout(set = 0, binding = 3) uniform sampler3D detail_noise_texture;
 layout(set = 0, binding = 4) uniform sampler2D weather_texture;
 layout(rgba16f, set = 0, binding = 5) uniform writeonly image2D cloud_metadata;
-layout(set = 0, binding = 6) uniform sampler2D orbit_weather_texture;
 
 const vec4 STRATUS_GRADIENT = vec4(0.00, 0.10, 0.20, 0.30);
 const vec4 STRATOCUMULUS_GRADIENT = vec4(0.02, 0.20, 0.48, 0.625);
@@ -52,13 +51,6 @@ struct OrbitWeatherSample {
     float cloud_type;
     float weather_edge;
     float height_multiplier;
-};
-
-struct OrbitStructureSample {
-    float fronts;
-    float cells;
-    float streaks;
-    float combined;
 };
 
 struct MarchResult {
@@ -139,6 +131,49 @@ float cloud_coverage_modulation(float coverage, float detail, float filter_width
                  0.0, 1.0);
 }
 
+float cloud_orbit_smooth_noise(vec3 p) {
+    float sum = 0.0;
+    float weight = 0.0;
+    sum += sin(dot(p, normalize(vec3(0.61, 0.37, 0.70))) + 0.31) * 0.20;
+    weight += 0.20;
+    sum += sin(dot(p, normalize(vec3(-0.46, 0.82, 0.34))) * 1.31 + 1.73) * 0.18;
+    weight += 0.18;
+    sum += sin(dot(p, normalize(vec3(0.18, -0.67, 0.72))) * 1.73 + 3.21) * 0.16;
+    weight += 0.16;
+    sum += sin(dot(p, normalize(vec3(0.86, 0.12, -0.49))) * 2.11 + 2.47) * 0.14;
+    weight += 0.14;
+    sum += sin(dot(p, normalize(vec3(-0.21, -0.92, 0.32))) * 2.57 + 5.11) * 0.12;
+    weight += 0.12;
+    sum += sin(dot(p, normalize(vec3(0.44, -0.26, -0.86))) * 3.19 + 4.03) * 0.10;
+    weight += 0.10;
+    sum += sin(dot(p, normalize(vec3(-0.79, 0.48, -0.38))) * 3.83 + 0.89) * 0.10;
+    weight += 0.10;
+    return clamp(0.5 + 0.5 * sum / max(weight, 0.0001), 0.0, 1.0);
+}
+
+float cloud_orbit_fbm(vec3 p) {
+    float sum = 0.0;
+    float amplitude = 0.5;
+    float normalizer = 0.0;
+    for (int i = 0; i < 5; ++i) {
+        sum += cloud_orbit_smooth_noise(p) * amplitude;
+        normalizer += amplitude;
+        p = p * 2.07 + vec3(5.17, 11.43, 2.79);
+        amplitude *= 0.5;
+    }
+    return sum / max(normalizer, 0.0001);
+}
+
+float cloud_orbit_ridge(vec3 p) {
+    return 1.0 - abs(cloud_orbit_fbm(p) * 2.0 - 1.0);
+}
+
+float cloud_orbit_feature_count() {
+    float circumference_m = max(cloud_planet_radius() * 2.0 * CLOUD_PI, 1.0);
+    float feature_scale_m = max(params.weather.z * 1000.0, 1000.0);
+    return clamp(circumference_m / feature_scale_m, 4.0, 160.0);
+}
+
 float cloud_orbit_wave_field(vec3 p, float frequency) {
     float sum = 0.0;
     float weight = 0.0;
@@ -155,145 +190,59 @@ float cloud_orbit_wave_field(vec3 p, float frequency) {
     return clamp(0.5 + 0.5 * sum / max(weight, 0.0001), 0.0, 1.0);
 }
 
-float cloud_orbit_weather_feature_count() {
-    float circumference = max(cloud_planet_radius() * 2.0 * CLOUD_PI, 1.0);
-    float feature_scale = max(params.weather.z * 1000.0, 1000.0);
-    return clamp(circumference / feature_scale, 4.0, 64.0);
-}
-
-float cloud_orbit_scaled_frequency(float multiplier) {
-    return max(cloud_orbit_weather_feature_count() * multiplier, 0.25);
-}
-
-float cloud_orbit_ridge(float value, float start, float end) {
-    float ridge = 1.0 - abs(value * 2.0 - 1.0);
-    return smoothstep(start, end, ridge);
-}
-
 vec3 cloud_orbit_warp(vec3 normal, vec3 wind) {
-    vec3 p = normal + wind * 0.055;
-    return vec3(cloud_orbit_wave_field(p + vec3(0.17, 0.03, 0.11),
-                                       cloud_orbit_scaled_frequency(0.11)),
-                cloud_orbit_wave_field(p + vec3(0.41, 0.29, 0.07),
-                                       cloud_orbit_scaled_frequency(0.13)),
-                cloud_orbit_wave_field(p + vec3(0.09, 0.37, 0.43),
-                                       cloud_orbit_scaled_frequency(0.15))) *
-               2.0 -
-           vec3(1.0);
+    float feature_count = cloud_orbit_feature_count();
+    vec3 p = normal * feature_count * 0.12 + wind * 0.08;
+    vec3 warp =
+        vec3(cloud_orbit_fbm(p + vec3(11.1, 3.7, 1.9)),
+             cloud_orbit_fbm(p + vec3(2.6, 17.3, 5.1)),
+             cloud_orbit_fbm(p + vec3(7.4, 4.2, 23.8))) *
+            2.0 -
+        vec3(1.0);
+    return warp - normal * dot(warp, normal);
 }
 
-float cloud_orbit_wave_turbulence(vec3 normal, vec3 wind) {
-    vec3 warp_a = cloud_orbit_warp(normal + vec3(0.23, 0.11, 0.37), wind);
-    vec3 p = normalize(normal + warp_a * 0.24);
-    vec3 warp_b = cloud_orbit_warp(p + vec3(0.47, 0.29, 0.13), wind);
-    vec3 q = normalize(p + warp_b * 0.16);
-    vec3 r = normalize(q + p * 0.35 + wind * 0.035);
-
-    float broad_detail =
-        cloud_orbit_wave_field(p + wind * 0.075, cloud_orbit_scaled_frequency(0.56));
-    float mid_detail =
-        cloud_orbit_wave_field(q - wind * 0.055, cloud_orbit_scaled_frequency(0.97));
-    float fine_detail =
-        cloud_orbit_wave_field(r + wind * 0.120, cloud_orbit_scaled_frequency(1.56));
-    float hole_detail =
-        cloud_orbit_wave_field(normalize(q + warp_b * 0.21),
-                               cloud_orbit_scaled_frequency(1.28));
-    float filament =
-        1.0 - abs(2.0 * cloud_orbit_wave_field(normalize(p + q * 0.65),
-                                               cloud_orbit_scaled_frequency(1.73)) - 1.0);
-    float puffs =
-        smoothstep(0.46, 0.72, broad_detail * 0.44 + mid_detail * 0.34 + fine_detail * 0.22);
-    float holes = smoothstep(0.32, 0.66, hole_detail);
-    float wisps = smoothstep(0.58, 0.88, fine_detail) *
-                  smoothstep(0.42, 0.74, filament);
-    return clamp(puffs * holes * 0.82 + wisps * 0.26, 0.0, 1.0);
-}
-
-float cloud_orbit_texture_breakup(vec3 normal, vec3 wind) {
-    vec3 warp_a = cloud_orbit_warp(normal + vec3(0.31, 0.17, 0.43), wind);
-    vec3 p = normalize(normal + warp_a * 0.16 + wind * 0.045);
-    vec3 warp_b = cloud_orbit_warp(p + vec3(0.13, 0.47, 0.29), wind);
-    vec3 q = normalize(p + warp_b * 0.13);
-    vec3 r = normalize(normal + warp_a * 0.28 - warp_b * 0.08);
-
-    vec3 low_coord = p * cloud_orbit_scaled_frequency(0.045) + vec3(0.50) + wind * 0.035;
-    vec3 mid_coord = q * cloud_orbit_scaled_frequency(0.160) + vec3(0.50) + wind * 0.080;
-    vec3 fine_coord = r * cloud_orbit_scaled_frequency(0.520) + vec3(0.50) + wind * 0.160;
-    vec3 micro_coord = normalize(q + r * 0.57) * cloud_orbit_scaled_frequency(0.880) +
-                       vec3(0.50) + wind * 0.230;
-
-    vec4 low = textureLod(base_noise_texture, low_coord, 0.0);
-    vec4 mid = textureLod(base_noise_texture, mid_coord, 0.0);
-    vec3 detail = textureLod(detail_noise_texture, fine_coord, 0.0).rgb;
-    vec3 micro = textureLod(detail_noise_texture, micro_coord, 0.0).rgb;
-    float low_shape = smoothstep(0.10, 0.82, low.r);
-    float mid_shape = smoothstep(0.08, 0.78, mid.r);
-    float retained_detail = 1.0 - dot(detail, vec3(0.625, 0.25, 0.125));
-    float fine_shape = smoothstep(0.24, 0.76, retained_detail);
-    float retained_micro = 1.0 - dot(micro, vec3(0.55, 0.30, 0.15));
-    float micro_shape = smoothstep(0.28, 0.82, retained_micro);
-    return clamp(low_shape * 0.34 + mid_shape * 0.28 + fine_shape * 0.25 +
-                     micro_shape * 0.13,
-                 0.0, 1.0);
-}
-
-OrbitStructureSample cloud_orbit_structure_sample(vec3 normal, vec3 warped_normal, vec3 wind,
-                                                     float edge_noise, float wave_breakup) {
+float cloud_orbit_front_field(vec3 normal, vec3 tangent, vec3 side, vec3 wind,
+                              float feature_count) {
     float front_weight = clamp(params.weather_feature_weights.x, 0.0, 2.0);
-    float cell_weight = clamp(params.weather_feature_weights.y, 0.0, 2.0);
-    float streak_weight = clamp(params.weather_feature_weights.z, 0.0, 2.0);
-    float total_weight =
-        max(front_weight * 0.34 + cell_weight * 0.48 + streak_weight * 0.18, 0.001);
-
-    vec3 front_warp =
-        cloud_orbit_warp(warped_normal + vec3(0.61, 0.17, 0.39), wind);
-    vec3 front_p = normalize(warped_normal + front_warp * 0.22 + wind * 0.080);
-    float front_a = cloud_orbit_ridge(
-        cloud_orbit_wave_field(front_p + wind * 0.040, cloud_orbit_scaled_frequency(0.72)),
-        0.34, 0.88);
-    float front_b = cloud_orbit_ridge(
-        cloud_orbit_wave_field(normalize(front_p + normal * 0.38 - front_warp * 0.10),
-                               cloud_orbit_scaled_frequency(1.08)),
-        0.44, 0.90);
-    float fronts = clamp(front_a * 0.68 + front_b * 0.32, 0.0, 1.0);
-
-    vec3 cell_warp = cloud_orbit_warp(normal + vec3(0.29, 0.53, 0.11), wind);
-    vec3 cell_p = normalize(normal + cell_warp * 0.30 - wind * 0.050);
-    float cell_broad =
-        cloud_orbit_wave_field(cell_p + wind * 0.030, cloud_orbit_scaled_frequency(1.18));
-    float cell_mid = cloud_orbit_wave_field(normalize(cell_p + cell_warp * 0.18),
-                                            cloud_orbit_scaled_frequency(2.10));
-    float cell_cluster =
-        smoothstep(0.42, 0.74, cell_broad * 0.48 + cell_mid * 0.34 + edge_noise * 0.18);
-    float cell_holes = 1.0 - smoothstep(0.58, 0.86, wave_breakup * 0.55 + cell_mid * 0.45);
-    float cells = clamp(cell_cluster * mix(0.62, 1.0, cell_holes), 0.0, 1.0);
-
-    vec3 wind_axis = normalize(WIND_DIRECTION + vec3(0.19, -0.06, 0.23));
-    vec3 side_axis = normalize(cross(wind_axis, vec3(0.0, 1.0, 0.0)) + vec3(0.03, 0.0, 0.02));
-    float along = dot(normal, wind_axis);
-    float across = dot(normal, side_axis);
-    float streak_frequency = cloud_orbit_scaled_frequency(1.38);
-    float streak_wave =
-        sin(across * streak_frequency * 2.35 + along * streak_frequency * 0.62 +
-            params.weather.w * 0.000018);
-    float streak_ridge = smoothstep(0.52, 0.92, 1.0 - abs(streak_wave));
-    float streak_breaks =
-        smoothstep(0.36, 0.74,
-                   cloud_orbit_wave_field(normalize(warped_normal + wind * 0.100),
-                                          cloud_orbit_scaled_frequency(1.36)));
-    float streaks = clamp(streak_ridge * streak_breaks * 0.72, 0.0, 1.0);
-
-    float combined = (fronts * front_weight * 0.34 + cells * cell_weight * 0.48 +
-                      streaks * streak_weight * 0.18) /
-                     total_weight;
-    combined = clamp(combined * 0.62 + edge_noise * 0.23 + wave_breakup * 0.15, 0.0, 1.0);
-    return OrbitStructureSample(fronts, cells, streaks, combined);
+    float band_coord = dot(normal, side) * feature_count * (0.48 + front_weight * 0.32);
+    float shear_coord = dot(normal, tangent) * feature_count * 0.18;
+    float curl = cloud_orbit_fbm(normal * feature_count * 0.42 + wind * 0.09) * 3.4;
+    float bands = 1.0 - abs(sin(band_coord + shear_coord + curl));
+    float broken = cloud_orbit_fbm(normal * feature_count * 1.10 + wind * 0.21);
+    return smoothstep(0.48, 0.88, bands) * smoothstep(0.24, 0.72, broken) *
+           min(front_weight, 1.0);
 }
 
-vec2 cloud_orbit_weather_uv(vec3 normal) {
-    float longitude = atan(normal.x, normal.z);
-    float latitude = asin(clamp(normal.y, -1.0, 1.0));
-    return vec2(longitude / (CLOUD_PI * 2.0) + 0.5, 0.5 - latitude / CLOUD_PI);
+float cloud_orbit_cell_field(vec3 normal, vec3 wind, float feature_count) {
+    float cell_weight = clamp(params.weather_feature_weights.y, 0.0, 2.0);
+    float cells =
+        cloud_orbit_fbm(normal * feature_count * (0.64 + cell_weight * 0.54) + wind * 0.16);
+    float holes =
+        cloud_orbit_fbm(normal * feature_count * (1.24 + cell_weight * 0.68) - wind * 0.09);
+    float clustered = smoothstep(0.36, 0.74, cells);
+    float carved = 1.0 - smoothstep(0.62, 0.88, holes);
+    return clamp(clustered * carved * min(cell_weight, 1.0), 0.0, 1.0);
+}
+
+float cloud_orbit_streak_field(vec3 normal, vec3 tangent, vec3 side, vec3 wind,
+                               float feature_count) {
+    float streak_weight = clamp(params.weather_feature_weights.z, 0.0, 2.0);
+    float line_coord = dot(normal, side) * feature_count * (1.85 + streak_weight * 1.60);
+    float wander = cloud_orbit_fbm(normal * feature_count * 0.74 + wind * 0.24) * 4.2;
+    float lines = 1.0 - abs(sin(line_coord + dot(normal, tangent) * 1.7 + wander));
+    float breaks =
+        smoothstep(0.32, 0.74,
+                   cloud_orbit_fbm(normal * feature_count * 2.25 - wind * 0.31));
+    return smoothstep(0.70, 0.95, lines) * breaks * min(streak_weight, 1.0);
+}
+
+float cloud_orbit_micro_field(vec3 normal, vec3 wind, float feature_count) {
+    float fine = cloud_orbit_fbm(normal * feature_count * 3.6 + wind * 0.45);
+    float finer = cloud_orbit_fbm(normal * feature_count * 7.2 - wind * 0.63);
+    float ridges = cloud_orbit_ridge(normal * feature_count * 5.0 + wind * 0.38);
+    float wisps = cloud_orbit_ridge(normal * feature_count * 11.5 - wind * 0.74);
+    return clamp(fine * 0.30 + finer * 0.30 + ridges * 0.22 + wisps * 0.18, 0.0, 1.0);
 }
 
 OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
@@ -303,24 +252,73 @@ OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
     }
 
     vec3 normal = normalize(position - cloud_sphere_center());
-    float wind_fraction =
-        params.weather.w / max(cloud_planet_radius() * 2.0 * CLOUD_PI, 1.0);
-    vec2 uv = cloud_orbit_weather_uv(normal);
-    uv.x = fract(uv.x + wind_fraction * 0.85);
-    vec4 product = texture(orbit_weather_texture, uv);
-    float detail_strength = clamp(params.distance_options.w, 0.0, 1.0);
-    float coverage = clamp(product.r, 0.0, 1.0);
-    float detail_field = clamp(product.g, 0.0, 1.0);
-    float cloud_type = clamp(product.b, 0.0, 1.0);
+    float circumference_m = max(cloud_planet_radius() * 2.0 * CLOUD_PI, 1.0);
+    float feature_count = cloud_orbit_feature_count();
+    vec3 wind = WIND_DIRECTION * (params.weather.w / circumference_m) * feature_count;
+    vec3 warped_normal = normalize(normal + cloud_orbit_warp(normal, wind) * 0.22);
+    vec3 tangent_raw = WIND_DIRECTION - warped_normal * dot(WIND_DIRECTION, warped_normal);
+    if (dot(tangent_raw, tangent_raw) < 0.0001) {
+        tangent_raw = cross(warped_normal, vec3(0.0, 1.0, 0.0));
+    }
+    if (dot(tangent_raw, tangent_raw) < 0.0001) {
+        tangent_raw = cross(warped_normal, vec3(0.0, 0.0, 1.0));
+    }
+    vec3 tangent = normalize(tangent_raw);
+    vec3 side = normalize(cross(warped_normal, tangent));
+
+    float macro_a =
+        cloud_orbit_fbm(warped_normal * feature_count * 0.105 + wind * 0.045);
+    float macro_b =
+        cloud_orbit_wave_field(warped_normal + wind * 0.020, feature_count * 0.175);
+    float macro_c =
+        cloud_orbit_fbm(normal * feature_count * 0.245 + wind * 0.075 + vec3(8.1, 1.7, 4.2));
+    float broad_field = clamp(macro_a * 0.54 + macro_b * 0.28 + macro_c * 0.18, 0.0, 1.0);
+
+    float front_field = cloud_orbit_front_field(warped_normal, tangent, side, wind, feature_count);
+    float cell_field = cloud_orbit_cell_field(warped_normal, wind, feature_count);
+    float streak_field =
+        cloud_orbit_streak_field(warped_normal, tangent, side, wind, feature_count);
+    float micro_field = cloud_orbit_micro_field(warped_normal, wind, feature_count);
+    float structure_field =
+        clamp(front_field * 0.30 + cell_field * 0.31 + streak_field * 0.25 +
+                  smoothstep(0.40, 0.82, micro_field) * 0.14,
+              0.0, 1.0);
+    float edge_detail =
+        clamp(front_field * 0.23 + cell_field * 0.22 + streak_field * 0.24 +
+                  smoothstep(0.28, 0.78, micro_field) * 0.31,
+              0.0, 1.0);
+
+    float global_coverage = clamp(params.weather.x, 0.0, 1.0);
+    float softness = clamp(params.sampling_options.z, 0.02, 0.60);
+    float threshold = clamp(0.80 - global_coverage * 0.52, 0.25, 0.92);
+    float envelope = smoothstep(threshold - softness * 0.42,
+                                threshold + softness * 0.72,
+                                broad_field);
+    float broken = smoothstep(0.20 - softness * 0.10,
+                              0.56 + softness * 0.08,
+                              structure_field);
+    float hole_field =
+        clamp(micro_field * 0.56 +
+                  cloud_orbit_ridge(warped_normal * feature_count * 8.8 - wind * 0.52) * 0.44,
+              0.0, 1.0);
+    float edge_holes = 1.0 - smoothstep(0.50, 0.84, hole_field) * 0.74;
+    float scattered =
+        smoothstep(0.78, 0.93,
+                   micro_field * 0.55 + cell_field * 0.28 + macro_c * 0.17) *
+        global_coverage * 0.10;
+    float coverage = clamp(envelope * mix(0.22, 1.0, broken) * edge_holes + scattered,
+                           0.0, 1.0);
+
+    float detail_field = clamp(edge_detail, 0.0, 1.0);
+    float type_field =
+        clamp(macro_b * 0.40 + front_field * 0.20 + cell_field * 0.25 +
+                  streak_field * 0.15,
+              0.0, 1.0);
+    float cloud_type = clamp(mix(type_field, detail_field, 0.16), 0.0, 1.0);
     float height_multiplier = max(cloud_density_gradient(height_fraction, cloud_type), 0.0);
     float base_hull = coverage * height_multiplier;
-    float product_hull = clamp(product.a, 0.0, 1.0) * height_multiplier;
-    float erosion_width = mix(0.82, 0.38, detail_strength);
-    float eroded_hull = cloud_coverage_modulation(base_hull, detail_field, erosion_width);
-    float detail_contrast = smoothstep(0.24, 0.82, detail_field);
-    float textured_hull = clamp(product_hull * mix(0.52, 1.48, detail_contrast), 0.0, 1.0);
-    float structured_hull = mix(textured_hull, eroded_hull, 0.18 + detail_strength * 0.32);
-    float hull = mix(base_hull, structured_hull, 0.20 + detail_strength * 0.72);
+    float eroded_hull = cloud_coverage_modulation(base_hull, detail_field, 0.34);
+    float hull = mix(base_hull, eroded_hull, 0.88);
     return OrbitWeatherSample(clamp(coverage, 0.0, 1.0),
                               detail_field,
                               clamp(hull, 0.0, 1.0),
