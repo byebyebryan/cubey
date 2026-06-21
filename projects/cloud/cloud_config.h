@@ -85,6 +85,16 @@ inline constexpr std::array<CloudsDistanceMode, 4> kCloudsDistanceModes{
     CloudsDistanceMode::BlendDebug,
 };
 
+enum class CloudsOrbitRepresentation : std::uint32_t {
+    VolumeRaymarch = 0,
+    SurfaceShell = 1,
+};
+
+inline constexpr std::array<CloudsOrbitRepresentation, 2> kCloudsOrbitRepresentations{
+    CloudsOrbitRepresentation::VolumeRaymarch,
+    CloudsOrbitRepresentation::SurfaceShell,
+};
+
 enum class CloudsDebugView : std::uint32_t {
     Final = 0,
     Weather = 1,
@@ -178,6 +188,7 @@ struct CloudsConfig {
     CloudsSamplingMode sampling_mode = CloudsSamplingMode::Bayer;
     CloudsBackgroundMode background_mode = CloudsBackgroundMode::Atmosphere;
     CloudsDistanceMode distance_mode = CloudsDistanceMode::Auto;
+    CloudsOrbitRepresentation orbit_representation = CloudsOrbitRepresentation::VolumeRaymarch;
     CloudsDebugView debug_view = CloudsDebugView::Final;
     bool temporal_enabled = true;
     CloudsTimeConfig time{};
@@ -241,6 +252,9 @@ void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset prese
 [[nodiscard]] const char* clouds_background_mode_name(CloudsBackgroundMode mode);
 [[nodiscard]] CloudsDistanceMode clouds_distance_mode_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_distance_mode_name(CloudsDistanceMode mode);
+[[nodiscard]] CloudsOrbitRepresentation
+clouds_orbit_representation_from_string(std::string_view value);
+[[nodiscard]] const char* clouds_orbit_representation_name(CloudsOrbitRepresentation mode);
 [[nodiscard]] CloudsDebugView clouds_debug_view_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_debug_view_name(CloudsDebugView view);
 [[nodiscard]] CloudsDebugView next_clouds_debug_view(CloudsDebugView view);

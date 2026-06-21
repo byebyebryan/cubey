@@ -92,6 +92,16 @@ void test_names_and_next_debug_view() {
                 cubey::projects::cloud::CloudsDistanceMode::BlendDebug) ==
                 std::string_view("blend-debug"),
             "distance mode name should use canonical spelling");
+    require(cubey::projects::cloud::clouds_orbit_representation_from_string("volume") ==
+                cubey::projects::cloud::CloudsOrbitRepresentation::VolumeRaymarch,
+            "volume orbit representation should parse");
+    require(cubey::projects::cloud::clouds_orbit_representation_from_string("surface-shell") ==
+                cubey::projects::cloud::CloudsOrbitRepresentation::SurfaceShell,
+            "surface shell orbit representation should parse");
+    require(cubey::projects::cloud::clouds_orbit_representation_name(
+                cubey::projects::cloud::CloudsOrbitRepresentation::SurfaceShell) ==
+                std::string_view("surface-shell"),
+            "orbit representation name should use canonical spelling");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::Final) ==
                 cubey::projects::cloud::CloudsDebugView::RawFinal,
@@ -254,6 +264,7 @@ void test_run_config_mapping() {
     run_config.clouds.sampling_mode = "bayer";
     run_config.clouds.background_mode = "water-context";
     run_config.clouds.distance_mode = "orbit-shell";
+    run_config.clouds.orbit_representation = "surface-shell";
     run_config.clouds.planet_radius_m = 1000000.0F;
     run_config.clouds.bottom_altitude_m = 2000.0F;
     run_config.clouds.top_altitude_m = 9000.0F;
@@ -309,6 +320,9 @@ void test_run_config_mapping() {
             "cloud background mode should map from run config");
     require(config.distance_mode == cubey::projects::cloud::CloudsDistanceMode::OrbitShell,
             "cloud distance mode should map from run config");
+    require(config.orbit_representation ==
+                cubey::projects::cloud::CloudsOrbitRepresentation::SurfaceShell,
+            "cloud orbit representation should map from run config");
     require(config.debug_view == cubey::projects::cloud::CloudsDebugView::Density,
             "cloud debug view should map from common debug config");
     require_near(config.camera_altitude_m,
@@ -414,6 +428,9 @@ void test_weather_preset_defaults() {
             "default background should use atmosphere only");
     require(config.distance_mode == cubey::projects::cloud::CloudsDistanceMode::Auto,
             "default distance mode should be auto");
+    require(config.orbit_representation ==
+                cubey::projects::cloud::CloudsOrbitRepresentation::VolumeRaymarch,
+            "default orbit representation should be volume raymarch");
     require_near(config.jitter_strength, 1.0F, 0.001F,
                  "default jitter should match reference Bayer strength");
     require_near(config.weather_influence, 0.0F, 0.001F,
@@ -622,6 +639,8 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.sampling_mode", "bayer");
     cubey::set_run_config_option_from_string(config, "clouds.background_mode", "water-context");
     cubey::set_run_config_option_from_string(config, "clouds.distance_mode", "blend-debug");
+    cubey::set_run_config_option_from_string(config, "clouds.orbit_representation",
+                                             "surface-shell");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.weather_scale_km", "120");
     cubey::set_run_config_option_from_string(config, "clouds.vertical_shear_fraction", "0.20");
@@ -662,6 +681,8 @@ void test_config_descriptors() {
             "cloud background mode descriptor should set");
     require(config.clouds.distance_mode == "blend-debug",
             "cloud distance mode descriptor should set");
+    require(config.clouds.orbit_representation == "surface-shell",
+            "cloud orbit representation descriptor should set");
     require_near(config.clouds.coverage, 0.44F, 0.001F,
                  "cloud coverage descriptor should set");
     require_near(config.clouds.weather_scale_km, 120.0F, 0.001F,

@@ -240,6 +240,7 @@ struct RunConfig {
         std::string sampling_mode{};
         std::string background_mode{};
         std::string distance_mode{};
+        std::string orbit_representation{};
         float planet_radius_m = kRunConfigUnsetFloat;
         float camera_altitude_m = kRunConfigUnsetFloat;
         float bottom_altitude_m = kRunConfigUnsetFloat;

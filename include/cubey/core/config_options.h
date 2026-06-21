@@ -155,6 +155,7 @@ enum class RunConfigOptionId {
     CloudRenderPath,
     CloudBackgroundMode,
     CloudDistanceMode,
+    CloudOrbitRepresentation,
     CloudPlanetRadius,
     CloudCameraAltitude,
     CloudBottomAltitude,

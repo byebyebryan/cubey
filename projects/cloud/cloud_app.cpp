@@ -104,6 +104,10 @@ constexpr std::array<CloudsDistanceMode, 4> kCloudDistanceModes{
     CloudsDistanceMode::OrbitShell,
     CloudsDistanceMode::BlendDebug,
 };
+constexpr std::array<CloudsOrbitRepresentation, 2> kCloudOrbitRepresentations{
+    CloudsOrbitRepresentation::VolumeRaymarch,
+    CloudsOrbitRepresentation::SurfaceShell,
+};
 constexpr std::array<CloudsDebugView, 31> kCloudDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
@@ -467,6 +471,10 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     return static_cast<float>(static_cast<std::uint32_t>(mode));
 }
 
+[[nodiscard]] float cloud_orbit_representation_value(CloudsOrbitRepresentation mode) {
+    return static_cast<float>(static_cast<std::uint32_t>(mode));
+}
+
 [[nodiscard]] CloudViewBasis cloud_view_basis(const CloudsConfig& config, float yaw,
                                                      float pitch_offset) {
     const cubey::math::Vec3 surface_up{0.0F, 1.0F, 0.0F};
@@ -621,7 +629,8 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
                              config.orbit_transition_end_m,
                              config.orbit_detail_strength},
         .orbit_options = {config.far_shell_start_m, config.far_shell_end_m,
-                          config.orbit_density_scale, 0.0F},
+                          config.orbit_density_scale,
+                          cloud_orbit_representation_value(config.orbit_representation)},
     };
 }
 
@@ -946,6 +955,8 @@ class CloudApp {
                         clouds_background_mode_name);
         draw_enum_combo("Distance", config_.distance_mode, kCloudDistanceModes,
                         clouds_distance_mode_name);
+        draw_enum_combo("Orbit repr.", config_.orbit_representation, kCloudOrbitRepresentations,
+                        clouds_orbit_representation_name);
         ImGui::Separator();
         ImGui::SliderFloat("Time", &config_.time.time_hours, 0.0F, 24.0F, "%.2f h");
         ImGui::SliderFloat("Coverage", &config_.coverage, 0.0F, 1.0F, "%.2f");

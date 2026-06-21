@@ -308,6 +308,27 @@ const char* clouds_distance_mode_name(CloudsDistanceMode mode) {
     return "auto";
 }
 
+CloudsOrbitRepresentation clouds_orbit_representation_from_string(std::string_view value) {
+    if (value.empty() || value == "volume" || value == "raymarch" ||
+        value == "volume-raymarch") {
+        return CloudsOrbitRepresentation::VolumeRaymarch;
+    }
+    if (value == "surface-shell" || value == "shell") {
+        return CloudsOrbitRepresentation::SurfaceShell;
+    }
+    throw std::runtime_error("unknown cloud orbit representation: " + std::string(value));
+}
+
+const char* clouds_orbit_representation_name(CloudsOrbitRepresentation mode) {
+    switch (mode) {
+    case CloudsOrbitRepresentation::VolumeRaymarch:
+        return "volume";
+    case CloudsOrbitRepresentation::SurfaceShell:
+        return "surface-shell";
+    }
+    return "volume";
+}
+
 CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value.empty() || value == "final") {
         return CloudsDebugView::Final;
@@ -583,6 +604,10 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     }
     if (!run_config.clouds.distance_mode.empty()) {
         config.distance_mode = clouds_distance_mode_from_string(run_config.clouds.distance_mode);
+    }
+    if (!run_config.clouds.orbit_representation.empty()) {
+        config.orbit_representation =
+            clouds_orbit_representation_from_string(run_config.clouds.orbit_representation);
     }
     if (!run_config.debug_view.empty()) {
         config.debug_view = clouds_debug_view_from_string(run_config.debug_view);

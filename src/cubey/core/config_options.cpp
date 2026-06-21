@@ -72,6 +72,8 @@ constexpr std::array<std::string_view, 3> kCloudSamplingModes{"interleaved", "ba
 constexpr std::array<std::string_view, 2> kCloudBackgroundModes{"atmosphere", "water-context"};
 constexpr std::array<std::string_view, 4> kCloudDistanceModes{"auto", "local", "orbit-shell",
                                                               "blend-debug"};
+constexpr std::array<std::string_view, 2> kCloudOrbitRepresentations{"volume",
+                                                                     "surface-shell"};
 constexpr std::array<std::string_view, 10> kCloudWeatherPresets{
     "fair-weather",     "broken-cumulus", "overcast-stratus", "storm-cells",
     "high-cirrus",      "clear",          "scattered",        "inspection",
@@ -125,7 +127,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 224> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 225> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -572,6 +574,10 @@ constexpr std::array<ConfigOptionDescriptor, 224> kRunConfigOptions{
            "--cloud-distance-mode", "Distance Mode", "Clouds",
            "Cloud distance regime: auto, local, orbit-shell, or blend-debug.",
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudDistanceModes)),
+    option(RunConfigOptionId::CloudOrbitRepresentation, "clouds.orbit_representation",
+           "--cloud-orbit-representation", "Orbit Representation", "Clouds",
+           "Orbit cloud representation: volume or surface-shell.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kCloudOrbitRepresentations)),
     option(RunConfigOptionId::CloudPlanetRadius, "clouds.planet_radius_m",
            "--cloud-planet-radius-m", "Planet Radius", "Clouds",
            "Planet radius used by the cloud shell in meters.", ConfigOptionType::Float,
@@ -1350,6 +1356,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.clouds.distance_mode.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.clouds.distance_mode);
+    case RunConfigOptionId::CloudOrbitRepresentation:
+        return config.clouds.orbit_representation.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.clouds.orbit_representation);
     case RunConfigOptionId::CloudPlanetRadius:
         return optional_float(config.clouds.planet_radius_m);
     case RunConfigOptionId::CloudCameraAltitude:
@@ -1823,6 +1833,8 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<std::string>("render_path", options.render_path);
     adapter.writeField<std::string>("sampling_mode", options.sampling_mode);
     adapter.writeField<std::string>("background_mode", options.background_mode);
+    adapter.writeField<std::string>("distance_mode", options.distance_mode);
+    adapter.writeField<std::string>("orbit_representation", options.orbit_representation);
     adapter.writeField<float>("planet_radius_m", options.planet_radius_m);
     adapter.writeField<float>("camera_altitude_m", options.camera_altitude_m);
     adapter.writeField<float>("bottom_altitude_m", options.bottom_altitude_m);
@@ -1863,6 +1875,8 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<std::string>("render_path", options.render_path);
     adapter.readField<std::string>("sampling_mode", options.sampling_mode);
     adapter.readField<std::string>("background_mode", options.background_mode);
+    adapter.readField<std::string>("distance_mode", options.distance_mode);
+    adapter.readField<std::string>("orbit_representation", options.orbit_representation);
     adapter.readField<float>("planet_radius_m", options.planet_radius_m);
     adapter.readField<float>("camera_altitude_m", options.camera_altitude_m);
     adapter.readField<float>("bottom_altitude_m", options.bottom_altitude_m);
@@ -2496,6 +2510,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::CloudDistanceMode:
         config.clouds.distance_mode = std::string(value);
+        break;
+    case RunConfigOptionId::CloudOrbitRepresentation:
+        config.clouds.orbit_representation = std::string(value);
         break;
     case RunConfigOptionId::CloudPlanetRadius:
         config.clouds.planet_radius_m = parse_config_float(value, option);
