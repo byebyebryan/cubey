@@ -48,26 +48,27 @@ capture surface-up --cloud-camera-mode surface-up
 capture high-oblique --cloud-camera-mode high-oblique
 capture surface --cloud-camera-mode surface
 capture high --cloud-camera-mode high
-capture orbit-preview --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+capture orbit-satellite-preview --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation surface-shell
-capture orbit-volume --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+capture orbit-satellite-high-oblique --cloud-camera-mode high-oblique \
+    --cloud-orbit-representation surface-shell
+capture orbit-volume-comparison --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation volume
-capture orbit-shell-surface --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
-    --cloud-orbit-representation surface-shell
-capture orbit-final-detail-off --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+capture orbit-satellite-detail-off --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation surface-shell --cloud-orbit-detail-strength 0
-capture orbit-final-detail-strong --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+capture orbit-satellite-detail-strong --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation surface-shell --cloud-orbit-detail-strength 0.8
-capture orbit-terminator --cloud-camera-mode orbit-terminator
-capture orbit-shell-envelope --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+capture orbit-satellite-terminator --cloud-camera-mode orbit-terminator \
+    --cloud-distance-mode orbit-shell --cloud-orbit-representation surface-shell
+capture orbit-satellite-shell-envelope --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation surface-shell --debug-view orbit-envelope
-capture orbit-shell-alpha --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+capture orbit-satellite-shell-alpha --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation surface-shell --debug-view orbit-shell-alpha
-capture orbit-shell-height --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+capture orbit-satellite-shell-height --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation surface-shell --debug-view orbit-shell-height
-capture orbit-shell-normal --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+capture orbit-satellite-shell-normal --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation surface-shell --debug-view orbit-shell-normal
-capture orbit-shell-shadow --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+capture orbit-satellite-shell-shadow --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation surface-shell --debug-view orbit-shell-shadow
 capture high-oblique-distance-regime --cloud-camera-mode high-oblique \
     --debug-view distance-regime
@@ -100,7 +101,7 @@ capture orbit-alpha-surface-up --cloud-camera-mode surface-up --debug-view orbit
 capture distance-regime --cloud-camera-mode surface-up --debug-view distance-regime
 
 if [[ "${DEEP}" != "0" ]]; then
-    motion_video="${OUT_DIR}/orbit-shell-motion.mp4"
+    motion_video="${OUT_DIR}/orbit-satellite-motion.mp4"
     "${APP}" \
         --headless \
         --capture video \
@@ -118,9 +119,9 @@ if [[ "${DEEP}" != "0" ]]; then
         --output "${motion_video}"
     if command -v ffmpeg >/dev/null 2>&1; then
         ffmpeg -y -loglevel error -i "${motion_video}" -frames:v 1 \
-            "${OUT_DIR}/orbit-shell-motion-start.png"
+            "${OUT_DIR}/orbit-satellite-motion-start.png"
         ffmpeg -y -loglevel error -sseof -0.1 -i "${motion_video}" -frames:v 1 \
-            "${OUT_DIR}/orbit-shell-motion-later.png"
+            "${OUT_DIR}/orbit-satellite-motion-later.png"
     fi
     capture orbit-local-weather --cloud-camera-mode orbit --debug-view weather
     capture orbit-local-weather-bias --cloud-camera-mode orbit --debug-view weather-bias
@@ -162,9 +163,11 @@ if command -v magick >/dev/null 2>&1; then
     crop_names=(
         surface-up raw-final cloud-alpha weather weather-edge weather-bias
         cloud-type density visible-density visible-cloud-type
-        orbit-preview orbit-volume orbit-shell-surface orbit-final-detail-off
-        orbit-final-detail-strong orbit-shell-envelope orbit-shell-alpha
-        orbit-shell-height orbit-shell-normal orbit-shell-shadow
+        orbit-satellite-preview orbit-satellite-high-oblique orbit-volume-comparison
+        orbit-satellite-detail-off orbit-satellite-detail-strong
+        orbit-satellite-terminator orbit-satellite-shell-envelope
+        orbit-satellite-shell-alpha orbit-satellite-shell-height
+        orbit-satellite-shell-normal orbit-satellite-shell-shadow
         high-oblique-distance-regime high-oblique-local-alpha high-oblique-orbit-alpha
         high-oblique-orbit-ray-coverage high-oblique-orbit-ray-detail
         high-oblique-orbit-ray-hull
@@ -172,7 +175,7 @@ if command -v magick >/dev/null 2>&1; then
     )
     if [[ "${DEEP}" != "0" ]]; then
         crop_names+=(
-            orbit-shell-motion-start orbit-shell-motion-later
+            orbit-satellite-motion-start orbit-satellite-motion-later
             orbit-local-weather orbit-local-weather-bias
             metadata-alpha metadata-distance metadata-confidence metadata-density
             transmittance lighting ambient-light direct-light phase-light shadow
