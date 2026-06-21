@@ -36,6 +36,12 @@ struct RiverFields {
     cubey::procedural::ScalarField2D deposition{};
 };
 
+struct ChannelPathPoint {
+    float x = 0.0F;
+    float y = 0.0F;
+    float strength = 1.0F;
+};
+
 [[nodiscard]] cubey::procedural::NoiseSource2D coherent_source(std::uint64_t seed,
                                                                float frequency,
                                                                std::uint32_t octaves) {
@@ -379,42 +385,182 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return trunk;
 }
 
-void mark_path(cubey::procedural::ScalarField2D& field, const std::vector<int>& path, float value,
-               int radius) {
+[[nodiscard]] cubey::procedural::NoiseSource2D channel_offset_source(std::uint64_t seed) {
+    return cubey::procedural::NoiseSource2D{
+        .backend = cubey::procedural::NoiseSource2DBackend::CoherentNoise,
+        .output = cubey::procedural::NoiseSource2DOutput::Signed,
+        .seed = seed,
+        .coherent =
+            {
+                .frequency = 0.075F,
+                .noise_type = cubey::procedural::CoherentNoiseType::OpenSimplex2S,
+                .fractal_type = cubey::procedural::CoherentFractalType::Fbm,
+                .octaves = 2U,
+                .lacunarity = 2.0F,
+                .gain = 0.45F,
+            },
+    };
+}
+
+[[nodiscard]] std::vector<ChannelPathPoint> make_channel_path_points(
+    const cubey::procedural::Grid2DDesc& desc, const std::vector<int>& path, float strength) {
+    std::vector<ChannelPathPoint> points;
+    points.reserve(path.size());
     for (const int index : path) {
         const auto uindex = static_cast<std::uint32_t>(index);
-        const int center_x = static_cast<int>(uindex % field.desc().width);
-        const int center_y = static_cast<int>(uindex / field.desc().width);
-        const float radius_scale = std::max(static_cast<float>(radius), 1.0F);
-        for (int oy = -radius; oy <= radius; ++oy) {
-            const int y = center_y + oy;
-            if (y < 0 || y >= static_cast<int>(field.desc().height)) {
-                continue;
-            }
-            for (int ox = -radius; ox <= radius; ++ox) {
-                const int x = center_x + ox;
-                if (x < 0 || x >= static_cast<int>(field.desc().width)) {
+        points.push_back({
+            .x = static_cast<float>(uindex % desc.width),
+            .y = static_cast<float>(uindex / desc.width),
+            .strength = strength,
+        });
+    }
+    return points;
+}
+
+void smooth_channel_path(std::vector<ChannelPathPoint>& points, int passes) {
+    if (points.size() < 3U) {
+        return;
+    }
+    for (int pass = 0; pass < passes; ++pass) {
+        std::vector<ChannelPathPoint> next = points;
+        for (std::size_t index = 1; index + 1U < points.size(); ++index) {
+            const ChannelPathPoint& prev = points[index - 1U];
+            const ChannelPathPoint& cur = points[index];
+            const ChannelPathPoint& post = points[index + 1U];
+            next[index].x = (prev.x * 0.22F) + (cur.x * 0.56F) + (post.x * 0.22F);
+            next[index].y = (prev.y * 0.22F) + (cur.y * 0.56F) + (post.y * 0.22F);
+            next[index].strength =
+                cubey::procedural::saturate((prev.strength * 0.18F) + (cur.strength * 0.64F) +
+                                            (post.strength * 0.18F));
+        }
+        points.swap(next);
+    }
+}
+
+void apply_channel_lateral_offset(std::vector<ChannelPathPoint>& points, std::uint64_t seed,
+                                  float max_offset_cells) {
+    if (points.size() < 3U || max_offset_cells <= 0.0F) {
+        return;
+    }
+
+    const cubey::procedural::NoiseSource2D source = channel_offset_source(seed);
+    const float denominator = static_cast<float>(points.size() - 1U);
+    for (std::size_t index = 1; index + 1U < points.size(); ++index) {
+        const float t = static_cast<float>(index) / denominator;
+        const float end_taper = cubey::procedural::smoothstep(0.0F, 0.24F, t) *
+                                (1.0F - cubey::procedural::smoothstep(0.76F, 1.0F, t));
+        if (end_taper <= 0.0F) {
+            continue;
+        }
+
+        const ChannelPathPoint& prev = points[index - 1U];
+        const ChannelPathPoint& post = points[index + 1U];
+        const float tx = post.x - prev.x;
+        const float ty = post.y - prev.y;
+        const float length = std::sqrt((tx * tx) + (ty * ty));
+        if (length <= 0.0001F) {
+            continue;
+        }
+
+        const float nx = -ty / length;
+        const float ny = tx / length;
+        const float noise =
+            cubey::procedural::sample_noise_source_2d(points[index].x, points[index].y, source);
+        const float offset = noise * max_offset_cells * end_taper;
+        points[index].x += nx * offset;
+        points[index].y += ny * offset;
+    }
+}
+
+[[nodiscard]] float point_segment_distance_cells(float px, float py, const ChannelPathPoint& a,
+                                                 const ChannelPathPoint& b, float& segment_t) {
+    const float abx = b.x - a.x;
+    const float aby = b.y - a.y;
+    const float apx = px - a.x;
+    const float apy = py - a.y;
+    const float ab_len_sq = (abx * abx) + (aby * aby);
+    segment_t = ab_len_sq <= 0.000001F ? 0.0F
+                                       : cubey::procedural::saturate(((apx * abx) + (apy * aby)) /
+                                                                     ab_len_sq);
+    const float cx = a.x + abx * segment_t;
+    const float cy = a.y + aby * segment_t;
+    const float dx = px - cx;
+    const float dy = py - cy;
+    return std::sqrt((dx * dx) + (dy * dy));
+}
+
+void rasterize_channel_segments(cubey::procedural::ScalarField2D& field,
+                                const std::vector<ChannelPathPoint>& points, float core_radius_cells,
+                                float falloff_radius_cells) {
+    if (points.empty()) {
+        return;
+    }
+    if (points.size() == 1U) {
+        const int cx = static_cast<int>(std::round(points.front().x));
+        const int cy = static_cast<int>(std::round(points.front().y));
+        if (cx >= 0 && cy >= 0 && cx < static_cast<int>(field.desc().width) &&
+            cy < static_cast<int>(field.desc().height)) {
+            field.at(static_cast<std::uint32_t>(cx), static_cast<std::uint32_t>(cy)) =
+                std::max(field.at(static_cast<std::uint32_t>(cx), static_cast<std::uint32_t>(cy)),
+                         points.front().strength);
+        }
+        return;
+    }
+
+    const float influence_radius = std::max(core_radius_cells, falloff_radius_cells);
+    for (std::size_t index = 0; index + 1U < points.size(); ++index) {
+        const ChannelPathPoint& a = points[index];
+        const ChannelPathPoint& b = points[index + 1U];
+        const float min_x = std::min(a.x, b.x) - influence_radius;
+        const float max_x = std::max(a.x, b.x) + influence_radius;
+        const float min_y = std::min(a.y, b.y) - influence_radius;
+        const float max_y = std::max(a.y, b.y) + influence_radius;
+        const std::uint32_t x0 = static_cast<std::uint32_t>(std::max(0.0F, std::floor(min_x)));
+        const std::uint32_t y0 = static_cast<std::uint32_t>(std::max(0.0F, std::floor(min_y)));
+        const std::uint32_t x1 = static_cast<std::uint32_t>(
+            std::min(static_cast<float>(field.desc().width - 1U), std::ceil(max_x)));
+        const std::uint32_t y1 = static_cast<std::uint32_t>(
+            std::min(static_cast<float>(field.desc().height - 1U), std::ceil(max_y)));
+
+        for (std::uint32_t y = y0; y <= y1; ++y) {
+            for (std::uint32_t x = x0; x <= x1; ++x) {
+                float segment_t = 0.0F;
+                const float distance = point_segment_distance_cells(static_cast<float>(x),
+                                                                    static_cast<float>(y), a, b,
+                                                                    segment_t);
+                if (distance > falloff_radius_cells) {
                     continue;
                 }
-                const float distance = std::sqrt(static_cast<float>((ox * ox) + (oy * oy)));
-                if (distance > static_cast<float>(radius) + 0.25F) {
-                    continue;
-                }
-                const float influence = value * std::exp(-(distance * distance) /
-                                                         (radius_scale * radius_scale));
-                field.at(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)) =
-                    std::max(field.at(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)),
-                             influence);
+                const float local_strength =
+                    cubey::procedural::lerp(a.strength, b.strength, segment_t);
+                const float core =
+                    1.0F - cubey::procedural::smoothstep(0.0F, core_radius_cells, distance);
+                const float shoulder =
+                    1.0F - cubey::procedural::smoothstep(core_radius_cells * 0.65F,
+                                                         falloff_radius_cells, distance);
+                const float profile = cubey::procedural::saturate((core * 0.82F) +
+                                                                  (shoulder * 0.34F));
+                field.at(x, y) = std::max(field.at(x, y), local_strength * profile);
             }
         }
     }
 }
 
-void activate_river_network(RiverFields& fields, const std::vector<int>& downstream) {
+void paint_channel_path(cubey::procedural::ScalarField2D& field, const std::vector<int>& path,
+                        float strength, float core_radius_cells, float falloff_radius_cells,
+                        std::uint64_t seed, float max_offset_cells) {
+    std::vector<ChannelPathPoint> points = make_channel_path_points(field.desc(), path, strength);
+    smooth_channel_path(points, 3);
+    apply_channel_lateral_offset(points, seed, max_offset_cells);
+    rasterize_channel_segments(field, points, core_radius_cells, falloff_radius_cells);
+}
+
+void activate_river_network(RiverFields& fields, const std::vector<int>& downstream,
+                            std::uint64_t seed) {
     const std::vector<std::vector<int>> upstream = make_upstream_adjacency(downstream);
     const std::vector<int> trunk =
         trace_main_trunk(fields.flow_accumulation, upstream, downstream);
-    mark_path(fields.river_trunk, trunk, 1.0F, 2);
+    paint_channel_path(fields.river_trunk, trunk, 1.0F, 1.4F, 3.0F, seed + 1101U, 1.25F);
 
     std::vector<bool> active(fields.flow_accumulation.sample_count(), false);
     for (const int index : trunk) {
@@ -450,7 +596,8 @@ void activate_river_network(RiverFields& fields, const std::vector<int>& downstr
             if (branch.size() < 5U) {
                 continue;
             }
-            mark_path(fields.tributaries, branch, 0.75F, 1);
+            paint_channel_path(fields.tributaries, branch, 0.75F, 0.9F, 2.1F,
+                               seed + 2203U + (accepted_tributaries * 117U), 0.75F);
             for (const int index : branch) {
                 active[static_cast<std::size_t>(index)] = true;
             }
@@ -517,7 +664,7 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
         }
     }
 
-    activate_river_network(fields, routing.downstream);
+    activate_river_network(fields, routing.downstream, seed);
 
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
