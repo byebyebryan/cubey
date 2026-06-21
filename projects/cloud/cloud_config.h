@@ -127,6 +127,11 @@ enum class CloudsDebugView : std::uint32_t {
     OrbitCoverage = 33,
     OrbitDetail = 34,
     OrbitHull = 35,
+    OrbitEnvelope = 36,
+    OrbitShellAlpha = 37,
+    OrbitShellHeight = 38,
+    OrbitShellNormal = 39,
+    OrbitShellShadow = 40,
 };
 
 enum class CloudsGeneratedArtifact : std::uint32_t {
@@ -141,7 +146,7 @@ inline constexpr std::array<CloudsGeneratedArtifact, 3> kCloudsGeneratedArtifact
     CloudsGeneratedArtifact::WeatherMap,
 };
 
-inline constexpr std::array<CloudsDebugView, 31> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 36> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
     CloudsDebugView::Weather,      CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting,
@@ -165,6 +170,11 @@ inline constexpr std::array<CloudsDebugView, 31> kCloudsDebugViews{
     CloudsDebugView::OrbitCoverage,
     CloudsDebugView::OrbitDetail,
     CloudsDebugView::OrbitHull,
+    CloudsDebugView::OrbitEnvelope,
+    CloudsDebugView::OrbitShellAlpha,
+    CloudsDebugView::OrbitShellHeight,
+    CloudsDebugView::OrbitShellNormal,
+    CloudsDebugView::OrbitShellShadow,
 };
 
 struct CloudsTimeConfig {

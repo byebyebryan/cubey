@@ -108,6 +108,56 @@ if (BUILD_TESTING)
         0.005
     )
 
+    set(CUBEY_CLOUD_ORBIT_SHELL_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/cloud-orbit-shell-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        cloud_orbit_surface_shell_headless_writes_png
+        cubey_project_cloud
+        "${CUBEY_CLOUD_ORBIT_SHELL_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        2
+        --cloud-camera-mode
+        orbit
+        --cloud-distance-mode
+        orbit-shell
+        --cloud-orbit-representation
+        surface-shell
+    )
+    cubey_add_png_stats_test(
+        cloud_orbit_surface_shell_headless_writes_png
+        "${CUBEY_CLOUD_ORBIT_SHELL_SMOKE_OUTPUT}"
+        0.005
+        0.005
+    )
+
+    set(CUBEY_CLOUD_ORBIT_SHELL_ALPHA_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/cloud-orbit-shell-alpha-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        cloud_orbit_surface_shell_alpha_headless_writes_png
+        cubey_project_cloud
+        "${CUBEY_CLOUD_ORBIT_SHELL_ALPHA_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        2
+        --cloud-camera-mode
+        orbit
+        --cloud-distance-mode
+        orbit-shell
+        --cloud-orbit-representation
+        surface-shell
+        --debug-view
+        orbit-shell-alpha
+    )
+    cubey_add_png_stats_test(
+        cloud_orbit_surface_shell_alpha_headless_writes_png
+        "${CUBEY_CLOUD_ORBIT_SHELL_ALPHA_SMOKE_OUTPUT}"
+        0.002
+        0.005
+    )
+
     set(CUBEY_CLOUD_ORBIT_COVERAGE_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/cloud-orbit-coverage-headless.png"
     )

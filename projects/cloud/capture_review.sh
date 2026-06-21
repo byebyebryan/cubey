@@ -47,11 +47,25 @@ capture high-oblique --cloud-camera-mode high-oblique
 capture surface --cloud-camera-mode surface
 capture high --cloud-camera-mode high
 capture orbit-preview --cloud-camera-mode orbit
+capture orbit-volume --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-representation volume
+capture orbit-shell-surface --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-representation surface-shell
 capture orbit-final-detail-off --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-detail-strength 0
 capture orbit-final-detail-strong --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-detail-strength 0.8
 capture orbit-terminator --cloud-camera-mode orbit-terminator
+capture orbit-shell-envelope --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-representation surface-shell --debug-view orbit-envelope
+capture orbit-shell-alpha --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-representation surface-shell --debug-view orbit-shell-alpha
+capture orbit-shell-height --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-representation surface-shell --debug-view orbit-shell-height
+capture orbit-shell-normal --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-representation surface-shell --debug-view orbit-shell-normal
+capture orbit-shell-shadow --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-representation surface-shell --debug-view orbit-shell-shadow
 capture high-oblique-distance-regime --cloud-camera-mode high-oblique \
     --debug-view distance-regime
 capture high-oblique-local-alpha --cloud-camera-mode high-oblique --debug-view local-alpha
@@ -123,7 +137,9 @@ if command -v magick >/dev/null 2>&1; then
     crop_names=(
         surface-up raw-final cloud-alpha weather weather-edge weather-bias
         cloud-type density visible-density visible-cloud-type
-        orbit-preview orbit-final-detail-off orbit-final-detail-strong
+        orbit-preview orbit-volume orbit-shell-surface orbit-final-detail-off
+        orbit-final-detail-strong orbit-shell-envelope orbit-shell-alpha
+        orbit-shell-height orbit-shell-normal orbit-shell-shadow
         high-oblique-distance-regime high-oblique-local-alpha high-oblique-orbit-alpha
         high-oblique-orbit-coverage high-oblique-orbit-detail high-oblique-orbit-hull
         orbit-distance-regime orbit-alpha orbit-coverage orbit-detail orbit-hull

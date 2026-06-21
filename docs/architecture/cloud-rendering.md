@@ -156,10 +156,10 @@ Initial scope:
   local or orbit-shell behavior, while `auto` blends high and orbit views toward
   a broad low-detail shell before the full cached sky product exists;
 - orbit rendering is split from the surface march. The volume raymarch remains
-  available for comparison, but the target representation is a filtered
-  cloud-top shell: broad weather acts as a soft envelope, while fronts, cells,
-  streaks, height, normals, and limb treatment own the visible planet-scale
-  cloud read;
+  available as `clouds.orbit_representation = volume`, while the experimental
+  `surface-shell` path tests a filtered cloud-top shell: broad weather acts as a
+  soft envelope, while fronts, cells, streaks, height, normals, and limb
+  treatment own the visible planet-scale cloud read;
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;

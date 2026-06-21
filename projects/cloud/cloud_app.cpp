@@ -108,7 +108,7 @@ constexpr std::array<CloudsOrbitRepresentation, 2> kCloudOrbitRepresentations{
     CloudsOrbitRepresentation::VolumeRaymarch,
     CloudsOrbitRepresentation::SurfaceShell,
 };
-constexpr std::array<CloudsDebugView, 31> kCloudDebugViews{
+constexpr std::array<CloudsDebugView, 36> kCloudDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
     CloudsDebugView::Lighting,     CloudsDebugView::AmbientLight,
@@ -130,6 +130,11 @@ constexpr std::array<CloudsDebugView, 31> kCloudDebugViews{
     CloudsDebugView::OrbitCoverage,
     CloudsDebugView::OrbitDetail,
     CloudsDebugView::OrbitHull,
+    CloudsDebugView::OrbitEnvelope,
+    CloudsDebugView::OrbitShellAlpha,
+    CloudsDebugView::OrbitShellHeight,
+    CloudsDebugView::OrbitShellNormal,
+    CloudsDebugView::OrbitShellShadow,
 };
 
 struct CloudFrameUniforms {

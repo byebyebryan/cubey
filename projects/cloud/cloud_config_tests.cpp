@@ -176,6 +176,26 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include orbit hull diagnostics");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::OrbitHull) ==
+                cubey::projects::cloud::CloudsDebugView::OrbitEnvelope,
+            "cloud debug view should include orbit envelope diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::OrbitEnvelope) ==
+                cubey::projects::cloud::CloudsDebugView::OrbitShellAlpha,
+            "cloud debug view should include orbit shell alpha diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::OrbitShellAlpha) ==
+                cubey::projects::cloud::CloudsDebugView::OrbitShellHeight,
+            "cloud debug view should include orbit shell height diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::OrbitShellHeight) ==
+                cubey::projects::cloud::CloudsDebugView::OrbitShellNormal,
+            "cloud debug view should include orbit shell normal diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::OrbitShellNormal) ==
+                cubey::projects::cloud::CloudsDebugView::OrbitShellShadow,
+            "cloud debug view should include orbit shell shadow diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::OrbitShellShadow) ==
                 cubey::projects::cloud::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::cloud::clouds_debug_view_from_string("cloud-alpha") ==
@@ -253,6 +273,21 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-hull") ==
                 cubey::projects::cloud::CloudsDebugView::OrbitHull,
             "orbit hull debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-envelope") ==
+                cubey::projects::cloud::CloudsDebugView::OrbitEnvelope,
+            "orbit envelope debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-shell-alpha") ==
+                cubey::projects::cloud::CloudsDebugView::OrbitShellAlpha,
+            "orbit shell alpha debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-shell-height") ==
+                cubey::projects::cloud::CloudsDebugView::OrbitShellHeight,
+            "orbit shell height debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-shell-normal") ==
+                cubey::projects::cloud::CloudsDebugView::OrbitShellNormal,
+            "orbit shell normal debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-shell-shadow") ==
+                cubey::projects::cloud::CloudsDebugView::OrbitShellShadow,
+            "orbit shell shadow debug view should parse");
 }
 
 void test_run_config_mapping() {

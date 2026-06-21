@@ -423,6 +423,21 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "orbit-hull") {
         return CloudsDebugView::OrbitHull;
     }
+    if (value == "orbit-envelope") {
+        return CloudsDebugView::OrbitEnvelope;
+    }
+    if (value == "orbit-shell-alpha" || value == "shell-alpha") {
+        return CloudsDebugView::OrbitShellAlpha;
+    }
+    if (value == "orbit-shell-height" || value == "shell-height") {
+        return CloudsDebugView::OrbitShellHeight;
+    }
+    if (value == "orbit-shell-normal" || value == "shell-normal") {
+        return CloudsDebugView::OrbitShellNormal;
+    }
+    if (value == "orbit-shell-shadow" || value == "shell-shadow") {
+        return CloudsDebugView::OrbitShellShadow;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -490,6 +505,16 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "orbit-detail";
     case CloudsDebugView::OrbitHull:
         return "orbit-hull";
+    case CloudsDebugView::OrbitEnvelope:
+        return "orbit-envelope";
+    case CloudsDebugView::OrbitShellAlpha:
+        return "orbit-shell-alpha";
+    case CloudsDebugView::OrbitShellHeight:
+        return "orbit-shell-height";
+    case CloudsDebugView::OrbitShellNormal:
+        return "orbit-shell-normal";
+    case CloudsDebugView::OrbitShellShadow:
+        return "orbit-shell-shadow";
     }
     return "final";
 }
