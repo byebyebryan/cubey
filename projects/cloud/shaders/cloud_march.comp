@@ -348,6 +348,62 @@ float cloud_orbit_synoptic_systems(vec3 normal, vec3 wind, float feature_count) 
     return clamp(max(max(a, b), c), 0.0, 1.0);
 }
 
+float cloud_orbit_regional_seed(float storm_track, float synoptic_system,
+                                float macro_a, float macro_b) {
+    float moving_systems = max(storm_track, synoptic_system * 0.72);
+    float macro_support = smoothstep(0.52, 0.86, macro_a) * 0.24 +
+                          smoothstep(0.58, 0.86, macro_b) * 0.16;
+    return clamp(moving_systems + macro_support, 0.0, 1.0);
+}
+
+float cloud_orbit_regional_fill_field(float regional_seed, float macro_a,
+                                      float macro_b, float macro_c,
+                                      float orbit_fill) {
+    float fill_bias = clamp(orbit_fill, 0.0, 2.0);
+    float broken_fill =
+        smoothstep(0.31, 0.72, macro_a * 0.50 + macro_c * 0.50) * 0.42 +
+        smoothstep(0.44, 0.80, macro_b) * 0.13;
+    return clamp(regional_seed + broken_fill * fill_bias, 0.0, 1.0);
+}
+
+float cloud_orbit_clear_gate(float dry_slot, float regional_fill, float orbit_fill) {
+    float fill_bias = clamp(orbit_fill, 0.0, 2.0);
+    float dry_strength =
+        mix(mix(0.86, 0.48, fill_bias), mix(0.50, 0.28, fill_bias), regional_fill);
+    return 1.0 - smoothstep(0.58, 0.92, dry_slot) * dry_strength;
+}
+
+float cloud_orbit_broad_weather(float storm_track, float synoptic_system,
+                                float macro_a, float macro_b, float macro_c,
+                                float regional_fill, float clear_gate,
+                                float orbit_fill) {
+    float fill_bias = clamp(orbit_fill, 0.0, 2.0);
+    float broad_fill =
+        smoothstep(0.30, 0.72, macro_a * 0.42 + macro_b * 0.20 + macro_c * 0.38) *
+        mix(0.16, 0.42, regional_fill) * fill_bias;
+    float track_field = storm_track * mix(0.20, 0.42, macro_b);
+    float system_field = synoptic_system * 0.34;
+    float planetary_field = macro_a * macro_c * 0.20;
+    return clamp((track_field + system_field + planetary_field + broad_fill) * clear_gate,
+                 0.0, 1.0);
+}
+
+float cloud_orbit_structure_field(float front_field, float cell_field,
+                                  float streak_field, float micro_field,
+                                  float synoptic_system) {
+    return clamp(front_field * 0.40 + cell_field * 0.24 + streak_field * 0.26 +
+                     smoothstep(0.36, 0.80, micro_field) * 0.10 +
+                     synoptic_system * 0.12,
+                 0.0, 1.0);
+}
+
+float cloud_orbit_edge_detail_field(float front_field, float cell_field,
+                                    float streak_field, float micro_field) {
+    return clamp(front_field * 0.24 + cell_field * 0.20 + streak_field * 0.28 +
+                     smoothstep(0.26, 0.78, micro_field) * 0.28,
+                 0.0, 1.0);
+}
+
 OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
                                                           float height_fraction,
                                                           float footprint) {
@@ -379,29 +435,15 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
                         vec3(8.1, 1.7, 4.2));
     float orbit_fill = cloud_orbit_fill();
     float regional_seed =
-        clamp(max(storm_track * 0.82, synoptic_system) +
-                  smoothstep(0.52, 0.86, macro_a) * 0.26 +
-                  smoothstep(0.56, 0.84, macro_b) * 0.18,
-              0.0, 1.0);
+        cloud_orbit_regional_seed(storm_track, synoptic_system, macro_a, macro_b);
     float regional_fill =
-        clamp(regional_seed +
-                  smoothstep(0.30, 0.72, macro_a * 0.58 + macro_c * 0.42) * 0.48 *
-                      orbit_fill +
-                  smoothstep(0.42, 0.78, macro_b) * 0.14 * orbit_fill,
-              0.0, 1.0);
+        cloud_orbit_regional_fill_field(regional_seed, macro_a, macro_b, macro_c,
+                                        orbit_fill);
     float dry_slot = cloud_orbit_dry_slot_field(warped_normal, wind, feature_count);
-    float clear_gate = 1.0 - smoothstep(0.60, 0.92, dry_slot) *
-                                 mix(mix(0.82, 0.50, orbit_fill),
-                                     mix(0.44, 0.26, orbit_fill),
-                                     regional_fill);
-    float broad_fill =
-        smoothstep(0.28, 0.70, macro_a * 0.46 + macro_b * 0.20 + macro_c * 0.34) *
-        mix(0.18, 0.48, regional_fill) * orbit_fill;
+    float clear_gate = cloud_orbit_clear_gate(dry_slot, regional_fill, orbit_fill);
     float broad_field =
-        clamp((synoptic_system * 0.52 + storm_track * macro_b * 0.30 +
-               macro_a * macro_c * 0.18 + broad_fill) *
-                  clear_gate,
-              0.0, 1.0);
+        cloud_orbit_broad_weather(storm_track, synoptic_system, macro_a, macro_b,
+                                  macro_c, regional_fill, clear_gate, orbit_fill);
 
     float front_field = cloud_orbit_front_field(warped_normal, tangent, side, wind, feature_count);
     float cell_field = cloud_orbit_cell_field(warped_normal, wind, feature_count);
@@ -416,14 +458,11 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
     micro_field =
         mix(smoothstep(0.34, 0.82, micro_field) * 0.56, micro_field, detail_visibility);
     float structure_field =
-        clamp(front_field * 0.38 + cell_field * 0.23 + streak_field * 0.27 +
-                  smoothstep(0.34, 0.78, micro_field) * 0.12 +
-                  synoptic_system * 0.18,
-              0.0, 1.0);
+        cloud_orbit_structure_field(front_field, cell_field, streak_field,
+                                    micro_field, synoptic_system);
     float edge_detail =
-        clamp(front_field * 0.22 + cell_field * 0.18 + streak_field * 0.26 +
-                  smoothstep(0.24, 0.76, micro_field) * 0.34,
-              0.0, 1.0);
+        cloud_orbit_edge_detail_field(front_field, cell_field, streak_field,
+                                      micro_field);
 
     float global_coverage = clamp(params.weather.x, 0.0, 1.0);
     float orbit_coverage = clamp(global_coverage * mix(0.94, 1.08, orbit_fill), 0.0, 1.0);
@@ -456,15 +495,15 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
     float broken_fill =
         smoothstep(0.20, 0.62, structure_field) *
         smoothstep(0.16, 0.64, regional_fill + broad_field * 0.42) *
-        orbit_coverage * 0.170 * clear_gate * orbit_fill;
+        orbit_coverage * 0.150 * clear_gate * orbit_fill;
     float system_coverage =
-        envelope * mix(mix(0.28, 0.52, orbit_fill), mix(0.96, 0.98, orbit_fill), broken) *
+        envelope * mix(mix(0.26, 0.48, orbit_fill), mix(0.92, 0.98, orbit_fill), broken) *
         mix(mix(0.62, 0.76, orbit_fill), 1.0, regional_fill);
     float front_overlay =
         filament_gate * max(max(envelope, storm_track * 0.34), synoptic_system * 0.56) *
         (0.36 + 0.36 * edge_holes);
     system_coverage =
-        max(system_coverage, synoptic_system * mix(0.34, 0.90, broken) * clear_gate);
+        max(system_coverage, synoptic_system * mix(0.22, 0.72, broken) * clear_gate);
     float coverage =
         clamp(max(system_coverage * edge_holes, front_overlay * clear_gate) + scattered +
                   broken_fill,
@@ -475,7 +514,7 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
                   smoothstep(mix(0.035, 0.030, orbit_fill),
                              mix(0.48, 0.44, orbit_fill),
                              coverage) *
-                  mix(1.0, mix(0.90, 1.12, broken), orbit_fill),
+                  mix(0.98, 1.10, broken),
               0.0,
               1.0);
     float type_field =
