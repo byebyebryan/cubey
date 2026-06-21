@@ -911,8 +911,11 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
     vec3 shell_normal = cloud_orbit_surface_normal(shell_up, shell_footprint);
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     float sun_elevation = dot(sun_dir, shell_up);
-    float day = smoothstep(-0.18, 0.10, sun_elevation) *
-                max(params.sun_direction_intensity.w, 0.0);
+    float sun_intensity = max(params.sun_direction_intensity.w, 0.0);
+    float day = smoothstep(-0.05, 0.12, sun_elevation) * sun_intensity;
+    float twilight = smoothstep(-0.20, 0.04, sun_elevation) *
+                     (1.0 - smoothstep(0.04, 0.28, sun_elevation)) *
+                     sun_intensity;
     float ndotl = max(dot(shell_normal, sun_dir), 0.0);
     float light_dot_eye = dot(sun_dir, direction);
     float phase_response = cloud_direct_phase(light_dot_eye);
@@ -922,25 +925,28 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
         DensitySample(max(alpha, 0.001), base_hull, orbit.detail, orbit.coverage,
                       orbit.cloud_type, orbit.weather_edge, filtered_hull,
                       cloud_orbit_shell_surface_height_fraction());
-    vec3 sun_color = vec3(1.18, 1.10, 0.92) * max(params.sun_direction_intensity.w, 0.0);
+    vec3 sun_color = vec3(1.18, 1.10, 0.92) * sun_intensity;
     vec3 ambient = cloud_cloud_ambient(hit_position, direction, density_sample) *
-                   (0.78 + 0.22 * day) * params.lighting_strengths.x;
-    vec3 direct = sun_color * shadow * phase_response *
-                  (0.10 + 0.36 * day + 0.54 * ndotl * day) *
+                   (0.16 + 0.78 * day + 0.18 * twilight) *
+                   params.lighting_strengths.x;
+    vec3 direct = sun_color * shadow * phase_response * day *
+                  (0.18 + 0.34 * day + 0.58 * ndotl) *
                   params.lighting_strengths.y;
     vec3 rim = sun_color * pow(max(light_dot_eye, 0.0), 5.0) *
-               (0.10 + 0.26 * day) * params.lighting_strengths.z;
+               (0.04 + 0.30 * day) * day * params.lighting_strengths.z;
     float view_grazing = 1.0 - view_alignment;
+    float limb_mass = smoothstep(0.10, 0.70, filtered_hull);
     vec3 limb_fill = cloud_sky_color(shell_up) * pow(max(view_grazing, 0.0), 2.0) *
-                     alpha * mix(0.045, 0.085, cloud_top_weight);
+                     alpha * limb_mass * mix(0.018, 0.055, cloud_top_weight) *
+                     (0.25 + 0.75 * max(day, twilight * 0.45));
     vec3 color = (ambient * mix(1.10, 1.24, cloud_top_weight) +
                   direct * mix(1.18, 1.38, cloud_top_weight) +
                   rim * mix(0.70, 1.00, cloud_top_weight)) *
                      alpha +
                  limb_fill;
     float limb_fade = smoothstep(0.030, 0.110, view_alignment);
-    alpha *= mix(0.50, 1.0, limb_fade);
-    color *= mix(0.56, 1.0, limb_fade);
+    alpha *= mix(0.38, 1.0, limb_fade);
+    color *= mix(0.46, 1.0, limb_fade);
 
     return OrbitSurfaceSample(orbit.coverage, alpha, height, shadow, shell_normal,
                               max(color, vec3(0.0)), hit_t);
