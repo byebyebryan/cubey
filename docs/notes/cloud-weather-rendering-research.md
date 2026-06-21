@@ -849,3 +849,40 @@ product because square patch seams are gone and orbit final has more small-scale
 breakup. Remaining work is still visual rather than solved architecture:
 high-oblique transition quality, limb/debug-ray artifacts, and physically
 believable satellite-scale cloud organization are not finished.
+
+## Orbit Shell Strategy 2026-06-20
+
+The current orbit raymarch is useful as a diagnostic, but it is no longer the
+target planet-scale representation. From orbit, cloud thickness is tiny relative
+to planet radius, and most of the visual read comes from cloud-top coverage,
+front/cell/streak detail, height/normal lighting, shadows, and atmosphere at the
+limb. A shell/cloud-top renderer should therefore sit beside the current volume
+path before it becomes the default.
+
+Reference direction:
+
+- satellite imagery from NASA/NOAA is the visual target: fronts, broken cells,
+  cloud streets, swirls, vortices, and large clear ocean/land gaps rather than
+  continent-shaped filled masks;
+- Horizon/Nubis-style cloud shaping still applies: large weather fields gate
+  where clouds may exist, while noise/detail fields erode and shape the visible
+  cloud body;
+- `godot-planet-fly-through-cloud-volume` is a useful local reference because
+  it uses cubemap/sphere-space cloud coverage instead of a naive equirectangular
+  product;
+- the failed generated 2D orbit-weather product should not be revived in this
+  batch. If cached products return later, use cubemap or octahedral storage with
+  mip/filtering.
+
+Implementation target:
+
+- add a side-by-side `clouds.orbit_representation` switch so the current
+  volume raymarch remains available for comparison;
+- implement a deterministic single-hit cloud-top shell for orbit views, with no
+  ray-start jitter;
+- derive visible alpha, height, normals, and a cheap shadow/occlusion scalar
+  from direct sphere-space procedural fields;
+- estimate screen-space footprint explicitly from camera distance, FOV, and
+  render resolution so high-frequency detail fades before it shimmers;
+- hide shell flatness with grazing-angle alpha feather, cloud-top normals,
+  limb/rim lighting, and atmosphere blending.

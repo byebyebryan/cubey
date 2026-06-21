@@ -155,10 +155,11 @@ Initial scope:
 - distance-regime controls are now explicit: `clouds.distance_mode` can force
   local or orbit-shell behavior, while `auto` blends high and orbit views toward
   a broad low-detail shell before the full cached sky product exists;
-- orbit-shell weather is now sampled from planet-normal procedural fields whose
-  broad frequencies derive from `clouds.weather_scale_km`; detail/noise is
-  constrained to edge and hull erosion so it does not own planet-scale cloud
-  placement;
+- orbit rendering is split from the surface march. The volume raymarch remains
+  available for comparison, but the target representation is a filtered
+  cloud-top shell: broad weather acts as a soft envelope, while fronts, cells,
+  streaks, height, normals, and limb treatment own the visible planet-scale
+  cloud read;
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;
@@ -190,9 +191,10 @@ Use separate regimes:
 - near/overhead: bounded volumetric march with real parallax and thickness;
 - mid/far sky: cached hemisphere or shell product with low-frequency weather
   massing and controlled horizon fade;
-- orbit: broad weather map/shell view with suppressed fine erosion. The active
-  project now has a direct shell prototype; it is a bridge to, not a substitute
-  for, a future cached planet-scale cloud product;
+- orbit: cloud-top shell view with filtered sphere-space detail. At planet
+  scale, cloud thickness is mostly a lighting/edge cue; visible alpha, height,
+  normals, shadows, and atmosphere/limb blending should carry the image rather
+  than a sparse volume march;
 - high/cirrus: cheap layer or shell until real volumetric need appears.
 
 The transition between near volume and far cached/cloud-shell output should be
