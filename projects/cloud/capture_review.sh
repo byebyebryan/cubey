@@ -10,6 +10,8 @@ FRAMES="${FRAMES:-2}"
 QUALITY="${QUALITY:-full}"
 PRESET="${PRESET:-broken-cumulus}"
 DEEP="${DEEP:-0}"
+MOTION_FRAMES="${MOTION_FRAMES:-180}"
+MOTION_FPS="${MOTION_FPS:-30}"
 CENTER_CROP_GEOMETRY="${CENTER_CROP_GEOMETRY:-}"
 
 if [[ -z "${CENTER_CROP_GEOMETRY}" ]]; then
@@ -97,6 +99,28 @@ capture orbit-alpha-surface-up --cloud-camera-mode surface-up --debug-view orbit
 capture distance-regime --cloud-camera-mode surface-up --debug-view distance-regime
 
 if [[ "${DEEP}" != "0" ]]; then
+    motion_video="${OUT_DIR}/orbit-shell-motion.mp4"
+    "${APP}" \
+        --headless \
+        --capture video \
+        --frames "${MOTION_FRAMES}" \
+        --fps "${MOTION_FPS}" \
+        --width "${WIDTH}" \
+        --height "${HEIGHT}" \
+        --cloud-quality "${QUALITY}" \
+        --cloud-weather-preset "${PRESET}" \
+        --cloud-camera-mode orbit \
+        --cloud-distance-mode orbit-shell \
+        --cloud-orbit-representation surface-shell \
+        --cloud-orbit-motion-strength 4 \
+        --cloud-wind-speed-mps 900 \
+        --output "${motion_video}"
+    if command -v ffmpeg >/dev/null 2>&1; then
+        ffmpeg -y -loglevel error -i "${motion_video}" -frames:v 1 \
+            "${OUT_DIR}/orbit-shell-motion-start.png"
+        ffmpeg -y -loglevel error -sseof -0.1 -i "${motion_video}" -frames:v 1 \
+            "${OUT_DIR}/orbit-shell-motion-later.png"
+    fi
     capture orbit-local-weather --cloud-camera-mode orbit --debug-view weather
     capture orbit-local-weather-bias --cloud-camera-mode orbit --debug-view weather-bias
     capture surface-up-weather-local --cloud-camera-mode surface-up --cloud-weather-influence 0
@@ -146,6 +170,7 @@ if command -v magick >/dev/null 2>&1; then
     )
     if [[ "${DEEP}" != "0" ]]; then
         crop_names+=(
+            orbit-shell-motion-start orbit-shell-motion-later
             orbit-local-weather orbit-local-weather-bias
             metadata-alpha metadata-distance metadata-confidence metadata-density
             transmittance lighting ambient-light direct-light phase-light shadow

@@ -124,6 +124,10 @@ if (BUILD_TESTING)
         orbit-shell
         --cloud-orbit-representation
         surface-shell
+        --cloud-orbit-motion-strength
+        1.25
+        --cloud-orbit-shell-extinction
+        3.0
     )
     cubey_add_png_stats_test(
         cloud_orbit_surface_shell_headless_writes_png
@@ -148,6 +152,10 @@ if (BUILD_TESTING)
         orbit-shell
         --cloud-orbit-representation
         surface-shell
+        --cloud-orbit-motion-strength
+        1.25
+        --cloud-orbit-shell-extinction
+        3.0
         --debug-view
         orbit-shell-alpha
     )
