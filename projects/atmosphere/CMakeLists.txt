@@ -253,6 +253,31 @@ if (BUILD_TESTING)
             "$<TARGET_FILE:cubey_project_atmosphere>"
     )
     set_tests_properties(atmosphere_async_atlas_windowed_smoke PROPERTIES TIMEOUT 75)
+    set_tests_properties(
+        atmosphere_config_tests
+        atmosphere_headless_writes_png
+        atmosphere_headless_writes_png_stats
+        atmosphere_solar_noon_writes_png
+        atmosphere_solar_noon_writes_png_stats
+        atmosphere_twilight_writes_png
+        atmosphere_twilight_writes_png_stats
+        atmosphere_night_writes_png
+        atmosphere_night_writes_png_stats
+        atmosphere_moonlit_writes_png
+        atmosphere_moonlit_writes_png_stats
+        atmosphere_moon_surface_writes_png
+        atmosphere_moon_surface_writes_png_stats
+        atmosphere_milky_way_writes_png
+        atmosphere_milky_way_writes_png_stats
+        atmosphere_milky_way_dust_writes_png
+        atmosphere_milky_way_dust_writes_png_stats
+        atmosphere_milky_way_hii_writes_png
+        atmosphere_milky_way_hii_writes_png_stats
+        atmosphere_transmittance_writes_png
+        atmosphere_transmittance_writes_png_stats
+        atmosphere_async_atlas_windowed_smoke
+        PROPERTIES LABELS sky
+    )
 
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_ATMOSPHERE_HEADLESS_VIDEO_SMOKE_OUTPUT

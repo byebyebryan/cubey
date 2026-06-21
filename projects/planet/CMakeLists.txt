@@ -208,6 +208,26 @@ if(BUILD_TESTING)
         --planet-time-hours
         12.0
     )
+    set_tests_properties(
+        planet_celestial_tests
+        planet_headless_writes_png
+        planet_headless_writes_png_stats
+        planet_surface_dawn_writes_png
+        planet_surface_dawn_writes_png_stats
+        planet_sky_frame_legacy_writes_png
+        planet_sky_frame_legacy_writes_png_stats
+        planet_surface_day_writes_png
+        planet_surface_day_writes_png_stats
+        planet_surface_night_writes_png
+        planet_surface_night_writes_png_stats
+        planet_orbit_lit_writes_png
+        planet_orbit_lit_writes_png_stats
+        planet_orbit_terminator_writes_png
+        planet_orbit_terminator_writes_png_stats
+        planet_day_moon_writes_png
+        planet_day_moon_writes_png_stats
+        PROPERTIES LABELS sky
+    )
     cubey_add_planet_visual_smoke(
         planet_wire_lod_writes_png
         planet-wire-lod.png
