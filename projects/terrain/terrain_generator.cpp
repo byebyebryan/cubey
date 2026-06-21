@@ -227,6 +227,21 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return result;
 }
 
+[[nodiscard]] cubey::procedural::ScalarField2D make_drainage_routing_surface(
+    const cubey::procedural::ScalarField2D& height) {
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    cubey::procedural::ScalarField2D result(desc, 0.0F);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        const float ny = static_cast<float>(y) / static_cast<float>(desc.height - 1U);
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float nx = static_cast<float>(x) / static_cast<float>(desc.width - 1U);
+            const float base_level_fall = ((nx * 0.42F) + (ny * 0.72F)) * 760.0F;
+            result.at(x, y) = height.at(x, y) - base_level_fall;
+        }
+    }
+    return result;
+}
+
 [[nodiscard]] cubey::procedural::ScalarField2D accumulate_flow(
     const cubey::procedural::ScalarField2D& height, const std::vector<int>& downstream) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
@@ -251,10 +266,11 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
 [[nodiscard]] RiverFields make_river_fields(const cubey::procedural::ScalarField2D& height,
                                             const cubey::procedural::ScalarField2D& slope) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
-    const FlowRoutingResult routing = route_steepest_descent(height);
+    const cubey::procedural::ScalarField2D routing_surface = make_drainage_routing_surface(height);
+    const FlowRoutingResult routing = route_steepest_descent(routing_surface);
     RiverFields fields{
         .flow_direction = routing.flow_direction,
-        .flow_accumulation = accumulate_flow(height, routing.downstream),
+        .flow_accumulation = accumulate_flow(routing_surface, routing.downstream),
         .stream_order = cubey::procedural::ScalarField2D(desc, 1.0F),
         .river_mask = cubey::procedural::ScalarField2D(desc, 0.0F),
         .channel_width = cubey::procedural::ScalarField2D(desc, 0.0F),
@@ -262,9 +278,6 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
         .wetness = cubey::procedural::ScalarField2D(desc, 0.0F),
         .deposition = cubey::procedural::ScalarField2D(desc, 0.0F),
     };
-    fields.flow_accumulation =
-        cubey::procedural::box_blur_3x3(cubey::procedural::box_blur_3x3(fields.flow_accumulation));
-
     const float max_accumulation = std::max(fields.flow_accumulation.summarize().max, 1.0F);
     const float log_max_accumulation = std::log1p(max_accumulation);
 
@@ -274,7 +287,7 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
             const float discharge =
                 log_max_accumulation <= 0.0F ? 0.0F : std::log1p(accumulation) /
                                                         log_max_accumulation;
-            const float river_strength = cubey::procedural::smoothstep(0.62F, 0.82F, discharge);
+            const float river_strength = cubey::procedural::smoothstep(0.66F, 0.84F, discharge);
             const float order = 1.0F + (discharge > 0.42F ? 1.0F : 0.0F) +
                                 (discharge > 0.56F ? 1.0F : 0.0F) +
                                 (discharge > 0.70F ? 1.0F : 0.0F) +
