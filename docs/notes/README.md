@@ -28,6 +28,8 @@ the detailed foundation notes under `docs/architecture/`.
 - [Sky and celestial current state](sky-celestial-current-state.md): current
   ownership, render paths, and cleanup checklist for the `sky-rendering`
   worktree.
+- [Sky validation baseline](sky-validation-baseline.md): focused sky label,
+  build, unit-test, and PNG-smoke baseline for the `sky-rendering` worktree.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
