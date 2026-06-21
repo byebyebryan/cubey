@@ -556,6 +556,21 @@ vec2 cloud_weather_uv(vec3 position) {
     return position.xz / weather_period_m + vec2(0.5);
 }
 
+float cloud_local_scatter_field(vec3 position, vec3 animation, float height_fraction) {
+    float feature_scale_m = max(params.weather.z * 1000.0, 1000.0);
+    vec3 domain = vec3((position.x + animation.x) / (feature_scale_m * 0.42),
+                       (position.z + animation.z) / (feature_scale_m * 0.42),
+                       height_fraction * 0.55 + params.weather.w / (feature_scale_m * 3.5));
+    float broad = clamp(0.5 + 0.5 * cubey_proc_fbm_3d(domain, 0x4c534341U, 4U), 0.0,
+                        1.0);
+    float breakup =
+        clamp(0.5 + 0.5 * cubey_proc_fbm_3d(domain * 2.15 + vec3(17.2, 4.8, 9.1),
+                                            0x42524541U, 3U),
+              0.0, 1.0);
+    float field = mix(broad, breakup, 0.38);
+    return mix(0.03, 1.0, smoothstep(0.34, 0.78, field));
+}
+
 DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float height_fraction = cloud_height_fraction(position);
     if (height_fraction <= 0.0 || height_fraction >= 1.0) {
@@ -573,10 +588,9 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
         height_fraction * WIND_DIRECTION * top_offset + WIND_DIRECTION * params.weather.w;
     vec2 shape_uv = cloud_project_uv(position);
     vec2 moving_shape_uv = cloud_project_uv(position + animation);
-    vec4 local_weather = texture(weather_texture, moving_shape_uv);
     vec4 authored_weather_sample = texture(weather_texture, cloud_weather_uv(position + animation));
     float authored_weather = clamp(authored_weather_sample.r, 0.0, 1.0);
-    float local_scatter = clamp(local_weather.a, 0.0, 1.0);
+    float local_scatter = cloud_local_scatter_field(position, animation, height_fraction);
     float weather_influence = clamp(params.sampling_options.w, 0.0, 1.0);
     float cloud_type = mix(1.0, authored_weather_sample.g, weather_influence);
     float weather_edge = authored_weather_sample.b;
