@@ -73,15 +73,15 @@ capture high-oblique-distance-regime --cloud-camera-mode high-oblique \
     --debug-view distance-regime
 capture high-oblique-local-alpha --cloud-camera-mode high-oblique --debug-view local-alpha
 capture high-oblique-orbit-alpha --cloud-camera-mode high-oblique --debug-view orbit-alpha
-capture high-oblique-orbit-coverage --cloud-camera-mode high-oblique \
+capture high-oblique-orbit-ray-coverage --cloud-camera-mode high-oblique \
     --debug-view orbit-coverage
-capture high-oblique-orbit-detail --cloud-camera-mode high-oblique --debug-view orbit-detail
-capture high-oblique-orbit-hull --cloud-camera-mode high-oblique --debug-view orbit-hull
+capture high-oblique-orbit-ray-detail --cloud-camera-mode high-oblique --debug-view orbit-detail
+capture high-oblique-orbit-ray-hull --cloud-camera-mode high-oblique --debug-view orbit-hull
 capture orbit-distance-regime --cloud-camera-mode orbit --debug-view distance-regime
 capture orbit-alpha --cloud-camera-mode orbit --debug-view orbit-alpha
-capture orbit-coverage --cloud-camera-mode orbit --debug-view orbit-coverage
-capture orbit-detail --cloud-camera-mode orbit --debug-view orbit-detail
-capture orbit-hull --cloud-camera-mode orbit --debug-view orbit-hull
+capture orbit-ray-coverage --cloud-camera-mode orbit --debug-view orbit-coverage
+capture orbit-ray-detail --cloud-camera-mode orbit --debug-view orbit-detail
+capture orbit-ray-hull --cloud-camera-mode orbit --debug-view orbit-hull
 capture high-oblique-weather --cloud-camera-mode high-oblique --debug-view weather
 capture high-oblique-weather-bias --cloud-camera-mode high-oblique --debug-view weather-bias
 capture raw-final --cloud-camera-mode surface-up --debug-view raw-final
@@ -166,8 +166,9 @@ if command -v magick >/dev/null 2>&1; then
         orbit-final-detail-strong orbit-shell-envelope orbit-shell-alpha
         orbit-shell-height orbit-shell-normal orbit-shell-shadow
         high-oblique-distance-regime high-oblique-local-alpha high-oblique-orbit-alpha
-        high-oblique-orbit-coverage high-oblique-orbit-detail high-oblique-orbit-hull
-        orbit-distance-regime orbit-alpha orbit-coverage orbit-detail orbit-hull
+        high-oblique-orbit-ray-coverage high-oblique-orbit-ray-detail
+        high-oblique-orbit-ray-hull
+        orbit-distance-regime orbit-alpha orbit-ray-coverage orbit-ray-detail orbit-ray-hull
     )
     if [[ "${DEEP}" != "0" ]]; then
         crop_names+=(

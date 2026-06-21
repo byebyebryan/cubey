@@ -36,9 +36,9 @@ Current V1 scope:
   high/orbit shell evaluation, and debug views for the local-vs-orbit blend;
 - diagnostics for weather, weather edge, weather bias, base/detail density,
   density, transmittance, cloud type, visible density/cloud type, lighting,
-  shadow, cloud alpha, distance, distance regime, local/orbit alpha, orbit
-  coverage/detail/hull, metadata distance/alpha/confidence, metadata density,
-  steps, and background.
+  shadow, cloud alpha, distance, distance regime, local/orbit alpha,
+  ray-sampled orbit coverage/detail/hull, shell alpha/height/normal/shadow,
+  metadata distance/alpha/confidence, metadata density, steps, and background.
 
 The first target is cloud shape. Surface/local captures should preserve coherent
 volumetric cloud masses; orbit captures should be judged against satellite and
@@ -73,6 +73,10 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view orbit-coverage
 ./build/dev/projects/cloud/cloud --debug-view orbit-detail
 ./build/dev/projects/cloud/cloud --debug-view orbit-hull
+./build/dev/projects/cloud/cloud --debug-view orbit-shell-alpha
+./build/dev/projects/cloud/cloud --debug-view orbit-shell-height
+./build/dev/projects/cloud/cloud --debug-view orbit-shell-normal
+./build/dev/projects/cloud/cloud --debug-view orbit-shell-shadow
 ./build/dev/projects/cloud/cloud --debug-view distance
 ./build/dev/projects/cloud/cloud --debug-view metadata-distance
 ./build/dev/projects/cloud/cloud --debug-view metadata-alpha
@@ -104,11 +108,12 @@ DEEP=1 projects/cloud/capture_review.sh outputs/cloud-v1-review-deep
 
 `capture_review.sh` defaults to a focused shape/regime review: final camera
 views, shell-first orbit captures, volume comparison, local/orbit alpha,
-distance-regime checks, orbit procedural coverage/detail/hull, and a small
-surface-local density set. `DEEP=1` adds secondary tuning captures
-such as sampling comparisons, metadata, lighting breakdowns, weather-influence
-sweeps, and explicitly named `orbit-local-weather` diagnostics for the old
-surface-local weather projection. The script also writes
+distance-regime checks, ray-sampled orbit procedural coverage/detail/hull,
+shell-specific alpha/height/normal/shadow, and a small surface-local density
+set. `DEEP=1` adds secondary tuning captures such as sampling comparisons,
+metadata, lighting breakdowns, weather-influence sweeps, and explicitly named
+`orbit-local-weather` diagnostics for the old surface-local weather projection.
+The script also writes
 `diagnostic-crops/center-feature-contact.png` with resolution-scaled center
 crops for the active review set.
 

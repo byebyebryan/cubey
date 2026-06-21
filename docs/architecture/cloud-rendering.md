@@ -187,8 +187,8 @@ Deferred until the shape is credible:
 
 - ocean reflection integration;
 - finished planet-scale orbit weather art direction;
-- removal of remaining orbit-shell projection/alias artifacts in the coverage
-  and alpha diagnostics;
+- removal of remaining orbit-shell projection/alias artifacts in shell-alpha
+  output and ray-sampled coverage/detail diagnostics;
 - a stronger planet-scale weather model than fixed experimental synoptic
   anchors plus procedural breakup;
 - cloud shadow consumption by ocean/terrain;
