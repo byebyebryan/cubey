@@ -42,7 +42,6 @@ Run it with:
 ./build/dev/projects/planet/planet --debug-view atmosphere-path-length
 ./build/dev/projects/planet/planet --debug-view seams
 ./build/dev/projects/planet/planet --planet-atmosphere-mode physical
-./build/dev/projects/planet/planet --planet-sky-backend sky-frame-legacy
 ./build/dev/projects/planet/planet --planet-atmosphere-haze-strength 0.18 --planet-atmosphere-aerial-strength 0.35
 ./build/dev/projects/planet/planet --rayleigh-scale 1.0 --mie-scale 0.85 --ozone-scale 1.1 --twilight-strength 1.1
 ./build/dev/projects/planet/planet --planet-max-lod-level 7 --planet-lod-target-edge-px 8
@@ -63,7 +62,6 @@ daylight.
 
 ```sh
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-surface-dawn.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-sky-backend sky-frame-legacy --output outputs/planet-surface-dawn-sky-frame-legacy.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 12.0 --planet-camera-mode surface --output outputs/planet-surface-day.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 0.0 --planet-camera-mode surface --output outputs/planet-surface-night.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 5.5 --planet-camera-mode orbit --output outputs/planet-orbit-dawn.png
@@ -82,7 +80,7 @@ The broader manual capture matrix is tracked in
 | Surface LOD | Done as v1: coverage-first cube-sphere patches, live instance-buffer uploads, hysteresis, single-step neighbor repair, terrain-aware screen-error bounds, and wire/debug diagnostics. |
 | Terrain field | Active procedural contract: CPU/shader sampling share height, named terrain bands, normal, water depth, shoreline, material, climate, roughness, and tile-summary vocabulary. It is not final art direction or streamed data. |
 | Local detail clipmap | Near-field surface layer: altitude-gated bounded local detail contributes to `final` surface view and can be inspected in local-detail and terrain-field views, with `local-detail-horizon` reserved for horizon-scale/full-range inspection. Local/global morphing, persistent topology, streaming, and ocean payloads remain deferred. |
-| Sky/celestial/atmosphere | Done as v1: shared mean solar clock/celestial mechanics, unified atmosphere sky with night-sky atlas sampling, depth-tested moon body geometry, `sky-frame-legacy` fallback comparison, HDR post, and view-aware exposure. Full LUT/transmittance atmosphere and true ephemeris remain deferred. |
+| Sky/celestial/atmosphere | Done as v1: shared mean solar clock/celestial mechanics, unified atmosphere sky with night-sky atlas sampling, depth-tested moon body geometry, HDR post, and view-aware exposure. Full LUT/transmittance atmosphere and true ephemeris remain deferred. |
 | Streaming/cache | Deferred: current patch replans and lazy uploads are not an out-of-core streamer. Parent coverage remains renderable while future child/tile data is prepared. |
 | Ocean integration | Deferred: `projects/ocean` stays local-water focused until planet frame, LOD, terrain, and local-detail contracts are ready to host it as one surface layer. |
 | Config ownership | Deferred cleanup: planet still consumes shared `RunConfig`; a project-owned CLI/config facade should be extracted when the next project repeats this pressure. |
@@ -232,18 +230,15 @@ sun in daylight. Eccentricity, equation of time, lunar apsidal/nodal precession,
 and true Earth/Moon barycentric motion are deferred until the planet project
 needs that fidelity.
 
-The default sky backend is `unified-atmosphere`. It renders the shared
-foundation atmosphere in sky-only mode from planet-owned frame/celestial inputs:
-dark space, generated night-sky/Milky Way atlas content plus procedural stars,
-surface twilight, scattering, and sun disk/glow. `sky-frame-legacy` remains
-selectable for short-term A/B fallback through `--planet-sky-backend
-sky-frame-legacy`; the old `local` and `shared-atmosphere` strings are accepted
-only as compatibility aliases. The older `analytic` atmosphere mode remains
-selectable for comparison and debugging. The moon is a depth-tested sphere
-rendered from the same local celestial state on a camera-relative shell that
-preserves its apparent angular size. Phase and terminator shape therefore come
-from body lighting against the modeled sun direction instead of a sky-disk mask.
-The unified sky receives moon direction/radius/phase only for star masking and
+Planet sky rendering uses the shared foundation atmosphere in sky-only mode from
+planet-owned frame/celestial inputs: dark space, generated night-sky/Milky Way
+atlas content plus procedural stars, surface twilight, scattering, and sun
+disk/glow. The older `analytic` atmosphere mode remains selectable for
+comparison and debugging. The moon is a depth-tested sphere rendered from the
+same local celestial state on a camera-relative shell that preserves its
+apparent angular size. Phase and terminator shape therefore come from body
+lighting against the modeled sun direction instead of a sky-disk mask. The
+unified sky receives moon direction/radius/phase only for star masking and
 washout; it does not draw the planet moon disk.
 Night-side terrain receives a small phase-scaled secondary moonlight term. True
 node-aware lunar eclipses remain deferred. The surface shader receives frame

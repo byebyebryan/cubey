@@ -40,8 +40,9 @@ the planet ownership model.
 
 ### Planet
 
-`projects/planet` defaults to `PlanetSkyBackend::UnifiedAtmosphere`. The legacy
-`SkyFrame` path remains available through `sky-frame-legacy` as an A/B fallback.
+`projects/planet` uses the shared unified atmosphere path for its sky. The old
+planet `SkyFrame` backend has been removed from runtime, CLI/config, tests, and
+shaders.
 
 The current planet render order is:
 
@@ -93,32 +94,29 @@ physical exposure calibration, eclipses, and real ephemeris remain deferred.
 - `projects/planet` exercises the hard cases: orbit views, surface views,
   planet occlusion, moon body rendering, and surface lighting.
 - Generated lunar and night-sky assets are deterministic and metadata-bearing.
-- The legacy sky path is still available for visual comparison while the unified
-  path is hardened.
+- Legacy sky-frame captures remain useful as historical references, but runtime
+  comparison now happens through the unified path and atmosphere-mode controls.
 
-## Cleanup Before New Feature Work
+## Cleanup Outcome
 
-Do a small cleanup pass before adding new sky features, but keep it conservative.
-The goal is to reduce ambiguity and test noise, not to rewrite the renderer.
+The first cleanup batch before new feature work is complete. It reduced
+ambiguity and test noise without changing sky art direction.
 
-Recommended first cleanup batch:
+Completed:
 
 1. Update stale notes that still describe `CelestialSystem` as project-local.
    The current code uses shared `cubey::render` celestial state, and the docs
    should not imply that planet owns a separate permanent model.
-2. Make the backend naming explicit in docs: `unified-atmosphere` is the
-   default, while `sky-frame-legacy` is a comparison fallback.
+2. Make the active sky ownership explicit in docs: planet uses the unified
+   atmosphere path rather than a selectable sky backend.
 3. Record the moon ownership contract in one place: standalone atmosphere may
    draw a shader moon disk, but planet owns the rendered moon body.
-4. Keep the legacy `SkyFrame` implementation for now, but treat it as fallback
-   only. Do not remove it before fresh visual captures prove the unified path is
-   sufficient.
-5. Establish focused validation commands and capture recipes for sky changes
-   before changing shader behavior.
+4. Remove the legacy `SkyFrame` implementation after visual review confirmed it
+   was only a comparison fallback.
+5. Establish focused validation commands and capture recipes for sky changes.
 
-Defer these until after the cleanup and baseline pass:
+Still deferred until dedicated feature work:
 
-- deleting the legacy `SkyFrame` path;
 - moving the sun to explicit body geometry;
 - replacing the procedural stars or Milky Way with catalog or panorama data;
 - starting a LUT-backed atmosphere rewrite;
@@ -131,4 +129,3 @@ Defer these until after the cleanup and baseline pass:
 3. Small ownership cleanup if tests expose duplicated or stale plumbing.
 4. Visual iteration in `projects/atmosphere`.
 5. Integrated validation in `projects/planet`.
-

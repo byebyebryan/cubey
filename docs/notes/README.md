@@ -31,7 +31,7 @@ the detailed foundation notes under `docs/architecture/`.
 - [Sky validation baseline](sky-validation-baseline.md): focused sky label,
   build, unit-test, and PNG-smoke baseline for the `sky-rendering` worktree.
 - [Sky visual baseline review](sky-visual-baseline-review.md): capture review
-  findings and the decision to remove the legacy planet `SkyFrame` backend.
+  findings behind removing the legacy planet `SkyFrame` backend.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling

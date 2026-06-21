@@ -45,11 +45,9 @@ night-sky atlas compositing:
 
 ## Atmosphere Comparison
 
-The default sky backend is the unified foundation atmosphere fed by planet-owned
-frame and celestial inputs. Keep `analytic` atmosphere-mode captures and
-`sky-frame-legacy` backend captures around as comparison/debug fallbacks. The
-legacy `shared-atmosphere` and `local` backend strings remain accepted only as
-compatibility aliases.
+Planet sky rendering uses the unified foundation atmosphere fed by planet frame
+and celestial inputs. Keep `analytic` atmosphere-mode captures around as the
+comparison/debug fallback.
 In `physical` mode, the planet surface shader and unified sky sample the same
 shared Rayleigh/Mie/ozone atmosphere model; `analytic` mode keeps the older
 distance-haze controls for fallback comparison.
@@ -82,7 +80,6 @@ mkdir -p outputs/planet-look
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look antisun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-look/surface-antisun-dawn.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 0.0 --planet-camera-mode surface --planet-atmosphere-mode physical --output outputs/planet-look/surface-night.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --planet-camera-altitude-m 14000000 --planet-atmosphere-mode physical --output outputs/planet-look/orbit-terminator-wide.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-sky-backend sky-frame-legacy --planet-atmosphere-mode physical --output outputs/planet-look/legacy-surface-sun-dawn.png
 ```
 
 For this matrix, check that the sun-facing dawn has a warm horizon with a
@@ -90,18 +87,13 @@ blue-violet upper ramp, the antisun dawn is subdued instead of fully black, the
 night sample stays dark with stars/Milky Way visible, and the orbit sample keeps
 black space outside a thin atmosphere limb.
 
-Use these paired captures when comparing the unified atmosphere default against
-the legacy sky-frame backend:
+Use these sky-specific captures when inspecting the unified atmosphere path:
 
 ```sh
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-sky-backend unified-atmosphere --output outputs/planet-sky-unified-surface-sun-dawn.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-sky-backend sky-frame-legacy --output outputs/planet-sky-legacy-surface-sun-dawn.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look antisun --planet-camera-surface-pitch-deg 22 --planet-sky-backend unified-atmosphere --output outputs/planet-sky-unified-surface-antisun-dawn.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look antisun --planet-camera-surface-pitch-deg 22 --planet-sky-backend sky-frame-legacy --output outputs/planet-sky-legacy-surface-antisun-dawn.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --planet-sky-backend unified-atmosphere --output outputs/planet-sky-unified-orbit-limb.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --planet-sky-backend sky-frame-legacy --output outputs/planet-sky-legacy-orbit-limb.png
-./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 23.0 --planet-time-speed-hours-per-second 0.0 --planet-camera-mode orbit --planet-camera-altitude-m 14000000 --planet-camera-orbit-spin-deg-per-sec 8.0 --planet-sky-backend unified-atmosphere --output outputs/planet-sky-unified-orbit-spin.mp4
-./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 23.0 --planet-time-speed-hours-per-second 0.0 --planet-camera-mode orbit --planet-camera-altitude-m 14000000 --planet-camera-orbit-spin-deg-per-sec 8.0 --planet-sky-backend sky-frame-legacy --output outputs/planet-sky-legacy-orbit-spin.mp4
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --output outputs/planet-sky-surface-sun-dawn.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look antisun --planet-camera-surface-pitch-deg 22 --output outputs/planet-sky-surface-antisun-dawn.png
+./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --output outputs/planet-sky-orbit-limb.png
+./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 23.0 --planet-time-speed-hours-per-second 0.0 --planet-camera-mode orbit --planet-camera-altitude-m 14000000 --planet-camera-orbit-spin-deg-per-sec 8.0 --output outputs/planet-sky-orbit-spin.mp4
 ```
 
 ## Surface Showcase

@@ -286,10 +286,9 @@ Current implementation notes:
   surface lighting, and body occlusion. The durable pieces have since been
   promoted into shared `cubey::render` celestial and atmosphere foundation code:
   `projects/planet` now adapts planet-scale frame and celestial inputs into the
-  default `unified-atmosphere` backend while keeping explicit moon body geometry
-  under planet control. Repeatable headless captures can pin the solar day,
-  hour, clock pause state, and startup camera mode through descriptor-backed
-  `RunConfig` options.
+  unified atmosphere path while keeping explicit moon body geometry under planet
+  control. Repeatable headless captures can pin the solar day, hour, clock pause
+  state, and startup camera mode through descriptor-backed `RunConfig` options.
 - The planet surface frame has moved out of push constants. Per-frame uniform
   data now carries view/projection, render origin, radius, terrain options,
   sea-level/bathymetry/shoreline options, camera render position, horizon
@@ -300,8 +299,8 @@ Current implementation notes:
   explicit celestial body pass, and post pass through an HDR transient scene
   color target. This aligns planet with the renderer-wide linear HDR contract
   while keeping ocean integration deferred.
-- The current atmosphere path uses the shared unified atmosphere as the default
-  sky backend and keeps the old analytic/legacy paths as debug fallbacks. The
+- The current atmosphere path uses the shared unified atmosphere for planet sky
+  rendering and keeps the old analytic atmosphere mode as a debug fallback. The
   landed v1 is a direct single-scattering model with spherical atmosphere
   intersections, Rayleigh/Mie vocabulary, sun transmittance, and surface aerial
   perspective. Sky background and surface haze should keep sharing the same
@@ -350,11 +349,10 @@ The latest planet foundation pass closed several previously loose contracts:
   resetting the camera or waiting for the device. Patch-grid topology changes
   still rebuild the reusable grid and synchronize explicitly.
 - `PlanetAtmosphereInputs` is derived from the planet-owned celestial model and
-  now feeds the default `unified-atmosphere` sky backend through a local
-  tangent-frame adapter. `sky-frame-legacy` keeps the old SkyFrame background as
-  a short-term A/B fallback. `analytic` remains an atmosphere-mode fallback/debug
-  option, while `physical` is the default v1 scattering vocabulary for planet
-  atmosphere inputs until the LUT-backed path replaces it.
+  feeds the unified atmosphere path through a local tangent-frame adapter.
+  `analytic` remains an atmosphere-mode fallback/debug option, while `physical`
+  is the default v1 scattering vocabulary for planet atmosphere inputs until the
+  LUT-backed path replaces it.
 - Moon rendering remains explicit body geometry. The body pass now receives
   camera-relative shading inputs, applies procedural lunar albedo variation, and
   renders the moon as a depth-tested body with premultiplied visibility for
@@ -380,7 +378,7 @@ Current alignment by area:
 | Global surface LOD | Done as v1 and now routed through shared `cubey::render::AdaptivePatchLod`. Planet still owns cube-sphere mapping, terrain displacement bounds, horizon/view culling callbacks, mesh/skirt generation, shader packing, and GPU upload policy. |
 | Procedural terrain field | Active contract, not just a visual placeholder. CPU tests, tile summaries, shader displacement, named terrain bands, material bands, water depth, shoreline, climate, and roughness use the same project-local vocabulary. |
 | Local detail clipmap | Near-field surface layer. The altitude-gated clipmap now uses semantic ridge/channel/plain residuals over the global terrain field and can contribute to `final`, bounded local-detail, terrain-field, and opt-in shaded inspection rendering. `local-detail-horizon` is reserved for full-range horizon diagnostics. Local/global morphing, persistent topology, streaming, and ocean payloads remain explicit follow-ups. |
-| Celestial and atmosphere | Done as v1. The planet project owns mean solar time, sun/moon state, planet-frame adapters, view-aware exposure, and moon body rendering while the unified foundation atmosphere is the default sky backend. `sky-frame-legacy` remains a comparison fallback. Atmosphere LUTs, physical transmittance assets, eclipses, and real ephemeris are deferred. |
+| Celestial and atmosphere | Done as v1. The planet project owns mean solar time, sun/moon state, planet-frame adapters, view-aware exposure, and moon body rendering while the unified foundation atmosphere is the only planet sky path. Atmosphere LUTs, physical transmittance assets, eclipses, and real ephemeris are deferred. |
 | Streaming and resource residency | Deferred. Current runtime replans CPU patch lists and lazily uploads instance buffers, but it is not an out-of-core tile streamer or async residency manager. |
 | Planet/ocean integration | Deferred. Ocean should port in as a local water layer once the planet frame, terrain field, sea datum, local detail clipmap, and render order are stable enough. |
 | Project config facade | Deferred. Planet still routes through shared `RunConfig`; extracting project-owned CLI/config ownership is worthwhile once another project repeats the same option pressure. |
@@ -398,9 +396,9 @@ explicit celestial-body frame renders depth-tested body geometry.
 `projects/planet` is the first planet-scale consumer because orbit and surface
 views need real occlusion, radius, phase, lighting, diagnostics, planetary
 self-rotation, and eventually eclipses or multiple moons.
-The `unified-atmosphere` sky backend renders the shared foundation atmosphere in
-sky-only mode, receives planet-owned view/sun/moon directions through the tangent
-adapter, and leaves explicit celestial body rendering under planet control. The
+The unified atmosphere path renders the shared foundation atmosphere in sky-only
+mode, receives planet-owned view/sun/moon directions through the tangent adapter,
+and leaves explicit celestial body rendering under planet control. The
 foundation atmosphere receives moon direction/radius/phase for star masking and
 sky washout, but it does not draw the planet moon disk. The next production
 atmosphere target is still a LUT-backed path: transmittance first, then sky-view
@@ -457,9 +455,8 @@ mask stars behind the full moon disk, but no atmosphere shader decides celestial
 placement, planet occlusion, moon phase, or moonlight. The shared
 `AtmosphereEnvironmentRuntime` now has the frame inputs needed by planet while
 existing atmosphere/ocean/glTF paths keep using the same foundation runtime.
-`sky-frame-legacy` stays available only as an A/B fallback while the unified path
-is hardened. Later work can move the sun to body-backed rendering or add
-node-aware eclipses without changing the solar-system source of truth.
+Later work can move the sun to body-backed rendering or add node-aware eclipses
+without changing the solar-system source of truth.
 
 Established engine precedents support this split. Unreal's Sky Atmosphere
 consumes scene Directional Lights marked as atmosphere lights, including
@@ -520,7 +517,7 @@ Current next sequence:
 
 Completed foundation checkpoints include the initial planet viewer, cube-sphere
 surface LOD, seam/skirt diagnostics, shared celestial/sky foundation, unified
-atmosphere sky default with legacy fallback, visual smoke coverage, `PlanetUi` /
+atmosphere planet sky path, visual smoke coverage, `PlanetUi` /
 `PlanetSurfaceRuntime`, terrain-field v2, and semantic local-detail diagnostics.
 
 Non-goals for the first planet pass:

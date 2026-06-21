@@ -9,9 +9,9 @@ not tracked by git; this note records the actionable observations.
 - The unified atmosphere path is the right planet sky foundation. Its orbit limb
   and twilight gradients are coherent with the current planet-scale atmosphere
   contract.
-- The legacy `sky-frame-legacy` path has a more obvious sun glow and more visible
-  stars in dawn surface views, but it reads like a space backdrop rather than a
-  lower-atmosphere sky.
+- The archived legacy `sky-frame-legacy` captures had a more obvious sun glow
+  and more visible stars in dawn surface views, but they read like a space
+  backdrop rather than a lower-atmosphere sky.
 - Unified and legacy orbit-limb captures are close enough that the legacy path
   does not provide a meaningful runtime fallback for orbit validation.
 - The planet day-moon and surface-night captures are not strong moon/night-sky
@@ -22,8 +22,8 @@ not tracked by git; this note records the actionable observations.
 
 ## Decision
 
-Use the unified atmosphere backend as the only active planet sky path. Remove
-the legacy fullscreen `SkyFrame` backend from planet runtime, UI, CLI, tests, and
+Use the unified atmosphere path as the only active planet sky path. Remove the
+legacy fullscreen `SkyFrame` backend from planet runtime, UI, CLI, tests, and
 active docs. Keep explicit celestial body rendering for the moon.
 
 ## Follow-Ups
@@ -33,4 +33,3 @@ active docs. Keep explicit celestial body rendering for the moon.
   work.
 - Consider cleaner standalone atmosphere review captures with ground reference
   geometry disabled or documented as a debug overlay.
-
