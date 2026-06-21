@@ -10,9 +10,9 @@ Current V1 scope:
 - generated 128^3 Perlin-Worley base noise;
 - generated 32^3 Worley erosion/detail noise;
 - generated 1024^2 weather map with authored coverage, cloud type,
-  edge-breakup, and local-scatter channels that bias the local 3D density field;
+  and edge-breakup channels for authored weather influence;
 - generated artifact descriptors for the materialized base density volume,
-  detail erosion volume, and local weather map, using the shared procedural
+  detail erosion volume, and weather map, using the shared procedural
   metadata contract;
 - spherical shell raymarch with height gradients, detail erosion, Beer
   transmittance, powder response, and a short light march;
@@ -37,9 +37,9 @@ Current V1 scope:
   high/orbit shell evaluation, and debug views for the local-vs-orbit blend;
 - footprint- and grazing-aware orbit shell filtering so high-frequency weather
   detail is retained on the disk but damped near the shell edge;
-- diagnostics for weather, weather edge, weather bias, base/detail density,
-  density, transmittance, cloud type, visible density/cloud type, lighting,
-  shadow, cloud alpha, distance, distance regime, local/orbit alpha,
+- diagnostics for authored weather, local scatter, weather edge, coverage bias,
+  base/detail density, density, transmittance, cloud type, visible density/cloud
+  type, lighting, shadow, cloud alpha, distance, distance regime, local/orbit alpha,
   ray-sampled orbit coverage/detail/hull, shell alpha/height/normal/shadow,
   metadata distance/alpha/confidence, metadata density, steps, and background.
 
@@ -62,12 +62,13 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --cloud-weather-preset broken-cumulus
 ./build/dev/projects/cloud/cloud --cloud-weather-preset storm-cells
 ./build/dev/projects/cloud/cloud --debug-view raw-final
-./build/dev/projects/cloud/cloud --debug-view weather
+./build/dev/projects/cloud/cloud --debug-view authored-weather
+./build/dev/projects/cloud/cloud --debug-view local-scatter
 ./build/dev/projects/cloud/cloud --debug-view base-density
 ./build/dev/projects/cloud/cloud --debug-view detail-density
 ./build/dev/projects/cloud/cloud --debug-view cloud-type
 ./build/dev/projects/cloud/cloud --debug-view weather-edge
-./build/dev/projects/cloud/cloud --debug-view weather-bias
+./build/dev/projects/cloud/cloud --debug-view coverage-bias
 ./build/dev/projects/cloud/cloud --debug-view density
 ./build/dev/projects/cloud/cloud --debug-view visible-density
 ./build/dev/projects/cloud/cloud --debug-view visible-cloud-type
@@ -125,7 +126,8 @@ a small surface-local density set. The default set includes high-oblique
 far-shell strength comparisons and orbit-fill comparisons. `DEEP=1` adds
 secondary tuning captures such as sampling comparisons, metadata, lighting
 breakdowns, weather-influence sweeps, satellite orbit motion, and explicitly named
-`orbit-local-weather` diagnostics for the old surface-local weather projection.
+`orbit-local-weather` / `orbit-local-coverage-bias` diagnostics for the old
+surface-local weather projection.
 The script also writes
 `diagnostic-crops/center-feature-contact.png` with resolution-scaled center
 crops for the active review set.
@@ -142,7 +144,7 @@ Controls:
 - `Weather softness`: damps broad weather contrast before local density shaping.
 - `Weather influence`: controls how strongly the broad weather map biases local
   shape thresholds, cloud type, and edge erosion. The default is `0`, preserving
-  the local noise-scattered baseline while authored weather remains opt-in.
+  the procedural `local-scatter` baseline while authored weather remains opt-in.
 - `Sampling`: ray-start sampling mode and jitter amount.
 - `Distance Regime`: local/orbit mode, altitude and ray-distance transition
   ranges, broad-shell detail strength, and broad-shell density scale.

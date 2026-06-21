@@ -91,12 +91,15 @@ capture orbit-alpha --cloud-camera-mode orbit --debug-view orbit-alpha
 capture orbit-ray-coverage --cloud-camera-mode orbit --debug-view orbit-coverage
 capture orbit-ray-detail --cloud-camera-mode orbit --debug-view orbit-detail
 capture orbit-ray-hull --cloud-camera-mode orbit --debug-view orbit-hull
-capture high-oblique-weather --cloud-camera-mode high-oblique --debug-view weather
-capture high-oblique-weather-bias --cloud-camera-mode high-oblique --debug-view weather-bias
+capture high-oblique-authored-weather --cloud-camera-mode high-oblique \
+    --debug-view authored-weather
+capture high-oblique-coverage-bias --cloud-camera-mode high-oblique \
+    --debug-view coverage-bias
 capture raw-final --cloud-camera-mode surface-up --debug-view raw-final
-capture weather --cloud-camera-mode surface-up --debug-view weather
+capture authored-weather --cloud-camera-mode surface-up --debug-view authored-weather
+capture local-scatter --cloud-camera-mode surface-up --debug-view local-scatter
 capture weather-edge --cloud-camera-mode surface-up --debug-view weather-edge
-capture weather-bias --cloud-camera-mode surface-up --debug-view weather-bias
+capture coverage-bias --cloud-camera-mode surface-up --debug-view coverage-bias
 capture base-density --cloud-camera-mode surface-up --debug-view base-density
 capture detail-density --cloud-camera-mode surface-up --debug-view detail-density
 capture cloud-type --cloud-camera-mode surface-up --debug-view cloud-type
@@ -132,7 +135,7 @@ if [[ "${DEEP}" != "0" ]]; then
             "${OUT_DIR}/orbit-satellite-motion-later.png"
     fi
     capture orbit-local-weather --cloud-camera-mode orbit --debug-view weather
-    capture orbit-local-weather-bias --cloud-camera-mode orbit --debug-view weather-bias
+    capture orbit-local-coverage-bias --cloud-camera-mode orbit --debug-view coverage-bias
     capture surface-up-weather-local --cloud-camera-mode surface-up --cloud-weather-influence 0
     capture surface-up-weather-authored --cloud-camera-mode surface-up --cloud-weather-influence 1
     capture high-oblique-weather-local --cloud-camera-mode high-oblique --cloud-weather-influence 0
@@ -169,7 +172,7 @@ if command -v magick >/dev/null 2>&1; then
     mkdir -p "${crop_dir}"
     crop_inputs=()
     crop_names=(
-        surface-up raw-final cloud-alpha weather weather-edge weather-bias
+        surface-up raw-final cloud-alpha authored-weather local-scatter weather-edge coverage-bias
         cloud-type density visible-density visible-cloud-type
         high-oblique-far-shell-off high-oblique-far-shell-strong
         orbit-satellite-preview orbit-satellite-high-oblique orbit-volume-comparison
@@ -186,7 +189,7 @@ if command -v magick >/dev/null 2>&1; then
     if [[ "${DEEP}" != "0" ]]; then
         crop_names+=(
             orbit-satellite-motion-start orbit-satellite-motion-later
-            orbit-local-weather orbit-local-weather-bias
+            orbit-local-weather orbit-local-coverage-bias
             metadata-alpha metadata-distance metadata-confidence metadata-density
             transmittance lighting ambient-light direct-light phase-light shadow
             steps background

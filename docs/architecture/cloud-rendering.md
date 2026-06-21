@@ -69,14 +69,15 @@ Keep these ideas:
   over local density instead of as final opacity masks;
 - cloud-type height gradients and coverage/density shaping;
 - separate authored weather channels for broad coverage, cloud type, and edge
-  softness/breakup, plus a local scatter channel so the influence control can
-  fade back to the old noise-driven scatter;
+  softness/breakup, with continuous procedural local scatter as the default
+  endpoint for the influence control;
 - default production tuning should preserve the local scatter endpoint until
   authored weather shapes are proven better than the old random distribution;
 - spherical cloud-shell intersections;
 - Beer transmittance, powder/edge response, and a short light march;
-- source-like debug views for weather, base density, detail density, density,
-  weather bias, lighting, transmittance, shadow, distance, and step count.
+- source-like debug views for authored weather, local scatter, coverage bias,
+  base density, detail density, density, lighting, transmittance, shadow,
+  distance, and step count.
 
 Do not overfit these parts:
 
