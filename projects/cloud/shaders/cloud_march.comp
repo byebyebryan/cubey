@@ -38,10 +38,11 @@ struct DensitySample {
     float density;
     float base_density;
     float detail_density;
-    float weather;
+    float authored_weather;
+    float local_scatter;
     float cloud_type;
     float weather_edge;
-    float weather_bias;
+    float coverage_bias;
     float height_fraction;
 };
 
@@ -558,7 +559,8 @@ vec2 cloud_weather_uv(vec3 position) {
 DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float height_fraction = cloud_height_fraction(position);
     if (height_fraction <= 0.0 || height_fraction >= 1.0) {
-        return DensitySample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, height_fraction);
+        return DensitySample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                             height_fraction);
     }
 
     float crispiness = max(params.shape_options.x, 0.001);
@@ -591,8 +593,8 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float global_coverage = clamp(params.weather.x, 0.0, 1.0);
     float softness = clamp(params.sampling_options.z, 0.02, 0.60);
     float softened_authored_weather = mix(authored_weather, 0.5, softness);
-    float weather_bias = mix(local_scatter, softened_authored_weather, weather_influence);
-    float local_coverage = clamp(global_coverage * weather_bias, 0.0, 1.0);
+    float coverage_bias = mix(local_scatter, softened_authored_weather, weather_influence);
+    float local_coverage = clamp(global_coverage * coverage_bias, 0.0, 1.0);
     float base_with_coverage =
         cloud_remap(base_cloud, local_coverage, 1.0, 0.0, 1.0) * local_coverage;
     float detail_density = 0.0;
@@ -620,7 +622,7 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
 
     float density = clamp(base_with_coverage, 0.0, 1.0);
     return DensitySample(density, clamp(base_cloud, 0.0, 1.0), detail_density,
-                         authored_weather, cloud_type, weather_edge, weather_bias,
+                         authored_weather, local_scatter, cloud_type, weather_edge, coverage_bias,
                          height_fraction);
 }
 
@@ -889,6 +891,7 @@ DensitySample cloud_orbit_density_sample(vec3 position) {
                          base_hull,
                          orbit.detail * detail_strength,
                          orbit.coverage,
+                         orbit.coverage,
                          orbit.cloud_type,
                          orbit.weather_edge,
                          detailed_hull,
@@ -1060,7 +1063,7 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
 
     DensitySample density_sample =
         DensitySample(max(alpha, 0.001), base_hull, orbit.detail, orbit.coverage,
-                      orbit.cloud_type, orbit.weather_edge, filtered_hull,
+                      orbit.coverage, orbit.cloud_type, orbit.weather_edge, filtered_hull,
                       cloud_orbit_shell_surface_height_fraction());
     vec3 sun_color = vec3(1.18, 1.10, 0.92) * sun_intensity;
     vec3 ambient = cloud_cloud_ambient(hit_position, direction, density_sample) *
@@ -1475,27 +1478,30 @@ void main() {
         debug_color = debug_view == CLOUD_DEBUG_VISIBLE_DENSITY
                           ? vec3(ray_fields.max_density)
                           : vec3(ray_fields.weighted_cloud_type);
-    } else if (debug_view == CLOUD_DEBUG_WEATHER ||
+    } else if (debug_view == CLOUD_DEBUG_AUTHORED_WEATHER ||
                debug_view == CLOUD_DEBUG_BASE_DENSITY ||
                debug_view == CLOUD_DEBUG_DETAIL_DENSITY ||
                debug_view == CLOUD_DEBUG_CLOUD_TYPE ||
+               debug_view == CLOUD_DEBUG_LOCAL_SCATTER ||
                debug_view == CLOUD_DEBUG_WEATHER_EDGE ||
-               debug_view == CLOUD_DEBUG_WEATHER_BIAS ||
+               debug_view == CLOUD_DEBUG_COVERAGE_BIAS ||
                debug_view == CLOUD_DEBUG_DENSITY) {
         vec3 mid = origin + direction * mix(start_t, end_t, 0.5);
         DensitySample sample_data = cloud_sample_density(mid, true, 0.0);
-        if (debug_view == CLOUD_DEBUG_WEATHER) {
-            debug_color = vec3(sample_data.weather);
+        if (debug_view == CLOUD_DEBUG_AUTHORED_WEATHER) {
+            debug_color = vec3(sample_data.authored_weather);
         } else if (debug_view == CLOUD_DEBUG_BASE_DENSITY) {
             debug_color = vec3(sample_data.base_density);
         } else if (debug_view == CLOUD_DEBUG_DETAIL_DENSITY) {
             debug_color = vec3(sample_data.detail_density);
         } else if (debug_view == CLOUD_DEBUG_CLOUD_TYPE) {
             debug_color = vec3(sample_data.cloud_type);
+        } else if (debug_view == CLOUD_DEBUG_LOCAL_SCATTER) {
+            debug_color = vec3(sample_data.local_scatter);
         } else if (debug_view == CLOUD_DEBUG_WEATHER_EDGE) {
             debug_color = vec3(sample_data.weather_edge);
-        } else if (debug_view == CLOUD_DEBUG_WEATHER_BIAS) {
-            debug_color = vec3(sample_data.weather_bias);
+        } else if (debug_view == CLOUD_DEBUG_COVERAGE_BIAS) {
+            debug_color = vec3(sample_data.coverage_bias);
         } else {
             debug_color = vec3(sample_data.density);
         }

@@ -97,7 +97,7 @@ inline constexpr std::array<CloudsOrbitRepresentation, 2> kCloudsOrbitRepresenta
 
 enum class CloudsDebugView : std::uint32_t {
     Final = 0,
-    Weather = 1,
+    AuthoredWeather = 1,
     Density = 2,
     Transmittance = 3,
     Lighting = 4,
@@ -120,7 +120,7 @@ enum class CloudsDebugView : std::uint32_t {
     VisibleDensity = 26,
     VisibleCloudType = 27,
     WeatherEdge = 28,
-    WeatherBias = 29,
+    CoverageBias = 29,
     DistanceRegime = 30,
     LocalAlpha = 31,
     OrbitAlpha = 32,
@@ -132,6 +132,7 @@ enum class CloudsDebugView : std::uint32_t {
     OrbitShellHeight = 38,
     OrbitShellNormal = 39,
     OrbitShellShadow = 40,
+    LocalScatter = 41,
 };
 
 enum class CloudsGeneratedArtifact : std::uint32_t {
@@ -146,9 +147,10 @@ inline constexpr std::array<CloudsGeneratedArtifact, 3> kCloudsGeneratedArtifact
     CloudsGeneratedArtifact::WeatherMap,
 };
 
-inline constexpr std::array<CloudsDebugView, 36> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 37> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
-    CloudsDebugView::Weather,      CloudsDebugView::Density,
+    CloudsDebugView::AuthoredWeather,
+    CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting,
     CloudsDebugView::AmbientLight, CloudsDebugView::DirectLight,
     CloudsDebugView::PhaseLight,   CloudsDebugView::Shadow,
@@ -160,8 +162,9 @@ inline constexpr std::array<CloudsDebugView, 36> kCloudsDebugViews{
     CloudsDebugView::MetadataDensity,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
     CloudsDebugView::CloudType,
+    CloudsDebugView::LocalScatter,
     CloudsDebugView::WeatherEdge,
-    CloudsDebugView::WeatherBias,
+    CloudsDebugView::CoverageBias,
     CloudsDebugView::VisibleDensity,
     CloudsDebugView::VisibleCloudType,
     CloudsDebugView::DistanceRegime,

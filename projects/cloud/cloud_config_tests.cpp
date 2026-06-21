@@ -140,16 +140,20 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include cloud-type diagnostics after detail density");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::CloudType) ==
+                cubey::projects::cloud::CloudsDebugView::LocalScatter,
+            "cloud debug view should include local scatter diagnostics after cloud type");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalScatter) ==
                 cubey::projects::cloud::CloudsDebugView::WeatherEdge,
-            "cloud debug view should include weather edge diagnostics after cloud type");
+            "cloud debug view should include weather edge diagnostics after local scatter");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::WeatherEdge) ==
-                cubey::projects::cloud::CloudsDebugView::WeatherBias,
-            "cloud debug view should include weather bias diagnostics after edge");
+                cubey::projects::cloud::CloudsDebugView::CoverageBias,
+            "cloud debug view should include coverage bias diagnostics after edge");
     require(cubey::projects::cloud::next_clouds_debug_view(
-                cubey::projects::cloud::CloudsDebugView::WeatherBias) ==
+                cubey::projects::cloud::CloudsDebugView::CoverageBias) ==
                 cubey::projects::cloud::CloudsDebugView::VisibleDensity,
-            "cloud debug view should include visible-density diagnostics after weather bias");
+            "cloud debug view should include visible-density diagnostics after coverage bias");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::VisibleDensity) ==
                 cubey::projects::cloud::CloudsDebugView::VisibleCloudType,
@@ -237,14 +241,26 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud::clouds_debug_view_from_string("cloud-type") ==
                 cubey::projects::cloud::CloudsDebugView::CloudType,
             "cloud type debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("authored-weather") ==
+                cubey::projects::cloud::CloudsDebugView::AuthoredWeather,
+            "authored weather debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("weather") ==
+                cubey::projects::cloud::CloudsDebugView::AuthoredWeather,
+            "weather debug alias should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("local-scatter") ==
+                cubey::projects::cloud::CloudsDebugView::LocalScatter,
+            "local scatter debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("weather-edge") ==
                 cubey::projects::cloud::CloudsDebugView::WeatherEdge,
             "weather edge debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("coverage-bias") ==
+                cubey::projects::cloud::CloudsDebugView::CoverageBias,
+            "coverage bias debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("weather-bias") ==
-                cubey::projects::cloud::CloudsDebugView::WeatherBias,
-            "weather bias debug view should parse");
+                cubey::projects::cloud::CloudsDebugView::CoverageBias,
+            "weather bias debug alias should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("weather-mask") ==
-                cubey::projects::cloud::CloudsDebugView::WeatherBias,
+                cubey::projects::cloud::CloudsDebugView::CoverageBias,
             "weather mask debug alias should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("visible-density") ==
                 cubey::projects::cloud::CloudsDebugView::VisibleDensity,

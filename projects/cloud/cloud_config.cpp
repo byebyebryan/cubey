@@ -336,8 +336,8 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "raw-final") {
         return CloudsDebugView::RawFinal;
     }
-    if (value == "weather") {
-        return CloudsDebugView::Weather;
+    if (value == "authored-weather" || value == "weather") {
+        return CloudsDebugView::AuthoredWeather;
     }
     if (value == "density") {
         return CloudsDebugView::Density;
@@ -393,11 +393,14 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "cloud-type") {
         return CloudsDebugView::CloudType;
     }
+    if (value == "local-scatter") {
+        return CloudsDebugView::LocalScatter;
+    }
     if (value == "weather-edge") {
         return CloudsDebugView::WeatherEdge;
     }
-    if (value == "weather-bias" || value == "weather-mask") {
-        return CloudsDebugView::WeatherBias;
+    if (value == "coverage-bias" || value == "weather-bias" || value == "weather-mask") {
+        return CloudsDebugView::CoverageBias;
     }
     if (value == "visible-density") {
         return CloudsDebugView::VisibleDensity;
@@ -447,8 +450,8 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "final";
     case CloudsDebugView::RawFinal:
         return "raw-final";
-    case CloudsDebugView::Weather:
-        return "weather";
+    case CloudsDebugView::AuthoredWeather:
+        return "authored-weather";
     case CloudsDebugView::Density:
         return "density";
     case CloudsDebugView::Transmittance:
@@ -485,10 +488,12 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "detail-density";
     case CloudsDebugView::CloudType:
         return "cloud-type";
+    case CloudsDebugView::LocalScatter:
+        return "local-scatter";
     case CloudsDebugView::WeatherEdge:
         return "weather-edge";
-    case CloudsDebugView::WeatherBias:
-        return "weather-bias";
+    case CloudsDebugView::CoverageBias:
+        return "coverage-bias";
     case CloudsDebugView::VisibleDensity:
         return "visible-density";
     case CloudsDebugView::VisibleCloudType:
