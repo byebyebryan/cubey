@@ -164,6 +164,11 @@ Initial scope:
   acceptable later as generated caches or diagnostics, but not as the source of
   truth; wind and slow domain warp should move broad systems without reseeding
   the noise field;
+- orbit visual direction should be judged against satellite/full-disk Earth
+  imagery, not against the current volume raymarch. The useful cues are sparse
+  regional weather systems, spiral/frontal bands, cellular breakup inside cloud
+  masses, and large clear ocean windows. The volume path is an implementation
+  comparison only and is not an art target;
 - the cloud-top shell should composite from column optical depth, not an
   arbitrary alpha curve, so orbit opacity can be tuned through density and
   extinction controls that map to a plausible cloud mass;
@@ -182,6 +187,10 @@ Deferred until the shape is credible:
 
 - ocean reflection integration;
 - finished planet-scale orbit weather art direction;
+- removal of remaining orbit-shell projection/alias artifacts in the coverage
+  and alpha diagnostics;
+- a stronger planet-scale weather model than fixed experimental synoptic
+  anchors plus procedural breakup;
 - cloud shadow consumption by ocean/terrain;
 - full cached octahedral sky blending;
 - temporal reconstruction beyond basic diagnostic toggles;
