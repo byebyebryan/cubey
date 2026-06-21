@@ -15,6 +15,8 @@ struct TerrainCliConfig {
     cubey::projects::terrain::TerrainDebugView debug_view =
         cubey::projects::terrain::TerrainDebugView::Final;
     std::filesystem::path output_path{};
+    std::filesystem::path output_dir{};
+    bool export_all_views = false;
     bool headless = false;
 };
 
@@ -89,10 +91,17 @@ struct TerrainCliConfig {
         } else if (arg == "--headless") {
             config.headless = true;
         } else if (arg == "--terrain-debug-view") {
-            config.debug_view = cubey::projects::terrain::terrain_debug_view_from_name(
-                require_value(index, argc, argv, arg));
+            const std::string_view value = require_value(index, argc, argv, arg);
+            if (value == "all") {
+                config.export_all_views = true;
+            } else {
+                config.debug_view = cubey::projects::terrain::terrain_debug_view_from_name(value);
+            }
         } else if (arg == "--output") {
             config.output_path = std::filesystem::path{
+                std::string(require_value(index, argc, argv, arg))};
+        } else if (arg == "--terrain-output-dir") {
+            config.output_dir = std::filesystem::path{
                 std::string(require_value(index, argc, argv, arg))};
         } else {
             throw std::runtime_error("unknown argument: " + std::string(arg));
@@ -106,14 +115,35 @@ struct TerrainCliConfig {
 int main(int argc, char** argv) {
     try {
         const TerrainCliConfig cli_config = parse_config(argc, argv);
+        if (!cli_config.output_path.empty() && !cli_config.output_dir.empty()) {
+            throw std::runtime_error("terrain export accepts either --output or --terrain-output-dir");
+        }
+        if (cli_config.export_all_views && cli_config.output_dir.empty()) {
+            throw std::runtime_error("terrain debug view all requires --terrain-output-dir");
+        }
         const cubey::projects::terrain::TerrainRegionProduct product =
             cubey::projects::terrain::generate_terrain_region(cli_config.terrain);
-        if (cli_config.headless || !cli_config.output_path.empty()) {
-            if (cli_config.output_path.empty()) {
-                throw std::runtime_error("terrain headless export requires --output");
+        if (cli_config.headless || !cli_config.output_path.empty() ||
+            !cli_config.output_dir.empty()) {
+            if (cli_config.output_path.empty() && cli_config.output_dir.empty()) {
+                throw std::runtime_error(
+                    "terrain headless export requires --output or --terrain-output-dir");
             }
-            cubey::projects::terrain::write_terrain_debug_png(product, cli_config.debug_view,
-                                                              cli_config.output_path);
+            if (cli_config.export_all_views) {
+                cubey::projects::terrain::write_terrain_debug_review_pngs(product,
+                                                                          cli_config.output_dir);
+            } else if (!cli_config.output_dir.empty()) {
+                const std::filesystem::path output_path =
+                    cli_config.output_dir /
+                    (std::string(cubey::projects::terrain::terrain_debug_view_name(
+                         cli_config.debug_view)) +
+                     ".png");
+                cubey::projects::terrain::write_terrain_debug_png(product, cli_config.debug_view,
+                                                                  output_path);
+            } else {
+                cubey::projects::terrain::write_terrain_debug_png(product, cli_config.debug_view,
+                                                                  cli_config.output_path);
+            }
         }
         std::cout << "terrain: generated product '" << product.config.recipe_id << "' "
                   << product.fields.desc().width << "x" << product.fields.desc().height
@@ -121,6 +151,15 @@ int main(int argc, char** argv) {
         if (!cli_config.output_path.empty()) {
             std::cout << " wrote " << cli_config.output_path.string() << " view="
                       << cubey::projects::terrain::terrain_debug_view_name(cli_config.debug_view);
+        } else if (!cli_config.output_dir.empty()) {
+            std::cout << " wrote " << cli_config.output_dir.string();
+            if (cli_config.export_all_views) {
+                std::cout << " views=all";
+            } else {
+                std::cout << " view="
+                          << cubey::projects::terrain::terrain_debug_view_name(
+                                 cli_config.debug_view);
+            }
         }
         std::cout << '\n';
         return EXIT_SUCCESS;

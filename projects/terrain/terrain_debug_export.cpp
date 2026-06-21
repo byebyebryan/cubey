@@ -46,6 +46,20 @@ inline constexpr std::array<DebugViewName, 11> kDebugViewNames{
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
+inline constexpr std::array<TerrainDebugView, 11> kTerrainDebugReviewViews{
+    TerrainDebugView::Final,
+    TerrainDebugView::Height,
+    TerrainDebugView::Slope,
+    TerrainDebugView::RidgeUplift,
+    TerrainDebugView::FlowAccumulation,
+    TerrainDebugView::StreamOrder,
+    TerrainDebugView::RiverMask,
+    TerrainDebugView::Wetness,
+    TerrainDebugView::Deposition,
+    TerrainDebugView::Material,
+    TerrainDebugView::Vegetation,
+};
+
 [[nodiscard]] bool name_matches(std::string_view value, std::string_view canonical) {
     if (value.size() != canonical.size()) {
         return false;
@@ -249,6 +263,10 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
 }
 
+std::span<const TerrainDebugView> terrain_debug_review_views() {
+    return kTerrainDebugReviewViews;
+}
+
 void write_terrain_debug_png(const TerrainRegionProduct& product, TerrainDebugView view,
                              const std::filesystem::path& output_path) {
     if (output_path.empty()) {
@@ -260,6 +278,19 @@ void write_terrain_debug_png(const TerrainRegionProduct& product, TerrainDebugVi
     const cubey::procedural::Grid2DDesc& desc = product.fields.desc();
     const std::vector<std::uint8_t> pixels = render_debug_view(product, view);
     cubey::write_png_rgba8(output_path, desc.width, desc.height, pixels);
+}
+
+void write_terrain_debug_review_pngs(const TerrainRegionProduct& product,
+                                     const std::filesystem::path& output_dir) {
+    if (output_dir.empty()) {
+        throw std::runtime_error("terrain debug PNG output directory must be non-empty");
+    }
+    std::filesystem::create_directories(output_dir);
+    for (const TerrainDebugView view : terrain_debug_review_views()) {
+        const std::filesystem::path output_path =
+            output_dir / (std::string(terrain_debug_view_name(view)) + ".png");
+        write_terrain_debug_png(product, view, output_path);
+    }
 }
 
 } // namespace cubey::projects::terrain
