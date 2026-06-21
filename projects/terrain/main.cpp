@@ -80,6 +80,10 @@ struct TerrainCliConfig {
             config.terrain.grid_width = parse_u32(require_value(index, argc, argv, arg), arg);
         } else if (arg == "--grid-height") {
             config.terrain.grid_height = parse_u32(require_value(index, argc, argv, arg), arg);
+        } else if (arg == "--width") {
+            config.terrain.grid_width = parse_u32(require_value(index, argc, argv, arg), arg);
+        } else if (arg == "--height") {
+            config.terrain.grid_height = parse_u32(require_value(index, argc, argv, arg), arg);
         } else if (arg == "--cell-size") {
             config.terrain.cell_size_m = parse_float(require_value(index, argc, argv, arg), arg);
         } else if (arg == "--headless") {

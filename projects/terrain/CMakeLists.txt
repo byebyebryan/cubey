@@ -28,4 +28,40 @@ if (BUILD_TESTING)
             cubey_project_warnings
     )
     add_test(NAME terrain_product_tests COMMAND cubey_project_terrain_tests)
+
+    set(CUBEY_TERRAIN_HEADLESS_FINAL_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-headless-final.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_headless_final_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_HEADLESS_FINAL_OUTPUT}"
+        --headless
+        --terrain-debug-view
+        final
+    )
+    cubey_add_png_stats_test(
+        terrain_headless_final_writes_png
+        "${CUBEY_TERRAIN_HEADLESS_FINAL_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
+    set(CUBEY_TERRAIN_HEADLESS_FLOW_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-headless-flow-accumulation.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_headless_flow_accumulation_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_HEADLESS_FLOW_OUTPUT}"
+        --headless
+        --terrain-debug-view
+        flow-accumulation
+    )
+    cubey_add_png_stats_test(
+        terrain_headless_flow_accumulation_writes_png
+        "${CUBEY_TERRAIN_HEADLESS_FLOW_OUTPUT}"
+        0.00001
+        0.00005
+    )
 endif()
