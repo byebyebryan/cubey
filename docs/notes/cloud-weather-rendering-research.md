@@ -878,10 +878,16 @@ Implementation target:
 
 - add a side-by-side `clouds.orbit_representation` switch so the current
   volume raymarch remains available for comparison;
+- keep the orbit weather source procedural and time-varying. A texture path can
+  return later as a cached cubemap/octahedral product, but it should be generated
+  from the procedural field instead of becoming static authored weather;
 - implement a deterministic single-hit cloud-top shell for orbit views, with no
   ray-start jitter;
-- derive visible alpha, height, normals, and a cheap shadow/occlusion scalar
-  from direct sphere-space procedural fields;
+- derive visible optical depth, height, normals, and a cheap shadow/occlusion
+  scalar from direct sphere-space procedural fields;
+- move weather by advecting sphere-space coordinates with wind plus low-amplitude
+  curl/domain warp. The field should drift continuously in time and never pop by
+  reseeding noise;
 - estimate screen-space footprint explicitly from camera distance, FOV, and
   render resolution so high-frequency detail fades before it shimmers;
 - hide shell flatness with grazing-angle alpha feather, cloud-top normals,

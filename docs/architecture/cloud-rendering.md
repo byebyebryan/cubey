@@ -160,6 +160,13 @@ Initial scope:
   `surface-shell` path tests a filtered cloud-top shell: broad weather acts as a
   soft envelope, while fronts, cells, streaks, height, normals, and limb
   treatment own the visible planet-scale cloud read;
+- orbit weather must remain procedural and time-continuous. Static textures are
+  acceptable later as generated caches or diagnostics, but not as the source of
+  truth; wind and slow domain warp should move broad systems without reseeding
+  the noise field;
+- the cloud-top shell should composite from column optical depth, not an
+  arbitrary alpha curve, so orbit opacity can be tuned through density and
+  extinction controls that map to a plausible cloud mass;
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;
