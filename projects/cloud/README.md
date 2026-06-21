@@ -121,7 +121,6 @@ comparison, local/orbit alpha, distance-regime checks, ray-sampled orbit
 procedural coverage/detail/hull, shell-specific alpha/height/normal/shadow, and
 a small surface-local density set. `DEEP=1` adds secondary tuning captures such
 as sampling comparisons, metadata, lighting breakdowns, weather-influence
-sweeps, satellite orbit motion, and explicitly named `orbit-local-weather`
 sweeps, orbit-fill comparisons, satellite orbit motion, and explicitly named
 `orbit-local-weather` diagnostics for the old surface-local weather projection.
 The script also writes
@@ -161,6 +160,10 @@ Known deferrals:
 
 - No cached octahedral hemisphere path yet. `cloud_ref_2` remains the cache
   architecture reference for a later pass.
+- High-oblique is the current regime bridge target. Surface/local volume should
+  remain the foreground shape reference, while a broad far-shell contribution
+  should carry cloud continuity toward the horizon before full orbit-shell
+  replacement takes over.
 - Temporal reconstruction exists for final-view cleanup, but raw diagnostics
   remain the source of truth when judging cloud shape.
 - Static sampling controls are diagnostic and deterministic. A blue-noise or

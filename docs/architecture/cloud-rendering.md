@@ -155,6 +155,9 @@ Initial scope:
 - distance-regime controls are now explicit: `clouds.distance_mode` can force
   local or orbit-shell behavior, while `auto` blends high and orbit views toward
   a broad low-detail shell before the full cached sky product exists;
+- the next distance-regime target is high-oblique composition, not another
+  renderer reboot: local volume should own nearby parallax/thickness, while a
+  far shell contributes behind it so clouds keep continuity toward the horizon;
 - orbit rendering is split from the surface march. The volume raymarch remains
   available as `clouds.orbit_representation = volume`, while the default
   `surface-shell` path tests a filtered cloud-top shell: regional dry slots and
@@ -194,8 +197,9 @@ Deferred until the shape is credible:
 - finished planet-scale orbit weather art direction;
 - removal of remaining orbit-shell projection/alias artifacts in shell-alpha
   output and ray-sampled coverage/detail diagnostics;
-- high-oblique transition polish and orbit motion/shimmer review against the
-  satellite capture pack;
+- high-oblique transition polish, especially local-volume foreground plus
+  far-shell background continuity;
+- orbit motion/shimmer review against the satellite capture pack;
 - a stronger planet-scale weather model than fixed experimental synoptic
   anchors, dry slots, and procedural breakup;
 - cloud shadow consumption by ocean/terrain;
