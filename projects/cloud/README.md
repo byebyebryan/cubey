@@ -18,7 +18,8 @@ Current V1 scope:
   transmittance, powder response, and a short light march;
 - world-scale weather/type sampling with separate opt-in vertical shear control;
 - sphere-continuous orbit weather coverage/detail/hull, evaluated from direct
-  planet-space procedural fields instead of projecting the local weather map;
+  planet-space procedural fields with regional dry slots, storm tracks, fronts,
+  cells, and streaks instead of projecting the local weather map;
 - separate cloud product and composite passes declared through
   `RenderGraphBuilder`;
 - shared `clouds.*` `RunConfig` options and hand-authored ImGui controls;
@@ -34,6 +35,8 @@ Current V1 scope:
   `water-context` proxy for ocean-adjacent inspection shots;
 - explicit distance regimes: surface/local volumetric marching, default
   high/orbit shell evaluation, and debug views for the local-vs-orbit blend;
+- footprint- and grazing-aware orbit shell filtering so high-frequency weather
+  detail is retained on the disk but damped near the shell edge;
 - diagnostics for weather, weather edge, weather bias, base/detail density,
   density, transmittance, cloud type, visible density/cloud type, lighting,
   shadow, cloud alpha, distance, distance regime, local/orbit alpha,
@@ -42,7 +45,9 @@ Current V1 scope:
 
 The first target is cloud shape. Surface/local captures should preserve coherent
 volumetric cloud masses; orbit captures should be judged against satellite and
-full-disk Earth imagery, not against the volume raymarch comparison path.
+full-disk Earth imagery, not against the volume raymarch comparison path. Orbit
+should show sparse regional systems, clear windows, fronts/streaks/cells, and
+filtered cloud-top detail rather than planet-wide procedural fill.
 
 Useful runs:
 
@@ -107,13 +112,14 @@ DEEP=1 projects/cloud/capture_review.sh outputs/cloud-v1-review-deep
 ```
 
 `capture_review.sh` defaults to a focused shape/regime review: final camera
-views, shell-first orbit captures, volume comparison, local/orbit alpha,
-distance-regime checks, ray-sampled orbit procedural coverage/detail/hull,
-shell-specific alpha/height/normal/shadow, and a small surface-local density
-set. `DEEP=1` adds secondary tuning captures such as sampling comparisons,
-metadata, lighting breakdowns, weather-influence sweeps, and explicitly named
-`orbit-local-weather` diagnostics for the old surface-local weather projection.
-The script also writes
+views, satellite-named orbit captures, high-oblique transition, volume
+comparison, local/orbit alpha, distance-regime checks, ray-sampled orbit
+procedural coverage/detail/hull, shell-specific alpha/height/normal/shadow, and
+a small surface-local density set. `DEEP=1` adds secondary tuning captures such
+as sampling comparisons, metadata, lighting breakdowns, weather-influence
+sweeps, satellite orbit motion, and explicitly named `orbit-local-weather`
+diagnostics for the old surface-local weather projection. The script also
+writes
 `diagnostic-crops/center-feature-contact.png` with resolution-scaled center
 crops for the active review set.
 
@@ -135,10 +141,11 @@ Controls:
   ranges, broad-shell detail strength, and broad-shell density scale.
   Orbit shell diagnostics sample a direct planet-space coverage/detail/hull
   model rather than the surface-local planar density field. The broad orbit
-  weather frequencies derive from `Weather scale`, with fine detail constrained
-  to edge and hull erosion instead of owning the planet-scale layout. The orbit
-  shell should read as sparse regional weather systems with visible fronts,
-  cells, streaks, and broken detail, not as a smooth planet-wide cap.
+  weather frequencies derive from `Weather scale`, with regional storm/dry
+  masks owning the planet-scale layout and fine detail constrained to fronts,
+  cells, streaks, edge breakup, and hull erosion. The orbit shell should read as
+  sparse regional weather systems with large clear windows, not as a smooth
+  planet-wide cap.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
 - `Final Resolve`: alpha-aware smoothing amount plus final contrast,
@@ -159,8 +166,10 @@ Known deferrals:
 - Orbit final output uses direct planet-space procedural coverage/detail/hull
   fields. A generated 2D orbit-weather product was tried and removed after it
   reintroduced projection/blocking artifacts without enough detail. The current
-  target remains believable regional systems and orbit-visible detail, not a
-  finished cached sky product or asset-backed global weather map.
+  target remains believable regional systems and orbit-visible detail. Remaining
+  issues are art/model tuning, high-oblique transition polish, and motion
+  shimmer checks, not a finished cached sky product or asset-backed global
+  weather map.
 - No ocean, planet, terrain, or PBR integration yet. Future consumers should
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,

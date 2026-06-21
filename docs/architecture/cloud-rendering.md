@@ -156,10 +156,10 @@ Initial scope:
   local or orbit-shell behavior, while `auto` blends high and orbit views toward
   a broad low-detail shell before the full cached sky product exists;
 - orbit rendering is split from the surface march. The volume raymarch remains
-  available as `clouds.orbit_representation = volume`, while the experimental
-  `surface-shell` path tests a filtered cloud-top shell: broad weather acts as a
-  soft envelope, while fronts, cells, streaks, height, normals, and limb
-  treatment own the visible planet-scale cloud read;
+  available as `clouds.orbit_representation = volume`, while the default
+  `surface-shell` path tests a filtered cloud-top shell: regional dry slots and
+  storm tracks own planet-scale spacing, while fronts, cells, streaks, height,
+  normals, and limb treatment own the visible cloud read;
 - orbit weather must remain procedural and time-continuous. Static textures are
   acceptable later as generated caches or diagnostics, but not as the source of
   truth; wind and slow domain warp should move broad systems without reseeding
@@ -169,6 +169,8 @@ Initial scope:
   regional weather systems, spiral/frontal bands, cellular breakup inside cloud
   masses, and large clear ocean windows. The volume path is an implementation
   comparison only and is not an art target;
+- orbit shell detail should be filtered by pixel footprint and grazing angle so
+  disk detail survives while limb/edge shimmer does not define the image;
 - the cloud-top shell should composite from column optical depth, not an
   arbitrary alpha curve, so orbit opacity can be tuned through density and
   extinction controls that map to a plausible cloud mass;
@@ -189,8 +191,10 @@ Deferred until the shape is credible:
 - finished planet-scale orbit weather art direction;
 - removal of remaining orbit-shell projection/alias artifacts in shell-alpha
   output and ray-sampled coverage/detail diagnostics;
+- high-oblique transition polish and orbit motion/shimmer review against the
+  satellite capture pack;
 - a stronger planet-scale weather model than fixed experimental synoptic
-  anchors plus procedural breakup;
+  anchors, dry slots, and procedural breakup;
 - cloud shadow consumption by ocean/terrain;
 - full cached octahedral sky blending;
 - temporal reconstruction beyond basic diagnostic toggles;
