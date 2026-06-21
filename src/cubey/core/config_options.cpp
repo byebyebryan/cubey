@@ -127,7 +127,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 228> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 229> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -694,6 +694,10 @@ constexpr std::array<ConfigOptionDescriptor, 228> kRunConfigOptions{
            "--cloud-far-shell-end-m", "Far Shell End", "Clouds",
            "View-ray distance where high-altitude rays fully prefer the orbit shell.",
            ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::CloudFarShellStrength, "clouds.far_shell_strength",
+           "--cloud-far-shell-strength", "Far Shell Strength", "Clouds",
+           "Strength of the far cloud shell contribution behind high-view local volume.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.5)),
     option(RunConfigOptionId::CloudOrbitDetailStrength, "clouds.orbit_detail_strength",
            "--cloud-orbit-detail-strength", "Orbit Detail", "Clouds",
            "Amount of high-frequency detail retained by the broad orbit shell.",
@@ -1432,6 +1436,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.far_shell_start_m);
     case RunConfigOptionId::CloudFarShellEnd:
         return optional_float(config.clouds.far_shell_end_m);
+    case RunConfigOptionId::CloudFarShellStrength:
+        return optional_float(config.clouds.far_shell_strength);
     case RunConfigOptionId::CloudOrbitDetailStrength:
         return optional_float(config.clouds.orbit_detail_strength);
     case RunConfigOptionId::CloudOrbitDensityScale:
@@ -1883,6 +1889,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("orbit_transition_end_m", options.orbit_transition_end_m);
     adapter.writeField<float>("far_shell_start_m", options.far_shell_start_m);
     adapter.writeField<float>("far_shell_end_m", options.far_shell_end_m);
+    adapter.writeField<float>("far_shell_strength", options.far_shell_strength);
     adapter.writeField<float>("orbit_detail_strength", options.orbit_detail_strength);
     adapter.writeField<float>("orbit_density_scale", options.orbit_density_scale);
     adapter.writeField<float>("orbit_fill", options.orbit_fill);
@@ -1934,6 +1941,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("orbit_transition_end_m", options.orbit_transition_end_m);
     adapter.readField<float>("far_shell_start_m", options.far_shell_start_m);
     adapter.readField<float>("far_shell_end_m", options.far_shell_end_m);
+    adapter.readField<float>("far_shell_strength", options.far_shell_strength);
     adapter.readField<float>("orbit_detail_strength", options.orbit_detail_strength);
     adapter.readField<float>("orbit_density_scale", options.orbit_density_scale);
     adapter.readField<float>("orbit_fill", options.orbit_fill);
@@ -2669,6 +2677,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudFarShellEnd:
         config.clouds.far_shell_end_m = parse_config_float(value, option);
         validate_range(config.clouds.far_shell_end_m, option);
+        break;
+    case RunConfigOptionId::CloudFarShellStrength:
+        config.clouds.far_shell_strength = parse_config_float(value, option);
+        validate_range(config.clouds.far_shell_strength, option);
         break;
     case RunConfigOptionId::CloudOrbitDetailStrength:
         config.clouds.orbit_detail_strength = parse_config_float(value, option);

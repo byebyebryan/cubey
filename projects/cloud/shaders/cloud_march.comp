@@ -168,6 +168,10 @@ float cloud_orbit_fill() {
     return clamp(params.orbit_shell_options.z, 0.0, 2.0);
 }
 
+float cloud_far_shell_strength() {
+    return clamp(params.orbit_shell_options.w, 0.0, 1.5);
+}
+
 vec3 cloud_orbit_tangent(vec3 normal) {
     vec3 tangent = WIND_DIRECTION - normal * dot(WIND_DIRECTION, normal);
     if (dot(tangent, tangent) < 0.0001) {
@@ -710,7 +714,7 @@ float cloud_distance_mode_value() {
     return params.distance_options.x;
 }
 
-float cloud_orbit_blend(vec3 origin, vec3 direction, float start_t, float end_t) {
+float cloud_full_orbit_blend() {
     int mode = int(cloud_distance_mode_value() + 0.5);
     if (mode == CLOUD_DISTANCE_LOCAL) {
         return 0.0;
@@ -723,17 +727,28 @@ float cloud_orbit_blend(vec3 origin, vec3 direction, float start_t, float end_t)
     float transition_end = max(params.distance_options.z, transition_start + 1.0);
     float altitude_blend =
         smoothstep(transition_start, transition_end, cloud_camera_altitude());
+    int camera_mode = int(params.camera_forward_mode.w + 0.5);
+    float orbit_camera_blend = camera_mode >= 4 ? 1.0 : 0.0;
+    return clamp(max(altitude_blend, orbit_camera_blend), 0.0, 1.0);
+}
+
+float cloud_far_shell_blend(float start_t, float end_t) {
+    int mode = int(cloud_distance_mode_value() + 0.5);
+    if (mode == CLOUD_DISTANCE_LOCAL) {
+        return 0.0;
+    }
+    if (mode == CLOUD_DISTANCE_ORBIT_SHELL) {
+        return 1.0;
+    }
+
+    float transition_start = params.distance_options.y;
 
     float high_altitude_gate =
         smoothstep(4000.0, max(transition_start, 4001.0), cloud_camera_altitude());
     float far_start = params.orbit_options.x;
     float far_end = max(params.orbit_options.y, far_start + 1.0);
     float ray_distance_blend = smoothstep(far_start, far_end, max(end_t - start_t, 0.0));
-    float distance_blend = ray_distance_blend * high_altitude_gate;
-
-    int camera_mode = int(params.camera_forward_mode.w + 0.5);
-    float orbit_camera_blend = camera_mode >= 4 ? 1.0 : 0.0;
-    return clamp(max(max(altitude_blend, distance_blend), orbit_camera_blend), 0.0, 1.0);
+    return clamp(ray_distance_blend * high_altitude_gate * cloud_far_shell_strength(), 0.0, 1.0);
 }
 
 int cloud_orbit_representation() {
@@ -770,6 +785,58 @@ MarchResult cloud_mix_results(MarchResult local_result, MarchResult orbit_result
                        mix(local_result.ambient_light, orbit_result.ambient_light, blend),
                        mix(local_result.direct_light, orbit_result.direct_light, blend),
                        mix(local_result.phase_light, orbit_result.phase_light, blend));
+}
+
+MarchResult cloud_scale_result(MarchResult result, float weight) {
+    float w = clamp(weight, 0.0, 1.0);
+    float transmittance = mix(1.0, result.transmittance, w);
+    return MarchResult(result.radiance * w,
+                       transmittance,
+                       1.0 - transmittance,
+                       result.avg_density * w,
+                       mix(1.0, result.last_light, w),
+                       result.first_distance,
+                       result.mean_distance,
+                       result.steps * w,
+                       result.ambient_light * w,
+                       result.direct_light * w,
+                       result.phase_light * w);
+}
+
+MarchResult cloud_compose_results(MarchResult foreground, MarchResult background) {
+    float transmittance = foreground.transmittance * background.transmittance;
+    float foreground_alpha = clamp(foreground.alpha, 0.0, 1.0);
+    float background_alpha = clamp(background.alpha, 0.0, 1.0);
+    float alpha_sum = max(foreground_alpha + background_alpha, 0.0001);
+    float mean_distance = foreground.mean_distance;
+    if (foreground.mean_distance < 0.0) {
+        mean_distance = background.mean_distance;
+    } else if (background.mean_distance >= 0.0) {
+        mean_distance =
+            (foreground.mean_distance * foreground_alpha +
+             background.mean_distance * background_alpha) /
+            alpha_sum;
+    }
+    float first_distance = foreground.first_distance;
+    if (first_distance < 0.0 ||
+        (background.first_distance >= 0.0 && background.first_distance < first_distance)) {
+        first_distance = background.first_distance;
+    }
+    return MarchResult(foreground.radiance +
+                           foreground.transmittance * background.radiance,
+                       transmittance,
+                       1.0 - transmittance,
+                       foreground.avg_density + background.avg_density * background_alpha,
+                       min(foreground.last_light, background.last_light),
+                       first_distance,
+                       mean_distance,
+                       foreground.steps + background.steps,
+                       foreground.ambient_light +
+                           foreground.transmittance * background.ambient_light,
+                       foreground.direct_light +
+                           foreground.transmittance * background.direct_light,
+                       foreground.phase_light +
+                           foreground.transmittance * background.phase_light);
 }
 
 DensitySample cloud_orbit_density_sample(vec3 position) {
@@ -1287,11 +1354,13 @@ void main() {
         return;
     }
 
-    float orbit_blend = cloud_orbit_blend(origin, direction, start_t, end_t);
-    bool needs_local = orbit_blend < 0.999 ||
+    float full_orbit_blend = cloud_full_orbit_blend();
+    float far_shell_blend = cloud_far_shell_blend(start_t, end_t);
+    bool needs_local = full_orbit_blend < 0.999 ||
                        debug_view == CLOUD_DEBUG_LOCAL_ALPHA ||
                        debug_view == CLOUD_DEBUG_DISTANCE_REGIME;
-    bool needs_orbit = orbit_blend > 0.001 ||
+    bool needs_orbit = full_orbit_blend > 0.001 ||
+                       far_shell_blend > 0.001 ||
                        debug_view == CLOUD_DEBUG_ORBIT_ALPHA ||
                        debug_view == CLOUD_DEBUG_ORBIT_COVERAGE ||
                        debug_view == CLOUD_DEBUG_ORBIT_DETAIL ||
@@ -1315,12 +1384,17 @@ void main() {
                                                    pixel);
         }
     }
-    MarchResult result = cloud_mix_results(local_result, orbit_result, orbit_blend);
+    MarchResult far_shell_result = cloud_scale_result(orbit_result, far_shell_blend);
+    MarchResult local_with_far_shell =
+        cloud_compose_results(local_result, far_shell_result);
+    MarchResult result = cloud_mix_results(local_with_far_shell, orbit_result, full_orbit_blend);
     vec3 debug_color = result.radiance;
     float debug_alpha = 1.0;
 
     if (debug_view == CLOUD_DEBUG_DISTANCE_REGIME) {
-        debug_color = vec3(orbit_blend, 0.0, 1.0 - orbit_blend);
+        debug_color = vec3(full_orbit_blend,
+                           far_shell_blend,
+                           1.0 - max(full_orbit_blend, far_shell_blend));
     } else if (debug_view == CLOUD_DEBUG_LOCAL_ALPHA) {
         debug_color = vec3(local_result.alpha);
     } else if (debug_view == CLOUD_DEBUG_ORBIT_ALPHA) {

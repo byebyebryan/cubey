@@ -236,6 +236,7 @@ struct CloudsConfig {
     float orbit_transition_end_m = 80000.0F;
     float far_shell_start_m = 45000.0F;
     float far_shell_end_m = 220000.0F;
+    float far_shell_strength = 1.0F;
     float orbit_detail_strength = 0.70F;
     float orbit_density_scale = 0.02F;
     float orbit_fill = 1.0F;

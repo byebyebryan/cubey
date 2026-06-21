@@ -727,6 +727,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (run_config_float_is_set(run_config.clouds.far_shell_end_m)) {
         config.far_shell_end_m = run_config.clouds.far_shell_end_m;
     }
+    if (run_config_float_is_set(run_config.clouds.far_shell_strength)) {
+        config.far_shell_strength = run_config.clouds.far_shell_strength;
+    }
     if (run_config_float_is_set(run_config.clouds.orbit_detail_strength)) {
         config.orbit_detail_strength = run_config.clouds.orbit_detail_strength;
     }
@@ -922,6 +925,10 @@ void validate_clouds_config(const CloudsConfig& config) {
         !finite_nonnegative(config.far_shell_end_m) ||
         config.far_shell_end_m <= config.far_shell_start_m) {
         throw std::runtime_error("cloud far shell range must be finite and increasing");
+    }
+    if (!std::isfinite(config.far_shell_strength) ||
+        config.far_shell_strength < 0.0F || config.far_shell_strength > 1.5F) {
+        throw std::runtime_error("cloud far shell strength must be finite and in [0, 1.5]");
     }
     if (!std::isfinite(config.orbit_detail_strength) ||
         config.orbit_detail_strength < 0.0F || config.orbit_detail_strength > 1.0F) {

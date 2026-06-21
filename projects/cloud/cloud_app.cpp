@@ -641,7 +641,7 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
         .orbit_shell_options = {config.orbit_motion_strength,
                                 config.orbit_shell_extinction,
                                 config.orbit_fill,
-                                0.0F},
+                                config.far_shell_strength},
     };
 }
 
@@ -988,6 +988,8 @@ class CloudApp {
                                "%.0f m");
             ImGui::SliderFloat("Far shell end", &config_.far_shell_end_m, 1000.0F, 900000.0F,
                                "%.0f m");
+            ImGui::SliderFloat("Far shell strength", &config_.far_shell_strength, 0.0F, 1.5F,
+                               "%.2f");
             ImGui::SliderFloat("Orbit detail", &config_.orbit_detail_strength, 0.0F, 1.0F,
                                "%.2f");
             ImGui::SliderFloat("Orbit density", &config_.orbit_density_scale, 0.0F, 2.0F,

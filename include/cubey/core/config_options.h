@@ -187,6 +187,7 @@ enum class RunConfigOptionId {
     CloudOrbitTransitionEnd,
     CloudFarShellStart,
     CloudFarShellEnd,
+    CloudFarShellStrength,
     CloudOrbitDetailStrength,
     CloudOrbitDensityScale,
     CloudOrbitFill,

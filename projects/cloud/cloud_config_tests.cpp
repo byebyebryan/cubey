@@ -329,6 +329,7 @@ void test_run_config_mapping() {
     run_config.clouds.orbit_transition_end_m = 70000.0F;
     run_config.clouds.far_shell_start_m = 36000.0F;
     run_config.clouds.far_shell_end_m = 180000.0F;
+    run_config.clouds.far_shell_strength = 1.25F;
     run_config.clouds.orbit_detail_strength = 0.22F;
     run_config.clouds.orbit_density_scale = 1.10F;
     run_config.clouds.orbit_fill = 1.40F;
@@ -415,6 +416,8 @@ void test_run_config_mapping() {
                  "cloud far shell start should map");
     require_near(config.far_shell_end_m, 180000.0F, 0.001F,
                  "cloud far shell end should map");
+    require_near(config.far_shell_strength, 1.25F, 0.001F,
+                 "cloud far shell strength should map");
     require_near(config.orbit_detail_strength, 0.22F, 0.001F,
                  "cloud orbit detail strength should map");
     require_near(config.orbit_density_scale, 1.10F, 0.001F,
@@ -506,6 +509,8 @@ void test_weather_preset_defaults() {
                  "default far shell start should be high-view scale");
     require_near(config.far_shell_end_m, 220000.0F, 0.001F,
                  "default far shell end should be high-view scale");
+    require_near(config.far_shell_strength, 1.0F, 0.001F,
+                 "default far shell strength should enable high-view continuity");
     require_near(config.orbit_detail_strength, 0.70F, 0.001F,
                  "default orbit detail should preserve visible shell structure");
     require_near(config.orbit_density_scale, 0.02F, 0.001F,
@@ -715,6 +720,7 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.orbit_transition_end_m", "70000");
     cubey::set_run_config_option_from_string(config, "clouds.far_shell_start_m", "36000");
     cubey::set_run_config_option_from_string(config, "clouds.far_shell_end_m", "180000");
+    cubey::set_run_config_option_from_string(config, "clouds.far_shell_strength", "1.25");
     cubey::set_run_config_option_from_string(config, "clouds.orbit_detail_strength", "0.22");
     cubey::set_run_config_option_from_string(config, "clouds.orbit_density_scale", "1.10");
     cubey::set_run_config_option_from_string(config, "clouds.orbit_fill", "1.40");
@@ -785,6 +791,8 @@ void test_config_descriptors() {
                  "cloud far shell start descriptor should set");
     require_near(config.clouds.far_shell_end_m, 180000.0F, 0.001F,
                  "cloud far shell end descriptor should set");
+    require_near(config.clouds.far_shell_strength, 1.25F, 0.001F,
+                 "cloud far shell strength descriptor should set");
     require_near(config.clouds.orbit_detail_strength, 0.22F, 0.001F,
                  "cloud orbit detail strength descriptor should set");
     require_near(config.clouds.orbit_density_scale, 1.10F, 0.001F,

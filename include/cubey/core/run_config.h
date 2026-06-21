@@ -271,6 +271,7 @@ struct RunConfig {
         float orbit_transition_end_m = kRunConfigUnsetFloat;
         float far_shell_start_m = kRunConfigUnsetFloat;
         float far_shell_end_m = kRunConfigUnsetFloat;
+        float far_shell_strength = kRunConfigUnsetFloat;
         float orbit_detail_strength = kRunConfigUnsetFloat;
         float orbit_density_scale = kRunConfigUnsetFloat;
         float orbit_fill = kRunConfigUnsetFloat;
