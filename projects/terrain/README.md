@@ -18,9 +18,9 @@ rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
 The current generator emits source fields, height/slope analysis, static
-drainage, active river trunk and tributary fields, wetness/deposition, material
-masks, and vegetation potential. The drainage pass is deliberately
-process-informed rather than a full hydraulic simulation.
+drainage, routing diagnostics, smoothed active river trunk and tributary fields,
+wetness/deposition, material masks, and vegetation potential. The drainage pass
+is deliberately process-informed rather than a full hydraulic simulation.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -51,20 +51,22 @@ The review set includes:
 - `height.png`
 - `slope.png`
 - `ridge-uplift.png`
+- `drainage-potential.png`
+- `flow-direction.png`
 - `flow-accumulation.png`
 - `stream-order.png`
 - `river-mask.png`
 - `river-trunk.png`
 - `tributaries.png`
+- `sink-mask.png`
 - `wetness.png`
 - `deposition.png`
 - `material.png`
 - `vegetation.png`
 
 The active river fields come from a coherent low-frequency drainage potential
-plus routed flow accumulation. `river-mask` is the combined product of the soft
-`river-trunk` and `tributaries` fields. The current D8 routing still leaves
-visible straight reaches, sharp turns, and angular segments that read less
-organic than real rivers; smoothing/vectorizing the extracted channel path or
-adding a stronger depression-fill/breach hydrology pass is a later quality
-target.
+plus routed flow accumulation. Traced grid paths are smoothed and rasterized as
+soft channel curves before producing `river-trunk`, `tributaries`, and the
+combined `river-mask`. The current routing is still D8 under the channel curve,
+so branch placement and some large-scale bends remain route-model limitations;
+adding stronger depression-fill/breach hydrology is a later quality target.

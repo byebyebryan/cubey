@@ -221,20 +221,22 @@ Visual tests should follow:
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
 local region, with deterministic source fields, height/slope analysis, static
-flow accumulation, active river trunk and tributary masks, wetness/deposition,
-material masks, vegetation potential, summaries, and tests.
+flow accumulation, routing diagnostics, smoothed active river trunk and tributary
+masks, wetness/deposition, material masks, vegetation potential, summaries, and
+tests.
 
 The river driver intentionally moved away from a single authored line. It routes
 over a coherent low-frequency drainage potential derived from the terrain seed,
-then extracts a main channel from the strongest routed catchment and paints soft
-trunk/tributary product fields. This is a useful midpoint because downstream
-fields can consume a connected river product, but it is not a complete hydrology
-solution.
+then extracts a main channel from the strongest routed catchment. The extracted
+grid paths are smoothed, nudged by a constrained procedural offset, and
+rasterized as soft trunk/tributary product fields. This is a useful midpoint
+because downstream fields can consume a connected river product, but it is not a
+complete hydrology solution.
 
 Known limitations:
 
-- D8 routing still leaves unnaturally straight channel reaches, sharp turns, and
-  angular segments in close inspection.
+- D8 routing still shapes the underlying network, so branch placement and some
+  large-scale bends can remain less organic than real rivers.
 - The drainage pass does not yet perform real depression fill, breach routing,
   erosion, or lake/wetland resolution.
 - Tributary selection is intentionally conservative and should be replaced by a
@@ -259,11 +261,10 @@ Keep the first implementation narrow. Defer:
 The next terrain batches should improve the underlying drivers before adding
 more biome labels:
 
-1. Replace or augment the current D8 channel path with vectorized/smoothed
-   channel extraction, so rivers do not read as straight grid-aligned reaches
-   with sharp turns.
-2. Evaluate a small depression-fill or breach-routing pass from the hydrology
+1. Evaluate a small depression-fill or breach-routing pass from the hydrology
    references before adding lakes, canyons, or wider river systems.
+2. Replace conservative tributary picking with a more explicit network
+   extraction pass once the route model improves.
 3. Split mountain/ridge drivers into explicit terrain products instead of
    treating mountains as only material response over height noise.
 4. Add capture summaries or manifest metadata for the review set so image
