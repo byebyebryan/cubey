@@ -233,7 +233,8 @@ solution.
 
 Known limitations:
 
-- D8 routing still leaves angular channel segments in close inspection.
+- D8 routing still leaves unnaturally straight channel reaches, sharp turns, and
+  angular segments in close inspection.
 - The drainage pass does not yet perform real depression fill, breach routing,
   erosion, or lake/wetland resolution.
 - Tributary selection is intentionally conservative and should be replaced by a
@@ -259,7 +260,8 @@ The next terrain batches should improve the underlying drivers before adding
 more biome labels:
 
 1. Replace or augment the current D8 channel path with vectorized/smoothed
-   channel extraction, so rivers do not read as grid stair-steps.
+   channel extraction, so rivers do not read as straight grid-aligned reaches
+   with sharp turns.
 2. Evaluate a small depression-fill or breach-routing pass from the hydrology
    references before adding lakes, canyons, or wider river systems.
 3. Split mountain/ridge drivers into explicit terrain products instead of

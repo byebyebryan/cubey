@@ -64,6 +64,7 @@ The review set includes:
 The active river fields come from a coherent low-frequency drainage potential
 plus routed flow accumulation. `river-mask` is the combined product of the soft
 `river-trunk` and `tributaries` fields. The current D8 routing still leaves
-visible angular segments; smoothing/vectorizing the extracted channel path or
+visible straight reaches, sharp turns, and angular segments that read less
+organic than real rivers; smoothing/vectorizing the extracted channel path or
 adding a stronger depression-fill/breach hydrology pass is a later quality
 target.

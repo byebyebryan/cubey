@@ -30,8 +30,8 @@ structure, channel continuity, and material response are easier to inspect.
 ## Current Limitations
 
 The active river no longer depends on an authored center line, but it still uses
-D8 routing over a scalar drainage potential. Close inspection shows angular
-segments and branch selection that is less natural than a real hydrology pass.
-The next river-quality work should evaluate depression fill/breach routing and
-vectorized or smoothed channel paths before expanding to lakes, canyons, or
-broader biome recipes.
+D8 routing over a scalar drainage potential. Close inspection shows perfectly
+straight reaches, sharp turns, angular segments, and branch selection that is
+less natural than a real hydrology pass. The next river-quality work should
+evaluate depression fill/breach routing and vectorized or smoothed channel paths
+before expanding to lakes, canyons, or broader biome recipes.
