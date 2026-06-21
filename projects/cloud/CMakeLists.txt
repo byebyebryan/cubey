@@ -23,7 +23,9 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_common.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_noise_common.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_weather_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
 )
 
 if (BUILD_TESTING)

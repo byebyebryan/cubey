@@ -286,7 +286,7 @@ float cloud_orbit_spiral_system(vec3 normal, vec3 center, float radius,
     center = normalize(center);
     float cos_angle = clamp(dot(normal, center), -1.0, 1.0);
     float chord_distance = sqrt(max(2.0 - 2.0 * cos_angle, 0.0));
-    float envelope = smoothstep(radius, radius * 0.28, chord_distance);
+    float envelope = 1.0 - smoothstep(radius * 0.28, radius, chord_distance);
     if (envelope <= 0.0) {
         return 0.0;
     }
@@ -308,7 +308,7 @@ float cloud_orbit_spiral_system(vec3 normal, vec3 center, float radius,
     float comma =
         smoothstep(-0.38, 0.42, (x * handedness + y * 0.45) / max(radius, 0.001));
     float core =
-        smoothstep(radius * 0.18, 0.0, chord_distance) * 0.44;
+        (1.0 - smoothstep(0.0, radius * 0.18, chord_distance)) * 0.44;
     float broken =
         smoothstep(0.34, 0.82,
                    cloud_orbit_fbm(normal * feature_count * 2.8 - wind * 0.21));
