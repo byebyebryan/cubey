@@ -12,7 +12,6 @@ cubey_add_app_target(
         shaders/cloud.vert
         shaders/cloud_composite.frag
         shaders/cloud_march.comp
-        shaders/cloud_orbit_weather.comp
         shaders/cloud_perlin_worley.comp
         shaders/cloud_temporal.comp
         shaders/cloud_weather.comp

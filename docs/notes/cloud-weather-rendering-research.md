@@ -796,23 +796,29 @@ this batch. The acceptance read is that `orbit-coverage` stays sparse,
 `orbit-detail` is visibly rich, and `orbit-hull`/final no longer read as smooth
 weather blobs.
 
-## Orbit Weather Product Target 2026-06-20
+## Orbit Weather Product Attempt 2026-06-20
 
-The direct orbit-shell formula still asks each raymarch sample to rediscover the
-same planet-scale organization from inline noise. That made the final image
-either too smooth and blob-like or too noisy without giving future consumers a
-reusable weather product.
+The direct orbit-shell formula asked each raymarch sample to rediscover the same
+planet-scale organization from inline noise. That made the final image either
+too smooth and blob-like or too noisy without giving future consumers a reusable
+weather product, so a generated 2048 x 1024 orbit weather map was tried.
 
-The next implementation should materialize a separate generated orbit weather
-map. It remains procedural and does not use a satellite asset, but it should
-behave like an authored planet-space cloud product:
+That product is no longer the active direction. It reduced per-sample formula
+work, but it did not carry enough planet-scale detail, and its map projection
+made block/discontinuity artifacts visible from orbit. The generated texture,
+metadata descriptor, descriptor binding, and shader were removed so the orbit
+path has one source of truth again.
+
+The next implementation should stay direct and procedural while behaving more
+like an authored planet-space cloud product:
 
 - broad coverage owns sparse regional weather placement;
 - fronts, cells, and streaks add mid-scale organization inside those regions;
 - detail erosion carves holes and texture without creating planet-wide overcast;
-- the orbit shell samples the product for coverage/detail/hull diagnostics;
+- the orbit shell evaluates direct sphere-space coverage/detail/hull
+  diagnostics;
 - the local surface weather texture stays separate so surface/high tuning is not
-  forced to share the same map projection.
+  forced to share the same projection.
 
 Acceptance target: orbit captures should gain visible satellite-scale detail
 without reintroducing square patch seams, longitude seams, or a full-planet

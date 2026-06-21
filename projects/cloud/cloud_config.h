@@ -16,8 +16,6 @@ inline constexpr float kCloudsDefaultTopAltitudeM = 22000.0F;
 inline constexpr std::uint32_t kCloudBaseNoiseSize = 128U;
 inline constexpr std::uint32_t kCloudDetailNoiseSize = 32U;
 inline constexpr std::uint32_t kCloudWeatherTextureSize = 1024U;
-inline constexpr std::uint32_t kCloudOrbitWeatherTextureWidth = 2048U;
-inline constexpr std::uint32_t kCloudOrbitWeatherTextureHeight = 1024U;
 
 enum class CloudsCameraMode : std::uint32_t {
     Surface = 0,
@@ -125,14 +123,12 @@ enum class CloudsGeneratedArtifact : std::uint32_t {
     BaseNoiseVolume = 0,
     DetailNoiseVolume = 1,
     WeatherMap = 2,
-    OrbitWeatherMap = 3,
 };
 
-inline constexpr std::array<CloudsGeneratedArtifact, 4> kCloudsGeneratedArtifacts{
+inline constexpr std::array<CloudsGeneratedArtifact, 3> kCloudsGeneratedArtifacts{
     CloudsGeneratedArtifact::BaseNoiseVolume,
     CloudsGeneratedArtifact::DetailNoiseVolume,
     CloudsGeneratedArtifact::WeatherMap,
-    CloudsGeneratedArtifact::OrbitWeatherMap,
 };
 
 inline constexpr std::array<CloudsDebugView, 31> kCloudsDebugViews{
