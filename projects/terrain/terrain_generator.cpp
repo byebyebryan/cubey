@@ -22,12 +22,14 @@ struct FlowRoutingResult {
 };
 
 struct RiverFields {
+    cubey::procedural::ScalarField2D drainage_potential{};
     cubey::procedural::ScalarField2D flow_direction{};
     cubey::procedural::ScalarField2D flow_accumulation{};
     cubey::procedural::ScalarField2D stream_order{};
     cubey::procedural::ScalarField2D river_mask{};
     cubey::procedural::ScalarField2D river_trunk{};
     cubey::procedural::ScalarField2D tributaries{};
+    cubey::procedural::ScalarField2D sink_mask{};
     cubey::procedural::ScalarField2D channel_width{};
     cubey::procedural::ScalarField2D valley_width{};
     cubey::procedural::ScalarField2D wetness{};
@@ -465,6 +467,17 @@ void activate_river_network(RiverFields& fields, const std::vector<int>& downstr
     }
 }
 
+void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
+                        const std::vector<int>& downstream) {
+    const cubey::procedural::Grid2DDesc& desc = sink_mask.desc();
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const std::size_t index = sink_mask.index(x, y);
+            sink_mask.at(x, y) = downstream[index] < 0 ? 1.0F : 0.0F;
+        }
+    }
+}
+
 [[nodiscard]] RiverFields make_river_fields(const cubey::procedural::ScalarField2D& height,
                                             const cubey::procedural::ScalarField2D& slope,
                                             std::uint64_t seed) {
@@ -473,12 +486,14 @@ void activate_river_network(RiverFields& fields, const std::vector<int>& downstr
         make_drainage_routing_surface(height, seed);
     const FlowRoutingResult routing = route_steepest_descent(routing_surface);
     RiverFields fields{
+        .drainage_potential = routing_surface,
         .flow_direction = routing.flow_direction,
         .flow_accumulation = accumulate_flow(routing_surface, routing.downstream),
         .stream_order = cubey::procedural::ScalarField2D(desc, 1.0F),
         .river_mask = cubey::procedural::ScalarField2D(desc, 0.0F),
         .river_trunk = cubey::procedural::ScalarField2D(desc, 0.0F),
         .tributaries = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .sink_mask = cubey::procedural::ScalarField2D(desc, 0.0F),
         .channel_width = cubey::procedural::ScalarField2D(desc, 0.0F),
         .valley_width = cubey::procedural::ScalarField2D(desc, 0.0F),
         .wetness = cubey::procedural::ScalarField2D(desc, 0.0F),
@@ -486,6 +501,7 @@ void activate_river_network(RiverFields& fields, const std::vector<int>& downstr
     };
     const float max_accumulation = std::max(fields.flow_accumulation.summarize().max, 1.0F);
     const float log_max_accumulation = std::log1p(max_accumulation);
+    populate_sink_mask(fields.sink_mask, routing.downstream);
 
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
@@ -567,12 +583,14 @@ void activate_river_network(RiverFields& fields, const std::vector<int>& downstr
     }
 
     return RiverFields{
+        .drainage_potential = std::move(fields.drainage_potential),
         .flow_direction = std::move(fields.flow_direction),
         .flow_accumulation = std::move(fields.flow_accumulation),
         .stream_order = std::move(fields.stream_order),
         .river_mask = std::move(fields.river_mask),
         .river_trunk = std::move(fields.river_trunk),
         .tributaries = std::move(fields.tributaries),
+        .sink_mask = std::move(fields.sink_mask),
         .channel_width = std::move(fields.channel_width),
         .valley_width = std::move(fields.valley_width),
         .wetness = std::move(fields.wetness),
@@ -676,6 +694,8 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldSlope, slope_curvature.slope);
     add_field(product.fields, kTerrainFieldCurvature, slope_curvature.curvature);
     add_field(product.fields, kTerrainFieldLocalRelief, local_relief.local_span);
+    add_field(product.fields, kTerrainFieldDrainagePotential,
+              std::move(river_fields.drainage_potential));
     add_field(product.fields, kTerrainFieldFlowDirection, std::move(river_fields.flow_direction));
     add_field(product.fields, kTerrainFieldFlowAccumulation,
               std::move(river_fields.flow_accumulation));
@@ -683,6 +703,7 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldRiverMask, std::move(river_fields.river_mask));
     add_field(product.fields, kTerrainFieldRiverTrunk, std::move(river_fields.river_trunk));
     add_field(product.fields, kTerrainFieldTributaries, std::move(river_fields.tributaries));
+    add_field(product.fields, kTerrainFieldSinkMask, std::move(river_fields.sink_mask));
     add_field(product.fields, kTerrainFieldChannelWidth, std::move(river_fields.channel_width));
     add_field(product.fields, kTerrainFieldValleyWidth, std::move(river_fields.valley_width));
     add_field(product.fields, kTerrainFieldWetness, std::move(river_fields.wetness));

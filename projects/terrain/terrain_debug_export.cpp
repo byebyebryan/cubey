@@ -32,32 +32,38 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 13> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 16> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::Height, "height"},
     DebugViewName{TerrainDebugView::Slope, "slope"},
     DebugViewName{TerrainDebugView::RidgeUplift, "ridge-uplift"},
+    DebugViewName{TerrainDebugView::DrainagePotential, "drainage-potential"},
+    DebugViewName{TerrainDebugView::FlowDirection, "flow-direction"},
     DebugViewName{TerrainDebugView::FlowAccumulation, "flow-accumulation"},
     DebugViewName{TerrainDebugView::StreamOrder, "stream-order"},
     DebugViewName{TerrainDebugView::RiverMask, "river-mask"},
     DebugViewName{TerrainDebugView::RiverTrunk, "river-trunk"},
     DebugViewName{TerrainDebugView::Tributaries, "tributaries"},
+    DebugViewName{TerrainDebugView::SinkMask, "sink-mask"},
     DebugViewName{TerrainDebugView::Wetness, "wetness"},
     DebugViewName{TerrainDebugView::Deposition, "deposition"},
     DebugViewName{TerrainDebugView::Material, "material"},
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 13> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 16> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::Height,
     TerrainDebugView::Slope,
     TerrainDebugView::RidgeUplift,
+    TerrainDebugView::DrainagePotential,
+    TerrainDebugView::FlowDirection,
     TerrainDebugView::FlowAccumulation,
     TerrainDebugView::StreamOrder,
     TerrainDebugView::RiverMask,
     TerrainDebugView::RiverTrunk,
     TerrainDebugView::Tributaries,
+    TerrainDebugView::SinkMask,
     TerrainDebugView::Wetness,
     TerrainDebugView::Deposition,
     TerrainDebugView::Material,
@@ -189,6 +195,10 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldSlope);
     case TerrainDebugView::RidgeUplift:
         return terrain_product_field(product, kTerrainFieldRidgeUplift);
+    case TerrainDebugView::DrainagePotential:
+        return terrain_product_field(product, kTerrainFieldDrainagePotential);
+    case TerrainDebugView::FlowDirection:
+        return terrain_product_field(product, kTerrainFieldFlowDirection);
     case TerrainDebugView::FlowAccumulation:
         return terrain_product_field(product, kTerrainFieldFlowAccumulation);
     case TerrainDebugView::StreamOrder:
@@ -199,6 +209,8 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldRiverTrunk);
     case TerrainDebugView::Tributaries:
         return terrain_product_field(product, kTerrainFieldTributaries);
+    case TerrainDebugView::SinkMask:
+        return terrain_product_field(product, kTerrainFieldSinkMask);
     case TerrainDebugView::Wetness:
         return terrain_product_field(product, kTerrainFieldWetness);
     case TerrainDebugView::Deposition:

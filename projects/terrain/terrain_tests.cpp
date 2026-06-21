@@ -117,7 +117,7 @@ void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 22> required_fields{
+    const std::array<std::string_view, 24> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
         cubey::projects::terrain::kTerrainFieldBroadRelief,
@@ -126,12 +126,14 @@ void test_terrain_product_emits_required_fields() {
         cubey::projects::terrain::kTerrainFieldSlope,
         cubey::projects::terrain::kTerrainFieldCurvature,
         cubey::projects::terrain::kTerrainFieldLocalRelief,
+        cubey::projects::terrain::kTerrainFieldDrainagePotential,
         cubey::projects::terrain::kTerrainFieldFlowDirection,
         cubey::projects::terrain::kTerrainFieldFlowAccumulation,
         cubey::projects::terrain::kTerrainFieldStreamOrder,
         cubey::projects::terrain::kTerrainFieldRiverMask,
         cubey::projects::terrain::kTerrainFieldRiverTrunk,
         cubey::projects::terrain::kTerrainFieldTributaries,
+        cubey::projects::terrain::kTerrainFieldSinkMask,
         cubey::projects::terrain::kTerrainFieldChannelWidth,
         cubey::projects::terrain::kTerrainFieldValleyWidth,
         cubey::projects::terrain::kTerrainFieldWetness,
@@ -172,8 +174,14 @@ void test_terrain_product_has_useful_ranges() {
         field(product, cubey::projects::terrain::kTerrainFieldFlowAccumulation).summarize();
     const cubey::procedural::ScalarFieldStats stream_order =
         field(product, cubey::projects::terrain::kTerrainFieldStreamOrder).summarize();
+    const cubey::procedural::ScalarFieldStats drainage =
+        field(product, cubey::projects::terrain::kTerrainFieldDrainagePotential).summarize();
+    const cubey::procedural::ScalarFieldStats sink =
+        field(product, cubey::projects::terrain::kTerrainFieldSinkMask).summarize();
     require(flow.max > flow.min, "flow accumulation should vary");
     require(stream_order.max >= 3.0F, "stream order should identify larger drainage trunks");
+    require(drainage.max > drainage.min, "drainage potential should vary");
+    require(sink.max > 0.0F && sink.max <= 1.0F, "sink mask should identify terminal cells");
 }
 
 void test_terrain_product_is_deterministic() {
@@ -245,12 +253,21 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("flow_accumulation") ==
                 cubey::projects::terrain::TerrainDebugView::FlowAccumulation,
             "terrain debug view should accept underscore aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("flow_direction") ==
+                cubey::projects::terrain::TerrainDebugView::FlowDirection,
+            "terrain debug view should parse flow direction aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("drainage_potential") ==
+                cubey::projects::terrain::TerrainDebugView::DrainagePotential,
+            "terrain debug view should parse drainage potential aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("river_trunk") ==
                 cubey::projects::terrain::TerrainDebugView::RiverTrunk,
             "terrain debug view should parse river trunk aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("tributaries") ==
                 cubey::projects::terrain::TerrainDebugView::Tributaries,
             "terrain debug view should parse tributaries");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("sink_mask") ==
+                cubey::projects::terrain::TerrainDebugView::SinkMask,
+            "terrain debug view should parse sink mask aliases");
     require_throws(
         [] {
             static_cast<void>(
