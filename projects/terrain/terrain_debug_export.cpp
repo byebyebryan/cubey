@@ -26,6 +26,12 @@ struct DebugViewName {
     std::string_view name{};
 };
 
+struct FieldNormalization {
+    float min_value = 0.0F;
+    float max_value = 1.0F;
+    bool log_scale = false;
+};
+
 inline constexpr std::array<DebugViewName, 11> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::Height, "height"},
@@ -73,20 +79,31 @@ void put_pixel(std::vector<std::uint8_t>& pixels, std::size_t index, Rgb color) 
     pixels[index + 3U] = 255U;
 }
 
-[[nodiscard]] float normalized_field_value(const cubey::procedural::ScalarField2D& field,
-                                           std::uint32_t x, std::uint32_t y, bool log_scale) {
+[[nodiscard]] FieldNormalization
+make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log_scale) {
     const cubey::procedural::ScalarFieldStats stats = field.summarize();
     if (stats.span <= 0.0F) {
-        return 0.0F;
+        return {.log_scale = log_scale};
     }
-    const float value = log_scale ? std::log1p(std::max(field.at(x, y), 0.0F))
-                                  : field.at(x, y);
     const float min_value = log_scale ? std::log1p(std::max(stats.min, 0.0F)) : stats.min;
     const float max_value = log_scale ? std::log1p(std::max(stats.max, 0.0F)) : stats.max;
-    if (min_value == max_value) {
+    return {
+        .min_value = min_value,
+        .max_value = max_value,
+        .log_scale = log_scale,
+    };
+}
+
+[[nodiscard]] float normalized_field_value(const cubey::procedural::ScalarField2D& field,
+                                           std::uint32_t x, std::uint32_t y,
+                                           const FieldNormalization& normalization) {
+    if (normalization.min_value == normalization.max_value) {
         return 0.0F;
     }
-    return cubey::procedural::saturate((value - min_value) / (max_value - min_value));
+    const float value = normalization.log_scale ? std::log1p(std::max(field.at(x, y), 0.0F))
+                                                : field.at(x, y);
+    return cubey::procedural::saturate((value - normalization.min_value) /
+                                       (normalization.max_value - normalization.min_value));
 }
 
 [[nodiscard]] Rgb terrain_ramp(float value) {
@@ -100,20 +117,22 @@ void put_pixel(std::vector<std::uint8_t>& pixels, std::size_t index, Rgb color) 
 }
 
 [[nodiscard]] Rgb scalar_color(const cubey::procedural::ScalarField2D& field, std::uint32_t x,
-                               std::uint32_t y, bool log_scale = false) {
-    const float value = normalized_field_value(field, x, y, log_scale);
+                               std::uint32_t y,
+                               const FieldNormalization& normalization) {
+    const float value = normalized_field_value(field, x, y, normalization);
     return lerp_rgb(Rgb{0.04F, 0.07F, 0.12F}, Rgb{0.95F, 0.86F, 0.45F}, value);
 }
 
 [[nodiscard]] Rgb final_color(const TerrainRegionProduct& product, std::uint32_t x,
-                              std::uint32_t y) {
+                              std::uint32_t y,
+                              const FieldNormalization& height_normalization) {
     const auto& height = terrain_product_field(product, kTerrainFieldHeightM);
     const auto& slope = terrain_product_field(product, kTerrainFieldSlope);
     const auto& rock = terrain_product_field(product, kTerrainFieldMaterialRock);
     const auto& soil = terrain_product_field(product, kTerrainFieldMaterialSoil);
     const auto& grass = terrain_product_field(product, kTerrainFieldMaterialGrass);
     const auto& river = terrain_product_field(product, kTerrainFieldRiverMask);
-    const float h = normalized_field_value(height, x, y, false);
+    const float h = normalized_field_value(height, x, y, height_normalization);
     const float shade = 1.0F - (cubey::procedural::smoothstep(0.06F, 0.46F, slope.at(x, y)) * 0.34F);
     const Rgb terrain = terrain_ramp(h);
     Rgb color{
@@ -174,18 +193,29 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
 [[nodiscard]] std::vector<std::uint8_t> render_debug_view(const TerrainRegionProduct& product,
                                                           TerrainDebugView view) {
     const cubey::procedural::Grid2DDesc& desc = product.fields.desc();
+    const cubey::procedural::ScalarField2D* scalar_field = nullptr;
+    FieldNormalization scalar_normalization{};
+    FieldNormalization height_normalization{};
+    if (view == TerrainDebugView::Final) {
+        height_normalization =
+            make_field_normalization(terrain_product_field(product, kTerrainFieldHeightM), false);
+    } else if (view != TerrainDebugView::Material) {
+        scalar_field = &field_for_debug_view(product, view);
+        scalar_normalization =
+            make_field_normalization(*scalar_field, view == TerrainDebugView::FlowAccumulation);
+    }
+
     std::vector<std::uint8_t> pixels(static_cast<std::size_t>(desc.width) *
                                      static_cast<std::size_t>(desc.height) * 4U);
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             Rgb color{};
             if (view == TerrainDebugView::Final) {
-                color = final_color(product, x, y);
+                color = final_color(product, x, y, height_normalization);
             } else if (view == TerrainDebugView::Material) {
                 color = material_color(product, x, y);
             } else {
-                const bool log_scale = view == TerrainDebugView::FlowAccumulation;
-                color = scalar_color(field_for_debug_view(product, view), x, y, log_scale);
+                color = scalar_color(*scalar_field, x, y, scalar_normalization);
             }
             const std::size_t flipped_y = static_cast<std::size_t>(desc.height - 1U - y);
             const std::size_t index =
