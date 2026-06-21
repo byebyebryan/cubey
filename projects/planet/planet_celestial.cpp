@@ -136,24 +136,6 @@ PlanetAtmosphereInputs planet_atmosphere_inputs(const PlanetCelestialSystem& cel
         celestial, lighting, camera_world_position_m, planet_radius_m, atmosphere_outer_radius_m);
 }
 
-PlanetSkyFrameUniforms planet_sky_frame_uniforms(const PlanetCelestialSystem& celestial,
-                                                 const PlanetSkyFrameUniformInputs& inputs) {
-    return cubey::render::sky_frame_uniforms(
-        celestial,
-        {
-            .view_rays = inputs.view_rays,
-            .camera_position_m = inputs.camera_position_m,
-            .planet_radius_m = inputs.planet_radius_m,
-            .atmosphere_outer_radius_m = inputs.atmosphere_outer_radius_m,
-            .atmosphere_mode = static_cast<std::uint32_t>(inputs.atmosphere_mode),
-            .moon_angular_radius_scale = inputs.moon_angular_radius_scale,
-        });
-}
-
-cubey::render::MaterialPassInfo planet_sky_pass_info() {
-    return cubey::render::sky_pass_info();
-}
-
 PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
     const PlanetCelestialBody& body, const PlanetCelestialBodyRenderPlacement& placement,
     const PlanetCelestialLighting& lighting, const cubey::math::Mat4& view_projection,

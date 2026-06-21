@@ -1,6 +1,4 @@
 set(CUBEY_PLANET_SHADERS
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/sky.vert"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/sky.frag"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/celestial_body.vert"
@@ -39,7 +37,6 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/sky_atmosphere.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_surface_field.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
@@ -147,18 +144,6 @@ if(BUILD_TESTING)
         5.5
     )
     cubey_add_planet_visual_smoke(
-        planet_sky_frame_legacy_writes_png
-        planet-sky-frame-legacy.png
-        --planet-camera-mode
-        surface
-        --planet-day-of-year
-        80
-        --planet-time-hours
-        5.5
-        --planet-sky-backend
-        sky-frame-legacy
-    )
-    cubey_add_planet_visual_smoke(
         planet_surface_day_writes_png
         planet-surface-day.png
         --planet-camera-mode
@@ -214,8 +199,6 @@ if(BUILD_TESTING)
         planet_headless_writes_png_stats
         planet_surface_dawn_writes_png
         planet_surface_dawn_writes_png_stats
-        planet_sky_frame_legacy_writes_png
-        planet_sky_frame_legacy_writes_png_stats
         planet_surface_day_writes_png
         planet_surface_day_writes_png_stats
         planet_surface_night_writes_png

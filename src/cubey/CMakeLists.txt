@@ -186,7 +186,6 @@ add_library(cubey_render STATIC
     render/render_graph_sync.cpp
     render/render_item.cpp
     render/shadow_map.cpp
-    render/sky_frame.cpp
     render/target.cpp
     render/terrain_ocean_fields.cpp
     render/texture.cpp

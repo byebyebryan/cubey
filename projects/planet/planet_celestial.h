@@ -11,7 +11,6 @@
 #include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pipeline_resource.h>
-#include <cubey/render/sky_frame.h>
 #include <cubey/render/target.h>
 #include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -63,17 +62,7 @@ using PlanetSolarTime = cubey::render::CelestialSolarTime;
 
 using PlanetSolarSystemConfig = cubey::render::CelestialSolarSystemConfig;
 
-using PlanetSkyFrameUniforms = cubey::render::SkyFrameUniforms;
 using PlanetCelestialBodyFrameUniforms = cubey::render::CelestialBodyFrameUniforms;
-
-struct PlanetSkyFrameUniformInputs {
-    cubey::render::ViewRayBasis3D view_rays{};
-    cubey::math::Vec3 camera_position_m{0.0F, 0.0F, 0.0F};
-    float planet_radius_m = 1.0F;
-    float atmosphere_outer_radius_m = 1.0F;
-    PlanetAtmosphereMode atmosphere_mode = PlanetAtmosphereMode::Physical;
-    float moon_angular_radius_scale = 1.0F;
-};
 
 using PlanetCelestialBodyAtmosphereInputs = cubey::render::CelestialBodyAtmosphereInputs;
 
@@ -81,8 +70,6 @@ using PlanetCelestialLighting = cubey::render::CelestialLighting;
 using PlanetCelestialBodyFrameInputs = cubey::render::CelestialBodyFrameInputs;
 
 using PlanetAtmosphereInputs = cubey::render::CelestialAtmosphereInputs;
-using PlanetSkyFrameMaterialConfig = cubey::render::SkyFrameMaterialConfig;
-using PlanetSkyFramePipelineConfig = cubey::render::SkyFramePipelineConfig;
 using PlanetCelestialBodyFrameMaterialConfig = cubey::render::CelestialBodyFrameMaterialConfig;
 using PlanetCelestialBodyFramePipelineConfig = cubey::render::CelestialBodyFramePipelineConfig;
 
@@ -133,16 +120,11 @@ planet_atmosphere_inputs(const PlanetCelestialSystem& celestial,
                          const PlanetCelestialLighting& lighting,
                          cubey::math::DVec3 camera_world_position_m, float planet_radius_m,
                          float atmosphere_outer_radius_m);
-[[nodiscard]] PlanetSkyFrameUniforms
-planet_sky_frame_uniforms(const PlanetCelestialSystem& celestial,
-                          const PlanetSkyFrameUniformInputs& inputs);
-[[nodiscard]] cubey::render::MaterialPassInfo planet_sky_pass_info();
 [[nodiscard]] PlanetCelestialBodyFrameUniforms planet_celestial_body_frame_uniforms(
     const PlanetCelestialBody& body, const PlanetCelestialBodyRenderPlacement& placement,
     const PlanetCelestialLighting& lighting, const cubey::math::Mat4& view_projection,
     const PlanetCelestialBodyFrameInputs& inputs = {});
 [[nodiscard]] cubey::render::MaterialPassInfo planet_celestial_body_pass_info();
-using PlanetSkyFrame = cubey::render::SkyFrame;
 using PlanetCelestialBodyFrame = cubey::render::CelestialBodyFrame;
 
 } // namespace cubey::projects::planet

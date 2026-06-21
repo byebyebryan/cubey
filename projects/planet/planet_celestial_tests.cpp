@@ -728,109 +728,6 @@ void test_celestial_body_render_placement_uses_topocentric_ray() {
                      "render placement should use the camera-to-physical-body ray");
 }
 
-void test_sky_frame_uniforms_pack_sun_state() {
-    cubey::projects::planet::PlanetCelestialSystem celestial{};
-    celestial.sun.direction = glm::normalize(cubey::math::Vec3{0.15F, 0.85F, -0.50F});
-    celestial.sun.color = {1.0F, 0.75F, 0.45F};
-    celestial.sun.intensity = 1.8F;
-    celestial.sun.angular_radius_rad = 0.012F;
-    celestial.moon.direction = glm::normalize(cubey::math::Vec3{-0.50F, 0.10F, 0.86F});
-    celestial.moon.angular_radius_rad = 0.008F;
-
-    const cubey::render::ViewRayBasis3D view_rays =
-        cubey::render::view_ray_basis_3d(cubey::math::identity_quat(), 1.5F, 1.0F);
-    const cubey::projects::planet::PlanetSkyFrameUniforms uniforms =
-        cubey::projects::planet::planet_sky_frame_uniforms(
-            celestial,
-            {
-                .view_rays = view_rays,
-                .camera_position_m = {0.0F, 0.0F, 10.0F},
-                .planet_radius_m = 4.0F,
-                .atmosphere_outer_radius_m = 5.0F,
-                .atmosphere_mode = cubey::projects::planet::PlanetAtmosphereMode::Physical,
-                .moon_angular_radius_scale = 3.0F,
-            });
-
-    require(uniforms.camera_right_aspect == view_rays.right_aspect,
-            "celestial frame uniforms should pack view right/aspect");
-    require(uniforms.camera_forward_enabled.w == 1.0F,
-            "celestial frame uniforms should pack sun visibility");
-    require_vec_near({uniforms.sun_direction_radius.x, uniforms.sun_direction_radius.y,
-                      uniforms.sun_direction_radius.z},
-                     celestial.sun.direction, "celestial frame uniforms should pack sun direction");
-    require_near(uniforms.sun_direction_radius.w, celestial.sun.angular_radius_rad, 0.000001F,
-                 "celestial frame uniforms should pack sun angular radius");
-    require_vec_near({uniforms.moon_direction_radius.x, uniforms.moon_direction_radius.y,
-                      uniforms.moon_direction_radius.z},
-                     celestial.moon.direction,
-                     "celestial frame uniforms should pack moon direction for star masking");
-    require_near(uniforms.moon_direction_radius.w, celestial.moon.angular_radius_rad * 3.0F,
-                 0.000001F, "celestial frame uniforms should pack scaled moon angular radius");
-    require_near(uniforms.sun_color_intensity.w, celestial.sun.intensity, 0.000001F,
-                 "celestial frame uniforms should pack sun intensity");
-    require_near(uniforms.camera_position_radius.z, 10.0F, 0.000001F,
-                 "celestial frame uniforms should pack camera position for occlusion");
-    require_near(uniforms.camera_position_radius.w, 4.0F, 0.000001F,
-                 "celestial frame uniforms should pack planet radius for occlusion");
-    require_near(uniforms.background_space_limb.w, 5.0F, 0.000001F,
-                 "celestial frame uniforms should pack atmosphere limb radius");
-    require_near(uniforms.atmosphere_mode_options.x, 1.0F, 0.000001F,
-                 "celestial frame uniforms should pack atmosphere preview mode");
-    require(uniforms.night_options.x < 0.60F,
-            "celestial frame uniforms should keep night-sky atlas defaults subtle");
-    require_near(uniforms.night_options.w, 1.0F, 0.000001F,
-                 "celestial frame uniforms should fully wash out night sky in daylight");
-    require(uniforms.milky_way_options.x < 0.90F,
-            "celestial frame uniforms should keep Milky Way defaults below inspection strength");
-}
-
-void test_sky_frame_uniforms_disable_invisible_moon_star_mask() {
-    cubey::projects::planet::PlanetCelestialSystem celestial{};
-    celestial.moon.visible = false;
-    celestial.moon.direction = glm::normalize(cubey::math::Vec3{-0.50F, 0.10F, 0.86F});
-    celestial.moon.angular_radius_rad = 0.008F;
-
-    const cubey::projects::planet::PlanetSkyFrameUniforms uniforms =
-        cubey::projects::planet::planet_sky_frame_uniforms(
-            celestial, {
-                           .view_rays = cubey::render::view_ray_basis_3d(
-                               cubey::math::identity_quat(), 1.5F, 1.0F),
-                           .moon_angular_radius_scale = 3.0F,
-                       });
-
-    require_vec_near({uniforms.moon_direction_radius.x, uniforms.moon_direction_radius.y,
-                      uniforms.moon_direction_radius.z},
-                     celestial.moon.direction,
-                     "invisible moon should still pack a valid direction for diagnostics");
-    require_near(uniforms.moon_direction_radius.w, 0.0F, 0.000001F,
-                 "invisible moon should disable sky star masking");
-}
-
-void test_sky_frame_uniforms_use_topocentric_moon_mask_direction() {
-    cubey::projects::planet::PlanetCelestialSystem celestial{};
-    celestial.moon.direction = {0.0F, 0.0F, 1.0F};
-    celestial.moon.distance_m = 10.0F;
-
-    const cubey::projects::planet::PlanetSkyFrameUniforms uniforms =
-        cubey::projects::planet::planet_sky_frame_uniforms(
-            celestial, {
-                           .camera_position_m = {2.0F, 0.0F, 0.0F},
-                       });
-
-    const cubey::math::Vec3 expected = glm::normalize(cubey::math::Vec3{-2.0F, 0.0F, 10.0F});
-    require_vec_near({uniforms.moon_direction_radius.x, uniforms.moon_direction_radius.y,
-                      uniforms.moon_direction_radius.z},
-                     expected,
-                     "moon star mask should match the topocentric body placement direction");
-}
-
-void test_sky_pass_writes_opaque_sky() {
-    const cubey::render::MaterialPassInfo pass = cubey::projects::planet::planet_sky_pass_info();
-    require(!pass.blend_enable, "sky pass should write the planet-owned sky");
-    require(!pass.depth_test && !pass.depth_write,
-            "sky pass should use analytic planet occlusion instead of depth");
-}
-
 void test_celestial_body_frame_uniforms_pack_render_placement() {
     cubey::projects::planet::PlanetCelestialBody moon{};
     moon.direction = glm::normalize(cubey::math::Vec3{0.0F, 0.0F, 1.0F});
@@ -1019,10 +916,6 @@ int main() {
         test_celestial_body_conversion_preserves_moon_state();
         test_celestial_body_render_placement_preserves_apparent_size();
         test_celestial_body_render_placement_uses_topocentric_ray();
-        test_sky_frame_uniforms_pack_sun_state();
-        test_sky_frame_uniforms_disable_invisible_moon_star_mask();
-        test_sky_frame_uniforms_use_topocentric_moon_mask_direction();
-        test_sky_pass_writes_opaque_sky();
         test_celestial_body_frame_uniforms_pack_render_placement();
         test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere();
         test_celestial_body_frame_defers_planet_shadow_eclipse();

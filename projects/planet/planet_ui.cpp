@@ -62,11 +62,6 @@ constexpr std::array<PlanetAtmosphereMode, 2> kAtmosphereModes{
     PlanetAtmosphereMode::Physical,
 };
 
-constexpr std::array<PlanetSkyBackend, 2> kSkyBackends{
-    PlanetSkyBackend::UnifiedAtmosphere,
-    PlanetSkyBackend::SkyFrameLegacy,
-};
-
 struct CameraLocationReadout {
     float latitude_degrees = 0.0F;
     float longitude_degrees = 0.0F;
@@ -215,8 +210,6 @@ void draw_atmosphere_controls(PlanetUiContext& ui) {
         const cubey::host::ScopedImGuiId section_id("Atmosphere");
         ImGui::InputFloat("Atmosphere Height (m)", &ui.edit_config.atmosphere_height_m, 0.0F, 0.0F,
                           "%.0f");
-        cubey::host::imgui_enum_combo("Sky Backend", ui.edit_config.sky_backend, kSkyBackends,
-                                      planet_sky_backend_name);
         cubey::host::imgui_enum_combo("Atmosphere Mode", ui.edit_config.atmosphere_mode,
                                       kAtmosphereModes, planet_atmosphere_mode_name);
         ImGui::SliderFloat("Surface Haze", &ui.edit_config.atmosphere_haze_strength, 0.0F, 1.0F,
