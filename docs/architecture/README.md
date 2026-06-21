@@ -20,6 +20,9 @@ than the root design and roadmap.
   rendering, and explicit handoff to planet-scale work.
 - [Planet rendering](planet-rendering.md): planet-scale frame, LOD,
   terrain-field, sky/celestial, and ocean handoff direction.
+- [Terrain reboot direction](terrain-reboot.md): local terrain product
+  generator strategy, previous terrain lessons, reference takeaways, product
+  contract, and first vertical slice.
 - [Cloud rendering](cloud-rendering.md): production cloud direction promoted
   from `clouds_legacy`, `cloud_ref`, and `cloud_ref_2` lessons.
 - [Ocean adjacent systems](ocean-adjacent-systems.md): atmosphere, clouds,

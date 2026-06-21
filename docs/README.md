@@ -46,6 +46,9 @@ Detailed current foundation notes live under
   handoff direction.
 - [Planet rendering](architecture/planet-rendering.md): planet-scale frame, LOD,
   terrain-field, sky/celestial, and ocean handoff direction.
+- [Terrain reboot direction](architecture/terrain-reboot.md): local terrain
+  product generator strategy, previous terrain lessons, reference takeaways,
+  product contract, and first vertical slice.
 - [Ocean adjacent systems](architecture/ocean-adjacent-systems.md): atmosphere,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [Cloud rendering](architecture/cloud-rendering.md): production cloud renderer
