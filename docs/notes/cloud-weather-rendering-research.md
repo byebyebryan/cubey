@@ -935,6 +935,14 @@ field. This is intentionally not the full orbit shell and not a separate orbit
 weather type; it is a high-view LOD assist for long rays where reduced local
 marching thins out before the horizon.
 
+The same checkpoint exposed a surface-view version of the issue: the local
+volume reaches the visible horizon only as sparse cloud bodies, with no cheap
+long-ray continuation below the main cloud band. The horizon layer now has a
+separate surface gate for low-altitude cameras: narrow lower-sky angles, long
+cloud-shell ray segments, and the same local weather field. It should extend the
+read of distant cloud cover without turning the lower half of the surface view
+into a uniform fog or changing the elevated-camera tangent fix.
+
 ## Orbit Shell Strategy 2026-06-20
 
 The current orbit raymarch is useful as a diagnostic, but it is no longer the

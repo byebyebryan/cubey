@@ -991,6 +991,13 @@ bool cloud_local_volume_enabled() {
     return params.background_options.z > 0.5;
 }
 
+bool cloud_surface_horizon_layer_mode() {
+    return cloud_horizon_layer_enabled() &&
+           cloud_surface_view_factor() > 0.0 &&
+           cloud_camera_altitude() <
+               max(params.cloud_shell.x * 0.90, params.cloud_shell.x - 1.0);
+}
+
 MarchResult cloud_empty_result() {
     return MarchResult(vec3(0.0), 1.0, 0.0, 0.0, 1.0, -1.0, -1.0, 0.0,
                        vec3(0.0), vec3(0.0), vec3(0.0));
@@ -1544,15 +1551,12 @@ float cloud_far_horizon_ray_weight(vec3 origin, vec3 direction, float start_t, f
         return 0.0;
     }
 
-    float altitude_gate =
+    float elevated_altitude_gate =
         smoothstep(8000.0, max(params.distance_options.y, 8001.0), cloud_camera_altitude());
     float distance_gate =
         smoothstep(params.orbit_options.x * 0.72,
                    max(params.orbit_options.y, params.orbit_options.x + 1.0),
                    max(end_t - start_t, 0.0));
-    if (altitude_gate <= 0.0 || distance_gate <= 0.0) {
-        return 0.0;
-    }
 
     vec3 local_origin = origin - cloud_sphere_center();
     float closest_t = clamp(-dot(local_origin, direction), max(start_t, 0.0), end_t);
@@ -1571,8 +1575,28 @@ float cloud_far_horizon_ray_weight(vec3 origin, vec3 direction, float start_t, f
     float view_alignment = abs(dot(direction, closest_up));
     float grazing_gate = 1.0 - smoothstep(0.055, 0.360, view_alignment);
     float horizon_gate = max(shell_gate, grazing_gate * 0.82);
+    float elevated_weight = elevated_altitude_gate * distance_gate * horizon_gate;
+
+    float view_height = dot(direction, cloud_planet_up());
+    float lower_sky_band =
+        smoothstep(-0.025, 0.040, view_height) *
+        (1.0 - smoothstep(0.16, 0.36, view_height));
+    float surface_camera_gate =
+        cloud_surface_view_factor() *
+        (1.0 - smoothstep(params.cloud_shell.x * 0.18,
+                          max(params.cloud_shell.x * 0.90,
+                              params.cloud_shell.x * 0.18 + 1.0),
+                          cloud_camera_altitude()));
+    float surface_distance_gate =
+        smoothstep(params.orbit_options.x * 0.30,
+                   max(params.orbit_options.y * 0.92,
+                       params.orbit_options.x * 0.30 + 1.0),
+                   max(end_t - start_t, 0.0));
+    float surface_weight =
+        surface_camera_gate * lower_sky_band * surface_distance_gate * 1.18;
+
     float strength = clamp(params.cloud_color_bottom_horizon.w, 0.0, 2.0);
-    return clamp(altitude_gate * distance_gate * horizon_gate * strength, 0.0, 1.0);
+    return clamp(max(elevated_weight, surface_weight) * strength, 0.0, 1.0);
 }
 
 DensitySample cloud_far_horizon_density_sample(vec3 position) {
@@ -1683,9 +1707,14 @@ MarchResult cloud_far_horizon_layer(vec3 origin, vec3 direction, float start_t, 
             vec3 phase_source =
                 sun_color * pow(max(light_dot_eye, 0.0), 4.0) *
                 (0.16 + 0.28 * day) * params.lighting_strengths.z;
+            float surface_opacity_boost =
+                cloud_surface_horizon_layer_mode() ? 1.45 : 1.0;
             float sample_alpha =
-                1.0 - exp(-sample_density * max(params.weather.y, 0.0) * ds * 0.0040);
-            sample_alpha = clamp(sample_alpha, 0.0, 0.18);
+                1.0 - exp(-sample_density * max(params.weather.y, 0.0) * ds *
+                          0.0040 * surface_opacity_boost);
+            sample_alpha =
+                clamp(sample_alpha, 0.0,
+                      cloud_surface_horizon_layer_mode() ? 0.24 : 0.18);
             vec3 source = (ambient_source + direct_source + phase_source) * sample_alpha;
             color += transmittance * source;
             ambient_sum += transmittance * ambient_source * sample_alpha;
@@ -1717,6 +1746,10 @@ MarchResult cloud_far_horizon_layer(vec3 origin, vec3 direction, float start_t, 
 
 MarchResult cloud_far_bridge_march(vec3 origin, vec3 direction, float start_t, float end_t,
                                    ivec2 pixel) {
+    if (cloud_surface_horizon_layer_mode()) {
+        return cloud_far_horizon_layer(origin, direction, start_t, end_t, pixel);
+    }
+
     float bridge_start = max(start_t, params.orbit_options.x);
     if (end_t <= bridge_start) {
         return cloud_far_horizon_layer(origin, direction, start_t, end_t, pixel);
@@ -1821,11 +1854,14 @@ void main() {
     float full_orbit_blend = cloud_full_orbit_blend();
     float far_shell_blend = cloud_far_shell_blend(start_t, end_t);
     float effective_far_shell_blend = far_shell_blend * (1.0 - full_orbit_blend);
+    float surface_horizon_blend = cloud_surface_horizon_layer_mode() ? 1.0 : 0.0;
+    float effective_far_bridge_blend =
+        max(effective_far_shell_blend, surface_horizon_blend);
     bool needs_local = full_orbit_blend < 0.999 ||
                        debug_view == CLOUD_DEBUG_LOCAL_ALPHA ||
                        debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA ||
                        debug_view == CLOUD_DEBUG_DISTANCE_REGIME;
-    bool needs_far_bridge_source = effective_far_shell_blend > 0.001 ||
+    bool needs_far_bridge_source = effective_far_bridge_blend > 0.001 ||
                                    debug_view == CLOUD_DEBUG_FAR_SHELL_ALPHA ||
                                    debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA;
     bool needs_full_orbit_source = full_orbit_blend > 0.001 ||
@@ -1857,7 +1893,7 @@ void main() {
         }
     }
     MarchResult far_shell_result =
-        cloud_scale_result(far_bridge_source_result, effective_far_shell_blend);
+        cloud_scale_result(far_bridge_source_result, effective_far_bridge_blend);
     MarchResult local_with_far_shell =
         cloud_compose_results(local_result, far_shell_result);
     MarchResult result =
@@ -1868,11 +1904,11 @@ void main() {
 
     if (debug_view == CLOUD_DEBUG_DISTANCE_REGIME) {
         debug_color = vec3(full_orbit_blend,
-                           effective_far_shell_blend,
-                           1.0 - max(full_orbit_blend, effective_far_shell_blend));
+                           effective_far_bridge_blend,
+                           1.0 - max(full_orbit_blend, effective_far_bridge_blend));
     } else if (debug_view == CLOUD_DEBUG_TRANSITION_WEIGHTS) {
         debug_color = vec3(1.0 - full_orbit_blend,
-                           effective_far_shell_blend * (1.0 - full_orbit_blend),
+                           effective_far_bridge_blend * (1.0 - full_orbit_blend),
                            full_orbit_blend);
     } else if (debug_view == CLOUD_DEBUG_LOCAL_ALPHA) {
         debug_color = vec3(local_result.alpha);

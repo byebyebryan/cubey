@@ -193,11 +193,13 @@ Known deferrals:
   continuity toward the horizon before full orbit-shell replacement takes over.
   The far bridge marches only the later ray segment with fewer local-density
   samples and a higher LOD bias, then adds a cheap distance/grazing-gated
-  horizon layer sampled from the same local weather field. Aerial perspective is
-  applied once after local/far/orbit composition. The default handoff keeps full
-  orbit replacement above the high-oblique preset (`45 km` to `180 km`) while
-  the far shell fills long rays earlier (`30 km` to `160 km`) with a slightly
-  boosted effective strength.
+  horizon layer sampled from the same local weather field. Surface cameras use
+  the same horizon layer through a narrower low-sky/long-ray gate so distant
+  clouds continue toward the horizon without filling the whole lower view.
+  Aerial perspective is applied once after local/far/orbit composition. The
+  default handoff keeps full orbit replacement above the high-oblique preset
+  (`45 km` to `180 km`) while the far shell fills long rays earlier (`30 km` to
+  `160 km`) with a slightly boosted effective strength.
 - Temporal reconstruction exists for final-view cleanup, but raw diagnostics
   remain the source of truth when judging cloud shape.
 - Static sampling controls are diagnostic and deterministic. A blue-noise or
