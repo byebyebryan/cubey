@@ -64,4 +64,26 @@ if (BUILD_TESTING)
         0.00001
         0.00005
     )
+
+    set(CUBEY_TERRAIN_HEADLESS_STRESS_RIVER_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-headless-stress-river-mask.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_headless_stress_river_network_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_HEADLESS_STRESS_RIVER_OUTPUT}"
+        --headless
+        --grid-size
+        257
+        --recipe
+        temperate-mountain-river-stress
+        --terrain-debug-view
+        river-mask
+    )
+    cubey_add_png_stats_test(
+        terrain_headless_stress_river_network_writes_png
+        "${CUBEY_TERRAIN_HEADLESS_STRESS_RIVER_OUTPUT}"
+        0.00001
+        0.00005
+    )
 endif()

@@ -318,6 +318,37 @@ void test_terrain_product_is_deterministic() {
             "terrain product hash should change when seed changes");
 }
 
+void test_terrain_stress_recipe_expands_river_network() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 257;
+    config.grid_height = 257;
+    const cubey::projects::terrain::TerrainRegionProduct baseline =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    config.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRiverStress);
+    const cubey::projects::terrain::TerrainRegionProduct stress =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const auto& baseline_river =
+        field(baseline, cubey::projects::terrain::kTerrainFieldRiverMask);
+    const auto& stress_river = field(stress, cubey::projects::terrain::kTerrainFieldRiverMask);
+    const std::size_t baseline_samples = count_active_samples(baseline_river, 0.30F);
+    const std::size_t stress_samples = count_active_samples(stress_river, 0.30F);
+
+    require(stress.config.recipe_id ==
+                cubey::projects::terrain::kTerrainRecipeTemperateMountainRiverStress,
+            "terrain stress recipe should preserve the requested recipe id");
+    require(stress.summary.content_hash != baseline.summary.content_hash,
+            "terrain stress recipe should produce a distinct product hash");
+    require(stress_samples * 100U > baseline_samples * 125U,
+            "terrain stress recipe should expand active river network coverage");
+    require(stress.summary.river_coverage > baseline.summary.river_coverage,
+            "terrain stress recipe should increase high-strength river coverage");
+    require(stress.summary.river_coverage < 0.25F,
+            "terrain stress recipe should not flood the whole review patch");
+}
+
 void test_terrain_materials_and_vegetation_are_bounded() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
@@ -490,6 +521,7 @@ int main() {
     test_terrain_product_emits_required_fields();
     test_terrain_product_has_useful_ranges();
     test_terrain_product_is_deterministic();
+    test_terrain_stress_recipe_expands_river_network();
     test_terrain_materials_and_vegetation_are_bounded();
     test_terrain_river_network_has_continuous_active_channels();
     test_terrain_river_core_avoids_long_grid_aligned_runs();

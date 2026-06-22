@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace cubey::projects::terrain {
 
@@ -15,6 +16,10 @@ inline constexpr std::uint32_t kTerrainMaxGridSize = 2049U;
 inline constexpr float kTerrainDefaultCellSizeM = 32.0F;
 inline constexpr std::uint64_t kTerrainDefaultSeed = 0x7465'7272'6169'6e01ULL;
 inline constexpr std::uint32_t kTerrainGeneratorRevision = 3U;
+inline constexpr std::string_view kTerrainRecipeTemperateMountainRiver =
+    "temperate-mountain-river";
+inline constexpr std::string_view kTerrainRecipeTemperateMountainRiverStress =
+    "temperate-mountain-river-stress";
 
 struct TerrainRegionConfig {
     std::uint32_t grid_width = kTerrainDefaultGridSize;
@@ -23,7 +28,7 @@ struct TerrainRegionConfig {
     float origin_x_m = 0.0F;
     float origin_y_m = 0.0F;
     std::uint64_t seed = kTerrainDefaultSeed;
-    std::string recipe_id = "temperate-mountain-river";
+    std::string recipe_id = std::string(kTerrainRecipeTemperateMountainRiver);
     std::uint32_t generator_revision = kTerrainGeneratorRevision;
 };
 

@@ -88,6 +88,8 @@ struct TerrainCliConfig {
             config.terrain.grid_height = parse_u32(require_value(index, argc, argv, arg), arg);
         } else if (arg == "--cell-size") {
             config.terrain.cell_size_m = parse_float(require_value(index, argc, argv, arg), arg);
+        } else if (arg == "--recipe" || arg == "--terrain-recipe") {
+            config.terrain.recipe_id = std::string(require_value(index, argc, argv, arg));
         } else if (arg == "--headless") {
             config.headless = true;
         } else if (arg == "--terrain-debug-view") {
