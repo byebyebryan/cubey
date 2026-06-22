@@ -176,8 +176,24 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include distance-regime diagnostics");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::DistanceRegime) ==
+                cubey::projects::cloud::CloudsDebugView::TransitionWeights,
+            "cloud debug view should include transition weight diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::TransitionWeights) ==
                 cubey::projects::cloud::CloudsDebugView::LocalAlpha,
             "cloud debug view should include local alpha diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalAlpha) ==
+                cubey::projects::cloud::CloudsDebugView::FarShellAlpha,
+            "cloud debug view should include far shell alpha diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::FarShellAlpha) ==
+                cubey::projects::cloud::CloudsDebugView::LocalWithShellAlpha,
+            "cloud debug view should include local and shell alpha diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalWithShellAlpha) ==
+                cubey::projects::cloud::CloudsDebugView::OrbitAlpha,
+            "cloud debug view should include orbit alpha diagnostics after local handoff");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::OrbitAlpha) ==
                 cubey::projects::cloud::CloudsDebugView::OrbitCoverage,
@@ -292,9 +308,18 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud::clouds_debug_view_from_string("distance-regime") ==
                 cubey::projects::cloud::CloudsDebugView::DistanceRegime,
             "distance regime debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("transition-weights") ==
+                cubey::projects::cloud::CloudsDebugView::TransitionWeights,
+            "transition weights debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("local-alpha") ==
                 cubey::projects::cloud::CloudsDebugView::LocalAlpha,
             "local alpha debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("far-shell-alpha") ==
+                cubey::projects::cloud::CloudsDebugView::FarShellAlpha,
+            "far shell alpha debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("local-with-shell-alpha") ==
+                cubey::projects::cloud::CloudsDebugView::LocalWithShellAlpha,
+            "local with shell alpha debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-alpha") ==
                 cubey::projects::cloud::CloudsDebugView::OrbitAlpha,
             "orbit alpha debug view should parse");

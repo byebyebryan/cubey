@@ -80,13 +80,20 @@ capture orbit-satellite-shell-shadow --cloud-camera-mode orbit --cloud-distance-
     --cloud-orbit-representation surface-shell --debug-view orbit-shell-shadow
 capture high-oblique-distance-regime --cloud-camera-mode high-oblique \
     --debug-view distance-regime
+capture high-oblique-transition-weights --cloud-camera-mode high-oblique \
+    --debug-view transition-weights
 capture high-oblique-local-alpha --cloud-camera-mode high-oblique --debug-view local-alpha
+capture high-oblique-far-shell-alpha --cloud-camera-mode high-oblique \
+    --debug-view far-shell-alpha
+capture high-oblique-local-with-shell-alpha --cloud-camera-mode high-oblique \
+    --debug-view local-with-shell-alpha
 capture high-oblique-orbit-alpha --cloud-camera-mode high-oblique --debug-view orbit-alpha
 capture high-oblique-orbit-ray-coverage --cloud-camera-mode high-oblique \
     --debug-view orbit-coverage
 capture high-oblique-orbit-ray-detail --cloud-camera-mode high-oblique --debug-view orbit-detail
 capture high-oblique-orbit-ray-hull --cloud-camera-mode high-oblique --debug-view orbit-hull
 capture orbit-distance-regime --cloud-camera-mode orbit --debug-view distance-regime
+capture orbit-transition-weights --cloud-camera-mode orbit --debug-view transition-weights
 capture orbit-alpha --cloud-camera-mode orbit --debug-view orbit-alpha
 capture orbit-ray-coverage --cloud-camera-mode orbit --debug-view orbit-coverage
 capture orbit-ray-detail --cloud-camera-mode orbit --debug-view orbit-detail
@@ -113,6 +120,7 @@ capture cloud-alpha --cloud-camera-mode surface-up --debug-view cloud-alpha
 capture local-alpha --cloud-camera-mode surface-up --debug-view local-alpha
 capture orbit-alpha-surface-up --cloud-camera-mode surface-up --debug-view orbit-alpha
 capture distance-regime --cloud-camera-mode surface-up --debug-view distance-regime
+capture transition-weights --cloud-camera-mode surface-up --debug-view transition-weights
 
 if [[ "${DEEP}" != "0" ]]; then
     motion_video="${OUT_DIR}/orbit-satellite-motion.mp4"
@@ -185,10 +193,13 @@ if command -v magick >/dev/null 2>&1; then
         orbit-satellite-terminator orbit-satellite-shell-envelope
         orbit-satellite-shell-alpha orbit-satellite-shell-height
         orbit-satellite-shell-normal orbit-satellite-shell-shadow
-        high-oblique-distance-regime high-oblique-local-alpha high-oblique-orbit-alpha
+        high-oblique-distance-regime high-oblique-transition-weights
+        high-oblique-local-alpha high-oblique-far-shell-alpha
+        high-oblique-local-with-shell-alpha high-oblique-orbit-alpha
         high-oblique-orbit-ray-coverage high-oblique-orbit-ray-detail
         high-oblique-orbit-ray-hull
-        orbit-distance-regime orbit-alpha orbit-ray-coverage orbit-ray-detail orbit-ray-hull
+        orbit-distance-regime orbit-transition-weights orbit-alpha
+        orbit-ray-coverage orbit-ray-detail orbit-ray-hull
     )
     if [[ "${DEEP}" != "0" ]]; then
         crop_names+=(

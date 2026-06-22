@@ -1514,10 +1514,13 @@ void main() {
     float far_shell_blend = cloud_far_shell_blend(start_t, end_t);
     bool needs_local = full_orbit_blend < 0.999 ||
                        debug_view == CLOUD_DEBUG_LOCAL_ALPHA ||
+                       debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA ||
                        debug_view == CLOUD_DEBUG_DISTANCE_REGIME;
     bool needs_orbit = full_orbit_blend > 0.001 ||
                        far_shell_blend > 0.001 ||
                        debug_view == CLOUD_DEBUG_ORBIT_ALPHA ||
+                       debug_view == CLOUD_DEBUG_FAR_SHELL_ALPHA ||
+                       debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA ||
                        debug_view == CLOUD_DEBUG_ORBIT_COVERAGE ||
                        debug_view == CLOUD_DEBUG_ORBIT_DETAIL ||
                        debug_view == CLOUD_DEBUG_ORBIT_HULL ||
@@ -1526,6 +1529,7 @@ void main() {
                        debug_view == CLOUD_DEBUG_ORBIT_SHELL_HEIGHT ||
                        debug_view == CLOUD_DEBUG_ORBIT_SHELL_NORMAL ||
                        debug_view == CLOUD_DEBUG_ORBIT_SHELL_SHADOW ||
+                       debug_view == CLOUD_DEBUG_TRANSITION_WEIGHTS ||
                        debug_view == CLOUD_DEBUG_DISTANCE_REGIME;
     MarchResult local_result = cloud_empty_result();
     MarchResult orbit_result = cloud_empty_result();
@@ -1551,8 +1555,14 @@ void main() {
         debug_color = vec3(full_orbit_blend,
                            far_shell_blend,
                            1.0 - max(full_orbit_blend, far_shell_blend));
+    } else if (debug_view == CLOUD_DEBUG_TRANSITION_WEIGHTS) {
+        debug_color = vec3(1.0 - full_orbit_blend, far_shell_blend, full_orbit_blend);
     } else if (debug_view == CLOUD_DEBUG_LOCAL_ALPHA) {
         debug_color = vec3(local_result.alpha);
+    } else if (debug_view == CLOUD_DEBUG_FAR_SHELL_ALPHA) {
+        debug_color = vec3(far_shell_result.alpha);
+    } else if (debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA) {
+        debug_color = vec3(local_with_far_shell.alpha);
     } else if (debug_view == CLOUD_DEBUG_ORBIT_ALPHA) {
         debug_color = vec3(orbit_result.alpha);
     } else if (debug_view == CLOUD_DEBUG_ORBIT_ENVELOPE ||

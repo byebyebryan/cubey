@@ -420,8 +420,17 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "distance-regime") {
         return CloudsDebugView::DistanceRegime;
     }
+    if (value == "transition-weights") {
+        return CloudsDebugView::TransitionWeights;
+    }
     if (value == "local-alpha") {
         return CloudsDebugView::LocalAlpha;
+    }
+    if (value == "far-shell-alpha") {
+        return CloudsDebugView::FarShellAlpha;
+    }
+    if (value == "local-with-shell-alpha") {
+        return CloudsDebugView::LocalWithShellAlpha;
     }
     if (value == "orbit-alpha") {
         return CloudsDebugView::OrbitAlpha;
@@ -515,8 +524,14 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "visible-cloud-type";
     case CloudsDebugView::DistanceRegime:
         return "distance-regime";
+    case CloudsDebugView::TransitionWeights:
+        return "transition-weights";
     case CloudsDebugView::LocalAlpha:
         return "local-alpha";
+    case CloudsDebugView::FarShellAlpha:
+        return "far-shell-alpha";
+    case CloudsDebugView::LocalWithShellAlpha:
+        return "local-with-shell-alpha";
     case CloudsDebugView::OrbitAlpha:
         return "orbit-alpha";
     case CloudsDebugView::OrbitCoverage:

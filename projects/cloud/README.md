@@ -82,7 +82,10 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view lighting
 ./build/dev/projects/cloud/cloud --debug-view cloud-alpha
 ./build/dev/projects/cloud/cloud --debug-view distance-regime
+./build/dev/projects/cloud/cloud --debug-view transition-weights
 ./build/dev/projects/cloud/cloud --debug-view local-alpha
+./build/dev/projects/cloud/cloud --debug-view far-shell-alpha
+./build/dev/projects/cloud/cloud --debug-view local-with-shell-alpha
 ./build/dev/projects/cloud/cloud --debug-view orbit-alpha
 ./build/dev/projects/cloud/cloud --debug-view orbit-coverage
 ./build/dev/projects/cloud/cloud --debug-view orbit-detail
@@ -117,6 +120,8 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --cloud-far-shell-strength 0
 ./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --cloud-far-shell-strength 1.5
 ./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --debug-view distance-regime
+./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --debug-view transition-weights
+./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --debug-view far-shell-alpha
 ./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --debug-view orbit-coverage
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode surface-up --output outputs/cloud-v1-surface-up.png
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode high-oblique --output outputs/cloud-v1-high-oblique.png
@@ -126,8 +131,9 @@ DEEP=1 projects/cloud/capture_review.sh outputs/cloud-v1-review-deep
 
 `capture_review.sh` defaults to a focused shape/regime review: final camera
 views, satellite-named orbit captures, high-oblique transition, volume
-comparison, local/orbit alpha, distance-regime checks, ray-sampled orbit
-procedural coverage/detail/hull, shell-specific alpha/height/normal/shadow, and
+comparison, local/far-shell/local-plus-shell/orbit alpha, transition weights,
+distance-regime checks, ray-sampled orbit procedural coverage/detail/hull,
+shell-specific alpha/height/normal/shadow, and
 a small surface-local density set. The default set includes high-oblique
 far-shell strength comparisons and orbit-fill comparisons. `DEEP=1` adds
 secondary tuning captures such as sampling comparisons, metadata, lighting
@@ -157,6 +163,10 @@ Controls:
 - `Sampling`: ray-start sampling mode and jitter amount.
 - `Distance Regime`: local/orbit mode, altitude and ray-distance transition
   ranges, broad-shell detail strength, and broad-shell density scale.
+  `transition-weights` displays local-branch availability in red, far-shell
+  assist in green, and full orbit takeover in blue. `far-shell-alpha` and
+  `local-with-shell-alpha` isolate the horizon continuity branch from the local
+  volume and full orbit replacement.
   Orbit shell diagnostics sample a direct planet-space coverage/detail/hull
   model rather than the surface-local planar density field. The broad orbit
   weather frequencies derive from `Weather scale`, with regional storm/dry
