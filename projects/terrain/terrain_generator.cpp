@@ -61,6 +61,13 @@ struct RoutingContext {
     cubey::procedural::ScalarField2D sink_mask{};
 };
 
+struct HiddenIndexBounds {
+    std::uint32_t x_begin = 0U;
+    std::uint32_t x_end = 0U;
+    std::uint32_t y_begin = 0U;
+    std::uint32_t y_end = 0U;
+};
+
 struct ChannelPathPoint {
     float x = 0.0F;
     float y = 0.0F;
@@ -298,6 +305,30 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return visible;
 }
 
+[[nodiscard]] HiddenIndexBounds visible_seed_bounds(const RoutingDomain& domain) {
+    const std::uint32_t visible_min = std::min(domain.visible_desc.width, domain.visible_desc.height);
+    std::uint32_t inset = std::max(8U, visible_min / 16U);
+    if (domain.visible_desc.width <= (inset * 2U) + 1U ||
+        domain.visible_desc.height <= (inset * 2U) + 1U) {
+        inset = 0U;
+    }
+    return HiddenIndexBounds{
+        .x_begin = domain.padding_x + inset,
+        .x_end = domain.padding_x + domain.visible_desc.width - inset,
+        .y_begin = domain.padding_y + inset,
+        .y_end = domain.padding_y + domain.visible_desc.height - inset,
+    };
+}
+
+[[nodiscard]] HiddenIndexBounds visible_crop_bounds(const RoutingDomain& domain) {
+    return HiddenIndexBounds{
+        .x_begin = domain.padding_x,
+        .x_end = domain.padding_x + domain.visible_desc.width,
+        .y_begin = domain.padding_y,
+        .y_end = domain.padding_y + domain.visible_desc.height,
+    };
+}
+
 [[nodiscard]] FlowRoutingResult route_steepest_descent(
     const cubey::procedural::ScalarField2D& height) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
@@ -406,21 +437,44 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return upstream;
 }
 
-[[nodiscard]] int select_main_channel_seed(const cubey::procedural::ScalarField2D& accumulation,
-                                           const RoutingDomain& domain) {
+[[nodiscard]] int select_best_accumulation_in_bounds(
+    const cubey::procedural::ScalarField2D& accumulation, const RoutingDomain& domain,
+    const HiddenIndexBounds& bounds) {
     int best_index = -1;
     float best_accumulation = -1.0F;
-    for (std::uint32_t y = 0; y < domain.visible_desc.height; ++y) {
-        for (std::uint32_t x = 0; x < domain.visible_desc.width; ++x) {
-            const std::uint32_t hidden_x = x + domain.padding_x;
-            const std::uint32_t hidden_y = y + domain.padding_y;
+    for (std::uint32_t y = bounds.y_begin; y < bounds.y_end; ++y) {
+        for (std::uint32_t x = bounds.x_begin; x < bounds.x_end; ++x) {
             const std::size_t index =
-                cubey::procedural::grid_index(hidden_x, hidden_y, domain.hidden_desc.width);
+                cubey::procedural::grid_index(x, y, domain.hidden_desc.width);
             const float value = accumulation.values()[index];
             if (value > best_accumulation) {
                 best_accumulation = value;
                 best_index = static_cast<int>(index);
             }
+        }
+    }
+    return best_index;
+}
+
+[[nodiscard]] int select_main_channel_seed(const cubey::procedural::ScalarField2D& accumulation,
+                                           const RoutingDomain& domain) {
+    int seed = select_best_accumulation_in_bounds(accumulation, domain,
+                                                  visible_seed_bounds(domain));
+    if (seed >= 0) {
+        return seed;
+    }
+    seed = select_best_accumulation_in_bounds(accumulation, domain, visible_crop_bounds(domain));
+    if (seed >= 0) {
+        return seed;
+    }
+
+    int best_index = -1;
+    float best_accumulation = -1.0F;
+    for (std::size_t index = 0; index < accumulation.sample_count(); ++index) {
+        const float value = accumulation.values()[index];
+        if (value > best_accumulation) {
+            best_accumulation = value;
+            best_index = static_cast<int>(index);
         }
     }
     return best_index;
@@ -440,6 +494,13 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
         current = downstream[static_cast<std::size_t>(current)];
     }
     return path;
+}
+
+[[nodiscard]] bool path_intersects_visible_crop(const RoutingDomain& domain,
+                                                const std::vector<int>& path) {
+    return std::any_of(path.begin(), path.end(), [&domain](int index) {
+        return is_inside_visible_crop(domain, index);
+    });
 }
 
 [[nodiscard]] int strongest_upstream_candidate(
@@ -694,6 +755,9 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context,
     const std::vector<std::vector<int>> upstream = make_upstream_adjacency(downstream);
     const std::vector<int> trunk =
         trace_main_trunk(context.accumulation, upstream, downstream, context.domain);
+    if (trunk.empty()) {
+        return;
+    }
     paint_channel_path(fields.river_trunk, trunk, context.domain, 1.0F, 1.4F, 3.0F,
                        seed + 1101U, 1.25F);
 
@@ -716,6 +780,7 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context,
         if (accepted_tributaries >= max_tributary_count) {
             break;
         }
+        const bool visible_anchor = is_inside_visible_crop(context.domain, trunk_index);
         std::vector<int> candidates = upstream[static_cast<std::size_t>(trunk_index)];
         std::sort(candidates.begin(), candidates.end(), [&context](int lhs, int rhs) {
             return context.accumulation.values()[static_cast<std::size_t>(lhs)] >
@@ -729,6 +794,9 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context,
             std::vector<int> branch = trace_strongest_upstream_path(
                 candidate, upstream, context.accumulation, min_tributary_accumulation, active);
             if (branch.size() < 5U) {
+                continue;
+            }
+            if (!visible_anchor && !path_intersects_visible_crop(context.domain, branch)) {
                 continue;
             }
             paint_channel_path(fields.tributaries, branch, context.domain, 0.75F, 0.9F, 2.1F,
