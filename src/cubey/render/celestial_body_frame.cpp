@@ -67,9 +67,9 @@ struct SurfaceBasis {
     return t * t * (3.0F - (2.0F * t));
 }
 
-[[nodiscard]] float moon_atmosphere_sky_visibility_factor(
-    const CelestialBody& body, const CelestialLighting& lighting,
-    const CelestialBodyAtmosphereInputs& atmosphere) {
+[[nodiscard]] float
+moon_atmosphere_sky_visibility_factor(const CelestialBody& body, const CelestialLighting& lighting,
+                                      const CelestialBodyAtmosphereInputs& atmosphere) {
     if (!finite_positive(atmosphere.planet_radius_m) ||
         atmosphere.atmosphere_outer_radius_m <= atmosphere.planet_radius_m ||
         glm::dot(atmosphere.camera_position_m, atmosphere.camera_position_m) <= 0.0F) {
@@ -246,8 +246,7 @@ void CelestialBodyFrame::create_materials(const cubey::vulkan::Device& device,
                                   .sampled_images =
                                       {
                                           SampledImageMaterialBinding{
-                                              .binding =
-                                                  binding(CelestialBodyBinding::LunarAtlas),
+                                              .binding = binding(CelestialBodyBinding::LunarAtlas),
                                               .sampler = config.textures.lunar_sampler,
                                               .image_view = config.textures.lunar_view,
                                               .layout = config.textures.lunar_layout,
@@ -257,8 +256,7 @@ void CelestialBodyFrame::create_materials(const cubey::vulkan::Device& device,
 }
 
 void CelestialBodyFrame::update_texture_bindings(
-    const cubey::vulkan::Device& device,
-    const CelestialBodyFrameTextureBindings& textures) const {
+    const cubey::vulkan::Device& device, const CelestialBodyFrameTextureBindings& textures) const {
     update_celestial_body_frame_material_texture_bindings(device, material(), textures);
 }
 
@@ -292,6 +290,16 @@ void CelestialBodyFrame::upload(FrameSlot frame_slot,
     material().upload(frame_slot, uniforms);
 }
 
+void CelestialBodyFrame::record_draw(const cubey::vulkan::CommandRecorder& recorder,
+                                     FrameSlot frame_slot, const Mesh& mesh) const {
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().layout(), 0,
+                                 material().set(frame_slot));
+    record_draw_item(recorder.handle(), {
+                                            .mesh = &mesh,
+                                        });
+}
+
 void CelestialBodyFrame::record_pass(const cubey::vulkan::CommandRecorder& recorder,
                                      const RenderTargetView& target, FrameSlot frame_slot,
                                      const Mesh& mesh) const {
@@ -303,12 +311,7 @@ void CelestialBodyFrame::record_pass(const cubey::vulkan::CommandRecorder& recor
         });
     recorder.begin_rendering(rendering.info());
     recorder.set_viewport_and_scissor(target.color.extent);
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline().layout(), 0,
-                                 material().set(frame_slot));
-    record_draw_item(recorder.handle(), {
-                                            .mesh = &mesh,
-                                        });
+    record_draw(recorder, frame_slot, mesh);
     recorder.end_rendering();
 }
 
@@ -316,7 +319,8 @@ bool CelestialBodyFrame::materials_created() const noexcept {
     return material_.has_value();
 }
 
-const FrameUniformMaterialInstance<CelestialBodyFrameUniforms>& CelestialBodyFrame::material() const {
+const FrameUniformMaterialInstance<CelestialBodyFrameUniforms>&
+CelestialBodyFrame::material() const {
     if (!material_.has_value()) {
         throw std::runtime_error("celestial body frame material is not initialized");
     }

@@ -32,21 +32,18 @@ struct Pyro3DRenderCamera {
 };
 
 void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& resources,
-                             const Pyro3DConfig& config, bool paused, bool& reset_requested,
-                             const ProjectFrame& frame,
-                             std::span<const Pyro3DSourceGpu> sources,
-                             Pyro3DFrameState& frame_state,
-                             bool include_render_visibility_barrier = true,
-                             cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
-                             std::uint32_t frame_slot_index = 0);
+                            const Pyro3DConfig& config, bool paused, bool& reset_requested,
+                            const ProjectFrame& frame, std::span<const Pyro3DSourceGpu> sources,
+                            Pyro3DFrameState& frame_state,
+                            bool include_render_visibility_barrier = true,
+                            cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
+                            std::uint32_t frame_slot_index = 0);
 
-void record_pyro_3d_draw(VkCommandBuffer command_buffer, const Pyro3DGpuResources& resources,
-                          const Pyro3DConfig& config, Pyro3DDebugView debug_view,
-                          const Pyro3DRenderCamera& camera,
-                          cubey::render::ColorTargetView color_target,
-                          const Pyro3DFrameState& frame_state,
-                          cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
-                          std::uint32_t frame_slot_index = 0,
-                          bool atmosphere_background_enabled = false);
+void record_pyro_3d_draw(
+    VkCommandBuffer command_buffer, const Pyro3DGpuResources& resources, const Pyro3DConfig& config,
+    Pyro3DDebugView debug_view, const Pyro3DRenderCamera& camera,
+    cubey::render::ColorTargetView color_target, const Pyro3DFrameState& frame_state,
+    cubey::vulkan::GpuTimestampProfiler* profiler = nullptr, std::uint32_t frame_slot_index = 0,
+    bool atmosphere_background_enabled = false, bool moon_body_enabled = false);
 
 } // namespace cubey::projects::fluid::pyro_3d

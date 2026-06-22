@@ -1,6 +1,7 @@
 #include "water_3d_gpu_resources.h"
 
 #include <cubey/render/material.h>
+#include <cubey/render/primitive_mesh.h>
 
 #include <array>
 #include <filesystem>
@@ -92,23 +93,22 @@ void validate_water_3d_environment_texture_bindings(
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_scene_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.scene",
-        .descriptor_sets =
-            {cubey::render::MaterialDescriptorSetLayout{
-                .set = 0,
-                .bindings =
-                    {
-                        cubey::vulkan::DescriptorSetBindingConfig{
-                            .binding = 0,
-                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                        },
-                        cubey::vulkan::DescriptorSetBindingConfig{
-                            .binding = 1,
-                            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                        },
+        .descriptor_sets = {cubey::render::MaterialDescriptorSetLayout{
+            .set = 0,
+            .bindings =
+                {
+                    cubey::vulkan::DescriptorSetBindingConfig{
+                        .binding = 0,
+                        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                     },
-            }},
+                    cubey::vulkan::DescriptorSetBindingConfig{
+                        .binding = 1,
+                        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    },
+                },
+        }},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = true,
         .depth_write = true,
@@ -168,43 +168,42 @@ void validate_water_3d_environment_texture_bindings(
 [[nodiscard]] cubey::render::MaterialPassInfo water_surface_composite_pass_info() {
     return cubey::render::MaterialPassInfo{
         .label = "water_3d.surface.composite",
-        .descriptor_sets =
-            {cubey::render::MaterialDescriptorSetLayout{
-                .set = 0,
-                .bindings =
-                    {
-                        cubey::vulkan::DescriptorSetBindingConfig{
-                            .binding = 0,
-                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                        },
-                        cubey::vulkan::DescriptorSetBindingConfig{
-                            .binding = 1,
-                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                        },
-                        cubey::vulkan::DescriptorSetBindingConfig{
-                            .binding = 2,
-                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                        },
-                        cubey::vulkan::DescriptorSetBindingConfig{
-                            .binding = 3,
-                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                        },
-                        cubey::vulkan::DescriptorSetBindingConfig{
-                            .binding = 4,
-                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                        },
-                        cubey::vulkan::DescriptorSetBindingConfig{
-                            .binding = 5,
-                            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                        },
+        .descriptor_sets = {cubey::render::MaterialDescriptorSetLayout{
+            .set = 0,
+            .bindings =
+                {
+                    cubey::vulkan::DescriptorSetBindingConfig{
+                        .binding = 0,
+                        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                     },
-            }},
+                    cubey::vulkan::DescriptorSetBindingConfig{
+                        .binding = 1,
+                        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    },
+                    cubey::vulkan::DescriptorSetBindingConfig{
+                        .binding = 2,
+                        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    },
+                    cubey::vulkan::DescriptorSetBindingConfig{
+                        .binding = 3,
+                        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    },
+                    cubey::vulkan::DescriptorSetBindingConfig{
+                        .binding = 4,
+                        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    },
+                    cubey::vulkan::DescriptorSetBindingConfig{
+                        .binding = 5,
+                        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    },
+                },
+        }},
         .push_constants = {water_surface_push_constant_range()},
         .depth_test = false,
         .depth_write = false,
@@ -281,6 +280,7 @@ template <typename Value>
 } // namespace
 
 void Water3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
+                                                            cubey::vulkan::GpuRuntime& mesh_gpu,
                                                             cubey::ProjectGpuServices& gpu,
                                                             const Water3DConfig& config,
                                                             std::uint32_t frame_slot_count) {
@@ -296,11 +296,26 @@ void Water3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
     frame_slot_count_ = frame_slot_count;
 
     create_field_buffers(gpu, config);
+    create_moon_mesh_if_needed(mesh_gpu);
     simulation_uniforms_.emplace(device, frame_slot_count_);
     environment_lighting_uniforms_.emplace(device, frame_slot_count_);
     create_descriptor_resources(device);
     create_compute_pipelines(device);
     profiler_.emplace(device, frame_slot_count_, kWater3DGpuProfilerPassCapacity);
+}
+
+void Water3DGpuResources::create_moon_mesh_if_needed(cubey::vulkan::GpuRuntime& gpu) {
+    if (moon_mesh_.has_value()) {
+        return;
+    }
+    const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv> moon_mesh =
+        cubey::render::make_uv_sphere_position_color_normal_uv_mesh({
+            .radius = 1.0F,
+            .latitude_segments = 32U,
+            .longitude_segments = 64U,
+            .color = {0.86F, 0.86F, 0.86F},
+        });
+    moon_mesh_.emplace(gpu, moon_mesh.mesh_config());
 }
 
 void Water3DGpuResources::destroy_swapchain_resources() {
@@ -312,6 +327,7 @@ void Water3DGpuResources::destroy_swapchain_resources() {
     surface_thickness_pipeline_resource_.reset();
     surface_depth_pipeline_resource_.reset();
     surface_scene_pipeline_resource_.reset();
+    moon_body_frame_.destroy_pipeline();
     atmosphere_background_.destroy_pipeline();
     surface_composite_material_.reset();
     surface_source_b_material_.reset();
@@ -327,7 +343,9 @@ void Water3DGpuResources::destroy_swapchain_resources() {
 
 void Water3DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
+    moon_body_frame_.destroy();
     atmosphere_background_.destroy();
+    moon_mesh_.reset();
     whitewater_draw_args_pipeline_resource_.reset();
     active_whitewater_indices_pipeline_resource_.reset();
     emit_whitewater_pipeline_resource_.reset();
@@ -968,6 +986,16 @@ void Water3DGpuResources::create_render_pipeline(
             .path = shader_path("atmosphere.frag.spv"),
         },
     };
+    const std::array<cubey::render::ShaderStageFile, 2> celestial_body_shaders{
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .path = shader_path("celestial_body.vert.spv"),
+        },
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .path = shader_path("celestial_body.frag.spv"),
+        },
+    };
     const std::array<cubey::render::ShaderStageFile, 2> surface_particle_depth_shaders{
         cubey::render::ShaderStageFile{
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
@@ -1063,6 +1091,11 @@ void Water3DGpuResources::create_render_pipeline(
                                       scene_set_layouts, surface_scene_material_pass,
                                       surface_scene_pipeline_resource_);
     if (environment.atmosphere_background_textures.has_value()) {
+        const cubey::render::CelestialBodyFrameTextureBindings moon_textures{
+            .lunar_sampler = environment.atmosphere_background_textures->lunar_sampler,
+            .lunar_view = environment.atmosphere_background_textures->lunar_view,
+            .lunar_layout = environment.atmosphere_background_textures->lunar_layout,
+        };
         if (!atmosphere_background_.materials_created()) {
             atmosphere_background_.create_materials(
                 device, cubey::render::AtmosphereBackgroundFrameMaterialConfig{
@@ -1079,6 +1112,23 @@ void Water3DGpuResources::create_render_pipeline(
                         .color_format = kWater3DSceneColorFormat,
                         .depth_format = depth_attachment().format(),
                         .shader_stage_files = atmosphere_shaders,
+                    });
+        if (!moon_body_frame_.materials_created()) {
+            moon_body_frame_.create_materials(device,
+                                              cubey::render::CelestialBodyFrameMaterialConfig{
+                                                  .frame_slot_count = frame_slot_count_,
+                                                  .textures = moon_textures,
+                                              });
+        } else {
+            moon_body_frame_.update_texture_bindings(device, moon_textures);
+        }
+        moon_body_frame_.create_pipeline(
+            device, cubey::render::CelestialBodyFramePipelineConfig{
+                        .extent = extent,
+                        .color_format = kWater3DSceneColorFormat,
+                        .depth_format = depth_attachment().format(),
+                        .shader_stage_files = celestial_body_shaders,
+                        .depth_mode = cubey::render::CelestialBodyDepthMode::None,
                     });
     }
     create_graphics_pipeline_resource(device, extent, kWater3DSurfaceScalarFormat,
@@ -1112,9 +1162,10 @@ void Water3DGpuResources::create_render_pipeline(
             .index = slot_index,
             .count = frame_slot_count_,
         };
-        writes.combined_image_sampler(surface_scene_descriptor_set(frame_slot), 0,
-                                      environment.display_sampler, environment.display_view,
-                                      environment.display_layout)
+        writes
+            .combined_image_sampler(surface_scene_descriptor_set(frame_slot), 0,
+                                    environment.display_sampler, environment.display_view,
+                                    environment.display_layout)
             .uniform_buffer(surface_scene_descriptor_set(frame_slot), 1,
                             environment_lighting_uniform_buffer(frame_slot).handle(),
                             environment_lighting_uniform_buffer(frame_slot).size());
@@ -1381,8 +1432,13 @@ void Water3DGpuResources::upload_atmosphere_background(
     atmosphere_background().upload(frame_slot, uniforms);
 }
 
-const cubey::vulkan::Buffer&
-Water3DGpuResources::environment_lighting_uniform_buffer(
+void Water3DGpuResources::upload_moon_body(
+    cubey::render::FrameSlot frame_slot,
+    const cubey::render::CelestialBodyFrameUniforms& uniforms) const {
+    moon_body_frame().upload(frame_slot, uniforms);
+}
+
+const cubey::vulkan::Buffer& Water3DGpuResources::environment_lighting_uniform_buffer(
     cubey::render::FrameSlot frame_slot) const {
     const cubey::render::FrameUniformBuffer<cubey::render::EnvironmentLightingUniforms>& buffers =
         require_initialized(environment_lighting_uniforms_,
@@ -1621,12 +1677,25 @@ Water3DGpuResources::whitewater_pipeline_resource() const {
                                "water 3D whitewater pipeline is not initialized");
 }
 
-const cubey::render::AtmosphereBackgroundFrame&
-Water3DGpuResources::atmosphere_background() const {
+const cubey::render::AtmosphereBackgroundFrame& Water3DGpuResources::atmosphere_background() const {
     if (!atmosphere_background_.materials_created()) {
         throw std::runtime_error("water 3D atmosphere background is not initialized");
     }
     return atmosphere_background_;
+}
+
+const cubey::render::CelestialBodyFrame& Water3DGpuResources::moon_body_frame() const {
+    if (!moon_body_frame_.materials_created()) {
+        throw std::runtime_error("water 3D moon body frame is not initialized");
+    }
+    return moon_body_frame_;
+}
+
+const cubey::render::Mesh& Water3DGpuResources::moon_mesh() const {
+    if (!moon_mesh_.has_value()) {
+        throw std::runtime_error("water 3D moon mesh is not initialized");
+    }
+    return moon_mesh_.value();
 }
 
 VkDescriptorSet
@@ -1712,8 +1781,7 @@ void Water3DGpuResources::update_surface_descriptors(
                                 environment.pbr.prefiltered_layout)
         .combined_image_sampler(composite_set, 4, whitewater_sampler.handle(), whitewater.view,
                                 whitewater.layout)
-        .uniform_buffer(composite_set, 5,
-                        environment_lighting_uniform_buffer(frame_slot).handle(),
+        .uniform_buffer(composite_set, 5, environment_lighting_uniform_buffer(frame_slot).handle(),
                         environment_lighting_uniform_buffer(frame_slot).size());
     writes.update(device);
 }

@@ -100,8 +100,10 @@ class CelestialBodyFrame {
     void destroy();
 
     void upload(FrameSlot frame_slot, const CelestialBodyFrameUniforms& uniforms) const;
-    void record_pass(const cubey::vulkan::CommandRecorder& recorder,
-                     const RenderTargetView& target, FrameSlot frame_slot, const Mesh& mesh) const;
+    void record_draw(const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot,
+                     const Mesh& mesh) const;
+    void record_pass(const cubey::vulkan::CommandRecorder& recorder, const RenderTargetView& target,
+                     FrameSlot frame_slot, const Mesh& mesh) const;
 
     [[nodiscard]] bool materials_created() const noexcept;
     [[nodiscard]] const FrameUniformMaterialInstance<CelestialBodyFrameUniforms>& material() const;

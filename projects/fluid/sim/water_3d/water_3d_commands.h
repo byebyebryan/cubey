@@ -45,16 +45,13 @@ void record_water_3d_draw(VkCommandBuffer command_buffer, const Water3DGpuResour
                           cubey::render::ColorTargetView color_target,
                           cubey::vulkan::GpuTimestampProfiler* profiler = nullptr);
 
-void record_water_3d_surface_draw(VkCommandBuffer command_buffer,
-                                  const cubey::vulkan::Device& device,
-                                  cubey::render::RenderGraphFrameExecutor& graph_executor,
-                                  Water3DGpuResources& resources, const Water3DConfig& config,
-                                  cubey::render::FrameSlot frame_slot,
-                                  const Water3DRuntimeState& runtime_state,
-                                  Water3DRenderView render_view, const Water3DRenderCamera& camera,
-                                  cubey::render::ColorTargetView color_target,
-                                  Water3DRenderTargetMode target_mode,
-                                  const Water3DEnvironmentTextureBindings& environment,
-                                  cubey::vulkan::GpuTimestampProfiler* profiler = nullptr);
+void record_water_3d_surface_draw(
+    VkCommandBuffer command_buffer, const cubey::vulkan::Device& device,
+    cubey::render::RenderGraphFrameExecutor& graph_executor, Water3DGpuResources& resources,
+    const Water3DConfig& config, cubey::render::FrameSlot frame_slot,
+    const Water3DRuntimeState& runtime_state, Water3DRenderView render_view,
+    const Water3DRenderCamera& camera, cubey::render::ColorTargetView color_target,
+    Water3DRenderTargetMode target_mode, const Water3DEnvironmentTextureBindings& environment,
+    bool moon_body_enabled, cubey::vulkan::GpuTimestampProfiler* profiler = nullptr);
 
 } // namespace cubey::projects::fluid::water_3d

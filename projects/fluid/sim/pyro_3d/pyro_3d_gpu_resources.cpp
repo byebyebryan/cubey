@@ -1,5 +1,6 @@
 #include "pyro_3d_gpu_resources.h"
 
+#include <cubey/render/primitive_mesh.h>
 #include <cubey/vulkan/buffer.h>
 
 #include <array>
@@ -137,9 +138,8 @@ void emplace_shadow_compute_pipeline(
                                                            environment_descriptor_layout};
     const std::array<VkPushConstantRange, 1> push_constants{simulation_push_constant_range()};
     destination.emplace(device, cubey::render::ComputePipelineResourceConfig{
-                                    .shader_stage =
-                                        cubey::render::compute_shader_file(
-                                            shader_path("pyro_3d_shadow.comp.spv")),
+                                    .shader_stage = cubey::render::compute_shader_file(
+                                        shader_path("pyro_3d_shadow.comp.spv")),
                                     .descriptor_set_layouts = set_layouts,
                                     .push_constants = push_constants,
                                 });
@@ -148,6 +148,7 @@ void emplace_shadow_compute_pipeline(
 } // namespace
 
 void Pyro3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
+                                                           cubey::vulkan::GpuRuntime& mesh_gpu,
                                                            cubey::ProjectGpuServices& gpu,
                                                            const Pyro3DConfig& config,
                                                            std::uint32_t frame_slot_count) {
@@ -164,6 +165,7 @@ void Pyro3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device
     frame_slot_count_ = frame_slot_count;
 
     create_volume_resources(device, gpu, config);
+    create_moon_mesh_if_needed(mesh_gpu);
     environment_lighting_uniforms_.emplace(device, frame_slot_count_);
     create_descriptor_resources(device);
     create_compute_pipelines(device);
@@ -203,14 +205,31 @@ void Pyro3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
         "pyro_3d source upload"));
 }
 
+void Pyro3DGpuResources::create_moon_mesh_if_needed(cubey::vulkan::GpuRuntime& gpu) {
+    if (moon_mesh_.has_value()) {
+        return;
+    }
+    const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv> moon_mesh =
+        cubey::render::make_uv_sphere_position_color_normal_uv_mesh({
+            .radius = 1.0F,
+            .latitude_segments = 32U,
+            .longitude_segments = 64U,
+            .color = {0.86F, 0.86F, 0.86F},
+        });
+    moon_mesh_.emplace(gpu, moon_mesh.mesh_config());
+}
+
 void Pyro3DGpuResources::destroy_swapchain_resources() {
     render_pipeline_.reset();
+    moon_body_frame_.destroy_pipeline();
     atmosphere_background_.destroy_pipeline();
 }
 
 void Pyro3DGpuResources::destroy_all_resources() {
     destroy_swapchain_resources();
+    moon_body_frame_.destroy();
     atmosphere_background_.destroy();
+    moon_mesh_.reset();
     profiler_.reset();
     shadow_pipeline_.reset();
     projection_pipeline_.reset();
@@ -588,9 +607,24 @@ void Pyro3DGpuResources::create_render_pipeline(
             .path = shader_path("atmosphere.frag.spv"),
         },
     };
+    const std::array<cubey::render::ShaderStageFile, 2> celestial_body_shaders{
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .path = shader_path("celestial_body.vert.spv"),
+        },
+        cubey::render::ShaderStageFile{
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .path = shader_path("celestial_body.frag.spv"),
+        },
+    };
     const std::array<VkDescriptorSetLayout, 2> set_layouts{render_descriptors().layout(),
                                                            environment_descriptor_layout()};
     if (atmosphere_background_textures.has_value()) {
+        const cubey::render::CelestialBodyFrameTextureBindings moon_textures{
+            .lunar_sampler = atmosphere_background_textures->lunar_sampler,
+            .lunar_view = atmosphere_background_textures->lunar_view,
+            .lunar_layout = atmosphere_background_textures->lunar_layout,
+        };
         if (!atmosphere_background_.materials_created()) {
             atmosphere_background_.create_materials(
                 device, cubey::render::AtmosphereBackgroundFrameMaterialConfig{
@@ -598,14 +632,30 @@ void Pyro3DGpuResources::create_render_pipeline(
                             .textures = atmosphere_background_textures.value(),
                         });
         } else {
-            atmosphere_background_.update_texture_bindings(
-                device, atmosphere_background_textures.value());
+            atmosphere_background_.update_texture_bindings(device,
+                                                           atmosphere_background_textures.value());
         }
         atmosphere_background_.create_pipeline(
             device, cubey::render::AtmosphereBackgroundFramePipelineConfig{
                         .extent = extent,
                         .color_format = color_format,
                         .shader_stage_files = atmosphere_shaders,
+                    });
+        if (!moon_body_frame_.materials_created()) {
+            moon_body_frame_.create_materials(device,
+                                              cubey::render::CelestialBodyFrameMaterialConfig{
+                                                  .frame_slot_count = frame_slot_count_,
+                                                  .textures = moon_textures,
+                                              });
+        } else {
+            moon_body_frame_.update_texture_bindings(device, moon_textures);
+        }
+        moon_body_frame_.create_pipeline(
+            device, cubey::render::CelestialBodyFramePipelineConfig{
+                        .extent = extent,
+                        .color_format = color_format,
+                        .shader_stage_files = celestial_body_shaders,
+                        .depth_mode = cubey::render::CelestialBodyDepthMode::None,
                     });
     }
     render_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
@@ -652,8 +702,8 @@ VkDescriptorSet Pyro3DGpuResources::render_descriptor_set(bool density_a_current
     return render_descriptors().set(advect_index(density_a_current, velocity_a_current));
 }
 
-VkDescriptorSet Pyro3DGpuResources::environment_descriptor_set(
-    std::uint32_t frame_slot_index) const {
+VkDescriptorSet
+Pyro3DGpuResources::environment_descriptor_set(std::uint32_t frame_slot_index) const {
     if (frame_slot_index >= frame_slot_count_) {
         throw std::runtime_error("pyro 3D environment descriptor frame slot is out of range");
     }
@@ -684,16 +734,39 @@ void Pyro3DGpuResources::upload_atmosphere_background(
     atmosphere_background().upload(frame_slot, uniforms);
 }
 
-const cubey::render::AtmosphereBackgroundFrame&
-Pyro3DGpuResources::atmosphere_background() const {
+void Pyro3DGpuResources::upload_moon_body(
+    std::uint32_t frame_slot_index,
+    const cubey::render::CelestialBodyFrameUniforms& uniforms) const {
+    const cubey::render::FrameSlot frame_slot{
+        .index = frame_slot_index,
+        .count = frame_slot_count_,
+    };
+    moon_body_frame().upload(frame_slot, uniforms);
+}
+
+const cubey::render::AtmosphereBackgroundFrame& Pyro3DGpuResources::atmosphere_background() const {
     if (!atmosphere_background_.materials_created()) {
         throw std::runtime_error("pyro 3D atmosphere background is not initialized");
     }
     return atmosphere_background_;
 }
 
-VkDescriptorSet Pyro3DGpuResources::atmosphere_background_descriptor_set(
-    std::uint32_t frame_slot_index) const {
+const cubey::render::CelestialBodyFrame& Pyro3DGpuResources::moon_body_frame() const {
+    if (!moon_body_frame_.materials_created()) {
+        throw std::runtime_error("pyro 3D moon body frame is not initialized");
+    }
+    return moon_body_frame_;
+}
+
+const cubey::render::Mesh& Pyro3DGpuResources::moon_mesh() const {
+    if (!moon_mesh_.has_value()) {
+        throw std::runtime_error("pyro 3D moon mesh is not initialized");
+    }
+    return moon_mesh_.value();
+}
+
+VkDescriptorSet
+Pyro3DGpuResources::atmosphere_background_descriptor_set(std::uint32_t frame_slot_index) const {
     return atmosphere_background().material().set(cubey::render::FrameSlot{
         .index = frame_slot_index,
         .count = frame_slot_count_,
@@ -970,8 +1043,8 @@ const cubey::vulkan::DescriptorSetArray& Pyro3DGpuResources::environment_descrip
     return environment_descriptors_.value();
 }
 
-const cubey::vulkan::Buffer& Pyro3DGpuResources::environment_lighting_uniform_buffer(
-    std::uint32_t frame_slot_index) const {
+const cubey::vulkan::Buffer&
+Pyro3DGpuResources::environment_lighting_uniform_buffer(std::uint32_t frame_slot_index) const {
     const cubey::render::FrameSlot frame_slot{
         .index = frame_slot_index,
         .count = frame_slot_count_,
