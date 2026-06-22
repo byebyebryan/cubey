@@ -772,6 +772,11 @@ void main() {
     bool render_moon_disk =
         render_celestial_content && atmosphere.celestial_render_options.z >= 0.5;
 
+    if ((debug_view == CUBEY_ATMOSPHERE_VIEW_MOON ||
+         debug_view == CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE) && !render_moon_disk) {
+        out_color = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
     if (debug_view == CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE && render_moon_disk) {
         vec3 color = render_moon_surface_debug();
         out_color = vec4(color, 1.0);

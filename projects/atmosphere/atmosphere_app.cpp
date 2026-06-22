@@ -643,13 +643,15 @@ class AtmosphereApp {
         return atmosphere_frame_uniforms(atmosphere_background_config(), {
                                                                              .view_rays = view_rays,
                                                                              .render_view =
-                                                                                 render_view_,
+                                                                                 background_render_view(),
                                                                          });
     }
 
     [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms() const {
+        const float exposure =
+            render_view_ == AtmosphereRenderView::MoonSurface ? 0.0F : atmosphere_config_.exposure;
         return cubey::render::hdr_post_uniforms(pipeline_color_format_,
-                                                atmosphere_config_.exposure);
+                                                exposure);
     }
 
     void record_atmosphere_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
@@ -667,10 +669,15 @@ class AtmosphereApp {
 
     [[nodiscard]] AtmosphereConfig atmosphere_background_config() const {
         AtmosphereConfig config = atmosphere_config_;
-        config.render_moon_disk = config.render_moon_disk &&
-                                  (render_view_ == AtmosphereRenderView::Moon ||
-                                   render_view_ == AtmosphereRenderView::MoonSurface);
+        config.render_moon_disk = false;
         return config;
+    }
+
+    [[nodiscard]] AtmosphereRenderView background_render_view() const {
+        if (render_view_ == AtmosphereRenderView::MoonSurface) {
+            return AtmosphereRenderView::Moon;
+        }
+        return render_view_;
     }
 
     [[nodiscard]] cubey::Transform3D atmosphere_camera_transform() const {
@@ -689,10 +696,17 @@ class AtmosphereApp {
         const cubey::render::AtmosphereEnvironmentLunarState moon =
             cubey::render::atmosphere_environment_lunar_state(
                 environment_config.time_of_day, environment_config.moon);
-        return render_view_ == AtmosphereRenderView::Final &&
-               atmosphere_config_.render_celestial_content &&
-               atmosphere_config_.render_moon_disk && atmosphere_config_.moon.enabled &&
-               moon.direction.y > -moon.angular_radius;
+        const bool moon_enabled = atmosphere_config_.render_celestial_content &&
+                                  atmosphere_config_.render_moon_disk &&
+                                  atmosphere_config_.moon.enabled;
+        if (!moon_enabled) {
+            return false;
+        }
+        if (render_view_ == AtmosphereRenderView::Final) {
+            return moon.direction.y > -moon.angular_radius;
+        }
+        return render_view_ == AtmosphereRenderView::Moon ||
+               render_view_ == AtmosphereRenderView::MoonSurface;
     }
 
     [[nodiscard]] cubey::render::CelestialBodyFrameUniforms
@@ -706,13 +720,16 @@ class AtmosphereApp {
         const cubey::render::AtmosphereEnvironmentLunarState lunar =
             cubey::render::atmosphere_environment_lunar_state(
                 environment_config.time_of_day, environment_config.moon);
+        const cubey::math::Vec3 camera_forward =
+            glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
+        const bool surface_debug = render_view_ == AtmosphereRenderView::MoonSurface;
         cubey::render::CelestialBody moon{};
         moon.type = cubey::render::CelestialBodyType::Moon;
         moon.visible = moon_body_render_enabled();
-        moon.direction = lunar.direction;
+        moon.direction = surface_debug ? camera_forward : lunar.direction;
         moon.color = {0.58F, 0.62F, 0.74F};
         moon.intensity = atmosphere_config_.moon.disk_intensity;
-        moon.angular_radius_rad = lunar.angular_radius;
+        moon.angular_radius_rad = surface_debug ? 0.34F : lunar.angular_radius;
         moon.distance_m = 384400000.0F;
         moon.radius_m = 1737400.0F;
         moon.phase_fraction = lunar.phase_fraction;
@@ -741,6 +758,12 @@ class AtmosphereApp {
             moon, placement, lighting, camera.view_projection_matrix(transform, aspect),
             {
                 .camera_render_position_m = transform.translation,
+                .shading_mode =
+                    surface_debug ? cubey::render::CelestialBodyShadingMode::SurfaceDebug
+                                  : cubey::render::CelestialBodyShadingMode::Lit,
+                .surface_detail_strength = surface_debug ? 1.0F : 0.42F,
+                .surface_texture_strength = 1.0F,
+                .limb_strength = surface_debug ? 0.0F : 0.32F,
             });
     }
 

@@ -1027,15 +1027,22 @@ int main() {
                      "atmosphere app should record visible moon geometry outside the shader disk");
     require_contains(app_source, "CelestialBodyDepthMode::None",
                      "atmosphere moon geometry should render as a no-depth backdrop");
-    require_contains(app_source, "config.render_moon_disk =",
-                     "atmosphere final view should suppress the inline moon shader disk");
+    require_contains(app_source, "config.render_moon_disk = false",
+                     "atmosphere background should suppress the inline moon shader disk");
+    require_contains(app_source, "background_render_view",
+                     "atmosphere moon surface debug view should use a mesh-owned backdrop");
+    require_contains(app_source, "render_view_ == AtmosphereRenderView::MoonSurface ? 0.0F",
+                     "atmosphere moon surface debug view should use neutral post exposure");
     require_contains(app_source, "render_view_ == AtmosphereRenderView::Moon ||",
-                     "atmosphere final view should keep the inline moon disk for debug views");
+                     "atmosphere moon debug views should render geometry");
     require_contains(app_source, "render_view_ == AtmosphereRenderView::Moon",
-                     "atmosphere moon debug view should keep the inline shader disk available");
-    require_contains(
-        app_source, "render_view_ == AtmosphereRenderView::MoonSurface",
-        "atmosphere moon surface debug view should keep the inline shader disk available");
+                     "atmosphere moon debug view should use the geometry moon");
+    require_contains(app_source, "CelestialBodyShadingMode::SurfaceDebug",
+                     "atmosphere moon surface debug view should use sphere surface diagnostics");
+    require_contains(app_source, "moon.angular_radius_rad = surface_debug ? 0.34F",
+                     "atmosphere moon surface debug view should render a centered close-up sphere");
+    require_contains(shader_source, "!render_moon_disk",
+                     "atmosphere shader should leave mesh-owned moon debug views with a black backdrop");
     require_not_contains(shader_source, "layout(push_constant)",
                          "atmosphere shader should not use push constants for frame data");
     require_not_contains(shader_source, "cubey_pbr_apply_display_transform",
