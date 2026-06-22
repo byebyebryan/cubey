@@ -567,8 +567,10 @@ float cloud_local_scatter_field(vec3 position, vec3 animation, float height_frac
         clamp(0.5 + 0.5 * cubey_proc_fbm_3d(domain * 2.15 + vec3(17.2, 4.8, 9.1),
                                             0x42524541U, 3U),
               0.0, 1.0);
-    float field = mix(broad, breakup, 0.34);
-    return pow(smoothstep(0.52, 0.74, field), 1.35);
+    float broad_gate = smoothstep(0.50, 0.74, broad);
+    float cell_gate = smoothstep(0.48, 0.76, breakup);
+    float islands = broad_gate * mix(0.10, 1.0, cell_gate);
+    return pow(islands, 1.65);
 }
 
 DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
