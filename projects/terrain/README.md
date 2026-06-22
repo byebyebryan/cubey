@@ -36,6 +36,7 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain --headless --terrain-debug-view final --output outputs/terrain/current/final.png
 ./build/dev/projects/terrain/terrain --headless --terrain-debug-view flow-accumulation --grid-size 129 --output outputs/terrain/current/flow-accumulation.png
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --terrain-debug-view all --terrain-output-dir outputs/terrain/current
+./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network
 ```
 
 ## Current Review Outputs
@@ -64,6 +65,13 @@ The review set includes:
 - `deposition.png`
 - `material.png`
 - `vegetation.png`
+
+The optional `temperate-mountain-river-stress` recipe keeps the same source
+terrain and routing diagnostics but expands active channel extraction for review
+stress testing. It paints additional separated trunk candidates and lowers
+tributary thresholds so `outputs/terrain/stress-river-network` exposes more of
+the patch to river-network artifacts. Treat it as a diagnostic recipe, not the
+default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
 plus routed flow accumulation over a padded hidden routing domain. Revision `3`

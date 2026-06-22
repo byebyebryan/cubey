@@ -240,6 +240,12 @@ constrained procedural offset, relaxed over drainage potential, and rasterized a
 soft product fields. This is a useful midpoint because downstream fields can
 consume a connected river product, but it is not a complete hydrology solution.
 
+The `temperate-mountain-river-stress` recipe is a diagnostic variant of the same
+slice. It keeps the same terrain/routing sources but expands active channel
+extraction with additional separated trunk candidates and lower tributary
+thresholds. Its purpose is to make routing artifacts visible across more of a
+review patch, not to define the desired default composition.
+
 Known limitations:
 
 - Fractional accumulation reduces receiver quantization, but active channel
@@ -251,6 +257,9 @@ Known limitations:
   is still static and should not be mistaken for simulated river evolution.
 - Tributary selection is intentionally conservative and should be replaced by a
   more explicit network extraction pass once the route model improves.
+- The stress recipe can expose parallel channel fans and disconnected-looking
+  subnetworks because it deliberately pushes coverage before the hydrology model
+  is complete.
 - The final PNG is an inspectable debug composition, not the target renderer.
 
 ## Deferred

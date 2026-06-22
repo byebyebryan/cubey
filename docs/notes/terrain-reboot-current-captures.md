@@ -7,11 +7,15 @@ temperate mountain river product pass.
 
 ```sh
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --terrain-debug-view all --terrain-output-dir outputs/terrain/current
+./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network
 ```
 
 The review images are `513x513` PNGs under `outputs/`, which is intentionally
 ignored by git. This replaced the earlier tiny local output set so field
 structure, channel continuity, and material response are easier to inspect.
+`outputs/terrain/current` is the default product review. The optional
+`outputs/terrain/stress-river-network` set uses the diagnostic stress recipe to
+paint more trunks and tributaries across the patch.
 
 ## What To Inspect
 
@@ -35,6 +39,12 @@ structure, channel continuity, and material response are easier to inspect.
   valley width, wetness, deposition, material, and final debug rendering.
 - `height.png`, `slope.png`, and `ridge-uplift.png`: current mountain/base
   terrain sources that still need a stronger mountain-driver pass.
+
+For `outputs/terrain/stress-river-network`, look for failures that the smaller
+default network may hide: repeated parallel channels, schematic branch fans,
+disconnected-looking tributaries, local-sink dead ends, and too-straight trunk
+segments. The stress recipe intentionally covers more of the patch and should
+not be treated as the desired default composition.
 
 ## Current Limitations
 
