@@ -866,6 +866,29 @@ look. New diagnostics expose `local-clear`, `local-structure`, and
 `local-edge-detail` alongside `local-scatter` so tuning can identify whether a
 bad capture is a placement, clear-slot, or erosion problem.
 
+## High-Oblique Far-Bridge Diagnosis 2026-06-22
+
+`outputs/cloud-transition-review/` showed that the first local/far/orbit
+transition split improved high-oblique framing only slightly. The far-shell
+weight activated, but `high-oblique-far-shell-alpha` was only a faint grazing
+streak and `high-oblique-local-with-shell-alpha` was nearly identical to
+`high-oblique-local-alpha`. The final high-oblique image also changed almost
+imperceptibly between far-shell off/default/strong captures.
+
+Forced comparisons clarified the source of the failure:
+
+- the orbit `surface-shell` is appropriate for full-disk orbit views, but its
+  grazing/limb filtering removes almost all useful high-oblique horizon mass;
+- the fallback orbit volume march contributes a soft horizon smear, not coherent
+  broken cloud structure;
+- per-branch haze then pushes distant cloud color toward sky/background, so even
+  faint far-field cloud reads as haze rather than cloud.
+
+The next implementation direction is therefore a dedicated high-oblique
+far-volume bridge. Orbit `surface-shell` remains the default full-orbit path,
+while the far bridge should use sphere-space weather/density over the far ray
+segment, then apply aerial perspective once after branch composition.
+
 ## Orbit Shell Strategy 2026-06-20
 
 The current orbit raymarch is useful as a diagnostic, but it is no longer the

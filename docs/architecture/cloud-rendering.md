@@ -237,8 +237,8 @@ separate contributors:
 
 - `local`: the normal surface volume march, responsible for foreground thickness
   and parallax;
-- `far shell`: the orbit shell sampled as a low-frequency horizon assist for
-  long high-oblique rays;
+- `far shell`: a dedicated low-detail far-volume bridge for long high-oblique
+  rays;
 - `full orbit`: the orbit shell as the replacement path for true orbit/high
   altitude views.
 
@@ -252,14 +252,17 @@ Composition is intentionally staged instead of a single lerp:
 4. Front-to-back compose `local + effective_far_shell`, then mix that branch
    toward the full orbit result using `full_orbit_blend`.
 
-This prevents the orbit shell from contributing once as far background and again
-as the full replacement during the same handoff. The diagnostic contract is:
-`distance-regime` shows full orbit, effective far shell, and residual local
-regime; `transition-weights` shows local-branch availability, final far-shell
-contribution, and full orbit takeover; `local-alpha`, `far-shell-alpha`,
-`local-with-shell-alpha`, and `orbit-alpha` isolate the visible alpha at each
-stage. `projects/cloud/capture_review.sh` includes these views for surface,
-high-oblique, and orbit review.
+This prevents the orbit representation from contributing once as far background
+and again as the full replacement during the same handoff. The far bridge must
+not reuse the orbit cloud-top shell directly: captures showed that the orbit
+shell is correctly limb/grazing-filtered for full-disk views, but it becomes a
+faint haze source rather than readable high-oblique cloud mass. The diagnostic
+contract is: `distance-regime` shows full orbit, effective far shell, and
+residual local regime; `transition-weights` shows local-branch availability,
+final far-shell contribution, and full orbit takeover; `local-alpha`,
+`far-shell-alpha`, `local-with-shell-alpha`, and `orbit-alpha` isolate the
+visible alpha at each stage. `projects/cloud/capture_review.sh` includes these
+views for surface, high-oblique, and orbit review.
 
 ## Renderer Contract
 
