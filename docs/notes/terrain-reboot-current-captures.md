@@ -17,8 +17,10 @@ structure, channel continuity, and material response are easier to inspect.
 
 - `final.png`: debug composition of height, material masks, slope shade, and
   active river/wetness response.
-- `drainage-potential.png`: scalar routing surface before D8 flow routing.
-- `flow-direction.png`: D8 receiver directions for diagnosing grid artifacts.
+- `drainage-potential.png`: scalar routing surface before flow routing. This
+  should remain smooth even when later river products expose routing artifacts.
+- `flow-direction.png`: flow receiver directions or continuous flow-angle debug
+  data for diagnosing grid artifacts.
 - `flow-accumulation.png`: routed catchment field. This should show regional
   organization, not many broken local fragments.
 - `sink-mask.png`: visible crop outlets and true terminal routing cells, useful
@@ -38,9 +40,14 @@ The active river no longer depends on an authored center line, and the visible
 trunk/mask now use a padded hidden routing domain instead of treating the review
 patch as the whole watershed. Main trunks are selected from traced candidates
 that better cross the visible crop, then the path is resampled, constrained by
-drainage potential, relaxed, and rasterized as a soft channel curve. The route
-network underneath is still D8 over a scalar drainage potential, so branch
-placement, sinks, and some large-scale bends are still less natural than a real
-hydrology pass. The next river-quality work should evaluate depression
-fill/breach routing and explicit network extraction before expanding to lakes,
-canyons, or broader biome recipes.
+drainage potential, relaxed, and rasterized as a soft channel curve.
+
+The current revision still exposes a routing-grid artifact: the
+`drainage-potential` field is smooth, but D8 flow accumulation quantizes water
+movement into horizontal, vertical, and 45-degree receiver runs. Smoothing the
+rendered channel helps but cannot fully remove a lattice-shaped drainage graph.
+The next river-quality pass should replace D8 as the active river driver with a
+D-Infinity-style continuous flow angle, fractional accumulation, and continuous
+streamline extraction. Depression fill/breach routing remains the follow-up
+hydrology correction before expanding to lakes, canyons, or broader biome
+recipes.

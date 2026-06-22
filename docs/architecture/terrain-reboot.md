@@ -239,7 +239,10 @@ complete hydrology solution.
 Known limitations:
 
 - D8 routing still shapes the underlying network, so branch placement and some
-  large-scale bends can remain less organic than real rivers.
+  large-scale bends can remain less organic than real rivers. The current
+  visual artifact is visible in `flow-accumulation` before channel
+  rasterization, which points to receiver quantization rather than only path
+  smoothing.
 - The drainage pass does not yet perform real depression fill, breach routing,
   erosion, or lake/wetland resolution.
 - Padded routing makes local review slices less artificial, but the route model
@@ -268,9 +271,11 @@ more biome labels:
 
 1. Evaluate a small depression-fill or breach-routing pass from the hydrology
    references before adding lakes, canyons, or wider river systems.
-2. Replace conservative tributary picking with a more explicit network
+2. Replace D8 as the active river driver with D-Infinity-style continuous flow
+   angles, fractional accumulation, and continuous streamline extraction.
+3. Replace conservative tributary picking with a more explicit network
    extraction pass once the route model improves.
-3. Split mountain/ridge drivers into explicit terrain products instead of
+4. Split mountain/ridge drivers into explicit terrain products instead of
    treating mountains as only material response over height noise.
-4. Add capture summaries or manifest metadata for the review set so image
+5. Add capture summaries or manifest metadata for the review set so image
    artifacts can be compared without relying only on manual inspection.
