@@ -904,6 +904,17 @@ planet/orbit weather model. The next checkpoint should treat the far bridge as a
 local-cloud LOD path: fewer steps, higher density LOD bias, same local weather
 and 3D density source, and still no changes to the full-orbit shell.
 
+The adaptive-local checkpoint is `outputs/cloud-local-lod-bridge-review/`. The
+far bridge now reuses `cloud_sample_density` over only the distant ray segment,
+with lower step count and higher LOD bias. `high-oblique-far-shell-alpha` now
+shares the local cloud shapes instead of the orbit weather layout. The visible
+final difference between far-shell off/default/strong remains modest because the
+foreground local march still traverses most of the same long ray; the value of
+this pass is domain consistency, not a dramatic final-color change. Further
+transition work should decide whether long high-oblique rays need explicit local
+march truncation, a cached hemisphere/shell product, or temporal reconstruction
+before increasing bridge strength.
+
 ## Orbit Shell Strategy 2026-06-20
 
 The current orbit raymarch is useful as a diagnostic, but it is no longer the
