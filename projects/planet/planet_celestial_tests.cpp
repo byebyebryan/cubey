@@ -774,6 +774,27 @@ void test_celestial_body_frame_uniforms_pack_render_placement() {
                  "body frame uniforms should pack body phase");
     require_near(uniforms.visibility_atmosphere.x, 0.0F, 0.000001F,
                  "body frame uniforms should default to no atmospheric sky visibility");
+
+    const cubey::math::Vec3 expected_forward =
+        glm::normalize(cubey::math::Vec3{1.0F, 2.0F, 3.0F} - placement.center_render_m);
+    const cubey::math::Vec3 basis_right{uniforms.surface_basis_right.x,
+                                        uniforms.surface_basis_right.y,
+                                        uniforms.surface_basis_right.z};
+    const cubey::math::Vec3 basis_up{uniforms.surface_basis_up.x, uniforms.surface_basis_up.y,
+                                     uniforms.surface_basis_up.z};
+    const cubey::math::Vec3 basis_forward{uniforms.surface_basis_forward_options.x,
+                                          uniforms.surface_basis_forward_options.y,
+                                          uniforms.surface_basis_forward_options.z};
+    require_vec_near(basis_forward, expected_forward,
+                     "body frame uniforms should aim the lunar atlas basis at the camera");
+    require_near(glm::dot(basis_right, basis_up), 0.0F, 0.0001F,
+                 "body frame atlas basis axes should be orthogonal");
+    require_near(glm::dot(basis_right, basis_forward), 0.0F, 0.0001F,
+                 "body frame atlas right axis should be orthogonal to the visible face");
+    require_near(glm::dot(basis_up, basis_forward), 0.0F, 0.0001F,
+                 "body frame atlas up axis should be orthogonal to the visible face");
+    require(uniforms.surface_basis_forward_options.w > 0.0F,
+            "body frame uniforms should enable lunar atlas sampling");
 }
 
 void test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere() {
@@ -872,6 +893,12 @@ void test_celestial_body_pass_uses_depth_test_without_depth_write() {
         cubey::projects::planet::planet_celestial_body_pass_info();
 
     require(pass.cull_mode == VK_CULL_MODE_BACK_BIT, "body pass should cull back faces");
+    require(pass.descriptor_sets.size() == 1U, "body pass should use one descriptor set");
+    require(pass.descriptor_sets[0].bindings.size() == 2U,
+            "body pass should bind frame uniforms and lunar atlas");
+    require(pass.descriptor_sets[0].bindings[1].type ==
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "body pass should sample the lunar atlas");
     require(pass.depth_test, "body pass should depth-test against planet geometry");
     require(!pass.depth_write, "body pass should not overwrite scene depth");
     require(pass.blend_enable,
@@ -884,6 +911,26 @@ void test_celestial_body_pass_uses_depth_test_without_depth_write() {
             "body pass should use premultiplied source alpha");
     require(pass.dst_alpha_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
             "body pass should keep destination alpha consistent with source-over blending");
+}
+
+void test_celestial_body_pass_can_disable_depth_for_backdrops() {
+    const cubey::render::MaterialPassInfo pass =
+        cubey::render::celestial_body_pass_info(cubey::render::CelestialBodyDepthMode::None);
+
+    require(!pass.depth_test, "backdrop body pass should be able to render without depth");
+    require(!pass.depth_write, "backdrop body pass should never write depth");
+    require(pass.blend_enable, "backdrop body pass should keep premultiplied blending");
+}
+
+void test_celestial_body_texture_bindings_require_lunar_atlas() {
+    bool threw = false;
+    try {
+        cubey::render::validate_celestial_body_frame_texture_bindings({});
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+
+    require(threw, "body frame texture bindings should reject missing lunar atlas handles");
 }
 
 } // namespace
@@ -920,6 +967,8 @@ int main() {
         test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere();
         test_celestial_body_frame_defers_planet_shadow_eclipse();
         test_celestial_body_pass_uses_depth_test_without_depth_write();
+        test_celestial_body_pass_can_disable_depth_for_backdrops();
+        test_celestial_body_texture_bindings_require_lunar_atlas();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_celestial_tests: %s\n", error.what());

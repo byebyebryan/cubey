@@ -1394,9 +1394,22 @@ class PlanetApp {
                                                          std::uint32_t frame_slot_count) {
         if (!celestial_body_frame_.materials_created() ||
             celestial_body_frame_.material().material_instance().set_count() != frame_slot_count) {
+            const cubey::render::AtmosphereBackgroundTextureBindings sky_textures =
+                sky_atlas_resources_->bindings();
             celestial_body_frame_.destroy();
             celestial_body_frame_.create_materials(device, {
                                                                .frame_slot_count = frame_slot_count,
+                                                               .textures =
+                                                                   {
+                                                                       .lunar_sampler =
+                                                                           sky_textures
+                                                                               .lunar_sampler,
+                                                                       .lunar_view =
+                                                                           sky_textures.lunar_view,
+                                                                       .lunar_layout =
+                                                                           sky_textures
+                                                                               .lunar_layout,
+                                                                   },
                                                            });
         }
     }

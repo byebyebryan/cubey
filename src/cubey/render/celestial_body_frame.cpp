@@ -13,6 +13,7 @@ namespace {
 
 enum class CelestialBodyBinding : std::uint32_t {
     FrameUniforms = 0,
+    LunarAtlas = 1,
 };
 
 [[nodiscard]] constexpr std::uint32_t binding(CelestialBodyBinding binding) noexcept {
@@ -28,6 +29,34 @@ enum class CelestialBodyBinding : std::uint32_t {
 
 [[nodiscard]] bool finite_positive(float value) {
     return std::isfinite(value) && value > 0.0F;
+}
+
+struct SurfaceBasis {
+    cubey::math::Vec3 right{1.0F, 0.0F, 0.0F};
+    cubey::math::Vec3 up{0.0F, 1.0F, 0.0F};
+    cubey::math::Vec3 forward{0.0F, 0.0F, 1.0F};
+};
+
+[[nodiscard]] SurfaceBasis moon_surface_basis(const CelestialBody& body,
+                                              const CelestialBodyRenderPlacement& placement,
+                                              const CelestialBodyFrameInputs& inputs) {
+    cubey::math::Vec3 forward = inputs.camera_render_position_m - placement.center_render_m;
+    if (glm::dot(forward, forward) <= 0.0F) {
+        forward = -body.direction;
+    }
+    forward = normalized_or_up(forward);
+
+    cubey::math::Vec3 up_seed{0.0F, 1.0F, 0.0F};
+    if (std::abs(glm::dot(up_seed, forward)) > 0.96F) {
+        up_seed = {1.0F, 0.0F, 0.0F};
+    }
+    const cubey::math::Vec3 right = glm::normalize(glm::cross(up_seed, forward));
+    const cubey::math::Vec3 up = glm::normalize(glm::cross(forward, right));
+    return {
+        .right = right,
+        .up = up,
+        .forward = forward,
+    };
 }
 
 [[nodiscard]] float smoothstep(float edge0, float edge1, float value) {
@@ -81,6 +110,7 @@ CelestialBodyFrameUniforms celestial_body_frame_uniforms(
     const cubey::math::Vec3 light_direction = normalized_or_up(lighting.primary_light_direction);
     const float sky_visibility =
         moon_atmosphere_sky_visibility_factor(body, lighting, inputs.atmosphere);
+    const SurfaceBasis surface_basis = moon_surface_basis(body, placement, inputs);
     return {
         .view_projection = view_projection,
         .center_radius =
@@ -118,10 +148,31 @@ CelestialBodyFrameUniforms celestial_body_frame_uniforms(
                 0.32F,
                 0.0F,
             },
+        .surface_basis_right =
+            {
+                surface_basis.right.x,
+                surface_basis.right.y,
+                surface_basis.right.z,
+                0.0F,
+            },
+        .surface_basis_up =
+            {
+                surface_basis.up.x,
+                surface_basis.up.y,
+                surface_basis.up.z,
+                0.0F,
+            },
+        .surface_basis_forward_options =
+            {
+                surface_basis.forward.x,
+                surface_basis.forward.y,
+                surface_basis.forward.z,
+                1.0F,
+            },
     };
 }
 
-MaterialPassInfo celestial_body_pass_info() {
+MaterialPassInfo celestial_body_pass_info(CelestialBodyDepthMode depth_mode) {
     return {
         .label = "celestial.body",
         .descriptor_sets =
@@ -136,11 +187,16 @@ MaterialPassInfo celestial_body_pass_info() {
                                 .stage_flags =
                                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = binding(CelestialBodyBinding::LunarAtlas),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
                         },
                 },
             },
         .cull_mode = VK_CULL_MODE_BACK_BIT,
-        .depth_test = true,
+        .depth_test = depth_mode == CelestialBodyDepthMode::TestNoWrite,
         .depth_write = false,
         .blend_enable = true,
         .src_color_blend_factor = VK_BLEND_FACTOR_ONE,
@@ -150,14 +206,60 @@ MaterialPassInfo celestial_body_pass_info() {
     };
 }
 
+void validate_celestial_body_frame_texture_bindings(
+    const CelestialBodyFrameTextureBindings& textures) {
+    if (textures.lunar_sampler == VK_NULL_HANDLE || textures.lunar_view == VK_NULL_HANDLE) {
+        throw std::runtime_error("celestial body lunar atlas binding is not initialized");
+    }
+}
+
+void update_celestial_body_frame_material_texture_bindings(
+    const cubey::vulkan::Device& device,
+    const FrameUniformMaterialInstance<CelestialBodyFrameUniforms>& material,
+    const CelestialBodyFrameTextureBindings& textures) {
+    validate_celestial_body_frame_texture_bindings(textures);
+    for (std::uint32_t slot_index = 0U; slot_index < material.material_instance().set_count();
+         ++slot_index) {
+        const FrameSlot frame_slot{
+            .index = slot_index,
+            .count = material.material_instance().set_count(),
+        };
+        MaterialDescriptorWriter(material.set(frame_slot))
+            .uniform_buffer(binding(CelestialBodyBinding::FrameUniforms),
+                            material.uniforms().buffer(frame_slot).handle(),
+                            material.uniforms().range())
+            .combined_image_sampler(binding(CelestialBodyBinding::LunarAtlas),
+                                    textures.lunar_sampler, textures.lunar_view,
+                                    textures.lunar_layout)
+            .update(device);
+    }
+}
+
 void CelestialBodyFrame::create_materials(const cubey::vulkan::Device& device,
                                           const CelestialBodyFrameMaterialConfig& config) {
+    validate_celestial_body_frame_texture_bindings(config.textures);
     material_.emplace(device, FrameUniformMaterialInstanceConfig{
                                   .material_pass = celestial_body_pass_info(),
                                   .descriptor_set = 0,
                                   .frame_slot_count = config.frame_slot_count,
                                   .uniform_binding = binding(CelestialBodyBinding::FrameUniforms),
+                                  .sampled_images =
+                                      {
+                                          SampledImageMaterialBinding{
+                                              .binding =
+                                                  binding(CelestialBodyBinding::LunarAtlas),
+                                              .sampler = config.textures.lunar_sampler,
+                                              .image_view = config.textures.lunar_view,
+                                              .layout = config.textures.lunar_layout,
+                                          },
+                                      },
                               });
+}
+
+void CelestialBodyFrame::update_texture_bindings(
+    const cubey::vulkan::Device& device,
+    const CelestialBodyFrameTextureBindings& textures) const {
+    update_celestial_body_frame_material_texture_bindings(device, material(), textures);
 }
 
 void CelestialBodyFrame::create_pipeline(const cubey::vulkan::Device& device,
@@ -172,7 +274,7 @@ void CelestialBodyFrame::create_pipeline(const cubey::vulkan::Device& device,
                                   .vertex_bindings = vertex_input.bindings(),
                                   .vertex_attributes = vertex_input.attribute_descriptions(),
                                   .descriptor_set_layouts = descriptor_set_layouts,
-                                  .material_pass = celestial_body_pass_info(),
+                                  .material_pass = celestial_body_pass_info(config.depth_mode),
                               });
 }
 
@@ -229,4 +331,3 @@ const GraphicsPipelineResource& CelestialBodyFrame::pipeline() const {
 }
 
 } // namespace cubey::render
-

@@ -11,22 +11,33 @@ layout(set = 0, binding = 0) uniform PlanetCelestialBodyFrame {
     vec4 light_direction_intensity;
     vec4 color_phase;
     vec4 visibility_atmosphere;
+    vec4 surface_basis_right;
+    vec4 surface_basis_up;
+    vec4 surface_basis_forward_options;
 } body;
+
+layout(set = 0, binding = 1) uniform sampler2D lunar_atlas;
 
 layout(location = 0) out vec4 out_color;
 
-float moon_surface_detail(vec3 normal) {
-    const vec3 n = normalize(normal);
-    const float maria =
-        sin(dot(n, normalize(vec3(0.73, -0.18, 0.66))) * 18.0) *
-        sin(dot(n, normalize(vec3(-0.22, 0.91, 0.35))) * 13.0);
-    const float highlands =
-        sin(dot(n, normalize(vec3(0.41, 0.57, -0.71))) * 44.0) * 0.5 + 0.5;
-    const float crater_seed =
-        sin(dot(n, normalize(vec3(-0.64, 0.28, 0.71))) * 72.0) *
-        sin(dot(n, normalize(vec3(0.33, -0.78, 0.53))) * 69.0);
-    const float crater = smoothstep(0.82, 0.98, crater_seed) * 0.16;
-    return clamp((maria * 0.16) + (highlands * 0.10) - crater, -0.22, 0.22);
+struct LunarSurfaceSample {
+    float albedo;
+    vec3 normal;
+};
+
+LunarSurfaceSample lunar_surface_sample(vec3 normal) {
+    const vec3 basis_right = normalize(body.surface_basis_right.xyz);
+    const vec3 basis_up = normalize(body.surface_basis_up.xyz);
+    const vec3 basis_forward = normalize(body.surface_basis_forward_options.xyz);
+    const vec2 disk_position = vec2(dot(normal, basis_right), dot(normal, basis_up));
+    const vec2 uv = clamp(disk_position * 0.5 + 0.5, vec2(0.0), vec2(1.0));
+    const vec4 atlas = texture(lunar_atlas, uv);
+    vec2 detail_xy = atlas.gb * 2.0 - 1.0;
+    detail_xy *= smoothstep(0.0, 0.18, max(dot(normal, basis_forward), 0.0));
+    const vec3 detail_normal =
+        normalize(normal + basis_right * detail_xy.x * 0.30 + basis_up * detail_xy.y * 0.30);
+    const float albedo = clamp((atlas.r - 0.44) * 2.05 + 0.44, 0.16, 0.84);
+    return LunarSurfaceSample(albedo, detail_normal);
 }
 
 void main() {
@@ -35,9 +46,10 @@ void main() {
     }
 
     const vec3 normal = normalize(in_normal);
+    const LunarSurfaceSample surface = lunar_surface_sample(normal);
     const vec3 light_direction = normalize(body.light_direction_intensity.xyz);
     const vec3 view_direction = normalize(body.camera_position_options.xyz - in_render_position);
-    const float ndotl = dot(normal, light_direction);
+    const float ndotl = dot(surface.normal, light_direction);
     const float ndotv = abs(dot(normal, view_direction));
     const float sky_visibility = clamp(body.visibility_atmosphere.x, 0.0, 1.0);
     const float body_transmittance = mix(1.0, 0.28, sky_visibility);
@@ -47,7 +59,9 @@ void main() {
     const float eclipse_shadow = clamp(body.visibility_atmosphere.y, 0.0, 1.0);
     const float limb_strength = clamp(body.visibility_atmosphere.z, 0.0, 1.0);
     const float detail_strength = clamp(body.camera_position_options.w, 0.0, 1.0);
-    const vec3 albedo = in_color * (1.0 + moon_surface_detail(normal) * detail_strength);
+    const float texture_strength = clamp(body.surface_basis_forward_options.w, 0.0, 1.0);
+    const vec3 albedo = in_color * mix(vec3(1.0), vec3(surface.albedo * 1.65),
+                                       texture_strength * detail_strength);
     const float ambient = 0.030 * (1.0 - sky_visibility);
     const float lit =
         (ambient + direct * body.light_direction_intensity.w * 0.66) *

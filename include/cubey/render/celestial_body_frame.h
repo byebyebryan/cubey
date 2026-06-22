@@ -26,9 +26,12 @@ struct CelestialBodyFrameUniforms {
     cubey::math::Vec4 light_direction_intensity{0.0F, 1.0F, 0.0F, 1.0F};
     cubey::math::Vec4 color_phase{0.58F, 0.62F, 0.74F, 0.5F};
     cubey::math::Vec4 visibility_atmosphere{1.0F, 0.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 surface_basis_right{1.0F, 0.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 surface_basis_up{0.0F, 1.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 surface_basis_forward_options{0.0F, 0.0F, 1.0F, 1.0F};
 };
 
-static_assert(sizeof(CelestialBodyFrameUniforms) == sizeof(float) * 36U);
+static_assert(sizeof(CelestialBodyFrameUniforms) == sizeof(float) * 48U);
 
 struct CelestialBodyAtmosphereInputs {
     cubey::math::Vec3 camera_position_m{0.0F, 0.0F, 0.0F};
@@ -41,8 +44,20 @@ struct CelestialBodyFrameInputs {
     CelestialBodyAtmosphereInputs atmosphere{};
 };
 
+enum class CelestialBodyDepthMode : std::uint8_t {
+    None,
+    TestNoWrite,
+};
+
+struct CelestialBodyFrameTextureBindings {
+    VkSampler lunar_sampler = VK_NULL_HANDLE;
+    VkImageView lunar_view = VK_NULL_HANDLE;
+    VkImageLayout lunar_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+};
+
 struct CelestialBodyFrameMaterialConfig {
     std::uint32_t frame_slot_count = 1;
+    CelestialBodyFrameTextureBindings textures{};
 };
 
 struct CelestialBodyFramePipelineConfig {
@@ -50,13 +65,21 @@ struct CelestialBodyFramePipelineConfig {
     VkFormat color_format = VK_FORMAT_UNDEFINED;
     VkFormat depth_format = VK_FORMAT_UNDEFINED;
     std::span<const ShaderStageFile> shader_stage_files{};
+    CelestialBodyDepthMode depth_mode = CelestialBodyDepthMode::TestNoWrite;
 };
 
 [[nodiscard]] CelestialBodyFrameUniforms celestial_body_frame_uniforms(
     const CelestialBody& body, const CelestialBodyRenderPlacement& placement,
     const CelestialLighting& lighting, const cubey::math::Mat4& view_projection,
     const CelestialBodyFrameInputs& inputs = {});
-[[nodiscard]] MaterialPassInfo celestial_body_pass_info();
+[[nodiscard]] MaterialPassInfo
+celestial_body_pass_info(CelestialBodyDepthMode depth_mode = CelestialBodyDepthMode::TestNoWrite);
+void validate_celestial_body_frame_texture_bindings(
+    const CelestialBodyFrameTextureBindings& textures);
+void update_celestial_body_frame_material_texture_bindings(
+    const cubey::vulkan::Device& device,
+    const FrameUniformMaterialInstance<CelestialBodyFrameUniforms>& material,
+    const CelestialBodyFrameTextureBindings& textures);
 
 class CelestialBodyFrame {
   public:
@@ -69,6 +92,8 @@ class CelestialBodyFrame {
 
     void create_materials(const cubey::vulkan::Device& device,
                           const CelestialBodyFrameMaterialConfig& config);
+    void update_texture_bindings(const cubey::vulkan::Device& device,
+                                 const CelestialBodyFrameTextureBindings& textures) const;
     void create_pipeline(const cubey::vulkan::Device& device,
                          const CelestialBodyFramePipelineConfig& config);
     void destroy_pipeline();
@@ -88,4 +113,3 @@ class CelestialBodyFrame {
 };
 
 } // namespace cubey::render
-
