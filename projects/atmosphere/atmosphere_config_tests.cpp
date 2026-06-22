@@ -908,6 +908,16 @@ int main() {
                      "atmosphere app should load the shared PBR post shader");
     require_contains(cmake_source, "forward_pbr_post.frag",
                      "atmosphere build should compile the shared PBR post fragment shader");
+    require_contains(cmake_source, "sky/celestial_body.vert",
+                     "atmosphere build should compile the shared celestial body vertex shader");
+    require_contains(cmake_source, "sky/celestial_body.frag",
+                     "atmosphere build should compile the shared celestial body fragment shader");
+    require_contains(app_source, "CelestialBodyFrame",
+                     "atmosphere app should use the shared geometry moon frame");
+    require_contains(app_source, "record_moon_body_frame",
+                     "atmosphere app should record visible moon geometry outside the shader disk");
+    require_contains(app_source, "CelestialBodyDepthMode::None",
+                     "atmosphere moon geometry should render as a no-depth backdrop");
     require_not_contains(shader_source, "layout(push_constant)",
                          "atmosphere shader should not use push constants for frame data");
     require_not_contains(shader_source, "cubey_pbr_apply_display_transform",

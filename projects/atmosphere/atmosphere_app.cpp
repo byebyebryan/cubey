@@ -14,12 +14,16 @@
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_lunar_atlas.h>
 #include <cubey/render/atmosphere_night_sky_atlas.h>
+#include <cubey/render/celestial_body_frame.h>
+#include <cubey/render/celestial_system.h>
 #include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/pbr.h>
+#include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
 #include <cubey/render/view_ray_basis_3d.h>
+#include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
@@ -295,6 +299,7 @@ class AtmosphereApp {
                               VkFormat color_format, VkExtent2D extent,
                               std::uint32_t frame_slot_count) {
         create_synchronous_atlas_resources(device, gpu, frame_slot_count);
+        create_moon_mesh_if_needed(gpu);
         create_pipeline(device, color_format, extent);
     }
 
@@ -307,6 +312,7 @@ class AtmosphereApp {
         current_night_sky_atlas_.reset();
         create_atmosphere_descriptors(device, frame_slot_count);
         update_atmosphere_descriptor_bindings(device);
+        create_moon_mesh_if_needed(gpu);
         refresh_loading_status();
     }
 
@@ -346,6 +352,7 @@ class AtmosphereApp {
                                                             .frame_slot_count = frame_slot_count,
                                                             .textures = atmosphere_textures(),
                                                         });
+        create_moon_body_frame_resources_if_needed(device, frame_slot_count);
         hdr_post_frame_.create_materials(device, {
                                                      .frame_slot_count = frame_slot_count,
                                                  });
@@ -354,6 +361,9 @@ class AtmosphereApp {
 
     void update_atmosphere_descriptor_bindings(cubey::vulkan::Device& device) const {
         atmosphere_background_.update_texture_bindings(device, atmosphere_textures());
+        if (moon_body_frame_.materials_created()) {
+            moon_body_frame_.update_texture_bindings(device, moon_body_textures());
+        }
     }
 
     void upload_night_sky_atlas(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
@@ -484,6 +494,7 @@ class AtmosphereApp {
                         .color_format = kAtmosphereSceneColorFormat,
                         .shader_stage_files = atmosphere_shader_stage_files,
                     });
+        create_moon_body_frame_pipeline(device, extent);
 
         const std::array<cubey::render::ShaderStageFile, 2> post_shader_stage_files{
             cubey::render::ShaderStageFile{
@@ -503,6 +514,48 @@ class AtmosphereApp {
         pipeline_color_format_ = color_format;
     }
 
+    void create_moon_mesh_if_needed(cubey::vulkan::GpuRuntime& gpu) {
+        if (moon_mesh_.has_value()) {
+            return;
+        }
+        const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv>
+            moon_mesh = cubey::render::make_uv_sphere_position_color_normal_uv_mesh({
+                .radius = 1.0F,
+                .latitude_segments = 32U,
+                .longitude_segments = 64U,
+                .color = {0.86F, 0.86F, 0.86F},
+            });
+        moon_mesh_.emplace(gpu, moon_mesh.mesh_config());
+    }
+
+    void create_moon_body_frame_resources_if_needed(const cubey::vulkan::Device& device,
+                                                    std::uint32_t frame_slot_count) {
+        if (!moon_body_frame_.materials_created() ||
+            moon_body_frame_.material().material_instance().set_count() != frame_slot_count) {
+            moon_body_frame_.destroy();
+            moon_body_frame_.create_materials(device, {
+                                                          .frame_slot_count = frame_slot_count,
+                                                          .textures = moon_body_textures(),
+                                                      });
+        }
+    }
+
+    void create_moon_body_frame_pipeline(const cubey::vulkan::Device& device,
+                                         VkExtent2D extent) {
+        const std::array<cubey::render::ShaderStageFile, 2> shaders{
+            cubey::render::vertex_shader_file(shader_path("celestial_body.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("celestial_body.frag.spv")),
+        };
+        moon_body_frame_.destroy_pipeline();
+        moon_body_frame_.create_pipeline(device, {
+                                                     .extent = extent,
+                                                     .color_format = kAtmosphereSceneColorFormat,
+                                                     .shader_stage_files = shaders,
+                                                     .depth_mode =
+                                                         cubey::render::CelestialBodyDepthMode::None,
+                                                 });
+    }
+
     void destroy_swapchain_resources() {
         const std::uint32_t frame_slot_count = graph_executor_.frame_slot_count();
         graph_executor_.clear();
@@ -510,6 +563,7 @@ class AtmosphereApp {
             graph_executor_.resize(frame_slot_count);
         }
         hdr_post_frame_.destroy_pipeline();
+        moon_body_frame_.destroy_pipeline();
         atmosphere_background_.destroy_pipeline();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     }
@@ -518,7 +572,9 @@ class AtmosphereApp {
         shutdown_atlas_jobs();
         graph_executor_.clear();
         hdr_post_frame_.destroy();
+        moon_body_frame_.destroy();
         atmosphere_background_.destroy();
+        moon_mesh_.reset();
         atmosphere_atlases_.reset();
         current_night_sky_atlas_.reset();
         lunar_atlas_ready_ = false;
@@ -539,10 +595,11 @@ class AtmosphereApp {
             cubey::math::angle_axis_quat(kBasePitch + view_controller_.pitch(), {1.0F, 0.0F, 0.0F});
         const cubey::render::ViewRayBasis3D view_rays =
             cubey::render::view_ray_basis_3d(rotation, aspect, kDefaultFovyRadians);
-        return atmosphere_frame_uniforms(atmosphere_config_, {
-                                                                 .view_rays = view_rays,
-                                                                 .render_view = render_view_,
-                                                             });
+        return atmosphere_frame_uniforms(atmosphere_background_config(), {
+                                                                             .view_rays = view_rays,
+                                                                             .render_view =
+                                                                                 render_view_,
+                                                                         });
     }
 
     [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms() const {
@@ -563,6 +620,96 @@ class AtmosphereApp {
         hdr_post_frame_.record_pass(recorder, target, frame_slot);
     }
 
+    [[nodiscard]] AtmosphereConfig atmosphere_background_config() const {
+        AtmosphereConfig config = atmosphere_config_;
+        config.render_moon_disk = config.render_moon_disk &&
+                                  (render_view_ == AtmosphereRenderView::Moon ||
+                                   render_view_ == AtmosphereRenderView::MoonSurface);
+        return config;
+    }
+
+    [[nodiscard]] cubey::Transform3D atmosphere_camera_transform() const {
+        return {
+            .rotation =
+                cubey::math::angle_axis_quat(kBaseYaw + view_controller_.yaw(),
+                                             {0.0F, 1.0F, 0.0F}) *
+                cubey::math::angle_axis_quat(kBasePitch + view_controller_.pitch(),
+                                             {1.0F, 0.0F, 0.0F}),
+        };
+    }
+
+    [[nodiscard]] bool moon_body_render_enabled() const {
+        const cubey::render::AtmosphereEnvironmentConfig environment_config =
+            atmosphere_environment_config(atmosphere_config_);
+        const cubey::render::AtmosphereEnvironmentLunarState moon =
+            cubey::render::atmosphere_environment_lunar_state(
+                environment_config.time_of_day, environment_config.moon);
+        return render_view_ == AtmosphereRenderView::Final &&
+               atmosphere_config_.render_celestial_content &&
+               atmosphere_config_.render_moon_disk && atmosphere_config_.moon.enabled &&
+               moon.direction.y > -moon.angular_radius;
+    }
+
+    [[nodiscard]] cubey::render::CelestialBodyFrameUniforms
+    moon_body_frame_uniforms(VkExtent2D extent) const {
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
+        const cubey::Transform3D transform = atmosphere_camera_transform();
+        const cubey::render::AtmosphereEnvironmentConfig environment_config =
+            atmosphere_environment_config(atmosphere_config_);
+        const cubey::render::AtmosphereEnvironmentLunarState lunar =
+            cubey::render::atmosphere_environment_lunar_state(
+                environment_config.time_of_day, environment_config.moon);
+        cubey::render::CelestialBody moon{};
+        moon.type = cubey::render::CelestialBodyType::Moon;
+        moon.visible = moon_body_render_enabled();
+        moon.direction = lunar.direction;
+        moon.color = {0.58F, 0.62F, 0.74F};
+        moon.intensity = atmosphere_config_.moon.disk_intensity;
+        moon.angular_radius_rad = lunar.angular_radius;
+        moon.distance_m = 384400000.0F;
+        moon.radius_m = 1737400.0F;
+        moon.phase_fraction = lunar.phase_fraction;
+
+        const cubey::render::CelestialBodyRenderPlacement placement =
+            cubey::render::celestial_body_render_placement(
+                moon, {
+                          .camera_render_position_m = transform.translation,
+                          .near_plane_m = 0.1F,
+                          .far_plane_m = 100.0F,
+                          .angular_radius_scale = 1.0F,
+                          .shell_distance_fraction = 0.62F,
+                      });
+        const cubey::render::CelestialLighting lighting{
+            .primary_light_direction = atmosphere_sun_direction(atmosphere_config_),
+            .primary_light_color = {1.0F, 0.94F, 0.82F},
+            .primary_light_intensity = atmosphere_config_.moon.disk_intensity,
+            .primary_light_angular_radius_rad = atmosphere_config_.sun_angular_radius,
+            .moon_light_direction = lunar.direction,
+            .moon_light_color = {0.58F, 0.62F, 0.74F},
+            .moon_light_intensity = atmosphere_config_.moon.moonlight_intensity,
+        };
+        cubey::Camera3D camera({.fovy_radians = kDefaultFovyRadians, .near_z = 0.1F,
+                                .far_z = 100.0F});
+        return cubey::render::celestial_body_frame_uniforms(
+            moon, placement, lighting, camera.view_projection_matrix(transform, aspect),
+            {
+                .camera_render_position_m = transform.translation,
+            });
+    }
+
+    void record_moon_body_frame(const cubey::vulkan::CommandRecorder& recorder,
+                                const cubey::render::ColorTargetView& target,
+                                cubey::render::FrameSlot frame_slot) const {
+        if (!moon_body_render_enabled()) {
+            return;
+        }
+        moon_body_frame_.upload(frame_slot, moon_body_frame_uniforms(target.extent));
+        moon_body_frame_.record_pass(recorder, cubey::render::render_target_view(target),
+                                     frame_slot, moon_mesh());
+    }
+
     [[nodiscard]] CompiledAtmosphereGraph
     current_render_graph(cubey::render::ColorTargetView target, cubey::render::FrameSlot frame_slot,
                          cubey::render::RenderGraphTextureState target_initial_state,
@@ -579,10 +726,23 @@ class AtmosphereApp {
             .material_pass(cubey::render::atmosphere_background_pass_info())
             .execute([this, scene_color,
                       frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
-                record_atmosphere_scene_pass(
-                    context.recorder(),
-                    cubey::render::resolved_color_target_view(context, scene_color), frame_slot);
+                const cubey::render::ColorTargetView target =
+                    cubey::render::resolved_color_target_view(context, scene_color);
+                record_atmosphere_scene_pass(context.recorder(), target, frame_slot);
             });
+        if (moon_body_render_enabled()) {
+            graph.add_pass("atmosphere moon", cubey::render::RenderGraphQueueDomain::Graphics)
+                .write_color(scene_color)
+                .material_pass(cubey::render::celestial_body_pass_info(
+                    cubey::render::CelestialBodyDepthMode::None))
+                .execute([this, scene_color,
+                          frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                    record_moon_body_frame(
+                        context.recorder(),
+                        cubey::render::resolved_color_target_view(context, scene_color),
+                        frame_slot);
+                });
+        }
         graph.add_pass("atmosphere post", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(scene_color)
             .write_color(backbuffer)
@@ -656,6 +816,22 @@ class AtmosphereApp {
         return atmosphere_atlases_->bindings();
     }
 
+    [[nodiscard]] cubey::render::CelestialBodyFrameTextureBindings moon_body_textures() const {
+        const cubey::render::AtmosphereBackgroundTextureBindings textures = atmosphere_textures();
+        return {
+            .lunar_sampler = textures.lunar_sampler,
+            .lunar_view = textures.lunar_view,
+            .lunar_layout = textures.lunar_layout,
+        };
+    }
+
+    [[nodiscard]] const cubey::render::Mesh& moon_mesh() const {
+        if (!moon_mesh_.has_value()) {
+            throw std::runtime_error("atmosphere moon mesh is not initialized");
+        }
+        return moon_mesh_.value();
+    }
+
     RunConfig run_config_;
     AtmosphereConfig atmosphere_config_;
     AtmosphereRenderView render_view_ = AtmosphereRenderView::Final;
@@ -679,7 +855,9 @@ class AtmosphereApp {
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_atlases_;
     std::optional<ResolvedNightSkyAtlas> current_night_sky_atlas_;
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_;
+    cubey::render::CelestialBodyFrame moon_body_frame_;
     cubey::render::HdrPostFrame hdr_post_frame_;
+    std::optional<cubey::render::Mesh> moon_mesh_;
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
     cubey::jobs::JobSystem atlas_jobs_{2};
     std::optional<cubey::jobs::JobHandle<LunarAtlas>> pending_lunar_atlas_;
