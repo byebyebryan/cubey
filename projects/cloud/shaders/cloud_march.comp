@@ -1336,15 +1336,6 @@ MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, 
                        max(phase_sum * 1.70, vec3(0.0)));
 }
 
-MarchResult cloud_far_bridge_march(vec3 origin, vec3 direction, float start_t, float end_t,
-                                   ivec2 pixel) {
-    float bridge_start = max(start_t, params.orbit_options.x);
-    if (end_t <= bridge_start) {
-        return cloud_empty_result();
-    }
-    return cloud_orbit_shell_march(origin, direction, bridge_start, end_t, pixel);
-}
-
 MarchResult cloud_local_volume_march(vec3 origin, vec3 direction, float start_t, float end_t,
                                      ivec2 pixel, int requested_steps, float lod_bias,
                                      bool expensive_detail) {
@@ -1455,6 +1446,17 @@ MarchResult cloud_local_volume_march(vec3 origin, vec3 direction, float start_t,
     return MarchResult(color, transmittance, alpha, density_sum / float(max_steps), last_light,
                        first_distance, mean_distance, steps_taken, ambient_sum, direct_sum,
                        phase_sum);
+}
+
+MarchResult cloud_far_bridge_march(vec3 origin, vec3 direction, float start_t, float end_t,
+                                   ivec2 pixel) {
+    float bridge_start = max(start_t, params.orbit_options.x);
+    if (end_t <= bridge_start) {
+        return cloud_empty_result();
+    }
+    int max_steps = clamp(int(params.ref_options.y * 0.36 + 0.5), 8, 28);
+    return cloud_local_volume_march(origin, direction, bridge_start, end_t, pixel, max_steps,
+                                    1.5, true);
 }
 
 MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
