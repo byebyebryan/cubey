@@ -235,7 +235,7 @@ void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 24> required_fields{
+    const std::array<std::string_view, 27> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
         cubey::projects::terrain::kTerrainFieldBroadRelief,
@@ -245,6 +245,8 @@ void test_terrain_product_emits_required_fields() {
         cubey::projects::terrain::kTerrainFieldCurvature,
         cubey::projects::terrain::kTerrainFieldLocalRelief,
         cubey::projects::terrain::kTerrainFieldDrainagePotential,
+        cubey::projects::terrain::kTerrainFieldFilledDrainagePotential,
+        cubey::projects::terrain::kTerrainFieldDepressionDepth,
         cubey::projects::terrain::kTerrainFieldFlowDirection,
         cubey::projects::terrain::kTerrainFieldFlowAccumulation,
         cubey::projects::terrain::kTerrainFieldStreamOrder,
@@ -256,6 +258,7 @@ void test_terrain_product_emits_required_fields() {
         cubey::projects::terrain::kTerrainFieldValleyWidth,
         cubey::projects::terrain::kTerrainFieldWetness,
         cubey::projects::terrain::kTerrainFieldDeposition,
+        cubey::projects::terrain::kTerrainFieldChannelGraph,
         cubey::projects::terrain::kTerrainFieldMaterialRock,
         cubey::projects::terrain::kTerrainFieldMaterialSoil,
         cubey::projects::terrain::kTerrainFieldMaterialGrass,
@@ -294,11 +297,19 @@ void test_terrain_product_has_useful_ranges() {
         field(product, cubey::projects::terrain::kTerrainFieldStreamOrder).summarize();
     const cubey::procedural::ScalarFieldStats drainage =
         field(product, cubey::projects::terrain::kTerrainFieldDrainagePotential).summarize();
+    const cubey::procedural::ScalarFieldStats filled_drainage =
+        field(product, cubey::projects::terrain::kTerrainFieldFilledDrainagePotential).summarize();
+    const cubey::procedural::ScalarFieldStats depression =
+        field(product, cubey::projects::terrain::kTerrainFieldDepressionDepth).summarize();
     const cubey::procedural::ScalarFieldStats sink =
         field(product, cubey::projects::terrain::kTerrainFieldSinkMask).summarize();
     require(flow.max > flow.min, "flow accumulation should vary");
     require(stream_order.max >= 3.0F, "stream order should identify larger drainage trunks");
     require(drainage.max > drainage.min, "drainage potential should vary");
+    require(filled_drainage.max > filled_drainage.min,
+            "filled drainage potential should vary");
+    require(depression.max >= depression.min && depression.min >= 0.0F,
+            "depression depth should be a non-negative diagnostic field");
     require(sink.max > 0.0F && sink.max <= 1.0F, "sink mask should identify terminal cells");
 }
 
@@ -457,6 +468,12 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("drainage_potential") ==
                 cubey::projects::terrain::TerrainDebugView::DrainagePotential,
             "terrain debug view should parse drainage potential aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("filled_drainage_potential") ==
+                cubey::projects::terrain::TerrainDebugView::FilledDrainagePotential,
+            "terrain debug view should parse filled drainage aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("depression_depth") ==
+                cubey::projects::terrain::TerrainDebugView::DepressionDepth,
+            "terrain debug view should parse depression depth aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("river_trunk") ==
                 cubey::projects::terrain::TerrainDebugView::RiverTrunk,
             "terrain debug view should parse river trunk aliases");
@@ -466,6 +483,9 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("sink_mask") ==
                 cubey::projects::terrain::TerrainDebugView::SinkMask,
             "terrain debug view should parse sink mask aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("channel_graph") ==
+                cubey::projects::terrain::TerrainDebugView::ChannelGraph,
+            "terrain debug view should parse channel graph aliases");
     require_throws(
         [] {
             static_cast<void>(

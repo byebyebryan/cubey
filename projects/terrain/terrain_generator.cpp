@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <limits>
 #include <numeric>
+#include <queue>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,6 +36,8 @@ struct FlowRoutingResult {
 
 struct RiverFields {
     cubey::procedural::ScalarField2D drainage_potential{};
+    cubey::procedural::ScalarField2D filled_drainage_potential{};
+    cubey::procedural::ScalarField2D depression_depth{};
     cubey::procedural::ScalarField2D flow_direction{};
     cubey::procedural::ScalarField2D flow_accumulation{};
     cubey::procedural::ScalarField2D stream_order{};
@@ -46,23 +49,25 @@ struct RiverFields {
     cubey::procedural::ScalarField2D valley_width{};
     cubey::procedural::ScalarField2D wetness{};
     cubey::procedural::ScalarField2D deposition{};
+    cubey::procedural::ScalarField2D channel_graph{};
 };
 
 struct RiverNetworkSettings {
     float trunk_core_radius_cells = 1.4F;
     float trunk_falloff_radius_cells = 3.0F;
-    float trunk_offset_cells = 2.25F;
-    std::size_t secondary_trunk_count = 0U;
-    int secondary_trunk_min_distance_cells = 48;
+    float trunk_offset_cells = 4.8F;
+    std::size_t selected_component_count = 3U;
+    std::size_t max_graph_edge_count = 30U;
+    std::size_t min_graph_visible_samples = 6U;
+    int graph_parallel_radius_cells = 4;
+    float graph_parallel_overlap_fraction = 0.72F;
     float tributary_min_accumulation = 4.0F;
-    float tributary_accumulation_fraction = 0.018F;
-    std::size_t min_tributary_count = 2U;
-    std::size_t tributary_count_divisor = 18U;
+    float tributary_accumulation_fraction = 0.004F;
     std::size_t min_tributary_path_samples = 5U;
     float tributary_strength = 0.75F;
     float tributary_core_radius_cells = 0.9F;
     float tributary_falloff_radius_cells = 2.1F;
-    float tributary_offset_cells = 0.75F;
+    float tributary_offset_cells = 1.8F;
 };
 
 struct TerrainSourceFields {
@@ -84,6 +89,8 @@ struct RoutingDomain {
 struct RoutingContext {
     RoutingDomain domain{};
     cubey::procedural::ScalarField2D routing_surface{};
+    cubey::procedural::ScalarField2D filled_routing_surface{};
+    cubey::procedural::ScalarField2D depression_depth{};
     FlowRoutingResult d8_routing{};
     FlowRoutingResult routing{};
     cubey::procedural::ScalarField2D accumulation{};
@@ -104,10 +111,35 @@ struct ChannelPathPoint {
     float strength = 1.0F;
 };
 
-struct FlowVector {
-    float x = 0.0F;
-    float y = 0.0F;
-    bool valid = false;
+enum class ChannelNodeKind {
+    Source,
+    Confluence,
+    Outlet,
+};
+
+struct ChannelGraphNode {
+    int cell = -1;
+    ChannelNodeKind kind = ChannelNodeKind::Source;
+    std::vector<int> incoming_edges{};
+    std::vector<int> outgoing_edges{};
+};
+
+struct ChannelGraphEdge {
+    int from_node = -1;
+    int to_node = -1;
+    int outlet_cell = -1;
+    std::vector<int> cells{};
+    float max_accumulation = 0.0F;
+    std::size_t visible_samples = 0U;
+    std::size_t visible_edge_touches = 0U;
+    float score = 0.0F;
+    bool selected = false;
+    bool trunk = false;
+};
+
+struct ChannelGraph {
+    std::vector<ChannelGraphNode> nodes{};
+    std::vector<ChannelGraphEdge> edges{};
 };
 
 [[nodiscard]] cubey::procedural::NoiseSource2D coherent_source(std::uint64_t seed,
@@ -150,18 +182,19 @@ struct FlowVector {
         return RiverNetworkSettings{
             .trunk_core_radius_cells = 1.55F,
             .trunk_falloff_radius_cells = 3.5F,
-            .trunk_offset_cells = 2.6F,
-            .secondary_trunk_count = 3U,
-            .secondary_trunk_min_distance_cells = 42,
+            .trunk_offset_cells = 5.2F,
+            .selected_component_count = 8U,
+            .max_graph_edge_count = 160U,
+            .min_graph_visible_samples = 2U,
+            .graph_parallel_radius_cells = 0,
+            .graph_parallel_overlap_fraction = 1.0F,
             .tributary_min_accumulation = 2.0F,
-            .tributary_accumulation_fraction = 0.006F,
-            .min_tributary_count = 10U,
-            .tributary_count_divisor = 5U,
-            .min_tributary_path_samples = 4U,
+            .tributary_accumulation_fraction = 0.0008F,
+            .min_tributary_path_samples = 2U,
             .tributary_strength = 0.78F,
             .tributary_core_radius_cells = 0.85F,
             .tributary_falloff_radius_cells = 2.35F,
-            .tributary_offset_cells = 1.2F,
+            .tributary_offset_cells = 2.2F,
         };
     }
     return {};
@@ -363,21 +396,6 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return visible;
 }
 
-[[nodiscard]] HiddenIndexBounds visible_seed_bounds(const RoutingDomain& domain) {
-    const std::uint32_t visible_min = std::min(domain.visible_desc.width, domain.visible_desc.height);
-    std::uint32_t inset = std::max(8U, visible_min / 16U);
-    if (domain.visible_desc.width <= (inset * 2U) + 1U ||
-        domain.visible_desc.height <= (inset * 2U) + 1U) {
-        inset = 0U;
-    }
-    return HiddenIndexBounds{
-        .x_begin = domain.padding_x + inset,
-        .x_end = domain.padding_x + domain.visible_desc.width - inset,
-        .y_begin = domain.padding_y + inset,
-        .y_end = domain.padding_y + domain.visible_desc.height - inset,
-    };
-}
-
 [[nodiscard]] HiddenIndexBounds visible_crop_bounds(const RoutingDomain& domain) {
     return HiddenIndexBounds{
         .x_begin = domain.padding_x,
@@ -396,6 +414,92 @@ inline constexpr std::array<int, 8> kAngleOffsetY{0, 1, 1, 1, 0, -1, -1, -1};
 [[nodiscard]] bool neighbor_in_bounds(const cubey::procedural::Grid2DDesc& desc, int x, int y) {
     return x >= 0 && y >= 0 && x < static_cast<int>(desc.width) &&
            y < static_cast<int>(desc.height);
+}
+
+struct HydroConditionedSurface {
+    cubey::procedural::ScalarField2D filled_surface{};
+    cubey::procedural::ScalarField2D depression_depth{};
+};
+
+struct PriorityFloodCell {
+    float elevation = 0.0F;
+    int index = -1;
+};
+
+struct PriorityFloodCellGreater {
+    [[nodiscard]] bool operator()(const PriorityFloodCell& lhs,
+                                  const PriorityFloodCell& rhs) const {
+        return lhs.elevation > rhs.elevation;
+    }
+};
+
+[[nodiscard]] HydroConditionedSurface fill_depressions_priority_flood(
+    const cubey::procedural::ScalarField2D& surface) {
+    const cubey::procedural::Grid2DDesc& desc = surface.desc();
+    HydroConditionedSurface conditioned{
+        .filled_surface = surface,
+        .depression_depth = cubey::procedural::ScalarField2D(desc, 0.0F),
+    };
+
+    std::priority_queue<PriorityFloodCell, std::vector<PriorityFloodCell>,
+                        PriorityFloodCellGreater>
+        frontier;
+    std::vector<bool> visited(surface.sample_count(), false);
+    const auto push_boundary = [&](std::uint32_t x, std::uint32_t y) {
+        const std::size_t index = surface.index(x, y);
+        if (visited[index]) {
+            return;
+        }
+        visited[index] = true;
+        frontier.push(PriorityFloodCell{
+            .elevation = conditioned.filled_surface.values()[index],
+            .index = static_cast<int>(index),
+        });
+    };
+
+    for (std::uint32_t x = 0; x < desc.width; ++x) {
+        push_boundary(x, 0U);
+        push_boundary(x, desc.height - 1U);
+    }
+    for (std::uint32_t y = 1U; y + 1U < desc.height; ++y) {
+        push_boundary(0U, y);
+        push_boundary(desc.width - 1U, y);
+    }
+
+    constexpr float kFillEpsilonM = 0.01F;
+    while (!frontier.empty()) {
+        const PriorityFloodCell cell = frontier.top();
+        frontier.pop();
+        const auto uindex = static_cast<std::uint32_t>(cell.index);
+        const int x = static_cast<int>(uindex % desc.width);
+        const int y = static_cast<int>(uindex / desc.width);
+        for (std::size_t direction = 0; direction < kAngleOffsetX.size(); ++direction) {
+            const int nx = x + kAngleOffsetX[direction];
+            const int ny = y + kAngleOffsetY[direction];
+            if (!neighbor_in_bounds(desc, nx, ny)) {
+                continue;
+            }
+            const std::uint32_t ux = static_cast<std::uint32_t>(nx);
+            const std::uint32_t uy = static_cast<std::uint32_t>(ny);
+            const std::size_t neighbor_index = surface.index(ux, uy);
+            if (visited[neighbor_index]) {
+                continue;
+            }
+            visited[neighbor_index] = true;
+            const float original = surface.values()[neighbor_index];
+            const float filled =
+                original <= cell.elevation ? cell.elevation + kFillEpsilonM : original;
+            conditioned.filled_surface.values()[neighbor_index] = filled;
+            conditioned.depression_depth.values()[neighbor_index] =
+                std::max(filled - original, 0.0F);
+            frontier.push(PriorityFloodCell{
+                .elevation = filled,
+                .index = static_cast<int>(neighbor_index),
+            });
+        }
+    }
+
+    return conditioned;
 }
 
 [[nodiscard]] float neighbor_distance_m(const cubey::procedural::Grid2DDesc& desc,
@@ -655,209 +759,6 @@ void assign_fractional_receivers(FlowRoutingResult& result,
     return accumulation;
 }
 
-[[nodiscard]] std::vector<std::vector<int>> make_upstream_adjacency(
-    const std::vector<int>& downstream) {
-    std::vector<std::vector<int>> upstream(downstream.size());
-    for (std::size_t index = 0; index < downstream.size(); ++index) {
-        const int target = downstream[index];
-        if (target >= 0) {
-            upstream[static_cast<std::size_t>(target)].push_back(static_cast<int>(index));
-        }
-    }
-    return upstream;
-}
-
-[[nodiscard]] int select_best_accumulation_in_bounds(
-    const cubey::procedural::ScalarField2D& accumulation, const RoutingDomain& domain,
-    const HiddenIndexBounds& bounds) {
-    int best_index = -1;
-    float best_accumulation = -1.0F;
-    for (std::uint32_t y = bounds.y_begin; y < bounds.y_end; ++y) {
-        for (std::uint32_t x = bounds.x_begin; x < bounds.x_end; ++x) {
-            const std::size_t index =
-                cubey::procedural::grid_index(x, y, domain.hidden_desc.width);
-            const float value = accumulation.values()[index];
-            if (value > best_accumulation) {
-                best_accumulation = value;
-                best_index = static_cast<int>(index);
-            }
-        }
-    }
-    return best_index;
-}
-
-[[nodiscard]] int select_main_channel_seed(const cubey::procedural::ScalarField2D& accumulation,
-                                           const RoutingDomain& domain) {
-    int seed = select_best_accumulation_in_bounds(accumulation, domain,
-                                                  visible_seed_bounds(domain));
-    if (seed >= 0) {
-        return seed;
-    }
-    seed = select_best_accumulation_in_bounds(accumulation, domain, visible_crop_bounds(domain));
-    if (seed >= 0) {
-        return seed;
-    }
-
-    int best_index = -1;
-    float best_accumulation = -1.0F;
-    for (std::size_t index = 0; index < accumulation.sample_count(); ++index) {
-        const float value = accumulation.values()[index];
-        if (value > best_accumulation) {
-            best_accumulation = value;
-            best_index = static_cast<int>(index);
-        }
-    }
-    return best_index;
-}
-
-[[nodiscard]] std::vector<int> collect_seed_candidates(
-    const cubey::procedural::ScalarField2D& accumulation, const RoutingDomain& domain,
-    const HiddenIndexBounds& bounds, std::size_t max_count) {
-    std::vector<int> candidates;
-    candidates.reserve(static_cast<std::size_t>((bounds.x_end - bounds.x_begin) *
-                                                (bounds.y_end - bounds.y_begin)));
-    for (std::uint32_t y = bounds.y_begin; y < bounds.y_end; ++y) {
-        for (std::uint32_t x = bounds.x_begin; x < bounds.x_end; ++x) {
-            candidates.push_back(static_cast<int>(
-                cubey::procedural::grid_index(x, y, domain.hidden_desc.width)));
-        }
-    }
-    std::sort(candidates.begin(), candidates.end(), [&accumulation](int lhs, int rhs) {
-        return accumulation.values()[static_cast<std::size_t>(lhs)] >
-               accumulation.values()[static_cast<std::size_t>(rhs)];
-    });
-    if (candidates.size() > max_count) {
-        candidates.resize(max_count);
-    }
-    return candidates;
-}
-
-void append_unique_candidates(std::vector<int>& candidates, std::vector<int> extra,
-                              std::size_t max_total) {
-    for (const int candidate : extra) {
-        if (candidates.size() >= max_total) {
-            break;
-        }
-        if (std::find(candidates.begin(), candidates.end(), candidate) == candidates.end()) {
-            candidates.push_back(candidate);
-        }
-    }
-}
-
-[[nodiscard]] bool is_inside_visible_crop(const RoutingDomain& domain,
-                                          const ChannelPathPoint& point) {
-    return point.x >= static_cast<float>(domain.padding_x) &&
-           point.y >= static_cast<float>(domain.padding_y) &&
-           point.x < static_cast<float>(domain.padding_x + domain.visible_desc.width) &&
-           point.y < static_cast<float>(domain.padding_y + domain.visible_desc.height);
-}
-
-[[nodiscard]] std::size_t visible_path_sample_count(const RoutingDomain& domain,
-                                                    const std::vector<ChannelPathPoint>& path) {
-    return static_cast<std::size_t>(std::count_if(path.begin(), path.end(), [&domain](auto point) {
-        return is_inside_visible_crop(domain, point);
-    }));
-}
-
-[[nodiscard]] std::size_t visible_path_edge_touch_count(
-    const RoutingDomain& domain, const std::vector<ChannelPathPoint>& path) {
-    bool left = false;
-    bool right = false;
-    bool top = false;
-    bool bottom = false;
-    const float x_min = static_cast<float>(domain.padding_x);
-    const float x_max = static_cast<float>(domain.padding_x + domain.visible_desc.width - 1U);
-    const float y_min = static_cast<float>(domain.padding_y);
-    const float y_max = static_cast<float>(domain.padding_y + domain.visible_desc.height - 1U);
-    for (const ChannelPathPoint& point : path) {
-        const bool inside_y = point.y >= y_min && point.y <= y_max;
-        const bool inside_x = point.x >= x_min && point.x <= x_max;
-        left = left || (inside_y && point.x <= x_min + 1.5F);
-        right = right || (inside_y && point.x >= x_max - 1.5F);
-        top = top || (inside_x && point.y <= y_min + 1.5F);
-        bottom = bottom || (inside_x && point.y >= y_max - 1.5F);
-    }
-    return static_cast<std::size_t>(left) + static_cast<std::size_t>(right) +
-           static_cast<std::size_t>(top) + static_cast<std::size_t>(bottom);
-}
-
-[[nodiscard]] FlowVector sample_flow_vector_bilinear(
-    const cubey::procedural::ScalarField2D& flow_direction, float x, float y) {
-    const cubey::procedural::Grid2DDesc& desc = flow_direction.desc();
-    x = std::clamp(x, 0.0F, static_cast<float>(desc.width - 1U));
-    y = std::clamp(y, 0.0F, static_cast<float>(desc.height - 1U));
-    const std::uint32_t x0 = static_cast<std::uint32_t>(std::floor(x));
-    const std::uint32_t y0 = static_cast<std::uint32_t>(std::floor(y));
-    const std::uint32_t x1 = std::min(x0 + 1U, desc.width - 1U);
-    const std::uint32_t y1 = std::min(y0 + 1U, desc.height - 1U);
-    const float tx = x - static_cast<float>(x0);
-    const float ty = y - static_cast<float>(y0);
-
-    float vector_x = 0.0F;
-    float vector_y = 0.0F;
-    float weight_sum = 0.0F;
-    const auto accumulate = [&](std::uint32_t sx, std::uint32_t sy, float weight) {
-        const float angle = flow_direction.at(sx, sy);
-        if (angle < 0.0F || weight <= 0.0F) {
-            return;
-        }
-        vector_x += std::cos(angle) * weight;
-        vector_y += std::sin(angle) * weight;
-        weight_sum += weight;
-    };
-
-    accumulate(x0, y0, (1.0F - tx) * (1.0F - ty));
-    accumulate(x1, y0, tx * (1.0F - ty));
-    accumulate(x0, y1, (1.0F - tx) * ty);
-    accumulate(x1, y1, tx * ty);
-
-    const float length = std::sqrt((vector_x * vector_x) + (vector_y * vector_y));
-    if (weight_sum <= 0.0001F || length <= 0.0001F) {
-        return {};
-    }
-    return FlowVector{
-        .x = vector_x / length,
-        .y = vector_y / length,
-        .valid = true,
-    };
-}
-
-[[nodiscard]] bool is_inside_hidden_domain(const cubey::procedural::Grid2DDesc& desc, float x,
-                                           float y) {
-    return x >= 0.0F && y >= 0.0F && x <= static_cast<float>(desc.width - 1U) &&
-           y <= static_cast<float>(desc.height - 1U);
-}
-
-[[nodiscard]] int hidden_index_from_point(const cubey::procedural::Grid2DDesc& desc,
-                                          const ChannelPathPoint& point) {
-    const int x = static_cast<int>(std::round(point.x));
-    const int y = static_cast<int>(std::round(point.y));
-    if (!neighbor_in_bounds(desc, x, y)) {
-        return -1;
-    }
-    return static_cast<int>(cubey::procedural::grid_index(static_cast<std::uint32_t>(x),
-                                                         static_cast<std::uint32_t>(y),
-                                                         desc.width));
-}
-
-[[nodiscard]] std::vector<int> path_point_indices(
-    const cubey::procedural::Grid2DDesc& desc, const std::vector<ChannelPathPoint>& path) {
-    std::vector<int> indices;
-    indices.reserve(path.size());
-    std::vector<bool> seen(static_cast<std::size_t>(desc.width) *
-                               static_cast<std::size_t>(desc.height),
-                           false);
-    for (const ChannelPathPoint& point : path) {
-        const int index = hidden_index_from_point(desc, point);
-        if (index < 0 || seen[static_cast<std::size_t>(index)]) {
-            continue;
-        }
-        seen[static_cast<std::size_t>(index)] = true;
-        indices.push_back(index);
-    }
-    return indices;
-}
-
 [[nodiscard]] std::vector<ChannelPathPoint> make_channel_path_points(
     const cubey::procedural::Grid2DDesc& desc, const std::vector<int>& path, float strength) {
     std::vector<ChannelPathPoint> points;
@@ -876,137 +777,10 @@ void append_unique_candidates(std::vector<int>& candidates, std::vector<int> ext
     return points;
 }
 
-[[nodiscard]] std::vector<ChannelPathPoint> trace_flow_streamline(
-    int seed, const cubey::procedural::ScalarField2D& flow_direction, float direction_sign,
-    float strength) {
-    std::vector<ChannelPathPoint> points;
-    if (seed < 0) {
-        return points;
-    }
-
-    const cubey::procedural::Grid2DDesc& desc = flow_direction.desc();
-    float x = static_cast<float>(static_cast<std::uint32_t>(seed) % desc.width);
-    float y = static_cast<float>(static_cast<std::uint32_t>(seed) / desc.width);
-    points.push_back(ChannelPathPoint{.x = x, .y = y, .strength = strength});
-
-    constexpr float kStepSizeCells = 1.15F;
-    const int max_steps = static_cast<int>((desc.width + desc.height) * 3U);
-    for (int step = 0; step < max_steps; ++step) {
-        const FlowVector flow = sample_flow_vector_bilinear(flow_direction, x, y);
-        if (!flow.valid) {
-            break;
-        }
-        const float next_x = x + (flow.x * direction_sign * kStepSizeCells);
-        const float next_y = y + (flow.y * direction_sign * kStepSizeCells);
-        if (!is_inside_hidden_domain(desc, next_x, next_y)) {
-            break;
-        }
-        x = next_x;
-        y = next_y;
-        points.push_back(ChannelPathPoint{.x = x, .y = y, .strength = strength});
-    }
-    return points;
-}
-
-[[nodiscard]] std::vector<ChannelPathPoint> trace_channel_streamline(
-    int seed, const cubey::procedural::ScalarField2D& flow_direction, float strength) {
-    std::vector<ChannelPathPoint> upstream =
-        trace_flow_streamline(seed, flow_direction, -1.0F, strength);
-    std::vector<ChannelPathPoint> downstream =
-        trace_flow_streamline(seed, flow_direction, 1.0F, strength);
-    if (upstream.size() + downstream.size() < 5U) {
-        return {};
-    }
-
-    std::reverse(upstream.begin(), upstream.end());
-    std::vector<ChannelPathPoint> path = std::move(upstream);
-    for (std::size_t index = downstream.empty() ? 0U : 1U; index < downstream.size(); ++index) {
-        path.push_back(downstream[index]);
-    }
-    return path;
-}
-
-[[nodiscard]] bool path_intersects_visible_crop(const RoutingDomain& domain,
-                                                const std::vector<int>& path) {
-    return std::any_of(path.begin(), path.end(), [&domain](int index) {
-        return is_inside_visible_crop(domain, index);
-    });
-}
-
-[[nodiscard]] std::vector<int> trace_downstream_path(int start, const std::vector<int>& downstream) {
-    std::vector<int> path;
-    if (start < 0) {
-        return path;
-    }
-
-    std::vector<bool> visited(downstream.size(), false);
-    int current = start;
-    while (current >= 0 && !visited[static_cast<std::size_t>(current)]) {
-        visited[static_cast<std::size_t>(current)] = true;
-        path.push_back(current);
-        current = downstream[static_cast<std::size_t>(current)];
-    }
-    return path;
-}
-
 [[nodiscard]] std::size_t visible_grid_path_sample_count(const RoutingDomain& domain,
                                                          const std::vector<int>& path) {
     return static_cast<std::size_t>(std::count_if(path.begin(), path.end(), [&domain](int index) {
         return is_inside_visible_crop(domain, index);
-    }));
-}
-
-[[nodiscard]] bool is_inside_visible_core(const RoutingDomain& domain, int hidden_index) {
-    if (hidden_index < 0) {
-        return false;
-    }
-    const auto index = static_cast<std::uint32_t>(hidden_index);
-    const std::uint32_t x = index % domain.hidden_desc.width;
-    const std::uint32_t y = index / domain.hidden_desc.width;
-    const float x_min =
-        static_cast<float>(domain.padding_x) + (static_cast<float>(domain.visible_desc.width) *
-                                                0.18F);
-    const float x_max =
-        static_cast<float>(domain.padding_x) + (static_cast<float>(domain.visible_desc.width) *
-                                                0.82F);
-    const float y_min =
-        static_cast<float>(domain.padding_y) + (static_cast<float>(domain.visible_desc.height) *
-                                                0.18F);
-    const float y_max =
-        static_cast<float>(domain.padding_y) + (static_cast<float>(domain.visible_desc.height) *
-                                                0.82F);
-    return static_cast<float>(x) >= x_min && static_cast<float>(x) <= x_max &&
-           static_cast<float>(y) >= y_min && static_cast<float>(y) <= y_max;
-}
-
-[[nodiscard]] bool is_inside_visible_core(const RoutingDomain& domain,
-                                          const ChannelPathPoint& point) {
-    const float x_min =
-        static_cast<float>(domain.padding_x) + (static_cast<float>(domain.visible_desc.width) *
-                                                0.18F);
-    const float x_max =
-        static_cast<float>(domain.padding_x) + (static_cast<float>(domain.visible_desc.width) *
-                                                0.82F);
-    const float y_min =
-        static_cast<float>(domain.padding_y) + (static_cast<float>(domain.visible_desc.height) *
-                                                0.18F);
-    const float y_max =
-        static_cast<float>(domain.padding_y) + (static_cast<float>(domain.visible_desc.height) *
-                                                0.82F);
-    return point.x >= x_min && point.x <= x_max && point.y >= y_min && point.y <= y_max;
-}
-
-[[nodiscard]] std::size_t visible_grid_path_core_sample_count(const RoutingDomain& domain,
-                                                              const std::vector<int>& path) {
-    return static_cast<std::size_t>(std::count_if(path.begin(), path.end(), [&domain](int index) {
-        return is_inside_visible_core(domain, index);
-    }));
-}
-
-[[nodiscard]] std::size_t visible_path_core_sample_count(
-    const RoutingDomain& domain, const std::vector<ChannelPathPoint>& path) {
-    return static_cast<std::size_t>(std::count_if(path.begin(), path.end(), [&domain](auto point) {
-        return is_inside_visible_core(domain, point);
     }));
 }
 
@@ -1085,265 +859,6 @@ void append_unique_candidates(std::vector<int>& candidates, std::vector<int> ext
         best = std::max(best, current);
     }
     return best;
-}
-
-[[nodiscard]] int strongest_upstream_candidate(
-    int index, const std::vector<std::vector<int>>& upstream,
-    const cubey::procedural::ScalarField2D& accumulation, const std::vector<bool>& excluded) {
-    int best_index = -1;
-    float best_accumulation = -1.0F;
-    for (const int candidate : upstream[static_cast<std::size_t>(index)]) {
-        if (excluded[static_cast<std::size_t>(candidate)]) {
-            continue;
-        }
-        const float value = accumulation.values()[static_cast<std::size_t>(candidate)];
-        if (value > best_accumulation) {
-            best_accumulation = value;
-            best_index = candidate;
-        }
-    }
-    return best_index;
-}
-
-[[nodiscard]] std::vector<int> trace_strongest_upstream_path(
-    int start, const std::vector<std::vector<int>>& upstream,
-    const cubey::procedural::ScalarField2D& accumulation, float min_accumulation,
-    const std::vector<bool>& excluded) {
-    std::vector<int> path;
-    if (start < 0) {
-        return path;
-    }
-
-    std::vector<bool> visited(accumulation.sample_count(), false);
-    int current = start;
-    while (current >= 0 && !visited[static_cast<std::size_t>(current)]) {
-        const float value = accumulation.values()[static_cast<std::size_t>(current)];
-        if (value < min_accumulation) {
-            break;
-        }
-        visited[static_cast<std::size_t>(current)] = true;
-        path.push_back(current);
-        current = strongest_upstream_candidate(current, upstream, accumulation, excluded);
-    }
-    return path;
-}
-
-[[nodiscard]] std::vector<int> trace_trunk_from_seed(
-    int seed, const cubey::procedural::ScalarField2D& accumulation,
-    const std::vector<std::vector<int>>& upstream, const std::vector<int>& downstream,
-    const std::vector<bool>& excluded) {
-    const std::vector<int> upstream_path =
-        trace_strongest_upstream_path(seed, upstream, accumulation, 1.0F, excluded);
-    std::vector<int> downstream_path = trace_downstream_path(seed, downstream);
-    std::reverse(downstream_path.begin(), downstream_path.end());
-
-    std::vector<int> trunk = std::move(downstream_path);
-    const std::size_t upstream_start = trunk.empty() ? 0U : 1U;
-    for (std::size_t index = upstream_start; index < upstream_path.size(); ++index) {
-        trunk.push_back(upstream_path[index]);
-    }
-    return trunk;
-}
-
-[[nodiscard]] float score_grid_trunk(const cubey::procedural::ScalarField2D& accumulation,
-                                     const RoutingDomain& domain,
-                                     const std::vector<int>& trunk, int seed) {
-    const std::size_t visible_samples = visible_grid_path_sample_count(domain, trunk);
-    const float visible_length_gate =
-        cubey::procedural::smoothstep(24.0F, 96.0F, static_cast<float>(visible_samples));
-    const float edge_score =
-        static_cast<float>(visible_grid_path_edge_touch_count(domain, trunk)) * 500'000.0F *
-        visible_length_gate;
-    const float length_score = static_cast<float>(visible_samples) * 20'000.0F;
-    const float core_score =
-        static_cast<float>(visible_grid_path_core_sample_count(domain, trunk)) * 15'000.0F;
-    const float straight_penalty =
-        std::pow(static_cast<float>(
-                     std::max<std::size_t>(visible_grid_path_aligned_run(domain, trunk), 10U) -
-                     10U),
-                 2.0F) *
-        20'000.0F;
-    const float accumulation_score =
-        seed >= 0 ? std::log1p(accumulation.values()[static_cast<std::size_t>(seed)]) : 0.0F;
-    return edge_score + length_score + core_score + accumulation_score - straight_penalty;
-}
-
-[[nodiscard]] bool path_is_near_indices(const cubey::procedural::Grid2DDesc& desc,
-                                        const std::vector<int>& path,
-                                        const std::vector<int>& indices,
-                                        int min_distance_cells) {
-    if (min_distance_cells <= 0 || indices.empty()) {
-        return false;
-    }
-    const int min_distance_sq = min_distance_cells * min_distance_cells;
-    for (const int path_index : path) {
-        if (path_index < 0) {
-            continue;
-        }
-        const auto path_uindex = static_cast<std::uint32_t>(path_index);
-        const int path_x = static_cast<int>(path_uindex % desc.width);
-        const int path_y = static_cast<int>(path_uindex / desc.width);
-        for (const int index : indices) {
-            if (index < 0) {
-                continue;
-            }
-            const auto uindex = static_cast<std::uint32_t>(index);
-            const int dx = path_x - static_cast<int>(uindex % desc.width);
-            const int dy = path_y - static_cast<int>(uindex / desc.width);
-            if ((dx * dx) + (dy * dy) <= min_distance_sq) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-void append_unique_indices(std::vector<int>& target, const std::vector<int>& indices) {
-    for (const int index : indices) {
-        if (std::find(target.begin(), target.end(), index) == target.end()) {
-            target.push_back(index);
-        }
-    }
-}
-
-[[nodiscard]] std::vector<int> trace_main_trunk_graph(
-    const cubey::procedural::ScalarField2D& accumulation,
-    const std::vector<std::vector<int>>& upstream, const std::vector<int>& downstream,
-    const RoutingDomain& domain) {
-    const std::vector<bool> no_exclusions(accumulation.sample_count(), false);
-    std::vector<int> candidates =
-        collect_seed_candidates(accumulation, domain, visible_seed_bounds(domain), 768U);
-    append_unique_candidates(candidates,
-                             collect_seed_candidates(accumulation, domain,
-                                                     visible_crop_bounds(domain), 768U),
-                             1536U);
-    if (candidates.empty()) {
-        candidates = collect_seed_candidates(accumulation, domain, visible_crop_bounds(domain),
-                                             1536U);
-    }
-    const int fallback_seed = select_main_channel_seed(accumulation, domain);
-    if (candidates.empty() && fallback_seed >= 0) {
-        candidates.push_back(fallback_seed);
-    }
-
-    std::vector<int> best_trunk;
-    float best_score = -1.0F;
-    for (const int seed : candidates) {
-        std::vector<int> trunk =
-            trace_trunk_from_seed(seed, accumulation, upstream, downstream, no_exclusions);
-        if (trunk.empty()) {
-            continue;
-        }
-        const float score = score_grid_trunk(accumulation, domain, trunk, seed);
-        if (score > best_score) {
-            best_score = score;
-            best_trunk = std::move(trunk);
-        }
-    }
-    return best_trunk;
-}
-
-[[nodiscard]] std::vector<std::vector<int>> trace_secondary_trunk_graphs(
-    const cubey::procedural::ScalarField2D& accumulation,
-    const std::vector<std::vector<int>>& upstream, const std::vector<int>& downstream,
-    const RoutingDomain& domain, const std::vector<int>& initial_selected_indices,
-    std::size_t trunk_count, int min_distance_cells) {
-    std::vector<std::vector<int>> trunks;
-    if (trunk_count == 0U) {
-        return trunks;
-    }
-
-    const std::vector<bool> no_exclusions(accumulation.sample_count(), false);
-    std::vector<int> candidates =
-        collect_seed_candidates(accumulation, domain, visible_seed_bounds(domain), 768U);
-    append_unique_candidates(candidates,
-                             collect_seed_candidates(accumulation, domain,
-                                                     visible_crop_bounds(domain), 768U),
-                             1536U);
-
-    std::vector<int> selected_indices = initial_selected_indices;
-    for (std::size_t trunk_index = 0U; trunk_index < trunk_count; ++trunk_index) {
-        std::vector<int> best_trunk;
-        float best_score = -1.0F;
-        for (const int seed : candidates) {
-            std::vector<int> trunk =
-                trace_trunk_from_seed(seed, accumulation, upstream, downstream, no_exclusions);
-            if (visible_grid_path_sample_count(domain, trunk) < 40U) {
-                continue;
-            }
-            if (path_is_near_indices(domain.hidden_desc, trunk, selected_indices,
-                                     min_distance_cells)) {
-                continue;
-            }
-            const float score = score_grid_trunk(accumulation, domain, trunk, seed);
-            if (score > best_score) {
-                best_score = score;
-                best_trunk = std::move(trunk);
-            }
-        }
-        if (best_trunk.empty()) {
-            break;
-        }
-        append_unique_indices(selected_indices, best_trunk);
-        trunks.push_back(std::move(best_trunk));
-    }
-    return trunks;
-}
-
-[[nodiscard]] std::vector<ChannelPathPoint> trace_main_trunk(
-    const cubey::procedural::ScalarField2D& accumulation, const FlowRoutingResult& vector_routing,
-    const FlowRoutingResult& graph_routing, const RoutingDomain& domain) {
-    std::vector<int> candidates =
-        collect_seed_candidates(accumulation, domain, visible_seed_bounds(domain), 768U);
-    append_unique_candidates(candidates,
-                             collect_seed_candidates(accumulation, domain,
-                                                     visible_crop_bounds(domain), 768U),
-                             1536U);
-    if (candidates.empty()) {
-        candidates = collect_seed_candidates(accumulation, domain, visible_crop_bounds(domain),
-                                             1536U);
-    }
-    const int fallback_seed = select_main_channel_seed(accumulation, domain);
-    if (candidates.empty() && fallback_seed >= 0) {
-        candidates.push_back(fallback_seed);
-    }
-
-    std::vector<ChannelPathPoint> best_trunk;
-    float best_score = -1.0F;
-    for (const int seed : candidates) {
-        std::vector<ChannelPathPoint> trunk =
-            trace_channel_streamline(seed, vector_routing.flow_direction, 1.0F);
-        if (trunk.empty()) {
-            continue;
-        }
-        const std::size_t visible_samples = visible_path_sample_count(domain, trunk);
-        const float visible_length_gate =
-            cubey::procedural::smoothstep(24.0F, 96.0F, static_cast<float>(visible_samples));
-        const float edge_score =
-            static_cast<float>(visible_path_edge_touch_count(domain, trunk)) * 500'000.0F *
-            visible_length_gate;
-        const float length_score = static_cast<float>(visible_samples) * 20'000.0F;
-        const float core_score =
-            static_cast<float>(visible_path_core_sample_count(domain, trunk)) * 15'000.0F;
-        const float hidden_length_score = static_cast<float>(trunk.size()) * 12.0F;
-        const float accumulation_score =
-            std::log1p(accumulation.values()[static_cast<std::size_t>(seed)]);
-        const float score =
-            edge_score + length_score + core_score + hidden_length_score + accumulation_score;
-        if (score > best_score) {
-            best_score = score;
-            best_trunk = std::move(trunk);
-        }
-    }
-    if (visible_path_edge_touch_count(domain, best_trunk) >= 2U &&
-        visible_path_sample_count(domain, best_trunk) >= 32U) {
-        return best_trunk;
-    }
-    const std::vector<std::vector<int>> upstream = make_upstream_adjacency(graph_routing.downstream);
-    return make_channel_path_points(domain.hidden_desc,
-                                    trace_main_trunk_graph(accumulation, upstream,
-                                                           graph_routing.downstream, domain),
-                                    1.0F);
 }
 
 [[nodiscard]] cubey::procedural::NoiseSource2D channel_offset_source(std::uint64_t seed) {
@@ -1624,113 +1139,440 @@ void paint_channel_path(cubey::procedural::ScalarField2D& field,
     points = resample_channel_path(points, 1.6F);
     smooth_channel_path(points, 2);
     apply_channel_lateral_offset(points, seed, max_offset_cells, routing_surface);
-    relax_channel_path(points, routing_surface, 4);
+    relax_channel_path(points, routing_surface, 2);
     smooth_channel_path(points, 1);
     rasterize_channel_segments(field, points, core_radius_cells, falloff_radius_cells, domain);
 }
 
+[[nodiscard]] float max_visible_accumulation(const cubey::procedural::ScalarField2D& accumulation,
+                                             const RoutingDomain& domain) {
+    float max_accumulation = 1.0F;
+    const HiddenIndexBounds visible = visible_crop_bounds(domain);
+    for (std::uint32_t y = visible.y_begin; y < visible.y_end; ++y) {
+        for (std::uint32_t x = visible.x_begin; x < visible.x_end; ++x) {
+            const std::size_t index =
+                cubey::procedural::grid_index(x, y, domain.hidden_desc.width);
+            max_accumulation = std::max(max_accumulation, accumulation.values()[index]);
+        }
+    }
+    return max_accumulation;
+}
+
+[[nodiscard]] float channel_accumulation_threshold(const RoutingContext& context,
+                                                   const RiverNetworkSettings& settings) {
+    return std::max(settings.tributary_min_accumulation,
+                    max_visible_accumulation(context.accumulation, context.domain) *
+                        settings.tributary_accumulation_fraction);
+}
+
+[[nodiscard]] std::vector<bool> make_channel_mask(const RoutingContext& context,
+                                                  const RiverNetworkSettings& settings) {
+    float threshold = channel_accumulation_threshold(context, settings);
+    std::vector<bool> channel(context.accumulation.sample_count(), false);
+    for (int pass = 0; pass < 4; ++pass) {
+        std::fill(channel.begin(), channel.end(), false);
+        std::size_t visible_count = 0U;
+        for (std::size_t index = 0; index < context.accumulation.sample_count(); ++index) {
+            if (context.accumulation.values()[index] < threshold) {
+                continue;
+            }
+            channel[index] = true;
+            if (is_inside_visible_crop(context.domain, static_cast<int>(index))) {
+                ++visible_count;
+            }
+        }
+        if (visible_count >= 24U || threshold <= settings.tributary_min_accumulation) {
+            return channel;
+        }
+        threshold *= 0.55F;
+    }
+    return channel;
+}
+
+[[nodiscard]] int ensure_channel_graph_node(ChannelGraph& graph, std::vector<int>& node_ids,
+                                            int cell, ChannelNodeKind kind) {
+    if (cell < 0) {
+        return -1;
+    }
+    const auto index = static_cast<std::size_t>(cell);
+    if (node_ids[index] >= 0) {
+        const int node = node_ids[index];
+        if (kind == ChannelNodeKind::Confluence) {
+            graph.nodes[static_cast<std::size_t>(node)].kind = kind;
+        }
+        return node;
+    }
+    const int node = static_cast<int>(graph.nodes.size());
+    node_ids[index] = node;
+    graph.nodes.push_back(ChannelGraphNode{
+        .cell = cell,
+        .kind = kind,
+    });
+    return node;
+}
+
+[[nodiscard]] ChannelNodeKind channel_node_kind(std::size_t upstream_count,
+                                                bool has_downstream_channel) {
+    if (!has_downstream_channel) {
+        return ChannelNodeKind::Outlet;
+    }
+    if (upstream_count >= 2U) {
+        return ChannelNodeKind::Confluence;
+    }
+    return ChannelNodeKind::Source;
+}
+
+[[nodiscard]] int channel_terminal_cell(int start, const std::vector<int>& downstream,
+                                        const std::vector<bool>& channel) {
+    if (start < 0) {
+        return -1;
+    }
+    std::vector<bool> visited(downstream.size(), false);
+    int current = start;
+    while (current >= 0 && !visited[static_cast<std::size_t>(current)]) {
+        visited[static_cast<std::size_t>(current)] = true;
+        const int next = downstream[static_cast<std::size_t>(current)];
+        if (next < 0 || !channel[static_cast<std::size_t>(next)]) {
+            return current;
+        }
+        current = next;
+    }
+    return current;
+}
+
+[[nodiscard]] ChannelGraph build_channel_graph(const RoutingContext& context,
+                                               const RiverNetworkSettings& settings) {
+    const std::vector<int>& downstream = context.routing.downstream;
+    const std::vector<bool> channel = make_channel_mask(context, settings);
+    std::vector<std::size_t> upstream_count(channel.size(), 0U);
+    for (std::size_t index = 0; index < downstream.size(); ++index) {
+        if (!channel[index]) {
+            continue;
+        }
+        const int target = downstream[index];
+        if (target >= 0 && channel[static_cast<std::size_t>(target)]) {
+            ++upstream_count[static_cast<std::size_t>(target)];
+        }
+    }
+
+    ChannelGraph graph{};
+    std::vector<int> node_ids(channel.size(), -1);
+    for (std::size_t index = 0; index < channel.size(); ++index) {
+        if (!channel[index]) {
+            continue;
+        }
+        const int target = downstream[index];
+        const bool has_downstream_channel =
+            target >= 0 && channel[static_cast<std::size_t>(target)];
+        if (!has_downstream_channel || upstream_count[index] != 1U) {
+            static_cast<void>(ensure_channel_graph_node(
+                graph, node_ids, static_cast<int>(index),
+                channel_node_kind(upstream_count[index], has_downstream_channel)));
+        }
+    }
+
+    for (std::size_t node_index = 0; node_index < graph.nodes.size(); ++node_index) {
+        const int start = graph.nodes[node_index].cell;
+        const int first = downstream[static_cast<std::size_t>(start)];
+        if (first < 0 || !channel[static_cast<std::size_t>(first)]) {
+            continue;
+        }
+
+        std::vector<int> cells;
+        cells.reserve(64U);
+        cells.push_back(start);
+        std::vector<bool> visited(channel.size(), false);
+        visited[static_cast<std::size_t>(start)] = true;
+        int current = first;
+        while (current >= 0 && channel[static_cast<std::size_t>(current)] &&
+               !visited[static_cast<std::size_t>(current)]) {
+            visited[static_cast<std::size_t>(current)] = true;
+            cells.push_back(current);
+            if (node_ids[static_cast<std::size_t>(current)] >= 0) {
+                break;
+            }
+            const int next = downstream[static_cast<std::size_t>(current)];
+            if (next < 0 || !channel[static_cast<std::size_t>(next)]) {
+                break;
+            }
+            current = next;
+        }
+        if (cells.size() < 2U) {
+            continue;
+        }
+
+        const int end = cells.back();
+        const int next_after_end = downstream[static_cast<std::size_t>(end)];
+        const bool end_has_downstream =
+            next_after_end >= 0 && channel[static_cast<std::size_t>(next_after_end)];
+        const int to_node =
+            ensure_channel_graph_node(graph, node_ids, end,
+                                      channel_node_kind(upstream_count[static_cast<std::size_t>(end)],
+                                                        end_has_downstream));
+        if (to_node < 0 || to_node == static_cast<int>(node_index)) {
+            continue;
+        }
+
+        float max_edge_accumulation = 0.0F;
+        for (const int cell : cells) {
+            max_edge_accumulation =
+                std::max(max_edge_accumulation,
+                         context.accumulation.values()[static_cast<std::size_t>(cell)]);
+        }
+        const std::size_t visible_samples = visible_grid_path_sample_count(context.domain, cells);
+        const std::size_t edge_touches = visible_grid_path_edge_touch_count(context.domain, cells);
+        const std::size_t aligned_run = visible_grid_path_aligned_run(context.domain, cells);
+        const float straight_penalty =
+            std::pow(static_cast<float>(std::max<std::size_t>(aligned_run, 10U) - 10U), 2.0F) *
+            8.0F;
+        const float score = (static_cast<float>(visible_samples) * 1800.0F) +
+                            (static_cast<float>(edge_touches) * 12'000.0F) +
+                            (std::log1p(max_edge_accumulation) * 650.0F) - straight_penalty;
+
+        const int edge_index = static_cast<int>(graph.edges.size());
+        graph.edges.push_back(ChannelGraphEdge{
+            .from_node = static_cast<int>(node_index),
+            .to_node = to_node,
+            .outlet_cell = channel_terminal_cell(end, downstream, channel),
+            .cells = std::move(cells),
+            .max_accumulation = max_edge_accumulation,
+            .visible_samples = visible_samples,
+            .visible_edge_touches = edge_touches,
+            .score = score,
+        });
+        graph.nodes[node_index].outgoing_edges.push_back(edge_index);
+        graph.nodes[static_cast<std::size_t>(to_node)].incoming_edges.push_back(edge_index);
+    }
+
+    return graph;
+}
+
+struct ChannelComponentStats {
+    int outlet_cell = -1;
+    float score = 0.0F;
+    float max_accumulation = 0.0F;
+};
+
+[[nodiscard]] std::size_t component_index_for_outlet(std::vector<ChannelComponentStats>& components,
+                                                     int outlet_cell) {
+    for (std::size_t index = 0; index < components.size(); ++index) {
+        if (components[index].outlet_cell == outlet_cell) {
+            return index;
+        }
+    }
+    components.push_back(ChannelComponentStats{
+        .outlet_cell = outlet_cell,
+    });
+    return components.size() - 1U;
+}
+
+[[nodiscard]] bool component_is_selected(const std::vector<ChannelComponentStats>& components,
+                                         int outlet_cell,
+                                         std::size_t selected_component_count) {
+    const std::size_t count = std::min(selected_component_count, components.size());
+    for (std::size_t index = 0; index < count; ++index) {
+        if (components[index].outlet_cell == outlet_cell) {
+            return true;
+        }
+    }
+    return false;
+}
+
+[[nodiscard]] float component_max_accumulation(const std::vector<ChannelComponentStats>& components,
+                                               int outlet_cell) {
+    for (const ChannelComponentStats& component : components) {
+        if (component.outlet_cell == outlet_cell) {
+            return component.max_accumulation;
+        }
+    }
+    return 1.0F;
+}
+
+[[nodiscard]] bool occupied_near_cell(const cubey::procedural::Grid2DDesc& desc,
+                                      const std::vector<bool>& occupied, int cell,
+                                      int radius_cells) {
+    if (cell < 0) {
+        return false;
+    }
+    const auto index = static_cast<std::uint32_t>(cell);
+    const int cx = static_cast<int>(index % desc.width);
+    const int cy = static_cast<int>(index / desc.width);
+    const int radius_sq = radius_cells * radius_cells;
+    for (int oy = -radius_cells; oy <= radius_cells; ++oy) {
+        for (int ox = -radius_cells; ox <= radius_cells; ++ox) {
+            if ((ox * ox) + (oy * oy) > radius_sq) {
+                continue;
+            }
+            const int x = cx + ox;
+            const int y = cy + oy;
+            if (!neighbor_in_bounds(desc, x, y)) {
+                continue;
+            }
+            const std::size_t sample = cubey::procedural::grid_index(
+                static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y), desc.width);
+            if (occupied[sample]) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+[[nodiscard]] float occupied_overlap_fraction(const cubey::procedural::Grid2DDesc& desc,
+                                              const std::vector<bool>& occupied,
+                                              const std::vector<int>& cells, int radius_cells) {
+    if (cells.size() <= 6U) {
+        return 0.0F;
+    }
+    std::size_t tested = 0U;
+    std::size_t overlapped = 0U;
+    for (std::size_t index = 3U; index + 3U < cells.size(); ++index) {
+        ++tested;
+        if (occupied_near_cell(desc, occupied, cells[index], radius_cells)) {
+            ++overlapped;
+        }
+    }
+    return tested == 0U ? 0.0F : static_cast<float>(overlapped) / static_cast<float>(tested);
+}
+
+void mark_occupied_cells(const cubey::procedural::Grid2DDesc& desc, std::vector<bool>& occupied,
+                         const std::vector<int>& cells, int radius_cells) {
+    const int radius_sq = radius_cells * radius_cells;
+    for (const int cell : cells) {
+        if (cell < 0) {
+            continue;
+        }
+        const auto index = static_cast<std::uint32_t>(cell);
+        const int cx = static_cast<int>(index % desc.width);
+        const int cy = static_cast<int>(index / desc.width);
+        for (int oy = -radius_cells; oy <= radius_cells; ++oy) {
+            for (int ox = -radius_cells; ox <= radius_cells; ++ox) {
+                if ((ox * ox) + (oy * oy) > radius_sq) {
+                    continue;
+                }
+                const int x = cx + ox;
+                const int y = cy + oy;
+                if (!neighbor_in_bounds(desc, x, y)) {
+                    continue;
+                }
+                occupied[cubey::procedural::grid_index(static_cast<std::uint32_t>(x),
+                                                       static_cast<std::uint32_t>(y),
+                                                       desc.width)] = true;
+            }
+        }
+    }
+}
+
+void select_channel_graph_edges(ChannelGraph& graph, const RoutingContext& context,
+                                const RiverNetworkSettings& settings) {
+    std::vector<ChannelComponentStats> components;
+    for (const ChannelGraphEdge& edge : graph.edges) {
+        if (edge.visible_samples == 0U && edge.visible_edge_touches == 0U) {
+            continue;
+        }
+        const std::size_t component_index =
+            component_index_for_outlet(components, edge.outlet_cell);
+        ChannelComponentStats& component = components[component_index];
+        component.score += edge.score + (static_cast<float>(edge.visible_edge_touches) * 80'000.0F);
+        component.max_accumulation =
+            std::max(component.max_accumulation, edge.max_accumulation);
+    }
+    std::sort(components.begin(), components.end(), [](const ChannelComponentStats& lhs,
+                                                       const ChannelComponentStats& rhs) {
+        return lhs.score > rhs.score;
+    });
+
+    std::vector<int> candidates;
+    candidates.reserve(graph.edges.size());
+    for (std::size_t index = 0; index < graph.edges.size(); ++index) {
+        const ChannelGraphEdge& edge = graph.edges[index];
+        if (!component_is_selected(components, edge.outlet_cell,
+                                   settings.selected_component_count)) {
+            continue;
+        }
+        if (edge.cells.size() < settings.min_tributary_path_samples) {
+            continue;
+        }
+        if (edge.visible_samples < settings.min_graph_visible_samples &&
+            edge.visible_edge_touches == 0U) {
+            continue;
+        }
+        candidates.push_back(static_cast<int>(index));
+    }
+    std::sort(candidates.begin(), candidates.end(), [&graph](int lhs, int rhs) {
+        const ChannelGraphEdge& lhs_edge = graph.edges[static_cast<std::size_t>(lhs)];
+        const ChannelGraphEdge& rhs_edge = graph.edges[static_cast<std::size_t>(rhs)];
+        return lhs_edge.score > rhs_edge.score;
+    });
+
+    std::vector<bool> occupied(context.accumulation.sample_count(), false);
+    std::size_t selected_count = 0U;
+    for (const int candidate : candidates) {
+        if (selected_count >= settings.max_graph_edge_count) {
+            break;
+        }
+        ChannelGraphEdge& edge = graph.edges[static_cast<std::size_t>(candidate)];
+        const float overlap =
+            occupied_overlap_fraction(context.domain.hidden_desc, occupied, edge.cells,
+                                      settings.graph_parallel_radius_cells);
+        if (selected_count > 0U && overlap > settings.graph_parallel_overlap_fraction) {
+            continue;
+        }
+        edge.selected = true;
+        const float component_max =
+            std::max(component_max_accumulation(components, edge.outlet_cell), 1.0F);
+        const std::size_t substantial_visible_samples =
+            std::max<std::size_t>(settings.min_graph_visible_samples * 3U, 18U);
+        edge.trunk = (edge.visible_samples >= substantial_visible_samples &&
+                      edge.max_accumulation >= component_max * 0.36F) ||
+                     (edge.visible_edge_touches >= 1U &&
+                      edge.max_accumulation >= component_max * 0.70F);
+        mark_occupied_cells(context.domain.hidden_desc, occupied, edge.cells,
+                            settings.graph_parallel_radius_cells);
+        ++selected_count;
+    }
+}
+
 void activate_river_network(RiverFields& fields, const RoutingContext& context, std::uint64_t seed,
                             const RiverNetworkSettings& settings) {
-    const std::vector<int>& downstream = context.d8_routing.downstream;
-    const std::vector<std::vector<int>> upstream = make_upstream_adjacency(downstream);
-    const std::vector<ChannelPathPoint> trunk =
-        trace_main_trunk(context.accumulation, context.routing, context.d8_routing,
-                         context.domain);
-    if (trunk.empty()) {
-        return;
-    }
-    paint_channel_path(fields.river_trunk, trunk, context.domain, settings.trunk_core_radius_cells,
-                       settings.trunk_falloff_radius_cells, context.routing_surface, seed + 1101U,
-                       settings.trunk_offset_cells);
-
-    std::vector<bool> active(context.accumulation.sample_count(), false);
-    std::vector<int> trunk_indices = path_point_indices(context.domain.hidden_desc, trunk);
-    if (trunk_indices.empty()) {
-        return;
-    }
-    for (const int index : trunk_indices) {
-        active[static_cast<std::size_t>(index)] = true;
-    }
-
-    const std::vector<std::vector<int>> secondary_trunks = trace_secondary_trunk_graphs(
-        context.accumulation, upstream, downstream, context.domain, trunk_indices,
-        settings.secondary_trunk_count, settings.secondary_trunk_min_distance_cells);
-    std::size_t secondary_index = 0U;
-    for (const std::vector<int>& secondary_trunk : secondary_trunks) {
-        const std::vector<ChannelPathPoint> secondary_points =
-            make_channel_path_points(context.domain.hidden_desc, secondary_trunk, 0.92F);
-        paint_channel_path(fields.river_trunk, secondary_points, context.domain,
-                           settings.trunk_core_radius_cells,
-                           settings.trunk_falloff_radius_cells, context.routing_surface,
-                           seed + 3301U + (secondary_index * 131U),
-                           settings.trunk_offset_cells);
-        const std::vector<int> secondary_indices =
-            path_point_indices(context.domain.hidden_desc, secondary_points);
-        append_unique_indices(trunk_indices, secondary_indices);
-        for (const int index : secondary_indices) {
-            active[static_cast<std::size_t>(index)] = true;
+    ChannelGraph graph = build_channel_graph(context, settings);
+    select_channel_graph_edges(graph, context, settings);
+    const float max_accumulation = std::max(max_visible_accumulation(context.accumulation,
+                                                                     context.domain),
+                                            1.0F);
+    const float log_max_accumulation = std::log1p(max_accumulation);
+    std::size_t rendered_edges = 0U;
+    for (const ChannelGraphEdge& edge : graph.edges) {
+        if (!edge.selected) {
+            continue;
         }
-        ++secondary_index;
-    }
-
-    float trunk_accumulation = 1.0F;
-    for (const int index : trunk_indices) {
-        trunk_accumulation =
-            std::max(trunk_accumulation,
-                     context.accumulation.values()[static_cast<std::size_t>(index)]);
-    }
-    const float min_tributary_accumulation =
-        std::max(settings.tributary_min_accumulation,
-                 trunk_accumulation * settings.tributary_accumulation_fraction);
-    const std::size_t max_tributary_count = std::max<std::size_t>(
-        settings.min_tributary_count,
-        trunk_indices.size() / std::max<std::size_t>(settings.tributary_count_divisor, 1U));
-    std::size_t accepted_tributaries = 0U;
-
-    for (const int trunk_index : trunk_indices) {
-        if (accepted_tributaries >= max_tributary_count) {
-            break;
-        }
-        const bool visible_anchor = is_inside_visible_crop(context.domain, trunk_index);
-        std::vector<int> candidates = upstream[static_cast<std::size_t>(trunk_index)];
-        std::sort(candidates.begin(), candidates.end(), [&context](int lhs, int rhs) {
-            return context.accumulation.values()[static_cast<std::size_t>(lhs)] >
-                   context.accumulation.values()[static_cast<std::size_t>(rhs)];
-        });
-
-        for (const int candidate : candidates) {
-            if (active[static_cast<std::size_t>(candidate)]) {
-                continue;
-            }
-            std::vector<int> branch = trace_strongest_upstream_path(
-                candidate, upstream, context.accumulation, min_tributary_accumulation, active);
-            if (branch.size() < settings.min_tributary_path_samples) {
-                continue;
-            }
-            if (!visible_anchor && !path_intersects_visible_crop(context.domain, branch)) {
-                continue;
-            }
-            std::vector<ChannelPathPoint> branch_points =
-                trace_flow_streamline(candidate, context.routing.flow_direction, -1.0F,
-                                      settings.tributary_strength);
-            if (branch_points.size() < settings.min_tributary_path_samples) {
-                continue;
-            }
-            std::reverse(branch_points.begin(), branch_points.end());
-            if (!visible_anchor && visible_path_sample_count(context.domain, branch_points) == 0U) {
-                continue;
-            }
-            paint_channel_path(fields.tributaries, branch_points, context.domain,
+        const float discharge =
+            log_max_accumulation <= 0.0F ? 0.0F : std::log1p(edge.max_accumulation) /
+                                                        log_max_accumulation;
+        const float strength =
+            cubey::procedural::saturate(edge.trunk ? 0.62F + (discharge * 0.24F)
+                                                   : settings.tributary_strength *
+                                                         (0.72F + (discharge * 0.28F)));
+        const std::vector<ChannelPathPoint> points =
+            make_channel_path_points(context.domain.hidden_desc, edge.cells, strength);
+        paint_channel_path(fields.channel_graph, points, context.domain, 0.65F, 1.35F,
+                           context.filled_routing_surface, seed + 4409U + rendered_edges, 0.0F);
+        if (edge.trunk) {
+            paint_channel_path(fields.river_trunk, points, context.domain,
+                               settings.trunk_core_radius_cells,
+                               settings.trunk_falloff_radius_cells,
+                               context.filled_routing_surface,
+                               seed + 1101U + (rendered_edges * 131U),
+                               settings.trunk_offset_cells);
+        } else {
+            paint_channel_path(fields.tributaries, points, context.domain,
                                settings.tributary_core_radius_cells,
-                               settings.tributary_falloff_radius_cells, context.routing_surface,
-                               seed + 2203U + (accepted_tributaries * 117U),
+                               settings.tributary_falloff_radius_cells,
+                               context.filled_routing_surface,
+                               seed + 2203U + (rendered_edges * 117U),
                                settings.tributary_offset_cells);
-            for (const int index : path_point_indices(context.domain.hidden_desc, branch_points)) {
-                active[static_cast<std::size_t>(index)] = true;
-            }
-            ++accepted_tributaries;
-            break;
         }
+        ++rendered_edges;
     }
 
     for (std::uint32_t y = 0; y < fields.river_mask.desc().height; ++y) {
@@ -1780,9 +1622,13 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
     const cubey::procedural::ScalarField2D routing_height =
         make_routing_source_height(context.domain.hidden_desc, seed);
     context.routing_surface = make_drainage_routing_surface(routing_height, seed);
-    context.d8_routing = route_steepest_descent(context.routing_surface);
-    context.routing = route_dinfinity_descent(context.routing_surface);
-    context.accumulation = accumulate_flow(context.routing_surface, context.routing.receivers);
+    HydroConditionedSurface conditioned = fill_depressions_priority_flood(context.routing_surface);
+    context.filled_routing_surface = std::move(conditioned.filled_surface);
+    context.depression_depth = std::move(conditioned.depression_depth);
+    context.d8_routing = route_steepest_descent(context.filled_routing_surface);
+    context.routing = route_dinfinity_descent(context.filled_routing_surface);
+    context.accumulation =
+        accumulate_flow(context.filled_routing_surface, context.routing.receivers);
     context.stream_order = make_stream_order_field(context.accumulation);
     context.sink_mask = cubey::procedural::ScalarField2D(context.domain.hidden_desc, 0.0F);
     populate_sink_mask(context.sink_mask, context.routing.downstream);
@@ -1815,6 +1661,9 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
     const RiverNetworkSettings settings = river_network_settings(config.recipe_id);
     RiverFields fields{
         .drainage_potential = crop_hidden_field_to_visible(context.routing_surface, context.domain),
+        .filled_drainage_potential =
+            crop_hidden_field_to_visible(context.filled_routing_surface, context.domain),
+        .depression_depth = crop_hidden_field_to_visible(context.depression_depth, context.domain),
         .flow_direction = crop_hidden_field_to_visible(context.routing.flow_direction,
                                                        context.domain),
         .flow_accumulation = crop_hidden_field_to_visible(context.accumulation, context.domain),
@@ -1827,6 +1676,7 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
         .valley_width = cubey::procedural::ScalarField2D(desc, 0.0F),
         .wetness = cubey::procedural::ScalarField2D(desc, 0.0F),
         .deposition = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .channel_graph = cubey::procedural::ScalarField2D(desc, 0.0F),
     };
     const float max_accumulation = std::max(fields.flow_accumulation.summarize().max, 1.0F);
     const float log_max_accumulation = std::log1p(max_accumulation);
@@ -1898,6 +1748,8 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
 
     return RiverFields{
         .drainage_potential = std::move(fields.drainage_potential),
+        .filled_drainage_potential = std::move(fields.filled_drainage_potential),
+        .depression_depth = std::move(fields.depression_depth),
         .flow_direction = std::move(fields.flow_direction),
         .flow_accumulation = std::move(fields.flow_accumulation),
         .stream_order = std::move(fields.stream_order),
@@ -1909,6 +1761,7 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
         .valley_width = std::move(fields.valley_width),
         .wetness = std::move(fields.wetness),
         .deposition = std::move(fields.deposition),
+        .channel_graph = std::move(fields.channel_graph),
     };
 }
 
@@ -1999,6 +1852,10 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldLocalRelief, local_relief.local_span);
     add_field(product.fields, kTerrainFieldDrainagePotential,
               std::move(river_fields.drainage_potential));
+    add_field(product.fields, kTerrainFieldFilledDrainagePotential,
+              std::move(river_fields.filled_drainage_potential));
+    add_field(product.fields, kTerrainFieldDepressionDepth,
+              std::move(river_fields.depression_depth));
     add_field(product.fields, kTerrainFieldFlowDirection, std::move(river_fields.flow_direction));
     add_field(product.fields, kTerrainFieldFlowAccumulation,
               std::move(river_fields.flow_accumulation));
@@ -2011,6 +1868,7 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldValleyWidth, std::move(river_fields.valley_width));
     add_field(product.fields, kTerrainFieldWetness, std::move(river_fields.wetness));
     add_field(product.fields, kTerrainFieldDeposition, std::move(river_fields.deposition));
+    add_field(product.fields, kTerrainFieldChannelGraph, std::move(river_fields.channel_graph));
     add_field(product.fields, kTerrainFieldMaterialRock, std::move(material_rock));
     add_field(product.fields, kTerrainFieldMaterialSoil, std::move(material_soil));
     add_field(product.fields, kTerrainFieldMaterialGrass, std::move(material_grass));

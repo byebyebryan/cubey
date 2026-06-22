@@ -20,6 +20,9 @@ inline constexpr std::string_view kTerrainFieldSlope = "slope";
 inline constexpr std::string_view kTerrainFieldCurvature = "curvature";
 inline constexpr std::string_view kTerrainFieldLocalRelief = "local_relief";
 inline constexpr std::string_view kTerrainFieldDrainagePotential = "drainage_potential";
+inline constexpr std::string_view kTerrainFieldFilledDrainagePotential =
+    "filled_drainage_potential";
+inline constexpr std::string_view kTerrainFieldDepressionDepth = "depression_depth";
 inline constexpr std::string_view kTerrainFieldFlowDirection = "flow_direction";
 inline constexpr std::string_view kTerrainFieldFlowAccumulation = "flow_accumulation";
 inline constexpr std::string_view kTerrainFieldStreamOrder = "stream_order";
@@ -31,6 +34,7 @@ inline constexpr std::string_view kTerrainFieldChannelWidth = "channel_width";
 inline constexpr std::string_view kTerrainFieldValleyWidth = "valley_width";
 inline constexpr std::string_view kTerrainFieldWetness = "wetness";
 inline constexpr std::string_view kTerrainFieldDeposition = "deposition";
+inline constexpr std::string_view kTerrainFieldChannelGraph = "channel_graph";
 inline constexpr std::string_view kTerrainFieldMaterialRock = "material_rock";
 inline constexpr std::string_view kTerrainFieldMaterialSoil = "material_soil";
 inline constexpr std::string_view kTerrainFieldMaterialGrass = "material_grass";
