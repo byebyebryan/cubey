@@ -163,6 +163,55 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
                     max_vertical_active_run(field, threshold, margin));
 }
 
+[[nodiscard]] std::size_t max_direction_active_run(const cubey::procedural::ScalarField2D& field,
+                                                   float threshold, int direction_x,
+                                                   int direction_y,
+                                                   std::uint32_t margin = 0U) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    const int x_begin = static_cast<int>(std::min(margin, desc.width));
+    const int x_end = static_cast<int>(desc.width > margin ? desc.width - margin : margin);
+    const int y_begin = static_cast<int>(std::min(margin, desc.height));
+    const int y_end = static_cast<int>(desc.height > margin ? desc.height - margin : margin);
+    const auto inside = [&](int x, int y) {
+        return x >= x_begin && x < x_end && y >= y_begin && y < y_end;
+    };
+    const auto active = [&](int x, int y) {
+        return field.at(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)) >=
+               threshold;
+    };
+
+    std::size_t best = 0U;
+    for (int y = y_begin; y < y_end; ++y) {
+        for (int x = x_begin; x < x_end; ++x) {
+            if (!active(x, y)) {
+                continue;
+            }
+            const int previous_x = x - direction_x;
+            const int previous_y = y - direction_y;
+            if (inside(previous_x, previous_y) && active(previous_x, previous_y)) {
+                continue;
+            }
+
+            std::size_t current = 0U;
+            int sx = x;
+            int sy = y;
+            while (inside(sx, sy) && active(sx, sy)) {
+                ++current;
+                sx += direction_x;
+                sy += direction_y;
+            }
+            best = std::max(best, current);
+        }
+    }
+    return best;
+}
+
+[[nodiscard]] std::size_t max_diagonal_active_run(
+    const cubey::procedural::ScalarField2D& field, float threshold, std::uint32_t margin = 0U) {
+    return std::max(max_direction_active_run(field, threshold, 1, 1, margin),
+                    max_direction_active_run(field, threshold, 1, -1, margin));
+}
+
 void test_terrain_region_config_defaults() {
     const cubey::projects::terrain::TerrainRegionConfig config{};
     require(config.grid_width == cubey::projects::terrain::kTerrainDefaultGridSize,
@@ -335,6 +384,10 @@ void test_terrain_river_core_avoids_long_grid_aligned_runs() {
             "terrain river trunk should avoid long straight core runs");
     require(max_axis_aligned_active_run(river_mask, 0.80F, kInteriorMargin) <= 24U,
             "terrain river mask should avoid long straight high-strength runs");
+    require(max_diagonal_active_run(trunk, 0.80F, kInteriorMargin) <= 24U,
+            "terrain river trunk should avoid long diagonal core runs");
+    require(max_diagonal_active_run(river_mask, 0.80F, kInteriorMargin) <= 30U,
+            "terrain river mask should avoid long diagonal high-strength runs");
 }
 
 void test_terrain_river_uses_larger_routing_context() {
