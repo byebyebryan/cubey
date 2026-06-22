@@ -915,6 +915,15 @@ transition work should decide whether long high-oblique rays need explicit local
 march truncation, a cached hemisphere/shell product, or temporal reconstruction
 before increasing bridge strength.
 
+`outputs/cloud-inner-boundary-fade-review/` records the next local-volume
+boundary fix. `high` and `high-oblique` exposed a horizontal cloud-floor line
+from grazing rays accumulating through the inner cloud-shell tangent. The local
+march now fades density near the inner-shell ray end, fades lower-layer samples
+for elevated downward/grazing views, and damps rays near the inner tangent so
+the shell floor does not saturate into a stripe. The `high` camera preset also
+moved above the default cloud top; the old 12 km preset sat inside the 5-22 km
+default cloud layer and was a poor high-view diagnostic.
+
 ## Orbit Shell Strategy 2026-06-20
 
 The current orbit raymarch is useful as a diagnostic, but it is no longer the
