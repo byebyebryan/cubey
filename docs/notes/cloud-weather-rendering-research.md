@@ -889,6 +889,12 @@ far-volume bridge. Orbit `surface-shell` remains the default full-orbit path,
 while the far bridge should use sphere-space weather/density over the far ray
 segment, then apply aerial perspective once after branch composition.
 
+The first implementation checkpoint is `outputs/cloud-far-bridge-review/`.
+`high-oblique-far-shell-alpha` now shows a broad broken horizon band, and
+far-shell off/default/strong captures are visibly distinguishable. The bridge is
+still intentionally soft; further work should improve far-field detail and
+lighting before changing the full-orbit shell again.
+
 ## Orbit Shell Strategy 2026-06-20
 
 The current orbit raymarch is useful as a diagnostic, but it is no longer the

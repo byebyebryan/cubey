@@ -165,8 +165,8 @@ Controls:
   ranges, broad-shell detail strength, and broad-shell density scale.
   `transition-weights` displays local-branch availability in red, effective
   far-shell contribution in green, and full orbit takeover in blue. `far-shell-alpha`
-  and `local-with-shell-alpha` isolate the horizon continuity branch from the
-  local volume and full orbit replacement.
+  and `local-with-shell-alpha` isolate the dedicated far-volume horizon branch
+  from the local volume and full orbit replacement.
   Orbit shell diagnostics sample a direct planet-space coverage/detail/hull
   model rather than the surface-local planar density field. The broad orbit
   weather frequencies derive from `Weather scale`, with regional storm/dry
@@ -175,8 +175,9 @@ Controls:
   broken regional weather with large clear windows and fewer totally empty
   regions, not as a smooth planet-wide cap. `Orbit fill` biases that empty-space
   fill while preserving the same weather/detail fields. `Far shell strength`
-  controls how much broad shell cloud contributes behind local volume in
-  high-oblique views.
+  controls how much low-detail far-volume cloud contributes behind local volume
+  in high-oblique views; full orbit still uses the orbit cloud-top shell by
+  default.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
 - `Final Resolve`: alpha-aware smoothing amount plus final contrast,
@@ -189,9 +190,12 @@ Known deferrals:
 - High-oblique is the current regime bridge target. Surface/local volume should
   remain the foreground shape reference, while a broad far-shell contribution
   should carry cloud continuity toward the horizon before full orbit-shell
-  replacement takes over. The default handoff keeps full orbit replacement above
-  the high-oblique preset (`45 km` to `180 km`) while the far shell fills long
-  rays earlier (`30 km` to `160 km`) with a slightly boosted effective strength.
+  replacement takes over. The far bridge marches only the later ray segment with
+  sphere-space orbit weather, then aerial perspective is applied once after
+  local/far/orbit composition. The default handoff keeps full orbit replacement
+  above the high-oblique preset (`45 km` to `180 km`) while the far shell fills
+  long rays earlier (`30 km` to `160 km`) with a slightly boosted effective
+  strength.
 - Temporal reconstruction exists for final-view cleanup, but raw diagnostics
   remain the source of truth when judging cloud shape.
 - Static sampling controls are diagnostic and deterministic. A blue-noise or

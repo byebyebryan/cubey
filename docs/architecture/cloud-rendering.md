@@ -251,6 +251,8 @@ Composition is intentionally staged instead of a single lerp:
    `effective_far_shell = raw_far_shell * (1 - full_orbit_blend)`.
 4. Front-to-back compose `local + effective_far_shell`, then mix that branch
    toward the full orbit result using `full_orbit_blend`.
+5. Apply cloud aerial perspective once to the composed result, not separately
+   inside local and far source branches.
 
 This prevents the orbit representation from contributing once as far background
 and again as the full replacement during the same handoff. The far bridge must
