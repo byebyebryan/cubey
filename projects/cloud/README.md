@@ -163,10 +163,10 @@ Controls:
 - `Sampling`: ray-start sampling mode and jitter amount.
 - `Distance Regime`: local/orbit mode, altitude and ray-distance transition
   ranges, broad-shell detail strength, and broad-shell density scale.
-  `transition-weights` displays local-branch availability in red, far-shell
-  assist in green, and full orbit takeover in blue. `far-shell-alpha` and
-  `local-with-shell-alpha` isolate the horizon continuity branch from the local
-  volume and full orbit replacement.
+  `transition-weights` displays local-branch availability in red, effective
+  far-shell contribution in green, and full orbit takeover in blue. `far-shell-alpha`
+  and `local-with-shell-alpha` isolate the horizon continuity branch from the
+  local volume and full orbit replacement.
   Orbit shell diagnostics sample a direct planet-space coverage/detail/hull
   model rather than the surface-local planar density field. The broad orbit
   weather frequencies derive from `Weather scale`, with regional storm/dry
