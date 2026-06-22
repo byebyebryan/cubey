@@ -94,6 +94,25 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return count;
 }
 
+[[nodiscard]] std::size_t edge_touch_count(const cubey::procedural::ScalarField2D& field,
+                                           float threshold) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    bool left = false;
+    bool right = false;
+    bool top = false;
+    bool bottom = false;
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        left = left || field.at(0U, y) >= threshold;
+        right = right || field.at(desc.width - 1U, y) >= threshold;
+    }
+    for (std::uint32_t x = 0; x < desc.width; ++x) {
+        top = top || field.at(x, 0U) >= threshold;
+        bottom = bottom || field.at(x, desc.height - 1U) >= threshold;
+    }
+    return static_cast<std::size_t>(left) + static_cast<std::size_t>(right) +
+           static_cast<std::size_t>(top) + static_cast<std::size_t>(bottom);
+}
+
 [[nodiscard]] std::size_t max_horizontal_active_run(const cubey::procedural::ScalarField2D& field,
                                                     float threshold, std::uint32_t margin = 0U) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
@@ -318,6 +337,29 @@ void test_terrain_river_core_avoids_long_grid_aligned_runs() {
             "terrain river mask should avoid long straight high-strength runs");
 }
 
+void test_terrain_river_uses_larger_routing_context() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 257;
+    config.grid_height = 257;
+    const cubey::projects::terrain::TerrainRegionProduct product =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const auto& trunk = field(product, cubey::projects::terrain::kTerrainFieldRiverTrunk);
+    const auto& river_mask = field(product, cubey::projects::terrain::kTerrainFieldRiverMask);
+    const auto& sink_mask = field(product, cubey::projects::terrain::kTerrainFieldSinkMask);
+
+    require(edge_touch_count(river_mask, 0.25F) >= 2U,
+            "terrain river mask should enter or leave multiple visible crop edges");
+    require(edge_touch_count(trunk, 0.45F) >= 1U,
+            "terrain river trunk should connect to a visible crop edge");
+
+    const std::size_t sink_count = count_active_samples(sink_mask, 0.5F);
+    const std::size_t total_count = sink_mask.sample_count();
+    require(sink_count > 0U, "terrain sink mask should mark visible crop outlets");
+    require(sink_count * 100U < total_count * 8U,
+            "terrain sink mask should stay bounded to outlets instead of filling the patch");
+}
+
 void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("final") ==
                 cubey::projects::terrain::TerrainDebugView::Final,
@@ -398,6 +440,7 @@ int main() {
     test_terrain_materials_and_vegetation_are_bounded();
     test_terrain_river_network_has_continuous_active_channels();
     test_terrain_river_core_avoids_long_grid_aligned_runs();
+    test_terrain_river_uses_larger_routing_context();
     test_terrain_debug_export_writes_png();
     test_terrain_debug_export_writes_review_set();
     return 0;
