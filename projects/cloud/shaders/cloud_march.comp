@@ -40,6 +40,9 @@ struct DensitySample {
     float detail_density;
     float authored_weather;
     float local_scatter;
+    float local_clear;
+    float local_structure;
+    float local_edge_detail;
     float cloud_type;
     float weather_edge;
     float coverage_bias;
@@ -53,6 +56,14 @@ struct OrbitWeatherSample {
     float cloud_type;
     float weather_edge;
     float height_multiplier;
+};
+
+struct LocalWeatherSample {
+    float coverage;
+    float cloud_type;
+    float edge_detail;
+    float clear_gate;
+    float structure;
 };
 
 struct MarchResult {
@@ -149,6 +160,14 @@ float cloud_orbit_fbm(vec3 p) {
 
 float cloud_orbit_ridge(vec3 p) {
     return 1.0 - abs(cloud_orbit_fbm(p) * 2.0 - 1.0);
+}
+
+float cloud_local_fbm(vec3 p, uint seed, uint octaves) {
+    return clamp(0.5 + 0.5 * cubey_proc_fbm_3d(p, seed, octaves), 0.0, 1.0);
+}
+
+float cloud_local_ridge(vec3 p, uint seed, uint octaves) {
+    return 1.0 - abs(cloud_local_fbm(p, seed, octaves) * 2.0 - 1.0);
 }
 
 float cloud_orbit_feature_count() {
@@ -556,25 +575,27 @@ vec2 cloud_weather_uv(vec3 position) {
     return position.xz / weather_period_m + vec2(0.5);
 }
 
-float cloud_local_scatter_field(vec3 position, vec3 animation, float height_fraction) {
+LocalWeatherSample cloud_local_weather_sample(vec3 position, vec3 animation,
+                                              float height_fraction) {
     float feature_scale_m = max(params.weather.z * 1000.0, 1000.0);
     vec3 domain = vec3((position.x + animation.x) / (feature_scale_m * 0.42),
                        (position.z + animation.z) / (feature_scale_m * 0.42),
                        height_fraction * 0.55 + params.weather.w / (feature_scale_m * 3.5));
-    float broad = clamp(0.5 + 0.5 * cubey_proc_fbm_3d(domain, 0x4c534341U, 4U), 0.0,
-                        1.0);
-    float breakup =
-        clamp(0.5 + 0.5 * cubey_proc_fbm_3d(domain * 2.15 + vec3(17.2, 4.8, 9.1),
-                                            0x42524541U, 3U),
-              0.0, 1.0);
-    float medium =
-        clamp(0.5 + 0.5 * cubey_proc_fbm_3d(domain * 4.30 + vec3(6.5, 18.1, 2.7),
-                                            0x4d454455U, 3U),
-              0.0, 1.0);
-    float fine =
-        clamp(0.5 + 0.5 * cubey_proc_fbm_3d(domain * 8.80 + vec3(31.0, 4.2, 14.6),
-                                            0x46524147U, 2U),
-              0.0, 1.0);
+    float broad = cloud_local_fbm(domain, 0x4c534341U, 4U);
+    float dry_slot =
+        cloud_local_fbm(domain * 0.58 + vec3(9.1, 2.4, 6.6), 0x44524f50U, 3U);
+    float breakup = cloud_local_fbm(domain * 2.15 + vec3(17.2, 4.8, 9.1),
+                                    0x42524541U, 3U);
+    float medium = cloud_local_fbm(domain * 4.30 + vec3(6.5, 18.1, 2.7),
+                                   0x4d454455U, 3U);
+    float fine = cloud_local_fbm(domain * 8.80 + vec3(31.0, 4.2, 14.6),
+                                 0x46524147U, 2U);
+    float micro_ridge =
+        cloud_local_ridge(domain * 7.40 - vec3(4.1, 16.7, 2.3), 0x57495350U, 2U);
+
+    float front_weight = clamp(params.weather_feature_weights.x, 0.0, 1.0);
+    float cell_weight = clamp(params.weather_feature_weights.y, 0.0, 1.0);
+    float streak_weight = clamp(params.weather_feature_weights.z, 0.0, 1.0);
 
     float broad_gate = smoothstep(0.52, 0.78, broad);
     float core_gate = smoothstep(0.58, 0.82, broad);
@@ -582,22 +603,73 @@ float cloud_local_scatter_field(vec3 position, vec3 animation, float height_frac
     float medium_gate = smoothstep(0.48, 0.74, medium);
     float fine_gate = smoothstep(0.50, 0.78, fine);
 
-    float cloud_system = pow(broad_gate * mix(0.08, 1.0, cell_gate), 1.50);
-    float broad_context = smoothstep(0.34, 0.70, broad);
-    float cell_context = smoothstep(0.34, 0.68, breakup);
-    float edge_context = broad_context * mix(0.38, 1.0, cell_context) * (1.0 - core_gate * 0.62);
-    float fragments = medium_gate * mix(0.34, 1.0, fine_gate) * edge_context;
-    float satellites = fine_gate * smoothstep(0.50, 0.76, max(medium, breakup)) *
-                       smoothstep(0.38, 0.68, broad) * (1.0 - core_gate * 0.35);
+    float front_coord = domain.x * 0.80 - domain.y * 1.55 + broad * 3.8;
+    float front_lines = 1.0 - abs(sin(front_coord * (2.2 + front_weight * 4.8)));
+    float front_field = smoothstep(0.64, 0.94, front_lines) *
+                        mix(medium_gate, micro_ridge, 0.32) * front_weight;
 
-    return clamp(max(cloud_system, fragments * 0.42 + satellites * 0.24), 0.0, 1.0);
+    float holes = smoothstep(0.56, 0.84, medium);
+    float cell_field =
+        cell_gate * mix(1.0 - holes * 0.66, smoothstep(0.42, 0.84, micro_ridge), 0.32) *
+        cell_weight;
+
+    float streak_coord = domain.y * 4.6 + domain.x * 0.65 + fine * 2.4;
+    float streak_lines = 1.0 - abs(sin(streak_coord * (0.75 + streak_weight * 1.65)));
+    float streak_field = smoothstep(0.72, 0.96, streak_lines) *
+                         smoothstep(0.36, 0.76, medium + fine * 0.35) *
+                         streak_weight;
+
+    float micro_field =
+        clamp(fine_gate * (1.0 - smoothstep(0.66, 0.92, medium)) * 0.42 +
+                  smoothstep(0.42, 0.86, micro_ridge) * 0.58,
+              0.0, 1.0);
+    float structure = clamp(front_field * 0.34 + cell_field * 0.28 +
+                                streak_field * 0.22 + micro_field * 0.16,
+                            0.0, 1.0);
+
+    float broad_context = smoothstep(0.34, 0.70, broad);
+    float dry_strength = mix(0.82, 0.32, broad_context);
+    float clear_gate = 1.0 - smoothstep(0.58, 0.90, dry_slot) * dry_strength;
+
+    float softness = clamp(params.sampling_options.z, 0.02, 0.60);
+    float envelope = smoothstep(0.54 - softness * 0.20, 0.80 + softness * 0.22,
+                                broad);
+    float broken = smoothstep(0.20 - softness * 0.08, 0.58 + softness * 0.10,
+                              structure);
+    float cloud_system =
+        pow(envelope * mix(0.06, 1.0, max(cell_gate, broken * 0.84)), 1.42) *
+        clear_gate;
+
+    float edge_context = broad_context * mix(0.36, 1.0, cell_gate) *
+                         (1.0 - core_gate * 0.58) * clear_gate;
+    float fragments = medium_gate * mix(0.30, 1.0, fine_gate) * edge_context;
+    float satellites = smoothstep(0.68, 0.92,
+                                  micro_field * 0.54 + cell_field * 0.28 +
+                                      broad * 0.18) *
+                       broad_context * clear_gate * 0.34;
+    float front_overlay = front_field * smoothstep(0.24, 0.68, broad_context + envelope) *
+                          clear_gate * 0.46;
+
+    float coverage =
+        clamp(max(max(cloud_system, front_overlay), fragments * 0.42) +
+                  satellites,
+              0.0, 1.0);
+    float edge_detail =
+        clamp(front_field * 0.24 + cell_field * 0.20 + streak_field * 0.28 +
+                  micro_field * 0.28,
+              0.0, 1.0);
+    float cloud_type =
+        clamp(0.58 + coverage * 0.10 + structure * 0.24 + cell_field * 0.10,
+              0.0, 1.0);
+
+    return LocalWeatherSample(coverage, cloud_type, edge_detail, clear_gate, structure);
 }
 
 DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float height_fraction = cloud_height_fraction(position);
     if (height_fraction <= 0.0 || height_fraction >= 1.0) {
-        return DensitySample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                             height_fraction);
+        return DensitySample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                             0.0, height_fraction);
     }
 
     float crispiness = max(params.shape_options.x, 0.001);
@@ -612,9 +684,11 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     vec2 moving_shape_uv = cloud_project_uv(position + animation);
     vec4 authored_weather_sample = texture(weather_texture, cloud_weather_uv(position + animation));
     float authored_weather = clamp(authored_weather_sample.r, 0.0, 1.0);
-    float local_scatter = cloud_local_scatter_field(position, animation, height_fraction);
+    LocalWeatherSample local_weather =
+        cloud_local_weather_sample(position, animation, height_fraction);
+    float local_scatter = local_weather.coverage;
     float weather_influence = clamp(params.sampling_options.w, 0.0, 1.0);
-    float cloud_type = mix(1.0, authored_weather_sample.g, weather_influence);
+    float cloud_type = mix(local_weather.cloud_type, authored_weather_sample.g, weather_influence);
     float weather_edge = authored_weather_sample.b;
 
     vec4 low_frequency =
@@ -644,11 +718,9 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
         float high_modifier =
             mix(high_fbm, 1.0 - high_fbm, clamp(height_fraction * 10.0, 0.0, 1.0));
         detail_density = high_modifier;
-        float edge_bias = mix(0.5, weather_edge, weather_influence);
+        float edge_bias = mix(local_weather.edge_detail, weather_edge, weather_influence);
         float erosion_strength =
-            mix(1.0,
-                clamp(params.weather_feature_weights.w * mix(0.72, 1.18, edge_bias), 0.0, 1.0),
-                weather_influence);
+            clamp(params.weather_feature_weights.w * mix(0.82, 1.20, edge_bias), 0.0, 1.0);
         float eroded = base_with_coverage -
                        high_modifier * (1.0 - base_with_coverage) * erosion_strength;
         float remapped =
@@ -658,8 +730,9 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
 
     float density = clamp(base_with_coverage, 0.0, 1.0);
     return DensitySample(density, clamp(base_cloud, 0.0, 1.0), detail_density,
-                         authored_weather, local_scatter, cloud_type, weather_edge, coverage_bias,
-                         height_fraction);
+                         authored_weather, local_scatter, local_weather.clear_gate,
+                         local_weather.structure, local_weather.edge_detail, cloud_type,
+                         weather_edge, coverage_bias, height_fraction);
 }
 
 float cloud_light_transmittance(vec3 start, float step_size, vec3 light_dir,
@@ -928,6 +1001,9 @@ DensitySample cloud_orbit_density_sample(vec3 position) {
                          orbit.detail * detail_strength,
                          orbit.coverage,
                          orbit.coverage,
+                         1.0,
+                         orbit.detail,
+                         orbit.weather_edge,
                          orbit.cloud_type,
                          orbit.weather_edge,
                          detailed_hull,
@@ -1099,7 +1175,8 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
 
     DensitySample density_sample =
         DensitySample(max(alpha, 0.001), base_hull, orbit.detail, orbit.coverage,
-                      orbit.coverage, orbit.cloud_type, orbit.weather_edge, filtered_hull,
+                      orbit.coverage, 1.0, orbit.detail, orbit.weather_edge,
+                      orbit.cloud_type, orbit.weather_edge, filtered_hull,
                       cloud_orbit_shell_surface_height_fraction());
     vec3 sun_color = vec3(1.18, 1.10, 0.92) * sun_intensity;
     vec3 ambient = cloud_cloud_ambient(hit_position, direction, density_sample) *
