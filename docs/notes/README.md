@@ -36,6 +36,8 @@ the detailed foundation notes under `docs/architecture/`.
   visual tuning scope and commit sequence for unified atmosphere sun work.
 - [Sky visual pass 001 review](sky-visual-pass-001-review.md): clean
   pre-tuning capture review for the first unified atmosphere sun pass.
+- [Sky visual pass 001 post-sun review](sky-visual-pass-001-post-sun-review.md):
+  post-halo capture review for the first unified atmosphere sun pass.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
