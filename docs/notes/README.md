@@ -40,6 +40,8 @@ the detailed foundation notes under `docs/architecture/`.
   post-halo capture review for the first unified atmosphere sun pass.
 - [Geometry moon migration](sky-geometry-moon-migration.md): migration plan for
   making explicit geometry the canonical app-visible moon path.
+- [Geometry moon migration captures](sky-moon-geo-migration-captures.md):
+  reproducible capture commands and observations for the migrated moon paths.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
