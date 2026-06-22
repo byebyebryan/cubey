@@ -16,9 +16,21 @@
 namespace cubey::projects::terrain {
 namespace {
 
+enum class FlowRoutingMode {
+    D8,
+    DInfinity,
+};
+
+struct FlowReceiver {
+    int index = -1;
+    float weight = 0.0F;
+};
+
 struct FlowRoutingResult {
+    FlowRoutingMode mode = FlowRoutingMode::D8;
     cubey::procedural::ScalarField2D flow_direction{};
     std::vector<int> downstream{};
+    std::vector<std::array<FlowReceiver, 2>> receivers{};
 };
 
 struct RiverFields {
@@ -333,8 +345,10 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     const cubey::procedural::ScalarField2D& height) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
     FlowRoutingResult result{
+        .mode = FlowRoutingMode::D8,
         .flow_direction = cubey::procedural::ScalarField2D(desc, -1.0F),
         .downstream = std::vector<int>(height.sample_count(), -1),
+        .receivers = std::vector<std::array<FlowReceiver, 2>>(height.sample_count()),
     };
 
     constexpr std::array<int, 8> kOffsetX{-1, 0, 1, -1, 1, -1, 0, 1};
@@ -370,7 +384,14 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
             }
 
             result.flow_direction.at(x, y) = static_cast<float>(best_direction);
-            result.downstream[height.index(x, y)] = best_neighbor;
+            const std::size_t index = height.index(x, y);
+            result.downstream[index] = best_neighbor;
+            if (best_neighbor >= 0) {
+                result.receivers[index][0] = FlowReceiver{
+                    .index = best_neighbor,
+                    .weight = 1.0F,
+                };
+            }
         }
     }
 
@@ -405,7 +426,8 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D accumulate_flow(
-    const cubey::procedural::ScalarField2D& height, const std::vector<int>& downstream) {
+    const cubey::procedural::ScalarField2D& height,
+    const std::vector<std::array<FlowReceiver, 2>>& receivers) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
     cubey::procedural::ScalarField2D accumulation(desc, 1.0F);
     std::vector<std::size_t> order(height.sample_count());
@@ -416,9 +438,11 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
 
     std::span<float> accumulation_values = accumulation.values();
     for (std::size_t index : order) {
-        const int target = downstream[index];
-        if (target >= 0) {
-            accumulation_values[static_cast<std::size_t>(target)] += accumulation_values[index];
+        for (const FlowReceiver& receiver : receivers[index]) {
+            if (receiver.index >= 0 && receiver.weight > 0.0F) {
+                accumulation_values[static_cast<std::size_t>(receiver.index)] +=
+                    accumulation_values[index] * receiver.weight;
+            }
         }
     }
 
@@ -1063,7 +1087,7 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
         make_routing_source_height(context.domain.hidden_desc, seed);
     context.routing_surface = make_drainage_routing_surface(routing_height, seed);
     context.routing = route_steepest_descent(context.routing_surface);
-    context.accumulation = accumulate_flow(context.routing_surface, context.routing.downstream);
+    context.accumulation = accumulate_flow(context.routing_surface, context.routing.receivers);
     context.stream_order = make_stream_order_field(context.accumulation);
     context.sink_mask = cubey::procedural::ScalarField2D(context.domain.hidden_desc, 0.0F);
     populate_sink_mask(context.sink_mask, context.routing.downstream);
