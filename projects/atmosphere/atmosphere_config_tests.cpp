@@ -1013,6 +1013,8 @@ int main() {
                      "atmosphere shader should include moon surface debug output");
     require_contains(shader_source, "(hit_ground || !render_sun_disk) ? vec3(0.0)",
                      "atmosphere shader should mask sun disk behind ground or disabled content");
+    require_contains(shader_source, "sun_halo_weight",
+                     "atmosphere shader should include bounded sun halo weighting");
     require_contains(shader_source, "bool render_celestial_content = atmosphere.render_options.y",
                      "atmosphere shader should expose inline celestial content control");
     require_contains(shader_source, "bool render_moon_disk",

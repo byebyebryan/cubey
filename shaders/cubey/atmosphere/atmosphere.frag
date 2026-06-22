@@ -502,12 +502,24 @@ CubeyAtmosphereSample integrate_atmosphere(vec3 ray_origin, vec3 ray_direction, 
                                           ray_direction, ray_start, ray_end);
 }
 
+float sun_halo_weight(float sun_angle, float sun_radius) {
+    float outside_disk = max(sun_angle - sun_radius, 0.0);
+    float inner_halo = exp(-outside_disk / max(sun_radius * 2.2, 0.0001)) *
+                       (1.0 - smoothstep(sun_radius * 1.2, sun_radius * 8.0, sun_angle));
+    float outer_halo = exp(-outside_disk / max(sun_radius * 8.5, 0.0001)) *
+                       (1.0 - smoothstep(sun_radius * 4.0, sun_radius * 32.0, sun_angle));
+    return inner_halo * 0.075 + outer_halo * 0.018;
+}
+
 vec3 sun_disk_luminance(vec3 ray_origin, vec3 ray_direction, vec3 planet_center) {
     vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
     float sun_cos = dot(ray_direction, sun_direction);
-    float sun_cutoff = cos(atmosphere.sun_direction_radius.w);
-    float disk = smoothstep(sun_cutoff, min(1.0, sun_cutoff + 0.00045), sun_cos);
-    if (disk <= 0.0) {
+    float sun_radius = max(atmosphere.sun_direction_radius.w, 0.0001);
+    float sun_angle = acos(clamp(sun_cos, -1.0, 1.0));
+    float disk_edge = max(fwidth(sun_angle) * 1.5, 0.00025);
+    float disk = 1.0 - smoothstep(sun_radius, sun_radius + disk_edge, sun_angle);
+    float halo = sun_halo_weight(sun_angle, sun_radius);
+    if (disk + halo <= 0.00001) {
         return vec3(0.0);
     }
     vec2 atmosphere_hit = ray_sphere_intersection(ray_origin, ray_direction, planet_center,
@@ -515,7 +527,8 @@ vec3 sun_disk_luminance(vec3 ray_origin, vec3 ray_direction, vec3 planet_center)
     float ray_end = max(atmosphere_hit.y, 0.0);
     CubeyAtmosphereOpticalDepth depth = integrate_optical_depth(
         ray_origin, ray_direction, ray_end, planet_center, CUBEY_ATMOSPHERE_LIGHT_SAMPLE_COUNT);
-    return transmittance_from_depth(depth, planet_center) * disk * ATMOSPHERE_SUN_INTENSITY;
+    return transmittance_from_depth(depth, planet_center) * (disk + halo) *
+           ATMOSPHERE_SUN_INTENSITY;
 }
 
 struct MoonSurfaceSample {
