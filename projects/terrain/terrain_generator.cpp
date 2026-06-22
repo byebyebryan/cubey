@@ -67,6 +67,7 @@ struct RoutingDomain {
 struct RoutingContext {
     RoutingDomain domain{};
     cubey::procedural::ScalarField2D routing_surface{};
+    FlowRoutingResult d8_routing{};
     FlowRoutingResult routing{};
     cubey::procedural::ScalarField2D accumulation{};
     cubey::procedural::ScalarField2D stream_order{};
@@ -84,6 +85,12 @@ struct ChannelPathPoint {
     float x = 0.0F;
     float y = 0.0F;
     float strength = 1.0F;
+};
+
+struct FlowVector {
+    float x = 0.0F;
+    float y = 0.0F;
+    bool valid = false;
 };
 
 [[nodiscard]] cubey::procedural::NoiseSource2D coherent_source(std::uint64_t seed,
@@ -341,6 +348,109 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     };
 }
 
+inline constexpr float kPi = 3.14159265358979323846F;
+inline constexpr float kTwoPi = kPi * 2.0F;
+inline constexpr float kQuarterPi = kPi * 0.25F;
+inline constexpr std::array<int, 8> kAngleOffsetX{1, 1, 0, -1, -1, -1, 0, 1};
+inline constexpr std::array<int, 8> kAngleOffsetY{0, 1, 1, 1, 0, -1, -1, -1};
+
+[[nodiscard]] bool neighbor_in_bounds(const cubey::procedural::Grid2DDesc& desc, int x, int y) {
+    return x >= 0 && y >= 0 && x < static_cast<int>(desc.width) &&
+           y < static_cast<int>(desc.height);
+}
+
+[[nodiscard]] float neighbor_distance_m(const cubey::procedural::Grid2DDesc& desc,
+                                        int offset_x, int offset_y) {
+    return offset_x != 0 && offset_y != 0 ? desc.cell_size * 1.41421356F : desc.cell_size;
+}
+
+[[nodiscard]] FlowReceiver steepest_receiver(const cubey::procedural::ScalarField2D& height,
+                                             std::uint32_t x, std::uint32_t y) {
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    const float center_height = height.at(x, y);
+    float best_drop_per_meter = 0.0F;
+    int best_neighbor = -1;
+    for (int direction = 0; direction < static_cast<int>(kAngleOffsetX.size()); ++direction) {
+        const auto direction_index = static_cast<std::size_t>(direction);
+        const int offset_x = kAngleOffsetX[direction_index];
+        const int offset_y = kAngleOffsetY[direction_index];
+        const int nx = static_cast<int>(x) + offset_x;
+        const int ny = static_cast<int>(y) + offset_y;
+        if (!neighbor_in_bounds(desc, nx, ny)) {
+            continue;
+        }
+        const float drop =
+            center_height -
+            height.at(static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny));
+        const float drop_per_meter = drop / neighbor_distance_m(desc, offset_x, offset_y);
+        if (drop_per_meter > best_drop_per_meter) {
+            best_drop_per_meter = drop_per_meter;
+            best_neighbor = static_cast<int>(cubey::procedural::grid_index(
+                static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny), desc.width));
+        }
+    }
+    return FlowReceiver{
+        .index = best_neighbor,
+        .weight = best_neighbor >= 0 ? 1.0F : 0.0F,
+    };
+}
+
+void assign_fractional_receivers(FlowRoutingResult& result,
+                                 const cubey::procedural::ScalarField2D& height,
+                                 std::uint32_t x, std::uint32_t y, float angle) {
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    const std::size_t index = height.index(x, y);
+    const float normalized_angle = angle < 0.0F ? angle + kTwoPi : angle;
+    const float sector_position = normalized_angle / kQuarterPi;
+    const int sector = static_cast<int>(std::floor(sector_position)) % 8;
+    const int next_sector = (sector + 1) % 8;
+    const float next_weight = sector_position - std::floor(sector_position);
+    const float sector_weight = 1.0F - next_weight;
+    const float center_height = height.at(x, y);
+
+    std::array<FlowReceiver, 2> receivers{};
+    int receiver_count = 0;
+    const auto try_add_receiver = [&](int direction, float weight) {
+        if (weight <= 0.0001F || receiver_count >= 2) {
+            return;
+        }
+        const auto direction_index = static_cast<std::size_t>(direction);
+        const int nx = static_cast<int>(x) + kAngleOffsetX[direction_index];
+        const int ny = static_cast<int>(y) + kAngleOffsetY[direction_index];
+        if (!neighbor_in_bounds(desc, nx, ny)) {
+            return;
+        }
+        const float target_height =
+            height.at(static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny));
+        if (target_height >= center_height) {
+            return;
+        }
+        receivers[static_cast<std::size_t>(receiver_count)] = FlowReceiver{
+            .index = static_cast<int>(cubey::procedural::grid_index(
+                static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny), desc.width)),
+            .weight = weight,
+        };
+        ++receiver_count;
+    };
+
+    try_add_receiver(sector, sector_weight);
+    try_add_receiver(next_sector, next_weight);
+
+    if (receiver_count == 0) {
+        receivers[0] = steepest_receiver(height, x, y);
+    } else if (receiver_count == 1) {
+        receivers[0].weight = 1.0F;
+    } else {
+        const float sum = receivers[0].weight + receivers[1].weight;
+        receivers[0].weight /= sum;
+        receivers[1].weight /= sum;
+    }
+
+    result.receivers[index] = receivers;
+    result.downstream[index] =
+        receivers[1].weight > receivers[0].weight ? receivers[1].index : receivers[0].index;
+}
+
 [[nodiscard]] FlowRoutingResult route_steepest_descent(
     const cubey::procedural::ScalarField2D& height) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
@@ -392,6 +502,63 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
                     .weight = 1.0F,
                 };
             }
+        }
+    }
+
+    return result;
+}
+
+[[nodiscard]] FlowRoutingResult route_dinfinity_descent(
+    const cubey::procedural::ScalarField2D& height) {
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    FlowRoutingResult result{
+        .mode = FlowRoutingMode::DInfinity,
+        .flow_direction = cubey::procedural::ScalarField2D(desc, -1.0F),
+        .downstream = std::vector<int>(height.sample_count(), -1),
+        .receivers = std::vector<std::array<FlowReceiver, 2>>(height.sample_count()),
+    };
+
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        const std::uint32_t y0 = y == 0U ? y : y - 1U;
+        const std::uint32_t y1 = std::min(y + 1U, desc.height - 1U);
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const std::uint32_t x0 = x == 0U ? x : x - 1U;
+            const std::uint32_t x1 = std::min(x + 1U, desc.width - 1U);
+            const float gradient_x = (height.at(x1, y) - height.at(x0, y)) /
+                                     (static_cast<float>(x1 - x0 + (x1 == x0 ? 1U : 0U)) *
+                                      desc.cell_size);
+            const float gradient_y = (height.at(x, y1) - height.at(x, y0)) /
+                                     (static_cast<float>(y1 - y0 + (y1 == y0 ? 1U : 0U)) *
+                                      desc.cell_size);
+            const float downhill_x = -gradient_x;
+            const float downhill_y = -gradient_y;
+            const float downhill_length =
+                std::sqrt((downhill_x * downhill_x) + (downhill_y * downhill_y));
+            if (downhill_length <= 0.000001F) {
+                const FlowReceiver fallback = steepest_receiver(height, x, y);
+                result.receivers[height.index(x, y)][0] = fallback;
+                result.downstream[height.index(x, y)] = fallback.index;
+                if (fallback.index >= 0) {
+                    const auto receiver_index = static_cast<std::uint32_t>(fallback.index);
+                    const float receiver_x = static_cast<float>(receiver_index % desc.width);
+                    const float receiver_y = static_cast<float>(receiver_index / desc.width);
+                    float fallback_angle =
+                        std::atan2(receiver_y - static_cast<float>(y),
+                                   receiver_x - static_cast<float>(x));
+                    if (fallback_angle < 0.0F) {
+                        fallback_angle += kTwoPi;
+                    }
+                    result.flow_direction.at(x, y) = fallback_angle;
+                }
+                continue;
+            }
+
+            float angle = std::atan2(downhill_y, downhill_x);
+            if (angle < 0.0F) {
+                angle += kTwoPi;
+            }
+            result.flow_direction.at(x, y) = angle;
+            assign_fractional_receivers(result, height, x, y, angle);
         }
     }
 
@@ -526,6 +693,207 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return candidates;
 }
 
+void append_unique_candidates(std::vector<int>& candidates, std::vector<int> extra,
+                              std::size_t max_total) {
+    for (const int candidate : extra) {
+        if (candidates.size() >= max_total) {
+            break;
+        }
+        if (std::find(candidates.begin(), candidates.end(), candidate) == candidates.end()) {
+            candidates.push_back(candidate);
+        }
+    }
+}
+
+[[nodiscard]] bool is_inside_visible_crop(const RoutingDomain& domain,
+                                          const ChannelPathPoint& point) {
+    return point.x >= static_cast<float>(domain.padding_x) &&
+           point.y >= static_cast<float>(domain.padding_y) &&
+           point.x < static_cast<float>(domain.padding_x + domain.visible_desc.width) &&
+           point.y < static_cast<float>(domain.padding_y + domain.visible_desc.height);
+}
+
+[[nodiscard]] std::size_t visible_path_sample_count(const RoutingDomain& domain,
+                                                    const std::vector<ChannelPathPoint>& path) {
+    return static_cast<std::size_t>(std::count_if(path.begin(), path.end(), [&domain](auto point) {
+        return is_inside_visible_crop(domain, point);
+    }));
+}
+
+[[nodiscard]] std::size_t visible_path_edge_touch_count(
+    const RoutingDomain& domain, const std::vector<ChannelPathPoint>& path) {
+    bool left = false;
+    bool right = false;
+    bool top = false;
+    bool bottom = false;
+    const float x_min = static_cast<float>(domain.padding_x);
+    const float x_max = static_cast<float>(domain.padding_x + domain.visible_desc.width - 1U);
+    const float y_min = static_cast<float>(domain.padding_y);
+    const float y_max = static_cast<float>(domain.padding_y + domain.visible_desc.height - 1U);
+    for (const ChannelPathPoint& point : path) {
+        const bool inside_y = point.y >= y_min && point.y <= y_max;
+        const bool inside_x = point.x >= x_min && point.x <= x_max;
+        left = left || (inside_y && point.x <= x_min + 1.5F);
+        right = right || (inside_y && point.x >= x_max - 1.5F);
+        top = top || (inside_x && point.y <= y_min + 1.5F);
+        bottom = bottom || (inside_x && point.y >= y_max - 1.5F);
+    }
+    return static_cast<std::size_t>(left) + static_cast<std::size_t>(right) +
+           static_cast<std::size_t>(top) + static_cast<std::size_t>(bottom);
+}
+
+[[nodiscard]] FlowVector sample_flow_vector_bilinear(
+    const cubey::procedural::ScalarField2D& flow_direction, float x, float y) {
+    const cubey::procedural::Grid2DDesc& desc = flow_direction.desc();
+    x = std::clamp(x, 0.0F, static_cast<float>(desc.width - 1U));
+    y = std::clamp(y, 0.0F, static_cast<float>(desc.height - 1U));
+    const std::uint32_t x0 = static_cast<std::uint32_t>(std::floor(x));
+    const std::uint32_t y0 = static_cast<std::uint32_t>(std::floor(y));
+    const std::uint32_t x1 = std::min(x0 + 1U, desc.width - 1U);
+    const std::uint32_t y1 = std::min(y0 + 1U, desc.height - 1U);
+    const float tx = x - static_cast<float>(x0);
+    const float ty = y - static_cast<float>(y0);
+
+    float vector_x = 0.0F;
+    float vector_y = 0.0F;
+    float weight_sum = 0.0F;
+    const auto accumulate = [&](std::uint32_t sx, std::uint32_t sy, float weight) {
+        const float angle = flow_direction.at(sx, sy);
+        if (angle < 0.0F || weight <= 0.0F) {
+            return;
+        }
+        vector_x += std::cos(angle) * weight;
+        vector_y += std::sin(angle) * weight;
+        weight_sum += weight;
+    };
+
+    accumulate(x0, y0, (1.0F - tx) * (1.0F - ty));
+    accumulate(x1, y0, tx * (1.0F - ty));
+    accumulate(x0, y1, (1.0F - tx) * ty);
+    accumulate(x1, y1, tx * ty);
+
+    const float length = std::sqrt((vector_x * vector_x) + (vector_y * vector_y));
+    if (weight_sum <= 0.0001F || length <= 0.0001F) {
+        return {};
+    }
+    return FlowVector{
+        .x = vector_x / length,
+        .y = vector_y / length,
+        .valid = true,
+    };
+}
+
+[[nodiscard]] bool is_inside_hidden_domain(const cubey::procedural::Grid2DDesc& desc, float x,
+                                           float y) {
+    return x >= 0.0F && y >= 0.0F && x <= static_cast<float>(desc.width - 1U) &&
+           y <= static_cast<float>(desc.height - 1U);
+}
+
+[[nodiscard]] int hidden_index_from_point(const cubey::procedural::Grid2DDesc& desc,
+                                          const ChannelPathPoint& point) {
+    const int x = static_cast<int>(std::round(point.x));
+    const int y = static_cast<int>(std::round(point.y));
+    if (!neighbor_in_bounds(desc, x, y)) {
+        return -1;
+    }
+    return static_cast<int>(cubey::procedural::grid_index(static_cast<std::uint32_t>(x),
+                                                         static_cast<std::uint32_t>(y),
+                                                         desc.width));
+}
+
+[[nodiscard]] std::vector<int> path_point_indices(
+    const cubey::procedural::Grid2DDesc& desc, const std::vector<ChannelPathPoint>& path) {
+    std::vector<int> indices;
+    indices.reserve(path.size());
+    std::vector<bool> seen(static_cast<std::size_t>(desc.width) *
+                               static_cast<std::size_t>(desc.height),
+                           false);
+    for (const ChannelPathPoint& point : path) {
+        const int index = hidden_index_from_point(desc, point);
+        if (index < 0 || seen[static_cast<std::size_t>(index)]) {
+            continue;
+        }
+        seen[static_cast<std::size_t>(index)] = true;
+        indices.push_back(index);
+    }
+    return indices;
+}
+
+[[nodiscard]] std::vector<ChannelPathPoint> make_channel_path_points(
+    const cubey::procedural::Grid2DDesc& desc, const std::vector<int>& path, float strength) {
+    std::vector<ChannelPathPoint> points;
+    points.reserve(path.size());
+    for (const int index : path) {
+        if (index < 0) {
+            continue;
+        }
+        const auto uindex = static_cast<std::uint32_t>(index);
+        points.push_back(ChannelPathPoint{
+            .x = static_cast<float>(uindex % desc.width),
+            .y = static_cast<float>(uindex / desc.width),
+            .strength = strength,
+        });
+    }
+    return points;
+}
+
+[[nodiscard]] std::vector<ChannelPathPoint> trace_flow_streamline(
+    int seed, const cubey::procedural::ScalarField2D& flow_direction, float direction_sign,
+    float strength) {
+    std::vector<ChannelPathPoint> points;
+    if (seed < 0) {
+        return points;
+    }
+
+    const cubey::procedural::Grid2DDesc& desc = flow_direction.desc();
+    float x = static_cast<float>(static_cast<std::uint32_t>(seed) % desc.width);
+    float y = static_cast<float>(static_cast<std::uint32_t>(seed) / desc.width);
+    points.push_back(ChannelPathPoint{.x = x, .y = y, .strength = strength});
+
+    constexpr float kStepSizeCells = 1.15F;
+    const int max_steps = static_cast<int>((desc.width + desc.height) * 3U);
+    for (int step = 0; step < max_steps; ++step) {
+        const FlowVector flow = sample_flow_vector_bilinear(flow_direction, x, y);
+        if (!flow.valid) {
+            break;
+        }
+        const float next_x = x + (flow.x * direction_sign * kStepSizeCells);
+        const float next_y = y + (flow.y * direction_sign * kStepSizeCells);
+        if (!is_inside_hidden_domain(desc, next_x, next_y)) {
+            break;
+        }
+        x = next_x;
+        y = next_y;
+        points.push_back(ChannelPathPoint{.x = x, .y = y, .strength = strength});
+    }
+    return points;
+}
+
+[[nodiscard]] std::vector<ChannelPathPoint> trace_channel_streamline(
+    int seed, const cubey::procedural::ScalarField2D& flow_direction, float strength) {
+    std::vector<ChannelPathPoint> upstream =
+        trace_flow_streamline(seed, flow_direction, -1.0F, strength);
+    std::vector<ChannelPathPoint> downstream =
+        trace_flow_streamline(seed, flow_direction, 1.0F, strength);
+    if (upstream.size() + downstream.size() < 5U) {
+        return {};
+    }
+
+    std::reverse(upstream.begin(), upstream.end());
+    std::vector<ChannelPathPoint> path = std::move(upstream);
+    for (std::size_t index = downstream.empty() ? 0U : 1U; index < downstream.size(); ++index) {
+        path.push_back(downstream[index]);
+    }
+    return path;
+}
+
+[[nodiscard]] bool path_intersects_visible_crop(const RoutingDomain& domain,
+                                                const std::vector<int>& path) {
+    return std::any_of(path.begin(), path.end(), [&domain](int index) {
+        return is_inside_visible_crop(domain, index);
+    });
+}
+
 [[nodiscard]] std::vector<int> trace_downstream_path(int start, const std::vector<int>& downstream) {
     std::vector<int> path;
     if (start < 0) {
@@ -542,15 +910,69 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return path;
 }
 
-[[nodiscard]] std::size_t visible_path_sample_count(const RoutingDomain& domain,
-                                                    const std::vector<int>& path) {
+[[nodiscard]] std::size_t visible_grid_path_sample_count(const RoutingDomain& domain,
+                                                         const std::vector<int>& path) {
     return static_cast<std::size_t>(std::count_if(path.begin(), path.end(), [&domain](int index) {
         return is_inside_visible_crop(domain, index);
     }));
 }
 
-[[nodiscard]] std::size_t visible_path_edge_touch_count(const RoutingDomain& domain,
-                                                        const std::vector<int>& path) {
+[[nodiscard]] bool is_inside_visible_core(const RoutingDomain& domain, int hidden_index) {
+    if (hidden_index < 0) {
+        return false;
+    }
+    const auto index = static_cast<std::uint32_t>(hidden_index);
+    const std::uint32_t x = index % domain.hidden_desc.width;
+    const std::uint32_t y = index / domain.hidden_desc.width;
+    const float x_min =
+        static_cast<float>(domain.padding_x) + (static_cast<float>(domain.visible_desc.width) *
+                                                0.18F);
+    const float x_max =
+        static_cast<float>(domain.padding_x) + (static_cast<float>(domain.visible_desc.width) *
+                                                0.82F);
+    const float y_min =
+        static_cast<float>(domain.padding_y) + (static_cast<float>(domain.visible_desc.height) *
+                                                0.18F);
+    const float y_max =
+        static_cast<float>(domain.padding_y) + (static_cast<float>(domain.visible_desc.height) *
+                                                0.82F);
+    return static_cast<float>(x) >= x_min && static_cast<float>(x) <= x_max &&
+           static_cast<float>(y) >= y_min && static_cast<float>(y) <= y_max;
+}
+
+[[nodiscard]] bool is_inside_visible_core(const RoutingDomain& domain,
+                                          const ChannelPathPoint& point) {
+    const float x_min =
+        static_cast<float>(domain.padding_x) + (static_cast<float>(domain.visible_desc.width) *
+                                                0.18F);
+    const float x_max =
+        static_cast<float>(domain.padding_x) + (static_cast<float>(domain.visible_desc.width) *
+                                                0.82F);
+    const float y_min =
+        static_cast<float>(domain.padding_y) + (static_cast<float>(domain.visible_desc.height) *
+                                                0.18F);
+    const float y_max =
+        static_cast<float>(domain.padding_y) + (static_cast<float>(domain.visible_desc.height) *
+                                                0.82F);
+    return point.x >= x_min && point.x <= x_max && point.y >= y_min && point.y <= y_max;
+}
+
+[[nodiscard]] std::size_t visible_grid_path_core_sample_count(const RoutingDomain& domain,
+                                                              const std::vector<int>& path) {
+    return static_cast<std::size_t>(std::count_if(path.begin(), path.end(), [&domain](int index) {
+        return is_inside_visible_core(domain, index);
+    }));
+}
+
+[[nodiscard]] std::size_t visible_path_core_sample_count(
+    const RoutingDomain& domain, const std::vector<ChannelPathPoint>& path) {
+    return static_cast<std::size_t>(std::count_if(path.begin(), path.end(), [&domain](auto point) {
+        return is_inside_visible_core(domain, point);
+    }));
+}
+
+[[nodiscard]] std::size_t visible_grid_path_edge_touch_count(const RoutingDomain& domain,
+                                                             const std::vector<int>& path) {
     bool left = false;
     bool right = false;
     bool top = false;
@@ -577,11 +999,53 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
            static_cast<std::size_t>(top) + static_cast<std::size_t>(bottom);
 }
 
-[[nodiscard]] bool path_intersects_visible_crop(const RoutingDomain& domain,
-                                                const std::vector<int>& path) {
-    return std::any_of(path.begin(), path.end(), [&domain](int index) {
-        return is_inside_visible_crop(domain, index);
-    });
+[[nodiscard]] std::size_t visible_grid_path_aligned_run(const RoutingDomain& domain,
+                                                        const std::vector<int>& path) {
+    if (path.size() < 2U) {
+        return 0U;
+    }
+
+    int last_dx = 0;
+    int last_dy = 0;
+    std::size_t current = 0U;
+    std::size_t best = 0U;
+    for (std::size_t index = 1U; index < path.size(); ++index) {
+        const int previous = path[index - 1U];
+        const int next = path[index];
+        if (!is_inside_visible_crop(domain, previous) && !is_inside_visible_crop(domain, next)) {
+            current = 0U;
+            last_dx = 0;
+            last_dy = 0;
+            continue;
+        }
+
+        const auto previous_index = static_cast<std::uint32_t>(previous);
+        const auto next_index = static_cast<std::uint32_t>(next);
+        const int previous_x = static_cast<int>(previous_index % domain.hidden_desc.width);
+        const int previous_y = static_cast<int>(previous_index / domain.hidden_desc.width);
+        const int next_x = static_cast<int>(next_index % domain.hidden_desc.width);
+        const int next_y = static_cast<int>(next_index / domain.hidden_desc.width);
+        const int step_x = next_x - previous_x;
+        const int step_y = next_y - previous_y;
+        if (std::abs(step_x) > 1 || std::abs(step_y) > 1 || (step_x == 0 && step_y == 0)) {
+            current = 0U;
+            last_dx = 0;
+            last_dy = 0;
+            continue;
+        }
+
+        const int dx = step_x == 0 ? 0 : (step_x > 0 ? 1 : -1);
+        const int dy = step_y == 0 ? 0 : (step_y > 0 ? 1 : -1);
+        if (dx == last_dx && dy == last_dy) {
+            ++current;
+        } else {
+            current = 1U;
+            last_dx = dx;
+            last_dy = dy;
+        }
+        best = std::max(best, current);
+    }
+    return best;
 }
 
 [[nodiscard]] int strongest_upstream_candidate(
@@ -642,16 +1106,20 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return trunk;
 }
 
-[[nodiscard]] std::vector<int> trace_main_trunk(
+[[nodiscard]] std::vector<int> trace_main_trunk_graph(
     const cubey::procedural::ScalarField2D& accumulation,
     const std::vector<std::vector<int>>& upstream, const std::vector<int>& downstream,
     const RoutingDomain& domain) {
     const std::vector<bool> no_exclusions(accumulation.sample_count(), false);
     std::vector<int> candidates =
-        collect_seed_candidates(accumulation, domain, visible_seed_bounds(domain), 96U);
+        collect_seed_candidates(accumulation, domain, visible_seed_bounds(domain), 768U);
+    append_unique_candidates(candidates,
+                             collect_seed_candidates(accumulation, domain,
+                                                     visible_crop_bounds(domain), 768U),
+                             1536U);
     if (candidates.empty()) {
-        candidates =
-            collect_seed_candidates(accumulation, domain, visible_crop_bounds(domain), 96U);
+        candidates = collect_seed_candidates(accumulation, domain, visible_crop_bounds(domain),
+                                             1536U);
     }
     const int fallback_seed = select_main_channel_seed(accumulation, domain);
     if (candidates.empty() && fallback_seed >= 0) {
@@ -666,19 +1134,87 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
         if (trunk.empty()) {
             continue;
         }
+        const std::size_t visible_samples = visible_grid_path_sample_count(domain, trunk);
+        const float visible_length_gate =
+            cubey::procedural::smoothstep(24.0F, 96.0F, static_cast<float>(visible_samples));
         const float edge_score =
-            static_cast<float>(visible_path_edge_touch_count(domain, trunk)) * 1'000'000.0F;
-        const float length_score =
-            static_cast<float>(visible_path_sample_count(domain, trunk)) * 1'000.0F;
+            static_cast<float>(visible_grid_path_edge_touch_count(domain, trunk)) *
+            500'000.0F * visible_length_gate;
+        const float length_score = static_cast<float>(visible_samples) * 20'000.0F;
+        const float core_score =
+            static_cast<float>(visible_grid_path_core_sample_count(domain, trunk)) * 15'000.0F;
+        const float straight_penalty =
+            std::pow(static_cast<float>(
+                         std::max<std::size_t>(visible_grid_path_aligned_run(domain, trunk), 10U) -
+                         10U),
+                     2.0F) *
+            20'000.0F;
         const float accumulation_score =
             std::log1p(accumulation.values()[static_cast<std::size_t>(seed)]);
-        const float score = edge_score + length_score + accumulation_score;
+        const float score =
+            edge_score + length_score + core_score + accumulation_score - straight_penalty;
         if (score > best_score) {
             best_score = score;
             best_trunk = std::move(trunk);
         }
     }
     return best_trunk;
+}
+
+[[nodiscard]] std::vector<ChannelPathPoint> trace_main_trunk(
+    const cubey::procedural::ScalarField2D& accumulation, const FlowRoutingResult& vector_routing,
+    const FlowRoutingResult& graph_routing, const RoutingDomain& domain) {
+    std::vector<int> candidates =
+        collect_seed_candidates(accumulation, domain, visible_seed_bounds(domain), 768U);
+    append_unique_candidates(candidates,
+                             collect_seed_candidates(accumulation, domain,
+                                                     visible_crop_bounds(domain), 768U),
+                             1536U);
+    if (candidates.empty()) {
+        candidates = collect_seed_candidates(accumulation, domain, visible_crop_bounds(domain),
+                                             1536U);
+    }
+    const int fallback_seed = select_main_channel_seed(accumulation, domain);
+    if (candidates.empty() && fallback_seed >= 0) {
+        candidates.push_back(fallback_seed);
+    }
+
+    std::vector<ChannelPathPoint> best_trunk;
+    float best_score = -1.0F;
+    for (const int seed : candidates) {
+        std::vector<ChannelPathPoint> trunk =
+            trace_channel_streamline(seed, vector_routing.flow_direction, 1.0F);
+        if (trunk.empty()) {
+            continue;
+        }
+        const std::size_t visible_samples = visible_path_sample_count(domain, trunk);
+        const float visible_length_gate =
+            cubey::procedural::smoothstep(24.0F, 96.0F, static_cast<float>(visible_samples));
+        const float edge_score =
+            static_cast<float>(visible_path_edge_touch_count(domain, trunk)) * 500'000.0F *
+            visible_length_gate;
+        const float length_score = static_cast<float>(visible_samples) * 20'000.0F;
+        const float core_score =
+            static_cast<float>(visible_path_core_sample_count(domain, trunk)) * 15'000.0F;
+        const float hidden_length_score = static_cast<float>(trunk.size()) * 12.0F;
+        const float accumulation_score =
+            std::log1p(accumulation.values()[static_cast<std::size_t>(seed)]);
+        const float score =
+            edge_score + length_score + core_score + hidden_length_score + accumulation_score;
+        if (score > best_score) {
+            best_score = score;
+            best_trunk = std::move(trunk);
+        }
+    }
+    if (visible_path_edge_touch_count(domain, best_trunk) >= 2U &&
+        visible_path_sample_count(domain, best_trunk) >= 32U) {
+        return best_trunk;
+    }
+    const std::vector<std::vector<int>> upstream = make_upstream_adjacency(graph_routing.downstream);
+    return make_channel_path_points(domain.hidden_desc,
+                                    trace_main_trunk_graph(accumulation, upstream,
+                                                           graph_routing.downstream, domain),
+                                    1.0F);
 }
 
 [[nodiscard]] cubey::procedural::NoiseSource2D channel_offset_source(std::uint64_t seed) {
@@ -696,21 +1232,6 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
                 .gain = 0.45F,
             },
     };
-}
-
-[[nodiscard]] std::vector<ChannelPathPoint> make_channel_path_points(
-    const cubey::procedural::Grid2DDesc& desc, const std::vector<int>& path, float strength) {
-    std::vector<ChannelPathPoint> points;
-    points.reserve(path.size());
-    for (const int index : path) {
-        const auto uindex = static_cast<std::uint32_t>(index);
-        points.push_back({
-            .x = static_cast<float>(uindex % desc.width),
-            .y = static_cast<float>(uindex / desc.width),
-            .strength = strength,
-        });
-    }
-    return points;
 }
 
 [[nodiscard]] float channel_point_distance(const ChannelPathPoint& lhs,
@@ -801,8 +1322,8 @@ void apply_channel_lateral_offset(std::vector<ChannelPathPoint>& points, std::ui
     const float denominator = static_cast<float>(points.size() - 1U);
     for (std::size_t index = 1; index + 1U < points.size(); ++index) {
         const float t = static_cast<float>(index) / denominator;
-        const float end_taper = cubey::procedural::smoothstep(0.0F, 0.24F, t) *
-                                (1.0F - cubey::procedural::smoothstep(0.76F, 1.0F, t));
+        const float end_taper = cubey::procedural::smoothstep(0.0F, 0.10F, t) *
+                                (1.0F - cubey::procedural::smoothstep(0.90F, 1.0F, t));
         if (end_taper <= 0.0F) {
             continue;
         }
@@ -963,13 +1484,14 @@ void rasterize_channel_segments(cubey::procedural::ScalarField2D& field,
     }
 }
 
-void paint_channel_path(cubey::procedural::ScalarField2D& field, const std::vector<int>& path,
-                        const RoutingDomain& domain, float strength, float core_radius_cells,
-                        float falloff_radius_cells,
+void paint_channel_path(cubey::procedural::ScalarField2D& field,
+                        std::vector<ChannelPathPoint> points, const RoutingDomain& domain,
+                        float core_radius_cells, float falloff_radius_cells,
                         const cubey::procedural::ScalarField2D& routing_surface,
                         std::uint64_t seed, float max_offset_cells) {
-    std::vector<ChannelPathPoint> points =
-        make_channel_path_points(domain.hidden_desc, path, strength);
+    if (points.empty()) {
+        return;
+    }
     points = resample_channel_path(points, 1.6F);
     smooth_channel_path(points, 2);
     apply_channel_lateral_offset(points, seed, max_offset_cells, routing_surface);
@@ -980,32 +1502,37 @@ void paint_channel_path(cubey::procedural::ScalarField2D& field, const std::vect
 
 void activate_river_network(RiverFields& fields, const RoutingContext& context,
                             std::uint64_t seed) {
-    const std::vector<int>& downstream = context.routing.downstream;
+    const std::vector<int>& downstream = context.d8_routing.downstream;
     const std::vector<std::vector<int>> upstream = make_upstream_adjacency(downstream);
-    const std::vector<int> trunk =
-        trace_main_trunk(context.accumulation, upstream, downstream, context.domain);
+    const std::vector<ChannelPathPoint> trunk =
+        trace_main_trunk(context.accumulation, context.routing, context.d8_routing,
+                         context.domain);
     if (trunk.empty()) {
         return;
     }
-    paint_channel_path(fields.river_trunk, trunk, context.domain, 1.0F, 1.4F, 3.0F,
-                       context.routing_surface, seed + 1101U, 1.25F);
+    paint_channel_path(fields.river_trunk, trunk, context.domain, 1.4F, 3.0F,
+                       context.routing_surface, seed + 1101U, 2.25F);
 
     std::vector<bool> active(context.accumulation.sample_count(), false);
-    for (const int index : trunk) {
+    const std::vector<int> trunk_indices = path_point_indices(context.domain.hidden_desc, trunk);
+    if (trunk_indices.empty()) {
+        return;
+    }
+    for (const int index : trunk_indices) {
         active[static_cast<std::size_t>(index)] = true;
     }
 
     float trunk_accumulation = 1.0F;
-    for (const int index : trunk) {
+    for (const int index : trunk_indices) {
         trunk_accumulation =
             std::max(trunk_accumulation,
                      context.accumulation.values()[static_cast<std::size_t>(index)]);
     }
     const float min_tributary_accumulation = std::max(4.0F, trunk_accumulation * 0.018F);
-    const std::size_t max_tributary_count = std::max<std::size_t>(2U, trunk.size() / 18U);
+    const std::size_t max_tributary_count = std::max<std::size_t>(2U, trunk_indices.size() / 18U);
     std::size_t accepted_tributaries = 0U;
 
-    for (const int trunk_index : trunk) {
+    for (const int trunk_index : trunk_indices) {
         if (accepted_tributaries >= max_tributary_count) {
             break;
         }
@@ -1028,10 +1555,19 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context,
             if (!visible_anchor && !path_intersects_visible_crop(context.domain, branch)) {
                 continue;
             }
-            paint_channel_path(fields.tributaries, branch, context.domain, 0.75F, 0.9F, 2.1F,
+            std::vector<ChannelPathPoint> branch_points =
+                trace_flow_streamline(candidate, context.routing.flow_direction, -1.0F, 0.75F);
+            if (branch_points.size() < 5U) {
+                continue;
+            }
+            std::reverse(branch_points.begin(), branch_points.end());
+            if (!visible_anchor && visible_path_sample_count(context.domain, branch_points) == 0U) {
+                continue;
+            }
+            paint_channel_path(fields.tributaries, branch_points, context.domain, 0.9F, 2.1F,
                                context.routing_surface,
                                seed + 2203U + (accepted_tributaries * 117U), 0.75F);
-            for (const int index : branch) {
+            for (const int index : path_point_indices(context.domain.hidden_desc, branch_points)) {
                 active[static_cast<std::size_t>(index)] = true;
             }
             ++accepted_tributaries;
@@ -1086,7 +1622,8 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
     const cubey::procedural::ScalarField2D routing_height =
         make_routing_source_height(context.domain.hidden_desc, seed);
     context.routing_surface = make_drainage_routing_surface(routing_height, seed);
-    context.routing = route_steepest_descent(context.routing_surface);
+    context.d8_routing = route_steepest_descent(context.routing_surface);
+    context.routing = route_dinfinity_descent(context.routing_surface);
     context.accumulation = accumulate_flow(context.routing_surface, context.routing.receivers);
     context.stream_order = make_stream_order_field(context.accumulation);
     context.sink_mask = cubey::procedural::ScalarField2D(context.domain.hidden_desc, 0.0F);
