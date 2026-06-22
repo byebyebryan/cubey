@@ -232,6 +232,35 @@ The transition between near volume and far cached/cloud-shell output should be
 an explicit feature with debug views. It should not be hidden in final color
 grading.
 
+The current production cloud project implements the `auto` transition as three
+separate contributors:
+
+- `local`: the normal surface volume march, responsible for foreground thickness
+  and parallax;
+- `far shell`: the orbit shell sampled as a low-frequency horizon assist for
+  long high-oblique rays;
+- `full orbit`: the orbit shell as the replacement path for true orbit/high
+  altitude views.
+
+Composition is intentionally staged instead of a single lerp:
+
+1. Compute `full_orbit_blend` from camera mode and altitude.
+2. Compute raw far-shell assist from ray length, camera altitude gate, and
+   `clouds.far_shell_strength`.
+3. Attenuate far-shell assist by the remaining local branch:
+   `effective_far_shell = raw_far_shell * (1 - full_orbit_blend)`.
+4. Front-to-back compose `local + effective_far_shell`, then mix that branch
+   toward the full orbit result using `full_orbit_blend`.
+
+This prevents the orbit shell from contributing once as far background and again
+as the full replacement during the same handoff. The diagnostic contract is:
+`distance-regime` shows full orbit, effective far shell, and residual local
+regime; `transition-weights` shows local-branch availability, final far-shell
+contribution, and full orbit takeover; `local-alpha`, `far-shell-alpha`,
+`local-with-shell-alpha`, and `orbit-alpha` isolate the visible alpha at each
+stage. `projects/cloud/capture_review.sh` includes these views for surface,
+high-oblique, and orbit review.
+
 ## Renderer Contract
 
 Clouds are a weather layer above clear-sky atmosphere. They should consume the
