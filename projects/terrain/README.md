@@ -17,7 +17,7 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `2`. It emits source fields, height/slope
+The current generator revision is `3`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass is deliberately process-informed rather than a full hydraulic
@@ -66,11 +66,13 @@ The review set includes:
 - `vegetation.png`
 
 The active river fields come from a coherent low-frequency drainage potential
-plus routed flow accumulation over a padded hidden routing domain. The visible
-product is a crop of that larger context, which avoids selecting rivers only
-from the review patch itself. Traced grid paths are selected for visible crop
-crossing, resampled, relaxed over drainage potential, and rasterized as soft
-channel curves before producing `river-trunk`, `tributaries`, and the combined
-`river-mask`. The current routing is still D8 under the channel curve, so
-branch placement and some large-scale bends remain route-model limitations;
-adding stronger depression-fill/breach hydrology is a later quality target.
+plus routed flow accumulation over a padded hidden routing domain. Revision `3`
+uses continuous D-Infinity-style flow angles and fractional accumulation for the
+diagnostic catchment field, then uses a conservative D8 topology graph only to
+keep trunk/tributary extraction connected while depression fill and breach
+routing are still absent. Selected paths are scored for visible length, crop
+continuity, interior coverage, and low repeated grid-direction runs before being
+resampled, procedurally offset, relaxed over drainage potential, and rasterized
+as soft channel curves. This produces `river-trunk`, `tributaries`, and the
+combined `river-mask`, but branch placement and some bends remain route-model
+limitations until a proper network extraction pass replaces the hybrid graph.

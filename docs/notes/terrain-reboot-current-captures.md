@@ -1,6 +1,6 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 2
+This note records the current terrain reboot capture set after the revision 3
 temperate mountain river product pass.
 
 ## Capture Command
@@ -19,15 +19,17 @@ structure, channel continuity, and material response are easier to inspect.
   active river/wetness response.
 - `drainage-potential.png`: scalar routing surface before flow routing. This
   should remain smooth even when later river products expose routing artifacts.
-- `flow-direction.png`: flow receiver directions or continuous flow-angle debug
-  data for diagnosing grid artifacts.
-- `flow-accumulation.png`: routed catchment field. This should show regional
-  organization, not many broken local fragments.
+- `flow-direction.png`: continuous flow-angle debug data for diagnosing local
+  sinks and direction-field artifacts.
+- `flow-accumulation.png`: D-Infinity-style fractional routed catchment field.
+  This should show regional organization without the obvious horizontal,
+  vertical, and 45-degree D8 lattice.
 - `sink-mask.png`: visible crop outlets and true terminal routing cells, useful
   for spotting where the larger hidden routing domain leaves the review patch.
-- `river-trunk.png`: soft active main-channel product field extracted from the
-  visible-crossing routed catchment, resampled, relaxed over drainage potential,
-  and rasterized as channel segments.
+- `river-trunk.png`: soft active main-channel product field selected from
+  fractional accumulation candidates, kept connected by the current topology
+  fallback, resampled, relaxed over drainage potential, and rasterized as
+  channel segments.
 - `tributaries.png`: conservative branch field feeding the trunk.
 - `river-mask.png`: combined active river product used by channel width,
   valley width, wetness, deposition, material, and final debug rendering.
@@ -38,16 +40,18 @@ structure, channel continuity, and material response are easier to inspect.
 
 The active river no longer depends on an authored center line, and the visible
 trunk/mask now use a padded hidden routing domain instead of treating the review
-patch as the whole watershed. Main trunks are selected from traced candidates
-that better cross the visible crop, then the path is resampled, constrained by
-drainage potential, relaxed, and rasterized as a soft channel curve.
+patch as the whole watershed. Revision `3` routes accumulation with continuous
+D-Infinity-style flow angles and fractional receivers. Active channel extraction
+is still a hybrid: candidates come from the fractional catchment field, while a
+conservative D8 topology graph keeps trunks and tributaries connected until a
+proper depression-fill/breach pass exists. Paths are scored for visible length,
+crop continuity, interior coverage, and limited repeated grid-direction runs,
+then resampled, constrained by drainage potential, relaxed, and rasterized as
+soft channel curves.
 
-The current revision still exposes a routing-grid artifact: the
-`drainage-potential` field is smooth, but D8 flow accumulation quantizes water
-movement into horizontal, vertical, and 45-degree receiver runs. Smoothing the
-rendered channel helps but cannot fully remove a lattice-shaped drainage graph.
-The next river-quality pass should replace D8 as the active river driver with a
-D-Infinity-style continuous flow angle, fractional accumulation, and continuous
-streamline extraction. Depression fill/breach routing remains the follow-up
-hydrology correction before expanding to lakes, canyons, or broader biome
-recipes.
+Remaining limitations are now concentrated in network extraction and hydrology
+rather than only flow accumulation. Continuous streamlines can still terminate on
+unresolved local sinks, and the topology fallback can still make tributary
+placement feel schematic. The next river-quality pass should evaluate
+depression fill or breach routing, then replace the fallback graph with an
+explicit connected network extraction over the fractional accumulation field.

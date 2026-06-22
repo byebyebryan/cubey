@@ -220,7 +220,7 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `2` emits deterministic source fields,
+local region. Generator revision `3` emits deterministic source fields,
 height/slope analysis, static flow accumulation, routing diagnostics, smoothed
 active river trunk and tributary masks, wetness/deposition, material masks,
 vegetation potential, summaries, and tests.
@@ -228,21 +228,23 @@ vegetation potential, summaries, and tests.
 The river driver intentionally moved away from a single authored line. It routes
 over a coherent low-frequency drainage potential derived from the terrain seed
 on a padded hidden routing domain, then crops diagnostics back to the visible
-region. Main-channel candidates are scored by visible crop crossings before raw
-accumulation, so the debug patch is more likely to show a river slice that
-continues outside the viewport. The extracted grid paths are resampled, smoothed,
-nudged by a constrained procedural offset, relaxed over the drainage potential,
-and rasterized as soft trunk/tributary product fields. This is a useful midpoint
-because downstream fields can consume a connected river product, but it is not a
-complete hydrology solution.
+region. The diagnostic catchment now uses D-Infinity-style continuous flow
+angles and fractional accumulation, reducing the obvious D8 lattice in
+`flow-accumulation`. Active trunk extraction is still a hybrid: candidates are
+seeded from the fractional accumulation field, but a conservative D8 topology
+graph keeps the visible trunk and tributaries connected until depression
+fill/breach routing and explicit network extraction exist. Candidates are scored
+for visible length, crop continuity, interior coverage, and low repeated
+grid-direction runs before the selected centerlines are resampled, nudged by a
+constrained procedural offset, relaxed over drainage potential, and rasterized as
+soft product fields. This is a useful midpoint because downstream fields can
+consume a connected river product, but it is not a complete hydrology solution.
 
 Known limitations:
 
-- D8 routing still shapes the underlying network, so branch placement and some
-  large-scale bends can remain less organic than real rivers. The current
-  visual artifact is visible in `flow-accumulation` before channel
-  rasterization, which points to receiver quantization rather than only path
-  smoothing.
+- Fractional accumulation reduces receiver quantization, but active channel
+  topology still uses a D8 fallback graph. Branch placement and some bends can
+  remain less organic than real rivers, especially near unresolved local sinks.
 - The drainage pass does not yet perform real depression fill, breach routing,
   erosion, or lake/wetland resolution.
 - Padded routing makes local review slices less artificial, but the route model
@@ -271,8 +273,8 @@ more biome labels:
 
 1. Evaluate a small depression-fill or breach-routing pass from the hydrology
    references before adding lakes, canyons, or wider river systems.
-2. Replace D8 as the active river driver with D-Infinity-style continuous flow
-   angles, fractional accumulation, and continuous streamline extraction.
+2. Add depression-fill or breach routing so continuous streamlines do not stop
+   on local sinks and the remaining D8 topology fallback can be removed.
 3. Replace conservative tributary picking with a more explicit network
    extraction pass once the route model improves.
 4. Split mountain/ridge drivers into explicit terrain products instead of
