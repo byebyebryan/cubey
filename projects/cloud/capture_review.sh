@@ -98,6 +98,9 @@ capture high-oblique-coverage-bias --cloud-camera-mode high-oblique \
 capture raw-final --cloud-camera-mode surface-up --debug-view raw-final
 capture authored-weather --cloud-camera-mode surface-up --debug-view authored-weather
 capture local-scatter --cloud-camera-mode surface-up --debug-view local-scatter
+capture local-clear --cloud-camera-mode surface-up --debug-view local-clear
+capture local-structure --cloud-camera-mode surface-up --debug-view local-structure
+capture local-edge-detail --cloud-camera-mode surface-up --debug-view local-edge-detail
 capture weather-edge --cloud-camera-mode surface-up --debug-view weather-edge
 capture coverage-bias --cloud-camera-mode surface-up --debug-view coverage-bias
 capture base-density --cloud-camera-mode surface-up --debug-view base-density
@@ -172,7 +175,8 @@ if command -v magick >/dev/null 2>&1; then
     mkdir -p "${crop_dir}"
     crop_inputs=()
     crop_names=(
-        surface-up raw-final cloud-alpha authored-weather local-scatter weather-edge coverage-bias
+        surface-up raw-final cloud-alpha authored-weather local-scatter
+        local-clear local-structure local-edge-detail weather-edge coverage-bias
         cloud-type density visible-density visible-cloud-type
         high-oblique-far-shell-off high-oblique-far-shell-strong
         orbit-satellite-preview orbit-satellite-high-oblique orbit-volume-comparison

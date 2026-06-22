@@ -1596,6 +1596,9 @@ void main() {
                debug_view == CLOUD_DEBUG_DETAIL_DENSITY ||
                debug_view == CLOUD_DEBUG_CLOUD_TYPE ||
                debug_view == CLOUD_DEBUG_LOCAL_SCATTER ||
+               debug_view == CLOUD_DEBUG_LOCAL_CLEAR ||
+               debug_view == CLOUD_DEBUG_LOCAL_STRUCTURE ||
+               debug_view == CLOUD_DEBUG_LOCAL_EDGE_DETAIL ||
                debug_view == CLOUD_DEBUG_WEATHER_EDGE ||
                debug_view == CLOUD_DEBUG_COVERAGE_BIAS ||
                debug_view == CLOUD_DEBUG_DENSITY) {
@@ -1611,6 +1614,12 @@ void main() {
             debug_color = vec3(sample_data.cloud_type);
         } else if (debug_view == CLOUD_DEBUG_LOCAL_SCATTER) {
             debug_color = vec3(sample_data.local_scatter);
+        } else if (debug_view == CLOUD_DEBUG_LOCAL_CLEAR) {
+            debug_color = vec3(sample_data.local_clear);
+        } else if (debug_view == CLOUD_DEBUG_LOCAL_STRUCTURE) {
+            debug_color = vec3(sample_data.local_structure);
+        } else if (debug_view == CLOUD_DEBUG_LOCAL_EDGE_DETAIL) {
+            debug_color = vec3(sample_data.local_edge_detail);
         } else if (debug_view == CLOUD_DEBUG_WEATHER_EDGE) {
             debug_color = vec3(sample_data.weather_edge);
         } else if (debug_view == CLOUD_DEBUG_COVERAGE_BIAS) {

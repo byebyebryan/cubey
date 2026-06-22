@@ -396,6 +396,15 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "local-scatter") {
         return CloudsDebugView::LocalScatter;
     }
+    if (value == "local-clear") {
+        return CloudsDebugView::LocalClear;
+    }
+    if (value == "local-structure") {
+        return CloudsDebugView::LocalStructure;
+    }
+    if (value == "local-edge-detail") {
+        return CloudsDebugView::LocalEdgeDetail;
+    }
     if (value == "weather-edge") {
         return CloudsDebugView::WeatherEdge;
     }
@@ -490,6 +499,12 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "cloud-type";
     case CloudsDebugView::LocalScatter:
         return "local-scatter";
+    case CloudsDebugView::LocalClear:
+        return "local-clear";
+    case CloudsDebugView::LocalStructure:
+        return "local-structure";
+    case CloudsDebugView::LocalEdgeDetail:
+        return "local-edge-detail";
     case CloudsDebugView::WeatherEdge:
         return "weather-edge";
     case CloudsDebugView::CoverageBias:

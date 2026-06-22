@@ -144,8 +144,20 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include local scatter diagnostics after cloud type");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::LocalScatter) ==
+                cubey::projects::cloud::CloudsDebugView::LocalClear,
+            "cloud debug view should include local clear diagnostics after local scatter");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalClear) ==
+                cubey::projects::cloud::CloudsDebugView::LocalStructure,
+            "cloud debug view should include local structure diagnostics after local clear");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalStructure) ==
+                cubey::projects::cloud::CloudsDebugView::LocalEdgeDetail,
+            "cloud debug view should include local edge diagnostics after local structure");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalEdgeDetail) ==
                 cubey::projects::cloud::CloudsDebugView::WeatherEdge,
-            "cloud debug view should include weather edge diagnostics after local scatter");
+            "cloud debug view should include weather edge diagnostics after local edge");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::WeatherEdge) ==
                 cubey::projects::cloud::CloudsDebugView::CoverageBias,
@@ -250,6 +262,15 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud::clouds_debug_view_from_string("local-scatter") ==
                 cubey::projects::cloud::CloudsDebugView::LocalScatter,
             "local scatter debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("local-clear") ==
+                cubey::projects::cloud::CloudsDebugView::LocalClear,
+            "local clear debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("local-structure") ==
+                cubey::projects::cloud::CloudsDebugView::LocalStructure,
+            "local structure debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("local-edge-detail") ==
+                cubey::projects::cloud::CloudsDebugView::LocalEdgeDetail,
+            "local edge detail debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("weather-edge") ==
                 cubey::projects::cloud::CloudsDebugView::WeatherEdge,
             "weather edge debug view should parse");

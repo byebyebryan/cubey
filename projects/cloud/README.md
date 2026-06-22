@@ -16,7 +16,9 @@ Current V1 scope:
   metadata contract;
 - spherical shell raymarch with height gradients, detail erosion, Beer
   transmittance, powder response, and a short light march;
-- world-scale weather/type sampling with separate opt-in vertical shear control;
+- world-scale local weather/type sampling with broad coverage, clear slots,
+  fronts, cells, streaks, and micro scatter, plus separate opt-in vertical shear
+  control;
 - sphere-continuous orbit weather coverage/detail/hull, evaluated from direct
   planet-space procedural fields with regional dry slots, storm tracks, fronts,
   cells, and streaks instead of projecting the local weather map;
@@ -37,11 +39,12 @@ Current V1 scope:
   high/orbit shell evaluation, and debug views for the local-vs-orbit blend;
 - footprint- and grazing-aware orbit shell filtering so high-frequency weather
   detail is retained on the disk but damped near the shell edge;
-- diagnostics for authored weather, local scatter, weather edge, coverage bias,
-  base/detail density, density, transmittance, cloud type, visible density/cloud
-  type, lighting, shadow, cloud alpha, distance, distance regime, local/orbit alpha,
-  ray-sampled orbit coverage/detail/hull, shell alpha/height/normal/shadow,
-  metadata distance/alpha/confidence, metadata density, steps, and background.
+- diagnostics for authored weather, local scatter/clear/structure/edge detail,
+  weather edge, coverage bias, base/detail density, density, transmittance,
+  cloud type, visible density/cloud type, lighting, shadow, cloud alpha,
+  distance, distance regime, local/orbit alpha, ray-sampled orbit
+  coverage/detail/hull, shell alpha/height/normal/shadow, metadata
+  distance/alpha/confidence, metadata density, steps, and background.
 
 The first target is cloud shape. Surface/local captures should preserve coherent
 volumetric cloud masses; orbit captures should be judged against satellite and
@@ -64,6 +67,9 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view raw-final
 ./build/dev/projects/cloud/cloud --debug-view authored-weather
 ./build/dev/projects/cloud/cloud --debug-view local-scatter
+./build/dev/projects/cloud/cloud --debug-view local-clear
+./build/dev/projects/cloud/cloud --debug-view local-structure
+./build/dev/projects/cloud/cloud --debug-view local-edge-detail
 ./build/dev/projects/cloud/cloud --debug-view base-density
 ./build/dev/projects/cloud/cloud --debug-view detail-density
 ./build/dev/projects/cloud/cloud --debug-view cloud-type
@@ -144,7 +150,10 @@ Controls:
 - `Weather softness`: damps broad weather contrast before local density shaping.
 - `Weather influence`: controls how strongly the broad weather map biases local
   shape thresholds, cloud type, and edge erosion. The default is `0`, preserving
-  the procedural `local-scatter` baseline while authored weather remains opt-in.
+  the layered procedural local weather baseline while authored weather remains
+  opt-in. `local-scatter`, `local-clear`, `local-structure`, and
+  `local-edge-detail` show the procedural local fields before final density
+  shaping.
 - `Sampling`: ray-start sampling mode and jitter amount.
 - `Distance Regime`: local/orbit mode, altitude and ray-distance transition
   ranges, broad-shell detail strength, and broad-shell density scale.

@@ -850,6 +850,22 @@ breakup. Remaining work is still visual rather than solved architecture:
 high-oblique transition quality, limb/debug-ray artifacts, and physically
 believable satellite-scale cloud organization are not finished.
 
+## Local Weather Layering Checkpoint 2026-06-21
+
+The surface/local path now borrows the orbit weather model's useful structure
+without sharing its sphere-normal domain. Local volumetric clouds still sample a
+planar world-space density field, but placement is no longer a single scalar
+scatter gate. Broad local systems, dry/clear slots, front bands, cells, streaks,
+and micro fragments are evaluated as separate procedural fields, then combined
+into coverage, cloud type, edge detail, clear, and structure outputs.
+
+This is deliberately not the removed generated 2D orbit-weather product. The
+goal is richer local scatter with clear windows and high-frequency cloudlets,
+while avoiding both old authored-map block seams and the later sparse-island
+look. New diagnostics expose `local-clear`, `local-structure`, and
+`local-edge-detail` alongside `local-scatter` so tuning can identify whether a
+bad capture is a placement, clear-slot, or erosion problem.
+
 ## Orbit Shell Strategy 2026-06-20
 
 The current orbit raymarch is useful as a diagnostic, but it is no longer the

@@ -176,6 +176,9 @@ Initial scope:
   planet-wide cap; `clouds.orbit_fill` owns that bias so the coverage target
   can be tuned without changing shader constants. The volume path is an
   implementation comparison only and is not an art target;
+- local surface weather should use the same layered idea in a planar world-space
+  domain: broad systems gate placement, dry slots preserve gaps, and fronts,
+  cells, streaks, and micro fragments drive scatter and erosion;
 - orbit shell detail should be filtered by pixel footprint and grazing angle so
   disk detail survives while limb/edge shimmer does not define the image;
 - the cloud-top shell should composite from column optical depth, not an
