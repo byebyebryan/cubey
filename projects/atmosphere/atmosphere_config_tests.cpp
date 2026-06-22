@@ -1149,6 +1149,8 @@ int main() {
                      "atmosphere shader should expose moon disk rendering control");
     require_contains(shader_source, "render_moon_surface_debug",
                      "atmosphere shader should include an enlarged moon atlas debug view");
+    require_contains(shader_source, "moon_surface_debug_albedo",
+                     "atmosphere shader should contrast-tune moon surface debug output");
     require_contains(shader_source, "ground_reference_geometry",
                      "atmosphere shader should include ground reference geometry");
     require_contains(shader_source, "reference_line",

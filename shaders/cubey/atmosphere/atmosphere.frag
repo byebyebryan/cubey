@@ -726,6 +726,18 @@ vec3 debug_optical_depth(CubeyAtmosphereOpticalDepth depth) {
     return vec3(depth.rayleigh * 0.020, depth.mie * 0.080, depth.ozone * 0.035);
 }
 
+float moon_surface_debug_albedo(float atlas_albedo) {
+    float normalized = clamp((atlas_albedo - 0.16) / 0.66, 0.0, 1.0);
+    float contrast = clamp((normalized - 0.5) * 1.75 + 0.5, 0.0, 1.0);
+    return mix(0.10, 0.58, contrast);
+}
+
+float moon_surface_debug_relief(vec2 normal_xy) {
+    vec3 debug_light = normalize(vec3(-0.42, 0.58, 0.70));
+    float relief = dot(normalize(vec3(normal_xy * 1.85, 1.0)), debug_light);
+    return (relief - debug_light.z) * 0.48;
+}
+
 vec3 render_moon_surface_debug() {
     vec2 position =
         vec2(frag_ndc.x * atmosphere.camera_right_aspect.w, frag_ndc.y) / 0.88;
@@ -735,13 +747,12 @@ vec3 render_moon_surface_debug() {
     }
 
     vec4 atlas = texture(moon_atlas, position * 0.5 + 0.5);
-    float albedo = clamp((atlas.r - 0.44) * 2.65 + 0.50, 0.0, 1.0);
     vec2 normal_xy = atlas.gb * 2.0 - 1.0;
-    float relief = dot(normalize(vec3(normal_xy * 1.6, 1.0)),
-                       normalize(vec3(-0.35, 0.55, 0.76)));
-    float relief_preview = mix(0.72, 1.18, clamp(relief * 0.5 + 0.5, 0.0, 1.0));
+    float diagnostic =
+        clamp(moon_surface_debug_albedo(atlas.r) + moon_surface_debug_relief(normal_xy),
+              0.06, 0.74);
     float limb = 1.0 - smoothstep(0.985, 1.0, sqrt(radius_squared));
-    return vec3(albedo * relief_preview * limb);
+    return cubey_srgb_to_linear(vec3(diagnostic * limb));
 }
 
 void main() {

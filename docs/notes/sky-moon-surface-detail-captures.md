@@ -23,7 +23,8 @@ mkdir -p outputs/sky-moon-surface-detail-001
   with the new surface-map binding. The crescent is small, so it validates
   routing and phase behavior more than fine texture quality.
 - `moon-surface` debug still intentionally exercises the old inline lunar atlas
-  path. This is the remaining debug-only use of the old disk atlas.
+  path. It is contrast-tuned as a readable diagnostic view rather than a
+  representative exposure for the final moon.
 - Fire, explosion, and water still draw the geometry moon over their direct
   atmosphere backgrounds. These captures are useful route checks for ray-marched
   and surface-composited scenes.
