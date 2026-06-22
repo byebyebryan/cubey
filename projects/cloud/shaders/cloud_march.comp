@@ -990,6 +990,35 @@ MarchResult cloud_compose_results(MarchResult foreground, MarchResult background
                            foreground.transmittance * background.phase_light);
 }
 
+MarchResult cloud_apply_composite_haze(MarchResult result, vec3 background) {
+    if (result.alpha <= 0.001) {
+        return result;
+    }
+    float first_distance =
+        result.first_distance >= 0.0 ? result.first_distance : result.mean_distance;
+    if (first_distance < 0.0) {
+        return result;
+    }
+
+    float mean_distance = result.mean_distance >= 0.0 ? result.mean_distance : first_distance;
+    float haze_distance = mix(first_distance, mean_distance, 0.65);
+    float surface_view = cloud_surface_view_factor();
+    float surface_haze = mix(1.0, cloud_weather_haze_factor(), surface_view);
+    float altitude_gate =
+        1.0 - smoothstep(params.distance_options.y,
+                         max(params.distance_options.z * 2.0, params.distance_options.y + 1.0),
+                         cloud_camera_altitude());
+    float distance_gate = smoothstep(6000.0, 80000.0, haze_distance);
+    float haze =
+        1.0 - exp(-haze_distance * 0.000020 * params.cloud_color_bottom_horizon.w *
+                  mix(0.72, 0.42, surface_view) * surface_haze * altitude_gate);
+    haze = clamp(haze * distance_gate, 0.0, mix(0.48, 0.30, surface_view));
+
+    MarchResult hazed = result;
+    hazed.radiance = mix(result.radiance, background * result.alpha, haze);
+    return hazed;
+}
+
 DensitySample cloud_orbit_density_sample(vec3 position) {
     float detail_strength = clamp(params.distance_options.w, 0.0, 1.0);
     OrbitWeatherSample orbit = cloud_orbit_weather_sample(position);
@@ -1216,7 +1245,7 @@ MarchResult cloud_orbit_surface_shell(vec3 origin, vec3 direction) {
 }
 
 MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, float end_t,
-                                        vec3 background, ivec2 pixel) {
+                                        ivec2 pixel) {
     int max_steps = clamp(int(params.ref_options.y * 0.36 + 0.5), 8, 28);
     float length_km = max(end_t - start_t, 0.001);
     float ds = length_km / float(max_steps);
@@ -1297,16 +1326,6 @@ MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, 
 
     float alpha = 1.0 - transmittance;
     color = max(color * 1.70 - vec3(0.08 * alpha), vec3(0.0));
-    if (first_distance > 0.0) {
-        float altitude_fog_gate =
-            1.0 - smoothstep(params.distance_options.y,
-                             max(params.distance_options.z * 2.0,
-                                 params.distance_options.y + 1.0),
-                             cloud_camera_altitude());
-        float fog = 1.0 - exp(-first_distance * 0.000028 *
-                              params.cloud_color_bottom_horizon.w * altitude_fog_gate);
-        color = mix(color, background * alpha, clamp(fog, 0.0, 1.0));
-    }
     float mean_distance = distance_weight_sum > 0.0
                               ? weighted_distance_sum / max(distance_weight_sum, 0.0001)
                               : -1.0;
@@ -1318,16 +1337,16 @@ MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, 
 }
 
 MarchResult cloud_far_bridge_march(vec3 origin, vec3 direction, float start_t, float end_t,
-                                   vec3 background, ivec2 pixel) {
+                                   ivec2 pixel) {
     float bridge_start = max(start_t, params.orbit_options.x);
     if (end_t <= bridge_start) {
         return cloud_empty_result();
     }
-    return cloud_orbit_shell_march(origin, direction, bridge_start, end_t, background, pixel);
+    return cloud_orbit_shell_march(origin, direction, bridge_start, end_t, pixel);
 }
 
 MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
-                            vec3 background, ivec2 pixel) {
+                            ivec2 pixel) {
     int max_steps = clamp(int(params.ref_options.y + 0.5), 1, 96);
     float length_km = max(end_t - start_t, 0.001);
     float ds = length_km / float(max_steps);
@@ -1428,13 +1447,6 @@ MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
     ambient_sum = max(ambient_sum * radiance_scale, vec3(0.0));
     direct_sum = max(direct_sum * radiance_scale, vec3(0.0));
     phase_sum = max(phase_sum * radiance_scale, vec3(0.0));
-    if (first_distance > 0.0) {
-        float fog_scale = mix(1.0, 0.58, surface_view);
-        float surface_haze = mix(1.0, cloud_weather_haze_factor(), surface_view);
-        float fog = 1.0 - exp(-first_distance * 0.00004 *
-                              params.cloud_color_bottom_horizon.w * fog_scale * surface_haze);
-        color = mix(color, background * alpha, clamp(fog, 0.0, 1.0));
-    }
     float mean_distance = distance_weight_sum > 0.0
                               ? weighted_distance_sum / max(distance_weight_sum, 0.0001)
                               : -1.0;
@@ -1543,18 +1555,18 @@ void main() {
     MarchResult far_bridge_source_result = cloud_empty_result();
     MarchResult full_orbit_result = cloud_empty_result();
     if (needs_local) {
-        local_result = cloud_march(origin, direction, start_t, end_t, background, pixel);
+        local_result = cloud_march(origin, direction, start_t, end_t, pixel);
     }
     if (needs_far_bridge_source) {
         far_bridge_source_result =
-            cloud_far_bridge_march(origin, direction, start_t, end_t, background, pixel);
+            cloud_far_bridge_march(origin, direction, start_t, end_t, pixel);
     }
     if (needs_full_orbit_source) {
         if (cloud_orbit_surface_shell_enabled()) {
             full_orbit_result = cloud_orbit_surface_shell(origin, direction);
         } else {
             full_orbit_result =
-                cloud_orbit_shell_march(origin, direction, start_t, end_t, background, pixel);
+                cloud_orbit_shell_march(origin, direction, start_t, end_t, pixel);
         }
     }
     MarchResult far_shell_result =
@@ -1563,6 +1575,7 @@ void main() {
         cloud_compose_results(local_result, far_shell_result);
     MarchResult result =
         cloud_mix_results(local_with_far_shell, full_orbit_result, full_orbit_blend);
+    result = cloud_apply_composite_haze(result, background);
     vec3 debug_color = result.radiance;
     float debug_alpha = 1.0;
 
