@@ -595,6 +595,47 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return points;
 }
 
+[[nodiscard]] float channel_point_distance(const ChannelPathPoint& lhs,
+                                           const ChannelPathPoint& rhs) {
+    const float dx = rhs.x - lhs.x;
+    const float dy = rhs.y - lhs.y;
+    return std::sqrt((dx * dx) + (dy * dy));
+}
+
+[[nodiscard]] ChannelPathPoint lerp_channel_point(const ChannelPathPoint& lhs,
+                                                  const ChannelPathPoint& rhs, float t) {
+    return ChannelPathPoint{
+        .x = cubey::procedural::lerp(lhs.x, rhs.x, t),
+        .y = cubey::procedural::lerp(lhs.y, rhs.y, t),
+        .strength = cubey::procedural::lerp(lhs.strength, rhs.strength, t),
+    };
+}
+
+[[nodiscard]] std::vector<ChannelPathPoint> resample_channel_path(
+    const std::vector<ChannelPathPoint>& points, float spacing_cells) {
+    if (points.size() < 2U || spacing_cells <= 0.0F) {
+        return points;
+    }
+
+    std::vector<ChannelPathPoint> result;
+    result.reserve(points.size() * 2U);
+    result.push_back(points.front());
+    for (std::size_t index = 0; index + 1U < points.size(); ++index) {
+        const ChannelPathPoint& a = points[index];
+        const ChannelPathPoint& b = points[index + 1U];
+        const float length = channel_point_distance(a, b);
+        if (length <= 0.0001F) {
+            continue;
+        }
+        const int steps = std::max(1, static_cast<int>(std::ceil(length / spacing_cells)));
+        for (int step = 1; step <= steps; ++step) {
+            const float t = static_cast<float>(step) / static_cast<float>(steps);
+            result.push_back(lerp_channel_point(a, b, t));
+        }
+    }
+    return result;
+}
+
 void smooth_channel_path(std::vector<ChannelPathPoint>& points, int passes) {
     if (points.size() < 3U) {
         return;
@@ -615,8 +656,25 @@ void smooth_channel_path(std::vector<ChannelPathPoint>& points, int passes) {
     }
 }
 
+[[nodiscard]] float sample_field_bilinear(const cubey::procedural::ScalarField2D& field, float x,
+                                          float y) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    x = std::clamp(x, 0.0F, static_cast<float>(desc.width - 1U));
+    y = std::clamp(y, 0.0F, static_cast<float>(desc.height - 1U));
+    const std::uint32_t x0 = static_cast<std::uint32_t>(std::floor(x));
+    const std::uint32_t y0 = static_cast<std::uint32_t>(std::floor(y));
+    const std::uint32_t x1 = std::min(x0 + 1U, desc.width - 1U);
+    const std::uint32_t y1 = std::min(y0 + 1U, desc.height - 1U);
+    const float tx = x - static_cast<float>(x0);
+    const float ty = y - static_cast<float>(y0);
+    const float top = cubey::procedural::lerp(field.at(x0, y0), field.at(x1, y0), tx);
+    const float bottom = cubey::procedural::lerp(field.at(x0, y1), field.at(x1, y1), tx);
+    return cubey::procedural::lerp(top, bottom, ty);
+}
+
 void apply_channel_lateral_offset(std::vector<ChannelPathPoint>& points, std::uint64_t seed,
-                                  float max_offset_cells) {
+                                  float max_offset_cells,
+                                  const cubey::procedural::ScalarField2D& routing_surface) {
     if (points.size() < 3U || max_offset_cells <= 0.0F) {
         return;
     }
@@ -645,8 +703,56 @@ void apply_channel_lateral_offset(std::vector<ChannelPathPoint>& points, std::ui
         const float noise =
             cubey::procedural::sample_noise_source_2d(points[index].x, points[index].y, source);
         const float offset = noise * max_offset_cells * end_taper;
-        points[index].x += nx * offset;
-        points[index].y += ny * offset;
+        float next_x = points[index].x + (nx * offset);
+        float next_y = points[index].y + (ny * offset);
+        const float current_potential =
+            sample_field_bilinear(routing_surface, points[index].x, points[index].y);
+        const float next_potential = sample_field_bilinear(routing_surface, next_x, next_y);
+        if (next_potential > current_potential + 35.0F) {
+            next_x = cubey::procedural::lerp(points[index].x, next_x, 0.25F);
+            next_y = cubey::procedural::lerp(points[index].y, next_y, 0.25F);
+        }
+        points[index].x = next_x;
+        points[index].y = next_y;
+    }
+}
+
+void relax_channel_path(std::vector<ChannelPathPoint>& points,
+                        const cubey::procedural::ScalarField2D& routing_surface, int passes) {
+    if (points.size() < 3U) {
+        return;
+    }
+
+    for (int pass = 0; pass < passes; ++pass) {
+        std::vector<ChannelPathPoint> next = points;
+        for (std::size_t index = 1; index + 1U < points.size(); ++index) {
+            const ChannelPathPoint& point = points[index];
+            const float left = sample_field_bilinear(routing_surface, point.x - 1.0F, point.y);
+            const float right = sample_field_bilinear(routing_surface, point.x + 1.0F, point.y);
+            const float up = sample_field_bilinear(routing_surface, point.x, point.y - 1.0F);
+            const float down = sample_field_bilinear(routing_surface, point.x, point.y + 1.0F);
+            const float gradient_x = (right - left) * 0.5F;
+            const float gradient_y = (down - up) * 0.5F;
+            const float gradient_length =
+                std::sqrt((gradient_x * gradient_x) + (gradient_y * gradient_y));
+            if (gradient_length <= 0.0001F) {
+                continue;
+            }
+
+            const float step =
+                0.35F * cubey::procedural::saturate(gradient_length / 24.0F);
+            const float candidate_x = point.x - (gradient_x / gradient_length) * step;
+            const float candidate_y = point.y - (gradient_y / gradient_length) * step;
+            const float current_potential =
+                sample_field_bilinear(routing_surface, point.x, point.y);
+            const float candidate_potential =
+                sample_field_bilinear(routing_surface, candidate_x, candidate_y);
+            if (candidate_potential <= current_potential + 8.0F) {
+                next[index].x = candidate_x;
+                next[index].y = candidate_y;
+            }
+        }
+        points.swap(next);
     }
 }
 
@@ -741,11 +847,16 @@ void rasterize_channel_segments(cubey::procedural::ScalarField2D& field,
 
 void paint_channel_path(cubey::procedural::ScalarField2D& field, const std::vector<int>& path,
                         const RoutingDomain& domain, float strength, float core_radius_cells,
-                        float falloff_radius_cells, std::uint64_t seed, float max_offset_cells) {
+                        float falloff_radius_cells,
+                        const cubey::procedural::ScalarField2D& routing_surface,
+                        std::uint64_t seed, float max_offset_cells) {
     std::vector<ChannelPathPoint> points =
         make_channel_path_points(domain.hidden_desc, path, strength);
-    smooth_channel_path(points, 3);
-    apply_channel_lateral_offset(points, seed, max_offset_cells);
+    points = resample_channel_path(points, 1.6F);
+    smooth_channel_path(points, 2);
+    apply_channel_lateral_offset(points, seed, max_offset_cells, routing_surface);
+    relax_channel_path(points, routing_surface, 4);
+    smooth_channel_path(points, 1);
     rasterize_channel_segments(field, points, core_radius_cells, falloff_radius_cells, domain);
 }
 
@@ -759,7 +870,7 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context,
         return;
     }
     paint_channel_path(fields.river_trunk, trunk, context.domain, 1.0F, 1.4F, 3.0F,
-                       seed + 1101U, 1.25F);
+                       context.routing_surface, seed + 1101U, 1.25F);
 
     std::vector<bool> active(context.accumulation.sample_count(), false);
     for (const int index : trunk) {
@@ -800,6 +911,7 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context,
                 continue;
             }
             paint_channel_path(fields.tributaries, branch, context.domain, 0.75F, 0.9F, 2.1F,
+                               context.routing_surface,
                                seed + 2203U + (accepted_tributaries * 117U), 0.75F);
             for (const int index : branch) {
                 active[static_cast<std::size_t>(index)] = true;
