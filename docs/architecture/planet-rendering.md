@@ -358,7 +358,7 @@ The latest planet foundation pass closed several previously loose contracts:
   renders the moon as a depth-tested body with premultiplied visibility for
   phase coverage and daylight sky washout. Planet occlusion is still geometric,
   while the unlit/day-washed portions blend into smooth sky. The sky pass masks
-  procedural stars behind the full rendered moon disk so blended moon phases do
+  procedural stars behind the full rendered moon body so blended moon phases do
   not behave like literal star transparency. Night-side terrain receives a small
   phase-scaled moonlight contribution. The eclipse shadow channel is
   intentionally zeroed until true node-aware lunar eclipses are modeled.
@@ -400,7 +400,7 @@ The unified atmosphere path renders the shared foundation atmosphere in sky-only
 mode, receives planet-owned view/sun/moon directions through the tangent adapter,
 and leaves explicit celestial body rendering under planet control. The
 foundation atmosphere receives moon direction/radius/phase for star masking and
-sky washout, but it does not draw the planet moon disk. The next production
+sky washout, but it does not draw the visible planet moon. The next production
 atmosphere target is still a LUT-backed path: transmittance first, then sky-view
 and multi-scattering LUTs, then shared aerial perspective for terrain/ocean.
 
@@ -445,13 +445,13 @@ The render-order contract for the current unified atmosphere path is:
 2. opaque planet surface, atmosphere surface terms, and future terrain/ocean
    layers;
 3. explicit celestial body geometry, starting with a depth-tested moon sphere
-   whose visible body contribution is premultiplied for phase and sky washout,
-   plus a sky-pass star mask over the full rendered moon disk;
+  whose visible body contribution is premultiplied for phase and sky washout,
+   plus a sky-pass star mask over the full rendered moon body;
 4. clouds, aerial-perspective overlays, and post as those systems arrive.
 
 For the immediate slice, a distant sun disk/glow in the sky pass plus a
 depth-tested moon sphere with blended visibility is enough. The sky pass may
-mask stars behind the full moon disk, but no atmosphere shader decides celestial
+mask stars behind the full moon body, but no atmosphere shader decides celestial
 placement, planet occlusion, moon phase, or moonlight. The shared
 `AtmosphereEnvironmentRuntime` now has the frame inputs needed by planet while
 existing atmosphere/ocean/glTF paths keep using the same foundation runtime.

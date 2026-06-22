@@ -206,21 +206,20 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
 
     if (const cubey::host::ScopedImGuiGroup group{
             "Moon",
-            {.default_open = false,
-             .help = "Moon disk and moonlight contribution controls."}};
+            {.default_open = false, .help = "Visible moon and moonlight contribution controls."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Moon");
         cubey::host::imgui_checkbox("Moon", &ui.config.moon.enabled,
-                                    "Enable the procedural moon disk and moonlight.");
-        cubey::host::imgui_slider_float("Disk", &ui.config.moon.disk_intensity, 0.0F, 4.0F, "%.2f",
-                                        "Brightness of the visible moon disk.");
+                                    "Enable the visible moon and moonlight.");
+        cubey::host::imgui_slider_float("Moon", &ui.config.moon.disk_intensity, 0.0F, 4.0F,
+                                        "%.2f", "Brightness of the visible moon.");
         cubey::host::imgui_slider_float("Moonlight", &ui.config.moon.moonlight_intensity, 0.0F,
                                         4.0F, "%.2f", "Brightness of indirect moonlight.");
         cubey::host::imgui_slider_float("Phase offset", &ui.config.moon.phase_offset_days, 0.0F,
                                         29.530588F, "%.2f d",
                                         "Offset in days through the lunar phase cycle.");
         cubey::host::imgui_slider_float("Size", &ui.config.moon.angular_radius_scale, 0.25F, 8.0F,
-                                        "%.2f", "Visual scale of the moon disk.");
+                                        "%.2f", "Visual scale of the moon.");
     }
 
     if (const cubey::host::ScopedImGuiGroup group{

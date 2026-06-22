@@ -116,7 +116,7 @@ The latest follow-up batch is complete:
   moon sprite.
 - added the missing sky-side moon contract: blended moon phases may visually
   merge into smooth sky, but procedural stars are masked behind the full
-  rendered moon disk.
+  rendered moon body.
 - expanded procedural terrain tile summaries with averaged fields and dominant
   material so the patch payload boundary looks more like a future cache/stream
   contract.

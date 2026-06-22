@@ -17,13 +17,12 @@ sunset remain inspectable before multiple-scattering LUTs exist. Time of day is
 resolved on the CPU from local solar time, day of year, and latitude, with manual
 sun direction still available for art/debug work.
 
-Night rendering includes procedural foreground stars, a moon disk with a
-generated lunar atlas, and a procedural Milky Way atlas. These are demo/debug
-features of the atmosphere project and lightweight background conveniences for
-non-planet scenes, not the intended ownership model for planet-scale celestial
-bodies. The Milky Way generator is tuned in local layers for stellar emission,
-dust lanes, star clouds, H II regions, and speckles instead of consuming a
-source panorama.
+Night rendering includes procedural foreground stars, visible moon geometry that
+uses the generated lunar atlas, and a procedural Milky Way atlas. The atmosphere
+shader still keeps moon debug views for atlas and washout validation, but the
+final-view visible moon now uses the shared celestial body geometry path. The
+Milky Way generator is tuned in local layers for stellar emission, dust lanes,
+star clouds, H II regions, and speckles instead of consuming a source panorama.
 
 Windowed runs create the lunar and night-sky atlases in background jobs and show
 placeholder textures until uploads complete. Headless runs generate the same

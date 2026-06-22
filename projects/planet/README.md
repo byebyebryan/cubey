@@ -239,7 +239,7 @@ same local celestial state on a camera-relative shell that preserves its
 apparent angular size. Phase and terminator shape therefore come from body
 lighting against the modeled sun direction instead of a sky-disk mask. The
 unified sky receives moon direction/radius/phase only for star masking and
-washout; it does not draw the planet moon disk.
+washout; it does not draw the visible planet moon.
 Night-side terrain receives a small phase-scaled secondary moonlight term. True
 node-aware lunar eclipses remain deferred. The surface shader receives frame
 data through a descriptor-backed uniform instead of push constants, and

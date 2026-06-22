@@ -15,8 +15,8 @@ the detailed foundation notes under `docs/architecture/`.
   notes on clear-sky scattering approaches and the first `projects/atmosphere`
   implementation direction.
 - [Celestial rendering research](celestial-rendering-research.md): historical
-  pivot note from atmosphere-owned sun/moon disks to planet-owned celestial
-  bodies with atmosphere as a consumer.
+  pivot note from atmosphere-owned celestial disks toward shared visible body
+  geometry with atmosphere as a consumer.
 - [Planet gap closure checkpoint](planet-gap-closure.md): current planet
   project state, missing foundation gaps, and the intended split-commit batch.
 - [Planet surface quality pass](planet-surface-quality.md): procedural terrain,

@@ -31,12 +31,14 @@ occlusion, time, or lighting decisions.
 ### Standalone Atmosphere
 
 `projects/atmosphere` renders a fullscreen atmosphere pass and post pass. It can
-draw the sun disk, moon disk, stars, and procedural Milky Way directly in the
-atmosphere shader. This path is useful for shader iteration, debug views,
-headless smoke captures, and generated atlas validation.
+draw the sun disk, stars, and procedural Milky Way directly in the atmosphere
+shader. Final-view moon rendering now uses the shared `CelestialBodyFrame`
+geometry path with the generated lunar atlas. The shader moon disk remains for
+moon atlas/debug views and for unmigrated consumers.
 
-The standalone moon disk is a demo/debug feature. It should not be treated as
-the planet ownership model.
+The standalone atmosphere app is now an iteration surface for the same visible
+moon geometry path used by planet and atmosphere-backed demos, not an equal
+runtime shader-disk moon model.
 
 ### Planet
 
@@ -55,7 +57,15 @@ The current planet render order is:
 Planet disables the atmosphere shader moon disk. The shared atmosphere still
 receives moon direction, angular radius, and phase so it can handle star masking,
 night-sky washout, and related sky visibility, but the rendered moon belongs to
-planet body geometry.
+geometry.
+
+### Atmosphere-Backed Fluid Scenes
+
+`fire_3d`, `explosion_3d`, and `water_3d` can use the shared atmosphere
+background for their sky. These paths now draw the visible moon with
+`CelestialBodyFrame` geometry inside the existing scene pass and pass a copied
+atmosphere config with the inline shader disk disabled to the fullscreen
+background shader.
 
 ### Engine PBR Consumers
 
@@ -69,21 +79,15 @@ The sun is currently drawn as a disk/glow in the atmosphere shader and also
 drives directional lighting through `CelestialSystem` and derived lighting
 inputs. It is not yet an explicit rendered body like the moon.
 
-The moon currently has two paths:
+The visible moon now has one canonical app path in migrated projects: explicit
+body geometry, phase/visibility behavior, and generated-lunar-atlas appearance.
+The atmosphere shader keeps moon data for moonlight, star masking, washout, and
+atlas/debug views, but it is no longer the default owner of the runtime visible
+moon in planet, standalone atmosphere final view, or atmosphere-backed fluid
+views. The existing lunar atlas is a near-side disk atlas, so geometry samples
+it by projecting surface normals into a moon-facing disk basis rather than by
+using mesh UVs as a global equirectangular texture.
 
-- standalone atmosphere: shader disk using the generated lunar atlas;
-- planet: explicit body geometry, phase/visibility behavior, and depth testing.
-
-The migration target is a single app-visible moon path: explicit body geometry
-using the generated lunar atlas as its appearance source. The atmosphere shader
-should keep moon data for moonlight, star masking, washout, and atlas/debug
-views, but it should not remain the default owner of the runtime visible moon.
-The existing lunar atlas is a near-side disk atlas, so geometry samples it by
-projecting surface normals into a moon-facing disk basis rather than by using
-mesh UVs as a global equirectangular texture.
-
-The first migration batch covers `projects/atmosphere`, `projects/planet`, and
-the atmosphere-backed `fire_3d`, `explosion_3d`, and `water_3d` fluid views.
 Forward PBR generic consumers, ocean, and reflection-probe cubemaps remain
 explicit follow-up work unless they gain their own geometry insertion point.
 
@@ -122,8 +126,9 @@ Completed:
    should not imply that planet owns a separate permanent model.
 2. Make the active sky ownership explicit in docs: planet uses the unified
    atmosphere path rather than a selectable sky backend.
-3. Record the moon ownership contract in one place: standalone atmosphere may
-   draw a shader moon disk, but planet owns the rendered moon body.
+3. Record the moon ownership contract in one place: the visible moon should be
+   geometry in migrated apps, while the shader disk remains debug/fallback
+   plumbing.
 4. Remove the legacy `SkyFrame` implementation after visual review confirmed it
    was only a comparison fallback.
 5. Establish focused validation commands and capture recipes for sky changes.
