@@ -50,9 +50,9 @@ enum class CelestialBodyDepthMode : std::uint8_t {
 };
 
 struct CelestialBodyFrameTextureBindings {
-    VkSampler lunar_sampler = VK_NULL_HANDLE;
-    VkImageView lunar_view = VK_NULL_HANDLE;
-    VkImageLayout lunar_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    VkSampler surface_sampler = VK_NULL_HANDLE;
+    VkImageView surface_view = VK_NULL_HANDLE;
+    VkImageLayout surface_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 };
 
 struct CelestialBodyFrameMaterialConfig {

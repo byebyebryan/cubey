@@ -547,7 +547,8 @@ void test_planet_atmosphere_environment_config_round_trips_sun_direction() {
             "planet atmosphere adapter should preserve sun direction through shared config");
     require(config.render_celestial_content,
             "planet atmosphere adapter should let unified atmosphere own sky celestial rendering");
-    require(config.render_sun_disk, "planet atmosphere adapter should let unified atmosphere draw sun");
+    require(config.render_sun_disk,
+            "planet atmosphere adapter should let unified atmosphere draw sun");
     require(config.render_night_sky,
             "planet atmosphere adapter should let unified atmosphere draw night sky");
     require(!config.render_moon_disk,
@@ -601,9 +602,8 @@ void test_planet_unified_atmosphere_frame_uses_local_tangent_up() {
     require_near(uniforms.rayleigh.x,
                  look_config.rayleigh_scattering.x * look_config.rayleigh_density_scale, 0.0001F,
                  "unified atmosphere frame should pack shared Rayleigh look scale");
-    require_near(uniforms.ozone.y,
-                 look_config.ozone_absorption.y * look_config.ozone_density_scale, 0.0001F,
-                 "unified atmosphere frame should pack shared ozone look scale");
+    require_near(uniforms.ozone.y, look_config.ozone_absorption.y * look_config.ozone_density_scale,
+                 0.0001F, "unified atmosphere frame should pack shared ozone look scale");
 }
 
 void test_planet_unified_atmosphere_frame_splits_sky_and_moon_ownership() {
@@ -631,8 +631,9 @@ void test_planet_unified_atmosphere_frame_splits_sky_and_moon_ownership() {
                  "unified atmosphere adapter should convert atmosphere radius to kilometers");
     require_near(uniforms.radii_ground.z, 10.0F, 0.0001F,
                  "unified atmosphere adapter should convert camera altitude to kilometers");
-    require_near(uniforms.render_options.x, 2.0F, 0.000001F,
-                 "unified atmosphere adapter should render sky-only without smooth ground occlusion");
+    require_near(
+        uniforms.render_options.x, 2.0F, 0.000001F,
+        "unified atmosphere adapter should render sky-only without smooth ground occlusion");
     require_near(uniforms.render_options.z, 0.0F, 0.000001F,
                  "unified atmosphere adapter should not lower the sky occluder by default");
     require_near(uniforms.render_options.y, 1.0F, 0.000001F,
@@ -775,8 +776,7 @@ void test_celestial_body_frame_uniforms_pack_render_placement() {
     require_near(uniforms.visibility_atmosphere.x, 0.0F, 0.000001F,
                  "body frame uniforms should default to no atmospheric sky visibility");
 
-    const cubey::math::Vec3 expected_forward =
-        glm::normalize(cubey::math::Vec3{1.0F, 2.0F, 3.0F} - placement.center_render_m);
+    const cubey::math::Vec3 expected_forward = glm::normalize(-moon.direction);
     const cubey::math::Vec3 basis_right{uniforms.surface_basis_right.x,
                                         uniforms.surface_basis_right.y,
                                         uniforms.surface_basis_right.z};
@@ -786,15 +786,27 @@ void test_celestial_body_frame_uniforms_pack_render_placement() {
                                           uniforms.surface_basis_forward_options.y,
                                           uniforms.surface_basis_forward_options.z};
     require_vec_near(basis_forward, expected_forward,
-                     "body frame uniforms should aim the lunar atlas basis at the camera");
+                     "body frame uniforms should aim the surface map basis at the moon near side");
     require_near(glm::dot(basis_right, basis_up), 0.0F, 0.0001F,
-                 "body frame atlas basis axes should be orthogonal");
+                 "body frame surface map basis axes should be orthogonal");
     require_near(glm::dot(basis_right, basis_forward), 0.0F, 0.0001F,
-                 "body frame atlas right axis should be orthogonal to the visible face");
+                 "body frame surface map right axis should be orthogonal to the near side");
     require_near(glm::dot(basis_up, basis_forward), 0.0F, 0.0001F,
-                 "body frame atlas up axis should be orthogonal to the visible face");
+                 "body frame surface map up axis should be orthogonal to the near side");
     require(uniforms.surface_basis_forward_options.w > 0.0F,
-            "body frame uniforms should enable lunar atlas sampling");
+            "body frame uniforms should enable surface map sampling");
+
+    const cubey::projects::planet::PlanetCelestialBodyFrameUniforms moved_camera_uniforms =
+        cubey::projects::planet::planet_celestial_body_frame_uniforms(
+            moon, placement, lighting, cubey::math::Mat4{1.0F},
+            {
+                .camera_render_position_m = {-100.0F, 40.0F, 12.0F},
+            });
+    require_vec_near({moved_camera_uniforms.surface_basis_forward_options.x,
+                      moved_camera_uniforms.surface_basis_forward_options.y,
+                      moved_camera_uniforms.surface_basis_forward_options.z},
+                     basis_forward,
+                     "body frame surface map basis should not swim when the camera moves");
 }
 
 void test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere() {
@@ -895,10 +907,9 @@ void test_celestial_body_pass_uses_depth_test_without_depth_write() {
     require(pass.cull_mode == VK_CULL_MODE_BACK_BIT, "body pass should cull back faces");
     require(pass.descriptor_sets.size() == 1U, "body pass should use one descriptor set");
     require(pass.descriptor_sets[0].bindings.size() == 2U,
-            "body pass should bind frame uniforms and lunar atlas");
-    require(pass.descriptor_sets[0].bindings[1].type ==
-                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            "body pass should sample the lunar atlas");
+            "body pass should bind frame uniforms and a surface map");
+    require(pass.descriptor_sets[0].bindings[1].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "body pass should sample the surface map");
     require(pass.depth_test, "body pass should depth-test against planet geometry");
     require(!pass.depth_write, "body pass should not overwrite scene depth");
     require(pass.blend_enable,
@@ -922,7 +933,7 @@ void test_celestial_body_pass_can_disable_depth_for_backdrops() {
     require(pass.blend_enable, "backdrop body pass should keep premultiplied blending");
 }
 
-void test_celestial_body_texture_bindings_require_lunar_atlas() {
+void test_celestial_body_texture_bindings_require_surface_map() {
     bool threw = false;
     try {
         cubey::render::validate_celestial_body_frame_texture_bindings({});
@@ -930,7 +941,7 @@ void test_celestial_body_texture_bindings_require_lunar_atlas() {
         threw = true;
     }
 
-    require(threw, "body frame texture bindings should reject missing lunar atlas handles");
+    require(threw, "body frame texture bindings should reject missing surface map handles");
 }
 
 } // namespace
@@ -968,7 +979,7 @@ int main() {
         test_celestial_body_frame_defers_planet_shadow_eclipse();
         test_celestial_body_pass_uses_depth_test_without_depth_write();
         test_celestial_body_pass_can_disable_depth_for_backdrops();
-        test_celestial_body_texture_bindings_require_lunar_atlas();
+        test_celestial_body_texture_bindings_require_surface_map();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_celestial_tests: %s\n", error.what());

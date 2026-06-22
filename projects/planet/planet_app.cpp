@@ -1401,12 +1401,12 @@ class PlanetApp {
                                                                .frame_slot_count = frame_slot_count,
                                                                .textures =
                                                                    {
-                                                                       .lunar_sampler =
+                                                                       .surface_sampler =
                                                                            sky_textures
                                                                                .lunar_sampler,
-                                                                       .lunar_view =
+                                                                       .surface_view =
                                                                            sky_textures.lunar_view,
-                                                                       .lunar_layout =
+                                                                       .surface_layout =
                                                                            sky_textures
                                                                                .lunar_layout,
                                                                    },

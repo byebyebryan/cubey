@@ -1016,8 +1016,10 @@ int main() {
                      "atmosphere app should record visible moon geometry outside the shader disk");
     require_contains(app_source, "CelestialBodyDepthMode::None",
                      "atmosphere moon geometry should render as a no-depth backdrop");
-    require_contains(app_source, "config.render_moon_disk = config.render_moon_disk &&",
+    require_contains(app_source, "config.render_moon_disk =",
                      "atmosphere final view should suppress the inline moon shader disk");
+    require_contains(app_source, "render_view_ == AtmosphereRenderView::Moon ||",
+                     "atmosphere final view should keep the inline moon disk for debug views");
     require_contains(app_source, "render_view_ == AtmosphereRenderView::Moon",
                      "atmosphere moon debug view should keep the inline shader disk available");
     require_contains(

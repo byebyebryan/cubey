@@ -16,7 +16,7 @@ layout(set = 0, binding = 0) uniform PlanetCelestialBodyFrame {
     vec4 surface_basis_forward_options;
 } body;
 
-layout(set = 0, binding = 1) uniform sampler2D lunar_atlas;
+layout(set = 0, binding = 1) uniform sampler2D lunar_surface_map;
 
 layout(location = 0) out vec4 out_color;
 
@@ -25,18 +25,25 @@ struct LunarSurfaceSample {
     vec3 normal;
 };
 
-LunarSurfaceSample lunar_surface_sample(vec3 normal) {
+const float kPi = 3.14159265358979323846;
+const float kInvTwoPi = 1.0 / (kPi * 2.0);
+const float kInvPi = 1.0 / kPi;
+
+LunarSurfaceSample lunar_surface_sample(vec3 normal, vec3 view_direction) {
     const vec3 basis_right = normalize(body.surface_basis_right.xyz);
     const vec3 basis_up = normalize(body.surface_basis_up.xyz);
     const vec3 basis_forward = normalize(body.surface_basis_forward_options.xyz);
-    const vec2 disk_position = vec2(dot(normal, basis_right), dot(normal, basis_up));
-    const vec2 uv = clamp(disk_position * 0.5 + 0.5, vec2(0.0), vec2(1.0));
-    const vec4 atlas = texture(lunar_atlas, uv);
-    vec2 detail_xy = atlas.gb * 2.0 - 1.0;
-    detail_xy *= smoothstep(0.0, 0.18, max(dot(normal, basis_forward), 0.0));
+
+    const vec3 local = normalize(vec3(dot(normal, basis_forward), dot(normal, basis_right),
+                                      dot(normal, basis_up)));
+    const vec2 uv = vec2(fract(atan(local.y, local.x) * kInvTwoPi + 0.5),
+                         clamp(0.5 - asin(clamp(local.z, -1.0, 1.0)) * kInvPi, 0.0, 1.0));
+    const vec4 surface = texture(lunar_surface_map, uv);
+    vec2 detail_xy = surface.gb * 2.0 - 1.0;
+    detail_xy *= smoothstep(0.0, 0.18, max(dot(normal, view_direction), 0.0));
     const vec3 detail_normal =
-        normalize(normal + basis_right * detail_xy.x * 0.30 + basis_up * detail_xy.y * 0.30);
-    const float albedo = clamp((atlas.r - 0.44) * 2.05 + 0.44, 0.16, 0.84);
+        normalize(normal + basis_right * detail_xy.x * 0.28 + basis_up * detail_xy.y * 0.28);
+    const float albedo = clamp((surface.r - 0.44) * 1.65 + 0.44, 0.16, 0.84);
     return LunarSurfaceSample(albedo, detail_normal);
 }
 
@@ -46,9 +53,9 @@ void main() {
     }
 
     const vec3 normal = normalize(in_normal);
-    const LunarSurfaceSample surface = lunar_surface_sample(normal);
-    const vec3 light_direction = normalize(body.light_direction_intensity.xyz);
     const vec3 view_direction = normalize(body.camera_position_options.xyz - in_render_position);
+    const LunarSurfaceSample surface = lunar_surface_sample(normal, view_direction);
+    const vec3 light_direction = normalize(body.light_direction_intensity.xyz);
     const float ndotl = dot(surface.normal, light_direction);
     const float ndotv = abs(dot(normal, view_direction));
     const float sky_visibility = clamp(body.visibility_atmosphere.x, 0.0, 1.0);

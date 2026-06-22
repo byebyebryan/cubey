@@ -13,7 +13,7 @@ namespace {
 
 enum class CelestialBodyBinding : std::uint32_t {
     FrameUniforms = 0,
-    LunarAtlas = 1,
+    SurfaceMap = 1,
 };
 
 [[nodiscard]] constexpr std::uint32_t binding(CelestialBodyBinding binding) noexcept {
@@ -40,15 +40,15 @@ struct SurfaceBasis {
 [[nodiscard]] SurfaceBasis moon_surface_basis(const CelestialBody& body,
                                               const CelestialBodyRenderPlacement& placement,
                                               const CelestialBodyFrameInputs& inputs) {
-    cubey::math::Vec3 forward = inputs.camera_render_position_m - placement.center_render_m;
-    if (glm::dot(forward, forward) <= 0.0F) {
-        forward = -body.direction;
-    }
+    (void)placement;
+    (void)inputs;
+
+    cubey::math::Vec3 forward = -body.direction;
     forward = normalized_or_up(forward);
 
     cubey::math::Vec3 up_seed{0.0F, 1.0F, 0.0F};
     if (std::abs(glm::dot(up_seed, forward)) > 0.96F) {
-        up_seed = {1.0F, 0.0F, 0.0F};
+        up_seed = {0.0F, 0.0F, 1.0F};
     }
     const cubey::math::Vec3 right = glm::normalize(glm::cross(up_seed, forward));
     const cubey::math::Vec3 up = glm::normalize(glm::cross(forward, right));
@@ -188,7 +188,7 @@ MaterialPassInfo celestial_body_pass_info(CelestialBodyDepthMode depth_mode) {
                                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
                             cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = binding(CelestialBodyBinding::LunarAtlas),
+                                .binding = binding(CelestialBodyBinding::SurfaceMap),
                                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
@@ -208,8 +208,8 @@ MaterialPassInfo celestial_body_pass_info(CelestialBodyDepthMode depth_mode) {
 
 void validate_celestial_body_frame_texture_bindings(
     const CelestialBodyFrameTextureBindings& textures) {
-    if (textures.lunar_sampler == VK_NULL_HANDLE || textures.lunar_view == VK_NULL_HANDLE) {
-        throw std::runtime_error("celestial body lunar atlas binding is not initialized");
+    if (textures.surface_sampler == VK_NULL_HANDLE || textures.surface_view == VK_NULL_HANDLE) {
+        throw std::runtime_error("celestial body surface map binding is not initialized");
     }
 }
 
@@ -228,9 +228,9 @@ void update_celestial_body_frame_material_texture_bindings(
             .uniform_buffer(binding(CelestialBodyBinding::FrameUniforms),
                             material.uniforms().buffer(frame_slot).handle(),
                             material.uniforms().range())
-            .combined_image_sampler(binding(CelestialBodyBinding::LunarAtlas),
-                                    textures.lunar_sampler, textures.lunar_view,
-                                    textures.lunar_layout)
+            .combined_image_sampler(binding(CelestialBodyBinding::SurfaceMap),
+                                    textures.surface_sampler, textures.surface_view,
+                                    textures.surface_layout)
             .update(device);
     }
 }
@@ -246,10 +246,10 @@ void CelestialBodyFrame::create_materials(const cubey::vulkan::Device& device,
                                   .sampled_images =
                                       {
                                           SampledImageMaterialBinding{
-                                              .binding = binding(CelestialBodyBinding::LunarAtlas),
-                                              .sampler = config.textures.lunar_sampler,
-                                              .image_view = config.textures.lunar_view,
-                                              .layout = config.textures.lunar_layout,
+                                              .binding = binding(CelestialBodyBinding::SurfaceMap),
+                                              .sampler = config.textures.surface_sampler,
+                                              .image_view = config.textures.surface_view,
+                                              .layout = config.textures.surface_layout,
                                           },
                                       },
                               });

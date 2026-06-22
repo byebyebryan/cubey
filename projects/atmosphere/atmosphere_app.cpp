@@ -819,9 +819,9 @@ class AtmosphereApp {
     [[nodiscard]] cubey::render::CelestialBodyFrameTextureBindings moon_body_textures() const {
         const cubey::render::AtmosphereBackgroundTextureBindings textures = atmosphere_textures();
         return {
-            .lunar_sampler = textures.lunar_sampler,
-            .lunar_view = textures.lunar_view,
-            .lunar_layout = textures.lunar_layout,
+            .surface_sampler = textures.lunar_sampler,
+            .surface_view = textures.lunar_view,
+            .surface_layout = textures.lunar_layout,
         };
     }
 
