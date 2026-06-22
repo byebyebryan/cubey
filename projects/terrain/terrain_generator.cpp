@@ -480,6 +480,28 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return best_index;
 }
 
+[[nodiscard]] std::vector<int> collect_seed_candidates(
+    const cubey::procedural::ScalarField2D& accumulation, const RoutingDomain& domain,
+    const HiddenIndexBounds& bounds, std::size_t max_count) {
+    std::vector<int> candidates;
+    candidates.reserve(static_cast<std::size_t>((bounds.x_end - bounds.x_begin) *
+                                                (bounds.y_end - bounds.y_begin)));
+    for (std::uint32_t y = bounds.y_begin; y < bounds.y_end; ++y) {
+        for (std::uint32_t x = bounds.x_begin; x < bounds.x_end; ++x) {
+            candidates.push_back(static_cast<int>(
+                cubey::procedural::grid_index(x, y, domain.hidden_desc.width)));
+        }
+    }
+    std::sort(candidates.begin(), candidates.end(), [&accumulation](int lhs, int rhs) {
+        return accumulation.values()[static_cast<std::size_t>(lhs)] >
+               accumulation.values()[static_cast<std::size_t>(rhs)];
+    });
+    if (candidates.size() > max_count) {
+        candidates.resize(max_count);
+    }
+    return candidates;
+}
+
 [[nodiscard]] std::vector<int> trace_downstream_path(int start, const std::vector<int>& downstream) {
     std::vector<int> path;
     if (start < 0) {
@@ -494,6 +516,41 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
         current = downstream[static_cast<std::size_t>(current)];
     }
     return path;
+}
+
+[[nodiscard]] std::size_t visible_path_sample_count(const RoutingDomain& domain,
+                                                    const std::vector<int>& path) {
+    return static_cast<std::size_t>(std::count_if(path.begin(), path.end(), [&domain](int index) {
+        return is_inside_visible_crop(domain, index);
+    }));
+}
+
+[[nodiscard]] std::size_t visible_path_edge_touch_count(const RoutingDomain& domain,
+                                                        const std::vector<int>& path) {
+    bool left = false;
+    bool right = false;
+    bool top = false;
+    bool bottom = false;
+    for (const int path_index : path) {
+        if (path_index < 0) {
+            continue;
+        }
+        const auto index = static_cast<std::uint32_t>(path_index);
+        const std::uint32_t x = index % domain.hidden_desc.width;
+        const std::uint32_t y = index / domain.hidden_desc.width;
+        const bool inside_y =
+            y >= domain.padding_y && y < domain.padding_y + domain.visible_desc.height;
+        const bool inside_x =
+            x >= domain.padding_x && x < domain.padding_x + domain.visible_desc.width;
+        left = left || (inside_y && x == domain.padding_x);
+        right = right ||
+                (inside_y && x == domain.padding_x + domain.visible_desc.width - 1U);
+        top = top || (inside_x && y == domain.padding_y);
+        bottom = bottom ||
+                 (inside_x && y == domain.padding_y + domain.visible_desc.height - 1U);
+    }
+    return static_cast<std::size_t>(left) + static_cast<std::size_t>(right) +
+           static_cast<std::size_t>(top) + static_cast<std::size_t>(bottom);
 }
 
 [[nodiscard]] bool path_intersects_visible_crop(const RoutingDomain& domain,
@@ -544,14 +601,12 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return path;
 }
 
-[[nodiscard]] std::vector<int> trace_main_trunk(
-    const cubey::procedural::ScalarField2D& accumulation,
+[[nodiscard]] std::vector<int> trace_trunk_from_seed(
+    int seed, const cubey::procedural::ScalarField2D& accumulation,
     const std::vector<std::vector<int>>& upstream, const std::vector<int>& downstream,
-    const RoutingDomain& domain) {
-    const int seed = select_main_channel_seed(accumulation, domain);
-    const std::vector<bool> no_exclusions(accumulation.sample_count(), false);
+    const std::vector<bool>& excluded) {
     const std::vector<int> upstream_path =
-        trace_strongest_upstream_path(seed, upstream, accumulation, 1.0F, no_exclusions);
+        trace_strongest_upstream_path(seed, upstream, accumulation, 1.0F, excluded);
     std::vector<int> downstream_path = trace_downstream_path(seed, downstream);
     std::reverse(downstream_path.begin(), downstream_path.end());
 
@@ -561,6 +616,45 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
         trunk.push_back(upstream_path[index]);
     }
     return trunk;
+}
+
+[[nodiscard]] std::vector<int> trace_main_trunk(
+    const cubey::procedural::ScalarField2D& accumulation,
+    const std::vector<std::vector<int>>& upstream, const std::vector<int>& downstream,
+    const RoutingDomain& domain) {
+    const std::vector<bool> no_exclusions(accumulation.sample_count(), false);
+    std::vector<int> candidates =
+        collect_seed_candidates(accumulation, domain, visible_seed_bounds(domain), 96U);
+    if (candidates.empty()) {
+        candidates =
+            collect_seed_candidates(accumulation, domain, visible_crop_bounds(domain), 96U);
+    }
+    const int fallback_seed = select_main_channel_seed(accumulation, domain);
+    if (candidates.empty() && fallback_seed >= 0) {
+        candidates.push_back(fallback_seed);
+    }
+
+    std::vector<int> best_trunk;
+    float best_score = -1.0F;
+    for (const int seed : candidates) {
+        std::vector<int> trunk =
+            trace_trunk_from_seed(seed, accumulation, upstream, downstream, no_exclusions);
+        if (trunk.empty()) {
+            continue;
+        }
+        const float edge_score =
+            static_cast<float>(visible_path_edge_touch_count(domain, trunk)) * 1'000'000.0F;
+        const float length_score =
+            static_cast<float>(visible_path_sample_count(domain, trunk)) * 1'000.0F;
+        const float accumulation_score =
+            std::log1p(accumulation.values()[static_cast<std::size_t>(seed)]);
+        const float score = edge_score + length_score + accumulation_score;
+        if (score > best_score) {
+            best_score = score;
+            best_trunk = std::move(trunk);
+        }
+    }
+    return best_trunk;
 }
 
 [[nodiscard]] cubey::procedural::NoiseSource2D channel_offset_source(std::uint64_t seed) {
