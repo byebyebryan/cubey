@@ -261,8 +261,8 @@ struct SurfaceSample {
     const float highland_pores = ridged(direction, 29.0F, "highland pores", 4U) - 0.48F;
     const float mare_patches = fbm(direction, 8.0F, "mare patches", 4U, 0.50F);
     const float highlands =
-        0.575F + broad * 0.070F + mid * 0.050F + fine * 0.030F + highland_pores * 0.045F;
-    const float mare = 0.330F + mare_patches * 0.040F + fine * 0.018F;
+        0.610F + broad * 0.090F + mid * 0.070F + fine * 0.045F + highland_pores * 0.065F;
+    const float mare = 0.270F + mare_patches * 0.050F + fine * 0.022F;
 
     float albedo = mix(highlands, mare, maria);
     float height = broad * 0.030F + mid * 0.015F + fine * 0.006F - maria * 0.036F;
@@ -275,8 +275,8 @@ struct SurfaceSample {
             const float rim =
                 smoothstep(0.62F, 0.86F, weight) * (1.0F - smoothstep(0.86F, 1.0F, weight));
             const float ejecta = 1.0F - smoothstep(0.82F, 1.0F, weight);
-            albedo += rim * crater.rim * 0.85F - floor * crater.depth * 0.55F +
-                      ejecta * crater.rim * 0.18F;
+            albedo += rim * crater.rim * 1.15F - floor * crater.depth * 0.68F +
+                      ejecta * crater.rim * 0.24F;
             height += rim * crater.rim - floor * crater.depth;
             roughness += rim * 0.06F;
         }
@@ -286,7 +286,7 @@ struct SurfaceSample {
     }
 
     return {
-        .albedo = std::clamp(albedo, 0.16F, 0.82F),
+        .albedo = std::clamp(albedo, 0.12F, 0.88F),
         .height = std::clamp(height, -0.16F, 0.18F),
         .roughness = std::clamp(roughness, 0.50F, 0.95F),
     };

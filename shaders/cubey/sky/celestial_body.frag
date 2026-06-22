@@ -42,8 +42,8 @@ LunarSurfaceSample lunar_surface_sample(vec3 normal, vec3 view_direction) {
     vec2 detail_xy = surface.gb * 2.0 - 1.0;
     detail_xy *= smoothstep(0.0, 0.18, max(dot(normal, view_direction), 0.0));
     const vec3 detail_normal =
-        normalize(normal + basis_right * detail_xy.x * 0.28 + basis_up * detail_xy.y * 0.28);
-    const float albedo = clamp((surface.r - 0.44) * 1.65 + 0.44, 0.16, 0.84);
+        normalize(normal + basis_right * detail_xy.x * 0.34 + basis_up * detail_xy.y * 0.34);
+    const float albedo = clamp((surface.r - 0.43) * 2.10 + 0.43, 0.12, 0.90);
     return LunarSurfaceSample(albedo, detail_normal);
 }
 
@@ -67,7 +67,7 @@ void main() {
     const float limb_strength = clamp(body.visibility_atmosphere.z, 0.0, 1.0);
     const float detail_strength = clamp(body.camera_position_options.w, 0.0, 1.0);
     const float texture_strength = clamp(body.surface_basis_forward_options.w, 0.0, 1.0);
-    const vec3 albedo = in_color * mix(vec3(1.0), vec3(surface.albedo * 1.65),
+    const vec3 albedo = in_color * mix(vec3(1.0), vec3(surface.albedo * 1.78),
                                        texture_strength * detail_strength);
     const float ambient = 0.030 * (1.0 - sky_visibility);
     const float lit =
