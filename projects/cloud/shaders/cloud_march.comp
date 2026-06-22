@@ -1517,38 +1517,46 @@ void main() {
                        debug_view == CLOUD_DEBUG_LOCAL_ALPHA ||
                        debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA ||
                        debug_view == CLOUD_DEBUG_DISTANCE_REGIME;
-    bool needs_orbit = full_orbit_blend > 0.001 ||
-                       effective_far_shell_blend > 0.001 ||
-                       debug_view == CLOUD_DEBUG_ORBIT_ALPHA ||
-                       debug_view == CLOUD_DEBUG_FAR_SHELL_ALPHA ||
-                       debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA ||
-                       debug_view == CLOUD_DEBUG_ORBIT_COVERAGE ||
-                       debug_view == CLOUD_DEBUG_ORBIT_DETAIL ||
-                       debug_view == CLOUD_DEBUG_ORBIT_HULL ||
-                       debug_view == CLOUD_DEBUG_ORBIT_ENVELOPE ||
-                       debug_view == CLOUD_DEBUG_ORBIT_SHELL_ALPHA ||
-                       debug_view == CLOUD_DEBUG_ORBIT_SHELL_HEIGHT ||
-                       debug_view == CLOUD_DEBUG_ORBIT_SHELL_NORMAL ||
-                       debug_view == CLOUD_DEBUG_ORBIT_SHELL_SHADOW ||
-                       debug_view == CLOUD_DEBUG_TRANSITION_WEIGHTS ||
-                       debug_view == CLOUD_DEBUG_DISTANCE_REGIME;
+    bool needs_far_bridge_source = effective_far_shell_blend > 0.001 ||
+                                   debug_view == CLOUD_DEBUG_FAR_SHELL_ALPHA ||
+                                   debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA;
+    bool needs_full_orbit_source = full_orbit_blend > 0.001 ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_ALPHA ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_COVERAGE ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_DETAIL ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_HULL ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_ENVELOPE ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_ALPHA ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_HEIGHT ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_NORMAL ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_SHADOW;
     MarchResult local_result = cloud_empty_result();
-    MarchResult orbit_result = cloud_empty_result();
+    MarchResult far_bridge_source_result = cloud_empty_result();
+    MarchResult full_orbit_result = cloud_empty_result();
     if (needs_local) {
         local_result = cloud_march(origin, direction, start_t, end_t, background, pixel);
     }
-    if (needs_orbit) {
+    if (needs_far_bridge_source || needs_full_orbit_source) {
+        MarchResult orbit_source_result = cloud_empty_result();
         if (cloud_orbit_surface_shell_enabled()) {
-            orbit_result = cloud_orbit_surface_shell(origin, direction);
+            orbit_source_result = cloud_orbit_surface_shell(origin, direction);
         } else {
-            orbit_result = cloud_orbit_shell_march(origin, direction, start_t, end_t, background,
-                                                   pixel);
+            orbit_source_result =
+                cloud_orbit_shell_march(origin, direction, start_t, end_t, background, pixel);
+        }
+        if (needs_far_bridge_source) {
+            far_bridge_source_result = orbit_source_result;
+        }
+        if (needs_full_orbit_source) {
+            full_orbit_result = orbit_source_result;
         }
     }
-    MarchResult far_shell_result = cloud_scale_result(orbit_result, effective_far_shell_blend);
+    MarchResult far_shell_result =
+        cloud_scale_result(far_bridge_source_result, effective_far_shell_blend);
     MarchResult local_with_far_shell =
         cloud_compose_results(local_result, far_shell_result);
-    MarchResult result = cloud_mix_results(local_with_far_shell, orbit_result, full_orbit_blend);
+    MarchResult result =
+        cloud_mix_results(local_with_far_shell, full_orbit_result, full_orbit_blend);
     vec3 debug_color = result.radiance;
     float debug_alpha = 1.0;
 
@@ -1567,7 +1575,7 @@ void main() {
     } else if (debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA) {
         debug_color = vec3(local_with_far_shell.alpha);
     } else if (debug_view == CLOUD_DEBUG_ORBIT_ALPHA) {
-        debug_color = vec3(orbit_result.alpha);
+        debug_color = vec3(full_orbit_result.alpha);
     } else if (debug_view == CLOUD_DEBUG_ORBIT_ENVELOPE ||
                debug_view == CLOUD_DEBUG_ORBIT_SHELL_ALPHA ||
                debug_view == CLOUD_DEBUG_ORBIT_SHELL_HEIGHT ||
