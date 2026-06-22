@@ -603,28 +603,29 @@ LocalWeatherSample cloud_local_weather_sample(vec3 position, vec3 animation,
     float medium_gate = smoothstep(0.48, 0.74, medium);
     float fine_gate = smoothstep(0.50, 0.78, fine);
 
-    float front_coord = domain.x * 0.80 - domain.y * 1.55 + broad * 3.8;
-    float front_lines = 1.0 - abs(sin(front_coord * (2.2 + front_weight * 4.8)));
-    float front_field = smoothstep(0.64, 0.94, front_lines) *
-                        mix(medium_gate, micro_ridge, 0.32) * front_weight;
+    float front_coord = domain.x * 0.55 - domain.y * 0.95 + broad * 2.4 + medium * 0.85;
+    float front_lines = 1.0 - abs(sin(front_coord * (1.15 + front_weight * 1.85)));
+    float front_field = smoothstep(0.46, 0.88, front_lines) *
+                        smoothstep(0.28, 0.74, medium + breakup * 0.35) *
+                        front_weight * 0.58;
 
     float holes = smoothstep(0.56, 0.84, medium);
     float cell_field =
         cell_gate * mix(1.0 - holes * 0.66, smoothstep(0.42, 0.84, micro_ridge), 0.32) *
         cell_weight;
 
-    float streak_coord = domain.y * 4.6 + domain.x * 0.65 + fine * 2.4;
-    float streak_lines = 1.0 - abs(sin(streak_coord * (0.75 + streak_weight * 1.65)));
+    float streak_coord = domain.y * 2.25 + domain.x * 0.42 + fine * 1.4;
+    float streak_lines = 1.0 - abs(sin(streak_coord * (0.62 + streak_weight * 1.10)));
     float streak_field = smoothstep(0.72, 0.96, streak_lines) *
                          smoothstep(0.36, 0.76, medium + fine * 0.35) *
-                         streak_weight;
+                         streak_weight * 0.55;
 
     float micro_field =
         clamp(fine_gate * (1.0 - smoothstep(0.66, 0.92, medium)) * 0.42 +
                   smoothstep(0.42, 0.86, micro_ridge) * 0.58,
               0.0, 1.0);
-    float structure = clamp(front_field * 0.34 + cell_field * 0.28 +
-                                streak_field * 0.22 + micro_field * 0.16,
+    float structure = clamp(front_field * 0.22 + cell_field * 0.36 +
+                                streak_field * 0.14 + micro_field * 0.28,
                             0.0, 1.0);
 
     float broad_context = smoothstep(0.34, 0.70, broad);
@@ -643,15 +644,15 @@ LocalWeatherSample cloud_local_weather_sample(vec3 position, vec3 animation,
     float edge_context = broad_context * mix(0.36, 1.0, cell_gate) *
                          (1.0 - core_gate * 0.58) * clear_gate;
     float fragments = medium_gate * mix(0.30, 1.0, fine_gate) * edge_context;
-    float satellites = smoothstep(0.68, 0.92,
+    float satellites = smoothstep(0.64, 0.90,
                                   micro_field * 0.54 + cell_field * 0.28 +
                                       broad * 0.18) *
-                       broad_context * clear_gate * 0.34;
+                       broad_context * clear_gate * 0.42;
     float front_overlay = front_field * smoothstep(0.24, 0.68, broad_context + envelope) *
-                          clear_gate * 0.46;
+                          clear_gate * 0.18;
 
     float coverage =
-        clamp(max(max(cloud_system, front_overlay), fragments * 0.42) +
+        clamp(max(max(cloud_system, front_overlay), fragments * 0.46) +
                   satellites,
               0.0, 1.0);
     float edge_detail =
