@@ -4,6 +4,7 @@
 #include <cubey/core/run_config.h>
 #include <cubey/render/atmosphere_lunar_atlas.h>
 #include <cubey/render/atmosphere_night_sky_atlas.h>
+#include <cubey/render/lunar_surface_map.h>
 
 #include <algorithm>
 #include <cmath>
@@ -67,6 +68,29 @@ void require_not_contains(const std::string& haystack, const char* needle, const
     const std::size_t texel =
         (static_cast<std::size_t>(y) * static_cast<std::size_t>(level.width) + x) * 4U;
     return atlas.rgba8.data() + level.byte_offset + texel;
+}
+
+[[nodiscard]] const std::uint8_t* lunar_surface_map_texel(const cubey::render::LunarSurfaceMap& map,
+                                                          std::uint32_t x, std::uint32_t y,
+                                                          std::uint32_t mip = 0) {
+    const cubey::render::LunarSurfaceMapMip& level = map.mips.at(mip);
+    const std::size_t texel =
+        (static_cast<std::size_t>(y) * static_cast<std::size_t>(level.width) + x) * 4U;
+    return map.rgba8.data() + level.byte_offset + texel;
+}
+
+[[nodiscard]] const std::uint8_t*
+lunar_surface_map_lon_lat_texel(const cubey::render::LunarSurfaceMap& map, float longitude_degrees,
+                                float latitude_degrees) {
+    const float u = longitude_degrees / 360.0F + 0.5F;
+    const float v = 0.5F - latitude_degrees / 180.0F;
+    const std::uint32_t x = static_cast<std::uint32_t>(
+        std::clamp(static_cast<int>(std::floor(u * static_cast<float>(map.width))), 0,
+                   static_cast<int>(map.width) - 1));
+    const std::uint32_t y = static_cast<std::uint32_t>(
+        std::clamp(static_cast<int>(std::floor(v * static_cast<float>(map.height))), 0,
+                   static_cast<int>(map.height) - 1));
+    return lunar_surface_map_texel(map, x, y);
 }
 
 struct TestVec3 {
@@ -428,6 +452,80 @@ int main() {
         require(mare[0] < highland[0], "lunar atlas maria should be darker than highlands");
         require(center[1] > 55U && center[1] < 200U && center[2] > 55U && center[2] < 200U,
                 "lunar atlas packed normals should stay in a usable range");
+    }
+
+    {
+        require(lunar_surface_map_mip_count(kLunarSurfaceMapWidth, kLunarSurfaceMapHeight) == 11U,
+                "default lunar surface map should include a complete 2:1 mip chain");
+        require_throws([] { static_cast<void>(lunar_surface_map_mip_count(512U, 512U)); },
+                       "lunar surface map should reject non-equirectangular dimensions");
+
+        const LunarSurfaceMap default_map = generate_lunar_surface_map();
+        require(default_map.width == kLunarSurfaceMapWidth &&
+                    default_map.height == kLunarSurfaceMapHeight,
+                "default lunar surface map should use the expected equirectangular extent");
+        require(default_map.mip_levels == 11U && default_map.mips.size() == default_map.mip_levels,
+                "default lunar surface map should include a complete mip chain");
+        cubey::procedural::validate_procedural_artifact_metadata(default_map.metadata);
+        require(default_map.metadata.generator == "cubey::render::generate_lunar_surface_map",
+                "lunar surface map metadata should identify its generator");
+        require(default_map.metadata.formula_version == "lunar-surface-map-v1",
+                "lunar surface map metadata should identify its formula version");
+        require(default_map.metadata.domain == "render.lunar_surface_map",
+                "lunar surface map metadata should identify its domain");
+        require(default_map.metadata.space == cubey::procedural::ProceduralDomainSpace::Atlas,
+                "lunar surface map metadata should use atlas domain space");
+        require(default_map.metadata.kind == cubey::procedural::ProceduralArtifactKind::Texture2D,
+                "lunar surface map metadata should identify a 2D texture");
+        require(default_map.metadata.format ==
+                    cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+                "lunar surface map metadata should identify RGBA8 payloads");
+        require(default_map.metadata.extent.width == default_map.width &&
+                    default_map.metadata.extent.height == default_map.height &&
+                    default_map.metadata.extent.faces == 1U &&
+                    default_map.metadata.extent.mip_levels == default_map.mip_levels,
+                "lunar surface map metadata should preserve dimensions and mip count");
+        require(default_map.metadata.content_hash == lunar_surface_map_hash(default_map.rgba8),
+                "lunar surface map metadata hash should match map bytes");
+
+        const LunarSurfaceMap map = generate_lunar_surface_map(128U, 64U);
+        const LunarSurfaceMap map_again = generate_lunar_surface_map(128U, 64U);
+        require(map.width == 128U && map.height == 64U && map.mip_levels == 8U,
+                "small lunar surface map should preserve requested 2:1 dimensions");
+        require(lunar_surface_map_hash(map.rgba8) == lunar_surface_map_hash(map_again.rgba8),
+                "lunar surface map generation should be deterministic");
+        require(map.metadata.seed == map_again.metadata.seed,
+                "lunar surface map metadata seed should be deterministic");
+        require(cubey::procedural::procedural_artifact_sample_count(map.metadata.extent) ==
+                    map.rgba8.size() / 4U,
+                "lunar surface map metadata sample count should match RGBA texels");
+        for (std::uint32_t mip = 0; mip < map.mip_levels; ++mip) {
+            const LunarSurfaceMapMip& level = map.mips.at(mip);
+            require(level.width >= 1U && level.height >= 1U,
+                    "lunar surface map mip dimensions should be nonzero");
+            require(level.byte_offset + level.byte_count <= map.rgba8.size(),
+                    "lunar surface map mip bytes should stay within the backing storage");
+            require(level.byte_count == static_cast<std::size_t>(level.width) *
+                                            static_cast<std::size_t>(level.height) * 4U,
+                    "lunar surface map mips should be tightly packed RGBA8");
+        }
+
+        const std::uint8_t* mare = lunar_surface_map_lon_lat_texel(map, -18.0F, 35.0F);
+        const std::uint8_t* highland = lunar_surface_map_lon_lat_texel(map, 142.0F, -11.0F);
+        const std::uint8_t* seam_left = lunar_surface_map_texel(map, 0U, map.height / 2U);
+        const std::uint8_t* seam_right =
+            lunar_surface_map_texel(map, map.width - 1U, map.height / 2U);
+        const std::uint8_t* north = lunar_surface_map_texel(map, map.width / 2U, 0U);
+        const std::uint8_t* center = lunar_surface_map_lon_lat_texel(map, 0.0F, 0.0F);
+        require(mare[0] < highland[0], "lunar surface map maria should be darker than highlands");
+        require(std::abs(static_cast<int>(seam_left[0]) - static_cast<int>(seam_right[0])) < 24,
+                "lunar surface map should stay continuous across the longitude seam");
+        require(north[0] > 20U && north[0] < 230U,
+                "lunar surface map poles should stay finite and populated");
+        require(center[1] > 55U && center[1] < 200U && center[2] > 55U && center[2] < 200U,
+                "lunar surface map packed normal detail should stay in a usable range");
+        require(center[3] > 80U && center[3] <= 255U,
+                "lunar surface map alpha should carry a roughness/detail mask");
     }
 
     {
@@ -922,8 +1020,9 @@ int main() {
                      "atmosphere final view should suppress the inline moon shader disk");
     require_contains(app_source, "render_view_ == AtmosphereRenderView::Moon",
                      "atmosphere moon debug view should keep the inline shader disk available");
-    require_contains(app_source, "render_view_ == AtmosphereRenderView::MoonSurface",
-                     "atmosphere moon surface debug view should keep the inline shader disk available");
+    require_contains(
+        app_source, "render_view_ == AtmosphereRenderView::MoonSurface",
+        "atmosphere moon surface debug view should keep the inline shader disk available");
     require_not_contains(shader_source, "layout(push_constant)",
                          "atmosphere shader should not use push constants for frame data");
     require_not_contains(shader_source, "cubey_pbr_apply_display_transform",

@@ -168,6 +168,7 @@ add_library(cubey_render STATIC
     render/generated_texture.cpp
     render/hdr_post_frame.cpp
     render/instance_buffer.cpp
+    render/lunar_surface_map.cpp
     render/material_instance.cpp
     render/material.cpp
     render/mesh.cpp
