@@ -775,6 +775,8 @@ void test_celestial_body_frame_uniforms_pack_render_placement() {
                  "body frame uniforms should pack body phase");
     require_near(uniforms.visibility_atmosphere.x, 0.0F, 0.000001F,
                  "body frame uniforms should default to no atmospheric sky visibility");
+    require_near(uniforms.visibility_atmosphere.w, 0.0F, 0.000001F,
+                 "body frame uniforms should default to lit body shading");
 
     const cubey::math::Vec3 expected_forward = glm::normalize(-moon.direction);
     const cubey::math::Vec3 basis_right{uniforms.surface_basis_right.x,
@@ -795,6 +797,26 @@ void test_celestial_body_frame_uniforms_pack_render_placement() {
                  "body frame surface map up axis should be orthogonal to the near side");
     require(uniforms.surface_basis_forward_options.w > 0.0F,
             "body frame uniforms should enable surface map sampling");
+
+    const cubey::projects::planet::PlanetCelestialBodyFrameUniforms debug_uniforms =
+        cubey::projects::planet::planet_celestial_body_frame_uniforms(
+            moon, placement, lighting, cubey::math::Mat4{1.0F},
+            {
+                .camera_render_position_m = {1.0F, 2.0F, 3.0F},
+                .atmosphere = {},
+                .shading_mode = cubey::render::CelestialBodyShadingMode::SurfaceDebug,
+                .surface_detail_strength = 0.75F,
+                .surface_texture_strength = 0.80F,
+                .limb_strength = 0.0F,
+            });
+    require_near(debug_uniforms.camera_position_options.w, 0.75F, 0.000001F,
+                 "body frame uniforms should pack requested surface detail strength");
+    require_near(debug_uniforms.visibility_atmosphere.z, 0.0F, 0.000001F,
+                 "body frame uniforms should pack requested limb strength");
+    require_near(debug_uniforms.visibility_atmosphere.w, 1.0F, 0.000001F,
+                 "body frame uniforms should pack surface debug shading mode");
+    require_near(debug_uniforms.surface_basis_forward_options.w, 0.80F, 0.000001F,
+                 "body frame uniforms should pack requested surface texture strength");
 
     const cubey::projects::planet::PlanetCelestialBodyFrameUniforms moved_camera_uniforms =
         cubey::projects::planet::planet_celestial_body_frame_uniforms(

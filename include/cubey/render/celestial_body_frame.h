@@ -39,9 +39,18 @@ struct CelestialBodyAtmosphereInputs {
     float atmosphere_outer_radius_m = 0.0F;
 };
 
+enum class CelestialBodyShadingMode : std::uint8_t {
+    Lit = 0,
+    SurfaceDebug = 1,
+};
+
 struct CelestialBodyFrameInputs {
     cubey::math::Vec3 camera_render_position_m{0.0F, 0.0F, 0.0F};
     CelestialBodyAtmosphereInputs atmosphere{};
+    CelestialBodyShadingMode shading_mode = CelestialBodyShadingMode::Lit;
+    float surface_detail_strength = 0.42F;
+    float surface_texture_strength = 1.0F;
+    float limb_strength = 0.32F;
 };
 
 enum class CelestialBodyDepthMode : std::uint8_t {

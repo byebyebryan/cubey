@@ -125,7 +125,7 @@ CelestialBodyFrameUniforms celestial_body_frame_uniforms(
                 inputs.camera_render_position_m.x,
                 inputs.camera_render_position_m.y,
                 inputs.camera_render_position_m.z,
-                0.42F,
+                inputs.surface_detail_strength,
             },
         .light_direction_intensity =
             {
@@ -145,8 +145,8 @@ CelestialBodyFrameUniforms celestial_body_frame_uniforms(
             {
                 sky_visibility,
                 0.0F,
-                0.32F,
-                0.0F,
+                inputs.limb_strength,
+                static_cast<float>(inputs.shading_mode),
             },
         .surface_basis_right =
             {
@@ -167,7 +167,7 @@ CelestialBodyFrameUniforms celestial_body_frame_uniforms(
                 surface_basis.forward.x,
                 surface_basis.forward.y,
                 surface_basis.forward.z,
-                1.0F,
+                inputs.surface_texture_strength,
             },
     };
 }

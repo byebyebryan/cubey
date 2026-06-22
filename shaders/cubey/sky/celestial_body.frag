@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "cubey/color_space.glsl"
 
 layout(location = 0) in vec3 in_normal;
 layout(location = 1) in vec3 in_color;
@@ -28,6 +31,8 @@ struct LunarSurfaceSample {
 const float kPi = 3.14159265358979323846;
 const float kInvTwoPi = 1.0 / (kPi * 2.0);
 const float kInvPi = 1.0 / kPi;
+const int kCelestialBodyShadingLit = 0;
+const int kCelestialBodyShadingSurfaceDebug = 1;
 
 LunarSurfaceSample lunar_surface_sample(vec3 normal, vec3 view_direction) {
     const vec3 basis_right = normalize(body.surface_basis_right.xyz);
@@ -45,6 +50,17 @@ LunarSurfaceSample lunar_surface_sample(vec3 normal, vec3 view_direction) {
         normalize(normal + basis_right * detail_xy.x * 0.34 + basis_up * detail_xy.y * 0.34);
     const float albedo = clamp((surface.r - 0.43) * 2.10 + 0.43, 0.12, 0.90);
     return LunarSurfaceSample(albedo, detail_normal);
+}
+
+vec3 lunar_surface_debug_color(LunarSurfaceSample surface, vec3 normal, vec3 view_direction) {
+    const float albedo = clamp((surface.albedo - 0.12) / 0.78, 0.0, 1.0);
+    const float maria_preserving_albedo = clamp((albedo - 0.5) * 1.30 + 0.5, 0.0, 1.0);
+    const vec3 debug_light = normalize(vec3(-0.45, 0.55, 0.70));
+    const vec3 tangent_relief = surface.normal - normal * dot(surface.normal, normal);
+    const float relief = dot(tangent_relief, debug_light) * 0.65;
+    const float limb = smoothstep(0.01, 0.16, abs(dot(normal, view_direction)));
+    const float value = clamp(mix(0.16, 0.74, maria_preserving_albedo) + relief, 0.05, 0.90);
+    return cubey_srgb_to_linear(vec3(value * limb));
 }
 
 void main() {
@@ -65,8 +81,14 @@ void main() {
     const float limb = smoothstep(0.02, 0.34, ndotv);
     const float eclipse_shadow = clamp(body.visibility_atmosphere.y, 0.0, 1.0);
     const float limb_strength = clamp(body.visibility_atmosphere.z, 0.0, 1.0);
+    const int shading_mode = int(body.visibility_atmosphere.w + 0.5);
     const float detail_strength = clamp(body.camera_position_options.w, 0.0, 1.0);
     const float texture_strength = clamp(body.surface_basis_forward_options.w, 0.0, 1.0);
+    if (shading_mode == kCelestialBodyShadingSurfaceDebug) {
+        out_color = vec4(lunar_surface_debug_color(surface, normal, view_direction), 1.0);
+        return;
+    }
+
     const vec3 albedo = in_color * mix(vec3(1.0), vec3(surface.albedo * 1.78),
                                        texture_strength * detail_strength);
     const float ambient = 0.030 * (1.0 - sky_visibility);
