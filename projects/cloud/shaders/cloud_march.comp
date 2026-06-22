@@ -1317,6 +1317,15 @@ MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, 
                        max(phase_sum * 1.70, vec3(0.0)));
 }
 
+MarchResult cloud_far_bridge_march(vec3 origin, vec3 direction, float start_t, float end_t,
+                                   vec3 background, ivec2 pixel) {
+    float bridge_start = max(start_t, params.orbit_options.x);
+    if (end_t <= bridge_start) {
+        return cloud_empty_result();
+    }
+    return cloud_orbit_shell_march(origin, direction, bridge_start, end_t, background, pixel);
+}
+
 MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
                             vec3 background, ivec2 pixel) {
     int max_steps = clamp(int(params.ref_options.y + 0.5), 1, 96);
@@ -1536,19 +1545,16 @@ void main() {
     if (needs_local) {
         local_result = cloud_march(origin, direction, start_t, end_t, background, pixel);
     }
-    if (needs_far_bridge_source || needs_full_orbit_source) {
-        MarchResult orbit_source_result = cloud_empty_result();
+    if (needs_far_bridge_source) {
+        far_bridge_source_result =
+            cloud_far_bridge_march(origin, direction, start_t, end_t, background, pixel);
+    }
+    if (needs_full_orbit_source) {
         if (cloud_orbit_surface_shell_enabled()) {
-            orbit_source_result = cloud_orbit_surface_shell(origin, direction);
+            full_orbit_result = cloud_orbit_surface_shell(origin, direction);
         } else {
-            orbit_source_result =
+            full_orbit_result =
                 cloud_orbit_shell_march(origin, direction, start_t, end_t, background, pixel);
-        }
-        if (needs_far_bridge_source) {
-            far_bridge_source_result = orbit_source_result;
-        }
-        if (needs_full_orbit_source) {
-            full_orbit_result = orbit_source_result;
         }
     }
     MarchResult far_shell_result =
