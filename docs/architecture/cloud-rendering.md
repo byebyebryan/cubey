@@ -237,8 +237,8 @@ separate contributors:
 
 - `local`: the normal surface volume march, responsible for foreground thickness
   and parallax;
-- `far shell`: a dedicated low-detail far-volume bridge for long high-oblique
-  rays;
+- `far shell`: an adaptive low-detail march of the same local volume field,
+  limited to the later high-oblique ray segment;
 - `full orbit`: the orbit shell as the replacement path for true orbit/high
   altitude views.
 
@@ -258,13 +258,19 @@ This prevents the orbit representation from contributing once as far background
 and again as the full replacement during the same handoff. The far bridge must
 not reuse the orbit cloud-top shell directly: captures showed that the orbit
 shell is correctly limb/grazing-filtered for full-disk views, but it becomes a
-faint haze source rather than readable high-oblique cloud mass. The diagnostic
-contract is: `distance-regime` shows full orbit, effective far shell, and
-residual local regime; `transition-weights` shows local-branch availability,
-final far-shell contribution, and full orbit takeover; `local-alpha`,
-`far-shell-alpha`, `local-with-shell-alpha`, and `orbit-alpha` isolate the
-visible alpha at each stage. `projects/cloud/capture_review.sh` includes these
-views for surface, high-oblique, and orbit review.
+faint haze source rather than readable high-oblique cloud mass. It should also
+not use the orbit weather volume as its primary source, because that swaps cloud
+domains during the surface-to-orbit transition and reads as a different cloud
+type. The intended bridge is a lower-step, higher-LOD march of the local density
+field over only the distant ray segment. Full orbit remains a separate
+cloud-top shell problem.
+
+The diagnostic contract is: `distance-regime` shows full orbit, effective far
+shell, and residual local regime; `transition-weights` shows local-branch
+availability, final far-shell contribution, and full orbit takeover;
+`local-alpha`, `far-shell-alpha`, `local-with-shell-alpha`, and `orbit-alpha`
+isolate the visible alpha at each stage. `projects/cloud/capture_review.sh`
+includes these views for surface, high-oblique, and orbit review.
 
 ## Renderer Contract
 

@@ -886,14 +886,23 @@ Forced comparisons clarified the source of the failure:
 
 The next implementation direction is therefore a dedicated high-oblique
 far-volume bridge. Orbit `surface-shell` remains the default full-orbit path,
-while the far bridge should use sphere-space weather/density over the far ray
-segment, then apply aerial perspective once after branch composition.
+while the far bridge should use a cheaper version of the same local cloud field
+over the far ray segment, then apply aerial perspective once after branch
+composition.
 
 The first implementation checkpoint is `outputs/cloud-far-bridge-review/`.
 `high-oblique-far-shell-alpha` now shows a broad broken horizon band, and
 far-shell off/default/strong captures are visibly distinguishable. The bridge is
 still intentionally soft; further work should improve far-field detail and
 lighting before changing the full-orbit shell again.
+
+The follow-up diagnosis is that this first bridge still used the orbit weather
+volume rather than the local cloud field. That makes high-oblique captures feel
+like a transition between cloud types: foreground structure comes from the
+surface/local procedural density, then the horizon assist comes from the
+planet/orbit weather model. The next checkpoint should treat the far bridge as a
+local-cloud LOD path: fewer steps, higher density LOD bias, same local weather
+and 3D density source, and still no changes to the full-orbit shell.
 
 ## Orbit Shell Strategy 2026-06-20
 
