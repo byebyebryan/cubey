@@ -32,6 +32,8 @@ the detailed foundation notes under `docs/architecture/`.
   build, unit-test, and PNG-smoke baseline for the `sky-rendering` worktree.
 - [Sky visual baseline review](sky-visual-baseline-review.md): capture review
   findings behind removing the legacy planet `SkyFrame` backend.
+- [Sky visual iteration plan](sky-visual-iteration-plan.md): first post-cleanup
+  visual tuning scope and commit sequence for unified atmosphere sun work.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
