@@ -166,7 +166,8 @@ Controls:
   `transition-weights` displays local-branch availability in red, effective
   far-shell contribution in green, and full orbit takeover in blue.
   `far-shell-alpha` and `local-with-shell-alpha` isolate the adaptive low-detail
-  local far bridge from the foreground local volume and full orbit replacement.
+  local far bridge plus the dedicated horizon layer from the foreground local
+  volume and full orbit replacement.
   Orbit shell diagnostics sample a direct planet-space coverage/detail/hull
   model rather than the surface-local planar density field. The broad orbit
   weather frequencies derive from `Weather scale`, with regional storm/dry
@@ -175,9 +176,9 @@ Controls:
   broken regional weather with large clear windows and fewer totally empty
   regions, not as a smooth planet-wide cap. `Orbit fill` biases that empty-space
   fill while preserving the same weather/detail fields. `Far shell strength`
-  controls how much low-detail local-volume cloud contributes behind foreground
-  local volume in high-oblique views; full orbit still uses the orbit cloud-top
-  shell by default.
+  controls how much low-detail local-volume and horizon-layer cloud contributes
+  behind foreground local volume in high-oblique views; full orbit still uses
+  the orbit cloud-top shell by default.
 - `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
   fill controls.
 - `Final Resolve`: alpha-aware smoothing amount plus final contrast,
@@ -188,10 +189,11 @@ Known deferrals:
 - No cached octahedral hemisphere path yet. `cloud_ref_2` remains the cache
   architecture reference for a later pass.
 - High-oblique is the current regime bridge target. Surface/local volume should
-  remain the foreground shape reference, while a broad far-shell contribution
-  should carry cloud continuity toward the horizon before full orbit-shell
-  replacement takes over. The far bridge marches only the later ray segment with
-  fewer local-density samples and a higher LOD bias, then aerial perspective is
+  remain the foreground shape reference, while the far bridge carries cloud
+  continuity toward the horizon before full orbit-shell replacement takes over.
+  The far bridge marches only the later ray segment with fewer local-density
+  samples and a higher LOD bias, then adds a cheap distance/grazing-gated
+  horizon layer sampled from the same local weather field. Aerial perspective is
   applied once after local/far/orbit composition. The default handoff keeps full
   orbit replacement above the high-oblique preset (`45 km` to `180 km`) while
   the far shell fills long rays earlier (`30 km` to `160 km`) with a slightly

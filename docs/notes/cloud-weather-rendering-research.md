@@ -924,6 +924,17 @@ the shell floor does not saturate into a stripe. The `high` camera preset also
 moved above the default cloud top; the old 12 km preset sat inside the 5-22 km
 default cloud layer and was a poor high-view diagnostic.
 
+`outputs/cloud-horizon-coverage-review/` showed that the boundary fade fixed
+the hard floor line but exposed a separate far-coverage problem: in high and
+high-oblique views the reduced local far bridge was active, yet its alpha stayed
+too sparse and patchy to carry cloud continuity all the way to the horizon. The
+follow-up keeps the local-volume far bridge for domain consistency, wires the
+existing `clouds.horizon_layer` option into the shader, and adds a cheap
+distance/grazing-gated horizon layer driven by the same local procedural weather
+field. This is intentionally not the full orbit shell and not a separate orbit
+weather type; it is a high-view LOD assist for long rays where reduced local
+marching thins out before the horizon.
+
 ## Orbit Shell Strategy 2026-06-20
 
 The current orbit raymarch is useful as a diagnostic, but it is no longer the
