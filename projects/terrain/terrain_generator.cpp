@@ -36,6 +36,31 @@ struct RiverFields {
     cubey::procedural::ScalarField2D deposition{};
 };
 
+struct TerrainSourceFields {
+    cubey::procedural::ScalarField2D broad_noise{};
+    cubey::procedural::ScalarField2D base_elevation{};
+    cubey::procedural::ScalarField2D broad_relief{};
+    cubey::procedural::ScalarField2D ridge_uplift{};
+    cubey::procedural::ScalarField2D detail_residual{};
+    cubey::procedural::ScalarField2D height{};
+};
+
+struct RoutingDomain {
+    cubey::procedural::Grid2DDesc visible_desc{};
+    cubey::procedural::Grid2DDesc hidden_desc{};
+    std::uint32_t padding_x = 0U;
+    std::uint32_t padding_y = 0U;
+};
+
+struct RoutingContext {
+    RoutingDomain domain{};
+    cubey::procedural::ScalarField2D routing_surface{};
+    FlowRoutingResult routing{};
+    cubey::procedural::ScalarField2D accumulation{};
+    cubey::procedural::ScalarField2D stream_order{};
+    cubey::procedural::ScalarField2D sink_mask{};
+};
+
 struct ChannelPathPoint {
     float x = 0.0F;
     float y = 0.0F;
@@ -184,9 +209,93 @@ struct ChannelPathPoint {
     return result;
 }
 
+[[nodiscard]] TerrainSourceFields make_terrain_source_fields(cubey::procedural::Grid2DDesc desc,
+                                                             std::uint64_t seed) {
+    TerrainSourceFields fields{
+        .broad_noise = unit_source_field(desc, seed + 101U, 0.00018F, 4U),
+    };
+    fields.base_elevation = make_base_elevation_field(desc, fields.broad_noise);
+    fields.broad_relief =
+        scale_unit_field(unit_source_field(desc, seed + 202U, 0.00042F, 5U), -80.0F, 360.0F);
+    fields.ridge_uplift =
+        make_ridge_uplift_field(ridge_source_field(desc, seed + 303U), fields.broad_relief);
+    fields.detail_residual =
+        scale_unit_field(unit_source_field(desc, seed + 404U, 0.0018F, 4U), -38.0F, 52.0F);
+    fields.detail_residual = cubey::procedural::box_blur_3x3(fields.detail_residual);
+    fields.height = add_height_fields(fields.base_elevation, fields.broad_relief,
+                                      fields.ridge_uplift, fields.detail_residual);
+    return fields;
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D make_routing_source_height(
+    cubey::procedural::Grid2DDesc desc, std::uint64_t seed) {
+    const cubey::procedural::ScalarField2D broad_noise =
+        unit_source_field(desc, seed + 101U, 0.00018F, 4U);
+    cubey::procedural::ScalarField2D broad_relief =
+        scale_unit_field(unit_source_field(desc, seed + 202U, 0.00042F, 5U), -80.0F, 360.0F);
+    const cubey::procedural::ScalarField2D ridge_uplift =
+        make_ridge_uplift_field(ridge_source_field(desc, seed + 303U), broad_relief);
+    cubey::procedural::ScalarField2D result(desc, 0.0F);
+    const cubey::procedural::ScalarField2D base_elevation =
+        make_base_elevation_field(desc, broad_noise);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            result.at(x, y) =
+                base_elevation.at(x, y) + broad_relief.at(x, y) + (ridge_uplift.at(x, y) * 0.55F);
+        }
+    }
+    return result;
+}
+
 void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
                cubey::procedural::ScalarField2D field) {
     fields.add_field(std::string(name), std::move(field));
+}
+
+[[nodiscard]] std::uint32_t routing_padding_cells(
+    const cubey::procedural::Grid2DDesc& visible_desc) {
+    const std::uint32_t base = std::min(visible_desc.width, visible_desc.height) / 4U;
+    return std::clamp(base, 32U, 128U);
+}
+
+[[nodiscard]] RoutingDomain make_routing_domain(cubey::procedural::Grid2DDesc visible_desc) {
+    const std::uint32_t padding = routing_padding_cells(visible_desc);
+    cubey::procedural::Grid2DDesc hidden_desc = visible_desc;
+    hidden_desc.width = visible_desc.width + (padding * 2U);
+    hidden_desc.height = visible_desc.height + (padding * 2U);
+    hidden_desc.origin_x = visible_desc.origin_x -
+                           (static_cast<float>(padding) * visible_desc.cell_size);
+    hidden_desc.origin_y = visible_desc.origin_y -
+                           (static_cast<float>(padding) * visible_desc.cell_size);
+    return RoutingDomain{
+        .visible_desc = visible_desc,
+        .hidden_desc = hidden_desc,
+        .padding_x = padding,
+        .padding_y = padding,
+    };
+}
+
+[[nodiscard]] bool is_inside_visible_crop(const RoutingDomain& domain, int hidden_index) {
+    if (hidden_index < 0) {
+        return false;
+    }
+    const auto index = static_cast<std::uint32_t>(hidden_index);
+    const std::uint32_t x = index % domain.hidden_desc.width;
+    const std::uint32_t y = index / domain.hidden_desc.width;
+    return x >= domain.padding_x && y >= domain.padding_y &&
+           x < domain.padding_x + domain.visible_desc.width &&
+           y < domain.padding_y + domain.visible_desc.height;
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D crop_hidden_field_to_visible(
+    const cubey::procedural::ScalarField2D& hidden_field, const RoutingDomain& domain) {
+    cubey::procedural::ScalarField2D visible(domain.visible_desc, 0.0F);
+    for (std::uint32_t y = 0; y < domain.visible_desc.height; ++y) {
+        for (std::uint32_t x = 0; x < domain.visible_desc.width; ++x) {
+            visible.at(x, y) = hidden_field.at(x + domain.padding_x, y + domain.padding_y);
+        }
+    }
+    return visible;
 }
 
 [[nodiscard]] FlowRoutingResult route_steepest_descent(
@@ -297,14 +406,21 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
     return upstream;
 }
 
-[[nodiscard]] int select_main_channel_seed(const cubey::procedural::ScalarField2D& accumulation) {
+[[nodiscard]] int select_main_channel_seed(const cubey::procedural::ScalarField2D& accumulation,
+                                           const RoutingDomain& domain) {
     int best_index = -1;
     float best_accumulation = -1.0F;
-    for (std::size_t index = 0; index < accumulation.sample_count(); ++index) {
-        const float value = accumulation.values()[index];
-        if (value > best_accumulation) {
-            best_accumulation = value;
-            best_index = static_cast<int>(index);
+    for (std::uint32_t y = 0; y < domain.visible_desc.height; ++y) {
+        for (std::uint32_t x = 0; x < domain.visible_desc.width; ++x) {
+            const std::uint32_t hidden_x = x + domain.padding_x;
+            const std::uint32_t hidden_y = y + domain.padding_y;
+            const std::size_t index =
+                cubey::procedural::grid_index(hidden_x, hidden_y, domain.hidden_desc.width);
+            const float value = accumulation.values()[index];
+            if (value > best_accumulation) {
+                best_accumulation = value;
+                best_index = static_cast<int>(index);
+            }
         }
     }
     return best_index;
@@ -369,8 +485,9 @@ void add_field(cubey::procedural::FieldSet2D& fields, std::string_view name,
 
 [[nodiscard]] std::vector<int> trace_main_trunk(
     const cubey::procedural::ScalarField2D& accumulation,
-    const std::vector<std::vector<int>>& upstream, const std::vector<int>& downstream) {
-    const int seed = select_main_channel_seed(accumulation);
+    const std::vector<std::vector<int>>& upstream, const std::vector<int>& downstream,
+    const RoutingDomain& domain) {
+    const int seed = select_main_channel_seed(accumulation, domain);
     const std::vector<bool> no_exclusions(accumulation.sample_count(), false);
     const std::vector<int> upstream_path =
         trace_strongest_upstream_path(seed, upstream, accumulation, 1.0F, no_exclusions);
@@ -491,13 +608,15 @@ void apply_channel_lateral_offset(std::vector<ChannelPathPoint>& points, std::ui
 
 void rasterize_channel_segments(cubey::procedural::ScalarField2D& field,
                                 const std::vector<ChannelPathPoint>& points, float core_radius_cells,
-                                float falloff_radius_cells) {
+                                float falloff_radius_cells, const RoutingDomain& domain) {
     if (points.empty()) {
         return;
     }
     if (points.size() == 1U) {
-        const int cx = static_cast<int>(std::round(points.front().x));
-        const int cy = static_cast<int>(std::round(points.front().y));
+        const int cx = static_cast<int>(
+            std::round(points.front().x - static_cast<float>(domain.padding_x)));
+        const int cy = static_cast<int>(
+            std::round(points.front().y - static_cast<float>(domain.padding_y)));
         if (cx >= 0 && cy >= 0 && cx < static_cast<int>(field.desc().width) &&
             cy < static_cast<int>(field.desc().height)) {
             field.at(static_cast<std::uint32_t>(cx), static_cast<std::uint32_t>(cy)) =
@@ -509,12 +628,25 @@ void rasterize_channel_segments(cubey::procedural::ScalarField2D& field,
 
     const float influence_radius = std::max(core_radius_cells, falloff_radius_cells);
     for (std::size_t index = 0; index + 1U < points.size(); ++index) {
-        const ChannelPathPoint& a = points[index];
-        const ChannelPathPoint& b = points[index + 1U];
+        const ChannelPathPoint a{
+            .x = points[index].x - static_cast<float>(domain.padding_x),
+            .y = points[index].y - static_cast<float>(domain.padding_y),
+            .strength = points[index].strength,
+        };
+        const ChannelPathPoint b{
+            .x = points[index + 1U].x - static_cast<float>(domain.padding_x),
+            .y = points[index + 1U].y - static_cast<float>(domain.padding_y),
+            .strength = points[index + 1U].strength,
+        };
         const float min_x = std::min(a.x, b.x) - influence_radius;
         const float max_x = std::max(a.x, b.x) + influence_radius;
         const float min_y = std::min(a.y, b.y) - influence_radius;
         const float max_y = std::max(a.y, b.y) + influence_radius;
+        if (max_x < 0.0F || max_y < 0.0F ||
+            min_x > static_cast<float>(field.desc().width - 1U) ||
+            min_y > static_cast<float>(field.desc().height - 1U)) {
+            continue;
+        }
         const std::uint32_t x0 = static_cast<std::uint32_t>(std::max(0.0F, std::floor(min_x)));
         const std::uint32_t y0 = static_cast<std::uint32_t>(std::max(0.0F, std::floor(min_y)));
         const std::uint32_t x1 = static_cast<std::uint32_t>(
@@ -547,22 +679,25 @@ void rasterize_channel_segments(cubey::procedural::ScalarField2D& field,
 }
 
 void paint_channel_path(cubey::procedural::ScalarField2D& field, const std::vector<int>& path,
-                        float strength, float core_radius_cells, float falloff_radius_cells,
-                        std::uint64_t seed, float max_offset_cells) {
-    std::vector<ChannelPathPoint> points = make_channel_path_points(field.desc(), path, strength);
+                        const RoutingDomain& domain, float strength, float core_radius_cells,
+                        float falloff_radius_cells, std::uint64_t seed, float max_offset_cells) {
+    std::vector<ChannelPathPoint> points =
+        make_channel_path_points(domain.hidden_desc, path, strength);
     smooth_channel_path(points, 3);
     apply_channel_lateral_offset(points, seed, max_offset_cells);
-    rasterize_channel_segments(field, points, core_radius_cells, falloff_radius_cells);
+    rasterize_channel_segments(field, points, core_radius_cells, falloff_radius_cells, domain);
 }
 
-void activate_river_network(RiverFields& fields, const std::vector<int>& downstream,
+void activate_river_network(RiverFields& fields, const RoutingContext& context,
                             std::uint64_t seed) {
+    const std::vector<int>& downstream = context.routing.downstream;
     const std::vector<std::vector<int>> upstream = make_upstream_adjacency(downstream);
     const std::vector<int> trunk =
-        trace_main_trunk(fields.flow_accumulation, upstream, downstream);
-    paint_channel_path(fields.river_trunk, trunk, 1.0F, 1.4F, 3.0F, seed + 1101U, 1.25F);
+        trace_main_trunk(context.accumulation, upstream, downstream, context.domain);
+    paint_channel_path(fields.river_trunk, trunk, context.domain, 1.0F, 1.4F, 3.0F,
+                       seed + 1101U, 1.25F);
 
-    std::vector<bool> active(fields.flow_accumulation.sample_count(), false);
+    std::vector<bool> active(context.accumulation.sample_count(), false);
     for (const int index : trunk) {
         active[static_cast<std::size_t>(index)] = true;
     }
@@ -571,7 +706,7 @@ void activate_river_network(RiverFields& fields, const std::vector<int>& downstr
     for (const int index : trunk) {
         trunk_accumulation =
             std::max(trunk_accumulation,
-                     fields.flow_accumulation.values()[static_cast<std::size_t>(index)]);
+                     context.accumulation.values()[static_cast<std::size_t>(index)]);
     }
     const float min_tributary_accumulation = std::max(4.0F, trunk_accumulation * 0.018F);
     const std::size_t max_tributary_count = std::max<std::size_t>(2U, trunk.size() / 18U);
@@ -582,9 +717,9 @@ void activate_river_network(RiverFields& fields, const std::vector<int>& downstr
             break;
         }
         std::vector<int> candidates = upstream[static_cast<std::size_t>(trunk_index)];
-        std::sort(candidates.begin(), candidates.end(), [&fields](int lhs, int rhs) {
-            return fields.flow_accumulation.values()[static_cast<std::size_t>(lhs)] >
-                   fields.flow_accumulation.values()[static_cast<std::size_t>(rhs)];
+        std::sort(candidates.begin(), candidates.end(), [&context](int lhs, int rhs) {
+            return context.accumulation.values()[static_cast<std::size_t>(lhs)] >
+                   context.accumulation.values()[static_cast<std::size_t>(rhs)];
         });
 
         for (const int candidate : candidates) {
@@ -592,11 +727,11 @@ void activate_river_network(RiverFields& fields, const std::vector<int>& downstr
                 continue;
             }
             std::vector<int> branch = trace_strongest_upstream_path(
-                candidate, upstream, fields.flow_accumulation, min_tributary_accumulation, active);
+                candidate, upstream, context.accumulation, min_tributary_accumulation, active);
             if (branch.size() < 5U) {
                 continue;
             }
-            paint_channel_path(fields.tributaries, branch, 0.75F, 0.9F, 2.1F,
+            paint_channel_path(fields.tributaries, branch, context.domain, 0.75F, 0.9F, 2.1F,
                                seed + 2203U + (accepted_tributaries * 117U), 0.75F);
             for (const int index : branch) {
                 active[static_cast<std::size_t>(index)] = true;
@@ -625,22 +760,75 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
     }
 }
 
+[[nodiscard]] cubey::procedural::ScalarField2D make_stream_order_field(
+    const cubey::procedural::ScalarField2D& accumulation) {
+    const cubey::procedural::Grid2DDesc& desc = accumulation.desc();
+    cubey::procedural::ScalarField2D stream_order(desc, 1.0F);
+    const float max_accumulation = std::max(accumulation.summarize().max, 1.0F);
+    const float log_max_accumulation = std::log1p(max_accumulation);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float discharge =
+                log_max_accumulation <= 0.0F ? 0.0F : std::log1p(accumulation.at(x, y)) /
+                                                        log_max_accumulation;
+            stream_order.at(x, y) = 1.0F + (discharge > 0.42F ? 1.0F : 0.0F) +
+                                    (discharge > 0.56F ? 1.0F : 0.0F) +
+                                    (discharge > 0.70F ? 1.0F : 0.0F) +
+                                    (discharge > 0.84F ? 1.0F : 0.0F);
+        }
+    }
+    return stream_order;
+}
+
+[[nodiscard]] RoutingContext make_routing_context(cubey::procedural::Grid2DDesc visible_desc,
+                                                  std::uint64_t seed) {
+    RoutingContext context{
+        .domain = make_routing_domain(visible_desc),
+    };
+    const cubey::procedural::ScalarField2D routing_height =
+        make_routing_source_height(context.domain.hidden_desc, seed);
+    context.routing_surface = make_drainage_routing_surface(routing_height, seed);
+    context.routing = route_steepest_descent(context.routing_surface);
+    context.accumulation = accumulate_flow(context.routing_surface, context.routing.downstream);
+    context.stream_order = make_stream_order_field(context.accumulation);
+    context.sink_mask = cubey::procedural::ScalarField2D(context.domain.hidden_desc, 0.0F);
+    populate_sink_mask(context.sink_mask, context.routing.downstream);
+    return context;
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D make_visible_sink_mask(
+    const RoutingContext& context) {
+    cubey::procedural::ScalarField2D sink_mask(context.domain.visible_desc, 0.0F);
+    for (std::uint32_t y = 0; y < context.domain.visible_desc.height; ++y) {
+        for (std::uint32_t x = 0; x < context.domain.visible_desc.width; ++x) {
+            const std::uint32_t hidden_x = x + context.domain.padding_x;
+            const std::uint32_t hidden_y = y + context.domain.padding_y;
+            const std::size_t hidden_index =
+                cubey::procedural::grid_index(hidden_x, hidden_y, context.domain.hidden_desc.width);
+            const int downstream = context.routing.downstream[hidden_index];
+            sink_mask.at(x, y) =
+                downstream < 0 || !is_inside_visible_crop(context.domain, downstream) ? 1.0F
+                                                                                      : 0.0F;
+        }
+    }
+    return sink_mask;
+}
+
 [[nodiscard]] RiverFields make_river_fields(const cubey::procedural::ScalarField2D& height,
                                             const cubey::procedural::ScalarField2D& slope,
                                             std::uint64_t seed) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
-    const cubey::procedural::ScalarField2D routing_surface =
-        make_drainage_routing_surface(height, seed);
-    const FlowRoutingResult routing = route_steepest_descent(routing_surface);
+    const RoutingContext context = make_routing_context(desc, seed);
     RiverFields fields{
-        .drainage_potential = routing_surface,
-        .flow_direction = routing.flow_direction,
-        .flow_accumulation = accumulate_flow(routing_surface, routing.downstream),
-        .stream_order = cubey::procedural::ScalarField2D(desc, 1.0F),
+        .drainage_potential = crop_hidden_field_to_visible(context.routing_surface, context.domain),
+        .flow_direction = crop_hidden_field_to_visible(context.routing.flow_direction,
+                                                       context.domain),
+        .flow_accumulation = crop_hidden_field_to_visible(context.accumulation, context.domain),
+        .stream_order = crop_hidden_field_to_visible(context.stream_order, context.domain),
         .river_mask = cubey::procedural::ScalarField2D(desc, 0.0F),
         .river_trunk = cubey::procedural::ScalarField2D(desc, 0.0F),
         .tributaries = cubey::procedural::ScalarField2D(desc, 0.0F),
-        .sink_mask = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .sink_mask = make_visible_sink_mask(context),
         .channel_width = cubey::procedural::ScalarField2D(desc, 0.0F),
         .valley_width = cubey::procedural::ScalarField2D(desc, 0.0F),
         .wetness = cubey::procedural::ScalarField2D(desc, 0.0F),
@@ -648,23 +836,8 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
     };
     const float max_accumulation = std::max(fields.flow_accumulation.summarize().max, 1.0F);
     const float log_max_accumulation = std::log1p(max_accumulation);
-    populate_sink_mask(fields.sink_mask, routing.downstream);
 
-    for (std::uint32_t y = 0; y < desc.height; ++y) {
-        for (std::uint32_t x = 0; x < desc.width; ++x) {
-            const float accumulation = fields.flow_accumulation.at(x, y);
-            const float discharge =
-                log_max_accumulation <= 0.0F ? 0.0F : std::log1p(accumulation) /
-                                                        log_max_accumulation;
-            const float order = 1.0F + (discharge > 0.42F ? 1.0F : 0.0F) +
-                                (discharge > 0.56F ? 1.0F : 0.0F) +
-                                (discharge > 0.70F ? 1.0F : 0.0F) +
-                                (discharge > 0.84F ? 1.0F : 0.0F);
-            fields.stream_order.at(x, y) = order;
-        }
-    }
-
-    activate_river_network(fields, routing.downstream, seed);
+    activate_river_network(fields, context, seed);
 
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
@@ -802,42 +975,31 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     TerrainRegionProduct product = make_empty_terrain_region_product(config);
     const cubey::procedural::Grid2DDesc desc = product.fields.desc();
 
-    const cubey::procedural::ScalarField2D broad_noise =
-        unit_source_field(desc, config.seed + 101U, 0.00018F, 4U);
-    cubey::procedural::ScalarField2D base_elevation =
-        make_base_elevation_field(desc, broad_noise);
-    cubey::procedural::ScalarField2D broad_relief =
-        scale_unit_field(unit_source_field(desc, config.seed + 202U, 0.00042F, 5U), -80.0F, 360.0F);
-    cubey::procedural::ScalarField2D ridge_uplift =
-        make_ridge_uplift_field(ridge_source_field(desc, config.seed + 303U), broad_relief);
-    cubey::procedural::ScalarField2D detail_residual =
-        scale_unit_field(unit_source_field(desc, config.seed + 404U, 0.0018F, 4U), -38.0F, 52.0F);
-    detail_residual = cubey::procedural::box_blur_3x3(detail_residual);
-    cubey::procedural::ScalarField2D height =
-        add_height_fields(base_elevation, broad_relief, ridge_uplift, detail_residual);
+    TerrainSourceFields source_fields = make_terrain_source_fields(desc, config.seed);
     const cubey::procedural::SlopeCurvature2D slope_curvature =
-        cubey::procedural::compute_slope_curvature(height);
+        cubey::procedural::compute_slope_curvature(source_fields.height);
     const cubey::procedural::LocalRelief2D local_relief =
-        cubey::procedural::compute_local_relief(height, 4U);
-    RiverFields river_fields = make_river_fields(height, slope_curvature.slope, config.seed);
+        cubey::procedural::compute_local_relief(source_fields.height, 4U);
+    RiverFields river_fields =
+        make_river_fields(source_fields.height, slope_curvature.slope, config.seed);
     cubey::procedural::ScalarField2D material_rock =
-        make_material_field(height, slope_curvature.slope, river_fields.wetness, ridge_uplift,
-                            kTerrainFieldMaterialRock);
+        make_material_field(source_fields.height, slope_curvature.slope, river_fields.wetness,
+                            source_fields.ridge_uplift, kTerrainFieldMaterialRock);
     cubey::procedural::ScalarField2D material_soil =
-        make_material_field(height, slope_curvature.slope, river_fields.wetness, ridge_uplift,
-                            kTerrainFieldMaterialSoil);
+        make_material_field(source_fields.height, slope_curvature.slope, river_fields.wetness,
+                            source_fields.ridge_uplift, kTerrainFieldMaterialSoil);
     cubey::procedural::ScalarField2D material_grass =
-        make_material_field(height, slope_curvature.slope, river_fields.wetness, ridge_uplift,
-                            kTerrainFieldMaterialGrass);
+        make_material_field(source_fields.height, slope_curvature.slope, river_fields.wetness,
+                            source_fields.ridge_uplift, kTerrainFieldMaterialGrass);
     cubey::procedural::ScalarField2D vegetation_potential =
         make_vegetation_potential_field(slope_curvature.slope, river_fields.wetness,
                                         material_grass);
 
-    add_field(product.fields, kTerrainFieldBaseElevation, std::move(base_elevation));
-    add_field(product.fields, kTerrainFieldBroadRelief, std::move(broad_relief));
-    add_field(product.fields, kTerrainFieldRidgeUplift, std::move(ridge_uplift));
-    add_field(product.fields, kTerrainFieldDetailResidual, std::move(detail_residual));
-    add_field(product.fields, kTerrainFieldHeightM, std::move(height));
+    add_field(product.fields, kTerrainFieldBaseElevation, std::move(source_fields.base_elevation));
+    add_field(product.fields, kTerrainFieldBroadRelief, std::move(source_fields.broad_relief));
+    add_field(product.fields, kTerrainFieldRidgeUplift, std::move(source_fields.ridge_uplift));
+    add_field(product.fields, kTerrainFieldDetailResidual, std::move(source_fields.detail_residual));
+    add_field(product.fields, kTerrainFieldHeightM, std::move(source_fields.height));
     add_field(product.fields, kTerrainFieldSlope, slope_curvature.slope);
     add_field(product.fields, kTerrainFieldCurvature, slope_curvature.curvature);
     add_field(product.fields, kTerrainFieldLocalRelief, local_relief.local_span);
