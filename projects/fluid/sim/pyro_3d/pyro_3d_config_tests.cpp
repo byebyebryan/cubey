@@ -598,6 +598,8 @@ int main() {
                          "pyro 3D build should compile the shared celestial body fragment shader");
         require_contains(gpu_resources_source, "CelestialBodyFrameMaterialConfig",
                          "pyro 3D should create the shared geometry moon frame material");
+        require_contains(gpu_resources_source, "lunar_surface_sampler",
+                         "pyro 3D moon geometry should bind the visible moon surface map");
         require_contains(gpu_resources_source, "CelestialBodyDepthMode::None",
                          "pyro 3D moon geometry should render as a no-depth sky backdrop");
         require_contains(commands_source, "moon_body_frame().record_draw",

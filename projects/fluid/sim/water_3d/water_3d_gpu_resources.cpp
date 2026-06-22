@@ -1092,9 +1092,9 @@ void Water3DGpuResources::create_render_pipeline(
                                       surface_scene_pipeline_resource_);
     if (environment.atmosphere_background_textures.has_value()) {
         const cubey::render::CelestialBodyFrameTextureBindings moon_textures{
-            .surface_sampler = environment.atmosphere_background_textures->lunar_sampler,
-            .surface_view = environment.atmosphere_background_textures->lunar_view,
-            .surface_layout = environment.atmosphere_background_textures->lunar_layout,
+            .surface_sampler = environment.atmosphere_background_textures->lunar_surface_sampler,
+            .surface_view = environment.atmosphere_background_textures->lunar_surface_view,
+            .surface_layout = environment.atmosphere_background_textures->lunar_surface_layout,
         };
         if (!atmosphere_background_.materials_created()) {
             atmosphere_background_.create_materials(

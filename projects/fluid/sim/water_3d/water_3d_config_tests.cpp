@@ -796,6 +796,8 @@ int main() {
                          "water 3D build should compile the shared celestial body fragment shader");
         require_contains(gpu_resources, "CelestialBodyFrameMaterialConfig",
                          "water 3D should create the shared geometry moon frame material");
+        require_contains(gpu_resources, "lunar_surface_sampler",
+                         "water 3D moon geometry should bind the visible moon surface map");
         require_contains(gpu_resources, ".depth_format = depth_attachment().format()",
                          "water 3D moon geometry pipeline should match the scene depth attachment");
         require_contains(gpu_resources, "CelestialBodyDepthMode::None",

@@ -960,6 +960,8 @@ int main() {
                      "shared render should expose the atmosphere background frame helper");
     require_contains(shared_background_header, "AtmosphereBackgroundTextureBindings",
                      "shared render should expose reusable atmosphere texture bindings");
+    require_contains(shared_background_header, "lunar_surface_sampler",
+                     "shared render should expose visible moon surface bindings");
     require_contains(shared_background_header, "FrameUniforms = 0",
                      "shared render should name atmosphere frame uniform binding zero");
     require_contains(shared_background_source, "atmosphere_background_pass_info",
@@ -968,6 +970,11 @@ int main() {
                      "shared render should own moon atlas binding metadata");
     require_contains(shared_background_source, "AtmosphereBackgroundBinding::NightSkyAtlas",
                      "shared render should own night sky atlas binding metadata");
+    require_contains(shared_background_source, "create_lunar_surface_map_texture",
+                     "shared render should upload the visible moon surface map");
+    require_contains(
+        shared_background_source, "generate_lunar_surface_map",
+        "shared render generated textures should include the visible moon surface map");
     require_contains(shared_background_source, "FrameUniformMaterialInstanceConfig",
                      "shared render should own atmosphere frame descriptor creation");
     require_contains(shared_background_source, "MaterialDescriptorWriter",
@@ -1012,6 +1019,10 @@ int main() {
                      "atmosphere build should compile the shared celestial body fragment shader");
     require_contains(app_source, "CelestialBodyFrame",
                      "atmosphere app should use the shared geometry moon frame");
+    require_contains(app_source, "pending_lunar_surface_map_",
+                     "atmosphere app should generate the visible moon surface separately");
+    require_contains(app_source, "textures.lunar_surface_sampler",
+                     "atmosphere visible moon geometry should bind the surface map");
     require_contains(app_source, "record_moon_body_frame",
                      "atmosphere app should record visible moon geometry outside the shader disk");
     require_contains(app_source, "CelestialBodyDepthMode::None",

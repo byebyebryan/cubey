@@ -621,9 +621,9 @@ void Pyro3DGpuResources::create_render_pipeline(
                                                            environment_descriptor_layout()};
     if (atmosphere_background_textures.has_value()) {
         const cubey::render::CelestialBodyFrameTextureBindings moon_textures{
-            .surface_sampler = atmosphere_background_textures->lunar_sampler,
-            .surface_view = atmosphere_background_textures->lunar_view,
-            .surface_layout = atmosphere_background_textures->lunar_layout,
+            .surface_sampler = atmosphere_background_textures->lunar_surface_sampler,
+            .surface_view = atmosphere_background_textures->lunar_surface_view,
+            .surface_layout = atmosphere_background_textures->lunar_surface_layout,
         };
         if (!atmosphere_background_.materials_created()) {
             atmosphere_background_.create_materials(

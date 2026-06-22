@@ -32,6 +32,8 @@ AtmosphereBackgroundTextureBindings AtmosphereBackgroundAtlasResources::bindings
     return {
         .lunar_sampler = lunar.sampler().handle(),
         .lunar_view = lunar.view(),
+        .lunar_surface_sampler = lunar_surface.sampler().handle(),
+        .lunar_surface_view = lunar_surface.view(),
         .night_sky_sampler = night_sky.sampler().handle(),
         .night_sky_view = night_sky.view(),
     };
@@ -70,6 +72,40 @@ Texture2D create_atmosphere_lunar_atlas_texture(const cubey::vulkan::Device& dev
         });
 }
 
+Texture2D create_lunar_surface_map_texture(const cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& gpu,
+                                           const LunarSurfaceMap& map) {
+    std::vector<UploadedTexture2DMip> upload_mips;
+    upload_mips.reserve(map.mips.size());
+    for (const LunarSurfaceMapMip& mip : map.mips) {
+        upload_mips.push_back(UploadedTexture2DMip{
+            .extent = {mip.width, mip.height},
+            .byte_offset = static_cast<VkDeviceSize>(mip.byte_offset),
+            .byte_count = mip.byte_count,
+        });
+    }
+
+    const cubey::vulkan::SamplerConfig sampler{
+        .min_filter = VK_FILTER_LINEAR,
+        .mag_filter = VK_FILTER_LINEAR,
+        .address_mode_u = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .address_mode_v = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .max_lod = static_cast<float>(map.mip_levels - 1U),
+    };
+    return create_uploaded_texture_2d(
+        device, gpu,
+        {
+            .extent = {map.width, map.height},
+            .mip_levels = map.mip_levels,
+            .format = VK_FORMAT_R8G8B8A8_UNORM,
+            .rgba8 = std::span<const std::uint8_t>{map.rgba8.data(), map.rgba8.size()},
+            .mips = std::span<const UploadedTexture2DMip>{upload_mips.data(), upload_mips.size()},
+            .create_sampler = true,
+            .sampler = sampler,
+        });
+}
+
 TextureCube create_atmosphere_night_sky_atlas_texture(const cubey::vulkan::Device& device,
                                                       cubey::vulkan::GpuRuntime& gpu,
                                                       const NightSkyAtlas& atlas) {
@@ -97,9 +133,10 @@ TextureCube create_atmosphere_night_sky_atlas_texture(const cubey::vulkan::Devic
 
 AtmosphereBackgroundAtlasResources create_atmosphere_background_atlas_resources(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu, const LunarAtlas& lunar,
-    const NightSkyAtlas& night_sky) {
+    const LunarSurfaceMap& lunar_surface, const NightSkyAtlas& night_sky) {
     return {
         .lunar = create_atmosphere_lunar_atlas_texture(device, gpu, lunar),
+        .lunar_surface = create_lunar_surface_map_texture(device, gpu, lunar_surface),
         .night_sky = create_atmosphere_night_sky_atlas_texture(device, gpu, night_sky),
     };
 }
@@ -109,6 +146,7 @@ AtmosphereBackgroundAtlasResources create_atmosphere_background_generated_textur
     const AtmosphereBackgroundGeneratedAtlasConfig& config) {
     return create_atmosphere_background_atlas_resources(
         device, gpu, generate_lunar_atlas(config.lunar_extent),
+        generate_lunar_surface_map(config.lunar_surface_width, config.lunar_surface_height),
         generate_night_sky_atlas(config.night_sky, config.night_sky_extent));
 }
 
@@ -124,6 +162,16 @@ create_atmosphere_background_placeholder_textures(const cubey::vulkan::Device& d
         .max_lod = 0.0F,
     };
     Texture2D lunar = create_uploaded_texture_2d(
+        device, gpu,
+        {
+            .extent = {1U, 1U},
+            .mip_levels = 1U,
+            .format = VK_FORMAT_R8G8B8A8_UNORM,
+            .rgba8 = std::span<const std::uint8_t>{lunar_pixel.data(), lunar_pixel.size()},
+            .create_sampler = true,
+            .sampler = atlas_sampler,
+        });
+    Texture2D lunar_surface = create_uploaded_texture_2d(
         device, gpu,
         {
             .extent = {1U, 1U},
@@ -152,8 +200,10 @@ create_atmosphere_background_placeholder_textures(const cubey::vulkan::Device& d
 
     return {
         .lunar = std::move(lunar),
+        .lunar_surface = std::move(lunar_surface),
         .night_sky = std::move(night_sky),
         .lunar_placeholder = true,
+        .lunar_surface_placeholder = true,
         .night_sky_placeholder = true,
     };
 }

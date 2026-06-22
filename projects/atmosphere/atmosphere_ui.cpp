@@ -38,9 +38,9 @@ void draw_loading_overlay(const AtmosphereLoadingStatus& status) {
 
     ImGui::TextUnformatted("Atmosphere assets");
     if (status.moon_pending) {
-        ImGui::BulletText("Generating moon atlas");
+        ImGui::BulletText("Generating moon surface");
     } else if (status.moon_placeholder) {
-        ImGui::BulletText("Moon placeholder");
+        ImGui::BulletText("Moon surface placeholder");
     }
     if (status.night_sky_pending) {
         ImGui::BulletText("Generating night sky atlas");

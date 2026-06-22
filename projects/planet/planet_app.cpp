@@ -1403,12 +1403,13 @@ class PlanetApp {
                                                                    {
                                                                        .surface_sampler =
                                                                            sky_textures
-                                                                               .lunar_sampler,
+                                                                               .lunar_surface_sampler,
                                                                        .surface_view =
-                                                                           sky_textures.lunar_view,
+                                                                           sky_textures
+                                                                               .lunar_surface_view,
                                                                        .surface_layout =
                                                                            sky_textures
-                                                                               .lunar_layout,
+                                                                               .lunar_surface_layout,
                                                                    },
                                                            });
         }
