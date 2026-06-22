@@ -220,16 +220,19 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region, with deterministic source fields, height/slope analysis, static
-flow accumulation, routing diagnostics, smoothed active river trunk and tributary
-masks, wetness/deposition, material masks, vegetation potential, summaries, and
-tests.
+local region. Generator revision `2` emits deterministic source fields,
+height/slope analysis, static flow accumulation, routing diagnostics, smoothed
+active river trunk and tributary masks, wetness/deposition, material masks,
+vegetation potential, summaries, and tests.
 
 The river driver intentionally moved away from a single authored line. It routes
-over a coherent low-frequency drainage potential derived from the terrain seed,
-then extracts a main channel from the strongest routed catchment. The extracted
-grid paths are smoothed, nudged by a constrained procedural offset, and
-rasterized as soft trunk/tributary product fields. This is a useful midpoint
+over a coherent low-frequency drainage potential derived from the terrain seed
+on a padded hidden routing domain, then crops diagnostics back to the visible
+region. Main-channel candidates are scored by visible crop crossings before raw
+accumulation, so the debug patch is more likely to show a river slice that
+continues outside the viewport. The extracted grid paths are resampled, smoothed,
+nudged by a constrained procedural offset, relaxed over the drainage potential,
+and rasterized as soft trunk/tributary product fields. This is a useful midpoint
 because downstream fields can consume a connected river product, but it is not a
 complete hydrology solution.
 
@@ -239,6 +242,8 @@ Known limitations:
   large-scale bends can remain less organic than real rivers.
 - The drainage pass does not yet perform real depression fill, breach routing,
   erosion, or lake/wetland resolution.
+- Padded routing makes local review slices less artificial, but the route model
+  is still static and should not be mistaken for simulated river evolution.
 - Tributary selection is intentionally conservative and should be replaced by a
   more explicit network extraction pass once the route model improves.
 - The final PNG is an inspectable debug composition, not the target renderer.

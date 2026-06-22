@@ -1,6 +1,6 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the first
+This note records the current terrain reboot capture set after the revision 2
 temperate mountain river product pass.
 
 ## Capture Command
@@ -21,10 +21,11 @@ structure, channel continuity, and material response are easier to inspect.
 - `flow-direction.png`: D8 receiver directions for diagnosing grid artifacts.
 - `flow-accumulation.png`: routed catchment field. This should show regional
   organization, not many broken local fragments.
-- `sink-mask.png`: terminal routing cells, useful for spotting local basin
-  fragmentation.
+- `sink-mask.png`: visible crop outlets and true terminal routing cells, useful
+  for spotting where the larger hidden routing domain leaves the review patch.
 - `river-trunk.png`: soft active main-channel product field extracted from the
-  strongest routed catchment, smoothed, and rasterized as channel segments.
+  visible-crossing routed catchment, resampled, relaxed over drainage potential,
+  and rasterized as channel segments.
 - `tributaries.png`: conservative branch field feeding the trunk.
 - `river-mask.png`: combined active river product used by channel width,
   valley width, wetness, deposition, material, and final debug rendering.
@@ -34,9 +35,12 @@ structure, channel continuity, and material response are easier to inspect.
 ## Current Limitations
 
 The active river no longer depends on an authored center line, and the visible
-trunk/mask now use smoothed channel-curve rasterization instead of direct
-one-cell D8 path painting. The route network underneath is still D8 over a
-scalar drainage potential, so branch placement, sinks, and some large-scale
-bends are still less natural than a real hydrology pass. The next river-quality
-work should evaluate depression fill/breach routing before expanding to lakes,
+trunk/mask now use a padded hidden routing domain instead of treating the review
+patch as the whole watershed. Main trunks are selected from traced candidates
+that better cross the visible crop, then the path is resampled, constrained by
+drainage potential, relaxed, and rasterized as a soft channel curve. The route
+network underneath is still D8 over a scalar drainage potential, so branch
+placement, sinks, and some large-scale bends are still less natural than a real
+hydrology pass. The next river-quality work should evaluate depression
+fill/breach routing and explicit network extraction before expanding to lakes,
 canyons, or broader biome recipes.
