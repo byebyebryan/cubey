@@ -567,10 +567,30 @@ float cloud_local_scatter_field(vec3 position, vec3 animation, float height_frac
         clamp(0.5 + 0.5 * cubey_proc_fbm_3d(domain * 2.15 + vec3(17.2, 4.8, 9.1),
                                             0x42524541U, 3U),
               0.0, 1.0);
-    float broad_gate = smoothstep(0.50, 0.74, broad);
-    float cell_gate = smoothstep(0.48, 0.76, breakup);
-    float islands = broad_gate * mix(0.10, 1.0, cell_gate);
-    return pow(islands, 1.65);
+    float medium =
+        clamp(0.5 + 0.5 * cubey_proc_fbm_3d(domain * 4.30 + vec3(6.5, 18.1, 2.7),
+                                            0x4d454455U, 3U),
+              0.0, 1.0);
+    float fine =
+        clamp(0.5 + 0.5 * cubey_proc_fbm_3d(domain * 8.80 + vec3(31.0, 4.2, 14.6),
+                                            0x46524147U, 2U),
+              0.0, 1.0);
+
+    float broad_gate = smoothstep(0.52, 0.78, broad);
+    float core_gate = smoothstep(0.58, 0.82, broad);
+    float cell_gate = smoothstep(0.46, 0.76, breakup);
+    float medium_gate = smoothstep(0.48, 0.74, medium);
+    float fine_gate = smoothstep(0.50, 0.78, fine);
+
+    float cloud_system = pow(broad_gate * mix(0.08, 1.0, cell_gate), 1.50);
+    float broad_context = smoothstep(0.34, 0.70, broad);
+    float cell_context = smoothstep(0.34, 0.68, breakup);
+    float edge_context = broad_context * mix(0.38, 1.0, cell_context) * (1.0 - core_gate * 0.62);
+    float fragments = medium_gate * mix(0.34, 1.0, fine_gate) * edge_context;
+    float satellites = fine_gate * smoothstep(0.50, 0.76, max(medium, breakup)) *
+                       smoothstep(0.38, 0.68, broad) * (1.0 - core_gate * 0.35);
+
+    return clamp(max(cloud_system, fragments * 0.42 + satellites * 0.24), 0.0, 1.0);
 }
 
 DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
