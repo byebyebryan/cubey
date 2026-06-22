@@ -52,3 +52,24 @@ The new visible moon surface should be a deterministic equirectangular texture:
 - The terminator should reveal surface detail without noisy sparkle.
 - Daylight washout should reduce contrast, not make the body disappear.
 - Texture coordinates must not swim when the camera moves.
+
+## Implementation Outcome
+
+Implemented on the `sky-rendering` worktree in June 2026:
+
+- `LunarSurfaceMap` is a deterministic `1024x512` equirectangular RGBA8
+  procedural artifact generated from shared `cubey::procedural` seed, noise,
+  hash, and metadata utilities.
+- `CelestialBodyFrame` samples the surface in a stable moon-local body frame,
+  so texture coordinates no longer face the camera.
+- `AtmosphereBackgroundAtlasResources` now owns both the old lunar debug atlas
+  and the new visible lunar surface map. Planet, standalone atmosphere final
+  view, fire/explosion, and water bind the surface map for geometry moon
+  rendering.
+- The old square `LunarAtlas` remains only for the atmosphere shader's `moon`
+  and `moon-surface` debug views.
+
+The first captures show routing and phase behavior, but the current visible
+moon lighting still makes close surface-detail inspection difficult without a
+dedicated surface-map debug view. Add that debug view before judging small crater
+quality too aggressively.

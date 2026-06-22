@@ -14,7 +14,8 @@ validated against the active rendering and simulation projects too.
 
 Relevant consumers:
 
-- generated lunar atlas and night-sky atlas code under `src/cubey/render`;
+- generated lunar debug atlas, lunar surface map, and night-sky atlas code under
+  `src/cubey/render`;
 - shared atmosphere shaders for procedural stars and moon terminator breakup;
 - atmosphere configuration tests that already protect atlas determinism and
   shader-helper adoption.

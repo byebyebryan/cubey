@@ -1,5 +1,9 @@
 # Geometry Moon Migration
 
+Update: visible moon geometry now uses the spherical `LunarSurfaceMap` described
+in `sky-moon-surface-detail-plan.md`. This note remains as the historical plan
+for unifying visible moon rendering onto geometry.
+
 The visible moon is moving to the shared `CelestialBodyFrame` geometry path.
 This keeps moon placement, phase, and view-dependent scale outside the
 fullscreen atmosphere shader and avoids maintaining both a shader disk and a
@@ -9,9 +13,9 @@ body renderer as equal runtime paths.
 
 - Geometry is the canonical app-visible moon for atmosphere, planet, and the
   atmosphere-backed fluid demos.
-- The generated lunar atlas remains the v1 appearance source.
-- The atlas is a near-side disk atlas, not an equirectangular sphere map, so
-  geometry samples it by projecting surface normals into a disk basis.
+- Superseded: the generated lunar atlas was the first geometry appearance
+  source. Visible geometry now uses an equirectangular lunar surface map, while
+  the old near-side disk atlas remains for debug views.
 - The atmosphere shader keeps moon uniforms for moonlight, night-sky washout,
   star masking, and debug atlas views.
 - Generic forward PBR, ocean, and reflection probes are follow-up consumers.
