@@ -164,6 +164,34 @@ if(BUILD_TESTING)
         0.0
     )
     cubey_add_planet_visual_smoke(
+        planet_surface_sun_dawn_writes_png
+        planet-surface-sun-dawn.png
+        --planet-camera-mode
+        surface
+        --planet-day-of-year
+        80
+        --planet-time-hours
+        4.75
+        --planet-camera-surface-look
+        sun
+        --planet-camera-surface-pitch-deg
+        22
+    )
+    cubey_add_planet_visual_smoke(
+        planet_surface_antisun_dawn_writes_png
+        planet-surface-antisun-dawn.png
+        --planet-camera-mode
+        surface
+        --planet-day-of-year
+        80
+        --planet-time-hours
+        4.75
+        --planet-camera-surface-look
+        antisun
+        --planet-camera-surface-pitch-deg
+        22
+    )
+    cubey_add_planet_visual_smoke(
         planet_orbit_lit_writes_png
         planet-orbit-lit.png
         --planet-camera-mode
@@ -193,6 +221,16 @@ if(BUILD_TESTING)
         --planet-time-hours
         12.0
     )
+    cubey_add_planet_visual_smoke(
+        planet_moon_occlusion_writes_png
+        planet-moon-occlusion.png
+        --planet-camera-mode
+        orbit
+        --planet-day-of-year
+        88
+        --planet-time-hours
+        18.13
+    )
     set_tests_properties(
         planet_celestial_tests
         planet_headless_writes_png
@@ -203,12 +241,18 @@ if(BUILD_TESTING)
         planet_surface_day_writes_png_stats
         planet_surface_night_writes_png
         planet_surface_night_writes_png_stats
+        planet_surface_sun_dawn_writes_png
+        planet_surface_sun_dawn_writes_png_stats
+        planet_surface_antisun_dawn_writes_png
+        planet_surface_antisun_dawn_writes_png_stats
         planet_orbit_lit_writes_png
         planet_orbit_lit_writes_png_stats
         planet_orbit_terminator_writes_png
         planet_orbit_terminator_writes_png_stats
         planet_day_moon_writes_png
         planet_day_moon_writes_png_stats
+        planet_moon_occlusion_writes_png
+        planet_moon_occlusion_writes_png_stats
         PROPERTIES LABELS sky
     )
     cubey_add_planet_visual_smoke(

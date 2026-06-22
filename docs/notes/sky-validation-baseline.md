@@ -1,7 +1,8 @@
 # Sky Validation Baseline
 
 Captured on 2026-06-21 from the `sky-rendering` worktree after removing the
-legacy planet `SkyFrame` backend.
+legacy planet `SkyFrame` backend. Updated on 2026-06-22 after adding focused
+planet sky smoke views for sun-facing dawn, antisun dawn, and moon occlusion.
 
 Tested source commit before this note commit:
 
@@ -24,7 +25,7 @@ git diff --check
 - `cmake --preset dev`: passed through build-time regeneration.
 - Baseline build targets: passed.
 - Focused unit tests: passed, 4/4.
-- `ctest --preset dev -L sky`: passed, 37/37.
+- `ctest --preset dev -L sky`: passed, 43/43.
 - Vulkan-dependent PNG smoke tests ran and passed; no sky tests skipped.
 - `git diff --check`: passed.
 
@@ -32,5 +33,7 @@ git diff --check
 
 The `sky` CTest label covers the current atmosphere config tests, standalone
 atmosphere sky PNG smokes, planet celestial tests, and planet sky-facing PNG
-smokes. It intentionally excludes planet local-detail, terrain-field, and broad
-non-sky visual smokes.
+smokes. The planet sky-facing subset includes baseline dawn/day/night, orbit
+lit/terminator, daytime moon, sun-facing dawn, antisun dawn, and moon occlusion
+captures. It intentionally excludes planet local-detail, terrain-field, and
+broad non-sky visual smokes.
