@@ -227,6 +227,7 @@ struct RunConfig {
         int time_paused = -1;
         int auto_exposure = -1;
         int moon = -1;
+        int reference_geometry = -1;
     };
 
     struct CloudOptions {

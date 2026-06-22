@@ -146,6 +146,7 @@ enum class RunConfigOptionId {
     AtmosphereMoonPhaseOffset,
     AtmosphereMoonSizeScale,
     AtmosphereMoon,
+    AtmosphereReferenceGeometry,
     CloudCameraMode,
     CloudQuality,
     CloudWeatherPreset,

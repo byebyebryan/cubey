@@ -729,6 +729,7 @@ int main() {
         run_config.atmosphere.moonlight_intensity = 1.50F;
         run_config.atmosphere.moon_phase_offset_days = 7.25F;
         run_config.atmosphere.moon_size_scale = 1.75F;
+        run_config.atmosphere.reference_geometry = 0;
         AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
         require(config.preset == AtmospherePreset::Sunset,
                 "run config should select atmosphere preset");
@@ -754,6 +755,8 @@ int main() {
                     config.moon.phase_offset_days == 7.25F &&
                     config.moon.angular_radius_scale == 1.75F,
                 "run config moon overrides should win over preset defaults");
+        require(!config.reference_geometry_enabled,
+                "run config should disable atmosphere reference geometry");
         require(config.time_of_day.mode == SunControlMode::ManualSun,
                 "manual sun overrides should force manual sun mode");
         require(config.time_of_day.auto_exposure_enabled,

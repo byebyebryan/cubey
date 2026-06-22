@@ -689,6 +689,9 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     if (run.atmosphere.moon >= 0) {
         config.moon.enabled = run.atmosphere.moon == 1;
     }
+    if (run.atmosphere.reference_geometry >= 0) {
+        config.reference_geometry_enabled = run.atmosphere.reference_geometry == 1;
+    }
     if (run_config_float_is_set(run.atmosphere.moon_intensity)) {
         config.moon.disk_intensity = run.atmosphere.moon_intensity;
     }
