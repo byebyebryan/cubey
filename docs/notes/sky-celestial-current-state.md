@@ -69,10 +69,23 @@ The sun is currently drawn as a disk/glow in the atmosphere shader and also
 drives directional lighting through `CelestialSystem` and derived lighting
 inputs. It is not yet an explicit rendered body like the moon.
 
-The moon has two intentional paths:
+The moon currently has two paths:
 
 - standalone atmosphere: shader disk using the generated lunar atlas;
 - planet: explicit body geometry, phase/visibility behavior, and depth testing.
+
+The migration target is a single app-visible moon path: explicit body geometry
+using the generated lunar atlas as its appearance source. The atmosphere shader
+should keep moon data for moonlight, star masking, washout, and atlas/debug
+views, but it should not remain the default owner of the runtime visible moon.
+The existing lunar atlas is a near-side disk atlas, so geometry samples it by
+projecting surface normals into a moon-facing disk basis rather than by using
+mesh UVs as a global equirectangular texture.
+
+The first migration batch covers `projects/atmosphere`, `projects/planet`, and
+the atmosphere-backed `fire_3d`, `explosion_3d`, and `water_3d` fluid views.
+Forward PBR generic consumers, ocean, and reflection-probe cubemaps remain
+explicit follow-up work unless they gain their own geometry insertion point.
 
 Stars and the Milky Way are generated assets and shader procedures, not real sky
 catalog data. The night-sky cubemap is deterministic and layered, with

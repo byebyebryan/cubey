@@ -38,6 +38,8 @@ the detailed foundation notes under `docs/architecture/`.
   pre-tuning capture review for the first unified atmosphere sun pass.
 - [Sky visual pass 001 post-sun review](sky-visual-pass-001-post-sun-review.md):
   post-halo capture review for the first unified atmosphere sun pass.
+- [Geometry moon migration](sky-geometry-moon-migration.md): migration plan for
+  making explicit geometry the canonical app-visible moon path.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
