@@ -189,7 +189,9 @@ Known deferrals:
 - High-oblique is the current regime bridge target. Surface/local volume should
   remain the foreground shape reference, while a broad far-shell contribution
   should carry cloud continuity toward the horizon before full orbit-shell
-  replacement takes over.
+  replacement takes over. The default handoff keeps full orbit replacement above
+  the high-oblique preset (`45 km` to `180 km`) while the far shell fills long
+  rays earlier (`30 km` to `160 km`) with a slightly boosted effective strength.
 - Temporal reconstruction exists for final-view cleanup, but raw diagnostics
   remain the source of truth when judging cloud shape.
 - Static sampling controls are diagnostic and deterministic. A blue-noise or

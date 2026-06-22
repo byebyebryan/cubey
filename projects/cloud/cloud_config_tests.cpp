@@ -563,16 +563,16 @@ void test_weather_preset_defaults() {
                  "default resolve should preserve density detail");
     require_near(config.horizon_glow_strength, 0.55F, 0.001F,
                  "default horizon glow should be restrained");
-    require_near(config.orbit_transition_start_m, 16000.0F, 0.001F,
-                 "default orbit transition start should match high camera handoff");
-    require_near(config.orbit_transition_end_m, 80000.0F, 0.001F,
-                 "default orbit transition end should match high camera handoff");
-    require_near(config.far_shell_start_m, 45000.0F, 0.001F,
-                 "default far shell start should be high-view scale");
-    require_near(config.far_shell_end_m, 220000.0F, 0.001F,
-                 "default far shell end should be high-view scale");
-    require_near(config.far_shell_strength, 1.0F, 0.001F,
-                 "default far shell strength should enable high-view continuity");
+    require_near(config.orbit_transition_start_m, 45000.0F, 0.001F,
+                 "default orbit transition start should leave high-oblique local");
+    require_near(config.orbit_transition_end_m, 180000.0F, 0.001F,
+                 "default orbit transition end should reserve full orbit for high views");
+    require_near(config.far_shell_start_m, 30000.0F, 0.001F,
+                 "default far shell start should bridge high-oblique horizon scale");
+    require_near(config.far_shell_end_m, 160000.0F, 0.001F,
+                 "default far shell end should fade in before full orbit takeover");
+    require_near(config.far_shell_strength, 1.25F, 0.001F,
+                 "default far shell strength should compensate effective branch fade");
     require_near(config.orbit_detail_strength, 0.70F, 0.001F,
                  "default orbit detail should preserve visible shell structure");
     require_near(config.orbit_density_scale, 0.02F, 0.001F,
