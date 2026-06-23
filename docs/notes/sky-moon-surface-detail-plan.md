@@ -19,6 +19,10 @@ geometry.
   <https://astrogeology.usgs.gov/search/map/moon_lro_lroc_wac_global_morphology_mosaic_100m>.
   Useful for global albedo/morphology structure and the expected polar/equator
   seam caveats in real lunar products.
+- LROC nearside WAC mosaic:
+  <https://lroc.im-ldi.com/images/293>. Useful as the current shape guide for
+  named near-side maria: broad dark plains, separated by highland corridors, not
+  one continuous black mass.
 - PDS LRO LOLA archive:
   <https://pds-geosciences.wustl.edu/missions/lro/lola.htm>. Useful reference
   for elevation provenance and naming around laser-altimeter products.
@@ -60,7 +64,7 @@ Implemented on the `sky-rendering` worktree in June 2026:
 - `LunarSurfaceMap` is a deterministic `1024x512` equirectangular RGBA8
   procedural artifact generated from shared `cubey::procedural` seed, noise,
   hash, and metadata utilities. The current artifact formula is
-  `lunar-surface-map-v2`.
+  `lunar-surface-map-v4`.
 - `CelestialBodyFrame` samples the surface in a stable moon-local body frame,
   so texture coordinates no longer face the camera.
 - `AtmosphereBackgroundAtlasResources` now owns the visible lunar surface map
@@ -75,5 +79,7 @@ Implemented on the `sky-rendering` worktree in June 2026:
   averaged texture mip.
 
 The current captures show routing, phase behavior, and a close-up sphere debug
-view. Maria now read as broad dark basaltic plains instead of spot noise; crater
-scale and mare edge shaping remain material-tuning follow-ups.
+view. Maria are guided by the LROC nearside mosaic: elongated mid-dark basaltic
+plains with visible highland gaps, rather than circular dark spots or a merged
+near-black mass. Crater scale, mare edge softness, and final-scene lighting
+balance remain material-tuning follow-ups.

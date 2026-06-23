@@ -41,7 +41,7 @@ LunarSurfaceSample lunar_surface_sample(vec3 normal, vec3 view_direction, bool f
 
     const vec3 sample_normal = -normal;
     const vec3 local = normalize(vec3(dot(sample_normal, basis_forward),
-                                      dot(sample_normal, basis_right),
+                                      -dot(sample_normal, basis_right),
                                       dot(sample_normal, basis_up)));
     const vec2 uv = vec2(fract(atan(local.y, local.x) * kInvTwoPi + 0.5),
                          clamp(0.5 - asin(clamp(local.z, -1.0, 1.0)) * kInvPi, 0.0, 1.0));
@@ -51,19 +51,19 @@ LunarSurfaceSample lunar_surface_sample(vec3 normal, vec3 view_direction, bool f
     detail_xy *= smoothstep(0.0, 0.18, max(dot(normal, view_direction), 0.0));
     const vec3 detail_normal =
         normalize(normal + basis_right * detail_xy.x * 0.34 + basis_up * detail_xy.y * 0.34);
-    const float albedo = clamp((surface.r - 0.43) * 2.10 + 0.43, 0.12, 0.90);
+    const float albedo = clamp((surface.r - 0.43) * 1.55 + 0.43, 0.16, 0.86);
     return LunarSurfaceSample(albedo, detail_normal);
 }
 
 vec3 lunar_surface_debug_color(LunarSurfaceSample surface, vec3 normal, vec3 view_direction) {
     const float albedo = clamp((surface.albedo - 0.12) / 0.78, 0.0, 1.0);
-    const float maria_preserving_albedo = pow(clamp((albedo - 0.48) * 1.70 + 0.46, 0.0, 1.0),
-                                              1.08);
+    const float maria_preserving_albedo = pow(clamp((albedo - 0.20) * 1.22 + 0.26, 0.0, 1.0),
+                                              1.04);
     const vec3 debug_light = normalize(vec3(-0.45, 0.55, 0.70));
     const vec3 tangent_relief = surface.normal - normal * dot(surface.normal, normal);
     const float relief = dot(tangent_relief, debug_light) * 1.45;
     const float limb = smoothstep(0.01, 0.16, abs(dot(normal, view_direction)));
-    const float value = clamp(mix(0.18, 0.58, maria_preserving_albedo) + relief, 0.10, 0.70);
+    const float value = clamp(mix(0.27, 0.62, maria_preserving_albedo) + relief, 0.18, 0.72);
     return cubey_srgb_to_linear(vec3(value * limb));
 }
 

@@ -1,9 +1,19 @@
 # Moon Surface Detail Captures
 
-Generated on 2026-06-22 under `outputs/sky-moon-surface-detail-001/` and
-`outputs/sky-moon-sphere-debug-001/`. The PNGs are ignored by git; this note
-records the capture sets used after routing visible moon geometry and moon
-debug views to the generated spherical lunar surface map.
+Generated on 2026-06-22 under `outputs/sky-moon-surface-detail-001/`,
+`outputs/sky-moon-sphere-debug-001/`, and `outputs/sky-moon-reference-001/`.
+The PNGs are ignored by git; this note records the capture and reference sets
+used after routing visible moon geometry and moon debug views to the generated
+spherical lunar surface map.
+
+## References
+
+```sh
+mkdir -p outputs/sky-moon-reference-001
+curl -L https://lroc.im-ldi.com/news/uploads/lroc_wac_nearside_noslew.png -o outputs/sky-moon-reference-001/lroc-wac-nearside.png
+curl -L https://lroc.im-ldi.com/news/uploads/lroc_wac_nearside_noslew_anot.png -o outputs/sky-moon-reference-001/lroc-wac-nearside-annotated.png
+curl -L https://astrogeology.usgs.gov/ckan/dataset/db948a2d-4d6a-4775-a0d3-12613d36f9e7/resource/d24d5ef3-abc5-42ee-ac7c-4c3261106327/download/moon_lro_lroc-wac_mosaic_global_1024.jpg -o outputs/sky-moon-reference-001/usgs-lroc-wac-global-1024.jpg
+```
 
 ## Current Sphere Debug Capture
 
@@ -40,6 +50,9 @@ mkdir -p outputs/sky-moon-surface-detail-001
   and surface-composited scenes.
 - Planet moon captures remain useful for occlusion and daytime washout, but the
   moon is not large enough in these frames to judge surface detail.
-- The `lunar-surface-map-v2` capture makes the maria read as broad dark basaltic
-  plains. Remaining visual tuning is mostly crater scale, mare edge softness,
-  and final-scene lighting balance.
+- The `lunar-surface-map-v4` capture uses the LROC nearside mosaic as the shape
+  guide: broad mid-dark plains, visible highland gaps between named basins,
+  corrected nearside longitude orientation, and no central near-black merged
+  mass.
+- Remaining visual tuning is mostly crater scale, mare edge softness, and
+  final-scene lighting balance.
