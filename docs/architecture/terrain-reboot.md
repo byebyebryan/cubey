@@ -262,6 +262,12 @@ Known limitations:
   is complete.
 - The final PNG is an inspectable debug composition, not the target renderer.
 
+A revision 4 experiment tried replacing the active river product with direct
+channel-graph edge rendering after an epsilon fill pass. It was reverted because
+the captures were worse: disconnected segments, hard straight or diagonal runs,
+and schematic clusters. The preserved lesson is in
+`docs/notes/terrain-river-graph-routing-attempt.md`.
+
 ## Deferred
 
 Keep the first implementation narrow. Defer:

@@ -46,6 +46,12 @@ disconnected-looking tributaries, local-sink dead ends, and too-straight trunk
 segments. The stress recipe intentionally covers more of the patch and should
 not be treated as the desired default composition.
 
+The current capture set intentionally remains on revision 3 after the reverted
+revision 4 graph-routing attempt. That attempt made the visible product worse by
+rendering selected graph edges directly, producing disconnected snippets and
+hard straight or diagonal runs. See
+`docs/notes/terrain-river-graph-routing-attempt.md` for the retained learnings.
+
 ## Current Limitations
 
 The active river no longer depends on an authored center line, and the visible
