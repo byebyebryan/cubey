@@ -67,6 +67,19 @@ struct Crater {
     return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
 }
 
+[[nodiscard]] Vec3 normalize(Vec3 value) {
+    const float length =
+        std::sqrt(value.x * value.x + value.y * value.y + value.z * value.z);
+    if (length <= 0.000001F) {
+        return {0.0F, 0.0F, 1.0F};
+    }
+    return {
+        value.x / length,
+        value.y / length,
+        value.z / length,
+    };
+}
+
 [[nodiscard]] Vec3 tangent_east(float longitude_radians) {
     return {
         -std::sin(longitude_radians),
@@ -132,6 +145,20 @@ struct Crater {
                                                 .gain = 0.52F,
                                                 .initial_amplitude = 0.52F,
                                             });
+}
+
+[[nodiscard]] Vec3 material_direction(Vec3 direction) {
+    constexpr float kOffset = 0.055F;
+    const float nx = mix(0.90F, 1.10F,
+                         fbm({direction.x + kOffset, direction.y, direction.z}, 3.0F,
+                             "material normal perturb x", 4U, 0.50F));
+    const float ny = mix(0.90F, 1.10F,
+                         fbm({direction.x, direction.y + kOffset, direction.z}, 3.0F,
+                             "material normal perturb y", 4U, 0.50F));
+    const float nz = mix(0.90F, 1.10F,
+                         fbm({direction.x, direction.y, direction.z + kOffset}, 3.0F,
+                             "material normal perturb z", 4U, 0.50F));
+    return normalize({direction.x * nx, direction.y * ny, direction.z * nz});
 }
 
 [[nodiscard]] float plain_mask(Vec3 direction, const MariaPlain& plain) {
@@ -462,18 +489,25 @@ struct SurfaceSample {
                                            std::span<const Crater> craters) {
     const float mare_coverage = mare_field_sample.coverage;
     const float mare_fill = mare_field_sample.fill;
-    const float broad = fbm(direction, 2.5F, "broad regolith", 5U, 0.55F);
-    const float mid = fbm(direction, 11.0F, "mid regolith", 4U, 0.52F);
-    const float fine = fbm(direction, 44.0F, "fine regolith", 3U, 0.48F);
-    const float highland_pores = ridged(direction, 29.0F, "highland pores", 4U) - 0.48F;
-    const float mare_plains = fbm(direction, 1.7F, "mare basalt plains", 4U, 0.50F);
-    const float mare_mottling = fbm(direction, 12.0F, "mare subtle mottling", 3U, 0.42F);
+    const Vec3 material = material_direction(direction);
+    const float broad = fbm(material, 2.5F, "broad regolith", 5U, 0.55F);
+    const float mid = fbm(material, 11.0F, "mid regolith", 4U, 0.52F);
+    const float fine = fbm(material, 44.0F, "fine regolith", 3U, 0.48F);
+    const float normal_tone = fbm(material, 4.0F, "normal-space surface tone", 5U, 0.50F) - 0.5F;
+    const float highland_pores = ridged(material, 29.0F, "highland pores", 4U) - 0.48F;
+    const float mare_plains = fbm(material, 1.7F, "mare basalt plains", 4U, 0.50F);
+    const float mare_mottling = fbm(material, 12.0F, "mare subtle mottling", 3U, 0.42F);
     const float highlands =
-        0.610F + broad * 0.090F + mid * 0.060F + fine * 0.034F + highland_pores * 0.035F;
-    const float mare = 0.370F + mare_plains * 0.018F + mare_mottling * 0.006F + fine * 0.003F;
+        0.610F + broad * 0.088F + mid * 0.055F + fine * 0.030F + highland_pores * 0.032F +
+        normal_tone * 0.036F;
+    const float mare =
+        0.370F + mare_plains * 0.016F + mare_mottling * 0.006F + fine * 0.003F +
+        normal_tone * 0.020F;
 
     float albedo = mix(highlands, mare, mare_fill);
-    float height = broad * 0.030F + mid * 0.015F + fine * 0.006F - mare_coverage * 0.036F;
+    float height =
+        broad * 0.028F + mid * 0.014F + fine * 0.006F + normal_tone * 0.008F -
+        mare_coverage * 0.036F;
     float roughness = mix(0.86F, 0.72F, mare_fill) + highland_pores * 0.050F;
 
     for (const Crater& crater : craters) {
@@ -660,7 +694,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v7", "render.lunar_surface_map",
+            "lunar-surface-map-v8", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,
