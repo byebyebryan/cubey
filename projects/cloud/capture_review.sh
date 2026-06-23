@@ -145,8 +145,6 @@ if [[ "${DEEP}" != "0" ]]; then
         ffmpeg -y -loglevel error -sseof -0.1 -i "${motion_video}" -frames:v 1 \
             "${OUT_DIR}/orbit-satellite-motion-later.png"
     fi
-    capture orbit-local-weather --cloud-camera-mode orbit --debug-view weather
-    capture orbit-local-coverage-bias --cloud-camera-mode orbit --debug-view coverage-bias
     capture surface-up-weather-local --cloud-camera-mode surface-up --cloud-weather-influence 0
     capture surface-up-weather-authored --cloud-camera-mode surface-up --cloud-weather-influence 1
     capture high-oblique-weather-local --cloud-camera-mode high-oblique --cloud-weather-influence 0
@@ -204,7 +202,6 @@ if command -v magick >/dev/null 2>&1; then
     if [[ "${DEEP}" != "0" ]]; then
         crop_names+=(
             orbit-satellite-motion-start orbit-satellite-motion-later
-            orbit-local-weather orbit-local-coverage-bias
             metadata-alpha metadata-distance metadata-confidence metadata-density
             transmittance lighting ambient-light direct-light phase-light shadow
             steps background

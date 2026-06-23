@@ -153,9 +153,7 @@ coverage/detail/hull, shell-specific alpha/height/normal/shadow, and a small
 surface-local density set. The default set includes high-oblique bridge
 strength comparisons and orbit empty-space-fill comparisons. `DEEP=1` adds
 secondary tuning captures such as sampling comparisons, metadata, lighting
-breakdowns, authored-weather influence sweeps, satellite orbit motion, and
-legacy `orbit-local-weather` / `orbit-local-coverage-bias` diagnostics for the
-old surface-local weather projection.
+breakdowns, authored-weather influence sweeps, and satellite orbit motion.
 The script also writes
 `diagnostic-crops/center-feature-contact.png` with resolution-scaled center
 crops for the active review set.
@@ -175,7 +173,9 @@ Controls:
   default is `0`, preserving the layered procedural local weather baseline
   while authored weather remains opt-in. `local-scatter`, `local-clear`,
   `local-structure`, and `local-edge-detail` show the procedural local fields
-  before final density shaping.
+  before final density shaping. `coverage-bias` is the canonical debug view for
+  the final local coverage bias; `weather-bias` and `weather-mask` remain
+  parser aliases for old commands.
 - `Sampling`: ray-start sampling mode and jitter amount.
 - `Distance / Transition`: local/orbit mode, altitude and ray-distance
   transition ranges, local-volume enable, surface horizon assist, and high-view

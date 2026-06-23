@@ -33,6 +33,9 @@ entrypoints are:
   old volume raymarch remains a comparison path, not the orbit art target.
 - Orbit coverage/detail is believable enough for checkpointing, but still needs
   art/model tuning before it should drive planet-scale feature work.
+- The default and deep capture packs no longer include old orbit-local planar
+  weather diagnostics; orbit review should use the direct planet-space shell
+  diagnostics instead.
 - The pre-merge prep should clarify controls and contracts, not retune the
   cloud model unless a capture shows an obvious regression.
 
