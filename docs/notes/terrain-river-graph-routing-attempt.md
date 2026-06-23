@@ -59,9 +59,11 @@ The attempt still points at useful future work:
 
 ## Current Decision
 
-Revision 3 is the active terrain product again. Continue from the previous
+Revision 5 is the active terrain product. It keeps the revision 3 connected
 padded-domain, fractional-accumulation, candidate-scored trunk/tributary
-implementation until a better network extractor is proven visually and by tests.
+implementation as the baseline, then adds only active-network-connected
+stream-order-seeded paths. Continue from that hybrid until a better network
+extractor is proven visually and by tests.
 
 Do not reintroduce direct graph-edge rendering into `river_mask` or
 `river_trunk` without first showing that it improves the default and stress

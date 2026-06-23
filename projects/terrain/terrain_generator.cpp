@@ -54,6 +54,13 @@ struct RiverNetworkSettings {
     float trunk_offset_cells = 2.25F;
     std::size_t secondary_trunk_count = 0U;
     int secondary_trunk_min_distance_cells = 48;
+    float order_seed_min_stream_order = 4.0F;
+    float order_seed_trunk_stream_order = 4.6F;
+    std::size_t order_seed_count = 5U;
+    int order_seed_min_distance_cells = 28;
+    int order_seed_contact_distance_cells = 5;
+    std::size_t order_seed_min_visible_samples = 20U;
+    float order_seed_max_active_overlap = 0.38F;
     float tributary_min_accumulation = 4.0F;
     float tributary_accumulation_fraction = 0.018F;
     std::size_t min_tributary_count = 2U;
@@ -153,6 +160,13 @@ struct FlowVector {
             .trunk_offset_cells = 2.6F,
             .secondary_trunk_count = 3U,
             .secondary_trunk_min_distance_cells = 42,
+            .order_seed_min_stream_order = 3.0F,
+            .order_seed_trunk_stream_order = 4.2F,
+            .order_seed_count = 18U,
+            .order_seed_min_distance_cells = 16,
+            .order_seed_contact_distance_cells = 6,
+            .order_seed_min_visible_samples = 12U,
+            .order_seed_max_active_overlap = 0.48F,
             .tributary_min_accumulation = 2.0F,
             .tributary_accumulation_fraction = 0.006F,
             .min_tributary_count = 10U,
@@ -1629,6 +1643,159 @@ void paint_channel_path(cubey::procedural::ScalarField2D& field,
     rasterize_channel_segments(field, points, core_radius_cells, falloff_radius_cells, domain);
 }
 
+[[nodiscard]] std::vector<int> collect_stream_order_candidates(const RoutingContext& context,
+                                                               float min_stream_order,
+                                                               std::size_t max_count) {
+    const HiddenIndexBounds bounds = visible_crop_bounds(context.domain);
+    std::vector<int> candidates;
+    candidates.reserve(static_cast<std::size_t>((bounds.x_end - bounds.x_begin) *
+                                                (bounds.y_end - bounds.y_begin)));
+    for (std::uint32_t y = bounds.y_begin; y < bounds.y_end; ++y) {
+        for (std::uint32_t x = bounds.x_begin; x < bounds.x_end; ++x) {
+            const std::size_t index =
+                cubey::procedural::grid_index(x, y, context.domain.hidden_desc.width);
+            if (context.stream_order.values()[index] >= min_stream_order) {
+                candidates.push_back(static_cast<int>(index));
+            }
+        }
+    }
+    std::sort(candidates.begin(), candidates.end(), [&context](int lhs, int rhs) {
+        const float lhs_accumulation = context.accumulation.values()[static_cast<std::size_t>(lhs)];
+        const float rhs_accumulation = context.accumulation.values()[static_cast<std::size_t>(rhs)];
+        if (lhs_accumulation == rhs_accumulation) {
+            return context.stream_order.values()[static_cast<std::size_t>(lhs)] >
+                   context.stream_order.values()[static_cast<std::size_t>(rhs)];
+        }
+        return lhs_accumulation > rhs_accumulation;
+    });
+    if (candidates.size() > max_count) {
+        candidates.resize(max_count);
+    }
+    return candidates;
+}
+
+[[nodiscard]] float active_path_overlap_fraction(const std::vector<int>& indices,
+                                                 const std::vector<bool>& active) {
+    if (indices.empty()) {
+        return 1.0F;
+    }
+    std::size_t active_count = 0U;
+    for (const int index : indices) {
+        if (index >= 0 && active[static_cast<std::size_t>(index)]) {
+            ++active_count;
+        }
+    }
+    return static_cast<float>(active_count) / static_cast<float>(indices.size());
+}
+
+[[nodiscard]] bool path_is_near_active(const cubey::procedural::Grid2DDesc& desc,
+                                       const std::vector<int>& indices,
+                                       const std::vector<bool>& active,
+                                       int min_distance_cells) {
+    if (min_distance_cells <= 0) {
+        return false;
+    }
+    const int min_distance_sq = min_distance_cells * min_distance_cells;
+    for (const int path_index : indices) {
+        if (path_index < 0) {
+            continue;
+        }
+        const auto path_uindex = static_cast<std::uint32_t>(path_index);
+        const int path_x = static_cast<int>(path_uindex % desc.width);
+        const int path_y = static_cast<int>(path_uindex / desc.width);
+        for (int oy = -min_distance_cells; oy <= min_distance_cells; ++oy) {
+            for (int ox = -min_distance_cells; ox <= min_distance_cells; ++ox) {
+                if ((ox * ox) + (oy * oy) > min_distance_sq) {
+                    continue;
+                }
+                const int x = path_x + ox;
+                const int y = path_y + oy;
+                if (!neighbor_in_bounds(desc, x, y)) {
+                    continue;
+                }
+                const std::size_t sample = cubey::procedural::grid_index(
+                    static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y), desc.width);
+                if (active[sample]) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+void mark_active_indices(std::vector<bool>& active, const std::vector<int>& indices) {
+    for (const int index : indices) {
+        if (index >= 0) {
+            active[static_cast<std::size_t>(index)] = true;
+        }
+    }
+}
+
+void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& context,
+                                 std::uint64_t seed, const RiverNetworkSettings& settings,
+                                 std::vector<bool>& active) {
+    const std::vector<int> candidates = collect_stream_order_candidates(
+        context, settings.order_seed_min_stream_order, settings.order_seed_count * 12U);
+    std::size_t accepted = 0U;
+    for (const int candidate : candidates) {
+        if (accepted >= settings.order_seed_count) {
+            break;
+        }
+        if (active[static_cast<std::size_t>(candidate)]) {
+            continue;
+        }
+        const float order = context.stream_order.values()[static_cast<std::size_t>(candidate)];
+        const float strength =
+            cubey::procedural::saturate(0.56F + ((order - 3.0F) * 0.13F));
+        std::vector<ChannelPathPoint> path =
+            trace_channel_streamline(candidate, context.routing.flow_direction, strength);
+        if (path.size() < settings.min_tributary_path_samples) {
+            continue;
+        }
+        if (visible_path_sample_count(context.domain, path) <
+            settings.order_seed_min_visible_samples) {
+            continue;
+        }
+        const std::vector<int> indices = path_point_indices(context.domain.hidden_desc, path);
+        if (indices.size() < settings.min_tributary_path_samples) {
+            continue;
+        }
+        const float overlap = active_path_overlap_fraction(indices, active);
+        if (overlap > settings.order_seed_max_active_overlap) {
+            continue;
+        }
+        const bool connects_to_active =
+            overlap > 0.02F ||
+            path_is_near_active(context.domain.hidden_desc, indices, active,
+                                settings.order_seed_contact_distance_cells);
+        if (!connects_to_active) {
+            continue;
+        }
+        if (path_is_near_active(context.domain.hidden_desc, indices, active,
+                                settings.order_seed_min_distance_cells) &&
+            overlap > 0.08F) {
+            continue;
+        }
+
+        if (order >= settings.order_seed_trunk_stream_order) {
+            paint_channel_path(fields.river_trunk, path, context.domain,
+                               settings.trunk_core_radius_cells,
+                               settings.trunk_falloff_radius_cells, context.routing_surface,
+                               seed + 5107U + (accepted * 149U),
+                               settings.trunk_offset_cells);
+        } else {
+            paint_channel_path(fields.tributaries, path, context.domain,
+                               settings.tributary_core_radius_cells,
+                               settings.tributary_falloff_radius_cells, context.routing_surface,
+                               seed + 6203U + (accepted * 127U),
+                               settings.tributary_offset_cells);
+        }
+        mark_active_indices(active, indices);
+        ++accepted;
+    }
+}
+
 void activate_river_network(RiverFields& fields, const RoutingContext& context, std::uint64_t seed,
                             const RiverNetworkSettings& settings) {
     const std::vector<int>& downstream = context.d8_routing.downstream;
@@ -1672,6 +1839,8 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context, 
         }
         ++secondary_index;
     }
+
+    add_stream_order_seed_paths(fields, context, seed, settings, active);
 
     float trunk_accumulation = 1.0F;
     for (const int index : trunk_indices) {

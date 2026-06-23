@@ -1,6 +1,6 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 3
+This note records the current terrain reboot capture set after the revision 5
 temperate mountain river product pass.
 
 ## Capture Command
@@ -46,8 +46,10 @@ disconnected-looking tributaries, local-sink dead ends, and too-straight trunk
 segments. The stress recipe intentionally covers more of the patch and should
 not be treated as the desired default composition.
 
-The current capture set intentionally remains on revision 3 after the reverted
-revision 4 graph-routing attempt. That attempt made the visible product worse by
+The current capture set intentionally keeps the revision 3 connected
+trunk/tributary baseline after the reverted revision 4 graph-routing attempt.
+Revision 5 adds stream-order-seeded paths only when they reconnect to the active
+network. The rejected revision 4 attempt made the visible product worse by
 rendering selected graph edges directly, producing disconnected snippets and
 hard straight or diagonal runs. See
 `docs/notes/terrain-river-graph-routing-attempt.md` for the retained learnings.
@@ -56,18 +58,20 @@ hard straight or diagonal runs. See
 
 The active river no longer depends on an authored center line, and the visible
 trunk/mask now use a padded hidden routing domain instead of treating the review
-patch as the whole watershed. Revision `3` routes accumulation with continuous
+patch as the whole watershed. Revision `5` routes accumulation with continuous
 D-Infinity-style flow angles and fractional receivers. Active channel extraction
-is still a hybrid: candidates come from the fractional catchment field, while a
-conservative D8 topology graph keeps trunks and tributaries connected until a
-proper depression-fill/breach pass exists. Paths are scored for visible length,
-crop continuity, interior coverage, and limited repeated grid-direction runs,
-then resampled, constrained by drainage potential, relaxed, and rasterized as
-soft channel curves.
+is still a hybrid: the revision 3 candidate-scored trunk/tributary network keeps
+the visible product connected, while stream-order-seeded additions borrow the
+better-looking source shape from the coherent `stream_order` diagnostic without
+rendering the whole hierarchy. Added order paths must reconnect to the active
+network, then are resampled, constrained by drainage potential, relaxed, and
+rasterized as soft channel curves.
 
 Remaining limitations are now concentrated in network extraction and hydrology
 rather than only flow accumulation. Continuous streamlines can still terminate on
 unresolved local sinks, and the topology fallback can still make tributary
-placement feel schematic. The next river-quality pass should evaluate
-depression fill or breach routing, then replace the fallback graph with an
-explicit connected network extraction over the fractional accumulation field.
+placement feel schematic. Stream-order seeding can improve branch shape, but it
+is still a supplement rather than a full network extractor. The next
+river-quality pass should evaluate depression fill or breach routing, then
+replace the fallback graph with an explicit connected network extraction over
+the fractional accumulation field.

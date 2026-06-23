@@ -220,7 +220,7 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `3` emits deterministic source fields,
+local region. Generator revision `5` emits deterministic source fields,
 height/slope analysis, static flow accumulation, routing diagnostics, smoothed
 active river trunk and tributary masks, wetness/deposition, material masks,
 vegetation potential, summaries, and tests.
@@ -233,12 +233,15 @@ angles and fractional accumulation, reducing the obvious D8 lattice in
 `flow-accumulation`. Active trunk extraction is still a hybrid: candidates are
 seeded from the fractional accumulation field, but a conservative D8 topology
 graph keeps the visible trunk and tributaries connected until depression
-fill/breach routing and explicit network extraction exist. Candidates are scored
-for visible length, crop continuity, interior coverage, and low repeated
-grid-direction runs before the selected centerlines are resampled, nudged by a
-constrained procedural offset, relaxed over drainage potential, and rasterized as
-soft product fields. This is a useful midpoint because downstream fields can
-consume a connected river product, but it is not a complete hydrology solution.
+fill/breach routing and explicit network extraction exist. Revision 5 adds
+stream-order-seeded paths from the coherent drainage hierarchy, but only when
+those paths reconnect to the active river network. Candidates are scored for
+visible length, crop continuity, interior coverage, low repeated grid-direction
+runs, and overlap with existing active paths before the selected centerlines are
+resampled, nudged by a constrained procedural offset, relaxed over drainage
+potential, and rasterized as soft product fields. This is a useful midpoint
+because downstream fields can consume a connected river product, but it is not a
+complete hydrology solution.
 
 The `temperate-mountain-river-stress` recipe is a diagnostic variant of the same
 slice. It keeps the same terrain/routing sources but expands active channel
