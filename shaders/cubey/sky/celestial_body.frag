@@ -54,12 +54,13 @@ LunarSurfaceSample lunar_surface_sample(vec3 normal, vec3 view_direction) {
 
 vec3 lunar_surface_debug_color(LunarSurfaceSample surface, vec3 normal, vec3 view_direction) {
     const float albedo = clamp((surface.albedo - 0.12) / 0.78, 0.0, 1.0);
-    const float maria_preserving_albedo = clamp((albedo - 0.5) * 1.55 + 0.5, 0.0, 1.0);
+    const float maria_preserving_albedo = pow(clamp((albedo - 0.52) * 2.10 + 0.46, 0.0, 1.0),
+                                              1.18);
     const vec3 debug_light = normalize(vec3(-0.45, 0.55, 0.70));
     const vec3 tangent_relief = surface.normal - normal * dot(surface.normal, normal);
-    const float relief = dot(tangent_relief, debug_light) * 1.45;
+    const float relief = dot(tangent_relief, debug_light) * 1.85;
     const float limb = smoothstep(0.01, 0.16, abs(dot(normal, view_direction)));
-    const float value = clamp(mix(0.12, 0.68, maria_preserving_albedo) + relief, 0.04, 0.86);
+    const float value = clamp(mix(0.07, 0.52, maria_preserving_albedo) + relief, 0.03, 0.66);
     return cubey_srgb_to_linear(vec3(value * limb));
 }
 
