@@ -25,15 +25,6 @@ struct Vec3 {
     float z = 0.0F;
 };
 
-struct MariaPlain {
-    float longitude_degrees = 0.0F;
-    float latitude_degrees = 0.0F;
-    float major_degrees = 1.0F;
-    float minor_degrees = 1.0F;
-    float rotation_degrees = 0.0F;
-    float strength = 1.0F;
-};
-
 struct MareField {
     float coverage = 0.0F;
     float fill = 0.0F;
@@ -77,22 +68,6 @@ struct Crater {
         value.x / length,
         value.y / length,
         value.z / length,
-    };
-}
-
-[[nodiscard]] Vec3 tangent_east(float longitude_radians) {
-    return {
-        -std::sin(longitude_radians),
-        std::cos(longitude_radians),
-        0.0F,
-    };
-}
-
-[[nodiscard]] Vec3 tangent_north(float longitude_radians, float latitude_radians) {
-    return {
-        -std::cos(longitude_radians) * std::sin(latitude_radians),
-        -std::sin(longitude_radians) * std::sin(latitude_radians),
-        std::cos(latitude_radians),
     };
 }
 
@@ -161,196 +136,27 @@ struct Crater {
     return normalize({direction.x * nx, direction.y * ny, direction.z * nz});
 }
 
-[[nodiscard]] float plain_mask(Vec3 direction, const MariaPlain& plain) {
-    const float longitude = radians(plain.longitude_degrees);
-    const float latitude = radians(plain.latitude_degrees);
-    const Vec3 center = direction_from_lon_lat(longitude, latitude);
-    const float center_dot = std::clamp(dot(direction, center), -1.0F, 1.0F);
-    const float angle = std::acos(center_dot);
-    const float sin_angle = std::max(std::sqrt(std::max(1.0F - center_dot * center_dot, 0.0F)),
-                                     0.00001F);
-    const float tangent_scale = angle / sin_angle;
-    const float east = dot(direction, tangent_east(longitude)) * tangent_scale;
-    const float north = dot(direction, tangent_north(longitude, latitude)) * tangent_scale;
-    const float rotation = radians(plain.rotation_degrees);
-    const float rotated_major = east * std::cos(rotation) + north * std::sin(rotation);
-    const float rotated_minor = -east * std::sin(rotation) + north * std::cos(rotation);
-    const float major = std::max(radians(plain.major_degrees), 0.0001F);
-    const float minor = std::max(radians(plain.minor_degrees), 0.0001F);
-    const float superellipse = std::sqrt((rotated_major * rotated_major) / (major * major) +
-                                         (rotated_minor * rotated_minor) / (minor * minor));
-    const float shore_noise =
-        (fbm(direction, 6.2F, "maria shore breakup", 4U, 0.50F) - 0.5F) * 0.10F;
-    const float edge_weight =
-        smoothstep(0.58F, 1.08F, superellipse) * (1.0F - smoothstep(1.08F, 1.34F, superellipse));
-    const float edge = superellipse + shore_noise * edge_weight;
-    const float core = 1.0F - smoothstep(0.70F, 1.00F, edge);
-    const float shelf = (1.0F - smoothstep(1.00F, 1.18F, edge)) * 0.06F;
-    return saturate((core + shelf) * plain.strength);
-}
-
-template <std::size_t N>
-[[nodiscard]] float complex_mask(Vec3 direction, const std::array<MariaPlain, N>& plains) {
-    float mask = 0.0F;
-    for (const MariaPlain& plain : plains) {
-        mask = std::max(mask, plain_mask(direction, plain));
-    }
-    return mask;
-}
-
 [[nodiscard]] MareField mare_field(Vec3 direction) {
-    // Reference-guided near-side mare complexes. The broad complexes come first
-    // so the Moon reads as basin-shaped basalt plains rather than scattered dots.
-    constexpr std::array<MariaPlain, 8> kWesternComplex{
-        MariaPlain{.longitude_degrees = -61.0F,
-                   .latitude_degrees = 1.0F,
-                   .major_degrees = 18.0F,
-                   .minor_degrees = 44.0F,
-                   .rotation_degrees = -7.0F,
-                   .strength = 0.52F},
-        MariaPlain{.longitude_degrees = -43.0F,
-                   .latitude_degrees = -18.0F,
-                   .major_degrees = 18.0F,
-                   .minor_degrees = 23.0F,
-                   .rotation_degrees = -18.0F,
-                   .strength = 0.45F},
-        MariaPlain{.longitude_degrees = -38.0F,
-                   .latitude_degrees = 5.0F,
-                   .major_degrees = 31.0F,
-                   .minor_degrees = 26.0F,
-                   .rotation_degrees = -10.0F,
-                   .strength = 0.48F},
-        MariaPlain{.longitude_degrees = -22.0F,
-                   .latitude_degrees = 34.0F,
-                   .major_degrees = 25.0F,
-                   .minor_degrees = 17.0F,
-                   .rotation_degrees = 12.0F,
-                   .strength = 0.62F},
-        MariaPlain{.longitude_degrees = -4.0F,
-                   .latitude_degrees = 57.0F,
-                   .major_degrees = 45.0F,
-                   .minor_degrees = 6.0F,
-                   .rotation_degrees = 0.0F,
-                   .strength = 0.26F},
-        MariaPlain{.longitude_degrees = -39.0F,
-                   .latitude_degrees = -24.0F,
-                   .major_degrees = 13.0F,
-                   .minor_degrees = 11.0F,
-                   .rotation_degrees = 6.0F,
-                   .strength = 0.40F},
-        MariaPlain{.longitude_degrees = -15.0F,
-                   .latitude_degrees = -21.0F,
-                   .major_degrees = 22.0F,
-                   .minor_degrees = 13.0F,
-                   .rotation_degrees = -10.0F,
-                   .strength = 0.42F},
-        MariaPlain{.longitude_degrees = -25.0F,
-                   .latitude_degrees = -5.0F,
-                   .major_degrees = 26.0F,
-                   .minor_degrees = 22.0F,
-                   .rotation_degrees = -16.0F,
-                   .strength = 0.38F},
-    };
-    constexpr std::array<MariaPlain, 6> kEasternComplex{
-        MariaPlain{.longitude_degrees = 18.0F,
-                   .latitude_degrees = 28.0F,
-                   .major_degrees = 15.0F,
-                   .minor_degrees = 12.0F,
-                   .rotation_degrees = -9.0F,
-                   .strength = 0.46F},
-        MariaPlain{.longitude_degrees = 33.0F,
-                   .latitude_degrees = 8.0F,
-                   .major_degrees = 31.0F,
-                   .minor_degrees = 16.0F,
-                   .rotation_degrees = -17.0F,
-                   .strength = 0.56F},
-        MariaPlain{.longitude_degrees = 40.0F,
-                   .latitude_degrees = -1.0F,
-                   .major_degrees = 42.0F,
-                   .minor_degrees = 22.0F,
-                   .rotation_degrees = -24.0F,
-                   .strength = 0.42F},
-        MariaPlain{.longitude_degrees = 54.0F,
-                   .latitude_degrees = -8.0F,
-                   .major_degrees = 24.0F,
-                   .minor_degrees = 16.0F,
-                   .rotation_degrees = -26.0F,
-                   .strength = 0.46F},
-        MariaPlain{.longitude_degrees = 59.0F,
-                   .latitude_degrees = 17.0F,
-                   .major_degrees = 12.0F,
-                   .minor_degrees = 10.0F,
-                   .rotation_degrees = -6.0F,
-                   .strength = 0.38F},
-        MariaPlain{.longitude_degrees = 35.0F,
-                   .latitude_degrees = -16.0F,
-                   .major_degrees = 12.0F,
-                   .minor_degrees = 8.0F,
-                   .rotation_degrees = -4.0F,
-                   .strength = 0.34F},
-    };
-    constexpr std::array<MariaPlain, 3> kIsolatedBasins{
-        MariaPlain{.longitude_degrees = 76.0F,
-                   .latitude_degrees = 2.0F,
-                   .major_degrees = 11.0F,
-                   .minor_degrees = 7.0F,
-                   .rotation_degrees = -20.0F,
-                   .strength = 0.24F},
-        MariaPlain{.longitude_degrees = -35.0F,
-                   .latitude_degrees = 44.0F,
-                   .major_degrees = 14.0F,
-                   .minor_degrees = 7.0F,
-                   .rotation_degrees = 10.0F,
-                   .strength = 0.28F},
-        MariaPlain{.longitude_degrees = 35.0F,
-                   .latitude_degrees = -16.0F,
-                   .major_degrees = 12.0F,
-                   .minor_degrees = 8.0F,
-                   .rotation_degrees = -4.0F,
-                   .strength = 0.28F},
-    };
-    constexpr std::array<MariaPlain, 4> kHighlandBays{
-        MariaPlain{.longitude_degrees = 2.0F,
-                   .latitude_degrees = 22.0F,
-                   .major_degrees = 8.0F,
-                   .minor_degrees = 24.0F,
-                   .rotation_degrees = -8.0F,
-                   .strength = 0.26F},
-        MariaPlain{.longitude_degrees = 25.0F,
-                   .latitude_degrees = 17.0F,
-                   .major_degrees = 7.5F,
-                   .minor_degrees = 12.0F,
-                   .rotation_degrees = 14.0F,
-                   .strength = 0.18F},
-        MariaPlain{.longitude_degrees = 47.0F,
-                   .latitude_degrees = 14.0F,
-                   .major_degrees = 7.0F,
-                   .minor_degrees = 13.0F,
-                   .rotation_degrees = -2.0F,
-                   .strength = 0.24F},
-        MariaPlain{.longitude_degrees = 9.0F,
-                   .latitude_degrees = -16.0F,
-                   .major_degrees = 14.0F,
-                   .minor_degrees = 8.0F,
-                   .rotation_degrees = -18.0F,
-                   .strength = 0.22F},
-    };
-
-    const float west = complex_mask(direction, kWesternComplex);
-    const float east = complex_mask(direction, kEasternComplex);
-    const float isolated = complex_mask(direction, kIsolatedBasins);
-    float bay = 0.0F;
-    for (const MariaPlain& highland : kHighlandBays) {
-        bay = std::max(bay, plain_mask(direction, highland));
-    }
-    const float mask = std::max(std::max(west, east), isolated);
-    const float edge =
-        smoothstep(0.08F, 0.40F, mask) * (1.0F - smoothstep(0.62F, 0.96F, mask));
-    const float breakup = (fbm(direction, 4.8F, "maria edge breakup", 4U, 0.52F) - 0.5F) * 0.04F;
-    const float coverage = saturate(mask * (1.0F - bay * 0.32F) + breakup * edge);
+    const Vec3 broad_warp = normalize({
+        direction.x + (fbm(direction, 1.05F, "body-space mare warp x", 4U, 0.52F) - 0.5F) * 0.42F,
+        direction.y + (fbm(direction, 1.05F, "body-space mare warp y", 4U, 0.52F) - 0.5F) * 0.42F,
+        direction.z + (fbm(direction, 1.05F, "body-space mare warp z", 4U, 0.52F) - 0.5F) * 0.42F,
+    });
+    const Vec3 warped = normalize({
+        broad_warp.x +
+            (fbm(broad_warp, 2.4F, "body-space mare lobe warp x", 3U, 0.48F) - 0.5F) * 0.16F,
+        broad_warp.y +
+            (fbm(broad_warp, 2.4F, "body-space mare lobe warp y", 3U, 0.48F) - 0.5F) * 0.16F,
+        broad_warp.z +
+            (fbm(broad_warp, 2.4F, "body-space mare lobe warp z", 3U, 0.48F) - 0.5F) * 0.16F,
+    });
+    const float broad = fbm(warped, 1.55F, "body-space broad mare field", 5U, 0.58F);
+    const float lobe = fbm(warped, 2.25F, "body-space mare lobe field", 4U, 0.52F);
+    const float field = broad * 0.86F + lobe * 0.14F;
+    const float coverage = smoothstep(0.10F, 0.50F, field);
     return {
         .coverage = coverage,
-        .fill = coverage,
+        .fill = coverage * 0.96F,
     };
 }
 
@@ -443,48 +249,6 @@ struct SurfaceSample {
            static_cast<std::size_t>(x);
 }
 
-[[nodiscard]] std::vector<float> blur_scalar_field(std::span<const float> source,
-                                                   std::uint32_t width, std::uint32_t height,
-                                                   std::uint32_t radius) {
-    if (radius == 0U) {
-        return std::vector<float>{source.begin(), source.end()};
-    }
-
-    std::vector<float> horizontal(source.size(), 0.0F);
-    std::vector<float> result(source.size(), 0.0F);
-    const float sample_count = static_cast<float>(radius * 2U + 1U);
-    for (std::uint32_t y = 0; y < height; ++y) {
-        for (std::uint32_t x = 0; x < width; ++x) {
-            float sum = 0.0F;
-            for (std::uint32_t offset = 0; offset <= radius * 2U; ++offset) {
-                const std::int32_t dx = static_cast<std::int32_t>(offset) -
-                                        static_cast<std::int32_t>(radius);
-                const std::uint32_t sx =
-                    static_cast<std::uint32_t>((static_cast<std::int32_t>(x) + dx +
-                                                static_cast<std::int32_t>(width)) %
-                                               static_cast<std::int32_t>(width));
-                sum += source[texel_index(sx, y, width)];
-            }
-            horizontal[texel_index(x, y, width)] = sum / sample_count;
-        }
-    }
-
-    for (std::uint32_t y = 0; y < height; ++y) {
-        for (std::uint32_t x = 0; x < width; ++x) {
-            float sum = 0.0F;
-            for (std::uint32_t offset = 0; offset <= radius * 2U; ++offset) {
-                const std::int32_t dy = static_cast<std::int32_t>(offset) -
-                                        static_cast<std::int32_t>(radius);
-                const std::uint32_t sy = static_cast<std::uint32_t>(std::clamp(
-                    static_cast<std::int32_t>(y) + dy, 0, static_cast<std::int32_t>(height - 1U)));
-                sum += horizontal[texel_index(x, sy, width)];
-            }
-            result[texel_index(x, y, width)] = sum / sample_count;
-        }
-    }
-    return result;
-}
-
 [[nodiscard]] SurfaceSample sample_surface(Vec3 direction, MareField mare_field_sample,
                                            std::span<const Crater> craters) {
     const float mare_coverage = mare_field_sample.coverage;
@@ -501,11 +265,11 @@ struct SurfaceSample {
     const float mare_plains = fbm(material, 1.7F, "mare basalt plains", 4U, 0.50F);
     const float mare_mottling = fbm(material, 12.0F, "mare subtle mottling", 3U, 0.42F);
     const float highlands =
-        0.610F + broad * 0.088F + mid * 0.055F + fine * 0.030F + highland_pores * 0.032F +
+        0.635F + broad * 0.088F + mid * 0.055F + fine * 0.030F + highland_pores * 0.032F +
         normal_tone * 0.036F;
     const float mare =
-        0.425F + mare_plains * 0.024F + mare_mottling * 0.012F + fine * 0.006F +
-        normal_tone * 0.026F;
+        0.290F + mare_plains * 0.032F + mare_mottling * 0.015F + fine * 0.006F +
+        normal_tone * 0.030F;
 
     float albedo = mix(highlands, mare, mare_fill) * surface_tone_multiplier;
     float height =
@@ -619,7 +383,6 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
         static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
     const std::vector<Crater> craters = generate_craters();
     std::vector<Vec3> directions(texel_count);
-    std::vector<float> raw_mare_coverage(texel_count, 0.0F);
     std::vector<float> albedo(texel_count, 0.0F);
     std::vector<float> surface_height(texel_count, 0.0F);
     std::vector<float> roughness(texel_count, 0.0F);
@@ -628,27 +391,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
         for (std::uint32_t x = 0; x < width; ++x) {
             const std::size_t index = texel_index(x, y, width);
             directions[index] = direction_for_texel(x, y, width, height);
-            raw_mare_coverage[index] = mare_field(directions[index]).coverage;
-        }
-    }
-
-    std::vector<float> mare_fill_shape(texel_count, 0.0F);
-    for (std::size_t index = 0; index < texel_count; ++index) {
-        mare_fill_shape[index] = smoothstep(0.07F, 0.24F, raw_mare_coverage[index]);
-    }
-
-    const std::uint32_t blur_radius = std::clamp(width / 80U, 2U, 16U);
-    std::vector<float> mare_fill_field =
-        blur_scalar_field(mare_fill_shape, width, height, blur_radius);
-    mare_fill_field = blur_scalar_field(mare_fill_field, width, height, blur_radius);
-
-    for (std::uint32_t y = 0; y < height; ++y) {
-        for (std::uint32_t x = 0; x < width; ++x) {
-            const std::size_t index = texel_index(x, y, width);
-            const MareField field{
-                .coverage = raw_mare_coverage[index],
-                .fill = smoothstep(0.05F, 0.88F, mare_fill_field[index]) * 0.78F,
-            };
+            const MareField field = mare_field(directions[index]);
             const SurfaceSample sample =
                 sample_surface(directions[index], field, std::span<const Crater>{craters});
             albedo[index] = sample.albedo;
@@ -697,7 +440,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v9", "render.lunar_surface_map",
+            "lunar-surface-map-v10", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,

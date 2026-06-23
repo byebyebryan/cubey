@@ -1,7 +1,8 @@
 # Moon Surface Detail Captures
 
-Generated on 2026-06-22 under `outputs/sky-moon-surface-detail-001/`,
-`outputs/sky-moon-sphere-debug-001/`, and `outputs/sky-moon-reference-001/`.
+Generated on 2026-06-22 and refreshed on 2026-06-23 under
+`outputs/sky-moon-surface-detail-001/`, `outputs/sky-moon-sphere-debug-001/`,
+and `outputs/sky-moon-reference-001/`.
 The PNGs are ignored by git; this note records the capture and reference sets
 used after routing visible moon geometry and moon debug views to the generated
 spherical lunar surface map.
@@ -20,6 +21,14 @@ curl -L https://astrogeology.usgs.gov/ckan/dataset/db948a2d-4d6a-4775-a0d3-12613
 ```sh
 mkdir -p outputs/sky-moon-sphere-debug-001
 ./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --debug-view moon-surface --atmosphere-preset moonlit-night --pause-time --no-reference-geometry --output outputs/sky-moon-sphere-debug-001/atmosphere-moon-surface-sphere.png
+```
+
+## Current Final-View Checks
+
+```sh
+mkdir -p outputs/sky-moon-surface-detail-001
+./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --atmosphere-preset moonlit-night --pause-time --no-reference-geometry --output outputs/sky-moon-surface-detail-001/atmosphere-moonlit-v10-normal.png
+./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --atmosphere-preset moonlit-night --time-hours 12 --sun-azimuth-offset -180 --moon-size-scale 8 --moon-intensity 4 --pause-time --no-reference-geometry --output outputs/sky-moon-surface-detail-001/atmosphere-moonlit-v10-readable.png
 ```
 
 ## Previous Routing Captures
@@ -50,11 +59,14 @@ mkdir -p outputs/sky-moon-surface-detail-001
   and surface-composited scenes.
 - Planet moon captures remain useful for occlusion and daytime washout, but the
   moon is not large enough in these frames to judge surface detail.
-- The `lunar-surface-map-v9` capture uses the LROC nearside mosaic as the shape
-  guide: basin-scale mid-dark plains, corrected nearside longitude orientation,
-  connected western/eastern mare complexes, and a normalized smoothed mare
-  silhouette so primitive overlap falloffs do not become visible albedo stamps.
-  A small normal-space FBM perturbation and subtle whole-disk tone multiplier
-  add non-stamp surface variation without copying Shadertoy noise code.
-- Remaining visual tuning is mostly crater scale, mare edge softness, and
-  final-scene lighting balance.
+- The `lunar-surface-map-v10` capture replaces the named mare primitive path
+  with a warped 3D body-space FBM field. The goal is far-field moon readability:
+  broad soft dark plains plus independent surface variation, without
+  screen-space texture swimming, equirectangular UV shaping, or visible
+  overlapping stamp centers.
+- The normal `moonlit-night` capture is useful as a routing check but does not
+  frame the moon well for texture review. The enlarged crescent capture shows
+  final-view binding and phase behavior; the sphere debug capture remains the
+  controlled full-disk texture check.
+- Remaining visual tuning is mostly final-scene moon-size contrast, crater
+  scale, and final-scene lighting balance.

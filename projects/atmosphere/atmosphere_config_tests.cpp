@@ -70,20 +70,6 @@ void require_not_contains(const std::string& haystack, const char* needle, const
     return map.rgba8.data() + level.byte_offset + texel;
 }
 
-[[nodiscard]] const std::uint8_t*
-lunar_surface_map_lon_lat_texel(const cubey::render::LunarSurfaceMap& map, float longitude_degrees,
-                                float latitude_degrees) {
-    const float u = longitude_degrees / 360.0F + 0.5F;
-    const float v = 0.5F - latitude_degrees / 180.0F;
-    const std::uint32_t x = static_cast<std::uint32_t>(
-        std::clamp(static_cast<int>(std::floor(u * static_cast<float>(map.width))), 0,
-                   static_cast<int>(map.width) - 1));
-    const std::uint32_t y = static_cast<std::uint32_t>(
-        std::clamp(static_cast<int>(std::floor(v * static_cast<float>(map.height))), 0,
-                   static_cast<int>(map.height) - 1));
-    return lunar_surface_map_texel(map, x, y);
-}
-
 struct TestVec3 {
     float x = 0.0F;
     float y = 0.0F;
@@ -404,7 +390,7 @@ int main() {
         cubey::procedural::validate_procedural_artifact_metadata(default_map.metadata);
         require(default_map.metadata.generator == "cubey::render::generate_lunar_surface_map",
                 "lunar surface map metadata should identify its generator");
-        require(default_map.metadata.formula_version == "lunar-surface-map-v9",
+        require(default_map.metadata.formula_version == "lunar-surface-map-v10",
                 "lunar surface map metadata should identify its formula version");
         require(default_map.metadata.domain == "render.lunar_surface_map",
                 "lunar surface map metadata should identify its domain");
@@ -445,67 +431,58 @@ int main() {
                     "lunar surface map mips should be tightly packed RGBA8");
         }
 
-        const std::uint8_t* mare = lunar_surface_map_lon_lat_texel(map, -18.0F, 35.0F);
-        const std::array<const std::uint8_t*, 7> mare_plain_samples{
-            lunar_surface_map_lon_lat_texel(map, -61.0F, 1.0F),
-            lunar_surface_map_lon_lat_texel(map, -22.0F, 34.0F),
-            lunar_surface_map_lon_lat_texel(map, 18.0F, 28.0F),
-            lunar_surface_map_lon_lat_texel(map, 33.0F, 8.0F),
-            lunar_surface_map_lon_lat_texel(map, 59.0F, 17.0F),
-            lunar_surface_map_lon_lat_texel(map, 54.0F, -8.0F),
-            lunar_surface_map_lon_lat_texel(map, -15.0F, -21.0F),
-        };
-        const std::array<const std::uint8_t*, 4> mare_complex_bridge_samples{
-            lunar_surface_map_lon_lat_texel(map, -38.0F, 5.0F),
-            lunar_surface_map_lon_lat_texel(map, -25.0F, -5.0F),
-            lunar_surface_map_lon_lat_texel(map, 40.0F, -1.0F),
-            lunar_surface_map_lon_lat_texel(map, 47.0F, -5.0F),
-        };
-        const std::array<const std::uint8_t*, 4> highland_bay_samples{
-            lunar_surface_map_lon_lat_texel(map, 2.0F, 22.0F),
-            lunar_surface_map_lon_lat_texel(map, 25.0F, 17.0F),
-            lunar_surface_map_lon_lat_texel(map, 47.0F, 14.0F),
-            lunar_surface_map_lon_lat_texel(map, 9.0F, -16.0F),
-        };
-        const std::uint8_t* highland = lunar_surface_map_lon_lat_texel(map, 142.0F, -11.0F);
+        std::vector<std::uint8_t> base_albedo;
+        base_albedo.reserve(static_cast<std::size_t>(map.width) * static_cast<std::size_t>(map.height));
+        for (std::uint32_t y = 0; y < map.height; ++y) {
+            for (std::uint32_t x = 0; x < map.width; ++x) {
+                base_albedo.push_back(lunar_surface_map_texel(map, x, y)[0]);
+            }
+        }
+        std::ranges::sort(base_albedo);
+        const std::uint8_t base_p10 = base_albedo[base_albedo.size() / 10U];
+        const std::uint8_t base_p50 = base_albedo[base_albedo.size() / 2U];
+        const std::uint8_t base_p90 = base_albedo[(base_albedo.size() * 9U) / 10U];
+
+        std::uint32_t darker_region_count = 0U;
+        std::uint32_t brighter_region_count = 0U;
+        for (std::uint8_t value : base_albedo) {
+            if (static_cast<int>(value) + 12 < static_cast<int>(base_p50)) {
+                ++darker_region_count;
+            }
+            if (static_cast<int>(value) > static_cast<int>(base_p50) + 8) {
+                ++brighter_region_count;
+            }
+        }
+
+        const std::uint32_t broad_mip = std::min<std::uint32_t>(3U, map.mip_levels - 1U);
+        const cubey::render::LunarSurfaceMapMip& broad_level = map.mips.at(broad_mip);
+        std::vector<std::uint8_t> broad_albedo;
+        broad_albedo.reserve(static_cast<std::size_t>(broad_level.width) *
+                             static_cast<std::size_t>(broad_level.height));
+        for (std::uint32_t y = 0; y < broad_level.height; ++y) {
+            for (std::uint32_t x = 0; x < broad_level.width; ++x) {
+                broad_albedo.push_back(lunar_surface_map_texel(map, x, y, broad_mip)[0]);
+            }
+        }
+        std::ranges::sort(broad_albedo);
+        const std::uint8_t broad_p10 = broad_albedo[broad_albedo.size() / 10U];
+        const std::uint8_t broad_p90 = broad_albedo[(broad_albedo.size() * 9U) / 10U];
+
         const std::uint8_t* seam_left = lunar_surface_map_texel(map, 0U, map.height / 2U);
         const std::uint8_t* seam_right =
             lunar_surface_map_texel(map, map.width - 1U, map.height / 2U);
         const std::uint8_t* north = lunar_surface_map_texel(map, map.width / 2U, 0U);
-        const std::uint8_t* center = lunar_surface_map_lon_lat_texel(map, 0.0F, 0.0F);
-        require(mare[0] < highland[0], "lunar surface map maria should be darker than highlands");
-        std::uint8_t darkest_mare = 255U;
-        std::uint8_t brightest_mare = 0U;
-        std::uint32_t broad_dark_mare_count = 0U;
-        for (const std::uint8_t* sample : mare_plain_samples) {
-            darkest_mare = std::min(darkest_mare, sample[0]);
-            brightest_mare = std::max(brightest_mare, sample[0]);
-            if (static_cast<int>(sample[0]) + 26 < static_cast<int>(highland[0])) {
-                ++broad_dark_mare_count;
-            }
-        }
-        require(broad_dark_mare_count >= 5U,
-                "lunar surface map should keep broad mare plains darker than highlands");
-        require(darkest_mare > 45U,
-                "lunar surface map mare plains should not collapse into near-black blobs");
-        require(static_cast<int>(brightest_mare) - static_cast<int>(darkest_mare) < 92,
-                "lunar surface map mare plains should stay coherent without spot-noise contrast");
-        std::uint32_t dark_bridge_count = 0U;
-        for (const std::uint8_t* sample : mare_complex_bridge_samples) {
-            if (static_cast<int>(sample[0]) + 18 < static_cast<int>(highland[0])) {
-                ++dark_bridge_count;
-            }
-        }
-        require(dark_bridge_count >= 3U,
-                "lunar surface map should connect near-side maria into basin-scale plains");
-        std::uint32_t bright_bay_count = 0U;
-        for (const std::uint8_t* sample : highland_bay_samples) {
-            if (static_cast<int>(sample[0]) > static_cast<int>(darkest_mare) + 18) {
-                ++bright_bay_count;
-            }
-        }
-        require(bright_bay_count >= 2U,
-                "lunar surface map should keep soft highland bays inside the mare complexes");
+        const std::uint8_t* center = lunar_surface_map_texel(map, map.width / 2U, map.height / 2U);
+        require(static_cast<int>(base_p10) + 36 < static_cast<int>(base_p90),
+                "lunar surface map should keep clear far-field albedo contrast");
+        require(base_p10 > 45U && base_p90 < 225U,
+                "lunar surface map should avoid crushed blacks and blown highlands");
+        require(darker_region_count * 8U > base_albedo.size(),
+                "lunar surface map should include enough broad dark plains");
+        require(brighter_region_count * 8U > base_albedo.size(),
+                "lunar surface map should include enough bright highland texture");
+        require(static_cast<int>(broad_p10) + 18 < static_cast<int>(broad_p90),
+                "lunar surface map broad albedo shapes should survive mip downsampling");
         require(std::abs(static_cast<int>(seam_left[0]) - static_cast<int>(seam_right[0])) < 24,
                 "lunar surface map should stay continuous across the longitude seam");
         require(north[0] > 20U && north[0] < 230U,
@@ -1041,20 +1018,20 @@ int main() {
                      "moon surface sampling should face the generated near-side map toward camera");
     require_contains(celestial_shader_source, "-dot(sample_normal, basis_right)",
                      "moon surface sampling should keep nearside longitude orientation readable");
-    require_contains(lunar_surface_source, "mare_fill_shape",
-                     "lunar surface generation should normalize mare fill before smoothing");
-    require_contains(lunar_surface_source, "raw_mare_coverage",
-                     "lunar surface generation should separate raw mare coverage from albedo fill");
-    require_contains(lunar_surface_source, "blur_scalar_field",
-                     "lunar surface generation should smooth mare albedo fill after shaping");
+    require_contains(lunar_surface_source, "body-space broad mare field",
+                     "lunar surface generation should use body-space procedural mare fields");
+    require_contains(lunar_surface_source, "body-space mare warp x",
+                     "lunar surface generation should domain-warp the body-space mare field");
     require_contains(lunar_surface_source, "material_direction",
                      "lunar surface generation should perturb sphere-normal material sampling");
     require_contains(lunar_surface_source, "normal-space surface tone",
                      "lunar surface generation should use normal-space procedural tone");
     require_contains(lunar_surface_source, "subtle moon disk tone",
                      "lunar surface generation should layer subtle full-surface tone");
-    require_not_contains(lunar_surface_source, "mare_fill_field[index] * 1.35F + raw_mare_coverage",
-                         "lunar surface albedo fill should not reintroduce raw stamp coverage");
+    require_not_contains(lunar_surface_source, "MariaPlain",
+                         "lunar surface albedo should not use hand-authored maria stamps");
+    require_not_contains(lunar_surface_source, "plain_mask",
+                         "lunar surface albedo should not use primitive mare masks");
     require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MOON ||",
                      "atmosphere shader should leave mesh-owned moon debug views with a black backdrop");
     require_not_contains(app_source, "pending_lunar_atlas_",

@@ -64,7 +64,7 @@ Implemented on the `sky-rendering` worktree in June 2026:
 - `LunarSurfaceMap` is a deterministic `1024x512` equirectangular RGBA8
   procedural artifact generated from shared `cubey::procedural` seed, noise,
   hash, and metadata utilities. The current artifact formula is
-  `lunar-surface-map-v9`.
+  `lunar-surface-map-v10`.
 - `CelestialBodyFrame` samples the surface in a stable moon-local body frame,
   so texture coordinates no longer face the camera.
 - `AtmosphereBackgroundAtlasResources` now owns the visible lunar surface map
@@ -79,13 +79,14 @@ Implemented on the `sky-rendering` worktree in June 2026:
   averaged texture mip.
 
 The current captures show routing, phase behavior, and a close-up sphere debug
-view. Maria are guided by the LROC nearside mosaic: connected basin-scale
-basalt plains, especially the Procellarum/Imbrium/Nubium western complex and
-the Serenitatis/Tranquillitatis/Fecunditatis eastern complex. The procedural
-stamps shape basin coverage, while a normalized and smoothed mare silhouette
-controls albedo so overlap falloffs do not read as painted stamp centers.
-Surface tone uses a small normal-space FBM perturbation plus a subtle
-low-frequency whole-disk multiplier inspired by simple moon shader examples,
+view. Maria are now broad body-space procedural fields instead of named
+near-side basin primitives. The field is generated from warped 3D FBM on the
+sphere direction, then used only as the soft basalt/highland albedo blend so
+the texture remains stable on the geometry moon without screen-space or UV
+painted stamp artifacts. Surface tone uses separate normal-space FBM and
+low-frequency body-space multipliers inspired by simple moon shader examples,
 implemented with the existing Cubey procedural noise utilities rather than
-copied Shadertoy noise code. Crater scale and final-scene lighting balance
-remain material-tuning follow-ups.
+copied Shadertoy noise code. Final acceptance should prioritize realistic
+moon-size captures; the close-up sphere view is for seam, mip, and stability
+checks. Crater scale and final-scene lighting balance remain material-tuning
+follow-ups.
