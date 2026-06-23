@@ -64,7 +64,7 @@ Implemented on the `sky-rendering` worktree in June 2026:
 - `LunarSurfaceMap` is a deterministic `1024x512` equirectangular RGBA8
   procedural artifact generated from shared `cubey::procedural` seed, noise,
   hash, and metadata utilities. The current artifact formula is
-  `lunar-surface-map-v4`.
+  `lunar-surface-map-v5`.
 - `CelestialBodyFrame` samples the surface in a stable moon-local body frame,
   so texture coordinates no longer face the camera.
 - `AtmosphereBackgroundAtlasResources` now owns the visible lunar surface map
@@ -79,7 +79,8 @@ Implemented on the `sky-rendering` worktree in June 2026:
   averaged texture mip.
 
 The current captures show routing, phase behavior, and a close-up sphere debug
-view. Maria are guided by the LROC nearside mosaic: elongated mid-dark basaltic
-plains with visible highland gaps, rather than circular dark spots or a merged
-near-black mass. Crater scale, mare edge softness, and final-scene lighting
-balance remain material-tuning follow-ups.
+view. Maria are guided by the LROC nearside mosaic: connected basin-scale
+basalt plains, especially the Procellarum/Imbrium/Nubium western complex and
+the Serenitatis/Tranquillitatis/Fecunditatis eastern complex. Crater scale,
+mare edge softness, and final-scene lighting balance remain material-tuning
+follow-ups.

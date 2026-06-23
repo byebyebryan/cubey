@@ -147,143 +147,178 @@ struct Crater {
     const float superellipse = std::sqrt((rotated_major * rotated_major) / (major * major) +
                                          (rotated_minor * rotated_minor) / (minor * minor));
     const float shore_noise =
-        (fbm(direction, 6.2F, "maria shore breakup", 4U, 0.50F) - 0.5F) * 0.16F;
+        (fbm(direction, 6.2F, "maria shore breakup", 4U, 0.50F) - 0.5F) * 0.10F;
     const float edge_weight =
         smoothstep(0.58F, 1.08F, superellipse) * (1.0F - smoothstep(1.08F, 1.34F, superellipse));
     const float edge = superellipse + shore_noise * edge_weight;
-    const float core = 1.0F - smoothstep(0.60F, 1.00F, edge);
-    const float shelf = (1.0F - smoothstep(1.00F, 1.20F, edge)) * 0.08F;
+    const float core = 1.0F - smoothstep(0.70F, 1.00F, edge);
+    const float shelf = (1.0F - smoothstep(1.00F, 1.18F, edge)) * 0.06F;
     return saturate((core + shelf) * plain.strength);
 }
 
+[[nodiscard]] float soft_union(float lhs, float rhs) {
+    return saturate(lhs + rhs * (1.0F - lhs));
+}
+
+template <std::size_t N>
+[[nodiscard]] float complex_mask(Vec3 direction, const std::array<MariaPlain, N>& plains) {
+    float mask = 0.0F;
+    for (const MariaPlain& plain : plains) {
+        mask = soft_union(mask, plain_mask(direction, plain));
+    }
+    return mask;
+}
+
 [[nodiscard]] float maria_mask(Vec3 direction) {
-    // Reference-guided named near-side plains, modeled as broad rotated patches
-    // instead of radial dots so the sphere reads closer to LROC WAC imagery.
-    constexpr std::array<MariaPlain, 13> kPlains{
+    // Reference-guided near-side mare complexes. The broad complexes come first
+    // so the Moon reads as basin-shaped basalt plains rather than scattered dots.
+    constexpr std::array<MariaPlain, 8> kWesternComplex{
         MariaPlain{.longitude_degrees = -61.0F,
                    .latitude_degrees = 1.0F,
                    .major_degrees = 18.0F,
                    .minor_degrees = 44.0F,
                    .rotation_degrees = -7.0F,
-                   .strength = 0.62F},
+                   .strength = 0.52F},
         MariaPlain{.longitude_degrees = -43.0F,
                    .latitude_degrees = -18.0F,
                    .major_degrees = 18.0F,
                    .minor_degrees = 23.0F,
                    .rotation_degrees = -18.0F,
-                   .strength = 0.52F},
+                   .strength = 0.45F},
+        MariaPlain{.longitude_degrees = -38.0F,
+                   .latitude_degrees = 5.0F,
+                   .major_degrees = 31.0F,
+                   .minor_degrees = 26.0F,
+                   .rotation_degrees = -10.0F,
+                   .strength = 0.48F},
         MariaPlain{.longitude_degrees = -22.0F,
                    .latitude_degrees = 34.0F,
                    .major_degrees = 25.0F,
                    .minor_degrees = 17.0F,
                    .rotation_degrees = 12.0F,
-                   .strength = 0.74F},
+                   .strength = 0.62F},
         MariaPlain{.longitude_degrees = -4.0F,
                    .latitude_degrees = 57.0F,
                    .major_degrees = 45.0F,
                    .minor_degrees = 6.0F,
                    .rotation_degrees = 0.0F,
-                   .strength = 0.32F},
-        MariaPlain{.longitude_degrees = 18.0F,
-                   .latitude_degrees = 28.0F,
-                   .major_degrees = 15.0F,
-                   .minor_degrees = 12.0F,
-                   .rotation_degrees = -9.0F,
-                   .strength = 0.66F},
-        MariaPlain{.longitude_degrees = 33.0F,
-                   .latitude_degrees = 8.0F,
-                   .major_degrees = 26.0F,
-                   .minor_degrees = 12.0F,
-                   .rotation_degrees = -17.0F,
-                   .strength = 0.61F},
-        MariaPlain{.longitude_degrees = 54.0F,
-                   .latitude_degrees = -8.0F,
-                   .major_degrees = 18.0F,
-                   .minor_degrees = 12.0F,
-                   .rotation_degrees = -26.0F,
-                   .strength = 0.52F},
-        MariaPlain{.longitude_degrees = 59.0F,
-                   .latitude_degrees = 17.0F,
-                   .major_degrees = 12.0F,
-                   .minor_degrees = 10.0F,
-                   .rotation_degrees = -6.0F,
-                   .strength = 0.61F},
+                   .strength = 0.26F},
         MariaPlain{.longitude_degrees = -39.0F,
                    .latitude_degrees = -24.0F,
                    .major_degrees = 13.0F,
                    .minor_degrees = 11.0F,
                    .rotation_degrees = 6.0F,
-                   .strength = 0.49F},
+                   .strength = 0.40F},
         MariaPlain{.longitude_degrees = -15.0F,
                    .latitude_degrees = -21.0F,
                    .major_degrees = 22.0F,
                    .minor_degrees = 13.0F,
                    .rotation_degrees = -10.0F,
-                   .strength = 0.50F},
+                   .strength = 0.42F},
+        MariaPlain{.longitude_degrees = -25.0F,
+                   .latitude_degrees = -5.0F,
+                   .major_degrees = 26.0F,
+                   .minor_degrees = 22.0F,
+                   .rotation_degrees = -16.0F,
+                   .strength = 0.38F},
+    };
+    constexpr std::array<MariaPlain, 6> kEasternComplex{
+        MariaPlain{.longitude_degrees = 18.0F,
+                   .latitude_degrees = 28.0F,
+                   .major_degrees = 15.0F,
+                   .minor_degrees = 12.0F,
+                   .rotation_degrees = -9.0F,
+                   .strength = 0.46F},
+        MariaPlain{.longitude_degrees = 33.0F,
+                   .latitude_degrees = 8.0F,
+                   .major_degrees = 31.0F,
+                   .minor_degrees = 16.0F,
+                   .rotation_degrees = -17.0F,
+                   .strength = 0.56F},
+        MariaPlain{.longitude_degrees = 40.0F,
+                   .latitude_degrees = -1.0F,
+                   .major_degrees = 42.0F,
+                   .minor_degrees = 22.0F,
+                   .rotation_degrees = -24.0F,
+                   .strength = 0.42F},
+        MariaPlain{.longitude_degrees = 54.0F,
+                   .latitude_degrees = -8.0F,
+                   .major_degrees = 24.0F,
+                   .minor_degrees = 16.0F,
+                   .rotation_degrees = -26.0F,
+                   .strength = 0.46F},
+        MariaPlain{.longitude_degrees = 59.0F,
+                   .latitude_degrees = 17.0F,
+                   .major_degrees = 12.0F,
+                   .minor_degrees = 10.0F,
+                   .rotation_degrees = -6.0F,
+                   .strength = 0.38F},
         MariaPlain{.longitude_degrees = 35.0F,
                    .latitude_degrees = -16.0F,
                    .major_degrees = 12.0F,
                    .minor_degrees = 8.0F,
                    .rotation_degrees = -4.0F,
-                   .strength = 0.42F},
+                   .strength = 0.34F},
+    };
+    constexpr std::array<MariaPlain, 3> kIsolatedBasins{
         MariaPlain{.longitude_degrees = 76.0F,
                    .latitude_degrees = 2.0F,
-                   .major_degrees = 10.0F,
-                   .minor_degrees = 6.0F,
+                   .major_degrees = 11.0F,
+                   .minor_degrees = 7.0F,
                    .rotation_degrees = -20.0F,
-                   .strength = 0.36F},
+                   .strength = 0.24F},
         MariaPlain{.longitude_degrees = -35.0F,
                    .latitude_degrees = 44.0F,
                    .major_degrees = 14.0F,
                    .minor_degrees = 7.0F,
                    .rotation_degrees = 10.0F,
-                   .strength = 0.36F},
+                   .strength = 0.28F},
+        MariaPlain{.longitude_degrees = 35.0F,
+                   .latitude_degrees = -16.0F,
+                   .major_degrees = 12.0F,
+                   .minor_degrees = 8.0F,
+                   .rotation_degrees = -4.0F,
+                   .strength = 0.28F},
     };
-    constexpr std::array<MariaPlain, 5> kHighlandSeparators{
+    constexpr std::array<MariaPlain, 4> kHighlandBays{
         MariaPlain{.longitude_degrees = 2.0F,
                    .latitude_degrees = 22.0F,
-                   .major_degrees = 6.5F,
-                   .minor_degrees = 32.0F,
+                   .major_degrees = 8.0F,
+                   .minor_degrees = 24.0F,
                    .rotation_degrees = -8.0F,
-                   .strength = 0.46F},
+                   .strength = 0.26F},
         MariaPlain{.longitude_degrees = 25.0F,
                    .latitude_degrees = 17.0F,
-                   .major_degrees = 6.0F,
-                   .minor_degrees = 16.0F,
+                   .major_degrees = 7.5F,
+                   .minor_degrees = 12.0F,
                    .rotation_degrees = 14.0F,
-                   .strength = 0.34F},
+                   .strength = 0.18F},
         MariaPlain{.longitude_degrees = 47.0F,
                    .latitude_degrees = 14.0F,
-                   .major_degrees = 5.8F,
-                   .minor_degrees = 19.0F,
+                   .major_degrees = 7.0F,
+                   .minor_degrees = 13.0F,
                    .rotation_degrees = -2.0F,
-                   .strength = 0.38F},
+                   .strength = 0.24F},
         MariaPlain{.longitude_degrees = 9.0F,
                    .latitude_degrees = -16.0F,
-                   .major_degrees = 16.0F,
-                   .minor_degrees = 9.0F,
+                   .major_degrees = 14.0F,
+                   .minor_degrees = 8.0F,
                    .rotation_degrees = -18.0F,
-                   .strength = 0.28F},
-        MariaPlain{.longitude_degrees = -31.0F,
-                   .latitude_degrees = 10.0F,
-                   .major_degrees = 7.0F,
-                   .minor_degrees = 20.0F,
-                   .rotation_degrees = 18.0F,
                    .strength = 0.22F},
     };
 
-    float mask = 0.0F;
-    for (const MariaPlain& plain : kPlains) {
-        mask = std::max(mask, plain_mask(direction, plain));
+    const float west = complex_mask(direction, kWesternComplex);
+    const float east = complex_mask(direction, kEasternComplex);
+    const float isolated = complex_mask(direction, kIsolatedBasins);
+    float bay = 0.0F;
+    for (const MariaPlain& highland : kHighlandBays) {
+        bay = std::max(bay, plain_mask(direction, highland));
     }
-    float separator = 0.0F;
-    for (const MariaPlain& highland : kHighlandSeparators) {
-        separator = std::max(separator, plain_mask(direction, highland));
-    }
+    const float mask = std::max(std::max(west, east), isolated);
     const float edge =
         smoothstep(0.08F, 0.40F, mask) * (1.0F - smoothstep(0.62F, 0.96F, mask));
-    const float breakup = (fbm(direction, 4.8F, "maria edge breakup", 4U, 0.52F) - 0.5F) * 0.08F;
-    return saturate(mask * (1.0F - separator * 0.50F) + breakup * edge);
+    const float breakup = (fbm(direction, 4.8F, "maria edge breakup", 4U, 0.52F) - 0.5F) * 0.04F;
+    return saturate(mask * (1.0F - bay * 0.32F) + breakup * edge);
 }
 
 [[nodiscard]] std::vector<Crater> generate_craters() {
@@ -551,7 +586,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v4", "render.lunar_surface_map",
+            "lunar-surface-map-v5", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,

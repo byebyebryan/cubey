@@ -404,7 +404,7 @@ int main() {
         cubey::procedural::validate_procedural_artifact_metadata(default_map.metadata);
         require(default_map.metadata.generator == "cubey::render::generate_lunar_surface_map",
                 "lunar surface map metadata should identify its generator");
-        require(default_map.metadata.formula_version == "lunar-surface-map-v4",
+        require(default_map.metadata.formula_version == "lunar-surface-map-v5",
                 "lunar surface map metadata should identify its formula version");
         require(default_map.metadata.domain == "render.lunar_surface_map",
                 "lunar surface map metadata should identify its domain");
@@ -455,7 +455,13 @@ int main() {
             lunar_surface_map_lon_lat_texel(map, 54.0F, -8.0F),
             lunar_surface_map_lon_lat_texel(map, -15.0F, -21.0F),
         };
-        const std::array<const std::uint8_t*, 4> highland_separator_samples{
+        const std::array<const std::uint8_t*, 4> mare_complex_bridge_samples{
+            lunar_surface_map_lon_lat_texel(map, -38.0F, 5.0F),
+            lunar_surface_map_lon_lat_texel(map, -25.0F, -5.0F),
+            lunar_surface_map_lon_lat_texel(map, 40.0F, -1.0F),
+            lunar_surface_map_lon_lat_texel(map, 47.0F, -5.0F),
+        };
+        const std::array<const std::uint8_t*, 4> highland_bay_samples{
             lunar_surface_map_lon_lat_texel(map, 2.0F, 22.0F),
             lunar_surface_map_lon_lat_texel(map, 25.0F, 17.0F),
             lunar_surface_map_lon_lat_texel(map, 47.0F, 14.0F),
@@ -484,14 +490,22 @@ int main() {
                 "lunar surface map mare plains should not collapse into near-black blobs");
         require(static_cast<int>(brightest_mare) - static_cast<int>(darkest_mare) < 92,
                 "lunar surface map mare plains should stay coherent without spot-noise contrast");
-        std::uint32_t bright_separator_count = 0U;
-        for (const std::uint8_t* sample : highland_separator_samples) {
-            if (static_cast<int>(sample[0]) > static_cast<int>(darkest_mare) + 28) {
-                ++bright_separator_count;
+        std::uint32_t dark_bridge_count = 0U;
+        for (const std::uint8_t* sample : mare_complex_bridge_samples) {
+            if (static_cast<int>(sample[0]) + 18 < static_cast<int>(highland[0])) {
+                ++dark_bridge_count;
             }
         }
-        require(bright_separator_count >= 3U,
-                "lunar surface map should preserve highland corridors between named maria");
+        require(dark_bridge_count >= 3U,
+                "lunar surface map should connect near-side maria into basin-scale plains");
+        std::uint32_t bright_bay_count = 0U;
+        for (const std::uint8_t* sample : highland_bay_samples) {
+            if (static_cast<int>(sample[0]) > static_cast<int>(darkest_mare) + 18) {
+                ++bright_bay_count;
+            }
+        }
+        require(bright_bay_count >= 2U,
+                "lunar surface map should keep soft highland bays inside the mare complexes");
         require(std::abs(static_cast<int>(seam_left[0]) - static_cast<int>(seam_right[0])) < 24,
                 "lunar surface map should stay continuous across the longitude seam");
         require(north[0] > 20U && north[0] < 230U,
