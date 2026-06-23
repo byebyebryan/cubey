@@ -595,9 +595,14 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
         }
     }
 
+    std::vector<float> mare_fill_shape(texel_count, 0.0F);
+    for (std::size_t index = 0; index < texel_count; ++index) {
+        mare_fill_shape[index] = smoothstep(0.07F, 0.24F, raw_mare_coverage[index]);
+    }
+
     const std::uint32_t blur_radius = std::clamp(width / 80U, 2U, 16U);
     std::vector<float> mare_fill_field =
-        blur_scalar_field(raw_mare_coverage, width, height, blur_radius);
+        blur_scalar_field(mare_fill_shape, width, height, blur_radius);
     mare_fill_field = blur_scalar_field(mare_fill_field, width, height, blur_radius);
 
     for (std::uint32_t y = 0; y < height; ++y) {
@@ -605,7 +610,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
             const std::size_t index = texel_index(x, y, width);
             const MareField field{
                 .coverage = raw_mare_coverage[index],
-                .fill = saturate(mare_fill_field[index] * 1.35F + raw_mare_coverage[index] * 0.10F),
+                .fill = smoothstep(0.08F, 0.72F, mare_fill_field[index]),
             };
             const SurfaceSample sample =
                 sample_surface(directions[index], field, std::span<const Crater>{craters});
@@ -655,7 +660,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v6", "render.lunar_surface_map",
+            "lunar-surface-map-v7", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,

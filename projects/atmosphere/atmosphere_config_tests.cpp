@@ -404,7 +404,7 @@ int main() {
         cubey::procedural::validate_procedural_artifact_metadata(default_map.metadata);
         require(default_map.metadata.generator == "cubey::render::generate_lunar_surface_map",
                 "lunar surface map metadata should identify its generator");
-        require(default_map.metadata.formula_version == "lunar-surface-map-v6",
+        require(default_map.metadata.formula_version == "lunar-surface-map-v7",
                 "lunar surface map metadata should identify its formula version");
         require(default_map.metadata.domain == "render.lunar_surface_map",
                 "lunar surface map metadata should identify its domain");
@@ -1041,10 +1041,14 @@ int main() {
                      "moon surface sampling should face the generated near-side map toward camera");
     require_contains(celestial_shader_source, "-dot(sample_normal, basis_right)",
                      "moon surface sampling should keep nearside longitude orientation readable");
+    require_contains(lunar_surface_source, "mare_fill_shape",
+                     "lunar surface generation should normalize mare fill before smoothing");
     require_contains(lunar_surface_source, "raw_mare_coverage",
                      "lunar surface generation should separate raw mare coverage from albedo fill");
     require_contains(lunar_surface_source, "blur_scalar_field",
                      "lunar surface generation should smooth mare albedo fill after shaping");
+    require_not_contains(lunar_surface_source, "mare_fill_field[index] * 1.35F + raw_mare_coverage",
+                         "lunar surface albedo fill should not reintroduce raw stamp coverage");
     require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MOON ||",
                      "atmosphere shader should leave mesh-owned moon debug views with a black backdrop");
     require_not_contains(app_source, "pending_lunar_atlas_",
