@@ -135,15 +135,15 @@ checkpoint recipe and review notes live in
 
 `capture_review.sh` defaults to a focused shape/regime review: final camera
 views, satellite-named orbit captures, high-oblique transition, volume
-comparison, local/far-shell/local-plus-shell/orbit alpha, transition weights,
-distance-regime checks, ray-sampled orbit procedural coverage/detail/hull,
-shell-specific alpha/height/normal/shadow, and
-a small surface-local density set. The default set includes high-oblique
-far-shell strength comparisons and orbit-fill comparisons. `DEEP=1` adds
+comparison, local/high-view-bridge/local-plus-bridge/orbit alpha, transition
+weights, distance-regime checks, ray-sampled orbit procedural
+coverage/detail/hull, shell-specific alpha/height/normal/shadow, and a small
+surface-local density set. The default set includes high-oblique bridge
+strength comparisons and orbit empty-space-fill comparisons. `DEEP=1` adds
 secondary tuning captures such as sampling comparisons, metadata, lighting
-breakdowns, weather-influence sweeps, satellite orbit motion, and explicitly named
-`orbit-local-weather` / `orbit-local-coverage-bias` diagnostics for the old
-surface-local weather projection.
+breakdowns, authored-weather influence sweeps, satellite orbit motion, and
+legacy `orbit-local-weather` / `orbit-local-coverage-bias` diagnostics for the
+old surface-local weather projection.
 The script also writes
 `diagnostic-crops/center-feature-contact.png` with resolution-scaled center
 crops for the active review set.
@@ -158,35 +158,38 @@ Controls:
 - `Shape / Density`: base shape scale, vertical shear, detail erosion, and
   powder response.
 - `Weather softness`: damps broad weather contrast before local density shaping.
-- `Weather influence`: controls how strongly the broad weather map biases local
-  shape thresholds, cloud type, and edge erosion. The default is `0`, preserving
-  the layered procedural local weather baseline while authored weather remains
-  opt-in. `local-scatter`, `local-clear`, `local-structure`, and
-  `local-edge-detail` show the procedural local fields before final density
-  shaping.
+- `Authored weather influence`: controls how strongly the authored broad
+  weather map biases local shape thresholds, cloud type, and edge erosion. The
+  default is `0`, preserving the layered procedural local weather baseline
+  while authored weather remains opt-in. `local-scatter`, `local-clear`,
+  `local-structure`, and `local-edge-detail` show the procedural local fields
+  before final density shaping.
 - `Sampling`: ray-start sampling mode and jitter amount.
-- `Distance Regime`: local/orbit mode, altitude and ray-distance transition
-  ranges, broad-shell detail strength, and broad-shell density scale.
+- `Distance / Transition`: local/orbit mode, altitude and ray-distance
+  transition ranges, local-volume enable, surface horizon assist, and high-view
+  far-bridge range/strength.
   `transition-weights` displays local-branch availability in red, effective
-  far-shell contribution in green, and full orbit takeover in blue.
+  high-view bridge contribution in green, and full orbit takeover in blue.
   `far-shell-alpha` and `local-with-shell-alpha` isolate the adaptive low-detail
-  local far bridge plus the dedicated horizon layer from the foreground local
-  volume and full orbit replacement.
+  local far bridge plus the dedicated surface horizon assist from the
+  foreground local volume and full orbit replacement. The debug-view and CLI
+  names keep the historical `far-shell` / `horizon-layer` vocabulary for
+  compatibility.
+- `Orbit Shell`: orbit representation plus orbit detail, density, empty-space
+  fill, motion, and extinction. These are art controls for the default
+  cloud-top shell path rather than local surface-volume controls.
   Orbit shell diagnostics sample a direct planet-space coverage/detail/hull
   model rather than the surface-local planar density field. The broad orbit
   weather frequencies derive from `Weather scale`, with regional storm/dry
   masks owning the planet-scale layout and fine detail constrained to fronts,
   cells, streaks, edge breakup, and hull erosion. The orbit shell should read as
   broken regional weather with large clear windows and fewer totally empty
-  regions, not as a smooth planet-wide cap. `Orbit fill` biases that empty-space
-  fill while preserving the same weather/detail fields. `Far shell strength`
-  controls how much low-detail local-volume and horizon-layer cloud contributes
-  behind foreground local volume in high-oblique views; full orbit still uses
-  the orbit cloud-top shell by default.
-- `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
-  fill controls.
-- `Final Resolve`: alpha-aware smoothing amount plus final contrast,
-  saturation, horizon glow, sun glare, and metadata-aware neighborhood resolve.
+  regions, not as a smooth planet-wide cap.
+- `Lighting / Horizon Fill`: ambient, direct sun, phase/rim, absorption, shadow,
+  and cloud horizon-fill lighting controls.
+- `Final Resolve / Sky Glow`: alpha-aware smoothing amount plus final contrast,
+  saturation, sky horizon glow, sun glare, and metadata-aware neighborhood
+  resolve.
 
 Known deferrals:
 

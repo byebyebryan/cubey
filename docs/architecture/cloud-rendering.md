@@ -265,12 +265,14 @@ type. The intended bridge is a lower-step, higher-LOD march of the local density
 field over only the distant ray segment. Full orbit remains a separate
 cloud-top shell problem.
 
-The diagnostic contract is: `distance-regime` shows full orbit, effective far
-shell, and residual local regime; `transition-weights` shows local-branch
-availability, final far-shell contribution, and full orbit takeover;
+The diagnostic contract is: `distance-regime` shows full orbit, effective
+high-view bridge, and residual local regime; `transition-weights` shows
+local-branch availability, final bridge contribution, and full orbit takeover.
 `local-alpha`, `far-shell-alpha`, `local-with-shell-alpha`, and `orbit-alpha`
-isolate the visible alpha at each stage. `projects/cloud/capture_review.sh`
-includes these views for surface, high-oblique, and orbit review.
+isolate the visible alpha at each stage. The `far-shell` debug name is a
+historical compatibility label for the high-view far bridge.
+`projects/cloud/capture_review.sh` includes these views for surface,
+high-oblique, and orbit review.
 
 ## Renderer Contract
 

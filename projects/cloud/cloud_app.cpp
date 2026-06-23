@@ -971,13 +971,12 @@ class CloudApp {
         draw_enum_combo("Weather", config_.weather_preset, kCloudWeatherPresets,
                         clouds_weather_preset_name);
         draw_enum_combo("Quality", config_.quality, kCloudQualityModes, clouds_quality_name);
-        draw_enum_combo("Debug", config_.debug_view, kCloudDebugViews, clouds_debug_view_name);
+        draw_enum_combo("Debug view", config_.debug_view, kCloudDebugViews,
+                        clouds_debug_view_name);
         draw_enum_combo("Background", config_.background_mode, kCloudBackgroundModes,
                         clouds_background_mode_name);
-        draw_enum_combo("Distance", config_.distance_mode, kCloudDistanceModes,
+        draw_enum_combo("Distance mode", config_.distance_mode, kCloudDistanceModes,
                         clouds_distance_mode_name);
-        draw_enum_combo("Orbit repr.", config_.orbit_representation, kCloudOrbitRepresentations,
-                        clouds_orbit_representation_name);
         ImGui::Separator();
         ImGui::SliderFloat("Time", &config_.time.time_hours, 0.0F, 24.0F, "%.2f h");
         ImGui::SliderFloat("Coverage", &config_.coverage, 0.0F, 1.0F, "%.2f");
@@ -989,30 +988,38 @@ class CloudApp {
                             clouds_sampling_mode_name);
             ImGui::SliderFloat("Jitter", &config_.jitter_strength, 0.0F, 1.0F, "%.2f");
         }
-        if (ImGui::CollapsingHeader("Distance Regime", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::SliderFloat("Orbit blend start", &config_.orbit_transition_start_m, 0.0F,
+        if (ImGui::CollapsingHeader("Distance / Transition",
+                                    ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox("Local volume", &config_.local_volume_enabled);
+            ImGui::Checkbox("Surface horizon assist", &config_.horizon_layer_enabled);
+            ImGui::SliderFloat("Orbit takeover start", &config_.orbit_transition_start_m, 0.0F,
                                120000.0F, "%.0f m");
-            ImGui::SliderFloat("Orbit blend end", &config_.orbit_transition_end_m, 1000.0F,
+            ImGui::SliderFloat("Orbit takeover end", &config_.orbit_transition_end_m, 1000.0F,
                                240000.0F, "%.0f m");
-            ImGui::SliderFloat("Far shell start", &config_.far_shell_start_m, 0.0F, 400000.0F,
-                               "%.0f m");
-            ImGui::SliderFloat("Far shell end", &config_.far_shell_end_m, 1000.0F, 900000.0F,
-                               "%.0f m");
-            ImGui::SliderFloat("Far shell strength", &config_.far_shell_strength, 0.0F, 1.5F,
-                               "%.2f");
-            ImGui::SliderFloat("Orbit detail", &config_.orbit_detail_strength, 0.0F, 1.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Orbit density", &config_.orbit_density_scale, 0.0F, 2.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Orbit fill", &config_.orbit_fill, 0.0F, 2.0F, "%.2f");
-            ImGui::SliderFloat("Orbit motion", &config_.orbit_motion_strength, 0.0F, 4.0F,
-                               "%.2f");
-            ImGui::SliderFloat("Orbit extinction", &config_.orbit_shell_extinction, 0.0F, 8.0F,
-                               "%.2f");
+            ImGui::SliderFloat("High-view bridge start", &config_.far_shell_start_m, 0.0F,
+                               400000.0F, "%.0f m");
+            ImGui::SliderFloat("High-view bridge end", &config_.far_shell_end_m, 1000.0F,
+                               900000.0F, "%.0f m");
+            ImGui::SliderFloat("High-view bridge strength", &config_.far_shell_strength, 0.0F,
+                               1.5F, "%.2f");
             config_.orbit_transition_end_m =
                 std::max(config_.orbit_transition_end_m, config_.orbit_transition_start_m + 1.0F);
             config_.far_shell_end_m =
                 std::max(config_.far_shell_end_m, config_.far_shell_start_m + 1.0F);
+        }
+        if (ImGui::CollapsingHeader("Orbit Shell", ImGuiTreeNodeFlags_DefaultOpen)) {
+            draw_enum_combo("Representation", config_.orbit_representation,
+                            kCloudOrbitRepresentations, clouds_orbit_representation_name);
+            ImGui::SliderFloat("Orbit detail", &config_.orbit_detail_strength, 0.0F, 1.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Orbit density", &config_.orbit_density_scale, 0.0F, 2.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Orbit empty-space fill", &config_.orbit_fill, 0.0F, 2.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Orbit motion", &config_.orbit_motion_strength, 0.0F, 4.0F,
+                               "%.2f");
+            ImGui::SliderFloat("Orbit extinction", &config_.orbit_shell_extinction, 0.0F, 8.0F,
+                               "%.2f");
         }
         if (ImGui::CollapsingHeader("Shape / Density", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::SliderFloat("Crispiness", &config_.crispiness, 1.0F, 120.0F, "%.1f");
@@ -1021,12 +1028,13 @@ class CloudApp {
                                "%.2f");
             ImGui::SliderFloat("Weather softness", &config_.weather_softness, 0.02F, 0.60F,
                                "%.2f");
-            ImGui::SliderFloat("Weather influence", &config_.weather_influence, 0.0F, 1.0F,
-                               "%.2f");
+            ImGui::SliderFloat("Authored weather influence", &config_.weather_influence, 0.0F,
+                               1.0F, "%.2f");
             ImGui::SliderFloat("Detail erosion", &config_.detail_erosion, 0.0F, 1.0F, "%.2f");
             ImGui::Checkbox("Powder", &config_.powder_enabled);
         }
-        if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader("Lighting / Horizon Fill",
+                                    ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::SliderFloat("Ambient", &config_.ambient_strength, 0.0F, 3.0F, "%.2f");
             ImGui::SliderFloat("Direct", &config_.direct_strength, 0.0F, 3.0F, "%.2f");
             ImGui::SliderFloat("Phase / rim", &config_.phase_strength, 0.0F, 3.0F, "%.2f");
@@ -1034,7 +1042,8 @@ class CloudApp {
             ImGui::SliderFloat("Shadow strength", &config_.shadow_strength, 0.0F, 2.0F, "%.2f");
             ImGui::SliderFloat("Horizon fill", &config_.horizon_strength, 0.0F, 2.0F, "%.2f");
         }
-        if (ImGui::CollapsingHeader("Final Resolve", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader("Final Resolve / Sky Glow",
+                                    ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::SliderFloat("Resolve", &config_.resolve_strength, 0.0F, 1.0F, "%.2f");
             ImGui::SliderFloat("Contrast", &config_.final_contrast, 0.0F, 3.0F, "%.2f");
             ImGui::SliderFloat("Saturation", &config_.final_saturation, 0.0F, 3.0F, "%.2f");
