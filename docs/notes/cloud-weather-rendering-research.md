@@ -941,7 +941,10 @@ long-ray continuation below the main cloud band. The horizon layer now has a
 separate surface gate for low-altitude cameras: narrow lower-sky angles, long
 cloud-shell ray segments, and the same local weather field. It should extend the
 read of distant cloud cover without turning the lower half of the surface view
-into a uniform fog or changing the elevated-camera tangent fix.
+into a uniform fog or changing the elevated-camera tangent fix. The first
+surface pass was diagnostic-visible but too subtle in final color, so the
+surface gate now carries stronger branch weight, optical depth, and radiance
+while leaving the elevated high/high-oblique horizon tuning unchanged.
 
 ## Orbit Shell Strategy 2026-06-20
 

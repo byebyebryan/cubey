@@ -1579,8 +1579,8 @@ float cloud_far_horizon_ray_weight(vec3 origin, vec3 direction, float start_t, f
 
     float view_height = dot(direction, cloud_planet_up());
     float lower_sky_band =
-        smoothstep(-0.025, 0.040, view_height) *
-        (1.0 - smoothstep(0.16, 0.36, view_height));
+        smoothstep(-0.040, 0.055, view_height) *
+        (1.0 - smoothstep(0.20, 0.40, view_height));
     float surface_camera_gate =
         cloud_surface_view_factor() *
         (1.0 - smoothstep(params.cloud_shell.x * 0.18,
@@ -1593,7 +1593,7 @@ float cloud_far_horizon_ray_weight(vec3 origin, vec3 direction, float start_t, f
                        params.orbit_options.x * 0.30 + 1.0),
                    max(end_t - start_t, 0.0));
     float surface_weight =
-        surface_camera_gate * lower_sky_band * surface_distance_gate * 1.18;
+        surface_camera_gate * lower_sky_band * surface_distance_gate * 2.35;
 
     float strength = clamp(params.cloud_color_bottom_horizon.w, 0.0, 2.0);
     return clamp(max(elevated_weight, surface_weight) * strength, 0.0, 1.0);
@@ -1708,14 +1708,16 @@ MarchResult cloud_far_horizon_layer(vec3 origin, vec3 direction, float start_t, 
                 sun_color * pow(max(light_dot_eye, 0.0), 4.0) *
                 (0.16 + 0.28 * day) * params.lighting_strengths.z;
             float surface_opacity_boost =
-                cloud_surface_horizon_layer_mode() ? 1.45 : 1.0;
+                cloud_surface_horizon_layer_mode() ? 3.15 : 1.0;
             float sample_alpha =
                 1.0 - exp(-sample_density * max(params.weather.y, 0.0) * ds *
                           0.0040 * surface_opacity_boost);
             sample_alpha =
                 clamp(sample_alpha, 0.0,
-                      cloud_surface_horizon_layer_mode() ? 0.24 : 0.18);
-            vec3 source = (ambient_source + direct_source + phase_source) * sample_alpha;
+                      cloud_surface_horizon_layer_mode() ? 0.34 : 0.18);
+            vec3 source = (ambient_source + direct_source + phase_source) *
+                          sample_alpha *
+                          (cloud_surface_horizon_layer_mode() ? 1.62 : 1.0);
             color += transmittance * source;
             ambient_sum += transmittance * ambient_source * sample_alpha;
             direct_sum += transmittance * direct_source * sample_alpha;
