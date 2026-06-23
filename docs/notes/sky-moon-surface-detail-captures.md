@@ -23,12 +23,13 @@ mkdir -p outputs/sky-moon-sphere-debug-001
 ./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --debug-view moon-surface --atmosphere-preset moonlit-night --pause-time --no-reference-geometry --output outputs/sky-moon-sphere-debug-001/atmosphere-moon-surface-sphere.png
 ```
 
-## Current Final-View Checks
+## Current Moon-View Checks
 
 ```sh
 mkdir -p outputs/sky-moon-surface-detail-001
-./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --atmosphere-preset moonlit-night --pause-time --no-reference-geometry --output outputs/sky-moon-surface-detail-001/atmosphere-moonlit-v10-normal.png
-./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --atmosphere-preset moonlit-night --time-hours 12 --sun-azimuth-offset -180 --moon-size-scale 8 --moon-intensity 4 --pause-time --no-reference-geometry --output outputs/sky-moon-surface-detail-001/atmosphere-moonlit-v10-readable.png
+./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --debug-view moon --atmosphere-preset moonlit-night --moon-size-scale 8 --moon-intensity 0.2 --pause-time --no-reference-geometry --output outputs/sky-moon-surface-detail-001/atmosphere-moonlit-v11-debug-moon-full.png
+./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --atmosphere-preset moonlit-night --pause-time --no-reference-geometry --output outputs/sky-moon-surface-detail-001/atmosphere-moonlit-v11-normal.png
+./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --atmosphere-preset moonlit-night --time-hours 12 --sun-azimuth-offset -180 --moon-size-scale 8 --moon-intensity 4 --pause-time --no-reference-geometry --output outputs/sky-moon-surface-detail-001/atmosphere-moonlit-v11-readable.png
 ```
 
 ## Previous Routing Captures
@@ -59,14 +60,17 @@ mkdir -p outputs/sky-moon-surface-detail-001
   and surface-composited scenes.
 - Planet moon captures remain useful for occlusion and daytime washout, but the
   moon is not large enough in these frames to judge surface detail.
-- The `lunar-surface-map-v10` capture replaces the named mare primitive path
-  with a warped 3D body-space FBM field. The goal is far-field moon readability:
-  broad soft dark plains plus independent surface variation, without
-  screen-space texture swimming, equirectangular UV shaping, or visible
-  overlapping stamp centers.
+- The `lunar-surface-map-v11` capture replaces the named mare primitive path
+  with a lightly warped 3D body-space FBM field and soft fill plateau. The goal
+  is far-field moon readability: broader dark plains plus independent surface
+  variation, without screen-space texture swimming, equirectangular UV shaping,
+  visible overlapping stamp centers, or the earlier dragged/smeared gradients.
 - The normal `moonlit-night` capture is useful as a routing check but does not
   frame the moon well for texture review. The enlarged crescent capture shows
   final-view binding and phase behavior; the sphere debug capture remains the
   controlled full-disk texture check.
+- The `moon` debug view now frames and front-lights the geometry moon for a
+  small-disk material check. Use low moon intensity for this capture so the
+  texture does not clip white.
 - Remaining visual tuning is mostly final-scene moon-size contrast, crater
   scale, and final-scene lighting balance.

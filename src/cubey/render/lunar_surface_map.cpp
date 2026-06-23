@@ -138,25 +138,25 @@ struct Crater {
 
 [[nodiscard]] MareField mare_field(Vec3 direction) {
     const Vec3 broad_warp = normalize({
-        direction.x + (fbm(direction, 1.05F, "body-space mare warp x", 4U, 0.52F) - 0.5F) * 0.42F,
-        direction.y + (fbm(direction, 1.05F, "body-space mare warp y", 4U, 0.52F) - 0.5F) * 0.42F,
-        direction.z + (fbm(direction, 1.05F, "body-space mare warp z", 4U, 0.52F) - 0.5F) * 0.42F,
+        direction.x + (fbm(direction, 1.05F, "body-space mare warp x", 4U, 0.52F) - 0.5F) * 0.18F,
+        direction.y + (fbm(direction, 1.05F, "body-space mare warp y", 4U, 0.52F) - 0.5F) * 0.18F,
+        direction.z + (fbm(direction, 1.05F, "body-space mare warp z", 4U, 0.52F) - 0.5F) * 0.18F,
     });
     const Vec3 warped = normalize({
         broad_warp.x +
-            (fbm(broad_warp, 2.4F, "body-space mare lobe warp x", 3U, 0.48F) - 0.5F) * 0.16F,
+            (fbm(broad_warp, 2.4F, "body-space mare lobe warp x", 3U, 0.48F) - 0.5F) * 0.06F,
         broad_warp.y +
-            (fbm(broad_warp, 2.4F, "body-space mare lobe warp y", 3U, 0.48F) - 0.5F) * 0.16F,
+            (fbm(broad_warp, 2.4F, "body-space mare lobe warp y", 3U, 0.48F) - 0.5F) * 0.06F,
         broad_warp.z +
-            (fbm(broad_warp, 2.4F, "body-space mare lobe warp z", 3U, 0.48F) - 0.5F) * 0.16F,
+            (fbm(broad_warp, 2.4F, "body-space mare lobe warp z", 3U, 0.48F) - 0.5F) * 0.06F,
     });
-    const float broad = fbm(warped, 1.55F, "body-space broad mare field", 5U, 0.58F);
-    const float lobe = fbm(warped, 2.25F, "body-space mare lobe field", 4U, 0.52F);
-    const float field = broad * 0.86F + lobe * 0.14F;
-    const float coverage = smoothstep(0.10F, 0.50F, field);
+    const float broad = fbm(warped, 1.35F, "body-space broad mare field", 5U, 0.58F);
+    const float lobe = fbm(warped, 1.95F, "body-space mare lobe field", 4U, 0.52F);
+    const float field = broad * 0.90F + lobe * 0.10F;
+    const float coverage = smoothstep(0.04F, 0.46F, field);
     return {
         .coverage = coverage,
-        .fill = coverage * 0.96F,
+        .fill = smoothstep(0.16F, 0.78F, coverage) * 0.92F,
     };
 }
 
@@ -440,7 +440,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v10", "render.lunar_surface_map",
+            "lunar-surface-map-v11", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,

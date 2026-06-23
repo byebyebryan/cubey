@@ -679,11 +679,13 @@ class AtmosphereApp {
                 environment_config.time_of_day, environment_config.moon);
         const cubey::math::Vec3 camera_forward =
             glm::normalize(transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F});
+        const bool moon_debug = render_view_ == AtmosphereRenderView::Moon;
         const bool surface_debug = render_view_ == AtmosphereRenderView::MoonSurface;
+        const bool framed_moon_debug = moon_debug || surface_debug;
         cubey::render::CelestialBody moon{};
         moon.type = cubey::render::CelestialBodyType::Moon;
         moon.visible = moon_body_render_enabled();
-        moon.direction = surface_debug ? camera_forward : lunar.direction;
+        moon.direction = framed_moon_debug ? camera_forward : lunar.direction;
         moon.color = {0.58F, 0.62F, 0.74F};
         moon.intensity = atmosphere_config_.moon.disk_intensity;
         moon.angular_radius_rad = surface_debug ? 0.34F : lunar.angular_radius;
@@ -701,7 +703,8 @@ class AtmosphereApp {
                           .shell_distance_fraction = 0.62F,
                       });
         const cubey::render::CelestialLighting lighting{
-            .primary_light_direction = atmosphere_sun_direction(atmosphere_config_),
+            .primary_light_direction =
+                moon_debug ? camera_forward : atmosphere_sun_direction(atmosphere_config_),
             .primary_light_color = {1.0F, 0.94F, 0.82F},
             .primary_light_intensity = atmosphere_config_.moon.disk_intensity,
             .primary_light_angular_radius_rad = atmosphere_config_.sun_angular_radius,

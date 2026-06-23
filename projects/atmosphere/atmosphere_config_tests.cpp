@@ -390,7 +390,7 @@ int main() {
         cubey::procedural::validate_procedural_artifact_metadata(default_map.metadata);
         require(default_map.metadata.generator == "cubey::render::generate_lunar_surface_map",
                 "lunar surface map metadata should identify its generator");
-        require(default_map.metadata.formula_version == "lunar-surface-map-v10",
+        require(default_map.metadata.formula_version == "lunar-surface-map-v11",
                 "lunar surface map metadata should identify its formula version");
         require(default_map.metadata.domain == "render.lunar_surface_map",
                 "lunar surface map metadata should identify its domain");
@@ -1008,6 +1008,10 @@ int main() {
                      "atmosphere moon debug views should render geometry");
     require_contains(app_source, "render_view_ == AtmosphereRenderView::Moon",
                      "atmosphere moon debug view should use the geometry moon");
+    require_contains(app_source, "const bool framed_moon_debug = moon_debug || surface_debug",
+                     "atmosphere moon debug views should frame the moon toward camera");
+    require_contains(app_source, "moon_debug ? camera_forward",
+                     "atmosphere moon debug view should light the framed moon for material review");
     require_contains(app_source, "CelestialBodyShadingMode::SurfaceDebug",
                      "atmosphere moon surface debug view should use sphere surface diagnostics");
     require_contains(app_source, "moon.angular_radius_rad = surface_debug ? 0.34F",
