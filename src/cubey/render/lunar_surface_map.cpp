@@ -10,6 +10,7 @@
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
+#include <vector>
 
 namespace cubey::render {
 namespace {
@@ -31,6 +32,11 @@ struct MariaPlain {
     float minor_degrees = 1.0F;
     float rotation_degrees = 0.0F;
     float strength = 1.0F;
+};
+
+struct MareField {
+    float coverage = 0.0F;
+    float fill = 0.0F;
 };
 
 struct Crater {
@@ -156,20 +162,16 @@ struct Crater {
     return saturate((core + shelf) * plain.strength);
 }
 
-[[nodiscard]] float soft_union(float lhs, float rhs) {
-    return saturate(lhs + rhs * (1.0F - lhs));
-}
-
 template <std::size_t N>
 [[nodiscard]] float complex_mask(Vec3 direction, const std::array<MariaPlain, N>& plains) {
     float mask = 0.0F;
     for (const MariaPlain& plain : plains) {
-        mask = soft_union(mask, plain_mask(direction, plain));
+        mask = std::max(mask, plain_mask(direction, plain));
     }
     return mask;
 }
 
-[[nodiscard]] float maria_mask(Vec3 direction) {
+[[nodiscard]] MareField mare_field(Vec3 direction) {
     // Reference-guided near-side mare complexes. The broad complexes come first
     // so the Moon reads as basin-shaped basalt plains rather than scattered dots.
     constexpr std::array<MariaPlain, 8> kWesternComplex{
@@ -318,7 +320,11 @@ template <std::size_t N>
     const float edge =
         smoothstep(0.08F, 0.40F, mask) * (1.0F - smoothstep(0.62F, 0.96F, mask));
     const float breakup = (fbm(direction, 4.8F, "maria edge breakup", 4U, 0.52F) - 0.5F) * 0.04F;
-    return saturate(mask * (1.0F - bay * 0.32F) + breakup * edge);
+    const float coverage = saturate(mask * (1.0F - bay * 0.32F) + breakup * edge);
+    return {
+        .coverage = coverage,
+        .fill = coverage,
+    };
 }
 
 [[nodiscard]] std::vector<Crater> generate_craters() {
@@ -405,27 +411,76 @@ struct SurfaceSample {
     float roughness = 0.0F;
 };
 
-[[nodiscard]] SurfaceSample sample_surface(Vec3 direction, std::span<const Crater> craters) {
-    const float maria = maria_mask(direction);
+[[nodiscard]] std::size_t texel_index(std::uint32_t x, std::uint32_t y, std::uint32_t width) {
+    return static_cast<std::size_t>(y) * static_cast<std::size_t>(width) +
+           static_cast<std::size_t>(x);
+}
+
+[[nodiscard]] std::vector<float> blur_scalar_field(std::span<const float> source,
+                                                   std::uint32_t width, std::uint32_t height,
+                                                   std::uint32_t radius) {
+    if (radius == 0U) {
+        return std::vector<float>{source.begin(), source.end()};
+    }
+
+    std::vector<float> horizontal(source.size(), 0.0F);
+    std::vector<float> result(source.size(), 0.0F);
+    const float sample_count = static_cast<float>(radius * 2U + 1U);
+    for (std::uint32_t y = 0; y < height; ++y) {
+        for (std::uint32_t x = 0; x < width; ++x) {
+            float sum = 0.0F;
+            for (std::uint32_t offset = 0; offset <= radius * 2U; ++offset) {
+                const std::int32_t dx = static_cast<std::int32_t>(offset) -
+                                        static_cast<std::int32_t>(radius);
+                const std::uint32_t sx =
+                    static_cast<std::uint32_t>((static_cast<std::int32_t>(x) + dx +
+                                                static_cast<std::int32_t>(width)) %
+                                               static_cast<std::int32_t>(width));
+                sum += source[texel_index(sx, y, width)];
+            }
+            horizontal[texel_index(x, y, width)] = sum / sample_count;
+        }
+    }
+
+    for (std::uint32_t y = 0; y < height; ++y) {
+        for (std::uint32_t x = 0; x < width; ++x) {
+            float sum = 0.0F;
+            for (std::uint32_t offset = 0; offset <= radius * 2U; ++offset) {
+                const std::int32_t dy = static_cast<std::int32_t>(offset) -
+                                        static_cast<std::int32_t>(radius);
+                const std::uint32_t sy = static_cast<std::uint32_t>(std::clamp(
+                    static_cast<std::int32_t>(y) + dy, 0, static_cast<std::int32_t>(height - 1U)));
+                sum += horizontal[texel_index(x, sy, width)];
+            }
+            result[texel_index(x, y, width)] = sum / sample_count;
+        }
+    }
+    return result;
+}
+
+[[nodiscard]] SurfaceSample sample_surface(Vec3 direction, MareField mare_field_sample,
+                                           std::span<const Crater> craters) {
+    const float mare_coverage = mare_field_sample.coverage;
+    const float mare_fill = mare_field_sample.fill;
     const float broad = fbm(direction, 2.5F, "broad regolith", 5U, 0.55F);
     const float mid = fbm(direction, 11.0F, "mid regolith", 4U, 0.52F);
     const float fine = fbm(direction, 44.0F, "fine regolith", 3U, 0.48F);
     const float highland_pores = ridged(direction, 29.0F, "highland pores", 4U) - 0.48F;
-    const float mare_plains = fbm(direction, 3.2F, "mare basalt plains", 4U, 0.50F);
-    const float mare_mottling = fbm(direction, 18.0F, "mare subtle mottling", 3U, 0.42F);
+    const float mare_plains = fbm(direction, 1.7F, "mare basalt plains", 4U, 0.50F);
+    const float mare_mottling = fbm(direction, 12.0F, "mare subtle mottling", 3U, 0.42F);
     const float highlands =
         0.610F + broad * 0.090F + mid * 0.060F + fine * 0.034F + highland_pores * 0.035F;
-    const float mare = 0.350F + mare_plains * 0.028F + mare_mottling * 0.010F + fine * 0.005F;
+    const float mare = 0.370F + mare_plains * 0.018F + mare_mottling * 0.006F + fine * 0.003F;
 
-    float albedo = mix(highlands, mare, maria);
-    float height = broad * 0.030F + mid * 0.015F + fine * 0.006F - maria * 0.036F;
-    float roughness = mix(0.86F, 0.72F, maria) + highland_pores * 0.050F;
+    float albedo = mix(highlands, mare, mare_fill);
+    float height = broad * 0.030F + mid * 0.015F + fine * 0.006F - mare_coverage * 0.036F;
+    float roughness = mix(0.86F, 0.72F, mare_fill) + highland_pores * 0.050F;
 
     for (const Crater& crater : craters) {
         const float weight = crater_weight(direction, crater);
         if (weight < 1.0F) {
-            const float crater_albedo_scale = mix(1.0F, 0.42F, maria);
-            const float crater_height_scale = mix(1.0F, 0.58F, maria);
+            const float crater_albedo_scale = mix(1.0F, 0.42F, mare_fill);
+            const float crater_height_scale = mix(1.0F, 0.58F, mare_coverage);
             const float floor = 1.0F - smoothstep(0.18F, 0.82F, weight);
             const float rim =
                 smoothstep(0.62F, 0.86F, weight) * (1.0F - smoothstep(0.86F, 1.0F, weight));
@@ -436,7 +491,7 @@ struct SurfaceSample {
             height += (rim * crater.rim - floor * crater.depth) * crater_height_scale;
             roughness += rim * 0.06F;
         }
-        const float ray = ray_weight(direction, crater) * mix(1.0F, 0.62F, maria);
+        const float ray = ray_weight(direction, crater) * mix(1.0F, 0.62F, mare_fill);
         albedo += ray;
         height += ray * 0.004F;
     }
@@ -446,11 +501,6 @@ struct SurfaceSample {
         .height = std::clamp(height, -0.16F, 0.18F),
         .roughness = std::clamp(roughness, 0.50F, 0.95F),
     };
-}
-
-[[nodiscard]] std::size_t texel_index(std::uint32_t x, std::uint32_t y, std::uint32_t width) {
-    return static_cast<std::size_t>(y) * static_cast<std::size_t>(width) +
-           static_cast<std::size_t>(x);
 }
 
 [[nodiscard]] std::uint8_t pack_unorm(float value) {
@@ -531,15 +581,34 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     const std::size_t texel_count =
         static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
     const std::vector<Crater> craters = generate_craters();
+    std::vector<Vec3> directions(texel_count);
+    std::vector<float> raw_mare_coverage(texel_count, 0.0F);
     std::vector<float> albedo(texel_count, 0.0F);
     std::vector<float> surface_height(texel_count, 0.0F);
     std::vector<float> roughness(texel_count, 0.0F);
 
     for (std::uint32_t y = 0; y < height; ++y) {
         for (std::uint32_t x = 0; x < width; ++x) {
-            const SurfaceSample sample = sample_surface(direction_for_texel(x, y, width, height),
-                                                        std::span<const Crater>{craters});
             const std::size_t index = texel_index(x, y, width);
+            directions[index] = direction_for_texel(x, y, width, height);
+            raw_mare_coverage[index] = mare_field(directions[index]).coverage;
+        }
+    }
+
+    const std::uint32_t blur_radius = std::clamp(width / 80U, 2U, 16U);
+    std::vector<float> mare_fill_field =
+        blur_scalar_field(raw_mare_coverage, width, height, blur_radius);
+    mare_fill_field = blur_scalar_field(mare_fill_field, width, height, blur_radius);
+
+    for (std::uint32_t y = 0; y < height; ++y) {
+        for (std::uint32_t x = 0; x < width; ++x) {
+            const std::size_t index = texel_index(x, y, width);
+            const MareField field{
+                .coverage = raw_mare_coverage[index],
+                .fill = saturate(mare_fill_field[index] * 1.35F + raw_mare_coverage[index] * 0.10F),
+            };
+            const SurfaceSample sample =
+                sample_surface(directions[index], field, std::span<const Crater>{craters});
             albedo[index] = sample.albedo;
             surface_height[index] = sample.height;
             roughness[index] = sample.roughness;
@@ -586,7 +655,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v5", "render.lunar_surface_map",
+            "lunar-surface-map-v6", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,

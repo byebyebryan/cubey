@@ -404,7 +404,7 @@ int main() {
         cubey::procedural::validate_procedural_artifact_metadata(default_map.metadata);
         require(default_map.metadata.generator == "cubey::render::generate_lunar_surface_map",
                 "lunar surface map metadata should identify its generator");
-        require(default_map.metadata.formula_version == "lunar-surface-map-v5",
+        require(default_map.metadata.formula_version == "lunar-surface-map-v6",
                 "lunar surface map metadata should identify its formula version");
         require(default_map.metadata.domain == "render.lunar_surface_map",
                 "lunar surface map metadata should identify its domain");
@@ -900,6 +900,8 @@ int main() {
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere.frag");
     const std::string celestial_shader_source =
         read_text_file(repo_root / "shaders/cubey/sky/celestial_body.frag");
+    const std::string lunar_surface_source =
+        read_text_file(repo_root / "src/cubey/render/lunar_surface_map.cpp");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
     const std::string render_cmake_source = read_text_file(repo_root / "src/cubey/CMakeLists.txt");
     require_contains(shared_environment_header, "struct AtmosphereEnvironmentFrameUniforms",
@@ -1039,6 +1041,10 @@ int main() {
                      "moon surface sampling should face the generated near-side map toward camera");
     require_contains(celestial_shader_source, "-dot(sample_normal, basis_right)",
                      "moon surface sampling should keep nearside longitude orientation readable");
+    require_contains(lunar_surface_source, "raw_mare_coverage",
+                     "lunar surface generation should separate raw mare coverage from albedo fill");
+    require_contains(lunar_surface_source, "blur_scalar_field",
+                     "lunar surface generation should smooth mare albedo fill after shaping");
     require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MOON ||",
                      "atmosphere shader should leave mesh-owned moon debug views with a black backdrop");
     require_not_contains(app_source, "pending_lunar_atlas_",

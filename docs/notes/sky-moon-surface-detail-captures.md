@@ -50,8 +50,9 @@ mkdir -p outputs/sky-moon-surface-detail-001
   and surface-composited scenes.
 - Planet moon captures remain useful for occlusion and daytime washout, but the
   moon is not large enough in these frames to judge surface detail.
-- The `lunar-surface-map-v5` capture uses the LROC nearside mosaic as the shape
+- The `lunar-surface-map-v6` capture uses the LROC nearside mosaic as the shape
   guide: basin-scale mid-dark plains, corrected nearside longitude orientation,
-  and connected western/eastern mare complexes instead of scattered dark spots.
+  connected western/eastern mare complexes, and a separate filled mare material
+  so primitive overlap falloffs do not become visible albedo stamps.
 - Remaining visual tuning is mostly crater scale, mare edge softness, and
   final-scene lighting balance.
