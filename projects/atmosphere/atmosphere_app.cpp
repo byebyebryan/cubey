@@ -12,7 +12,6 @@
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/atmosphere_background_frame.h>
-#include <cubey/render/atmosphere_lunar_atlas.h>
 #include <cubey/render/atmosphere_night_sky_atlas.h>
 #include <cubey/render/celestial_body_frame.h>
 #include <cubey/render/celestial_system.h>
@@ -54,10 +53,8 @@ namespace {
 using cubey::FrameTiming;
 using cubey::host::FrameStatsSample;
 using cubey::host::FrameStatsSnapshot;
-using cubey::render::generate_lunar_atlas;
 using cubey::render::generate_lunar_surface_map;
 using cubey::render::generate_night_sky_atlas;
-using cubey::render::LunarAtlas;
 using cubey::render::LunarSurfaceMap;
 using cubey::render::NightSkyAtlas;
 using cubey::render::NightSkyAtlasConfig;
@@ -311,7 +308,6 @@ class AtmosphereApp {
                                           std::uint32_t frame_slot_count) {
         atmosphere_atlases_.emplace(
             cubey::render::create_atmosphere_background_placeholder_textures(device, gpu));
-        lunar_atlas_ready_ = false;
         lunar_surface_map_ready_ = false;
         current_night_sky_atlas_.reset();
         create_atmosphere_descriptors(device, frame_slot_count);
@@ -326,9 +322,7 @@ class AtmosphereApp {
         const ResolvedNightSkyAtlas resolved = resolve_night_sky_atlas(atmosphere_config_);
         const GeneratedNightSkyAtlas generated = generate_resolved_night_sky_atlas(resolved);
         atmosphere_atlases_.emplace(cubey::render::create_atmosphere_background_atlas_resources(
-            device, gpu, generate_lunar_atlas(), generate_lunar_surface_map(), generated.atlas));
-        lunar_atlas_ready_ = true;
-        lunar_atlas_error_.clear();
+            device, gpu, generate_lunar_surface_map(), generated.atlas));
         lunar_surface_map_ready_ = true;
         lunar_surface_map_error_.clear();
         current_night_sky_atlas_ = generated.resolved;
@@ -337,19 +331,6 @@ class AtmosphereApp {
         create_atmosphere_descriptors(device, frame_slot_count);
         update_atmosphere_descriptor_bindings(device);
         refresh_loading_status();
-    }
-
-    void upload_lunar_atlas(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-                            const LunarAtlas& atlas) {
-        if (!atmosphere_atlases_.has_value()) {
-            throw std::runtime_error("atmosphere atlas resources are not initialized");
-        }
-
-        atmosphere_atlases_->lunar =
-            cubey::render::create_atmosphere_lunar_atlas_texture(device, gpu, atlas);
-        atmosphere_atlases_->lunar_placeholder = false;
-        lunar_atlas_ready_ = true;
-        lunar_atlas_error_.clear();
     }
 
     void upload_lunar_surface_map(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
@@ -402,9 +383,6 @@ class AtmosphereApp {
         if (atlas_shutdown_requested_) {
             return;
         }
-        if (!pending_lunar_atlas_.has_value() && !lunar_atlas_ready_) {
-            pending_lunar_atlas_.emplace(atlas_jobs_.submit([] { return generate_lunar_atlas(); }));
-        }
         if (!pending_lunar_surface_map_.has_value() && !lunar_surface_map_ready_) {
             pending_lunar_surface_map_.emplace(
                 atlas_jobs_.submit([] { return generate_lunar_surface_map(); }));
@@ -443,7 +421,6 @@ class AtmosphereApp {
         if (!atmosphere_background_.materials_created()) {
             return;
         }
-        poll_lunar_atlas_job(device, gpu);
         poll_lunar_surface_map_job(device, gpu);
         poll_night_sky_atlas_job(device, gpu);
         const ResolvedNightSkyAtlas desired = desired_windowed_night_sky_atlas();
@@ -464,22 +441,6 @@ class AtmosphereApp {
         } catch (const std::exception& error) {
             pending_lunar_surface_map_.reset();
             lunar_surface_map_error_ = error.what();
-        }
-    }
-
-    void poll_lunar_atlas_job(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
-        if (!pending_lunar_atlas_.has_value() || !pending_lunar_atlas_->ready()) {
-            return;
-        }
-        try {
-            const LunarAtlas atlas = pending_lunar_atlas_->get();
-            pending_lunar_atlas_.reset();
-            wait_for_idle_before_descriptor_update(device);
-            upload_lunar_atlas(device, gpu, atlas);
-            update_atmosphere_descriptor_bindings(device);
-        } catch (const std::exception& error) {
-            pending_lunar_atlas_.reset();
-            lunar_atlas_error_ = error.what();
         }
     }
 
@@ -510,13 +471,11 @@ class AtmosphereApp {
     }
 
     void refresh_loading_status() {
-        loading_status_.moon_pending =
-            pending_lunar_atlas_.has_value() || pending_lunar_surface_map_.has_value();
+        loading_status_.moon_pending = pending_lunar_surface_map_.has_value();
         loading_status_.night_sky_pending = pending_night_sky_atlas_.has_value();
-        loading_status_.moon_placeholder = !lunar_atlas_ready_ || !lunar_surface_map_ready_;
+        loading_status_.moon_placeholder = !lunar_surface_map_ready_;
         loading_status_.night_sky_placeholder = !current_night_sky_atlas_.has_value();
-        loading_status_.moon_error =
-            lunar_surface_map_error_.empty() ? lunar_atlas_error_ : lunar_surface_map_error_;
+        loading_status_.moon_error = lunar_surface_map_error_;
         loading_status_.night_sky_error = night_sky_atlas_error_;
     }
 
@@ -620,7 +579,6 @@ class AtmosphereApp {
         moon_mesh_.reset();
         atmosphere_atlases_.reset();
         current_night_sky_atlas_.reset();
-        lunar_atlas_ready_ = false;
         lunar_surface_map_ready_ = false;
         refresh_loading_status();
     }
@@ -628,7 +586,6 @@ class AtmosphereApp {
     void shutdown_atlas_jobs() {
         atlas_shutdown_requested_ = true;
         atlas_jobs_.shutdown();
-        pending_lunar_atlas_.reset();
         pending_lunar_surface_map_.reset();
         pending_night_sky_atlas_.reset();
     }
@@ -928,13 +885,10 @@ class AtmosphereApp {
     std::optional<cubey::render::Mesh> moon_mesh_;
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
     cubey::jobs::JobSystem atlas_jobs_{2};
-    std::optional<cubey::jobs::JobHandle<LunarAtlas>> pending_lunar_atlas_;
     std::optional<cubey::jobs::JobHandle<LunarSurfaceMap>> pending_lunar_surface_map_;
     std::optional<PendingNightSkyAtlasJob> pending_night_sky_atlas_;
     bool atlas_shutdown_requested_ = false;
-    bool lunar_atlas_ready_ = false;
     bool lunar_surface_map_ready_ = false;
-    std::string lunar_atlas_error_{};
     std::string lunar_surface_map_error_{};
     std::string night_sky_atlas_error_{};
 };

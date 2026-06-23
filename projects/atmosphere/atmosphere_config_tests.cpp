@@ -2,7 +2,6 @@
 #include "atmosphere_environment.h"
 
 #include <cubey/core/run_config.h>
-#include <cubey/render/atmosphere_lunar_atlas.h>
 #include <cubey/render/atmosphere_night_sky_atlas.h>
 #include <cubey/render/lunar_surface_map.h>
 
@@ -59,15 +58,6 @@ void require_not_contains(const std::string& haystack, const char* needle, const
     if (haystack.find(needle) != std::string::npos) {
         throw std::runtime_error(message);
     }
-}
-
-[[nodiscard]] const std::uint8_t* lunar_atlas_texel(const cubey::render::LunarAtlas& atlas,
-                                                    std::uint32_t x, std::uint32_t y,
-                                                    std::uint32_t mip = 0) {
-    const cubey::render::LunarAtlasMip& level = atlas.mips.at(mip);
-    const std::size_t texel =
-        (static_cast<std::size_t>(y) * static_cast<std::size_t>(level.width) + x) * 4U;
-    return atlas.rgba8.data() + level.byte_offset + texel;
 }
 
 [[nodiscard]] const std::uint8_t* lunar_surface_map_texel(const cubey::render::LunarSurfaceMap& map,
@@ -397,62 +387,6 @@ int main() {
                 defaults.moon.moonlight_intensity > 0.0F &&
                 defaults.moon.phase_offset_days > 0.0F && defaults.moon.angular_radius_scale > 0.0F,
             "default atmosphere config should include moon controls");
-
-    {
-        const LunarAtlas atlas = generate_lunar_atlas();
-        const LunarAtlas atlas_again = generate_lunar_atlas();
-        require(atlas.width == kLunarAtlasExtent && atlas.height == kLunarAtlasExtent,
-                "lunar atlas should use the default square extent");
-        require(atlas.mip_levels == 10U && atlas.mips.size() == atlas.mip_levels,
-                "lunar atlas should include a complete mip chain");
-        require(lunar_atlas_hash(atlas.rgba8) == lunar_atlas_hash(atlas_again.rgba8),
-                "lunar atlas generation should be deterministic");
-        cubey::procedural::validate_procedural_artifact_metadata(atlas.metadata);
-        require(atlas.metadata.generator == "cubey::render::generate_lunar_atlas",
-                "lunar atlas metadata should identify its generator");
-        require(atlas.metadata.formula_version == "atmosphere-lunar-atlas-v1",
-                "lunar atlas metadata should identify its formula version");
-        require(atlas.metadata.domain == "atmosphere.lunar_atlas",
-                "lunar atlas metadata should identify its domain");
-        require(atlas.metadata.seed == atlas_again.metadata.seed,
-                "lunar atlas metadata seed should be deterministic");
-        require(atlas.metadata.space == cubey::procedural::ProceduralDomainSpace::Atlas,
-                "lunar atlas metadata should use atlas domain space");
-        require(atlas.metadata.kind == cubey::procedural::ProceduralArtifactKind::Texture2D,
-                "lunar atlas metadata should identify a 2D texture");
-        require(atlas.metadata.format ==
-                    cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
-                "lunar atlas metadata should identify RGBA8 payloads");
-        require(atlas.metadata.extent.width == atlas.width &&
-                    atlas.metadata.extent.height == atlas.height &&
-                    atlas.metadata.extent.faces == 1U &&
-                    atlas.metadata.extent.mip_levels == atlas.mip_levels,
-                "lunar atlas metadata should preserve dimensions and mip count");
-        require(atlas.metadata.content_hash == lunar_atlas_hash(atlas.rgba8),
-                "lunar atlas metadata hash should match atlas bytes");
-        require(cubey::procedural::procedural_artifact_sample_count(atlas.metadata.extent) ==
-                    atlas.rgba8.size() / 4U,
-                "lunar atlas metadata sample count should match RGBA texels");
-        for (std::uint32_t mip = 0; mip < atlas.mip_levels; ++mip) {
-            const LunarAtlasMip& level = atlas.mips.at(mip);
-            require(level.width >= 1U && level.height >= 1U,
-                    "lunar atlas mip dimensions should be nonzero");
-            require(level.byte_offset + level.byte_count <= atlas.rgba8.size(),
-                    "lunar atlas mip bytes should stay within the backing storage");
-            require(level.byte_count == static_cast<std::size_t>(level.width) *
-                                            static_cast<std::size_t>(level.height) * 4U,
-                    "lunar atlas mips should be tightly packed RGBA8");
-        }
-
-        const std::uint8_t* center = lunar_atlas_texel(atlas, 256U, 256U);
-        const std::uint8_t* mare = lunar_atlas_texel(atlas, 146U, 270U);
-        const std::uint8_t* highland = lunar_atlas_texel(atlas, 390U, 382U);
-        require(center[0] >= 60U && center[0] <= 184U,
-                "lunar atlas center albedo should stay in the expected lunar range");
-        require(mare[0] < highland[0], "lunar atlas maria should be darker than highlands");
-        require(center[1] > 55U && center[1] < 200U && center[2] > 55U && center[2] < 200U,
-                "lunar atlas packed normals should stay in a usable range");
-    }
 
     {
         require(lunar_surface_map_mip_count(kLunarSurfaceMapWidth, kLunarSurfaceMapHeight) == 11U,
@@ -966,8 +900,10 @@ int main() {
                      "shared render should name atmosphere frame uniform binding zero");
     require_contains(shared_background_source, "atmosphere_background_pass_info",
                      "shared render should own atmosphere pass metadata");
-    require_contains(shared_background_source, "AtmosphereBackgroundBinding::MoonAtlas",
-                     "shared render should own moon atlas binding metadata");
+    require_not_contains(shared_background_header, "atmosphere_lunar_atlas",
+                         "shared render should not expose the removed lunar disk atlas");
+    require_not_contains(shared_background_source, "AtmosphereBackgroundBinding::MoonAtlas",
+                         "shared render should not bind the removed lunar disk atlas");
     require_contains(shared_background_source, "AtmosphereBackgroundBinding::NightSkyAtlas",
                      "shared render should own night sky atlas binding metadata");
     require_contains(shared_background_source, "create_lunar_surface_map_texture",
@@ -1041,8 +977,12 @@ int main() {
                      "atmosphere moon surface debug view should use sphere surface diagnostics");
     require_contains(app_source, "moon.angular_radius_rad = surface_debug ? 0.34F",
                      "atmosphere moon surface debug view should render a centered close-up sphere");
-    require_contains(shader_source, "!render_moon_disk",
+    require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MOON ||",
                      "atmosphere shader should leave mesh-owned moon debug views with a black backdrop");
+    require_not_contains(app_source, "pending_lunar_atlas_",
+                         "atmosphere app should not generate the removed lunar disk atlas");
+    require_not_contains(app_source, "generate_lunar_atlas",
+                         "atmosphere app should not upload the removed lunar disk atlas");
     require_not_contains(shader_source, "layout(push_constant)",
                          "atmosphere shader should not use push constants for frame data");
     require_not_contains(shader_source, "cubey_pbr_apply_display_transform",
@@ -1057,8 +997,8 @@ int main() {
                      "atmosphere shader should use shared procedural noise helpers");
     require_contains(shader_source, "cubey_proc_hash_pcg_2d",
                      "atmosphere shader should use shared 2D PCG hashes for stars");
-    require_contains(shader_source, "cubey_proc_value_noise_pcg_2d",
-                     "atmosphere shader should use shared 2D value noise for moon breakup");
+	    require_contains(shader_source, "cubey_proc_value_noise_pcg_2d",
+	                     "atmosphere shader should use shared 2D value noise for night sky detail");
     require_not_contains(shader_source, "float hash12",
                          "atmosphere shader should not keep local 2D hash helpers");
     require_not_contains(shader_source, "float value_noise",
@@ -1120,7 +1060,7 @@ int main() {
     require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_NIGHT_SKY",
                      "atmosphere shader should include night sky debug output");
     require_contains(shader_source,
-                     "layout(set = 0, binding = 2) uniform samplerCube night_sky_atlas",
+                     "layout(set = 0, binding = 1) uniform samplerCube night_sky_atlas",
                      "atmosphere shader should sample a night sky atlas");
     require_contains(shader_source, "milky_way_radiance",
                      "atmosphere shader should include Milky Way radiance");
@@ -1130,14 +1070,14 @@ int main() {
                      "atmosphere shader should include Milky Way debug output");
     require_contains(shader_source, "galactic_debug_direction",
                      "atmosphere shader should map Milky Way debug view across the galactic plane");
-    require_contains(shader_source, "moon_disk_radiance",
-                     "atmosphere shader should include moon disk radiance");
-    require_contains(shader_source, "layout(set = 0, binding = 1) uniform sampler2D moon_atlas",
-                     "atmosphere shader should sample a generated lunar atlas");
-    require_contains(shader_source, "moon_surface_sample",
-                     "atmosphere shader should include lunar atlas surface sampling");
-    require_contains(shader_source, "lunar_lambert",
-                     "atmosphere shader should include lunar-style moon lighting");
+    require_not_contains(shader_source, "moon_disk_radiance",
+                         "atmosphere shader should not render the removed inline moon disk");
+    require_not_contains(shader_source, "moon_atlas",
+                         "atmosphere shader should not sample the removed lunar disk atlas");
+    require_not_contains(shader_source, "moon_surface_sample",
+                         "atmosphere shader should not keep lunar atlas surface sampling");
+    require_not_contains(shader_source, "lunar_lambert",
+                         "atmosphere shader should leave lunar lighting to geometry");
     require_contains(shared_helper_source, "CUBEY_ATMOSPHERE_VIEW_MOON = 9",
                      "shared atmosphere shader include should define moon debug view value");
     require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MOON",
@@ -1152,12 +1092,12 @@ int main() {
                      "atmosphere shader should include bounded sun halo weighting");
     require_contains(shader_source, "bool render_celestial_content = atmosphere.render_options.y",
                      "atmosphere shader should expose inline celestial content control");
-    require_contains(shader_source, "bool render_moon_disk",
-                     "atmosphere shader should expose moon disk rendering control");
-    require_contains(shader_source, "render_moon_surface_debug",
-                     "atmosphere shader should include an enlarged moon atlas debug view");
-    require_contains(shader_source, "moon_surface_debug_albedo",
-                     "atmosphere shader should contrast-tune moon surface debug output");
+    require_not_contains(shader_source, "bool render_moon_disk",
+                         "atmosphere shader should not expose inline moon disk rendering control");
+    require_not_contains(shader_source, "render_moon_surface_debug",
+                         "atmosphere shader should not keep an enlarged moon atlas debug view");
+    require_not_contains(shader_source, "moon_surface_debug_albedo",
+                         "atmosphere shader should not keep moon atlas debug output");
     require_contains(shader_source, "ground_reference_geometry",
                      "atmosphere shader should include ground reference geometry");
     require_contains(shader_source, "reference_line",

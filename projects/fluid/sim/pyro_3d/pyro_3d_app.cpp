@@ -631,7 +631,6 @@ class Pyro3DApp {
                 cubey::render::create_atmosphere_background_generated_textures(
                     device, gpu,
                     {
-                        .lunar_extent = 128,
                         .night_sky_extent = 128,
                     }));
         }

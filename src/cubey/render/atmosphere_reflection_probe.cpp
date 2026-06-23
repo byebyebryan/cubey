@@ -64,12 +64,6 @@ atmosphere_background_material_config(std::uint32_t frame_slot_count,
         .sampled_images =
             {
                 SampledImageMaterialBinding{
-                    .binding = static_cast<std::uint32_t>(AtmosphereBackgroundBinding::MoonAtlas),
-                    .sampler = textures.lunar_sampler,
-                    .image_view = textures.lunar_view,
-                    .layout = textures.lunar_layout,
-                },
-                SampledImageMaterialBinding{
                     .binding =
                         static_cast<std::uint32_t>(AtmosphereBackgroundBinding::NightSkyAtlas),
                     .sampler = textures.night_sky_sampler,
