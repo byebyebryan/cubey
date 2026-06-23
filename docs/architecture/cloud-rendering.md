@@ -279,10 +279,11 @@ high-oblique, and orbit review.
 Clouds are a weather layer above clear-sky atmosphere. They should consume the
 shared sky/celestial/atmosphere state and emit reusable outputs:
 
-- cloud product RGB as linear cloud radiance and product alpha as view
-  transmittance for background composition;
-- mean distance, cloud opacity, and confidence in metadata/debug outputs for
-  reconstruction and depth-aware composition;
+- cloud product RGB is linear cloud radiance;
+- cloud product alpha is view transmittance for background composition, not
+  cloud opacity;
+- metadata/debug outputs carry mean distance, cloud opacity, confidence, and
+  density for reconstruction and future depth-aware composition;
 - low-frequency cloud shadow factor for terrain/ocean;
 - optional sky/reflection or environment contribution for water/PBR consumers;
 - debug views for weather, base/detail density, lighting, shadow, cache,
@@ -294,7 +295,9 @@ should sample cloud outputs or composed sky/environment products.
 V1 should use `RenderGraphBuilder` to make the cloud product and composite
 passes explicit. Descriptor sets, textures, material instances, and synchronization
 policy remain project-owned until at least two consumers need a shared cloud
-renderer contract.
+renderer contract. Until promotion, downstream branches should use the
+standalone app's quarter-resolution consumer smoke recipe to check visual and
+contract assumptions without adopting cloud internals.
 
 ## First Milestone
 

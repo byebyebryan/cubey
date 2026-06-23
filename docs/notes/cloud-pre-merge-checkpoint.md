@@ -42,6 +42,9 @@ entrypoints are:
   raymarch code.
 - Ocean/planet/terrain integration should consume cloud products, metadata, and
   future shadow outputs through a shared contract.
+- Quick consumer checks should use the quarter-resolution smoke recipe in
+  `projects/cloud/README.md`; full-quality captures are for standalone visual
+  review.
 - The cached octahedral/hemisphere path from `cloud_ref_2` remains a later
   performance architecture candidate.
 - Motion/shimmer checks should be repeated before orbit clouds become a

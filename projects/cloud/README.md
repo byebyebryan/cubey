@@ -133,6 +133,18 @@ All review output under `outputs/` is ignored by git. The current pre-merge
 checkpoint recipe and review notes live in
 [`docs/notes/cloud-pre-merge-checkpoint.md`](../../docs/notes/cloud-pre-merge-checkpoint.md).
 
+For quick consumer smoke checks from other project branches, use a smaller
+quarter-resolution set instead of the full review matrix:
+
+```sh
+mkdir -p outputs/cloud-consumer-smoke
+./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-quality quarter --cloud-camera-mode surface-up --output outputs/cloud-consumer-smoke/surface-up.png
+./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-quality quarter --cloud-camera-mode high-oblique --output outputs/cloud-consumer-smoke/high-oblique.png
+./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-quality quarter --cloud-camera-mode orbit --cloud-distance-mode orbit-shell --cloud-orbit-representation surface-shell --output outputs/cloud-consumer-smoke/orbit-shell.png
+./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-quality quarter --cloud-camera-mode high-oblique --debug-view transition-weights --output outputs/cloud-consumer-smoke/transition-weights.png
+./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-quality quarter --cloud-camera-mode high-oblique --debug-view local-with-shell-alpha --output outputs/cloud-consumer-smoke/local-with-shell-alpha.png
+```
+
 `capture_review.sh` defaults to a focused shape/regime review: final camera
 views, satellite-named orbit captures, high-oblique transition, volume
 comparison, local/high-view-bridge/local-plus-bridge/orbit alpha, transition
@@ -226,6 +238,9 @@ Known deferrals:
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,
   and synchronization remain project-owned in V1.
+- Consumer smoke checks should use `quarter` quality unless the purpose is
+  visual tuning. The standalone cloud app keeps `full` quality as its inspection
+  default.
 - Generated artifact metadata is descriptor-only for now. GPU content hashes,
   readback/export metadata, and cached sky/cloud products remain deferred.
 
