@@ -31,7 +31,8 @@ mkdir -p outputs/sky-moon-surface-detail-001
   routing and phase behavior more than fine texture quality.
 - `moon-surface` debug now renders a centered close-up sphere through
   `CelestialBodyFrame::SurfaceDebug`. It samples the generated
-  `LunarSurfaceMap`, not a 2D near-side atlas.
+  `LunarSurfaceMap`, not a 2D near-side atlas, and forces base-mip sampling so
+  broad maria are not averaged away.
 - The sphere debug capture is intentionally neutral-exposure and contrast-tuned
   for surface inspection, not representative final-scene exposure.
 - Fire, explosion, and water still draw the geometry moon over their direct
@@ -39,5 +40,6 @@ mkdir -p outputs/sky-moon-surface-detail-001
   and surface-composited scenes.
 - Planet moon captures remain useful for occlusion and daytime washout, but the
   moon is not large enough in these frames to judge surface detail.
-- The current procedural surface shows crater relief and maria structure on the
-  sphere, but mare contrast and crater scale still need visual tuning.
+- The `lunar-surface-map-v2` capture makes the maria read as broad dark basaltic
+  plains. Remaining visual tuning is mostly crater scale, mare edge softness,
+  and final-scene lighting balance.

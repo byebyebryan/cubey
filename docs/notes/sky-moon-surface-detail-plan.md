@@ -59,7 +59,8 @@ Implemented on the `sky-rendering` worktree in June 2026:
 
 - `LunarSurfaceMap` is a deterministic `1024x512` equirectangular RGBA8
   procedural artifact generated from shared `cubey::procedural` seed, noise,
-  hash, and metadata utilities.
+  hash, and metadata utilities. The current artifact formula is
+  `lunar-surface-map-v2`.
 - `CelestialBodyFrame` samples the surface in a stable moon-local body frame,
   so texture coordinates no longer face the camera.
 - `AtmosphereBackgroundAtlasResources` now owns the visible lunar surface map
@@ -69,8 +70,10 @@ Implemented on the `sky-rendering` worktree in June 2026:
   debug views, fire/explosion, and water bind the surface map for geometry moon
   rendering.
 - `CelestialBodyFrame` has a `SurfaceDebug` shading mode so moon-surface
-  diagnostics inspect the same textured sphere path as final rendering.
+  diagnostics inspect the same textured sphere path as final rendering. The
+  debug view forces base-mip sampling so it does not hide broad maria behind an
+  averaged texture mip.
 
 The current captures show routing, phase behavior, and a close-up sphere debug
-view. Maria and crater relief are visible, but the generated surface still needs
-visual tuning before judging it as a final lunar body material.
+view. Maria now read as broad dark basaltic plains instead of spot noise; crater
+scale and mare edge shaping remain material-tuning follow-ups.

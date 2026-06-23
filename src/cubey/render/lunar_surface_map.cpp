@@ -114,59 +114,92 @@ struct Crater {
     const Vec3 center =
         direction_from_lon_lat(radians(basin.longitude_degrees), radians(basin.latitude_degrees));
     const float radius = radians(basin.radius_degrees);
-    const float denominator = std::max(1.0F - std::cos(radius), 0.0001F);
-    const float normalized_distance = saturate((1.0F - dot(direction, center)) / denominator);
-    const float core = 1.0F - smoothstep(0.52F, 1.0F, normalized_distance);
-    const float shoulder = 1.0F - smoothstep(0.92F, 1.0F, normalized_distance);
-    return saturate((core * 0.78F + shoulder * 0.22F) * basin.strength);
+    const float angle = std::acos(std::clamp(dot(direction, center), -1.0F, 1.0F));
+    const float core = 1.0F - smoothstep(radius * 0.70F, radius, angle);
+    const float shoulder = 1.0F - smoothstep(radius, radius * 1.24F, angle);
+    return saturate((core * 0.90F + shoulder * 0.10F) * basin.strength);
 }
 
 [[nodiscard]] float maria_mask(Vec3 direction) {
-    constexpr std::array<MariaBasin, 9> kBasins{
+    constexpr std::array<MariaBasin, 16> kBasins{
         MariaBasin{.longitude_degrees = -55.0F,
                    .latitude_degrees = 18.0F,
-                   .radius_degrees = 30.0F,
-                   .strength = 0.92F},
+                   .radius_degrees = 43.0F,
+                   .strength = 0.96F},
+        MariaBasin{.longitude_degrees = -58.0F,
+                   .latitude_degrees = -5.0F,
+                   .radius_degrees = 31.0F,
+                   .strength = 0.78F},
+        MariaBasin{.longitude_degrees = -34.0F,
+                   .latitude_degrees = 5.0F,
+                   .radius_degrees = 27.0F,
+                   .strength = 0.62F},
+        MariaBasin{.longitude_degrees = -8.0F,
+                   .latitude_degrees = 14.0F,
+                   .radius_degrees = 34.0F,
+                   .strength = 0.55F},
         MariaBasin{.longitude_degrees = -18.0F,
                    .latitude_degrees = 35.0F,
-                   .radius_degrees = 16.0F,
-                   .strength = 0.88F},
+                   .radius_degrees = 23.0F,
+                   .strength = 0.98F},
+        MariaBasin{.longitude_degrees = -6.0F,
+                   .latitude_degrees = 55.0F,
+                   .radius_degrees = 28.0F,
+                   .strength = 0.58F},
         MariaBasin{.longitude_degrees = 18.0F,
                    .latitude_degrees = 28.0F,
-                   .radius_degrees = 12.0F,
-                   .strength = 0.80F},
+                   .radius_degrees = 23.0F,
+                   .strength = 0.92F},
         MariaBasin{.longitude_degrees = 31.0F,
                    .latitude_degrees = 8.0F,
-                   .radius_degrees = 14.0F,
-                   .strength = 0.88F},
+                   .radius_degrees = 26.0F,
+                   .strength = 0.96F},
         MariaBasin{.longitude_degrees = 52.0F,
                    .latitude_degrees = -7.0F,
-                   .radius_degrees = 13.0F,
-                   .strength = 0.72F},
+                   .radius_degrees = 20.0F,
+                   .strength = 0.76F},
         MariaBasin{.longitude_degrees = 59.0F,
                    .latitude_degrees = 17.0F,
-                   .radius_degrees = 10.0F,
-                   .strength = 0.78F},
+                   .radius_degrees = 15.0F,
+                   .strength = 0.82F},
         MariaBasin{.longitude_degrees = -40.0F,
                    .latitude_degrees = -24.0F,
-                   .radius_degrees = 11.0F,
-                   .strength = 0.62F},
+                   .radius_degrees = 16.0F,
+                   .strength = 0.64F},
         MariaBasin{.longitude_degrees = -15.0F,
                    .latitude_degrees = -21.0F,
-                   .radius_degrees = 13.0F,
-                   .strength = 0.66F},
+                   .radius_degrees = 20.0F,
+                   .strength = 0.70F},
+        MariaBasin{.longitude_degrees = -6.0F,
+                   .latitude_degrees = -9.0F,
+                   .radius_degrees = 29.0F,
+                   .strength = 0.46F},
+        MariaBasin{.longitude_degrees = 35.0F,
+                   .latitude_degrees = -16.0F,
+                   .radius_degrees = 15.0F,
+                   .strength = 0.58F},
         MariaBasin{.longitude_degrees = 5.0F,
                    .latitude_degrees = -2.0F,
-                   .radius_degrees = 10.0F,
+                   .radius_degrees = 24.0F,
                    .strength = 0.40F},
+        MariaBasin{.longitude_degrees = 76.0F,
+                   .latitude_degrees = 2.0F,
+                   .radius_degrees = 11.0F,
+                   .strength = 0.46F},
     };
 
-    float mask = 0.0F;
+    float max_mask = 0.0F;
+    float union_mask = 0.0F;
     for (const MariaBasin& basin : kBasins) {
-        mask = std::max(mask, basin_mask(direction, basin));
+        const float basin_value = basin_mask(direction, basin);
+        max_mask = std::max(max_mask, basin_value);
+        union_mask = 1.0F - (1.0F - union_mask) * (1.0F - basin_value);
     }
-    const float breakup = fbm(direction, 3.7F, "maria edge breakup", 5U, 0.54F) * 0.14F;
-    return saturate(mask + breakup);
+    float mask = mix(max_mask, union_mask, 0.38F);
+    const float edge =
+        smoothstep(0.08F, 0.40F, mask) * (1.0F - smoothstep(0.62F, 0.96F, mask));
+    const float breakup = (fbm(direction, 4.8F, "maria edge breakup", 4U, 0.52F) - 0.5F) * 0.18F;
+    return saturate(mask + breakup * edge);
 }
 
 [[nodiscard]] std::vector<Crater> generate_craters() {
@@ -259,10 +292,11 @@ struct SurfaceSample {
     const float mid = fbm(direction, 11.0F, "mid regolith", 4U, 0.52F);
     const float fine = fbm(direction, 44.0F, "fine regolith", 3U, 0.48F);
     const float highland_pores = ridged(direction, 29.0F, "highland pores", 4U) - 0.48F;
-    const float mare_patches = fbm(direction, 8.0F, "mare patches", 4U, 0.50F);
+    const float mare_plains = fbm(direction, 3.2F, "mare basalt plains", 4U, 0.50F);
+    const float mare_mottling = fbm(direction, 18.0F, "mare subtle mottling", 3U, 0.42F);
     const float highlands =
-        0.610F + broad * 0.090F + mid * 0.070F + fine * 0.045F + highland_pores * 0.065F;
-    const float mare = 0.270F + mare_patches * 0.050F + fine * 0.022F;
+        0.610F + broad * 0.090F + mid * 0.060F + fine * 0.034F + highland_pores * 0.035F;
+    const float mare = 0.195F + mare_plains * 0.024F + mare_mottling * 0.006F + fine * 0.004F;
 
     float albedo = mix(highlands, mare, maria);
     float height = broad * 0.030F + mid * 0.015F + fine * 0.006F - maria * 0.036F;
@@ -271,16 +305,19 @@ struct SurfaceSample {
     for (const Crater& crater : craters) {
         const float weight = crater_weight(direction, crater);
         if (weight < 1.0F) {
+            const float crater_albedo_scale = mix(1.0F, 0.42F, maria);
+            const float crater_height_scale = mix(1.0F, 0.58F, maria);
             const float floor = 1.0F - smoothstep(0.18F, 0.82F, weight);
             const float rim =
                 smoothstep(0.62F, 0.86F, weight) * (1.0F - smoothstep(0.86F, 1.0F, weight));
             const float ejecta = 1.0F - smoothstep(0.82F, 1.0F, weight);
-            albedo += rim * crater.rim * 1.15F - floor * crater.depth * 0.68F +
-                      ejecta * crater.rim * 0.24F;
-            height += rim * crater.rim - floor * crater.depth;
+            albedo += (rim * crater.rim * 0.82F - floor * crater.depth * 0.24F +
+                       ejecta * crater.rim * 0.12F) *
+                      crater_albedo_scale;
+            height += (rim * crater.rim - floor * crater.depth) * crater_height_scale;
             roughness += rim * 0.06F;
         }
-        const float ray = ray_weight(direction, crater);
+        const float ray = ray_weight(direction, crater) * mix(1.0F, 0.62F, maria);
         albedo += ray;
         height += ray * 0.004F;
     }
@@ -430,7 +467,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v1", "render.lunar_surface_map",
+            "lunar-surface-map-v2", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,

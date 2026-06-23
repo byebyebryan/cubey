@@ -6,6 +6,7 @@
 #include <cubey/render/lunar_surface_map.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -403,7 +404,7 @@ int main() {
         cubey::procedural::validate_procedural_artifact_metadata(default_map.metadata);
         require(default_map.metadata.generator == "cubey::render::generate_lunar_surface_map",
                 "lunar surface map metadata should identify its generator");
-        require(default_map.metadata.formula_version == "lunar-surface-map-v1",
+        require(default_map.metadata.formula_version == "lunar-surface-map-v2",
                 "lunar surface map metadata should identify its formula version");
         require(default_map.metadata.domain == "render.lunar_surface_map",
                 "lunar surface map metadata should identify its domain");
@@ -445,6 +446,13 @@ int main() {
         }
 
         const std::uint8_t* mare = lunar_surface_map_lon_lat_texel(map, -18.0F, 35.0F);
+        const std::array<const std::uint8_t*, 5> mare_plain_samples{
+            lunar_surface_map_lon_lat_texel(map, -55.0F, 18.0F),
+            lunar_surface_map_lon_lat_texel(map, -58.0F, -5.0F),
+            lunar_surface_map_lon_lat_texel(map, -34.0F, 5.0F),
+            lunar_surface_map_lon_lat_texel(map, -18.0F, 35.0F),
+            lunar_surface_map_lon_lat_texel(map, 31.0F, 8.0F),
+        };
         const std::uint8_t* highland = lunar_surface_map_lon_lat_texel(map, 142.0F, -11.0F);
         const std::uint8_t* seam_left = lunar_surface_map_texel(map, 0U, map.height / 2U);
         const std::uint8_t* seam_right =
@@ -452,6 +460,20 @@ int main() {
         const std::uint8_t* north = lunar_surface_map_texel(map, map.width / 2U, 0U);
         const std::uint8_t* center = lunar_surface_map_lon_lat_texel(map, 0.0F, 0.0F);
         require(mare[0] < highland[0], "lunar surface map maria should be darker than highlands");
+        std::uint8_t darkest_mare = 255U;
+        std::uint8_t brightest_mare = 0U;
+        std::uint32_t broad_dark_mare_count = 0U;
+        for (const std::uint8_t* sample : mare_plain_samples) {
+            darkest_mare = std::min(darkest_mare, sample[0]);
+            brightest_mare = std::max(brightest_mare, sample[0]);
+            if (static_cast<int>(sample[0]) + 36 < static_cast<int>(highland[0])) {
+                ++broad_dark_mare_count;
+            }
+        }
+        require(broad_dark_mare_count >= 4U,
+                "lunar surface map should keep broad mare plains darker than highlands");
+        require(static_cast<int>(brightest_mare) - static_cast<int>(darkest_mare) < 70,
+                "lunar surface map mare plains should stay coherent instead of spotty");
         require(std::abs(static_cast<int>(seam_left[0]) - static_cast<int>(seam_right[0])) < 24,
                 "lunar surface map should stay continuous across the longitude seam");
         require(north[0] > 20U && north[0] < 230U,
@@ -844,6 +866,8 @@ int main() {
         read_text_file(repo_root / "shaders/cubey/atmosphere.glsl");
     const std::string shader_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere.frag");
+    const std::string celestial_shader_source =
+        read_text_file(repo_root / "shaders/cubey/sky/celestial_body.frag");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
     const std::string render_cmake_source = read_text_file(repo_root / "src/cubey/CMakeLists.txt");
     require_contains(shared_environment_header, "struct AtmosphereEnvironmentFrameUniforms",
@@ -977,6 +1001,10 @@ int main() {
                      "atmosphere moon surface debug view should use sphere surface diagnostics");
     require_contains(app_source, "moon.angular_radius_rad = surface_debug ? 0.34F",
                      "atmosphere moon surface debug view should render a centered close-up sphere");
+    require_contains(celestial_shader_source, "textureLod(lunar_surface_map, uv, 0.0)",
+                     "moon surface debug should inspect base texture detail instead of averaged mips");
+    require_contains(celestial_shader_source, "const vec3 sample_normal = -normal",
+                     "moon surface sampling should face the generated near-side map toward camera");
     require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MOON ||",
                      "atmosphere shader should leave mesh-owned moon debug views with a black backdrop");
     require_not_contains(app_source, "pending_lunar_atlas_",
