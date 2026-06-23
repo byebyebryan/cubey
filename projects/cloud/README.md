@@ -129,6 +129,10 @@ projects/cloud/capture_review.sh outputs/cloud-v1-review
 DEEP=1 projects/cloud/capture_review.sh outputs/cloud-v1-review-deep
 ```
 
+All review output under `outputs/` is ignored by git. The current pre-merge
+checkpoint recipe and review notes live in
+[`docs/notes/cloud-pre-merge-checkpoint.md`](../../docs/notes/cloud-pre-merge-checkpoint.md).
+
 `capture_review.sh` defaults to a focused shape/regime review: final camera
 views, satellite-named orbit captures, high-oblique transition, volume
 comparison, local/far-shell/local-plus-shell/orbit alpha, transition weights,
