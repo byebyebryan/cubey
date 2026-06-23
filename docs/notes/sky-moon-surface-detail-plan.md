@@ -64,7 +64,7 @@ Implemented on the `sky-rendering` worktree in June 2026:
 - `LunarSurfaceMap` is a deterministic `1024x512` equirectangular RGBA8
   procedural artifact generated from shared `cubey::procedural` seed, noise,
   hash, and metadata utilities. The current artifact formula is
-  `lunar-surface-map-v8`.
+  `lunar-surface-map-v9`.
 - `CelestialBodyFrame` samples the surface in a stable moon-local body frame,
   so texture coordinates no longer face the camera.
 - `AtmosphereBackgroundAtlasResources` now owns the visible lunar surface map
@@ -84,7 +84,8 @@ basalt plains, especially the Procellarum/Imbrium/Nubium western complex and
 the Serenitatis/Tranquillitatis/Fecunditatis eastern complex. The procedural
 stamps shape basin coverage, while a normalized and smoothed mare silhouette
 controls albedo so overlap falloffs do not read as painted stamp centers.
-Surface tone uses a small normal-space FBM perturbation inspired by simple
-sphere shader examples, implemented with the existing Cubey procedural noise
-utilities rather than copied Shadertoy noise code. Crater scale and final-scene
-lighting balance remain material-tuning follow-ups.
+Surface tone uses a small normal-space FBM perturbation plus a subtle
+low-frequency whole-disk multiplier inspired by simple moon shader examples,
+implemented with the existing Cubey procedural noise utilities rather than
+copied Shadertoy noise code. Crater scale and final-scene lighting balance
+remain material-tuning follow-ups.

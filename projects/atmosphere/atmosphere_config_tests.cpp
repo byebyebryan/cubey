@@ -404,7 +404,7 @@ int main() {
         cubey::procedural::validate_procedural_artifact_metadata(default_map.metadata);
         require(default_map.metadata.generator == "cubey::render::generate_lunar_surface_map",
                 "lunar surface map metadata should identify its generator");
-        require(default_map.metadata.formula_version == "lunar-surface-map-v8",
+        require(default_map.metadata.formula_version == "lunar-surface-map-v9",
                 "lunar surface map metadata should identify its formula version");
         require(default_map.metadata.domain == "render.lunar_surface_map",
                 "lunar surface map metadata should identify its domain");
@@ -1051,6 +1051,8 @@ int main() {
                      "lunar surface generation should perturb sphere-normal material sampling");
     require_contains(lunar_surface_source, "normal-space surface tone",
                      "lunar surface generation should use normal-space procedural tone");
+    require_contains(lunar_surface_source, "subtle moon disk tone",
+                     "lunar surface generation should layer subtle full-surface tone");
     require_not_contains(lunar_surface_source, "mare_fill_field[index] * 1.35F + raw_mare_coverage",
                          "lunar surface albedo fill should not reintroduce raw stamp coverage");
     require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MOON ||",

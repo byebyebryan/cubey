@@ -494,6 +494,9 @@ struct SurfaceSample {
     const float mid = fbm(material, 11.0F, "mid regolith", 4U, 0.52F);
     const float fine = fbm(material, 44.0F, "fine regolith", 3U, 0.48F);
     const float normal_tone = fbm(material, 4.0F, "normal-space surface tone", 5U, 0.50F) - 0.5F;
+    const float subtle_disk_tone =
+        smoothstep(0.25F, 0.70F, fbm(material, 0.85F, "subtle moon disk tone", 4U, 0.50F));
+    const float surface_tone_multiplier = 0.92F + subtle_disk_tone * 0.10F;
     const float highland_pores = ridged(material, 29.0F, "highland pores", 4U) - 0.48F;
     const float mare_plains = fbm(material, 1.7F, "mare basalt plains", 4U, 0.50F);
     const float mare_mottling = fbm(material, 12.0F, "mare subtle mottling", 3U, 0.42F);
@@ -501,10 +504,10 @@ struct SurfaceSample {
         0.610F + broad * 0.088F + mid * 0.055F + fine * 0.030F + highland_pores * 0.032F +
         normal_tone * 0.036F;
     const float mare =
-        0.370F + mare_plains * 0.016F + mare_mottling * 0.006F + fine * 0.003F +
-        normal_tone * 0.020F;
+        0.425F + mare_plains * 0.024F + mare_mottling * 0.012F + fine * 0.006F +
+        normal_tone * 0.026F;
 
-    float albedo = mix(highlands, mare, mare_fill);
+    float albedo = mix(highlands, mare, mare_fill) * surface_tone_multiplier;
     float height =
         broad * 0.028F + mid * 0.014F + fine * 0.006F + normal_tone * 0.008F -
         mare_coverage * 0.036F;
@@ -644,7 +647,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
             const std::size_t index = texel_index(x, y, width);
             const MareField field{
                 .coverage = raw_mare_coverage[index],
-                .fill = smoothstep(0.08F, 0.72F, mare_fill_field[index]),
+                .fill = smoothstep(0.05F, 0.88F, mare_fill_field[index]) * 0.78F,
             };
             const SurfaceSample sample =
                 sample_surface(directions[index], field, std::span<const Crater>{craters});
@@ -694,7 +697,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v8", "render.lunar_surface_map",
+            "lunar-surface-map-v9", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,
