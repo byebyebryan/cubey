@@ -17,11 +17,11 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `4`. It emits source fields, height/slope
-analysis, static drainage, raw and filled routing diagnostics, depression depth,
-a selected channel graph, smoothed active river trunk and tributary fields,
-wetness/deposition, material masks, and vegetation potential. The drainage pass
-is deliberately process-informed rather than a full hydraulic simulation.
+The current generator revision is `3`. It emits source fields, height/slope
+analysis, static drainage, routing diagnostics, smoothed active river trunk and
+tributary fields, wetness/deposition, material masks, and vegetation potential.
+The drainage pass is deliberately process-informed rather than a full hydraulic
+simulation.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -54,12 +54,9 @@ The review set includes:
 - `slope.png`
 - `ridge-uplift.png`
 - `drainage-potential.png`
-- `filled-drainage-potential.png`
-- `depression-depth.png`
 - `flow-direction.png`
 - `flow-accumulation.png`
 - `stream-order.png`
-- `channel-graph.png`
 - `river-mask.png`
 - `river-trunk.png`
 - `tributaries.png`
@@ -77,14 +74,13 @@ the patch to river-network artifacts. Treat it as a diagnostic recipe, not the
 default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
-plus routed flow accumulation over a padded hidden routing domain. Revision `4`
-applies a small Priority-Flood-style epsilon fill before routing with continuous
-D-Infinity-style flow angles and fractional accumulation. It then extracts an
-explicit source/confluence/outlet channel graph from the filled catchment and
-dominant downstream receivers. Selected graph edges are grouped by outlet
-component, scored for visible length and crop continuity, pruned for short or
-parallel segments, procedurally offset, lightly relaxed over the filled routing
-surface, and rasterized as soft channel curves. This produces `channel-graph`,
-`river-trunk`, `tributaries`, and the combined `river-mask`, but sharp turns and
-straight receiver runs remain visible enough that this is still a midpoint, not
-a finished river model.
+plus routed flow accumulation over a padded hidden routing domain. Revision `3`
+uses continuous D-Infinity-style flow angles and fractional accumulation for the
+diagnostic catchment field, then uses a conservative D8 topology graph only to
+keep trunk/tributary extraction connected while depression fill and breach
+routing are still absent. Selected paths are scored for visible length, crop
+continuity, interior coverage, and low repeated grid-direction runs before being
+resampled, procedurally offset, relaxed over drainage potential, and rasterized
+as soft channel curves. This produces `river-trunk`, `tributaries`, and the
+combined `river-mask`, but branch placement and some bends remain route-model
+limitations until a proper network extraction pass replaces the hybrid graph.

@@ -282,8 +282,8 @@ Remaining candidates after that closure batch are:
   descriptors can report content hashes instead of descriptor-only identity;
 - a future `SourceRecipe3D` or volume-field variant after the cloud/environment
   review proves the shape;
-- shared hydrology primitives only after the terrain reboot proves which parts
-  of its fill/routing/graph extraction are stable outside one recipe;
+- flow-routing and accumulation data structures after a deeper SimpleHydrology
+  pass;
 - explicit source-field recipes for mountain range, river, and dune drivers.
 
 Near-term non-goals:

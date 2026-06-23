@@ -220,31 +220,25 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `4` emits deterministic source fields,
-height/slope analysis, static flow accumulation, raw and filled routing
-diagnostics, depression depth, a selected channel-graph diagnostic, smoothed
+local region. Generator revision `3` emits deterministic source fields,
+height/slope analysis, static flow accumulation, routing diagnostics, smoothed
 active river trunk and tributary masks, wetness/deposition, material masks,
 vegetation potential, summaries, and tests.
 
 The river driver intentionally moved away from a single authored line. It routes
 over a coherent low-frequency drainage potential derived from the terrain seed
 on a padded hidden routing domain, then crops diagnostics back to the visible
-region. The diagnostic catchment now performs a small Priority-Flood-style
-epsilon fill over that hidden routing surface before D-Infinity-style continuous
-flow angles and fractional accumulation. The unfilled `drainage_potential`,
-`filled_drainage_potential`, and `depression_depth` fields are all emitted so
-the correction stays inspectable.
-
-Active river extraction now builds an explicit channel graph from the filled
-fractional accumulation field and its dominant downstream receivers. Channel
-cells are thresholded by discharge, collapsed into source/confluence/outlet
-nodes plus edges, grouped by outlet component, pruned for short or parallel
-segments, then rendered into `channel_graph`, `river_trunk`, `tributaries`, and
-`river_mask`. Selected centerlines are resampled, nudged by a constrained
-procedural offset, lightly relaxed over the filled routing surface, and
-rasterized as soft product fields. This removes the previous authored trunk and
-D8 fallback topology, but it is still a static graph extraction rather than a
-complete hydrology solution.
+region. The diagnostic catchment now uses D-Infinity-style continuous flow
+angles and fractional accumulation, reducing the obvious D8 lattice in
+`flow-accumulation`. Active trunk extraction is still a hybrid: candidates are
+seeded from the fractional accumulation field, but a conservative D8 topology
+graph keeps the visible trunk and tributaries connected until depression
+fill/breach routing and explicit network extraction exist. Candidates are scored
+for visible length, crop continuity, interior coverage, and low repeated
+grid-direction runs before the selected centerlines are resampled, nudged by a
+constrained procedural offset, relaxed over drainage potential, and rasterized as
+soft product fields. This is a useful midpoint because downstream fields can
+consume a connected river product, but it is not a complete hydrology solution.
 
 The `temperate-mountain-river-stress` recipe is a diagnostic variant of the same
 slice. It keeps the same terrain/routing sources but expands active channel
@@ -254,13 +248,15 @@ review patch, not to define the desired default composition.
 
 Known limitations:
 
-- The epsilon fill removes obvious local sink dead ends, but it is not a full
-  breach-routing, lake/wetland, or erosion model.
-- The channel graph is extracted from a raster receiver field. It is more
-  coherent than isolated streamlines, but some sharp turns, regular widths, and
-  straight sections can still show up under close inspection.
+- Fractional accumulation reduces receiver quantization, but active channel
+  topology still uses a D8 fallback graph. Branch placement and some bends can
+  remain less organic than real rivers, especially near unresolved local sinks.
+- The drainage pass does not yet perform real depression fill, breach routing,
+  erosion, or lake/wetland resolution.
 - Padded routing makes local review slices less artificial, but the route model
   is still static and should not be mistaken for simulated river evolution.
+- Tributary selection is intentionally conservative and should be replaced by a
+  more explicit network extraction pass once the route model improves.
 - The stress recipe can expose parallel channel fans and disconnected-looking
   subnetworks because it deliberately pushes coverage before the hydrology model
   is complete.
@@ -284,12 +280,13 @@ Keep the first implementation narrow. Defer:
 The next terrain batches should improve the underlying drivers before adding
 more biome labels:
 
-1. Compare the current epsilon fill against a breach-routing variant before
-   adding lakes, canyons, or wider river systems.
-2. Improve graph extraction with more organic receiver paths, variable channel
-   width by discharge/order, and basin-aware pruning so stress captures do not
-   read as schematic branch fans.
-3. Split mountain/ridge drivers into explicit terrain products instead of
+1. Evaluate a small depression-fill or breach-routing pass from the hydrology
+   references before adding lakes, canyons, or wider river systems.
+2. Add depression-fill or breach routing so continuous streamlines do not stop
+   on local sinks and the remaining D8 topology fallback can be removed.
+3. Replace conservative tributary picking with a more explicit network
+   extraction pass once the route model improves.
+4. Split mountain/ridge drivers into explicit terrain products instead of
    treating mountains as only material response over height noise.
-4. Add capture summaries or manifest metadata for the review set so image
+5. Add capture summaries or manifest metadata for the review set so image
    artifacts can be compared without relying only on manual inspection.

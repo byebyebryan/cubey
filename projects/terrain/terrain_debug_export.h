@@ -14,8 +14,6 @@ enum class TerrainDebugView {
     Slope,
     RidgeUplift,
     DrainagePotential,
-    FilledDrainagePotential,
-    DepressionDepth,
     FlowDirection,
     FlowAccumulation,
     StreamOrder,
@@ -25,7 +23,6 @@ enum class TerrainDebugView {
     SinkMask,
     Wetness,
     Deposition,
-    ChannelGraph,
     Material,
     Vegetation,
 };
