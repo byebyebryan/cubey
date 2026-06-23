@@ -12,11 +12,11 @@ integration on top:
 - `cubey::render::CelestialSystem` owns mean solar time, sun and moon state,
   rotation/orbit angles, moon phase, render placement, and derived lighting.
 - `cubey::render::AtmosphereEnvironmentConfig` owns atmosphere, night sky,
-  moon-disk, Milky Way, render-view, and debug-control inputs for the shared
-  atmosphere shader.
+  moon visibility/lighting, Milky Way, render-view, and debug-control inputs
+  for the shared atmosphere shader.
 - `cubey::render::AtmosphereBackgroundFrame` owns the fullscreen atmosphere
-  draw, descriptor layout, generated lunar debug atlas, visible lunar surface
-  map, and night-sky atlas bindings.
+  draw, descriptor layout, visible lunar surface map, and night-sky atlas
+  bindings.
 - `cubey::engine::AtmosphereEnvironmentRuntime` adapts atmosphere state into
   engine usage, including reflection-probe and PBR environment plumbing.
 - `projects/atmosphere` is the standalone clear-sky and night-sky testbed.
@@ -35,7 +35,7 @@ occlusion, time, or lighting decisions.
 draw the sun disk, stars, and procedural Milky Way directly in the atmosphere
 shader. Final-view moon rendering now uses the shared `CelestialBodyFrame`
 geometry path with the generated spherical lunar surface map. The shader moon
-disk remains for moon atlas/debug views only.
+disk and old near-side debug atlas have been removed.
 
 The standalone atmosphere app is now an iteration surface for the same visible
 moon geometry path used by planet and atmosphere-backed demos, not an equal
@@ -83,10 +83,9 @@ inputs. It is not yet an explicit rendered body like the moon.
 The visible moon now has one canonical app path in migrated projects: explicit
 body geometry, phase/visibility behavior, and a generated equirectangular lunar
 surface map. The atmosphere shader keeps moon data for moonlight, star masking,
-washout, and old atlas/debug views, but it is no longer the default owner of the
-runtime visible moon in planet, standalone atmosphere final view, or
-atmosphere-backed fluid views. The old near-side disk lunar atlas is deprecated
-for visible rendering and remains debug-only.
+and washout, but it no longer renders a visible moon disk in planet, standalone
+atmosphere final/debug views, or atmosphere-backed fluid views. The old
+near-side disk lunar atlas has been removed.
 
 Forward PBR generic consumers, ocean, and reflection-probe cubemaps remain
 explicit follow-up work unless they gain their own geometry insertion point.
@@ -110,8 +109,8 @@ physical exposure calibration, eclipses, and real ephemeris remain deferred.
 - `projects/atmosphere` gives sky work a focused iteration surface.
 - `projects/planet` exercises the hard cases: orbit views, surface views,
   planet occlusion, moon body rendering, and surface lighting.
-- Generated lunar surface, lunar debug-atlas, and night-sky assets are
-  deterministic and metadata-bearing.
+- Generated lunar surface and night-sky assets are deterministic and
+  metadata-bearing.
 - Legacy sky-frame captures remain useful as historical references, but runtime
   comparison now happens through the unified path and atmosphere-mode controls.
 
@@ -128,8 +127,8 @@ Completed:
 2. Make the active sky ownership explicit in docs: planet uses the unified
    atmosphere path rather than a selectable sky backend.
 3. Record the moon ownership contract in one place: the visible moon should be
-   geometry in migrated apps, while the shader disk remains debug/fallback
-   plumbing.
+   geometry in migrated apps, and the shader disk/fallback plumbing can be
+   removed once debug views move to geometry.
 4. Remove the legacy `SkyFrame` implementation after visual review confirmed it
    was only a comparison fallback.
 5. Establish focused validation commands and capture recipes for sky changes.

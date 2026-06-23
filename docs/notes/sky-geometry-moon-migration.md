@@ -14,10 +14,10 @@ body renderer as equal runtime paths.
 - Geometry is the canonical app-visible moon for atmosphere, planet, and the
   atmosphere-backed fluid demos.
 - Superseded: the generated lunar atlas was the first geometry appearance
-  source. Visible geometry now uses an equirectangular lunar surface map, while
-  the old near-side disk atlas remains for debug views.
+  source. Visible geometry and moon debug views now use an equirectangular lunar
+  surface map; the old near-side disk atlas has been removed.
 - The atmosphere shader keeps moon uniforms for moonlight, night-sky washout,
-  star masking, and debug atlas views.
+  and star masking, but no longer renders the moon disk.
 - Generic forward PBR, ocean, and reflection probes are follow-up consumers.
 
 ## Commit Sequence
@@ -37,18 +37,22 @@ body renderer as equal runtime paths.
    fire/explosion/water backgrounds.
 7. Refresh captures under `outputs/sky-moon-geo-migration-001/` and record the
    remaining visual follow-ups.
+8. Replace the old `moon` / `moon-surface` debug atlas views with geometry
+   debug rendering. Done in `atmosphere(moon): render debug views as geometry`.
+9. Remove the old `LunarAtlas` generator, descriptor binding, and shader disk
+   path. Done in `render(atmosphere): remove legacy lunar atlas`.
 
 ## Current Runtime Boundary
 
 - Planet, standalone atmosphere final view, fire/explosion atmosphere
   backgrounds, and water surface atmosphere backgrounds now render the visible
   moon through `CelestialBodyFrame` geometry.
-- The atmosphere shader moon disk remains for `Moon` and `MoonSurface` debug
-  views and for unmigrated generic consumers that do not yet insert geometry.
+- The atmosphere shader no longer renders a moon disk. It still receives moon
+  state for moonlight, star masking, and sky washout.
 - The `render_moon_disk` config flag currently means "show the visible moon" at
-  the public config boundary. Migrated apps consume it as the geometry moon
-  enable/brightness control, then pass a copied atmosphere config with the
-  inline disk disabled to the fullscreen atmosphere shader.
+  the public config boundary. Migrated apps consume it as geometry moon intent,
+  then pass a copied atmosphere config with inline moon rendering disabled to
+  the fullscreen atmosphere shader.
 
 ## Validation
 

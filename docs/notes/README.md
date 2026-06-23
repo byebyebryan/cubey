@@ -44,7 +44,7 @@ the detailed foundation notes under `docs/architecture/`.
   reproducible capture commands and observations for the migrated moon paths.
 - [Moon surface detail plan](sky-moon-surface-detail-plan.md): procedural
   spherical lunar surface map references, implementation outcome, and remaining
-  inspection caveat.
+  material tuning caveat.
 - [Moon surface detail captures](sky-moon-surface-detail-captures.md):
   reproducible capture commands and observations for the lunar surface-map
   routing pass.

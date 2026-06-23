@@ -1,10 +1,10 @@
 # Moon Surface Detail Plan
 
 This note records the follow-up after moving visible moon rendering to shared
-`CelestialBodyFrame` geometry. The old square lunar atlas is a near-side disk
-projection, so it is deprecated for visible body rendering. It remains useful
-only for the atmosphere shader's existing `moon` and `moon-surface` debug views
-until those diagnostics are replaced.
+`CelestialBodyFrame` geometry. The old square lunar atlas was a near-side disk
+projection and has been removed from live rendering. Final moon rendering and
+the atmosphere `moon` / `moon-surface` debug views now use textured sphere
+geometry.
 
 ## References
 
@@ -62,14 +62,15 @@ Implemented on the `sky-rendering` worktree in June 2026:
   hash, and metadata utilities.
 - `CelestialBodyFrame` samples the surface in a stable moon-local body frame,
   so texture coordinates no longer face the camera.
-- `AtmosphereBackgroundAtlasResources` now owns both the old lunar debug atlas
-  and the new visible lunar surface map. Planet, standalone atmosphere final
-  view, fire/explosion, and water bind the surface map for geometry moon
+- `AtmosphereBackgroundAtlasResources` now owns the visible lunar surface map
+  and the night-sky atlas. The old square `LunarAtlas` and inline atmosphere
+  moon disk path have been removed.
+- Planet, standalone atmosphere final view, atmosphere `moon` / `moon-surface`
+  debug views, fire/explosion, and water bind the surface map for geometry moon
   rendering.
-- The old square `LunarAtlas` remains only for the atmosphere shader's `moon`
-  and `moon-surface` debug views.
+- `CelestialBodyFrame` has a `SurfaceDebug` shading mode so moon-surface
+  diagnostics inspect the same textured sphere path as final rendering.
 
-The first captures show routing and phase behavior, but the current visible
-moon lighting still makes close surface-detail inspection difficult without a
-dedicated surface-map debug view. Add that debug view before judging small crater
-quality too aggressively.
+The current captures show routing, phase behavior, and a close-up sphere debug
+view. Maria and crater relief are visible, but the generated surface still needs
+visual tuning before judging it as a final lunar body material.

@@ -24,8 +24,10 @@ natural water capture is also kept in the folder as
 
 ## Observations
 
-- Standalone atmosphere final view renders a crescent moon through geometry;
-  `moon-surface` debug still exercises the inline shader atlas view.
+- Standalone atmosphere final view renders a crescent moon through geometry. At
+  the time of this capture, `moon-surface` debug still exercised the inline
+  shader atlas view; that has since been superseded by the sphere debug capture
+  in `outputs/sky-moon-sphere-debug-001/`.
 - Planet moon occlusion and day-moon washout captures remain consistent with
   the existing depth-tested body path.
 - Fire and explosion show the moon geometry over the direct atmosphere

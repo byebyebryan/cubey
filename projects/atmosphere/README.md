@@ -19,16 +19,16 @@ sun direction still available for art/debug work.
 
 Night rendering includes procedural foreground stars, visible moon geometry that
 uses the generated spherical lunar surface map, and a procedural Milky Way
-atlas. The atmosphere shader still keeps moon debug views for old atlas and
-washout validation, but the final-view visible moon now uses the shared
-celestial body geometry path. The Milky Way generator is tuned in local layers
-for stellar emission, dust lanes, star clouds, H II regions, and speckles
-instead of consuming a source panorama.
+atlas. Final, `moon`, and `moon-surface` views now use the shared celestial body
+geometry path for moon drawing; the atmosphere shader keeps moon data only for
+moonlight, star masking, and sky washout. The Milky Way generator is tuned in
+local layers for stellar emission, dust lanes, star clouds, H II regions, and
+speckles instead of consuming a source panorama.
 
-Windowed runs create the lunar debug atlas, lunar surface map, and night-sky
-atlas in background jobs and show placeholder textures until uploads complete.
-Headless runs generate the same assets synchronously for deterministic capture
-output. Presets resolve through the same solar-clock path used at runtime so
+Windowed runs create the lunar surface map and night-sky atlas in background
+jobs and show placeholder textures until uploads complete. Headless runs
+generate the same assets synchronously for deterministic capture output. Presets
+resolve through the same solar-clock path used at runtime so
 their reported sun and exposure values match what is rendered. This project
 still owns presets, UI, debug view selection, generated sky assets, and
 render-graph wiring; the render helpers are intended to be reusable by ocean and
