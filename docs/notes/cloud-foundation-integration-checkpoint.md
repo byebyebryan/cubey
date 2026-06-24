@@ -57,3 +57,16 @@ from a standalone renderer into a shared weather layer.
   sky-probe contribution.
 - Planet integration remains deferred until the active planet sky/horizon issues
   are stabilized.
+
+## Runtime Promotion Plan
+
+The next foundation pass should promote a reusable cloud runtime without changing
+the standalone cloud look. The runtime should own generated cloud resources,
+march/temporal/composite materials and pipelines, transient cloud products,
+temporal history, and descriptor binding. `projects/cloud` remains the primary
+tuning surface, while `projects/atmosphere` should consume the same runtime in
+external-background mode with editable cloud controls.
+
+Out of scope for that pass: planet integration, production cloud shadow textures
+for ocean/terrain, cloud reflection or sky-probe contribution, and visual
+retuning beyond fixes required by the runtime migration.
