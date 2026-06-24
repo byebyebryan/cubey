@@ -2,18 +2,24 @@
 
 #include <cubey/core/math.h>
 #include <cubey/render/material.h>
+#include <cubey/render/material_instance.h>
 #include <cubey/render/pipeline_resource.h>
+#include <cubey/render/render_graph.h>
 #include <cubey/render/render_graph_types.h>
 #include <cubey/render/target.h>
 #include <cubey/render/texture.h>
+#include <cubey/render/uniform_buffer.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/sampler.h>
 
 #include <vulkan/vulkan.h>
 
+#include <array>
 #include <cstdint>
+#include <optional>
 #include <string>
+#include <vector>
 
 namespace cubey::render {
 
@@ -274,11 +280,130 @@ struct CloudLayerGeneratedShaderFiles {
     ShaderStageFile weather{};
 };
 
+struct CloudLayerRuntimeShaderFiles {
+    CloudLayerGeneratedShaderFiles generated{};
+    ShaderStageFile march{};
+    ShaderStageFile temporal{};
+    ShaderStageFile composite_vertex{};
+    ShaderStageFile composite_fragment{};
+};
+
+enum class CloudLayerCompositeMode : std::uint32_t {
+    Standalone = 0,
+    ExternalBackground = 1,
+};
+
 struct CloudLayerGeneratedResources {
     Texture3D base_noise;
     Texture3D detail_noise;
     Texture2D weather;
     CloudLayerWeatherPushConstants weather_generation{};
+};
+
+struct CloudLayerRuntimeFrame {
+    CloudLayerProduct product{};
+    RenderGraphTextureHandle history_cloud_read{};
+    RenderGraphTextureHandle history_metadata_read{};
+    RenderGraphTextureHandle history_cloud_write{};
+    RenderGraphTextureHandle history_metadata_write{};
+    bool temporal_pass_enabled = false;
+    std::uint32_t history_write_index = 0;
+    CloudLayerFrameUniforms frame_uniforms{};
+};
+
+class CloudLayerRuntime {
+  public:
+    CloudLayerRuntime() = default;
+
+    CloudLayerRuntime(const CloudLayerRuntime&) = delete;
+    CloudLayerRuntime& operator=(const CloudLayerRuntime&) = delete;
+    CloudLayerRuntime(CloudLayerRuntime&&) = delete;
+    CloudLayerRuntime& operator=(CloudLayerRuntime&&) = delete;
+
+    void create_generated_resources(const cubey::vulkan::Device& device,
+                                    cubey::vulkan::GpuRuntime& gpu,
+                                    const CloudLayerGeneratedShaderFiles& shaders,
+                                    const CloudLayerConfig& config);
+    void update_weather_texture(const cubey::vulkan::Device& device,
+                                cubey::vulkan::GpuRuntime& gpu, const ShaderStageFile& shader,
+                                const CloudLayerConfig& config, bool force = false);
+    void destroy_swapchain_resources();
+    void create_swapchain_resources(const cubey::vulkan::Device& device,
+                                    const CloudLayerRuntimeShaderFiles& shaders,
+                                    CloudLayerCompositeMode composite_mode, VkFormat color_format,
+                                    VkExtent2D extent, std::uint32_t frame_slot_count,
+                                    const CloudLayerConfig& config);
+
+    [[nodiscard]] std::uint32_t temporal_frame_index() const noexcept {
+        return temporal_frame_index_;
+    }
+    [[nodiscard]] const CloudLayerGeneratedResources& generated_resources() const;
+
+    void upload_frame_uniforms(FrameSlot frame_slot,
+                               const CloudLayerFrameUniforms& uniforms) const;
+    [[nodiscard]] CloudLayerRuntimeFrame declare_product(RenderGraphBuilder& graph,
+                                                         VkExtent2D target_extent,
+                                                         const CloudLayerConfig& config,
+                                                         FrameSlot frame_slot,
+                                                         CloudLayerFrameUniforms uniforms) const;
+    void declare_composite(RenderGraphBuilder& graph, RenderGraphTextureHandle target,
+                           const CloudLayerRuntimeFrame& frame, FrameSlot frame_slot,
+                           std::optional<RenderGraphTextureHandle> background = std::nullopt) const;
+    void update_descriptors(const cubey::vulkan::Device& device, FrameSlot frame_slot,
+                            const CompiledRenderGraph& graph,
+                            const RenderGraphResourceSet& resources,
+                            const CloudLayerRuntimeFrame& frame,
+                            std::optional<RenderGraphTextureHandle> background = std::nullopt) const;
+    void complete_frame(FrameSlot frame_slot, const CloudLayerRuntimeFrame& frame);
+
+  private:
+    [[nodiscard]] const FrameUniformBuffer<CloudLayerFrameUniforms>& frame_uniforms() const;
+    [[nodiscard]] const FrameUniformBuffer<CloudLayerTemporalUniforms>& temporal_uniforms() const;
+    [[nodiscard]] const MaterialInstance& march_material() const;
+    [[nodiscard]] const MaterialInstance& temporal_material() const;
+    [[nodiscard]] const MaterialInstance& composite_material() const;
+    [[nodiscard]] const ComputePipelineResource& march_pipeline() const;
+    [[nodiscard]] const ComputePipelineResource& temporal_pipeline() const;
+    [[nodiscard]] const GraphicsPipelineResource& composite_pipeline() const;
+    [[nodiscard]] const cubey::vulkan::Sampler& composite_sampler() const;
+    [[nodiscard]] const Texture2D& history_cloud_texture(FrameSlot frame_slot,
+                                                         std::uint32_t ping_pong) const;
+    [[nodiscard]] const Texture2D& history_metadata_texture(FrameSlot frame_slot,
+                                                            std::uint32_t ping_pong) const;
+    [[nodiscard]] bool history_texture_valid(FrameSlot frame_slot,
+                                             std::uint32_t ping_pong) const;
+    [[nodiscard]] bool history_extent_matches(VkExtent2D extent) const noexcept;
+    [[nodiscard]] CloudLayerTemporalUniforms temporal_frame_uniforms(
+        FrameSlot frame_slot, CloudLayerFrameUniforms current,
+        std::uint32_t history_read_index) const;
+
+    void create_history_textures(const cubey::vulkan::Device& device, VkExtent2D extent,
+                                 std::uint32_t frame_slot_count);
+    void invalidate_history();
+    void record_march_dispatch(const cubey::vulkan::CommandRecorder& recorder,
+                               VkDescriptorSet descriptor_set, VkExtent2D extent) const;
+    void record_temporal_dispatch(const cubey::vulkan::CommandRecorder& recorder,
+                                  VkDescriptorSet descriptor_set, VkExtent2D extent) const;
+    void record_composite_draw(const cubey::vulkan::CommandRecorder& recorder,
+                               const ColorTargetView& target, FrameSlot frame_slot) const;
+
+    std::optional<CloudLayerGeneratedResources> generated_{};
+    std::optional<FrameUniformBuffer<CloudLayerFrameUniforms>> frame_uniforms_{};
+    std::optional<FrameUniformBuffer<CloudLayerTemporalUniforms>> temporal_uniforms_{};
+    std::optional<MaterialInstance> march_material_{};
+    std::optional<MaterialInstance> temporal_material_{};
+    std::optional<MaterialInstance> composite_material_{};
+    std::optional<ComputePipelineResource> march_pipeline_{};
+    std::optional<ComputePipelineResource> temporal_pipeline_{};
+    std::optional<GraphicsPipelineResource> composite_pipeline_{};
+    std::optional<cubey::vulkan::Sampler> composite_sampler_{};
+    std::vector<std::array<std::optional<Texture2D>, 2>> history_cloud_textures_{};
+    std::vector<std::array<std::optional<Texture2D>, 2>> history_metadata_textures_{};
+    std::vector<std::uint32_t> history_read_indices_{};
+    std::vector<std::array<bool, 2>> history_texture_valid_{};
+    std::vector<std::optional<CloudLayerFrameUniforms>> history_frame_states_{};
+    CloudLayerCompositeMode composite_mode_ = CloudLayerCompositeMode::Standalone;
+    std::uint32_t temporal_frame_index_ = 0;
 };
 
 [[nodiscard]] vulkan::SamplerConfig cloud_layer_repeat_sampler_config(
