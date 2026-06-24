@@ -9,19 +9,9 @@
 #include <cubey/input/input.h>
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/cloud_layer.h>
-#include <cubey/render/material_instance.h>
-#include <cubey/render/pass.h>
-#include <cubey/render/pipeline_resource.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/target.h>
-#include <cubey/render/texture.h>
-#include <cubey/render/uniform_buffer.h>
-#include <cubey/vulkan/command_recorder.h>
-#include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/gpu_runtime.h>
-#include <cubey/vulkan/image_transitions.h>
-#include <cubey/vulkan/immediate_commands.h>
-#include <cubey/vulkan/sampler.h>
 
 #include <glm/gtc/constants.hpp>
 #include <imgui.h>
@@ -33,11 +23,9 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 #ifndef CUBEY_CLOUD_SHADER_DIR
 #error "CUBEY_CLOUD_SHADER_DIR must be defined by the cloud CMake target"
@@ -53,32 +41,6 @@ constexpr float kCameraDragRadiansPerPixel = 0.006F;
 constexpr float kSurfaceMinPitchRadians = -1.50F;
 constexpr float kSurfaceMaxPitchRadians = 1.35F;
 constexpr float kOrbitMaxLatitudeRadians = 1.30F;
-constexpr std::uint32_t kCloudComputeGroupSize = cubey::render::kCloudLayerComputeGroupSize;
-constexpr std::uint32_t kCloudVolumeGroupSize = cubey::render::kCloudLayerVolumeGroupSize;
-constexpr std::uint32_t kCloudUniformBinding = cubey::render::kCloudLayerUniformBinding;
-constexpr std::uint32_t kCloudOutputBinding = cubey::render::kCloudLayerOutputBinding;
-constexpr std::uint32_t kCloudBaseNoiseBinding = cubey::render::kCloudLayerBaseNoiseBinding;
-constexpr std::uint32_t kCloudDetailNoiseBinding = cubey::render::kCloudLayerDetailNoiseBinding;
-constexpr std::uint32_t kCloudWeatherBinding = cubey::render::kCloudLayerWeatherBinding;
-constexpr std::uint32_t kCloudMetadataBinding = cubey::render::kCloudLayerMetadataBinding;
-constexpr std::uint32_t kCloudCompositeCloudBinding =
-    cubey::render::kCloudLayerCompositeCloudBinding;
-constexpr std::uint32_t kCloudCompositeMetadataBinding =
-    cubey::render::kCloudLayerCompositeMetadataBinding;
-constexpr std::uint32_t kCloudTemporalCurrentCloudBinding =
-    cubey::render::kCloudLayerTemporalCurrentCloudBinding;
-constexpr std::uint32_t kCloudTemporalCurrentMetadataBinding =
-    cubey::render::kCloudLayerTemporalCurrentMetadataBinding;
-constexpr std::uint32_t kCloudTemporalHistoryCloudBinding =
-    cubey::render::kCloudLayerTemporalHistoryCloudBinding;
-constexpr std::uint32_t kCloudTemporalHistoryMetadataBinding =
-    cubey::render::kCloudLayerTemporalHistoryMetadataBinding;
-constexpr std::uint32_t kCloudTemporalUniformBinding =
-    cubey::render::kCloudLayerTemporalUniformBinding;
-constexpr std::uint32_t kCloudTemporalOutputBinding =
-    cubey::render::kCloudLayerTemporalOutputBinding;
-constexpr std::uint32_t kCloudTemporalOutputMetadataBinding =
-    cubey::render::kCloudLayerTemporalOutputMetadataBinding;
 
 constexpr std::array<CloudsCameraMode, 6> kCloudCameraModes{
     CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
@@ -154,8 +116,6 @@ constexpr std::array<CloudsDebugView, 43> kCloudDebugViews{
 };
 
 using CloudFrameUniforms = cubey::render::CloudLayerFrameUniforms;
-using CloudTemporalUniforms = cubey::render::CloudLayerTemporalUniforms;
-using CloudWeatherPushConstants = cubey::render::CloudLayerWeatherPushConstants;
 
 struct CloudViewBasis {
     cubey::math::Vec3 position{0.0F, 0.0F, 0.0F};
@@ -171,48 +131,29 @@ enum class CloudTargetMode : std::uint8_t {
 
 struct CloudFrameGraph {
     cubey::render::CompiledRenderGraph graph{};
-    cubey::render::RenderGraphTextureHandle cloud_product{};
-    cubey::render::RenderGraphTextureHandle cloud_metadata{};
-    cubey::render::RenderGraphTextureHandle history_cloud_read{};
-    cubey::render::RenderGraphTextureHandle history_metadata_read{};
-    cubey::render::RenderGraphTextureHandle history_cloud_write{};
-    cubey::render::RenderGraphTextureHandle history_metadata_write{};
-    cubey::render::RenderGraphTextureHandle resolved_cloud_product{};
-    cubey::render::RenderGraphTextureHandle resolved_cloud_metadata{};
-    bool temporal_pass_enabled = false;
-    std::uint32_t history_write_index = 0;
+    cubey::render::CloudLayerRuntimeFrame cloud{};
 };
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_CLOUD_SHADER_DIR) / filename;
 }
 
-[[nodiscard]] cubey::vulkan::SamplerConfig cloud_repeat_sampler_config(
-    std::uint32_t mip_levels = 1) {
+[[nodiscard]] cubey::render::CloudLayerRuntimeShaderFiles cloud_runtime_shader_files() {
     return {
-        .min_filter = VK_FILTER_LINEAR,
-        .mag_filter = VK_FILTER_LINEAR,
-        .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        .min_lod = 0.0F,
-        .max_lod = static_cast<float>(std::max(1U, mip_levels) - 1U),
+        .generated =
+            {
+                .base_noise =
+                    cubey::render::compute_shader_file(shader_path("cloud_perlin_worley.comp.spv")),
+                .detail_noise =
+                    cubey::render::compute_shader_file(shader_path("cloud_worley.comp.spv")),
+                .weather = cubey::render::compute_shader_file(shader_path("cloud_weather.comp.spv")),
+            },
+        .march = cubey::render::compute_shader_file(shader_path("cloud_march.comp.spv")),
+        .temporal = cubey::render::compute_shader_file(shader_path("cloud_temporal.comp.spv")),
+        .composite_vertex = cubey::render::vertex_shader_file(shader_path("cloud.vert.spv")),
+        .composite_fragment =
+            cubey::render::fragment_shader_file(shader_path("cloud_composite.frag.spv")),
     };
-}
-
-[[nodiscard]] cubey::render::MaterialPassInfo cloud_march_pass_info() {
-    return cubey::render::cloud_layer_march_pass_info();
-}
-
-[[nodiscard]] cubey::render::MaterialPassInfo cloud_composite_pass_info() {
-    return cubey::render::cloud_layer_composite_pass_info();
-}
-
-[[nodiscard]] cubey::render::MaterialPassInfo cloud_temporal_pass_info() {
-    return cubey::render::cloud_layer_temporal_pass_info();
-}
-
-[[nodiscard]] cubey::render::RenderGraphTextureState cloud_sampled_texture_state() {
-    return cubey::render::cloud_layer_sampled_texture_state();
 }
 
 [[nodiscard]] cubey::render::RenderGraphTextureState
@@ -227,18 +168,6 @@ cloud_target_final_state(CloudTargetMode mode) {
     return mode == CloudTargetMode::Present
                ? cubey::render::render_graph_present_texture_state()
                : cubey::render::render_graph_color_attachment_texture_state();
-}
-
-[[nodiscard]] cubey::render::RenderGraphTextureDesc
-cloud_color_texture_desc(std::string label, VkExtent2D extent) {
-    return cubey::render::cloud_layer_color_texture_desc(std::move(label), extent);
-}
-
-[[nodiscard]] VkExtent2D cloud_product_extent(VkExtent2D target_extent,
-                                                  CloudsQuality quality) {
-    return cubey::render::cloud_layer_product_extent(
-        target_extent,
-        static_cast<cubey::render::CloudLayerQuality>(static_cast<std::uint32_t>(quality)));
 }
 
 [[nodiscard]] bool cloud_camera_mode_is_orbit(CloudsCameraMode mode) {
@@ -411,52 +340,6 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     };
 }
 
-[[nodiscard]] CloudWeatherPushConstants cloud_weather_push_constants(const CloudsConfig& config) {
-    return cubey::render::cloud_layer_weather_push_constants(cloud_layer_config(config, 0.0F));
-}
-
-[[nodiscard]] bool cloud_weather_generation_equal(const CloudWeatherPushConstants& lhs,
-                                                  const CloudWeatherPushConstants& rhs) {
-    return cubey::render::cloud_layer_weather_generation_equal(lhs, rhs);
-}
-
-[[nodiscard]] bool cloud_extent_equal(VkExtent2D lhs, VkExtent2D rhs) {
-    return lhs.width == rhs.width && lhs.height == rhs.height;
-}
-
-[[nodiscard]] bool cloud_near(float lhs, float rhs, float tolerance = 0.001F) {
-    return std::abs(lhs - rhs) <= tolerance;
-}
-
-[[nodiscard]] bool cloud_near(cubey::math::Vec4 lhs, cubey::math::Vec4 rhs,
-                              float tolerance = 0.001F) {
-    return cloud_near(lhs.x, rhs.x, tolerance) && cloud_near(lhs.y, rhs.y, tolerance) &&
-           cloud_near(lhs.z, rhs.z, tolerance) && cloud_near(lhs.w, rhs.w, tolerance);
-}
-
-[[nodiscard]] bool cloud_history_uniforms_compatible(const CloudFrameUniforms& previous,
-                                                     const CloudFrameUniforms& current) {
-    const cubey::math::Vec4 previous_weather_static{previous.weather.x, previous.weather.y,
-                                                    previous.weather.z, 0.0F};
-    const cubey::math::Vec4 current_weather_static{current.weather.x, current.weather.y,
-                                                   current.weather.z, 0.0F};
-    return cloud_near(previous.cloud_shell, current.cloud_shell) &&
-           cloud_near(previous_weather_static, current_weather_static) &&
-           cloud_near(previous.sun_direction_intensity, current.sun_direction_intensity) &&
-           cloud_near(previous.ref_options, current.ref_options) &&
-           cloud_near(previous.shape_options, current.shape_options) &&
-           cloud_near(previous.weather_feature_weights, current.weather_feature_weights) &&
-           cloud_near(previous.cloud_color_top_shadow, current.cloud_color_top_shadow) &&
-           cloud_near(previous.cloud_color_bottom_horizon, current.cloud_color_bottom_horizon) &&
-           cloud_near(previous.lighting_strengths, current.lighting_strengths) &&
-           cloud_near(previous.composite_options, current.composite_options) &&
-           cloud_near(previous.sampling_options, current.sampling_options) &&
-           cloud_near(previous.background_options, current.background_options) &&
-           cloud_near(previous.distance_options, current.distance_options) &&
-           cloud_near(previous.orbit_options, current.orbit_options) &&
-           cloud_near(previous.orbit_shell_options, current.orbit_shell_options);
-}
-
 [[nodiscard]] CloudFrameUniforms cloud_frame_uniforms(const CloudsConfig& config,
                                                             VkExtent2D target_extent,
                                                             float yaw, float pitch,
@@ -478,152 +361,6 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
             .temporal_frame_index = temporal_frame_index,
             .camera_mode = cloud_camera_shader_mode(config.camera_mode),
         });
-}
-
-[[nodiscard]] cubey::render::Texture3DConfig cloud_volume_texture_config(
-    std::uint32_t size) {
-    const std::uint32_t mip_levels = cloud_generated_volume_mip_count(size);
-    return {
-        .extent = {size, size, size},
-        .mip_levels = mip_levels,
-        .format = cubey::render::kCloudLayerNoiseFormat,
-        .create_sampler = true,
-        .sampler = cloud_repeat_sampler_config(mip_levels),
-    };
-}
-
-[[nodiscard]] cubey::render::Texture2DConfig cloud_weather_texture_config() {
-    return {
-        .extent = {kCloudWeatherTextureSize, kCloudWeatherTextureSize},
-        .format = cubey::render::kCloudLayerNoiseFormat,
-        .usage = cubey::render::Texture2DUsage::StorageSampled,
-        .create_sampler = true,
-        .sampler = cloud_repeat_sampler_config(),
-    };
-}
-
-[[nodiscard]] cubey::render::Texture2DConfig cloud_history_texture_config(VkExtent2D extent) {
-    return {
-        .extent = extent,
-        .format = cubey::render::kCloudLayerColorFormat,
-        .usage = cubey::render::Texture2DUsage::StorageSampled,
-        .create_sampler = false,
-        .sampler = {},
-    };
-}
-
-template <typename PushConstants>
-void generate_storage_texture(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-                              const char* label, const std::filesystem::path& shader,
-                              VkImage image, VkImageView view, PushConstants push_constants,
-                              cubey::render::ComputeDispatchGroups groups) {
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 0,
-            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-        },
-    }};
-    const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings);
-    cubey::vulkan::DescriptorSetBundle descriptors(device, descriptor_info);
-    cubey::vulkan::DescriptorWriteBatch writes;
-    writes.storage_image(descriptors.set(), 0, view, VK_IMAGE_LAYOUT_GENERAL);
-    writes.update(device);
-
-    const std::array<VkDescriptorSetLayout, 1> layouts{descriptors.layout()};
-    const VkPushConstantRange push_constant_range{
-        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-        .offset = 0,
-        .size = sizeof(PushConstants),
-    };
-    const std::array<VkPushConstantRange, 1> push_constant_ranges{push_constant_range};
-    const cubey::render::ComputePipelineResource pipeline(
-        device, cubey::render::ComputePipelineResourceConfig{
-                    .shader_stage = cubey::render::compute_shader_file(shader),
-                    .descriptor_set_layouts = layouts,
-                    .push_constants = push_constant_ranges,
-                });
-
-    static_cast<void>(gpu.submit_and_wait(cubey::vulkan::GpuWorkRequest{
-        .label = label,
-        .work =
-            [image, &pipeline, descriptor_set = descriptors.set(), push_constants,
-             groups](cubey::vulkan::GpuOwnerContext& context) {
-                cubey::vulkan::ImmediateCommands commands(context);
-                const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
-                recorder.transition_image_layout(
-                    cubey::vulkan::begin_storage_image_write_transition(image));
-                cubey::render::record_compute_pipeline_dispatch(
-                    recorder,
-                    cubey::render::compute_pipeline_dispatch_info(pipeline, descriptor_set,
-                                                                  groups),
-                    VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
-                recorder.transition_image_layout(
-                    cubey::vulkan::finish_storage_image_write_for_sampling_transition(image));
-                commands.submit_and_wait();
-            },
-    }));
-}
-
-void generate_storage_volume_texture(const cubey::vulkan::Device& device,
-                                     cubey::vulkan::GpuRuntime& gpu, const char* label,
-                                     const std::filesystem::path& shader,
-                                     const cubey::render::Texture3D& texture,
-                                     cubey::render::ComputeDispatchGroups groups) {
-    const cubey::vulkan::ImageView storage_view(
-        device, cubey::vulkan::ImageViewConfig{
-                    .image = texture.handle(),
-                    .format = texture.format(),
-                    .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .view_type = VK_IMAGE_VIEW_TYPE_3D,
-                    .base_mip_level = 0,
-                    .level_count = 1,
-                });
-
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{{
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = 0,
-            .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-        },
-    }};
-    const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings);
-    cubey::vulkan::DescriptorSetBundle descriptors(device, descriptor_info);
-    cubey::vulkan::DescriptorWriteBatch writes;
-    writes.storage_image(descriptors.set(), 0, storage_view.handle(), VK_IMAGE_LAYOUT_GENERAL);
-    writes.update(device);
-
-    const std::array<VkDescriptorSetLayout, 1> layouts{descriptors.layout()};
-    const cubey::render::ComputePipelineResource pipeline(
-        device, cubey::render::ComputePipelineResourceConfig{
-                    .shader_stage = cubey::render::compute_shader_file(shader),
-                    .descriptor_set_layouts = layouts,
-                });
-
-    static_cast<void>(gpu.submit_and_wait(cubey::vulkan::GpuWorkRequest{
-        .label = label,
-        .work =
-            [&texture, &pipeline, descriptor_set = descriptors.set(),
-             groups](cubey::vulkan::GpuOwnerContext& context) {
-                cubey::vulkan::ImmediateCommands commands(context);
-                const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
-                recorder.transition_image_layout(
-                    cubey::vulkan::begin_storage_image_write_transition(texture.handle()));
-                cubey::render::record_compute_pipeline_dispatch(
-                    recorder,
-                    cubey::render::compute_pipeline_dispatch_info(pipeline, descriptor_set,
-                                                                  groups));
-                if (texture.mip_levels() > 1U) {
-                    cubey::render::record_generate_texture_3d_mips(
-                        commands.command_buffer(), texture, VK_IMAGE_LAYOUT_GENERAL);
-                } else {
-                    recorder.transition_image_layout(
-                        cubey::vulkan::finish_storage_image_write_for_sampling_transition(
-                            texture.handle()));
-                }
-                commands.submit_and_wait();
-            },
-    }));
 }
 
 class CloudApp {
@@ -776,8 +513,6 @@ class CloudApp {
     }
 
     void draw_ui() {
-        const CloudWeatherPushConstants before_weather =
-            cloud_weather_push_constants(config_);
         ImGui::SetNextWindowPos(ImVec2(12.0F, 12.0F), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(420.0F, 650.0F), ImGuiCond_FirstUseEver);
         if (!ImGui::Begin("Cloud")) {
@@ -883,11 +618,6 @@ class CloudApp {
         ImGui::Text("Weather texture: %u x %u", kCloudWeatherTextureSize,
                     kCloudWeatherTextureSize);
         ImGui::End();
-        const CloudWeatherPushConstants after_weather =
-            cloud_weather_push_constants(config_);
-        if (!cloud_weather_generation_equal(before_weather, after_weather)) {
-            weather_texture_dirty_ = true;
-        }
     }
 
     template <typename T, std::size_t N, typename NameFn>
@@ -923,508 +653,67 @@ class CloudApp {
         yaw_ = 0.0F;
         pitch_ = cloud_clamp_pitch(config_.camera_mode, 0.0F);
         elapsed_seconds_ = 0.0F;
-        invalidate_cloud_history();
-    }
-
-    void invalidate_cloud_history() {
-        for (std::array<bool, 2>& valid : cloud_history_texture_valid_) {
-            valid = {false, false};
-        }
-        std::fill(cloud_history_read_indices_.begin(), cloud_history_read_indices_.end(), 0U);
-        for (std::optional<CloudFrameUniforms>& frame_state : cloud_history_frame_states_) {
-            frame_state.reset();
-        }
-    }
-
-    void create_cloud_history_textures(const cubey::vulkan::Device& device, VkExtent2D extent,
-                                       std::uint32_t frame_slot_count) {
-        cloud_history_textures_.clear();
-        cloud_history_metadata_textures_.clear();
-        cloud_history_read_indices_.assign(frame_slot_count, 0U);
-        cloud_history_texture_valid_.assign(frame_slot_count, {false, false});
-        cloud_history_frame_states_.assign(frame_slot_count, std::nullopt);
-        cloud_history_textures_.resize(frame_slot_count);
-        cloud_history_metadata_textures_.resize(frame_slot_count);
-        for (std::array<std::optional<cubey::render::Texture2D>, 2>& slot_textures :
-             cloud_history_textures_) {
-            for (std::optional<cubey::render::Texture2D>& texture : slot_textures) {
-                texture.emplace(device, cloud_history_texture_config(extent));
-            }
-        }
-        for (std::array<std::optional<cubey::render::Texture2D>, 2>& slot_textures :
-             cloud_history_metadata_textures_) {
-            for (std::optional<cubey::render::Texture2D>& texture : slot_textures) {
-                texture.emplace(device, cloud_history_texture_config(extent));
-            }
-        }
-    }
-
-    [[nodiscard]] const cubey::render::Texture2D&
-    cloud_history_texture(cubey::render::FrameSlot frame_slot, std::uint32_t ping_pong) const {
-        if (frame_slot.index >= cloud_history_textures_.size() || ping_pong >= 2U ||
-            !cloud_history_textures_[frame_slot.index][ping_pong].has_value()) {
-            throw std::runtime_error("cloud history texture is not initialized");
-        }
-        return cloud_history_textures_[frame_slot.index][ping_pong].value();
-    }
-
-    [[nodiscard]] const cubey::render::Texture2D&
-    cloud_history_metadata_texture(cubey::render::FrameSlot frame_slot,
-                                   std::uint32_t ping_pong) const {
-        if (frame_slot.index >= cloud_history_metadata_textures_.size() || ping_pong >= 2U ||
-            !cloud_history_metadata_textures_[frame_slot.index][ping_pong].has_value()) {
-            throw std::runtime_error("cloud metadata history texture is not initialized");
-        }
-        return cloud_history_metadata_textures_[frame_slot.index][ping_pong].value();
-    }
-
-    [[nodiscard]] bool
-    cloud_history_texture_valid(cubey::render::FrameSlot frame_slot,
-                                std::uint32_t ping_pong) const noexcept {
-        return frame_slot.index < cloud_history_texture_valid_.size() && ping_pong < 2U &&
-               cloud_history_texture_valid_[frame_slot.index][ping_pong];
-    }
-
-    [[nodiscard]] bool cloud_history_extent_matches(VkExtent2D extent) const noexcept {
-        if (cloud_history_textures_.empty() ||
-            cloud_history_textures_.front().front() == std::nullopt) {
-            return false;
-        }
-        return cloud_extent_equal(cloud_history_textures_.front().front()->extent(), extent);
+        cloud_runtime_.invalidate_history();
     }
 
     void create_global_resources(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu) {
-        if (base_noise_.has_value()) {
+        if (cloud_global_resources_created_) {
             return;
         }
-
-        base_noise_.emplace(device, cloud_volume_texture_config(kCloudBaseNoiseSize));
-        detail_noise_.emplace(device, cloud_volume_texture_config(kCloudDetailNoiseSize));
-        weather_texture_.emplace(device, cloud_weather_texture_config());
-
-        generate_storage_volume_texture(
-            device, gpu, "cloud generate base noise",
-            shader_path("cloud_perlin_worley.comp.spv"), base_noise_.value(),
-            cubey::render::ceil_dispatch_groups(kCloudBaseNoiseSize, kCloudBaseNoiseSize,
-                                                kCloudBaseNoiseSize, kCloudVolumeGroupSize));
-        generate_storage_volume_texture(
-            device, gpu, "cloud generate detail noise", shader_path("cloud_worley.comp.spv"),
-            detail_noise_.value(),
-            cubey::render::ceil_dispatch_groups(kCloudDetailNoiseSize, kCloudDetailNoiseSize,
-                                                kCloudDetailNoiseSize, kCloudVolumeGroupSize));
-        generate_storage_texture(
-            device, gpu, "cloud generate weather", shader_path("cloud_weather.comp.spv"),
-            weather_texture_->handle(), weather_texture_->view(),
-            cloud_weather_push_constants(config_),
-            cubey::render::ceil_dispatch_groups(kCloudWeatherTextureSize,
-                                                kCloudWeatherTextureSize, kCloudComputeGroupSize));
-        last_weather_generation_ = cloud_weather_push_constants(config_);
-        weather_texture_dirty_ = false;
+        cloud_runtime_.create_generated_resources(device, gpu, cloud_runtime_shader_files().generated,
+                                                  cloud_layer_config(config_, elapsed_seconds_));
+        cloud_global_resources_created_ = true;
     }
 
     void destroy_global_resources() {
-        weather_texture_.reset();
-        detail_noise_.reset();
-        base_noise_.reset();
-        weather_texture_dirty_ = true;
-        last_weather_generation_.reset();
+        cloud_runtime_.destroy_generated_resources();
+        cloud_global_resources_created_ = false;
     }
 
     void refresh_weather_texture_if_needed(const cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& gpu) {
-        if (!weather_texture_.has_value()) {
+        if (!cloud_global_resources_created_) {
             return;
         }
-        const CloudWeatherPushConstants current = cloud_weather_push_constants(config_);
-        if (!weather_texture_dirty_ && last_weather_generation_.has_value() &&
-            cloud_weather_generation_equal(last_weather_generation_.value(), current)) {
-            return;
-        }
-        generate_storage_texture(
-            device, gpu, "cloud regenerate weather", shader_path("cloud_weather.comp.spv"),
-            weather_texture_->handle(), weather_texture_->view(), current,
-            cubey::render::ceil_dispatch_groups(kCloudWeatherTextureSize,
-                                                kCloudWeatherTextureSize, kCloudComputeGroupSize));
-        last_weather_generation_ = current;
-        weather_texture_dirty_ = false;
+        cloud_runtime_.update_weather_texture(device, gpu,
+                                              cloud_runtime_shader_files().generated.weather,
+                                              cloud_layer_config(config_, elapsed_seconds_));
     }
 
     void destroy_swapchain_resources() {
         graph_executor_.clear();
-        composite_sampler_.reset();
-        temporal_material_.reset();
-        march_material_.reset();
-        composite_material_.reset();
-        temporal_pipeline_.reset();
-        march_pipeline_.reset();
-        composite_pipeline_.reset();
-        cloud_history_textures_.clear();
-        cloud_history_metadata_textures_.clear();
-        cloud_history_read_indices_.clear();
-        cloud_history_texture_valid_.clear();
-        cloud_history_frame_states_.clear();
-        temporal_uniforms_.reset();
-        frame_uniforms_.reset();
+        cloud_runtime_.destroy_swapchain_resources();
     }
 
     void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
                          std::uint32_t frame_slot_count) {
         graph_executor_.resize(frame_slot_count);
-        frame_uniforms_.emplace(device, frame_slot_count);
-        temporal_uniforms_.emplace(device, frame_slot_count);
-
-        const cubey::render::MaterialPassInfo march_pass = cloud_march_pass_info();
-        march_material_.emplace(device, cubey::render::MaterialInstanceConfig{
-                                            .material_pass = march_pass,
-                                            .descriptor_set = 0,
-                                            .set_count = frame_slot_count,
-                                        });
-        const std::array<VkDescriptorSetLayout, 1> march_layouts{march_material_->layout()};
-        march_pipeline_.emplace(device, cubey::render::ComputePipelineResourceConfig{
-                                            .shader_stage = cubey::render::compute_shader_file(
-                                                shader_path("cloud_march.comp.spv")),
-                                            .descriptor_set_layouts = march_layouts,
-                                        });
-
-        const cubey::render::MaterialPassInfo temporal_pass = cloud_temporal_pass_info();
-        temporal_material_.emplace(device, cubey::render::MaterialInstanceConfig{
-                                               .material_pass = temporal_pass,
-                                               .descriptor_set = 0,
-                                               .set_count = frame_slot_count,
-                                           });
-        const std::array<VkDescriptorSetLayout, 1> temporal_layouts{
-            temporal_material_->layout()};
-        temporal_pipeline_.emplace(device, cubey::render::ComputePipelineResourceConfig{
-                                               .shader_stage = cubey::render::compute_shader_file(
-                                                   shader_path("cloud_temporal.comp.spv")),
-                                               .descriptor_set_layouts = temporal_layouts,
-                                           });
-        create_cloud_history_textures(device, cloud_product_extent(extent, config_.quality),
-                                      frame_slot_count);
-
-        const cubey::render::MaterialPassInfo composite_pass = cloud_composite_pass_info();
-        composite_material_.emplace(device, cubey::render::MaterialInstanceConfig{
-                                                .material_pass = composite_pass,
-                                                .descriptor_set = 0,
-                                                .set_count = frame_slot_count,
-                                            });
-        composite_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
-                                               .min_filter = VK_FILTER_LINEAR,
-                                               .mag_filter = VK_FILTER_LINEAR,
-                                               .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                                           });
-        const std::array<VkDescriptorSetLayout, 1> composite_layouts{
-            composite_material_->layout()};
-        const std::array<cubey::render::ShaderStageFile, 2> composite_shaders{
-            cubey::render::vertex_shader_file(shader_path("cloud.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("cloud_composite.frag.spv")),
-        };
-        composite_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                                .extent = extent,
-                                                .color_format = color_format,
-                                                .shader_stage_files = composite_shaders,
-                                                .descriptor_set_layouts = composite_layouts,
-                                                .material_pass = composite_pass,
-                                            });
-    }
-
-    [[nodiscard]] const cubey::render::Texture3D& base_noise() const {
-        if (!base_noise_.has_value()) {
-            throw std::runtime_error("cloud base noise texture is not initialized");
-        }
-        return base_noise_.value();
-    }
-
-    [[nodiscard]] const cubey::render::Texture3D& detail_noise() const {
-        if (!detail_noise_.has_value()) {
-            throw std::runtime_error("cloud detail noise texture is not initialized");
-        }
-        return detail_noise_.value();
-    }
-
-    [[nodiscard]] const cubey::render::Texture2D& weather_texture() const {
-        if (!weather_texture_.has_value()) {
-            throw std::runtime_error("cloud weather texture is not initialized");
-        }
-        return weather_texture_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::Sampler& composite_sampler() const {
-        if (!composite_sampler_.has_value()) {
-            throw std::runtime_error("cloud composite sampler is not initialized");
-        }
-        return composite_sampler_.value();
-    }
-
-    [[nodiscard]] const cubey::render::FrameUniformBuffer<CloudFrameUniforms>&
-    frame_uniforms() const {
-        if (!frame_uniforms_.has_value()) {
-            throw std::runtime_error("cloud uniforms are not initialized");
-        }
-        return frame_uniforms_.value();
-    }
-
-    [[nodiscard]] const cubey::render::FrameUniformBuffer<CloudTemporalUniforms>&
-    temporal_uniforms() const {
-        if (!temporal_uniforms_.has_value()) {
-            throw std::runtime_error("cloud temporal uniforms are not initialized");
-        }
-        return temporal_uniforms_.value();
-    }
-
-    [[nodiscard]] const cubey::render::ComputePipelineResource& march_pipeline() const {
-        if (!march_pipeline_.has_value()) {
-            throw std::runtime_error("cloud march pipeline is not initialized");
-        }
-        return march_pipeline_.value();
-    }
-
-    [[nodiscard]] const cubey::render::ComputePipelineResource& temporal_pipeline() const {
-        if (!temporal_pipeline_.has_value()) {
-            throw std::runtime_error("cloud temporal pipeline is not initialized");
-        }
-        return temporal_pipeline_.value();
-    }
-
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& composite_pipeline() const {
-        if (!composite_pipeline_.has_value()) {
-            throw std::runtime_error("cloud composite pipeline is not initialized");
-        }
-        return composite_pipeline_.value();
-    }
-
-    [[nodiscard]] const cubey::render::MaterialInstance& march_material() const {
-        if (!march_material_.has_value()) {
-            throw std::runtime_error("cloud march material is not initialized");
-        }
-        return march_material_.value();
-    }
-
-    [[nodiscard]] const cubey::render::MaterialInstance& temporal_material() const {
-        if (!temporal_material_.has_value()) {
-            throw std::runtime_error("cloud temporal material is not initialized");
-        }
-        return temporal_material_.value();
-    }
-
-    [[nodiscard]] const cubey::render::MaterialInstance& composite_material() const {
-        if (!composite_material_.has_value()) {
-            throw std::runtime_error("cloud composite material is not initialized");
-        }
-        return composite_material_.value();
+        cloud_runtime_.create_swapchain_resources(
+            device, cloud_runtime_shader_files(), cubey::render::CloudLayerCompositeMode::Standalone,
+            color_format, extent, frame_slot_count, cloud_layer_config(config_, elapsed_seconds_));
     }
 
     [[nodiscard]] CloudFrameUniforms current_frame_uniforms(VkExtent2D target_extent) const {
         return cloud_frame_uniforms(config_, target_extent, yaw_, pitch_, elapsed_seconds_,
-                                    temporal_frame_index_);
-    }
-
-    void upload_uniforms(cubey::render::FrameSlot frame_slot, VkExtent2D target_extent) const {
-        frame_uniforms().upload(frame_slot, current_frame_uniforms(target_extent));
-    }
-
-    void record_cloud_dispatch(const cubey::vulkan::CommandRecorder& recorder,
-                               VkDescriptorSet descriptor_set, VkExtent2D extent) const {
-        cubey::render::record_compute_pipeline_dispatch(
-            recorder,
-            cubey::render::compute_pipeline_dispatch_info(
-                march_pipeline(), descriptor_set,
-                cubey::render::ceil_dispatch_groups(extent.width, extent.height,
-                                                    kCloudComputeGroupSize)));
-    }
-
-    [[nodiscard]] CloudTemporalUniforms temporal_frame_uniforms(
-        cubey::render::FrameSlot frame_slot, VkExtent2D target_extent,
-        std::uint32_t history_read_index) const {
-        const CloudFrameUniforms current = current_frame_uniforms(target_extent);
-        const bool has_frame_state = frame_slot.index < cloud_history_frame_states_.size() &&
-                                     cloud_history_frame_states_[frame_slot.index].has_value();
-        const bool reset =
-            !cloud_history_texture_valid(frame_slot, history_read_index) || !has_frame_state ||
-            !cloud_history_uniforms_compatible(
-                has_frame_state ? cloud_history_frame_states_[frame_slot.index].value() : current,
-                current);
-        const CloudFrameUniforms previous =
-            reset ? current : cloud_history_frame_states_[frame_slot.index].value();
-        const float current_weight = reset ? 1.0F : current.temporal_options.z;
-        return {
-            .current_camera_right_aspect = current.camera_right_aspect,
-            .current_camera_up_tan_half_fovy = current.camera_up_tan_half_fovy,
-            .current_camera_forward_mode = current.camera_forward_mode,
-            .current_camera_position_radius = current.camera_position_radius,
-            .previous_camera_right_aspect = previous.camera_right_aspect,
-            .previous_camera_up_tan_half_fovy = previous.camera_up_tan_half_fovy,
-            .previous_camera_forward_mode = previous.camera_forward_mode,
-            .previous_camera_position_radius = previous.camera_position_radius,
-            .current_weather = current.weather,
-            .previous_weather = previous.weather,
-            .options =
-                {
-                    current_weight,
-                    reset ? 1.0F : 0.0F,
-                    current.temporal_options.y,
-                    current.temporal_options.x,
-                },
-        };
-    }
-
-    void upload_temporal_uniforms(cubey::render::FrameSlot frame_slot, VkExtent2D target_extent,
-                                  std::uint32_t history_read_index) const {
-        temporal_uniforms().upload(
-            frame_slot, temporal_frame_uniforms(frame_slot, target_extent, history_read_index));
-    }
-
-    void record_temporal_dispatch(const cubey::vulkan::CommandRecorder& recorder,
-                                  VkDescriptorSet descriptor_set, VkExtent2D extent) const {
-        cubey::render::record_compute_pipeline_dispatch(
-            recorder,
-            cubey::render::compute_pipeline_dispatch_info(
-                temporal_pipeline(), descriptor_set,
-                cubey::render::ceil_dispatch_groups(extent.width, extent.height,
-                                                    kCloudComputeGroupSize)));
-    }
-
-    void record_composite_draw(const cubey::vulkan::CommandRecorder& recorder,
-                               const cubey::render::ColorTargetView& target,
-                               cubey::render::FrameSlot frame_slot) const {
-        cubey::render::record_render_target_pass(
-            recorder, cubey::render::render_target_view(target),
-            cubey::render::RenderClearValues{
-                .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
-            },
-            [this, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
-                cubey::render::record_fullscreen_pipeline_draw(
-                    pass_recorder,
-                    {.pipeline = &composite_pipeline(),
-                     .descriptor_set = composite_material().set(frame_slot)});
-            });
+                                    cloud_runtime_.temporal_frame_index());
     }
 
     [[nodiscard]] CloudFrameGraph build_frame_graph(cubey::render::ColorTargetView target,
                                                        cubey::render::FrameSlot frame_slot,
-                                                       CloudTargetMode mode) const {
+                                                       CloudTargetMode mode,
+                                                       CloudFrameUniforms uniforms) const {
         cubey::render::RenderGraphBuilder graph;
         const cubey::render::RenderGraphTextureHandle backbuffer =
             graph.import_color_target("backbuffer", target, cloud_target_initial_state(mode),
                                       cloud_target_final_state(mode));
-        const VkExtent2D cloud_extent = cloud_product_extent(target.extent, config_.quality);
-        const bool temporal_pass_enabled =
-            config_.temporal_enabled && config_.debug_view == CloudsDebugView::Final &&
-            cloud_history_extent_matches(cloud_extent);
-        const std::uint32_t history_read_index =
-            frame_slot.index < cloud_history_read_indices_.size()
-                ? cloud_history_read_indices_[frame_slot.index]
-                : 0U;
-        const std::uint32_t history_write_index = 1U - history_read_index;
-        const bool history_read_valid =
-            cloud_history_texture_valid(frame_slot, history_read_index);
-        const bool history_write_valid =
-            cloud_history_texture_valid(frame_slot, history_write_index);
-        const cubey::render::RenderGraphTextureState sampled_state =
-            cloud_sampled_texture_state();
-        const cubey::render::RenderGraphTextureHandle cloud_product =
-            graph.create_texture(cloud_color_texture_desc("cloud product", cloud_extent));
-        const cubey::render::RenderGraphTextureHandle cloud_metadata =
-            graph.create_texture(cloud_color_texture_desc("cloud metadata", cloud_extent));
-        graph.add_pass("cloud march", cubey::render::RenderGraphQueueDomain::Compute)
-            .write_storage_texture(cloud_product, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-            .write_storage_texture(cloud_metadata, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-            .execute([this, cloud_product, cloud_metadata, frame_slot, cloud_extent](
-                         const cubey::render::RenderGraphExecutionContext& context) {
-                static_cast<void>(cloud_product);
-                static_cast<void>(cloud_metadata);
-                record_cloud_dispatch(context.recorder(), march_material().set(frame_slot),
-                                      cloud_extent);
-            });
-
-        cubey::render::RenderGraphTextureHandle resolved_cloud_product = cloud_product;
-        cubey::render::RenderGraphTextureHandle resolved_cloud_metadata = cloud_metadata;
-        cubey::render::RenderGraphTextureHandle history_cloud_read{};
-        cubey::render::RenderGraphTextureHandle history_metadata_read{};
-        cubey::render::RenderGraphTextureHandle history_cloud_write{};
-        cubey::render::RenderGraphTextureHandle history_metadata_write{};
-        if (temporal_pass_enabled) {
-            const cubey::render::Texture2D& read_texture =
-                cloud_history_texture(frame_slot, history_read_index);
-            history_cloud_read = graph.import_texture(
-                cloud_color_texture_desc("cloud history read", cloud_extent),
-                read_texture.handle(), read_texture.view(),
-                history_read_valid
-                    ? std::optional<cubey::render::RenderGraphTextureState>{sampled_state}
-                    : std::optional<cubey::render::RenderGraphTextureState>{
-                          cubey::render::render_graph_undefined_texture_state()},
-                sampled_state);
-            const cubey::render::Texture2D& metadata_read_texture =
-                cloud_history_metadata_texture(frame_slot, history_read_index);
-            history_metadata_read = graph.import_texture(
-                cloud_color_texture_desc("cloud metadata history read", cloud_extent),
-                metadata_read_texture.handle(), metadata_read_texture.view(),
-                history_read_valid
-                    ? std::optional<cubey::render::RenderGraphTextureState>{sampled_state}
-                    : std::optional<cubey::render::RenderGraphTextureState>{
-                          cubey::render::render_graph_undefined_texture_state()},
-                sampled_state);
-            const cubey::render::Texture2D& write_texture =
-                cloud_history_texture(frame_slot, history_write_index);
-            history_cloud_write = graph.import_texture(
-                cloud_color_texture_desc("cloud history write", cloud_extent),
-                write_texture.handle(), write_texture.view(),
-                history_write_valid
-                    ? std::optional<cubey::render::RenderGraphTextureState>{sampled_state}
-                    : std::optional<cubey::render::RenderGraphTextureState>{
-                          cubey::render::render_graph_undefined_texture_state()},
-                sampled_state);
-            const cubey::render::Texture2D& metadata_write_texture =
-                cloud_history_metadata_texture(frame_slot, history_write_index);
-            history_metadata_write = graph.import_texture(
-                cloud_color_texture_desc("cloud metadata history write", cloud_extent),
-                metadata_write_texture.handle(), metadata_write_texture.view(),
-                history_write_valid
-                    ? std::optional<cubey::render::RenderGraphTextureState>{sampled_state}
-                    : std::optional<cubey::render::RenderGraphTextureState>{
-                          cubey::render::render_graph_undefined_texture_state()},
-                sampled_state);
-            graph.add_pass("cloud temporal", cubey::render::RenderGraphQueueDomain::Compute)
-                .read_texture(cloud_product, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-                .read_texture(cloud_metadata, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-                .read_texture(history_cloud_read, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-                .read_texture(history_metadata_read, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-                .write_storage_texture(history_cloud_write, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-                .write_storage_texture(history_metadata_write,
-                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-                .execute([this, frame_slot, cloud_extent, target_extent = target.extent,
-                          history_read_index](const cubey::render::RenderGraphExecutionContext&
-                                                  context) {
-                    upload_temporal_uniforms(frame_slot, target_extent, history_read_index);
-                    record_temporal_dispatch(context.recorder(), temporal_material().set(frame_slot),
-                                             cloud_extent);
-                });
-            resolved_cloud_product = history_cloud_write;
-            resolved_cloud_metadata = history_metadata_write;
-        }
-        graph.add_pass("cloud composite", cubey::render::RenderGraphQueueDomain::Graphics)
-            .read_texture(resolved_cloud_product)
-            .read_texture(resolved_cloud_metadata)
-            .write_color(backbuffer)
-            .execute([this, backbuffer, frame_slot](
-                         const cubey::render::RenderGraphExecutionContext& context) {
-                record_composite_draw(context.recorder(),
-                                      cubey::render::resolved_color_target_view(context, backbuffer),
-                                      frame_slot);
-            });
+        cubey::render::CloudLayerRuntimeFrame cloud_frame = cloud_runtime_.declare_product(
+            graph, target.extent, cloud_layer_config(config_, elapsed_seconds_), frame_slot,
+            uniforms);
+        cloud_runtime_.declare_composite(graph, backbuffer, cloud_frame, frame_slot);
         return {
             .graph = graph.compile(),
-            .cloud_product = cloud_product,
-            .cloud_metadata = cloud_metadata,
-            .history_cloud_read = history_cloud_read,
-            .history_metadata_read = history_metadata_read,
-            .history_cloud_write = history_cloud_write,
-            .history_metadata_write = history_metadata_write,
-            .resolved_cloud_product = resolved_cloud_product,
-            .resolved_cloud_metadata = resolved_cloud_metadata,
-            .temporal_pass_enabled = temporal_pass_enabled,
-            .history_write_index = history_write_index,
+            .cloud = cloud_frame,
         };
     }
 
@@ -1433,8 +722,9 @@ class CloudApp {
                        cubey::render::FrameSlot frame_slot, CloudTargetMode mode,
                        cubey::render::RenderGraphCommandBufferMode command_buffer_mode,
                        const char* label) {
-        upload_uniforms(frame_slot, target.extent);
-        const CloudFrameGraph frame_graph = build_frame_graph(target, frame_slot, mode);
+        const CloudFrameUniforms uniforms = current_frame_uniforms(target.extent);
+        cloud_runtime_.upload_frame_uniforms(frame_slot, uniforms);
+        const CloudFrameGraph frame_graph = build_frame_graph(target, frame_slot, mode, uniforms);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &device,
@@ -1446,105 +736,10 @@ class CloudApp {
             frame_graph.graph,
             [this, &device, frame_slot,
              &frame_graph](const cubey::render::RenderGraphResourceSet& graph_resources) {
-                const cubey::render::RenderGraphSampledTextureView cloud_product =
-                    cubey::render::resolved_sampled_texture_view(
-                        frame_graph.graph, graph_resources, frame_graph.cloud_product);
-                const cubey::render::RenderGraphSampledTextureView cloud_metadata =
-                    cubey::render::resolved_sampled_texture_view(
-                        frame_graph.graph, graph_resources, frame_graph.cloud_metadata);
-                const cubey::render::RenderGraphSampledTextureView resolved_cloud_product =
-                    cubey::render::resolved_sampled_texture_view(
-                        frame_graph.graph, graph_resources, frame_graph.resolved_cloud_product);
-                const cubey::render::RenderGraphSampledTextureView resolved_cloud_metadata =
-                    cubey::render::resolved_sampled_texture_view(
-                        frame_graph.graph, graph_resources, frame_graph.resolved_cloud_metadata);
-                cubey::render::MaterialDescriptorWriter(march_material().set(frame_slot))
-                    .uniform_buffer(kCloudUniformBinding,
-                                    frame_uniforms().buffer(frame_slot).handle(),
-                                    frame_uniforms().range())
-                    .storage_image(kCloudOutputBinding, cloud_product.view,
-                                   VK_IMAGE_LAYOUT_GENERAL)
-                    .combined_image_sampler(kCloudBaseNoiseBinding,
-                                            base_noise().sampler().handle(), base_noise().view())
-                    .combined_image_sampler(kCloudDetailNoiseBinding,
-                                            detail_noise().sampler().handle(),
-                                            detail_noise().view())
-                    .combined_image_sampler(kCloudWeatherBinding,
-                                            weather_texture().sampler().handle(),
-                                            weather_texture().view())
-                    .storage_image(kCloudMetadataBinding, cloud_metadata.view,
-                                   VK_IMAGE_LAYOUT_GENERAL)
-                    .update(device);
-                if (frame_graph.temporal_pass_enabled) {
-                    const cubey::render::RenderGraphSampledTextureView history_cloud_read =
-                        cubey::render::resolved_sampled_texture_view(
-                            frame_graph.graph, graph_resources, frame_graph.history_cloud_read);
-                    const cubey::render::RenderGraphSampledTextureView history_metadata_read =
-                        cubey::render::resolved_sampled_texture_view(
-                            frame_graph.graph, graph_resources,
-                            frame_graph.history_metadata_read);
-                    const cubey::render::RenderGraphSampledTextureView history_cloud_write =
-                        cubey::render::resolved_sampled_texture_view(
-                            frame_graph.graph, graph_resources, frame_graph.history_cloud_write);
-                    const cubey::render::RenderGraphSampledTextureView history_metadata_write =
-                        cubey::render::resolved_sampled_texture_view(
-                            frame_graph.graph, graph_resources,
-                            frame_graph.history_metadata_write);
-                    cubey::render::MaterialDescriptorWriter(temporal_material().set(frame_slot))
-                        .combined_image_sampler(kCloudTemporalCurrentCloudBinding,
-                                                composite_sampler().handle(), cloud_product.view,
-                                                cloud_product.layout)
-                        .combined_image_sampler(kCloudTemporalCurrentMetadataBinding,
-                                                composite_sampler().handle(), cloud_metadata.view,
-                                                cloud_metadata.layout)
-                        .combined_image_sampler(kCloudTemporalHistoryCloudBinding,
-                                                composite_sampler().handle(),
-                                                history_cloud_read.view,
-                                                history_cloud_read.layout)
-                        .combined_image_sampler(kCloudTemporalHistoryMetadataBinding,
-                                                composite_sampler().handle(),
-                                                history_metadata_read.view,
-                                                history_metadata_read.layout)
-                        .uniform_buffer(kCloudTemporalUniformBinding,
-                                        temporal_uniforms().buffer(frame_slot).handle(),
-                                        temporal_uniforms().range())
-                        .storage_image(kCloudTemporalOutputBinding, history_cloud_write.view,
-                                       VK_IMAGE_LAYOUT_GENERAL)
-                        .storage_image(kCloudTemporalOutputMetadataBinding,
-                                       history_metadata_write.view, VK_IMAGE_LAYOUT_GENERAL)
-                        .update(device);
-                }
-                cubey::render::MaterialDescriptorWriter(composite_material().set(frame_slot))
-                    .uniform_buffer(kCloudUniformBinding,
-                                    frame_uniforms().buffer(frame_slot).handle(),
-                                    frame_uniforms().range())
-                    .combined_image_sampler(kCloudCompositeCloudBinding,
-                                            composite_sampler().handle(),
-                                            resolved_cloud_product.view,
-                                            resolved_cloud_product.layout)
-                    .combined_image_sampler(kCloudCompositeMetadataBinding,
-                                            composite_sampler().handle(),
-                                            resolved_cloud_metadata.view,
-                                            resolved_cloud_metadata.layout)
-                    .update(device);
+                cloud_runtime_.update_descriptors(device, frame_slot, frame_graph.graph,
+                                                  graph_resources, frame_graph.cloud);
             });
-        if (frame_graph.temporal_pass_enabled &&
-            frame_slot.index < cloud_history_texture_valid_.size() &&
-            frame_slot.index < cloud_history_read_indices_.size()) {
-            cloud_history_texture_valid_[frame_slot.index][frame_graph.history_write_index] = true;
-            cloud_history_read_indices_[frame_slot.index] = frame_graph.history_write_index;
-            if (frame_slot.index < cloud_history_frame_states_.size()) {
-                cloud_history_frame_states_[frame_slot.index] =
-                    current_frame_uniforms(target.extent);
-            }
-        } else if (!frame_graph.temporal_pass_enabled &&
-                   frame_slot.index < cloud_history_texture_valid_.size()) {
-            cloud_history_texture_valid_[frame_slot.index] = {false, false};
-            if (frame_slot.index < cloud_history_frame_states_.size()) {
-                cloud_history_frame_states_[frame_slot.index].reset();
-            }
-        }
-        ++temporal_frame_index_;
+        cloud_runtime_.complete_frame(frame_slot, frame_graph.cloud);
     }
 
     void record_windowed_frame(cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
@@ -1571,28 +766,9 @@ class CloudApp {
     float elapsed_seconds_ = 0.0F;
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
-    std::optional<cubey::render::Texture3D> base_noise_{};
-    std::optional<cubey::render::Texture3D> detail_noise_{};
-    std::optional<cubey::render::Texture2D> weather_texture_{};
-    std::optional<CloudWeatherPushConstants> last_weather_generation_{};
-    bool weather_texture_dirty_ = true;
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
-    std::optional<cubey::vulkan::Sampler> composite_sampler_{};
-    std::optional<cubey::render::FrameUniformBuffer<CloudFrameUniforms>> frame_uniforms_{};
-    std::optional<cubey::render::FrameUniformBuffer<CloudTemporalUniforms>> temporal_uniforms_{};
-    std::optional<cubey::render::MaterialInstance> march_material_{};
-    std::optional<cubey::render::MaterialInstance> temporal_material_{};
-    std::optional<cubey::render::MaterialInstance> composite_material_{};
-    std::optional<cubey::render::ComputePipelineResource> march_pipeline_{};
-    std::optional<cubey::render::ComputePipelineResource> temporal_pipeline_{};
-    std::optional<cubey::render::GraphicsPipelineResource> composite_pipeline_{};
-    std::vector<std::array<std::optional<cubey::render::Texture2D>, 2>> cloud_history_textures_{};
-    std::vector<std::array<std::optional<cubey::render::Texture2D>, 2>>
-        cloud_history_metadata_textures_{};
-    std::vector<std::uint32_t> cloud_history_read_indices_{};
-    std::vector<std::array<bool, 2>> cloud_history_texture_valid_{};
-    std::vector<std::optional<CloudFrameUniforms>> cloud_history_frame_states_{};
-    std::uint32_t temporal_frame_index_ = 0;
+    cubey::render::CloudLayerRuntime cloud_runtime_{};
+    bool cloud_global_resources_created_ = false;
 };
 
 } // namespace

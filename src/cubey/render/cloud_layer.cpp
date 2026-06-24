@@ -568,6 +568,10 @@ void CloudLayerRuntime::create_generated_resources(const cubey::vulkan::Device& 
                                                                              config));
 }
 
+void CloudLayerRuntime::destroy_generated_resources() {
+    generated_.reset();
+}
+
 void CloudLayerRuntime::update_weather_texture(const cubey::vulkan::Device& device,
                                                cubey::vulkan::GpuRuntime& gpu,
                                                const ShaderStageFile& shader,

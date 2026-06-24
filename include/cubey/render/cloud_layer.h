@@ -324,6 +324,7 @@ class CloudLayerRuntime {
                                     cubey::vulkan::GpuRuntime& gpu,
                                     const CloudLayerGeneratedShaderFiles& shaders,
                                     const CloudLayerConfig& config);
+    void destroy_generated_resources();
     void update_weather_texture(const cubey::vulkan::Device& device,
                                 cubey::vulkan::GpuRuntime& gpu, const ShaderStageFile& shader,
                                 const CloudLayerConfig& config, bool force = false);
@@ -354,6 +355,7 @@ class CloudLayerRuntime {
                             const RenderGraphResourceSet& resources,
                             const CloudLayerRuntimeFrame& frame,
                             std::optional<RenderGraphTextureHandle> background = std::nullopt) const;
+    void invalidate_history();
     void complete_frame(FrameSlot frame_slot, const CloudLayerRuntimeFrame& frame);
 
   private:
@@ -379,7 +381,6 @@ class CloudLayerRuntime {
 
     void create_history_textures(const cubey::vulkan::Device& device, VkExtent2D extent,
                                  std::uint32_t frame_slot_count);
-    void invalidate_history();
     void record_march_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                                VkDescriptorSet descriptor_set, VkExtent2D extent) const;
     void record_temporal_dispatch(const cubey::vulkan::CommandRecorder& recorder,
