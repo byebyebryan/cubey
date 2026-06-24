@@ -1,7 +1,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
-#include "cloud_common.glsl"
+#include "cubey/cloud/cloud_common.glsl"
 
 layout(set = 0, binding = 1) uniform sampler2D cloud_product_texture;
 layout(set = 0, binding = 2) uniform sampler2D cloud_metadata_texture;

@@ -9,20 +9,19 @@ cubey_add_app_target(
         cloud_config.cpp
         main.cpp
     SHADERS
-        shaders/cloud.vert
-        shaders/cloud_composite.frag
-        shaders/cloud_march.comp
-        shaders/cloud_perlin_worley.comp
-        shaders/cloud_temporal.comp
-        shaders/cloud_weather.comp
-        shaders/cloud_worley.comp
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_march.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_perlin_worley.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_temporal.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_worley.comp"
     SHADER_INCLUDE_DIRS
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_common.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_noise_common.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cloud_weather_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_noise_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"

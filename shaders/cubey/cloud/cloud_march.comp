@@ -5,8 +5,8 @@
 // Core path: spherical shell march, Perlin-Worley base density, Worley erosion,
 // Beer transmittance, Bayer jitter, and short cone light march.
 
-#include "cloud_common.glsl"
-#include "cloud_weather_common.glsl"
+#include "cubey/cloud/cloud_common.glsl"
+#include "cubey/cloud/cloud_weather_common.glsl"
 #include "cubey/procedural/noise.glsl"
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
