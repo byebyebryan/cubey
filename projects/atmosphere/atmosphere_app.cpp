@@ -87,9 +87,8 @@ struct CompiledAtmosphereGraph {
     cubey::render::CompiledRenderGraph graph{};
     cubey::render::RenderGraphTextureHandle post_scene_color{};
     cubey::render::RenderGraphTextureHandle atmosphere_scene_color{};
-    cubey::render::RenderGraphTextureHandle cloud_product{};
-    cubey::render::RenderGraphTextureHandle cloud_metadata{};
     cubey::render::RenderGraphTextureHandle cloud_scene_color{};
+    cubey::render::CloudLayerRuntimeFrame cloud{};
     bool clouds_enabled = false;
 };
 
@@ -97,11 +96,21 @@ std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_ATMOSPHERE_SHADER_DIR) / filename;
 }
 
-[[nodiscard]] cubey::render::CloudLayerGeneratedShaderFiles cloud_generated_shader_files() {
+[[nodiscard]] cubey::render::CloudLayerRuntimeShaderFiles cloud_runtime_shader_files() {
     return {
-        .base_noise = cubey::render::compute_shader_file(shader_path("cloud_perlin_worley.comp.spv")),
-        .detail_noise = cubey::render::compute_shader_file(shader_path("cloud_worley.comp.spv")),
-        .weather = cubey::render::compute_shader_file(shader_path("cloud_weather.comp.spv")),
+        .generated =
+            {
+                .base_noise =
+                    cubey::render::compute_shader_file(shader_path("cloud_perlin_worley.comp.spv")),
+                .detail_noise =
+                    cubey::render::compute_shader_file(shader_path("cloud_worley.comp.spv")),
+                .weather = cubey::render::compute_shader_file(shader_path("cloud_weather.comp.spv")),
+            },
+        .march = cubey::render::compute_shader_file(shader_path("cloud_march.comp.spv")),
+        .temporal = cubey::render::compute_shader_file(shader_path("cloud_temporal.comp.spv")),
+        .composite_vertex = cubey::render::vertex_shader_file(shader_path("cloud.vert.spv")),
+        .composite_fragment =
+            cubey::render::fragment_shader_file(shader_path("cloud_composite_background.frag.spv")),
     };
 }
 
@@ -195,6 +204,7 @@ class AtmosphereApp {
         };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
+            refresh_cloud_weather_if_needed(context.device(), context.gpu());
             record_windowed_frame(context.device(), frame);
         };
         callbacks.frame_stats_sample =
@@ -238,6 +248,7 @@ class AtmosphereApp {
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
             update_headless_time(frame);
+            refresh_cloud_weather_if_needed(context.device(), context.gpu());
             record_atmosphere_target(context.device(), command_buffer, target, frame.frame_slot);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
@@ -393,32 +404,22 @@ class AtmosphereApp {
     }
 
     void create_cloud_resources(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
-        cloud_generated_.emplace(cubey::render::create_cloud_layer_generated_resources(
-            device, gpu, cloud_generated_shader_files(), atmosphere_cloud_config(0.0F)));
+        if (cloud_global_resources_created_) {
+            return;
+        }
+        cloud_runtime_.create_generated_resources(device, gpu, cloud_runtime_shader_files().generated,
+                                                  atmosphere_cloud_config(cloud_elapsed_seconds_));
+        cloud_global_resources_created_ = true;
     }
 
-    void create_cloud_materials(const cubey::vulkan::Device& device,
-                                std::uint32_t frame_slot_count) {
-        cloud_frame_uniforms_.emplace(device, frame_slot_count);
-        cloud_march_material_.emplace(
-            device, cubey::render::MaterialInstanceConfig{
-                        .material_pass = cubey::render::cloud_layer_march_pass_info(),
-                        .descriptor_set = 0,
-                        .set_count = frame_slot_count,
-                    });
-        cloud_composite_material_.emplace(
-            device, cubey::render::MaterialInstanceConfig{
-                        .material_pass = cubey::render::cloud_layer_composite_pass_info(
-                            true),
-                        .descriptor_set = 0,
-                        .set_count = frame_slot_count,
-                    });
-        cloud_composite_sampler_.emplace(
-            device, cubey::vulkan::SamplerConfig{
-                        .min_filter = VK_FILTER_LINEAR,
-                        .mag_filter = VK_FILTER_LINEAR,
-                        .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                    });
+    void refresh_cloud_weather_if_needed(cubey::vulkan::Device& device,
+                                         cubey::vulkan::GpuRuntime& gpu) {
+        if (!cloud_global_resources_created_) {
+            return;
+        }
+        cloud_runtime_.update_weather_texture(device, gpu,
+                                              cloud_runtime_shader_files().generated.weather,
+                                              atmosphere_cloud_config(cloud_elapsed_seconds_));
     }
 
     void upload_lunar_surface_map(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
@@ -444,7 +445,6 @@ class AtmosphereApp {
         hdr_post_frame_.create_materials(device, {
                                                      .frame_slot_count = frame_slot_count,
                                                  });
-        create_cloud_materials(device, frame_slot_count);
         graph_executor_.resize(frame_slot_count);
     }
 
@@ -607,32 +607,11 @@ class AtmosphereApp {
     }
 
     void create_cloud_pipelines(const cubey::vulkan::Device& device, VkExtent2D extent) {
-        const std::array<VkDescriptorSetLayout, 1> march_layouts{
-            cloud_march_material().layout()};
-        cloud_march_pipeline_.emplace(
-            device, cubey::render::ComputePipelineResourceConfig{
-                        .shader_stage =
-                            cubey::render::compute_shader_file(shader_path("cloud_march.comp.spv")),
-                        .descriptor_set_layouts = march_layouts,
-                    });
-
-        const cubey::render::MaterialPassInfo composite_pass =
-            cubey::render::cloud_layer_composite_pass_info(true);
-        const std::array<VkDescriptorSetLayout, 1> composite_layouts{
-            cloud_composite_material().layout()};
-        const std::array<cubey::render::ShaderStageFile, 2> composite_shaders{
-            cubey::render::vertex_shader_file(shader_path("cloud.vert.spv")),
-            cubey::render::fragment_shader_file(
-                shader_path("cloud_composite_background.frag.spv")),
-        };
-        cloud_composite_pipeline_.emplace(
-            device, cubey::render::GraphicsPipelineFileResourceConfig{
-                        .extent = extent,
-                        .color_format = kAtmosphereSceneColorFormat,
-                        .shader_stage_files = composite_shaders,
-                        .descriptor_set_layouts = composite_layouts,
-                        .material_pass = composite_pass,
-                    });
+        cloud_runtime_.create_swapchain_resources(
+            device, cloud_runtime_shader_files(),
+            cubey::render::CloudLayerCompositeMode::ExternalBackground,
+            kAtmosphereSceneColorFormat, extent, graph_executor_.frame_slot_count(),
+            atmosphere_cloud_config(cloud_elapsed_seconds_));
     }
 
     void create_moon_mesh_if_needed(cubey::vulkan::GpuRuntime& gpu) {
@@ -685,8 +664,7 @@ class AtmosphereApp {
         }
         hdr_post_frame_.destroy_pipeline();
         moon_body_frame_.destroy_pipeline();
-        cloud_composite_pipeline_.reset();
-        cloud_march_pipeline_.reset();
+        cloud_runtime_.destroy_swapchain_resources();
         atmosphere_background_.destroy_pipeline();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     }
@@ -695,11 +673,9 @@ class AtmosphereApp {
         shutdown_atlas_jobs();
         graph_executor_.clear();
         hdr_post_frame_.destroy();
-        cloud_composite_material_.reset();
-        cloud_march_material_.reset();
-        cloud_frame_uniforms_.reset();
-        cloud_composite_sampler_.reset();
-        cloud_generated_.reset();
+        cloud_runtime_.destroy_swapchain_resources();
+        cloud_runtime_.destroy_generated_resources();
+        cloud_global_resources_created_ = false;
         moon_body_frame_.destroy();
         atmosphere_background_.destroy();
         moon_mesh_.reset();
@@ -754,6 +730,7 @@ class AtmosphereApp {
                 .sun_direction = cubey::render::atmosphere_environment_sun_direction(environment),
                 .sun_intensity = 1.0F,
                 .target_extent = extent,
+                .temporal_frame_index = cloud_runtime_.temporal_frame_index(),
                 .camera_mode = 0.0F,
             });
     }
@@ -774,36 +751,6 @@ class AtmosphereApp {
 
     [[nodiscard]] bool cloud_layer_enabled() const noexcept {
         return render_view_ == AtmosphereRenderView::Final;
-    }
-
-    void upload_cloud_uniforms(cubey::render::FrameSlot frame_slot, VkExtent2D extent) const {
-        cloud_frame_uniform_buffer().upload(frame_slot, cloud_frame_uniforms(extent));
-    }
-
-    void record_cloud_dispatch(const cubey::vulkan::CommandRecorder& recorder,
-                               VkDescriptorSet descriptor_set, VkExtent2D extent) const {
-        cubey::render::record_compute_pipeline_dispatch(
-            recorder,
-            cubey::render::compute_pipeline_dispatch_info(
-                cloud_march_pipeline(), descriptor_set,
-                cubey::render::ceil_dispatch_groups(
-                    extent.width, extent.height, cubey::render::kCloudLayerComputeGroupSize)));
-    }
-
-    void record_cloud_composite_draw(const cubey::vulkan::CommandRecorder& recorder,
-                                     const cubey::render::ColorTargetView& target,
-                                     cubey::render::FrameSlot frame_slot) const {
-        cubey::render::record_render_target_pass(
-            recorder, cubey::render::render_target_view(target),
-            cubey::render::RenderClearValues{
-                .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
-            },
-            [this, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
-                cubey::render::record_fullscreen_pipeline_draw(
-                    pass_recorder,
-                    {.pipeline = &cloud_composite_pipeline(),
-                     .descriptor_set = cloud_composite_material().set(frame_slot)});
-            });
     }
 
     void record_atmosphere_post_pass(const cubey::vulkan::CommandRecorder& recorder,
@@ -929,7 +876,8 @@ class AtmosphereApp {
     [[nodiscard]] CompiledAtmosphereGraph
     current_render_graph(cubey::render::ColorTargetView target, cubey::render::FrameSlot frame_slot,
                          cubey::render::RenderGraphTextureState target_initial_state,
-                         cubey::render::RenderGraphTextureState target_final_state) const {
+                         cubey::render::RenderGraphTextureState target_final_state,
+                         std::optional<cubey::render::CloudLayerFrameUniforms> cloud_uniforms) const {
         cubey::render::RenderGraphBuilder graph;
         const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
             "backbuffer", target, target_initial_state, target_final_state);
@@ -937,9 +885,8 @@ class AtmosphereApp {
             graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
                 "atmosphere scene color", target.extent, kAtmosphereSceneColorFormat));
         cubey::render::RenderGraphTextureHandle post_scene_color = scene_color;
-        cubey::render::RenderGraphTextureHandle cloud_product{};
-        cubey::render::RenderGraphTextureHandle cloud_metadata{};
         cubey::render::RenderGraphTextureHandle cloud_scene_color{};
+        cubey::render::CloudLayerRuntimeFrame cloud_frame{};
 
         graph.add_pass("atmosphere sky", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(scene_color)
@@ -963,43 +910,16 @@ class AtmosphereApp {
                         frame_slot);
                 });
         }
-        const bool clouds_enabled = cloud_layer_enabled();
+        const bool clouds_enabled = cloud_layer_enabled() && cloud_uniforms.has_value();
         if (clouds_enabled) {
-            const VkExtent2D cloud_extent = cubey::render::cloud_layer_product_extent(
-                target.extent, cubey::render::CloudLayerQuality::Half);
-            cloud_product = graph.create_texture(
-                cubey::render::cloud_layer_color_texture_desc("atmosphere cloud product",
-                                                              cloud_extent));
-            cloud_metadata = graph.create_texture(
-                cubey::render::cloud_layer_color_texture_desc("atmosphere cloud metadata",
-                                                              cloud_extent));
             cloud_scene_color =
                 graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
                     "atmosphere cloud scene color", target.extent, kAtmosphereSceneColorFormat));
-
-            graph.add_pass("atmosphere cloud march",
-                           cubey::render::RenderGraphQueueDomain::Compute)
-                .write_storage_texture(cloud_product, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-                .write_storage_texture(cloud_metadata, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-                .execute([this, cloud_extent,
-                          frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
-                    record_cloud_dispatch(context.recorder(), cloud_march_material().set(frame_slot),
-                                          cloud_extent);
-                });
-            graph.add_pass("atmosphere cloud composite",
-                           cubey::render::RenderGraphQueueDomain::Graphics)
-                .read_texture(scene_color)
-                .read_texture(cloud_product)
-                .read_texture(cloud_metadata)
-                .write_color(cloud_scene_color)
-                .material_pass(cubey::render::cloud_layer_composite_pass_info(true))
-                .execute([this, cloud_scene_color,
-                          frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
-                    record_cloud_composite_draw(
-                        context.recorder(),
-                        cubey::render::resolved_color_target_view(context, cloud_scene_color),
-                        frame_slot);
-                });
+            cloud_frame = cloud_runtime_.declare_product(
+                graph, target.extent, atmosphere_cloud_config(cloud_elapsed_seconds_), frame_slot,
+                cloud_uniforms.value());
+            cloud_runtime_.declare_composite(graph, cloud_scene_color, cloud_frame, frame_slot,
+                                             scene_color);
             post_scene_color = cloud_scene_color;
         }
         graph.add_pass("atmosphere post", cubey::render::RenderGraphQueueDomain::Graphics)
@@ -1015,9 +935,8 @@ class AtmosphereApp {
             .graph = graph.compile(),
             .post_scene_color = post_scene_color,
             .atmosphere_scene_color = scene_color,
-            .cloud_product = cloud_product,
-            .cloud_metadata = cloud_metadata,
             .cloud_scene_color = cloud_scene_color,
+            .cloud = cloud_frame,
             .clouds_enabled = clouds_enabled,
         };
     }
@@ -1038,11 +957,13 @@ class AtmosphereApp {
                                  cubey::render::RenderGraphTextureState target_final_state,
                                  cubey::render::RenderGraphCommandBufferMode command_buffer_mode) {
         hdr_post_frame_.upload(frame_slot, post_uniforms());
+        std::optional<cubey::render::CloudLayerFrameUniforms> cloud_uniforms{};
         if (cloud_layer_enabled()) {
-            upload_cloud_uniforms(frame_slot, target.extent);
+            cloud_uniforms = cloud_frame_uniforms(target.extent);
+            cloud_runtime_.upload_frame_uniforms(frame_slot, cloud_uniforms.value());
         }
-        const CompiledAtmosphereGraph render_graph =
-            current_render_graph(target, frame_slot, target_initial_state, target_final_state);
+        const CompiledAtmosphereGraph render_graph = current_render_graph(
+            target, frame_slot, target_initial_state, target_final_state, cloud_uniforms);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &device,
@@ -1059,51 +980,13 @@ class AtmosphereApp {
                 if (!render_graph.clouds_enabled) {
                     return;
                 }
-                const cubey::render::RenderGraphSampledTextureView cloud_product =
-                    cubey::render::resolved_sampled_texture_view(
-                        render_graph.graph, resources, render_graph.cloud_product);
-                const cubey::render::RenderGraphSampledTextureView cloud_metadata =
-                    cubey::render::resolved_sampled_texture_view(
-                        render_graph.graph, resources, render_graph.cloud_metadata);
-                const cubey::render::RenderGraphSampledTextureView background =
-                    cubey::render::resolved_sampled_texture_view(
-                        render_graph.graph, resources, render_graph.atmosphere_scene_color);
-                const cubey::render::CloudLayerGeneratedResources& generated =
-                    cloud_generated();
-                cubey::render::MaterialDescriptorWriter(cloud_march_material().set(frame_slot))
-                    .uniform_buffer(cubey::render::kCloudLayerUniformBinding,
-                                    cloud_frame_uniform_buffer().buffer(frame_slot).handle(),
-                                    cloud_frame_uniform_buffer().range())
-                    .storage_image(cubey::render::kCloudLayerOutputBinding, cloud_product.view,
-                                   VK_IMAGE_LAYOUT_GENERAL)
-                    .combined_image_sampler(cubey::render::kCloudLayerBaseNoiseBinding,
-                                            generated.base_noise.sampler().handle(),
-                                            generated.base_noise.view())
-                    .combined_image_sampler(cubey::render::kCloudLayerDetailNoiseBinding,
-                                            generated.detail_noise.sampler().handle(),
-                                            generated.detail_noise.view())
-                    .combined_image_sampler(cubey::render::kCloudLayerWeatherBinding,
-                                            generated.weather.sampler().handle(),
-                                            generated.weather.view())
-                    .storage_image(cubey::render::kCloudLayerMetadataBinding,
-                                   cloud_metadata.view, VK_IMAGE_LAYOUT_GENERAL)
-                    .update(device);
-                cubey::render::MaterialDescriptorWriter(
-                    cloud_composite_material().set(frame_slot))
-                    .uniform_buffer(cubey::render::kCloudLayerUniformBinding,
-                                    cloud_frame_uniform_buffer().buffer(frame_slot).handle(),
-                                    cloud_frame_uniform_buffer().range())
-                    .combined_image_sampler(cubey::render::kCloudLayerCompositeCloudBinding,
-                                            cloud_composite_sampler().handle(),
-                                            cloud_product.view, cloud_product.layout)
-                    .combined_image_sampler(cubey::render::kCloudLayerCompositeMetadataBinding,
-                                            cloud_composite_sampler().handle(),
-                                            cloud_metadata.view, cloud_metadata.layout)
-                    .combined_image_sampler(cubey::render::kCloudLayerCompositeBackgroundBinding,
-                                            cloud_composite_sampler().handle(),
-                                            background.view, background.layout)
-                    .update(device);
+                cloud_runtime_.update_descriptors(device, frame_slot, render_graph.graph, resources,
+                                                  render_graph.cloud,
+                                                  render_graph.atmosphere_scene_color);
             });
+        if (render_graph.clouds_enabled) {
+            cloud_runtime_.complete_frame(frame_slot, render_graph.cloud);
+        }
     }
 
     void record_windowed_frame(cubey::vulkan::Device& device,
@@ -1146,58 +1029,6 @@ class AtmosphereApp {
         return moon_mesh_.value();
     }
 
-    [[nodiscard]] const cubey::render::CloudLayerGeneratedResources& cloud_generated() const {
-        if (!cloud_generated_.has_value()) {
-            throw std::runtime_error("atmosphere cloud resources are not initialized");
-        }
-        return cloud_generated_.value();
-    }
-
-    [[nodiscard]] const cubey::render::FrameUniformBuffer<
-        cubey::render::CloudLayerFrameUniforms>&
-    cloud_frame_uniform_buffer() const {
-        if (!cloud_frame_uniforms_.has_value()) {
-            throw std::runtime_error("atmosphere cloud uniforms are not initialized");
-        }
-        return cloud_frame_uniforms_.value();
-    }
-
-    [[nodiscard]] const cubey::render::MaterialInstance& cloud_march_material() const {
-        if (!cloud_march_material_.has_value()) {
-            throw std::runtime_error("atmosphere cloud march material is not initialized");
-        }
-        return cloud_march_material_.value();
-    }
-
-    [[nodiscard]] const cubey::render::MaterialInstance& cloud_composite_material() const {
-        if (!cloud_composite_material_.has_value()) {
-            throw std::runtime_error("atmosphere cloud composite material is not initialized");
-        }
-        return cloud_composite_material_.value();
-    }
-
-    [[nodiscard]] const cubey::render::ComputePipelineResource& cloud_march_pipeline() const {
-        if (!cloud_march_pipeline_.has_value()) {
-            throw std::runtime_error("atmosphere cloud march pipeline is not initialized");
-        }
-        return cloud_march_pipeline_.value();
-    }
-
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& cloud_composite_pipeline()
-        const {
-        if (!cloud_composite_pipeline_.has_value()) {
-            throw std::runtime_error("atmosphere cloud composite pipeline is not initialized");
-        }
-        return cloud_composite_pipeline_.value();
-    }
-
-    [[nodiscard]] const cubey::vulkan::Sampler& cloud_composite_sampler() const {
-        if (!cloud_composite_sampler_.has_value()) {
-            throw std::runtime_error("atmosphere cloud composite sampler is not initialized");
-        }
-        return cloud_composite_sampler_.value();
-    }
-
     RunConfig run_config_;
     AtmosphereConfig atmosphere_config_;
     AtmosphereRenderView render_view_ = AtmosphereRenderView::Final;
@@ -1224,14 +1055,8 @@ class AtmosphereApp {
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_;
     cubey::render::CelestialBodyFrame moon_body_frame_;
     cubey::render::HdrPostFrame hdr_post_frame_;
-    std::optional<cubey::render::CloudLayerGeneratedResources> cloud_generated_;
-    std::optional<cubey::render::FrameUniformBuffer<cubey::render::CloudLayerFrameUniforms>>
-        cloud_frame_uniforms_;
-    std::optional<cubey::render::MaterialInstance> cloud_march_material_;
-    std::optional<cubey::render::MaterialInstance> cloud_composite_material_;
-    std::optional<cubey::render::ComputePipelineResource> cloud_march_pipeline_;
-    std::optional<cubey::render::GraphicsPipelineResource> cloud_composite_pipeline_;
-    std::optional<cubey::vulkan::Sampler> cloud_composite_sampler_;
+    cubey::render::CloudLayerRuntime cloud_runtime_{};
+    bool cloud_global_resources_created_ = false;
     std::optional<cubey::render::Mesh> moon_mesh_;
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
     cubey::jobs::JobSystem atlas_jobs_{2};
