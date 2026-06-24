@@ -75,6 +75,16 @@ struct Crater {
     return degrees * kPi / 180.0F;
 }
 
+[[nodiscard]] Vec3 rotate_x(Vec3 value, float angle) {
+    const float s = std::sin(angle);
+    const float c = std::cos(angle);
+    return {
+        value.x,
+        value.y * c - value.z * s,
+        value.y * s + value.z * c,
+    };
+}
+
 [[nodiscard]] Vec3 rotate_y(Vec3 value, float angle) {
     const float s = std::sin(angle);
     const float c = std::cos(angle);
@@ -111,6 +121,10 @@ struct Crater {
     const float longitude = (u - 0.5F) * kTwoPi;
     const float latitude = (0.5F - v) * kPi;
     return direction_from_lon_lat(longitude, latitude);
+}
+
+[[nodiscard]] Vec3 near_side_surface_direction(Vec3 direction) {
+    return normalize(rotate_x(direction, radians(-20.0F)));
 }
 
 [[nodiscard]] std::uint32_t seed32(std::string_view domain) {
@@ -428,7 +442,8 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     for (std::uint32_t y = 0; y < height; ++y) {
         for (std::uint32_t x = 0; x < width; ++x) {
             const std::size_t index = texel_index(x, y, width);
-            directions[index] = direction_for_texel(x, y, width, height);
+            directions[index] =
+                near_side_surface_direction(direction_for_texel(x, y, width, height));
             const MareField field = mare_field(directions[index]);
             const SurfaceSample sample =
                 sample_surface(directions[index], field, std::span<const Crater>{craters});
@@ -478,7 +493,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v13", "render.lunar_surface_map",
+            "lunar-surface-map-v14", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,
