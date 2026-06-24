@@ -75,6 +75,26 @@ struct Crater {
     return degrees * kPi / 180.0F;
 }
 
+[[nodiscard]] Vec3 rotate_y(Vec3 value, float angle) {
+    const float s = std::sin(angle);
+    const float c = std::cos(angle);
+    return {
+        value.x * c + value.z * s,
+        value.y,
+        -value.x * s + value.z * c,
+    };
+}
+
+[[nodiscard]] Vec3 rotate_z(Vec3 value, float angle) {
+    const float s = std::sin(angle);
+    const float c = std::cos(angle);
+    return {
+        value.x * c - value.y * s,
+        value.x * s + value.y * c,
+        value.z,
+    };
+}
+
 [[nodiscard]] Vec3 direction_from_lon_lat(float longitude_radians, float latitude_radians) {
     const float horizontal = std::cos(latitude_radians);
     return {
@@ -136,11 +156,23 @@ struct Crater {
     return normalize({direction.x * nx, direction.y * ny, direction.z * nz});
 }
 
+[[nodiscard]] Vec3 mare_field_direction(Vec3 direction) {
+    // Rotate only the mare noise domain so broad plains land on the generated near-side face.
+    return normalize(rotate_y(rotate_z(direction, radians(-38.0F)), radians(26.0F)));
+}
+
 [[nodiscard]] MareField mare_field(Vec3 direction) {
+    const Vec3 mare_direction = mare_field_direction(direction);
     const Vec3 broad_warp = normalize({
-        direction.x + (fbm(direction, 1.05F, "body-space mare warp x", 4U, 0.52F) - 0.5F) * 0.18F,
-        direction.y + (fbm(direction, 1.05F, "body-space mare warp y", 4U, 0.52F) - 0.5F) * 0.18F,
-        direction.z + (fbm(direction, 1.05F, "body-space mare warp z", 4U, 0.52F) - 0.5F) * 0.18F,
+        mare_direction.x +
+            (fbm(mare_direction, 1.05F, "body-space mare warp x", 4U, 0.52F) - 0.5F) *
+                0.18F,
+        mare_direction.y +
+            (fbm(mare_direction, 1.05F, "body-space mare warp y", 4U, 0.52F) - 0.5F) *
+                0.18F,
+        mare_direction.z +
+            (fbm(mare_direction, 1.05F, "body-space mare warp z", 4U, 0.52F) - 0.5F) *
+                0.18F,
     });
     const Vec3 warped = normalize({
         broad_warp.x +
@@ -150,13 +182,19 @@ struct Crater {
         broad_warp.z +
             (fbm(broad_warp, 2.4F, "body-space mare lobe warp z", 3U, 0.48F) - 0.5F) * 0.06F,
     });
+    const float basin = fbm(warped, 0.78F, "body-space near-side mare mass", 5U, 0.60F);
     const float broad = fbm(warped, 1.35F, "body-space broad mare field", 5U, 0.58F);
     const float lobe = fbm(warped, 1.95F, "body-space mare lobe field", 4U, 0.52F);
-    const float field = broad * 0.90F + lobe * 0.10F;
-    const float coverage = smoothstep(0.04F, 0.46F, field);
+    const float near_side_bias = smoothstep(-0.04F, 0.74F, direction.x);
+    const float center_lift =
+        near_side_bias * smoothstep(-0.22F, 0.78F, mare_direction.x) * 0.075F;
+    const float limb_fade = mix(0.72F, 1.0F, near_side_bias);
+    const float field =
+        (basin * 0.28F + broad * 0.66F + lobe * 0.06F + center_lift) * limb_fade;
+    const float coverage = smoothstep(0.01F, 0.43F, field);
     return {
         .coverage = coverage,
-        .fill = smoothstep(0.16F, 0.78F, coverage) * 0.92F,
+        .fill = smoothstep(0.12F, 0.74F, coverage) * 0.95F,
     };
 }
 
@@ -265,10 +303,10 @@ struct SurfaceSample {
     const float mare_plains = fbm(material, 1.7F, "mare basalt plains", 4U, 0.50F);
     const float mare_mottling = fbm(material, 12.0F, "mare subtle mottling", 3U, 0.42F);
     const float highlands =
-        0.635F + broad * 0.088F + mid * 0.055F + fine * 0.030F + highland_pores * 0.032F +
+        0.650F + broad * 0.088F + mid * 0.055F + fine * 0.030F + highland_pores * 0.032F +
         normal_tone * 0.036F;
     const float mare =
-        0.290F + mare_plains * 0.032F + mare_mottling * 0.015F + fine * 0.006F +
+        0.255F + mare_plains * 0.032F + mare_mottling * 0.015F + fine * 0.006F +
         normal_tone * 0.030F;
 
     float albedo = mix(highlands, mare, mare_fill) * surface_tone_multiplier;
@@ -440,7 +478,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v11", "render.lunar_surface_map",
+            "lunar-surface-map-v12", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,

@@ -390,7 +390,7 @@ int main() {
         cubey::procedural::validate_procedural_artifact_metadata(default_map.metadata);
         require(default_map.metadata.generator == "cubey::render::generate_lunar_surface_map",
                 "lunar surface map metadata should identify its generator");
-        require(default_map.metadata.formula_version == "lunar-surface-map-v11",
+        require(default_map.metadata.formula_version == "lunar-surface-map-v12",
                 "lunar surface map metadata should identify its formula version");
         require(default_map.metadata.domain == "render.lunar_surface_map",
                 "lunar surface map metadata should identify its domain");
@@ -1026,6 +1026,10 @@ int main() {
                      "lunar surface generation should use body-space procedural mare fields");
     require_contains(lunar_surface_source, "body-space mare warp x",
                      "lunar surface generation should domain-warp the body-space mare field");
+    require_contains(lunar_surface_source, "mare_field_direction",
+                     "lunar surface generation should orient mare fields in body space");
+    require_contains(lunar_surface_source, "near_side_bias",
+                     "lunar surface generation should bias broad maria toward the generated nearside");
     require_contains(lunar_surface_source, "material_direction",
                      "lunar surface generation should perturb sphere-normal material sampling");
     require_contains(lunar_surface_source, "normal-space surface tone",
