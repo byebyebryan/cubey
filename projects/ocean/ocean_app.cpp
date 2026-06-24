@@ -17,6 +17,7 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/cloud_layer.h>
 #include <cubey/render/color_space.h>
 #include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/material_instance.h>
@@ -592,6 +593,19 @@ ocean_terrain_field_uniforms(const cubey::render::TerrainOceanPackedFields& fiel
                 fields.max_abs_shore_sdf_m,
                 fields.max_slope,
                 enabled ? 1.0F : 0.0F,
+            },
+    };
+}
+
+[[nodiscard]] cubey::render::CloudLayerShadowProduct
+ocean_cloud_shadow_diagnostic(const OceanConfig& config) {
+    return {
+        .options =
+            {
+                config.cloud_shadow_strength,
+                config.cloud_shadow_scale_m,
+                config.cloud_shadow_speed_mps,
+                0.0F,
             },
     };
 }
@@ -1302,6 +1316,8 @@ class OceanApp {
 
     [[nodiscard]] OceanSurfaceFeatureUniforms surface_feature_uniforms(
         const OceanSurfaceFrame& surface_frame) const {
+        const cubey::render::CloudLayerShadowProduct cloud_shadow =
+            ocean_cloud_shadow_diagnostic(ocean_config_);
         return {
             .feature_options =
                 {
@@ -1364,14 +1380,14 @@ class OceanApp {
                     ocean_config_.far_field_enabled ? 1.0F : 0.0F,
                     ocean_config_.far_field_start_m,
                     ocean_config_.far_field_end_m,
-                    0.0F,
+                    cloud_shadow.options.x,
                 },
             .far_field_options2 =
                 {
                     ocean_config_.far_roughness_strength,
                     ocean_config_.far_glint_strength,
-                    0.0F,
-                    0.0F,
+                    cloud_shadow.options.y,
+                    cloud_shadow.options.z,
                 },
             .far_detail_options =
                 {
