@@ -2,8 +2,12 @@
 
 #include <cubey/core/math.h>
 #include <cubey/render/material.h>
+#include <cubey/render/pipeline_resource.h>
 #include <cubey/render/render_graph_types.h>
 #include <cubey/render/target.h>
+#include <cubey/render/texture.h>
+#include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/sampler.h>
 
 #include <vulkan/vulkan.h>
@@ -264,8 +268,24 @@ struct CloudLayerReflectionContribution {
     float intensity = 0.0F;
 };
 
+struct CloudLayerGeneratedShaderFiles {
+    ShaderStageFile base_noise{};
+    ShaderStageFile detail_noise{};
+    ShaderStageFile weather{};
+};
+
+struct CloudLayerGeneratedResources {
+    Texture3D base_noise;
+    Texture3D detail_noise;
+    Texture2D weather;
+    CloudLayerWeatherPushConstants weather_generation{};
+};
+
 [[nodiscard]] vulkan::SamplerConfig cloud_layer_repeat_sampler_config(
     std::uint32_t mip_levels = 1);
+[[nodiscard]] std::uint32_t cloud_layer_generated_volume_mip_count(std::uint32_t size);
+[[nodiscard]] Texture3DConfig cloud_layer_volume_texture_config(std::uint32_t size);
+[[nodiscard]] Texture2DConfig cloud_layer_weather_texture_config();
 [[nodiscard]] MaterialPassInfo cloud_layer_march_pass_info();
 [[nodiscard]] MaterialPassInfo cloud_layer_composite_pass_info(bool external_background = false);
 [[nodiscard]] MaterialPassInfo cloud_layer_temporal_pass_info();
@@ -281,5 +301,12 @@ struct CloudLayerReflectionContribution {
 cloud_layer_weather_push_constants(const CloudLayerConfig& config);
 [[nodiscard]] bool cloud_layer_weather_generation_equal(
     const CloudLayerWeatherPushConstants& lhs, const CloudLayerWeatherPushConstants& rhs);
+[[nodiscard]] CloudLayerGeneratedResources create_cloud_layer_generated_resources(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+    const CloudLayerGeneratedShaderFiles& shaders, const CloudLayerConfig& config);
+void update_cloud_layer_weather_texture(const cubey::vulkan::Device& device,
+                                        cubey::vulkan::GpuRuntime& gpu,
+                                        const ShaderStageFile& shader, Texture2D& weather_texture,
+                                        CloudLayerWeatherPushConstants push_constants);
 
 } // namespace cubey::render
