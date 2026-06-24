@@ -34,6 +34,13 @@ still owns presets, UI, debug view selection, generated sky assets, and
 render-graph wiring; the render helpers are intended to be reusable by ocean and
 later terrain/environment work.
 
+Final view also has an early shared cloud-layer smoke path. It uses the
+promoted `cubey::render::CloudLayer*` contracts and `shaders/cubey/cloud/`
+assets to march a conservative half-resolution cloud product, then composites it
+over the clear-sky atmosphere background. Cloud controls, temporal cloud
+history, cloud debug views, cloud shadows, and cloud-driven reflection or
+environment-lighting outputs are still deferred to the cloud foundation work.
+
 Useful runs:
 
 ```sh

@@ -190,6 +190,11 @@ Initial scope:
 - shared `RunConfig` descriptors plus existing ImGui helper controls from the
   start.
 
+The first promotion pass has landed the shared `cubey::render::CloudLayer*`
+contract, common shader assets, shared generated-resource helpers, atmosphere
+backdrop composition smoke, and an ocean cloud-shadow diagnostic. Treat this as
+the boundary layer, not the finished reusable cloud runtime.
+
 Even while standalone, the project must keep planet handoff constraints visible:
 use meters, carry planet radius/cloud-shell metadata explicitly, keep camera GPU
 state camera-relative, and define weather coordinates so they can later map onto
@@ -206,7 +211,8 @@ Deferred until the shape is credible:
 - orbit motion/shimmer review against the satellite capture pack;
 - a stronger planet-scale weather model than fixed experimental synoptic
   anchors, dry slots, and procedural breakup;
-- cloud shadow consumption by ocean/terrain;
+- production cloud shadow consumption by ocean/terrain from a real projected
+  cloud shadow product;
 - full cached octahedral sky blending;
 - temporal reconstruction beyond basic diagnostic toggles;
 - blue-noise/spatiotemporal sampling until a useful temporal path exists;

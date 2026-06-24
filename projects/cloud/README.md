@@ -24,6 +24,9 @@ Current V1 scope:
   cells, and streaks instead of projecting the local weather map;
 - separate cloud product and composite passes declared through
   `RenderGraphBuilder`;
+- shared `cubey::render::CloudLayer*` contracts and shader assets under
+  `shaders/cubey/cloud/`, consumed by this standalone app and early atmosphere
+  and ocean integration smoke paths;
 - shared `clouds.*` `RunConfig` options and hand-authored ImGui controls;
 - tunable ambient/direct/phase lighting, final contrast/saturation, sun glare,
   horizon glow, and alpha-aware final resolve strength;
@@ -234,10 +237,13 @@ Known deferrals:
   issues are art/model tuning, high-oblique transition polish, and motion
   shimmer checks, not a finished cached sky product or asset-backed global
   weather map.
-- No ocean, planet, terrain, or PBR integration yet. Future consumers should
-  sample cloud outputs rather than owning cloud raymarch code.
-- No promoted shared cloud renderer API yet. Textures, descriptors, materials,
-  and synchronization remain project-owned in V1.
+- No planet, terrain, PBR, or production ocean reflection integration yet.
+  Future consumers should sample cloud outputs rather than owning cloud raymarch
+  code.
+- A first shared cloud-layer contract exists, and atmosphere/ocean have smoke
+  consumers. A complete promoted cloud renderer runtime does not exist yet:
+  textures, descriptors, materials, temporal history, UI, and synchronization
+  remain mostly project-owned in V1.
 - Consumer smoke checks should use `quarter` quality unless the purpose is
   visual tuning. The standalone cloud app keeps `full` quality as its inspection
   default.

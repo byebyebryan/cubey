@@ -475,13 +475,17 @@ Perlin-Worley shape textures, Worley erosion textures, or orbit/planet-scale
 clouds. The older implementation is frozen in `projects/clouds_legacy` for
 side-by-side comparison.
 
-The remaining promotion blockers are now less about first visibility and more
-about renderer contracts:
+The first foundation promotion pass moved common `CloudLayer*` contracts,
+shader assets, generated-resource helpers, atmosphere backdrop composition, and
+an ocean cloud-shadow diagnostic into shared/consumer code. The remaining
+promotion blockers are less about first visibility and more about full renderer
+ownership:
 
-- promote cloud radiance/transmittance out of the standalone project so ocean
-  and planet can compose clouds with their own scene passes;
-- promote the current analytic sun-shadow factor into a reusable cloud shadow
-  texture or sampled lighting input for surface and ocean lighting;
+- turn the shared cloud contract into a reusable runtime so ocean and planet can
+  compose real cloud radiance/transmittance products with their own scene
+  passes;
+- promote the current analytic sun-shadow diagnostic into a real reusable cloud
+  shadow texture or sampled lighting input for surface and ocean lighting;
 - improve horizon-layer shape/lighting before promotion; temporal/blue-noise
   sampling is still useful, but the current surface artifact is no longer being
   hidden by a final composite blur;
