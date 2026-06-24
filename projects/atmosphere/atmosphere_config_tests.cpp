@@ -390,7 +390,7 @@ int main() {
         cubey::procedural::validate_procedural_artifact_metadata(default_map.metadata);
         require(default_map.metadata.generator == "cubey::render::generate_lunar_surface_map",
                 "lunar surface map metadata should identify its generator");
-        require(default_map.metadata.formula_version == "lunar-surface-map-v12",
+        require(default_map.metadata.formula_version == "lunar-surface-map-v13",
                 "lunar surface map metadata should identify its formula version");
         require(default_map.metadata.domain == "render.lunar_surface_map",
                 "lunar surface map metadata should identify its domain");
