@@ -274,12 +274,12 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
                                config.local_volume_enabled ? 1.0F : 0.0F, 0.0F},
         .distance_options = {distance_mode_value(config.distance_mode),
                              config.orbit_transition_start_m, config.orbit_transition_end_m,
-                             config.far_shell_strength},
+                             config.orbit_detail_strength},
         .orbit_options = {config.far_shell_start_m, config.far_shell_end_m,
                           config.orbit_density_scale,
                           orbit_representation_value(config.orbit_representation)},
-        .orbit_shell_options = {config.orbit_detail_strength, config.orbit_fill,
-                                config.orbit_motion_strength, config.orbit_shell_extinction},
+        .orbit_shell_options = {config.orbit_motion_strength, config.orbit_shell_extinction,
+                                config.orbit_fill, config.far_shell_strength},
     };
 }
 

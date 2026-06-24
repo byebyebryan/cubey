@@ -8,6 +8,7 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/cloud_layer.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pipeline_resource.h>
@@ -52,25 +53,32 @@ constexpr float kCameraDragRadiansPerPixel = 0.006F;
 constexpr float kSurfaceMinPitchRadians = -1.50F;
 constexpr float kSurfaceMaxPitchRadians = 1.35F;
 constexpr float kOrbitMaxLatitudeRadians = 1.30F;
-constexpr std::uint32_t kCloudComputeGroupSize = 16U;
-constexpr std::uint32_t kCloudVolumeGroupSize = 4U;
-constexpr VkFormat kCloudColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
-constexpr VkFormat kCloudNoiseFormat = VK_FORMAT_R8G8B8A8_UNORM;
-constexpr std::uint32_t kCloudUniformBinding = 0;
-constexpr std::uint32_t kCloudOutputBinding = 1;
-constexpr std::uint32_t kCloudBaseNoiseBinding = 2;
-constexpr std::uint32_t kCloudDetailNoiseBinding = 3;
-constexpr std::uint32_t kCloudWeatherBinding = 4;
-constexpr std::uint32_t kCloudMetadataBinding = 5;
-constexpr std::uint32_t kCloudCompositeCloudBinding = 1;
-constexpr std::uint32_t kCloudCompositeMetadataBinding = 2;
-constexpr std::uint32_t kCloudTemporalCurrentCloudBinding = 0;
-constexpr std::uint32_t kCloudTemporalCurrentMetadataBinding = 1;
-constexpr std::uint32_t kCloudTemporalHistoryCloudBinding = 2;
-constexpr std::uint32_t kCloudTemporalHistoryMetadataBinding = 3;
-constexpr std::uint32_t kCloudTemporalUniformBinding = 4;
-constexpr std::uint32_t kCloudTemporalOutputBinding = 5;
-constexpr std::uint32_t kCloudTemporalOutputMetadataBinding = 6;
+constexpr std::uint32_t kCloudComputeGroupSize = cubey::render::kCloudLayerComputeGroupSize;
+constexpr std::uint32_t kCloudVolumeGroupSize = cubey::render::kCloudLayerVolumeGroupSize;
+constexpr std::uint32_t kCloudUniformBinding = cubey::render::kCloudLayerUniformBinding;
+constexpr std::uint32_t kCloudOutputBinding = cubey::render::kCloudLayerOutputBinding;
+constexpr std::uint32_t kCloudBaseNoiseBinding = cubey::render::kCloudLayerBaseNoiseBinding;
+constexpr std::uint32_t kCloudDetailNoiseBinding = cubey::render::kCloudLayerDetailNoiseBinding;
+constexpr std::uint32_t kCloudWeatherBinding = cubey::render::kCloudLayerWeatherBinding;
+constexpr std::uint32_t kCloudMetadataBinding = cubey::render::kCloudLayerMetadataBinding;
+constexpr std::uint32_t kCloudCompositeCloudBinding =
+    cubey::render::kCloudLayerCompositeCloudBinding;
+constexpr std::uint32_t kCloudCompositeMetadataBinding =
+    cubey::render::kCloudLayerCompositeMetadataBinding;
+constexpr std::uint32_t kCloudTemporalCurrentCloudBinding =
+    cubey::render::kCloudLayerTemporalCurrentCloudBinding;
+constexpr std::uint32_t kCloudTemporalCurrentMetadataBinding =
+    cubey::render::kCloudLayerTemporalCurrentMetadataBinding;
+constexpr std::uint32_t kCloudTemporalHistoryCloudBinding =
+    cubey::render::kCloudLayerTemporalHistoryCloudBinding;
+constexpr std::uint32_t kCloudTemporalHistoryMetadataBinding =
+    cubey::render::kCloudLayerTemporalHistoryMetadataBinding;
+constexpr std::uint32_t kCloudTemporalUniformBinding =
+    cubey::render::kCloudLayerTemporalUniformBinding;
+constexpr std::uint32_t kCloudTemporalOutputBinding =
+    cubey::render::kCloudLayerTemporalOutputBinding;
+constexpr std::uint32_t kCloudTemporalOutputMetadataBinding =
+    cubey::render::kCloudLayerTemporalOutputMetadataBinding;
 
 constexpr std::array<CloudsCameraMode, 6> kCloudCameraModes{
     CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
@@ -145,55 +153,9 @@ constexpr std::array<CloudsDebugView, 43> kCloudDebugViews{
     CloudsDebugView::OrbitShellShadow,
 };
 
-struct CloudFrameUniforms {
-    cubey::math::Vec4 camera_right_aspect;
-    cubey::math::Vec4 camera_up_tan_half_fovy;
-    cubey::math::Vec4 camera_forward_mode;
-    cubey::math::Vec4 camera_position_radius;
-    cubey::math::Vec4 cloud_shell;
-    cubey::math::Vec4 weather;
-    cubey::math::Vec4 sun_direction_intensity;
-    cubey::math::Vec4 ref_options;
-    cubey::math::Vec4 shape_options;
-    cubey::math::Vec4 weather_feature_weights;
-    cubey::math::Vec4 cloud_color_top_shadow;
-    cubey::math::Vec4 cloud_color_bottom_horizon;
-    cubey::math::Vec4 lighting_strengths;
-    cubey::math::Vec4 composite_options;
-    cubey::math::Vec4 sampling_options;
-    cubey::math::Vec4 temporal_options;
-    cubey::math::Vec4 background_options;
-    cubey::math::Vec4 distance_options;
-    cubey::math::Vec4 orbit_options;
-    cubey::math::Vec4 orbit_shell_options;
-};
-
-static_assert(sizeof(CloudFrameUniforms) == sizeof(float) * 80U);
-
-struct CloudTemporalUniforms {
-    cubey::math::Vec4 current_camera_right_aspect;
-    cubey::math::Vec4 current_camera_up_tan_half_fovy;
-    cubey::math::Vec4 current_camera_forward_mode;
-    cubey::math::Vec4 current_camera_position_radius;
-    cubey::math::Vec4 previous_camera_right_aspect;
-    cubey::math::Vec4 previous_camera_up_tan_half_fovy;
-    cubey::math::Vec4 previous_camera_forward_mode;
-    cubey::math::Vec4 previous_camera_position_radius;
-    cubey::math::Vec4 current_weather;
-    cubey::math::Vec4 previous_weather;
-    cubey::math::Vec4 options;
-};
-
-static_assert(sizeof(CloudTemporalUniforms) == sizeof(float) * 44U);
-
-struct CloudWeatherPushConstants {
-    float fronts = 1.0F;
-    float cells = 1.0F;
-    float streaks = 1.0F;
-    float cloud_style = 1.0F;
-};
-
-static_assert(sizeof(CloudWeatherPushConstants) == sizeof(float) * 4U);
+using CloudFrameUniforms = cubey::render::CloudLayerFrameUniforms;
+using CloudTemporalUniforms = cubey::render::CloudLayerTemporalUniforms;
+using CloudWeatherPushConstants = cubey::render::CloudLayerWeatherPushConstants;
 
 struct CloudViewBasis {
     cubey::math::Vec3 position{0.0F, 0.0F, 0.0F};
@@ -237,144 +199,20 @@ std::filesystem::path shader_path(const char* filename) {
     };
 }
 
-[[nodiscard]] cubey::render::MaterialDescriptorSetLayout cloud_march_set_layout() {
-    return {
-        .set = 0,
-        .bindings =
-            {
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudUniformBinding,
-                    .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudOutputBinding,
-                    .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudBaseNoiseBinding,
-                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudDetailNoiseBinding,
-                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudWeatherBinding,
-                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudMetadataBinding,
-                    .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
-                },
-            },
-    };
-}
-
-[[nodiscard]] cubey::render::MaterialDescriptorSetLayout cloud_composite_set_layout() {
-    return {
-        .set = 0,
-        .bindings =
-            {
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudUniformBinding,
-                    .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudCompositeCloudBinding,
-                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudCompositeMetadataBinding,
-                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                },
-            },
-    };
-}
-
-[[nodiscard]] cubey::render::MaterialDescriptorSetLayout cloud_temporal_set_layout() {
-    constexpr VkShaderStageFlags compute_stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    return {
-        .set = 0,
-        .bindings =
-            {
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudTemporalCurrentCloudBinding,
-                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stage_flags = compute_stage,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudTemporalCurrentMetadataBinding,
-                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stage_flags = compute_stage,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudTemporalHistoryCloudBinding,
-                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stage_flags = compute_stage,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudTemporalHistoryMetadataBinding,
-                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stage_flags = compute_stage,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudTemporalUniformBinding,
-                    .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                    .stage_flags = compute_stage,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudTemporalOutputBinding,
-                    .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                    .stage_flags = compute_stage,
-                },
-                cubey::vulkan::DescriptorSetBindingConfig{
-                    .binding = kCloudTemporalOutputMetadataBinding,
-                    .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                    .stage_flags = compute_stage,
-                },
-            },
-    };
-}
-
 [[nodiscard]] cubey::render::MaterialPassInfo cloud_march_pass_info() {
-    return {
-        .label = "cloud_march",
-        .descriptor_sets = {cloud_march_set_layout()},
-    };
+    return cubey::render::cloud_layer_march_pass_info();
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo cloud_composite_pass_info() {
-    return {
-        .label = "cloud_composite",
-        .descriptor_sets = {cloud_composite_set_layout()},
-        .cull_mode = VK_CULL_MODE_NONE,
-        .depth_test = false,
-        .depth_write = false,
-    };
+    return cubey::render::cloud_layer_composite_pass_info();
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo cloud_temporal_pass_info() {
-    return {
-        .label = "cloud_temporal",
-        .descriptor_sets = {cloud_temporal_set_layout()},
-    };
+    return cubey::render::cloud_layer_temporal_pass_info();
 }
 
 [[nodiscard]] cubey::render::RenderGraphTextureState cloud_sampled_texture_state() {
-    return {
-        .layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        .access_mask = VK_ACCESS_SHADER_READ_BIT,
-        .stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-    };
+    return cubey::render::cloud_layer_sampled_texture_state();
 }
 
 [[nodiscard]] cubey::render::RenderGraphTextureState
@@ -393,25 +231,14 @@ cloud_target_final_state(CloudTargetMode mode) {
 
 [[nodiscard]] cubey::render::RenderGraphTextureDesc
 cloud_color_texture_desc(std::string label, VkExtent2D extent) {
-    return {
-        .label = std::move(label),
-        .extent = {extent.width, extent.height, 1U},
-        .format = kCloudColorFormat,
-        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
-    };
+    return cubey::render::cloud_layer_color_texture_desc(std::move(label), extent);
 }
 
 [[nodiscard]] VkExtent2D cloud_product_extent(VkExtent2D target_extent,
                                                   CloudsQuality quality) {
-    const CloudsQualityBudget budget = clouds_quality_budget(quality);
-    return {
-        .width = std::max(1U, static_cast<std::uint32_t>(
-                                  std::round(static_cast<float>(target_extent.width) *
-                                             budget.resolution_scale))),
-        .height = std::max(1U, static_cast<std::uint32_t>(
-                                   std::round(static_cast<float>(target_extent.height) *
-                                              budget.resolution_scale))),
-    };
+    return cubey::render::cloud_layer_product_extent(
+        target_extent,
+        static_cast<cubey::render::CloudLayerQuality>(static_cast<std::uint32_t>(quality)));
 }
 
 [[nodiscard]] bool cloud_camera_mode_is_orbit(CloudsCameraMode mode) {
@@ -469,26 +296,6 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     return static_cast<float>(static_cast<std::uint32_t>(mode));
 }
 
-[[nodiscard]] float cloud_cloud_style_value(CloudsCloudStyle style) {
-    return static_cast<float>(static_cast<std::uint32_t>(style));
-}
-
-[[nodiscard]] float cloud_sampling_mode_value(CloudsSamplingMode mode) {
-    return static_cast<float>(static_cast<std::uint32_t>(mode));
-}
-
-[[nodiscard]] float cloud_background_mode_value(CloudsBackgroundMode mode) {
-    return static_cast<float>(static_cast<std::uint32_t>(mode));
-}
-
-[[nodiscard]] float cloud_distance_mode_value(CloudsDistanceMode mode) {
-    return static_cast<float>(static_cast<std::uint32_t>(mode));
-}
-
-[[nodiscard]] float cloud_orbit_representation_value(CloudsOrbitRepresentation mode) {
-    return static_cast<float>(static_cast<std::uint32_t>(mode));
-}
-
 [[nodiscard]] CloudViewBasis cloud_view_basis(const CloudsConfig& config, float yaw,
                                                      float pitch_offset) {
     const cubey::math::Vec3 surface_up{0.0F, 1.0F, 0.0F};
@@ -535,19 +342,82 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     return glm::normalize(cubey::math::Vec3{-0.5F, 0.5F, 1.0F});
 }
 
-[[nodiscard]] CloudWeatherPushConstants cloud_weather_push_constants(const CloudsConfig& config) {
+[[nodiscard]] cubey::render::CloudLayerConfig cloud_layer_config(const CloudsConfig& config,
+                                                                 float elapsed_seconds) {
     return {
-        .fronts = config.weather_fronts,
-        .cells = config.weather_cells,
-        .streaks = config.weather_streaks,
-        .cloud_style = cloud_cloud_style_value(config.cloud_style),
+        .quality =
+            static_cast<cubey::render::CloudLayerQuality>(static_cast<std::uint32_t>(
+                config.quality)),
+        .cloud_style =
+            static_cast<cubey::render::CloudLayerCloudStyle>(static_cast<std::uint32_t>(
+                config.cloud_style)),
+        .sampling_mode =
+            static_cast<cubey::render::CloudLayerSamplingMode>(static_cast<std::uint32_t>(
+                config.sampling_mode)),
+        .background_mode =
+            static_cast<cubey::render::CloudLayerBackgroundMode>(static_cast<std::uint32_t>(
+                config.background_mode)),
+        .distance_mode =
+            static_cast<cubey::render::CloudLayerDistanceMode>(static_cast<std::uint32_t>(
+                config.distance_mode)),
+        .orbit_representation =
+            static_cast<cubey::render::CloudLayerOrbitRepresentation>(
+                static_cast<std::uint32_t>(config.orbit_representation)),
+        .debug_view =
+            static_cast<cubey::render::CloudLayerDebugView>(static_cast<std::uint32_t>(
+                config.debug_view)),
+        .temporal_enabled = config.temporal_enabled,
+        .powder_enabled = config.powder_enabled,
+        .local_volume_enabled = config.local_volume_enabled,
+        .horizon_layer_enabled = config.horizon_layer_enabled,
+        .planet_radius_m = config.planet_radius_m,
+        .bottom_altitude_m = config.bottom_altitude_m,
+        .top_altitude_m = config.top_altitude_m,
+        .coverage = config.coverage,
+        .density = config.density,
+        .weather_scale_km = config.weather_scale_km,
+        .vertical_shear_fraction = config.vertical_shear_fraction,
+        .wind_offset_m = elapsed_seconds * config.wind_speed_mps,
+        .shadow_strength = config.shadow_strength,
+        .horizon_strength = config.horizon_strength,
+        .weather_fronts = config.weather_fronts,
+        .weather_cells = config.weather_cells,
+        .weather_streaks = config.weather_streaks,
+        .weather_softness = config.weather_softness,
+        .weather_influence = config.weather_influence,
+        .detail_erosion = config.detail_erosion,
+        .crispiness = config.crispiness,
+        .curliness = config.curliness,
+        .absorption = config.absorption,
+        .ambient_strength = config.ambient_strength,
+        .direct_strength = config.direct_strength,
+        .phase_strength = config.phase_strength,
+        .final_contrast = config.final_contrast,
+        .final_saturation = config.final_saturation,
+        .resolve_strength = config.resolve_strength,
+        .horizon_glow_strength = config.horizon_glow_strength,
+        .sun_glare_strength = config.sun_glare_strength,
+        .jitter_strength = config.jitter_strength,
+        .orbit_transition_start_m = config.orbit_transition_start_m,
+        .orbit_transition_end_m = config.orbit_transition_end_m,
+        .far_shell_start_m = config.far_shell_start_m,
+        .far_shell_end_m = config.far_shell_end_m,
+        .far_shell_strength = config.far_shell_strength,
+        .orbit_detail_strength = config.orbit_detail_strength,
+        .orbit_density_scale = config.orbit_density_scale,
+        .orbit_fill = config.orbit_fill,
+        .orbit_motion_strength = config.orbit_motion_strength,
+        .orbit_shell_extinction = config.orbit_shell_extinction,
     };
+}
+
+[[nodiscard]] CloudWeatherPushConstants cloud_weather_push_constants(const CloudsConfig& config) {
+    return cubey::render::cloud_layer_weather_push_constants(cloud_layer_config(config, 0.0F));
 }
 
 [[nodiscard]] bool cloud_weather_generation_equal(const CloudWeatherPushConstants& lhs,
                                                   const CloudWeatherPushConstants& rhs) {
-    return lhs.fronts == rhs.fronts && lhs.cells == rhs.cells && lhs.streaks == rhs.streaks &&
-           lhs.cloud_style == rhs.cloud_style;
+    return cubey::render::cloud_layer_weather_generation_equal(lhs, rhs);
 }
 
 [[nodiscard]] bool cloud_extent_equal(VkExtent2D lhs, VkExtent2D rhs) {
@@ -593,66 +463,21 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
                                                             float elapsed_seconds,
                                                             std::uint32_t temporal_frame_index) {
     const CloudViewBasis basis = cloud_view_basis(config, yaw, pitch);
-    const float aspect =
-        static_cast<float>(target_extent.width) / static_cast<float>(target_extent.height);
     const float tan_half_fovy = std::tan(kDefaultFovyRadians * 0.5F);
-    const CloudsQualityBudget budget = clouds_quality_budget(config.quality);
-    const cubey::math::Vec3 sun_direction = cloud_source_sun_direction();
-    const cubey::math::Vec3 cloud_top_color{1.12F, 1.04F, 0.82F};
-    const cubey::math::Vec3 cloud_bottom_color{0.24F, 0.30F, 0.38F};
-    return {
-        .camera_right_aspect = {basis.right.x, basis.right.y, basis.right.z, aspect},
-        .camera_up_tan_half_fovy = {basis.up.x, basis.up.y, basis.up.z, tan_half_fovy},
-        .camera_forward_mode = {basis.forward.x, basis.forward.y, basis.forward.z,
-                                cloud_camera_shader_mode(config.camera_mode)},
-        .camera_position_radius = {basis.position.x, basis.position.y, basis.position.z,
-                                   config.planet_radius_m},
-        .cloud_shell = {config.bottom_altitude_m,
-                        config.top_altitude_m - config.bottom_altitude_m,
-                        config.vertical_shear_fraction,
-                        cloud_cloud_style_value(config.cloud_style)},
-        .weather = {config.coverage, config.density, config.weather_scale_km,
-                    elapsed_seconds * config.wind_speed_mps},
-        .sun_direction_intensity = {sun_direction.x, sun_direction.y, sun_direction.z, 1.0F},
-        .ref_options = {static_cast<float>(static_cast<std::uint32_t>(config.debug_view)),
-                        static_cast<float>(budget.view_steps),
-                        static_cast<float>(budget.light_steps),
-                        static_cast<float>(target_extent.width)},
-        .shape_options = {config.crispiness, config.curliness, config.absorption,
-                          config.powder_enabled ? 1.0F : 0.0F},
-        .weather_feature_weights = {config.weather_fronts, config.weather_cells,
-                                    config.weather_streaks, config.detail_erosion},
-        .cloud_color_top_shadow = {cloud_top_color.x, cloud_top_color.y, cloud_top_color.z,
-                                   config.shadow_strength},
-        .cloud_color_bottom_horizon = {cloud_bottom_color.x, cloud_bottom_color.y,
-                                       cloud_bottom_color.z, config.horizon_strength},
-        .lighting_strengths = {config.ambient_strength, config.direct_strength,
-                               config.phase_strength, config.sun_glare_strength},
-        .composite_options = {config.resolve_strength, config.final_contrast,
-                              config.final_saturation, config.horizon_glow_strength},
-        .sampling_options = {cloud_sampling_mode_value(config.sampling_mode),
-                             config.jitter_strength, config.weather_softness,
-                             config.weather_influence},
-        .temporal_options = {static_cast<float>(temporal_frame_index % 256U),
-                             config.temporal_enabled ? 1.0F : 0.0F,
-                             0.18F,
-                             0.0F},
-        .background_options = {cloud_background_mode_value(config.background_mode),
-                               config.horizon_layer_enabled ? 1.0F : 0.0F,
-                               config.local_volume_enabled ? 1.0F : 0.0F,
-                               0.0F},
-        .distance_options = {cloud_distance_mode_value(config.distance_mode),
-                             config.orbit_transition_start_m,
-                             config.orbit_transition_end_m,
-                             config.orbit_detail_strength},
-        .orbit_options = {config.far_shell_start_m, config.far_shell_end_m,
-                          config.orbit_density_scale,
-                          cloud_orbit_representation_value(config.orbit_representation)},
-        .orbit_shell_options = {config.orbit_motion_strength,
-                                config.orbit_shell_extinction,
-                                config.orbit_fill,
-                                config.far_shell_strength},
-    };
+    return cubey::render::cloud_layer_frame_uniforms(
+        cloud_layer_config(config, elapsed_seconds),
+        cubey::render::CloudLayerFrameInfo{
+            .camera_position = basis.position,
+            .camera_right = basis.right,
+            .camera_up = basis.up,
+            .camera_forward = basis.forward,
+            .tan_half_fovy = tan_half_fovy,
+            .sun_direction = cloud_source_sun_direction(),
+            .sun_intensity = 1.0F,
+            .target_extent = target_extent,
+            .temporal_frame_index = temporal_frame_index,
+            .camera_mode = cloud_camera_shader_mode(config.camera_mode),
+        });
 }
 
 [[nodiscard]] cubey::render::Texture3DConfig cloud_volume_texture_config(
@@ -661,7 +486,7 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
     return {
         .extent = {size, size, size},
         .mip_levels = mip_levels,
-        .format = kCloudNoiseFormat,
+        .format = cubey::render::kCloudLayerNoiseFormat,
         .create_sampler = true,
         .sampler = cloud_repeat_sampler_config(mip_levels),
     };
@@ -670,7 +495,7 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
 [[nodiscard]] cubey::render::Texture2DConfig cloud_weather_texture_config() {
     return {
         .extent = {kCloudWeatherTextureSize, kCloudWeatherTextureSize},
-        .format = kCloudNoiseFormat,
+        .format = cubey::render::kCloudLayerNoiseFormat,
         .usage = cubey::render::Texture2DUsage::StorageSampled,
         .create_sampler = true,
         .sampler = cloud_repeat_sampler_config(),
@@ -680,7 +505,7 @@ cloud_color_texture_desc(std::string label, VkExtent2D extent) {
 [[nodiscard]] cubey::render::Texture2DConfig cloud_history_texture_config(VkExtent2D extent) {
     return {
         .extent = extent,
-        .format = kCloudColorFormat,
+        .format = cubey::render::kCloudLayerColorFormat,
         .usage = cubey::render::Texture2DUsage::StorageSampled,
         .create_sampler = false,
         .sampler = {},
