@@ -170,6 +170,71 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
+            "Clouds",
+            {.default_open = false,
+             .help = "Shared cloud layer rendered over the atmosphere background."}};
+        group) {
+        const cubey::host::ScopedImGuiId section_id("Clouds");
+        AtmosphereCloudConfig& clouds = ui.config.clouds;
+        cubey::render::CloudLayerConfig& layer = clouds.layer;
+        cubey::host::imgui_checkbox("Clouds", &clouds.enabled,
+                                    "Composite the shared cloud layer in final view.");
+        if (!clouds.enabled) {
+            ImGui::BeginDisabled();
+        }
+        cubey::host::imgui_enum_combo("Quality", layer.quality, kAtmosphereCloudQualities,
+                                      atmosphere_cloud_quality_name,
+                                      "Cloud render resolution and ray-step budget.");
+        cubey::host::imgui_enum_combo("Sampling", layer.sampling_mode,
+                                      kAtmosphereCloudSamplingModes,
+                                      atmosphere_cloud_sampling_mode_name,
+                                      "Ray sampling pattern used to hide banding.");
+        cubey::host::imgui_enum_combo("Distance mode", layer.distance_mode,
+                                      kAtmosphereCloudDistanceModes,
+                                      atmosphere_cloud_distance_mode_name,
+                                      "Local, orbit shell, or blended cloud distance behavior.");
+        cubey::host::imgui_checkbox("Temporal", &layer.temporal_enabled,
+                                    "Enable temporal reconstruction for the cloud product.");
+        cubey::host::imgui_checkbox("Local volume", &layer.local_volume_enabled,
+                                    "Render near and overhead volumetric cloud detail.");
+        cubey::host::imgui_checkbox("Horizon layer", &layer.horizon_layer_enabled,
+                                    "Add far cloud support near the horizon.");
+        cubey::host::imgui_slider_float("Base altitude", &layer.bottom_altitude_m, 0.0F,
+                                        14000.0F, "%.0f m",
+                                        "Lower boundary of the cloud layer.");
+        cubey::host::imgui_slider_float("Top altitude", &layer.top_altitude_m, 1000.0F, 30000.0F,
+                                        "%.0f m", "Upper boundary of the cloud layer.");
+        cubey::host::imgui_slider_float("Coverage", &layer.coverage, 0.0F, 1.0F, "%.2f",
+                                        "Base cloud coverage before weather/detail carving.");
+        cubey::host::imgui_slider_float("Density", &layer.density, 0.0F, 0.08F, "%.3f",
+                                        "Volume density multiplier.");
+        cubey::host::imgui_slider_float("Weather scale", &layer.weather_scale_km, 40.0F, 500.0F,
+                                        "%.0f km", "Broad weather feature scale.");
+        cubey::host::imgui_slider_float("Wind", &clouds.wind_speed_mps, 0.0F, 900.0F, "%.0f m/s",
+                                        "Advection speed for cloud sampling.");
+        cubey::host::imgui_slider_float("Weather softness", &layer.weather_softness, 0.02F, 0.60F,
+                                        "%.2f", "Softness of broad weather transitions.");
+        cubey::host::imgui_slider_float("Weather influence", &layer.weather_influence, 0.0F, 1.0F,
+                                        "%.2f", "How strongly the weather map biases density.");
+        cubey::host::imgui_slider_float("Detail erosion", &layer.detail_erosion, 0.0F, 1.0F,
+                                        "%.2f", "High-frequency erosion contribution.");
+        cubey::host::imgui_slider_float("Ambient", &layer.ambient_strength, 0.0F, 3.0F, "%.2f",
+                                        "Cloud ambient-light multiplier.");
+        cubey::host::imgui_slider_float("Direct", &layer.direct_strength, 0.0F, 3.0F, "%.2f",
+                                        "Direct sunlight multiplier.");
+        cubey::host::imgui_slider_float("Phase", &layer.phase_strength, 0.0F, 3.0F, "%.2f",
+                                        "Forward/rim phase-light multiplier.");
+        cubey::host::imgui_slider_float("Resolve", &layer.resolve_strength, 0.0F, 1.0F, "%.2f",
+                                        "Alpha-aware cloud resolve strength.");
+        cubey::host::imgui_slider_float("Jitter", &layer.jitter_strength, 0.0F, 1.0F, "%.2f",
+                                        "Ray-start jitter amount.");
+        layer.top_altitude_m = std::max(layer.top_altitude_m, layer.bottom_altitude_m + 1.0F);
+        if (!clouds.enabled) {
+            ImGui::EndDisabled();
+        }
+    }
+
+    if (const cubey::host::ScopedImGuiGroup group{
             "Night sky",
             {.default_open = false,
              .help = "Twilight, stars, Milky Way, and night-sky visibility controls."}};

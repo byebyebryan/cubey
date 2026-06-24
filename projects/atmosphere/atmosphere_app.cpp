@@ -367,39 +367,10 @@ class AtmosphereApp {
 
     [[nodiscard]] cubey::render::CloudLayerConfig atmosphere_cloud_config(
         float elapsed_seconds) const {
-        cubey::render::CloudLayerConfig config{};
-        config.quality = cubey::render::CloudLayerQuality::Half;
-        config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
-        config.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
-        config.debug_view = cubey::render::CloudLayerDebugView::Final;
-        config.temporal_enabled = false;
+        cubey::render::CloudLayerConfig config = atmosphere_config_.clouds.layer;
         config.planet_radius_m = atmosphere_config_.bottom_radius_km * 1000.0F;
-        config.bottom_altitude_m = 4200.0F;
-        config.top_altitude_m = 18000.0F;
-        config.coverage = 0.42F;
-        config.density = 0.020F;
-        config.weather_scale_km = 125.0F;
-        config.wind_offset_m = elapsed_seconds * 115.0F;
-        config.shadow_strength = 0.72F;
-        config.horizon_strength = 0.36F;
-        config.weather_fronts = 1.0F;
-        config.weather_cells = 1.0F;
-        config.weather_streaks = 1.0F;
-        config.weather_softness = 0.24F;
-        config.weather_influence = 0.0F;
-        config.detail_erosion = 1.0F;
-        config.crispiness = 40.0F;
-        config.curliness = 0.10F;
-        config.absorption = 0.30F;
-        config.ambient_strength = 0.74F;
-        config.direct_strength = 1.16F;
-        config.phase_strength = 1.08F;
-        config.resolve_strength = 0.45F;
-        config.final_contrast = 1.0F;
-        config.final_saturation = 1.0F;
-        config.horizon_glow_strength = 0.0F;
-        config.sun_glare_strength = 0.0F;
-        config.jitter_strength = 1.0F;
+        config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+        config.wind_offset_m = elapsed_seconds * atmosphere_config_.clouds.wind_speed_mps;
         return config;
     }
 
@@ -750,7 +721,7 @@ class AtmosphereApp {
     }
 
     [[nodiscard]] bool cloud_layer_enabled() const noexcept {
-        return render_view_ == AtmosphereRenderView::Final;
+        return render_view_ == AtmosphereRenderView::Final && atmosphere_config_.clouds.enabled;
     }
 
     void record_atmosphere_post_pass(const cubey::vulkan::CommandRecorder& recorder,
