@@ -336,8 +336,8 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "raw-final") {
         return CloudsDebugView::RawFinal;
     }
-    if (value == "weather") {
-        return CloudsDebugView::Weather;
+    if (value == "authored-weather" || value == "weather") {
+        return CloudsDebugView::AuthoredWeather;
     }
     if (value == "density") {
         return CloudsDebugView::Density;
@@ -393,11 +393,23 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "cloud-type") {
         return CloudsDebugView::CloudType;
     }
+    if (value == "local-scatter") {
+        return CloudsDebugView::LocalScatter;
+    }
+    if (value == "local-clear") {
+        return CloudsDebugView::LocalClear;
+    }
+    if (value == "local-structure") {
+        return CloudsDebugView::LocalStructure;
+    }
+    if (value == "local-edge-detail") {
+        return CloudsDebugView::LocalEdgeDetail;
+    }
     if (value == "weather-edge") {
         return CloudsDebugView::WeatherEdge;
     }
-    if (value == "weather-bias" || value == "weather-mask") {
-        return CloudsDebugView::WeatherBias;
+    if (value == "coverage-bias" || value == "weather-bias" || value == "weather-mask") {
+        return CloudsDebugView::CoverageBias;
     }
     if (value == "visible-density") {
         return CloudsDebugView::VisibleDensity;
@@ -408,8 +420,17 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "distance-regime") {
         return CloudsDebugView::DistanceRegime;
     }
+    if (value == "transition-weights") {
+        return CloudsDebugView::TransitionWeights;
+    }
     if (value == "local-alpha") {
         return CloudsDebugView::LocalAlpha;
+    }
+    if (value == "far-shell-alpha") {
+        return CloudsDebugView::FarShellAlpha;
+    }
+    if (value == "local-with-shell-alpha") {
+        return CloudsDebugView::LocalWithShellAlpha;
     }
     if (value == "orbit-alpha") {
         return CloudsDebugView::OrbitAlpha;
@@ -447,8 +468,8 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "final";
     case CloudsDebugView::RawFinal:
         return "raw-final";
-    case CloudsDebugView::Weather:
-        return "weather";
+    case CloudsDebugView::AuthoredWeather:
+        return "authored-weather";
     case CloudsDebugView::Density:
         return "density";
     case CloudsDebugView::Transmittance:
@@ -485,18 +506,32 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "detail-density";
     case CloudsDebugView::CloudType:
         return "cloud-type";
+    case CloudsDebugView::LocalScatter:
+        return "local-scatter";
+    case CloudsDebugView::LocalClear:
+        return "local-clear";
+    case CloudsDebugView::LocalStructure:
+        return "local-structure";
+    case CloudsDebugView::LocalEdgeDetail:
+        return "local-edge-detail";
     case CloudsDebugView::WeatherEdge:
         return "weather-edge";
-    case CloudsDebugView::WeatherBias:
-        return "weather-bias";
+    case CloudsDebugView::CoverageBias:
+        return "coverage-bias";
     case CloudsDebugView::VisibleDensity:
         return "visible-density";
     case CloudsDebugView::VisibleCloudType:
         return "visible-cloud-type";
     case CloudsDebugView::DistanceRegime:
         return "distance-regime";
+    case CloudsDebugView::TransitionWeights:
+        return "transition-weights";
     case CloudsDebugView::LocalAlpha:
         return "local-alpha";
+    case CloudsDebugView::FarShellAlpha:
+        return "far-shell-alpha";
+    case CloudsDebugView::LocalWithShellAlpha:
+        return "local-with-shell-alpha";
     case CloudsDebugView::OrbitAlpha:
         return "orbit-alpha";
     case CloudsDebugView::OrbitCoverage:
@@ -593,7 +628,7 @@ float clouds_default_camera_altitude_m(CloudsCameraMode mode) {
     case CloudsCameraMode::SurfaceUp:
         return 800.0F;
     case CloudsCameraMode::High:
-        return 12000.0F;
+        return 28000.0F;
     case CloudsCameraMode::HighOblique:
         return 28000.0F;
     case CloudsCameraMode::Orbit:
@@ -726,6 +761,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     }
     if (run_config_float_is_set(run_config.clouds.far_shell_end_m)) {
         config.far_shell_end_m = run_config.clouds.far_shell_end_m;
+    }
+    if (run_config_float_is_set(run_config.clouds.far_shell_strength)) {
+        config.far_shell_strength = run_config.clouds.far_shell_strength;
     }
     if (run_config_float_is_set(run_config.clouds.orbit_detail_strength)) {
         config.orbit_detail_strength = run_config.clouds.orbit_detail_strength;
@@ -922,6 +960,10 @@ void validate_clouds_config(const CloudsConfig& config) {
         !finite_nonnegative(config.far_shell_end_m) ||
         config.far_shell_end_m <= config.far_shell_start_m) {
         throw std::runtime_error("cloud far shell range must be finite and increasing");
+    }
+    if (!std::isfinite(config.far_shell_strength) ||
+        config.far_shell_strength < 0.0F || config.far_shell_strength > 1.5F) {
+        throw std::runtime_error("cloud far shell strength must be finite and in [0, 1.5]");
     }
     if (!std::isfinite(config.orbit_detail_strength) ||
         config.orbit_detail_strength < 0.0F || config.orbit_detail_strength > 1.0F) {

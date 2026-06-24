@@ -520,6 +520,8 @@ int main() {
         const std::string app_source = read_text_file(source_dir / "pyro_3d_app.cpp");
         const std::string gpu_resources_source =
             read_text_file(source_dir / "pyro_3d_gpu_resources.cpp");
+        const std::string cmake_source =
+            read_text_file(source_dir / ".." / ".." / "CMakeLists.txt");
         require(count_occurrences(commands_source,
                                   "static_cast<float>(static_cast<std::uint32_t>(config.mode))") >=
                     2,
@@ -590,6 +592,18 @@ int main() {
                          "pyro 3D GPU resources should create atmosphere background descriptors");
         require_contains(gpu_resources_source, "atmosphere_background_.create_pipeline",
                          "pyro 3D GPU resources should create the atmosphere background pipeline");
+        require_contains(cmake_source, "sky/celestial_body.vert",
+                         "pyro 3D build should compile the shared celestial body vertex shader");
+        require_contains(cmake_source, "sky/celestial_body.frag",
+                         "pyro 3D build should compile the shared celestial body fragment shader");
+        require_contains(gpu_resources_source, "CelestialBodyFrameMaterialConfig",
+                         "pyro 3D should create the shared geometry moon frame material");
+        require_contains(gpu_resources_source, "lunar_surface_sampler",
+                         "pyro 3D moon geometry should bind the visible moon surface map");
+        require_contains(gpu_resources_source, "CelestialBodyDepthMode::None",
+                         "pyro 3D moon geometry should render as a no-depth sky backdrop");
+        require_contains(commands_source, "moon_body_frame().record_draw",
+                         "pyro 3D commands should draw moon geometry inside the scene pass");
         require_contains(gpu_resources_source, "ComputePipelineResourceConfig",
                          "pyro 3D shadow pipeline should support multiple descriptor sets");
         require_contains(app_source, "draw_atmosphere_environment_controls",
@@ -598,6 +612,10 @@ int main() {
                          "pyro 3D should create shared atmosphere background atlases");
         require_contains(app_source, "upload_atmosphere_background",
                          "pyro 3D should upload direct atmosphere background uniforms");
+        require_contains(app_source, "environment.render_moon_disk = false",
+                         "pyro 3D atmosphere background should suppress the inline moon disk");
+        require_contains(app_source, "upload_moon_body",
+                         "pyro 3D should upload geometry moon uniforms");
         require_contains(app_source, "resolved_render_exposure",
                          "pyro 3D should combine shared exposure with the project render bias");
     } catch (const std::exception& error) {

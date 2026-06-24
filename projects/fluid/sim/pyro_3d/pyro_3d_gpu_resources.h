@@ -5,6 +5,7 @@
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/render/atmosphere_background_frame.h>
+#include <cubey/render/celestial_body_frame.h>
 #include <cubey/render/environment_lighting.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/render/texture.h>
@@ -26,14 +27,14 @@ namespace cubey::projects::fluid::pyro_3d {
 class Pyro3DGpuResources {
   public:
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& mesh_gpu,
                                            cubey::ProjectGpuServices& gpu,
                                            const Pyro3DConfig& config,
                                            std::uint32_t frame_slot_count);
-    void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
-                                VkExtent2D extent,
-                                const std::optional<
-                                    cubey::render::AtmosphereBackgroundTextureBindings>&
-                                    atmosphere_background_textures);
+    void
+    create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
+                           const std::optional<cubey::render::AtmosphereBackgroundTextureBindings>&
+                               atmosphere_background_textures);
     void destroy_swapchain_resources();
     void destroy_all_resources();
 
@@ -81,14 +82,20 @@ class Pyro3DGpuResources {
     [[nodiscard]] VkDescriptorSet render_descriptor_set(bool density_a_current,
                                                         bool velocity_a_current) const;
     [[nodiscard]] VkDescriptorSet environment_descriptor_set(std::uint32_t frame_slot_index) const;
-    void upload_environment_lighting(
-        std::uint32_t frame_slot_index,
-        const cubey::render::EnvironmentLightingUniforms& uniforms) const;
+    void
+    upload_environment_lighting(std::uint32_t frame_slot_index,
+                                const cubey::render::EnvironmentLightingUniforms& uniforms) const;
     void upload_atmosphere_background(
         std::uint32_t frame_slot_index,
         const cubey::render::AtmosphereEnvironmentFrameUniforms& uniforms) const;
-    [[nodiscard]] const cubey::render::AtmosphereBackgroundFrame&
-    atmosphere_background() const;
+    void upload_moon_body(std::uint32_t frame_slot_index,
+                          const cubey::render::CelestialBodyFrameUniforms& uniforms) const;
+    [[nodiscard]] const cubey::render::AtmosphereBackgroundFrame& atmosphere_background() const;
+    [[nodiscard]] const cubey::render::CelestialBodyFrame& moon_body_frame() const;
+    [[nodiscard]] const cubey::render::Mesh& moon_mesh() const;
+    [[nodiscard]] std::uint32_t frame_slot_count() const noexcept {
+        return frame_slot_count_;
+    }
     [[nodiscard]] VkDescriptorSet
     atmosphere_background_descriptor_set(std::uint32_t frame_slot_index) const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
@@ -99,6 +106,7 @@ class Pyro3DGpuResources {
   private:
     void create_volume_resources(cubey::vulkan::Device& device, cubey::ProjectGpuServices& gpu,
                                  const Pyro3DConfig& config);
+    void create_moon_mesh_if_needed(cubey::vulkan::GpuRuntime& gpu);
     void create_descriptor_resources(cubey::vulkan::Device& device);
     void update_descriptors(cubey::vulkan::Device& device);
     void create_compute_pipelines(cubey::vulkan::Device& device);
@@ -165,6 +173,8 @@ class Pyro3DGpuResources {
         environment_lighting_uniforms_;
     std::optional<cubey::vulkan::DescriptorSetArray> environment_descriptors_;
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_;
+    cubey::render::CelestialBodyFrame moon_body_frame_;
+    std::optional<cubey::render::Mesh> moon_mesh_;
     std::uint32_t frame_slot_count_ = 0;
     std::optional<cubey::render::ComputePipelineResource> reset_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> advect_pipeline_;

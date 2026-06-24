@@ -69,14 +69,15 @@ Keep these ideas:
   over local density instead of as final opacity masks;
 - cloud-type height gradients and coverage/density shaping;
 - separate authored weather channels for broad coverage, cloud type, and edge
-  softness/breakup, plus a local scatter channel so the influence control can
-  fade back to the old noise-driven scatter;
+  softness/breakup, with continuous procedural local scatter as the default
+  endpoint for the influence control;
 - default production tuning should preserve the local scatter endpoint until
   authored weather shapes are proven better than the old random distribution;
 - spherical cloud-shell intersections;
 - Beer transmittance, powder/edge response, and a short light march;
-- source-like debug views for weather, base density, detail density, density,
-  weather bias, lighting, transmittance, shadow, distance, and step count.
+- source-like debug views for authored weather, local scatter, coverage bias,
+  base density, detail density, density, lighting, transmittance, shadow,
+  distance, and step count.
 
 Do not overfit these parts:
 
@@ -155,6 +156,9 @@ Initial scope:
 - distance-regime controls are now explicit: `clouds.distance_mode` can force
   local or orbit-shell behavior, while `auto` blends high and orbit views toward
   a broad low-detail shell before the full cached sky product exists;
+- the next distance-regime target is high-oblique composition, not another
+  renderer reboot: local volume should own nearby parallax/thickness, while a
+  far shell contributes behind it so clouds keep continuity toward the horizon;
 - orbit rendering is split from the surface march. The volume raymarch remains
   available as `clouds.orbit_representation = volume`, while the default
   `surface-shell` path tests a filtered cloud-top shell: regional dry slots and
@@ -172,6 +176,9 @@ Initial scope:
   planet-wide cap; `clouds.orbit_fill` owns that bias so the coverage target
   can be tuned without changing shader constants. The volume path is an
   implementation comparison only and is not an art target;
+- local surface weather should use the same layered idea in a planar world-space
+  domain: broad systems gate placement, dry slots preserve gaps, and fronts,
+  cells, streaks, and micro fragments drive scatter and erosion;
 - orbit shell detail should be filtered by pixel footprint and grazing angle so
   disk detail survives while limb/edge shimmer does not define the image;
 - the cloud-top shell should composite from column optical depth, not an
@@ -194,8 +201,9 @@ Deferred until the shape is credible:
 - finished planet-scale orbit weather art direction;
 - removal of remaining orbit-shell projection/alias artifacts in shell-alpha
   output and ray-sampled coverage/detail diagnostics;
-- high-oblique transition polish and orbit motion/shimmer review against the
-  satellite capture pack;
+- high-oblique transition polish, especially local-volume foreground plus
+  far-shell background continuity;
+- orbit motion/shimmer review against the satellite capture pack;
 - a stronger planet-scale weather model than fixed experimental synoptic
   anchors, dry slots, and procedural breakup;
 - cloud shadow consumption by ocean/terrain;
@@ -224,15 +232,58 @@ The transition between near volume and far cached/cloud-shell output should be
 an explicit feature with debug views. It should not be hidden in final color
 grading.
 
+The current production cloud project implements the `auto` transition as three
+separate contributors:
+
+- `local`: the normal surface volume march, responsible for foreground thickness
+  and parallax;
+- `far shell`: an adaptive low-detail march of the same local volume field,
+  limited to the later high-oblique ray segment;
+- `full orbit`: the orbit shell as the replacement path for true orbit/high
+  altitude views.
+
+Composition is intentionally staged instead of a single lerp:
+
+1. Compute `full_orbit_blend` from camera mode and altitude.
+2. Compute raw far-shell assist from ray length, camera altitude gate, and
+   `clouds.far_shell_strength`.
+3. Attenuate far-shell assist by the remaining local branch:
+   `effective_far_shell = raw_far_shell * (1 - full_orbit_blend)`.
+4. Front-to-back compose `local + effective_far_shell`, then mix that branch
+   toward the full orbit result using `full_orbit_blend`.
+5. Apply cloud aerial perspective once to the composed result, not separately
+   inside local and far source branches.
+
+This prevents the orbit representation from contributing once as far background
+and again as the full replacement during the same handoff. The far bridge must
+not reuse the orbit cloud-top shell directly: captures showed that the orbit
+shell is correctly limb/grazing-filtered for full-disk views, but it becomes a
+faint haze source rather than readable high-oblique cloud mass. It should also
+not use the orbit weather volume as its primary source, because that swaps cloud
+domains during the surface-to-orbit transition and reads as a different cloud
+type. The intended bridge is a lower-step, higher-LOD march of the local density
+field over only the distant ray segment. Full orbit remains a separate
+cloud-top shell problem.
+
+The diagnostic contract is: `distance-regime` shows full orbit, effective
+high-view bridge, and residual local regime; `transition-weights` shows
+local-branch availability, final bridge contribution, and full orbit takeover.
+`local-alpha`, `far-shell-alpha`, `local-with-shell-alpha`, and `orbit-alpha`
+isolate the visible alpha at each stage. The `far-shell` debug name is a
+historical compatibility label for the high-view far bridge.
+`projects/cloud/capture_review.sh` includes these views for surface,
+high-oblique, and orbit review.
+
 ## Renderer Contract
 
 Clouds are a weather layer above clear-sky atmosphere. They should consume the
 shared sky/celestial/atmosphere state and emit reusable outputs:
 
-- cloud product RGB as linear cloud radiance and product alpha as view
-  transmittance for background composition;
-- mean distance, cloud opacity, and confidence in metadata/debug outputs for
-  reconstruction and depth-aware composition;
+- cloud product RGB is linear cloud radiance;
+- cloud product alpha is view transmittance for background composition, not
+  cloud opacity;
+- metadata/debug outputs carry mean distance, cloud opacity, confidence, and
+  density for reconstruction and future depth-aware composition;
 - low-frequency cloud shadow factor for terrain/ocean;
 - optional sky/reflection or environment contribution for water/PBR consumers;
 - debug views for weather, base/detail density, lighting, shadow, cache,
@@ -244,7 +295,9 @@ should sample cloud outputs or composed sky/environment products.
 V1 should use `RenderGraphBuilder` to make the cloud product and composite
 passes explicit. Descriptor sets, textures, material instances, and synchronization
 policy remain project-owned until at least two consumers need a shared cloud
-renderer contract.
+renderer contract. Until promotion, downstream branches should use the
+standalone app's quarter-resolution consumer smoke recipe to check visual and
+contract assumptions without adopting cloud internals.
 
 ## First Milestone
 

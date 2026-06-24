@@ -10,13 +10,15 @@ Current V1 scope:
 - generated 128^3 Perlin-Worley base noise;
 - generated 32^3 Worley erosion/detail noise;
 - generated 1024^2 weather map with authored coverage, cloud type,
-  edge-breakup, and local-scatter channels that bias the local 3D density field;
+  and edge-breakup channels for authored weather influence;
 - generated artifact descriptors for the materialized base density volume,
-  detail erosion volume, and local weather map, using the shared procedural
+  detail erosion volume, and weather map, using the shared procedural
   metadata contract;
 - spherical shell raymarch with height gradients, detail erosion, Beer
   transmittance, powder response, and a short light march;
-- world-scale weather/type sampling with separate opt-in vertical shear control;
+- world-scale local weather/type sampling with broad coverage, clear slots,
+  fronts, cells, streaks, and micro scatter, plus separate opt-in vertical shear
+  control;
 - sphere-continuous orbit weather coverage/detail/hull, evaluated from direct
   planet-space procedural fields with regional dry slots, storm tracks, fronts,
   cells, and streaks instead of projecting the local weather map;
@@ -37,11 +39,12 @@ Current V1 scope:
   high/orbit shell evaluation, and debug views for the local-vs-orbit blend;
 - footprint- and grazing-aware orbit shell filtering so high-frequency weather
   detail is retained on the disk but damped near the shell edge;
-- diagnostics for weather, weather edge, weather bias, base/detail density,
-  density, transmittance, cloud type, visible density/cloud type, lighting,
-  shadow, cloud alpha, distance, distance regime, local/orbit alpha,
-  ray-sampled orbit coverage/detail/hull, shell alpha/height/normal/shadow,
-  metadata distance/alpha/confidence, metadata density, steps, and background.
+- diagnostics for authored weather, local scatter/clear/structure/edge detail,
+  weather edge, coverage bias, base/detail density, density, transmittance,
+  cloud type, visible density/cloud type, lighting, shadow, cloud alpha,
+  distance, distance regime, local/orbit alpha, ray-sampled orbit
+  coverage/detail/hull, shell alpha/height/normal/shadow, metadata
+  distance/alpha/confidence, metadata density, steps, and background.
 
 The first target is cloud shape. Surface/local captures should preserve coherent
 volumetric cloud masses; orbit captures should be judged against satellite and
@@ -62,12 +65,16 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --cloud-weather-preset broken-cumulus
 ./build/dev/projects/cloud/cloud --cloud-weather-preset storm-cells
 ./build/dev/projects/cloud/cloud --debug-view raw-final
-./build/dev/projects/cloud/cloud --debug-view weather
+./build/dev/projects/cloud/cloud --debug-view authored-weather
+./build/dev/projects/cloud/cloud --debug-view local-scatter
+./build/dev/projects/cloud/cloud --debug-view local-clear
+./build/dev/projects/cloud/cloud --debug-view local-structure
+./build/dev/projects/cloud/cloud --debug-view local-edge-detail
 ./build/dev/projects/cloud/cloud --debug-view base-density
 ./build/dev/projects/cloud/cloud --debug-view detail-density
 ./build/dev/projects/cloud/cloud --debug-view cloud-type
 ./build/dev/projects/cloud/cloud --debug-view weather-edge
-./build/dev/projects/cloud/cloud --debug-view weather-bias
+./build/dev/projects/cloud/cloud --debug-view coverage-bias
 ./build/dev/projects/cloud/cloud --debug-view density
 ./build/dev/projects/cloud/cloud --debug-view visible-density
 ./build/dev/projects/cloud/cloud --debug-view visible-cloud-type
@@ -75,7 +82,10 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --debug-view lighting
 ./build/dev/projects/cloud/cloud --debug-view cloud-alpha
 ./build/dev/projects/cloud/cloud --debug-view distance-regime
+./build/dev/projects/cloud/cloud --debug-view transition-weights
 ./build/dev/projects/cloud/cloud --debug-view local-alpha
+./build/dev/projects/cloud/cloud --debug-view far-shell-alpha
+./build/dev/projects/cloud/cloud --debug-view local-with-shell-alpha
 ./build/dev/projects/cloud/cloud --debug-view orbit-alpha
 ./build/dev/projects/cloud/cloud --debug-view orbit-coverage
 ./build/dev/projects/cloud/cloud --debug-view orbit-detail
@@ -107,7 +117,11 @@ Useful runs:
 ./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --cloud-orbit-representation surface-shell
 ./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --cloud-orbit-fill 0.5
 ./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --cloud-orbit-fill 1.5
+./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --cloud-far-shell-strength 0
+./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --cloud-far-shell-strength 1.5
 ./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --debug-view distance-regime
+./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --debug-view transition-weights
+./build/dev/projects/cloud/cloud --cloud-camera-mode high-oblique --debug-view far-shell-alpha
 ./build/dev/projects/cloud/cloud --cloud-camera-mode orbit --debug-view orbit-coverage
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode surface-up --output outputs/cloud-v1-surface-up.png
 ./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-camera-mode high-oblique --output outputs/cloud-v1-high-oblique.png
@@ -115,15 +129,31 @@ projects/cloud/capture_review.sh outputs/cloud-v1-review
 DEEP=1 projects/cloud/capture_review.sh outputs/cloud-v1-review-deep
 ```
 
+All review output under `outputs/` is ignored by git. The current pre-merge
+checkpoint recipe and review notes live in
+[`docs/notes/cloud-pre-merge-checkpoint.md`](../../docs/notes/cloud-pre-merge-checkpoint.md).
+
+For quick consumer smoke checks from other project branches, use a smaller
+quarter-resolution set instead of the full review matrix:
+
+```sh
+mkdir -p outputs/cloud-consumer-smoke
+./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-quality quarter --cloud-camera-mode surface-up --output outputs/cloud-consumer-smoke/surface-up.png
+./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-quality quarter --cloud-camera-mode high-oblique --output outputs/cloud-consumer-smoke/high-oblique.png
+./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-quality quarter --cloud-camera-mode orbit --cloud-distance-mode orbit-shell --cloud-orbit-representation surface-shell --output outputs/cloud-consumer-smoke/orbit-shell.png
+./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-quality quarter --cloud-camera-mode high-oblique --debug-view transition-weights --output outputs/cloud-consumer-smoke/transition-weights.png
+./build/dev/projects/cloud/cloud --headless --frames 2 --cloud-quality quarter --cloud-camera-mode high-oblique --debug-view local-with-shell-alpha --output outputs/cloud-consumer-smoke/local-with-shell-alpha.png
+```
+
 `capture_review.sh` defaults to a focused shape/regime review: final camera
 views, satellite-named orbit captures, high-oblique transition, volume
-comparison, local/orbit alpha, distance-regime checks, ray-sampled orbit
-procedural coverage/detail/hull, shell-specific alpha/height/normal/shadow, and
-a small surface-local density set. `DEEP=1` adds secondary tuning captures such
-as sampling comparisons, metadata, lighting breakdowns, weather-influence
-sweeps, satellite orbit motion, and explicitly named `orbit-local-weather`
-sweeps, orbit-fill comparisons, satellite orbit motion, and explicitly named
-`orbit-local-weather` diagnostics for the old surface-local weather projection.
+comparison, local/high-view-bridge/local-plus-bridge/orbit alpha, transition
+weights, distance-regime checks, ray-sampled orbit procedural
+coverage/detail/hull, shell-specific alpha/height/normal/shadow, and a small
+surface-local density set. The default set includes high-oblique bridge
+strength comparisons and orbit empty-space-fill comparisons. `DEEP=1` adds
+secondary tuning captures such as sampling comparisons, metadata, lighting
+breakdowns, authored-weather influence sweeps, and satellite orbit motion.
 The script also writes
 `diagnostic-crops/center-feature-contact.png` with resolution-scaled center
 crops for the active review set.
@@ -138,29 +168,57 @@ Controls:
 - `Shape / Density`: base shape scale, vertical shear, detail erosion, and
   powder response.
 - `Weather softness`: damps broad weather contrast before local density shaping.
-- `Weather influence`: controls how strongly the broad weather map biases local
-  shape thresholds, cloud type, and edge erosion. The default is `0`, preserving
-  the local noise-scattered baseline while authored weather remains opt-in.
+- `Authored weather influence`: controls how strongly the authored broad
+  weather map biases local shape thresholds, cloud type, and edge erosion. The
+  default is `0`, preserving the layered procedural local weather baseline
+  while authored weather remains opt-in. `local-scatter`, `local-clear`,
+  `local-structure`, and `local-edge-detail` show the procedural local fields
+  before final density shaping. `coverage-bias` is the canonical debug view for
+  the final local coverage bias; `weather-bias` and `weather-mask` remain
+  parser aliases for old commands.
 - `Sampling`: ray-start sampling mode and jitter amount.
-- `Distance Regime`: local/orbit mode, altitude and ray-distance transition
-  ranges, broad-shell detail strength, and broad-shell density scale.
+- `Distance / Transition`: local/orbit mode, altitude and ray-distance
+  transition ranges, local-volume enable, surface horizon assist, and high-view
+  far-bridge range/strength.
+  `transition-weights` displays local-branch availability in red, effective
+  high-view bridge contribution in green, and full orbit takeover in blue.
+  `far-shell-alpha` and `local-with-shell-alpha` isolate the adaptive low-detail
+  local far bridge plus the dedicated surface horizon assist from the
+  foreground local volume and full orbit replacement. The debug-view and CLI
+  names keep the historical `far-shell` / `horizon-layer` vocabulary for
+  compatibility.
+- `Orbit Shell`: orbit representation plus orbit detail, density, empty-space
+  fill, motion, and extinction. These are art controls for the default
+  cloud-top shell path rather than local surface-volume controls.
   Orbit shell diagnostics sample a direct planet-space coverage/detail/hull
   model rather than the surface-local planar density field. The broad orbit
   weather frequencies derive from `Weather scale`, with regional storm/dry
   masks owning the planet-scale layout and fine detail constrained to fronts,
   cells, streaks, edge breakup, and hull erosion. The orbit shell should read as
   broken regional weather with large clear windows and fewer totally empty
-  regions, not as a smooth planet-wide cap. `Orbit fill` biases that empty-space
-  fill while preserving the same weather/detail fields.
-- `Lighting`: ambient, direct sun, phase/rim, absorption, shadow, and horizon
-  fill controls.
-- `Final Resolve`: alpha-aware smoothing amount plus final contrast,
-  saturation, horizon glow, sun glare, and metadata-aware neighborhood resolve.
+  regions, not as a smooth planet-wide cap.
+- `Lighting / Horizon Fill`: ambient, direct sun, phase/rim, absorption, shadow,
+  and cloud horizon-fill lighting controls.
+- `Final Resolve / Sky Glow`: alpha-aware smoothing amount plus final contrast,
+  saturation, sky horizon glow, sun glare, and metadata-aware neighborhood
+  resolve.
 
 Known deferrals:
 
 - No cached octahedral hemisphere path yet. `cloud_ref_2` remains the cache
   architecture reference for a later pass.
+- High-oblique is the current regime bridge target. Surface/local volume should
+  remain the foreground shape reference, while the far bridge carries cloud
+  continuity toward the horizon before full orbit-shell replacement takes over.
+  The far bridge marches only the later ray segment with fewer local-density
+  samples and a higher LOD bias, then adds a cheap distance/grazing-gated
+  horizon layer sampled from the same local weather field. Surface cameras use
+  the same horizon layer through a narrower low-sky/long-ray gate so distant
+  clouds continue toward the horizon without filling the whole lower view.
+  Aerial perspective is applied once after local/far/orbit composition. The
+  default handoff keeps full orbit replacement above the high-oblique preset
+  (`45 km` to `180 km`) while the far shell fills long rays earlier (`30 km` to
+  `160 km`) with a slightly boosted effective strength.
 - Temporal reconstruction exists for final-view cleanup, but raw diagnostics
   remain the source of truth when judging cloud shape.
 - Static sampling controls are diagnostic and deterministic. A blue-noise or
@@ -180,6 +238,9 @@ Known deferrals:
   sample cloud outputs rather than owning cloud raymarch code.
 - No promoted shared cloud renderer API yet. Textures, descriptors, materials,
   and synchronization remain project-owned in V1.
+- Consumer smoke checks should use `quarter` quality unless the purpose is
+  visual tuning. The standalone cloud app keeps `full` quality as its inspection
+  default.
 - Generated artifact metadata is descriptor-only for now. GPU content hashes,
   readback/export metadata, and cached sky/cloud products remain deferred.
 

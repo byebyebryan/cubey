@@ -38,10 +38,14 @@ struct DensitySample {
     float density;
     float base_density;
     float detail_density;
-    float weather;
+    float authored_weather;
+    float local_scatter;
+    float local_clear;
+    float local_structure;
+    float local_edge_detail;
     float cloud_type;
     float weather_edge;
-    float weather_bias;
+    float coverage_bias;
     float height_fraction;
 };
 
@@ -52,6 +56,14 @@ struct OrbitWeatherSample {
     float cloud_type;
     float weather_edge;
     float height_multiplier;
+};
+
+struct LocalWeatherSample {
+    float coverage;
+    float cloud_type;
+    float edge_detail;
+    float clear_gate;
+    float structure;
 };
 
 struct MarchResult {
@@ -150,6 +162,14 @@ float cloud_orbit_ridge(vec3 p) {
     return 1.0 - abs(cloud_orbit_fbm(p) * 2.0 - 1.0);
 }
 
+float cloud_local_fbm(vec3 p, uint seed, uint octaves) {
+    return clamp(0.5 + 0.5 * cubey_proc_fbm_3d(p, seed, octaves), 0.0, 1.0);
+}
+
+float cloud_local_ridge(vec3 p, uint seed, uint octaves) {
+    return 1.0 - abs(cloud_local_fbm(p, seed, octaves) * 2.0 - 1.0);
+}
+
 float cloud_orbit_feature_count() {
     float circumference_m = max(cloud_planet_radius() * 2.0 * CLOUD_PI, 1.0);
     float feature_scale_m = max(params.weather.z * 1000.0, 1000.0);
@@ -166,6 +186,10 @@ float cloud_orbit_shell_extinction() {
 
 float cloud_orbit_fill() {
     return clamp(params.orbit_shell_options.z, 0.0, 2.0);
+}
+
+float cloud_far_shell_strength() {
+    return clamp(params.orbit_shell_options.w, 0.0, 1.5);
 }
 
 vec3 cloud_orbit_tangent(vec3 normal) {
@@ -344,6 +368,62 @@ float cloud_orbit_synoptic_systems(vec3 normal, vec3 wind, float feature_count) 
     return clamp(max(max(a, b), c), 0.0, 1.0);
 }
 
+float cloud_orbit_regional_seed(float storm_track, float synoptic_system,
+                                float macro_a, float macro_b) {
+    float moving_systems = max(storm_track, synoptic_system * 0.72);
+    float macro_support = smoothstep(0.52, 0.86, macro_a) * 0.24 +
+                          smoothstep(0.58, 0.86, macro_b) * 0.16;
+    return clamp(moving_systems + macro_support, 0.0, 1.0);
+}
+
+float cloud_orbit_regional_fill_field(float regional_seed, float macro_a,
+                                      float macro_b, float macro_c,
+                                      float orbit_fill) {
+    float fill_bias = clamp(orbit_fill, 0.0, 2.0);
+    float broken_fill =
+        smoothstep(0.31, 0.72, macro_a * 0.50 + macro_c * 0.50) * 0.42 +
+        smoothstep(0.44, 0.80, macro_b) * 0.13;
+    return clamp(regional_seed + broken_fill * fill_bias, 0.0, 1.0);
+}
+
+float cloud_orbit_clear_gate(float dry_slot, float regional_fill, float orbit_fill) {
+    float fill_bias = clamp(orbit_fill, 0.0, 2.0);
+    float dry_strength =
+        mix(mix(0.86, 0.48, fill_bias), mix(0.50, 0.28, fill_bias), regional_fill);
+    return 1.0 - smoothstep(0.58, 0.92, dry_slot) * dry_strength;
+}
+
+float cloud_orbit_broad_weather(float storm_track, float synoptic_system,
+                                float macro_a, float macro_b, float macro_c,
+                                float regional_fill, float clear_gate,
+                                float orbit_fill) {
+    float fill_bias = clamp(orbit_fill, 0.0, 2.0);
+    float broad_fill =
+        smoothstep(0.30, 0.72, macro_a * 0.42 + macro_b * 0.20 + macro_c * 0.38) *
+        mix(0.16, 0.42, regional_fill) * fill_bias;
+    float track_field = storm_track * mix(0.20, 0.42, macro_b);
+    float system_field = synoptic_system * 0.34;
+    float planetary_field = macro_a * macro_c * 0.20;
+    return clamp((track_field + system_field + planetary_field + broad_fill) * clear_gate,
+                 0.0, 1.0);
+}
+
+float cloud_orbit_structure_field(float front_field, float cell_field,
+                                  float streak_field, float micro_field,
+                                  float synoptic_system) {
+    return clamp(front_field * 0.40 + cell_field * 0.24 + streak_field * 0.26 +
+                     smoothstep(0.36, 0.80, micro_field) * 0.10 +
+                     synoptic_system * 0.12,
+                 0.0, 1.0);
+}
+
+float cloud_orbit_edge_detail_field(float front_field, float cell_field,
+                                    float streak_field, float micro_field) {
+    return clamp(front_field * 0.24 + cell_field * 0.20 + streak_field * 0.28 +
+                     smoothstep(0.26, 0.78, micro_field) * 0.28,
+                 0.0, 1.0);
+}
+
 OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
                                                           float height_fraction,
                                                           float footprint) {
@@ -375,29 +455,15 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
                         vec3(8.1, 1.7, 4.2));
     float orbit_fill = cloud_orbit_fill();
     float regional_seed =
-        clamp(max(storm_track * 0.82, synoptic_system) +
-                  smoothstep(0.52, 0.86, macro_a) * 0.26 +
-                  smoothstep(0.56, 0.84, macro_b) * 0.18,
-              0.0, 1.0);
+        cloud_orbit_regional_seed(storm_track, synoptic_system, macro_a, macro_b);
     float regional_fill =
-        clamp(regional_seed +
-                  smoothstep(0.30, 0.72, macro_a * 0.58 + macro_c * 0.42) * 0.48 *
-                      orbit_fill +
-                  smoothstep(0.42, 0.78, macro_b) * 0.14 * orbit_fill,
-              0.0, 1.0);
+        cloud_orbit_regional_fill_field(regional_seed, macro_a, macro_b, macro_c,
+                                        orbit_fill);
     float dry_slot = cloud_orbit_dry_slot_field(warped_normal, wind, feature_count);
-    float clear_gate = 1.0 - smoothstep(0.60, 0.92, dry_slot) *
-                                 mix(mix(0.82, 0.50, orbit_fill),
-                                     mix(0.44, 0.26, orbit_fill),
-                                     regional_fill);
-    float broad_fill =
-        smoothstep(0.28, 0.70, macro_a * 0.46 + macro_b * 0.20 + macro_c * 0.34) *
-        mix(0.18, 0.48, regional_fill) * orbit_fill;
+    float clear_gate = cloud_orbit_clear_gate(dry_slot, regional_fill, orbit_fill);
     float broad_field =
-        clamp((synoptic_system * 0.52 + storm_track * macro_b * 0.30 +
-               macro_a * macro_c * 0.18 + broad_fill) *
-                  clear_gate,
-              0.0, 1.0);
+        cloud_orbit_broad_weather(storm_track, synoptic_system, macro_a, macro_b,
+                                  macro_c, regional_fill, clear_gate, orbit_fill);
 
     float front_field = cloud_orbit_front_field(warped_normal, tangent, side, wind, feature_count);
     float cell_field = cloud_orbit_cell_field(warped_normal, wind, feature_count);
@@ -412,14 +478,11 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
     micro_field =
         mix(smoothstep(0.34, 0.82, micro_field) * 0.56, micro_field, detail_visibility);
     float structure_field =
-        clamp(front_field * 0.38 + cell_field * 0.23 + streak_field * 0.27 +
-                  smoothstep(0.34, 0.78, micro_field) * 0.12 +
-                  synoptic_system * 0.18,
-              0.0, 1.0);
+        cloud_orbit_structure_field(front_field, cell_field, streak_field,
+                                    micro_field, synoptic_system);
     float edge_detail =
-        clamp(front_field * 0.22 + cell_field * 0.18 + streak_field * 0.26 +
-                  smoothstep(0.24, 0.76, micro_field) * 0.34,
-              0.0, 1.0);
+        cloud_orbit_edge_detail_field(front_field, cell_field, streak_field,
+                                      micro_field);
 
     float global_coverage = clamp(params.weather.x, 0.0, 1.0);
     float orbit_coverage = clamp(global_coverage * mix(0.94, 1.08, orbit_fill), 0.0, 1.0);
@@ -452,15 +515,15 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
     float broken_fill =
         smoothstep(0.20, 0.62, structure_field) *
         smoothstep(0.16, 0.64, regional_fill + broad_field * 0.42) *
-        orbit_coverage * 0.170 * clear_gate * orbit_fill;
+        orbit_coverage * 0.150 * clear_gate * orbit_fill;
     float system_coverage =
-        envelope * mix(mix(0.28, 0.52, orbit_fill), mix(0.96, 0.98, orbit_fill), broken) *
+        envelope * mix(mix(0.26, 0.48, orbit_fill), mix(0.92, 0.98, orbit_fill), broken) *
         mix(mix(0.62, 0.76, orbit_fill), 1.0, regional_fill);
     float front_overlay =
         filament_gate * max(max(envelope, storm_track * 0.34), synoptic_system * 0.56) *
         (0.36 + 0.36 * edge_holes);
     system_coverage =
-        max(system_coverage, synoptic_system * mix(0.34, 0.90, broken) * clear_gate);
+        max(system_coverage, synoptic_system * mix(0.22, 0.72, broken) * clear_gate);
     float coverage =
         clamp(max(system_coverage * edge_holes, front_overlay * clear_gate) + scattered +
                   broken_fill,
@@ -471,7 +534,7 @@ OrbitWeatherSample cloud_orbit_weather_sample_from_normal(vec3 normal,
                   smoothstep(mix(0.035, 0.030, orbit_fill),
                              mix(0.48, 0.44, orbit_fill),
                              coverage) *
-                  mix(1.0, mix(0.90, 1.12, broken), orbit_fill),
+                  mix(0.98, 1.10, broken),
               0.0,
               1.0);
     float type_field =
@@ -512,10 +575,102 @@ vec2 cloud_weather_uv(vec3 position) {
     return position.xz / weather_period_m + vec2(0.5);
 }
 
+LocalWeatherSample cloud_local_weather_sample(vec3 position, vec3 animation,
+                                              float height_fraction) {
+    float feature_scale_m = max(params.weather.z * 1000.0, 1000.0);
+    vec3 domain = vec3((position.x + animation.x) / (feature_scale_m * 0.42),
+                       (position.z + animation.z) / (feature_scale_m * 0.42),
+                       height_fraction * 0.55 + params.weather.w / (feature_scale_m * 3.5));
+    float broad = cloud_local_fbm(domain, 0x4c534341U, 4U);
+    float dry_slot =
+        cloud_local_fbm(domain * 0.58 + vec3(9.1, 2.4, 6.6), 0x44524f50U, 3U);
+    float breakup = cloud_local_fbm(domain * 2.15 + vec3(17.2, 4.8, 9.1),
+                                    0x42524541U, 3U);
+    float medium = cloud_local_fbm(domain * 4.30 + vec3(6.5, 18.1, 2.7),
+                                   0x4d454455U, 3U);
+    float fine = cloud_local_fbm(domain * 8.80 + vec3(31.0, 4.2, 14.6),
+                                 0x46524147U, 2U);
+    float micro_ridge =
+        cloud_local_ridge(domain * 7.40 - vec3(4.1, 16.7, 2.3), 0x57495350U, 2U);
+
+    float front_weight = clamp(params.weather_feature_weights.x, 0.0, 1.0);
+    float cell_weight = clamp(params.weather_feature_weights.y, 0.0, 1.0);
+    float streak_weight = clamp(params.weather_feature_weights.z, 0.0, 1.0);
+
+    float broad_gate = smoothstep(0.52, 0.78, broad);
+    float core_gate = smoothstep(0.58, 0.82, broad);
+    float cell_gate = smoothstep(0.46, 0.76, breakup);
+    float medium_gate = smoothstep(0.48, 0.74, medium);
+    float fine_gate = smoothstep(0.50, 0.78, fine);
+
+    float front_coord = domain.x * 0.55 - domain.y * 0.95 + broad * 2.4 + medium * 0.85;
+    float front_lines = 1.0 - abs(sin(front_coord * (1.15 + front_weight * 1.85)));
+    float front_field = smoothstep(0.46, 0.88, front_lines) *
+                        smoothstep(0.28, 0.74, medium + breakup * 0.35) *
+                        front_weight * 0.58;
+
+    float holes = smoothstep(0.56, 0.84, medium);
+    float cell_field =
+        cell_gate * mix(1.0 - holes * 0.66, smoothstep(0.42, 0.84, micro_ridge), 0.32) *
+        cell_weight;
+
+    float streak_coord = domain.y * 2.25 + domain.x * 0.42 + fine * 1.4;
+    float streak_lines = 1.0 - abs(sin(streak_coord * (0.62 + streak_weight * 1.10)));
+    float streak_field = smoothstep(0.72, 0.96, streak_lines) *
+                         smoothstep(0.36, 0.76, medium + fine * 0.35) *
+                         streak_weight * 0.55;
+
+    float micro_field =
+        clamp(fine_gate * (1.0 - smoothstep(0.66, 0.92, medium)) * 0.42 +
+                  smoothstep(0.42, 0.86, micro_ridge) * 0.58,
+              0.0, 1.0);
+    float structure = clamp(front_field * 0.22 + cell_field * 0.36 +
+                                streak_field * 0.14 + micro_field * 0.28,
+                            0.0, 1.0);
+
+    float broad_context = smoothstep(0.34, 0.70, broad);
+    float dry_strength = mix(0.82, 0.32, broad_context);
+    float clear_gate = 1.0 - smoothstep(0.58, 0.90, dry_slot) * dry_strength;
+
+    float softness = clamp(params.sampling_options.z, 0.02, 0.60);
+    float envelope = smoothstep(0.54 - softness * 0.20, 0.80 + softness * 0.22,
+                                broad);
+    float broken = smoothstep(0.20 - softness * 0.08, 0.58 + softness * 0.10,
+                              structure);
+    float cloud_system =
+        pow(envelope * mix(0.06, 1.0, max(cell_gate, broken * 0.84)), 1.42) *
+        clear_gate;
+
+    float edge_context = broad_context * mix(0.36, 1.0, cell_gate) *
+                         (1.0 - core_gate * 0.58) * clear_gate;
+    float fragments = medium_gate * mix(0.30, 1.0, fine_gate) * edge_context;
+    float satellites = smoothstep(0.64, 0.90,
+                                  micro_field * 0.54 + cell_field * 0.28 +
+                                      broad * 0.18) *
+                       broad_context * clear_gate * 0.42;
+    float front_overlay = front_field * smoothstep(0.24, 0.68, broad_context + envelope) *
+                          clear_gate * 0.18;
+
+    float coverage =
+        clamp(max(max(cloud_system, front_overlay), fragments * 0.46) +
+                  satellites,
+              0.0, 1.0);
+    float edge_detail =
+        clamp(front_field * 0.24 + cell_field * 0.20 + streak_field * 0.28 +
+                  micro_field * 0.28,
+              0.0, 1.0);
+    float cloud_type =
+        clamp(0.58 + coverage * 0.10 + structure * 0.24 + cell_field * 0.10,
+              0.0, 1.0);
+
+    return LocalWeatherSample(coverage, cloud_type, edge_detail, clear_gate, structure);
+}
+
 DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float height_fraction = cloud_height_fraction(position);
     if (height_fraction <= 0.0 || height_fraction >= 1.0) {
-        return DensitySample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, height_fraction);
+        return DensitySample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                             0.0, height_fraction);
     }
 
     float crispiness = max(params.shape_options.x, 0.001);
@@ -528,12 +683,13 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
         height_fraction * WIND_DIRECTION * top_offset + WIND_DIRECTION * params.weather.w;
     vec2 shape_uv = cloud_project_uv(position);
     vec2 moving_shape_uv = cloud_project_uv(position + animation);
-    vec4 local_weather = texture(weather_texture, moving_shape_uv);
     vec4 authored_weather_sample = texture(weather_texture, cloud_weather_uv(position + animation));
     float authored_weather = clamp(authored_weather_sample.r, 0.0, 1.0);
-    float local_scatter = clamp(local_weather.a, 0.0, 1.0);
+    LocalWeatherSample local_weather =
+        cloud_local_weather_sample(position, animation, height_fraction);
+    float local_scatter = local_weather.coverage;
     float weather_influence = clamp(params.sampling_options.w, 0.0, 1.0);
-    float cloud_type = mix(1.0, authored_weather_sample.g, weather_influence);
+    float cloud_type = mix(local_weather.cloud_type, authored_weather_sample.g, weather_influence);
     float weather_edge = authored_weather_sample.b;
 
     vec4 low_frequency =
@@ -548,8 +704,8 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float global_coverage = clamp(params.weather.x, 0.0, 1.0);
     float softness = clamp(params.sampling_options.z, 0.02, 0.60);
     float softened_authored_weather = mix(authored_weather, 0.5, softness);
-    float weather_bias = mix(local_scatter, softened_authored_weather, weather_influence);
-    float local_coverage = clamp(global_coverage * weather_bias, 0.0, 1.0);
+    float coverage_bias = mix(local_scatter, softened_authored_weather, weather_influence);
+    float local_coverage = clamp(global_coverage * coverage_bias, 0.0, 1.0);
     float base_with_coverage =
         cloud_remap(base_cloud, local_coverage, 1.0, 0.0, 1.0) * local_coverage;
     float detail_density = 0.0;
@@ -563,11 +719,9 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
         float high_modifier =
             mix(high_fbm, 1.0 - high_fbm, clamp(height_fraction * 10.0, 0.0, 1.0));
         detail_density = high_modifier;
-        float edge_bias = mix(0.5, weather_edge, weather_influence);
+        float edge_bias = mix(local_weather.edge_detail, weather_edge, weather_influence);
         float erosion_strength =
-            mix(1.0,
-                clamp(params.weather_feature_weights.w * mix(0.72, 1.18, edge_bias), 0.0, 1.0),
-                weather_influence);
+            clamp(params.weather_feature_weights.w * mix(0.82, 1.20, edge_bias), 0.0, 1.0);
         float eroded = base_with_coverage -
                        high_modifier * (1.0 - base_with_coverage) * erosion_strength;
         float remapped =
@@ -577,8 +731,9 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
 
     float density = clamp(base_with_coverage, 0.0, 1.0);
     return DensitySample(density, clamp(base_cloud, 0.0, 1.0), detail_density,
-                         authored_weather, cloud_type, weather_edge, weather_bias,
-                         height_fraction);
+                         authored_weather, local_scatter, local_weather.clear_gate,
+                         local_weather.structure, local_weather.edge_detail, cloud_type,
+                         weather_edge, coverage_bias, height_fraction);
 }
 
 float cloud_light_transmittance(vec3 start, float step_size, vec3 light_dir,
@@ -706,11 +861,84 @@ bool cloud_shell_segment(vec3 origin, vec3 direction, out float start_t, out flo
     return end_t > start_t;
 }
 
+float cloud_inner_boundary_fade_distance() {
+    return clamp(params.cloud_shell.y * 0.28, 1800.0, 7000.0);
+}
+
+float cloud_inner_boundary_elevated_camera_factor() {
+    float cloud_base = params.cloud_shell.x;
+    float cloud_thickness = max(params.cloud_shell.y, 1.0);
+    return smoothstep(cloud_base + cloud_thickness * 0.10,
+                      cloud_base + cloud_thickness * 0.45,
+                      cloud_camera_altitude());
+}
+
+bool cloud_segment_ends_at_inner_boundary(vec3 origin, vec3 direction, float start_t,
+                                          float end_t, float step_size) {
+    float inner_near = 0.0;
+    float inner_far = 0.0;
+    if (!cloud_ray_sphere(origin, direction, cloud_inner_radius(), inner_near,
+                              inner_far)) {
+        return false;
+    }
+    if (inner_near <= max(start_t, 0.0)) {
+        return false;
+    }
+    return abs(end_t - inner_near) <= max(step_size * 1.75, 32.0);
+}
+
+float cloud_inner_boundary_end_fade(float sample_t, float end_t, bool ends_at_inner) {
+    if (!ends_at_inner) {
+        return 1.0;
+    }
+    float distance_to_end = max(end_t - sample_t, 0.0);
+    return smoothstep(0.0, cloud_inner_boundary_fade_distance(), distance_to_end);
+}
+
+float cloud_inner_boundary_sample_fade(vec3 position, vec3 direction,
+                                       float height_fraction) {
+    float elevated_camera = cloud_inner_boundary_elevated_camera_factor();
+    if (elevated_camera <= 0.0) {
+        return 1.0;
+    }
+
+    float view_up = dot(direction, cloud_local_up(position));
+    float boundary_view = 1.0 - smoothstep(0.04, 0.24, view_up);
+    float lower_layer_fade = smoothstep(0.08, 0.55, height_fraction);
+    return mix(1.0, lower_layer_fade, elevated_camera * boundary_view);
+}
+
+float cloud_inner_boundary_ray_fade(vec3 origin, vec3 direction) {
+    float cloud_thickness = max(params.cloud_shell.y, 1.0);
+    float elevated_camera = cloud_inner_boundary_elevated_camera_factor();
+    if (elevated_camera <= 0.0) {
+        return 1.0;
+    }
+
+    vec3 center = cloud_sphere_center();
+    vec3 local_origin = origin - center;
+    float closest_t = max(-dot(local_origin, direction), 0.0);
+    if (closest_t <= 0.0) {
+        return 1.0;
+    }
+
+    vec3 closest_local = local_origin + direction * closest_t;
+    float closest_radius = length(closest_local);
+    vec3 closest_up = closest_radius > 0.001 ? closest_local / closest_radius
+                                             : cloud_planet_up();
+    float boundary_view = 1.0 - smoothstep(0.04, 0.24, dot(direction, closest_up));
+    float tangent_distance = abs(closest_radius - cloud_inner_radius());
+    float tangent_band = clamp(cloud_thickness * 0.55, 5000.0, 14000.0);
+    float tangent_fade = smoothstep(0.0, tangent_band, tangent_distance);
+    return mix(1.0, mix(0.08, 1.0, tangent_fade),
+               elevated_camera * boundary_view);
+}
+
 float cloud_distance_mode_value() {
     return params.distance_options.x;
 }
 
-float cloud_orbit_blend(vec3 origin, vec3 direction, float start_t, float end_t) {
+float cloud_full_orbit_blend() {
     int mode = int(cloud_distance_mode_value() + 0.5);
     if (mode == CLOUD_DISTANCE_LOCAL) {
         return 0.0;
@@ -723,17 +951,28 @@ float cloud_orbit_blend(vec3 origin, vec3 direction, float start_t, float end_t)
     float transition_end = max(params.distance_options.z, transition_start + 1.0);
     float altitude_blend =
         smoothstep(transition_start, transition_end, cloud_camera_altitude());
+    int camera_mode = int(params.camera_forward_mode.w + 0.5);
+    float orbit_camera_blend = camera_mode >= 4 ? 1.0 : 0.0;
+    return clamp(max(altitude_blend, orbit_camera_blend), 0.0, 1.0);
+}
+
+float cloud_far_shell_blend(float start_t, float end_t) {
+    int mode = int(cloud_distance_mode_value() + 0.5);
+    if (mode == CLOUD_DISTANCE_LOCAL) {
+        return 0.0;
+    }
+    if (mode == CLOUD_DISTANCE_ORBIT_SHELL) {
+        return 1.0;
+    }
+
+    float transition_start = params.distance_options.y;
 
     float high_altitude_gate =
         smoothstep(4000.0, max(transition_start, 4001.0), cloud_camera_altitude());
     float far_start = params.orbit_options.x;
     float far_end = max(params.orbit_options.y, far_start + 1.0);
     float ray_distance_blend = smoothstep(far_start, far_end, max(end_t - start_t, 0.0));
-    float distance_blend = ray_distance_blend * high_altitude_gate;
-
-    int camera_mode = int(params.camera_forward_mode.w + 0.5);
-    float orbit_camera_blend = camera_mode >= 4 ? 1.0 : 0.0;
-    return clamp(max(max(altitude_blend, distance_blend), orbit_camera_blend), 0.0, 1.0);
+    return clamp(ray_distance_blend * high_altitude_gate * cloud_far_shell_strength(), 0.0, 1.0);
 }
 
 int cloud_orbit_representation() {
@@ -742,6 +981,21 @@ int cloud_orbit_representation() {
 
 bool cloud_orbit_surface_shell_enabled() {
     return cloud_orbit_representation() == CLOUD_ORBIT_REPRESENTATION_SURFACE_SHELL;
+}
+
+bool cloud_horizon_layer_enabled() {
+    return params.background_options.y > 0.5;
+}
+
+bool cloud_local_volume_enabled() {
+    return params.background_options.z > 0.5;
+}
+
+bool cloud_surface_horizon_layer_mode() {
+    return cloud_horizon_layer_enabled() &&
+           cloud_surface_view_factor() > 0.0 &&
+           cloud_camera_altitude() <
+               max(params.cloud_shell.x * 0.90, params.cloud_shell.x - 1.0);
 }
 
 MarchResult cloud_empty_result() {
@@ -772,6 +1026,87 @@ MarchResult cloud_mix_results(MarchResult local_result, MarchResult orbit_result
                        mix(local_result.phase_light, orbit_result.phase_light, blend));
 }
 
+MarchResult cloud_scale_result(MarchResult result, float weight) {
+    float w = clamp(weight, 0.0, 1.0);
+    float transmittance = mix(1.0, result.transmittance, w);
+    return MarchResult(result.radiance * w,
+                       transmittance,
+                       1.0 - transmittance,
+                       result.avg_density * w,
+                       mix(1.0, result.last_light, w),
+                       result.first_distance,
+                       result.mean_distance,
+                       result.steps * w,
+                       result.ambient_light * w,
+                       result.direct_light * w,
+                       result.phase_light * w);
+}
+
+MarchResult cloud_compose_results(MarchResult foreground, MarchResult background) {
+    float transmittance = foreground.transmittance * background.transmittance;
+    float foreground_alpha = clamp(foreground.alpha, 0.0, 1.0);
+    float background_alpha = clamp(background.alpha, 0.0, 1.0);
+    float alpha_sum = max(foreground_alpha + background_alpha, 0.0001);
+    float mean_distance = foreground.mean_distance;
+    if (foreground.mean_distance < 0.0) {
+        mean_distance = background.mean_distance;
+    } else if (background.mean_distance >= 0.0) {
+        mean_distance =
+            (foreground.mean_distance * foreground_alpha +
+             background.mean_distance * background_alpha) /
+            alpha_sum;
+    }
+    float first_distance = foreground.first_distance;
+    if (first_distance < 0.0 ||
+        (background.first_distance >= 0.0 && background.first_distance < first_distance)) {
+        first_distance = background.first_distance;
+    }
+    return MarchResult(foreground.radiance +
+                           foreground.transmittance * background.radiance,
+                       transmittance,
+                       1.0 - transmittance,
+                       foreground.avg_density + background.avg_density * background_alpha,
+                       min(foreground.last_light, background.last_light),
+                       first_distance,
+                       mean_distance,
+                       foreground.steps + background.steps,
+                       foreground.ambient_light +
+                           foreground.transmittance * background.ambient_light,
+                       foreground.direct_light +
+                           foreground.transmittance * background.direct_light,
+                       foreground.phase_light +
+                           foreground.transmittance * background.phase_light);
+}
+
+MarchResult cloud_apply_composite_haze(MarchResult result, vec3 background) {
+    if (result.alpha <= 0.001) {
+        return result;
+    }
+    float first_distance =
+        result.first_distance >= 0.0 ? result.first_distance : result.mean_distance;
+    if (first_distance < 0.0) {
+        return result;
+    }
+
+    float mean_distance = result.mean_distance >= 0.0 ? result.mean_distance : first_distance;
+    float haze_distance = mix(first_distance, mean_distance, 0.65);
+    float surface_view = cloud_surface_view_factor();
+    float surface_haze = mix(1.0, cloud_weather_haze_factor(), surface_view);
+    float altitude_gate =
+        1.0 - smoothstep(params.distance_options.y,
+                         max(params.distance_options.z * 2.0, params.distance_options.y + 1.0),
+                         cloud_camera_altitude());
+    float distance_gate = smoothstep(6000.0, 80000.0, haze_distance);
+    float haze =
+        1.0 - exp(-haze_distance * 0.000020 * params.cloud_color_bottom_horizon.w *
+                  mix(0.72, 0.42, surface_view) * surface_haze * altitude_gate);
+    haze = clamp(haze * distance_gate, 0.0, mix(0.48, 0.30, surface_view));
+
+    MarchResult hazed = result;
+    hazed.radiance = mix(result.radiance, background * result.alpha, haze);
+    return hazed;
+}
+
 DensitySample cloud_orbit_density_sample(vec3 position) {
     float detail_strength = clamp(params.distance_options.w, 0.0, 1.0);
     OrbitWeatherSample orbit = cloud_orbit_weather_sample(position);
@@ -783,6 +1118,10 @@ DensitySample cloud_orbit_density_sample(vec3 position) {
                          base_hull,
                          orbit.detail * detail_strength,
                          orbit.coverage,
+                         orbit.coverage,
+                         1.0,
+                         orbit.detail,
+                         orbit.weather_edge,
                          orbit.cloud_type,
                          orbit.weather_edge,
                          detailed_hull,
@@ -954,6 +1293,7 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
 
     DensitySample density_sample =
         DensitySample(max(alpha, 0.001), base_hull, orbit.detail, orbit.coverage,
+                      orbit.coverage, 1.0, orbit.detail, orbit.weather_edge,
                       orbit.cloud_type, orbit.weather_edge, filtered_hull,
                       cloud_orbit_shell_surface_height_fraction());
     vec3 sun_color = vec3(1.18, 1.10, 0.92) * sun_intensity;
@@ -993,7 +1333,7 @@ MarchResult cloud_orbit_surface_shell(vec3 origin, vec3 direction) {
 }
 
 MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, float end_t,
-                                        vec3 background, ivec2 pixel) {
+                                        ivec2 pixel) {
     int max_steps = clamp(int(params.ref_options.y * 0.36 + 0.5), 8, 28);
     float length_km = max(end_t - start_t, 0.001);
     float ds = length_km / float(max_steps);
@@ -1074,16 +1414,6 @@ MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, 
 
     float alpha = 1.0 - transmittance;
     color = max(color * 1.70 - vec3(0.08 * alpha), vec3(0.0));
-    if (first_distance > 0.0) {
-        float altitude_fog_gate =
-            1.0 - smoothstep(params.distance_options.y,
-                             max(params.distance_options.z * 2.0,
-                                 params.distance_options.y + 1.0),
-                             cloud_camera_altitude());
-        float fog = 1.0 - exp(-first_distance * 0.000028 *
-                              params.cloud_color_bottom_horizon.w * altitude_fog_gate);
-        color = mix(color, background * alpha, clamp(fog, 0.0, 1.0));
-    }
     float mean_distance = distance_weight_sum > 0.0
                               ? weighted_distance_sum / max(distance_weight_sum, 0.0001)
                               : -1.0;
@@ -1094,18 +1424,23 @@ MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, 
                        max(phase_sum * 1.70, vec3(0.0)));
 }
 
-MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
-                            vec3 background, ivec2 pixel) {
-    int max_steps = clamp(int(params.ref_options.y + 0.5), 1, 96);
+MarchResult cloud_local_volume_march(vec3 origin, vec3 direction, float start_t, float end_t,
+                                     ivec2 pixel, int requested_steps, float lod_bias,
+                                     bool expensive_detail) {
+    int max_steps = clamp(requested_steps, 1, 96);
     float length_km = max(end_t - start_t, 0.001);
     float ds = length_km / float(max_steps);
     vec3 step_vec = direction * ds;
-    vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel));
+    float sample_t = start_t + ds * cloud_ray_jitter(pixel);
+    vec3 pos = origin + direction * sample_t;
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     vec3 sun_color = vec3(1.20, 1.12, 0.92) * max(params.sun_direction_intensity.w, 0.0);
     float light_dot_eye = dot(sun_dir, direction);
     float density_factor = max(params.weather.y, 0.0);
     float sigma_ds = -ds * density_factor;
+    bool ends_at_inner_boundary =
+        cloud_segment_ends_at_inner_boundary(origin, direction, start_t, end_t, ds);
+    float inner_boundary_ray_fade = cloud_inner_boundary_ray_fade(origin, direction);
     float transmittance = 1.0;
     vec3 color = vec3(0.0);
     float density_sum = 0.0;
@@ -1122,7 +1457,13 @@ MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
         if (i >= max_steps) {
             break;
         }
-        DensitySample sample_data = cloud_sample_density(pos, true, float(i / 16));
+        DensitySample sample_data =
+            cloud_sample_density(pos, expensive_detail, lod_bias + float(i / 16));
+        sample_data.density *= cloud_inner_boundary_end_fade(sample_t, end_t,
+                                                             ends_at_inner_boundary);
+        sample_data.density *= cloud_inner_boundary_sample_fade(
+            pos, direction, sample_data.height_fraction);
+        sample_data.density *= inner_boundary_ray_fade;
         if (sample_data.density > 0.0) {
             float sample_distance = length(pos - origin);
             if (first_distance < 0.0) {
@@ -1185,6 +1526,7 @@ MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
             break;
         }
         pos += step_vec;
+        sample_t += ds;
         steps_taken += 1.0;
     }
 
@@ -1196,19 +1538,243 @@ MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
     ambient_sum = max(ambient_sum * radiance_scale, vec3(0.0));
     direct_sum = max(direct_sum * radiance_scale, vec3(0.0));
     phase_sum = max(phase_sum * radiance_scale, vec3(0.0));
-    if (first_distance > 0.0) {
-        float fog_scale = mix(1.0, 0.58, surface_view);
-        float surface_haze = mix(1.0, cloud_weather_haze_factor(), surface_view);
-        float fog = 1.0 - exp(-first_distance * 0.00004 *
-                              params.cloud_color_bottom_horizon.w * fog_scale * surface_haze);
-        color = mix(color, background * alpha, clamp(fog, 0.0, 1.0));
-    }
     float mean_distance = distance_weight_sum > 0.0
                               ? weighted_distance_sum / max(distance_weight_sum, 0.0001)
                               : -1.0;
     return MarchResult(color, transmittance, alpha, density_sum / float(max_steps), last_light,
                        first_distance, mean_distance, steps_taken, ambient_sum, direct_sum,
                        phase_sum);
+}
+
+float cloud_far_horizon_ray_weight(vec3 origin, vec3 direction, float start_t, float end_t) {
+    if (!cloud_horizon_layer_enabled()) {
+        return 0.0;
+    }
+
+    float elevated_altitude_gate =
+        smoothstep(8000.0, max(params.distance_options.y, 8001.0), cloud_camera_altitude());
+    float distance_gate =
+        smoothstep(params.orbit_options.x * 0.72,
+                   max(params.orbit_options.y, params.orbit_options.x + 1.0),
+                   max(end_t - start_t, 0.0));
+
+    vec3 local_origin = origin - cloud_sphere_center();
+    float closest_t = clamp(-dot(local_origin, direction), max(start_t, 0.0), end_t);
+    vec3 closest = local_origin + direction * closest_t;
+    float closest_radius = length(closest);
+    if (closest_radius <= 0.001) {
+        return 0.0;
+    }
+
+    vec3 closest_up = closest / closest_radius;
+    float layer_radius = mix(cloud_inner_radius(), cloud_outer_radius(), 0.42);
+    float tangent_distance = abs(closest_radius - layer_radius);
+    float tangent_band = max(params.cloud_shell.y * 1.25, 12000.0);
+    float shell_gate =
+        1.0 - smoothstep(tangent_band * 0.20, tangent_band, tangent_distance);
+    float view_alignment = abs(dot(direction, closest_up));
+    float grazing_gate = 1.0 - smoothstep(0.055, 0.360, view_alignment);
+    float horizon_gate = max(shell_gate, grazing_gate * 0.82);
+    float elevated_weight = elevated_altitude_gate * distance_gate * horizon_gate;
+
+    float view_height = dot(direction, cloud_planet_up());
+    float lower_sky_band =
+        smoothstep(-0.040, 0.055, view_height) *
+        (1.0 - smoothstep(0.20, 0.40, view_height));
+    float surface_camera_gate =
+        cloud_surface_view_factor() *
+        (1.0 - smoothstep(params.cloud_shell.x * 0.18,
+                          max(params.cloud_shell.x * 0.90,
+                              params.cloud_shell.x * 0.18 + 1.0),
+                          cloud_camera_altitude()));
+    float surface_distance_gate =
+        smoothstep(params.orbit_options.x * 0.30,
+                   max(params.orbit_options.y * 0.92,
+                       params.orbit_options.x * 0.30 + 1.0),
+                   max(end_t - start_t, 0.0));
+    float surface_weight =
+        surface_camera_gate * lower_sky_band * surface_distance_gate * 2.35;
+
+    float strength = clamp(params.cloud_color_bottom_horizon.w, 0.0, 2.0);
+    return clamp(max(elevated_weight, surface_weight) * strength, 0.0, 1.0);
+}
+
+DensitySample cloud_far_horizon_density_sample(vec3 position) {
+    float height_fraction = cloud_height_fraction(position);
+    if (height_fraction <= 0.0 || height_fraction >= 1.0) {
+        return DensitySample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                             0.0, height_fraction);
+    }
+
+    float top_offset =
+        max(CLOUD_TOP_OFFSET, params.weather.z * 1000.0 * params.cloud_shell.z);
+    vec3 animation =
+        height_fraction * WIND_DIRECTION * top_offset + WIND_DIRECTION * params.weather.w;
+    LocalWeatherSample local_weather =
+        cloud_local_weather_sample(position, animation, height_fraction);
+    float height_multiplier =
+        max(cloud_density_gradient(height_fraction, local_weather.cloud_type), 0.0);
+    float broad_mass = smoothstep(0.10, 0.58, local_weather.coverage);
+    float structure_mass = smoothstep(0.12, 0.64, local_weather.structure);
+    float edge_mass = smoothstep(0.18, 0.72, local_weather.edge_detail);
+    float continuity = clamp(broad_mass * 0.70 + structure_mass * 0.20 + edge_mass * 0.10,
+                             0.0, 1.0);
+    float broken_continuity =
+        cloud_coverage_modulation(continuity, local_weather.edge_detail, 0.52);
+    float density =
+        mix(continuity, broken_continuity, 0.32) * height_multiplier *
+        mix(0.72, 1.0, local_weather.clear_gate);
+
+    return DensitySample(clamp(density, 0.0, 1.0),
+                         continuity,
+                         local_weather.edge_detail,
+                         local_weather.coverage,
+                         local_weather.coverage,
+                         local_weather.clear_gate,
+                         local_weather.structure,
+                         local_weather.edge_detail,
+                         local_weather.cloud_type,
+                         local_weather.edge_detail,
+                         continuity,
+                         height_fraction);
+}
+
+MarchResult cloud_far_horizon_layer(vec3 origin, vec3 direction, float start_t, float end_t,
+                                    ivec2 pixel) {
+    float ray_weight = cloud_far_horizon_ray_weight(origin, direction, start_t, end_t);
+    if (ray_weight <= 0.0) {
+        return cloud_empty_result();
+    }
+
+    float bridge_start = max(start_t, params.orbit_options.x * 0.58);
+    if (end_t <= bridge_start) {
+        return cloud_empty_result();
+    }
+
+    int max_steps = clamp(int(params.ref_options.y * 0.22 + 0.5), 8, 18);
+    float length_m = max(end_t - bridge_start, 0.001);
+    float ds = length_m / float(max_steps);
+    float sample_t = bridge_start + ds * cloud_ray_jitter(pixel);
+    vec3 pos = origin + direction * sample_t;
+    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
+    vec3 sun_color = vec3(1.18, 1.10, 0.92) * max(params.sun_direction_intensity.w, 0.0);
+    float light_dot_eye = dot(sun_dir, direction);
+    float transmittance = 1.0;
+    vec3 color = vec3(0.0);
+    float density_sum = 0.0;
+    float first_distance = -1.0;
+    float weighted_distance_sum = 0.0;
+    float distance_weight_sum = 0.0;
+    float steps_taken = 0.0;
+    vec3 ambient_sum = vec3(0.0);
+    vec3 direct_sum = vec3(0.0);
+    vec3 phase_sum = vec3(0.0);
+    float last_light = 1.0;
+
+    for (int i = 0; i < 18; ++i) {
+        if (i >= max_steps) {
+            break;
+        }
+
+        DensitySample sample_data = cloud_far_horizon_density_sample(pos);
+        float sample_distance = max(sample_t - start_t, 0.0);
+        float distance_gate =
+            smoothstep(params.orbit_options.x * 0.42,
+                       max(params.orbit_options.y, params.orbit_options.x + 1.0),
+                       sample_distance);
+        float sample_density = sample_data.density * ray_weight * distance_gate;
+        if (sample_density > 0.0) {
+            float world_distance = length(pos - origin);
+            if (first_distance < 0.0) {
+                first_distance = world_distance;
+            }
+
+            vec3 local_up = cloud_local_up(pos);
+            float sun_elevation = dot(sun_dir, local_up);
+            float day = smoothstep(-0.16, 0.10, sun_elevation) *
+                        params.sun_direction_intensity.w;
+            float phase_response = cloud_direct_phase(light_dot_eye);
+            float shadow =
+                clamp(1.0 - sample_density * params.cloud_color_top_shadow.w * 0.24,
+                      0.62, 1.0);
+            vec3 ambient_source =
+                cloud_cloud_ambient(pos, direction, sample_data) *
+                (0.40 + 0.28 * day) * params.lighting_strengths.x;
+            vec3 direct_source =
+                sun_color * shadow * phase_response *
+                (0.10 + 0.42 * day + 0.20 * max(sun_elevation, 0.0)) *
+                params.lighting_strengths.y;
+            vec3 phase_source =
+                sun_color * pow(max(light_dot_eye, 0.0), 4.0) *
+                (0.16 + 0.28 * day) * params.lighting_strengths.z;
+            float surface_opacity_boost =
+                cloud_surface_horizon_layer_mode() ? 3.15 : 1.0;
+            float sample_alpha =
+                1.0 - exp(-sample_density * max(params.weather.y, 0.0) * ds *
+                          0.0040 * surface_opacity_boost);
+            sample_alpha =
+                clamp(sample_alpha, 0.0,
+                      cloud_surface_horizon_layer_mode() ? 0.34 : 0.18);
+            vec3 source = (ambient_source + direct_source + phase_source) *
+                          sample_alpha *
+                          (cloud_surface_horizon_layer_mode() ? 1.62 : 1.0);
+            color += transmittance * source;
+            ambient_sum += transmittance * ambient_source * sample_alpha;
+            direct_sum += transmittance * direct_source * sample_alpha;
+            phase_sum += transmittance * phase_source * sample_alpha;
+            transmittance *= 1.0 - sample_alpha;
+            density_sum += sample_density;
+            weighted_distance_sum += world_distance * sample_alpha;
+            distance_weight_sum += sample_alpha;
+            last_light = shadow;
+        }
+
+        if (transmittance <= 0.01) {
+            break;
+        }
+        pos += direction * ds;
+        sample_t += ds;
+        steps_taken += 1.0;
+    }
+
+    float alpha = 1.0 - transmittance;
+    float mean_distance = distance_weight_sum > 0.0
+                              ? weighted_distance_sum / max(distance_weight_sum, 0.0001)
+                              : -1.0;
+    return MarchResult(max(color * 1.22, vec3(0.0)), transmittance, alpha,
+                       density_sum / float(max_steps), last_light, first_distance,
+                       mean_distance, steps_taken, ambient_sum, direct_sum, phase_sum);
+}
+
+MarchResult cloud_far_bridge_march(vec3 origin, vec3 direction, float start_t, float end_t,
+                                   ivec2 pixel) {
+    if (cloud_surface_horizon_layer_mode()) {
+        return cloud_far_horizon_layer(origin, direction, start_t, end_t, pixel);
+    }
+
+    float bridge_start = max(start_t, params.orbit_options.x);
+    if (end_t <= bridge_start) {
+        return cloud_far_horizon_layer(origin, direction, start_t, end_t, pixel);
+    }
+    int max_steps = clamp(int(params.ref_options.y * 0.36 + 0.5), 8, 28);
+    MarchResult local_far =
+        cloud_local_volume_enabled()
+            ? cloud_local_volume_march(origin, direction, bridge_start, end_t, pixel,
+                                       max_steps, 1.5, true)
+            : cloud_empty_result();
+    MarchResult horizon =
+        cloud_far_horizon_layer(origin, direction, start_t, end_t, pixel);
+    return cloud_compose_results(local_far, horizon);
+}
+
+MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
+                            ivec2 pixel) {
+    if (!cloud_local_volume_enabled()) {
+        return cloud_empty_result();
+    }
+    int max_steps = clamp(int(params.ref_options.y + 0.5), 1, 96);
+    return cloud_local_volume_march(origin, direction, start_t, end_t, pixel, max_steps,
+                                    0.0, true);
 }
 
 DebugRayFields cloud_debug_ray_fields(vec3 origin, vec3 direction, float start_t, float end_t,
@@ -1287,44 +1853,73 @@ void main() {
         return;
     }
 
-    float orbit_blend = cloud_orbit_blend(origin, direction, start_t, end_t);
-    bool needs_local = orbit_blend < 0.999 ||
+    float full_orbit_blend = cloud_full_orbit_blend();
+    float far_shell_blend = cloud_far_shell_blend(start_t, end_t);
+    float effective_far_shell_blend = far_shell_blend * (1.0 - full_orbit_blend);
+    float surface_horizon_blend = cloud_surface_horizon_layer_mode() ? 1.0 : 0.0;
+    float effective_far_bridge_blend =
+        max(effective_far_shell_blend, surface_horizon_blend);
+    bool needs_local = full_orbit_blend < 0.999 ||
                        debug_view == CLOUD_DEBUG_LOCAL_ALPHA ||
+                       debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA ||
                        debug_view == CLOUD_DEBUG_DISTANCE_REGIME;
-    bool needs_orbit = orbit_blend > 0.001 ||
-                       debug_view == CLOUD_DEBUG_ORBIT_ALPHA ||
-                       debug_view == CLOUD_DEBUG_ORBIT_COVERAGE ||
-                       debug_view == CLOUD_DEBUG_ORBIT_DETAIL ||
-                       debug_view == CLOUD_DEBUG_ORBIT_HULL ||
-                       debug_view == CLOUD_DEBUG_ORBIT_ENVELOPE ||
-                       debug_view == CLOUD_DEBUG_ORBIT_SHELL_ALPHA ||
-                       debug_view == CLOUD_DEBUG_ORBIT_SHELL_HEIGHT ||
-                       debug_view == CLOUD_DEBUG_ORBIT_SHELL_NORMAL ||
-                       debug_view == CLOUD_DEBUG_ORBIT_SHELL_SHADOW ||
-                       debug_view == CLOUD_DEBUG_DISTANCE_REGIME;
+    bool needs_far_bridge_source = effective_far_bridge_blend > 0.001 ||
+                                   debug_view == CLOUD_DEBUG_FAR_SHELL_ALPHA ||
+                                   debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA;
+    bool needs_full_orbit_source = full_orbit_blend > 0.001 ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_ALPHA ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_COVERAGE ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_DETAIL ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_HULL ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_ENVELOPE ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_ALPHA ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_HEIGHT ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_NORMAL ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_SHADOW;
     MarchResult local_result = cloud_empty_result();
-    MarchResult orbit_result = cloud_empty_result();
+    MarchResult far_bridge_source_result = cloud_empty_result();
+    MarchResult full_orbit_result = cloud_empty_result();
     if (needs_local) {
-        local_result = cloud_march(origin, direction, start_t, end_t, background, pixel);
+        local_result = cloud_march(origin, direction, start_t, end_t, pixel);
     }
-    if (needs_orbit) {
+    if (needs_far_bridge_source) {
+        far_bridge_source_result =
+            cloud_far_bridge_march(origin, direction, start_t, end_t, pixel);
+    }
+    if (needs_full_orbit_source) {
         if (cloud_orbit_surface_shell_enabled()) {
-            orbit_result = cloud_orbit_surface_shell(origin, direction);
+            full_orbit_result = cloud_orbit_surface_shell(origin, direction);
         } else {
-            orbit_result = cloud_orbit_shell_march(origin, direction, start_t, end_t, background,
-                                                   pixel);
+            full_orbit_result =
+                cloud_orbit_shell_march(origin, direction, start_t, end_t, pixel);
         }
     }
-    MarchResult result = cloud_mix_results(local_result, orbit_result, orbit_blend);
+    MarchResult far_shell_result =
+        cloud_scale_result(far_bridge_source_result, effective_far_bridge_blend);
+    MarchResult local_with_far_shell =
+        cloud_compose_results(local_result, far_shell_result);
+    MarchResult result =
+        cloud_mix_results(local_with_far_shell, full_orbit_result, full_orbit_blend);
+    result = cloud_apply_composite_haze(result, background);
     vec3 debug_color = result.radiance;
     float debug_alpha = 1.0;
 
     if (debug_view == CLOUD_DEBUG_DISTANCE_REGIME) {
-        debug_color = vec3(orbit_blend, 0.0, 1.0 - orbit_blend);
+        debug_color = vec3(full_orbit_blend,
+                           effective_far_bridge_blend,
+                           1.0 - max(full_orbit_blend, effective_far_bridge_blend));
+    } else if (debug_view == CLOUD_DEBUG_TRANSITION_WEIGHTS) {
+        debug_color = vec3(1.0 - full_orbit_blend,
+                           effective_far_bridge_blend * (1.0 - full_orbit_blend),
+                           full_orbit_blend);
     } else if (debug_view == CLOUD_DEBUG_LOCAL_ALPHA) {
         debug_color = vec3(local_result.alpha);
+    } else if (debug_view == CLOUD_DEBUG_FAR_SHELL_ALPHA) {
+        debug_color = vec3(far_shell_result.alpha);
+    } else if (debug_view == CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA) {
+        debug_color = vec3(local_with_far_shell.alpha);
     } else if (debug_view == CLOUD_DEBUG_ORBIT_ALPHA) {
-        debug_color = vec3(orbit_result.alpha);
+        debug_color = vec3(full_orbit_result.alpha);
     } else if (debug_view == CLOUD_DEBUG_ORBIT_ENVELOPE ||
                debug_view == CLOUD_DEBUG_ORBIT_SHELL_ALPHA ||
                debug_view == CLOUD_DEBUG_ORBIT_SHELL_HEIGHT ||
@@ -1362,27 +1957,39 @@ void main() {
         debug_color = debug_view == CLOUD_DEBUG_VISIBLE_DENSITY
                           ? vec3(ray_fields.max_density)
                           : vec3(ray_fields.weighted_cloud_type);
-    } else if (debug_view == CLOUD_DEBUG_WEATHER ||
+    } else if (debug_view == CLOUD_DEBUG_AUTHORED_WEATHER ||
                debug_view == CLOUD_DEBUG_BASE_DENSITY ||
                debug_view == CLOUD_DEBUG_DETAIL_DENSITY ||
                debug_view == CLOUD_DEBUG_CLOUD_TYPE ||
+               debug_view == CLOUD_DEBUG_LOCAL_SCATTER ||
+               debug_view == CLOUD_DEBUG_LOCAL_CLEAR ||
+               debug_view == CLOUD_DEBUG_LOCAL_STRUCTURE ||
+               debug_view == CLOUD_DEBUG_LOCAL_EDGE_DETAIL ||
                debug_view == CLOUD_DEBUG_WEATHER_EDGE ||
-               debug_view == CLOUD_DEBUG_WEATHER_BIAS ||
+               debug_view == CLOUD_DEBUG_COVERAGE_BIAS ||
                debug_view == CLOUD_DEBUG_DENSITY) {
         vec3 mid = origin + direction * mix(start_t, end_t, 0.5);
         DensitySample sample_data = cloud_sample_density(mid, true, 0.0);
-        if (debug_view == CLOUD_DEBUG_WEATHER) {
-            debug_color = vec3(sample_data.weather);
+        if (debug_view == CLOUD_DEBUG_AUTHORED_WEATHER) {
+            debug_color = vec3(sample_data.authored_weather);
         } else if (debug_view == CLOUD_DEBUG_BASE_DENSITY) {
             debug_color = vec3(sample_data.base_density);
         } else if (debug_view == CLOUD_DEBUG_DETAIL_DENSITY) {
             debug_color = vec3(sample_data.detail_density);
         } else if (debug_view == CLOUD_DEBUG_CLOUD_TYPE) {
             debug_color = vec3(sample_data.cloud_type);
+        } else if (debug_view == CLOUD_DEBUG_LOCAL_SCATTER) {
+            debug_color = vec3(sample_data.local_scatter);
+        } else if (debug_view == CLOUD_DEBUG_LOCAL_CLEAR) {
+            debug_color = vec3(sample_data.local_clear);
+        } else if (debug_view == CLOUD_DEBUG_LOCAL_STRUCTURE) {
+            debug_color = vec3(sample_data.local_structure);
+        } else if (debug_view == CLOUD_DEBUG_LOCAL_EDGE_DETAIL) {
+            debug_color = vec3(sample_data.local_edge_detail);
         } else if (debug_view == CLOUD_DEBUG_WEATHER_EDGE) {
             debug_color = vec3(sample_data.weather_edge);
-        } else if (debug_view == CLOUD_DEBUG_WEATHER_BIAS) {
-            debug_color = vec3(sample_data.weather_bias);
+        } else if (debug_view == CLOUD_DEBUG_COVERAGE_BIAS) {
+            debug_color = vec3(sample_data.coverage_bias);
         } else {
             debug_color = vec3(sample_data.density);
         }

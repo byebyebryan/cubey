@@ -140,16 +140,32 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include cloud-type diagnostics after detail density");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::CloudType) ==
+                cubey::projects::cloud::CloudsDebugView::LocalScatter,
+            "cloud debug view should include local scatter diagnostics after cloud type");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalScatter) ==
+                cubey::projects::cloud::CloudsDebugView::LocalClear,
+            "cloud debug view should include local clear diagnostics after local scatter");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalClear) ==
+                cubey::projects::cloud::CloudsDebugView::LocalStructure,
+            "cloud debug view should include local structure diagnostics after local clear");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalStructure) ==
+                cubey::projects::cloud::CloudsDebugView::LocalEdgeDetail,
+            "cloud debug view should include local edge diagnostics after local structure");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalEdgeDetail) ==
                 cubey::projects::cloud::CloudsDebugView::WeatherEdge,
-            "cloud debug view should include weather edge diagnostics after cloud type");
+            "cloud debug view should include weather edge diagnostics after local edge");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::WeatherEdge) ==
-                cubey::projects::cloud::CloudsDebugView::WeatherBias,
-            "cloud debug view should include weather bias diagnostics after edge");
+                cubey::projects::cloud::CloudsDebugView::CoverageBias,
+            "cloud debug view should include coverage bias diagnostics after edge");
     require(cubey::projects::cloud::next_clouds_debug_view(
-                cubey::projects::cloud::CloudsDebugView::WeatherBias) ==
+                cubey::projects::cloud::CloudsDebugView::CoverageBias) ==
                 cubey::projects::cloud::CloudsDebugView::VisibleDensity,
-            "cloud debug view should include visible-density diagnostics after weather bias");
+            "cloud debug view should include visible-density diagnostics after coverage bias");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::VisibleDensity) ==
                 cubey::projects::cloud::CloudsDebugView::VisibleCloudType,
@@ -160,8 +176,24 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include distance-regime diagnostics");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::DistanceRegime) ==
+                cubey::projects::cloud::CloudsDebugView::TransitionWeights,
+            "cloud debug view should include transition weight diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::TransitionWeights) ==
                 cubey::projects::cloud::CloudsDebugView::LocalAlpha,
             "cloud debug view should include local alpha diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalAlpha) ==
+                cubey::projects::cloud::CloudsDebugView::FarShellAlpha,
+            "cloud debug view should include far shell alpha diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::FarShellAlpha) ==
+                cubey::projects::cloud::CloudsDebugView::LocalWithShellAlpha,
+            "cloud debug view should include local and shell alpha diagnostics");
+    require(cubey::projects::cloud::next_clouds_debug_view(
+                cubey::projects::cloud::CloudsDebugView::LocalWithShellAlpha) ==
+                cubey::projects::cloud::CloudsDebugView::OrbitAlpha,
+            "cloud debug view should include orbit alpha diagnostics after local handoff");
     require(cubey::projects::cloud::next_clouds_debug_view(
                 cubey::projects::cloud::CloudsDebugView::OrbitAlpha) ==
                 cubey::projects::cloud::CloudsDebugView::OrbitCoverage,
@@ -237,14 +269,35 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud::clouds_debug_view_from_string("cloud-type") ==
                 cubey::projects::cloud::CloudsDebugView::CloudType,
             "cloud type debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("authored-weather") ==
+                cubey::projects::cloud::CloudsDebugView::AuthoredWeather,
+            "authored weather debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("weather") ==
+                cubey::projects::cloud::CloudsDebugView::AuthoredWeather,
+            "weather debug alias should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("local-scatter") ==
+                cubey::projects::cloud::CloudsDebugView::LocalScatter,
+            "local scatter debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("local-clear") ==
+                cubey::projects::cloud::CloudsDebugView::LocalClear,
+            "local clear debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("local-structure") ==
+                cubey::projects::cloud::CloudsDebugView::LocalStructure,
+            "local structure debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("local-edge-detail") ==
+                cubey::projects::cloud::CloudsDebugView::LocalEdgeDetail,
+            "local edge detail debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("weather-edge") ==
                 cubey::projects::cloud::CloudsDebugView::WeatherEdge,
             "weather edge debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("coverage-bias") ==
+                cubey::projects::cloud::CloudsDebugView::CoverageBias,
+            "coverage bias debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("weather-bias") ==
-                cubey::projects::cloud::CloudsDebugView::WeatherBias,
-            "weather bias debug view should parse");
+                cubey::projects::cloud::CloudsDebugView::CoverageBias,
+            "weather bias debug alias should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("weather-mask") ==
-                cubey::projects::cloud::CloudsDebugView::WeatherBias,
+                cubey::projects::cloud::CloudsDebugView::CoverageBias,
             "weather mask debug alias should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("visible-density") ==
                 cubey::projects::cloud::CloudsDebugView::VisibleDensity,
@@ -255,9 +308,18 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud::clouds_debug_view_from_string("distance-regime") ==
                 cubey::projects::cloud::CloudsDebugView::DistanceRegime,
             "distance regime debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("transition-weights") ==
+                cubey::projects::cloud::CloudsDebugView::TransitionWeights,
+            "transition weights debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("local-alpha") ==
                 cubey::projects::cloud::CloudsDebugView::LocalAlpha,
             "local alpha debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("far-shell-alpha") ==
+                cubey::projects::cloud::CloudsDebugView::FarShellAlpha,
+            "far shell alpha debug view should parse");
+    require(cubey::projects::cloud::clouds_debug_view_from_string("local-with-shell-alpha") ==
+                cubey::projects::cloud::CloudsDebugView::LocalWithShellAlpha,
+            "local with shell alpha debug view should parse");
     require(cubey::projects::cloud::clouds_debug_view_from_string("orbit-alpha") ==
                 cubey::projects::cloud::CloudsDebugView::OrbitAlpha,
             "orbit alpha debug view should parse");
@@ -329,6 +391,7 @@ void test_run_config_mapping() {
     run_config.clouds.orbit_transition_end_m = 70000.0F;
     run_config.clouds.far_shell_start_m = 36000.0F;
     run_config.clouds.far_shell_end_m = 180000.0F;
+    run_config.clouds.far_shell_strength = 1.25F;
     run_config.clouds.orbit_detail_strength = 0.22F;
     run_config.clouds.orbit_density_scale = 1.10F;
     run_config.clouds.orbit_fill = 1.40F;
@@ -415,6 +478,8 @@ void test_run_config_mapping() {
                  "cloud far shell start should map");
     require_near(config.far_shell_end_m, 180000.0F, 0.001F,
                  "cloud far shell end should map");
+    require_near(config.far_shell_strength, 1.25F, 0.001F,
+                 "cloud far shell strength should map");
     require_near(config.orbit_detail_strength, 0.22F, 0.001F,
                  "cloud orbit detail strength should map");
     require_near(config.orbit_density_scale, 1.10F, 0.001F,
@@ -498,14 +563,16 @@ void test_weather_preset_defaults() {
                  "default resolve should preserve density detail");
     require_near(config.horizon_glow_strength, 0.55F, 0.001F,
                  "default horizon glow should be restrained");
-    require_near(config.orbit_transition_start_m, 16000.0F, 0.001F,
-                 "default orbit transition start should match high camera handoff");
-    require_near(config.orbit_transition_end_m, 80000.0F, 0.001F,
-                 "default orbit transition end should match high camera handoff");
-    require_near(config.far_shell_start_m, 45000.0F, 0.001F,
-                 "default far shell start should be high-view scale");
-    require_near(config.far_shell_end_m, 220000.0F, 0.001F,
-                 "default far shell end should be high-view scale");
+    require_near(config.orbit_transition_start_m, 45000.0F, 0.001F,
+                 "default orbit transition start should leave high-oblique local");
+    require_near(config.orbit_transition_end_m, 180000.0F, 0.001F,
+                 "default orbit transition end should reserve full orbit for high views");
+    require_near(config.far_shell_start_m, 30000.0F, 0.001F,
+                 "default far shell start should bridge high-oblique horizon scale");
+    require_near(config.far_shell_end_m, 160000.0F, 0.001F,
+                 "default far shell end should fade in before full orbit takeover");
+    require_near(config.far_shell_strength, 1.25F, 0.001F,
+                 "default far shell strength should compensate effective branch fade");
     require_near(config.orbit_detail_strength, 0.70F, 0.001F,
                  "default orbit detail should preserve visible shell structure");
     require_near(config.orbit_density_scale, 0.02F, 0.001F,
@@ -715,6 +782,7 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.orbit_transition_end_m", "70000");
     cubey::set_run_config_option_from_string(config, "clouds.far_shell_start_m", "36000");
     cubey::set_run_config_option_from_string(config, "clouds.far_shell_end_m", "180000");
+    cubey::set_run_config_option_from_string(config, "clouds.far_shell_strength", "1.25");
     cubey::set_run_config_option_from_string(config, "clouds.orbit_detail_strength", "0.22");
     cubey::set_run_config_option_from_string(config, "clouds.orbit_density_scale", "1.10");
     cubey::set_run_config_option_from_string(config, "clouds.orbit_fill", "1.40");
@@ -785,6 +853,8 @@ void test_config_descriptors() {
                  "cloud far shell start descriptor should set");
     require_near(config.clouds.far_shell_end_m, 180000.0F, 0.001F,
                  "cloud far shell end descriptor should set");
+    require_near(config.clouds.far_shell_strength, 1.25F, 0.001F,
+                 "cloud far shell strength descriptor should set");
     require_near(config.clouds.orbit_detail_strength, 0.22F, 0.001F,
                  "cloud orbit detail strength descriptor should set");
     require_near(config.clouds.orbit_density_scale, 1.10F, 0.001F,

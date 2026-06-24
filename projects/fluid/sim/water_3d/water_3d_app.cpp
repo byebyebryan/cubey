@@ -19,6 +19,8 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/celestial_body_frame.h>
+#include <cubey/render/celestial_system.h>
 #include <cubey/render/environment_lighting.h>
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/pass.h>
@@ -67,8 +69,7 @@ water_3d_atmosphere_run_state(const RunConfig& config) {
     return cubey::atmosphere_environment_run_state_from_config(
         config.atmosphere,
         {
-            .ground_mode =
-                cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
+            .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
             .reference_geometry_enabled = false,
         });
 }
@@ -216,8 +217,7 @@ class Water3DApp {
         if (draw_water_3d_ui({
                 .title = app_info_.ui_title,
                 .config = water_config_,
-                .atmosphere =
-                    use_atmosphere_environment_source() ? &atmosphere_state_ : nullptr,
+                .atmosphere = use_atmosphere_environment_source() ? &atmosphere_state_ : nullptr,
                 .runtime_state = runtime_state_,
                 .resources = resources_,
                 .performance =
@@ -278,10 +278,11 @@ class Water3DApp {
     [[nodiscard]] cubey::render::EnvironmentLightingUniforms environment_lighting_uniforms() const {
         if (!use_atmosphere_environment_source()) {
             return water_3d_static_environment_lighting(resolved_exposure(),
-                                                       water_config_.environment_intensity);
+                                                        water_config_.environment_intensity);
         }
-        return cubey::render::environment_lighting_uniforms(
-            atmosphere_runtime_.lighting(), resolved_exposure(), water_config_.environment_intensity);
+        return cubey::render::environment_lighting_uniforms(atmosphere_runtime_.lighting(),
+                                                            resolved_exposure(),
+                                                            water_config_.environment_intensity);
     }
 
     [[nodiscard]] Water3DEnvironmentTextureBindings water_environment_bindings() const {
@@ -306,14 +307,18 @@ class Water3DApp {
         };
     }
 
-    [[nodiscard]] Water3DRenderCamera render_camera(VkExtent2D extent) const {
-        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const cubey::Transform3D transform = cubey::orbit_camera_transform(cubey::OrbitCameraState{
+    [[nodiscard]] cubey::Transform3D render_camera_transform() const {
+        return cubey::orbit_camera_transform(cubey::OrbitCameraState{
             .target = kVolumeCenter,
             .distance = orbit_controller_.distance(),
             .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
             .pitch = kCameraBasePitch + orbit_controller_.pitch(),
         });
+    }
+
+    [[nodiscard]] Water3DRenderCamera render_camera(VkExtent2D extent) const {
+        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+        const cubey::Transform3D transform = render_camera_transform();
         const cubey::math::Quat rotation = transform.rotation;
         return {
             .view_projection = camera_.view_projection_matrix(transform, aspect),
@@ -334,12 +339,69 @@ class Water3DApp {
                                  std::tan(camera.fovy_radians * 0.5F)},
             .forward = {camera.forward.x, camera.forward.y, camera.forward.z, 0.0F},
         };
-        return atmosphere_runtime_
-            .frame({
-                .view_rays = view_rays,
-                .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
-            })
-            .background;
+        cubey::render::AtmosphereEnvironmentConfig environment = atmosphere_state_.environment;
+        environment.render_moon_disk = false;
+        return cubey::render::atmosphere_environment_frame_uniforms(
+            environment, {
+                             .view_rays = view_rays,
+                             .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
+                         });
+    }
+
+    [[nodiscard]] bool moon_body_render_enabled() const {
+        const cubey::render::AtmosphereEnvironmentConfig& environment =
+            atmosphere_state_.environment;
+        return use_atmosphere_environment_source() && environment.render_celestial_content &&
+               environment.render_moon_disk && environment.moon.enabled;
+    }
+
+    [[nodiscard]] cubey::render::CelestialBodyFrameUniforms
+    moon_body_frame_uniforms(VkExtent2D extent) const {
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
+        const cubey::Transform3D transform = render_camera_transform();
+        const cubey::render::AtmosphereEnvironmentConfig& environment =
+            atmosphere_state_.environment;
+        const cubey::render::AtmosphereEnvironmentLunarState lunar =
+            cubey::render::atmosphere_environment_lunar_state(environment.time_of_day,
+                                                              environment.moon);
+        const cubey::render::AtmosphereEnvironmentLighting atmosphere_lighting =
+            cubey::render::atmosphere_environment_lighting(environment);
+        cubey::render::CelestialBody moon{};
+        moon.type = cubey::render::CelestialBodyType::Moon;
+        moon.visible = moon_body_render_enabled();
+        moon.direction = lunar.direction;
+        moon.color = {0.58F, 0.62F, 0.74F};
+        moon.intensity = environment.moon.disk_intensity;
+        moon.angular_radius_rad = lunar.angular_radius;
+        moon.distance_m = 384400000.0F;
+        moon.radius_m = 1737400.0F;
+        moon.phase_fraction = lunar.phase_fraction;
+
+        const cubey::render::CelestialBodyRenderPlacement placement =
+            cubey::render::celestial_body_render_placement(
+                moon, {
+                          .camera_render_position_m = transform.translation,
+                          .near_plane_m = camera_.near_z(),
+                          .far_plane_m = camera_.far_z(),
+                          .angular_radius_scale = 1.0F,
+                          .shell_distance_fraction = 0.62F,
+                      });
+        const cubey::render::CelestialLighting lighting{
+            .primary_light_direction = atmosphere_lighting.sun_direction,
+            .primary_light_color = atmosphere_lighting.sun_color,
+            .primary_light_intensity = environment.moon.disk_intensity,
+            .primary_light_angular_radius_rad = environment.sun_angular_radius,
+            .moon_light_direction = lunar.direction,
+            .moon_light_color = atmosphere_lighting.moon_color,
+            .moon_light_intensity = atmosphere_lighting.moon_intensity,
+        };
+        return cubey::render::celestial_body_frame_uniforms(
+            moon, placement, lighting, camera_.view_projection_matrix(transform, aspect),
+            {
+                .camera_render_position_m = transform.translation,
+            });
     }
 
     void destroy_swapchain_resources() {
@@ -414,7 +476,6 @@ class Water3DApp {
                 cubey::render::create_atmosphere_background_generated_textures(
                     device, gpu,
                     {
-                        .lunar_extent = 128,
                         .night_sky_extent = 128,
                     }));
         }
@@ -448,7 +509,7 @@ class Water3DApp {
         create_environment_resources_if_needed(device, gpu);
         create_atmosphere_environment_runtime(device, gpu, frame_slot_count);
         attach_project_gpu(gpu);
-        resources_.create_global_resources_if_needed(device, runtime_.gpu(), water_config_,
+        resources_.create_global_resources_if_needed(device, gpu, runtime_.gpu(), water_config_,
                                                      frame_slot_count);
         surface_graph_executor_.resize(frame_slot_count);
     }
@@ -499,14 +560,19 @@ class Water3DApp {
                 resources_.upload_atmosphere_background(
                     render_frame.frame_slot,
                     atmosphere_background_uniforms(camera, render_frame.color_target.extent));
+                if (moon_body_render_enabled()) {
+                    resources_.upload_moon_body(
+                        render_frame.frame_slot,
+                        moon_body_frame_uniforms(render_frame.color_target.extent));
+                }
                 atmosphere_runtime_.record_pending_update(recorder, render_frame.frame_slot);
             }
             const Water3DEnvironmentTextureBindings environment = water_environment_bindings();
             record_water_3d_surface_draw(
                 render_frame.command_buffer, context.device(), surface_graph_executor_, resources_,
-                draw_config, render_frame.frame_slot, runtime_state_, render_view_,
-                camera, render_frame.color_target, Water3DRenderTargetMode::Present, environment,
-                profiler);
+                draw_config, render_frame.frame_slot, runtime_state_, render_view_, camera,
+                render_frame.color_target, Water3DRenderTargetMode::Present, environment,
+                moon_body_render_enabled(), profiler);
         } else {
             cubey::render::record_present_render_target(
                 recorder, cubey::render::render_target_view(render_frame.color_target),
@@ -625,13 +691,18 @@ class Water3DApp {
                 if (use_atmosphere_environment_source()) {
                     resources_.upload_atmosphere_background(
                         frame.frame_slot, atmosphere_background_uniforms(camera, target.extent));
+                    if (moon_body_render_enabled()) {
+                        resources_.upload_moon_body(frame.frame_slot,
+                                                    moon_body_frame_uniforms(target.extent));
+                    }
                     atmosphere_runtime_.record_pending_update(recorder, frame.frame_slot);
                 }
                 const Water3DEnvironmentTextureBindings environment = water_environment_bindings();
-                record_water_3d_surface_draw(
-                    command_buffer, context.device(), surface_graph_executor_, resources_,
-                    draw_config, frame.frame_slot, runtime_state_, render_view_,
-                    camera, target, Water3DRenderTargetMode::ColorAttachment, environment);
+                record_water_3d_surface_draw(command_buffer, context.device(),
+                                             surface_graph_executor_, resources_, draw_config,
+                                             frame.frame_slot, runtime_state_, render_view_, camera,
+                                             target, Water3DRenderTargetMode::ColorAttachment,
+                                             environment, moon_body_render_enabled());
             } else {
                 record_water_3d_draw(command_buffer, resources_, water_config_, frame.frame_slot,
                                      runtime_state_, render_view_, render_camera(target.extent),

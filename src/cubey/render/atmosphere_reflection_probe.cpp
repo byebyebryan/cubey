@@ -64,12 +64,6 @@ atmosphere_background_material_config(std::uint32_t frame_slot_count,
         .sampled_images =
             {
                 SampledImageMaterialBinding{
-                    .binding = static_cast<std::uint32_t>(AtmosphereBackgroundBinding::MoonAtlas),
-                    .sampler = textures.lunar_sampler,
-                    .image_view = textures.lunar_view,
-                    .layout = textures.lunar_layout,
-                },
-                SampledImageMaterialBinding{
                     .binding =
                         static_cast<std::uint32_t>(AtmosphereBackgroundBinding::NightSkyAtlas),
                     .sampler = textures.night_sky_sampler,
@@ -194,10 +188,10 @@ void AtmosphereReflectionProbe::create_resources(const cubey::vulkan::Device& de
     sky_face_initialized_.fill(false);
     prefiltered_face_mip_initialized_.assign(static_cast<std::size_t>(mip_levels_) * 6U, false);
 
-    sky_frame_.create_materials(device, AtmosphereBackgroundFrameMaterialConfig{
-                                            .frame_slot_count = config.frame_slot_count,
-                                            .textures = config.atmosphere_textures,
-                                        });
+    atmosphere_frame_.create_materials(device, AtmosphereBackgroundFrameMaterialConfig{
+                                                   .frame_slot_count = config.frame_slot_count,
+                                                   .textures = config.atmosphere_textures,
+                                               });
     const FrameUniformMaterialInstanceConfig sky_material_config =
         atmosphere_background_material_config(config.frame_slot_count, config.atmosphere_textures);
     for (std::unique_ptr<FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>>&
@@ -234,11 +228,11 @@ void AtmosphereReflectionProbe::create_pipelines(
         vertex_shader_file(config.atmosphere_vertex_shader),
         fragment_shader_file(config.atmosphere_fragment_shader),
     };
-    sky_frame_.create_pipeline(device, AtmosphereBackgroundFramePipelineConfig{
-                                           .extent = {extent_, extent_},
-                                           .color_format = format_,
-                                           .shader_stage_files = atmosphere_shaders,
-                                       });
+    atmosphere_frame_.create_pipeline(device, AtmosphereBackgroundFramePipelineConfig{
+                                                  .extent = {extent_, extent_},
+                                                  .color_format = format_,
+                                                  .shader_stage_files = atmosphere_shaders,
+                                              });
 
     const std::array<ShaderStageFile, 2> prefilter_shaders{
         vertex_shader_file(config.prefilter_vertex_shader),
@@ -260,7 +254,7 @@ void AtmosphereReflectionProbe::create_pipelines(
 
 void AtmosphereReflectionProbe::destroy_pipelines() {
     prefilter_pipeline_.reset();
-    sky_frame_.destroy_pipeline();
+    atmosphere_frame_.destroy_pipeline();
 }
 
 void AtmosphereReflectionProbe::destroy() {
@@ -270,7 +264,7 @@ void AtmosphereReflectionProbe::destroy() {
              material : sky_face_materials_) {
         material.reset();
     }
-    sky_frame_.destroy();
+    atmosphere_frame_.destroy();
     prefiltered_face_views_.clear();
     sky_face_views_.clear();
     prefiltered_cube_.reset();
@@ -310,7 +304,7 @@ void AtmosphereReflectionProbe::record_face_update(const cubey::vulkan::CommandR
 void AtmosphereReflectionProbe::update_atmosphere_texture_bindings(
     const cubey::vulkan::Device& device,
     const AtmosphereBackgroundTextureBindings& textures) const {
-    sky_frame_.update_texture_bindings(device, textures);
+    atmosphere_frame_.update_texture_bindings(device, textures);
     for (const std::unique_ptr<FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>>&
              material : sky_face_materials_) {
         if (material == nullptr) {
@@ -384,7 +378,7 @@ void AtmosphereReflectionProbe::record_sky_face(const cubey::vulkan::CommandReco
                     sky_face_initialized_.at(face_index) ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
                                                          : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-    sky_frame_.record_pass(
+    atmosphere_frame_.record_pass(
         recorder,
         face_target(*sky_radiance_cube_, extent_, format_, sky_face_views_, 0, face_index),
         material.set(frame_slot));

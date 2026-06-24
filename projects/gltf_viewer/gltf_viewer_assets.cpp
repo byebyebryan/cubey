@@ -137,7 +137,6 @@ void GltfViewerApp::create_atmosphere_background_atlases(const cubey::vulkan::De
     atmosphere_background_atlases_.emplace(
         cubey::render::create_atmosphere_background_generated_textures(device, gpu,
                                                                        {
-                                                                           .lunar_extent = 128,
                                                                            .night_sky_extent = 128,
                                                                        }));
 }

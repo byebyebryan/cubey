@@ -10,7 +10,7 @@ FRAMES="${FRAMES:-2}"
 QUALITY="${QUALITY:-full}"
 PRESET="${PRESET:-broken-cumulus}"
 DEEP="${DEEP:-0}"
-MOTION_FRAMES="${MOTION_FRAMES:-180}"
+MOTION_FRAMES="${MOTION_FRAMES:-120}"
 MOTION_FPS="${MOTION_FPS:-30}"
 CENTER_CROP_GEOMETRY="${CENTER_CROP_GEOMETRY:-}"
 
@@ -46,10 +46,18 @@ capture() {
 
 capture surface-up --cloud-camera-mode surface-up
 capture high-oblique --cloud-camera-mode high-oblique
+capture high-oblique-far-shell-off --cloud-camera-mode high-oblique \
+    --cloud-far-shell-strength 0
+capture high-oblique-far-shell-strong --cloud-camera-mode high-oblique \
+    --cloud-far-shell-strength 1.5
 capture surface --cloud-camera-mode surface
 capture high --cloud-camera-mode high
 capture orbit-satellite-preview --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
     --cloud-orbit-representation surface-shell
+capture orbit-satellite-fill-off --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-representation surface-shell --cloud-orbit-fill 0
+capture orbit-satellite-fill-strong --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
+    --cloud-orbit-representation surface-shell --cloud-orbit-fill 1.5
 capture orbit-satellite-high-oblique --cloud-camera-mode high-oblique \
     --cloud-orbit-representation surface-shell
 capture orbit-volume-comparison --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
@@ -72,23 +80,36 @@ capture orbit-satellite-shell-shadow --cloud-camera-mode orbit --cloud-distance-
     --cloud-orbit-representation surface-shell --debug-view orbit-shell-shadow
 capture high-oblique-distance-regime --cloud-camera-mode high-oblique \
     --debug-view distance-regime
+capture high-oblique-transition-weights --cloud-camera-mode high-oblique \
+    --debug-view transition-weights
 capture high-oblique-local-alpha --cloud-camera-mode high-oblique --debug-view local-alpha
+capture high-oblique-far-shell-alpha --cloud-camera-mode high-oblique \
+    --debug-view far-shell-alpha
+capture high-oblique-local-with-shell-alpha --cloud-camera-mode high-oblique \
+    --debug-view local-with-shell-alpha
 capture high-oblique-orbit-alpha --cloud-camera-mode high-oblique --debug-view orbit-alpha
 capture high-oblique-orbit-ray-coverage --cloud-camera-mode high-oblique \
     --debug-view orbit-coverage
 capture high-oblique-orbit-ray-detail --cloud-camera-mode high-oblique --debug-view orbit-detail
 capture high-oblique-orbit-ray-hull --cloud-camera-mode high-oblique --debug-view orbit-hull
 capture orbit-distance-regime --cloud-camera-mode orbit --debug-view distance-regime
+capture orbit-transition-weights --cloud-camera-mode orbit --debug-view transition-weights
 capture orbit-alpha --cloud-camera-mode orbit --debug-view orbit-alpha
 capture orbit-ray-coverage --cloud-camera-mode orbit --debug-view orbit-coverage
 capture orbit-ray-detail --cloud-camera-mode orbit --debug-view orbit-detail
 capture orbit-ray-hull --cloud-camera-mode orbit --debug-view orbit-hull
-capture high-oblique-weather --cloud-camera-mode high-oblique --debug-view weather
-capture high-oblique-weather-bias --cloud-camera-mode high-oblique --debug-view weather-bias
+capture high-oblique-authored-weather --cloud-camera-mode high-oblique \
+    --debug-view authored-weather
+capture high-oblique-coverage-bias --cloud-camera-mode high-oblique \
+    --debug-view coverage-bias
 capture raw-final --cloud-camera-mode surface-up --debug-view raw-final
-capture weather --cloud-camera-mode surface-up --debug-view weather
+capture authored-weather --cloud-camera-mode surface-up --debug-view authored-weather
+capture local-scatter --cloud-camera-mode surface-up --debug-view local-scatter
+capture local-clear --cloud-camera-mode surface-up --debug-view local-clear
+capture local-structure --cloud-camera-mode surface-up --debug-view local-structure
+capture local-edge-detail --cloud-camera-mode surface-up --debug-view local-edge-detail
 capture weather-edge --cloud-camera-mode surface-up --debug-view weather-edge
-capture weather-bias --cloud-camera-mode surface-up --debug-view weather-bias
+capture coverage-bias --cloud-camera-mode surface-up --debug-view coverage-bias
 capture base-density --cloud-camera-mode surface-up --debug-view base-density
 capture detail-density --cloud-camera-mode surface-up --debug-view detail-density
 capture cloud-type --cloud-camera-mode surface-up --debug-view cloud-type
@@ -99,6 +120,7 @@ capture cloud-alpha --cloud-camera-mode surface-up --debug-view cloud-alpha
 capture local-alpha --cloud-camera-mode surface-up --debug-view local-alpha
 capture orbit-alpha-surface-up --cloud-camera-mode surface-up --debug-view orbit-alpha
 capture distance-regime --cloud-camera-mode surface-up --debug-view distance-regime
+capture transition-weights --cloud-camera-mode surface-up --debug-view transition-weights
 
 if [[ "${DEEP}" != "0" ]]; then
     motion_video="${OUT_DIR}/orbit-satellite-motion.mp4"
@@ -123,17 +145,11 @@ if [[ "${DEEP}" != "0" ]]; then
         ffmpeg -y -loglevel error -sseof -0.1 -i "${motion_video}" -frames:v 1 \
             "${OUT_DIR}/orbit-satellite-motion-later.png"
     fi
-    capture orbit-local-weather --cloud-camera-mode orbit --debug-view weather
-    capture orbit-local-weather-bias --cloud-camera-mode orbit --debug-view weather-bias
     capture surface-up-weather-local --cloud-camera-mode surface-up --cloud-weather-influence 0
     capture surface-up-weather-authored --cloud-camera-mode surface-up --cloud-weather-influence 1
     capture high-oblique-weather-local --cloud-camera-mode high-oblique --cloud-weather-influence 0
     capture high-oblique-weather-authored --cloud-camera-mode high-oblique \
         --cloud-weather-influence 1
-    capture orbit-satellite-fill-off --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
-        --cloud-orbit-representation surface-shell --cloud-orbit-fill 0
-    capture orbit-satellite-fill-strong --cloud-camera-mode orbit --cloud-distance-mode orbit-shell \
-        --cloud-orbit-representation surface-shell --cloud-orbit-fill 1.5
     capture surface-up-bayer --cloud-camera-mode surface-up --cloud-sampling-mode bayer
     capture surface-up-no-jitter --cloud-camera-mode surface-up --cloud-sampling-mode off
     capture high-oblique-bayer --cloud-camera-mode high-oblique --cloud-sampling-mode bayer
@@ -165,23 +181,27 @@ if command -v magick >/dev/null 2>&1; then
     mkdir -p "${crop_dir}"
     crop_inputs=()
     crop_names=(
-        surface-up raw-final cloud-alpha weather weather-edge weather-bias
+        surface-up raw-final cloud-alpha authored-weather local-scatter
+        local-clear local-structure local-edge-detail weather-edge coverage-bias
         cloud-type density visible-density visible-cloud-type
+        high-oblique-far-shell-off high-oblique-far-shell-strong
         orbit-satellite-preview orbit-satellite-high-oblique orbit-volume-comparison
+        orbit-satellite-fill-off orbit-satellite-fill-strong
         orbit-satellite-detail-off orbit-satellite-detail-strong
         orbit-satellite-terminator orbit-satellite-shell-envelope
         orbit-satellite-shell-alpha orbit-satellite-shell-height
         orbit-satellite-shell-normal orbit-satellite-shell-shadow
-        high-oblique-distance-regime high-oblique-local-alpha high-oblique-orbit-alpha
+        high-oblique-distance-regime high-oblique-transition-weights
+        high-oblique-local-alpha high-oblique-far-shell-alpha
+        high-oblique-local-with-shell-alpha high-oblique-orbit-alpha
         high-oblique-orbit-ray-coverage high-oblique-orbit-ray-detail
         high-oblique-orbit-ray-hull
-        orbit-distance-regime orbit-alpha orbit-ray-coverage orbit-ray-detail orbit-ray-hull
+        orbit-distance-regime orbit-transition-weights orbit-alpha
+        orbit-ray-coverage orbit-ray-detail orbit-ray-hull
     )
     if [[ "${DEEP}" != "0" ]]; then
         crop_names+=(
             orbit-satellite-motion-start orbit-satellite-motion-later
-            orbit-satellite-fill-off orbit-satellite-fill-strong
-            orbit-local-weather orbit-local-weather-bias
             metadata-alpha metadata-distance metadata-confidence metadata-density
             transmittance lighting ambient-light direct-light phase-light shadow
             steps background

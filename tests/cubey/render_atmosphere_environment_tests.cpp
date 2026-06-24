@@ -287,8 +287,8 @@ void test_atmosphere_background_pass_declares_frame_and_atlas_bindings() {
             "atmosphere background pass should use one descriptor set");
     require(pass.descriptor_sets[0].set == 0U,
             "atmosphere background pass should use descriptor set zero");
-    require(pass.descriptor_sets[0].bindings.size() == 3U,
-            "atmosphere background pass should bind frame uniforms and two atlases");
+    require(pass.descriptor_sets[0].bindings.size() == 2U,
+            "atmosphere background pass should bind frame uniforms and night sky");
     require(
         pass.descriptor_sets[0].bindings[0].binding ==
             static_cast<std::uint32_t>(cubey::render::AtmosphereBackgroundBinding::FrameUniforms),
@@ -296,15 +296,9 @@ void test_atmosphere_background_pass_declares_frame_and_atlas_bindings() {
     require(pass.descriptor_sets[0].bindings[0].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             "atmosphere background frame uniforms should use a uniform buffer");
     require(pass.descriptor_sets[0].bindings[1].binding ==
-                static_cast<std::uint32_t>(cubey::render::AtmosphereBackgroundBinding::MoonAtlas),
-            "atmosphere background moon atlas should use binding one");
+                static_cast<std::uint32_t>(cubey::render::AtmosphereBackgroundBinding::NightSkyAtlas),
+            "atmosphere background night sky atlas should use binding one");
     require(pass.descriptor_sets[0].bindings[1].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            "atmosphere background moon atlas should be sampled");
-    require(
-        pass.descriptor_sets[0].bindings[2].binding ==
-            static_cast<std::uint32_t>(cubey::render::AtmosphereBackgroundBinding::NightSkyAtlas),
-        "atmosphere background night sky atlas should use binding two");
-    require(pass.descriptor_sets[0].bindings[2].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             "atmosphere background night sky atlas should be sampled");
     require(pass.push_constants.empty(),
             "atmosphere background pass should not use push constants");

@@ -129,14 +129,14 @@ bool draw_atmosphere_environment_controls(cubey::AtmosphereEnvironmentRunState& 
                 "Moon",
                 {.default_open = false,
                  .level = 1U,
-                 .help = "Moon disk and moonlight contribution for night lighting."}};
+                 .help = "Visible moon and moonlight contribution for night lighting."}};
             moon_group) {
             const ScopedImGuiId moon_id("Moon");
             mark_changed(imgui_checkbox("Moon", &environment.moon.enabled,
-                                        "Enable moon disk and moonlight."),
+                                        "Enable visible moon and moonlight."),
                          changed);
-            mark_changed(imgui_slider_float("Disk", &environment.moon.disk_intensity, 0.0F, 4.0F,
-                                            "%.2f", "Brightness of the visible moon disk."),
+            mark_changed(imgui_slider_float("Moon", &environment.moon.disk_intensity, 0.0F, 4.0F,
+                                            "%.2f", "Brightness of the visible moon."),
                          changed);
             mark_changed(imgui_slider_float("Moonlight", &environment.moon.moonlight_intensity,
                                             0.0F, 4.0F, "%.2f",

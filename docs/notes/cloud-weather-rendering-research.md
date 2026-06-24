@@ -850,6 +850,102 @@ breakup. Remaining work is still visual rather than solved architecture:
 high-oblique transition quality, limb/debug-ray artifacts, and physically
 believable satellite-scale cloud organization are not finished.
 
+## Local Weather Layering Checkpoint 2026-06-21
+
+The surface/local path now borrows the orbit weather model's useful structure
+without sharing its sphere-normal domain. Local volumetric clouds still sample a
+planar world-space density field, but placement is no longer a single scalar
+scatter gate. Broad local systems, dry/clear slots, front bands, cells, streaks,
+and micro fragments are evaluated as separate procedural fields, then combined
+into coverage, cloud type, edge detail, clear, and structure outputs.
+
+This is deliberately not the removed generated 2D orbit-weather product. The
+goal is richer local scatter with clear windows and high-frequency cloudlets,
+while avoiding both old authored-map block seams and the later sparse-island
+look. New diagnostics expose `local-clear`, `local-structure`, and
+`local-edge-detail` alongside `local-scatter` so tuning can identify whether a
+bad capture is a placement, clear-slot, or erosion problem.
+
+## High-Oblique Far-Bridge Diagnosis 2026-06-22
+
+`outputs/cloud-transition-review/` showed that the first local/far/orbit
+transition split improved high-oblique framing only slightly. The far-shell
+weight activated, but `high-oblique-far-shell-alpha` was only a faint grazing
+streak and `high-oblique-local-with-shell-alpha` was nearly identical to
+`high-oblique-local-alpha`. The final high-oblique image also changed almost
+imperceptibly between far-shell off/default/strong captures.
+
+Forced comparisons clarified the source of the failure:
+
+- the orbit `surface-shell` is appropriate for full-disk orbit views, but its
+  grazing/limb filtering removes almost all useful high-oblique horizon mass;
+- the fallback orbit volume march contributes a soft horizon smear, not coherent
+  broken cloud structure;
+- per-branch haze then pushes distant cloud color toward sky/background, so even
+  faint far-field cloud reads as haze rather than cloud.
+
+The next implementation direction is therefore a dedicated high-oblique
+far-volume bridge. Orbit `surface-shell` remains the default full-orbit path,
+while the far bridge should use a cheaper version of the same local cloud field
+over the far ray segment, then apply aerial perspective once after branch
+composition.
+
+The first implementation checkpoint is `outputs/cloud-far-bridge-review/`.
+`high-oblique-far-shell-alpha` now shows a broad broken horizon band, and
+far-shell off/default/strong captures are visibly distinguishable. The bridge is
+still intentionally soft; further work should improve far-field detail and
+lighting before changing the full-orbit shell again.
+
+The follow-up diagnosis is that this first bridge still used the orbit weather
+volume rather than the local cloud field. That makes high-oblique captures feel
+like a transition between cloud types: foreground structure comes from the
+surface/local procedural density, then the horizon assist comes from the
+planet/orbit weather model. The next checkpoint should treat the far bridge as a
+local-cloud LOD path: fewer steps, higher density LOD bias, same local weather
+and 3D density source, and still no changes to the full-orbit shell.
+
+The adaptive-local checkpoint is `outputs/cloud-local-lod-bridge-review/`. The
+far bridge now reuses `cloud_sample_density` over only the distant ray segment,
+with lower step count and higher LOD bias. `high-oblique-far-shell-alpha` now
+shares the local cloud shapes instead of the orbit weather layout. The visible
+final difference between far-shell off/default/strong remains modest because the
+foreground local march still traverses most of the same long ray; the value of
+this pass is domain consistency, not a dramatic final-color change. Further
+transition work should decide whether long high-oblique rays need explicit local
+march truncation, a cached hemisphere/shell product, or temporal reconstruction
+before increasing bridge strength.
+
+`outputs/cloud-inner-boundary-fade-review/` records the next local-volume
+boundary fix. `high` and `high-oblique` exposed a horizontal cloud-floor line
+from grazing rays accumulating through the inner cloud-shell tangent. The local
+march now fades density near the inner-shell ray end, fades lower-layer samples
+for elevated downward/grazing views, and damps rays near the inner tangent so
+the shell floor does not saturate into a stripe. The `high` camera preset also
+moved above the default cloud top; the old 12 km preset sat inside the 5-22 km
+default cloud layer and was a poor high-view diagnostic.
+
+`outputs/cloud-horizon-coverage-review/` showed that the boundary fade fixed
+the hard floor line but exposed a separate far-coverage problem: in high and
+high-oblique views the reduced local far bridge was active, yet its alpha stayed
+too sparse and patchy to carry cloud continuity all the way to the horizon. The
+follow-up keeps the local-volume far bridge for domain consistency, wires the
+existing `clouds.horizon_layer` option into the shader, and adds a cheap
+distance/grazing-gated horizon layer driven by the same local procedural weather
+field. This is intentionally not the full orbit shell and not a separate orbit
+weather type; it is a high-view LOD assist for long rays where reduced local
+marching thins out before the horizon.
+
+The same checkpoint exposed a surface-view version of the issue: the local
+volume reaches the visible horizon only as sparse cloud bodies, with no cheap
+long-ray continuation below the main cloud band. The horizon layer now has a
+separate surface gate for low-altitude cameras: narrow lower-sky angles, long
+cloud-shell ray segments, and the same local weather field. It should extend the
+read of distant cloud cover without turning the lower half of the surface view
+into a uniform fog or changing the elevated-camera tangent fix. The first
+surface pass was diagnostic-visible but too subtle in final color, so the
+surface gate now carries stronger branch weight, optical depth, and radiance
+while leaving the elevated high/high-oblique horizon tuning unchanged.
+
 ## Orbit Shell Strategy 2026-06-20
 
 The current orbit raymarch is useful as a diagnostic, but it is no longer the

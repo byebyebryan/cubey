@@ -14,15 +14,16 @@ validated against the active rendering and simulation projects too.
 
 Relevant consumers:
 
-- generated lunar atlas and night-sky atlas code under `src/cubey/render`;
-- shared atmosphere shaders for procedural stars and moon terminator breakup;
-- atmosphere configuration tests that already protect atlas determinism and
+- generated lunar surface map and night-sky atlas code under `src/cubey/render`;
+- shared atmosphere shaders for procedural stars and Milky Way detail;
+- atmosphere configuration tests that already protect generated asset determinism and
   shader-helper adoption.
 
 Shared needs:
 
-- stable seed derivation for atlas sub-features such as star cells, Milky Way
-  structure, crater/terminator breakup, and deterministic capture variants;
+- stable seed derivation for generated sub-features such as star cells, Milky
+  Way structure, crater distribution, maria masks, and deterministic capture
+  variants;
 - atlas-oriented 2D sample domains that are not confused with terrain grids;
 - generated asset metadata so atlas revisions can be compared by seed, domain,
   dimensions, and formula version.

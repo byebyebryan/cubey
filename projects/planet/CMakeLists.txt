@@ -1,6 +1,4 @@
 set(CUBEY_PLANET_SHADERS
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/sky.vert"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/sky.frag"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/celestial_body.vert"
@@ -39,7 +37,6 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/sky_atmosphere.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_surface_field.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
@@ -147,18 +144,6 @@ if(BUILD_TESTING)
         5.5
     )
     cubey_add_planet_visual_smoke(
-        planet_sky_frame_legacy_writes_png
-        planet-sky-frame-legacy.png
-        --planet-camera-mode
-        surface
-        --planet-day-of-year
-        80
-        --planet-time-hours
-        5.5
-        --planet-sky-backend
-        sky-frame-legacy
-    )
-    cubey_add_planet_visual_smoke(
         planet_surface_day_writes_png
         planet-surface-day.png
         --planet-camera-mode
@@ -177,6 +162,34 @@ if(BUILD_TESTING)
         80
         --planet-time-hours
         0.0
+    )
+    cubey_add_planet_visual_smoke(
+        planet_surface_sun_dawn_writes_png
+        planet-surface-sun-dawn.png
+        --planet-camera-mode
+        surface
+        --planet-day-of-year
+        80
+        --planet-time-hours
+        4.75
+        --planet-camera-surface-look
+        sun
+        --planet-camera-surface-pitch-deg
+        22
+    )
+    cubey_add_planet_visual_smoke(
+        planet_surface_antisun_dawn_writes_png
+        planet-surface-antisun-dawn.png
+        --planet-camera-mode
+        surface
+        --planet-day-of-year
+        80
+        --planet-time-hours
+        4.75
+        --planet-camera-surface-look
+        antisun
+        --planet-camera-surface-pitch-deg
+        22
     )
     cubey_add_planet_visual_smoke(
         planet_orbit_lit_writes_png
@@ -207,6 +220,40 @@ if(BUILD_TESTING)
         87.4
         --planet-time-hours
         12.0
+    )
+    cubey_add_planet_visual_smoke(
+        planet_moon_occlusion_writes_png
+        planet-moon-occlusion.png
+        --planet-camera-mode
+        orbit
+        --planet-day-of-year
+        88
+        --planet-time-hours
+        18.13
+    )
+    set_tests_properties(
+        planet_celestial_tests
+        planet_headless_writes_png
+        planet_headless_writes_png_stats
+        planet_surface_dawn_writes_png
+        planet_surface_dawn_writes_png_stats
+        planet_surface_day_writes_png
+        planet_surface_day_writes_png_stats
+        planet_surface_night_writes_png
+        planet_surface_night_writes_png_stats
+        planet_surface_sun_dawn_writes_png
+        planet_surface_sun_dawn_writes_png_stats
+        planet_surface_antisun_dawn_writes_png
+        planet_surface_antisun_dawn_writes_png_stats
+        planet_orbit_lit_writes_png
+        planet_orbit_lit_writes_png_stats
+        planet_orbit_terminator_writes_png
+        planet_orbit_terminator_writes_png_stats
+        planet_day_moon_writes_png
+        planet_day_moon_writes_png_stats
+        planet_moon_occlusion_writes_png
+        planet_moon_occlusion_writes_png_stats
+        PROPERTIES LABELS sky
     )
     cubey_add_planet_visual_smoke(
         planet_wire_lod_writes_png
