@@ -63,8 +63,7 @@ int main() {
         constexpr std::size_t kExpectedTotalFaceCount =
             kExpectedUFaceCount + kExpectedVFaceCount + kExpectedWFaceCount;
         constexpr std::size_t kExpectedActiveParticleCount = std::size_t{40} * 46U * 29U * 4U;
-        constexpr std::size_t kExpectedInitialParticleCapacity =
-            std::size_t{96} * 48U * 36U * 4U;
+        constexpr std::size_t kExpectedInitialParticleCapacity = std::size_t{96} * 48U * 36U * 4U;
         constexpr std::size_t kExpectedParticleCapacity =
             kExpectedInitialParticleCapacity + water::kWater3DDefaultEmitterParticleCapacity;
 
@@ -120,8 +119,8 @@ int main() {
                 "water 3D should default to visible whitewater emission");
         require(config.whitewater_drag == 0.91F && config.whitewater_gravity_scale == 0.65F,
                 "water 3D should default to damped spray whitewater");
-        require(!config.hose.enabled && config.hose.particle_capacity ==
-                                           water::kWater3DDefaultEmitterParticleCapacity,
+        require(!config.hose.enabled &&
+                    config.hose.particle_capacity == water::kWater3DDefaultEmitterParticleCapacity,
                 "water 3D should reserve a default opt-in emitter particle pool");
         require(!config.drain.enabled && config.drain.pull_speed == 2.2F &&
                     config.drain.pull_radius == 1.10F,
@@ -388,6 +387,8 @@ int main() {
             read_text_file(std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_app.cpp");
         const std::string ui =
             read_text_file(std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_ui.cpp");
+        const std::string cmake = read_text_file(std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) /
+                                                 ".." / ".." / "water_3d" / "CMakeLists.txt");
         const std::string diagnostics_cpp = read_text_file(
             std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_diagnostics.cpp");
 
@@ -493,7 +494,8 @@ int main() {
                          "water 3D particle sort should apply hierarchical scan offsets");
         require_contains(scatter_sorted_particles, "cell_offsets.values[cell_id] + slot",
                          "water 3D particle sort should scatter into compact cell ranges");
-        require_contains(scatter_sorted_particles, "sorted_particle_indices.values[target_id] = source_id",
+        require_contains(scatter_sorted_particles,
+                         "sorted_particle_indices.values[target_id] = source_id",
                          "water 3D particle sort should keep canonical particle storage stable");
         require_contains(p2g_shader, "gather_face_velocity",
                          "water 3D particle-to-grid should gather face velocities");
@@ -788,7 +790,20 @@ int main() {
                          "water 3D should create direct atmosphere background descriptors");
         require_contains(gpu_resources, "atmosphere_background_.create_pipeline",
                          "water 3D should create a direct atmosphere background pipeline");
-        require_contains(gpu_resources, "FrameUniformBuffer<cubey::render::EnvironmentLightingUniforms>",
+        require_contains(cmake, "sky/celestial_body.vert",
+                         "water 3D build should compile the shared celestial body vertex shader");
+        require_contains(cmake, "sky/celestial_body.frag",
+                         "water 3D build should compile the shared celestial body fragment shader");
+        require_contains(gpu_resources, "CelestialBodyFrameMaterialConfig",
+                         "water 3D should create the shared geometry moon frame material");
+        require_contains(gpu_resources, "lunar_surface_sampler",
+                         "water 3D moon geometry should bind the visible moon surface map");
+        require_contains(gpu_resources, ".depth_format = depth_attachment().format()",
+                         "water 3D moon geometry pipeline should match the scene depth attachment");
+        require_contains(gpu_resources, "CelestialBodyDepthMode::None",
+                         "water 3D moon geometry should render as a no-depth sky backdrop");
+        require_contains(gpu_resources,
+                         "FrameUniformBuffer<cubey::render::EnvironmentLightingUniforms>",
                          "water 3D GPU resources should allocate environment lighting uniforms");
         require_contains(gpu_resources, "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER",
                          "water 3D surface layouts should bind environment lighting uniforms");
@@ -796,12 +811,17 @@ int main() {
                          "water 3D scene shader should preserve direct atmosphere sky pixels");
         require_contains(commands, "resources.atmosphere_background().pipeline()",
                          "water 3D scene pass should draw the direct atmosphere background");
+        require_contains(commands, "moon_body_frame().record_draw",
+                         "water 3D scene pass should draw moon geometry before water composition");
         require_contains(app, "AtmosphereEnvironmentRuntime",
                          "water 3D should own the shared atmosphere environment runtime");
         require_contains(app, "atmosphere_background_uniforms",
                          "water 3D should upload camera-aligned atmosphere background uniforms");
         require_contains(app, "upload_atmosphere_background",
                          "water 3D should upload direct atmosphere background uniforms");
+        require_contains(app, "environment.render_moon_disk = false",
+                         "water 3D atmosphere background should suppress the inline moon disk");
+        require_contains(app, "upload_moon_body", "water 3D should upload geometry moon uniforms");
         require_contains(app, "mark_full_update_pending",
                          "water 3D should keep atmosphere reflection updates coherent");
         require_contains(app, "record_pending_update",
@@ -879,8 +899,9 @@ int main() {
                          "water 3D GPU resources should label the whitewater render pass");
         require_contains(gpu_resources, "water_3d.whitewater",
                          "water 3D GPU resources should label the whitewater render pass");
-        require_contains(gpu_resources, ".dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE",
-                         "water 3D whitewater render should use additive premultiplied accumulation");
+        require_contains(
+            gpu_resources, ".dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE",
+            "water 3D whitewater render should use additive premultiplied accumulation");
         require_contains(commands, "draw_indirect(resources.whitewater_draw_args().handle()",
                          "water 3D whitewater render should use compacted indirect draw args");
         require(count_occurrences(commands, "surface_filter_options(config, extent)") >= 2U,

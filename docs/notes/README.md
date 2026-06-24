@@ -14,9 +14,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Atmosphere rendering research](atmosphere-rendering-research.md): early
   notes on clear-sky scattering approaches and the first `projects/atmosphere`
   implementation direction.
-- [Celestial rendering research](celestial-rendering-research.md): current
-  planet-scale pivot from atmosphere-owned sun/moon disks to planet-owned
-  celestial bodies with atmosphere as a consumer.
+- [Celestial rendering research](celestial-rendering-research.md): historical
+  pivot note from atmosphere-owned celestial disks toward shared visible body
+  geometry with atmosphere as a consumer.
 - [Planet gap closure checkpoint](planet-gap-closure.md): current planet
   project state, missing foundation gaps, and the intended split-commit batch.
 - [Planet surface quality pass](planet-surface-quality.md): procedural terrain,
@@ -25,6 +25,29 @@ the detailed foundation notes under `docs/architecture/`.
   sample/tile vocabulary for later ocean, biome, cache, and streaming work.
 - [Planet atmosphere v1](planet-atmosphere-v1.md): immediate planet-local
   scattering, transmittance, and aerial-perspective direction.
+- [Sky and celestial current state](sky-celestial-current-state.md): current
+  ownership, render paths, and cleanup checklist for the `sky-rendering`
+  worktree.
+- [Sky validation baseline](sky-validation-baseline.md): focused sky label,
+  build, unit-test, and PNG-smoke baseline for the `sky-rendering` worktree.
+- [Sky visual baseline review](sky-visual-baseline-review.md): capture review
+  findings behind removing the legacy planet `SkyFrame` backend.
+- [Sky visual iteration plan](sky-visual-iteration-plan.md): first post-cleanup
+  visual tuning scope and commit sequence for unified atmosphere sun work.
+- [Sky visual pass 001 review](sky-visual-pass-001-review.md): clean
+  pre-tuning capture review for the first unified atmosphere sun pass.
+- [Sky visual pass 001 post-sun review](sky-visual-pass-001-post-sun-review.md):
+  post-halo capture review for the first unified atmosphere sun pass.
+- [Geometry moon migration](sky-geometry-moon-migration.md): migration plan for
+  making explicit geometry the canonical app-visible moon path.
+- [Geometry moon migration captures](sky-moon-geo-migration-captures.md):
+  reproducible capture commands and observations for the migrated moon paths.
+- [Moon surface detail plan](sky-moon-surface-detail-plan.md): procedural
+  spherical lunar surface map references, implementation outcome, and remaining
+  material tuning caveat.
+- [Moon surface detail captures](sky-moon-surface-detail-captures.md):
+  reproducible capture commands and observations for the lunar surface-map
+  routing pass.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling

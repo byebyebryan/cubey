@@ -547,7 +547,8 @@ void test_planet_atmosphere_environment_config_round_trips_sun_direction() {
             "planet atmosphere adapter should preserve sun direction through shared config");
     require(config.render_celestial_content,
             "planet atmosphere adapter should let unified atmosphere own sky celestial rendering");
-    require(config.render_sun_disk, "planet atmosphere adapter should let unified atmosphere draw sun");
+    require(config.render_sun_disk,
+            "planet atmosphere adapter should let unified atmosphere draw sun");
     require(config.render_night_sky,
             "planet atmosphere adapter should let unified atmosphere draw night sky");
     require(!config.render_moon_disk,
@@ -601,9 +602,8 @@ void test_planet_unified_atmosphere_frame_uses_local_tangent_up() {
     require_near(uniforms.rayleigh.x,
                  look_config.rayleigh_scattering.x * look_config.rayleigh_density_scale, 0.0001F,
                  "unified atmosphere frame should pack shared Rayleigh look scale");
-    require_near(uniforms.ozone.y,
-                 look_config.ozone_absorption.y * look_config.ozone_density_scale, 0.0001F,
-                 "unified atmosphere frame should pack shared ozone look scale");
+    require_near(uniforms.ozone.y, look_config.ozone_absorption.y * look_config.ozone_density_scale,
+                 0.0001F, "unified atmosphere frame should pack shared ozone look scale");
 }
 
 void test_planet_unified_atmosphere_frame_splits_sky_and_moon_ownership() {
@@ -631,8 +631,9 @@ void test_planet_unified_atmosphere_frame_splits_sky_and_moon_ownership() {
                  "unified atmosphere adapter should convert atmosphere radius to kilometers");
     require_near(uniforms.radii_ground.z, 10.0F, 0.0001F,
                  "unified atmosphere adapter should convert camera altitude to kilometers");
-    require_near(uniforms.render_options.x, 2.0F, 0.000001F,
-                 "unified atmosphere adapter should render sky-only without smooth ground occlusion");
+    require_near(
+        uniforms.render_options.x, 2.0F, 0.000001F,
+        "unified atmosphere adapter should render sky-only without smooth ground occlusion");
     require_near(uniforms.render_options.z, 0.0F, 0.000001F,
                  "unified atmosphere adapter should not lower the sky occluder by default");
     require_near(uniforms.render_options.y, 1.0F, 0.000001F,
@@ -728,109 +729,6 @@ void test_celestial_body_render_placement_uses_topocentric_ray() {
                      "render placement should use the camera-to-physical-body ray");
 }
 
-void test_sky_frame_uniforms_pack_sun_state() {
-    cubey::projects::planet::PlanetCelestialSystem celestial{};
-    celestial.sun.direction = glm::normalize(cubey::math::Vec3{0.15F, 0.85F, -0.50F});
-    celestial.sun.color = {1.0F, 0.75F, 0.45F};
-    celestial.sun.intensity = 1.8F;
-    celestial.sun.angular_radius_rad = 0.012F;
-    celestial.moon.direction = glm::normalize(cubey::math::Vec3{-0.50F, 0.10F, 0.86F});
-    celestial.moon.angular_radius_rad = 0.008F;
-
-    const cubey::render::ViewRayBasis3D view_rays =
-        cubey::render::view_ray_basis_3d(cubey::math::identity_quat(), 1.5F, 1.0F);
-    const cubey::projects::planet::PlanetSkyFrameUniforms uniforms =
-        cubey::projects::planet::planet_sky_frame_uniforms(
-            celestial,
-            {
-                .view_rays = view_rays,
-                .camera_position_m = {0.0F, 0.0F, 10.0F},
-                .planet_radius_m = 4.0F,
-                .atmosphere_outer_radius_m = 5.0F,
-                .atmosphere_mode = cubey::projects::planet::PlanetAtmosphereMode::Physical,
-                .moon_angular_radius_scale = 3.0F,
-            });
-
-    require(uniforms.camera_right_aspect == view_rays.right_aspect,
-            "celestial frame uniforms should pack view right/aspect");
-    require(uniforms.camera_forward_enabled.w == 1.0F,
-            "celestial frame uniforms should pack sun visibility");
-    require_vec_near({uniforms.sun_direction_radius.x, uniforms.sun_direction_radius.y,
-                      uniforms.sun_direction_radius.z},
-                     celestial.sun.direction, "celestial frame uniforms should pack sun direction");
-    require_near(uniforms.sun_direction_radius.w, celestial.sun.angular_radius_rad, 0.000001F,
-                 "celestial frame uniforms should pack sun angular radius");
-    require_vec_near({uniforms.moon_direction_radius.x, uniforms.moon_direction_radius.y,
-                      uniforms.moon_direction_radius.z},
-                     celestial.moon.direction,
-                     "celestial frame uniforms should pack moon direction for star masking");
-    require_near(uniforms.moon_direction_radius.w, celestial.moon.angular_radius_rad * 3.0F,
-                 0.000001F, "celestial frame uniforms should pack scaled moon angular radius");
-    require_near(uniforms.sun_color_intensity.w, celestial.sun.intensity, 0.000001F,
-                 "celestial frame uniforms should pack sun intensity");
-    require_near(uniforms.camera_position_radius.z, 10.0F, 0.000001F,
-                 "celestial frame uniforms should pack camera position for occlusion");
-    require_near(uniforms.camera_position_radius.w, 4.0F, 0.000001F,
-                 "celestial frame uniforms should pack planet radius for occlusion");
-    require_near(uniforms.background_space_limb.w, 5.0F, 0.000001F,
-                 "celestial frame uniforms should pack atmosphere limb radius");
-    require_near(uniforms.atmosphere_mode_options.x, 1.0F, 0.000001F,
-                 "celestial frame uniforms should pack atmosphere preview mode");
-    require(uniforms.night_options.x < 0.60F,
-            "celestial frame uniforms should keep night-sky atlas defaults subtle");
-    require_near(uniforms.night_options.w, 1.0F, 0.000001F,
-                 "celestial frame uniforms should fully wash out night sky in daylight");
-    require(uniforms.milky_way_options.x < 0.90F,
-            "celestial frame uniforms should keep Milky Way defaults below inspection strength");
-}
-
-void test_sky_frame_uniforms_disable_invisible_moon_star_mask() {
-    cubey::projects::planet::PlanetCelestialSystem celestial{};
-    celestial.moon.visible = false;
-    celestial.moon.direction = glm::normalize(cubey::math::Vec3{-0.50F, 0.10F, 0.86F});
-    celestial.moon.angular_radius_rad = 0.008F;
-
-    const cubey::projects::planet::PlanetSkyFrameUniforms uniforms =
-        cubey::projects::planet::planet_sky_frame_uniforms(
-            celestial, {
-                           .view_rays = cubey::render::view_ray_basis_3d(
-                               cubey::math::identity_quat(), 1.5F, 1.0F),
-                           .moon_angular_radius_scale = 3.0F,
-                       });
-
-    require_vec_near({uniforms.moon_direction_radius.x, uniforms.moon_direction_radius.y,
-                      uniforms.moon_direction_radius.z},
-                     celestial.moon.direction,
-                     "invisible moon should still pack a valid direction for diagnostics");
-    require_near(uniforms.moon_direction_radius.w, 0.0F, 0.000001F,
-                 "invisible moon should disable sky star masking");
-}
-
-void test_sky_frame_uniforms_use_topocentric_moon_mask_direction() {
-    cubey::projects::planet::PlanetCelestialSystem celestial{};
-    celestial.moon.direction = {0.0F, 0.0F, 1.0F};
-    celestial.moon.distance_m = 10.0F;
-
-    const cubey::projects::planet::PlanetSkyFrameUniforms uniforms =
-        cubey::projects::planet::planet_sky_frame_uniforms(
-            celestial, {
-                           .camera_position_m = {2.0F, 0.0F, 0.0F},
-                       });
-
-    const cubey::math::Vec3 expected = glm::normalize(cubey::math::Vec3{-2.0F, 0.0F, 10.0F});
-    require_vec_near({uniforms.moon_direction_radius.x, uniforms.moon_direction_radius.y,
-                      uniforms.moon_direction_radius.z},
-                     expected,
-                     "moon star mask should match the topocentric body placement direction");
-}
-
-void test_sky_pass_writes_opaque_sky() {
-    const cubey::render::MaterialPassInfo pass = cubey::projects::planet::planet_sky_pass_info();
-    require(!pass.blend_enable, "sky pass should write the planet-owned sky");
-    require(!pass.depth_test && !pass.depth_write,
-            "sky pass should use analytic planet occlusion instead of depth");
-}
-
 void test_celestial_body_frame_uniforms_pack_render_placement() {
     cubey::projects::planet::PlanetCelestialBody moon{};
     moon.direction = glm::normalize(cubey::math::Vec3{0.0F, 0.0F, 1.0F});
@@ -877,6 +775,60 @@ void test_celestial_body_frame_uniforms_pack_render_placement() {
                  "body frame uniforms should pack body phase");
     require_near(uniforms.visibility_atmosphere.x, 0.0F, 0.000001F,
                  "body frame uniforms should default to no atmospheric sky visibility");
+    require_near(uniforms.visibility_atmosphere.w, 0.0F, 0.000001F,
+                 "body frame uniforms should default to lit body shading");
+
+    const cubey::math::Vec3 expected_forward = glm::normalize(-moon.direction);
+    const cubey::math::Vec3 basis_right{uniforms.surface_basis_right.x,
+                                        uniforms.surface_basis_right.y,
+                                        uniforms.surface_basis_right.z};
+    const cubey::math::Vec3 basis_up{uniforms.surface_basis_up.x, uniforms.surface_basis_up.y,
+                                     uniforms.surface_basis_up.z};
+    const cubey::math::Vec3 basis_forward{uniforms.surface_basis_forward_options.x,
+                                          uniforms.surface_basis_forward_options.y,
+                                          uniforms.surface_basis_forward_options.z};
+    require_vec_near(basis_forward, expected_forward,
+                     "body frame uniforms should aim the surface map basis at the moon near side");
+    require_near(glm::dot(basis_right, basis_up), 0.0F, 0.0001F,
+                 "body frame surface map basis axes should be orthogonal");
+    require_near(glm::dot(basis_right, basis_forward), 0.0F, 0.0001F,
+                 "body frame surface map right axis should be orthogonal to the near side");
+    require_near(glm::dot(basis_up, basis_forward), 0.0F, 0.0001F,
+                 "body frame surface map up axis should be orthogonal to the near side");
+    require(uniforms.surface_basis_forward_options.w > 0.0F,
+            "body frame uniforms should enable surface map sampling");
+
+    const cubey::projects::planet::PlanetCelestialBodyFrameUniforms debug_uniforms =
+        cubey::projects::planet::planet_celestial_body_frame_uniforms(
+            moon, placement, lighting, cubey::math::Mat4{1.0F},
+            {
+                .camera_render_position_m = {1.0F, 2.0F, 3.0F},
+                .atmosphere = {},
+                .shading_mode = cubey::render::CelestialBodyShadingMode::SurfaceDebug,
+                .surface_detail_strength = 0.75F,
+                .surface_texture_strength = 0.80F,
+                .limb_strength = 0.0F,
+            });
+    require_near(debug_uniforms.camera_position_options.w, 0.75F, 0.000001F,
+                 "body frame uniforms should pack requested surface detail strength");
+    require_near(debug_uniforms.visibility_atmosphere.z, 0.0F, 0.000001F,
+                 "body frame uniforms should pack requested limb strength");
+    require_near(debug_uniforms.visibility_atmosphere.w, 1.0F, 0.000001F,
+                 "body frame uniforms should pack surface debug shading mode");
+    require_near(debug_uniforms.surface_basis_forward_options.w, 0.80F, 0.000001F,
+                 "body frame uniforms should pack requested surface texture strength");
+
+    const cubey::projects::planet::PlanetCelestialBodyFrameUniforms moved_camera_uniforms =
+        cubey::projects::planet::planet_celestial_body_frame_uniforms(
+            moon, placement, lighting, cubey::math::Mat4{1.0F},
+            {
+                .camera_render_position_m = {-100.0F, 40.0F, 12.0F},
+            });
+    require_vec_near({moved_camera_uniforms.surface_basis_forward_options.x,
+                      moved_camera_uniforms.surface_basis_forward_options.y,
+                      moved_camera_uniforms.surface_basis_forward_options.z},
+                     basis_forward,
+                     "body frame surface map basis should not swim when the camera moves");
 }
 
 void test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere() {
@@ -975,6 +927,11 @@ void test_celestial_body_pass_uses_depth_test_without_depth_write() {
         cubey::projects::planet::planet_celestial_body_pass_info();
 
     require(pass.cull_mode == VK_CULL_MODE_BACK_BIT, "body pass should cull back faces");
+    require(pass.descriptor_sets.size() == 1U, "body pass should use one descriptor set");
+    require(pass.descriptor_sets[0].bindings.size() == 2U,
+            "body pass should bind frame uniforms and a surface map");
+    require(pass.descriptor_sets[0].bindings[1].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "body pass should sample the surface map");
     require(pass.depth_test, "body pass should depth-test against planet geometry");
     require(!pass.depth_write, "body pass should not overwrite scene depth");
     require(pass.blend_enable,
@@ -987,6 +944,26 @@ void test_celestial_body_pass_uses_depth_test_without_depth_write() {
             "body pass should use premultiplied source alpha");
     require(pass.dst_alpha_blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
             "body pass should keep destination alpha consistent with source-over blending");
+}
+
+void test_celestial_body_pass_can_disable_depth_for_backdrops() {
+    const cubey::render::MaterialPassInfo pass =
+        cubey::render::celestial_body_pass_info(cubey::render::CelestialBodyDepthMode::None);
+
+    require(!pass.depth_test, "backdrop body pass should be able to render without depth");
+    require(!pass.depth_write, "backdrop body pass should never write depth");
+    require(pass.blend_enable, "backdrop body pass should keep premultiplied blending");
+}
+
+void test_celestial_body_texture_bindings_require_surface_map() {
+    bool threw = false;
+    try {
+        cubey::render::validate_celestial_body_frame_texture_bindings({});
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+
+    require(threw, "body frame texture bindings should reject missing surface map handles");
 }
 
 } // namespace
@@ -1019,14 +996,12 @@ int main() {
         test_celestial_body_conversion_preserves_moon_state();
         test_celestial_body_render_placement_preserves_apparent_size();
         test_celestial_body_render_placement_uses_topocentric_ray();
-        test_sky_frame_uniforms_pack_sun_state();
-        test_sky_frame_uniforms_disable_invisible_moon_star_mask();
-        test_sky_frame_uniforms_use_topocentric_moon_mask_direction();
-        test_sky_pass_writes_opaque_sky();
         test_celestial_body_frame_uniforms_pack_render_placement();
         test_celestial_body_frame_washes_out_daytime_moon_in_atmosphere();
         test_celestial_body_frame_defers_planet_shadow_eclipse();
         test_celestial_body_pass_uses_depth_test_without_depth_write();
+        test_celestial_body_pass_can_disable_depth_for_backdrops();
+        test_celestial_body_texture_bindings_require_surface_map();
         return 0;
     } catch (const std::exception& error) {
         std::fprintf(stderr, "planet_celestial_tests: %s\n", error.what());

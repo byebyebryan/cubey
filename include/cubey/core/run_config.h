@@ -157,7 +157,6 @@ struct RunConfig {
         int time_paused = -1;
         std::string camera_mode{};
         std::string atmosphere_mode{};
-        std::string sky_backend{};
         bool terrain_seed_set = false;
     };
 
@@ -228,6 +227,7 @@ struct RunConfig {
         int time_paused = -1;
         int auto_exposure = -1;
         int moon = -1;
+        int reference_geometry = -1;
     };
 
     struct CloudOptions {

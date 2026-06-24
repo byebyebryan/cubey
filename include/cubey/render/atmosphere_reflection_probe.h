@@ -124,7 +124,7 @@ class AtmosphereReflectionProbe {
     std::vector<cubey::vulkan::ImageView> prefiltered_face_views_{};
     std::array<bool, 6> sky_face_initialized_{};
     std::vector<bool> prefiltered_face_mip_initialized_{};
-    AtmosphereBackgroundFrame sky_frame_{};
+    AtmosphereBackgroundFrame atmosphere_frame_{};
     std::array<std::unique_ptr<FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>>, 6>
         sky_face_materials_{};
     std::vector<

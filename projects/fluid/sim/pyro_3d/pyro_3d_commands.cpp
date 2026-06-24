@@ -372,7 +372,7 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
     if (update_shadow) {
         const cubey::render::ComputePipelineResource& shadow_pipeline = resources.shadow_pipeline();
         cubey::vulkan::GpuTimestampScope shadow_scope(profiler, command_buffer, frame_slot_index,
-                                                       "shadow");
+                                                      "shadow");
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, shadow_pipeline.pipeline());
         const std::array<VkDescriptorSet, 2> sets{
             resources.shadow_descriptor_set(frame_state.density_a_current),
@@ -401,12 +401,11 @@ void record_pyro_3d_draw(VkCommandBuffer command_buffer, const Pyro3DGpuResource
                          cubey::render::ColorTargetView color_target,
                          const Pyro3DFrameState& frame_state,
                          cubey::vulkan::GpuTimestampProfiler* profiler,
-                         std::uint32_t frame_slot_index,
-                         bool atmosphere_background_enabled) {
+                         std::uint32_t frame_slot_index, bool atmosphere_background_enabled,
+                         bool moon_body_enabled) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
-    const RenderPushConstants push_constants =
-        render_push_constants(config, debug_view, camera, color_target.extent,
-                              atmosphere_background_enabled);
+    const RenderPushConstants push_constants = render_push_constants(
+        config, debug_view, camera, color_target.extent, atmosphere_background_enabled);
 
     cubey::vulkan::GpuTimestampScope profile_scope(profiler, command_buffer, frame_slot_index,
                                                    "raymarch");
@@ -415,9 +414,8 @@ void record_pyro_3d_draw(VkCommandBuffer command_buffer, const Pyro3DGpuResource
         cubey::render::RenderClearValues{
             .color = cubey::render::color_clear_value(0.006F, 0.008F, 0.012F, 1.0F),
         },
-        [&resources, &frame_state, frame_slot_index,
-         push_constants,
-         atmosphere_background_enabled](const cubey::vulkan::CommandRecorder& pass_recorder) {
+        [&resources, &frame_state, frame_slot_index, push_constants, atmosphere_background_enabled,
+         moon_body_enabled](const cubey::vulkan::CommandRecorder& pass_recorder) {
             if (atmosphere_background_enabled) {
                 cubey::render::record_fullscreen_pipeline_draw(
                     pass_recorder,
@@ -426,6 +424,14 @@ void record_pyro_3d_draw(VkCommandBuffer command_buffer, const Pyro3DGpuResource
                         .descriptor_set =
                             resources.atmosphere_background_descriptor_set(frame_slot_index),
                     });
+            }
+            if (moon_body_enabled) {
+                resources.moon_body_frame().record_draw(pass_recorder,
+                                                        cubey::render::FrameSlot{
+                                                            .index = frame_slot_index,
+                                                            .count = resources.frame_slot_count(),
+                                                        },
+                                                        resources.moon_mesh());
             }
             const cubey::render::GraphicsPipelineResource& pipeline = resources.render_pipeline();
             pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());

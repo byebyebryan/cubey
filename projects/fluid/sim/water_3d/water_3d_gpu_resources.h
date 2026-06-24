@@ -4,6 +4,7 @@
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/render/atmosphere_background_frame.h>
+#include <cubey/render/celestial_body_frame.h>
 #include <cubey/render/environment_lighting.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/generated_ibl.h>
@@ -37,6 +38,7 @@ struct Water3DEnvironmentTextureBindings {
 class Water3DGpuResources {
   public:
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& mesh_gpu,
                                            cubey::ProjectGpuServices& gpu,
                                            const Water3DConfig& config,
                                            std::uint32_t frame_slot_count);
@@ -104,12 +106,14 @@ class Water3DGpuResources {
     simulation_uniform_buffer(cubey::render::FrameSlot frame_slot) const;
     void upload_simulation_uniforms(cubey::render::FrameSlot frame_slot,
                                     const Water3DSimulationUniforms& uniforms) const;
-    void upload_environment_lighting(
-        cubey::render::FrameSlot frame_slot,
-        const cubey::render::EnvironmentLightingUniforms& uniforms) const;
+    void
+    upload_environment_lighting(cubey::render::FrameSlot frame_slot,
+                                const cubey::render::EnvironmentLightingUniforms& uniforms) const;
     void upload_atmosphere_background(
         cubey::render::FrameSlot frame_slot,
         const cubey::render::AtmosphereEnvironmentFrameUniforms& uniforms) const;
+    void upload_moon_body(cubey::render::FrameSlot frame_slot,
+                          const cubey::render::CelestialBodyFrameUniforms& uniforms) const;
     [[nodiscard]] VkDescriptorSet field_descriptor_set(cubey::render::FrameSlot frame_slot) const;
 
     [[nodiscard]] const cubey::render::ComputePipelineResource& reset_pipeline_resource() const;
@@ -177,8 +181,12 @@ class Water3DGpuResources {
     surface_composite_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource&
     whitewater_pipeline_resource() const;
-    [[nodiscard]] const cubey::render::AtmosphereBackgroundFrame&
-    atmosphere_background() const;
+    [[nodiscard]] const cubey::render::AtmosphereBackgroundFrame& atmosphere_background() const;
+    [[nodiscard]] const cubey::render::CelestialBodyFrame& moon_body_frame() const;
+    [[nodiscard]] const cubey::render::Mesh& moon_mesh() const;
+    [[nodiscard]] std::uint32_t frame_slot_count() const noexcept {
+        return frame_slot_count_;
+    }
     [[nodiscard]] VkDescriptorSet
     surface_scene_descriptor_set(cubey::render::FrameSlot frame_slot) const;
     [[nodiscard]] VkDescriptorSet
@@ -206,6 +214,7 @@ class Water3DGpuResources {
 
   private:
     void create_field_buffers(cubey::ProjectGpuServices& gpu, const Water3DConfig& config);
+    void create_moon_mesh_if_needed(cubey::vulkan::GpuRuntime& gpu);
     void create_descriptor_resources(cubey::vulkan::Device& device);
     void update_field_descriptors(cubey::vulkan::Device& device);
     void create_compute_pipelines(cubey::vulkan::Device& device);
@@ -286,8 +295,7 @@ class Water3DGpuResources {
     std::optional<cubey::render::ComputePipelineResource>
         scatter_sorted_particles_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> particle_to_grid_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource>
-        particle_to_grid_tiled_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> particle_to_grid_tiled_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> force_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_resource_;
     std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_resource_;
@@ -307,6 +315,8 @@ class Water3DGpuResources {
     std::optional<cubey::vulkan::Sampler> whitewater_sampler_;
     std::optional<cubey::render::MaterialInstance> surface_scene_material_;
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_;
+    cubey::render::CelestialBodyFrame moon_body_frame_;
+    std::optional<cubey::render::Mesh> moon_mesh_;
     std::optional<cubey::render::MaterialInstance> surface_thickness_material_;
     std::optional<cubey::render::MaterialInstance> surface_pack_material_;
     std::optional<cubey::render::MaterialInstance> surface_source_a_material_;

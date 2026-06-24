@@ -55,8 +55,6 @@ constexpr std::array<std::string_view, 2> kPlanetCameraModes{"orbit", "surface"}
 constexpr std::array<std::string_view, 3> kPlanetSurfaceLooks{"default", "sun", "antisun"};
 constexpr std::array<std::string_view, 3> kPlanetAtmosphereModes{"analytic", "physical",
                                                                  "physical-preview"};
-constexpr std::array<std::string_view, 2> kPlanetSkyBackends{"unified-atmosphere",
-                                                             "sky-frame-legacy"};
 constexpr std::array<std::string_view, 2> kTimeOfDayModes{"manual", "solar"};
 constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
@@ -401,10 +399,6 @@ constexpr std::array<ConfigOptionDescriptor, 229> kRunConfigOptions{
     option(RunConfigOptionId::PlanetAtmosphereMode, "planet.atmosphere_mode",
            "--planet-atmosphere-mode", "Atmosphere Mode", "Planet", "Planet sky atmosphere mode.",
            ConfigOptionType::Enum, no_range(), enum_choices(kPlanetAtmosphereModes)),
-    option(RunConfigOptionId::PlanetSkyBackend, "planet.sky_backend", "--planet-sky-backend",
-           "Sky Backend", "Planet",
-           "Planet sky backend used for comparing local and shared atmosphere paths.",
-           ConfigOptionType::Enum, no_range(), enum_choices(kPlanetSkyBackends)),
     option(RunConfigOptionId::TerrainSeed, "terrain.seed", "--terrain-seed", "Seed", "Terrain",
            "Deterministic procedural terrain seed.", ConfigOptionType::UInt64),
     option(RunConfigOptionId::TerrainCellSize, "terrain.cell_size", "--terrain-cell-size",
@@ -525,7 +519,7 @@ constexpr std::array<ConfigOptionDescriptor, 229> kRunConfigOptions{
            "Procedural variation phase for Milky Way generation.", ConfigOptionType::Float,
            bounded_range(0.0, 16.0)),
     option(RunConfigOptionId::AtmosphereMoonIntensity, "atmosphere.moon_intensity",
-           "--moon-intensity", "Moon Disk", "Atmosphere", "Visible moon disk brightness.",
+           "--moon-intensity", "Moon", "Atmosphere", "Visible moon brightness.",
            ConfigOptionType::Float, bounded_range(0.0, 4.0)),
     option(RunConfigOptionId::AtmosphereMoonlightIntensity, "atmosphere.moonlight_intensity",
            "--moonlight-intensity", "Moonlight", "Atmosphere", "Moonlight contribution.",
@@ -535,11 +529,15 @@ constexpr std::array<ConfigOptionDescriptor, 229> kRunConfigOptions{
            "Offset in days through the lunar phase cycle.", ConfigOptionType::Float,
            bounded_range(0.0, 29.530588)),
     option(RunConfigOptionId::AtmosphereMoonSizeScale, "atmosphere.moon_size_scale",
-           "--moon-size-scale", "Moon Size", "Atmosphere", "Visual moon disk scale.",
+           "--moon-size-scale", "Moon Size", "Atmosphere", "Visual moon scale.",
            ConfigOptionType::Float, bounded_range(0.000001, 8.0)),
     option(RunConfigOptionId::AtmosphereMoon, "atmosphere.moon", "--moon", "Moon", "Atmosphere",
-           "Enable the procedural moon and moonlight.", ConfigOptionType::Bool, no_range(), {},
+           "Enable the visible moon and moonlight.", ConfigOptionType::Bool, no_range(), {},
            "--no-moon"),
+    option(RunConfigOptionId::AtmosphereReferenceGeometry, "atmosphere.reference_geometry",
+           "--reference-geometry", "Reference Geometry", "Atmosphere",
+           "Enable the standalone atmosphere ground reference grid.", ConfigOptionType::Bool,
+           no_range(), {}, "--no-reference-geometry"),
     option(RunConfigOptionId::CloudCameraMode, "clouds.camera_mode", "--cloud-camera-mode",
            "Camera Mode", "Clouds", "Initial cloud camera mode.", ConfigOptionType::Enum,
            no_range(), enum_choices(kCloudCameraModes)),
@@ -1248,9 +1246,6 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.planet.atmosphere_mode.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.planet.atmosphere_mode);
-    case RunConfigOptionId::PlanetSkyBackend:
-        return config.planet.sky_backend.empty() ? nlohmann::json(nullptr)
-                                                 : nlohmann::json(config.planet.sky_backend);
     case RunConfigOptionId::TerrainSeed:
         return config.terrain.seed_set ? nlohmann::json(config.terrain.seed)
                                        : nlohmann::json(nullptr);
@@ -1344,6 +1339,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.atmosphere.moon_size_scale);
     case RunConfigOptionId::AtmosphereMoon:
         return optional_bool(config.atmosphere.moon);
+    case RunConfigOptionId::AtmosphereReferenceGeometry:
+        return optional_bool(config.atmosphere.reference_geometry);
     case RunConfigOptionId::CloudCameraMode:
         return config.clouds.camera_mode.empty() ? nlohmann::json(nullptr)
                                                  : nlohmann::json(config.clouds.camera_mode);
@@ -1654,7 +1651,6 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::PlanetOptions& opti
     adapter.writeField<int>("time_paused", options.time_paused);
     adapter.writeField<std::string>("camera_mode", options.camera_mode);
     adapter.writeField<std::string>("atmosphere_mode", options.atmosphere_mode);
-    adapter.writeField<std::string>("sky_backend", options.sky_backend);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options) {
@@ -1701,7 +1697,6 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::PlanetOptions& options)
     adapter.readField<int>("time_paused", options.time_paused);
     adapter.readField<std::string>("camera_mode", options.camera_mode);
     adapter.readField<std::string>("atmosphere_mode", options.atmosphere_mode);
-    adapter.readField<std::string>("sky_backend", options.sky_backend);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::PbrOptions& options) {
@@ -1812,6 +1807,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::AtmosphereOptions& 
     adapter.writeField<int>("time_paused", options.time_paused);
     adapter.writeField<int>("auto_exposure", options.auto_exposure);
     adapter.writeField<int>("moon", options.moon);
+    adapter.writeField<int>("reference_geometry", options.reference_geometry);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::AtmosphereOptions& options) {
@@ -1846,6 +1842,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::AtmosphereOptions& opti
     adapter.readField<int>("time_paused", options.time_paused);
     adapter.readField<int>("auto_exposure", options.auto_exposure);
     adapter.readField<int>("moon", options.moon);
+    adapter.readField<int>("reference_geometry", options.reference_geometry);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& options) {
@@ -2364,9 +2361,6 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::PlanetAtmosphereMode:
         config.planet.atmosphere_mode = std::string(value);
         break;
-    case RunConfigOptionId::PlanetSkyBackend:
-        config.planet.sky_backend = std::string(value);
-        break;
     case RunConfigOptionId::TerrainSeed:
         config.terrain.seed = parse_number<std::uint64_t>(value, option, "unsigned integer");
         config.terrain.seed_set = true;
@@ -2525,6 +2519,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::AtmosphereMoon:
         config.atmosphere.moon = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::AtmosphereReferenceGeometry:
+        config.atmosphere.reference_geometry = parse_config_bool(value, option) ? 1 : 0;
         break;
     case RunConfigOptionId::CloudCameraMode:
         config.clouds.camera_mode = std::string(value);

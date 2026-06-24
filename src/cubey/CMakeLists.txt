@@ -158,15 +158,16 @@ add_library(cubey_render STATIC
     render/deformation.cpp
     render/atmosphere_background_frame.cpp
     render/atmosphere_environment.cpp
-    render/atmosphere_lunar_atlas.cpp
     render/atmosphere_night_sky_atlas.cpp
     render/atmosphere_reflection_probe.cpp
+    render/celestial_body_frame.cpp
     render/forward_pass.cpp
     render/generated_ibl.cpp
     render/frame_data.cpp
     render/generated_texture.cpp
     render/hdr_post_frame.cpp
     render/instance_buffer.cpp
+    render/lunar_surface_map.cpp
     render/material_instance.cpp
     render/material.cpp
     render/mesh.cpp
@@ -185,7 +186,6 @@ add_library(cubey_render STATIC
     render/render_graph_sync.cpp
     render/render_item.cpp
     render/shadow_map.cpp
-    render/sky_frame.cpp
     render/target.cpp
     render/terrain_ocean_fields.cpp
     render/texture.cpp
