@@ -34,12 +34,14 @@ still owns presets, UI, debug view selection, generated sky assets, and
 render-graph wiring; the render helpers are intended to be reusable by ocean and
 later terrain/environment work.
 
-Final view also has an early shared cloud-layer smoke path. It uses the
-promoted `cubey::render::CloudLayer*` contracts and `shaders/cubey/cloud/`
-assets to march a conservative half-resolution cloud product, then composites it
-over the clear-sky atmosphere background. Cloud controls, temporal cloud
-history, cloud debug views, cloud shadows, and cloud-driven reflection or
-environment-lighting outputs are still deferred to the cloud foundation work.
+Final view also uses the shared cloud-layer runtime. `CloudLayerRuntime` owns
+generated cloud resources, march/temporal/composite pipelines, render-graph
+products, descriptors, and temporal history; atmosphere consumes it in
+external-background mode so clouds are composited over the clear-sky background.
+The Clouds panel exposes the shared quality, sampling, layer, weather, and
+lighting controls, and existing `clouds.*` config/CLI overrides apply here too.
+Cloud debug-view surfacing, cloud shadows, and cloud-driven reflection or
+environment-lighting outputs remain deferred.
 
 Useful runs:
 
@@ -64,6 +66,7 @@ Controls:
 - The Time panel switches between manual sun direction and local solar time.
 - The Reference panel controls the ground grid, local red/cyan axes, and origin
   marker used for orientation.
+- The Clouds panel controls the shared cloud layer used in final view.
 - The Night sky panel switches diagnostic layer, human/camera response, Milky
   Way intensity/contrast, light pollution, and procedural variation.
 - Escape: close.

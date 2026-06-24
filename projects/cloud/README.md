@@ -240,10 +240,12 @@ Known deferrals:
 - No planet, terrain, PBR, or production ocean reflection integration yet.
   Future consumers should sample cloud outputs rather than owning cloud raymarch
   code.
-- A first shared cloud-layer contract exists, and atmosphere/ocean have smoke
-  consumers. A complete promoted cloud renderer runtime does not exist yet:
-  textures, descriptors, materials, temporal history, UI, and synchronization
-  remain mostly project-owned in V1.
+- The shared cloud-layer contract now includes `CloudLayerRuntime`, which owns
+  generated noise/weather resources, march/temporal/composite materials and
+  pipelines, render-graph product declaration, descriptor updates, and temporal
+  history. `projects/cloud` remains the primary tuning surface, while
+  `projects/atmosphere` consumes the runtime in external-background mode with
+  editable cloud controls.
 - Consumer smoke checks should use `quarter` quality unless the purpose is
   visual tuning. The standalone cloud app keeps `full` quality as its inspection
   default.
