@@ -64,7 +64,7 @@ Implemented on the `sky-rendering` worktree in June 2026:
 - `LunarSurfaceMap` is a deterministic `1024x512` equirectangular RGBA8
   procedural artifact generated from shared `cubey::procedural` seed, noise,
   hash, and metadata utilities. The current artifact formula is
-  `lunar-surface-map-v14`.
+  `lunar-surface-map-v15`.
 - `CelestialBodyFrame` samples the surface in a stable moon-local body frame,
   so texture coordinates no longer face the camera.
 - `AtmosphereBackgroundAtlasResources` now owns the visible lunar surface map
@@ -86,9 +86,11 @@ so the dark plains read closer to the generated face instead of collecting on
 the limb. The v13 tuning widens that fill curve and gives the low-frequency
 mare mass more weight so maria occupy more of the far-field disk. The v14
 tuning applies a small front-axis nearside presentation rotation so the larger
-basins sit more naturally on the visible disk. The texture remains stable on
-the geometry moon without screen-space or UV painted stamp artifacts. Surface
-tone uses separate normal-space FBM and
+basins sit more naturally on the visible disk. The v15 tuning grows a broad
+central-basin contribution and fades limb maria harder so the largest readable
+mass sits on the face instead of leaving a small center basin and a larger edge
+basin. The texture remains stable on the geometry moon without screen-space or
+UV painted stamp artifacts. Surface tone uses separate normal-space FBM and
 low-frequency body-space multipliers inspired by simple moon shader examples,
 implemented with the existing Cubey procedural noise utilities rather than
 copied Shadertoy noise code. Final acceptance should prioritize realistic

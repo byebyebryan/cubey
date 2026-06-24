@@ -200,11 +200,15 @@ struct Crater {
     const float broad = fbm(warped, 1.35F, "body-space broad mare field", 5U, 0.58F);
     const float lobe = fbm(warped, 1.95F, "body-space mare lobe field", 4U, 0.52F);
     const float near_side_bias = smoothstep(-0.12F, 0.70F, direction.x);
+    const float central_basin_bias = smoothstep(0.18F, 0.86F, direction.x);
     const float center_lift =
         near_side_bias * smoothstep(-0.26F, 0.74F, mare_direction.x) * 0.105F;
-    const float limb_fade = mix(0.76F, 1.0F, near_side_bias);
+    const float central_basin_lift =
+        central_basin_bias * (0.075F + smoothstep(0.32F, 0.74F, basin) * 0.060F);
+    const float limb_fade = mix(0.54F, 1.0F, central_basin_bias);
     const float field =
-        (basin * 0.34F + broad * 0.60F + lobe * 0.06F + center_lift) * limb_fade;
+        (basin * 0.34F + broad * 0.60F + lobe * 0.06F + center_lift + central_basin_lift) *
+        limb_fade;
     const float coverage = smoothstep(-0.03F, 0.37F, field);
     return {
         .coverage = coverage,
@@ -493,7 +497,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v14", "render.lunar_surface_map",
+            "lunar-surface-map-v15", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,
