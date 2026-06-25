@@ -2,10 +2,10 @@
 
 Date: 2026-06-25
 
-This note captures the revision 6 river-quality pivot. Revision 5 proved that
-the `stream_order` diagnostic had a more useful river-network source shape than
-isolated local tributary picks, but it still used stream order only as a
-supplemental path source.
+This note captures the revision 6 river-quality pivot and the revision 7
+branch/width correction. Revision 5 proved that the `stream_order` diagnostic
+had a more useful river-network source shape than isolated local tributary
+picks, but it still used stream order only as a supplemental path source.
 
 ## Decision
 
@@ -19,7 +19,8 @@ desired default composition.
 
 ## Implementation Boundary
 
-- Keep the public terrain product fields and debug view set unchanged.
+- Keep the public terrain product fields stable. Debug exports may add review
+  fields when an existing product field needs visual inspection.
 - Bump the generator revision when the river product changes.
 - Do not reintroduce revision 4 direct graph-edge rendering.
 - Do not add depression fill, breach routing, erosion, lakes, or new hydrology
@@ -42,7 +43,9 @@ Candidate cells are grouped as connected support in the hidden-domain
 local sinks fragmented otherwise coherent source shapes. The default recipe
 keeps one selected corridor; the stress recipe can render several corridors for
 diagnostics. Lower-order tributary branches are accepted only when they connect
-back to the selected trunk/corridor, not as independent local features.
+back to the selected trunk/corridor, or when their downstream trace gets close
+enough to snap to an existing active channel. They are not accepted as
+independent local features.
 
 ## Rendering Model
 
@@ -53,7 +56,9 @@ then use the existing path pipeline:
 `resample -> smooth -> constrained offset -> relax downhill -> smooth -> rasterize`
 
 Widths and strengths should vary with stream order or discharge so tributaries
-taper into the trunk instead of reading as uniform tubes.
+taper into the trunk instead of reading as uniform tubes. Revision 7 carries that
+width scale through path resampling/smoothing and applies it during segment
+rasterization.
 
 ## Acceptance
 
@@ -64,5 +69,7 @@ taper into the trunk instead of reading as uniform tubes.
 - Hard horizontal, vertical, and 45-degree centerline runs should not become
   worse than revision 5.
 - The stress recipe should increase coverage without flooding the review patch.
+- Endpoint snapping should be limited to near-edge endpoints; it should not draw
+  artificial straight extensions just to force edge contact.
 - Remaining limitation: the default review composition can still be sparse or
   close to a crop edge, so the stress recipe remains the better artifact probe.

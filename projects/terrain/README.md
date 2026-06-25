@@ -17,7 +17,7 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `6`. It emits source fields, height/slope
+The current generator revision is `7`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass is deliberately process-informed rather than a full hydraulic
@@ -61,6 +61,7 @@ The review set includes:
 - `river-trunk.png`
 - `tributaries.png`
 - `sink-mask.png`
+- `channel-width.png`
 - `wetness.png`
 - `deposition.png`
 - `material.png`
@@ -74,11 +75,13 @@ patch to river-network artifacts. Treat it as a diagnostic recipe, not the
 default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
-plus routed flow accumulation over a padded hidden routing domain. Revision `6`
+plus routed flow accumulation over a padded hidden routing domain. Revision `7`
 uses continuous D-Infinity-style flow angles and fractional accumulation for the
 diagnostic catchment field, then promotes `stream_order` into connected support
-selection for the active product. The default recipe selects one connected
-support corridor, traces a trunk from that source, adds limited connected
-tributaries, and rasterizes smoothed channel curves. The stress recipe renders
-more selected corridors to expose artifacts that the default composition may
-hide. See [Terrain river stream-order corridor plan](../../docs/notes/terrain-river-stream-order-corridor-plan.md).
+selection for the active product. The default recipe keeps a conservative trunk
+and attached branch network. Additional branches are accepted only when they
+reach or closely approach an existing active channel, which avoids independent
+local strokes. Channel rasterization carries discharge/stream-order width scale
+through the path, and the stress recipe renders more selected corridors to expose
+coverage, parallel-branch, and straight-segment artifacts that the default
+composition may hide. See [Terrain river stream-order corridor plan](../../docs/notes/terrain-river-stream-order-corridor-plan.md).

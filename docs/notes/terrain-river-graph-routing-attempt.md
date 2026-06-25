@@ -63,7 +63,9 @@ Revision 5 kept the revision 3 connected padded-domain,
 fractional-accumulation, candidate-scored trunk/tributary implementation as the
 baseline, then added only active-network-connected stream-order-seeded paths.
 Revision 6 supersedes that hybrid by selecting connected stream-order support
-corridors before tracing active product paths.
+corridors before tracing active product paths. Revision 7 keeps that corridor
+baseline, tightens branch acceptance to active/near-active paths, limits
+endpoint snapping, and carries variable channel width through rasterization.
 
 Do not reintroduce direct graph-edge rendering into `river_mask` or
 `river_trunk` without first showing that it improves the default and stress

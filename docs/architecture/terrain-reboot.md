@@ -220,7 +220,7 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `6` emits deterministic source fields,
+local region. Generator revision `7` emits deterministic source fields,
 height/slope analysis, static flow accumulation, routing diagnostics, smoothed
 active river trunk and tributary masks, wetness/deposition, material masks,
 vegetation potential, summaries, and tests.
@@ -230,14 +230,15 @@ over a coherent low-frequency drainage potential derived from the terrain seed
 on a padded hidden routing domain, then crops diagnostics back to the visible
 region. The diagnostic catchment now uses D-Infinity-style continuous flow
 angles and fractional accumulation, reducing the obvious D8 lattice in
-`flow-accumulation`. Revision 6 promotes `stream_order` into the active river
+`flow-accumulation`. Revision 7 promotes `stream_order` into the active river
 driver: connected support components are selected from the hidden-domain
 drainage hierarchy, a trunk is traced through the selected support, and limited
-tributaries are accepted only when they connect back into the active corridor.
-Selected centerlines are resampled, nudged by a constrained procedural offset,
-relaxed over drainage potential, and rasterized as soft product fields. This is
-a useful midpoint because downstream fields can consume a connected river
-product, but it is not a complete hydrology solution.
+tributaries are accepted only when they connect back into or near an active
+channel. Selected centerlines are resampled, nudged by a constrained procedural
+offset, relaxed over drainage potential, and rasterized as soft product fields
+with discharge/stream-order width scale. This is a useful midpoint because
+downstream fields can consume a connected river product, but it is not a
+complete hydrology solution.
 
 The `temperate-mountain-river-stress` recipe is a diagnostic variant of the same
 slice. It keeps the same terrain/routing sources but expands active channel
