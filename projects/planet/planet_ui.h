@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../atmosphere/atmosphere_config.h"
 #include "planet_camera.h"
 #include "planet_celestial.h"
 #include "planet_config.h"
@@ -24,6 +25,7 @@ struct PlanetUiContext {
     std::string& rebuild_error;
     PlanetSolarTime& solar_time;
     cubey::render::AtmosphereEnvironmentConfig& atmosphere_look_config;
+    atmosphere::AtmosphereCloudConfig& clouds_config;
     const PlanetSolarSystemConfig& solar_config;
     const PlanetCelestialSystem& celestial_system;
     const PlanetCelestialLighting& celestial_lighting;

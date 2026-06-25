@@ -603,6 +603,7 @@ class PlanetApp {
             .rebuild_error = rebuild_error_,
             .solar_time = solar_time_,
             .atmosphere_look_config = atmosphere_look_config_,
+            .clouds_config = clouds_config_,
             .solar_config = solar_config_,
             .celestial_system = celestial_system_,
             .celestial_lighting = celestial_lighting_,
@@ -621,6 +622,7 @@ class PlanetApp {
                 [this](VkExtent2D extent) { return view_light_fraction(extent); },
             .display_exposure = [this](VkExtent2D extent) { return display_exposure(extent); },
         });
+        sync_cloud_runtime_after_ui(context);
     }
 
     [[nodiscard]] std::optional<cubey::host::FrameStatsSample>
@@ -1139,6 +1141,19 @@ class PlanetApp {
         cloud_runtime_.update_weather_texture(device, gpu,
                                               cloud_runtime_shader_files().generated.weather,
                                               planet_cloud_config(cloud_elapsed_seconds_));
+    }
+
+    void sync_cloud_runtime_after_ui(cubey::host::WindowedAppContext& context) {
+        if (!clouds_config_.enabled || cloud_global_resources_created_) {
+            return;
+        }
+        cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
+                             "vkDeviceWaitIdle planet cloud enable");
+        static_cast<void>(context.gpu().drain());
+        create_cloud_resources(context.device(), context.gpu());
+        create_cloud_pipelines(context.device(), context.swapchain().extent(),
+                               context.frame_slot_count());
+        static_cast<void>(context.gpu().drain());
     }
 
     [[nodiscard]] cubey::render::CloudLayerFrameUniforms

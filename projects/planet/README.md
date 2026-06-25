@@ -51,6 +51,7 @@ Run it with:
 ./build/dev/projects/planet/planet --no-planet-local-detail
 ./build/dev/projects/planet/planet --planet-terrain-mid-detail-strength 0.58 --planet-terrain-fine-detail-strength 0.12 --planet-terrain-fine-detail-scale 12
 ./build/dev/projects/planet/planet --planet-sea-level-m 0 --planet-shoreline-width-m 1500
+./build/dev/projects/planet/planet --clouds --cloud-quality quarter --cloud-weather-preset broken-cumulus
 ```
 
 For repeatable atmosphere and celestial-body captures, keep the solar clock
@@ -67,6 +68,7 @@ daylight.
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 5.5 --planet-camera-mode orbit --output outputs/planet-orbit-dawn.png
 ./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --output outputs/planet-orbit-backlit.png
 ./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 4.35 --planet-time-speed-hours-per-second 0.03 --planet-camera-mode surface --planet-camera-altitude-m 1200 --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-surface-twilight.mp4
+projects/planet/capture_cloud_review.sh outputs/planet-cloud-review
 ```
 
 The broader manual capture matrix is tracked in
@@ -81,6 +83,7 @@ The broader manual capture matrix is tracked in
 | Terrain field | Active procedural contract: CPU/shader sampling share height, named terrain bands, normal, water depth, shoreline, material, climate, roughness, and tile-summary vocabulary. It is not final art direction or streamed data. |
 | Local detail clipmap | Near-field surface layer: altitude-gated bounded local detail contributes to `final` surface view and can be inspected in local-detail and terrain-field views, with `local-detail-horizon` reserved for horizon-scale/full-range inspection. Local/global morphing, persistent topology, streaming, and ocean payloads remain deferred. |
 | Sky/celestial/atmosphere | Done as v1: shared mean solar clock/celestial mechanics, unified atmosphere sky with night-sky atlas sampling, depth-tested moon body geometry, HDR post, and view-aware exposure. Full LUT/transmittance atmosphere and true ephemeris remain deferred. |
+| Clouds | Integrated as opt-in v1: `--clouds` composites the shared cloud layer into the planet HDR scene, uses planet-scale view-regime selection, and exposes the shared cloud controls in the Planet UI. Surface/horizon occlusion, shadowing/reflections, and final transition tuning remain active work. |
 | Streaming/cache | Deferred: current patch replans and lazy uploads are not an out-of-core streamer. Parent coverage remains renderable while future child/tile data is prepared. |
 | Ocean integration | Deferred: `projects/ocean` stays local-water focused until planet frame, LOD, terrain, and local-detail contracts are ready to host it as one surface layer. |
 | Config ownership | Deferred cleanup: planet still consumes shared `RunConfig`; a project-owned CLI/config facade should be extracted when the next project repeats this pressure. |
