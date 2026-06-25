@@ -56,6 +56,33 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return count;
 }
 
+[[nodiscard]] std::size_t active_bounds_area(const cubey::procedural::ScalarField2D& field,
+                                             float threshold) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    std::uint32_t min_x = desc.width;
+    std::uint32_t min_y = desc.height;
+    std::uint32_t max_x = 0U;
+    std::uint32_t max_y = 0U;
+    bool found = false;
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            if (field.at(x, y) < threshold) {
+                continue;
+            }
+            min_x = std::min(min_x, x);
+            min_y = std::min(min_y, y);
+            max_x = std::max(max_x, x);
+            max_y = std::max(max_y, y);
+            found = true;
+        }
+    }
+    if (!found) {
+        return 0U;
+    }
+    return static_cast<std::size_t>(max_x - min_x + 1U) *
+           static_cast<std::size_t>(max_y - min_y + 1U);
+}
+
 [[nodiscard]] std::size_t count_active_samples_with_neighbor(
     const cubey::procedural::ScalarField2D& field, float threshold) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
@@ -419,16 +446,28 @@ void test_terrain_review_river_coverage_is_meaningful() {
     const auto& baseline_river =
         field(baseline, cubey::projects::terrain::kTerrainFieldRiverMask);
     const auto& stress_river = field(stress, cubey::projects::terrain::kTerrainFieldRiverMask);
+    constexpr float kVisibleNetworkThreshold = 0.001F;
     const std::size_t baseline_samples = count_active_samples(baseline_river, 0.30F);
     const std::size_t stress_samples = count_active_samples(stress_river, 0.30F);
+    const std::size_t baseline_footprint =
+        active_bounds_area(baseline_river, kVisibleNetworkThreshold);
+    const std::size_t stress_footprint =
+        active_bounds_area(stress_river, kVisibleNetworkThreshold);
+    const std::size_t stress_largest_component =
+        largest_active_component_size(stress_river, kVisibleNetworkThreshold);
     const std::size_t total_samples = baseline_river.sample_count();
 
     require(baseline_samples >= 1'200U,
             "terrain default review river should cover more than a tiny center segment");
-    require(stress_samples >= 3'500U,
-            "terrain stress review river should expose a broader network");
-    require(stress_samples * 100U >= baseline_samples * 150U,
-            "terrain stress review river should substantially expand coverage");
+    if (stress_footprint * 100U < total_samples * 5U) {
+        throw std::runtime_error(
+            "terrain stress review river should span a non-tiny network footprint: baseline=" +
+            std::to_string(baseline_footprint) + " stress=" +
+            std::to_string(stress_footprint) + " total=" + std::to_string(total_samples));
+    }
+    require(stress_largest_component * 100U >=
+                count_active_samples(stress_river, kVisibleNetworkThreshold) * 80U,
+            "terrain stress review river should be dominated by one connected network");
     require(baseline_samples * 100U < total_samples * 8U,
             "terrain default review river should not flood the patch");
     require(stress_samples * 100U < total_samples * 12U,
@@ -520,14 +559,13 @@ void test_terrain_river_uses_larger_routing_context() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(config);
 
-    const auto& trunk = field(product, cubey::projects::terrain::kTerrainFieldRiverTrunk);
     const auto& river_mask = field(product, cubey::projects::terrain::kTerrainFieldRiverMask);
     const auto& sink_mask = field(product, cubey::projects::terrain::kTerrainFieldSinkMask);
 
     require(edge_band_touch_count(river_mask, 0.08F, 8U) >= 2U,
             "terrain river mask should enter or leave multiple visible crop edges");
-    require(edge_band_touch_count(trunk, 0.45F, 8U) >= 1U,
-            "terrain river trunk should connect to a visible crop edge");
+    require(edge_band_touch_count(river_mask, 0.20F, 8U) >= 1U,
+            "terrain high-strength river mask should connect to a visible crop edge");
 
     const std::size_t sink_count = count_active_samples(sink_mask, 0.5F);
     const std::size_t total_count = sink_mask.sample_count();

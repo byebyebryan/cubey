@@ -230,23 +230,25 @@ over a coherent low-frequency drainage potential derived from the terrain seed
 on a padded hidden routing domain, then crops diagnostics back to the visible
 region. The diagnostic catchment now uses D-Infinity-style continuous flow
 angles and fractional accumulation, reducing the obvious D8 lattice in
-`flow-accumulation`. Revision 8 promotes `stream_order` into the active river
+`flow-accumulation`. Revision 9 promotes `stream_order` into the active river
 driver: connected support components are selected from the hidden-domain
 drainage hierarchy, a trunk is traced through the selected support, and limited
-tributaries are accepted only when they connect back into or near an active
-channel. Selected centerlines are resampled, nudged by a constrained procedural
+tributaries are accepted only when they connect back into an active channel.
+Selected centerlines are resampled, nudged by a constrained procedural
 offset, relaxed over drainage potential, and rasterized as soft product fields
-with discharge/stream-order width scale. Selected support cells are also painted
-as a softer coverage layer so the product exposes a meaningful review footprint
-instead of only the strongest centerlines. This is a useful midpoint because
-downstream fields can consume a connected river product, but it is not a
-complete hydrology solution.
+with discharge/stream-order width scale. The stress recipe uses an additional
+procedural basin-convergence routing profile and paints connected support paths
+through the same smoothed channel pipeline, rather than painting raw support
+cells or unrelated corridors. This is a useful midpoint because downstream
+fields can consume a connected river product, but it is not a complete
+hydrology solution.
 
 The `temperate-mountain-river-stress` recipe is a diagnostic variant of the same
 slice. It keeps the same terrain/routing sources but expands active channel
-extraction with additional separated trunk candidates and lower tributary
-thresholds. Its purpose is to make routing artifacts visible across more of a
-review patch, not to define the desired default composition.
+extraction with a stronger basin-grade routing source and extra connected
+support paths feeding one selected basin. Its purpose is to make routing
+artifacts visible across more of a review patch, not to define the desired
+default composition.
 
 Known limitations:
 
@@ -258,13 +260,12 @@ Known limitations:
   erosion, or lake/wetland resolution.
 - Padded routing makes local review slices less artificial, but the route model
   is still static and should not be mistaken for simulated river evolution.
-- Default river composition now has a stronger review footprint, but support
-  promotion can expose broad or fan-like stream-order bands where the source is
-  too coarse. The stress recipe is better for exposing a broader network, but it
-  intentionally renders disconnected diagnostic corridors.
-- The stress recipe can expose parallel channel fans and disconnected-looking
-  subnetworks because it deliberately pushes coverage before the hydrology model
-  is complete.
+- Default river composition now has a stronger review footprint, but path
+  selection can still expose parallel channel fans where the source is too
+  coarse.
+- The stress recipe now avoids intentionally disconnected diagnostic corridors,
+  but it can still expose straight reaches and parallel branches because it
+  deliberately pushes coverage before the hydrology model is complete.
 - The final PNG is an inspectable debug composition, not the target renderer.
 
 A revision 4 experiment tried replacing the active river product with direct

@@ -68,6 +68,9 @@ baseline, tightens branch acceptance to active/near-active paths, limits
 endpoint snapping, and carries variable channel width through rasterization.
 Revision 8 keeps the traced-path baseline but softly promotes selected
 stream-order support so the visible product has enough coverage to review.
+Revision 9 keeps the connected-support lesson but changes the stress recipe to
+paint connected support paths through the smoothed tributary pipeline instead of
+painting raw support cells or unrelated corridors.
 
 Do not reintroduce direct graph-edge rendering into `river_mask` or
 `river_trunk` without first showing that it improves the default and stress

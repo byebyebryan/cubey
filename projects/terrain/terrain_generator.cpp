@@ -49,6 +49,13 @@ struct RiverFields {
 };
 
 struct RiverNetworkSettings {
+    float routing_height_weight = 0.16F;
+    float routing_variation_scale = 950.0F;
+    float routing_base_level_fall = 4200.0F;
+    float routing_grade_x = 0.30F;
+    float routing_grade_y = 0.70F;
+    float routing_basin_convergence = 0.0F;
+    float routing_basin_meander = 0.0F;
     float trunk_core_radius_cells = 1.4F;
     float trunk_falloff_radius_cells = 3.0F;
     float trunk_offset_cells = 2.25F;
@@ -62,6 +69,7 @@ struct RiverNetworkSettings {
     std::size_t corridor_branch_min_visible_samples = 6U;
     int corridor_branch_min_confluence_distance_cells = 12;
     float corridor_branch_max_active_overlap = 0.38F;
+    bool include_accumulation_trunk_candidate = true;
     std::size_t secondary_trunk_count = 0U;
     int secondary_trunk_min_distance_cells = 48;
     float order_seed_min_stream_order = 2.4F;
@@ -80,6 +88,18 @@ struct RiverNetworkSettings {
     float tributary_falloff_radius_cells = 2.1F;
     float tributary_offset_cells = 0.75F;
     bool paint_stream_order_support = true;
+    bool expand_connected_support = false;
+    float connected_support_min_stream_order = 2.0F;
+    std::size_t connected_support_seed_count = 512U;
+    std::size_t connected_support_max_paths = 64U;
+    std::size_t connected_support_min_visible_samples = 3U;
+    float connected_support_max_selected_overlap = 0.82F;
+    bool paint_connected_support_paths = false;
+    std::size_t connected_support_painted_path_count = 0U;
+    float connected_support_path_strength = 0.54F;
+    float connected_support_path_core_radius_cells = 0.75F;
+    float connected_support_path_falloff_radius_cells = 2.0F;
+    float connected_support_path_offset_cells = 1.2F;
     float support_min_strength = 0.30F;
     float support_trunk_strength = 0.56F;
     float support_tributary_core_radius_cells = 0.45F;
@@ -197,42 +217,63 @@ struct FlowVector {
 [[nodiscard]] RiverNetworkSettings river_network_settings(std::string_view recipe_id) {
     if (recipe_id == kTerrainRecipeTemperateMountainRiverStress) {
         return RiverNetworkSettings{
-            .trunk_core_radius_cells = 1.55F,
-            .trunk_falloff_radius_cells = 3.5F,
-            .trunk_offset_cells = 2.6F,
+            .routing_height_weight = 0.09F,
+            .routing_variation_scale = 760.0F,
+            .routing_base_level_fall = 5200.0F,
+            .routing_grade_x = 0.24F,
+            .routing_grade_y = 0.76F,
+            .routing_basin_convergence = 2200.0F,
+            .routing_basin_meander = 0.17F,
+            .trunk_core_radius_cells = 2.05F,
+            .trunk_falloff_radius_cells = 4.8F,
+            .trunk_offset_cells = 3.2F,
             .corridor_trunk_stream_order = 4.0F,
             .corridor_tributary_stream_order = 2.0F,
-            .corridor_count = 3U,
-            .corridor_render_count = 3U,
+            .corridor_count = 1U,
+            .corridor_render_count = 1U,
             .corridor_seed_count = 192U,
-            .corridor_branch_count = 24U,
+            .corridor_branch_count = 32U,
             .corridor_min_visible_samples = 16U,
             .corridor_branch_min_visible_samples = 4U,
             .corridor_branch_min_confluence_distance_cells = 14,
-            .corridor_branch_max_active_overlap = 0.36F,
+            .corridor_branch_max_active_overlap = 0.34F,
+            .include_accumulation_trunk_candidate = false,
             .secondary_trunk_count = 3U,
             .secondary_trunk_min_distance_cells = 42,
             .order_seed_min_stream_order = 2.0F,
             .order_seed_trunk_stream_order = 4.2F,
-            .order_seed_count = 10U,
-            .order_seed_contact_distance_cells = 8,
-            .order_seed_min_visible_samples = 12U,
-            .order_seed_max_active_overlap = 0.30F,
+            .order_seed_count = 16U,
+            .order_seed_contact_distance_cells = 0,
+            .order_seed_min_visible_samples = 8U,
+            .order_seed_max_active_overlap = 0.34F,
             .tributary_min_accumulation = 2.0F,
             .tributary_accumulation_fraction = 0.006F,
-            .min_tributary_count = 10U,
-            .tributary_count_divisor = 5U,
+            .min_tributary_count = 14U,
+            .tributary_count_divisor = 6U,
             .min_tributary_path_samples = 4U,
             .tributary_strength = 0.78F,
-            .tributary_core_radius_cells = 0.85F,
-            .tributary_falloff_radius_cells = 2.35F,
-            .tributary_offset_cells = 1.2F,
-            .support_min_strength = 0.34F,
-            .support_trunk_strength = 0.62F,
-            .support_tributary_core_radius_cells = 0.55F,
-            .support_tributary_falloff_radius_cells = 1.45F,
-            .support_trunk_core_radius_cells = 0.95F,
-            .support_trunk_falloff_radius_cells = 2.25F,
+            .tributary_core_radius_cells = 1.25F,
+            .tributary_falloff_radius_cells = 3.5F,
+            .tributary_offset_cells = 2.2F,
+            .paint_stream_order_support = false,
+            .expand_connected_support = true,
+            .connected_support_min_stream_order = 1.0F,
+            .connected_support_seed_count = 16'384U,
+            .connected_support_max_paths = 120U,
+            .connected_support_min_visible_samples = 6U,
+            .connected_support_max_selected_overlap = 0.74F,
+            .paint_connected_support_paths = true,
+            .connected_support_painted_path_count = 80U,
+            .connected_support_path_strength = 0.62F,
+            .connected_support_path_core_radius_cells = 0.95F,
+            .connected_support_path_falloff_radius_cells = 2.8F,
+            .connected_support_path_offset_cells = 2.4F,
+            .support_min_strength = 0.28F,
+            .support_trunk_strength = 0.44F,
+            .support_tributary_core_radius_cells = 0.25F,
+            .support_tributary_falloff_radius_cells = 0.85F,
+            .support_trunk_core_radius_cells = 0.45F,
+            .support_trunk_falloff_radius_cells = 1.25F,
         };
     }
     return {};
@@ -676,7 +717,8 @@ void assign_fractional_receivers(FlowRoutingResult& result,
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D make_drainage_routing_surface(
-    const cubey::procedural::ScalarField2D& height, std::uint64_t seed) {
+    const cubey::procedural::ScalarField2D& height, std::uint64_t seed,
+    const RiverNetworkSettings& settings) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
     cubey::procedural::ScalarField2D smoothed = cubey::procedural::box_blur_3x3(height);
     for (int pass = 0; pass < 17; ++pass) {
@@ -689,14 +731,30 @@ void assign_fractional_receivers(FlowRoutingResult& result,
     }
 
     cubey::procedural::ScalarField2D result(desc, 0.0F);
+    const float phase_a =
+        static_cast<float>((seed * 37U) % 997U) / 997.0F * kTwoPi;
+    const float phase_b =
+        static_cast<float>((seed * 91U + 17U) % 991U) / 991.0F * kTwoPi;
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         const float ny = static_cast<float>(y) / static_cast<float>(desc.height - 1U);
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const float nx = static_cast<float>(x) / static_cast<float>(desc.width - 1U);
-            const float base_level_fall = ((nx * 0.30F) + (ny * 0.70F)) * 4200.0F;
-            const float drainage_variation = (drainage_shape.at(x, y) - 0.5F) * 950.0F;
-            result.at(x, y) = (smoothed.at(x, y) * 0.16F) + drainage_variation -
-                              base_level_fall;
+            const float base_level_fall =
+                ((nx * settings.routing_grade_x) + (ny * settings.routing_grade_y)) *
+                settings.routing_base_level_fall;
+            const float drainage_variation =
+                (drainage_shape.at(x, y) - 0.5F) * settings.routing_variation_scale;
+            const float basin_center =
+                0.50F +
+                (std::sin((ny * 2.15F * kTwoPi) + phase_a) *
+                 settings.routing_basin_meander) +
+                (std::sin((ny * 4.70F * kTwoPi) + phase_b) *
+                 settings.routing_basin_meander * 0.35F);
+            const float cross_basin = nx - basin_center;
+            const float basin_convergence =
+                cross_basin * cross_basin * settings.routing_basin_convergence;
+            result.at(x, y) = (smoothed.at(x, y) * settings.routing_height_weight) +
+                              drainage_variation + basin_convergence - base_level_fall;
         }
     }
     return result;
@@ -2383,6 +2441,105 @@ void snap_trunk_endpoints_to_visible_edges(std::vector<ChannelPathPoint>& points
     return {};
 }
 
+void expand_connected_support_to_active_basin(RiverFields& fields,
+                                              RiverCorridorSelection& selection,
+                                              const RoutingContext& context,
+                                              const RiverNetworkSettings& settings,
+                                              std::uint64_t seed,
+                                              std::vector<bool>& active) {
+    if (!settings.expand_connected_support) {
+        return;
+    }
+
+    const std::vector<int> candidates =
+        collect_stream_order_candidates(context, settings.connected_support_min_stream_order,
+                                        settings.connected_support_seed_count);
+    if (candidates.empty()) {
+        return;
+    }
+
+    const std::vector<bool> all_cells(context.accumulation.sample_count(), true);
+    std::vector<int> support_cells;
+    support_cells.reserve(settings.connected_support_max_paths *
+                          settings.connected_support_min_visible_samples);
+    std::size_t accepted = 0U;
+    std::size_t painted = 0U;
+    for (const int candidate : candidates) {
+        if (accepted >= settings.connected_support_max_paths) {
+            break;
+        }
+        if (candidate < 0 || active[static_cast<std::size_t>(candidate)]) {
+            continue;
+        }
+
+        std::vector<int> downstream_path = trace_downstream_to_active_or_near_path(
+            candidate, context.d8_routing.downstream, all_cells, active,
+            context.domain.hidden_desc, 0);
+        if (downstream_path.empty()) {
+            continue;
+        }
+        if (visible_grid_path_sample_count(context.domain, downstream_path) <
+            settings.connected_support_min_visible_samples) {
+            continue;
+        }
+        if (active_path_overlap_fraction(downstream_path, selection.selected) >
+            settings.connected_support_max_selected_overlap) {
+            continue;
+        }
+
+        std::size_t new_visible_samples = 0U;
+        for (const int index : downstream_path) {
+            if (index < 0) {
+                continue;
+            }
+            const std::size_t sample = static_cast<std::size_t>(index);
+            if (!selection.selected[sample]) {
+                new_visible_samples += is_inside_visible_crop(context.domain, index) ? 1U : 0U;
+            }
+        }
+        if (new_visible_samples < settings.connected_support_min_visible_samples) {
+            continue;
+        }
+
+        for (const int index : downstream_path) {
+            if (index < 0) {
+                continue;
+            }
+            const std::size_t sample = static_cast<std::size_t>(index);
+            if (!selection.selected[sample]) {
+                support_cells.push_back(index);
+            }
+            selection.selected[sample] = true;
+            selection.trunk_support[sample] =
+                selection.trunk_support[sample] ||
+                context.stream_order.values()[sample] >= settings.corridor_trunk_stream_order;
+        }
+        if (settings.paint_connected_support_paths &&
+            painted < settings.connected_support_painted_path_count) {
+            std::vector<ChannelPathPoint> path_points =
+                make_corridor_channel_points(context, downstream_path,
+                                             settings.connected_support_path_strength);
+            annotate_channel_path_points(context, path_points,
+                                         settings.connected_support_path_strength, 0.34F, 0.95F);
+            paint_channel_path(fields.tributaries, std::move(path_points), context.domain,
+                               settings.connected_support_path_core_radius_cells,
+                               settings.connected_support_path_falloff_radius_cells,
+                               context.routing_surface, seed + 9109U + (painted * 127U),
+                               settings.connected_support_path_offset_cells);
+            mark_active_indices(active, downstream_path);
+            ++painted;
+        }
+        ++accepted;
+    }
+
+    if (!support_cells.empty()) {
+        selection.corridors.push_back(RiverCorridor{
+            .terminal_index = support_cells.back(),
+            .cells = std::move(support_cells),
+        });
+    }
+}
+
 [[nodiscard]] float nearby_active_fraction(const cubey::procedural::Grid2DDesc& desc,
                                            const std::vector<int>& indices,
                                            const std::vector<bool>& active,
@@ -2951,32 +3108,35 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context, 
     std::vector<CorridorTrunkCandidate> candidates;
     candidates.reserve(selection.corridors.size() + 1U);
 
-    const std::vector<ChannelPathPoint> accumulation_trunk =
-        trace_main_trunk(context.accumulation, context.routing, context.d8_routing,
-                         context.domain);
-    std::vector<int> accumulation_trunk_indices =
-        path_point_indices(context.domain.hidden_desc, accumulation_trunk);
-    if (visible_grid_path_sample_count(context.domain, accumulation_trunk_indices) >= 32U) {
-        std::vector<ChannelPathPoint> accumulation_points =
-            make_corridor_channel_points(context, accumulation_trunk_indices, 0.84F);
-        snap_trunk_endpoints_to_visible_edges(accumulation_points, context.domain);
-        const float edge_score =
-            static_cast<float>(visible_path_edge_touch_count(context.domain,
+    if (settings.include_accumulation_trunk_candidate) {
+        const std::vector<ChannelPathPoint> accumulation_trunk =
+            trace_main_trunk(context.accumulation, context.routing, context.d8_routing,
+                             context.domain);
+        std::vector<int> accumulation_trunk_indices =
+            path_point_indices(context.domain.hidden_desc, accumulation_trunk);
+        if (visible_grid_path_sample_count(context.domain, accumulation_trunk_indices) >= 32U) {
+            std::vector<ChannelPathPoint> accumulation_points =
+                make_corridor_channel_points(context, accumulation_trunk_indices, 0.84F);
+            snap_trunk_endpoints_to_visible_edges(accumulation_points, context.domain);
+            const float edge_score =
+                static_cast<float>(visible_path_edge_touch_count(context.domain,
+                                                                 accumulation_points)) *
+                900'000.0F;
+            const float length_score =
+                static_cast<float>(visible_path_sample_count(context.domain,
                                                              accumulation_points)) *
-            900'000.0F;
-        const float length_score =
-            static_cast<float>(visible_path_sample_count(context.domain, accumulation_points)) *
-            35'000.0F;
-        const float grid_score = score_grid_trunk(context.accumulation, context.domain,
-                                                  accumulation_trunk_indices,
-                                                  accumulation_trunk_indices.front());
-        candidates.push_back(CorridorTrunkCandidate{
-            .corridor_index = 0U,
-            .has_corridor = false,
-            .indices = std::move(accumulation_trunk_indices),
-            .points = std::move(accumulation_points),
-            .score = edge_score + length_score + grid_score,
-        });
+                35'000.0F;
+            const float grid_score = score_grid_trunk(context.accumulation, context.domain,
+                                                      accumulation_trunk_indices,
+                                                      accumulation_trunk_indices.front());
+            candidates.push_back(CorridorTrunkCandidate{
+                .corridor_index = 0U,
+                .has_corridor = false,
+                .indices = std::move(accumulation_trunk_indices),
+                .points = std::move(accumulation_points),
+                .score = edge_score + length_score + grid_score,
+            });
+        }
     }
 
     for (std::size_t corridor_index = 0U; corridor_index < selection.corridors.size();
@@ -3052,6 +3212,8 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context, 
         return;
     }
 
+    expand_connected_support_to_active_basin(fields, rendered_selection, context, settings, seed,
+                                             active);
     add_stream_order_seed_paths(fields, context, seed, settings, active);
 
     const std::size_t accepted_tributaries =
@@ -3095,13 +3257,14 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
 }
 
 [[nodiscard]] RoutingContext make_routing_context(cubey::procedural::Grid2DDesc visible_desc,
-                                                  std::uint64_t seed) {
+                                                  std::uint64_t seed,
+                                                  const RiverNetworkSettings& settings) {
     RoutingContext context{
         .domain = make_routing_domain(visible_desc),
     };
     const cubey::procedural::ScalarField2D routing_height =
         make_routing_source_height(context.domain.hidden_desc, seed);
-    context.routing_surface = make_drainage_routing_surface(routing_height, seed);
+    context.routing_surface = make_drainage_routing_surface(routing_height, seed, settings);
     context.d8_routing = route_steepest_descent(context.routing_surface);
     context.routing = route_dinfinity_descent(context.routing_surface);
     context.accumulation = accumulate_flow(context.routing_surface, context.routing.receivers);
@@ -3133,8 +3296,8 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
                                             const cubey::procedural::ScalarField2D& slope,
                                             const TerrainRegionConfig& config) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
-    const RoutingContext context = make_routing_context(desc, config.seed);
     const RiverNetworkSettings settings = river_network_settings(config.recipe_id);
+    const RoutingContext context = make_routing_context(desc, config.seed, settings);
     RiverFields fields{
         .drainage_potential = crop_hidden_field_to_visible(context.routing_surface, context.domain),
         .flow_direction = crop_hidden_field_to_visible(context.routing.flow_direction,
