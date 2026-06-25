@@ -79,6 +79,13 @@ struct RiverNetworkSettings {
     float tributary_core_radius_cells = 0.9F;
     float tributary_falloff_radius_cells = 2.1F;
     float tributary_offset_cells = 0.75F;
+    bool paint_stream_order_support = true;
+    float support_min_strength = 0.30F;
+    float support_trunk_strength = 0.56F;
+    float support_tributary_core_radius_cells = 0.45F;
+    float support_tributary_falloff_radius_cells = 1.25F;
+    float support_trunk_core_radius_cells = 0.85F;
+    float support_trunk_falloff_radius_cells = 2.0F;
 };
 
 struct TerrainSourceFields {
@@ -220,6 +227,12 @@ struct FlowVector {
             .tributary_core_radius_cells = 0.85F,
             .tributary_falloff_radius_cells = 2.35F,
             .tributary_offset_cells = 1.2F,
+            .support_min_strength = 0.34F,
+            .support_trunk_strength = 0.62F,
+            .support_tributary_core_radius_cells = 0.55F,
+            .support_tributary_falloff_radius_cells = 1.45F,
+            .support_trunk_core_radius_cells = 0.95F,
+            .support_trunk_falloff_radius_cells = 2.25F,
         };
     }
     return {};
@@ -2600,6 +2613,104 @@ void combine_river_mask(RiverFields& fields) {
     }
 }
 
+void paint_support_disc(cubey::procedural::ScalarField2D& field,
+                        const RoutingDomain& domain, int hidden_index, float strength,
+                        float core_radius_cells, float falloff_radius_cells) {
+    if (hidden_index < 0 || !is_inside_visible_crop(domain, hidden_index)) {
+        return;
+    }
+
+    const auto uindex = static_cast<std::uint32_t>(hidden_index);
+    const float cx =
+        static_cast<float>(uindex % domain.hidden_desc.width) - static_cast<float>(domain.padding_x);
+    const float cy =
+        static_cast<float>(uindex / domain.hidden_desc.width) - static_cast<float>(domain.padding_y);
+    const float min_x = cx - falloff_radius_cells;
+    const float max_x = cx + falloff_radius_cells;
+    const float min_y = cy - falloff_radius_cells;
+    const float max_y = cy + falloff_radius_cells;
+    if (max_x < 0.0F || max_y < 0.0F || min_x > static_cast<float>(field.desc().width - 1U) ||
+        min_y > static_cast<float>(field.desc().height - 1U)) {
+        return;
+    }
+
+    const std::uint32_t x0 = static_cast<std::uint32_t>(std::max(0.0F, std::floor(min_x)));
+    const std::uint32_t y0 = static_cast<std::uint32_t>(std::max(0.0F, std::floor(min_y)));
+    const std::uint32_t x1 = static_cast<std::uint32_t>(
+        std::min(static_cast<float>(field.desc().width - 1U), std::ceil(max_x)));
+    const std::uint32_t y1 = static_cast<std::uint32_t>(
+        std::min(static_cast<float>(field.desc().height - 1U), std::ceil(max_y)));
+
+    for (std::uint32_t y = y0; y <= y1; ++y) {
+        for (std::uint32_t x = x0; x <= x1; ++x) {
+            const float dx = static_cast<float>(x) - cx;
+            const float dy = static_cast<float>(y) - cy;
+            const float distance = std::sqrt((dx * dx) + (dy * dy));
+            if (distance > falloff_radius_cells) {
+                continue;
+            }
+            const float core =
+                1.0F - cubey::procedural::smoothstep(0.0F, core_radius_cells, distance);
+            const float shoulder =
+                1.0F - cubey::procedural::smoothstep(core_radius_cells * 0.55F,
+                                                     falloff_radius_cells, distance);
+            const float profile =
+                cubey::procedural::saturate((core * 0.65F) + (shoulder * 0.45F));
+            field.at(x, y) = std::max(field.at(x, y), strength * profile);
+        }
+    }
+}
+
+void paint_stream_order_support(RiverFields& fields, const RoutingContext& context,
+                                const RiverCorridorSelection& selection,
+                                const RiverNetworkSettings& settings) {
+    if (!settings.paint_stream_order_support || selection.corridors.empty()) {
+        return;
+    }
+
+    const float max_accumulation = std::max(context.accumulation.summarize().max, 1.0F);
+    const float log_max_accumulation = std::log1p(max_accumulation);
+    for (const RiverCorridor& corridor : selection.corridors) {
+        for (const int index : corridor.cells) {
+            if (!is_inside_visible_crop(context.domain, index)) {
+                continue;
+            }
+            const std::size_t sample = static_cast<std::size_t>(index);
+            const float order = context.stream_order.values()[sample];
+            const float discharge = log_max_accumulation <= 0.0F
+                                        ? 0.0F
+                                        : std::log1p(context.accumulation.values()[sample]) /
+                                              log_max_accumulation;
+            const bool trunk = order >= settings.corridor_trunk_stream_order ||
+                               discharge >= 0.62F;
+            const float order_t =
+                cubey::procedural::saturate((order - settings.corridor_tributary_stream_order) /
+                                            3.0F);
+            const float strength =
+                trunk ? cubey::procedural::saturate(settings.support_trunk_strength +
+                                                    (discharge * 0.20F))
+                      : cubey::procedural::saturate(settings.support_min_strength +
+                                                    (order_t * 0.14F) + (discharge * 0.20F));
+            const float core_radius =
+                trunk ? cubey::procedural::lerp(settings.support_trunk_core_radius_cells,
+                                                settings.support_trunk_core_radius_cells * 1.65F,
+                                                discharge)
+                      : cubey::procedural::lerp(settings.support_tributary_core_radius_cells,
+                                                settings.support_tributary_core_radius_cells * 1.35F,
+                                                order_t);
+            const float falloff_radius =
+                trunk ? cubey::procedural::lerp(settings.support_trunk_falloff_radius_cells,
+                                                settings.support_trunk_falloff_radius_cells * 1.55F,
+                                                discharge)
+                      : cubey::procedural::lerp(
+                            settings.support_tributary_falloff_radius_cells,
+                            settings.support_tributary_falloff_radius_cells * 1.35F, order_t);
+            paint_support_disc(trunk ? fields.river_trunk : fields.tributaries, context.domain,
+                               index, strength, core_radius, falloff_radius);
+        }
+    }
+}
+
 void soften_channel_field(cubey::procedural::ScalarField2D& field, int passes, float gain) {
     if (passes <= 0) {
         return;
@@ -2947,6 +3058,7 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context, 
         add_corridor_tributaries(fields, context, rendered_selection, upstream, trunk_paths,
                                  settings, seed, active);
     static_cast<void>(accepted_tributaries);
+    paint_stream_order_support(fields, context, rendered_selection, settings);
     soften_active_channels(fields);
     combine_river_mask(fields);
 }
