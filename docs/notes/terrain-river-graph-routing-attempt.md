@@ -66,6 +66,8 @@ Revision 6 supersedes that hybrid by selecting connected stream-order support
 corridors before tracing active product paths. Revision 7 keeps that corridor
 baseline, tightens branch acceptance to active/near-active paths, limits
 endpoint snapping, and carries variable channel width through rasterization.
+Revision 8 keeps the traced-path baseline but softly promotes selected
+stream-order support so the visible product has enough coverage to review.
 
 Do not reintroduce direct graph-edge rendering into `river_mask` or
 `river_trunk` without first showing that it improves the default and stress

@@ -220,7 +220,7 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `7` emits deterministic source fields,
+local region. Generator revision `8` emits deterministic source fields,
 height/slope analysis, static flow accumulation, routing diagnostics, smoothed
 active river trunk and tributary masks, wetness/deposition, material masks,
 vegetation potential, summaries, and tests.
@@ -230,13 +230,15 @@ over a coherent low-frequency drainage potential derived from the terrain seed
 on a padded hidden routing domain, then crops diagnostics back to the visible
 region. The diagnostic catchment now uses D-Infinity-style continuous flow
 angles and fractional accumulation, reducing the obvious D8 lattice in
-`flow-accumulation`. Revision 7 promotes `stream_order` into the active river
+`flow-accumulation`. Revision 8 promotes `stream_order` into the active river
 driver: connected support components are selected from the hidden-domain
 drainage hierarchy, a trunk is traced through the selected support, and limited
 tributaries are accepted only when they connect back into or near an active
 channel. Selected centerlines are resampled, nudged by a constrained procedural
 offset, relaxed over drainage potential, and rasterized as soft product fields
-with discharge/stream-order width scale. This is a useful midpoint because
+with discharge/stream-order width scale. Selected support cells are also painted
+as a softer coverage layer so the product exposes a meaningful review footprint
+instead of only the strongest centerlines. This is a useful midpoint because
 downstream fields can consume a connected river product, but it is not a
 complete hydrology solution.
 
@@ -256,10 +258,10 @@ Known limitations:
   erosion, or lake/wetland resolution.
 - Padded routing makes local review slices less artificial, but the route model
   is still static and should not be mistaken for simulated river evolution.
-- Default river composition can still be sparse or land near a crop edge,
-  depending on seed and review tile. The stress recipe is better for exposing a
-  broader network, but it intentionally renders disconnected diagnostic
-  corridors.
+- Default river composition now has a stronger review footprint, but support
+  promotion can expose broad or fan-like stream-order bands where the source is
+  too coarse. The stress recipe is better for exposing a broader network, but it
+  intentionally renders disconnected diagnostic corridors.
 - The stress recipe can expose parallel channel fans and disconnected-looking
   subnetworks because it deliberately pushes coverage before the hydrology model
   is complete.

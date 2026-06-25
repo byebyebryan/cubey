@@ -2,10 +2,11 @@
 
 Date: 2026-06-25
 
-This note captures the revision 6 river-quality pivot and the revision 7
-branch/width correction. Revision 5 proved that the `stream_order` diagnostic
-had a more useful river-network source shape than isolated local tributary
-picks, but it still used stream order only as a supplemental path source.
+This note captures the revision 6 river-quality pivot, the revision 7
+branch/width correction, and the revision 8 coverage correction. Revision 5
+proved that the `stream_order` diagnostic had a more useful river-network source
+shape than isolated local tributary picks, but it still used stream order only
+as a supplemental path source.
 
 ## Decision
 
@@ -60,6 +61,11 @@ taper into the trunk instead of reading as uniform tubes. Revision 7 carries tha
 width scale through path resampling/smoothing and applies it during segment
 rasterization.
 
+Revision 8 also promotes the selected `stream_order` support cells into a softer
+coverage layer after trunk/branch selection. This support layer should remain
+weaker than traced centerlines, but it prevents the visible product from
+collapsing to only a tiny strongest-flow segment.
+
 ## Acceptance
 
 - `river-mask` is dominated by one connected default component.
@@ -71,5 +77,8 @@ rasterization.
 - The stress recipe should increase coverage without flooding the review patch.
 - Endpoint snapping should be limited to near-edge endpoints; it should not draw
   artificial straight extensions just to force edge contact.
-- Remaining limitation: the default review composition can still be sparse or
-  close to a crop edge, so the stress recipe remains the better artifact probe.
+- The default 513 review should cover more than a tiny center segment, and the
+  stress recipe should expose a substantially broader river network.
+- Remaining limitation: support promotion can make broad stream-order source
+  regions read as fan-like channel bands, so the stress recipe remains the
+  better artifact probe.

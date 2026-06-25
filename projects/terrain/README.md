@@ -17,7 +17,7 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `7`. It emits source fields, height/slope
+The current generator revision is `8`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass is deliberately process-informed rather than a full hydraulic
@@ -75,13 +75,15 @@ patch to river-network artifacts. Treat it as a diagnostic recipe, not the
 default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
-plus routed flow accumulation over a padded hidden routing domain. Revision `7`
+plus routed flow accumulation over a padded hidden routing domain. Revision `8`
 uses continuous D-Infinity-style flow angles and fractional accumulation for the
 diagnostic catchment field, then promotes `stream_order` into connected support
 selection for the active product. The default recipe keeps a conservative trunk
 and attached branch network. Additional branches are accepted only when they
 reach or closely approach an existing active channel, which avoids independent
-local strokes. Channel rasterization carries discharge/stream-order width scale
-through the path, and the stress recipe renders more selected corridors to expose
-coverage, parallel-branch, and straight-segment artifacts that the default
-composition may hide. See [Terrain river stream-order corridor plan](../../docs/notes/terrain-river-stream-order-corridor-plan.md).
+local strokes. The selected stream-order support is also promoted as a softer
+channel-support field so the active product does not collapse to a tiny
+centerline-only snippet. Channel rasterization carries discharge/stream-order
+width scale through traced paths, and the stress recipe renders more selected
+corridors to expose coverage, parallel-branch, and straight-segment artifacts
+that the default composition may hide. See [Terrain river stream-order corridor plan](../../docs/notes/terrain-river-stream-order-corridor-plan.md).
