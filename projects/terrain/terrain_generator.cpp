@@ -52,6 +52,15 @@ struct RiverNetworkSettings {
     float trunk_core_radius_cells = 1.4F;
     float trunk_falloff_radius_cells = 3.0F;
     float trunk_offset_cells = 2.25F;
+    float corridor_trunk_stream_order = 4.0F;
+    float corridor_tributary_stream_order = 2.0F;
+    std::size_t corridor_count = 3U;
+    std::size_t corridor_render_count = 1U;
+    std::size_t corridor_seed_count = 128U;
+    std::size_t corridor_branch_count = 6U;
+    std::size_t corridor_min_visible_samples = 1U;
+    std::size_t corridor_branch_min_visible_samples = 8U;
+    float corridor_branch_max_active_overlap = 0.42F;
     std::size_t secondary_trunk_count = 0U;
     int secondary_trunk_min_distance_cells = 48;
     float order_seed_min_stream_order = 4.0F;
@@ -111,6 +120,31 @@ struct ChannelPathPoint {
     float strength = 1.0F;
 };
 
+struct RiverCorridor {
+    int terminal_index = -1;
+    std::vector<int> cells{};
+};
+
+struct RiverCorridorSelection {
+    std::vector<bool> selected{};
+    std::vector<bool> trunk_support{};
+    std::vector<RiverCorridor> corridors{};
+};
+
+struct RiverCorridorComponent {
+    int terminal_index = -1;
+    std::vector<int> cells{};
+    std::size_t visible_samples = 0U;
+    std::size_t visible_core_samples = 0U;
+    std::size_t trunk_visible_samples = 0U;
+    float max_accumulation = 0.0F;
+    bool touches_left = false;
+    bool touches_right = false;
+    bool touches_top = false;
+    bool touches_bottom = false;
+    float score = 0.0F;
+};
+
 struct FlowVector {
     float x = 0.0F;
     float y = 0.0F;
@@ -158,6 +192,15 @@ struct FlowVector {
             .trunk_core_radius_cells = 1.55F,
             .trunk_falloff_radius_cells = 3.5F,
             .trunk_offset_cells = 2.6F,
+            .corridor_trunk_stream_order = 4.0F,
+            .corridor_tributary_stream_order = 2.0F,
+            .corridor_count = 3U,
+            .corridor_render_count = 3U,
+            .corridor_seed_count = 192U,
+            .corridor_branch_count = 18U,
+            .corridor_min_visible_samples = 16U,
+            .corridor_branch_min_visible_samples = 6U,
+            .corridor_branch_max_active_overlap = 0.50F,
             .secondary_trunk_count = 3U,
             .secondary_trunk_min_distance_cells = 42,
             .order_seed_min_stream_order = 3.0F,
@@ -1732,6 +1775,618 @@ void mark_active_indices(std::vector<bool>& active, const std::vector<int>& indi
     }
 }
 
+void update_component_visibility(RiverCorridorComponent& component,
+                                 const RoutingContext& context, int index,
+                                 float trunk_stream_order) {
+    if (index < 0) {
+        return;
+    }
+    const auto uindex = static_cast<std::uint32_t>(index);
+    const std::uint32_t x = uindex % context.domain.hidden_desc.width;
+    const std::uint32_t y = uindex / context.domain.hidden_desc.width;
+    const bool inside_y = y >= context.domain.padding_y &&
+                          y < context.domain.padding_y + context.domain.visible_desc.height;
+    const bool inside_x = x >= context.domain.padding_x &&
+                          x < context.domain.padding_x + context.domain.visible_desc.width;
+
+    if (inside_x && inside_y) {
+        ++component.visible_samples;
+        component.visible_core_samples += is_inside_visible_core(context.domain, index) ? 1U : 0U;
+        component.trunk_visible_samples +=
+            context.stream_order.values()[static_cast<std::size_t>(index)] >= trunk_stream_order
+                ? 1U
+                : 0U;
+    }
+    constexpr std::uint32_t kComponentEdgeBandCells = 8U;
+    component.touches_left =
+        component.touches_left ||
+        (inside_y && x <= context.domain.padding_x + kComponentEdgeBandCells);
+    component.touches_right =
+        component.touches_right ||
+        (inside_y &&
+         x + kComponentEdgeBandCells >= context.domain.padding_x + context.domain.visible_desc.width -
+                                           1U);
+    component.touches_top =
+        component.touches_top ||
+        (inside_x && y <= context.domain.padding_y + kComponentEdgeBandCells);
+    component.touches_bottom =
+        component.touches_bottom ||
+        (inside_x &&
+         y + kComponentEdgeBandCells >= context.domain.padding_y + context.domain.visible_desc.height -
+                                           1U);
+    component.max_accumulation =
+        std::max(component.max_accumulation,
+                 context.accumulation.values()[static_cast<std::size_t>(index)]);
+}
+
+[[nodiscard]] std::size_t corridor_component_edge_touch_count(
+    const RiverCorridorComponent& component) {
+    return static_cast<std::size_t>(component.touches_left) +
+           static_cast<std::size_t>(component.touches_right) +
+           static_cast<std::size_t>(component.touches_top) +
+           static_cast<std::size_t>(component.touches_bottom);
+}
+
+void score_corridor_component(RiverCorridorComponent& component) {
+    const std::size_t edge_touch_count = corridor_component_edge_touch_count(component);
+    component.score =
+        (static_cast<float>(component.visible_samples) * 4.0F) +
+        (static_cast<float>(component.visible_core_samples) * 6.0F) +
+        (static_cast<float>(component.trunk_visible_samples) * 12.0F) +
+        (static_cast<float>(edge_touch_count) * 2500.0F) +
+        (std::log1p(component.max_accumulation) * 22.0F) +
+        (static_cast<float>(component.cells.size()) * 0.035F);
+}
+
+[[nodiscard]] RiverCorridorSelection select_stream_order_corridors(
+    const RoutingContext& context, const RiverNetworkSettings& settings) {
+    const std::size_t sample_count = context.accumulation.sample_count();
+    RiverCorridorSelection selection{
+        .selected = std::vector<bool>(sample_count, false),
+        .trunk_support = std::vector<bool>(sample_count, false),
+    };
+
+    std::vector<bool> candidate(sample_count, false);
+    for (std::size_t index = 0U; index < sample_count; ++index) {
+        candidate[index] =
+            context.stream_order.values()[index] >= settings.corridor_tributary_stream_order;
+    }
+
+    std::vector<bool> visited(sample_count, false);
+    std::vector<RiverCorridorComponent> components;
+    components.reserve(64U);
+
+    for (std::size_t index = 0U; index < sample_count; ++index) {
+        if (!candidate[index] || visited[index]) {
+            continue;
+        }
+        RiverCorridorComponent component{.terminal_index = static_cast<int>(index)};
+        std::vector<int> stack{static_cast<int>(index)};
+        visited[index] = true;
+        while (!stack.empty()) {
+            const int current = stack.back();
+            stack.pop_back();
+            component.cells.push_back(current);
+            update_component_visibility(component, context, current,
+                                        settings.corridor_trunk_stream_order);
+
+            const auto current_index = static_cast<std::uint32_t>(current);
+            const int cx = static_cast<int>(current_index % context.domain.hidden_desc.width);
+            const int cy = static_cast<int>(current_index / context.domain.hidden_desc.width);
+            for (int oy = -1; oy <= 1; ++oy) {
+                for (int ox = -1; ox <= 1; ++ox) {
+                    if (ox == 0 && oy == 0) {
+                        continue;
+                    }
+                    const int nx = cx + ox;
+                    const int ny = cy + oy;
+                    if (!neighbor_in_bounds(context.domain.hidden_desc, nx, ny)) {
+                        continue;
+                    }
+                    const std::size_t neighbor = cubey::procedural::grid_index(
+                        static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny),
+                        context.domain.hidden_desc.width);
+                    if (!candidate[neighbor] || visited[neighbor]) {
+                        continue;
+                    }
+                    visited[neighbor] = true;
+                    stack.push_back(static_cast<int>(neighbor));
+                }
+            }
+        }
+        components.push_back(std::move(component));
+    }
+
+    for (RiverCorridorComponent& component : components) {
+        score_corridor_component(component);
+    }
+    const bool has_visible_edge_component = std::any_of(
+        components.begin(), components.end(), [&settings](const RiverCorridorComponent& component) {
+            return component.visible_samples >= settings.corridor_min_visible_samples &&
+                   corridor_component_edge_touch_count(component) > 0U;
+        });
+    std::sort(components.begin(), components.end(),
+              [](const RiverCorridorComponent& lhs, const RiverCorridorComponent& rhs) {
+                  return lhs.score > rhs.score;
+              });
+
+    for (const RiverCorridorComponent& component : components) {
+        if (selection.corridors.size() >= settings.corridor_count) {
+            break;
+        }
+        if (component.visible_samples < settings.corridor_min_visible_samples &&
+            selection.corridors.empty()) {
+            continue;
+        }
+        if (has_visible_edge_component &&
+            corridor_component_edge_touch_count(component) == 0U) {
+            continue;
+        }
+        if (component.visible_samples == 0U) {
+            continue;
+        }
+
+        RiverCorridor corridor{
+            .terminal_index = component.terminal_index,
+            .cells = component.cells,
+        };
+        for (const int index : corridor.cells) {
+            const std::size_t sample = static_cast<std::size_t>(index);
+            selection.selected[sample] = true;
+            selection.trunk_support[sample] =
+                context.stream_order.values()[sample] >= settings.corridor_trunk_stream_order;
+        }
+        selection.corridors.push_back(std::move(corridor));
+    }
+
+    if (selection.corridors.empty() && !components.empty()) {
+        const RiverCorridorComponent& component = components.front();
+        RiverCorridor corridor{
+            .terminal_index = component.terminal_index,
+            .cells = component.cells,
+        };
+        for (const int index : corridor.cells) {
+            const std::size_t sample = static_cast<std::size_t>(index);
+            selection.selected[sample] = true;
+            selection.trunk_support[sample] =
+                context.stream_order.values()[sample] >= settings.corridor_trunk_stream_order;
+        }
+        selection.corridors.push_back(std::move(corridor));
+    }
+
+    return selection;
+}
+
+[[nodiscard]] int strongest_upstream_allowed_candidate(
+    int index, const std::vector<std::vector<int>>& upstream,
+    const cubey::procedural::ScalarField2D& accumulation, const std::vector<bool>& allowed,
+    const std::vector<bool>& excluded) {
+    int best_index = -1;
+    float best_accumulation = -1.0F;
+    for (const int candidate : upstream[static_cast<std::size_t>(index)]) {
+        const std::size_t sample = static_cast<std::size_t>(candidate);
+        if (!allowed[sample] || excluded[sample]) {
+            continue;
+        }
+        const float value = accumulation.values()[sample];
+        if (value > best_accumulation) {
+            best_accumulation = value;
+            best_index = candidate;
+        }
+    }
+    return best_index;
+}
+
+[[nodiscard]] std::vector<int> trace_strongest_upstream_allowed_path(
+    int start, const std::vector<std::vector<int>>& upstream,
+    const cubey::procedural::ScalarField2D& accumulation, const std::vector<bool>& allowed,
+    const std::vector<bool>& excluded) {
+    std::vector<int> path;
+    if (start < 0 || !allowed[static_cast<std::size_t>(start)]) {
+        return path;
+    }
+
+    std::vector<bool> visited(accumulation.sample_count(), false);
+    int current = start;
+    while (current >= 0 && allowed[static_cast<std::size_t>(current)] &&
+           !excluded[static_cast<std::size_t>(current)] &&
+           !visited[static_cast<std::size_t>(current)]) {
+        visited[static_cast<std::size_t>(current)] = true;
+        path.push_back(current);
+        current = strongest_upstream_allowed_candidate(current, upstream, accumulation, allowed,
+                                                       excluded);
+    }
+    return path;
+}
+
+[[nodiscard]] std::vector<int> trace_downstream_allowed_path(
+    int start, const std::vector<int>& downstream, const std::vector<bool>& allowed) {
+    std::vector<int> path;
+    if (start < 0 || !allowed[static_cast<std::size_t>(start)]) {
+        return path;
+    }
+
+    std::vector<bool> visited(downstream.size(), false);
+    int current = start;
+    while (current >= 0 && allowed[static_cast<std::size_t>(current)] &&
+           !visited[static_cast<std::size_t>(current)]) {
+        visited[static_cast<std::size_t>(current)] = true;
+        path.push_back(current);
+        current = downstream[static_cast<std::size_t>(current)];
+    }
+    return path;
+}
+
+[[nodiscard]] std::vector<int> trace_corridor_trunk_from_seed(
+    int seed, const std::vector<std::vector<int>>& upstream, const std::vector<int>& downstream,
+    const cubey::procedural::ScalarField2D& accumulation, const std::vector<bool>& allowed) {
+    const std::vector<bool> no_exclusions(accumulation.sample_count(), false);
+    std::vector<int> upstream_path =
+        trace_strongest_upstream_allowed_path(seed, upstream, accumulation, allowed,
+                                              no_exclusions);
+    std::reverse(upstream_path.begin(), upstream_path.end());
+    std::vector<int> downstream_path = trace_downstream_allowed_path(seed, downstream, allowed);
+
+    std::vector<int> trunk = std::move(upstream_path);
+    const std::size_t downstream_start = trunk.empty() ? 0U : 1U;
+    for (std::size_t index = downstream_start; index < downstream_path.size(); ++index) {
+        trunk.push_back(downstream_path[index]);
+    }
+    return trunk;
+}
+
+[[nodiscard]] std::vector<int> collect_corridor_trunk_candidates(
+    const RoutingContext& context, const RiverCorridor& corridor,
+    const std::vector<bool>& trunk_support, std::size_t max_count) {
+    std::vector<int> candidates;
+    candidates.reserve(std::min(corridor.cells.size(), max_count));
+    for (const int index : corridor.cells) {
+        if (trunk_support[static_cast<std::size_t>(index)] &&
+            is_inside_visible_crop(context.domain, index)) {
+            candidates.push_back(index);
+        }
+    }
+    if (candidates.empty()) {
+        for (const int index : corridor.cells) {
+            if (is_inside_visible_crop(context.domain, index)) {
+                candidates.push_back(index);
+            }
+        }
+    }
+    if (candidates.empty()) {
+        candidates = corridor.cells;
+    }
+
+    std::sort(candidates.begin(), candidates.end(), [&context](int lhs, int rhs) {
+        const float lhs_accumulation = context.accumulation.values()[static_cast<std::size_t>(lhs)];
+        const float rhs_accumulation = context.accumulation.values()[static_cast<std::size_t>(rhs)];
+        if (lhs_accumulation == rhs_accumulation) {
+            return context.stream_order.values()[static_cast<std::size_t>(lhs)] >
+                   context.stream_order.values()[static_cast<std::size_t>(rhs)];
+        }
+        return lhs_accumulation > rhs_accumulation;
+    });
+    if (candidates.size() > max_count) {
+        candidates.resize(max_count);
+    }
+    return candidates;
+}
+
+[[nodiscard]] bool is_visible_crop_edge_cell(const RoutingDomain& domain, int hidden_index) {
+    if (!is_inside_visible_crop(domain, hidden_index)) {
+        return false;
+    }
+    const auto index = static_cast<std::uint32_t>(hidden_index);
+    const std::uint32_t x = index % domain.hidden_desc.width;
+    const std::uint32_t y = index / domain.hidden_desc.width;
+    return x == domain.padding_x || x == domain.padding_x + domain.visible_desc.width - 1U ||
+           y == domain.padding_y || y == domain.padding_y + domain.visible_desc.height - 1U;
+}
+
+[[nodiscard]] int select_corridor_support_seed(const RoutingContext& context,
+                                               const RiverCorridor& corridor) {
+    int best_index = -1;
+    float best_score = -std::numeric_limits<float>::infinity();
+    for (const int index : corridor.cells) {
+        const float visible_score = is_inside_visible_crop(context.domain, index) ? 500.0F : 0.0F;
+        const float edge_score = is_visible_crop_edge_cell(context.domain, index) ? 1400.0F : 0.0F;
+        const float core_score = is_inside_visible_core(context.domain, index) ? 240.0F : 0.0F;
+        const float accumulation_score =
+            std::log1p(context.accumulation.values()[static_cast<std::size_t>(index)]) * 24.0F;
+        const float order_score =
+            context.stream_order.values()[static_cast<std::size_t>(index)] * 80.0F;
+        const float score = visible_score + edge_score + core_score + accumulation_score +
+                            order_score;
+        if (score > best_score) {
+            best_score = score;
+            best_index = index;
+        }
+    }
+    return best_index;
+}
+
+[[nodiscard]] int farthest_corridor_support_cell(
+    int start, const std::vector<bool>& allowed, const RoutingContext& context,
+    std::vector<int>* parent_out = nullptr) {
+    if (start < 0 || !allowed[static_cast<std::size_t>(start)]) {
+        return -1;
+    }
+
+    const std::size_t sample_count = context.accumulation.sample_count();
+    std::vector<int> distance(sample_count, -1);
+    if (parent_out != nullptr) {
+        parent_out->assign(sample_count, -1);
+    }
+
+    std::vector<int> queue;
+    queue.reserve(4096U);
+    queue.push_back(start);
+    distance[static_cast<std::size_t>(start)] = 0;
+    int best_index = start;
+    float best_score = -std::numeric_limits<float>::infinity();
+
+    for (std::size_t head = 0U; head < queue.size(); ++head) {
+        const int current = queue[head];
+        const int current_distance = distance[static_cast<std::size_t>(current)];
+        const float visible_score =
+            is_inside_visible_crop(context.domain, current) ? 550.0F : 0.0F;
+        const float edge_score =
+            is_visible_crop_edge_cell(context.domain, current) ? 1400.0F : 0.0F;
+        const float core_score = is_inside_visible_core(context.domain, current) ? 180.0F : 0.0F;
+        const float accumulation_score =
+            std::log1p(context.accumulation.values()[static_cast<std::size_t>(current)]) * 10.0F;
+        const float score = static_cast<float>(current_distance) + visible_score + edge_score +
+                            core_score + accumulation_score;
+        if (score > best_score) {
+            best_score = score;
+            best_index = current;
+        }
+
+        const auto current_index = static_cast<std::uint32_t>(current);
+        const int cx = static_cast<int>(current_index % context.domain.hidden_desc.width);
+        const int cy = static_cast<int>(current_index / context.domain.hidden_desc.width);
+        for (int oy = -1; oy <= 1; ++oy) {
+            for (int ox = -1; ox <= 1; ++ox) {
+                if (ox == 0 && oy == 0) {
+                    continue;
+                }
+                const int nx = cx + ox;
+                const int ny = cy + oy;
+                if (!neighbor_in_bounds(context.domain.hidden_desc, nx, ny)) {
+                    continue;
+                }
+                const std::size_t neighbor = cubey::procedural::grid_index(
+                    static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny),
+                    context.domain.hidden_desc.width);
+                if (!allowed[neighbor] || distance[neighbor] >= 0) {
+                    continue;
+                }
+                distance[neighbor] = current_distance + 1;
+                if (parent_out != nullptr) {
+                    (*parent_out)[neighbor] = current;
+                }
+                queue.push_back(static_cast<int>(neighbor));
+            }
+        }
+    }
+
+    return best_index;
+}
+
+[[nodiscard]] std::vector<int> trace_corridor_support_spine(const RoutingContext& context,
+                                                            const RiverCorridor& corridor) {
+    if (corridor.cells.empty()) {
+        return {};
+    }
+
+    std::vector<bool> allowed(context.accumulation.sample_count(), false);
+    for (const int index : corridor.cells) {
+        allowed[static_cast<std::size_t>(index)] = true;
+    }
+
+    const int seed = select_corridor_support_seed(context, corridor);
+    const int first = farthest_corridor_support_cell(seed, allowed, context);
+    std::vector<int> parent;
+    const int second = farthest_corridor_support_cell(first, allowed, context, &parent);
+    if (first < 0 || second < 0) {
+        return {};
+    }
+
+    std::vector<int> path;
+    int current = second;
+    while (current >= 0) {
+        path.push_back(current);
+        if (current == first) {
+            break;
+        }
+        current = parent[static_cast<std::size_t>(current)];
+    }
+    if (path.empty() || path.back() != first) {
+        return {};
+    }
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
+[[nodiscard]] std::vector<int> trace_best_corridor_trunk(
+    const RoutingContext& context, const RiverCorridor& corridor,
+    const RiverCorridorSelection& selection, const std::vector<std::vector<int>>& upstream,
+    const RiverNetworkSettings& settings) {
+    const std::vector<int> candidates =
+        collect_corridor_trunk_candidates(context, corridor, selection.trunk_support,
+                                          settings.corridor_seed_count);
+    std::vector<int> best_trunk;
+    float best_score = -std::numeric_limits<float>::infinity();
+    for (const int seed : candidates) {
+        const std::vector<int> trunk =
+            trace_corridor_trunk_from_seed(seed, upstream, context.d8_routing.downstream,
+                                           context.accumulation, selection.selected);
+        if (visible_grid_path_sample_count(context.domain, trunk) < 24U) {
+            continue;
+        }
+        const float score = score_grid_trunk(context.accumulation, context.domain, trunk, seed);
+        if (score > best_score) {
+            best_score = score;
+            best_trunk = trunk;
+        }
+    }
+    if (best_trunk.empty() && !candidates.empty()) {
+        best_trunk = trace_corridor_trunk_from_seed(candidates.front(), upstream,
+                                                    context.d8_routing.downstream,
+                                                    context.accumulation, selection.selected);
+    }
+    const std::vector<int> support_spine = trace_corridor_support_spine(context, corridor);
+    if (!support_spine.empty()) {
+        const bool current_crosses_crop =
+            visible_grid_path_edge_touch_count(context.domain, best_trunk) >= 2U;
+        const bool support_crosses_crop =
+            visible_grid_path_edge_touch_count(context.domain, support_spine) >= 2U;
+        const bool support_is_longer =
+            visible_grid_path_sample_count(context.domain, support_spine) >
+            visible_grid_path_sample_count(context.domain, best_trunk) + 16U;
+        if (best_trunk.empty() || (!current_crosses_crop && support_crosses_crop) ||
+            support_is_longer) {
+            best_trunk = support_spine;
+        }
+    }
+    return best_trunk;
+}
+
+[[nodiscard]] float channel_strength_for_order(const RoutingContext& context, int index,
+                                               float minimum_strength) {
+    if (index < 0) {
+        return minimum_strength;
+    }
+    const std::size_t sample = static_cast<std::size_t>(index);
+    const float order =
+        cubey::procedural::saturate((context.stream_order.values()[sample] - 2.0F) / 3.0F);
+    const float max_accumulation = std::max(context.accumulation.summarize().max, 1.0F);
+    const float discharge =
+        std::log1p(context.accumulation.values()[sample]) / std::log1p(max_accumulation);
+    return cubey::procedural::saturate(
+        std::max(minimum_strength, 0.52F + (order * 0.22F) + (discharge * 0.30F)));
+}
+
+[[nodiscard]] std::vector<ChannelPathPoint> make_corridor_channel_points(
+    const RoutingContext& context, const std::vector<int>& path, float minimum_strength) {
+    std::vector<ChannelPathPoint> points;
+    points.reserve(path.size());
+    for (const int index : path) {
+        if (index < 0) {
+            continue;
+        }
+        const auto uindex = static_cast<std::uint32_t>(index);
+        points.push_back(ChannelPathPoint{
+            .x = static_cast<float>(uindex % context.domain.hidden_desc.width),
+            .y = static_cast<float>(uindex / context.domain.hidden_desc.width),
+            .strength = channel_strength_for_order(context, index, minimum_strength),
+        });
+    }
+    return points;
+}
+
+void snap_channel_endpoint_to_visible_edge(ChannelPathPoint& point, const RoutingDomain& domain,
+                                           float max_distance_cells) {
+    if (!is_inside_visible_crop(domain, point)) {
+        return;
+    }
+
+    const float left = point.x - static_cast<float>(domain.padding_x);
+    const float right =
+        static_cast<float>(domain.padding_x + domain.visible_desc.width - 1U) - point.x;
+    const float top = point.y - static_cast<float>(domain.padding_y);
+    const float bottom =
+        static_cast<float>(domain.padding_y + domain.visible_desc.height - 1U) - point.y;
+    const float nearest = std::min(std::min(left, right), std::min(top, bottom));
+    if (nearest > max_distance_cells) {
+        return;
+    }
+
+    if (nearest == left) {
+        point.x = static_cast<float>(domain.padding_x);
+    } else if (nearest == right) {
+        point.x = static_cast<float>(domain.padding_x + domain.visible_desc.width - 1U);
+    } else if (nearest == top) {
+        point.y = static_cast<float>(domain.padding_y);
+    } else {
+        point.y = static_cast<float>(domain.padding_y + domain.visible_desc.height - 1U);
+    }
+}
+
+void snap_trunk_endpoints_to_visible_edges(std::vector<ChannelPathPoint>& points,
+                                           const RoutingDomain& domain) {
+    if (points.empty()) {
+        return;
+    }
+    constexpr float kMaxEndpointSnapDistanceCells = 96.0F;
+    snap_channel_endpoint_to_visible_edge(points.front(), domain, kMaxEndpointSnapDistanceCells);
+    snap_channel_endpoint_to_visible_edge(points.back(), domain, kMaxEndpointSnapDistanceCells);
+}
+
+[[nodiscard]] std::size_t add_corridor_tributaries(
+    RiverFields& fields, const RoutingContext& context, const RiverCorridorSelection& selection,
+    const std::vector<std::vector<int>>& upstream, const std::vector<std::vector<int>>& trunks,
+    const RiverNetworkSettings& settings, std::uint64_t seed, std::vector<bool>& active) {
+    std::size_t accepted = 0U;
+    for (const std::vector<int>& trunk : trunks) {
+        for (const int trunk_index : trunk) {
+            if (accepted >= settings.corridor_branch_count) {
+                return accepted;
+            }
+            std::vector<int> candidates = upstream[static_cast<std::size_t>(trunk_index)];
+            std::sort(candidates.begin(), candidates.end(), [&context](int lhs, int rhs) {
+                return context.accumulation.values()[static_cast<std::size_t>(lhs)] >
+                       context.accumulation.values()[static_cast<std::size_t>(rhs)];
+            });
+
+            for (const int candidate : candidates) {
+                const std::size_t sample = static_cast<std::size_t>(candidate);
+                if (!selection.selected[sample] || active[sample]) {
+                    continue;
+                }
+                std::vector<int> branch = trace_strongest_upstream_allowed_path(
+                    candidate, upstream, context.accumulation, selection.selected, active);
+                if (branch.size() + 1U < settings.min_tributary_path_samples) {
+                    continue;
+                }
+                std::reverse(branch.begin(), branch.end());
+                branch.push_back(trunk_index);
+                if (visible_grid_path_sample_count(context.domain, branch) <
+                    settings.corridor_branch_min_visible_samples) {
+                    continue;
+                }
+                if (active_path_overlap_fraction(branch, active) >
+                    settings.corridor_branch_max_active_overlap) {
+                    continue;
+                }
+                std::vector<ChannelPathPoint> branch_points =
+                    make_corridor_channel_points(context, branch, settings.tributary_strength);
+                if (visible_path_sample_count(context.domain, branch_points) == 0U) {
+                    continue;
+                }
+                paint_channel_path(fields.tributaries, std::move(branch_points), context.domain,
+                                   settings.tributary_core_radius_cells,
+                                   settings.tributary_falloff_radius_cells,
+                                   context.routing_surface, seed + 7103U + (accepted * 131U),
+                                   settings.tributary_offset_cells);
+                mark_active_indices(active, branch);
+                ++accepted;
+                break;
+            }
+        }
+    }
+    return accepted;
+}
+
+void combine_river_mask(RiverFields& fields) {
+    for (std::uint32_t y = 0; y < fields.river_mask.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < fields.river_mask.desc().width; ++x) {
+            fields.river_mask.at(x, y) =
+                std::max(fields.river_trunk.at(x, y), fields.tributaries.at(x, y));
+        }
+    }
+}
+
 void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& context,
                                  std::uint64_t seed, const RiverNetworkSettings& settings,
                                  std::vector<bool>& active) {
@@ -1796,8 +2451,9 @@ void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& cont
     }
 }
 
-void activate_river_network(RiverFields& fields, const RoutingContext& context, std::uint64_t seed,
-                            const RiverNetworkSettings& settings) {
+void activate_river_network_fallback(RiverFields& fields, const RoutingContext& context,
+                                     std::uint64_t seed,
+                                     const RiverNetworkSettings& settings) {
     const std::vector<int>& downstream = context.d8_routing.downstream;
     const std::vector<std::vector<int>> upstream = make_upstream_adjacency(downstream);
     const std::vector<ChannelPathPoint> trunk =
@@ -1902,12 +2558,102 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context, 
         }
     }
 
-    for (std::uint32_t y = 0; y < fields.river_mask.desc().height; ++y) {
-        for (std::uint32_t x = 0; x < fields.river_mask.desc().width; ++x) {
-            fields.river_mask.at(x, y) =
-                std::max(fields.river_trunk.at(x, y), fields.tributaries.at(x, y));
-        }
+    combine_river_mask(fields);
+}
+
+void activate_river_network(RiverFields& fields, const RoutingContext& context, std::uint64_t seed,
+                            const RiverNetworkSettings& settings) {
+    struct CorridorTrunkCandidate {
+        std::size_t corridor_index = 0U;
+        std::vector<int> indices{};
+        std::vector<ChannelPathPoint> points{};
+        float score = -std::numeric_limits<float>::infinity();
+    };
+
+    const std::vector<int>& downstream = context.d8_routing.downstream;
+    const std::vector<std::vector<int>> upstream = make_upstream_adjacency(downstream);
+    const RiverCorridorSelection selection = select_stream_order_corridors(context, settings);
+    if (selection.corridors.empty()) {
+        activate_river_network_fallback(fields, context, seed, settings);
+        return;
     }
+
+    std::vector<bool> active(context.accumulation.sample_count(), false);
+    std::vector<CorridorTrunkCandidate> candidates;
+    candidates.reserve(selection.corridors.size());
+    for (std::size_t corridor_index = 0U; corridor_index < selection.corridors.size();
+         ++corridor_index) {
+        const RiverCorridor& corridor = selection.corridors[corridor_index];
+        std::vector<int> trunk =
+            trace_best_corridor_trunk(context, corridor, selection, upstream, settings);
+        if (visible_grid_path_sample_count(context.domain, trunk) < 24U) {
+            continue;
+        }
+        std::vector<ChannelPathPoint> trunk_points =
+            make_corridor_channel_points(context, trunk, 0.82F);
+        snap_trunk_endpoints_to_visible_edges(trunk_points, context.domain);
+        const float edge_score =
+            static_cast<float>(visible_path_edge_touch_count(context.domain, trunk_points)) *
+            650'000.0F;
+        const float length_score =
+            static_cast<float>(visible_path_sample_count(context.domain, trunk_points)) *
+            20'000.0F;
+        const float grid_score =
+            score_grid_trunk(context.accumulation, context.domain, trunk, trunk.front());
+        candidates.push_back(CorridorTrunkCandidate{
+            .corridor_index = corridor_index,
+            .indices = std::move(trunk),
+            .points = std::move(trunk_points),
+            .score = edge_score + length_score + grid_score,
+        });
+    }
+
+    if (candidates.empty()) {
+        activate_river_network_fallback(fields, context, seed, settings);
+        return;
+    }
+    std::sort(candidates.begin(), candidates.end(),
+              [](const CorridorTrunkCandidate& lhs, const CorridorTrunkCandidate& rhs) {
+                  return lhs.score > rhs.score;
+              });
+
+    RiverCorridorSelection rendered_selection{
+        .selected = std::vector<bool>(context.accumulation.sample_count(), false),
+        .trunk_support = std::vector<bool>(context.accumulation.sample_count(), false),
+    };
+    std::vector<std::vector<int>> trunk_paths;
+    const std::size_t render_count =
+        std::min(settings.corridor_render_count, candidates.size());
+    trunk_paths.reserve(render_count);
+    for (std::size_t candidate_index = 0U; candidate_index < render_count; ++candidate_index) {
+        CorridorTrunkCandidate& candidate = candidates[candidate_index];
+        const RiverCorridor& corridor = selection.corridors[candidate.corridor_index];
+        for (const int index : corridor.cells) {
+            const std::size_t sample = static_cast<std::size_t>(index);
+            rendered_selection.selected[sample] = true;
+            rendered_selection.trunk_support[sample] = selection.trunk_support[sample];
+        }
+        rendered_selection.corridors.push_back(corridor);
+        const std::size_t trunk_ordinal = trunk_paths.size();
+        paint_channel_path(fields.river_trunk, std::move(candidate.points), context.domain,
+                           settings.trunk_core_radius_cells,
+                           settings.trunk_falloff_radius_cells, context.routing_surface,
+                           seed + 8101U + (trunk_ordinal * 149U),
+                           settings.trunk_offset_cells);
+        mark_active_indices(active, candidate.indices);
+        trunk_paths.push_back(std::move(candidate.indices));
+    }
+
+    if (trunk_paths.empty()) {
+        activate_river_network_fallback(fields, context, seed, settings);
+        return;
+    }
+
+    const std::size_t accepted_tributaries =
+        add_corridor_tributaries(fields, context, rendered_selection, upstream, trunk_paths,
+                                 settings, seed, active);
+    static_cast<void>(accepted_tributaries);
+    combine_river_mask(fields);
 }
 
 void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
