@@ -527,6 +527,9 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("sink_mask") ==
                 cubey::projects::terrain::TerrainDebugView::SinkMask,
             "terrain debug view should parse sink mask aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("channel_width") ==
+                cubey::projects::terrain::TerrainDebugView::ChannelWidth,
+            "terrain debug view should parse channel width aliases");
     require_throws(
         [] {
             static_cast<void>(

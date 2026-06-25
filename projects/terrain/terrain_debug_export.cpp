@@ -32,7 +32,7 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 16> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 17> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::Height, "height"},
     DebugViewName{TerrainDebugView::Slope, "slope"},
@@ -45,13 +45,14 @@ inline constexpr std::array<DebugViewName, 16> kDebugViewNames{
     DebugViewName{TerrainDebugView::RiverTrunk, "river-trunk"},
     DebugViewName{TerrainDebugView::Tributaries, "tributaries"},
     DebugViewName{TerrainDebugView::SinkMask, "sink-mask"},
+    DebugViewName{TerrainDebugView::ChannelWidth, "channel-width"},
     DebugViewName{TerrainDebugView::Wetness, "wetness"},
     DebugViewName{TerrainDebugView::Deposition, "deposition"},
     DebugViewName{TerrainDebugView::Material, "material"},
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 16> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 17> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::Height,
     TerrainDebugView::Slope,
@@ -64,6 +65,7 @@ inline constexpr std::array<TerrainDebugView, 16> kTerrainDebugReviewViews{
     TerrainDebugView::RiverTrunk,
     TerrainDebugView::Tributaries,
     TerrainDebugView::SinkMask,
+    TerrainDebugView::ChannelWidth,
     TerrainDebugView::Wetness,
     TerrainDebugView::Deposition,
     TerrainDebugView::Material,
@@ -211,6 +213,8 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldTributaries);
     case TerrainDebugView::SinkMask:
         return terrain_product_field(product, kTerrainFieldSinkMask);
+    case TerrainDebugView::ChannelWidth:
+        return terrain_product_field(product, kTerrainFieldChannelWidth);
     case TerrainDebugView::Wetness:
         return terrain_product_field(product, kTerrainFieldWetness);
     case TerrainDebugView::Deposition:

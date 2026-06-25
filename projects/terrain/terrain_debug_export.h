@@ -21,6 +21,7 @@ enum class TerrainDebugView {
     RiverTrunk,
     Tributaries,
     SinkMask,
+    ChannelWidth,
     Wetness,
     Deposition,
     Material,
