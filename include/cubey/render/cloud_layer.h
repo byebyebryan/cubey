@@ -252,6 +252,21 @@ struct CloudLayerFrameInfo {
     bool external_background = false;
 };
 
+struct CloudLayerViewRegimeInput {
+    math::Vec3 camera_position{0.0F, 0.0F, 0.0F};
+    math::Vec3 camera_forward{0.0F, 0.0F, -1.0F};
+    float planet_radius_m = 1.0F;
+    float orbit_transition_start_m = 45000.0F;
+    float orbit_transition_end_m = 180000.0F;
+};
+
+struct CloudLayerViewRegime {
+    float camera_mode = 0.0F;
+    float altitude_m = 0.0F;
+    float altitude_blend = 0.0F;
+    float horizon_grazing = 0.0F;
+};
+
 struct CloudLayerFrameUniforms {
     math::Vec4 camera_right_aspect;
     math::Vec4 camera_up_tan_half_fovy;
@@ -474,6 +489,7 @@ class CloudLayerRuntime {
 [[nodiscard]] CloudLayerDebugView next_cloud_layer_debug_view(CloudLayerDebugView view);
 [[nodiscard]] CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& config,
                                                                  const CloudLayerFrameInfo& frame);
+[[nodiscard]] CloudLayerViewRegime cloud_layer_view_regime(const CloudLayerViewRegimeInput& input);
 [[nodiscard]] CloudLayerWeatherPushConstants
 cloud_layer_weather_push_constants(const CloudLayerConfig& config);
 [[nodiscard]] bool cloud_layer_weather_generation_equal(

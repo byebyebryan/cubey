@@ -686,10 +686,27 @@ class AtmosphereApp {
         const cubey::render::ViewRayBasis3D view_rays = atmosphere_view_rays(extent);
         const cubey::render::AtmosphereEnvironmentConfig environment =
             atmosphere_environment_config(atmosphere_config_);
+        const cubey::math::Vec3 cloud_camera_position{
+            0.0F,
+            atmosphere_config_.camera_altitude_km * 1000.0F,
+            0.0F,
+        };
+        const cubey::render::CloudLayerConfig cloud_config =
+            atmosphere_cloud_config(cloud_elapsed_seconds_);
+        const cubey::render::CloudLayerViewRegime view_regime =
+            cubey::render::cloud_layer_view_regime({
+                .camera_position = {0.0F,
+                                    cloud_config.planet_radius_m + cloud_camera_position.y,
+                                    0.0F},
+                .camera_forward = cubey::math::Vec3{view_rays.forward},
+                .planet_radius_m = cloud_config.planet_radius_m,
+                .orbit_transition_start_m = cloud_config.orbit_transition_start_m,
+                .orbit_transition_end_m = cloud_config.orbit_transition_end_m,
+            });
         return cubey::render::cloud_layer_frame_uniforms(
-            atmosphere_cloud_config(cloud_elapsed_seconds_),
+            cloud_config,
             cubey::render::CloudLayerFrameInfo{
-                .camera_position = {0.0F, atmosphere_config_.camera_altitude_km * 1000.0F, 0.0F},
+                .camera_position = cloud_camera_position,
                 .camera_right = cubey::math::Vec3{view_rays.right_aspect},
                 .camera_up = cubey::math::Vec3{view_rays.up_tan_half_fovy},
                 .camera_forward = cubey::math::Vec3{view_rays.forward},
@@ -698,7 +715,7 @@ class AtmosphereApp {
                 .sun_intensity = 1.0F,
                 .target_extent = extent,
                 .temporal_frame_index = cloud_runtime_.temporal_frame_index(),
-                .camera_mode = 0.0F,
+                .camera_mode = view_regime.camera_mode,
                 .external_background = true,
             });
     }

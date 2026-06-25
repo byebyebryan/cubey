@@ -681,6 +681,42 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
     };
 }
 
+CloudLayerViewRegime cloud_layer_view_regime(const CloudLayerViewRegimeInput& input) {
+    const float radius = std::max(input.planet_radius_m, 1.0F);
+    const float camera_radius = glm::length(input.camera_position);
+    const float altitude = std::max(camera_radius - radius, 0.0F);
+    const float transition_start = std::max(input.orbit_transition_start_m, 1.0F);
+    const float transition_end = std::max(input.orbit_transition_end_m, transition_start + 1.0F);
+    const float altitude_blend =
+        std::clamp((altitude - transition_start) / (transition_end - transition_start), 0.0F,
+                   1.0F);
+
+    math::Vec3 up{0.0F, 1.0F, 0.0F};
+    if (camera_radius > 0.0001F) {
+        up = input.camera_position / camera_radius;
+    }
+    math::Vec3 forward{0.0F, 0.0F, -1.0F};
+    if (glm::dot(input.camera_forward, input.camera_forward) > 0.000001F) {
+        forward = glm::normalize(input.camera_forward);
+    }
+    const float view_up = std::abs(glm::dot(forward, up));
+    const float horizon_grazing = 1.0F - std::clamp(view_up / 0.28F, 0.0F, 1.0F);
+
+    float camera_mode = 0.0F;
+    if (altitude_blend >= 0.95F) {
+        camera_mode = 4.0F;
+    } else if (altitude_blend >= 0.05F || (altitude >= 5000.0F && horizon_grazing > 0.75F)) {
+        camera_mode = 1.0F;
+    }
+
+    return {
+        .camera_mode = camera_mode,
+        .altitude_m = altitude,
+        .altitude_blend = altitude_blend,
+        .horizon_grazing = horizon_grazing,
+    };
+}
+
 CloudLayerWeatherPushConstants cloud_layer_weather_push_constants(
     const CloudLayerConfig& config) {
     return {

@@ -46,6 +46,7 @@ add_executable(cubey_core_tests
     image_transitions_tests.cpp
     render_context_tests.cpp
     render_clipmap_grid_2d_tests.cpp
+    render_cloud_layer_tests.cpp
     render_atmosphere_environment_tests.cpp
     render_adaptive_patch_lod_tests.cpp
     render_deformation_tests.cpp
