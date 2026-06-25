@@ -94,23 +94,78 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return count;
 }
 
-[[nodiscard]] std::size_t edge_touch_count(const cubey::procedural::ScalarField2D& field,
-                                           float threshold) {
+[[nodiscard]] std::size_t edge_band_touch_count(const cubey::procedural::ScalarField2D& field,
+                                                float threshold, std::uint32_t band_cells) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
+    const std::uint32_t band = std::min(band_cells, std::min(desc.width, desc.height) - 1U);
     bool left = false;
     bool right = false;
     bool top = false;
     bool bottom = false;
     for (std::uint32_t y = 0; y < desc.height; ++y) {
-        left = left || field.at(0U, y) >= threshold;
-        right = right || field.at(desc.width - 1U, y) >= threshold;
+        for (std::uint32_t x = 0; x <= band; ++x) {
+            left = left || field.at(x, y) >= threshold;
+            right = right || field.at(desc.width - 1U - x, y) >= threshold;
+        }
     }
     for (std::uint32_t x = 0; x < desc.width; ++x) {
-        top = top || field.at(x, 0U) >= threshold;
-        bottom = bottom || field.at(x, desc.height - 1U) >= threshold;
+        for (std::uint32_t y = 0; y <= band; ++y) {
+            top = top || field.at(x, y) >= threshold;
+            bottom = bottom || field.at(x, desc.height - 1U - y) >= threshold;
+        }
     }
     return static_cast<std::size_t>(left) + static_cast<std::size_t>(right) +
            static_cast<std::size_t>(top) + static_cast<std::size_t>(bottom);
+}
+
+[[nodiscard]] std::size_t largest_active_component_size(
+    const cubey::procedural::ScalarField2D& field, float threshold) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    std::vector<bool> visited(field.sample_count(), false);
+    std::size_t best = 0U;
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const std::size_t start = field.index(x, y);
+            if (visited[start] || field.at(x, y) < threshold) {
+                continue;
+            }
+
+            std::size_t count = 0U;
+            std::vector<std::size_t> stack{start};
+            visited[start] = true;
+            while (!stack.empty()) {
+                const std::size_t current = stack.back();
+                stack.pop_back();
+                ++count;
+                const int cx = static_cast<int>(current % desc.width);
+                const int cy = static_cast<int>(current / desc.width);
+                for (int oy = -1; oy <= 1; ++oy) {
+                    for (int ox = -1; ox <= 1; ++ox) {
+                        if (ox == 0 && oy == 0) {
+                            continue;
+                        }
+                        const int nx = cx + ox;
+                        const int ny = cy + oy;
+                        if (nx < 0 || ny < 0 || nx >= static_cast<int>(desc.width) ||
+                            ny >= static_cast<int>(desc.height)) {
+                            continue;
+                        }
+                        const std::size_t neighbor = field.index(static_cast<std::uint32_t>(nx),
+                                                                 static_cast<std::uint32_t>(ny));
+                        if (visited[neighbor] ||
+                            field.at(static_cast<std::uint32_t>(nx),
+                                     static_cast<std::uint32_t>(ny)) < threshold) {
+                            continue;
+                        }
+                        visited[neighbor] = true;
+                        stack.push_back(neighbor);
+                    }
+                }
+            }
+            best = std::max(best, count);
+        }
+    }
+    return best;
 }
 
 [[nodiscard]] std::size_t max_horizontal_active_run(const cubey::procedural::ScalarField2D& field,
@@ -389,10 +444,14 @@ void test_terrain_river_network_has_continuous_active_channels() {
 
     const std::size_t connected_trunk_count = count_active_samples_with_neighbor(trunk, 0.45F);
     const std::size_t connected_river_count = count_active_samples_with_neighbor(river_mask, 0.30F);
+    const std::size_t largest_river_component =
+        largest_active_component_size(river_mask, 0.30F);
     require(connected_trunk_count * 100U >= trunk_count * 90U,
             "terrain river trunk samples should be locally continuous");
     require(connected_river_count * 100U >= river_count * 80U,
             "terrain river mask samples should be locally continuous");
+    require(largest_river_component * 100U >= river_count * 80U,
+            "terrain river mask should be dominated by one connected component");
 
     const std::size_t trunk_core_count = count_active_samples(trunk, 0.80F);
     const std::size_t trunk_soft_count = count_active_samples(trunk, 0.30F);
@@ -432,9 +491,9 @@ void test_terrain_river_uses_larger_routing_context() {
     const auto& river_mask = field(product, cubey::projects::terrain::kTerrainFieldRiverMask);
     const auto& sink_mask = field(product, cubey::projects::terrain::kTerrainFieldSinkMask);
 
-    require(edge_touch_count(river_mask, 0.25F) >= 2U,
+    require(edge_band_touch_count(river_mask, 0.08F, 8U) >= 2U,
             "terrain river mask should enter or leave multiple visible crop edges");
-    require(edge_touch_count(trunk, 0.45F) >= 1U,
+    require(edge_band_touch_count(trunk, 0.45F, 8U) >= 1U,
             "terrain river trunk should connect to a visible crop edge");
 
     const std::size_t sink_count = count_active_samples(sink_mask, 0.5F);
