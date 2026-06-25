@@ -54,11 +54,11 @@ struct RiverNetworkSettings {
     float trunk_offset_cells = 2.25F;
     float corridor_trunk_stream_order = 4.0F;
     float corridor_tributary_stream_order = 2.0F;
-    std::size_t corridor_count = 3U;
+    std::size_t corridor_count = 1U;
     std::size_t corridor_render_count = 1U;
     std::size_t corridor_seed_count = 128U;
     std::size_t corridor_branch_count = 6U;
-    std::size_t corridor_min_visible_samples = 1U;
+    std::size_t corridor_min_visible_samples = 24U;
     std::size_t corridor_branch_min_visible_samples = 8U;
     float corridor_branch_max_active_overlap = 0.42F;
     std::size_t secondary_trunk_count = 0U;
@@ -1833,7 +1833,7 @@ void score_corridor_component(RiverCorridorComponent& component) {
         (static_cast<float>(component.visible_samples) * 4.0F) +
         (static_cast<float>(component.visible_core_samples) * 6.0F) +
         (static_cast<float>(component.trunk_visible_samples) * 12.0F) +
-        (static_cast<float>(edge_touch_count) * 2500.0F) +
+        (static_cast<float>(edge_touch_count) * 160.0F) +
         (std::log1p(component.max_accumulation) * 22.0F) +
         (static_cast<float>(component.cells.size()) * 0.035F);
 }
@@ -1900,11 +1900,6 @@ void score_corridor_component(RiverCorridorComponent& component) {
     for (RiverCorridorComponent& component : components) {
         score_corridor_component(component);
     }
-    const bool has_visible_edge_component = std::any_of(
-        components.begin(), components.end(), [&settings](const RiverCorridorComponent& component) {
-            return component.visible_samples >= settings.corridor_min_visible_samples &&
-                   corridor_component_edge_touch_count(component) > 0U;
-        });
     std::sort(components.begin(), components.end(),
               [](const RiverCorridorComponent& lhs, const RiverCorridorComponent& rhs) {
                   return lhs.score > rhs.score;
@@ -1916,10 +1911,6 @@ void score_corridor_component(RiverCorridorComponent& component) {
         }
         if (component.visible_samples < settings.corridor_min_visible_samples &&
             selection.corridors.empty()) {
-            continue;
-        }
-        if (has_visible_edge_component &&
-            corridor_component_edge_touch_count(component) == 0U) {
             continue;
         }
         if (component.visible_samples == 0U) {

@@ -484,6 +484,8 @@ void test_terrain_river_uses_larger_routing_context() {
     cubey::projects::terrain::TerrainRegionConfig config = small_config();
     config.grid_width = 257;
     config.grid_height = 257;
+    config.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRiverStress);
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(config);
 
