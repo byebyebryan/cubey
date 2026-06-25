@@ -33,9 +33,10 @@ Current V1 scope:
 - configurable static ray-start sampling (`bayer`, `interleaved`, or `off`)
   with jitter-strength control. The default matches the reference Bayer
   ray-start pattern to break up march-step banding;
-- temporal cloud product/metadata history for the final view, with
-  metadata-aware reprojection and current-neighborhood clamping to reduce
-  residual raymarch banding;
+- experimental temporal cloud product/metadata history for the final view, with
+  metadata-aware reprojection and current-neighborhood clamping. It is off by
+  default because the current validation is still too edge-sensitive and can
+  turn raymarch noise into shimmer;
 - standalone background modes: atmosphere-only by default, plus an opt-in
   `water-context` proxy for ocean-adjacent inspection shots;
 - explicit distance regimes: surface/local volumetric marching, default
@@ -222,8 +223,8 @@ Known deferrals:
   default handoff keeps full orbit replacement above the high-oblique preset
   (`45 km` to `180 km`) while the far shell fills long rays earlier (`30 km` to
   `160 km`) with a slightly boosted effective strength.
-- Temporal reconstruction exists for final-view cleanup, but raw diagnostics
-  remain the source of truth when judging cloud shape.
+- Temporal reconstruction exists for final-view cleanup experiments, but raw
+  diagnostics remain the source of truth when judging cloud shape.
 - Static sampling controls are diagnostic and deterministic. A blue-noise or
   spatiotemporal blue-noise sampling path remains deferred until the direct
   local/orbit regimes are stable.

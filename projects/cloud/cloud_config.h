@@ -215,7 +215,7 @@ struct CloudsConfig {
     CloudsDistanceMode distance_mode = CloudsDistanceMode::Auto;
     CloudsOrbitRepresentation orbit_representation = CloudsOrbitRepresentation::SurfaceShell;
     CloudsDebugView debug_view = CloudsDebugView::Final;
-    bool temporal_enabled = true;
+    bool temporal_enabled = false;
     CloudsTimeConfig time{};
 
     float planet_radius_m = kCloudsDefaultPlanetRadiusM;

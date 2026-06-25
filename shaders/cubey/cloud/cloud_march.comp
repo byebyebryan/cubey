@@ -566,7 +566,9 @@ OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
 }
 
 vec2 cloud_project_uv(vec3 position) {
-    return position.xz / cloud_inner_radius() + vec2(0.5);
+    float feature_scale_m = max(params.weather.z * 1000.0, 1000.0);
+    float shape_period_m = feature_scale_m * 5.0;
+    return position.xz / shape_period_m + vec2(0.5);
 }
 
 vec2 cloud_weather_uv(vec3 position) {
@@ -991,8 +993,13 @@ bool cloud_local_volume_enabled() {
     return params.background_options.z > 0.5;
 }
 
+bool cloud_external_background_enabled() {
+    return params.background_options.w > 0.5;
+}
+
 bool cloud_surface_horizon_layer_mode() {
     return cloud_horizon_layer_enabled() &&
+           !cloud_external_background_enabled() &&
            cloud_surface_view_factor() > 0.0 &&
            cloud_camera_altitude() <
                max(params.cloud_shell.x * 0.90, params.cloud_shell.x - 1.0);

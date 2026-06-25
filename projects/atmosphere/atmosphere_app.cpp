@@ -703,6 +703,7 @@ class AtmosphereApp {
                 .target_extent = extent,
                 .temporal_frame_index = cloud_runtime_.temporal_frame_index(),
                 .camera_mode = 0.0F,
+                .external_background = true,
             });
     }
 

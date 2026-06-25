@@ -125,33 +125,33 @@ struct MoonConfig {
     config.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
     config.debug_view = cubey::render::CloudLayerDebugView::Final;
     config.temporal_enabled = false;
-    config.bottom_altitude_m = 4200.0F;
-    config.top_altitude_m = 18000.0F;
-    config.coverage = 0.42F;
+    config.bottom_altitude_m = 5000.0F;
+    config.top_altitude_m = 22000.0F;
+    config.coverage = 0.45F;
     config.density = 0.020F;
-    config.weather_scale_km = 125.0F;
-    config.shadow_strength = 0.72F;
-    config.horizon_strength = 0.36F;
-    config.weather_softness = 0.24F;
+    config.weather_scale_km = 120.0F;
+    config.shadow_strength = 0.82F;
+    config.horizon_strength = 0.48F;
+    config.weather_softness = 0.22F;
     config.detail_erosion = 1.0F;
     config.crispiness = 40.0F;
     config.curliness = 0.10F;
-    config.absorption = 0.30F;
-    config.ambient_strength = 0.74F;
-    config.direct_strength = 1.16F;
-    config.phase_strength = 1.08F;
-    config.resolve_strength = 0.45F;
-    config.final_contrast = 1.0F;
-    config.final_saturation = 1.0F;
-    config.horizon_glow_strength = 0.0F;
-    config.sun_glare_strength = 0.0F;
+    config.absorption = 0.28F;
+    config.ambient_strength = 0.82F;
+    config.direct_strength = 1.28F;
+    config.phase_strength = 1.14F;
+    config.resolve_strength = 0.48F;
+    config.final_contrast = 1.17F;
+    config.final_saturation = 1.12F;
+    config.horizon_glow_strength = 0.55F;
+    config.sun_glare_strength = 1.0F;
     config.jitter_strength = 1.0F;
     return config;
 }
 
 struct AtmosphereCloudConfig {
     bool enabled = true;
-    float wind_speed_mps = 115.0F;
+    float wind_speed_mps = 450.0F;
     cubey::render::CloudLayerConfig layer = default_atmosphere_cloud_layer_config();
 };
 

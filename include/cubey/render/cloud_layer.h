@@ -146,7 +146,7 @@ struct CloudLayerConfig {
     CloudLayerOrbitRepresentation orbit_representation =
         CloudLayerOrbitRepresentation::SurfaceShell;
     CloudLayerDebugView debug_view = CloudLayerDebugView::Final;
-    bool temporal_enabled = true;
+    bool temporal_enabled = false;
     bool powder_enabled = true;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;
@@ -202,6 +202,7 @@ struct CloudLayerFrameInfo {
     VkExtent2D target_extent{};
     std::uint32_t temporal_frame_index = 0;
     float camera_mode = 0.0F;
+    bool external_background = false;
 };
 
 struct CloudLayerFrameUniforms {

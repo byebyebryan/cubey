@@ -877,6 +877,8 @@ int main() {
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere.frag");
     const std::string celestial_shader_source =
         read_text_file(repo_root / "shaders/cubey/sky/celestial_body.frag");
+    const std::string cloud_march_source =
+        read_text_file(repo_root / "shaders/cubey/cloud/cloud_march.comp");
     const std::string lunar_surface_source =
         read_text_file(repo_root / "src/cubey/render/lunar_surface_map.cpp");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
@@ -982,6 +984,12 @@ int main() {
                      "atmosphere app should use the shared HDR scene color descriptor helper");
     require_contains(app_source, "forward_pbr_post.frag.spv",
                      "atmosphere app should load the shared PBR post shader");
+    require_contains(app_source, ".external_background = true",
+                     "atmosphere clouds should declare external background composition");
+    require_contains(cloud_march_source, "shape_period_m = feature_scale_m * 5.0",
+                     "local cloud detail projection should not scale with planet radius");
+    require_contains(cloud_march_source, "!cloud_external_background_enabled()",
+                     "external-background clouds should not force the standalone horizon assist");
     require_contains(cmake_source, "forward_pbr_post.frag",
                      "atmosphere build should compile the shared PBR post fragment shader");
     require_contains(cmake_source, "sky/celestial_body.vert",

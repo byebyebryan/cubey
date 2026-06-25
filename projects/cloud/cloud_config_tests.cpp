@@ -2,6 +2,7 @@
 
 #include <cubey/core/config_options.h>
 #include <cubey/procedural/seed.h>
+#include <cubey/render/cloud_layer.h>
 
 #include <cmath>
 #include <cstdlib>
@@ -539,6 +540,8 @@ void test_weather_preset_defaults() {
     require(config.orbit_representation ==
                 cubey::projects::cloud::CloudsOrbitRepresentation::SurfaceShell,
             "default orbit representation should be surface shell");
+    require(!config.temporal_enabled,
+            "default temporal reconstruction should stay off until stable");
     require_near(config.jitter_strength, 1.0F, 0.001F,
                  "default jitter should match reference Bayer strength");
     require_near(config.weather_influence, 0.0F, 0.001F,
@@ -870,6 +873,29 @@ void test_config_descriptors() {
     require(config.clouds.horizon_layer == 1, "cloud horizon layer descriptor should set");
 }
 
+void test_shared_cloud_frame_uniform_packing() {
+    cubey::render::CloudLayerConfig layer{};
+    layer.horizon_layer_enabled = true;
+    layer.local_volume_enabled = true;
+
+    cubey::render::CloudLayerFrameInfo frame{};
+    frame.target_extent = {128U, 64U};
+
+    cubey::render::CloudLayerFrameUniforms uniforms =
+        cubey::render::cloud_layer_frame_uniforms(layer, frame);
+    require_near(uniforms.background_options.y, 1.0F, 0.001F,
+                 "cloud frame uniforms should pack horizon layer enable");
+    require_near(uniforms.background_options.z, 1.0F, 0.001F,
+                 "cloud frame uniforms should pack local volume enable");
+    require_near(uniforms.background_options.w, 0.0F, 0.001F,
+                 "cloud frame uniforms should default to standalone background composition");
+
+    frame.external_background = true;
+    uniforms = cubey::render::cloud_layer_frame_uniforms(layer, frame);
+    require_near(uniforms.background_options.w, 1.0F, 0.001F,
+                 "cloud frame uniforms should pack external background composition");
+}
+
 } // namespace
 
 int main() {
@@ -880,6 +906,7 @@ int main() {
         test_weather_preset_defaults();
         test_generated_artifact_metadata();
         test_config_descriptors();
+        test_shared_cloud_frame_uniform_packing();
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return EXIT_FAILURE;
