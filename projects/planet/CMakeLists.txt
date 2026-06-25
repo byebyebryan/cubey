@@ -3,6 +3,13 @@ set(CUBEY_PLANET_SHADERS
     "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/celestial_body.vert"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/celestial_body.frag"
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud.vert"
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background.frag"
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_march.comp"
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_perlin_worley.comp"
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_temporal.comp"
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather.comp"
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_worley.comp"
     shaders/planet_surface.vert
     shaders/planet_surface.frag
     shaders/planet_local_detail.vert
@@ -37,6 +44,9 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_noise_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather_common.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_surface_field.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
