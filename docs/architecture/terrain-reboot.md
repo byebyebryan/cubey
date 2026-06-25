@@ -249,6 +249,12 @@ extraction with additional separated trunk candidates and lower tributary
 thresholds. Its purpose is to make routing artifacts visible across more of a
 review patch, not to define the desired default composition.
 
+The next river batch should promote the `stream_order` and `flow_accumulation`
+diagnostics into connected corridor selection. The intent is to keep the
+coherent river-network shape visible in `stream-order.png` while tracing only a
+curated trunk and limited tributaries into the active product. See
+`docs/notes/terrain-river-stream-order-corridor-plan.md`.
+
 Known limitations:
 
 - Fractional accumulation reduces receiver quantization, but active channel
@@ -289,12 +295,12 @@ Keep the first implementation narrow. Defer:
 The next terrain batches should improve the underlying drivers before adding
 more biome labels:
 
-1. Evaluate a small depression-fill or breach-routing pass from the hydrology
-   references before adding lakes, canyons, or wider river systems.
-2. Add depression-fill or breach routing so continuous streamlines do not stop
+1. Replace conservative tributary picking with connected stream-order corridor
+   extraction before adding lakes, canyons, or wider river systems.
+2. Evaluate a small depression-fill or breach-routing pass from the hydrology
+   references once the corridor extractor has clear visual gates.
+3. Add depression-fill or breach routing so continuous streamlines do not stop
    on local sinks and the remaining D8 topology fallback can be removed.
-3. Replace conservative tributary picking with a more explicit network
-   extraction pass once the route model improves.
 4. Split mountain/ridge drivers into explicit terrain products instead of
    treating mountains as only material response over height noise.
 5. Add capture summaries or manifest metadata for the review set so image

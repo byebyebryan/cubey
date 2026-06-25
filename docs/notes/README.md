@@ -69,6 +69,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain reboot current captures](terrain-reboot-current-captures.md):
   current `projects/terrain` 513 PNG review set, what to inspect, and river
   driver limitations.
+- [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
+  next river-quality pivot: promote `stream_order` and `flow_accumulation` into
+  connected corridor selection while avoiding direct graph-edge rendering.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.

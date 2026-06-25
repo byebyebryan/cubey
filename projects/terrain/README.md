@@ -79,10 +79,8 @@ uses continuous D-Infinity-style flow angles and fractional accumulation for the
 diagnostic catchment field, then keeps the revision 3 conservative trunk and
 tributary extractor as the connected baseline. It now adds a small number of
 stream-order-seeded paths from the coherent `stream_order` field, but only when
-those paths reconnect to the already active river network. Selected paths are
-scored for visible length, crop continuity, interior coverage, repeated
-grid-direction runs, and active-network overlap before being resampled,
-procedurally offset, relaxed over drainage potential, and rasterized as soft
-channel curves. This produces `river-trunk`, `tributaries`, and the combined
-`river-mask`, but branch placement and some bends remain route-model limitations
-until a proper network extraction pass replaces the hybrid graph.
+those paths reconnect to the already active river network. The next planned
+river batch promotes `stream_order` and `flow_accumulation` into connected
+corridor selection so the active product is traced from a coherent river source
+instead of stitching together local feature picks. See
+[Terrain river stream-order corridor plan](../../docs/notes/terrain-river-stream-order-corridor-plan.md).
