@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace cubey::render {
@@ -129,6 +130,52 @@ enum class CloudLayerDebugView : std::uint32_t {
     FarShellAlpha = 45,
     LocalWithShellAlpha = 46,
     TransitionWeights = 47,
+};
+
+inline constexpr std::array<CloudLayerDebugView, 43> kCloudLayerDebugViews{
+    CloudLayerDebugView::Final,
+    CloudLayerDebugView::RawFinal,
+    CloudLayerDebugView::AuthoredWeather,
+    CloudLayerDebugView::Density,
+    CloudLayerDebugView::Transmittance,
+    CloudLayerDebugView::Lighting,
+    CloudLayerDebugView::AmbientLight,
+    CloudLayerDebugView::DirectLight,
+    CloudLayerDebugView::PhaseLight,
+    CloudLayerDebugView::Shadow,
+    CloudLayerDebugView::Steps,
+    CloudLayerDebugView::Background,
+    CloudLayerDebugView::CloudAlpha,
+    CloudLayerDebugView::Distance,
+    CloudLayerDebugView::MetadataDistance,
+    CloudLayerDebugView::MetadataAlpha,
+    CloudLayerDebugView::MetadataConfidence,
+    CloudLayerDebugView::MetadataDensity,
+    CloudLayerDebugView::BaseDensity,
+    CloudLayerDebugView::DetailDensity,
+    CloudLayerDebugView::CloudType,
+    CloudLayerDebugView::LocalScatter,
+    CloudLayerDebugView::LocalClear,
+    CloudLayerDebugView::LocalStructure,
+    CloudLayerDebugView::LocalEdgeDetail,
+    CloudLayerDebugView::WeatherEdge,
+    CloudLayerDebugView::CoverageBias,
+    CloudLayerDebugView::VisibleDensity,
+    CloudLayerDebugView::VisibleCloudType,
+    CloudLayerDebugView::DistanceRegime,
+    CloudLayerDebugView::TransitionWeights,
+    CloudLayerDebugView::LocalAlpha,
+    CloudLayerDebugView::FarShellAlpha,
+    CloudLayerDebugView::LocalWithShellAlpha,
+    CloudLayerDebugView::OrbitAlpha,
+    CloudLayerDebugView::OrbitCoverage,
+    CloudLayerDebugView::OrbitDetail,
+    CloudLayerDebugView::OrbitHull,
+    CloudLayerDebugView::OrbitEnvelope,
+    CloudLayerDebugView::OrbitShellAlpha,
+    CloudLayerDebugView::OrbitShellHeight,
+    CloudLayerDebugView::OrbitShellNormal,
+    CloudLayerDebugView::OrbitShellShadow,
 };
 
 struct CloudLayerQualityBudget {
@@ -422,6 +469,9 @@ class CloudLayerRuntime {
 [[nodiscard]] VkExtent2D cloud_layer_product_extent(VkExtent2D target_extent,
                                                     CloudLayerQuality quality);
 [[nodiscard]] CloudLayerQualityBudget cloud_layer_quality_budget(CloudLayerQuality quality);
+[[nodiscard]] CloudLayerDebugView cloud_layer_debug_view_from_name(std::string_view value);
+[[nodiscard]] const char* cloud_layer_debug_view_name(CloudLayerDebugView view);
+[[nodiscard]] CloudLayerDebugView next_cloud_layer_debug_view(CloudLayerDebugView view);
 [[nodiscard]] CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& config,
                                                                  const CloudLayerFrameInfo& frame);
 [[nodiscard]] CloudLayerWeatherPushConstants

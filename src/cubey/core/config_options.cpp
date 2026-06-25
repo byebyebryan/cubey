@@ -125,7 +125,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 229> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 231> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -538,6 +538,12 @@ constexpr std::array<ConfigOptionDescriptor, 229> kRunConfigOptions{
            "--reference-geometry", "Reference Geometry", "Atmosphere",
            "Enable the standalone atmosphere ground reference grid.", ConfigOptionType::Bool,
            no_range(), {}, "--no-reference-geometry"),
+    option(RunConfigOptionId::CloudEnabled, "clouds.enabled", "--clouds", "Clouds", "Clouds",
+           "Enable cloud layer rendering in shared atmosphere-backed projects.",
+           ConfigOptionType::Bool, no_range(), {}, "--no-clouds"),
+    option(RunConfigOptionId::CloudDebugView, "clouds.debug_view", "--cloud-debug-view",
+           "Debug View", "Clouds", "Cloud layer debug or diagnostic view.",
+           ConfigOptionType::String),
     option(RunConfigOptionId::CloudCameraMode, "clouds.camera_mode", "--cloud-camera-mode",
            "Camera Mode", "Clouds", "Initial cloud camera mode.", ConfigOptionType::Enum,
            no_range(), enum_choices(kCloudCameraModes)),
@@ -1341,6 +1347,11 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_bool(config.atmosphere.moon);
     case RunConfigOptionId::AtmosphereReferenceGeometry:
         return optional_bool(config.atmosphere.reference_geometry);
+    case RunConfigOptionId::CloudEnabled:
+        return optional_bool(config.clouds.enabled);
+    case RunConfigOptionId::CloudDebugView:
+        return config.clouds.debug_view.empty() ? nlohmann::json(nullptr)
+                                                : nlohmann::json(config.clouds.debug_view);
     case RunConfigOptionId::CloudCameraMode:
         return config.clouds.camera_mode.empty() ? nlohmann::json(nullptr)
                                                  : nlohmann::json(config.clouds.camera_mode);
@@ -1846,6 +1857,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::AtmosphereOptions& opti
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& options) {
+    adapter.writeField<std::string>("debug_view", options.debug_view);
     adapter.writeField<std::string>("camera_mode", options.camera_mode);
     adapter.writeField<std::string>("quality", options.quality);
     adapter.writeField<std::string>("weather_preset", options.weather_preset);
@@ -1892,12 +1904,14 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("orbit_fill", options.orbit_fill);
     adapter.writeField<float>("orbit_motion_strength", options.orbit_motion_strength);
     adapter.writeField<float>("orbit_shell_extinction", options.orbit_shell_extinction);
+    adapter.writeField<int>("enabled", options.enabled);
     adapter.writeField<int>("temporal", options.temporal);
     adapter.writeField<int>("local_volume", options.local_volume);
     adapter.writeField<int>("horizon_layer", options.horizon_layer);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) {
+    adapter.readField<std::string>("debug_view", options.debug_view);
     adapter.readField<std::string>("camera_mode", options.camera_mode);
     adapter.readField<std::string>("quality", options.quality);
     adapter.readField<std::string>("weather_preset", options.weather_preset);
@@ -1944,6 +1958,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("orbit_fill", options.orbit_fill);
     adapter.readField<float>("orbit_motion_strength", options.orbit_motion_strength);
     adapter.readField<float>("orbit_shell_extinction", options.orbit_shell_extinction);
+    adapter.readField<int>("enabled", options.enabled);
     adapter.readField<int>("temporal", options.temporal);
     adapter.readField<int>("local_volume", options.local_volume);
     adapter.readField<int>("horizon_layer", options.horizon_layer);
@@ -2522,6 +2537,12 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::AtmosphereReferenceGeometry:
         config.atmosphere.reference_geometry = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::CloudEnabled:
+        config.clouds.enabled = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::CloudDebugView:
+        config.clouds.debug_view = std::string(value);
         break;
     case RunConfigOptionId::CloudCameraMode:
         config.clouds.camera_mode = std::string(value);

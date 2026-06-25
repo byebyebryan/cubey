@@ -333,6 +333,8 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "atmosphere.time_speed_hours_per_second",
         "atmosphere.auto_exposure",
         "atmosphere.moon",
+        "clouds.enabled",
+        "clouds.debug_view",
         "clouds.camera_mode",
         "clouds.quality",
         "clouds.sampling_mode",
@@ -495,6 +497,8 @@ void test_run_config_loads_json_config_file() {
     "moon": false
   },
   "clouds": {
+    "enabled": false,
+    "debug_view": "orbit-weather",
     "camera_mode": "high",
     "quality": "full",
     "weather_preset": "inspection",
@@ -562,7 +566,8 @@ void test_run_config_loads_json_config_file() {
     require(config.atmosphere.time_of_day_mode == "solar" &&
                 config.atmosphere.time_hours == 18.5F && config.atmosphere.moon == 0,
             "config file should set atmosphere controls");
-    require(config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
+    require(config.clouds.enabled == 0 && config.clouds.debug_view == "orbit-weather" &&
+                config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
                 config.clouds.weather_preset == "inspection" &&
                 config.clouds.sampling_mode == "bayer" &&
                 config.clouds.background_mode == "water-context" &&
@@ -1024,8 +1029,11 @@ void test_run_config_parses_cloud_options() {
     std::string orbit_density_value = "1.10";
     std::string orbit_fill_flag = "--cloud-orbit-fill";
     std::string orbit_fill_value = "1.40";
+    std::string clouds_flag = "--no-clouds";
+    std::string debug_flag = "--cloud-debug-view";
+    std::string debug_value = "transition-weights";
     std::string temporal_flag = "--no-cloud-temporal";
-    std::array<char*, 50> argv{
+    std::array<char*, 53> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -1075,6 +1083,9 @@ void test_run_config_parses_cloud_options() {
         orbit_density_value.data(),
         orbit_fill_flag.data(),
         orbit_fill_value.data(),
+        clouds_flag.data(),
+        debug_flag.data(),
+        debug_value.data(),
         temporal_flag.data(),
     };
 
@@ -1085,6 +1096,9 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.quality == "full", "run config should parse cloud quality");
     require(config.clouds.weather_preset == "storm",
             "run config should parse cloud weather preset");
+    require(config.clouds.enabled == 0, "run config should parse negative cloud enable flag");
+    require(config.clouds.debug_view == "transition-weights",
+            "run config should parse cloud debug view");
     require(config.clouds.sampling_mode == "bayer",
             "run config should parse cloud sampling mode");
     require(config.clouds.background_mode == "water-context",

@@ -231,6 +231,7 @@ struct RunConfig {
     };
 
     struct CloudOptions {
+        std::string debug_view{};
         std::string camera_mode{};
         std::string quality{};
         std::string weather_preset{};
@@ -277,6 +278,7 @@ struct RunConfig {
         float orbit_fill = kRunConfigUnsetFloat;
         float orbit_motion_strength = kRunConfigUnsetFloat;
         float orbit_shell_extinction = kRunConfigUnsetFloat;
+        int enabled = -1;
         int temporal = -1;
         int local_volume = -1;
         int horizon_layer = -1;

@@ -229,6 +229,47 @@ int main() {
     require_throws([] { static_cast<void>(night_sky_layer_view_from_name("hydrogen")); },
                    "night sky layer parser should reject unknown layers");
 
+    for (const AtmosphereCloudWeatherPreset preset : kAtmosphereCloudWeatherPresets) {
+        require(atmosphere_cloud_weather_preset_from_name(
+                    atmosphere_cloud_weather_preset_name(preset)) == preset,
+                "atmosphere cloud weather preset names should round trip");
+    }
+    require(atmosphere_cloud_weather_preset_from_name("storm") ==
+                AtmosphereCloudWeatherPreset::StormCells,
+            "legacy storm cloud weather preset alias should parse");
+    require(atmosphere_cloud_weather_preset_from_name("inspection") ==
+                AtmosphereCloudWeatherPreset::BrokenCumulus,
+            "inspection cloud weather preset alias should parse");
+    require_throws([] {
+        static_cast<void>(atmosphere_cloud_weather_preset_from_name("planetary-storm"));
+    }, "atmosphere cloud weather preset parser should reject unknown presets");
+
+    for (const CloudLayerDebugView view : kCloudLayerDebugViews) {
+        require(cloud_layer_debug_view_from_name(cloud_layer_debug_view_name(view)) == view,
+                "cloud layer debug view names should round trip");
+    }
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::Final) ==
+                CloudLayerDebugView::RawFinal,
+            "cloud layer debug view should expose raw final after final");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::Lighting) ==
+                CloudLayerDebugView::AmbientLight,
+            "cloud layer debug view should include ambient-light diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::OrbitShellShadow) ==
+                CloudLayerDebugView::Final,
+            "cloud layer debug view should wrap");
+    require(cloud_layer_debug_view_from_name("weather") == CloudLayerDebugView::AuthoredWeather,
+            "cloud weather debug alias should parse");
+    require(cloud_layer_debug_view_from_name("weather-mask") == CloudLayerDebugView::CoverageBias,
+            "cloud weather mask debug alias should parse");
+    require(cloud_layer_debug_view_from_name("orbit-weather") ==
+                CloudLayerDebugView::OrbitCoverage,
+            "cloud orbit weather debug alias should parse");
+    require(cloud_layer_debug_view_from_name("shell-normal") ==
+                CloudLayerDebugView::OrbitShellNormal,
+            "cloud shell normal debug alias should parse");
+    require_throws([] { static_cast<void>(cloud_layer_debug_view_from_name("humidity")); },
+                   "cloud layer debug view parser should reject unknown views");
+
     {
         const TimeOfDayConfig defaults;
         require_near(defaults.time_hours, 5.5F, 0.0001F,
@@ -374,6 +415,64 @@ int main() {
                 defaults.moon.moonlight_intensity > 0.0F &&
                 defaults.moon.phase_offset_days > 0.0F && defaults.moon.angular_radius_scale > 0.0F,
             "default atmosphere config should include moon controls");
+    require(defaults.clouds.enabled &&
+                defaults.clouds.weather_preset == AtmosphereCloudWeatherPreset::BrokenCumulus &&
+                defaults.clouds.layer.debug_view == CloudLayerDebugView::Final,
+            "default atmosphere config should include production clouds");
+
+    {
+        AtmosphereCloudConfig clouds;
+        apply_atmosphere_cloud_weather_preset(clouds, AtmosphereCloudWeatherPreset::StormCells);
+        require(clouds.weather_preset == AtmosphereCloudWeatherPreset::StormCells,
+                "atmosphere cloud weather preset should preserve selected preset");
+        require(clouds.layer.cloud_style == CloudLayerCloudStyle::StormCells,
+                "atmosphere cloud weather preset should select cloud style");
+        require_near(clouds.layer.coverage, 0.64F, 0.001F,
+                     "atmosphere cloud weather preset should apply coverage");
+        require_near(clouds.wind_speed_mps, 650.0F, 0.001F,
+                     "atmosphere cloud weather preset should apply wind");
+    }
+
+    {
+        cubey::RunConfig run_config{};
+        run_config.clouds.enabled = 0;
+        run_config.clouds.debug_view = "orbit-weather";
+        run_config.clouds.weather_preset = "storm";
+        run_config.clouds.quality = "quarter";
+        run_config.clouds.sampling_mode = "off";
+        run_config.clouds.distance_mode = "orbit-shell";
+        run_config.clouds.orbit_representation = "volume";
+        run_config.clouds.coverage = 0.25F;
+        run_config.clouds.wind_speed_mps = 42.0F;
+        run_config.clouds.temporal = 0;
+        run_config.clouds.local_volume = 0;
+        run_config.clouds.horizon_layer = 1;
+        const AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
+        require(!config.clouds.enabled, "atmosphere run config should disable clouds");
+        require(config.clouds.weather_preset == AtmosphereCloudWeatherPreset::StormCells,
+                "atmosphere run config should map cloud weather preset");
+        require(config.clouds.layer.debug_view == CloudLayerDebugView::OrbitCoverage,
+                "atmosphere run config should map cloud debug view");
+        require(config.clouds.layer.quality == CloudLayerQuality::Quarter,
+                "atmosphere run config should map cloud quality");
+        require(config.clouds.layer.sampling_mode == CloudLayerSamplingMode::Off,
+                "atmosphere run config should map cloud sampling");
+        require(config.clouds.layer.distance_mode == CloudLayerDistanceMode::OrbitShell,
+                "atmosphere run config should map cloud distance mode");
+        require(config.clouds.layer.orbit_representation ==
+                    CloudLayerOrbitRepresentation::VolumeRaymarch,
+                "atmosphere run config should map cloud orbit representation");
+        require_near(config.clouds.layer.coverage, 0.25F, 0.001F,
+                     "atmosphere run config explicit cloud coverage should override preset");
+        require_near(config.clouds.wind_speed_mps, 42.0F, 0.001F,
+                     "atmosphere run config explicit cloud wind should override preset");
+        require(!config.clouds.layer.temporal_enabled,
+                "atmosphere run config should map cloud temporal flag");
+        require(!config.clouds.layer.local_volume_enabled,
+                "atmosphere run config should map local volume flag");
+        require(config.clouds.layer.horizon_layer_enabled,
+                "atmosphere run config should map horizon layer flag");
+    }
 
     {
         require(lunar_surface_map_mip_count(kLunarSurfaceMapWidth, kLunarSurfaceMapHeight) == 11U,

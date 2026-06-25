@@ -9,7 +9,10 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <iterator>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <utility>
 
 namespace cubey::render {
@@ -370,6 +373,239 @@ CloudLayerQualityBudget cloud_layer_quality_budget(CloudLayerQuality quality) {
         return {.view_steps = 64, .light_steps = 6, .resolution_scale = 1.0F};
     }
     return {};
+}
+
+CloudLayerDebugView cloud_layer_debug_view_from_name(std::string_view value) {
+    if (value.empty() || value == "final") {
+        return CloudLayerDebugView::Final;
+    }
+    if (value == "raw-final") {
+        return CloudLayerDebugView::RawFinal;
+    }
+    if (value == "authored-weather" || value == "weather") {
+        return CloudLayerDebugView::AuthoredWeather;
+    }
+    if (value == "density") {
+        return CloudLayerDebugView::Density;
+    }
+    if (value == "transmittance") {
+        return CloudLayerDebugView::Transmittance;
+    }
+    if (value == "lighting") {
+        return CloudLayerDebugView::Lighting;
+    }
+    if (value == "ambient-light") {
+        return CloudLayerDebugView::AmbientLight;
+    }
+    if (value == "direct-light") {
+        return CloudLayerDebugView::DirectLight;
+    }
+    if (value == "phase-light") {
+        return CloudLayerDebugView::PhaseLight;
+    }
+    if (value == "shadow") {
+        return CloudLayerDebugView::Shadow;
+    }
+    if (value == "steps") {
+        return CloudLayerDebugView::Steps;
+    }
+    if (value == "background") {
+        return CloudLayerDebugView::Background;
+    }
+    if (value == "cloud-alpha") {
+        return CloudLayerDebugView::CloudAlpha;
+    }
+    if (value == "distance") {
+        return CloudLayerDebugView::Distance;
+    }
+    if (value == "metadata-distance") {
+        return CloudLayerDebugView::MetadataDistance;
+    }
+    if (value == "metadata-alpha") {
+        return CloudLayerDebugView::MetadataAlpha;
+    }
+    if (value == "metadata-confidence") {
+        return CloudLayerDebugView::MetadataConfidence;
+    }
+    if (value == "metadata-density") {
+        return CloudLayerDebugView::MetadataDensity;
+    }
+    if (value == "base-density") {
+        return CloudLayerDebugView::BaseDensity;
+    }
+    if (value == "detail-density") {
+        return CloudLayerDebugView::DetailDensity;
+    }
+    if (value == "cloud-type") {
+        return CloudLayerDebugView::CloudType;
+    }
+    if (value == "local-scatter") {
+        return CloudLayerDebugView::LocalScatter;
+    }
+    if (value == "local-clear") {
+        return CloudLayerDebugView::LocalClear;
+    }
+    if (value == "local-structure") {
+        return CloudLayerDebugView::LocalStructure;
+    }
+    if (value == "local-edge-detail") {
+        return CloudLayerDebugView::LocalEdgeDetail;
+    }
+    if (value == "weather-edge") {
+        return CloudLayerDebugView::WeatherEdge;
+    }
+    if (value == "coverage-bias" || value == "weather-bias" || value == "weather-mask") {
+        return CloudLayerDebugView::CoverageBias;
+    }
+    if (value == "visible-density") {
+        return CloudLayerDebugView::VisibleDensity;
+    }
+    if (value == "visible-cloud-type") {
+        return CloudLayerDebugView::VisibleCloudType;
+    }
+    if (value == "distance-regime") {
+        return CloudLayerDebugView::DistanceRegime;
+    }
+    if (value == "transition-weights") {
+        return CloudLayerDebugView::TransitionWeights;
+    }
+    if (value == "local-alpha") {
+        return CloudLayerDebugView::LocalAlpha;
+    }
+    if (value == "far-shell-alpha") {
+        return CloudLayerDebugView::FarShellAlpha;
+    }
+    if (value == "local-with-shell-alpha") {
+        return CloudLayerDebugView::LocalWithShellAlpha;
+    }
+    if (value == "orbit-alpha") {
+        return CloudLayerDebugView::OrbitAlpha;
+    }
+    if (value == "orbit-weather" || value == "orbit-coverage") {
+        return CloudLayerDebugView::OrbitCoverage;
+    }
+    if (value == "orbit-detail") {
+        return CloudLayerDebugView::OrbitDetail;
+    }
+    if (value == "orbit-hull") {
+        return CloudLayerDebugView::OrbitHull;
+    }
+    if (value == "orbit-envelope") {
+        return CloudLayerDebugView::OrbitEnvelope;
+    }
+    if (value == "orbit-shell-alpha" || value == "shell-alpha") {
+        return CloudLayerDebugView::OrbitShellAlpha;
+    }
+    if (value == "orbit-shell-height" || value == "shell-height") {
+        return CloudLayerDebugView::OrbitShellHeight;
+    }
+    if (value == "orbit-shell-normal" || value == "shell-normal") {
+        return CloudLayerDebugView::OrbitShellNormal;
+    }
+    if (value == "orbit-shell-shadow" || value == "shell-shadow") {
+        return CloudLayerDebugView::OrbitShellShadow;
+    }
+    throw std::runtime_error("unknown cloud debug view: " + std::string(value));
+}
+
+const char* cloud_layer_debug_view_name(CloudLayerDebugView view) {
+    switch (view) {
+    case CloudLayerDebugView::Final:
+        return "final";
+    case CloudLayerDebugView::RawFinal:
+        return "raw-final";
+    case CloudLayerDebugView::AuthoredWeather:
+        return "authored-weather";
+    case CloudLayerDebugView::Density:
+        return "density";
+    case CloudLayerDebugView::Transmittance:
+        return "transmittance";
+    case CloudLayerDebugView::Lighting:
+        return "lighting";
+    case CloudLayerDebugView::AmbientLight:
+        return "ambient-light";
+    case CloudLayerDebugView::DirectLight:
+        return "direct-light";
+    case CloudLayerDebugView::PhaseLight:
+        return "phase-light";
+    case CloudLayerDebugView::Shadow:
+        return "shadow";
+    case CloudLayerDebugView::Steps:
+        return "steps";
+    case CloudLayerDebugView::Background:
+        return "background";
+    case CloudLayerDebugView::CloudAlpha:
+        return "cloud-alpha";
+    case CloudLayerDebugView::Distance:
+        return "distance";
+    case CloudLayerDebugView::MetadataDistance:
+        return "metadata-distance";
+    case CloudLayerDebugView::MetadataAlpha:
+        return "metadata-alpha";
+    case CloudLayerDebugView::MetadataConfidence:
+        return "metadata-confidence";
+    case CloudLayerDebugView::MetadataDensity:
+        return "metadata-density";
+    case CloudLayerDebugView::BaseDensity:
+        return "base-density";
+    case CloudLayerDebugView::DetailDensity:
+        return "detail-density";
+    case CloudLayerDebugView::CloudType:
+        return "cloud-type";
+    case CloudLayerDebugView::LocalScatter:
+        return "local-scatter";
+    case CloudLayerDebugView::LocalClear:
+        return "local-clear";
+    case CloudLayerDebugView::LocalStructure:
+        return "local-structure";
+    case CloudLayerDebugView::LocalEdgeDetail:
+        return "local-edge-detail";
+    case CloudLayerDebugView::WeatherEdge:
+        return "weather-edge";
+    case CloudLayerDebugView::CoverageBias:
+        return "coverage-bias";
+    case CloudLayerDebugView::VisibleDensity:
+        return "visible-density";
+    case CloudLayerDebugView::VisibleCloudType:
+        return "visible-cloud-type";
+    case CloudLayerDebugView::DistanceRegime:
+        return "distance-regime";
+    case CloudLayerDebugView::TransitionWeights:
+        return "transition-weights";
+    case CloudLayerDebugView::LocalAlpha:
+        return "local-alpha";
+    case CloudLayerDebugView::FarShellAlpha:
+        return "far-shell-alpha";
+    case CloudLayerDebugView::LocalWithShellAlpha:
+        return "local-with-shell-alpha";
+    case CloudLayerDebugView::OrbitAlpha:
+        return "orbit-alpha";
+    case CloudLayerDebugView::OrbitCoverage:
+        return "orbit-coverage";
+    case CloudLayerDebugView::OrbitDetail:
+        return "orbit-detail";
+    case CloudLayerDebugView::OrbitHull:
+        return "orbit-hull";
+    case CloudLayerDebugView::OrbitEnvelope:
+        return "orbit-envelope";
+    case CloudLayerDebugView::OrbitShellAlpha:
+        return "orbit-shell-alpha";
+    case CloudLayerDebugView::OrbitShellHeight:
+        return "orbit-shell-height";
+    case CloudLayerDebugView::OrbitShellNormal:
+        return "orbit-shell-normal";
+    case CloudLayerDebugView::OrbitShellShadow:
+        return "orbit-shell-shadow";
+    }
+    return "final";
+}
+
+CloudLayerDebugView next_cloud_layer_debug_view(CloudLayerDebugView view) {
+    const auto it = std::find(kCloudLayerDebugViews.begin(), kCloudLayerDebugViews.end(), view);
+    if (it == kCloudLayerDebugViews.end() || std::next(it) == kCloudLayerDebugViews.end()) {
+        return kCloudLayerDebugViews.front();
+    }
+    return *std::next(it);
 }
 
 VkExtent2D cloud_layer_product_extent(VkExtent2D target_extent, CloudLayerQuality quality) {
