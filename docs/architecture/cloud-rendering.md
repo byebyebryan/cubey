@@ -2,14 +2,15 @@
 
 This document promotes the lessons from `projects/clouds_legacy`,
 `projects/cloud_ref`, and `projects/cloud_ref_2` into the direction for the
-production `projects/cloud` renderer. The reference projects should remain
-available as guardrails, but new cloud feature work should not keep tuning
-throwaway ports.
+production cloud layer hosted by `projects/atmosphere`. The reference projects
+should remain available as guardrails, but new cloud feature work should not
+keep tuning throwaway ports or a separate standalone production app.
 
 ## Decision
 
-Start a new production cloud project instead of continuing `clouds_legacy` or
-pulling `cloud_ref_2` toward visual quality.
+Use the shared `cubey::render::CloudLayerRuntime` through `projects/atmosphere`
+instead of continuing `clouds_legacy`, reviving a standalone `projects/cloud`,
+or pulling `cloud_ref_2` toward visual quality.
 
 The production renderer should combine:
 
@@ -121,8 +122,9 @@ amplifies bad cloud shape.
 
 ## Production Shape
 
-The production cloud renderer should be a standalone `projects/cloud` project
-first. It should not start inside ocean or planet.
+The production cloud renderer now lives as the shared cloud layer consumed by
+`projects/atmosphere`. It should continue to be tested and tuned there before
+ocean, planet, or PBR viewers consume cloud products directly.
 
 Initial scope:
 
@@ -146,13 +148,13 @@ Initial scope:
   opacity, mean distance, and confidence while leaving `raw-final` unfiltered;
 - Bayer ray-start jitter should remain the default static anti-banding path
   until temporal reprojection or blue-noise sampling is available;
-- active cloud now has a compute temporal resolve for the final view: the ray
+- the shared cloud layer has a compute temporal resolve for the final view: the ray
   march writes current product/metadata, a ping-pong history pass reprojects by
   mean cloud distance, clamps against the current neighborhood, and resets on
   incompatible cloud parameter changes;
-- the default standalone background is atmosphere-only. The earlier water proxy
-  remains available as `clouds.background_mode = water-context` for ocean
-  inspection captures, but it should not be part of the baseline cloud read;
+- the default composite background is atmosphere-only. The earlier water proxy
+  remains as a historical standalone-capture lesson, but it should not be part
+  of the baseline cloud read;
 - distance-regime controls are now explicit: `clouds.distance_mode` can force
   local or orbit-shell behavior, while `auto` blends high and orbit views toward
   a broad low-detail shell before the full cached sky product exists;
@@ -190,15 +192,16 @@ Initial scope:
 - shared `RunConfig` descriptors plus existing ImGui helper controls from the
   start.
 
-The first promotion pass has landed the shared `cubey::render::CloudLayer*`
-contract, common shader assets, shared generated-resource helpers, atmosphere
-backdrop composition smoke, and an ocean cloud-shadow diagnostic. Treat this as
-the boundary layer, not the finished reusable cloud runtime.
+The absorption pass keeps the shared `cubey::render::CloudLayer*` contract,
+common shader assets, shared generated-resource helpers, atmosphere backdrop
+composition, cloud config/UI controls, and cloud diagnostics in the atmosphere
+project. Treat this as the production pressure surface, not a finished
+multi-consumer cloud product.
 
-Even while standalone, the project must keep planet handoff constraints visible:
-use meters, carry planet radius/cloud-shell metadata explicitly, keep camera GPU
-state camera-relative, and define weather coordinates so they can later map onto
-a planet frame, local tangent frame, or stable global weather address.
+The layer must keep planet handoff constraints visible: use meters, carry planet
+radius/cloud-shell metadata explicitly, keep camera GPU state camera-relative,
+and define weather coordinates so they can later map onto a planet frame, local
+tangent frame, or stable global weather address.
 
 Deferred until the shape is credible:
 
@@ -238,7 +241,7 @@ The transition between near volume and far cached/cloud-shell output should be
 an explicit feature with debug views. It should not be hidden in final color
 grading.
 
-The current production cloud project implements the `auto` transition as three
+The current production cloud layer implements the `auto` transition as three
 separate contributors:
 
 - `local`: the normal surface volume march, responsible for foreground thickness
@@ -277,8 +280,8 @@ local-branch availability, final bridge contribution, and full orbit takeover.
 `local-alpha`, `far-shell-alpha`, `local-with-shell-alpha`, and `orbit-alpha`
 isolate the visible alpha at each stage. The `far-shell` debug name is a
 historical compatibility label for the high-view far bridge.
-`projects/cloud/capture_review.sh` includes these views for surface,
-high-oblique, and orbit review.
+`projects/atmosphere/capture_cloud_review.sh` includes these views for
+atmosphere-hosted surface, high-altitude, and orbit-shell review.
 
 ## Renderer Contract
 
@@ -300,26 +303,24 @@ should sample cloud outputs or composed sky/environment products.
 
 V1 should use `RenderGraphBuilder` to make the cloud product and composite
 passes explicit. Descriptor sets, textures, material instances, and synchronization
-policy remain project-owned until at least two consumers need a shared cloud
-renderer contract. Until promotion, downstream branches should use the
-standalone app's quarter-resolution consumer smoke recipe to check visual and
-contract assumptions without adopting cloud internals.
+policy remain owned by the atmosphere integration until at least two consumers
+need direct cloud products. Downstream branches should use the atmosphere cloud
+capture helper and shared `clouds.*` config options to check visual and contract
+assumptions without adopting cloud internals.
 
-## First Milestone
+## Current Milestone
 
-The first production milestone should be small and hard to fake:
+The standalone production pressure project has served its purpose and has been
+absorbed into atmosphere. The next milestone should be small and hard to fake:
 
-1. Create `projects/cloud` as a new standalone project.
-2. Port or reuse the `cloud_ref` texture-backed density path, but wire it to
-   shared sky/celestial/atmosphere inputs and shared config descriptors from day
-   one.
-3. Render a cloud radiance/transmittance product and composite it in a separate
-   pass.
-4. Add raw diagnostics and a repeatable capture script before tuning.
-5. Validate surface-up and high-oblique captures against `cloud_ref`, not
-   `cloud_ref_2`.
-6. Keep sampling and resolve controls isolated so capture bundles can compare
-   default, Bayer, and no-jitter output before adding temporal accumulation.
+1. Keep atmosphere final/no-cloud/debug captures visually comparable through
+   `projects/atmosphere/capture_cloud_review.sh`.
+2. Improve high-altitude and horizon continuity without regressing the credible
+   surface cloud look.
+3. Keep sampling and resolve controls isolated so capture bundles can compare
+   default, Bayer, and no-jitter output before re-enabling temporal accumulation.
+4. Expose cloud outputs only when a second consumer has a concrete contract for
+   radiance/transmittance, metadata, shadow, or reflection data.
 
 Acceptance for this milestone:
 
@@ -327,9 +328,9 @@ Acceptance for this milestone:
 - final view still reads without relying on temporal smear or final blur;
 - surface/high captures do not show the legacy horizontal streaking as the
   dominant artifact;
-- the project exposes enough controls to isolate density, detail erosion,
+- atmosphere exposes enough controls to isolate density, detail erosion,
   weather map, sampling, lighting, composition, and metadata output;
 - the implementation does not duplicate project-local atmosphere horizon logic.
 
-Only after that should the production project add the cached hemisphere path
-from `cloud_ref_2`.
+Only after that should the production layer add the cached hemisphere path from
+`cloud_ref_2` or promote direct cloud-product consumption into ocean/planet.

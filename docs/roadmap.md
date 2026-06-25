@@ -537,16 +537,16 @@ Project checkpoints:
   simulation compute followed by fullscreen rendering; solver-internal barriers
   remain project-owned, while the compute-to-render boundary uses graph-owned
   buffer barriers and the backbuffer acquire/release path.
-- `projects/cloud` is the active standalone production cloud/weather project.
-  It starts from `cloud_ref`'s texture-backed coherent density path with
-  generated 3D base/detail noise, a generated 2D weather map, a spherical-shell
-  direct march, cloud product/composite passes, and diagnostics for raw density,
-  transmittance, lighting, distance, and steps. `projects/clouds_legacy` remains
-  the frozen planet-aware pressure project for surface/high/orbit integration
+- `projects/atmosphere` now hosts the active production cloud/weather layer.
+  The shared `CloudLayerRuntime` keeps the texture-backed coherent density path,
+  generated 3D base/detail noise, generated 2D weather map, spherical-shell
+  direct march, cloud product/composite passes, nested controls, and diagnostics
+  for raw density, transmittance, lighting, distance, and steps. `clouds_legacy`
+  remains the frozen planet-aware pressure project for surface/high/orbit
   lessons, while `projects/cloud_ref_2` remains the cached-sky architecture
   reference. Cloud outputs should not be integrated into ocean or planet until
-  the active project shows credible raw cloud masses without relying on cache,
-  temporal reconstruction, or final blur.
+  the atmosphere-hosted layer shows stable high-altitude/horizon behavior without
+  relying on cache, temporal reconstruction, or final blur.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer

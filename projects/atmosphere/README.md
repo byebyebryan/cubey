@@ -38,9 +38,9 @@ Final view also uses the shared cloud-layer runtime. `CloudLayerRuntime` owns
 generated cloud resources, march/temporal/composite pipelines, render-graph
 products, descriptors, and temporal history; atmosphere consumes it in
 external-background mode so clouds are composited over the clear-sky background.
-The Clouds panel exposes the shared quality, sampling, layer, weather, and
-lighting controls, and existing `clouds.*` config/CLI overrides apply here too.
-Cloud debug-view surfacing, cloud shadows, and cloud-driven reflection or
+The Clouds panel exposes the shared quality, sampling, layer, weather, shape,
+lighting, transition, and debug controls, and existing `clouds.*` config/CLI
+overrides apply here too. Cloud shadows and cloud-driven reflection or
 environment-lighting outputs remain deferred.
 
 Useful runs:
@@ -54,6 +54,7 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
+projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
 ```
 
 Controls:
@@ -66,7 +67,8 @@ Controls:
 - The Time panel switches between manual sun direction and local solar time.
 - The Reference panel controls the ground grid, local red/cyan axes, and origin
   marker used for orientation.
-- The Clouds panel controls the shared cloud layer used in final view.
+- The Clouds panel controls the shared cloud layer used in final view, including
+  cloud diagnostic views through `--cloud-debug-view` / Debug view.
 - The Night sky panel switches diagnostic layer, human/camera response, Milky
   Way intensity/contrast, light pollution, and procedural variation.
 - Escape: close.
