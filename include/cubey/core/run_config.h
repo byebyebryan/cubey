@@ -203,6 +203,8 @@ struct RunConfig {
         float sun_elevation_degrees = kRunConfigUnsetFloat;
         float sun_azimuth_degrees = kRunConfigUnsetFloat;
         float camera_altitude_km = kRunConfigUnsetFloat;
+        float camera_yaw_offset_degrees = kRunConfigUnsetFloat;
+        float camera_pitch_offset_degrees = kRunConfigUnsetFloat;
         float rayleigh_scale = kRunConfigUnsetFloat;
         float mie_scale = kRunConfigUnsetFloat;
         float ozone_scale = kRunConfigUnsetFloat;

@@ -125,7 +125,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 231> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 233> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -457,6 +457,16 @@ constexpr std::array<ConfigOptionDescriptor, 231> kRunConfigOptions{
     option(RunConfigOptionId::AtmosphereCameraAltitude, "atmosphere.camera_altitude_km",
            "--camera-altitude-km", "Camera Altitude", "Atmosphere",
            "Observer altitude above sea level.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::AtmosphereCameraYawOffset,
+           "atmosphere.camera_yaw_offset_degrees", "--camera-yaw-offset-deg",
+           "Camera Yaw Offset", "Atmosphere",
+           "Additional yaw offset from the default atmosphere review direction.",
+           ConfigOptionType::Float, bounded_range(-360.0, 360.0)),
+    option(RunConfigOptionId::AtmosphereCameraPitchOffset,
+           "atmosphere.camera_pitch_offset_degrees", "--camera-pitch-offset-deg",
+           "Camera Pitch Offset", "Atmosphere",
+           "Additional pitch offset from the default atmosphere review direction.",
+           ConfigOptionType::Float, bounded_range(-89.0, 89.0)),
     option(RunConfigOptionId::AtmosphereRayleighScale, "atmosphere.rayleigh_scale",
            "--rayleigh-scale", "Rayleigh Scale", "Atmosphere",
            "Rayleigh molecular scattering density multiplier.", ConfigOptionType::Float,
@@ -1297,6 +1307,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.atmosphere.sun_azimuth_degrees);
     case RunConfigOptionId::AtmosphereCameraAltitude:
         return optional_float(config.atmosphere.camera_altitude_km);
+    case RunConfigOptionId::AtmosphereCameraYawOffset:
+        return optional_float(config.atmosphere.camera_yaw_offset_degrees);
+    case RunConfigOptionId::AtmosphereCameraPitchOffset:
+        return optional_float(config.atmosphere.camera_pitch_offset_degrees);
     case RunConfigOptionId::AtmosphereRayleighScale:
         return optional_float(config.atmosphere.rayleigh_scale);
     case RunConfigOptionId::AtmosphereMieScale:
@@ -1794,6 +1808,8 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::AtmosphereOptions& 
     adapter.writeField<float>("sun_elevation_degrees", options.sun_elevation_degrees);
     adapter.writeField<float>("sun_azimuth_degrees", options.sun_azimuth_degrees);
     adapter.writeField<float>("camera_altitude_km", options.camera_altitude_km);
+    adapter.writeField<float>("camera_yaw_offset_degrees", options.camera_yaw_offset_degrees);
+    adapter.writeField<float>("camera_pitch_offset_degrees", options.camera_pitch_offset_degrees);
     adapter.writeField<float>("rayleigh_scale", options.rayleigh_scale);
     adapter.writeField<float>("mie_scale", options.mie_scale);
     adapter.writeField<float>("ozone_scale", options.ozone_scale);
@@ -1829,6 +1845,8 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::AtmosphereOptions& opti
     adapter.readField<float>("sun_elevation_degrees", options.sun_elevation_degrees);
     adapter.readField<float>("sun_azimuth_degrees", options.sun_azimuth_degrees);
     adapter.readField<float>("camera_altitude_km", options.camera_altitude_km);
+    adapter.readField<float>("camera_yaw_offset_degrees", options.camera_yaw_offset_degrees);
+    adapter.readField<float>("camera_pitch_offset_degrees", options.camera_pitch_offset_degrees);
     adapter.readField<float>("rayleigh_scale", options.rayleigh_scale);
     adapter.readField<float>("mie_scale", options.mie_scale);
     adapter.readField<float>("ozone_scale", options.ozone_scale);
@@ -2441,6 +2459,14 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::AtmosphereCameraAltitude:
         config.atmosphere.camera_altitude_km = parse_config_float(value, option);
         validate_range(config.atmosphere.camera_altitude_km, option);
+        break;
+    case RunConfigOptionId::AtmosphereCameraYawOffset:
+        config.atmosphere.camera_yaw_offset_degrees = parse_config_float(value, option);
+        validate_range(config.atmosphere.camera_yaw_offset_degrees, option);
+        break;
+    case RunConfigOptionId::AtmosphereCameraPitchOffset:
+        config.atmosphere.camera_pitch_offset_degrees = parse_config_float(value, option);
+        validate_range(config.atmosphere.camera_pitch_offset_degrees, option);
         break;
     case RunConfigOptionId::AtmosphereRayleighScale:
         config.atmosphere.rayleigh_scale = parse_config_float(value, option);

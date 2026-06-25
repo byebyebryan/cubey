@@ -143,6 +143,12 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
         const cubey::host::ScopedImGuiId section_id("Medium");
         cubey::host::imgui_slider_float("Camera altitude", &ui.config.camera_altitude_km, 0.0F,
                                         80.0F, "%.2f km", "Observer altitude above sea level.");
+        cubey::host::imgui_slider_float("Camera yaw", &ui.config.camera_yaw_offset_degrees,
+                                        -180.0F, 180.0F, "%.1f deg",
+                                        "View yaw offset from the default review direction.");
+        cubey::host::imgui_slider_float("Camera pitch", &ui.config.camera_pitch_offset_degrees,
+                                        -60.0F, 60.0F, "%.1f deg",
+                                        "View pitch offset from the default review direction.");
         cubey::host::imgui_slider_float("Rayleigh density", &ui.config.rayleigh_density_scale, 0.0F,
                                         2.0F, "%.2f", "Multiplier for molecular sky scattering.");
         cubey::host::imgui_slider_float("Mie density", &ui.config.mie_density_scale, 0.0F, 5.0F,

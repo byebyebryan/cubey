@@ -330,6 +330,8 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "atmosphere.rayleigh_scale",
         "atmosphere.mie_scale",
         "atmosphere.ozone_scale",
+        "atmosphere.camera_yaw_offset_degrees",
+        "atmosphere.camera_pitch_offset_degrees",
         "atmosphere.time_speed_hours_per_second",
         "atmosphere.auto_exposure",
         "atmosphere.moon",
@@ -494,6 +496,8 @@ void test_run_config_loads_json_config_file() {
   "atmosphere": {
     "time_of_day_mode": "solar",
     "time_hours": 18.5,
+    "camera_yaw_offset_degrees": 12.0,
+    "camera_pitch_offset_degrees": -18.0,
     "moon": false
   },
   "clouds": {
@@ -564,7 +568,10 @@ void test_run_config_loads_json_config_file() {
                 config.water3d.p2g_mode == "active-faces" && config.water3d.whitewater == 1,
             "config file should set water 3D controls");
     require(config.atmosphere.time_of_day_mode == "solar" &&
-                config.atmosphere.time_hours == 18.5F && config.atmosphere.moon == 0,
+                config.atmosphere.time_hours == 18.5F &&
+                config.atmosphere.camera_yaw_offset_degrees == 12.0F &&
+                config.atmosphere.camera_pitch_offset_degrees == -18.0F &&
+                config.atmosphere.moon == 0,
             "config file should set atmosphere controls");
     require(config.clouds.enabled == 0 && config.clouds.debug_view == "orbit-weather" &&
                 config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
@@ -851,6 +858,10 @@ void test_run_config_parses_atmosphere_options() {
     std::string azimuth_value = "-28.0";
     std::string altitude_flag = "--camera-altitude-km";
     std::string altitude_value = "2.25";
+    std::string camera_yaw_flag = "--camera-yaw-offset-deg";
+    std::string camera_yaw_value = "18";
+    std::string camera_pitch_flag = "--camera-pitch-offset-deg";
+    std::string camera_pitch_value = "-22";
     std::string rayleigh_flag = "--rayleigh-scale";
     std::string rayleigh_value = "1.15";
     std::string mie_flag = "--mie-scale";
@@ -890,7 +901,7 @@ void test_run_config_parses_atmosphere_options() {
     std::string moon_size_scale_flag = "--moon-size-scale";
     std::string moon_size_scale_value = "1.8";
     std::string no_moon_flag = "--no-moon";
-    std::array<char*, 48> argv{program.data(),
+    std::array<char*, 52> argv{program.data(),
                                preset_flag.data(),
                                preset_value.data(),
                                elevation_flag.data(),
@@ -899,6 +910,10 @@ void test_run_config_parses_atmosphere_options() {
                                azimuth_value.data(),
                                altitude_flag.data(),
                                altitude_value.data(),
+                               camera_yaw_flag.data(),
+                               camera_yaw_value.data(),
+                               camera_pitch_flag.data(),
+                               camera_pitch_value.data(),
                                rayleigh_flag.data(),
                                rayleigh_value.data(),
                                mie_flag.data(),
@@ -947,6 +962,10 @@ void test_run_config_parses_atmosphere_options() {
     require(config.atmosphere.sun_azimuth_degrees == -28.0F, "run config should parse sun azimuth");
     require(config.atmosphere.camera_altitude_km == 2.25F,
             "run config should parse camera altitude");
+    require(config.atmosphere.camera_yaw_offset_degrees == 18.0F,
+            "run config should parse camera yaw offset");
+    require(config.atmosphere.camera_pitch_offset_degrees == -22.0F,
+            "run config should parse camera pitch offset");
     require(config.atmosphere.rayleigh_scale == 1.15F,
             "run config should parse Rayleigh scale");
     require(config.atmosphere.mie_scale == 1.75F, "run config should parse Mie scale");

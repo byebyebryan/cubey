@@ -677,12 +677,8 @@ class AtmosphereApp {
         const float aspect = extent.height == 0U ? 1.0F
                                                  : static_cast<float>(extent.width) /
                                                        static_cast<float>(extent.height);
-        const cubey::math::Quat rotation =
-            cubey::math::angle_axis_quat(kBaseYaw + view_controller_.yaw(),
-                                         {0.0F, 1.0F, 0.0F}) *
-            cubey::math::angle_axis_quat(kBasePitch + view_controller_.pitch(),
-                                         {1.0F, 0.0F, 0.0F});
-        return cubey::render::view_ray_basis_3d(rotation, aspect, kDefaultFovyRadians);
+        return cubey::render::view_ray_basis_3d(atmosphere_view_rotation(), aspect,
+                                                kDefaultFovyRadians);
     }
 
     [[nodiscard]] cubey::render::CloudLayerFrameUniforms
@@ -746,12 +742,19 @@ class AtmosphereApp {
 
     [[nodiscard]] cubey::Transform3D atmosphere_camera_transform() const {
         return {
-            .rotation =
-                cubey::math::angle_axis_quat(kBaseYaw + view_controller_.yaw(),
-                                             {0.0F, 1.0F, 0.0F}) *
-                cubey::math::angle_axis_quat(kBasePitch + view_controller_.pitch(),
-                                             {1.0F, 0.0F, 0.0F}),
+            .rotation = atmosphere_view_rotation(),
         };
+    }
+
+    [[nodiscard]] cubey::math::Quat atmosphere_view_rotation() const {
+        const float yaw_offset = atmosphere_degrees_to_radians(
+            atmosphere_config_.camera_yaw_offset_degrees);
+        const float pitch_offset = atmosphere_degrees_to_radians(
+            atmosphere_config_.camera_pitch_offset_degrees);
+        return cubey::math::angle_axis_quat(kBaseYaw + yaw_offset + view_controller_.yaw(),
+                                            {0.0F, 1.0F, 0.0F}) *
+               cubey::math::angle_axis_quat(kBasePitch + pitch_offset + view_controller_.pitch(),
+                                            {1.0F, 0.0F, 0.0F});
     }
 
     [[nodiscard]] bool moon_body_render_enabled() const {

@@ -122,6 +122,8 @@ enum class RunConfigOptionId {
     AtmosphereSunElevation,
     AtmosphereSunAzimuth,
     AtmosphereCameraAltitude,
+    AtmosphereCameraYawOffset,
+    AtmosphereCameraPitchOffset,
     AtmosphereRayleighScale,
     AtmosphereMieScale,
     AtmosphereOzoneScale,

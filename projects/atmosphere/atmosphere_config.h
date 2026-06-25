@@ -203,6 +203,8 @@ struct AtmosphereConfig {
     float sun_elevation_degrees = 60.0F;
     float sun_azimuth_degrees = 0.0F;
     float camera_altitude_km = 0.15F;
+    float camera_yaw_offset_degrees = 0.0F;
+    float camera_pitch_offset_degrees = 0.0F;
     float exposure = 0.0F;
     bool render_celestial_content = true;
     bool render_sun_disk = true;
@@ -835,6 +837,8 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     require_finite(config.sun_elevation_degrees, "atmosphere sun elevation");
     require_finite(config.sun_azimuth_degrees, "atmosphere sun azimuth");
     require_finite(config.camera_altitude_km, "atmosphere camera altitude");
+    require_finite(config.camera_yaw_offset_degrees, "atmosphere camera yaw offset");
+    require_finite(config.camera_pitch_offset_degrees, "atmosphere camera pitch offset");
     require_finite(config.exposure, "atmosphere exposure");
     require_finite(config.reference_grid_km, "atmosphere reference grid scale");
     require_finite(config.reference_intensity, "atmosphere reference intensity");
@@ -884,6 +888,12 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     }
     if (config.sun_angular_radius <= 0.0F || config.camera_altitude_km < 0.0F) {
         throw std::runtime_error("atmosphere sun radius must be positive and altitude nonnegative");
+    }
+    if (config.camera_yaw_offset_degrees < -360.0F ||
+        config.camera_yaw_offset_degrees > 360.0F ||
+        config.camera_pitch_offset_degrees < -89.0F ||
+        config.camera_pitch_offset_degrees > 89.0F) {
+        throw std::runtime_error("atmosphere camera view offsets are out of range");
     }
     if (config.reference_grid_km <= 0.0F || config.reference_intensity < 0.0F) {
         throw std::runtime_error("atmosphere reference grid scale must be positive");
@@ -1031,6 +1041,12 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
     }
     if (run_config_float_is_set(run.atmosphere.camera_altitude_km)) {
         config.camera_altitude_km = run.atmosphere.camera_altitude_km;
+    }
+    if (run_config_float_is_set(run.atmosphere.camera_yaw_offset_degrees)) {
+        config.camera_yaw_offset_degrees = run.atmosphere.camera_yaw_offset_degrees;
+    }
+    if (run_config_float_is_set(run.atmosphere.camera_pitch_offset_degrees)) {
+        config.camera_pitch_offset_degrees = run.atmosphere.camera_pitch_offset_degrees;
     }
     if (run_config_float_is_set(run.atmosphere.mie_scale)) {
         config.mie_density_scale = run.atmosphere.mie_scale;

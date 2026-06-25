@@ -869,6 +869,12 @@ int main() {
                        "atmosphere config should reject invalid moon controls");
     }
     {
+        AtmosphereConfig invalid = defaults;
+        invalid.camera_pitch_offset_degrees = 95.0F;
+        require_throws([&invalid] { validate_atmosphere_config(invalid); },
+                       "atmosphere config should reject invalid camera view offsets");
+    }
+    {
         cubey::RunConfig run_config;
         run_config.atmosphere.preset = "sunset";
         run_config.debug_view = "moon";
@@ -877,6 +883,8 @@ int main() {
         run_config.atmosphere.sun_elevation_degrees = 6.0F;
         run_config.atmosphere.sun_azimuth_degrees = 33.0F;
         run_config.atmosphere.camera_altitude_km = 2.0F;
+        run_config.atmosphere.camera_yaw_offset_degrees = 18.0F;
+        run_config.atmosphere.camera_pitch_offset_degrees = -24.0F;
         run_config.atmosphere.mie_scale = 2.25F;
         run_config.atmosphere.twilight_strength = 1.50F;
         run_config.atmosphere.twilight_horizon_warmth = 0.80F;
@@ -903,6 +911,9 @@ int main() {
         require(config.sun_elevation_degrees == 6.0F && config.sun_azimuth_degrees == 33.0F &&
                     config.camera_altitude_km == 2.0F && config.mie_density_scale == 2.25F,
                 "run config atmosphere overrides should win over preset defaults");
+        require(config.camera_yaw_offset_degrees == 18.0F &&
+                    config.camera_pitch_offset_degrees == -24.0F,
+                "run config atmosphere camera view offsets should map");
         require(config.night_sky.twilight_strength == 1.50F &&
                     config.night_sky.twilight_horizon_warmth == 0.80F &&
                     config.night_sky.star_intensity == 1.70F &&
