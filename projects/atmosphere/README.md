@@ -57,6 +57,9 @@ Useful runs:
 projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
 ```
 
+The cloud review script writes a stable set of labeled captures plus
+`manifest.tsv`, `index.md`, and `contact-sheet.png` for quick visual comparison.
+
 Controls:
 
 - Left-drag: rotate view direction.
