@@ -2,10 +2,10 @@
 
 Date: 2026-06-25
 
-This note captures the next river-quality pivot before the implementation
-changes. Revision 5 proved that the `stream_order` diagnostic has a more useful
-river-network source shape than isolated local tributary picks, but it still
-uses stream order only as a supplemental path source.
+This note captures the revision 6 river-quality pivot. Revision 5 proved that
+the `stream_order` diagnostic had a more useful river-network source shape than
+isolated local tributary picks, but it still used stream order only as a
+supplemental path source.
 
 ## Decision
 
@@ -13,8 +13,9 @@ Promote `stream_order` and `flow_accumulation` into the river corridor driver.
 The active river product should be selected from connected corridors in the
 padded hidden routing domain, then traced and rasterized as smoothed channel
 paths. The default output should read as one basin-scale river system with a
-clear trunk and limited tributaries. The stress recipe may expose more branches,
-but should still avoid independent scattered snippets.
+clear trunk and limited tributaries. The stress recipe may render several
+selected corridors so artifacts are easier to see; it is diagnostic, not the
+desired default composition.
 
 ## Implementation Boundary
 
@@ -32,15 +33,16 @@ The extractor should build candidate corridor cells from the existing bucketed
 `stream_order` field:
 
 - default trunk support: `stream_order >= 4`;
-- default tributary support: `stream_order >= 3`;
+- default tributary support: `stream_order >= 2`;
 - stress trunk support: `stream_order >= 4`;
 - stress tributary support: `stream_order >= 2`.
 
-Candidate cells are grouped by downstream reachability over the hidden routing
-domain. The default recipe keeps the highest-scoring basin-like corridor; the
-stress recipe can keep several corridors for diagnostics. Lower-order tributary
-branches are accepted only when their downstream chain reaches the selected
-trunk or outlet, not as independent local features.
+Candidate cells are grouped as connected support in the hidden-domain
+`stream_order` field. This replaced terminal-based grouping because unresolved
+local sinks fragmented otherwise coherent source shapes. The default recipe
+keeps one selected corridor; the stress recipe can render several corridors for
+diagnostics. Lower-order tributary branches are accepted only when they connect
+back to the selected trunk/corridor, not as independent local features.
 
 ## Rendering Model
 
@@ -62,3 +64,5 @@ taper into the trunk instead of reading as uniform tubes.
 - Hard horizontal, vertical, and 45-degree centerline runs should not become
   worse than revision 5.
 - The stress recipe should increase coverage without flooding the review patch.
+- Remaining limitation: the default review composition can still be sparse or
+  close to a crop edge, so the stress recipe remains the better artifact probe.

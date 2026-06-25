@@ -17,7 +17,7 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `5`. It emits source fields, height/slope
+The current generator revision is `6`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass is deliberately process-informed rather than a full hydraulic
@@ -68,19 +68,17 @@ The review set includes:
 
 The optional `temperate-mountain-river-stress` recipe keeps the same source
 terrain and routing diagnostics but expands active channel extraction for review
-stress testing. It paints additional separated trunk candidates and lowers
-tributary thresholds so `outputs/terrain/stress-river-network` exposes more of
-the patch to river-network artifacts. Treat it as a diagnostic recipe, not the
+stress testing. It renders several selected corridor trunks and lower-threshold
+tributary support so `outputs/terrain/stress-river-network` exposes more of the
+patch to river-network artifacts. Treat it as a diagnostic recipe, not the
 default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
-plus routed flow accumulation over a padded hidden routing domain. Revision `5`
+plus routed flow accumulation over a padded hidden routing domain. Revision `6`
 uses continuous D-Infinity-style flow angles and fractional accumulation for the
-diagnostic catchment field, then keeps the revision 3 conservative trunk and
-tributary extractor as the connected baseline. It now adds a small number of
-stream-order-seeded paths from the coherent `stream_order` field, but only when
-those paths reconnect to the already active river network. The next planned
-river batch promotes `stream_order` and `flow_accumulation` into connected
-corridor selection so the active product is traced from a coherent river source
-instead of stitching together local feature picks. See
-[Terrain river stream-order corridor plan](../../docs/notes/terrain-river-stream-order-corridor-plan.md).
+diagnostic catchment field, then promotes `stream_order` into connected support
+selection for the active product. The default recipe selects one connected
+support corridor, traces a trunk from that source, adds limited connected
+tributaries, and rasterizes smoothed channel curves. The stress recipe renders
+more selected corridors to expose artifacts that the default composition may
+hide. See [Terrain river stream-order corridor plan](../../docs/notes/terrain-river-stream-order-corridor-plan.md).
