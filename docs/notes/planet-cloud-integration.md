@@ -52,3 +52,26 @@ The after capture has more usable dawn/orbit cloud fill and keeps high
 transition cloud mass readable. Remaining visual work is still horizon polish:
 high-oblique clouds and the sky/terrain boundary can read as separate layers
 even when depth overdraw is masked.
+
+## High-Oblique Review
+
+Diagnostic capture:
+
+```sh
+WIDTH=1280 HEIGHT=720 FRAMES=2 QUALITY=quarter \
+  projects/planet/capture_cloud_review.sh outputs/planet-cloud-review-oblique-grazing
+```
+
+This pass expanded the review pack with low-surface horizon/overhead views,
+60 km / 140 km / 260 km transition samples, transition-weight diagnostics, and
+a `scene-depth-occlusion` debug view. The shader now boosts the orbit-shell
+handoff for elevated, grazing rays while leaving downward and low-altitude rays
+on the local volume path longer.
+
+The captures show the 140 km limb now entering the orbit-shell regime instead
+of staying mostly local-volume. That improves the handoff shape, but the visible
+chunkiness at quarter and half quality points to remaining orbit-shell
+filtering/detail work rather than just a distance-threshold problem. The next
+cloud/planet pass should focus on shell detail antialiasing, horizon-limb
+filtering, and higher-signal surface diagnostics before treating the transition
+as visually done.

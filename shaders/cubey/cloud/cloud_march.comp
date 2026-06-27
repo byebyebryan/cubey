@@ -940,7 +940,35 @@ float cloud_distance_mode_value() {
     return params.distance_options.x;
 }
 
-float cloud_full_orbit_blend() {
+float cloud_high_oblique_orbit_boost(vec3 origin, vec3 direction, float start_t,
+                                     float end_t) {
+    float transition_start = params.distance_options.y;
+    float altitude = cloud_camera_altitude();
+    float elevated_gate =
+        smoothstep(9000.0, max(transition_start * 0.72, 9001.0), altitude);
+    if (elevated_gate <= 0.0) {
+        return 0.0;
+    }
+
+    vec3 local_origin = origin - cloud_sphere_center();
+    float closest_t = clamp(-dot(local_origin, direction), max(start_t, 0.0), end_t);
+    vec3 closest = local_origin + direction * closest_t;
+    float closest_radius = length(closest);
+    if (closest_radius <= 0.001) {
+        return 0.0;
+    }
+
+    vec3 closest_up = closest / closest_radius;
+    float view_alignment = abs(dot(direction, closest_up));
+    float grazing_gate = 1.0 - smoothstep(0.035, 0.310, view_alignment);
+    float distance_gate =
+        smoothstep(params.orbit_options.x * 0.58,
+                   max(params.orbit_options.y, params.orbit_options.x + 1.0),
+                   max(end_t - start_t, 0.0));
+    return clamp(elevated_gate * grazing_gate * distance_gate, 0.0, 1.0);
+}
+
+float cloud_full_orbit_blend(vec3 origin, vec3 direction, float start_t, float end_t) {
     int mode = int(cloud_distance_mode_value() + 0.5);
     if (mode == CLOUD_DISTANCE_LOCAL) {
         return 0.0;
@@ -953,9 +981,11 @@ float cloud_full_orbit_blend() {
     float transition_end = max(params.distance_options.z, transition_start + 1.0);
     float altitude_blend =
         smoothstep(transition_start, transition_end, cloud_camera_altitude());
+    float high_oblique_blend =
+        cloud_high_oblique_orbit_boost(origin, direction, start_t, end_t);
     int camera_mode = int(params.camera_forward_mode.w + 0.5);
     float orbit_camera_blend = camera_mode >= 4 ? 1.0 : 0.0;
-    return clamp(max(altitude_blend, orbit_camera_blend), 0.0, 1.0);
+    return clamp(max(max(altitude_blend, high_oblique_blend), orbit_camera_blend), 0.0, 1.0);
 }
 
 float cloud_far_shell_blend(float start_t, float end_t) {
@@ -1860,7 +1890,7 @@ void main() {
         return;
     }
 
-    float full_orbit_blend = cloud_full_orbit_blend();
+    float full_orbit_blend = cloud_full_orbit_blend(origin, direction, start_t, end_t);
     float far_shell_blend = cloud_far_shell_blend(start_t, end_t);
     float effective_far_shell_blend = far_shell_blend * (1.0 - full_orbit_blend);
     float surface_horizon_blend = cloud_surface_horizon_layer_mode() ? 1.0 : 0.0;
