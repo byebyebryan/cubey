@@ -104,8 +104,8 @@ composition cleanup.
 Diagnostic capture:
 
 ```sh
-WIDTH=1280 HEIGHT=720 FRAMES=2 QUALITY=quarter \
-  projects/planet/capture_horizon_review.sh outputs/planet-horizon-review-current
+WIDTH=1920 HEIGHT=1080 FRAMES=2 QUALITY=full \
+  projects/planet/capture_horizon_review.sh outputs/planet-horizon-review-current-full
 ```
 
 This pass added a dedicated planet horizon review script and extra no-cloud
