@@ -57,8 +57,17 @@ namespace {
     };
 }
 
+[[nodiscard]] bool cloud_layer_composite_mode_has_background(CloudLayerCompositeMode mode) {
+    return mode == CloudLayerCompositeMode::ExternalBackground ||
+           mode == CloudLayerCompositeMode::ExternalBackgroundSceneDepth;
+}
+
+[[nodiscard]] bool cloud_layer_composite_mode_has_scene_depth(CloudLayerCompositeMode mode) {
+    return mode == CloudLayerCompositeMode::ExternalBackgroundSceneDepth;
+}
+
 [[nodiscard]] MaterialDescriptorSetLayout cloud_layer_composite_set_layout(
-    bool external_background) {
+    bool external_background, bool scene_depth) {
     MaterialDescriptorSetLayout layout{
         .set = 0,
         .bindings =
@@ -83,6 +92,13 @@ namespace {
     if (external_background) {
         layout.bindings.push_back(vulkan::DescriptorSetBindingConfig{
             .binding = kCloudLayerCompositeBackgroundBinding,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        });
+    }
+    if (scene_depth) {
+        layout.bindings.push_back(vulkan::DescriptorSetBindingConfig{
+            .binding = kCloudLayerCompositeSceneDepthBinding,
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         });
@@ -329,10 +345,12 @@ MaterialPassInfo cloud_layer_march_pass_info() {
     };
 }
 
-MaterialPassInfo cloud_layer_composite_pass_info(bool external_background) {
+MaterialPassInfo cloud_layer_composite_pass_info(bool external_background, bool scene_depth) {
     return {
-        .label = external_background ? "cloud_composite_background" : "cloud_composite",
-        .descriptor_sets = {cloud_layer_composite_set_layout(external_background)},
+        .label = external_background ? (scene_depth ? "cloud_composite_background_depth"
+                                                     : "cloud_composite_background")
+                                     : "cloud_composite",
+        .descriptor_sets = {cloud_layer_composite_set_layout(external_background, scene_depth)},
         .cull_mode = VK_CULL_MODE_NONE,
         .depth_test = false,
         .depth_write = false,
@@ -678,6 +696,11 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
                           orbit_representation_value(config.orbit_representation)},
         .orbit_shell_options = {config.orbit_motion_strength, config.orbit_shell_extinction,
                                 config.orbit_fill, config.far_shell_strength},
+        .scene_depth_options = {std::max(frame.near_plane_m, 0.0001F),
+                                std::max(frame.far_plane_m,
+                                         std::max(frame.near_plane_m, 0.0001F) + 1.0F),
+                                frame.scene_depth_occlusion_enabled ? 1.0F : 0.0F,
+                                std::max(frame.scene_depth_fade_m, 1.0F)},
     };
 }
 
@@ -824,7 +847,8 @@ namespace {
            cloud_layer_near(previous.background_options, current.background_options) &&
            cloud_layer_near(previous.distance_options, current.distance_options) &&
            cloud_layer_near(previous.orbit_options, current.orbit_options) &&
-           cloud_layer_near(previous.orbit_shell_options, current.orbit_shell_options);
+           cloud_layer_near(previous.orbit_shell_options, current.orbit_shell_options) &&
+           cloud_layer_near(previous.scene_depth_options, current.scene_depth_options);
 }
 
 [[nodiscard]] bool cloud_layer_extent_equal(VkExtent2D lhs, VkExtent2D rhs) {
@@ -913,8 +937,10 @@ void CloudLayerRuntime::create_swapchain_resources(
     create_history_textures(device, cloud_layer_product_extent(extent, config.quality),
                             frame_slot_count);
 
-    const bool external_background = composite_mode == CloudLayerCompositeMode::ExternalBackground;
-    const MaterialPassInfo composite_pass = cloud_layer_composite_pass_info(external_background);
+    const bool external_background = cloud_layer_composite_mode_has_background(composite_mode);
+    const bool scene_depth = cloud_layer_composite_mode_has_scene_depth(composite_mode);
+    const MaterialPassInfo composite_pass =
+        cloud_layer_composite_pass_info(external_background, scene_depth);
     composite_material_.emplace(device, MaterialInstanceConfig{
                                             .material_pass = composite_pass,
                                             .descriptor_set = 0,
@@ -1052,10 +1078,15 @@ CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(
 
 void CloudLayerRuntime::declare_composite(
     RenderGraphBuilder& graph, RenderGraphTextureHandle target, const CloudLayerRuntimeFrame& frame,
-    FrameSlot frame_slot, std::optional<RenderGraphTextureHandle> background) const {
-    const bool expects_background = composite_mode_ == CloudLayerCompositeMode::ExternalBackground;
+    FrameSlot frame_slot, std::optional<RenderGraphTextureHandle> background,
+    std::optional<RenderGraphTextureHandle> scene_depth) const {
+    const bool expects_background = cloud_layer_composite_mode_has_background(composite_mode_);
+    const bool expects_scene_depth = cloud_layer_composite_mode_has_scene_depth(composite_mode_);
     if (expects_background != background.has_value()) {
         throw std::runtime_error("cloud layer composite background mode mismatch");
+    }
+    if (expects_scene_depth != scene_depth.has_value()) {
+        throw std::runtime_error("cloud layer composite scene depth mode mismatch");
     }
     auto pass = graph.add_pass("cloud composite", RenderGraphQueueDomain::Graphics)
                     .read_texture(frame.product.resolved_cloud)
@@ -1063,8 +1094,12 @@ void CloudLayerRuntime::declare_composite(
     if (background.has_value()) {
         pass.read_texture(background.value());
     }
+    if (scene_depth.has_value()) {
+        pass.read_texture(scene_depth.value(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    }
     pass.write_color(target)
-        .material_pass(cloud_layer_composite_pass_info(background.has_value()))
+        .material_pass(cloud_layer_composite_pass_info(background.has_value(),
+                                                       scene_depth.has_value()))
         .execute([this, target, frame_slot](const RenderGraphExecutionContext& context) {
             const ColorTargetView color_target = resolved_color_target_view(context, target);
             record_composite_draw(context.recorder(), color_target, frame_slot);
@@ -1074,10 +1109,15 @@ void CloudLayerRuntime::declare_composite(
 void CloudLayerRuntime::update_descriptors(
     const cubey::vulkan::Device& device, FrameSlot frame_slot, const CompiledRenderGraph& graph,
     const RenderGraphResourceSet& resources, const CloudLayerRuntimeFrame& frame,
-    std::optional<RenderGraphTextureHandle> background) const {
-    const bool expects_background = composite_mode_ == CloudLayerCompositeMode::ExternalBackground;
+    std::optional<RenderGraphTextureHandle> background,
+    std::optional<RenderGraphTextureHandle> scene_depth) const {
+    const bool expects_background = cloud_layer_composite_mode_has_background(composite_mode_);
+    const bool expects_scene_depth = cloud_layer_composite_mode_has_scene_depth(composite_mode_);
     if (expects_background != background.has_value()) {
         throw std::runtime_error("cloud layer descriptor background mode mismatch");
+    }
+    if (expects_scene_depth != scene_depth.has_value()) {
+        throw std::runtime_error("cloud layer descriptor scene depth mode mismatch");
     }
     const RenderGraphSampledTextureView cloud_product =
         resolved_sampled_texture_view(graph, resources, frame.product.cloud);
@@ -1148,6 +1188,13 @@ void CloudLayerRuntime::update_descriptors(
         writer.combined_image_sampler(kCloudLayerCompositeBackgroundBinding,
                                       composite_sampler().handle(), background_view.view,
                                       background_view.layout);
+    }
+    if (scene_depth.has_value()) {
+        const RenderGraphSampledTextureView scene_depth_view =
+            resolved_sampled_texture_view(graph, resources, scene_depth.value());
+        writer.combined_image_sampler(kCloudLayerCompositeSceneDepthBinding,
+                                      composite_sampler().handle(), scene_depth_view.view,
+                                      scene_depth_view.layout);
     }
     writer.update(device);
 }

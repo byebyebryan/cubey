@@ -5,6 +5,7 @@ set(CUBEY_PLANET_SHADERS
     "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/celestial_body.frag"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud.vert"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background.frag"
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background_depth.frag"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_march.comp"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_perlin_worley.comp"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_temporal.comp"

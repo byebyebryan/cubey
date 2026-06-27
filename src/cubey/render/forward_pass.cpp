@@ -24,7 +24,7 @@ pipeline_target_info(GraphicsPipelineTargetInfo target,
 ForwardScenePass3D::ForwardScenePass3D(const cubey::vulkan::Device& device,
                                        GraphicsPipelineTargetInfo target,
                                        const ForwardScenePass3DConfig& config)
-    : depth_attachment_(device, target.extent),
+    : depth_attachment_(device, target.extent, config.sampled_depth),
       pipeline_(device, graphics_pipeline_file_resource_config(
                             pipeline_target_info(target, depth_attachment_), config.pipeline)),
       clear_(config.clear) {}

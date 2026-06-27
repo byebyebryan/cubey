@@ -41,6 +41,7 @@ inline constexpr std::uint32_t kCloudLayerMetadataBinding = 5U;
 inline constexpr std::uint32_t kCloudLayerCompositeCloudBinding = 1U;
 inline constexpr std::uint32_t kCloudLayerCompositeMetadataBinding = 2U;
 inline constexpr std::uint32_t kCloudLayerCompositeBackgroundBinding = 3U;
+inline constexpr std::uint32_t kCloudLayerCompositeSceneDepthBinding = 4U;
 inline constexpr std::uint32_t kCloudLayerTemporalCurrentCloudBinding = 0U;
 inline constexpr std::uint32_t kCloudLayerTemporalCurrentMetadataBinding = 1U;
 inline constexpr std::uint32_t kCloudLayerTemporalHistoryCloudBinding = 2U;
@@ -250,6 +251,10 @@ struct CloudLayerFrameInfo {
     std::uint32_t temporal_frame_index = 0;
     float camera_mode = 0.0F;
     bool external_background = false;
+    float near_plane_m = 1.0F;
+    float far_plane_m = 1000.0F;
+    bool scene_depth_occlusion_enabled = false;
+    float scene_depth_fade_m = 500.0F;
 };
 
 struct CloudLayerViewRegimeInput {
@@ -288,9 +293,10 @@ struct CloudLayerFrameUniforms {
     math::Vec4 distance_options;
     math::Vec4 orbit_options;
     math::Vec4 orbit_shell_options;
+    math::Vec4 scene_depth_options;
 };
 
-static_assert(sizeof(CloudLayerFrameUniforms) == sizeof(float) * 80U);
+static_assert(sizeof(CloudLayerFrameUniforms) == sizeof(float) * 84U);
 
 struct CloudLayerTemporalUniforms {
     math::Vec4 current_camera_right_aspect;
@@ -354,6 +360,7 @@ struct CloudLayerRuntimeShaderFiles {
 enum class CloudLayerCompositeMode : std::uint32_t {
     Standalone = 0,
     ExternalBackground = 1,
+    ExternalBackgroundSceneDepth = 2,
 };
 
 struct CloudLayerGeneratedResources {
@@ -412,12 +419,14 @@ class CloudLayerRuntime {
                                                          CloudLayerFrameUniforms uniforms) const;
     void declare_composite(RenderGraphBuilder& graph, RenderGraphTextureHandle target,
                            const CloudLayerRuntimeFrame& frame, FrameSlot frame_slot,
-                           std::optional<RenderGraphTextureHandle> background = std::nullopt) const;
+                           std::optional<RenderGraphTextureHandle> background = std::nullopt,
+                           std::optional<RenderGraphTextureHandle> scene_depth = std::nullopt) const;
     void update_descriptors(const cubey::vulkan::Device& device, FrameSlot frame_slot,
                             const CompiledRenderGraph& graph,
                             const RenderGraphResourceSet& resources,
                             const CloudLayerRuntimeFrame& frame,
-                            std::optional<RenderGraphTextureHandle> background = std::nullopt) const;
+                            std::optional<RenderGraphTextureHandle> background = std::nullopt,
+                            std::optional<RenderGraphTextureHandle> scene_depth = std::nullopt) const;
     void invalidate_history();
     void complete_frame(FrameSlot frame_slot, const CloudLayerRuntimeFrame& frame);
 
@@ -476,7 +485,8 @@ class CloudLayerRuntime {
 [[nodiscard]] Texture3DConfig cloud_layer_volume_texture_config(std::uint32_t size);
 [[nodiscard]] Texture2DConfig cloud_layer_weather_texture_config();
 [[nodiscard]] MaterialPassInfo cloud_layer_march_pass_info();
-[[nodiscard]] MaterialPassInfo cloud_layer_composite_pass_info(bool external_background = false);
+[[nodiscard]] MaterialPassInfo cloud_layer_composite_pass_info(bool external_background = false,
+                                                               bool scene_depth = false);
 [[nodiscard]] MaterialPassInfo cloud_layer_temporal_pass_info();
 [[nodiscard]] RenderGraphTextureState cloud_layer_sampled_texture_state();
 [[nodiscard]] RenderGraphTextureDesc cloud_layer_color_texture_desc(std::string label,

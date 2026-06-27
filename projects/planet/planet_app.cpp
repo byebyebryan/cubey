@@ -132,7 +132,8 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 30U);
         .temporal = cubey::render::compute_shader_file(shader_path("cloud_temporal.comp.spv")),
         .composite_vertex = cubey::render::vertex_shader_file(shader_path("cloud.vert.spv")),
         .composite_fragment =
-            cubey::render::fragment_shader_file(shader_path("cloud_composite_background.frag.spv")),
+            cubey::render::fragment_shader_file(
+                shader_path("cloud_composite_background_depth.frag.spv")),
     };
 }
 
@@ -300,6 +301,7 @@ class PlanetApp {
         cubey::render::CompiledRenderGraph graph{};
         cubey::render::RenderGraphTextureHandle post_scene_color{};
         cubey::render::RenderGraphTextureHandle scene_color{};
+        cubey::render::RenderGraphTextureHandle depth{};
         cubey::render::RenderGraphTextureHandle cloud_scene_color{};
         cubey::render::CloudLayerRuntimeFrame cloud{};
         bool clouds_enabled = false;
@@ -455,6 +457,7 @@ class PlanetApp {
                         .color = cubey::render::color_clear_value(0.018F, 0.030F, 0.052F, 1.0F),
                         .depth = cubey::render::depth_clear_value(),
                     },
+                .sampled_depth = true,
             });
         const std::array<cubey::render::ShaderStageFile, 2> local_detail_shaders{
             cubey::render::vertex_shader_file(shader_path("planet_local_detail.vert.spv")),
@@ -1202,6 +1205,10 @@ class PlanetApp {
                 .temporal_frame_index = cloud_runtime_.temporal_frame_index(),
                 .camera_mode = view_regime.camera_mode,
                 .external_background = true,
+                .near_plane_m = frame_.near_plane_m,
+                .far_plane_m = frame_.far_plane_m,
+                .scene_depth_occlusion_enabled = true,
+                .scene_depth_fade_m = 500.0F,
             });
     }
 
@@ -1444,7 +1451,7 @@ class PlanetApp {
                 graph, color_target.extent, planet_cloud_config(cloud_elapsed_seconds_), frame_slot,
                 cloud_uniforms.value());
             cloud_runtime_.declare_composite(graph, cloud_scene_color, cloud_frame, frame_slot,
-                                             scene_color);
+                                             scene_color, depth);
             post_scene_color = cloud_scene_color;
         }
         graph.add_pass("planet post", cubey::render::RenderGraphQueueDomain::Graphics)
@@ -1460,6 +1467,7 @@ class PlanetApp {
             .graph = graph.compile(),
             .post_scene_color = post_scene_color,
             .scene_color = scene_color,
+            .depth = depth,
             .cloud_scene_color = cloud_scene_color,
             .cloud = cloud_frame,
             .clouds_enabled = clouds_enabled,
@@ -1514,7 +1522,8 @@ class PlanetApp {
                     return;
                 }
                 cloud_runtime_.update_descriptors(device, frame_slot, frame_graph.graph, resources,
-                                                  frame_graph.cloud, frame_graph.scene_color);
+                                                  frame_graph.cloud, frame_graph.scene_color,
+                                                  frame_graph.depth);
             });
         if (frame_graph.clouds_enabled) {
             cloud_runtime_.complete_frame(frame_slot, frame_graph.cloud);
@@ -1594,7 +1603,7 @@ class PlanetApp {
                                 std::uint32_t frame_slot_count) {
         cloud_runtime_.create_swapchain_resources(
             device, cloud_runtime_shader_files(),
-            cubey::render::CloudLayerCompositeMode::ExternalBackground,
+            cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth,
             kPlanetSceneColorFormat, extent, frame_slot_count,
             planet_cloud_config(cloud_elapsed_seconds_));
     }
