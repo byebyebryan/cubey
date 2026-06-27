@@ -220,7 +220,7 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `10` emits deterministic source fields,
+local region. Generator revision `11` emits deterministic source fields,
 height/slope analysis, repaired routing diagnostics, smoothed active river trunk
 and tributary masks, wetness/deposition, material masks, vegetation potential,
 summaries, and tests.
@@ -230,29 +230,35 @@ over a coherent low-frequency drainage potential derived from the terrain seed
 on a padded hidden routing domain, then crops diagnostics back to the visible
 region. The diagnostic catchment now uses D-Infinity-style continuous flow
 angles and fractional accumulation, reducing the obvious D8 lattice in
-`flow-accumulation`. Revision 10 adds a bounded priority-flood epsilon repair
+`flow-accumulation`. Revision 10 added a bounded priority-flood epsilon repair
 over the hidden routing surface before D8, D-Infinity, accumulation, stream
 order, sink masks, and active river extraction run. The repaired surface is the
 published `drainage_potential`; `routing_fill_delta` exposes where the raw
 routing surface was raised. Connected support components are selected from the
 hidden-domain drainage hierarchy, a trunk is traced through the selected
 support, and limited tributaries are accepted only when they visibly connect
-back into an active channel. Selected centerlines are resampled, nudged by a
-constrained procedural offset, lightly relaxed over drainage potential, and
-rasterized as soft product fields with discharge/stream-order width and strength
-variation. The default recipe no longer paints raw support cells. The stress
-recipe uses an additional procedural basin-convergence routing profile and
-paints connected support paths through the same smoothed channel pipeline,
-rather than painting unrelated corridors. This is a useful midpoint because
-downstream fields can consume a connected river product, but it is not a
-complete hydrology solution.
+back into an active channel.
+
+Revision 11 keeps D8 graph traversal as connectivity scaffolding but stops
+using raw grid paths as the rendered centerline. Selected paths are converted to
+sub-cell channel points, smoothed, nudged along the continuous D-Infinity flow
+direction, constrained against large uphill moves on the repaired routing
+surface, and then rasterized with bounded lateral meander,
+discharge/stream-order width, and strength variation. The default recipe no
+longer paints raw support cells. The stress recipe uses an additional
+procedural basin-convergence routing profile and paints connected support paths
+through the same de-gridded channel pipeline rather than painting unrelated
+corridors. This is a useful midpoint because downstream fields can consume a
+connected river product, but it is not a complete hydrology solution.
 
 The `temperate-mountain-river-stress` recipe is a diagnostic variant of the same
 slice. It keeps the same terrain/routing sources but expands active channel
 extraction with a stronger basin-grade routing source and extra connected
 support paths feeding one selected basin. Its purpose is to make routing
 artifacts visible across more of a review patch, not to define the desired
-default composition.
+default composition. Revision 11 also raises support-order gates, spaces
+accepted confluences, caps low-value branch clutter, and adds tests for stress
+endpoint density plus long straight or diagonal high-strength runs.
 
 Known limitations:
 
@@ -263,13 +269,13 @@ Known limitations:
   does not yet perform breach routing, erosion, or lake/wetland resolution.
 - Padded routing makes local review slices less artificial, but the route model
   is still static and should not be mistaken for simulated river evolution.
-- Default river composition now has a stronger review footprint, but path
-  selection can still expose parallel channel fans where the source is too
-  coarse.
-- The stress recipe now avoids intentionally disconnected diagnostic corridors,
-  but it can still expose parallel branches and edge-connected side clusters
-  because it deliberately pushes coverage before the hydrology model is
-  complete.
+- Default river composition now has a stronger review footprint, but a few
+  segments can still read too straight where the underlying routing source is
+  dominated by a single grade.
+- The stress recipe now avoids intentionally disconnected diagnostic corridors
+  and prunes the worst low-order branch fans, but it can still expose parallel
+  support strokes because it deliberately pushes coverage before the hydrology
+  model is complete.
 - Stress generation is currently expensive enough that performance should be
   revisited before adding heavier hydrology checks.
 - The final PNG is an inspectable debug composition, not the target renderer.
@@ -302,7 +308,8 @@ more biome labels:
    routing surface has a bounded fill pass.
 2. Improve corridor scoring/tiling so the default review composition is less
    sparse without turning into the stress recipe.
-3. Reduce stress recipe support expansion cost and parallel-branch artifacts.
+3. Replace stress support expansion with a more principled basin/tributary
+   hierarchy so visual coverage does not depend on many painted support paths.
 4. Split mountain/ridge drivers into explicit terrain products instead of
    treating mountains as only material response over height noise.
 5. Add capture summaries or manifest metadata for the review set so image

@@ -36,3 +36,32 @@ paint every low-order finger that can technically reach the active basin.
 - Stress keeps a connected dominant network but has fewer short hairy branches.
 - Branch-density and grid-run tests catch regressions directly.
 - Updated captures and docs call out remaining hydrology limitations honestly.
+
+## Outcome
+
+Implemented in revision 11.
+
+- Grid-selected trunk, tributary, and connected-support paths now pass through a
+  degrid stage before rasterization: resampling, smoothing, flow-direction
+  nudging, and uphill-move constraints over the repaired routing surface.
+- Channel rasterization now uses denser resampling and a stronger smoothing /
+  relax pass so the high-strength core follows the de-gridded centerline rather
+  than the raw D8 graph.
+- The stress recipe now uses stronger bounded lateral meander, higher
+  support-order gates, fewer painted support paths, and wider confluence spacing
+  to reduce low-order branch clutter while preserving a connected review
+  network.
+- Terrain tests now cover stress endpoint density and long high-strength
+  straight/diagonal runs in addition to the existing coverage and continuity
+  checks.
+
+One tuning lesson is worth preserving: a hard visual-shape rejection for any
+long grid-aligned support path starved seed `1234` and left only a tiny visible
+stress network. The kept approach is to prune low-value support expansion and
+de-grid rendered centerlines, not to reject every long straight source path
+before hierarchy selection.
+
+Remaining limitation: stress captures can still show straight-ish support
+strokes and parallel branches. That points to the next source/model problem:
+replace painted support expansion with a more principled basin and tributary
+hierarchy rather than adding more render-space masking.
