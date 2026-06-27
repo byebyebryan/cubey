@@ -32,12 +32,13 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 17> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 18> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::Height, "height"},
     DebugViewName{TerrainDebugView::Slope, "slope"},
     DebugViewName{TerrainDebugView::RidgeUplift, "ridge-uplift"},
     DebugViewName{TerrainDebugView::DrainagePotential, "drainage-potential"},
+    DebugViewName{TerrainDebugView::RoutingFillDelta, "routing-fill-delta"},
     DebugViewName{TerrainDebugView::FlowDirection, "flow-direction"},
     DebugViewName{TerrainDebugView::FlowAccumulation, "flow-accumulation"},
     DebugViewName{TerrainDebugView::StreamOrder, "stream-order"},
@@ -52,12 +53,13 @@ inline constexpr std::array<DebugViewName, 17> kDebugViewNames{
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 17> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 18> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::Height,
     TerrainDebugView::Slope,
     TerrainDebugView::RidgeUplift,
     TerrainDebugView::DrainagePotential,
+    TerrainDebugView::RoutingFillDelta,
     TerrainDebugView::FlowDirection,
     TerrainDebugView::FlowAccumulation,
     TerrainDebugView::StreamOrder,
@@ -199,6 +201,8 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldRidgeUplift);
     case TerrainDebugView::DrainagePotential:
         return terrain_product_field(product, kTerrainFieldDrainagePotential);
+    case TerrainDebugView::RoutingFillDelta:
+        return terrain_product_field(product, kTerrainFieldRoutingFillDelta);
     case TerrainDebugView::FlowDirection:
         return terrain_product_field(product, kTerrainFieldFlowDirection);
     case TerrainDebugView::FlowAccumulation:

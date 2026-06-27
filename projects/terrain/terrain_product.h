@@ -20,6 +20,7 @@ inline constexpr std::string_view kTerrainFieldSlope = "slope";
 inline constexpr std::string_view kTerrainFieldCurvature = "curvature";
 inline constexpr std::string_view kTerrainFieldLocalRelief = "local_relief";
 inline constexpr std::string_view kTerrainFieldDrainagePotential = "drainage_potential";
+inline constexpr std::string_view kTerrainFieldRoutingFillDelta = "routing_fill_delta";
 inline constexpr std::string_view kTerrainFieldFlowDirection = "flow_direction";
 inline constexpr std::string_view kTerrainFieldFlowAccumulation = "flow_accumulation";
 inline constexpr std::string_view kTerrainFieldStreamOrder = "stream_order";

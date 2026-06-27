@@ -317,7 +317,7 @@ void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 24> required_fields{
+    const std::array<std::string_view, 25> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
         cubey::projects::terrain::kTerrainFieldBroadRelief,
@@ -327,6 +327,7 @@ void test_terrain_product_emits_required_fields() {
         cubey::projects::terrain::kTerrainFieldCurvature,
         cubey::projects::terrain::kTerrainFieldLocalRelief,
         cubey::projects::terrain::kTerrainFieldDrainagePotential,
+        cubey::projects::terrain::kTerrainFieldRoutingFillDelta,
         cubey::projects::terrain::kTerrainFieldFlowDirection,
         cubey::projects::terrain::kTerrainFieldFlowAccumulation,
         cubey::projects::terrain::kTerrainFieldStreamOrder,
@@ -376,11 +377,18 @@ void test_terrain_product_has_useful_ranges() {
         field(product, cubey::projects::terrain::kTerrainFieldStreamOrder).summarize();
     const cubey::procedural::ScalarFieldStats drainage =
         field(product, cubey::projects::terrain::kTerrainFieldDrainagePotential).summarize();
+    const auto& fill_delta = field(product, cubey::projects::terrain::kTerrainFieldRoutingFillDelta);
+    const cubey::procedural::ScalarFieldStats fill_delta_stats = fill_delta.summarize();
     const cubey::procedural::ScalarFieldStats sink =
         field(product, cubey::projects::terrain::kTerrainFieldSinkMask).summarize();
     require(flow.max > flow.min, "flow accumulation should vary");
     require(stream_order.max >= 3.0F, "stream order should identify larger drainage trunks");
     require(drainage.max > drainage.min, "drainage potential should vary");
+    require(fill_delta_stats.min >= 0.0F, "routing fill delta should be non-negative");
+    const std::size_t repaired_count = count_active_samples(fill_delta, 0.001F);
+    require(repaired_count > 0U, "routing repair should expose at least one repaired sample");
+    require(repaired_count * 100U < fill_delta.sample_count() * 75U,
+            "routing repair should not fill most of the visible patch");
     require(sink.max > 0.0F && sink.max <= 1.0F, "sink mask should identify terminal cells");
 }
 
@@ -423,8 +431,11 @@ void test_terrain_stress_recipe_expands_river_network() {
             "terrain stress recipe should preserve the requested recipe id");
     require(stress.summary.content_hash != baseline.summary.content_hash,
             "terrain stress recipe should produce a distinct product hash");
-    require(stress_samples * 100U > baseline_samples * 125U,
-            "terrain stress recipe should expand active river network coverage");
+    if (stress_samples * 100U <= baseline_samples * 125U) {
+        throw std::runtime_error(
+            "terrain stress recipe should expand active river network coverage: baseline=" +
+            std::to_string(baseline_samples) + " stress=" + std::to_string(stress_samples));
+    }
     require(stress.summary.river_coverage > baseline.summary.river_coverage,
             "terrain stress recipe should increase high-strength river coverage");
     require(stress.summary.river_coverage < 0.25F,
@@ -465,9 +476,15 @@ void test_terrain_review_river_coverage_is_meaningful() {
             std::to_string(baseline_footprint) + " stress=" +
             std::to_string(stress_footprint) + " total=" + std::to_string(total_samples));
     }
-    require(stress_largest_component * 100U >=
-                count_active_samples(stress_river, kVisibleNetworkThreshold) * 80U,
-            "terrain stress review river should be dominated by one connected network");
+    const std::size_t stress_visible_network_samples =
+        count_active_samples(stress_river, kVisibleNetworkThreshold);
+    if (stress_largest_component * 100U < stress_visible_network_samples * 80U) {
+        throw std::runtime_error(
+            "terrain stress review river should be dominated by one connected network: largest=" +
+            std::to_string(stress_largest_component) + " active=" +
+            std::to_string(stress_visible_network_samples) + " footprint=" +
+            std::to_string(stress_footprint));
+    }
     require(baseline_samples * 100U < total_samples * 8U,
             "terrain default review river should not flood the patch");
     require(stress_samples * 100U < total_samples * 12U,
@@ -520,8 +537,11 @@ void test_terrain_river_network_has_continuous_active_channels() {
             "terrain river trunk samples should be locally continuous");
     require(connected_river_count * 100U >= river_count * 80U,
             "terrain river mask samples should be locally continuous");
-    require(largest_river_component * 100U >= river_count * 80U,
-            "terrain river mask should be dominated by one connected component");
+    if (largest_river_component * 100U < river_count * 80U) {
+        throw std::runtime_error(
+            "terrain river mask should be dominated by one connected component: largest=" +
+            std::to_string(largest_river_component) + " active=" + std::to_string(river_count));
+    }
 
     const std::size_t trunk_core_count = count_active_samples(trunk, 0.80F);
     const std::size_t trunk_soft_count = count_active_samples(trunk, 0.30F);
@@ -540,14 +560,34 @@ void test_terrain_river_core_avoids_long_grid_aligned_runs() {
     const auto& trunk = field(product, cubey::projects::terrain::kTerrainFieldRiverTrunk);
     const auto& river_mask = field(product, cubey::projects::terrain::kTerrainFieldRiverMask);
     constexpr std::uint32_t kInteriorMargin = 16U;
-    require(max_axis_aligned_active_run(trunk, 0.80F, kInteriorMargin) <= 18U,
-            "terrain river trunk should avoid long straight core runs");
-    require(max_axis_aligned_active_run(river_mask, 0.80F, kInteriorMargin) <= 24U,
-            "terrain river mask should avoid long straight high-strength runs");
-    require(max_diagonal_active_run(trunk, 0.80F, kInteriorMargin) <= 24U,
-            "terrain river trunk should avoid long diagonal core runs");
-    require(max_diagonal_active_run(river_mask, 0.80F, kInteriorMargin) <= 30U,
-            "terrain river mask should avoid long diagonal high-strength runs");
+    const std::size_t trunk_axis_run =
+        max_axis_aligned_active_run(trunk, 0.80F, kInteriorMargin);
+    const std::size_t mask_axis_run =
+        max_axis_aligned_active_run(river_mask, 0.80F, kInteriorMargin);
+    const std::size_t trunk_diagonal_run =
+        max_diagonal_active_run(trunk, 0.80F, kInteriorMargin);
+    const std::size_t mask_diagonal_run =
+        max_diagonal_active_run(river_mask, 0.80F, kInteriorMargin);
+    if (trunk_axis_run > 18U) {
+        throw std::runtime_error(
+            "terrain river trunk should avoid long straight core runs: axis=" +
+            std::to_string(trunk_axis_run));
+    }
+    if (mask_axis_run > 24U) {
+        throw std::runtime_error(
+            "terrain river mask should avoid long straight high-strength runs: axis=" +
+            std::to_string(mask_axis_run));
+    }
+    if (trunk_diagonal_run > 24U) {
+        throw std::runtime_error(
+            "terrain river trunk should avoid long diagonal core runs: diagonal=" +
+            std::to_string(trunk_diagonal_run));
+    }
+    if (mask_diagonal_run > 30U) {
+        throw std::runtime_error(
+            "terrain river mask should avoid long diagonal high-strength runs: diagonal=" +
+            std::to_string(mask_diagonal_run));
+    }
 }
 
 void test_terrain_river_uses_larger_routing_context() {
@@ -587,6 +627,9 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("drainage_potential") ==
                 cubey::projects::terrain::TerrainDebugView::DrainagePotential,
             "terrain debug view should parse drainage potential aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("routing_fill_delta") ==
+                cubey::projects::terrain::TerrainDebugView::RoutingFillDelta,
+            "terrain debug view should parse routing fill delta aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("river_trunk") ==
                 cubey::projects::terrain::TerrainDebugView::RiverTrunk,
             "terrain debug view should parse river trunk aliases");

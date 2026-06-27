@@ -14,6 +14,7 @@ enum class TerrainDebugView {
     Slope,
     RidgeUplift,
     DrainagePotential,
+    RoutingFillDelta,
     FlowDirection,
     FlowAccumulation,
     StreamOrder,

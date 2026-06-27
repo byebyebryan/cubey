@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <limits>
 #include <numeric>
+#include <queue>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,6 +36,7 @@ struct FlowRoutingResult {
 
 struct RiverFields {
     cubey::procedural::ScalarField2D drainage_potential{};
+    cubey::procedural::ScalarField2D routing_fill_delta{};
     cubey::procedural::ScalarField2D flow_direction{};
     cubey::procedural::ScalarField2D flow_accumulation{};
     cubey::procedural::ScalarField2D stream_order{};
@@ -56,9 +58,11 @@ struct RiverNetworkSettings {
     float routing_grade_y = 0.70F;
     float routing_basin_convergence = 0.0F;
     float routing_basin_meander = 0.0F;
-    float trunk_core_radius_cells = 1.4F;
+    bool repair_routing_sinks = true;
+    float routing_fill_epsilon = 0.02F;
+    float trunk_core_radius_cells = 0.75F;
     float trunk_falloff_radius_cells = 3.0F;
-    float trunk_offset_cells = 2.25F;
+    float trunk_offset_cells = 6.0F;
     float corridor_trunk_stream_order = 4.0F;
     float corridor_tributary_stream_order = 2.0F;
     std::size_t corridor_count = 1U;
@@ -86,8 +90,8 @@ struct RiverNetworkSettings {
     float tributary_strength = 0.75F;
     float tributary_core_radius_cells = 0.9F;
     float tributary_falloff_radius_cells = 2.1F;
-    float tributary_offset_cells = 0.75F;
-    bool paint_stream_order_support = true;
+    float tributary_offset_cells = 1.8F;
+    bool paint_stream_order_support = false;
     bool expand_connected_support = false;
     float connected_support_min_stream_order = 2.0F;
     std::size_t connected_support_seed_count = 512U;
@@ -127,6 +131,7 @@ struct RoutingDomain {
 struct RoutingContext {
     RoutingDomain domain{};
     cubey::procedural::ScalarField2D routing_surface{};
+    cubey::procedural::ScalarField2D routing_fill_delta{};
     FlowRoutingResult d8_routing{};
     FlowRoutingResult routing{};
     cubey::procedural::ScalarField2D accumulation{};
@@ -179,6 +184,11 @@ struct FlowVector {
     bool valid = false;
 };
 
+struct RoutingRepairResult {
+    cubey::procedural::ScalarField2D surface{};
+    cubey::procedural::ScalarField2D fill_delta{};
+};
+
 [[nodiscard]] cubey::procedural::NoiseSource2D coherent_source(std::uint64_t seed,
                                                                float frequency,
                                                                std::uint32_t octaves) {
@@ -224,8 +234,8 @@ struct FlowVector {
             .routing_grade_y = 0.76F,
             .routing_basin_convergence = 2200.0F,
             .routing_basin_meander = 0.17F,
-            .trunk_core_radius_cells = 2.05F,
-            .trunk_falloff_radius_cells = 4.8F,
+            .trunk_core_radius_cells = 2.20F,
+            .trunk_falloff_radius_cells = 5.0F,
             .trunk_offset_cells = 3.2F,
             .corridor_trunk_stream_order = 4.0F,
             .corridor_tributary_stream_order = 2.0F,
@@ -251,9 +261,9 @@ struct FlowVector {
             .min_tributary_count = 14U,
             .tributary_count_divisor = 6U,
             .min_tributary_path_samples = 4U,
-            .tributary_strength = 0.78F,
-            .tributary_core_radius_cells = 1.25F,
-            .tributary_falloff_radius_cells = 3.5F,
+            .tributary_strength = 0.80F,
+            .tributary_core_radius_cells = 1.32F,
+            .tributary_falloff_radius_cells = 3.75F,
             .tributary_offset_cells = 2.2F,
             .paint_stream_order_support = false,
             .expand_connected_support = true,
@@ -264,10 +274,10 @@ struct FlowVector {
             .connected_support_max_selected_overlap = 0.74F,
             .paint_connected_support_paths = true,
             .connected_support_painted_path_count = 80U,
-            .connected_support_path_strength = 0.62F,
-            .connected_support_path_core_radius_cells = 0.95F,
-            .connected_support_path_falloff_radius_cells = 2.8F,
-            .connected_support_path_offset_cells = 2.4F,
+            .connected_support_path_strength = 0.68F,
+            .connected_support_path_core_radius_cells = 1.08F,
+            .connected_support_path_falloff_radius_cells = 3.35F,
+            .connected_support_path_offset_cells = 2.5F,
             .support_min_strength = 0.28F,
             .support_trunk_strength = 0.44F,
             .support_tributary_core_radius_cells = 0.25F,
@@ -758,6 +768,90 @@ void assign_fractional_receivers(FlowRoutingResult& result,
         }
     }
     return result;
+}
+
+[[nodiscard]] RoutingRepairResult repair_routing_surface(
+    const cubey::procedural::ScalarField2D& raw_surface,
+    const RiverNetworkSettings& settings) {
+    cubey::procedural::ScalarField2D repaired = raw_surface;
+    cubey::procedural::ScalarField2D fill_delta(raw_surface.desc(), 0.0F);
+    if (!settings.repair_routing_sinks) {
+        return {
+            .surface = std::move(repaired),
+            .fill_delta = std::move(fill_delta),
+        };
+    }
+
+    struct QueueItem {
+        float height = 0.0F;
+        std::uint32_t x = 0U;
+        std::uint32_t y = 0U;
+    };
+    struct QueueItemGreater {
+        bool operator()(const QueueItem& lhs, const QueueItem& rhs) const {
+            return lhs.height > rhs.height;
+        }
+    };
+
+    const cubey::procedural::Grid2DDesc& desc = raw_surface.desc();
+    std::priority_queue<QueueItem, std::vector<QueueItem>, QueueItemGreater> frontier;
+    std::vector<bool> visited(raw_surface.sample_count(), false);
+    const float epsilon = std::max(settings.routing_fill_epsilon, 0.0F);
+    const auto push_boundary = [&](std::uint32_t x, std::uint32_t y) {
+        const std::size_t index = raw_surface.index(x, y);
+        if (visited[index]) {
+            return;
+        }
+        visited[index] = true;
+        frontier.push(QueueItem{
+            .height = repaired.at(x, y),
+            .x = x,
+            .y = y,
+        });
+    };
+
+    for (std::uint32_t x = 0; x < desc.width; ++x) {
+        push_boundary(x, 0U);
+        push_boundary(x, desc.height - 1U);
+    }
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        push_boundary(0U, y);
+        push_boundary(desc.width - 1U, y);
+    }
+
+    while (!frontier.empty()) {
+        const QueueItem current = frontier.top();
+        frontier.pop();
+        for (std::size_t direction = 0; direction < kAngleOffsetX.size(); ++direction) {
+            const int nx = static_cast<int>(current.x) + kAngleOffsetX[direction];
+            const int ny = static_cast<int>(current.y) + kAngleOffsetY[direction];
+            if (!neighbor_in_bounds(desc, nx, ny)) {
+                continue;
+            }
+            const auto ux = static_cast<std::uint32_t>(nx);
+            const auto uy = static_cast<std::uint32_t>(ny);
+            const std::size_t index = raw_surface.index(ux, uy);
+            if (visited[index]) {
+                continue;
+            }
+            visited[index] = true;
+
+            const float raw_height = raw_surface.values()[index];
+            const float repaired_height = std::max(raw_height, current.height + epsilon);
+            repaired.values()[index] = repaired_height;
+            fill_delta.values()[index] = std::max(0.0F, repaired_height - raw_height);
+            frontier.push(QueueItem{
+                .height = repaired_height,
+                .x = ux,
+                .y = uy,
+            });
+        }
+    }
+
+    return {
+        .surface = std::move(repaired),
+        .fill_delta = std::move(fill_delta),
+    };
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D accumulate_flow(
@@ -1583,6 +1677,10 @@ void apply_channel_lateral_offset(std::vector<ChannelPathPoint>& points, std::ui
 
     const cubey::procedural::NoiseSource2D source = channel_offset_source(seed);
     const float denominator = static_cast<float>(points.size() - 1U);
+    const float phase_a =
+        static_cast<float>((seed * 53U + 19U) % 997U) / 997.0F * kTwoPi;
+    const float phase_b =
+        static_cast<float>((seed * 89U + 41U) % 991U) / 991.0F * kTwoPi;
     for (std::size_t index = 1; index + 1U < points.size(); ++index) {
         const float t = static_cast<float>(index) / denominator;
         const float end_taper = cubey::procedural::smoothstep(0.0F, 0.10F, t) *
@@ -1604,15 +1702,18 @@ void apply_channel_lateral_offset(std::vector<ChannelPathPoint>& points, std::ui
         const float ny = tx / length;
         const float noise =
             cubey::procedural::sample_noise_source_2d(points[index].x, points[index].y, source);
-        const float offset = noise * max_offset_cells * end_taper;
+        const float macro_bend = (std::sin((t * 2.2F * kTwoPi) + phase_a) * 0.62F) +
+                                 (std::sin((t * 5.1F * kTwoPi) + phase_b) * 0.28F);
+        const float offset =
+            ((noise * 0.35F) + (macro_bend * 0.65F)) * max_offset_cells * end_taper;
         float next_x = points[index].x + (nx * offset);
         float next_y = points[index].y + (ny * offset);
         const float current_potential =
             sample_field_bilinear(routing_surface, points[index].x, points[index].y);
         const float next_potential = sample_field_bilinear(routing_surface, next_x, next_y);
-        if (next_potential > current_potential + 35.0F) {
-            next_x = cubey::procedural::lerp(points[index].x, next_x, 0.25F);
-            next_y = cubey::procedural::lerp(points[index].y, next_y, 0.25F);
+        if (next_potential > current_potential + 65.0F) {
+            next_x = cubey::procedural::lerp(points[index].x, next_x, 0.35F);
+            next_y = cubey::procedural::lerp(points[index].y, next_y, 0.35F);
         }
         points[index].x = next_x;
         points[index].y = next_y;
@@ -1655,6 +1756,28 @@ void relax_channel_path(std::vector<ChannelPathPoint>& points,
             }
         }
         points.swap(next);
+    }
+}
+
+void apply_channel_strength_variation(std::vector<ChannelPathPoint>& points, std::uint64_t seed) {
+    if (points.size() < 4U) {
+        return;
+    }
+
+    const float denominator = static_cast<float>(points.size() - 1U);
+    const float phase_a =
+        static_cast<float>((seed * 31U + 7U) % 997U) / 997.0F * kTwoPi;
+    const float phase_b =
+        static_cast<float>((seed * 67U + 23U) % 991U) / 991.0F * kTwoPi;
+    for (std::size_t index = 0; index < points.size(); ++index) {
+        const float t = static_cast<float>(index) / denominator;
+        const float broad =
+            0.5F + (0.5F * std::sin((t * 8.4F * kTwoPi) + phase_a));
+        const float fine =
+            0.5F + (0.5F * std::sin((t * 19.0F * kTwoPi) + phase_b));
+        const float strength_scale = 0.68F + (broad * 0.24F) + (fine * 0.08F);
+        points[index].strength = cubey::procedural::saturate(points[index].strength *
+                                                             strength_scale);
     }
 }
 
@@ -1767,8 +1890,9 @@ void paint_channel_path(cubey::procedural::ScalarField2D& field,
     points = resample_channel_path(points, 1.6F);
     smooth_channel_path(points, 2);
     apply_channel_lateral_offset(points, seed, max_offset_cells, routing_surface);
-    relax_channel_path(points, routing_surface, 4);
+    relax_channel_path(points, routing_surface, 2);
     smooth_channel_path(points, 1);
+    apply_channel_strength_variation(points, seed);
     rasterize_channel_segments(field, points, core_radius_cells, falloff_radius_cells, domain);
 }
 
@@ -1824,6 +1948,19 @@ void mark_active_indices(std::vector<bool>& active, const std::vector<int>& indi
         }
     }
 }
+
+[[nodiscard]] bool path_contacts_visible_active(const RoutingDomain& domain,
+                                                const std::vector<int>& indices,
+                                                const std::vector<bool>& active) {
+    return std::any_of(indices.begin(), indices.end(), [&domain, &active](int index) {
+        return index >= 0 && active[static_cast<std::size_t>(index)] &&
+               is_inside_visible_crop(domain, index);
+    });
+}
+
+void paint_support_disc(cubey::procedural::ScalarField2D& field,
+                        const RoutingDomain& domain, int hidden_index, float strength,
+                        float core_radius_cells, float falloff_radius_cells);
 
 void update_component_visibility(RiverCorridorComponent& component,
                                  const RoutingContext& context, int index,
@@ -2478,6 +2615,9 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
         if (downstream_path.empty()) {
             continue;
         }
+        if (!path_contacts_visible_active(context.domain, downstream_path, active)) {
+            continue;
+        }
         if (visible_grid_path_sample_count(context.domain, downstream_path) <
             settings.connected_support_min_visible_samples) {
             continue;
@@ -2526,6 +2666,13 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
                                settings.connected_support_path_falloff_radius_cells,
                                context.routing_surface, seed + 9109U + (painted * 127U),
                                settings.connected_support_path_offset_cells);
+            paint_support_disc(
+                fields.tributaries, context.domain, downstream_path.back(),
+                settings.connected_support_path_strength,
+                std::max(settings.connected_support_path_core_radius_cells,
+                         settings.tributary_core_radius_cells),
+                std::max(settings.connected_support_path_falloff_radius_cells,
+                         settings.trunk_falloff_radius_cells));
             mark_active_indices(active, downstream_path);
             ++painted;
         }
@@ -2632,6 +2779,9 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
         if (downstream_path.empty()) {
             continue;
         }
+        if (!path_contacts_visible_active(context.domain, downstream_path, active)) {
+            continue;
+        }
         const int confluence_index = downstream_path.back();
 
         std::vector<int> branch = std::move(upstream_path);
@@ -2701,6 +2851,11 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
                            settings.tributary_core_radius_cells,
                            settings.tributary_falloff_radius_cells, context.routing_surface,
                            seed + 7103U + (accepted * 131U), settings.tributary_offset_cells);
+        paint_support_disc(fields.tributaries, context.domain, candidate.confluence_index,
+                           settings.tributary_strength,
+                           settings.tributary_core_radius_cells,
+                           std::max(settings.tributary_falloff_radius_cells,
+                                    settings.trunk_falloff_radius_cells));
         mark_active_indices(active, candidate.path);
         if (candidate.confluence_index >= 0) {
             accepted_confluences.push_back(candidate.confluence_index);
@@ -2752,6 +2907,11 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
                                    settings.tributary_falloff_radius_cells,
                                    context.routing_surface, seed + 7103U + (accepted * 131U),
                                    settings.tributary_offset_cells);
+                paint_support_disc(fields.tributaries, context.domain, trunk_index,
+                                   settings.tributary_strength,
+                                   settings.tributary_core_radius_cells,
+                                   std::max(settings.tributary_falloff_radius_cells,
+                                            settings.trunk_falloff_radius_cells));
                 mark_active_indices(active, branch);
                 ++accepted;
                 break;
@@ -2916,6 +3076,9 @@ void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& cont
         if (downstream_path.empty()) {
             continue;
         }
+        if (!path_contacts_visible_active(context.domain, downstream_path, active)) {
+            continue;
+        }
         const int confluence_index = downstream_path.back();
         const std::vector<int> confluence{confluence_index};
         if (path_is_near_indices(context.domain.hidden_desc, confluence, accepted_confluences,
@@ -2963,12 +3126,19 @@ void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& cont
                                settings.trunk_falloff_radius_cells, context.routing_surface,
                                seed + 5107U + (accepted * 149U),
                                settings.trunk_offset_cells);
+            paint_support_disc(fields.river_trunk, context.domain, confluence_index, strength,
+                               settings.trunk_core_radius_cells,
+                               settings.trunk_falloff_radius_cells);
         } else {
             paint_channel_path(fields.tributaries, std::move(path_points), context.domain,
                                settings.tributary_core_radius_cells,
                                settings.tributary_falloff_radius_cells, context.routing_surface,
                                seed + 6203U + (accepted * 127U),
                                settings.tributary_offset_cells);
+            paint_support_disc(fields.tributaries, context.domain, confluence_index, strength,
+                               settings.tributary_core_radius_cells,
+                               std::max(settings.tributary_falloff_radius_cells,
+                                        settings.trunk_falloff_radius_cells));
         }
         mark_active_indices(active, path);
         accepted_confluences.push_back(confluence_index);
@@ -3264,7 +3434,12 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
     };
     const cubey::procedural::ScalarField2D routing_height =
         make_routing_source_height(context.domain.hidden_desc, seed);
-    context.routing_surface = make_drainage_routing_surface(routing_height, seed, settings);
+    const cubey::procedural::ScalarField2D raw_routing_surface =
+        make_drainage_routing_surface(routing_height, seed, settings);
+    RoutingRepairResult repaired_routing =
+        repair_routing_surface(raw_routing_surface, settings);
+    context.routing_surface = std::move(repaired_routing.surface);
+    context.routing_fill_delta = std::move(repaired_routing.fill_delta);
     context.d8_routing = route_steepest_descent(context.routing_surface);
     context.routing = route_dinfinity_descent(context.routing_surface);
     context.accumulation = accumulate_flow(context.routing_surface, context.routing.receivers);
@@ -3300,6 +3475,8 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
     const RoutingContext context = make_routing_context(desc, config.seed, settings);
     RiverFields fields{
         .drainage_potential = crop_hidden_field_to_visible(context.routing_surface, context.domain),
+        .routing_fill_delta = crop_hidden_field_to_visible(context.routing_fill_delta,
+                                                           context.domain),
         .flow_direction = crop_hidden_field_to_visible(context.routing.flow_direction,
                                                        context.domain),
         .flow_accumulation = crop_hidden_field_to_visible(context.accumulation, context.domain),
@@ -3383,6 +3560,7 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
 
     return RiverFields{
         .drainage_potential = std::move(fields.drainage_potential),
+        .routing_fill_delta = std::move(fields.routing_fill_delta),
         .flow_direction = std::move(fields.flow_direction),
         .flow_accumulation = std::move(fields.flow_accumulation),
         .stream_order = std::move(fields.stream_order),
@@ -3484,6 +3662,8 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldLocalRelief, local_relief.local_span);
     add_field(product.fields, kTerrainFieldDrainagePotential,
               std::move(river_fields.drainage_potential));
+    add_field(product.fields, kTerrainFieldRoutingFillDelta,
+              std::move(river_fields.routing_fill_delta));
     add_field(product.fields, kTerrainFieldFlowDirection, std::move(river_fields.flow_direction));
     add_field(product.fields, kTerrainFieldFlowAccumulation,
               std::move(river_fields.flow_accumulation));
