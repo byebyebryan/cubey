@@ -31,3 +31,24 @@ The next pass should keep planet clouds opt-in, add scene-depth-aware cloud
 composition for planet, and retune the planet-specific distance regimes. Cloud
 shadows, ocean/terrain reflections, and production temporal stabilization remain
 deferred until composition and scale reads are stable.
+
+## Depth Composite Pass
+
+Follow-up capture:
+
+```sh
+WIDTH=1280 HEIGHT=720 FRAMES=2 QUALITY=quarter \
+  projects/planet/capture_cloud_review.sh outputs/planet-cloud-review-current
+```
+
+The pass added a planet-only cloud composite shader that samples scene depth and
+suppresses final cloud contribution when opaque scene depth is closer than the
+cloud hit distance. Planet also opts its forward depth attachment into sampled
+usage; other forward-pass users keep non-sampled depth by default.
+
+The planet `--clouds` defaults now use quarter resolution, no temporal resolve,
+automatic local/orbit distance handling, and a wider high-altitude transition.
+The after capture has more usable dawn/orbit cloud fill and keeps high
+transition cloud mass readable. Remaining visual work is still horizon polish:
+high-oblique clouds and the sky/terrain boundary can read as separate layers
+even when depth overdraw is masked.
