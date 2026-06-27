@@ -75,3 +75,26 @@ filtering/detail work rather than just a distance-threshold problem. The next
 cloud/planet pass should focus on shell detail antialiasing, horizon-limb
 filtering, and higher-signal surface diagnostics before treating the transition
 as visually done.
+
+## Orbit Shell Filtering Pass
+
+Full-quality capture:
+
+```sh
+WIDTH=1920 HEIGHT=1080 FRAMES=2 QUALITY=full \
+  projects/planet/capture_cloud_review.sh outputs/planet-cloud-review-shell-filtering
+```
+
+The pass added orbit-shell footprint/filter/mass diagnostics and routes the
+surface-shell renderer through one shared footprint value for detail visibility,
+filtered mass, height/normal sampling, and limb alpha. The shell now filters
+micro/detail fields more aggressively at grazing angles, gates low-mass alpha
+near the limb, and fades fully grazing shell color more strongly.
+
+The full-quality captures show the high-oblique shell edge is less stippled
+without removing the main cloud bodies or orbit-scale wisps. A `--no-clouds`
+comparison at 140 km also confirmed that part of the hard high-oblique horizon
+read comes from the planet/sky/surface silhouette itself, not only cloud-shell
+alpha. Remaining work should therefore split into two tracks: further shell
+texture quality for orbit-scale weather, and separate planet horizon/surface
+composition cleanup.
