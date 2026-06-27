@@ -62,6 +62,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Cloud pre-merge checkpoint](cloud-pre-merge-checkpoint.md): current
   production cloud capture recipe and known-good read before syncing cloud work
   into other worktrees.
+- [Planet cloud integration checkpoint](planet-cloud-integration.md): current
+  planet cloud capture baseline, depth-composition issue list, and deferred
+  integration work.
 - [Procedural terrain reference review](procedural-terrain-reference-review.md):
   current pass over `3DWorld`, `Planet-Generator`, `TerraForge3D`, and
   `terrain-diffusion`, with lessons for code-centric terrain recipes, field
