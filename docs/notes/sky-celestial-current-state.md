@@ -117,11 +117,13 @@ physical exposure calibration, eclipses, and real ephemeris remain deferred.
 ## Planet GUI Issues Observed 2026-06-24
 
 These were observed interactively in `projects/planet` after the
-`sky-rendering` merge. They are recorded for a later diagnosis pass; no fix has
-been attempted yet.
+`sky-rendering` merge. They are tracked here so fixed and remaining issues stay
+separate.
 
-- A black band can appear between the terrain horizon and sky at some camera
-  altitudes or viewing angles.
+- The low-surface twilight black band was addressed by a planet-surface
+  horizon-fill pass after physical aerial perspective. High-altitude silhouette
+  issues, including the 60 km no-cloud notch, remain separate planet
+  LOD/composition follow-up work.
 - In surface view, rotating the camera rotates the surface correctly, but the
   sky appears static, as if the surface and sky view frames disagree.
 - In orbit view, stars appear to be missing or washed out. This may be exposure

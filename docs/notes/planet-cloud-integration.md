@@ -98,3 +98,26 @@ read comes from the planet/sky/surface silhouette itself, not only cloud-shell
 alpha. Remaining work should therefore split into two tracks: further shell
 texture quality for orbit-scale weather, and separate planet horizon/surface
 composition cleanup.
+
+## Planet Horizon Composition Pass
+
+Diagnostic capture:
+
+```sh
+WIDTH=1280 HEIGHT=720 FRAMES=2 QUALITY=quarter \
+  projects/planet/capture_horizon_review.sh outputs/planet-horizon-review-current
+```
+
+This pass added a dedicated planet horizon review script and extra no-cloud
+high-altitude samples to the cloud review pack. The important diagnosis was that
+the low-surface twilight band was visible with clouds disabled: terrain
+fragments near the sun-facing horizon received almost no physical in-scatter,
+while the sky just above them was bright twilight.
+
+The fix keeps the shared atmosphere background unchanged and adds a
+planet-surface-only horizon fill after physical aerial perspective. The fill is
+gated to low camera altitudes, grazing view rays, and far surface distance, so
+orbit/high-oblique views remain owned by the atmosphere background and cloud
+shell. The current capture pack shows a softer low-surface horizon; 140 km and
+260 km no-cloud views are intentionally unchanged. A pre-existing 60 km surface
+silhouette notch remains a separate planet LOD/geometry coverage issue.
