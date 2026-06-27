@@ -17,10 +17,11 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `9`. It emits source fields, height/slope
+The current generator revision is `10`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
-The drainage pass is deliberately process-informed rather than a full hydraulic
+The drainage pass now repairs local routing pits with a bounded priority-flood
+epsilon fill, but it is still process-informed rather than a full hydraulic
 simulation.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
@@ -54,6 +55,7 @@ The review set includes:
 - `slope.png`
 - `ridge-uplift.png`
 - `drainage-potential.png`
+- `routing-fill-delta.png`
 - `flow-direction.png`
 - `flow-accumulation.png`
 - `stream-order.png`
@@ -76,14 +78,15 @@ patch to river-network artifacts without rendering unrelated watershed clusters.
 Treat it as a diagnostic recipe, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
-plus routed flow accumulation over a padded hidden routing domain. Revision `9`
-uses continuous D-Infinity-style flow angles and fractional accumulation for the
-diagnostic catchment field, then promotes `stream_order` into connected support
-selection for the active product. The default recipe keeps a conservative trunk
-and attached branch network. Additional branches are accepted only when they
-reach an existing active channel, which avoids independent local strokes and
-straight snap connectors. The stress recipe no longer paints multiple unrelated
-corridors; it applies a procedural basin convergence to the routing surface and
+plus routed flow accumulation over a padded hidden routing domain. Revision `10`
+routes over a priority-flood-repaired drainage surface and exposes the
+raw-to-repaired delta as `routing_fill_delta`. Continuous D-Infinity-style flow
+angles and fractional accumulation remain the diagnostic catchment path, while
+`stream_order` selects connected support for active channels. The default recipe
+now avoids raw support-cell painting and keeps a traced trunk plus attached
+branch network. Additional branches are accepted only when they visibly reach an
+existing active channel, which avoids independent local strokes and straight snap
+connectors. The stress recipe still applies a procedural basin convergence and
 paints selected connected support paths through the normal smoothed channel
-pipeline. Channel rasterization carries discharge/stream-order width scale
-through traced paths. See [Terrain river stream-order corridor plan](../../docs/notes/terrain-river-stream-order-corridor-plan.md).
+pipeline. Channel rasterization carries discharge/stream-order width and
+strength variation through traced paths. See [Terrain routing repair plan](../../docs/notes/terrain-routing-repair-plan.md).

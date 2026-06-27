@@ -7,6 +7,8 @@ straight reaches, parallel branches, and local-sink artifacts. The next batch
 should repair the routing surface before adding more biome or river-rendering
 features.
 
+Status: implemented in generator revision 10.
+
 ## Decision
 
 Use a small deterministic priority-flood epsilon fill over the hidden routing
@@ -39,3 +41,16 @@ not provide a ready-made fill/breach model to port here.
   collapse to a flooded patch.
 - Default and stress river masks remain connected enough for the existing
   review tests, with no regression to scattered clusters.
+
+## Outcome
+
+Revision 10 added the priority-flood epsilon fill over the padded hidden routing
+domain. `drainage_potential` now reflects the repaired routing surface, and
+`routing_fill_delta` is emitted as a product/debug field. The default recipe no
+longer paints raw stream-order support cells; traced paths carry procedural
+offset, join discs, width scale, and strength variation so the visible product
+stays connected without long uniform high-strength cores.
+
+This did not solve full river-network quality. The stress recipe still shows
+parallel support-path artifacts and remains slow enough that stress performance
+should be addressed before adding heavier hydrology checks.
