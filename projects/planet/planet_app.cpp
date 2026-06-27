@@ -141,7 +141,18 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 30U);
 planet_cloud_config_from_run_config(const RunConfig& config) {
     atmosphere::AtmosphereCloudConfig clouds{};
     clouds.enabled = false;
+    clouds.layer.quality = cubey::render::CloudLayerQuality::Quarter;
     clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Auto;
+    clouds.layer.orbit_representation = cubey::render::CloudLayerOrbitRepresentation::SurfaceShell;
+    clouds.layer.temporal_enabled = false;
+    clouds.layer.orbit_transition_start_m = 80000.0F;
+    clouds.layer.orbit_transition_end_m = 260000.0F;
+    clouds.layer.far_shell_start_m = 45000.0F;
+    clouds.layer.far_shell_end_m = 220000.0F;
+    clouds.layer.far_shell_strength = 1.10F;
+    clouds.layer.orbit_detail_strength = 0.78F;
+    clouds.layer.orbit_density_scale = 0.023F;
+    clouds.layer.orbit_fill = 1.12F;
     atmosphere::apply_atmosphere_cloud_run_config(clouds, config.clouds);
     return clouds;
 }
