@@ -65,3 +65,19 @@ Remaining limitation: stress captures can still show straight-ish support
 strokes and parallel branches. That points to the next source/model problem:
 replace painted support expansion with a more principled basin and tributary
 hierarchy rather than adding more render-space masking.
+
+## Revision 12 Follow-Up
+
+The first revision 11 prune pass improved branch clutter but regressed active
+coverage and network read. Revision 12 recovers part of that loss by:
+
+- increasing the default recipe's branch and order-seed budget;
+- allowing order-seed paths to trace farther upstream before accumulation
+  cutoff;
+- broadening the stress selected support hierarchy and overlap gate; and
+- adding path-level spacing between accepted connected-support paths so coverage
+  can increase without immediately returning to dense parallel support bundles.
+
+This is still a compromise. It is better than the sparse revision 11 output, but
+the proper next fix is still a stronger basin/tributary hierarchy rather than
+more stress-recipe tuning.

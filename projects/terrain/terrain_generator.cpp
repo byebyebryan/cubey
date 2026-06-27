@@ -68,25 +68,26 @@ struct RiverNetworkSettings {
     std::size_t corridor_count = 1U;
     std::size_t corridor_render_count = 1U;
     std::size_t corridor_seed_count = 128U;
-    std::size_t corridor_branch_count = 14U;
+    std::size_t corridor_branch_count = 20U;
     std::size_t corridor_min_visible_samples = 24U;
     std::size_t corridor_branch_min_visible_samples = 6U;
-    int corridor_branch_min_confluence_distance_cells = 12;
-    std::size_t corridor_branch_max_grid_aligned_run_cells = 36U;
-    float corridor_branch_max_active_overlap = 0.38F;
+    int corridor_branch_min_confluence_distance_cells = 10;
+    std::size_t corridor_branch_max_grid_aligned_run_cells = 42U;
+    float corridor_branch_max_active_overlap = 0.42F;
     bool include_accumulation_trunk_candidate = true;
     std::size_t secondary_trunk_count = 0U;
     int secondary_trunk_min_distance_cells = 48;
-    float order_seed_min_stream_order = 2.4F;
+    float order_seed_min_stream_order = 2.1F;
     float order_seed_trunk_stream_order = 4.5F;
-    std::size_t order_seed_count = 6U;
-    int order_seed_contact_distance_cells = 8;
-    std::size_t order_seed_min_visible_samples = 12U;
-    float order_seed_max_active_overlap = 0.34F;
+    std::size_t order_seed_count = 10U;
+    int order_seed_contact_distance_cells = 6;
+    std::size_t order_seed_min_visible_samples = 10U;
+    float order_seed_max_active_overlap = 0.40F;
+    float order_seed_upstream_accumulation_fraction = 0.05F;
     float tributary_min_accumulation = 4.0F;
     float tributary_accumulation_fraction = 0.018F;
-    std::size_t min_tributary_count = 4U;
-    std::size_t tributary_count_divisor = 18U;
+    std::size_t min_tributary_count = 8U;
+    std::size_t tributary_count_divisor = 12U;
     std::size_t min_tributary_path_samples = 5U;
     float tributary_strength = 0.75F;
     float tributary_core_radius_cells = 0.9F;
@@ -106,6 +107,7 @@ struct RiverNetworkSettings {
     float connected_support_path_falloff_radius_cells = 2.0F;
     float connected_support_path_offset_cells = 1.2F;
     int connected_support_min_confluence_distance_cells = 12;
+    int connected_support_min_path_distance_cells = 0;
     std::size_t connected_support_max_grid_aligned_run_cells = 36U;
     float support_min_strength = 0.30F;
     float support_trunk_strength = 0.56F;
@@ -241,7 +243,7 @@ struct RoutingRepairResult {
             .trunk_falloff_radius_cells = 5.0F,
             .trunk_offset_cells = 6.0F,
             .corridor_trunk_stream_order = 4.0F,
-            .corridor_tributary_stream_order = 2.0F,
+            .corridor_tributary_stream_order = 1.4F,
             .corridor_count = 1U,
             .corridor_render_count = 1U,
             .corridor_seed_count = 192U,
@@ -260,6 +262,7 @@ struct RoutingRepairResult {
             .order_seed_contact_distance_cells = 0,
             .order_seed_min_visible_samples = 8U,
             .order_seed_max_active_overlap = 0.34F,
+            .order_seed_upstream_accumulation_fraction = 0.035F,
             .tributary_min_accumulation = 2.0F,
             .tributary_accumulation_fraction = 0.006F,
             .min_tributary_count = 14U,
@@ -271,18 +274,19 @@ struct RoutingRepairResult {
             .tributary_offset_cells = 4.8F,
             .paint_stream_order_support = false,
             .expand_connected_support = true,
-            .connected_support_min_stream_order = 1.5F,
+            .connected_support_min_stream_order = 1.2F,
             .connected_support_seed_count = 16'384U,
-            .connected_support_max_paths = 96U,
-            .connected_support_min_visible_samples = 7U,
-            .connected_support_max_selected_overlap = 0.54F,
+            .connected_support_max_paths = 144U,
+            .connected_support_min_visible_samples = 6U,
+            .connected_support_max_selected_overlap = 0.74F,
             .paint_connected_support_paths = true,
-            .connected_support_painted_path_count = 52U,
+            .connected_support_painted_path_count = 82U,
             .connected_support_path_strength = 0.68F,
             .connected_support_path_core_radius_cells = 1.08F,
             .connected_support_path_falloff_radius_cells = 3.35F,
             .connected_support_path_offset_cells = 5.5F,
-            .connected_support_min_confluence_distance_cells = 28,
+            .connected_support_min_confluence_distance_cells = 18,
+            .connected_support_min_path_distance_cells = 5,
             .connected_support_max_grid_aligned_run_cells = 96U,
             .support_min_strength = 0.28F,
             .support_trunk_strength = 0.44F,
@@ -2806,6 +2810,10 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
                 continue;
             }
         }
+        if (path_is_near_indices(context.domain.hidden_desc, downstream_path, support_cells,
+                                 settings.connected_support_min_path_distance_cells)) {
+            continue;
+        }
 
         std::size_t new_visible_samples = 0U;
         for (const int index : downstream_path) {
@@ -3280,7 +3288,8 @@ void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& cont
             context.accumulation.values()[static_cast<std::size_t>(candidate)];
         std::vector<int> upstream_path = trace_strongest_upstream_path(
             candidate, upstream, context.accumulation,
-            std::max(1.0F, seed_accumulation * 0.08F), active);
+            std::max(1.0F, seed_accumulation * settings.order_seed_upstream_accumulation_fraction),
+            active);
         if (upstream_path.empty()) {
             upstream_path.push_back(candidate);
         }

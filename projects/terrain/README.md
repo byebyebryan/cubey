@@ -17,15 +17,18 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `11`. It emits source fields, height/slope
+The current generator revision is `12`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass now repairs local routing pits with a bounded priority-flood
 epsilon fill. River topology still uses D8 graph traversal where that is useful
 for connectivity, but selected channel paths are converted to sub-cell
 centerlines, nudged by continuous flow direction, and rasterized with bounded
-meander before they become product masks. This remains process-informed rather
-than a full hydraulic simulation.
+meander before they become product masks. Revision 12 restores more active
+network coverage by allowing more default tributary/order-seed candidates and by
+spacing stress support paths against already accepted support geometry, not only
+against confluence points. This remains process-informed rather than a full
+hydraulic simulation.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -76,13 +79,14 @@ The optional `temperate-mountain-river-stress` recipe keeps the same source
 terrain and routing diagnostics but expands active channel extraction for review
 stress testing. It uses a stronger basin-grade routing profile, selects one
 connected support basin, spaces accepted support confluences, and paints extra
-support paths as de-gridded tributary channels so
+support paths as de-gridded tributary channels. Revision 12 also spaces support
+paths against previously accepted support paths so
 `outputs/terrain/stress-river-network` exposes more of the patch to
 river-network artifacts without rendering unrelated watershed clusters.
 Treat it as a diagnostic recipe, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
-plus routed flow accumulation over a padded hidden routing domain. Revision `11`
+plus routed flow accumulation over a padded hidden routing domain. Revision `12`
 routes over a priority-flood-repaired drainage surface and exposes the
 raw-to-repaired delta as `routing_fill_delta`. Continuous D-Infinity-style flow
 angles and fractional accumulation remain the diagnostic catchment path, while
@@ -94,5 +98,6 @@ snap connectors. Before rasterization, grid-selected paths are resampled into
 sub-cell centerlines, smoothed, constrained by the continuous flow field, and
 given discharge/stream-order width and strength variation. The stress recipe
 still applies a procedural basin convergence, but now prunes low-value support
-branches more aggressively and spaces accepted confluences to reduce parallel
-branch fans. See [Terrain routing repair plan](../../docs/notes/terrain-routing-repair-plan.md).
+branches more aggressively, spaces accepted confluences, and rejects support
+paths that run too near previously accepted support paths to reduce parallel
+branch fans without starving the network. See [Terrain routing repair plan](../../docs/notes/terrain-routing-repair-plan.md).

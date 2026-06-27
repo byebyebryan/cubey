@@ -76,8 +76,9 @@ the detailed foundation notes under `docs/architecture/`.
   priority-flood epsilon fill pass for repairing local routing sinks before
   broader hydrology or erosion work.
 - [Terrain river degrid and stress pruning plan](terrain-river-degrid-stress-pruning-plan.md):
-  revision 11 outcome for moving rendered river centerlines away from raw D8
-  graph paths and pruning the stress recipe's low-order support branches.
+  revision 11/12 outcomes for moving rendered river centerlines away from raw
+  D8 graph paths, pruning low-order support branches, and recovering active
+  network coverage.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.

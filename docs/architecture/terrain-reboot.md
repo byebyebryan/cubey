@@ -220,7 +220,7 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `11` emits deterministic source fields,
+local region. Generator revision `12` emits deterministic source fields,
 height/slope analysis, repaired routing diagnostics, smoothed active river trunk
 and tributary masks, wetness/deposition, material masks, vegetation potential,
 summaries, and tests.
@@ -260,6 +260,15 @@ default composition. Revision 11 also raises support-order gates, spaces
 accepted confluences, caps low-value branch clutter, and adds tests for stress
 endpoint density plus long straight or diagonal high-strength runs.
 
+Revision 12 is a coverage-recovery pass after revision 11 pruned the network too
+far. The default recipe accepts more tributary and order-seed branches, and
+order-seed paths can trace farther upstream before accumulation cutoff. The
+stress recipe broadens the selected support hierarchy and restores more
+connected support coverage, but adds a support-path spacing guard so newly
+accepted support routes cannot run too close to previously accepted support
+geometry. This keeps the de-gridded channel renderer while reducing the earlier
+coverage regression.
+
 Known limitations:
 
 - Fractional accumulation reduces receiver quantization, but active trunk
@@ -269,13 +278,13 @@ Known limitations:
   does not yet perform breach routing, erosion, or lake/wetland resolution.
 - Padded routing makes local review slices less artificial, but the route model
   is still static and should not be mistaken for simulated river evolution.
-- Default river composition now has a stronger review footprint, but a few
-  segments can still read too straight where the underlying routing source is
-  dominated by a single grade.
+- Default river composition now has a stronger review footprint than the
+  revision 11 prune pass, but it is still trunk-dominant and can read too sparse
+  compared with a mature drainage network.
 - The stress recipe now avoids intentionally disconnected diagnostic corridors
-  and prunes the worst low-order branch fans, but it can still expose parallel
-  support strokes because it deliberately pushes coverage before the hydrology
-  model is complete.
+  and prunes the worst low-order branch fans, but it can still expose
+  straight-ish or parallel support strokes because it deliberately pushes
+  coverage before the hydrology model is complete.
 - Stress generation is currently expensive enough that performance should be
   revisited before adding heavier hydrology checks.
 - The final PNG is an inspectable debug composition, not the target renderer.

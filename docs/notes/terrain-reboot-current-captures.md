@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 11
-river degrid and stress-pruning pass.
+This note records the current terrain reboot capture set after the revision 12
+river coverage-recovery pass.
 
 ## Capture Command
 
@@ -16,7 +16,9 @@ structure, channel continuity, and material response are easier to inspect.
 `outputs/terrain/current` is the default product review. The optional
 `outputs/terrain/stress-river-network` set uses the diagnostic stress recipe to
 apply a stronger basin-grade routing profile and paint extra connected support
-paths across the patch through the same de-gridded channel pipeline.
+paths across the patch through the same de-gridded channel pipeline. Revision 12
+restores some active network coverage after the first degrid/pruning pass while
+spacing accepted support paths to avoid near-duplicate branch bundles.
 
 ## What To Inspect
 
@@ -64,7 +66,10 @@ selected grid paths into flow-guided sub-cell centerlines before rasterization.
 The stress recipe still paints connected support paths through the normal
 channel pipeline instead of painting raw support cells or multiple unrelated
 corridors, but it now spaces support confluences and reduces low-order branch
-clutter. The
+clutter. Revision 12 loosens default tributary/order-seed selection and lets
+order-seed paths trace farther upstream, then restores more stress support
+coverage while rejecting support paths that run too near previously accepted
+support geometry. The
 rejected revision 4 attempt made the visible product worse by rendering selected
 graph edges directly, producing disconnected snippets and hard straight or
 diagonal runs. See
@@ -74,12 +79,12 @@ diagonal runs. See
 
 The active river no longer depends on an authored center line, and the visible
 trunk/mask now use a padded hidden routing domain instead of treating the review
-patch as the whole watershed. Revision `11` routes accumulation with continuous
+patch as the whole watershed. Revision `12` routes accumulation with continuous
 D-Infinity-style flow angles and fractional receivers over the repaired routing
 surface, selects active channels from connected `stream_order` support, accepts
 extra branches only when they visibly terminate at an existing active channel,
 converts visible paths to de-gridded centerlines, and gives the stress recipe a
-basin-convergent routing source plus extra but pruned connected support paths.
+basin-convergent routing source plus extra but spaced connected support paths.
 The stress recipe remains intentionally better for artifact hunting than
 composition review.
 
