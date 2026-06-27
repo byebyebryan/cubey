@@ -168,12 +168,16 @@ capture_named surface-low-depth-occlusion "Surface low depth occlusion" diagnost
 
 capture_named high-060-clouds "High 60km clouds" transition \
     "${high_transition_60[@]}"
+capture_named high-060-no-clouds "High 60km no clouds" transition \
+    "${high_transition_60[@]}" --no-clouds
 capture_named high-060-distance "High 60km distance" transition \
     "${high_transition_60[@]}" --cloud-debug-view distance-regime
 capture_named high-060-weights "High 60km weights" transition \
     "${high_transition_60[@]}" --cloud-debug-view transition-weights
 capture_named high-140-clouds "High 140km clouds" transition \
     "${high_transition_140[@]}"
+capture_named high-140-no-clouds "High 140km no clouds" transition \
+    "${high_transition_140[@]}" --no-clouds
 capture_named high-140-distance "High 140km distance" transition \
     "${high_transition_140[@]}" --cloud-debug-view distance-regime
 capture_named high-140-weights "High 140km weights" transition \
@@ -188,6 +192,8 @@ capture_named high-140-shell-mass "High 140km shell mass" transition \
     "${high_transition_140[@]}" --cloud-debug-view orbit-shell-mass
 capture_named high-260-clouds "High 260km clouds" transition \
     "${high_transition_260[@]}"
+capture_named high-260-no-clouds "High 260km no clouds" transition \
+    "${high_transition_260[@]}" --no-clouds
 capture_named high-260-distance "High 260km distance" transition \
     "${high_transition_260[@]}" --cloud-debug-view distance-regime
 capture_named high-260-weights "High 260km weights" transition \
