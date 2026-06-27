@@ -494,11 +494,16 @@ void test_terrain_review_river_coverage_is_meaningful() {
     const auto& baseline_river =
         field(baseline, cubey::projects::terrain::kTerrainFieldRiverMask);
     const auto& stress_river = field(stress, cubey::projects::terrain::kTerrainFieldRiverMask);
+    const auto& baseline_trunk =
+        field(baseline, cubey::projects::terrain::kTerrainFieldRiverTrunk);
+    const auto& stress_trunk = field(stress, cubey::projects::terrain::kTerrainFieldRiverTrunk);
     const auto& stress_tributaries =
         field(stress, cubey::projects::terrain::kTerrainFieldTributaries);
     constexpr float kVisibleNetworkThreshold = 0.001F;
     const std::size_t baseline_samples = count_active_samples(baseline_river, 0.30F);
     const std::size_t stress_samples = count_active_samples(stress_river, 0.30F);
+    const std::size_t baseline_trunk_samples = count_active_samples(baseline_trunk, 0.30F);
+    const std::size_t stress_trunk_samples = count_active_samples(stress_trunk, 0.30F);
     const std::size_t stress_tributary_samples = count_active_samples(stress_tributaries, 0.30F);
     const std::size_t stress_endpoint_samples =
         count_active_endpoint_samples(stress_tributaries, 0.30F);
@@ -531,6 +536,25 @@ void test_terrain_review_river_coverage_is_meaningful() {
             "terrain default review river should not flood the patch");
     require(stress_samples * 100U < total_samples * 12U,
             "terrain stress review river should not flood the patch");
+    if (stress_trunk_samples <= baseline_trunk_samples) {
+        throw std::runtime_error(
+            "terrain stress trunk should expand high-order trunk coverage: baseline=" +
+            std::to_string(baseline_trunk_samples) + " stress=" +
+            std::to_string(stress_trunk_samples));
+    }
+    if (stress_trunk_samples * 100U < stress_samples * 40U) {
+        throw std::runtime_error(
+            "terrain stress trunk should carry a meaningful share of active network: trunk=" +
+            std::to_string(stress_trunk_samples) + " river=" +
+            std::to_string(stress_samples));
+    }
+    if (stress_trunk_samples * 100U < stress_tributary_samples * 50U) {
+        throw std::runtime_error(
+            "terrain stress trunk should not leave tributaries as the dominant network carrier: "
+            "trunk=" +
+            std::to_string(stress_trunk_samples) + " tributaries=" +
+            std::to_string(stress_tributary_samples));
+    }
     if (stress_endpoint_samples * 100U > stress_tributary_samples * 8U) {
         throw std::runtime_error(
             "terrain stress tributaries should not collapse into hairy endpoints: endpoints=" +

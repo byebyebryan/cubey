@@ -63,6 +63,10 @@ struct RiverNetworkSettings {
     float trunk_core_radius_cells = 0.75F;
     float trunk_falloff_radius_cells = 3.0F;
     float trunk_offset_cells = 6.0F;
+    float trunk_path_strength = 0.82F;
+    float accumulation_trunk_path_strength = 0.84F;
+    float trunk_soften_gain = 1.85F;
+    float tributary_soften_gain = 1.45F;
     float corridor_trunk_stream_order = 4.0F;
     float corridor_tributary_stream_order = 2.0F;
     std::size_t corridor_count = 1U;
@@ -109,6 +113,12 @@ struct RiverNetworkSettings {
     int connected_support_min_confluence_distance_cells = 12;
     int connected_support_min_path_distance_cells = 0;
     std::size_t connected_support_max_grid_aligned_run_cells = 36U;
+    bool promote_major_paths_to_trunk = false;
+    std::size_t promoted_trunk_min_visible_samples = 18U;
+    float promoted_trunk_min_stream_order = 3.4F;
+    float promoted_trunk_min_discharge = 0.48F;
+    float promoted_trunk_strength = 0.78F;
+    std::size_t promoted_trunk_branch_count = 0U;
     float support_min_strength = 0.30F;
     float support_trunk_strength = 0.56F;
     float support_tributary_core_radius_cells = 0.45F;
@@ -183,6 +193,12 @@ struct RiverCorridorComponent {
     float score = 0.0F;
 };
 
+struct ChannelPathHierarchyStats {
+    std::size_t visible_samples = 0U;
+    float max_stream_order = 0.0F;
+    float max_discharge = 0.0F;
+};
+
 struct FlowVector {
     float x = 0.0F;
     float y = 0.0F;
@@ -239,9 +255,13 @@ struct RoutingRepairResult {
             .routing_grade_y = 0.76F,
             .routing_basin_convergence = 2200.0F,
             .routing_basin_meander = 0.17F,
-            .trunk_core_radius_cells = 2.20F,
-            .trunk_falloff_radius_cells = 5.0F,
+            .trunk_core_radius_cells = 2.80F,
+            .trunk_falloff_radius_cells = 8.0F,
             .trunk_offset_cells = 6.0F,
+            .trunk_path_strength = 0.68F,
+            .accumulation_trunk_path_strength = 0.68F,
+            .trunk_soften_gain = 1.16F,
+            .tributary_soften_gain = 1.10F,
             .corridor_trunk_stream_order = 4.0F,
             .corridor_tributary_stream_order = 1.4F,
             .corridor_count = 1U,
@@ -257,7 +277,7 @@ struct RoutingRepairResult {
             .secondary_trunk_count = 3U,
             .secondary_trunk_min_distance_cells = 42,
             .order_seed_min_stream_order = 2.0F,
-            .order_seed_trunk_stream_order = 4.2F,
+            .order_seed_trunk_stream_order = 3.5F,
             .order_seed_count = 16U,
             .order_seed_contact_distance_cells = 0,
             .order_seed_min_visible_samples = 8U,
@@ -268,7 +288,7 @@ struct RoutingRepairResult {
             .min_tributary_count = 14U,
             .tributary_count_divisor = 7U,
             .min_tributary_path_samples = 4U,
-            .tributary_strength = 0.80F,
+            .tributary_strength = 0.68F,
             .tributary_core_radius_cells = 1.32F,
             .tributary_falloff_radius_cells = 3.75F,
             .tributary_offset_cells = 4.8F,
@@ -288,6 +308,12 @@ struct RoutingRepairResult {
             .connected_support_min_confluence_distance_cells = 18,
             .connected_support_min_path_distance_cells = 5,
             .connected_support_max_grid_aligned_run_cells = 96U,
+            .promote_major_paths_to_trunk = true,
+            .promoted_trunk_min_visible_samples = 6U,
+            .promoted_trunk_min_stream_order = 1.2F,
+            .promoted_trunk_min_discharge = 1.0F,
+            .promoted_trunk_strength = 0.68F,
+            .promoted_trunk_branch_count = 8U,
             .support_min_strength = 0.28F,
             .support_trunk_strength = 0.44F,
             .support_tributary_core_radius_cells = 0.25F,
@@ -2000,6 +2026,47 @@ void paint_channel_path(cubey::procedural::ScalarField2D& field,
     return static_cast<float>(active_count) / static_cast<float>(indices.size());
 }
 
+[[nodiscard]] float routing_log_max_accumulation(const RoutingContext& context) {
+    return std::log1p(std::max(context.accumulation.summarize().max, 1.0F));
+}
+
+[[nodiscard]] ChannelPathHierarchyStats channel_path_hierarchy_stats(
+    const RoutingContext& context, const std::vector<int>& path, float log_max_accumulation) {
+    ChannelPathHierarchyStats stats{};
+    for (const int index : path) {
+        if (index < 0) {
+            continue;
+        }
+        const std::size_t sample = static_cast<std::size_t>(index);
+        stats.visible_samples += is_inside_visible_crop(context.domain, index) ? 1U : 0U;
+        stats.max_stream_order =
+            std::max(stats.max_stream_order, context.stream_order.values()[sample]);
+        if (log_max_accumulation > 0.0F) {
+            const float discharge =
+                std::log1p(std::max(context.accumulation.values()[sample], 0.0F)) /
+                log_max_accumulation;
+            stats.max_discharge = std::max(stats.max_discharge, discharge);
+        }
+    }
+    return stats;
+}
+
+[[nodiscard]] bool should_promote_path_to_trunk(const RoutingContext& context,
+                                                const std::vector<int>& path,
+                                                const RiverNetworkSettings& settings,
+                                                float log_max_accumulation) {
+    if (!settings.promote_major_paths_to_trunk) {
+        return false;
+    }
+    const ChannelPathHierarchyStats stats =
+        channel_path_hierarchy_stats(context, path, log_max_accumulation);
+    if (stats.visible_samples < settings.promoted_trunk_min_visible_samples) {
+        return false;
+    }
+    return stats.max_stream_order >= settings.promoted_trunk_min_stream_order ||
+           stats.max_discharge >= settings.promoted_trunk_min_discharge;
+}
+
 void mark_active_indices(std::vector<bool>& active, const std::vector<int>& indices) {
     for (const int index : indices) {
         if (index >= 0) {
@@ -2772,6 +2839,7 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
     std::size_t painted = 0U;
     std::vector<int> accepted_confluences;
     accepted_confluences.reserve(settings.connected_support_max_paths);
+    const float log_max_accumulation = routing_log_max_accumulation(context);
     for (const int candidate : candidates) {
         if (accepted >= settings.connected_support_max_paths) {
             break;
@@ -2844,22 +2912,37 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
         }
         if (settings.paint_connected_support_paths &&
             painted < settings.connected_support_painted_path_count) {
-            std::vector<ChannelPathPoint> path_points =
-                make_degridded_channel_points(context, downstream_path,
-                                              settings.connected_support_path_strength, 0.34F,
-                                              0.95F);
-            paint_channel_path(fields.tributaries, std::move(path_points), context.domain,
-                               settings.connected_support_path_core_radius_cells,
-                               settings.connected_support_path_falloff_radius_cells,
-                               context.routing_surface, seed + 9109U + (painted * 127U),
-                               settings.connected_support_path_offset_cells);
-            paint_support_disc(
-                fields.tributaries, context.domain, downstream_path.back(),
-                settings.connected_support_path_strength,
-                std::max(settings.connected_support_path_core_radius_cells,
-                         settings.tributary_core_radius_cells),
-                std::max(settings.connected_support_path_falloff_radius_cells,
-                         settings.trunk_falloff_radius_cells));
+            const bool promoted_trunk = should_promote_path_to_trunk(
+                context, downstream_path, settings, log_max_accumulation);
+            if (promoted_trunk) {
+                std::vector<ChannelPathPoint> path_points = make_degridded_channel_points(
+                    context, downstream_path, settings.promoted_trunk_strength, 0.65F, 2.15F);
+                paint_channel_path(fields.river_trunk, std::move(path_points), context.domain,
+                                   settings.trunk_core_radius_cells,
+                                   settings.trunk_falloff_radius_cells, context.routing_surface,
+                                   seed + 9109U + (painted * 127U),
+                                   settings.trunk_offset_cells);
+                paint_support_disc(fields.river_trunk, context.domain, downstream_path.back(),
+                                   settings.promoted_trunk_strength,
+                                   settings.trunk_core_radius_cells,
+                                   settings.trunk_falloff_radius_cells);
+            } else {
+                std::vector<ChannelPathPoint> path_points = make_degridded_channel_points(
+                    context, downstream_path, settings.connected_support_path_strength, 0.34F,
+                    0.95F);
+                paint_channel_path(fields.tributaries, std::move(path_points), context.domain,
+                                   settings.connected_support_path_core_radius_cells,
+                                   settings.connected_support_path_falloff_radius_cells,
+                                   context.routing_surface, seed + 9109U + (painted * 127U),
+                                   settings.connected_support_path_offset_cells);
+                paint_support_disc(
+                    fields.tributaries, context.domain, downstream_path.back(),
+                    settings.connected_support_path_strength,
+                    std::max(settings.connected_support_path_core_radius_cells,
+                             settings.tributary_core_radius_cells),
+                    std::max(settings.connected_support_path_falloff_radius_cells,
+                             settings.trunk_falloff_radius_cells));
+            }
             mark_active_indices(active, downstream_path);
             ++painted;
         }
@@ -3018,6 +3101,8 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
               });
 
     std::size_t accepted = 0U;
+    std::size_t promoted_branches = 0U;
+    const float log_max_accumulation = routing_log_max_accumulation(context);
     std::vector<int> accepted_confluences;
     accepted_confluences.reserve(settings.corridor_branch_count);
     for (const BranchCandidate& candidate : branch_candidates) {
@@ -3039,17 +3124,36 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
             0.46F) {
             continue;
         }
-        std::vector<ChannelPathPoint> branch_points =
-            make_degridded_channel_points(context, candidate.path, settings.tributary_strength);
-        paint_channel_path(fields.tributaries, std::move(branch_points), context.domain,
-                           settings.tributary_core_radius_cells,
-                           settings.tributary_falloff_radius_cells, context.routing_surface,
-                           seed + 7103U + (accepted * 131U), settings.tributary_offset_cells);
-        paint_support_disc(fields.tributaries, context.domain, candidate.confluence_index,
-                           settings.tributary_strength,
-                           settings.tributary_core_radius_cells,
-                           std::max(settings.tributary_falloff_radius_cells,
-                                    settings.trunk_falloff_radius_cells));
+        const bool promoted_trunk =
+            promoted_branches < settings.promoted_trunk_branch_count &&
+            should_promote_path_to_trunk(context, candidate.path, settings,
+                                         log_max_accumulation);
+        if (promoted_trunk) {
+            std::vector<ChannelPathPoint> branch_points = make_degridded_channel_points(
+                context, candidate.path, settings.promoted_trunk_strength, 0.65F, 2.15F);
+            paint_channel_path(fields.river_trunk, std::move(branch_points), context.domain,
+                               settings.trunk_core_radius_cells,
+                               settings.trunk_falloff_radius_cells, context.routing_surface,
+                               seed + 7103U + (accepted * 131U),
+                               settings.trunk_offset_cells);
+            paint_support_disc(fields.river_trunk, context.domain, candidate.confluence_index,
+                               settings.promoted_trunk_strength,
+                               settings.trunk_core_radius_cells,
+                               settings.trunk_falloff_radius_cells);
+            ++promoted_branches;
+        } else {
+            std::vector<ChannelPathPoint> branch_points =
+                make_degridded_channel_points(context, candidate.path, settings.tributary_strength);
+            paint_channel_path(fields.tributaries, std::move(branch_points), context.domain,
+                               settings.tributary_core_radius_cells,
+                               settings.tributary_falloff_radius_cells, context.routing_surface,
+                               seed + 7103U + (accepted * 131U), settings.tributary_offset_cells);
+            paint_support_disc(fields.tributaries, context.domain, candidate.confluence_index,
+                               settings.tributary_strength,
+                               settings.tributary_core_radius_cells,
+                               std::max(settings.tributary_falloff_radius_cells,
+                                        settings.trunk_falloff_radius_cells));
+        }
         mark_active_indices(active, candidate.path);
         if (candidate.confluence_index >= 0) {
             accepted_confluences.push_back(candidate.confluence_index);
@@ -3095,21 +3199,43 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
                     settings.corridor_branch_max_active_overlap) {
                     continue;
                 }
+                const bool promoted_trunk =
+                    promoted_branches < settings.promoted_trunk_branch_count &&
+                    should_promote_path_to_trunk(context, branch, settings,
+                                                 log_max_accumulation);
                 std::vector<ChannelPathPoint> branch_points =
-                    make_degridded_channel_points(context, branch, settings.tributary_strength);
+                    promoted_trunk
+                        ? make_degridded_channel_points(context, branch,
+                                                        settings.promoted_trunk_strength, 0.65F,
+                                                        2.15F)
+                        : make_degridded_channel_points(context, branch,
+                                                        settings.tributary_strength);
                 if (visible_path_sample_count(context.domain, branch_points) == 0U) {
                     continue;
                 }
-                paint_channel_path(fields.tributaries, std::move(branch_points), context.domain,
-                                   settings.tributary_core_radius_cells,
-                                   settings.tributary_falloff_radius_cells,
-                                   context.routing_surface, seed + 7103U + (accepted * 131U),
-                                   settings.tributary_offset_cells);
-                paint_support_disc(fields.tributaries, context.domain, trunk_index,
-                                   settings.tributary_strength,
-                                   settings.tributary_core_radius_cells,
-                                   std::max(settings.tributary_falloff_radius_cells,
-                                            settings.trunk_falloff_radius_cells));
+                if (promoted_trunk) {
+                    paint_channel_path(fields.river_trunk, std::move(branch_points),
+                                       context.domain, settings.trunk_core_radius_cells,
+                                       settings.trunk_falloff_radius_cells,
+                                       context.routing_surface, seed + 7103U + (accepted * 131U),
+                                       settings.trunk_offset_cells);
+                    paint_support_disc(fields.river_trunk, context.domain, trunk_index,
+                                       settings.promoted_trunk_strength,
+                                       settings.trunk_core_radius_cells,
+                                       settings.trunk_falloff_radius_cells);
+                    ++promoted_branches;
+                } else {
+                    paint_channel_path(fields.tributaries, std::move(branch_points),
+                                       context.domain, settings.tributary_core_radius_cells,
+                                       settings.tributary_falloff_radius_cells,
+                                       context.routing_surface, seed + 7103U + (accepted * 131U),
+                                       settings.tributary_offset_cells);
+                    paint_support_disc(fields.tributaries, context.domain, trunk_index,
+                                       settings.tributary_strength,
+                                       settings.tributary_core_radius_cells,
+                                       std::max(settings.tributary_falloff_radius_cells,
+                                                settings.trunk_falloff_radius_cells));
+                }
                 mark_active_indices(active, branch);
                 ++accepted;
                 break;
@@ -3242,9 +3368,9 @@ void soften_channel_field(cubey::procedural::ScalarField2D& field, int passes, f
     }
 }
 
-void soften_active_channels(RiverFields& fields) {
-    soften_channel_field(fields.river_trunk, 3, 1.85F);
-    soften_channel_field(fields.tributaries, 2, 1.45F);
+void soften_active_channels(RiverFields& fields, const RiverNetworkSettings& settings) {
+    soften_channel_field(fields.river_trunk, 3, settings.trunk_soften_gain);
+    soften_channel_field(fields.tributaries, 2, settings.tributary_soften_gain);
 }
 
 void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& context,
@@ -3258,6 +3384,7 @@ void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& cont
     std::vector<int> accepted_confluences;
     accepted_confluences.reserve(settings.order_seed_count);
     std::size_t accepted = 0U;
+    const float log_max_accumulation = routing_log_max_accumulation(context);
     for (const int candidate : candidates) {
         if (accepted >= settings.order_seed_count) {
             break;
@@ -3316,9 +3443,13 @@ void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& cont
             continue;
         }
 
-        const bool trunk_seed = order >= settings.order_seed_trunk_stream_order;
+        const bool promoted_trunk =
+            should_promote_path_to_trunk(context, path, settings, log_max_accumulation);
+        const bool trunk_seed = order >= settings.order_seed_trunk_stream_order || promoted_trunk;
+        const float path_strength =
+            trunk_seed ? std::max(strength, settings.promoted_trunk_strength) : strength;
         std::vector<ChannelPathPoint> path_points =
-            make_degridded_channel_points(context, path, strength,
+            make_degridded_channel_points(context, path, path_strength,
                                           trunk_seed ? 0.65F : 0.42F,
                                           trunk_seed ? 2.15F : 1.18F);
 
@@ -3328,7 +3459,7 @@ void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& cont
                                settings.trunk_falloff_radius_cells, context.routing_surface,
                                seed + 5107U + (accepted * 149U),
                                settings.trunk_offset_cells);
-            paint_support_disc(fields.river_trunk, context.domain, confluence_index, strength,
+            paint_support_disc(fields.river_trunk, context.domain, confluence_index, path_strength,
                                settings.trunk_core_radius_cells,
                                settings.trunk_falloff_radius_cells);
         } else {
@@ -3488,7 +3619,8 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context, 
             path_point_indices(context.domain.hidden_desc, accumulation_trunk);
         if (visible_grid_path_sample_count(context.domain, accumulation_trunk_indices) >= 32U) {
             std::vector<ChannelPathPoint> accumulation_points = accumulation_trunk;
-            annotate_channel_path_points(context, accumulation_points, 0.84F, 0.65F, 2.15F);
+            annotate_channel_path_points(context, accumulation_points,
+                                         settings.accumulation_trunk_path_strength, 0.65F, 2.15F);
             snap_trunk_endpoints_to_visible_edges(accumulation_points, context.domain);
             const float edge_score =
                 static_cast<float>(visible_path_edge_touch_count(context.domain,
@@ -3520,7 +3652,7 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context, 
             continue;
         }
         std::vector<ChannelPathPoint> trunk_points =
-            make_degridded_channel_points(context, trunk, 0.82F);
+            make_degridded_channel_points(context, trunk, settings.trunk_path_strength);
         snap_trunk_endpoints_to_visible_edges(trunk_points, context.domain);
         const float edge_score =
             static_cast<float>(visible_path_edge_touch_count(context.domain, trunk_points)) *
@@ -3593,7 +3725,7 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context, 
                                  settings, seed, active);
     static_cast<void>(accepted_tributaries);
     paint_stream_order_support(fields, context, rendered_selection, settings);
-    soften_active_channels(fields);
+    soften_active_channels(fields, settings);
     combine_river_mask(fields);
 }
 
