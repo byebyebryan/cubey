@@ -10,6 +10,7 @@
 
 #include <cubey/host/performance_ui.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/cloud_layer.h>
 
 #include <vulkan/vulkan.h>
 
@@ -35,6 +36,9 @@ struct PlanetUiContext {
     const PlanetSurfaceDiagnostics& surface_diagnostics;
     const PlanetLocalDetailDiagnostics& local_detail_diagnostics;
     float local_detail_surface_weight = 0.0F;
+    cubey::render::CloudLayerViewRegime cloud_view_regime{};
+    bool cloud_scene_depth_occlusion_enabled = false;
+    float cloud_scene_depth_fade_m = 0.0F;
     cubey::host::PerformanceUiContext performance;
     VkExtent2D extent{};
     std::function<void()> reset_camera;

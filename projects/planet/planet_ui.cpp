@@ -83,6 +83,16 @@ struct CameraLocationReadout {
     };
 }
 
+[[nodiscard]] const char* cloud_view_regime_name(float camera_mode) {
+    if (camera_mode >= 3.5F) {
+        return "orbit";
+    }
+    if (camera_mode >= 0.5F) {
+        return "high-oblique";
+    }
+    return "local";
+}
+
 void draw_panel_actions(PlanetUiContext& ui) {
     if (ImGui::Button("Revert Config")) {
         ui.edit_config = ui.active_config;
@@ -254,6 +264,14 @@ void draw_cloud_controls(PlanetUiContext& ui) {
             cubey::projects::atmosphere::apply_atmosphere_cloud_weather_preset(
                 clouds, clouds.weather_preset);
         }
+        const cubey::render::CloudLayerViewRegime& regime = ui.cloud_view_regime;
+        ImGui::Text("Regime: %s  altitude %.0f m", cloud_view_regime_name(regime.camera_mode),
+                    regime.altitude_m);
+        ImGui::Text("Blend: orbit %.0f%%  grazing %.0f%%", regime.altitude_blend * 100.0F,
+                    regime.horizon_grazing * 100.0F);
+        ImGui::Text("Depth mask: %s  fade %.0f m",
+                    ui.cloud_scene_depth_occlusion_enabled ? "on" : "off",
+                    ui.cloud_scene_depth_fade_m);
 
         if (const cubey::host::ScopedImGuiGroup subgroup{
                 "Sampling",

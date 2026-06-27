@@ -255,6 +255,9 @@ int main() {
                 CloudLayerDebugView::AmbientLight,
             "cloud layer debug view should include ambient-light diagnostics");
     require(next_cloud_layer_debug_view(CloudLayerDebugView::OrbitShellShadow) ==
+                CloudLayerDebugView::SceneDepthOcclusion,
+            "cloud layer debug view should include scene depth occlusion diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::SceneDepthOcclusion) ==
                 CloudLayerDebugView::Final,
             "cloud layer debug view should wrap");
     require(cloud_layer_debug_view_from_name("weather") == CloudLayerDebugView::AuthoredWeather,
@@ -267,6 +270,9 @@ int main() {
     require(cloud_layer_debug_view_from_name("shell-normal") ==
                 CloudLayerDebugView::OrbitShellNormal,
             "cloud shell normal debug alias should parse");
+    require(cloud_layer_debug_view_from_name("depth-mask") ==
+                CloudLayerDebugView::SceneDepthOcclusion,
+            "cloud scene depth debug alias should parse");
     require_throws([] { static_cast<void>(cloud_layer_debug_view_from_name("humidity")); },
                    "cloud layer debug view parser should reject unknown views");
 

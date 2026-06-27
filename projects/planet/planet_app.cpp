@@ -73,6 +73,7 @@ constexpr float kPlanetLocalDetailInspectionMinimumOuterHalfExtentM = 131072.0F;
 constexpr float kPlanetLocalDetailInspectionHorizonExtentScale = 1.35F;
 constexpr float kPlanetSharedAtmosphereSunRadiance = 22.0F;
 constexpr float kPlanetSharedAtmosphereMinTwilightSoftness = 0.022F;
+constexpr float kPlanetCloudSceneDepthFadeM = 500.0F;
 constexpr std::uint32_t kPlanetSurfaceFrameUniformBinding = 0;
 constexpr VkFormat kPlanetSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
@@ -627,6 +628,9 @@ class PlanetApp {
             .surface_diagnostics = surface_runtime_.diagnostics(),
             .local_detail_diagnostics = local_detail_runtime_.diagnostics(),
             .local_detail_surface_weight = local_detail_surface_weight(),
+            .cloud_view_regime = planet_cloud_view_regime(ui_extent),
+            .cloud_scene_depth_occlusion_enabled = cloud_layer_enabled(),
+            .cloud_scene_depth_fade_m = kPlanetCloudSceneDepthFadeM,
             .performance = performance,
             .extent = ui_extent,
             .reset_camera = [this]() { reset_camera(); },
@@ -1170,6 +1174,33 @@ class PlanetApp {
         static_cast<void>(context.gpu().drain());
     }
 
+    [[nodiscard]] cubey::render::CloudLayerViewRegime planet_cloud_view_regime(
+        VkExtent2D extent) const {
+        const cubey::Transform3D transform = camera_transform();
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
+        const cubey::render::ViewRayBasis3D world_rays =
+            cubey::render::view_ray_basis_3d(transform.rotation, aspect, camera_.fovy_radians());
+        const cubey::render::LocalTangentFrame& tangent = frame_.local_frame;
+        const cubey::math::Vec3 camera_position =
+            cubey::render::local_tangent_world_to_local_m(tangent, frame_.camera_world_position_m);
+        const cubey::math::Vec3 camera_forward =
+            planet_cloud_local_direction(cubey::math::Vec3{world_rays.forward}, tangent);
+        const cubey::render::CloudLayerConfig config =
+            planet_cloud_config(cloud_elapsed_seconds_);
+
+        return cubey::render::cloud_layer_view_regime({
+            .camera_position = {camera_position.x,
+                                config.planet_radius_m + camera_position.y,
+                                camera_position.z},
+            .camera_forward = camera_forward,
+            .planet_radius_m = config.planet_radius_m,
+            .orbit_transition_start_m = config.orbit_transition_start_m,
+            .orbit_transition_end_m = config.orbit_transition_end_m,
+        });
+    }
+
     [[nodiscard]] cubey::render::CloudLayerFrameUniforms
     cloud_frame_uniforms(VkExtent2D extent) const {
         const cubey::Transform3D transform = camera_transform();
@@ -1219,7 +1250,7 @@ class PlanetApp {
                 .near_plane_m = frame_.near_plane_m,
                 .far_plane_m = frame_.far_plane_m,
                 .scene_depth_occlusion_enabled = true,
-                .scene_depth_fade_m = 500.0F,
+                .scene_depth_fade_m = kPlanetCloudSceneDepthFadeM,
             });
     }
 

@@ -487,6 +487,10 @@ CloudLayerDebugView cloud_layer_debug_view_from_name(std::string_view value) {
     if (value == "transition-weights") {
         return CloudLayerDebugView::TransitionWeights;
     }
+    if (value == "scene-depth-occlusion" || value == "depth-occlusion" ||
+        value == "depth-mask") {
+        return CloudLayerDebugView::SceneDepthOcclusion;
+    }
     if (value == "local-alpha") {
         return CloudLayerDebugView::LocalAlpha;
     }
@@ -590,6 +594,8 @@ const char* cloud_layer_debug_view_name(CloudLayerDebugView view) {
         return "distance-regime";
     case CloudLayerDebugView::TransitionWeights:
         return "transition-weights";
+    case CloudLayerDebugView::SceneDepthOcclusion:
+        return "scene-depth-occlusion";
     case CloudLayerDebugView::LocalAlpha:
         return "local-alpha";
     case CloudLayerDebugView::FarShellAlpha:

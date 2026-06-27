@@ -127,7 +127,9 @@ void main() {
     vec4 cloud = final_view ? mix(raw_cloud, resolved_cloud, resolve_strength)
                             : raw_cloud;
     vec3 color = background * clamp(cloud.a, 0.0, 1.0) + cloud.rgb;
-    if (debug_view == CLOUD_DEBUG_METADATA_DISTANCE ||
+    if (debug_view == CLOUD_DEBUG_SCENE_DEPTH_OCCLUSION) {
+        color = vec3(0.0);
+    } else if (debug_view == CLOUD_DEBUG_METADATA_DISTANCE ||
         debug_view == CLOUD_DEBUG_METADATA_ALPHA ||
         debug_view == CLOUD_DEBUG_METADATA_CONFIDENCE ||
         debug_view == CLOUD_DEBUG_METADATA_DENSITY) {

@@ -131,9 +131,10 @@ enum class CloudLayerDebugView : std::uint32_t {
     FarShellAlpha = 45,
     LocalWithShellAlpha = 46,
     TransitionWeights = 47,
+    SceneDepthOcclusion = 48,
 };
 
-inline constexpr std::array<CloudLayerDebugView, 43> kCloudLayerDebugViews{
+inline constexpr std::array<CloudLayerDebugView, 44> kCloudLayerDebugViews{
     CloudLayerDebugView::Final,
     CloudLayerDebugView::RawFinal,
     CloudLayerDebugView::AuthoredWeather,
@@ -177,6 +178,7 @@ inline constexpr std::array<CloudLayerDebugView, 43> kCloudLayerDebugViews{
     CloudLayerDebugView::OrbitShellHeight,
     CloudLayerDebugView::OrbitShellNormal,
     CloudLayerDebugView::OrbitShellShadow,
+    CloudLayerDebugView::SceneDepthOcclusion,
 };
 
 struct CloudLayerQualityBudget {

@@ -90,15 +90,43 @@ surface_day=(
     --planet-time-hours 12.0
     --planet-camera-surface-pitch-deg 32
 )
+surface_low_horizon=(
+    --planet-camera-mode surface
+    --planet-camera-altitude-m 1200
+    --planet-day-of-year 80
+    --planet-time-hours 12.0
+    --planet-camera-surface-look sun
+    --planet-camera-surface-pitch-deg 6
+)
+surface_low_overhead=(
+    --planet-camera-mode surface
+    --planet-camera-altitude-m 1200
+    --planet-day-of-year 80
+    --planet-time-hours 12.0
+    --planet-camera-surface-look sun
+    --planet-camera-surface-pitch-deg 42
+)
 surface_night=(
     --planet-camera-mode surface
     --planet-day-of-year 80
     --planet-time-hours 0.0
     --planet-camera-surface-pitch-deg 28
 )
-high_transition=(
+high_transition_60=(
+    --planet-camera-mode orbit
+    --planet-camera-altitude-m 60000
+    --planet-day-of-year 80
+    --planet-time-hours 12.0
+)
+high_transition_140=(
     --planet-camera-mode orbit
     --planet-camera-altitude-m 140000
+    --planet-day-of-year 80
+    --planet-time-hours 12.0
+)
+high_transition_260=(
+    --planet-camera-mode orbit
+    --planet-camera-altitude-m 260000
     --planet-day-of-year 80
     --planet-time-hours 12.0
 )
@@ -123,6 +151,10 @@ capture_named surface-dawn-no-clouds "Surface dawn no clouds" surface \
     "${surface_sun_dawn[@]}" --no-clouds
 capture_named surface-day-clouds "Surface day clouds" surface \
     "${surface_day[@]}"
+capture_named surface-low-horizon-clouds "Surface low horizon clouds" surface \
+    "${surface_low_horizon[@]}"
+capture_named surface-low-overhead-clouds "Surface low overhead clouds" surface \
+    "${surface_low_overhead[@]}"
 capture_named surface-night-clouds "Surface night clouds" surface \
     "${surface_night[@]}"
 capture_named surface-day-cloud-alpha "Surface day cloud alpha" diagnostics \
@@ -131,13 +163,29 @@ capture_named surface-day-density "Surface day density" diagnostics \
     "${surface_day[@]}" --cloud-debug-view density
 capture_named surface-day-local-structure "Surface day local structure" diagnostics \
     "${surface_day[@]}" --cloud-debug-view local-structure
+capture_named surface-low-depth-occlusion "Surface low depth occlusion" diagnostics \
+    "${surface_low_horizon[@]}" --cloud-debug-view scene-depth-occlusion
 
-capture_named high-transition-clouds "High transition clouds" transition \
-    "${high_transition[@]}"
-capture_named high-transition-distance "High transition distance" transition \
-    "${high_transition[@]}" --cloud-debug-view distance-regime
-capture_named high-transition-weights "High transition weights" transition \
-    "${high_transition[@]}" --cloud-debug-view transition-weights
+capture_named high-060-clouds "High 60km clouds" transition \
+    "${high_transition_60[@]}"
+capture_named high-060-distance "High 60km distance" transition \
+    "${high_transition_60[@]}" --cloud-debug-view distance-regime
+capture_named high-060-weights "High 60km weights" transition \
+    "${high_transition_60[@]}" --cloud-debug-view transition-weights
+capture_named high-140-clouds "High 140km clouds" transition \
+    "${high_transition_140[@]}"
+capture_named high-140-distance "High 140km distance" transition \
+    "${high_transition_140[@]}" --cloud-debug-view distance-regime
+capture_named high-140-weights "High 140km weights" transition \
+    "${high_transition_140[@]}" --cloud-debug-view transition-weights
+capture_named high-140-depth-occlusion "High 140km depth occlusion" transition \
+    "${high_transition_140[@]}" --cloud-debug-view scene-depth-occlusion
+capture_named high-260-clouds "High 260km clouds" transition \
+    "${high_transition_260[@]}"
+capture_named high-260-distance "High 260km distance" transition \
+    "${high_transition_260[@]}" --cloud-debug-view distance-regime
+capture_named high-260-weights "High 260km weights" transition \
+    "${high_transition_260[@]}" --cloud-debug-view transition-weights
 
 capture_named orbit-day-clouds "Orbit day clouds" orbit \
     "${orbit_day[@]}"
