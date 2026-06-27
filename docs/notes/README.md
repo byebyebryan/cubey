@@ -72,6 +72,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
   next river-quality pivot: promote `stream_order` and `flow_accumulation` into
   connected corridor selection while avoiding direct graph-edge rendering.
+- [Terrain routing repair plan](terrain-routing-repair-plan.md):
+  priority-flood epsilon fill pass for repairing local routing sinks before
+  broader hydrology or erosion work.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.
