@@ -72,6 +72,7 @@ struct RiverNetworkSettings {
     std::size_t corridor_min_visible_samples = 24U;
     std::size_t corridor_branch_min_visible_samples = 6U;
     int corridor_branch_min_confluence_distance_cells = 12;
+    std::size_t corridor_branch_max_grid_aligned_run_cells = 36U;
     float corridor_branch_max_active_overlap = 0.38F;
     bool include_accumulation_trunk_candidate = true;
     std::size_t secondary_trunk_count = 0U;
@@ -104,6 +105,8 @@ struct RiverNetworkSettings {
     float connected_support_path_core_radius_cells = 0.75F;
     float connected_support_path_falloff_radius_cells = 2.0F;
     float connected_support_path_offset_cells = 1.2F;
+    int connected_support_min_confluence_distance_cells = 12;
+    std::size_t connected_support_max_grid_aligned_run_cells = 36U;
     float support_min_strength = 0.30F;
     float support_trunk_strength = 0.56F;
     float support_tributary_core_radius_cells = 0.45F;
@@ -236,7 +239,7 @@ struct RoutingRepairResult {
             .routing_basin_meander = 0.17F,
             .trunk_core_radius_cells = 2.20F,
             .trunk_falloff_radius_cells = 5.0F,
-            .trunk_offset_cells = 3.2F,
+            .trunk_offset_cells = 6.0F,
             .corridor_trunk_stream_order = 4.0F,
             .corridor_tributary_stream_order = 2.0F,
             .corridor_count = 1U,
@@ -246,6 +249,7 @@ struct RoutingRepairResult {
             .corridor_min_visible_samples = 16U,
             .corridor_branch_min_visible_samples = 4U,
             .corridor_branch_min_confluence_distance_cells = 14,
+            .corridor_branch_max_grid_aligned_run_cells = 48U,
             .corridor_branch_max_active_overlap = 0.34F,
             .include_accumulation_trunk_candidate = false,
             .secondary_trunk_count = 3U,
@@ -259,25 +263,27 @@ struct RoutingRepairResult {
             .tributary_min_accumulation = 2.0F,
             .tributary_accumulation_fraction = 0.006F,
             .min_tributary_count = 14U,
-            .tributary_count_divisor = 6U,
+            .tributary_count_divisor = 7U,
             .min_tributary_path_samples = 4U,
             .tributary_strength = 0.80F,
             .tributary_core_radius_cells = 1.32F,
             .tributary_falloff_radius_cells = 3.75F,
-            .tributary_offset_cells = 2.2F,
+            .tributary_offset_cells = 4.8F,
             .paint_stream_order_support = false,
             .expand_connected_support = true,
-            .connected_support_min_stream_order = 1.0F,
+            .connected_support_min_stream_order = 1.5F,
             .connected_support_seed_count = 16'384U,
-            .connected_support_max_paths = 120U,
-            .connected_support_min_visible_samples = 6U,
-            .connected_support_max_selected_overlap = 0.74F,
+            .connected_support_max_paths = 96U,
+            .connected_support_min_visible_samples = 7U,
+            .connected_support_max_selected_overlap = 0.54F,
             .paint_connected_support_paths = true,
-            .connected_support_painted_path_count = 80U,
+            .connected_support_painted_path_count = 52U,
             .connected_support_path_strength = 0.68F,
             .connected_support_path_core_radius_cells = 1.08F,
             .connected_support_path_falloff_radius_cells = 3.35F,
-            .connected_support_path_offset_cells = 2.5F,
+            .connected_support_path_offset_cells = 5.5F,
+            .connected_support_min_confluence_distance_cells = 28,
+            .connected_support_max_grid_aligned_run_cells = 96U,
             .support_min_strength = 0.28F,
             .support_trunk_strength = 0.44F,
             .support_tributary_core_radius_cells = 0.25F,
@@ -1179,6 +1185,55 @@ void append_unique_candidates(std::vector<int>& candidates, std::vector<int> ext
     }));
 }
 
+[[nodiscard]] std::size_t max_visible_grid_aligned_run_cells(
+    const RoutingDomain& domain, const std::vector<int>& path) {
+    if (path.size() < 2U) {
+        return 0U;
+    }
+
+    std::size_t best = 0U;
+    std::size_t current = 0U;
+    int previous_dx = 0;
+    int previous_dy = 0;
+    for (std::size_t index = 1U; index < path.size(); ++index) {
+        if (path[index - 1U] < 0 || path[index] < 0) {
+            current = 0U;
+            previous_dx = 0;
+            previous_dy = 0;
+            continue;
+        }
+        if (!is_inside_visible_crop(domain, path[index - 1U]) &&
+            !is_inside_visible_crop(domain, path[index])) {
+            current = 0U;
+            previous_dx = 0;
+            previous_dy = 0;
+            continue;
+        }
+
+        const auto previous = static_cast<std::uint32_t>(path[index - 1U]);
+        const auto next = static_cast<std::uint32_t>(path[index]);
+        const int px = static_cast<int>(previous % domain.hidden_desc.width);
+        const int py = static_cast<int>(previous / domain.hidden_desc.width);
+        const int nx = static_cast<int>(next % domain.hidden_desc.width);
+        const int ny = static_cast<int>(next / domain.hidden_desc.width);
+        const int dx = std::clamp(nx - px, -1, 1);
+        const int dy = std::clamp(ny - py, -1, 1);
+        if (dx == 0 && dy == 0) {
+            continue;
+        }
+
+        if (dx == previous_dx && dy == previous_dy) {
+            ++current;
+        } else {
+            current = 1U;
+            previous_dx = dx;
+            previous_dy = dy;
+        }
+        best = std::max(best, current);
+    }
+    return best;
+}
+
 [[nodiscard]] bool is_inside_visible_core(const RoutingDomain& domain, int hidden_index) {
     if (hidden_index < 0) {
         return false;
@@ -1887,11 +1942,11 @@ void paint_channel_path(cubey::procedural::ScalarField2D& field,
     if (points.empty()) {
         return;
     }
-    points = resample_channel_path(points, 1.6F);
-    smooth_channel_path(points, 2);
+    points = resample_channel_path(points, 1.15F);
+    smooth_channel_path(points, 3);
     apply_channel_lateral_offset(points, seed, max_offset_cells, routing_surface);
-    relax_channel_path(points, routing_surface, 2);
-    smooth_channel_path(points, 1);
+    relax_channel_path(points, routing_surface, 3);
+    smooth_channel_path(points, 2);
     apply_channel_strength_variation(points, seed);
     rasterize_channel_segments(field, points, core_radius_cells, falloff_radius_cells, domain);
 }
@@ -2468,6 +2523,116 @@ void annotate_channel_path_points(const RoutingContext& context,
     return points;
 }
 
+[[nodiscard]] FlowVector path_tangent(const std::vector<ChannelPathPoint>& points,
+                                      std::size_t index) {
+    if (points.size() < 2U) {
+        return {};
+    }
+    const std::size_t prev_index = index == 0U ? index : index - 1U;
+    const std::size_t next_index = std::min(index + 1U, points.size() - 1U);
+    const float dx = points[next_index].x - points[prev_index].x;
+    const float dy = points[next_index].y - points[prev_index].y;
+    const float length = std::sqrt((dx * dx) + (dy * dy));
+    if (length <= 0.0001F) {
+        return {};
+    }
+    return FlowVector{
+        .x = dx / length,
+        .y = dy / length,
+        .valid = true,
+    };
+}
+
+[[nodiscard]] ChannelPathPoint flow_guided_channel_candidate(
+    const RoutingContext& context, const std::vector<ChannelPathPoint>& points,
+    std::size_t index) {
+    const ChannelPathPoint& prev = points[index - 1U];
+    const ChannelPathPoint& point = points[index];
+    const ChannelPathPoint& next = points[index + 1U];
+    const FlowVector local_tangent = path_tangent(points, index);
+    FlowVector flow = sample_flow_vector_bilinear(context.routing.flow_direction, point.x, point.y);
+    if (!local_tangent.valid || !flow.valid) {
+        return lerp_channel_point(point, lerp_channel_point(prev, next, 0.5F), 0.34F);
+    }
+    if ((flow.x * local_tangent.x) + (flow.y * local_tangent.y) < 0.0F) {
+        flow.x = -flow.x;
+        flow.y = -flow.y;
+    }
+
+    const float prev_distance = channel_point_distance(prev, point);
+    const float next_distance = channel_point_distance(point, next);
+    const ChannelPathPoint from_prev{
+        .x = prev.x + (flow.x * prev_distance),
+        .y = prev.y + (flow.y * prev_distance),
+        .strength = point.strength,
+        .width_scale = point.width_scale,
+    };
+    const ChannelPathPoint from_next{
+        .x = next.x - (flow.x * next_distance),
+        .y = next.y - (flow.y * next_distance),
+        .strength = point.strength,
+        .width_scale = point.width_scale,
+    };
+    const ChannelPathPoint smooth = lerp_channel_point(point, lerp_channel_point(prev, next, 0.5F),
+                                                       0.56F);
+    return ChannelPathPoint{
+        .x = (smooth.x * 0.50F) + (from_prev.x * 0.25F) + (from_next.x * 0.25F),
+        .y = (smooth.y * 0.50F) + (from_prev.y * 0.25F) + (from_next.y * 0.25F),
+        .strength = point.strength,
+        .width_scale = point.width_scale,
+    };
+}
+
+void degrid_channel_points(std::vector<ChannelPathPoint>& points, const RoutingContext& context) {
+    if (points.size() < 4U) {
+        return;
+    }
+    points = resample_channel_path(points, 0.80F);
+    smooth_channel_path(points, 2);
+    for (int pass = 0; pass < 5; ++pass) {
+        std::vector<ChannelPathPoint> next = points;
+        for (std::size_t index = 1U; index + 1U < points.size(); ++index) {
+            ChannelPathPoint candidate = flow_guided_channel_candidate(context, points, index);
+            if (!is_inside_hidden_domain(context.domain.hidden_desc, candidate.x, candidate.y)) {
+                continue;
+            }
+            const float current_potential =
+                sample_field_bilinear(context.routing_surface, points[index].x, points[index].y);
+            const float candidate_potential =
+                sample_field_bilinear(context.routing_surface, candidate.x, candidate.y);
+            if (candidate_potential > current_potential + 80.0F) {
+                candidate = lerp_channel_point(points[index], candidate, 0.35F);
+            }
+            next[index].x = candidate.x;
+            next[index].y = candidate.y;
+        }
+        points.swap(next);
+    }
+    smooth_channel_path(points, 2);
+}
+
+[[nodiscard]] std::vector<ChannelPathPoint> make_degridded_channel_points(
+    const RoutingContext& context, const std::vector<int>& path, float minimum_strength) {
+    std::vector<ChannelPathPoint> points = make_corridor_channel_points(context, path,
+                                                                        minimum_strength);
+    degrid_channel_points(points, context);
+    annotate_channel_path_points(context, points, minimum_strength,
+                                 minimum_strength >= 0.80F ? 0.65F : 0.42F,
+                                 minimum_strength >= 0.80F ? 2.15F : 1.18F);
+    return points;
+}
+
+[[nodiscard]] std::vector<ChannelPathPoint> make_degridded_channel_points(
+    const RoutingContext& context, const std::vector<int>& path, float minimum_strength,
+    float minimum_width_scale, float maximum_width_scale) {
+    std::vector<ChannelPathPoint> points = make_corridor_channel_points(context, path,
+                                                                        minimum_strength);
+    degrid_channel_points(points, context);
+    annotate_channel_path_points(context, points, minimum_strength, minimum_width_scale,
+                                 maximum_width_scale);
+    return points;
+}
+
 void snap_channel_endpoint_to_visible_edge(ChannelPathPoint& point, const RoutingDomain& domain,
                                            float max_distance_cells) {
     if (!is_inside_visible_crop(domain, point)) {
@@ -2601,6 +2766,8 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
                           settings.connected_support_min_visible_samples);
     std::size_t accepted = 0U;
     std::size_t painted = 0U;
+    std::vector<int> accepted_confluences;
+    accepted_confluences.reserve(settings.connected_support_max_paths);
     for (const int candidate : candidates) {
         if (accepted >= settings.connected_support_max_paths) {
             break;
@@ -2622,9 +2789,22 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
             settings.connected_support_min_visible_samples) {
             continue;
         }
+        if (max_visible_grid_aligned_run_cells(context.domain, downstream_path) >
+            settings.connected_support_max_grid_aligned_run_cells) {
+            continue;
+        }
         if (active_path_overlap_fraction(downstream_path, selection.selected) >
             settings.connected_support_max_selected_overlap) {
             continue;
+        }
+        const int confluence_index = downstream_path.back();
+        if (confluence_index >= 0) {
+            const std::vector<int> confluence{confluence_index};
+            if (path_is_near_indices(
+                    context.domain.hidden_desc, confluence, accepted_confluences,
+                    settings.connected_support_min_confluence_distance_cells)) {
+                continue;
+            }
         }
 
         std::size_t new_visible_samples = 0U;
@@ -2657,10 +2837,9 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
         if (settings.paint_connected_support_paths &&
             painted < settings.connected_support_painted_path_count) {
             std::vector<ChannelPathPoint> path_points =
-                make_corridor_channel_points(context, downstream_path,
-                                             settings.connected_support_path_strength);
-            annotate_channel_path_points(context, path_points,
-                                         settings.connected_support_path_strength, 0.34F, 0.95F);
+                make_degridded_channel_points(context, downstream_path,
+                                              settings.connected_support_path_strength, 0.34F,
+                                              0.95F);
             paint_channel_path(fields.tributaries, std::move(path_points), context.domain,
                                settings.connected_support_path_core_radius_cells,
                                settings.connected_support_path_falloff_radius_cells,
@@ -2675,6 +2854,9 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
                          settings.trunk_falloff_radius_cells));
             mark_active_indices(active, downstream_path);
             ++painted;
+        }
+        if (confluence_index >= 0) {
+            accepted_confluences.push_back(confluence_index);
         }
         ++accepted;
     }
@@ -2794,6 +2976,10 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
                 settings.corridor_branch_min_visible_samples) {
             continue;
         }
+        if (max_visible_grid_aligned_run_cells(context.domain, branch) >
+            settings.corridor_branch_max_grid_aligned_run_cells) {
+            continue;
+        }
         if (active_path_overlap_fraction(branch, active) >
             settings.corridor_branch_max_active_overlap) {
             continue;
@@ -2846,7 +3032,7 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
             continue;
         }
         std::vector<ChannelPathPoint> branch_points =
-            make_corridor_channel_points(context, candidate.path, settings.tributary_strength);
+            make_degridded_channel_points(context, candidate.path, settings.tributary_strength);
         paint_channel_path(fields.tributaries, std::move(branch_points), context.domain,
                            settings.tributary_core_radius_cells,
                            settings.tributary_falloff_radius_cells, context.routing_surface,
@@ -2893,12 +3079,16 @@ void expand_connected_support_to_active_basin(RiverFields& fields,
                     settings.corridor_branch_min_visible_samples) {
                     continue;
                 }
+                if (max_visible_grid_aligned_run_cells(context.domain, branch) >
+                    settings.corridor_branch_max_grid_aligned_run_cells) {
+                    continue;
+                }
                 if (active_path_overlap_fraction(branch, active) >
                     settings.corridor_branch_max_active_overlap) {
                     continue;
                 }
                 std::vector<ChannelPathPoint> branch_points =
-                    make_corridor_channel_points(context, branch, settings.tributary_strength);
+                    make_degridded_channel_points(context, branch, settings.tributary_strength);
                 if (visible_path_sample_count(context.domain, branch_points) == 0U) {
                     continue;
                 }
@@ -3106,6 +3296,10 @@ void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& cont
             settings.order_seed_min_visible_samples) {
             continue;
         }
+        if (max_visible_grid_aligned_run_cells(context.domain, path) >
+            settings.corridor_branch_max_grid_aligned_run_cells) {
+            continue;
+        }
         if (active_path_overlap_fraction(path, active) > settings.order_seed_max_active_overlap) {
             continue;
         }
@@ -3115,10 +3309,9 @@ void add_stream_order_seed_paths(RiverFields& fields, const RoutingContext& cont
 
         const bool trunk_seed = order >= settings.order_seed_trunk_stream_order;
         std::vector<ChannelPathPoint> path_points =
-            make_corridor_channel_points(context, path, strength);
-        annotate_channel_path_points(context, path_points, strength,
-                                     trunk_seed ? 0.65F : 0.42F,
-                                     trunk_seed ? 2.15F : 1.18F);
+            make_degridded_channel_points(context, path, strength,
+                                          trunk_seed ? 0.65F : 0.42F,
+                                          trunk_seed ? 2.15F : 1.18F);
 
         if (trunk_seed) {
             paint_channel_path(fields.river_trunk, std::move(path_points), context.domain,
@@ -3176,7 +3369,7 @@ void activate_river_network_fallback(RiverFields& fields, const RoutingContext& 
     std::size_t secondary_index = 0U;
     for (const std::vector<int>& secondary_trunk : secondary_trunks) {
         const std::vector<ChannelPathPoint> secondary_points =
-            make_channel_path_points(context.domain.hidden_desc, secondary_trunk, 0.92F);
+            make_degridded_channel_points(context, secondary_trunk, 0.92F);
         paint_channel_path(fields.river_trunk, secondary_points, context.domain,
                            settings.trunk_core_radius_cells,
                            settings.trunk_falloff_radius_cells, context.routing_surface,
@@ -3285,8 +3478,8 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context, 
         std::vector<int> accumulation_trunk_indices =
             path_point_indices(context.domain.hidden_desc, accumulation_trunk);
         if (visible_grid_path_sample_count(context.domain, accumulation_trunk_indices) >= 32U) {
-            std::vector<ChannelPathPoint> accumulation_points =
-                make_corridor_channel_points(context, accumulation_trunk_indices, 0.84F);
+            std::vector<ChannelPathPoint> accumulation_points = accumulation_trunk;
+            annotate_channel_path_points(context, accumulation_points, 0.84F, 0.65F, 2.15F);
             snap_trunk_endpoints_to_visible_edges(accumulation_points, context.domain);
             const float edge_score =
                 static_cast<float>(visible_path_edge_touch_count(context.domain,
@@ -3318,7 +3511,7 @@ void activate_river_network(RiverFields& fields, const RoutingContext& context, 
             continue;
         }
         std::vector<ChannelPathPoint> trunk_points =
-            make_corridor_channel_points(context, trunk, 0.82F);
+            make_degridded_channel_points(context, trunk, 0.82F);
         snap_trunk_endpoints_to_visible_edges(trunk_points, context.domain);
         const float edge_score =
             static_cast<float>(visible_path_edge_touch_count(context.domain, trunk_points)) *

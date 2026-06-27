@@ -121,6 +121,43 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return count;
 }
 
+[[nodiscard]] std::size_t count_active_endpoint_samples(
+    const cubey::procedural::ScalarField2D& field, float threshold) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    std::size_t count = 0U;
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            if (field.at(x, y) < threshold) {
+                continue;
+            }
+            std::size_t neighbor_count = 0U;
+            for (int oy = -1; oy <= 1; ++oy) {
+                const int sy = static_cast<int>(y) + oy;
+                if (sy < 0 || sy >= static_cast<int>(desc.height)) {
+                    continue;
+                }
+                for (int ox = -1; ox <= 1; ++ox) {
+                    if (ox == 0 && oy == 0) {
+                        continue;
+                    }
+                    const int sx = static_cast<int>(x) + ox;
+                    if (sx < 0 || sx >= static_cast<int>(desc.width)) {
+                        continue;
+                    }
+                    if (field.at(static_cast<std::uint32_t>(sx),
+                                 static_cast<std::uint32_t>(sy)) >= threshold) {
+                        ++neighbor_count;
+                    }
+                }
+            }
+            if (neighbor_count <= 1U) {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
 [[nodiscard]] std::size_t edge_band_touch_count(const cubey::procedural::ScalarField2D& field,
                                                 float threshold, std::uint32_t band_cells) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
@@ -457,9 +494,14 @@ void test_terrain_review_river_coverage_is_meaningful() {
     const auto& baseline_river =
         field(baseline, cubey::projects::terrain::kTerrainFieldRiverMask);
     const auto& stress_river = field(stress, cubey::projects::terrain::kTerrainFieldRiverMask);
+    const auto& stress_tributaries =
+        field(stress, cubey::projects::terrain::kTerrainFieldTributaries);
     constexpr float kVisibleNetworkThreshold = 0.001F;
     const std::size_t baseline_samples = count_active_samples(baseline_river, 0.30F);
     const std::size_t stress_samples = count_active_samples(stress_river, 0.30F);
+    const std::size_t stress_tributary_samples = count_active_samples(stress_tributaries, 0.30F);
+    const std::size_t stress_endpoint_samples =
+        count_active_endpoint_samples(stress_tributaries, 0.30F);
     const std::size_t baseline_footprint =
         active_bounds_area(baseline_river, kVisibleNetworkThreshold);
     const std::size_t stress_footprint =
@@ -489,6 +531,26 @@ void test_terrain_review_river_coverage_is_meaningful() {
             "terrain default review river should not flood the patch");
     require(stress_samples * 100U < total_samples * 12U,
             "terrain stress review river should not flood the patch");
+    if (stress_endpoint_samples * 100U > stress_tributary_samples * 8U) {
+        throw std::runtime_error(
+            "terrain stress tributaries should not collapse into hairy endpoints: endpoints=" +
+            std::to_string(stress_endpoint_samples) + " active=" +
+            std::to_string(stress_tributary_samples));
+    }
+    const std::size_t stress_axis_run =
+        max_axis_aligned_active_run(stress_river, 0.80F, 16U);
+    const std::size_t stress_diagonal_run =
+        max_diagonal_active_run(stress_river, 0.80F, 16U);
+    if (stress_axis_run > 36U) {
+        throw std::runtime_error(
+            "terrain stress river should avoid long straight high-strength runs: axis=" +
+            std::to_string(stress_axis_run));
+    }
+    if (stress_diagonal_run > 42U) {
+        throw std::runtime_error(
+            "terrain stress river should avoid long diagonal high-strength runs: diagonal=" +
+            std::to_string(stress_diagonal_run));
+    }
 }
 
 void test_terrain_materials_and_vegetation_are_bounded() {
