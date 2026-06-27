@@ -96,6 +96,9 @@ struct OrbitSurfaceSample {
     float alpha;
     float height;
     float shadow;
+    float footprint;
+    float detail_filter;
+    float mass;
     vec3 normal;
     vec3 color;
     float distance;
@@ -1292,7 +1295,8 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
     vec3 hit_position = vec3(0.0);
     float hit_t = -1.0;
     if (!cloud_orbit_surface_intersection(origin, direction, hit_position, hit_t)) {
-        return OrbitSurfaceSample(0.0, 0.0, 0.0, 1.0, vec3(0.0), vec3(0.0), -1.0);
+        return OrbitSurfaceSample(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+                                  vec3(0.0), vec3(0.0), -1.0);
     }
 
     vec3 shell_up = normalize(hit_position - cloud_sphere_center());
@@ -1301,6 +1305,7 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
     float grazing_footprint =
         (1.0 - smoothstep(0.08, 0.32, view_alignment)) * 2.40;
     float shell_footprint = max(footprint, grazing_footprint);
+    float shell_filter = cloud_orbit_shell_detail_filter(shell_footprint);
     OrbitWeatherSample orbit =
         cloud_orbit_weather_sample_from_normal(shell_up,
                                                cloud_orbit_shell_surface_height_fraction(),
@@ -1356,8 +1361,10 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
     alpha *= mix(0.38, 1.0, limb_fade);
     color *= mix(0.46, 1.0, limb_fade);
 
-    return OrbitSurfaceSample(orbit.coverage, alpha, height, shadow, shell_normal,
-                              max(color, vec3(0.0)), hit_t);
+    return OrbitSurfaceSample(orbit.coverage, alpha, height, shadow,
+                              clamp(shell_footprint, 0.0, 4.0), shell_filter,
+                              filtered_hull, shell_normal, max(color, vec3(0.0)),
+                              hit_t);
 }
 
 MarchResult cloud_orbit_surface_shell(vec3 origin, vec3 direction) {
@@ -1912,7 +1919,10 @@ void main() {
                                    debug_view == CLOUD_DEBUG_ORBIT_SHELL_ALPHA ||
                                    debug_view == CLOUD_DEBUG_ORBIT_SHELL_HEIGHT ||
                                    debug_view == CLOUD_DEBUG_ORBIT_SHELL_NORMAL ||
-                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_SHADOW;
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_SHADOW ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_FOOTPRINT ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_FILTER ||
+                                   debug_view == CLOUD_DEBUG_ORBIT_SHELL_MASS;
     MarchResult local_result = cloud_empty_result();
     MarchResult far_bridge_source_result = cloud_empty_result();
     MarchResult full_orbit_result = cloud_empty_result();
@@ -1961,7 +1971,10 @@ void main() {
                debug_view == CLOUD_DEBUG_ORBIT_SHELL_ALPHA ||
                debug_view == CLOUD_DEBUG_ORBIT_SHELL_HEIGHT ||
                debug_view == CLOUD_DEBUG_ORBIT_SHELL_NORMAL ||
-               debug_view == CLOUD_DEBUG_ORBIT_SHELL_SHADOW) {
+               debug_view == CLOUD_DEBUG_ORBIT_SHELL_SHADOW ||
+               debug_view == CLOUD_DEBUG_ORBIT_SHELL_FOOTPRINT ||
+               debug_view == CLOUD_DEBUG_ORBIT_SHELL_FILTER ||
+               debug_view == CLOUD_DEBUG_ORBIT_SHELL_MASS) {
         OrbitSurfaceSample surface_sample =
             cloud_orbit_surface_sample(origin, direction);
         if (debug_view == CLOUD_DEBUG_ORBIT_ENVELOPE) {
@@ -1972,6 +1985,12 @@ void main() {
             debug_color = vec3(surface_sample.height);
         } else if (debug_view == CLOUD_DEBUG_ORBIT_SHELL_NORMAL) {
             debug_color = surface_sample.normal * 0.5 + vec3(0.5);
+        } else if (debug_view == CLOUD_DEBUG_ORBIT_SHELL_FOOTPRINT) {
+            debug_color = vec3(clamp(surface_sample.footprint * 0.25, 0.0, 1.0));
+        } else if (debug_view == CLOUD_DEBUG_ORBIT_SHELL_FILTER) {
+            debug_color = vec3(surface_sample.detail_filter);
+        } else if (debug_view == CLOUD_DEBUG_ORBIT_SHELL_MASS) {
+            debug_color = vec3(surface_sample.mass);
         } else {
             debug_color = vec3(1.0 - surface_sample.shadow);
         }

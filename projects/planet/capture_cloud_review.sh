@@ -180,12 +180,24 @@ capture_named high-140-weights "High 140km weights" transition \
     "${high_transition_140[@]}" --cloud-debug-view transition-weights
 capture_named high-140-depth-occlusion "High 140km depth occlusion" transition \
     "${high_transition_140[@]}" --cloud-debug-view scene-depth-occlusion
+capture_named high-140-shell-footprint "High 140km shell footprint" transition \
+    "${high_transition_140[@]}" --cloud-debug-view orbit-shell-footprint
+capture_named high-140-shell-filter "High 140km shell filter" transition \
+    "${high_transition_140[@]}" --cloud-debug-view orbit-shell-filter
+capture_named high-140-shell-mass "High 140km shell mass" transition \
+    "${high_transition_140[@]}" --cloud-debug-view orbit-shell-mass
 capture_named high-260-clouds "High 260km clouds" transition \
     "${high_transition_260[@]}"
 capture_named high-260-distance "High 260km distance" transition \
     "${high_transition_260[@]}" --cloud-debug-view distance-regime
 capture_named high-260-weights "High 260km weights" transition \
     "${high_transition_260[@]}" --cloud-debug-view transition-weights
+capture_named high-260-shell-footprint "High 260km shell footprint" transition \
+    "${high_transition_260[@]}" --cloud-debug-view orbit-shell-footprint
+capture_named high-260-shell-filter "High 260km shell filter" transition \
+    "${high_transition_260[@]}" --cloud-debug-view orbit-shell-filter
+capture_named high-260-shell-mass "High 260km shell mass" transition \
+    "${high_transition_260[@]}" --cloud-debug-view orbit-shell-mass
 
 capture_named orbit-day-clouds "Orbit day clouds" orbit \
     "${orbit_day[@]}"
@@ -201,6 +213,12 @@ capture_named orbit-shell-alpha "Orbit shell alpha" orbit-diagnostics \
     "${orbit_day[@]}" --cloud-debug-view orbit-shell-alpha
 capture_named orbit-shell-normal "Orbit shell normal" orbit-diagnostics \
     "${orbit_day[@]}" --cloud-debug-view orbit-shell-normal
+capture_named orbit-shell-footprint "Orbit shell footprint" orbit-diagnostics \
+    "${orbit_day[@]}" --cloud-debug-view orbit-shell-footprint
+capture_named orbit-shell-filter "Orbit shell filter" orbit-diagnostics \
+    "${orbit_day[@]}" --cloud-debug-view orbit-shell-filter
+capture_named orbit-shell-mass "Orbit shell mass" orbit-diagnostics \
+    "${orbit_day[@]}" --cloud-debug-view orbit-shell-mass
 
 write_contact_sheet
 

@@ -255,6 +255,9 @@ int main() {
                 CloudLayerDebugView::AmbientLight,
             "cloud layer debug view should include ambient-light diagnostics");
     require(next_cloud_layer_debug_view(CloudLayerDebugView::OrbitShellShadow) ==
+                CloudLayerDebugView::OrbitShellFootprint,
+            "cloud layer debug view should include shell footprint diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::OrbitShellMass) ==
                 CloudLayerDebugView::SceneDepthOcclusion,
             "cloud layer debug view should include scene depth occlusion diagnostics");
     require(next_cloud_layer_debug_view(CloudLayerDebugView::SceneDepthOcclusion) ==
@@ -270,6 +273,15 @@ int main() {
     require(cloud_layer_debug_view_from_name("shell-normal") ==
                 CloudLayerDebugView::OrbitShellNormal,
             "cloud shell normal debug alias should parse");
+    require(cloud_layer_debug_view_from_name("shell-footprint") ==
+                CloudLayerDebugView::OrbitShellFootprint,
+            "cloud shell footprint debug alias should parse");
+    require(cloud_layer_debug_view_from_name("shell-filter") ==
+                CloudLayerDebugView::OrbitShellFilter,
+            "cloud shell filter debug alias should parse");
+    require(cloud_layer_debug_view_from_name("shell-mass") ==
+                CloudLayerDebugView::OrbitShellMass,
+            "cloud shell mass debug alias should parse");
     require(cloud_layer_debug_view_from_name("depth-mask") ==
                 CloudLayerDebugView::SceneDepthOcclusion,
             "cloud scene depth debug alias should parse");

@@ -527,6 +527,15 @@ CloudLayerDebugView cloud_layer_debug_view_from_name(std::string_view value) {
     if (value == "orbit-shell-shadow" || value == "shell-shadow") {
         return CloudLayerDebugView::OrbitShellShadow;
     }
+    if (value == "orbit-shell-footprint" || value == "shell-footprint") {
+        return CloudLayerDebugView::OrbitShellFootprint;
+    }
+    if (value == "orbit-shell-filter" || value == "shell-filter") {
+        return CloudLayerDebugView::OrbitShellFilter;
+    }
+    if (value == "orbit-shell-mass" || value == "shell-mass") {
+        return CloudLayerDebugView::OrbitShellMass;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -620,6 +629,12 @@ const char* cloud_layer_debug_view_name(CloudLayerDebugView view) {
         return "orbit-shell-normal";
     case CloudLayerDebugView::OrbitShellShadow:
         return "orbit-shell-shadow";
+    case CloudLayerDebugView::OrbitShellFootprint:
+        return "orbit-shell-footprint";
+    case CloudLayerDebugView::OrbitShellFilter:
+        return "orbit-shell-filter";
+    case CloudLayerDebugView::OrbitShellMass:
+        return "orbit-shell-mass";
     }
     return "final";
 }
