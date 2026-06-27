@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 12
-river coverage-recovery pass.
+This note records the current terrain reboot capture set after the revision 13
+stress trunk-hierarchy pass.
 
 ## Capture Command
 
@@ -18,7 +18,10 @@ structure, channel continuity, and material response are easier to inspect.
 apply a stronger basin-grade routing profile and paint extra connected support
 paths across the patch through the same de-gridded channel pipeline. Revision 12
 restores some active network coverage after the first degrid/pruning pass while
-spacing accepted support paths to avoid near-duplicate branch bundles.
+spacing accepted support paths to avoid near-duplicate branch bundles. Revision
+13 keeps the same routing source but promotes major stress support/order-seed
+and high-scoring branch paths into `river_trunk`, with a softer/wider stress
+trunk band to avoid long high-strength straight runs.
 
 ## What To Inspect
 
@@ -40,10 +43,11 @@ spacing accepted support paths to avoid near-duplicate branch bundles.
 - `river-trunk.png`: soft active main-channel product field traced from a
   connected stream-order support corridor, converted to a sub-cell flow-guided
   centerline, relaxed over drainage potential, and rasterized as channel
-  segments.
+  segments. In the stress set, this should now read as a branching trunk
+  skeleton rather than one main corridor plus thin side support.
 - `tributaries.png`: conservative connected branch field feeding the trunk,
-  with the stress recipe using spaced support confluences to avoid painting
-  every low-order finger.
+  with the stress recipe using spaced support confluences and hierarchy
+  promotion so tributaries read as feeders rather than the dominant carrier.
 - `river-mask.png`: combined active river product used by channel width,
   valley width, wetness, deposition, material, and final debug rendering.
 - `channel-width.png`: channel-width product derived from active river strength
@@ -53,9 +57,10 @@ spacing accepted support paths to avoid near-duplicate branch bundles.
 
 For `outputs/terrain/stress-river-network`, look for failures that the smaller
 default network may hide: repeated parallel channels, schematic branch fans,
-disconnected-looking tributaries, local-sink dead ends, and too-straight trunk
-segments. The stress recipe intentionally covers more of the patch and should
-not be treated as the desired default composition.
+disconnected-looking tributaries, local-sink dead ends, too-straight trunk
+segments, and major drainage paths accidentally left in `tributaries`. The
+stress recipe intentionally covers more of the patch and should not be treated
+as the desired default composition.
 
 The current capture set intentionally keeps the lesson from the reverted
 revision 4 graph-routing attempt without rendering graph edges directly.
@@ -69,7 +74,10 @@ corridors, but it now spaces support confluences and reduces low-order branch
 clutter. Revision 12 loosens default tributary/order-seed selection and lets
 order-seed paths trace farther upstream, then restores more stress support
 coverage while rejecting support paths that run too near previously accepted
-support geometry. The
+support geometry. Revision 13 promotes major visible stress paths into
+`river_trunk` using visible length plus stream-order/discharge metrics, then
+widens and softens the stress trunk band so the hierarchy is visible without
+failing high-strength straight-run guards. The
 rejected revision 4 attempt made the visible product worse by rendering selected
 graph edges directly, producing disconnected snippets and hard straight or
 diagonal runs. See
@@ -79,19 +87,20 @@ diagonal runs. See
 
 The active river no longer depends on an authored center line, and the visible
 trunk/mask now use a padded hidden routing domain instead of treating the review
-patch as the whole watershed. Revision `12` routes accumulation with continuous
+patch as the whole watershed. Revision `13` routes accumulation with continuous
 D-Infinity-style flow angles and fractional receivers over the repaired routing
 surface, selects active channels from connected `stream_order` support, accepts
 extra branches only when they visibly terminate at an existing active channel,
 converts visible paths to de-gridded centerlines, and gives the stress recipe a
 basin-convergent routing source plus extra but spaced connected support paths.
-The stress recipe remains intentionally better for artifact hunting than
+The stress recipe now separates primary trunk hierarchy from feeder
+tributaries, but remains intentionally better for artifact hunting than
 composition review.
 
-Remaining limitations are now concentrated in hydrology and corridor scoring
-rather than only flow accumulation. Stress captures can still expose straight-ish
-support strokes, parallel branches, and side clusters, and the source can still
-look too schematic without breach routing, process erosion, or better basin
-selection. The next river-quality pass should evaluate breach routing and
-process erosion references, then improve trunk continuity, stress performance,
-and default composition scoring.
+Remaining limitations are now concentrated in hydrology, basin hierarchy, and
+corridor scoring rather than only flow accumulation. Stress captures can still
+expose straight-ish support strokes, parallel branches, and side clusters, and
+the source can still look too schematic without breach routing, process erosion,
+or better basin selection. The next river-quality pass should evaluate breach
+routing and process erosion references, then improve trunk continuity, stress
+performance, and default composition scoring.

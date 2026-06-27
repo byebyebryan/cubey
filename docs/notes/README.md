@@ -80,8 +80,8 @@ the detailed foundation notes under `docs/architecture/`.
   D8 graph paths, pruning low-order support branches, and recovering active
   network coverage.
 - [Terrain stress trunk hierarchy plan](terrain-stress-trunk-hierarchy-plan.md):
-  plan for promoting major stress support/order-seed paths into trunk so
-  tributaries stop carrying most of the visible network.
+  revision 13 plan and outcome for promoting major stress support/order-seed
+  paths into trunk so tributaries stop carrying most of the visible network.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.

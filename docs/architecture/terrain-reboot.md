@@ -220,7 +220,7 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `12` emits deterministic source fields,
+local region. Generator revision `13` emits deterministic source fields,
 height/slope analysis, repaired routing diagnostics, smoothed active river trunk
 and tributary masks, wetness/deposition, material masks, vegetation potential,
 summaries, and tests.
@@ -269,6 +269,16 @@ accepted support routes cannot run too close to previously accepted support
 geometry. This keeps the de-gridded channel renderer while reducing the earlier
 coverage regression.
 
+Revision 13 is a stress-only trunk hierarchy pass. The default recipe remains
+stable, but the stress recipe now classifies visible support/order-seed/branch
+paths with stream-order and normalized discharge metrics before painting them.
+Qualified major paths are promoted into `river_trunk` up to a capped branch
+count, while lower-order attached paths remain in `tributaries`. The stress
+trunk band is wider but softer: it preserves meaningful `0.30` and `0.50`
+coverage for review while avoiding the long `0.80` axis-aligned and diagonal
+runs that exposed the D8-like outlet core. This is hierarchy classification over
+the current routing fields, not a new hydrology solver.
+
 Known limitations:
 
 - Fractional accumulation reduces receiver quantization, but active trunk
@@ -281,8 +291,8 @@ Known limitations:
 - Default river composition now has a stronger review footprint than the
   revision 11 prune pass, but it is still trunk-dominant and can read too sparse
   compared with a mature drainage network.
-- The stress recipe now avoids intentionally disconnected diagnostic corridors
-  and prunes the worst low-order branch fans, but it can still expose
+- The stress recipe now promotes major branches into a trunk hierarchy instead
+  of leaving tributaries as the primary network carrier, but it can still expose
   straight-ish or parallel support strokes because it deliberately pushes
   coverage before the hydrology model is complete.
 - Stress generation is currently expensive enough that performance should be
@@ -317,8 +327,9 @@ more biome labels:
    routing surface has a bounded fill pass.
 2. Improve corridor scoring/tiling so the default review composition is less
    sparse without turning into the stress recipe.
-3. Replace stress support expansion with a more principled basin/tributary
-   hierarchy so visual coverage does not depend on many painted support paths.
+3. Replace the current support-path hierarchy classifier with a more principled
+   basin/tributary model so visual coverage does not depend on capped promoted
+   branch counts.
 4. Split mountain/ridge drivers into explicit terrain products instead of
    treating mountains as only material response over height noise.
 5. Add capture summaries or manifest metadata for the review set so image
