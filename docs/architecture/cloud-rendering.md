@@ -248,8 +248,8 @@ separate contributors:
 
 - `local`: the normal surface volume march, responsible for foreground thickness
   and parallax;
-- `far shell`: an adaptive low-detail march of the same local volume field,
-  limited to the later high-oblique ray segment;
+- `far shell`: an integrated low-detail horizon layer from the same local weather
+  field, used after local volumetric detail fades out of grazing long rays;
 - `full orbit`: the orbit shell as the replacement path for true orbit/high
   altitude views.
 
@@ -272,9 +272,11 @@ shell is correctly limb/grazing-filtered for full-disk views, but it becomes a
 faint haze source rather than readable high-oblique cloud mass. It should also
 not use the orbit weather volume as its primary source, because that swaps cloud
 domains during the surface-to-orbit transition and reads as a different cloud
-type. The intended bridge is a lower-step, higher-LOD march of the local density
-field over only the distant ray segment. Full orbit remains a separate
-cloud-top shell problem.
+type. The intended bridge is a deterministic integrated layer over the distant
+horizon segment: it should sample broad local/weather mass, suppress
+high-frequency erosion by distance and grazing angle, lift far-cloud lighting,
+and blend into sky haze. It should not use stochastic long-ray starts as its
+primary anti-banding tool. Full orbit remains a separate cloud-top shell problem.
 
 The diagnostic contract is: `distance-regime` shows full orbit, effective
 high-view bridge, and residual local regime; `transition-weights` shows
