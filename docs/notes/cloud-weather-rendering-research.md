@@ -992,3 +992,33 @@ Implementation target:
   render resolution so high-frequency detail fades before it shimmers;
 - hide shell flatness with grazing-angle alpha feather, cloud-top normals,
   limb/rim lighting, and atmosphere blending.
+
+## Absorbed Atmosphere Baseline 2026-06-28
+
+After the standalone cloud project was absorbed into `projects/atmosphere`, the
+current review command is:
+
+```sh
+projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review-current
+```
+
+The script now captures full-quality 1920x1080 output by default and includes
+`high-oblique-no-clouds` alongside `high-oblique-final`. That comparison matters:
+the no-cloud high-oblique frame has a clean clear-sky/reference horizon, while
+the final frame still shows the cloud layer becoming a hard, noisy far band.
+This points the next fix back at cloud handoff/LOD, not at the shared
+atmosphere background.
+
+The current visual split is:
+
+- surface and upward views are the strongest baseline for local volumetric cloud
+  body shape;
+- high-oblique final is acceptable as a checkpoint, but the far handoff is still
+  visibly rough;
+- orbit-shell oblique gives useful broad weather/shell diagnostics, but it is
+  too flat and translucent to be the high-oblique target by itself.
+
+Next transition work should preserve the no-cloud comparison, then decide
+whether high-oblique needs local march truncation, a dedicated cached
+hemisphere/shell product, or a more explicit far-cloud LOD bridge before cloud
+shadows/reflections are treated as foundation-ready.

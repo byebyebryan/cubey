@@ -78,3 +78,27 @@ cloud renderer without copying descriptor or temporal-history code.
 Still out of scope: production cloud shadow textures for ocean/terrain/planet,
 cloud reflection or sky-probe contribution, clouded lighting feedback, and
 visual retuning beyond integration fixes.
+
+## High-Oblique Baseline 2026-06-28
+
+Current absorbed-cloud review pack:
+
+```sh
+projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review-current
+```
+
+The pack now defaults to 1920x1080 full-quality output and includes a
+`high-oblique-no-clouds` comparison beside `high-oblique-final`. The no-cloud
+frame confirms the clear atmosphere/reference horizon is not the source of the
+remaining high-oblique roughness; the issue is in the cloud handoff itself.
+
+Current read:
+
+- surface horizon/upward views remain the strongest baseline for local
+  volumetric shape;
+- high-oblique final has usable foreground clouds, but the far cloud band still
+  reads harder and noisier than the clear-sky comparison;
+- orbit-shell oblique is useful for shell/weather diagnostics, but it remains a
+  flatter cloud-top representation rather than the desired high-oblique handoff;
+- future work should keep the high-oblique comparison in the acceptance pack
+  before promoting cloud shadows/reflections or planet-scale consumers.

@@ -148,6 +148,8 @@ capture_named surface-up-coverage-bias "Surface upward coverage bias" diagnostic
 
 capture_named high-oblique-final "High oblique final" transition \
     "${high_oblique_day[@]}"
+capture_named high-oblique-no-clouds "High oblique no clouds" transition \
+    "${high_oblique_day[@]}" --no-clouds
 capture_named high-oblique-distance-regime "High oblique distance regime" transition \
     "${high_oblique_day[@]}" --cloud-debug-view distance-regime
 capture_named high-oblique-transition-weights "High oblique transition weights" transition \
