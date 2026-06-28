@@ -17,7 +17,7 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `14`. It emits source fields, height/slope
+The current generator revision is `15`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass now repairs local routing pits with a bounded priority-flood
@@ -34,7 +34,11 @@ thresholds without recreating long high-strength straight runs. Revision 14
 keeps the stress-only hierarchy but requires promoted branches to add distinct
 visible area away from the current trunk skeleton, pruning nearby parallel
 alternatives that read as repeated routes through the same corridor. This
-remains process-informed rather than a full hydraulic simulation.
+remains process-informed rather than a full hydraulic simulation. Revision 15
+keeps the stress trunk as a continuous mainstem, restores the longer
+accumulation trunk candidate, and grows a connected basin-tree tributary network
+from edge-biased stream-order candidates so the stress review exposes broader
+river reach without rendering unrelated graph edges.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -93,11 +97,14 @@ Revision 13 adds a stress-only hierarchy pass so major branches read as a
 branching trunk skeleton while smaller attached paths remain tributaries.
 Revision 14 rejects near-parallel promoted branches that do not add distinct
 visible drainage area, so the stress trunk review is sparser but less clustered
-around one corridor.
+around one corridor. Revision 15 shifts broad stress reach into connected
+basin-tree tributaries while keeping `river_trunk` as the continuous mainstem;
+this exposes more network coverage without turning side branches into
+disconnected trunk fragments.
 Treat it as a diagnostic recipe, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
-plus routed flow accumulation over a padded hidden routing domain. Revision `14`
+plus routed flow accumulation over a padded hidden routing domain. Revision `15`
 routes over a priority-flood-repaired drainage surface and exposes the
 raw-to-repaired delta as `routing_fill_delta`. Continuous D-Infinity-style flow
 angles and fractional accumulation remain the diagnostic catchment path, while
@@ -111,11 +118,12 @@ given discharge/stream-order width and strength variation. The stress recipe
 still applies a procedural basin convergence, but now prunes low-value support
 branches more aggressively, spaces accepted confluences, and rejects support
 paths that run too near previously accepted support paths to reduce parallel
-branch fans without starving the network. Major stress branches are promoted
-into `river_trunk` when their visible length and stream-order/discharge metrics
-make them part of the primary hierarchy, while lower-order attached channels
-stay in `tributaries`. Stress trunk promotion now also compares each candidate
-against the already promoted trunk skeleton, skips redundant near-parallel
-paths, and keeps only branches that contribute enough visible samples away from
-the existing trunk. See
+branch fans without starving the network. Revision 14 promoted only distinct
+major branches into `river_trunk` and skipped redundant near-parallel paths
+against the already promoted trunk skeleton. Revision 15 disables extra stress
+trunk promotion again, adds reach and continuity gates, and uses a connected
+basin-growth pass to paint long attached tributaries until the visible patch has
+a broader review footprint. Some tributary runs can still read too straight
+because the source hierarchy remains static routing rather than evolved
+hydrology. See
 [Terrain routing repair plan](../../docs/notes/terrain-routing-repair-plan.md).

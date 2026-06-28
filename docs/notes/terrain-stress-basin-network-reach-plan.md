@@ -36,10 +36,33 @@ raw graph-edge rendering.
 ## Acceptance
 
 - `outputs/terrain/stress-river-network/river-trunk.png` should show a connected
-  trunk hierarchy without the current left-side break.
+  mainstem without the current left-side break.
 - `outputs/terrain/stress-river-network/river-mask.png` should read as one
   broad basin tree reaching a meaningful portion of the map.
 - Stress branches should include several long arms that reach different visible
   regions; short local fingers are not enough for this diagnostic recipe.
 - Existing straight-run and endpoint-clutter regressions should continue to
   guard against returning to hard D8-looking strokes.
+
+## Outcome
+
+Implemented in revision 15.
+
+- Added stress-only reach regressions for high-strength coverage, largest
+  component dominance, crop-edge reach, coarse review footprint, and trunk
+  continuity.
+- Added a connected basin-growth pass that gathers edge-biased stream-order
+  candidates, traces them downstream into the active network, and accepts only
+  paths that add visible samples and coarse footprint.
+- Kept extra stress trunk promotion disabled for now. Broad diagnostic reach is
+  carried by attached tributaries, while `river_trunk` remains a continuous
+  mainstem.
+- Restored the longer accumulation trunk candidate and widened/softened the
+  stress mainstem so the trunk remains visible without fragmenting into
+  disconnected side branches.
+
+The revision 15 stress output is broader and no longer has the left-side trunk
+break, but it still exposes straight-ish tributary strokes. That is now a source
+model limitation rather than only a coverage bug; the next river pass should
+focus on more organic tributary routing or erosion/breach-informed path
+selection.
