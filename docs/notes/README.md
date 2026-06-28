@@ -85,6 +85,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain stress branch distinctness plan](terrain-stress-branch-distinctness-plan.md):
   revision 14 plan and outcome for rejecting near-parallel promoted stress
   trunks so trunk branches add distinct visible drainage area.
+- [Terrain stress basin network reach plan](terrain-stress-basin-network-reach-plan.md):
+  next stress-river correction: move from sparse promoted branches to a broad
+  connected basin tree with explicit reach and continuity acceptance checks.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.
