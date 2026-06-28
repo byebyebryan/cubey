@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 15
-stress basin-network reach pass.
+This note records the current terrain reboot capture set after the revision 16
+stress trunk-connectivity and tributary de-straightening pass.
 
 ## Capture Command
 
@@ -25,7 +25,10 @@ trunk band to avoid long high-strength straight runs. Revision 14 keeps the
 stress-only hierarchy but rejects promoted candidates that mostly run beside the
 existing trunk skeleton without adding distinct visible drainage area. Revision
 15 keeps the stress trunk as a continuous mainstem and grows broader connected
-basin-tree tributaries from edge-biased stream-order candidates.
+basin-tree tributaries from edge-biased stream-order candidates. Revision 16
+keeps promotion available only when the rendered trunk remains connected, then
+tightens and pre-curves stress support paths so the worst straight tributary
+fingers are filtered before export.
 
 ## What To Inspect
 
@@ -68,7 +71,10 @@ as the desired default composition. Revision 14 intentionally prunes some stress
 trunk coverage to reduce the obvious parallel-corridor failure. Revision 15
 allows tributaries to carry more of the broad stress footprint, so use
 `river-mask.png` and `final.png` for reach review and `river-trunk.png` for
-mainstem continuity.
+mainstem continuity. Revision 16 keeps that split but rejects rendered trunk
+branches that would create disconnected high-strength components. The current
+stress capture should read as a clean connected mainstem with attached
+tributaries; it is no longer trying to force a three-edge trunk skeleton.
 
 The current capture set intentionally keeps the lesson from the reverted
 revision 4 graph-routing attempt without rendering graph edges directly.
@@ -91,7 +97,10 @@ from the current skeleton; redundant near-parallel paths are skipped instead of
 being promoted. Revision 15 adds stress reach and continuity regressions, keeps
 extra stress trunk promotion disabled, restores the longer accumulation-trunk
 candidate, and paints connected basin-tree paths into `tributaries` until the
-visible review footprint broadens. The
+visible review footprint broadens. Revision 16 promotes stress trunk branches
+only after a temporary rendered-field connectivity check passes, adds direction
+and straight-run gates for promoted candidates, and pre-curves stress support
+paths before rasterization. The
 rejected revision 4 attempt made the visible product worse by rendering selected
 graph edges directly, producing disconnected snippets and hard straight or
 diagonal runs. See
@@ -101,7 +110,7 @@ diagonal runs. See
 
 The active river no longer depends on an authored center line, and the visible
 trunk/mask now use a padded hidden routing domain instead of treating the review
-patch as the whole watershed. Revision `15` routes accumulation with continuous
+patch as the whole watershed. Revision `16` routes accumulation with continuous
 D-Infinity-style flow angles and fractional receivers over the repaired routing
 surface, selects active channels from connected `stream_order` support, accepts
 extra branches only when they visibly terminate at an existing active channel,
@@ -113,8 +122,7 @@ artifact hunting than composition review.
 
 Remaining limitations are now concentrated in hydrology, basin hierarchy, and
 corridor scoring rather than only flow accumulation. Stress captures can still
-expose straight-ish tributary strokes and side clusters, and the source can
-still look too schematic without breach routing, process erosion, or better
-basin selection. The next river-quality pass should evaluate breach routing and
-process erosion references, then improve organic tributary curvature, stress
-performance, and default composition scoring.
+read too sparse and side-branch hierarchy is not yet broad enough to feel like a
+mature river network. The next river-quality pass should evaluate breach
+routing and process erosion references, then improve organic tributary
+curvature, basin reach, stress performance, and default composition scoring.

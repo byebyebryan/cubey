@@ -220,7 +220,7 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `15` emits deterministic source fields,
+local region. Generator revision `16` emits deterministic source fields,
 height/slope analysis, repaired routing diagnostics, smoothed active river trunk
 and tributary masks, wetness/deposition, material masks, vegetation potential,
 summaries, and tests.
@@ -298,6 +298,17 @@ as one connected basin tree rather than disconnected watershed clusters or a
 single trunk with short fingers. Extra trunk promotion is disabled until the
 branch hierarchy can be made continuous at confluences.
 
+Revision 16 re-enables stress trunk promotion only behind a rendered
+connectivity guard. A candidate path is first painted into a temporary trunk
+field and accepted only if the high-strength trunk remains dominated by one
+connected component. Connected-support, order-seed, basin, and corridor branch
+paths also get tighter grid-aligned source caps plus an additional pre-curving
+pass before rasterization. The result is cleaner than the revision 15
+stress-network output: long vertical promoted stubs are rejected and the worst
+tributary fingers are filtered. It is still not the final broad river-network
+model; the stress product currently favors a clean connected mainstem with
+some attached branches over forcing a third crop-edge branch.
+
 Known limitations:
 
 - Fractional accumulation reduces receiver quantization, but active trunk
@@ -311,9 +322,9 @@ Known limitations:
   revision 11 prune pass, but it is still trunk-dominant and can read too sparse
   compared with a mature drainage network.
 - The stress recipe now broadens reach through connected tributary basin growth
-  while keeping the trunk continuous, but it can still expose straight-ish
-  tributary strokes because it is still using a static routing hierarchy rather
-  than evolved hydrology.
+  while keeping the trunk continuous, but it can still read too sparse and
+  schematic because it is still using a static routing hierarchy rather than
+  evolved hydrology.
 - Stress generation is currently expensive enough that performance should be
   revisited before adding heavier hydrology checks.
 - The final PNG is an inspectable debug composition, not the target renderer.

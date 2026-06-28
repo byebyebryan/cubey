@@ -88,6 +88,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain stress basin network reach plan](terrain-stress-basin-network-reach-plan.md):
   next stress-river correction: move from sparse promoted branches to a broad
   connected basin tree with explicit reach and continuity acceptance checks.
+- [Terrain stress promotion organic cleanup plan](terrain-stress-promotion-organic-cleanup-plan.md):
+  revision 16 outcome for rendered trunk-connectivity gating, anti-straight
+  stress support filters, and the remaining broad-network driver gap.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.

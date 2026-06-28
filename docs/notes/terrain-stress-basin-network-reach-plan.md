@@ -66,3 +66,8 @@ break, but it still exposes straight-ish tributary strokes. That is now a source
 model limitation rather than only a coverage bug; the next river pass should
 focus on more organic tributary routing or erosion/breach-informed path
 selection.
+
+Revision 16 follows up on that limitation by adding rendered trunk-connectivity
+gating, direction checks, tighter straight-run caps, and extra pre-curving for
+stress support paths. It improves the obvious artificial strokes, but does not
+claim the broader multi-edge river-network driver is solved.
