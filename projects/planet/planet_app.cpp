@@ -1293,6 +1293,7 @@ class PlanetApp {
             inputs, {
                         .view_rays = cubey::render::view_ray_basis_3d(
                             transform.rotation, aspect, camera_.fovy_radians()),
+                        .local_frame = frame_.local_frame,
                         .look_config = atmosphere_look_config_,
                     });
     }

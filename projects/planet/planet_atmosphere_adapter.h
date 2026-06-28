@@ -3,6 +3,7 @@
 #include "planet_celestial.h"
 
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/local_tangent_frame.h>
 
 namespace cubey::projects::planet {
 
@@ -13,6 +14,7 @@ planet_atmosphere_environment_config(
 
 struct PlanetUnifiedAtmosphereFrameInputs {
     cubey::render::ViewRayBasis3D view_rays{};
+    cubey::render::LocalTangentFrame local_frame{};
     cubey::render::AtmosphereEnvironmentRenderView render_view =
         cubey::render::AtmosphereEnvironmentRenderView::Final;
     cubey::render::AtmosphereEnvironmentConfig look_config{};

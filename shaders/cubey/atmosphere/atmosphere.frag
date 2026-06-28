@@ -334,6 +334,29 @@ float star_limiting_magnitude(vec3 ray_direction, vec3 sun_direction) {
     return clamp(limiting_magnitude, -1.2, 6.45);
 }
 
+float space_sun_clear_visibility(vec3 ray_direction, vec3 sun_direction) {
+    float sun_angle = acos(clamp(dot(ray_direction, sun_direction), -1.0, 1.0));
+    return smoothstep(0.18, 0.62, sun_angle);
+}
+
+float space_night_object_visibility(vec3 ray_direction, vec3 sun_direction,
+                                    float moon_base, float moon_lobe, float moon_min,
+                                    float pollution_min) {
+    float pollution = mix(1.0, pollution_min, clamp(atmosphere.milky_way_options.z, 0.0, 1.0));
+    return space_sun_clear_visibility(ray_direction, sun_direction) * pollution *
+           moon_washout(ray_direction, moon_base, moon_lobe, moon_min);
+}
+
+float space_star_limiting_magnitude(vec3 ray_direction, vec3 sun_direction) {
+    float sun_clear = space_sun_clear_visibility(ray_direction, sun_direction);
+    float moon_clear = moon_washout(ray_direction, 0.55, 0.92, 0.22);
+    float pollution = clamp(atmosphere.milky_way_options.z, 0.0, 1.0);
+    float limiting_magnitude = mix(-1.0, 6.25, sun_clear);
+    limiting_magnitude -= (1.0 - moon_clear) * 2.5;
+    limiting_magnitude -= pollution * 3.0;
+    return clamp(limiting_magnitude, -1.2, 6.35);
+}
+
 float star_point_spread(vec2 local, vec2 center, float radius, float halo_strength) {
     float distance_to_star = length(local - center);
     float antialias = min(max(length(fwidth(distance_to_star)), 0.0035), 0.010);
@@ -447,7 +470,22 @@ vec3 procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
            visibility;
 }
 
-vec3 milky_way_radiance(vec3 ray_direction, vec3 sun_direction) {
+vec3 space_procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
+    float visibility =
+        space_night_object_visibility(ray_direction, sun_direction, 0.10, 0.24, 0.18, 0.20) *
+        atmosphere.night_options.z;
+    if (visibility <= 0.0 || atmosphere.night_options.w <= 0.0) {
+        return vec3(0.0);
+    }
+
+    float limiting_magnitude = space_star_limiting_magnitude(ray_direction, sun_direction);
+    vec3 sky_direction = star_sample_direction(ray_direction);
+    return (bright_star_radiance(sky_direction, limiting_magnitude) +
+            faint_star_radiance(sky_direction, limiting_magnitude)) *
+           visibility * 1.35;
+}
+
+vec3 milky_way_radiance_with_visibility(vec3 ray_direction, float visibility) {
     float source_intensity = atmosphere.milky_way_options.x;
     if (source_intensity <= 0.0) {
         return vec3(0.0);
@@ -465,9 +503,19 @@ vec3 milky_way_radiance(vec3 ray_direction, vec3 sun_direction) {
     float contrast = clamp(atmosphere.milky_way_options.y, 0.0, 4.0);
     float contrast_gain = mix(0.45, 1.55, contrast * 0.25);
     float exposure_gain = mix(0.85, 1.70, camera_mode);
+    return color * source_intensity * contrast_gain * exposure_gain * visibility;
+}
+
+vec3 milky_way_radiance(vec3 ray_direction, vec3 sun_direction) {
     float visibility =
         night_object_visibility(ray_direction, sun_direction, 0.24, 0.34, 0.46, 0.06, 0.04);
-    return color * source_intensity * contrast_gain * exposure_gain * visibility;
+    return milky_way_radiance_with_visibility(ray_direction, visibility);
+}
+
+vec3 space_milky_way_radiance(vec3 ray_direction, vec3 sun_direction) {
+    float visibility =
+        space_night_object_visibility(ray_direction, sun_direction, 0.34, 0.46, 0.06, 0.04);
+    return milky_way_radiance_with_visibility(ray_direction, visibility);
 }
 
 vec3 galactic_debug_direction() {
@@ -493,6 +541,11 @@ vec3 night_sky_radiance(vec3 ray_direction, vec3 sun_direction) {
            twilight_radiance(ray_direction, sun_direction) +
            procedural_star_radiance(ray_direction, sun_direction) +
            milky_way_radiance(ray_direction, sun_direction);
+}
+
+vec3 space_night_sky_radiance(vec3 ray_direction, vec3 sun_direction) {
+    return space_procedural_star_radiance(ray_direction, sun_direction) +
+           space_milky_way_radiance(ray_direction, sun_direction);
 }
 
 CubeyAtmosphereSample integrate_atmosphere(vec3 ray_origin, vec3 ray_direction, float ray_start,
@@ -688,7 +741,8 @@ void main() {
         vec3 space_color = (render_sun_disk ? sun_disk_luminance(ray_origin, ray_direction,
                                                                  planet_center)
                                             : vec3(0.0)) +
-                           (render_night_sky ? night_sky_radiance(ray_direction, sun_direction)
+                           (render_night_sky ? space_night_sky_radiance(ray_direction,
+                                                                         sun_direction)
                                              : vec3(0.0));
         out_color = vec4(space_color, 1.0);
         return;

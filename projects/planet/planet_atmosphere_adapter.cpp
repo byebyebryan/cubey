@@ -26,16 +26,6 @@ struct PlanetAtmosphereTangentFrame {
     cubey::math::Vec3 forward{0.0F, 0.0F, 1.0F};
 };
 
-[[nodiscard]] cubey::math::Vec3 projected_or_zero(cubey::math::Vec3 value,
-                                                  cubey::math::Vec3 normal) {
-    return value - normal * glm::dot(value, normal);
-}
-
-[[nodiscard]] cubey::math::Vec3 tangent_fallback_axis(cubey::math::Vec3 up) {
-    return std::abs(up.y) < 0.92F ? cubey::math::Vec3{0.0F, 1.0F, 0.0F}
-                                  : cubey::math::Vec3{1.0F, 0.0F, 0.0F};
-}
-
 [[nodiscard]] cubey::math::Vec3 normalized_or_fallback(cubey::math::Vec3 value,
                                                        cubey::math::Vec3 fallback) {
     if (glm::dot(value, value) <= 0.00000001F) {
@@ -45,15 +35,11 @@ struct PlanetAtmosphereTangentFrame {
 }
 
 [[nodiscard]] PlanetAtmosphereTangentFrame planet_atmosphere_tangent_frame(
-    const PlanetAtmosphereInputs& inputs, const cubey::render::ViewRayBasis3D& view_rays) {
+    const PlanetAtmosphereInputs& inputs, const cubey::render::LocalTangentFrame& local_frame) {
     PlanetAtmosphereTangentFrame frame;
-    frame.up = normalized_or_up(inputs.camera_position_m);
-    const cubey::math::Vec3 right_hint = projected_or_zero(cubey::math::Vec3{view_rays.right_aspect},
-                                                           frame.up);
-    const cubey::math::Vec3 fallback =
-        glm::cross(tangent_fallback_axis(frame.up), frame.up);
-    frame.right = normalized_or_fallback(right_hint, fallback);
-    frame.forward = glm::normalize(glm::cross(frame.right, frame.up));
+    frame.up = normalized_or_fallback(local_frame.up, normalized_or_up(inputs.camera_position_m));
+    frame.right = normalized_or_fallback(local_frame.right, {1.0F, 0.0F, 0.0F});
+    frame.forward = normalized_or_fallback(local_frame.forward, glm::cross(frame.up, frame.right));
     return frame;
 }
 
@@ -132,7 +118,7 @@ cubey::render::AtmosphereEnvironmentConfig planet_atmosphere_environment_config(
 cubey::render::AtmosphereEnvironmentFrameUniforms planet_unified_atmosphere_frame_uniforms(
     const PlanetAtmosphereInputs& inputs, const PlanetUnifiedAtmosphereFrameInputs& frame_inputs) {
     const PlanetAtmosphereTangentFrame tangent =
-        planet_atmosphere_tangent_frame(inputs, frame_inputs.view_rays);
+        planet_atmosphere_tangent_frame(inputs, frame_inputs.local_frame);
     const cubey::render::ViewRayBasis3D view_rays =
         unified_atmosphere_view_rays(frame_inputs.view_rays, tangent);
     const cubey::math::Vec3 camera_position_km =
