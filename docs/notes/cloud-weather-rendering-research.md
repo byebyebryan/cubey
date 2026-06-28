@@ -1093,3 +1093,47 @@ but surface-horizon dark silhouettes/holes are still visible. That residual
 failure now looks less like pure stochastic noise and more like a far-horizon
 lighting/opacity/handoff problem. The next visual pass should target far-cloud
 radiance, alpha, and the near/far handoff before adding more resolution tweaks.
+
+## Integrated Horizon Handoff Checkpoint 2026-06-28
+
+This follow-up implements the handoff direction from the Shadertoy inventory:
+near/local cloud samples are truncated as rays become horizon-grazing, then a
+deterministic integrated far-horizon layer reconstructs the distant cloud band.
+The intent is to avoid throwing more stochastic samples at extremely long
+tangent rays while keeping the same weather/local-detail field as the source.
+
+Landed changes:
+
+- the architecture note now defines the far cloud target as an integrated
+  low-detail horizon layer, not another detailed local march;
+- the local volume march fades density in the grazing/far handoff region;
+- the old far bridge no longer runs a noisy secondary local march;
+- atmosphere clouds now default to `auto` distance mode so the atmo project
+  actually exercises the distance-aware cloud path;
+- new diagnostics expose `horizon-handoff`, `local-truncation`,
+  `integrated-horizon-alpha`, and `integrated-horizon-radiance`;
+- the atmosphere cloud review script now captures horizon on/off comparisons
+  plus the handoff diagnostics for surface and high-oblique views.
+
+Validation passed with:
+
+```sh
+cmake --build --preset dev --target atmosphere cubey_project_atmosphere_tests
+ctest --preset dev -R '^atmosphere_config_tests$' --output-on-failure
+```
+
+Review captures:
+
+```text
+outputs/atmosphere-cloud-horizon-handoff-20260628/
+outputs/atmosphere-cloud-horizon-handoff-20260628-auto-fix/
+```
+
+The mechanical handoff now activates in surface and high-oblique views, and the
+debug masks clearly show where local samples are being removed. The visible
+final/no-horizon delta is intentionally subtle because the integrated layer is a
+soft far cloud band, not a new cloud type. The full-size captures also show that
+the hard black strip at the surface horizon is already present with `--no-clouds`;
+that is an atmo/background or horizon-composition issue, not a cloud-march
+artifact. Treat that as a separate atmo fix before judging further cloud
+horizon tuning.
