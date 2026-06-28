@@ -140,7 +140,7 @@ struct MoonConfig {
     cubey::render::CloudLayerConfig config{};
     config.quality = cubey::render::CloudLayerQuality::Half;
     config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
-    config.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    config.distance_mode = cubey::render::CloudLayerDistanceMode::Auto;
     config.debug_view = cubey::render::CloudLayerDebugView::Final;
     config.sampling_mode = cubey::render::CloudLayerSamplingMode::BlueNoise;
     config.temporal_enabled = true;

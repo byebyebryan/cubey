@@ -110,18 +110,21 @@ surface_horizon_day=(
     --time-hours 14.0
     --camera-altitude-km 0.15
     --camera-pitch-offset-deg 0
+    --cloud-distance-mode auto
 )
 surface_up_day=(
     --time-of-day-mode solar
     --time-hours 14.0
     --camera-altitude-km 0.15
     --camera-pitch-offset-deg 45
+    --cloud-distance-mode auto
 )
 surface_horizon_sunset=(
     --time-of-day-mode solar
     --time-hours 17.8
     --camera-altitude-km 0.15
     --camera-pitch-offset-deg 0
+    --cloud-distance-mode auto
 )
 high_oblique_day=(
     --time-of-day-mode solar

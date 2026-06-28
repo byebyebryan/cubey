@@ -468,6 +468,8 @@ int main() {
     require(defaults.clouds.layer.sampling_mode == CloudLayerSamplingMode::BlueNoise &&
                 defaults.clouds.layer.temporal_enabled,
             "default atmosphere clouds should use temporal blue-noise sampling");
+    require(defaults.clouds.layer.distance_mode == CloudLayerDistanceMode::Auto,
+            "default atmosphere clouds should use distance-aware rendering");
 
     {
         AtmosphereCloudConfig clouds;
