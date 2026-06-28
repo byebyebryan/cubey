@@ -7,7 +7,8 @@ OUT_DIR="${1:-${ROOT_DIR}/outputs/atmosphere-cloud-review-$(date +%Y%m%d-%H%M%S)
 WIDTH="${WIDTH:-1920}"
 HEIGHT="${HEIGHT:-1080}"
 FRAMES="${FRAMES:-2}"
-QUALITY="${QUALITY:-full}"
+QUALITY="${QUALITY:-half}"
+REFERENCE_QUALITY="${REFERENCE_QUALITY:-full}"
 PRESET="${PRESET:-broken-cumulus}"
 DEEP="${DEEP:-0}"
 MOTION_FRAMES="${MOTION_FRAMES:-120}"
@@ -20,18 +21,25 @@ INDEX="${OUT_DIR}/index.md"
 CAPTURE_FILES=()
 CAPTURE_LABELS=()
 
-capture() {
-    local name="$1"
-    shift
+capture_with_quality() {
+    local quality="$1"
+    local name="$2"
+    shift 2
     "${APP}" \
         --headless \
         --frames "${FRAMES}" \
         --width "${WIDTH}" \
         --height "${HEIGHT}" \
-        --cloud-quality "${QUALITY}" \
+        --cloud-quality "${quality}" \
         --cloud-weather-preset "${PRESET}" \
         "$@" \
         --output "${OUT_DIR}/${name}.png"
+}
+
+capture() {
+    local name="$1"
+    shift
+    capture_with_quality "${QUALITY}" "${name}" "$@"
 }
 
 write_index_header() {
@@ -41,6 +49,7 @@ write_index_header() {
         printf -- '- Size: %sx%s\n' "${WIDTH}" "${HEIGHT}"
         printf -- '- Frames: %s\n' "${FRAMES}"
         printf -- '- Quality: %s\n' "${QUALITY}"
+        printf -- '- Reference quality: %s\n' "${REFERENCE_QUALITY}"
         printf -- '- Weather preset: %s\n' "${PRESET}"
         printf -- '- Deep diagnostics: %s\n\n' "${DEEP}"
         printf '| Capture | Group | Args |\n'
@@ -57,6 +66,23 @@ capture_named() {
     capture "${name}" "$@"
 
     local args="$*"
+    args="${args//$'\t'/ }"
+    CAPTURE_FILES+=("${OUT_DIR}/${name}.png")
+    CAPTURE_LABELS+=("${title}")
+    printf '%s\t%s\t%s\t%s\n' "${name}.png" "${title}" "${group}" "${args}" >>"${MANIFEST}"
+    printf '| [%s](%s) | %s | `%s` |\n' "${title}" "${name}.png" "${group}" "${args}" >>"${INDEX}"
+}
+
+capture_named_quality() {
+    local quality="$1"
+    local name="$2"
+    local title="$3"
+    local group="$4"
+    shift 4
+
+    capture_with_quality "${quality}" "${name}" "$@"
+
+    local args="--cloud-quality ${quality} $*"
     args="${args//$'\t'/ }"
     CAPTURE_FILES+=("${OUT_DIR}/${name}.png")
     CAPTURE_LABELS+=("${title}")
@@ -126,6 +152,24 @@ capture_named surface-horizon-final "Surface horizon final" final \
     "${surface_horizon_day[@]}"
 capture_named surface-horizon-no-clouds "Surface horizon no clouds" final \
     "${surface_horizon_day[@]}" --no-clouds
+capture_named surface-horizon-raw-final "Surface horizon raw final" horizon-diagnostics \
+    "${surface_horizon_day[@]}" --cloud-debug-view raw-final
+capture_named surface-horizon-cloud-alpha "Surface horizon cloud alpha" horizon-diagnostics \
+    "${surface_horizon_day[@]}" --cloud-debug-view cloud-alpha
+capture_named surface-horizon-metadata-confidence "Surface horizon metadata confidence" \
+    horizon-diagnostics "${surface_horizon_day[@]}" --cloud-debug-view metadata-confidence
+capture_named surface-horizon-steps "Surface horizon steps" horizon-diagnostics \
+    "${surface_horizon_day[@]}" --cloud-debug-view steps
+capture_named surface-horizon-far-shell-alpha "Surface horizon far-shell alpha" \
+    horizon-diagnostics "${surface_horizon_day[@]}" --cloud-debug-view far-shell-alpha
+capture_named surface-horizon-local-alpha "Surface horizon local alpha" horizon-diagnostics \
+    "${surface_horizon_day[@]}" --cloud-debug-view local-alpha
+capture_named surface-horizon-jitter-pattern "Surface horizon jitter pattern" \
+    horizon-diagnostics "${surface_horizon_day[@]}" --cloud-debug-view jitter-pattern
+capture_named surface-horizon-step-length "Surface horizon step length" horizon-diagnostics \
+    "${surface_horizon_day[@]}" --cloud-debug-view horizon-step-length
+capture_named surface-horizon-filter-lod "Surface horizon filter LOD" horizon-diagnostics \
+    "${surface_horizon_day[@]}" --cloud-debug-view horizon-filter-lod
 capture_named surface-up-final "Surface upward final" final \
     "${surface_up_day[@]}"
 capture_named sunset-horizon-final "Sunset horizon final" final \
@@ -150,6 +194,24 @@ capture_named high-oblique-final "High oblique final" transition \
     "${high_oblique_day[@]}"
 capture_named high-oblique-no-clouds "High oblique no clouds" transition \
     "${high_oblique_day[@]}" --no-clouds
+capture_named high-oblique-raw-final "High oblique raw final" transition-diagnostics \
+    "${high_oblique_day[@]}" --cloud-debug-view raw-final
+capture_named high-oblique-cloud-alpha "High oblique cloud alpha" transition-diagnostics \
+    "${high_oblique_day[@]}" --cloud-debug-view cloud-alpha
+capture_named high-oblique-metadata-confidence "High oblique metadata confidence" \
+    transition-diagnostics "${high_oblique_day[@]}" --cloud-debug-view metadata-confidence
+capture_named high-oblique-steps "High oblique steps" transition-diagnostics \
+    "${high_oblique_day[@]}" --cloud-debug-view steps
+capture_named high-oblique-far-shell-alpha "High oblique far-shell alpha" \
+    transition-diagnostics "${high_oblique_day[@]}" --cloud-debug-view far-shell-alpha
+capture_named high-oblique-local-alpha "High oblique local alpha" transition-diagnostics \
+    "${high_oblique_day[@]}" --cloud-debug-view local-alpha
+capture_named high-oblique-jitter-pattern "High oblique jitter pattern" transition-diagnostics \
+    "${high_oblique_day[@]}" --cloud-debug-view jitter-pattern
+capture_named high-oblique-step-length "High oblique step length" transition-diagnostics \
+    "${high_oblique_day[@]}" --cloud-debug-view horizon-step-length
+capture_named high-oblique-filter-lod "High oblique filter LOD" transition-diagnostics \
+    "${high_oblique_day[@]}" --cloud-debug-view horizon-filter-lod
 capture_named high-oblique-distance-regime "High oblique distance regime" transition \
     "${high_oblique_day[@]}" --cloud-debug-view distance-regime
 capture_named high-oblique-transition-weights "High oblique transition weights" transition \
@@ -167,6 +229,13 @@ capture_named orbit-shell-alpha "Orbit shell alpha" orbit \
     "${orbit_shell_oblique_day[@]}" --cloud-debug-view orbit-shell-alpha
 
 if [[ "${DEEP}" != "0" ]]; then
+    capture_named_quality "${REFERENCE_QUALITY}" surface-horizon-reference-final \
+        "Surface horizon reference final" reference \
+        "${surface_horizon_day[@]}"
+    capture_named_quality "${REFERENCE_QUALITY}" high-oblique-reference-final \
+        "High oblique reference final" reference \
+        "${high_oblique_day[@]}"
+
     motion_video="${OUT_DIR}/surface-up-motion.mp4"
     "${APP}" \
         --headless \

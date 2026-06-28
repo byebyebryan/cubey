@@ -258,6 +258,9 @@ int main() {
                 CloudLayerDebugView::OrbitShellFootprint,
             "cloud layer debug view should include shell footprint diagnostics");
     require(next_cloud_layer_debug_view(CloudLayerDebugView::OrbitShellMass) ==
+                CloudLayerDebugView::JitterPattern,
+            "cloud layer debug view should include sampling diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::HorizonFilterLod) ==
                 CloudLayerDebugView::SceneDepthOcclusion,
             "cloud layer debug view should include scene depth occlusion diagnostics");
     require(next_cloud_layer_debug_view(CloudLayerDebugView::SceneDepthOcclusion) ==
@@ -282,6 +285,11 @@ int main() {
     require(cloud_layer_debug_view_from_name("shell-mass") ==
                 CloudLayerDebugView::OrbitShellMass,
             "cloud shell mass debug alias should parse");
+    require(cloud_layer_debug_view_from_name("jitter") == CloudLayerDebugView::JitterPattern,
+            "cloud jitter debug alias should parse");
+    require(cloud_layer_debug_view_from_name("horizon-lod") ==
+                CloudLayerDebugView::HorizonFilterLod,
+            "cloud horizon LOD debug alias should parse");
     require(cloud_layer_debug_view_from_name("depth-mask") ==
                 CloudLayerDebugView::SceneDepthOcclusion,
             "cloud scene depth debug alias should parse");

@@ -135,9 +135,12 @@ enum class CloudLayerDebugView : std::uint32_t {
     OrbitShellFootprint = 49,
     OrbitShellFilter = 50,
     OrbitShellMass = 51,
+    JitterPattern = 52,
+    HorizonStepLength = 53,
+    HorizonFilterLod = 54,
 };
 
-inline constexpr std::array<CloudLayerDebugView, 47> kCloudLayerDebugViews{
+inline constexpr std::array<CloudLayerDebugView, 50> kCloudLayerDebugViews{
     CloudLayerDebugView::Final,
     CloudLayerDebugView::RawFinal,
     CloudLayerDebugView::AuthoredWeather,
@@ -184,6 +187,9 @@ inline constexpr std::array<CloudLayerDebugView, 47> kCloudLayerDebugViews{
     CloudLayerDebugView::OrbitShellFootprint,
     CloudLayerDebugView::OrbitShellFilter,
     CloudLayerDebugView::OrbitShellMass,
+    CloudLayerDebugView::JitterPattern,
+    CloudLayerDebugView::HorizonStepLength,
+    CloudLayerDebugView::HorizonFilterLod,
     CloudLayerDebugView::SceneDepthOcclusion,
 };
 

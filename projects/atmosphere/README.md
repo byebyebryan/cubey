@@ -59,10 +59,11 @@ projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
 
 The cloud review script writes a stable set of labeled captures plus
 `manifest.tsv`, `index.md`, and `contact-sheet.png` for quick visual comparison.
-It defaults to 1920x1080 full-quality captures; set `WIDTH`, `HEIGHT`, or
-`QUALITY` for faster local smoke runs. The high-oblique row includes a no-cloud
-comparison so cloud handoff artifacts can be separated from the clear-sky
-background.
+It defaults to 1920x1080 half-quality captures, because half resolution is the
+current practical target; set `WIDTH`, `HEIGHT`, `QUALITY`, or `DEEP=1` for
+faster smoke runs or full-quality reference comparisons. The high-oblique row
+includes a no-cloud comparison so cloud handoff artifacts can be separated from
+the clear-sky background.
 
 Controls:
 

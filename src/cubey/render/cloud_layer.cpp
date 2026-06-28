@@ -536,6 +536,15 @@ CloudLayerDebugView cloud_layer_debug_view_from_name(std::string_view value) {
     if (value == "orbit-shell-mass" || value == "shell-mass") {
         return CloudLayerDebugView::OrbitShellMass;
     }
+    if (value == "jitter-pattern" || value == "jitter") {
+        return CloudLayerDebugView::JitterPattern;
+    }
+    if (value == "horizon-step-length" || value == "horizon-steps") {
+        return CloudLayerDebugView::HorizonStepLength;
+    }
+    if (value == "horizon-filter-lod" || value == "horizon-lod") {
+        return CloudLayerDebugView::HorizonFilterLod;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -635,6 +644,12 @@ const char* cloud_layer_debug_view_name(CloudLayerDebugView view) {
         return "orbit-shell-filter";
     case CloudLayerDebugView::OrbitShellMass:
         return "orbit-shell-mass";
+    case CloudLayerDebugView::JitterPattern:
+        return "jitter-pattern";
+    case CloudLayerDebugView::HorizonStepLength:
+        return "horizon-step-length";
+    case CloudLayerDebugView::HorizonFilterLod:
+        return "horizon-filter-lod";
     }
     return "final";
 }
