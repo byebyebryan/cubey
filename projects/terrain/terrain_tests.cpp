@@ -9,6 +9,7 @@
 #include <string>
 #include <stdexcept>
 #include <string_view>
+#include <vector>
 
 namespace {
 
@@ -81,6 +82,44 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     }
     return static_cast<std::size_t>(max_x - min_x + 1U) *
            static_cast<std::size_t>(max_y - min_y + 1U);
+}
+
+[[nodiscard]] std::size_t max_active_window_samples(
+    const cubey::procedural::ScalarField2D& field, float threshold, std::uint32_t window_size) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    if (window_size == 0U || window_size > desc.width || window_size > desc.height) {
+        return 0U;
+    }
+
+    const std::uint32_t integral_width = desc.width + 1U;
+    std::vector<std::uint32_t> integral(
+        static_cast<std::size_t>(integral_width) * static_cast<std::size_t>(desc.height + 1U),
+        0U);
+    const auto integral_index = [integral_width](std::uint32_t x, std::uint32_t y) {
+        return static_cast<std::size_t>(y) * static_cast<std::size_t>(integral_width) +
+               static_cast<std::size_t>(x);
+    };
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        std::uint32_t row_count = 0U;
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            row_count += field.at(x, y) >= threshold ? 1U : 0U;
+            integral[integral_index(x + 1U, y + 1U)] =
+                integral[integral_index(x + 1U, y)] + row_count;
+        }
+    }
+
+    std::size_t best = 0U;
+    for (std::uint32_t y = 0; y + window_size <= desc.height; ++y) {
+        for (std::uint32_t x = 0; x + window_size <= desc.width; ++x) {
+            const std::uint32_t x1 = x + window_size;
+            const std::uint32_t y1 = y + window_size;
+            const std::uint32_t count =
+                integral[integral_index(x1, y1)] - integral[integral_index(x, y1)] -
+                integral[integral_index(x1, y)] + integral[integral_index(x, y)];
+            best = std::max(best, static_cast<std::size_t>(count));
+        }
+    }
+    return best;
 }
 
 [[nodiscard]] std::size_t count_active_samples_with_neighbor(
@@ -536,9 +575,9 @@ void test_terrain_review_river_coverage_is_meaningful() {
             "terrain default review river should not flood the patch");
     require(stress_samples * 100U < total_samples * 12U,
             "terrain stress review river should not flood the patch");
-    if (stress_trunk_samples <= baseline_trunk_samples) {
+    if (stress_trunk_samples * 100U < baseline_trunk_samples * 90U) {
         throw std::runtime_error(
-            "terrain stress trunk should expand high-order trunk coverage: baseline=" +
+            "terrain stress trunk should retain most baseline high-order trunk coverage: baseline=" +
             std::to_string(baseline_trunk_samples) + " stress=" +
             std::to_string(stress_trunk_samples));
     }
@@ -554,6 +593,15 @@ void test_terrain_review_river_coverage_is_meaningful() {
             "trunk=" +
             std::to_string(stress_trunk_samples) + " tributaries=" +
             std::to_string(stress_tributary_samples));
+    }
+    const std::size_t stress_trunk_max_window =
+        max_active_window_samples(stress_trunk, 0.30F, 64U);
+    if (stress_trunk_max_window * 100U > stress_trunk_samples * 60U) {
+        throw std::runtime_error(
+            "terrain stress trunk should not pack most promoted branches into one corridor: "
+            "window=" +
+            std::to_string(stress_trunk_max_window) + " trunk=" +
+            std::to_string(stress_trunk_samples));
     }
     if (stress_endpoint_samples * 100U > stress_tributary_samples * 8U) {
         throw std::runtime_error(
