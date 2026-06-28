@@ -591,8 +591,11 @@ void test_terrain_review_river_coverage_is_meaningful() {
         largest_active_component_size(stress_river, kVisibleNetworkThreshold);
     const std::size_t stress_edge_touches =
         edge_band_touch_count(stress_river, kVisibleNetworkThreshold, 8U);
+    const std::size_t stress_trunk_edge_touches = edge_band_touch_count(stress_trunk, 0.30F, 8U);
     const std::size_t stress_coarse_tiles =
         count_active_coarse_tiles(stress_river, kVisibleNetworkThreshold, 5U);
+    const std::size_t stress_trunk_coarse_tiles =
+        count_active_coarse_tiles(stress_trunk, 0.30F, 5U);
     const std::size_t total_samples = baseline_river.sample_count();
 
     require(baseline_samples >= 1'200U,
@@ -623,6 +626,16 @@ void test_terrain_review_river_coverage_is_meaningful() {
             "terrain stress trunk should be dominated by one continuous trunk component: largest=" +
             std::to_string(stress_trunk_largest_component) + " active=" +
             std::to_string(stress_trunk_samples));
+    }
+    if (stress_trunk_edge_touches < 3U) {
+        throw std::runtime_error(
+            "terrain stress trunk should include a divergent branch reaching another edge: edges=" +
+            std::to_string(stress_trunk_edge_touches));
+    }
+    if (stress_trunk_coarse_tiles < 7U) {
+        throw std::runtime_error(
+            "terrain stress trunk should occupy multiple coarse basin regions: tiles=" +
+            std::to_string(stress_trunk_coarse_tiles));
     }
     if (stress_edge_touches < 3U) {
         throw std::runtime_error(
@@ -671,6 +684,20 @@ void test_terrain_review_river_coverage_is_meaningful() {
             "terrain stress tributaries should not collapse into hairy endpoints: endpoints=" +
             std::to_string(stress_endpoint_samples) + " active=" +
             std::to_string(stress_tributary_samples));
+    }
+    const std::size_t stress_tributary_axis_run =
+        max_axis_aligned_active_run(stress_tributaries, 0.45F, 16U);
+    const std::size_t stress_tributary_diagonal_run =
+        max_diagonal_active_run(stress_tributaries, 0.45F, 16U);
+    if (stress_tributary_axis_run > 44U) {
+        throw std::runtime_error(
+            "terrain stress tributaries should avoid long straight mid-strength runs: axis=" +
+            std::to_string(stress_tributary_axis_run));
+    }
+    if (stress_tributary_diagonal_run > 50U) {
+        throw std::runtime_error(
+            "terrain stress tributaries should avoid long diagonal mid-strength runs: diagonal=" +
+            std::to_string(stress_tributary_diagonal_run));
     }
     const std::size_t stress_axis_run =
         max_axis_aligned_active_run(stress_river, 0.80F, 16U);
