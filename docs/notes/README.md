@@ -82,6 +82,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain stress trunk hierarchy plan](terrain-stress-trunk-hierarchy-plan.md):
   revision 13 plan and outcome for promoting major stress support/order-seed
   paths into trunk so tributaries stop carrying most of the visible network.
+- [Terrain stress branch distinctness plan](terrain-stress-branch-distinctness-plan.md):
+  revision 14 plan for rejecting near-parallel promoted stress trunks so trunk
+  branches add distinct visible drainage area.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.
