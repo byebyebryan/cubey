@@ -41,3 +41,26 @@ otherwise they should be skipped as redundant diagnostic clutter.
 - Tests should keep the revision 13 trunk-share and straight-run checks and add
   a corridor-density regression that catches one small window carrying too much
   of the stress trunk field.
+
+## Outcome
+
+Implemented in revision 14.
+
+- Added a promoted-trunk skeleton seeded from the rendered main trunk path and
+  updated whenever a later stress path is promoted.
+- Added a distinctness classifier for stress promotions that measures visible
+  samples away from the current skeleton, max distance from the skeleton, and
+  near-skeleton fraction while ignoring the expected confluence approach.
+- Applied the classifier to connected support paths, order-seed paths, and
+  high-scoring branch candidates.
+- Redundant near-parallel promotion candidates are skipped instead of being
+  painted as extra trunk or tributary clutter.
+- Added an integral-image window-density regression over the stress
+  `river_trunk` field to guard against future promoted branches collapsing back
+  into one narrow corridor.
+
+The result is deliberately sparser than revision 13. The branch-distinctness
+pass prioritizes avoiding obvious parallel promoted trunks over maximizing
+stress trunk coverage. The remaining larger issue is still the routing/source
+model: a future pass should select branches from a more principled basin or
+tributary hierarchy rather than relying on promoted support-path caps.
