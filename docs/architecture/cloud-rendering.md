@@ -143,11 +143,13 @@ Initial scope:
   inputs;
 - tunable direct/ambient/phase lighting and final resolve controls so final
   image polish can be isolated from raw march quality;
-- deterministic static sampling controls for interleaved-gradient, Bayer, and
-  center-of-step ray starts, plus a metadata-aware final resolve that uses
-  opacity, mean distance, and confidence while leaving `raw-final` unfiltered;
-- Bayer ray-start jitter should remain the default static anti-banding path
-  until temporal reprojection or blue-noise sampling is available;
+- deterministic static sampling controls for interleaved-gradient, Bayer,
+  blue-noise, and center-of-step ray starts, plus a metadata-aware final resolve
+  that uses opacity, mean distance, and confidence while leaving `raw-final`
+  unfiltered;
+- blue-noise ray-start jitter and temporal convergence should be the default
+  production anti-banding path; Bayer remains only as an inspection fallback for
+  static sampling comparisons;
 - the shared cloud layer has a compute temporal resolve for the final view: the ray
   march writes current product/metadata, a ping-pong history pass reprojects by
   mean cloud distance, clamps against the current neighborhood, and resets on
@@ -315,11 +317,14 @@ absorbed into atmosphere. The next milestone should be small and hard to fake:
 
 1. Keep atmosphere final/no-cloud/debug captures visually comparable through
    `projects/atmosphere/capture_cloud_review.sh`.
-2. Improve high-altitude and horizon continuity without regressing the credible
+2. Make half-resolution atmo clouds the practical horizon-quality target while
+   keeping full resolution as the reference ceiling and quarter as a rough
+   fallback.
+3. Improve high-altitude and horizon continuity without regressing the credible
    surface cloud look.
-3. Keep sampling and resolve controls isolated so capture bundles can compare
-   default, Bayer, and no-jitter output before re-enabling temporal accumulation.
-4. Expose cloud outputs only when a second consumer has a concrete contract for
+4. Keep sampling and resolve controls isolated so capture bundles can compare
+   blue-noise/temporal, Bayer, interleaved, and no-jitter output.
+5. Expose cloud outputs only when a second consumer has a concrete contract for
    radiance/transmittance, metadata, shadow, or reflection data.
 
 Acceptance for this milestone:
@@ -328,6 +333,8 @@ Acceptance for this milestone:
 - final view still reads without relying on temporal smear or final blur;
 - surface/high captures do not show the legacy horizontal streaking as the
   dominant artifact;
+- half-resolution final captures do not rely on full-res supersampling to hide
+  horizon/far-field noise;
 - atmosphere exposes enough controls to isolate density, detail erosion,
   weather map, sampling, lighting, composition, and metadata output;
 - the implementation does not duplicate project-local atmosphere horizon logic.

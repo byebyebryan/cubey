@@ -1022,3 +1022,41 @@ Next transition work should preserve the no-cloud comparison, then decide
 whether high-oblique needs local march truncation, a dedicated cached
 hemisphere/shell product, or a more explicit far-cloud LOD bridge before cloud
 shadows/reflections are treated as foundation-ready.
+
+## Shadertoy Horizon Artifact Inventory 2026-06-28
+
+The local reference folder is `/home/bryan/code/ref/ShaderToy`. The important
+lesson from the inventory is that the current atmo artifacts are not unusual:
+real-time cloud examples either spend many more samples near grazing rays, filter
+distant density/detail aggressively, or rely on temporal reconstruction designed
+for stochastic samples. Bayer ray-start jitter without temporal convergence
+mostly turns bands into visible noise.
+
+Highest-value references for the current atmo failure:
+
+- `enscape_cube_*`: spherical Earth/cloud-shell setup with hash jitter, temporal
+  accumulation, and neighborhood clamping. It is the closest reference to the
+  Cubey atmo/ocean/planet camera problem.
+- `starry_night_*`: blue-noise and golden-ratio frame offsets are used
+  specifically to hide banding under temporal accumulation.
+- `clouds_raymarching_*`: an expensive but clear slab marcher with reprojection,
+  variance clipping, and enough samples to show what quality the sparse path is
+  approximating.
+- `clouds.glsl`: IQ-style fBM volume marching uses progressive step growth and
+  lowers density/noise detail with distance instead of sampling the same detail
+  field everywhere.
+- `overcast_cloud.glsl`, `wather.glsl`, and `horizon_clouds.glsl`: useful
+  horizon/slab comparisons, including explicit comments about noisy horizon
+  behavior and grazing-ray step issues.
+- `sun_sky_clouds.glsl` and `tiny_planet_clouds.glsl`: useful secondary checks
+  for atmosphere/cloud distance caps and planet-scale shell composition.
+
+The active Cubey path matches the known bad case: half quality traces a reduced
+cloud product, uses static Bayer jitter by default, keeps temporal accumulation
+off, and gives the far-horizon bridge only a small number of samples across very
+long tangent rays. Full resolution hides some upsample damage, but the raw march
+still undersamples the far field. The next fix should target half-res atmo
+output: blue-noise or spatiotemporal jitter, confidence-aware temporal resolve,
+distance/footprint density LOD, and a stronger metadata-aware composite resolve.
+Quarter quality can remain a rough fallback until a cached hemisphere/impostor
+path exists.
