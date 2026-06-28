@@ -260,9 +260,11 @@ model for both sky and surface aerial perspective, so horizon and surface
 boundary behavior use one coefficient source. `Surface Haze`, `Haze Start`, and
 `Haze End` tune only the `analytic` distance-haze fallback; `Aerial Strength`
 blends the shared physical aerial perspective. Full LUT/transmittance caching
-and cloud/terrain shadows remain deferred. The intended cloud path is a
-separate planet-aware weather/cloud layer that can render surface, above-cloud,
-and orbit views before planet consumes it as another surface/sky system.
+and cloud/terrain shadows remain deferred. The cloud path is now an opt-in
+integration of the shared cloud layer: `--clouds` renders the shared
+weather/cloud product over the planet HDR scene with planet-scale view-regime
+selection and scene-depth-aware composition. Cloud shadows, reflections, and
+final transition polish remain follow-up work.
 Planet also consumes the shared atmosphere look profile. The windowed
 `Atmosphere > Sky Look` group edits Rayleigh, Mie, ozone, twilight strength, and
 horizon warmth live, and the same options can be seeded from CLI/config through

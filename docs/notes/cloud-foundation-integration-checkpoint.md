@@ -1,7 +1,9 @@
 # Cloud Foundation Integration Checkpoint
 
-This note checkpoints the integration scope before promoting `projects/cloud`
-from a standalone renderer into a shared weather layer.
+This note checkpoints the integration scope that promoted the former
+`projects/cloud` standalone renderer into a shared weather layer. Current cloud
+tuning happens through `projects/atmosphere`; planet now consumes the shared
+runtime as an opt-in integration target.
 
 ## Batch Scope
 
@@ -18,7 +20,8 @@ from a standalone renderer into a shared weather layer.
 
 ## Acceptance
 
-- Cloud standalone captures continue to render through the same visual model.
+- Cloud captures continue to render through the same visual model after the
+  standalone app is absorbed.
 - Shared cloud contracts are available without importing `projects/cloud`.
 - Atmosphere can render a clouded-sky path without folding cloud noise into the
   clear-sky atmosphere shader.
@@ -33,10 +36,10 @@ from a standalone renderer into a shared weather layer.
   view enums, frame uniforms, temporal uniforms, generated resource helpers,
   cloud product metadata, a shadow product slot, and a placeholder reflection
   contribution slot.
-- Cloud shaders moved under `shaders/cubey/cloud/`. `projects/cloud` remains
-  the primary tuning surface, but generated cloud resources, march/temporal/
-  composite materials and pipelines, render-graph product declaration,
-  descriptor updates, and temporal history are now owned by
+- Cloud shaders moved under `shaders/cubey/cloud/`. `projects/atmosphere` is
+  now the primary tuning surface, while generated cloud resources,
+  march/temporal/composite materials and pipelines, render-graph product
+  declaration, descriptor updates, and temporal history are owned by
   `cubey::render::CloudLayerRuntime`.
 - `projects/atmosphere` now builds the shared cloud shaders, consumes
   `CloudLayerRuntime` in external-background mode, composites clouds over the
@@ -46,6 +49,9 @@ from a standalone renderer into a shared weather layer.
 - `projects/ocean` now has a cloud-shadow diagnostic view and controls that
   consume the shared `CloudLayerShadowProduct` shape. The current shadow is
   procedural and local to ocean so water does not import the cloud raymarcher.
+- `projects/planet` now has an opt-in `--clouds` path that composites the shared
+  cloud product over the planet HDR scene using scene depth. It is an integration
+  checkpoint, not a finished cloud shadow/reflection/environment-lighting path.
 
 ## Remaining Gaps
 
@@ -58,17 +64,17 @@ from a standalone renderer into a shared weather layer.
 - Ocean receives only a diagnostic analytic cloud shadow factor. It does not
   sample a real cloud shadow texture, cloud reflection product, or clouded
   sky-probe contribution.
-- Planet integration remains deferred until the active planet sky/horizon issues
-  are stabilized.
+- Planet cloud shadows, reflections, and final high-oblique/orbit transition
+  polish remain deferred until the active planet sky/horizon issues are
+  stabilized.
 
 ## Runtime Promotion Checkpoint
 
-The reusable cloud runtime has landed without intentionally changing the
-standalone cloud look. `projects/cloud` still owns cloud-specific camera modes,
-diagnostic captures, and visual tuning; `projects/atmosphere` now proves that a
-consumer can reuse the same cloud renderer without copying descriptor or
-temporal-history code.
+The reusable cloud runtime has landed without intentionally changing the cloud
+look during promotion. `projects/atmosphere` now owns cloud-specific review
+captures and visual tuning, and planet proves that a consumer can reuse the same
+cloud renderer without copying descriptor or temporal-history code.
 
-Still out of scope: planet integration, production cloud shadow textures for
-ocean/terrain, cloud reflection or sky-probe contribution, clouded lighting
-feedback, and visual retuning beyond integration fixes.
+Still out of scope: production cloud shadow textures for ocean/terrain/planet,
+cloud reflection or sky-probe contribution, clouded lighting feedback, and
+visual retuning beyond integration fixes.

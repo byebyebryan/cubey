@@ -544,9 +544,11 @@ Project checkpoints:
   for raw density, transmittance, lighting, distance, and steps. `clouds_legacy`
   remains the frozen planet-aware pressure project for surface/high/orbit
   lessons, while `projects/cloud_ref_2` remains the cached-sky architecture
-  reference. Cloud outputs should not be integrated into ocean or planet until
-  the atmosphere-hosted layer shows stable high-altitude/horizon behavior without
-  relying on cache, temporal reconstruction, or final blur.
+  reference. Planet now has an opt-in shared-cloud composition path for
+  integration pressure. Production cloud shadows, reflections, and clouded
+  environment outputs should wait until the atmosphere-hosted layer shows stable
+  high-altitude/horizon behavior without relying on cache, temporal
+  reconstruction, or final blur.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer

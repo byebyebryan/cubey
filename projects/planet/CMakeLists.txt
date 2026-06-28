@@ -48,6 +48,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_noise_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather_common.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_atmosphere.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_surface_field.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
