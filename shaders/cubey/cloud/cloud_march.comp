@@ -14,6 +14,7 @@ layout(rgba16f, set = 0, binding = 1) uniform writeonly image2D cloud_product;
 layout(set = 0, binding = 2) uniform sampler3D base_noise_texture;
 layout(set = 0, binding = 3) uniform sampler3D detail_noise_texture;
 layout(set = 0, binding = 4) uniform sampler2D weather_texture;
+layout(set = 0, binding = 6) uniform sampler2D blue_noise_texture;
 layout(rgba16f, set = 0, binding = 5) uniform writeonly image2D cloud_metadata;
 
 const vec4 STRATUS_GRADIENT = vec4(0.00, 0.10, 0.20, 0.30);
@@ -138,6 +139,15 @@ float cloud_ray_jitter(ivec2 pixel) {
         jitter = BAYER[(temporal_pixel.y & 3) * 4 + (temporal_pixel.x & 3)];
     } else if (mode == CLOUD_SAMPLING_OFF) {
         jitter = 0.5;
+    } else if (mode == CLOUD_SAMPLING_BLUE_NOISE) {
+        ivec2 size = textureSize(blue_noise_texture, 0);
+        int frame = int(params.temporal_options.x + 0.5);
+        ivec2 offset = ivec2(frame * 47, frame * 29);
+        vec2 uv = (vec2((temporal_pixel + offset) % size) + vec2(0.5)) / vec2(size);
+        vec3 ranks = texture(blue_noise_texture, uv).rgb;
+        int channel = frame % 3;
+        float base = channel == 0 ? ranks.r : (channel == 1 ? ranks.g : ranks.b);
+        jitter = fract(base + 0.61803398875 * float(frame % 32));
     }
     return mix(0.5, jitter, strength);
 }

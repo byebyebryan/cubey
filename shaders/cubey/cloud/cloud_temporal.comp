@@ -61,16 +61,20 @@ vec4 neighborhood_clamped_history(vec2 uv, vec4 history) {
     vec2 texel = 1.0 / vec2(max(textureSize(current_cloud_texture, 0), ivec2(1)));
     vec4 min_value = vec4(1.0e6);
     vec4 max_value = vec4(-1.0e6);
+    float confidence_sum = 0.0;
     for (int y = -1; y <= 1; ++y) {
         for (int x = -1; x <= 1; ++x) {
             vec2 sample_uv = clamp(uv + vec2(float(x), float(y)) * texel, vec2(0.0), vec2(1.0));
             vec4 sample_value = texture(current_cloud_texture, sample_uv);
+            vec4 sample_metadata = texture(current_cloud_metadata_texture, sample_uv);
             min_value = min(min_value, sample_value);
             max_value = max(max_value, sample_value);
+            confidence_sum += clamp(sample_metadata.z, 0.0, 1.0);
         }
     }
 
-    vec4 slack = vec4(0.08, 0.08, 0.08, 0.05);
+    float confidence = confidence_sum / 9.0;
+    vec4 slack = vec4(vec3(mix(0.035, 0.085, confidence)), mix(0.025, 0.055, confidence));
     return clamp(history, min_value - slack, max_value + slack);
 }
 
@@ -83,24 +87,26 @@ float temporal_history_valid(vec2 previous_uv, float previous_depth, vec4 curren
     float history_alpha = clamp(history_metadata.y, 0.0, 1.0);
     float current_confidence = clamp(current_metadata.z, 0.0, 1.0);
     float history_confidence = clamp(history_metadata.z, 0.0, 1.0);
-    if (current_alpha <= 0.02 || history_alpha <= 0.02 ||
+    if (current_alpha <= 0.01 || history_alpha <= 0.01 ||
         current_confidence <= 0.01 || history_confidence <= 0.01) {
         return 0.0;
     }
 
     float depth_delta = abs(history_metadata.x - current_metadata.x);
-    float depth_limit = max(1200.0, current_metadata.x * 0.10);
+    float depth_limit = max(900.0, current_metadata.x * 0.065);
     if (depth_delta > depth_limit || abs(history_metadata.x - previous_depth) > depth_limit) {
         return 0.0;
     }
 
     float wind_delta = abs(frame.current_weather.w - frame.previous_weather.w);
-    float wind_fade = 1.0 - smoothstep(1500.0, 6000.0, wind_delta);
-    float alpha_fade = 1.0 - smoothstep(0.20, 0.55, abs(history_alpha - current_alpha));
+    float wind_fade = 1.0 - smoothstep(900.0, 4200.0, wind_delta);
+    float alpha_fade = 1.0 - smoothstep(0.12, 0.36, abs(history_alpha - current_alpha));
     float confidence = min(current_confidence, history_confidence);
+    float opacity_confidence = smoothstep(0.01, 0.16, min(current_alpha, history_alpha));
     float edge_fade = min(min(previous_uv.x, previous_uv.y), min(1.0 - previous_uv.x,
                                                                  1.0 - previous_uv.y));
-    return confidence * alpha_fade * wind_fade * smoothstep(0.0, 0.035, edge_fade);
+    return confidence * opacity_confidence * alpha_fade * wind_fade *
+           smoothstep(0.0, 0.035, edge_fade);
 }
 
 void main() {

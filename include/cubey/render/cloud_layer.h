@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/core/math.h>
+#include <cubey/render/generated_texture.h>
 #include <cubey/render/material.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/pipeline_resource.h>
@@ -29,6 +30,7 @@ inline constexpr std::uint32_t kCloudLayerVolumeGroupSize = 4U;
 inline constexpr std::uint32_t kCloudLayerBaseNoiseSize = 128U;
 inline constexpr std::uint32_t kCloudLayerDetailNoiseSize = 32U;
 inline constexpr std::uint32_t kCloudLayerWeatherTextureSize = 1024U;
+inline constexpr std::uint32_t kCloudLayerBlueNoiseTextureSize = 128U;
 inline constexpr VkFormat kCloudLayerColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 inline constexpr VkFormat kCloudLayerNoiseFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -38,6 +40,7 @@ inline constexpr std::uint32_t kCloudLayerBaseNoiseBinding = 2U;
 inline constexpr std::uint32_t kCloudLayerDetailNoiseBinding = 3U;
 inline constexpr std::uint32_t kCloudLayerWeatherBinding = 4U;
 inline constexpr std::uint32_t kCloudLayerMetadataBinding = 5U;
+inline constexpr std::uint32_t kCloudLayerBlueNoiseBinding = 6U;
 inline constexpr std::uint32_t kCloudLayerCompositeCloudBinding = 1U;
 inline constexpr std::uint32_t kCloudLayerCompositeMetadataBinding = 2U;
 inline constexpr std::uint32_t kCloudLayerCompositeBackgroundBinding = 3U;
@@ -60,6 +63,7 @@ enum class CloudLayerSamplingMode : std::uint32_t {
     Interleaved = 0,
     Bayer = 1,
     Off = 2,
+    BlueNoise = 3,
 };
 
 enum class CloudLayerBackgroundMode : std::uint32_t {
@@ -202,7 +206,7 @@ struct CloudLayerQualityBudget {
 struct CloudLayerConfig {
     CloudLayerQuality quality = CloudLayerQuality::Full;
     CloudLayerCloudStyle cloud_style = CloudLayerCloudStyle::BrokenCumulus;
-    CloudLayerSamplingMode sampling_mode = CloudLayerSamplingMode::Bayer;
+    CloudLayerSamplingMode sampling_mode = CloudLayerSamplingMode::BlueNoise;
     CloudLayerBackgroundMode background_mode = CloudLayerBackgroundMode::Atmosphere;
     CloudLayerDistanceMode distance_mode = CloudLayerDistanceMode::Auto;
     CloudLayerOrbitRepresentation orbit_representation =
@@ -361,6 +365,7 @@ struct CloudLayerGeneratedShaderFiles {
     ShaderStageFile base_noise{};
     ShaderStageFile detail_noise{};
     ShaderStageFile weather{};
+    ShaderStageFile blue_noise{};
 };
 
 struct CloudLayerRuntimeShaderFiles {
@@ -381,6 +386,7 @@ struct CloudLayerGeneratedResources {
     Texture3D base_noise;
     Texture3D detail_noise;
     Texture2D weather;
+    Texture2D blue_noise;
     CloudLayerWeatherPushConstants weather_generation{};
 };
 
@@ -498,6 +504,8 @@ class CloudLayerRuntime {
 [[nodiscard]] std::uint32_t cloud_layer_generated_volume_mip_count(std::uint32_t size);
 [[nodiscard]] Texture3DConfig cloud_layer_volume_texture_config(std::uint32_t size);
 [[nodiscard]] Texture2DConfig cloud_layer_weather_texture_config();
+[[nodiscard]] ComputeGeneratedTexture2DConfig
+cloud_layer_blue_noise_texture_config(ShaderStageFile shader);
 [[nodiscard]] MaterialPassInfo cloud_layer_march_pass_info();
 [[nodiscard]] MaterialPassInfo cloud_layer_composite_pass_info(bool external_background = false,
                                                                bool scene_depth = false);

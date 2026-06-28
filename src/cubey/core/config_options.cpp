@@ -66,7 +66,8 @@ constexpr std::array<std::string_view, 3> kCloudQualities{"quarter", "half", "fu
 constexpr std::array<std::string_view, 4> kCloudCacheFrames{"4", "16", "64", "256"};
 constexpr std::array<std::string_view, 4> kCloudRenderPaths{
     "cached", "direct", "diff", "alpha-diff"};
-constexpr std::array<std::string_view, 3> kCloudSamplingModes{"interleaved", "bayer", "off"};
+constexpr std::array<std::string_view, 4> kCloudSamplingModes{
+    "interleaved", "bayer", "blue-noise", "off"};
 constexpr std::array<std::string_view, 2> kCloudBackgroundModes{"atmosphere", "water-context"};
 constexpr std::array<std::string_view, 4> kCloudDistanceModes{"auto", "local", "orbit-shell",
                                                               "blend-debug"};
@@ -578,7 +579,7 @@ constexpr std::array<ConfigOptionDescriptor, 233> kRunConfigOptions{
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudRenderPaths)),
     option(RunConfigOptionId::CloudSamplingMode, "clouds.sampling_mode",
            "--cloud-sampling-mode", "Sampling Mode", "Clouds",
-           "Cloud ray-start sampling mode: interleaved, bayer, or off.",
+           "Cloud ray-start sampling mode: interleaved, bayer, blue-noise, or off.",
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudSamplingModes)),
     option(RunConfigOptionId::CloudBackgroundMode, "clouds.background_mode",
            "--cloud-background-mode", "Background Mode", "Clouds",

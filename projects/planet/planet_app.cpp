@@ -128,6 +128,8 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 30U);
                 .detail_noise =
                     cubey::render::compute_shader_file(shader_path("cloud_worley.comp.spv")),
                 .weather = cubey::render::compute_shader_file(shader_path("cloud_weather.comp.spv")),
+                .blue_noise =
+                    cubey::render::compute_shader_file(shader_path("cloud_blue_noise.comp.spv")),
             },
         .march = cubey::render::compute_shader_file(shader_path("cloud_march.comp.spv")),
         .temporal = cubey::render::compute_shader_file(shader_path("cloud_temporal.comp.spv")),

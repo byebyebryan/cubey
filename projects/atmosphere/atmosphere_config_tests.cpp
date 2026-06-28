@@ -295,6 +295,11 @@ int main() {
             "cloud scene depth debug alias should parse");
     require_throws([] { static_cast<void>(cloud_layer_debug_view_from_name("humidity")); },
                    "cloud layer debug view parser should reject unknown views");
+    require(atmosphere_cloud_sampling_mode_from_name("") == CloudLayerSamplingMode::BlueNoise,
+            "empty cloud sampling mode should default to blue noise");
+    require(atmosphere_cloud_sampling_mode_from_name("blue-noise") ==
+                CloudLayerSamplingMode::BlueNoise,
+            "blue-noise cloud sampling mode should parse");
 
     {
         const TimeOfDayConfig defaults;
@@ -445,6 +450,9 @@ int main() {
                 defaults.clouds.weather_preset == AtmosphereCloudWeatherPreset::BrokenCumulus &&
                 defaults.clouds.layer.debug_view == CloudLayerDebugView::Final,
             "default atmosphere config should include production clouds");
+    require(defaults.clouds.layer.sampling_mode == CloudLayerSamplingMode::BlueNoise &&
+                defaults.clouds.layer.temporal_enabled,
+            "default atmosphere clouds should use temporal blue-noise sampling");
 
     {
         AtmosphereCloudConfig clouds;

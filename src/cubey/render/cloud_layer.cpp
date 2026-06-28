@@ -1,5 +1,6 @@
 #include <cubey/render/cloud_layer.h>
 
+#include <cubey/render/generated_texture.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/vulkan/descriptors.h>
@@ -51,6 +52,11 @@ namespace {
                 vulkan::DescriptorSetBindingConfig{
                     .binding = kCloudLayerMetadataBinding,
                     .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                    .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+                },
+                vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudLayerBlueNoiseBinding,
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                     .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
                 },
             },
@@ -335,6 +341,22 @@ Texture2DConfig cloud_layer_weather_texture_config() {
         .usage = Texture2DUsage::StorageSampled,
         .create_sampler = true,
         .sampler = cloud_layer_repeat_sampler_config(),
+    };
+}
+
+ComputeGeneratedTexture2DConfig cloud_layer_blue_noise_texture_config(ShaderStageFile shader) {
+    return {
+        .label = "cloud layer generate blue noise",
+        .extent = {kCloudLayerBlueNoiseTextureSize, kCloudLayerBlueNoiseTextureSize},
+        .format = kCloudLayerNoiseFormat,
+        .shader = std::move(shader),
+        .group_size_x = kCloudLayerComputeGroupSize,
+        .group_size_y = kCloudLayerComputeGroupSize,
+        .group_size_z = 1,
+        .create_sampler = true,
+        .sampler = cloud_layer_repeat_sampler_config(),
+        .required_format_features = VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT |
+                                    VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT,
     };
 }
 
@@ -719,7 +741,7 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
         .sampling_options = {sampling_mode_value(config.sampling_mode), config.jitter_strength,
                              config.weather_softness, config.weather_influence},
         .temporal_options = {static_cast<float>(frame.temporal_frame_index % 256U),
-                             config.temporal_enabled ? 1.0F : 0.0F, 0.18F, 0.0F},
+                             config.temporal_enabled ? 1.0F : 0.0F, 0.14F, 0.0F},
         .background_options = {background_mode_value(config.background_mode),
                                config.horizon_layer_enabled ? 1.0F : 0.0F,
                                config.local_volume_enabled ? 1.0F : 0.0F,
@@ -798,6 +820,10 @@ CloudLayerGeneratedResources create_cloud_layer_generated_resources(
     Texture3D base_noise(device, cloud_layer_volume_texture_config(kCloudLayerBaseNoiseSize));
     Texture3D detail_noise(device, cloud_layer_volume_texture_config(kCloudLayerDetailNoiseSize));
     Texture2D weather(device, cloud_layer_weather_texture_config());
+    Texture2D blue_noise =
+        create_compute_generated_texture_2d(device, gpu,
+                                            cloud_layer_blue_noise_texture_config(
+                                                shaders.blue_noise));
 
     generate_cloud_storage_volume_texture(
         device, gpu, "cloud layer generate base noise", shaders.base_noise, base_noise,
@@ -815,6 +841,7 @@ CloudLayerGeneratedResources create_cloud_layer_generated_resources(
         .base_noise = std::move(base_noise),
         .detail_noise = std::move(detail_noise),
         .weather = std::move(weather),
+        .blue_noise = std::move(blue_noise),
         .weather_generation = weather_generation,
     };
 }
@@ -1177,6 +1204,9 @@ void CloudLayerRuntime::update_descriptors(
         .combined_image_sampler(kCloudLayerWeatherBinding, generated.weather.sampler().handle(),
                                 generated.weather.view())
         .storage_image(kCloudLayerMetadataBinding, cloud_metadata.view, VK_IMAGE_LAYOUT_GENERAL)
+        .combined_image_sampler(kCloudLayerBlueNoiseBinding,
+                                generated.blue_noise.sampler().handle(),
+                                generated.blue_noise.view())
         .update(device);
 
     if (frame.temporal_pass_enabled) {
