@@ -84,6 +84,41 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
            static_cast<std::size_t>(max_y - min_y + 1U);
 }
 
+[[nodiscard]] std::size_t count_active_coarse_tiles(
+    const cubey::procedural::ScalarField2D& field, float threshold, std::uint32_t tile_count) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    if (tile_count == 0U) {
+        return 0U;
+    }
+
+    std::size_t active_tiles = 0U;
+    for (std::uint32_t tile_y = 0; tile_y < tile_count; ++tile_y) {
+        const std::uint32_t y0 =
+            static_cast<std::uint32_t>((static_cast<std::uint64_t>(tile_y) * desc.height) /
+                                       tile_count);
+        const std::uint32_t y1 = static_cast<std::uint32_t>(
+            (static_cast<std::uint64_t>(tile_y + 1U) * desc.height) / tile_count);
+        for (std::uint32_t tile_x = 0; tile_x < tile_count; ++tile_x) {
+            const std::uint32_t x0 =
+                static_cast<std::uint32_t>((static_cast<std::uint64_t>(tile_x) * desc.width) /
+                                           tile_count);
+            const std::uint32_t x1 = static_cast<std::uint32_t>(
+                (static_cast<std::uint64_t>(tile_x + 1U) * desc.width) / tile_count);
+            bool has_active_sample = false;
+            for (std::uint32_t y = y0; y < y1 && !has_active_sample; ++y) {
+                for (std::uint32_t x = x0; x < x1; ++x) {
+                    if (field.at(x, y) >= threshold) {
+                        has_active_sample = true;
+                        break;
+                    }
+                }
+            }
+            active_tiles += has_active_sample ? 1U : 0U;
+        }
+    }
+    return active_tiles;
+}
+
 [[nodiscard]] std::size_t max_active_window_samples(
     const cubey::procedural::ScalarField2D& field, float threshold, std::uint32_t window_size) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
@@ -546,16 +581,28 @@ void test_terrain_review_river_coverage_is_meaningful() {
     const std::size_t stress_tributary_samples = count_active_samples(stress_tributaries, 0.30F);
     const std::size_t stress_endpoint_samples =
         count_active_endpoint_samples(stress_tributaries, 0.30F);
+    const std::size_t stress_trunk_largest_component =
+        largest_active_component_size(stress_trunk, 0.30F);
     const std::size_t baseline_footprint =
         active_bounds_area(baseline_river, kVisibleNetworkThreshold);
     const std::size_t stress_footprint =
         active_bounds_area(stress_river, kVisibleNetworkThreshold);
     const std::size_t stress_largest_component =
         largest_active_component_size(stress_river, kVisibleNetworkThreshold);
+    const std::size_t stress_edge_touches =
+        edge_band_touch_count(stress_river, kVisibleNetworkThreshold, 8U);
+    const std::size_t stress_coarse_tiles =
+        count_active_coarse_tiles(stress_river, kVisibleNetworkThreshold, 5U);
     const std::size_t total_samples = baseline_river.sample_count();
 
     require(baseline_samples >= 1'200U,
             "terrain default review river should cover more than a tiny center segment");
+    if (stress_samples * 100U < baseline_samples * 175U) {
+        throw std::runtime_error(
+            "terrain stress river should substantially expand high-strength network coverage: "
+            "baseline=" +
+            std::to_string(baseline_samples) + " stress=" + std::to_string(stress_samples));
+    }
     if (stress_footprint * 100U < total_samples * 5U) {
         throw std::runtime_error(
             "terrain stress review river should span a non-tiny network footprint: baseline=" +
@@ -570,6 +617,22 @@ void test_terrain_review_river_coverage_is_meaningful() {
             std::to_string(stress_largest_component) + " active=" +
             std::to_string(stress_visible_network_samples) + " footprint=" +
             std::to_string(stress_footprint));
+    }
+    if (stress_trunk_largest_component * 100U < stress_trunk_samples * 90U) {
+        throw std::runtime_error(
+            "terrain stress trunk should be dominated by one continuous trunk component: largest=" +
+            std::to_string(stress_trunk_largest_component) + " active=" +
+            std::to_string(stress_trunk_samples));
+    }
+    if (stress_edge_touches < 3U) {
+        throw std::runtime_error(
+            "terrain stress river should reach at least three visible crop edges: edges=" +
+            std::to_string(stress_edge_touches));
+    }
+    if (stress_coarse_tiles < 10U) {
+        throw std::runtime_error(
+            "terrain stress river should occupy a broad coarse basin footprint: tiles=" +
+            std::to_string(stress_coarse_tiles));
     }
     require(baseline_samples * 100U < total_samples * 8U,
             "terrain default review river should not flood the patch");
