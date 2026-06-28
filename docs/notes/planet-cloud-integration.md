@@ -121,3 +121,15 @@ orbit/high-oblique views remain owned by the atmosphere background and cloud
 shell. The current capture pack shows a softer low-surface horizon; 140 km and
 260 km no-cloud views are intentionally unchanged. A pre-existing 60 km surface
 silhouette notch remains a separate planet LOD/geometry coverage issue.
+
+2026-06-28 recapture:
+
+```sh
+projects/planet/capture_horizon_review.sh outputs/planet-horizon-review-current
+```
+
+After the unified sky-frame fix, the no-cloud surface/high-altitude rows no
+longer show the earlier sky-attached black band or the 60 km no-cloud notch.
+The cloud rows still expose quarter-resolution cloud-shell roughness and
+high-altitude transition tuning issues, so follow-up cloud work should use the
+cloud review pack rather than treating this as a planet no-cloud horizon bug.

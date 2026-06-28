@@ -121,13 +121,16 @@ These were observed interactively in `projects/planet` after the
 separate.
 
 - The low-surface twilight black band was addressed by a planet-surface
-  horizon-fill pass after physical aerial perspective. High-altitude silhouette
-  issues, including the 60 km no-cloud notch, remain separate planet
-  LOD/composition follow-up work.
-- In surface view, rotating the camera rotates the surface correctly, but the
-  sky appears static, as if the surface and sky view frames disagree.
-- In orbit view, stars appear to be missing or washed out. This may be exposure
-  related, but the cause is not confirmed.
+  horizon-fill pass after physical aerial perspective. A 2026-06-28 recapture
+  with `projects/planet/capture_horizon_review.sh
+  outputs/planet-horizon-review-current` did not reproduce the prior
+  high-altitude no-cloud notch; keep watching cloud/limb composition separately.
+- The surface sky-frame mismatch was addressed by feeding the planet unified
+  atmosphere adapter with the explicit `LocalTangentFrame` used by clouds,
+  instead of deriving tangent space from the current view ray.
+- Orbit space backgrounds now use a separate night-sky visibility path for rays
+  that miss the atmosphere, so stars/Milky Way are no longer suppressed by the
+  surface-horizon term.
 - In orbit view, the sun glare has visible banding and does not yet read like a
   clean solar glow.
 
