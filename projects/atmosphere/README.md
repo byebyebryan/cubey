@@ -59,6 +59,8 @@ projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
 
 The cloud review script writes a stable set of labeled captures plus
 `manifest.tsv`, `index.md`, and `contact-sheet.png` for quick visual comparison.
+It defaults to 1920x1080 full-quality captures; set `WIDTH`, `HEIGHT`, or
+`QUALITY` for faster local smoke runs.
 
 Controls:
 
