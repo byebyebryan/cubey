@@ -1060,3 +1060,36 @@ output: blue-noise or spatiotemporal jitter, confidence-aware temporal resolve,
 distance/footprint density LOD, and a stronger metadata-aware composite resolve.
 Quarter quality can remain a rough fallback until a cached hemisphere/impostor
 path exists.
+
+## Atmo Horizon Sampling Checkpoint 2026-06-28
+
+This batch moved the active atmo cloud path from static Bayer half-res sampling
+toward the reference-backed strategy above:
+
+- added diagnostic views for jitter, horizon step length, and horizon filter LOD;
+- made half-res atmosphere clouds the default quality target;
+- added a generated blue-noise texture with frame-varying temporal sampling;
+- tightened temporal neighborhood clamping and history validity;
+- filtered local density detail by distance, step footprint, and grazing angle;
+- replaced the half-res composite with a metadata-aware 5x5 bilateral resolve.
+
+Validation passed with:
+
+```sh
+cmake --build --preset dev --target atmosphere planet
+ctest --preset dev --output-on-failure
+```
+
+The full test suite reported 159/159 passing tests. The review pack is:
+
+```text
+outputs/atmosphere-cloud-horizon-noise-20260628/
+```
+
+That pack includes the standard cloud review frames plus targeted horizon
+diagnostics and full/quarter high-oblique comparison frames. The high-oblique
+transition is more legible and the debug views now expose the sampling regime,
+but surface-horizon dark silhouettes/holes are still visible. That residual
+failure now looks less like pure stochastic noise and more like a far-horizon
+lighting/opacity/handoff problem. The next visual pass should target far-cloud
+radiance, alpha, and the near/far handoff before adding more resolution tweaks.
