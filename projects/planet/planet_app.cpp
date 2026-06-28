@@ -250,6 +250,15 @@ planet_cloud_config_from_run_config(const RunConfig& config) {
     };
 }
 
+[[nodiscard]] cubey::math::Vec3 planet_cloud_fixed_position(
+    cubey::math::DVec3 world_position_m, float planet_radius_m) {
+    return {
+        static_cast<float>(world_position_m.x),
+        static_cast<float>(world_position_m.y - static_cast<double>(planet_radius_m)),
+        static_cast<float>(world_position_m.z),
+    };
+}
+
 [[nodiscard]] float packed_debug_wire_option(const PlanetConfig& config) {
     return static_cast<float>(static_cast<int>(config.debug_view)) +
            (config.wire_overlay ? 0.25F : 0.0F);
@@ -1210,28 +1219,44 @@ class PlanetApp {
         const cubey::render::ViewRayBasis3D world_rays =
             cubey::render::view_ray_basis_3d(transform.rotation, aspect, camera_.fovy_radians());
         const cubey::render::LocalTangentFrame& tangent = frame_.local_frame;
-        const cubey::math::Vec3 camera_position =
+        const cubey::math::Vec3 local_camera_position =
             cubey::render::local_tangent_world_to_local_m(tangent, frame_.camera_world_position_m);
-        const cubey::math::Vec3 camera_right =
+        const cubey::math::Vec3 local_camera_right =
             planet_cloud_local_direction(cubey::math::Vec3{world_rays.right_aspect}, tangent);
-        const cubey::math::Vec3 camera_up =
+        const cubey::math::Vec3 local_camera_up =
             planet_cloud_local_direction(cubey::math::Vec3{world_rays.up_tan_half_fovy}, tangent);
-        const cubey::math::Vec3 camera_forward =
+        const cubey::math::Vec3 local_camera_forward =
             planet_cloud_local_direction(cubey::math::Vec3{world_rays.forward}, tangent);
-        const cubey::math::Vec3 sun_direction =
+        const cubey::math::Vec3 local_sun_direction =
             planet_cloud_local_direction(celestial_lighting_.primary_light_direction, tangent);
         const cubey::render::CloudLayerConfig config =
             planet_cloud_config(cloud_elapsed_seconds_);
         const cubey::render::CloudLayerViewRegime view_regime =
             cubey::render::cloud_layer_view_regime({
-                .camera_position = {camera_position.x,
-                                    config.planet_radius_m + camera_position.y,
-                                    camera_position.z},
-                .camera_forward = camera_forward,
+                .camera_position = {local_camera_position.x,
+                                    config.planet_radius_m + local_camera_position.y,
+                                    local_camera_position.z},
+                .camera_forward = local_camera_forward,
                 .planet_radius_m = config.planet_radius_m,
                 .orbit_transition_start_m = config.orbit_transition_start_m,
                 .orbit_transition_end_m = config.orbit_transition_end_m,
             });
+        // Full-orbit cloud rendering samples the shell in a planet-fixed frame; the
+        // surface/high regimes stay camera-relative to preserve local tangent precision.
+        const bool fixed_orbit_frame = view_regime.camera_mode >= 3.5F;
+        const cubey::math::Vec3 camera_position =
+            fixed_orbit_frame
+                ? planet_cloud_fixed_position(frame_.camera_world_position_m,
+                                              config.planet_radius_m)
+                : local_camera_position;
+        const cubey::math::Vec3 camera_right =
+            fixed_orbit_frame ? cubey::math::Vec3{world_rays.right_aspect} : local_camera_right;
+        const cubey::math::Vec3 camera_up =
+            fixed_orbit_frame ? cubey::math::Vec3{world_rays.up_tan_half_fovy} : local_camera_up;
+        const cubey::math::Vec3 camera_forward =
+            fixed_orbit_frame ? cubey::math::Vec3{world_rays.forward} : local_camera_forward;
+        const cubey::math::Vec3 sun_direction =
+            fixed_orbit_frame ? celestial_lighting_.primary_light_direction : local_sun_direction;
 
         return cubey::render::cloud_layer_frame_uniforms(
             config,
