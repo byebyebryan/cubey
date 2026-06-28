@@ -261,8 +261,11 @@ int main() {
                 CloudLayerDebugView::JitterPattern,
             "cloud layer debug view should include sampling diagnostics");
     require(next_cloud_layer_debug_view(CloudLayerDebugView::HorizonFilterLod) ==
+                CloudLayerDebugView::HorizonHandoff,
+            "cloud layer debug view should include horizon handoff diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::IntegratedHorizonRadiance) ==
                 CloudLayerDebugView::SceneDepthOcclusion,
-            "cloud layer debug view should include scene depth occlusion diagnostics");
+            "cloud layer debug view should include integrated horizon diagnostics");
     require(next_cloud_layer_debug_view(CloudLayerDebugView::SceneDepthOcclusion) ==
                 CloudLayerDebugView::Final,
             "cloud layer debug view should wrap");
@@ -290,6 +293,18 @@ int main() {
     require(cloud_layer_debug_view_from_name("horizon-lod") ==
                 CloudLayerDebugView::HorizonFilterLod,
             "cloud horizon LOD debug alias should parse");
+    require(cloud_layer_debug_view_from_name("horizon-gate") ==
+                CloudLayerDebugView::HorizonHandoff,
+            "cloud horizon handoff debug alias should parse");
+    require(cloud_layer_debug_view_from_name("horizon-local-truncation") ==
+                CloudLayerDebugView::LocalTruncation,
+            "cloud local truncation debug alias should parse");
+    require(cloud_layer_debug_view_from_name("horizon-integrated-alpha") ==
+                CloudLayerDebugView::IntegratedHorizonAlpha,
+            "cloud integrated horizon alpha debug alias should parse");
+    require(cloud_layer_debug_view_from_name("horizon-integrated-radiance") ==
+                CloudLayerDebugView::IntegratedHorizonRadiance,
+            "cloud integrated horizon radiance debug alias should parse");
     require(cloud_layer_debug_view_from_name("depth-mask") ==
                 CloudLayerDebugView::SceneDepthOcclusion,
             "cloud scene depth debug alias should parse");

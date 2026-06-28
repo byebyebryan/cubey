@@ -567,6 +567,18 @@ CloudLayerDebugView cloud_layer_debug_view_from_name(std::string_view value) {
     if (value == "horizon-filter-lod" || value == "horizon-lod") {
         return CloudLayerDebugView::HorizonFilterLod;
     }
+    if (value == "horizon-handoff" || value == "horizon-gate") {
+        return CloudLayerDebugView::HorizonHandoff;
+    }
+    if (value == "local-truncation" || value == "horizon-local-truncation") {
+        return CloudLayerDebugView::LocalTruncation;
+    }
+    if (value == "integrated-horizon-alpha" || value == "horizon-integrated-alpha") {
+        return CloudLayerDebugView::IntegratedHorizonAlpha;
+    }
+    if (value == "integrated-horizon-radiance" || value == "horizon-integrated-radiance") {
+        return CloudLayerDebugView::IntegratedHorizonRadiance;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -672,6 +684,14 @@ const char* cloud_layer_debug_view_name(CloudLayerDebugView view) {
         return "horizon-step-length";
     case CloudLayerDebugView::HorizonFilterLod:
         return "horizon-filter-lod";
+    case CloudLayerDebugView::HorizonHandoff:
+        return "horizon-handoff";
+    case CloudLayerDebugView::LocalTruncation:
+        return "local-truncation";
+    case CloudLayerDebugView::IntegratedHorizonAlpha:
+        return "integrated-horizon-alpha";
+    case CloudLayerDebugView::IntegratedHorizonRadiance:
+        return "integrated-horizon-radiance";
     }
     return "final";
 }

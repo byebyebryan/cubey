@@ -142,9 +142,13 @@ enum class CloudLayerDebugView : std::uint32_t {
     JitterPattern = 52,
     HorizonStepLength = 53,
     HorizonFilterLod = 54,
+    HorizonHandoff = 55,
+    LocalTruncation = 56,
+    IntegratedHorizonAlpha = 57,
+    IntegratedHorizonRadiance = 58,
 };
 
-inline constexpr std::array<CloudLayerDebugView, 50> kCloudLayerDebugViews{
+inline constexpr std::array<CloudLayerDebugView, 54> kCloudLayerDebugViews{
     CloudLayerDebugView::Final,
     CloudLayerDebugView::RawFinal,
     CloudLayerDebugView::AuthoredWeather,
@@ -194,6 +198,10 @@ inline constexpr std::array<CloudLayerDebugView, 50> kCloudLayerDebugViews{
     CloudLayerDebugView::JitterPattern,
     CloudLayerDebugView::HorizonStepLength,
     CloudLayerDebugView::HorizonFilterLod,
+    CloudLayerDebugView::HorizonHandoff,
+    CloudLayerDebugView::LocalTruncation,
+    CloudLayerDebugView::IntegratedHorizonAlpha,
+    CloudLayerDebugView::IntegratedHorizonRadiance,
     CloudLayerDebugView::SceneDepthOcclusion,
 };
 

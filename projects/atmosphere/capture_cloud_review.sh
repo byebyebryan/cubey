@@ -152,6 +152,8 @@ capture_named surface-horizon-final "Surface horizon final" final \
     "${surface_horizon_day[@]}"
 capture_named surface-horizon-no-clouds "Surface horizon no clouds" final \
     "${surface_horizon_day[@]}" --no-clouds
+capture_named surface-horizon-no-horizon-layer "Surface horizon no horizon layer" final \
+    "${surface_horizon_day[@]}" --no-cloud-horizon-layer
 capture_named surface-horizon-raw-final "Surface horizon raw final" horizon-diagnostics \
     "${surface_horizon_day[@]}" --cloud-debug-view raw-final
 capture_named surface-horizon-cloud-alpha "Surface horizon cloud alpha" horizon-diagnostics \
@@ -170,6 +172,14 @@ capture_named surface-horizon-step-length "Surface horizon step length" horizon-
     "${surface_horizon_day[@]}" --cloud-debug-view horizon-step-length
 capture_named surface-horizon-filter-lod "Surface horizon filter LOD" horizon-diagnostics \
     "${surface_horizon_day[@]}" --cloud-debug-view horizon-filter-lod
+capture_named surface-horizon-handoff "Surface horizon handoff" horizon-diagnostics \
+    "${surface_horizon_day[@]}" --cloud-debug-view horizon-handoff
+capture_named surface-horizon-local-truncation "Surface horizon local truncation" \
+    horizon-diagnostics "${surface_horizon_day[@]}" --cloud-debug-view local-truncation
+capture_named surface-horizon-integrated-alpha "Surface horizon integrated alpha" \
+    horizon-diagnostics "${surface_horizon_day[@]}" --cloud-debug-view integrated-horizon-alpha
+capture_named surface-horizon-integrated-radiance "Surface horizon integrated radiance" \
+    horizon-diagnostics "${surface_horizon_day[@]}" --cloud-debug-view integrated-horizon-radiance
 capture_named surface-up-final "Surface upward final" final \
     "${surface_up_day[@]}"
 capture_named sunset-horizon-final "Sunset horizon final" final \
@@ -194,6 +204,8 @@ capture_named high-oblique-final "High oblique final" transition \
     "${high_oblique_day[@]}"
 capture_named high-oblique-no-clouds "High oblique no clouds" transition \
     "${high_oblique_day[@]}" --no-clouds
+capture_named high-oblique-no-horizon-layer "High oblique no horizon layer" transition \
+    "${high_oblique_day[@]}" --no-cloud-horizon-layer
 capture_named high-oblique-raw-final "High oblique raw final" transition-diagnostics \
     "${high_oblique_day[@]}" --cloud-debug-view raw-final
 capture_named high-oblique-cloud-alpha "High oblique cloud alpha" transition-diagnostics \
@@ -212,6 +224,14 @@ capture_named high-oblique-step-length "High oblique step length" transition-dia
     "${high_oblique_day[@]}" --cloud-debug-view horizon-step-length
 capture_named high-oblique-filter-lod "High oblique filter LOD" transition-diagnostics \
     "${high_oblique_day[@]}" --cloud-debug-view horizon-filter-lod
+capture_named high-oblique-handoff "High oblique handoff" transition-diagnostics \
+    "${high_oblique_day[@]}" --cloud-debug-view horizon-handoff
+capture_named high-oblique-local-truncation "High oblique local truncation" \
+    transition-diagnostics "${high_oblique_day[@]}" --cloud-debug-view local-truncation
+capture_named high-oblique-integrated-alpha "High oblique integrated alpha" \
+    transition-diagnostics "${high_oblique_day[@]}" --cloud-debug-view integrated-horizon-alpha
+capture_named high-oblique-integrated-radiance "High oblique integrated radiance" \
+    transition-diagnostics "${high_oblique_day[@]}" --cloud-debug-view integrated-horizon-radiance
 capture_named high-oblique-distance-regime "High oblique distance regime" transition \
     "${high_oblique_day[@]}" --cloud-debug-view distance-regime
 capture_named high-oblique-transition-weights "High oblique transition weights" transition \
