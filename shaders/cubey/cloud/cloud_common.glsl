@@ -98,6 +98,7 @@ layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 orbit_options;
     vec4 orbit_shell_options;
     vec4 scene_depth_options;
+    vec4 density_options;
 } params;
 
 float cloud_saturate(float value) {

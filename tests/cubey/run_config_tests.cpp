@@ -340,6 +340,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.camera_mode",
         "clouds.quality",
         "clouds.sampling_mode",
+        "clouds.density_model",
         "clouds.background_mode",
         "clouds.distance_mode",
         "clouds.planet_radius_m",
@@ -507,6 +508,7 @@ void test_run_config_loads_json_config_file() {
     "quality": "full",
     "weather_preset": "inspection",
     "sampling_mode": "bayer",
+    "density_model": "ref-density",
     "background_mode": "water-context",
     "coverage": 0.62,
     "wind_speed_mps": 24.0,
@@ -577,6 +579,7 @@ void test_run_config_loads_json_config_file() {
                 config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
                 config.clouds.weather_preset == "inspection" &&
                 config.clouds.sampling_mode == "bayer" &&
+                config.clouds.density_model == "ref-density" &&
                 config.clouds.background_mode == "water-context" &&
                 config.clouds.coverage == 0.62F && config.clouds.wind_speed_mps == 24.0F &&
                 config.clouds.shadow_strength == 0.75F &&
@@ -1008,6 +1011,8 @@ void test_run_config_parses_cloud_options() {
     std::string weather_preset_value = "storm";
     std::string sampling_mode_flag = "--cloud-sampling-mode";
     std::string sampling_mode_value = "bayer";
+    std::string density_model_flag = "--cloud-density-model";
+    std::string density_model_value = "cloud-ref-compatible";
     std::string background_mode_flag = "--cloud-background-mode";
     std::string background_mode_value = "water-context";
     std::string distance_mode_flag = "--cloud-distance-mode";
@@ -1052,7 +1057,7 @@ void test_run_config_parses_cloud_options() {
     std::string debug_flag = "--cloud-debug-view";
     std::string debug_value = "transition-weights";
     std::string temporal_flag = "--no-cloud-temporal";
-    std::array<char*, 53> argv{
+    std::array<char*, 55> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -1062,6 +1067,8 @@ void test_run_config_parses_cloud_options() {
         weather_preset_value.data(),
         sampling_mode_flag.data(),
         sampling_mode_value.data(),
+        density_model_flag.data(),
+        density_model_value.data(),
         background_mode_flag.data(),
         background_mode_value.data(),
         distance_mode_flag.data(),
@@ -1120,6 +1127,8 @@ void test_run_config_parses_cloud_options() {
             "run config should parse cloud debug view");
     require(config.clouds.sampling_mode == "bayer",
             "run config should parse cloud sampling mode");
+    require(config.clouds.density_model == "cloud-ref-compatible",
+            "run config should parse cloud density model");
     require(config.clouds.background_mode == "water-context",
             "run config should parse cloud background mode");
     require(config.clouds.distance_mode == "orbit-shell",

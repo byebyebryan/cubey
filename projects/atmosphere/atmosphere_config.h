@@ -141,6 +141,7 @@ struct MoonConfig {
     config.quality = cubey::render::CloudLayerQuality::Half;
     config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
     config.distance_mode = cubey::render::CloudLayerDistanceMode::Auto;
+    config.density_model = cubey::render::CloudLayerDensityModel::Procedural;
     config.debug_view = cubey::render::CloudLayerDebugView::Final;
     config.sampling_mode = cubey::render::CloudLayerSamplingMode::Bayer;
     config.temporal_enabled = false;
@@ -242,6 +243,13 @@ inline constexpr std::array<cubey::render::CloudLayerOrbitRepresentation, 2>
     kAtmosphereCloudOrbitRepresentations{
         cubey::render::CloudLayerOrbitRepresentation::VolumeRaymarch,
         cubey::render::CloudLayerOrbitRepresentation::SurfaceShell,
+    };
+
+inline constexpr std::array<cubey::render::CloudLayerDensityModel, 3>
+    kAtmosphereCloudDensityModels{
+        cubey::render::CloudLayerDensityModel::RefDensity,
+        cubey::render::CloudLayerDensityModel::Procedural,
+        cubey::render::CloudLayerDensityModel::CloudRefCompatible,
     };
 
 [[nodiscard]] inline const char*
@@ -390,6 +398,35 @@ atmosphere_cloud_orbit_representation_from_name(std::string_view name) {
     }
     throw std::runtime_error("unknown atmosphere cloud orbit representation: " +
                              std::string(name));
+}
+
+[[nodiscard]] inline const char*
+atmosphere_cloud_density_model_name(cubey::render::CloudLayerDensityModel model) {
+    switch (model) {
+    case cubey::render::CloudLayerDensityModel::RefDensity:
+        return "ref-density";
+    case cubey::render::CloudLayerDensityModel::Procedural:
+        return "procedural";
+    case cubey::render::CloudLayerDensityModel::CloudRefCompatible:
+        return "cloud-ref-compatible";
+    }
+    return "procedural";
+}
+
+[[nodiscard]] inline cubey::render::CloudLayerDensityModel
+atmosphere_cloud_density_model_from_name(std::string_view name) {
+    if (name.empty() || name == "procedural" || name == "active") {
+        return cubey::render::CloudLayerDensityModel::Procedural;
+    }
+    if (name == "ref-density" || name == "terrain-ref" || name == "terrain" ||
+        name == "ref") {
+        return cubey::render::CloudLayerDensityModel::RefDensity;
+    }
+    if (name == "cloud-ref-compatible" || name == "cloud-ref" ||
+        name == "compatible") {
+        return cubey::render::CloudLayerDensityModel::CloudRefCompatible;
+    }
+    throw std::runtime_error("unknown atmosphere cloud density model: " + std::string(name));
 }
 
 struct AtmosphereCloudWeatherPresetSettings {
@@ -965,6 +1002,10 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
         config.layer.orbit_representation =
             atmosphere_cloud_orbit_representation_from_name(run_clouds.orbit_representation);
     }
+    if (!run_clouds.density_model.empty()) {
+        config.layer.density_model =
+            atmosphere_cloud_density_model_from_name(run_clouds.density_model);
+    }
     if (!run_clouds.weather_preset.empty()) {
         apply_atmosphere_cloud_weather_preset(
             config, atmosphere_cloud_weather_preset_from_name(run_clouds.weather_preset));
@@ -972,6 +1013,7 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
 
     apply_float(run_clouds.bottom_altitude_m, config.layer.bottom_altitude_m);
     apply_float(run_clouds.top_altitude_m, config.layer.top_altitude_m);
+    apply_float(run_clouds.planet_radius_m, config.layer.planet_radius_m);
     apply_float(run_clouds.coverage, config.layer.coverage);
     apply_float(run_clouds.density, config.layer.density);
     apply_float(run_clouds.weather_scale_km, config.layer.weather_scale_km);

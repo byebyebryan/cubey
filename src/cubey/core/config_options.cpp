@@ -68,6 +68,8 @@ constexpr std::array<std::string_view, 4> kCloudRenderPaths{
     "cached", "direct", "diff", "alpha-diff"};
 constexpr std::array<std::string_view, 4> kCloudSamplingModes{
     "interleaved", "bayer", "blue-noise", "off"};
+constexpr std::array<std::string_view, 3> kCloudDensityModels{"ref-density", "procedural",
+                                                              "cloud-ref-compatible"};
 constexpr std::array<std::string_view, 2> kCloudBackgroundModes{"atmosphere", "water-context"};
 constexpr std::array<std::string_view, 4> kCloudDistanceModes{"auto", "local", "orbit-shell",
                                                               "blend-debug"};
@@ -126,7 +128,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 233> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 234> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -581,6 +583,10 @@ constexpr std::array<ConfigOptionDescriptor, 233> kRunConfigOptions{
            "--cloud-sampling-mode", "Sampling Mode", "Clouds",
            "Cloud ray-start sampling mode: interleaved, bayer, blue-noise, or off.",
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudSamplingModes)),
+    option(RunConfigOptionId::CloudDensityModel, "clouds.density_model",
+           "--cloud-density-model", "Density Model", "Clouds",
+           "Cloud density and placement model: ref-density, procedural, or cloud-ref-compatible.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudDensityModels)),
     option(RunConfigOptionId::CloudBackgroundMode, "clouds.background_mode",
            "--cloud-background-mode", "Background Mode", "Clouds",
            "Standalone cloud background mode: atmosphere or water-context.",
@@ -1387,6 +1393,9 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::CloudSamplingMode:
         return config.clouds.sampling_mode.empty() ? nlohmann::json(nullptr)
                                                    : nlohmann::json(config.clouds.sampling_mode);
+    case RunConfigOptionId::CloudDensityModel:
+        return config.clouds.density_model.empty() ? nlohmann::json(nullptr)
+                                                   : nlohmann::json(config.clouds.density_model);
     case RunConfigOptionId::CloudBackgroundMode:
         return config.clouds.background_mode.empty()
                    ? nlohmann::json(nullptr)
@@ -1884,6 +1893,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
     adapter.writeField<std::string>("render_path", options.render_path);
     adapter.writeField<std::string>("sampling_mode", options.sampling_mode);
+    adapter.writeField<std::string>("density_model", options.density_model);
     adapter.writeField<std::string>("background_mode", options.background_mode);
     adapter.writeField<std::string>("distance_mode", options.distance_mode);
     adapter.writeField<std::string>("orbit_representation", options.orbit_representation);
@@ -1938,6 +1948,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
     adapter.readField<std::string>("render_path", options.render_path);
     adapter.readField<std::string>("sampling_mode", options.sampling_mode);
+    adapter.readField<std::string>("density_model", options.density_model);
     adapter.readField<std::string>("background_mode", options.background_mode);
     adapter.readField<std::string>("distance_mode", options.distance_mode);
     adapter.readField<std::string>("orbit_representation", options.orbit_representation);
@@ -2593,6 +2604,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::CloudSamplingMode:
         config.clouds.sampling_mode = std::string(value);
+        break;
+    case RunConfigOptionId::CloudDensityModel:
+        config.clouds.density_model = std::string(value);
         break;
     case RunConfigOptionId::CloudBackgroundMode:
         config.clouds.background_mode = std::string(value);

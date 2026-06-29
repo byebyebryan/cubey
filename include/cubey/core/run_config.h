@@ -241,6 +241,7 @@ struct RunConfig {
         std::uint32_t cache_texture_size = 0;
         std::string render_path{};
         std::string sampling_mode{};
+        std::string density_model{};
         std::string background_mode{};
         std::string distance_mode{};
         std::string orbit_representation{};

@@ -83,6 +83,12 @@ enum class CloudLayerOrbitRepresentation : std::uint32_t {
     SurfaceShell = 1,
 };
 
+enum class CloudLayerDensityModel : std::uint32_t {
+    RefDensity = 0,
+    Procedural = 1,
+    CloudRefCompatible = 2,
+};
+
 enum class CloudLayerCloudStyle : std::uint32_t {
     FairWeather = 0,
     BrokenCumulus = 1,
@@ -219,6 +225,7 @@ struct CloudLayerConfig {
     CloudLayerDistanceMode distance_mode = CloudLayerDistanceMode::Auto;
     CloudLayerOrbitRepresentation orbit_representation =
         CloudLayerOrbitRepresentation::SurfaceShell;
+    CloudLayerDensityModel density_model = CloudLayerDensityModel::Procedural;
     CloudLayerDebugView debug_view = CloudLayerDebugView::Final;
     bool temporal_enabled = false;
     bool powder_enabled = true;
@@ -320,9 +327,10 @@ struct CloudLayerFrameUniforms {
     math::Vec4 orbit_options;
     math::Vec4 orbit_shell_options;
     math::Vec4 scene_depth_options;
+    math::Vec4 density_options;
 };
 
-static_assert(sizeof(CloudLayerFrameUniforms) == sizeof(float) * 84U);
+static_assert(sizeof(CloudLayerFrameUniforms) == sizeof(float) * 88U);
 
 struct CloudLayerTemporalUniforms {
     math::Vec4 current_camera_right_aspect;
@@ -345,9 +353,10 @@ struct CloudLayerWeatherPushConstants {
     float cells = 1.0F;
     float streaks = 1.0F;
     float cloud_style = 1.0F;
+    float density_model = 1.0F;
 };
 
-static_assert(sizeof(CloudLayerWeatherPushConstants) == sizeof(float) * 4U);
+static_assert(sizeof(CloudLayerWeatherPushConstants) == sizeof(float) * 5U);
 
 struct CloudLayerProduct {
     RenderGraphTextureHandle cloud{};

@@ -315,6 +315,20 @@ int main() {
     require(atmosphere_cloud_sampling_mode_from_name("blue-noise") ==
                 CloudLayerSamplingMode::BlueNoise,
             "blue-noise cloud sampling mode should parse");
+    require(atmosphere_cloud_density_model_from_name("") == CloudLayerDensityModel::Procedural,
+            "empty cloud density model should default to procedural");
+    require(atmosphere_cloud_density_model_from_name("procedural") ==
+                CloudLayerDensityModel::Procedural,
+            "procedural cloud density model should parse");
+    require(atmosphere_cloud_density_model_from_name("ref-density") ==
+                CloudLayerDensityModel::RefDensity,
+            "ref-density cloud density model should parse");
+    require(atmosphere_cloud_density_model_from_name("terrain-ref") ==
+                CloudLayerDensityModel::RefDensity,
+            "legacy terrain-ref cloud density model alias should parse");
+    require(atmosphere_cloud_density_model_from_name("cloud-ref-compatible") ==
+                CloudLayerDensityModel::CloudRefCompatible,
+            "cloud-ref-compatible density model should parse");
 
     {
         const TimeOfDayConfig defaults;
@@ -470,6 +484,8 @@ int main() {
             "default atmosphere clouds should use stable Bayer sampling");
     require(defaults.clouds.layer.distance_mode == CloudLayerDistanceMode::Auto,
             "default atmosphere clouds should use distance-aware rendering");
+    require(defaults.clouds.layer.density_model == CloudLayerDensityModel::Procedural,
+            "default atmosphere clouds should keep the tuned procedural density model");
 
     {
         AtmosphereCloudConfig clouds;
@@ -493,6 +509,8 @@ int main() {
         run_config.clouds.sampling_mode = "off";
         run_config.clouds.distance_mode = "orbit-shell";
         run_config.clouds.orbit_representation = "volume";
+        run_config.clouds.density_model = "procedural";
+        run_config.clouds.planet_radius_m = 700000.0F;
         run_config.clouds.coverage = 0.25F;
         run_config.clouds.wind_speed_mps = 42.0F;
         run_config.clouds.temporal = 0;
@@ -513,6 +531,10 @@ int main() {
         require(config.clouds.layer.orbit_representation ==
                     CloudLayerOrbitRepresentation::VolumeRaymarch,
                 "atmosphere run config should map cloud orbit representation");
+        require(config.clouds.layer.density_model == CloudLayerDensityModel::Procedural,
+                "atmosphere run config should map cloud density model");
+        require_near(config.clouds.layer.planet_radius_m, 700000.0F, 0.001F,
+                     "atmosphere run config should map cloud planet radius");
         require_near(config.clouds.layer.coverage, 0.25F, 0.001F,
                      "atmosphere run config explicit cloud coverage should override preset");
         require_near(config.clouds.wind_speed_mps, 42.0F, 0.001F,

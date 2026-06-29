@@ -173,6 +173,10 @@ namespace {
     return static_cast<float>(static_cast<std::uint32_t>(mode));
 }
 
+[[nodiscard]] float density_model_value(CloudLayerDensityModel model) {
+    return static_cast<float>(static_cast<std::uint32_t>(model));
+}
+
 [[nodiscard]] float cloud_style_value(CloudLayerCloudStyle style) {
     return static_cast<float>(static_cast<std::uint32_t>(style));
 }
@@ -779,6 +783,7 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
                                          std::max(frame.near_plane_m, 0.0001F) + 1.0F),
                                 frame.scene_depth_occlusion_enabled ? 1.0F : 0.0F,
                                 std::max(frame.scene_depth_fade_m, 1.0F)},
+        .density_options = {density_model_value(config.density_model), 0.0F, 0.0F, 0.0F},
     };
 }
 
@@ -825,13 +830,14 @@ CloudLayerWeatherPushConstants cloud_layer_weather_push_constants(
         .cells = config.weather_cells,
         .streaks = config.weather_streaks,
         .cloud_style = cloud_style_value(config.cloud_style),
+        .density_model = density_model_value(config.density_model),
     };
 }
 
 bool cloud_layer_weather_generation_equal(const CloudLayerWeatherPushConstants& lhs,
                                           const CloudLayerWeatherPushConstants& rhs) {
     return lhs.fronts == rhs.fronts && lhs.cells == rhs.cells && lhs.streaks == rhs.streaks &&
-           lhs.cloud_style == rhs.cloud_style;
+           lhs.cloud_style == rhs.cloud_style && lhs.density_model == rhs.density_model;
 }
 
 CloudLayerGeneratedResources create_cloud_layer_generated_resources(

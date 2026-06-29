@@ -212,6 +212,10 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
                                           atmosphere_cloud_sampling_mode_name,
                                           "Ray-start pattern. Bayer is stable; blue noise is diagnostic until temporal reconstruction improves.");
             cubey::host::imgui_enum_combo(
+                "Density model", layer.density_model, kAtmosphereCloudDensityModels,
+                atmosphere_cloud_density_model_name,
+                "Cloud density and placement path. Ref-density isolates the old reference density branch; cloud-ref-compatible bypasses macro cloud layers for diagnostics.");
+            cubey::host::imgui_enum_combo(
                 "Distance mode", layer.distance_mode, kAtmosphereCloudDistanceModes,
                 atmosphere_cloud_distance_mode_name,
                 "Local, orbit shell, or blended cloud distance behavior.");
