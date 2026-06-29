@@ -605,6 +605,42 @@ float cloud_detail_filter_lod(float base_lod) {
     return clamp(base_lod + extra_lod * strength, 0.0, 7.0);
 }
 
+float cloud_edge_softness_strength() {
+    return clamp(params.edge_options.x, 0.0, 2.0);
+}
+
+float cloud_edge_detail_fade_strength() {
+    return clamp(params.edge_options.y, 0.0, 2.0);
+}
+
+float cloud_density_edge_width(float lod) {
+    float lod_factor = smoothstep(0.35, 4.25, lod);
+    return cloud_edge_softness_strength() * (0.010 + lod_factor * 0.085);
+}
+
+float cloud_soft_coverage_density(float base_cloud, float coverage, float lod) {
+    coverage = clamp(coverage, 0.0, 1.0);
+    float hard_density = cloud_remap(base_cloud, coverage, 1.0, 0.0, 1.0) * coverage;
+    float strength = min(cloud_edge_softness_strength(), 1.0);
+    if (strength <= 0.0001 || coverage <= 0.0001) {
+        return hard_density;
+    }
+
+    float edge_width = cloud_density_edge_width(lod) * mix(1.20, 0.72, coverage);
+    float lower_threshold = clamp(coverage - edge_width, 0.0, 0.98);
+    float upper_threshold = clamp(coverage + edge_width, lower_threshold + 0.001, 0.999);
+    float edge_gate = smoothstep(lower_threshold, upper_threshold, base_cloud);
+    float ramp = cloud_remap(base_cloud, lower_threshold, 1.0, 0.0, 1.0);
+    float soft_density = coverage * edge_gate * ramp;
+    return mix(hard_density, soft_density, strength);
+}
+
+float cloud_unresolved_edge_factor(float density, float lod) {
+    float edge = 1.0 - smoothstep(0.12, 0.58, density);
+    float lod_factor = smoothstep(0.45, 4.25, lod);
+    return clamp(edge * lod_factor * cloud_edge_detail_fade_strength(), 0.0, 1.0);
+}
+
 vec2 cloud_project_uv(vec3 position) {
     return position.xz / cloud_shape_domain_m() + vec2(0.5);
 }
@@ -825,7 +861,7 @@ DensitySample cloud_sample_density_procedural(vec3 position, bool expensive, flo
     float coverage_bias = mix(local_scatter, softened_authored_weather, weather_influence);
     float local_coverage = clamp(global_coverage * coverage_bias, 0.0, 1.0);
     float base_with_coverage =
-        cloud_remap(base_cloud, local_coverage, 1.0, 0.0, 1.0) * local_coverage;
+        cloud_soft_coverage_density(base_cloud, local_coverage, lod);
     float detail_density = 0.0;
 
     if (expensive) {
@@ -843,6 +879,8 @@ DensitySample cloud_sample_density_procedural(vec3 position, bool expensive, flo
         float erosion_strength =
             clamp(params.weather_feature_weights.w * mix(0.82, 1.20, edge_bias), 0.0, 1.0);
         erosion_strength *= mix(1.0, 0.42, far_detail_filter);
+        float unresolved_edge = cloud_unresolved_edge_factor(base_with_coverage, lod);
+        erosion_strength *= mix(1.0, 0.22, unresolved_edge);
         float eroded = base_with_coverage -
                        high_modifier * (1.0 - base_with_coverage) * erosion_strength;
         float remapped =
@@ -2052,8 +2090,10 @@ DensitySample cloud_far_horizon_density_sample(vec3 position, float lod) {
                              0.0, 1.0);
     float broken_continuity =
         cloud_coverage_modulation(continuity, local_weather.edge_detail, 0.52);
+    float unresolved_edge = cloud_unresolved_edge_factor(continuity, lod);
     float density =
-        mix(continuity, broken_continuity, mix(0.18, 0.04, far_detail_filter)) *
+        mix(continuity, broken_continuity,
+            mix(0.18, 0.04, far_detail_filter) * (1.0 - unresolved_edge * 0.65)) *
         height_multiplier *
         mix(0.72, 1.0, local_weather.clear_gate);
 
