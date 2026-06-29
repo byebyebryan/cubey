@@ -783,7 +783,8 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
                                          std::max(frame.near_plane_m, 0.0001F) + 1.0F),
                                 frame.scene_depth_occlusion_enabled ? 1.0F : 0.0F,
                                 std::max(frame.scene_depth_fade_m, 1.0F)},
-        .density_options = {density_model_value(config.density_model), 0.0F, 0.0F, 0.0F},
+        .density_options = {density_model_value(config.density_model), config.shape_domain_km,
+                            0.0F, 0.0F},
     };
 }
 

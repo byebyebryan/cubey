@@ -370,9 +370,7 @@ class AtmosphereApp {
     [[nodiscard]] cubey::render::CloudLayerConfig atmosphere_cloud_config(
         float elapsed_seconds) const {
         cubey::render::CloudLayerConfig config = atmosphere_config_.clouds.layer;
-        if (config.density_model != cubey::render::CloudLayerDensityModel::CloudRefCompatible) {
-            config.planet_radius_m = atmosphere_config_.bottom_radius_km * 1000.0F;
-        }
+        config.planet_radius_m = atmosphere_config_.bottom_radius_km * 1000.0F;
         config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
         config.wind_offset_m = elapsed_seconds * atmosphere_config_.clouds.wind_speed_mps;
         return config;

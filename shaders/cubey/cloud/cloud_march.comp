@@ -590,9 +590,8 @@ OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
 }
 
 vec2 cloud_project_uv(vec3 position) {
-    float feature_scale_m = max(params.weather.z * 1000.0, 1000.0);
-    float shape_period_m = feature_scale_m * 5.0;
-    return position.xz / shape_period_m + vec2(0.5);
+    float shape_domain_m = max(params.density_options.y * 1000.0, 1.0);
+    return position.xz / shape_domain_m + vec2(0.5);
 }
 
 vec2 cloud_weather_uv(vec3 position) {
@@ -602,7 +601,8 @@ vec2 cloud_weather_uv(vec3 position) {
 }
 
 vec2 cloud_terrain_ref_project_uv(vec3 position) {
-    return position.xz / cloud_inner_radius() + vec2(0.5);
+    float shape_domain_m = max(params.density_options.y * 1000.0, 1.0);
+    return position.xz / shape_domain_m + vec2(0.5);
 }
 
 int cloud_density_model() {
