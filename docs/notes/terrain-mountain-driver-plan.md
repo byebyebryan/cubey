@@ -93,6 +93,23 @@ recipes in this first implementation pass.
 - Review captures should include `outputs/terrain/mountain-range-stress` and
   `outputs/terrain/mountain-range-stress-1025`.
 
+## Review Readability Correction
+
+Revision 19 split the mountain source fields correctly, but `final.png` is still
+the river/material debug composition. It mixes material masks, slope shade, and
+the active river overlay, so the mountain stress recipe can look too close to the
+river review even when the underlying support and uplift fields differ.
+
+The next capture batch should add a mountain-specific rendered debug view instead
+of tuning the generator against `final.png`. The primary mountain inspection
+image should:
+
+- remove river, wetness, vegetation, and material overlays;
+- hillshade `height_m` with stronger relief contrast;
+- tint broad height/range mass from `mountain_support`;
+- highlight ridge and peak accents from `ridge_support` and `peak_support`;
+- keep `final.png` unchanged for river/material review.
+
 ## Deferred
 
 - Full hydraulic or thermal erosion simulation.
