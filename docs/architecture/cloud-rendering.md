@@ -132,6 +132,9 @@ Initial scope:
 - texture-backed cloud density: base volume, detail/erosion volume, weather map;
 - world-scale weather/type sampling where `clouds.weather_scale_km` means
   approximate broad feature size rather than texture period;
+- explicit local density projection scale where `clouds.shape_domain_km` owns
+  base/detail cloud texture frequency. Physical planet radius must not stretch
+  or shrink local cloud breakup;
 - raw weather/type diagnostics plus ray-marched visible density/type diagnostics
   so map artifacts and visible artifacts can be separated before changing
   production shaping;
@@ -186,6 +189,9 @@ Initial scope:
   cells, streaks, and micro fragments drive scatter and erosion;
 - orbit shell detail should be filtered by pixel footprint and grazing angle so
   disk detail survives while limb/edge shimmer does not define the image;
+- local volume detail should use deterministic footprint filtering from camera
+  distance, step length, pixel size, grazing angle, shape domain, and generated
+  noise texture size. `clouds.footprint_filter_strength` controls that filter;
 - the cloud-top shell should composite from column optical depth, not an
   arbitrary alpha curve, so orbit opacity can be tuned through density and
   extinction controls that map to a plausible cloud mass;
@@ -205,6 +211,23 @@ The layer must keep planet handoff constraints visible: use meters, carry planet
 radius/cloud-shell metadata explicitly, keep camera GPU state camera-relative,
 and define weather coordinates so they can later map onto a planet frame, local
 tangent frame, or stable global weather address.
+
+The TerrainEngine/cloud_ref diagnostic exposed a specific scale trap: the
+reference density projection originally divided local `position.xz` by the cloud
+inner radius. That made the same density field look detailed on the 600 km
+reference sphere but smooth and capped on an Earth-radius atmosphere. Production
+clouds therefore split the controls:
+
+- physical `planet_radius_m`: shell intersection, horizon curvature, altitude,
+  and orbit/planet geometry;
+- `weather_scale_km`: macro weather placement, broad coverage, and type fields;
+- `shape_domain_km`: local base/detail density texture projection;
+- `footprint_filter_strength`: deterministic mip/filter response for distant or
+  grazing cloud detail.
+
+`cloud-ref-compatible` should be kept as a diagnostic mode, but it should match
+the reference through `shape_domain_km`, not by pretending the atmosphere has a
+600 km planet radius.
 
 Deferred until the shape is credible:
 
@@ -338,7 +361,8 @@ Acceptance for this milestone:
 - half-resolution final captures do not rely on full-res supersampling to hide
   horizon/far-field noise;
 - atmosphere exposes enough controls to isolate density, detail erosion,
-  weather map, sampling, lighting, composition, and metadata output;
+  weather map, local shape domain, footprint filtering, sampling, lighting,
+  composition, and metadata output;
 - the implementation does not duplicate project-local atmosphere horizon logic.
 
 Only after that should the production layer add the cached hemisphere path from
