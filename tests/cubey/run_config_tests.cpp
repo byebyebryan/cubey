@@ -351,6 +351,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.density",
         "clouds.weather_scale_km",
         "clouds.shape_domain_km",
+        "clouds.footprint_filter_strength",
         "clouds.vertical_shear_fraction",
         "clouds.wind_speed_mps",
         "clouds.shadow_strength",
@@ -1034,6 +1035,8 @@ void test_run_config_parses_cloud_options() {
     std::string weather_scale_value = "260";
     std::string shape_domain_flag = "--cloud-shape-domain-km";
     std::string shape_domain_value = "840";
+    std::string footprint_filter_flag = "--cloud-footprint-filter-strength";
+    std::string footprint_filter_value = "1.35";
     std::string vertical_shear_flag = "--cloud-vertical-shear-fraction";
     std::string vertical_shear_value = "0.16";
     std::string wind_flag = "--cloud-wind-speed-mps";
@@ -1060,7 +1063,7 @@ void test_run_config_parses_cloud_options() {
     std::string debug_flag = "--cloud-debug-view";
     std::string debug_value = "transition-weights";
     std::string temporal_flag = "--no-cloud-temporal";
-    std::array<char*, 57> argv{
+    std::array<char*, 59> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -1092,6 +1095,8 @@ void test_run_config_parses_cloud_options() {
         weather_scale_value.data(),
         shape_domain_flag.data(),
         shape_domain_value.data(),
+        footprint_filter_flag.data(),
+        footprint_filter_value.data(),
         vertical_shear_flag.data(),
         vertical_shear_value.data(),
         wind_flag.data(),
@@ -1152,6 +1157,8 @@ void test_run_config_parses_cloud_options() {
             "run config should parse cloud weather scale");
     require(config.clouds.shape_domain_km == 840.0F,
             "run config should parse cloud shape domain");
+    require(config.clouds.footprint_filter_strength == 1.35F,
+            "run config should parse cloud footprint filter strength");
     require(config.clouds.vertical_shear_fraction == 0.16F,
             "run config should parse cloud vertical shear fraction");
     require(config.clouds.wind_speed_mps == 32.0F, "run config should parse cloud wind speed");

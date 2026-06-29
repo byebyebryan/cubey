@@ -239,6 +239,7 @@ struct CloudLayerConfig {
     float density = 0.02F;
     float weather_scale_km = 120.0F;
     float shape_domain_km = 600.0F;
+    float footprint_filter_strength = 1.0F;
     float vertical_shear_fraction = 0.0F;
     float wind_offset_m = 0.0F;
     float shadow_strength = 0.82F;

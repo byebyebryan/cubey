@@ -513,6 +513,7 @@ int main() {
         run_config.clouds.planet_radius_m = 700000.0F;
         run_config.clouds.coverage = 0.25F;
         run_config.clouds.shape_domain_km = 840.0F;
+        run_config.clouds.footprint_filter_strength = 1.35F;
         run_config.clouds.wind_speed_mps = 42.0F;
         run_config.clouds.temporal = 0;
         run_config.clouds.local_volume = 0;
@@ -540,6 +541,8 @@ int main() {
                      "atmosphere run config explicit cloud coverage should override preset");
         require_near(config.clouds.layer.shape_domain_km, 840.0F, 0.001F,
                      "atmosphere run config should map cloud shape domain");
+        require_near(config.clouds.layer.footprint_filter_strength, 1.35F, 0.001F,
+                     "atmosphere run config should map cloud footprint filter strength");
         require_near(config.clouds.wind_speed_mps, 42.0F, 0.001F,
                      "atmosphere run config explicit cloud wind should override preset");
         require(!config.clouds.layer.temporal_enabled,
@@ -1172,9 +1175,10 @@ int main() {
                      "atmosphere app should load the shared PBR post shader");
     require_contains(app_source, ".external_background = true",
                      "atmosphere clouds should declare external background composition");
-    require_contains(cloud_march_source,
-                     "shape_domain_m = max(params.density_options.y * 1000.0, 1.0)",
+    require_contains(cloud_march_source, "float cloud_shape_domain_m()",
                      "local cloud detail projection should use explicit domain scale");
+    require_contains(cloud_march_source, "params.density_options.y * 1000.0",
+                     "local cloud domain scale should come from cloud uniforms");
     require_contains(cloud_march_source, "!cloud_external_background_enabled()",
                      "external-background clouds should not force the standalone horizon assist");
     require_contains(cmake_source, "forward_pbr_post.frag",

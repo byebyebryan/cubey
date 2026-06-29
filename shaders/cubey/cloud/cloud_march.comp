@@ -22,6 +22,8 @@ const vec4 STRATOCUMULUS_GRADIENT = vec4(0.02, 0.20, 0.48, 0.625);
 const vec4 CUMULUS_GRADIENT = vec4(0.00, 0.1625, 0.88, 0.98);
 const vec3 WIND_DIRECTION = normalize(vec3(0.5, 0.0, 0.1));
 const float CLOUD_TOP_OFFSET = 750.0;
+const float CLOUD_BASE_NOISE_TEXTURE_SIZE = 128.0;
+const float CLOUD_DETAIL_NOISE_TEXTURE_SIZE = 32.0;
 const vec3 NOISE_KERNEL[6] = vec3[](
     vec3(0.38051305, 0.92453449, -0.02111345),
     vec3(-0.50625799, -0.03590792, -0.86163418),
@@ -589,9 +591,22 @@ OrbitWeatherSample cloud_orbit_weather_sample(vec3 position) {
     return cloud_orbit_weather_sample_from_normal(normal, height_fraction);
 }
 
+float cloud_shape_domain_m() {
+    return max(params.density_options.y * 1000.0, 1.0);
+}
+
+float cloud_footprint_filter_strength() {
+    return clamp(params.density_options.z, 0.0, 2.0);
+}
+
+float cloud_detail_filter_lod(float base_lod) {
+    float strength = cloud_footprint_filter_strength();
+    float extra_lod = max(base_lod - 0.35, 0.0) * 0.72 + strength * 0.22;
+    return clamp(base_lod + extra_lod * strength, 0.0, 7.0);
+}
+
 vec2 cloud_project_uv(vec3 position) {
-    float shape_domain_m = max(params.density_options.y * 1000.0, 1.0);
-    return position.xz / shape_domain_m + vec2(0.5);
+    return position.xz / cloud_shape_domain_m() + vec2(0.5);
 }
 
 vec2 cloud_weather_uv(vec3 position) {
@@ -601,8 +616,7 @@ vec2 cloud_weather_uv(vec3 position) {
 }
 
 vec2 cloud_terrain_ref_project_uv(vec3 position) {
-    float shape_domain_m = max(params.density_options.y * 1000.0, 1.0);
-    return position.xz / shape_domain_m + vec2(0.5);
+    return position.xz / cloud_shape_domain_m() + vec2(0.5);
 }
 
 int cloud_density_model() {
@@ -743,9 +757,11 @@ DensitySample cloud_sample_density_terrain_ref(vec3 position, bool expensive, fl
     float detail_density = 0.0;
 
     if (expensive) {
+        float detail_lod = cloud_detail_filter_lod(lod);
         vec3 detail =
             textureLod(detail_noise_texture,
-                       vec3(moving_shape_uv * crispiness, height_fraction) * curliness, lod)
+                       vec3(moving_shape_uv * crispiness, height_fraction) * curliness,
+                       detail_lod)
                 .rgb;
         float high_fbm = dot(detail, vec3(0.625, 0.25, 0.125));
         float high_modifier =
@@ -813,9 +829,11 @@ DensitySample cloud_sample_density_procedural(vec3 position, bool expensive, flo
     float detail_density = 0.0;
 
     if (expensive) {
+        float detail_lod = cloud_detail_filter_lod(lod);
         vec3 detail =
             textureLod(detail_noise_texture,
-                       vec3(moving_shape_uv * crispiness, height_fraction) * curliness, lod)
+                       vec3(moving_shape_uv * crispiness, height_fraction) * curliness,
+                       detail_lod)
                 .rgb;
         float high_fbm = dot(detail, vec3(0.625, 0.25, 0.125));
         float high_modifier =
@@ -885,9 +903,23 @@ float cloud_sample_filter_lod(vec3 origin, vec3 direction, vec3 position,
     float view_alignment = abs(dot(direction, local_up));
     float grazing = 1.0 - smoothstep(0.06, 0.42, view_alignment);
     float camera_distance = max(length(position - origin), sample_t);
+    float aspect = max(params.camera_right_aspect.w, 0.001);
+    float target_width = max(params.ref_options.w, 1.0);
+    float target_height = max(target_width / aspect, 1.0);
+    float pixel_world_m =
+        camera_distance * (2.0 * max(params.camera_up_tan_half_fovy.w, 0.001)) /
+        target_height;
+    float grazing_stretch = mix(1.0, 4.0, grazing);
+    float footprint_m = max(pixel_world_m, step_size * 0.35) * grazing_stretch;
+    float domain_texels =
+        max((footprint_m / cloud_shape_domain_m()) * CLOUD_BASE_NOISE_TEXTURE_SIZE, 1.0);
+    float domain_lod = log2(domain_texels);
     float distance_lod = log2(max(camera_distance / 26000.0, 1.0));
     float step_lod = log2(max(step_size / 1800.0, 1.0));
-    return clamp(distance_lod * 0.36 + step_lod * 0.52 + grazing * 1.20, 0.0, 5.0);
+    float strength = cloud_footprint_filter_strength();
+    float raw_lod = domain_lod * 0.80 + distance_lod * 0.18 + step_lod * 0.34 +
+                    grazing * 0.70;
+    return clamp(raw_lod * strength, 0.0, 6.0);
 }
 
 vec3 cloud_horizon_direction(vec3 direction, vec3 local_up) {
