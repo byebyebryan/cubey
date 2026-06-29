@@ -32,11 +32,16 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 20> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 25> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::Height, "height"},
     DebugViewName{TerrainDebugView::Slope, "slope"},
+    DebugViewName{TerrainDebugView::MountainSupport, "mountain-support"},
+    DebugViewName{TerrainDebugView::RidgeSupport, "ridge-support"},
+    DebugViewName{TerrainDebugView::PeakSupport, "peak-support"},
+    DebugViewName{TerrainDebugView::MountainUplift, "mountain-uplift"},
     DebugViewName{TerrainDebugView::RidgeUplift, "ridge-uplift"},
+    DebugViewName{TerrainDebugView::PeakUplift, "peak-uplift"},
     DebugViewName{TerrainDebugView::DrainagePotential, "drainage-potential"},
     DebugViewName{TerrainDebugView::RoutingFillDelta, "routing-fill-delta"},
     DebugViewName{TerrainDebugView::FlowDirection, "flow-direction"},
@@ -55,11 +60,16 @@ inline constexpr std::array<DebugViewName, 20> kDebugViewNames{
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 20> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 25> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::Height,
     TerrainDebugView::Slope,
+    TerrainDebugView::MountainSupport,
+    TerrainDebugView::RidgeSupport,
+    TerrainDebugView::PeakSupport,
+    TerrainDebugView::MountainUplift,
     TerrainDebugView::RidgeUplift,
+    TerrainDebugView::PeakUplift,
     TerrainDebugView::DrainagePotential,
     TerrainDebugView::RoutingFillDelta,
     TerrainDebugView::FlowDirection,
@@ -201,8 +211,18 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldHeightM);
     case TerrainDebugView::Slope:
         return terrain_product_field(product, kTerrainFieldSlope);
+    case TerrainDebugView::MountainSupport:
+        return terrain_product_field(product, kTerrainFieldMountainSupport);
+    case TerrainDebugView::RidgeSupport:
+        return terrain_product_field(product, kTerrainFieldRidgeSupport);
+    case TerrainDebugView::PeakSupport:
+        return terrain_product_field(product, kTerrainFieldPeakSupport);
+    case TerrainDebugView::MountainUplift:
+        return terrain_product_field(product, kTerrainFieldMountainUplift);
     case TerrainDebugView::RidgeUplift:
         return terrain_product_field(product, kTerrainFieldRidgeUplift);
+    case TerrainDebugView::PeakUplift:
+        return terrain_product_field(product, kTerrainFieldPeakUplift);
     case TerrainDebugView::DrainagePotential:
         return terrain_product_field(product, kTerrainFieldDrainagePotential);
     case TerrainDebugView::RoutingFillDelta:

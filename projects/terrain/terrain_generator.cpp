@@ -155,9 +155,23 @@ struct TerrainSourceFields {
     cubey::procedural::ScalarField2D broad_noise{};
     cubey::procedural::ScalarField2D base_elevation{};
     cubey::procedural::ScalarField2D broad_relief{};
+    cubey::procedural::ScalarField2D mountain_support{};
+    cubey::procedural::ScalarField2D ridge_support{};
+    cubey::procedural::ScalarField2D peak_support{};
+    cubey::procedural::ScalarField2D mountain_uplift{};
     cubey::procedural::ScalarField2D ridge_uplift{};
+    cubey::procedural::ScalarField2D peak_uplift{};
     cubey::procedural::ScalarField2D detail_residual{};
     cubey::procedural::ScalarField2D height{};
+};
+
+struct TerrainSourceProfile {
+    bool explicit_mountain_driver = false;
+    float mountain_uplift_m = 0.0F;
+    float ridge_uplift_m = 420.0F;
+    float peak_uplift_m = 0.0F;
+    float detail_min_m = -38.0F;
+    float detail_max_m = 52.0F;
 };
 
 struct RoutingDomain {
@@ -409,6 +423,20 @@ struct RoutingRepairResult {
     return {};
 }
 
+[[nodiscard]] TerrainSourceProfile terrain_source_profile(std::string_view recipe_id) {
+    if (recipe_id == kTerrainRecipeTemperateMountainRangeStress) {
+        return TerrainSourceProfile{
+            .explicit_mountain_driver = true,
+            .mountain_uplift_m = 260.0F,
+            .ridge_uplift_m = 580.0F,
+            .peak_uplift_m = 220.0F,
+            .detail_min_m = -32.0F,
+            .detail_max_m = 48.0F,
+        };
+    }
+    return {};
+}
+
 [[nodiscard]] cubey::procedural::ScalarField2D unit_source_field(
     cubey::procedural::Grid2DDesc desc, std::uint64_t seed, float frequency,
     std::uint32_t octaves) {
@@ -416,6 +444,24 @@ struct RoutingRepairResult {
         cubey::procedural::sample_noise_source_field_2d(desc,
                                                         coherent_source(seed, frequency, octaves));
     return cubey::procedural::percentile_remap_field(field, 0.03F, 0.97F, 0.0F, 1.0F);
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D zero_field(
+    cubey::procedural::Grid2DDesc desc) {
+    return cubey::procedural::ScalarField2D(desc, 0.0F);
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D shape_unit_field(
+    const cubey::procedural::ScalarField2D& field, float edge0, float edge1, float exponent) {
+    cubey::procedural::ScalarField2D result(field.desc(), 0.0F);
+    for (std::uint32_t y = 0; y < field.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < field.desc().width; ++x) {
+            const float shaped =
+                cubey::procedural::smoothstep(edge0, edge1, field.at(x, y));
+            result.at(x, y) = std::pow(cubey::procedural::saturate(shaped), exponent);
+        }
+    }
+    return result;
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D ridge_source_field(
@@ -458,6 +504,55 @@ struct RoutingRepairResult {
     return cubey::procedural::pow_unit_field(field, 1.55F);
 }
 
+[[nodiscard]] cubey::procedural::ScalarField2D mountain_support_field(
+    cubey::procedural::Grid2DDesc desc, std::uint64_t seed) {
+    cubey::procedural::ScalarField2D field = unit_source_field(desc, seed, 0.00015F, 4U);
+    field = cubey::procedural::box_blur_3x3(field);
+    field = cubey::procedural::box_blur_3x3(field);
+    return shape_unit_field(field, 0.30F, 0.82F, 0.82F);
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D mountain_ridge_support_field(
+    cubey::procedural::Grid2DDesc desc, std::uint64_t seed,
+    const cubey::procedural::ScalarField2D& mountain_support) {
+    const cubey::procedural::ScalarField2D ridge = ridge_source_field(desc, seed);
+    cubey::procedural::ScalarField2D result(desc, 0.0F);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float support_gate =
+                cubey::procedural::smoothstep(0.12F, 0.78F, mountain_support.at(x, y));
+            result.at(x, y) = std::pow(cubey::procedural::saturate(ridge.at(x, y) *
+                                                                   support_gate),
+                                       0.92F);
+        }
+    }
+    return result;
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D peak_support_field(
+    cubey::procedural::Grid2DDesc desc, std::uint64_t seed,
+    const cubey::procedural::ScalarField2D& mountain_support,
+    const cubey::procedural::ScalarField2D& ridge_support) {
+    const cubey::procedural::ScalarField2D summit_noise =
+        unit_source_field(desc, seed, 0.00105F, 4U);
+    cubey::procedural::ScalarField2D result(desc, 0.0F);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float mountain_gate =
+                cubey::procedural::smoothstep(0.42F, 0.96F, mountain_support.at(x, y));
+            const float ridge_gate =
+                cubey::procedural::smoothstep(0.48F, 0.94F, ridge_support.at(x, y));
+            const float local_peak =
+                cubey::procedural::smoothstep(0.62F, 0.96F, summit_noise.at(x, y));
+            const float support =
+                cubey::procedural::saturate((ridge_gate * 0.72F) + (local_peak * 0.44F) -
+                                            0.24F);
+            result.at(x, y) = mountain_gate * std::pow(support, 2.15F);
+        }
+    }
+    return result;
+}
+
 [[nodiscard]] cubey::procedural::ScalarField2D make_base_elevation_field(
     cubey::procedural::Grid2DDesc desc, const cubey::procedural::ScalarField2D& broad_noise) {
     cubey::procedural::ScalarField2D result(desc, 0.0F);
@@ -489,13 +584,40 @@ struct RoutingRepairResult {
 
 [[nodiscard]] cubey::procedural::ScalarField2D make_ridge_uplift_field(
     const cubey::procedural::ScalarField2D& ridge_support,
-    const cubey::procedural::ScalarField2D& broad_relief) {
+    const cubey::procedural::ScalarField2D& broad_relief, float max_uplift_m) {
     cubey::procedural::ScalarField2D result(ridge_support.desc(), 0.0F);
     for (std::uint32_t y = 0; y < ridge_support.desc().height; ++y) {
         for (std::uint32_t x = 0; x < ridge_support.desc().width; ++x) {
             const float relief_gate = cubey::procedural::smoothstep(80.0F, 360.0F,
                                                                     broad_relief.at(x, y));
-            result.at(x, y) = ridge_support.at(x, y) * relief_gate * 420.0F;
+            result.at(x, y) = ridge_support.at(x, y) * relief_gate * max_uplift_m;
+        }
+    }
+    return result;
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D make_mountain_uplift_field(
+    const cubey::procedural::ScalarField2D& mountain_support, float max_uplift_m) {
+    cubey::procedural::ScalarField2D result(mountain_support.desc(), 0.0F);
+    for (std::uint32_t y = 0; y < mountain_support.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < mountain_support.desc().width; ++x) {
+            result.at(x, y) =
+                std::pow(cubey::procedural::saturate(mountain_support.at(x, y)), 1.22F) *
+                max_uplift_m;
+        }
+    }
+    return result;
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D make_peak_uplift_field(
+    const cubey::procedural::ScalarField2D& peak_support,
+    const cubey::procedural::ScalarField2D& broad_relief, float max_uplift_m) {
+    cubey::procedural::ScalarField2D result(peak_support.desc(), 0.0F);
+    for (std::uint32_t y = 0; y < peak_support.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < peak_support.desc().width; ++x) {
+            const float relief_gate = cubey::procedural::smoothstep(40.0F, 320.0F,
+                                                                    broad_relief.at(x, y));
+            result.at(x, y) = peak_support.at(x, y) * relief_gate * max_uplift_m;
         }
     }
     return result;
@@ -504,51 +626,69 @@ struct RoutingRepairResult {
 [[nodiscard]] cubey::procedural::ScalarField2D add_height_fields(
     const cubey::procedural::ScalarField2D& base,
     const cubey::procedural::ScalarField2D& broad_relief,
+    const cubey::procedural::ScalarField2D& mountain_uplift,
     const cubey::procedural::ScalarField2D& ridge_uplift,
+    const cubey::procedural::ScalarField2D& peak_uplift,
     const cubey::procedural::ScalarField2D& detail_residual) {
     cubey::procedural::ScalarField2D result(base.desc(), 0.0F);
     for (std::uint32_t y = 0; y < base.desc().height; ++y) {
         for (std::uint32_t x = 0; x < base.desc().width; ++x) {
-            result.at(x, y) = base.at(x, y) + broad_relief.at(x, y) + ridge_uplift.at(x, y) +
-                              detail_residual.at(x, y);
+            result.at(x, y) = base.at(x, y) + broad_relief.at(x, y) +
+                              mountain_uplift.at(x, y) + ridge_uplift.at(x, y) +
+                              peak_uplift.at(x, y) + detail_residual.at(x, y);
         }
     }
     return result;
 }
 
 [[nodiscard]] TerrainSourceFields make_terrain_source_fields(cubey::procedural::Grid2DDesc desc,
-                                                             std::uint64_t seed) {
+                                                             std::uint64_t seed,
+                                                             std::string_view recipe_id) {
+    const TerrainSourceProfile profile = terrain_source_profile(recipe_id);
     TerrainSourceFields fields{
         .broad_noise = unit_source_field(desc, seed + 101U, 0.00018F, 4U),
     };
     fields.base_elevation = make_base_elevation_field(desc, fields.broad_noise);
     fields.broad_relief =
         scale_unit_field(unit_source_field(desc, seed + 202U, 0.00042F, 5U), -80.0F, 360.0F);
+    if (profile.explicit_mountain_driver) {
+        fields.mountain_support = mountain_support_field(desc, seed + 251U);
+        fields.ridge_support =
+            mountain_ridge_support_field(desc, seed + 303U, fields.mountain_support);
+        fields.peak_support =
+            peak_support_field(desc, seed + 505U, fields.mountain_support, fields.ridge_support);
+    } else {
+        fields.mountain_support = zero_field(desc);
+        fields.ridge_support = ridge_source_field(desc, seed + 303U);
+        fields.peak_support = zero_field(desc);
+    }
+    fields.mountain_uplift =
+        make_mountain_uplift_field(fields.mountain_support, profile.mountain_uplift_m);
     fields.ridge_uplift =
-        make_ridge_uplift_field(ridge_source_field(desc, seed + 303U), fields.broad_relief);
+        make_ridge_uplift_field(fields.ridge_support, fields.broad_relief,
+                                profile.ridge_uplift_m);
+    fields.peak_uplift =
+        make_peak_uplift_field(fields.peak_support, fields.broad_relief, profile.peak_uplift_m);
     fields.detail_residual =
-        scale_unit_field(unit_source_field(desc, seed + 404U, 0.0018F, 4U), -38.0F, 52.0F);
+        scale_unit_field(unit_source_field(desc, seed + 404U, 0.0018F, 4U),
+                         profile.detail_min_m, profile.detail_max_m);
     fields.detail_residual = cubey::procedural::box_blur_3x3(fields.detail_residual);
     fields.height = add_height_fields(fields.base_elevation, fields.broad_relief,
-                                      fields.ridge_uplift, fields.detail_residual);
+                                      fields.mountain_uplift, fields.ridge_uplift,
+                                      fields.peak_uplift, fields.detail_residual);
     return fields;
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D make_routing_source_height(
-    cubey::procedural::Grid2DDesc desc, std::uint64_t seed) {
-    const cubey::procedural::ScalarField2D broad_noise =
-        unit_source_field(desc, seed + 101U, 0.00018F, 4U);
-    cubey::procedural::ScalarField2D broad_relief =
-        scale_unit_field(unit_source_field(desc, seed + 202U, 0.00042F, 5U), -80.0F, 360.0F);
-    const cubey::procedural::ScalarField2D ridge_uplift =
-        make_ridge_uplift_field(ridge_source_field(desc, seed + 303U), broad_relief);
+    cubey::procedural::Grid2DDesc desc, std::uint64_t seed, std::string_view recipe_id) {
+    const TerrainSourceFields fields = make_terrain_source_fields(desc, seed, recipe_id);
     cubey::procedural::ScalarField2D result(desc, 0.0F);
-    const cubey::procedural::ScalarField2D base_elevation =
-        make_base_elevation_field(desc, broad_noise);
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
-            result.at(x, y) =
-                base_elevation.at(x, y) + broad_relief.at(x, y) + (ridge_uplift.at(x, y) * 0.55F);
+            result.at(x, y) = fields.base_elevation.at(x, y) + fields.broad_relief.at(x, y) +
+                              (fields.mountain_uplift.at(x, y) * 0.65F) +
+                              (fields.ridge_uplift.at(x, y) * 0.55F) +
+                              (fields.peak_uplift.at(x, y) * 0.35F);
         }
     }
     return result;
@@ -5566,12 +5706,13 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
 
 [[nodiscard]] RoutingContext make_routing_context(cubey::procedural::Grid2DDesc visible_desc,
                                                   std::uint64_t seed,
-                                                  const RiverNetworkSettings& settings) {
+                                                  const RiverNetworkSettings& settings,
+                                                  std::string_view recipe_id) {
     RoutingContext context{
         .domain = make_routing_domain(visible_desc),
     };
     const cubey::procedural::ScalarField2D routing_height =
-        make_routing_source_height(context.domain.hidden_desc, seed);
+        make_routing_source_height(context.domain.hidden_desc, seed, recipe_id);
     const cubey::procedural::ScalarField2D raw_routing_surface =
         make_drainage_routing_surface(routing_height, seed, settings);
     RoutingRepairResult repaired_routing =
@@ -5610,7 +5751,8 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
                                             const TerrainRegionConfig& config) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
     const RiverNetworkSettings settings = river_network_settings(config.recipe_id);
-    const RoutingContext context = make_routing_context(desc, config.seed, settings);
+    const RoutingContext context = make_routing_context(desc, config.seed, settings,
+                                                       config.recipe_id);
     RiverFields fields{
         .drainage_potential = crop_hidden_field_to_visible(context.routing_surface, context.domain),
         .routing_fill_delta = crop_hidden_field_to_visible(context.routing_fill_delta,
@@ -5782,7 +5924,8 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     TerrainRegionProduct product = make_empty_terrain_region_product(config);
     const cubey::procedural::Grid2DDesc desc = product.fields.desc();
 
-    TerrainSourceFields source_fields = make_terrain_source_fields(desc, config.seed);
+    TerrainSourceFields source_fields =
+        make_terrain_source_fields(desc, config.seed, config.recipe_id);
     const cubey::procedural::SlopeCurvature2D slope_curvature =
         cubey::procedural::compute_slope_curvature(source_fields.height);
     const cubey::procedural::LocalRelief2D local_relief =
@@ -5804,7 +5947,14 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
 
     add_field(product.fields, kTerrainFieldBaseElevation, std::move(source_fields.base_elevation));
     add_field(product.fields, kTerrainFieldBroadRelief, std::move(source_fields.broad_relief));
+    add_field(product.fields, kTerrainFieldMountainSupport,
+              std::move(source_fields.mountain_support));
+    add_field(product.fields, kTerrainFieldRidgeSupport, std::move(source_fields.ridge_support));
+    add_field(product.fields, kTerrainFieldPeakSupport, std::move(source_fields.peak_support));
+    add_field(product.fields, kTerrainFieldMountainUplift,
+              std::move(source_fields.mountain_uplift));
     add_field(product.fields, kTerrainFieldRidgeUplift, std::move(source_fields.ridge_uplift));
+    add_field(product.fields, kTerrainFieldPeakUplift, std::move(source_fields.peak_uplift));
     add_field(product.fields, kTerrainFieldDetailResidual, std::move(source_fields.detail_residual));
     add_field(product.fields, kTerrainFieldHeightM, std::move(source_fields.height));
     add_field(product.fields, kTerrainFieldSlope, slope_curvature.slope);

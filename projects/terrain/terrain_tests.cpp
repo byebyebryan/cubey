@@ -428,11 +428,16 @@ void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 27> required_fields{
+    const std::array<std::string_view, 32> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
         cubey::projects::terrain::kTerrainFieldBroadRelief,
+        cubey::projects::terrain::kTerrainFieldMountainSupport,
+        cubey::projects::terrain::kTerrainFieldRidgeSupport,
+        cubey::projects::terrain::kTerrainFieldPeakSupport,
+        cubey::projects::terrain::kTerrainFieldMountainUplift,
         cubey::projects::terrain::kTerrainFieldRidgeUplift,
+        cubey::projects::terrain::kTerrainFieldPeakUplift,
         cubey::projects::terrain::kTerrainFieldDetailResidual,
         cubey::projects::terrain::kTerrainFieldSlope,
         cubey::projects::terrain::kTerrainFieldCurvature,
@@ -553,6 +558,81 @@ void test_terrain_stress_recipe_expands_river_network() {
             "terrain stress recipe should increase high-strength river coverage");
     require(stress.summary.river_coverage < 0.25F,
             "terrain stress recipe should not flood the whole review patch");
+}
+
+void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 257;
+    config.grid_height = 257;
+    const cubey::projects::terrain::TerrainRegionProduct baseline =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    config.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress);
+    const cubey::projects::terrain::TerrainRegionProduct mountain =
+        cubey::projects::terrain::generate_terrain_region(config);
+    const cubey::projects::terrain::TerrainRegionProduct repeat =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const auto& baseline_mountain_uplift =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainUplift);
+    const auto& baseline_peak_uplift =
+        field(baseline, cubey::projects::terrain::kTerrainFieldPeakUplift);
+    const auto& mountain_support =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainSupport);
+    const auto& ridge_support =
+        field(mountain, cubey::projects::terrain::kTerrainFieldRidgeSupport);
+    const auto& peak_support =
+        field(mountain, cubey::projects::terrain::kTerrainFieldPeakSupport);
+    const auto& mountain_uplift =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainUplift);
+    const auto& ridge_uplift =
+        field(mountain, cubey::projects::terrain::kTerrainFieldRidgeUplift);
+    const auto& peak_uplift =
+        field(mountain, cubey::projects::terrain::kTerrainFieldPeakUplift);
+
+    require(mountain.config.recipe_id ==
+                cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress,
+            "terrain mountain recipe should preserve the requested recipe id");
+    require(mountain.summary.content_hash == repeat.summary.content_hash,
+            "terrain mountain recipe should be deterministic");
+    require(mountain.summary.content_hash != baseline.summary.content_hash,
+            "terrain mountain recipe should produce a distinct product hash");
+    require(baseline_mountain_uplift.summarize().max == 0.0F,
+            "default terrain recipe should keep broad mountain uplift disabled");
+    require(baseline_peak_uplift.summarize().max == 0.0F,
+            "default terrain recipe should keep peak uplift disabled");
+
+    const std::size_t total_samples = mountain_support.sample_count();
+    const std::size_t mountain_support_samples = count_active_samples(mountain_support, 0.30F);
+    const std::size_t ridge_support_samples = count_active_samples(ridge_support, 0.30F);
+    const std::size_t peak_support_samples = count_active_samples(peak_support, 0.20F);
+    if (mountain_support_samples * 100U < total_samples * 12U ||
+        mountain_support_samples * 100U > total_samples * 78U) {
+        throw std::runtime_error(
+            "terrain mountain support should be broad but bounded: samples=" +
+            std::to_string(mountain_support_samples) + " total=" + std::to_string(total_samples));
+    }
+    if (ridge_support_samples * 100U < total_samples * 3U ||
+        ridge_support_samples * 100U > total_samples * 58U) {
+        throw std::runtime_error(
+            "terrain ridge support should be visible but not full-map: samples=" +
+            std::to_string(ridge_support_samples) + " total=" + std::to_string(total_samples));
+    }
+    if (peak_support_samples < 32U || peak_support_samples * 100U > total_samples * 34U) {
+        throw std::runtime_error(
+            "terrain peak support should produce localized summit accents: samples=" +
+            std::to_string(peak_support_samples) + " total=" + std::to_string(total_samples));
+    }
+
+    require(mountain.summary.height.span > baseline.summary.height.span,
+            "terrain mountain recipe should increase height relief");
+    require(mountain_uplift.summarize().max > 160.0F,
+            "terrain mountain recipe should emit broad mountain uplift");
+    require(ridge_uplift.summarize().max > 220.0F,
+            "terrain mountain recipe should emit stronger ridge uplift");
+    require(peak_uplift.summarize().max > 24.0F,
+            "terrain mountain recipe should emit peak uplift");
 }
 
 void test_terrain_review_river_coverage_is_meaningful() {
@@ -869,6 +949,21 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("final") ==
                 cubey::projects::terrain::TerrainDebugView::Final,
             "terrain debug view should parse final");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_support") ==
+                cubey::projects::terrain::TerrainDebugView::MountainSupport,
+            "terrain debug view should parse mountain support aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("ridge_support") ==
+                cubey::projects::terrain::TerrainDebugView::RidgeSupport,
+            "terrain debug view should parse ridge support aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("peak_support") ==
+                cubey::projects::terrain::TerrainDebugView::PeakSupport,
+            "terrain debug view should parse peak support aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_uplift") ==
+                cubey::projects::terrain::TerrainDebugView::MountainUplift,
+            "terrain debug view should parse mountain uplift aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("peak_uplift") ==
+                cubey::projects::terrain::TerrainDebugView::PeakUplift,
+            "terrain debug view should parse peak uplift aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("flow_accumulation") ==
                 cubey::projects::terrain::TerrainDebugView::FlowAccumulation,
             "terrain debug view should accept underscore aliases");
@@ -955,6 +1050,7 @@ int main() {
     test_terrain_product_has_useful_ranges();
     test_terrain_product_is_deterministic();
     test_terrain_stress_recipe_expands_river_network();
+    test_terrain_mountain_range_stress_recipe_exposes_mountain_driver();
     test_terrain_review_river_coverage_is_meaningful();
     test_terrain_materials_and_vegetation_are_bounded();
     test_terrain_river_network_has_continuous_active_channels();
