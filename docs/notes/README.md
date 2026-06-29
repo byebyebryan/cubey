@@ -99,7 +99,7 @@ the detailed foundation notes under `docs/architecture/`.
   river/lake/wetland/coast/ocean boundaries before moving from river work to the
   next terrain driver.
 - [Terrain mountain driver plan](terrain-mountain-driver-plan.md):
-  revision 19 target for explicit mountain support, ridge, peak, and uplift
+  revision 19 implementation for explicit mountain support, ridge, peak, and uplift
   fields in an isolated mountain-range stress recipe.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future

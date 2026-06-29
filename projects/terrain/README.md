@@ -17,7 +17,7 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `18`. It emits source fields, height/slope
+The current generator revision is `19`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass now repairs local routing pits with a bounded priority-flood
@@ -53,6 +53,11 @@ Revision 18 keeps the public field contract stable but changes stress hierarchy:
 `river_trunk` now means major channels, so selected high-discharge/high-order
 graph tributaries are painted with the mainstem while smaller attached branches
 remain in `tributaries`.
+Revision 19 adds explicit mountain source products: broad mountain support,
+ridge support, peak support, mountain uplift, and peak uplift. The new
+`temperate-mountain-range-stress` recipe is an isolated mountain-driver review
+slice; existing river recipes emit the fields but keep broad mountain and peak
+uplift disabled for stability.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -69,6 +74,8 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --terrain-debug-view all --terrain-output-dir outputs/terrain/current-river-network
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
+./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress
+./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress-1025
 ```
 
 ## Current Review Outputs
@@ -84,7 +91,12 @@ The review set includes:
 - `final.png`
 - `height.png`
 - `slope.png`
+- `mountain-support.png`
+- `ridge-support.png`
+- `peak-support.png`
+- `mountain-uplift.png`
 - `ridge-uplift.png`
+- `peak-uplift.png`
 - `drainage-potential.png`
 - `routing-fill-delta.png`
 - `flow-direction.png`
@@ -128,7 +140,14 @@ also exports `river-graph-plan.png` and `river-graph-discharge.png` so the
 source topology can be reviewed independently from the rendered river mask.
 Revision 18 promotes selected major graph tributaries into `river_trunk` while
 leaving smaller graph paths in `tributaries`.
-Treat it as a diagnostic recipe, not the default product target.
+
+The optional `temperate-mountain-range-stress` recipe uses the same product
+contract to review mountain shape independently from the river stress graph. It
+adds broad mountain mass from `mountain-support.png`, sharper ridge structure
+from `ridge-support.png`, localized summit accents from `peak-support.png`, and
+routes over a softened combination of those uplifts without including fine
+detail.
+Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
 plus routed flow accumulation over a padded hidden routing domain. Revision `17`

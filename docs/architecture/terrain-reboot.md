@@ -220,10 +220,10 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `16` emits deterministic source fields,
-height/slope analysis, repaired routing diagnostics, smoothed active river trunk
-and tributary masks, wetness/deposition, material masks, vegetation potential,
-summaries, and tests.
+local region. Generator revision `19` emits deterministic source fields,
+explicit mountain support/ridge/peak/uplift fields, height/slope analysis,
+repaired routing diagnostics, smoothed active river trunk and tributary masks,
+wetness/deposition, material masks, vegetation potential, summaries, and tests.
 
 The river driver intentionally moved away from a single authored line. It routes
 over a coherent low-frequency drainage potential derived from the terrain seed
@@ -309,6 +309,22 @@ tributary fingers are filtered. It is still not the final broad river-network
 model; the stress product currently favors a clean connected mainstem with
 some attached branches over forcing a third crop-edge branch.
 
+Revision 17 pivots the stress recipe to a deterministic graph-first river source
+over the padded hidden domain. The graph is a source topology and diagnostic,
+not the rendered product mask; accepted graph paths still pass through the
+channel rasterization pipeline.
+
+Revision 18 promotes selected high-discharge or high-order graph tributaries
+into `river_trunk` with the mainstem. Smaller attached graph paths remain in
+`tributaries`, so the hierarchy reads as major channels versus smaller branches
+instead of trunk-as-one-line.
+
+Revision 19 adds an isolated `temperate-mountain-range-stress` recipe and makes
+mountain structure first-class in the product: `mountain_support`,
+`ridge_support`, `peak_support`, `mountain_uplift`, `ridge_uplift`, and
+`peak_uplift`. Existing river recipes still emit the new fields, but broad
+mountain and peak uplift are disabled there so the river work remains stable.
+
 Known limitations:
 
 - Fractional accumulation reduces receiver quantization, but active trunk
@@ -327,6 +343,9 @@ Known limitations:
   evolved hydrology.
 - Stress generation is currently expensive enough that performance should be
   revisited before adding heavier hydrology checks.
+- The mountain stress recipe is an early diagnostic driver, not a finished
+  alpine biome. It does not yet include erosion time, talus, snow/ice, glacial
+  valley carving, or world-scale range continuity.
 - The final PNG is an inspectable debug composition, not the target renderer.
 
 A revision 4 experiment tried replacing the active river product with direct
@@ -360,7 +379,7 @@ more biome labels:
 3. Replace the current support-path hierarchy and distinctness classifier with a
    more principled basin/tributary model so visual coverage does not depend on
    capped promoted branch counts.
-4. Split mountain/ridge drivers into explicit terrain products instead of
-   treating mountains as only material response over height noise.
+4. Refine the revision 19 mountain driver with better range continuity, ridge
+   hierarchy, peak placement, and slope/detail layering.
 5. Add capture summaries or manifest metadata for the review set so image
    artifacts can be compared without relying only on manual inspection.

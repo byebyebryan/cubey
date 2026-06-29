@@ -2,11 +2,13 @@
 
 Date: 2026-06-29
 
+Status: implemented in generator revision 19.
+
 This note captures the first mountain-driver batch after the river-network
-stress work. The current revision 18 terrain product has coherent base relief
-and `ridge_uplift`, but mountains are still mostly a height-noise response. The
-next batch should make mountain structure inspectable as source fields before
-adding glacial valleys, snow, lakes, or biome polish.
+stress work. Before this pass, the revision 18 terrain product had coherent base
+relief and `ridge_uplift`, but mountains were still mostly a height-noise
+response. Revision 19 makes mountain structure inspectable as source fields
+before adding glacial valleys, snow, lakes, or biome polish.
 
 ## Current Gap
 

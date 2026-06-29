@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 18
-graph major-channel promotion pass.
+This note records the current terrain reboot capture set after the revision 19
+mountain-driver pass.
 
 ## Capture Command
 
@@ -9,15 +9,20 @@ graph major-channel promotion pass.
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --terrain-debug-view all --terrain-output-dir outputs/terrain/current-river-network
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
+./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress
+./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress-1025
 ```
 
-The primary review images are `513x513` PNGs under `outputs/`, with a `1025x1025`
-stress capture for larger network inspection. `outputs/` is intentionally
+The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
+stress captures for larger river-network and mountain-driver inspection. `outputs/` is intentionally
 ignored by git. This replaced the earlier tiny local output set so field
 structure, channel continuity, and material response are easier to inspect.
 `outputs/terrain/current-river-network` is the default product review. The optional
 `outputs/terrain/stress-river-network` set uses the diagnostic stress recipe to
-stress-test broader river-network shape and coverage. Revision 12
+stress-test broader river-network shape and coverage. The optional
+`outputs/terrain/mountain-range-stress` set uses the isolated revision 19
+mountain source profile to inspect range support, ridge structure, and peak
+uplift without retuning the river graph stress recipe. Revision 12
 restores some active network coverage after the first degrid/pruning pass while
 spacing accepted support paths to avoid near-duplicate branch bundles. Revision
 13 keeps the same routing source but promotes major stress support/order-seed
@@ -41,6 +46,11 @@ stay diagnostic source views. This graph is still patch-local over the padded
 hidden domain; later world-scale terrain work should move topology planning into
 deterministic world-coordinate basin graph data and let local products rasterize
 only the tile plus halo.
+Revision 19 expands the product contract with explicit mountain fields:
+`mountain_support`, `ridge_support`, `peak_support`, `mountain_uplift`, and
+`peak_uplift`. The existing river recipes emit those fields while keeping broad
+mountain and peak uplift disabled; the new `temperate-mountain-range-stress`
+recipe opts into them for mountain-driver review.
 
 ## What To Inspect
 
@@ -75,8 +85,19 @@ only the tile plus halo.
   valley width, wetness, deposition, material, and final debug rendering.
 - `channel-width.png`: channel-width product derived from active river strength
   and discharge. Use this to check that trunk/tributary width is not uniform.
-- `height.png`, `slope.png`, and `ridge-uplift.png`: current mountain/base
-  terrain sources that still need a stronger mountain-driver pass.
+- `mountain-support.png`: broad range mask. It should read as regional mountain
+  mass, not as isolated authored circles or quadrant blocks.
+- `ridge-support.png`: ridged structure gated by mountain support. It should
+  show coherent ridge webs inside broad support, not full-map noise.
+- `peak-support.png`: localized summit accents derived from the coherent ridge
+  fields. It should stay sparse and attached to ridge regions.
+- `mountain-uplift.png`, `ridge-uplift.png`, and `peak-uplift.png`: height
+  contributions from the support fields. Review these before judging
+  `height.png`, because the final height also includes base relief and residual
+  detail.
+- `height.png` and `slope.png`: combined terrain shape and derivative response.
+  The mountain stress recipe is the best current view for checking whether the
+  new driver creates recognizable range mass before biome or glacial polish.
 
 For `outputs/terrain/stress-river-network`, look for failures that the smaller
 default network may hide: repeated parallel channels, schematic branch fans,
@@ -125,6 +146,8 @@ once so shared downstream paths do not become parallel offset copies. The
 revision 18 hierarchy pass promotes selected graph paths into `river_trunk`
 based on graph discharge, stream order, visible length, and novelty against the
 current trunk skeleton, then leaves the remaining graph paths in `tributaries`.
+Revision 19 keeps the river graph path unchanged and adds mountain source fields
+as product diagnostics instead of hiding them inside `ridge_uplift`.
 The rejected revision 4 attempt made the visible product worse by rendering selected
 graph edges directly, producing disconnected snippets and hard straight or
 diagonal runs. See
@@ -153,3 +176,10 @@ capture also shows the patch-local limitation: some promoted major channels are
 cut by the visible crop without the larger basin context that would make their
 upstream/downstream role clearer. The next river-quality pass should improve
 graph topology construction before adding more high-level terrain features.
+
+The revision 19 mountain driver is still an early diagnostic source profile, not
+a polished alpine biome. It separates broad support, ridges, and peak accents,
+but it does not yet model tectonic plates, erosion time, talus, snow/ice,
+glacial valley carving, or a world-scale range graph. The next mountain-quality
+pass should focus on range continuity, ridge hierarchy, and slope/detail
+layering before turning these fields into final biome compositions.
