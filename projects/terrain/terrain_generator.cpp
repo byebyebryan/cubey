@@ -1,6 +1,7 @@
 #include "terrain_generator.h"
 
 #include <cubey/procedural/operators.h>
+#include <cubey/procedural/seed.h>
 #include <cubey/procedural/source_fields.h>
 
 #include <algorithm>
@@ -43,6 +44,8 @@ struct RiverFields {
     cubey::procedural::ScalarField2D river_mask{};
     cubey::procedural::ScalarField2D river_trunk{};
     cubey::procedural::ScalarField2D tributaries{};
+    cubey::procedural::ScalarField2D river_graph_plan{};
+    cubey::procedural::ScalarField2D river_graph_discharge{};
     cubey::procedural::ScalarField2D sink_mask{};
     cubey::procedural::ScalarField2D channel_width{};
     cubey::procedural::ScalarField2D valley_width{};
@@ -237,6 +240,32 @@ struct FlowVector {
     float x = 0.0F;
     float y = 0.0F;
     bool valid = false;
+};
+
+struct RiverGraphNode {
+    float x = 0.0F;
+    float y = 0.0F;
+    float potential = 0.0F;
+    FlowVector flow{};
+    std::vector<int> neighbors{};
+    std::vector<int> upstream{};
+    int downstream = -1;
+    bool active = false;
+    bool trunk = false;
+    float discharge = 0.0F;
+    float normalized_discharge = 0.0F;
+    float stream_order = 1.0F;
+};
+
+struct RiverGraphPath {
+    std::vector<int> nodes{};
+    bool trunk = false;
+};
+
+struct RiverNetworkPlan {
+    std::vector<RiverGraphNode> nodes{};
+    std::vector<RiverGraphPath> paths{};
+    std::vector<int> mainstem{};
 };
 
 struct RoutingRepairResult {
@@ -2345,6 +2374,14 @@ void paint_hidden_index_connector(cubey::procedural::ScalarField2D& field,
     std::uint64_t paint_seed, float support_core_scale = 1.0F,
     float support_falloff_scale = 1.0F, bool connect_to_existing_trunk = false);
 
+void soften_active_channels(RiverFields& fields, const RiverNetworkSettings& settings);
+
+void soften_channel_field(cubey::procedural::ScalarField2D& field, int passes, float gain);
+
+void activate_river_network_fallback(RiverFields& fields, const RoutingContext& context,
+                                     std::uint64_t seed,
+                                     const RiverNetworkSettings& settings);
+
 void update_component_visibility(RiverCorridorComponent& component,
                                  const RoutingContext& context, int index,
                                  float trunk_stream_order) {
@@ -3010,6 +3047,46 @@ void snap_trunk_endpoints_to_visible_edges(std::vector<ChannelPathPoint>& points
     constexpr float kMaxEndpointSnapDistanceCells = 18.0F;
     snap_channel_endpoint_to_visible_edge(points.front(), domain, kMaxEndpointSnapDistanceCells);
     snap_channel_endpoint_to_visible_edge(points.back(), domain, kMaxEndpointSnapDistanceCells);
+}
+
+void extend_channel_endpoint_to_visible_edge_along_tangent(ChannelPathPoint& point,
+                                                           const ChannelPathPoint& neighbor,
+                                                           const RoutingDomain& domain,
+                                                           float max_distance_cells) {
+    if (!is_inside_visible_crop(domain, point)) {
+        return;
+    }
+    float dx = point.x - neighbor.x;
+    float dy = point.y - neighbor.y;
+    const float length = std::sqrt((dx * dx) + (dy * dy));
+    if (length <= 0.0001F) {
+        snap_channel_endpoint_to_visible_edge(point, domain, max_distance_cells);
+        return;
+    }
+    dx /= length;
+    dy /= length;
+
+    const float min_x = static_cast<float>(domain.padding_x);
+    const float max_x = static_cast<float>(domain.padding_x + domain.visible_desc.width - 1U);
+    const float min_y = static_cast<float>(domain.padding_y);
+    const float max_y = static_cast<float>(domain.padding_y + domain.visible_desc.height - 1U);
+    float best_t = std::numeric_limits<float>::infinity();
+    if (dx > 0.0001F) {
+        best_t = std::min(best_t, (max_x - point.x) / dx);
+    } else if (dx < -0.0001F) {
+        best_t = std::min(best_t, (min_x - point.x) / dx);
+    }
+    if (dy > 0.0001F) {
+        best_t = std::min(best_t, (max_y - point.y) / dy);
+    } else if (dy < -0.0001F) {
+        best_t = std::min(best_t, (min_y - point.y) / dy);
+    }
+    if (!std::isfinite(best_t) || best_t < 0.0F || best_t > max_distance_cells) {
+        snap_channel_endpoint_to_visible_edge(point, domain, max_distance_cells);
+        return;
+    }
+    point.x += dx * best_t;
+    point.y += dy * best_t;
 }
 
 [[nodiscard]] int nearest_active_index(const cubey::procedural::Grid2DDesc& desc, int index,
@@ -3969,6 +4046,721 @@ void combine_river_mask(RiverFields& fields) {
     }
 }
 
+[[nodiscard]] float river_graph_node_distance(const RiverGraphNode& lhs,
+                                              const RiverGraphNode& rhs) {
+    const float dx = rhs.x - lhs.x;
+    const float dy = rhs.y - lhs.y;
+    return std::sqrt((dx * dx) + (dy * dy));
+}
+
+[[nodiscard]] FlowVector flow_vector_from_angle(float angle) {
+    if (angle < 0.0F) {
+        return {};
+    }
+    return FlowVector{
+        .x = std::cos(angle),
+        .y = std::sin(angle),
+        .valid = true,
+    };
+}
+
+[[nodiscard]] std::vector<RiverGraphNode> make_river_graph_nodes(const RoutingContext& context,
+                                                                 std::uint64_t seed) {
+    const cubey::procedural::Grid2DDesc& desc = context.domain.hidden_desc;
+    const std::uint32_t visible_min =
+        std::min(context.domain.visible_desc.width, context.domain.visible_desc.height);
+    const float spacing = static_cast<float>(std::clamp(visible_min / 15U, 16U, 44U));
+    const std::uint32_t x_count =
+        std::max<std::uint32_t>(4U, static_cast<std::uint32_t>(
+                                        std::ceil(static_cast<float>(desc.width) / spacing)));
+    const std::uint32_t y_count =
+        std::max<std::uint32_t>(4U, static_cast<std::uint32_t>(
+                                        std::ceil(static_cast<float>(desc.height) / spacing)));
+
+    std::vector<RiverGraphNode> nodes;
+    nodes.reserve(static_cast<std::size_t>(x_count) * static_cast<std::size_t>(y_count));
+    for (std::uint32_t gy = 0; gy < y_count; ++gy) {
+        for (std::uint32_t gx = 0; gx < x_count; ++gx) {
+            const std::uint32_t sample_index = gy * x_count + gx;
+            const float jitter_x =
+                (cubey::procedural::random01(seed, "terrain.river.graph.node", sample_index, 0U) -
+                 0.5F) *
+                spacing * 0.72F;
+            const float jitter_y =
+                (cubey::procedural::random01(seed, "terrain.river.graph.node", sample_index, 1U) -
+                 0.5F) *
+                spacing * 0.72F;
+            const float x = std::clamp((static_cast<float>(gx) + 0.5F) * spacing + jitter_x,
+                                       1.0F, static_cast<float>(desc.width - 2U));
+            const float y = std::clamp((static_cast<float>(gy) + 0.5F) * spacing + jitter_y,
+                                       1.0F, static_cast<float>(desc.height - 2U));
+            nodes.push_back(RiverGraphNode{
+                .x = x,
+                .y = y,
+                .potential = sample_field_bilinear(context.routing_surface, x, y),
+                .flow = flow_vector_from_angle(
+                    sample_field_bilinear(context.routing.flow_direction, x, y)),
+            });
+        }
+    }
+
+    const float max_neighbor_distance = spacing * 1.85F;
+    const float max_neighbor_distance_sq = max_neighbor_distance * max_neighbor_distance;
+    for (std::size_t index = 0; index < nodes.size(); ++index) {
+        std::vector<std::pair<float, int>> neighbors;
+        neighbors.reserve(10U);
+        for (std::size_t other = 0; other < nodes.size(); ++other) {
+            if (other == index) {
+                continue;
+            }
+            const float dx = nodes[other].x - nodes[index].x;
+            const float dy = nodes[other].y - nodes[index].y;
+            const float distance_sq = (dx * dx) + (dy * dy);
+            if (distance_sq <= max_neighbor_distance_sq) {
+                neighbors.emplace_back(distance_sq, static_cast<int>(other));
+            }
+        }
+        std::sort(neighbors.begin(), neighbors.end(),
+                  [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
+        const std::size_t keep_count = std::min<std::size_t>(neighbors.size(), 9U);
+        nodes[index].neighbors.reserve(keep_count);
+        for (std::size_t neighbor = 0; neighbor < keep_count; ++neighbor) {
+            nodes[index].neighbors.push_back(neighbors[neighbor].second);
+        }
+    }
+
+    return nodes;
+}
+
+[[nodiscard]] bool river_graph_node_inside_visible(const RoutingDomain& domain,
+                                                   const RiverGraphNode& node) {
+    return node.x >= static_cast<float>(domain.padding_x) &&
+           node.y >= static_cast<float>(domain.padding_y) &&
+           node.x <= static_cast<float>(domain.padding_x + domain.visible_desc.width - 1U) &&
+           node.y <= static_cast<float>(domain.padding_y + domain.visible_desc.height - 1U);
+}
+
+[[nodiscard]] bool river_graph_node_near_visible_edge(const RoutingDomain& domain,
+                                                      const RiverGraphNode& node,
+                                                      float edge_band_cells) {
+    if (!river_graph_node_inside_visible(domain, node)) {
+        return false;
+    }
+    const float left = node.x - static_cast<float>(domain.padding_x);
+    const float right =
+        static_cast<float>(domain.padding_x + domain.visible_desc.width - 1U) - node.x;
+    const float top = node.y - static_cast<float>(domain.padding_y);
+    const float bottom =
+        static_cast<float>(domain.padding_y + domain.visible_desc.height - 1U) - node.y;
+    return std::min(std::min(left, right), std::min(top, bottom)) <= edge_band_cells;
+}
+
+[[nodiscard]] int select_river_graph_outlet(const RiverNetworkPlan& plan,
+                                            const RoutingDomain& domain) {
+    int best = -1;
+    float best_score = -std::numeric_limits<float>::infinity();
+    const float edge_band = std::max(12.0F, static_cast<float>(
+                                                std::min(domain.visible_desc.width,
+                                                         domain.visible_desc.height)) *
+                                                0.10F);
+    for (std::size_t index = 0; index < plan.nodes.size(); ++index) {
+        const RiverGraphNode& node = plan.nodes[index];
+        if (!river_graph_node_inside_visible(domain, node)) {
+            continue;
+        }
+        const float nx = (node.x - static_cast<float>(domain.padding_x)) /
+                         static_cast<float>(domain.visible_desc.width - 1U);
+        const float ny = (node.y - static_cast<float>(domain.padding_y)) /
+                         static_cast<float>(domain.visible_desc.height - 1U);
+        const float edge_score =
+            river_graph_node_near_visible_edge(domain, node, edge_band) ? 2200.0F : 0.0F;
+        const float grade_score = ((nx * 0.32F) + (ny * 0.68F)) * 900.0F;
+        const float score = -node.potential + edge_score + grade_score;
+        if (score > best_score) {
+            best_score = score;
+            best = static_cast<int>(index);
+        }
+    }
+    return best;
+}
+
+[[nodiscard]] float river_graph_edge_cost(const RiverNetworkPlan& plan, int from, int to) {
+    const RiverGraphNode& source = plan.nodes[static_cast<std::size_t>(from)];
+    const RiverGraphNode& target = plan.nodes[static_cast<std::size_t>(to)];
+    const float distance = std::max(river_graph_node_distance(source, target), 0.001F);
+    const float dx = (target.x - source.x) / distance;
+    const float dy = (target.y - source.y) / distance;
+    const float potential_climb = std::max(0.0F, target.potential - source.potential);
+    const float axis_penalty =
+        (std::abs(dx) < 0.18F || std::abs(dy) < 0.18F) ? distance * 2.65F : 0.0F;
+    const float diagonal_penalty =
+        std::abs(std::abs(dx) - std::abs(dy)) < 0.12F ? distance * 0.95F : 0.0F;
+    float flow_penalty = distance * 0.80F;
+    if (source.flow.valid) {
+        const float alignment = (source.flow.x * dx) + (source.flow.y * dy);
+        flow_penalty = distance * cubey::procedural::saturate(1.0F - alignment) * 1.35F;
+        if (alignment < -0.25F) {
+            flow_penalty += distance * 2.25F;
+        }
+    }
+    const float grade_penalty = potential_climb * 0.055F;
+    const float short_edge_bonus = distance * 0.18F;
+    return distance + flow_penalty + grade_penalty + short_edge_bonus + axis_penalty +
+           diagonal_penalty;
+}
+
+[[nodiscard]] float river_graph_min_distance_to_active(const RiverNetworkPlan& plan, int node) {
+    float best = std::numeric_limits<float>::infinity();
+    const RiverGraphNode& source = plan.nodes[static_cast<std::size_t>(node)];
+    for (const RiverGraphNode& active : plan.nodes) {
+        if (!active.active) {
+            continue;
+        }
+        best = std::min(best, river_graph_node_distance(source, active));
+    }
+    return best;
+}
+
+[[nodiscard]] std::vector<int> find_river_graph_path_to_active(const RiverNetworkPlan& plan,
+                                                               int source,
+                                                               float near_active_radius) {
+    if (source < 0 || plan.nodes[static_cast<std::size_t>(source)].active) {
+        return {};
+    }
+
+    struct QueueItem {
+        float cost = 0.0F;
+        int node = -1;
+    };
+    struct QueueItemGreater {
+        bool operator()(const QueueItem& lhs, const QueueItem& rhs) const {
+            return lhs.cost > rhs.cost;
+        }
+    };
+
+    std::priority_queue<QueueItem, std::vector<QueueItem>, QueueItemGreater> queue;
+    std::vector<float> cost(plan.nodes.size(), std::numeric_limits<float>::infinity());
+    std::vector<int> parent(plan.nodes.size(), -1);
+    cost[static_cast<std::size_t>(source)] = 0.0F;
+    queue.push(QueueItem{.cost = 0.0F, .node = source});
+
+    int target = -1;
+    while (!queue.empty()) {
+        const QueueItem item = queue.top();
+        queue.pop();
+        if (item.cost != cost[static_cast<std::size_t>(item.node)]) {
+            continue;
+        }
+        if (plan.nodes[static_cast<std::size_t>(item.node)].active) {
+            target = item.node;
+            break;
+        }
+
+        for (const int neighbor : plan.nodes[static_cast<std::size_t>(item.node)].neighbors) {
+            float edge_cost = river_graph_edge_cost(plan, item.node, neighbor);
+            if (!plan.nodes[static_cast<std::size_t>(neighbor)].active &&
+                near_active_radius > 0.0F) {
+                const float active_distance = river_graph_min_distance_to_active(plan, neighbor);
+                if (active_distance < near_active_radius) {
+                    edge_cost += (near_active_radius - active_distance) * 3.25F;
+                }
+            }
+            const float next_cost = item.cost + edge_cost;
+            if (next_cost >= cost[static_cast<std::size_t>(neighbor)]) {
+                continue;
+            }
+            cost[static_cast<std::size_t>(neighbor)] = next_cost;
+            parent[static_cast<std::size_t>(neighbor)] = item.node;
+            queue.push(QueueItem{.cost = next_cost, .node = neighbor});
+        }
+    }
+
+    if (target < 0) {
+        return {};
+    }
+    std::vector<int> path;
+    int current = target;
+    while (current >= 0) {
+        path.push_back(current);
+        if (current == source) {
+            break;
+        }
+        current = parent[static_cast<std::size_t>(current)];
+    }
+    if (path.empty() || path.back() != source) {
+        return {};
+    }
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
+void add_river_graph_path(RiverNetworkPlan& plan, const std::vector<int>& path, bool trunk) {
+    if (path.size() < 2U) {
+        return;
+    }
+    for (std::size_t index = 0; index + 1U < path.size(); ++index) {
+        RiverGraphNode& node = plan.nodes[static_cast<std::size_t>(path[index])];
+        node.active = true;
+        node.downstream = path[index + 1U];
+    }
+    plan.nodes[static_cast<std::size_t>(path.back())].active = true;
+    plan.paths.push_back(RiverGraphPath{.nodes = path, .trunk = trunk});
+}
+
+[[nodiscard]] int select_river_graph_trunk_source(const RiverNetworkPlan& plan,
+                                                  const RoutingDomain& domain, int outlet) {
+    int best = -1;
+    float best_score = -std::numeric_limits<float>::infinity();
+    const RiverGraphNode& outlet_node = plan.nodes[static_cast<std::size_t>(outlet)];
+    for (std::size_t index = 0; index < plan.nodes.size(); ++index) {
+        const RiverGraphNode& node = plan.nodes[index];
+        if (!river_graph_node_inside_visible(domain, node)) {
+            continue;
+        }
+        const float distance = river_graph_node_distance(node, outlet_node);
+        const float potential_gain = node.potential - outlet_node.potential;
+        const float edge_score = river_graph_node_near_visible_edge(domain, node, 48.0F)
+                                     ? 950.0F
+                                     : 0.0F;
+        const float score = (distance * 18.0F) + (potential_gain * 0.45F) + edge_score;
+        if (score > best_score) {
+            best_score = score;
+            best = static_cast<int>(index);
+        }
+    }
+    return best;
+}
+
+[[nodiscard]] std::size_t visible_nodes_in_path(const RiverNetworkPlan& plan,
+                                                const RoutingDomain& domain,
+                                                const std::vector<int>& path) {
+    return static_cast<std::size_t>(std::count_if(path.begin(), path.end(), [&](int node) {
+        return river_graph_node_inside_visible(domain, plan.nodes[static_cast<std::size_t>(node)]);
+    }));
+}
+
+[[nodiscard]] std::size_t river_graph_path_new_coarse_tiles(
+    const RiverNetworkPlan& plan, const RoutingDomain& domain, const std::vector<int>& path,
+    const std::vector<bool>& active_tiles, std::uint32_t tile_count) {
+    if (tile_count == 0U) {
+        return 0U;
+    }
+    std::vector<bool> touched = active_tiles;
+    std::size_t new_tiles = 0U;
+    for (const int node_index : path) {
+        const RiverGraphNode& node = plan.nodes[static_cast<std::size_t>(node_index)];
+        if (!river_graph_node_inside_visible(domain, node)) {
+            continue;
+        }
+        const float vx = node.x - static_cast<float>(domain.padding_x);
+        const float vy = node.y - static_cast<float>(domain.padding_y);
+        const std::uint32_t tile_x = std::min(
+            tile_count - 1U,
+            static_cast<std::uint32_t>((vx / static_cast<float>(domain.visible_desc.width)) *
+                                       static_cast<float>(tile_count)));
+        const std::uint32_t tile_y = std::min(
+            tile_count - 1U,
+            static_cast<std::uint32_t>((vy / static_cast<float>(domain.visible_desc.height)) *
+                                       static_cast<float>(tile_count)));
+        const std::size_t tile = static_cast<std::size_t>(tile_y) * tile_count + tile_x;
+        if (!touched[tile]) {
+            touched[tile] = true;
+            ++new_tiles;
+        }
+    }
+    return new_tiles;
+}
+
+void mark_river_graph_path_tiles(const RiverNetworkPlan& plan, const RoutingDomain& domain,
+                                 const std::vector<int>& path, std::vector<bool>& active_tiles,
+                                 std::uint32_t tile_count) {
+    if (tile_count == 0U) {
+        return;
+    }
+    for (const int node_index : path) {
+        const RiverGraphNode& node = plan.nodes[static_cast<std::size_t>(node_index)];
+        if (!river_graph_node_inside_visible(domain, node)) {
+            continue;
+        }
+        const float vx = node.x - static_cast<float>(domain.padding_x);
+        const float vy = node.y - static_cast<float>(domain.padding_y);
+        const std::uint32_t tile_x = std::min(
+            tile_count - 1U,
+            static_cast<std::uint32_t>((vx / static_cast<float>(domain.visible_desc.width)) *
+                                       static_cast<float>(tile_count)));
+        const std::uint32_t tile_y = std::min(
+            tile_count - 1U,
+            static_cast<std::uint32_t>((vy / static_cast<float>(domain.visible_desc.height)) *
+                                       static_cast<float>(tile_count)));
+        active_tiles[static_cast<std::size_t>(tile_y) * tile_count + tile_x] = true;
+    }
+}
+
+[[nodiscard]] int select_river_graph_branch_source(const RiverNetworkPlan& plan,
+                                                   const RoutingDomain& domain,
+                                                   const std::vector<bool>& active_tiles,
+                                                   std::uint32_t tile_count,
+                                                   const std::vector<int>& used_sources) {
+    int best = -1;
+    float best_score = -std::numeric_limits<float>::infinity();
+    for (std::size_t index = 0; index < plan.nodes.size(); ++index) {
+        const RiverGraphNode& node = plan.nodes[index];
+        if (node.active || !river_graph_node_inside_visible(domain, node)) {
+            continue;
+        }
+        const float active_distance =
+            river_graph_min_distance_to_active(plan, static_cast<int>(index));
+        if (active_distance < 36.0F) {
+            continue;
+        }
+        bool near_used_source = false;
+        for (const int used_source : used_sources) {
+            if (river_graph_node_distance(node, plan.nodes[static_cast<std::size_t>(used_source)]) <
+                72.0F) {
+                near_used_source = true;
+                break;
+            }
+        }
+        if (near_used_source) {
+            continue;
+        }
+
+        const float vx = node.x - static_cast<float>(domain.padding_x);
+        const float vy = node.y - static_cast<float>(domain.padding_y);
+        const std::uint32_t tile_x = std::min(
+            tile_count - 1U,
+            static_cast<std::uint32_t>((vx / static_cast<float>(domain.visible_desc.width)) *
+                                       static_cast<float>(tile_count)));
+        const std::uint32_t tile_y = std::min(
+            tile_count - 1U,
+            static_cast<std::uint32_t>((vy / static_cast<float>(domain.visible_desc.height)) *
+                                       static_cast<float>(tile_count)));
+        const bool tile_is_new =
+            !active_tiles[static_cast<std::size_t>(tile_y) * tile_count + tile_x];
+        const float edge_score =
+            river_graph_node_near_visible_edge(domain, node, 42.0F) ? 500.0F : 0.0F;
+        const float score = (active_distance * 16.0F) + (node.potential * 0.22F) +
+                            (tile_is_new ? 1500.0F : 0.0F) + edge_score;
+        if (score > best_score) {
+            best_score = score;
+            best = static_cast<int>(index);
+        }
+    }
+    return best;
+}
+
+[[nodiscard]] float river_graph_path_length(const RiverNetworkPlan& plan,
+                                            const std::vector<int>& path) {
+    float length = 0.0F;
+    for (std::size_t index = 0; index + 1U < path.size(); ++index) {
+        length += river_graph_node_distance(plan.nodes[static_cast<std::size_t>(path[index])],
+                                            plan.nodes[static_cast<std::size_t>(path[index + 1U])]);
+    }
+    return length;
+}
+
+void rebuild_river_graph_topology(RiverNetworkPlan& plan) {
+    for (RiverGraphNode& node : plan.nodes) {
+        node.upstream.clear();
+        node.discharge = 0.0F;
+        node.normalized_discharge = 0.0F;
+        node.stream_order = 1.0F;
+        node.trunk = false;
+    }
+    for (std::size_t index = 0; index < plan.nodes.size(); ++index) {
+        const RiverGraphNode& node = plan.nodes[index];
+        if (!node.active || node.downstream < 0) {
+            continue;
+        }
+        plan.nodes[static_cast<std::size_t>(node.downstream)].upstream.push_back(
+            static_cast<int>(index));
+    }
+}
+
+[[nodiscard]] float compute_river_graph_discharge(RiverNetworkPlan& plan, int node_index) {
+    RiverGraphNode& node = plan.nodes[static_cast<std::size_t>(node_index)];
+    if (node.discharge > 0.0F) {
+        return node.discharge;
+    }
+    float discharge = 1.0F;
+    for (const int upstream : node.upstream) {
+        discharge += compute_river_graph_discharge(plan, upstream);
+    }
+    node.discharge = discharge;
+    return discharge;
+}
+
+[[nodiscard]] float compute_river_graph_stream_order(RiverNetworkPlan& plan, int node_index) {
+    RiverGraphNode& node = plan.nodes[static_cast<std::size_t>(node_index)];
+    if (node.upstream.empty()) {
+        node.stream_order = 1.0F;
+        return node.stream_order;
+    }
+    float max_order = 0.0F;
+    int max_count = 0;
+    for (const int upstream : node.upstream) {
+        const float order = compute_river_graph_stream_order(plan, upstream);
+        if (order > max_order) {
+            max_order = order;
+            max_count = 1;
+        } else if (order == max_order) {
+            ++max_count;
+        }
+    }
+    node.stream_order = max_count >= 2 ? max_order + 1.0F : max_order;
+    return node.stream_order;
+}
+
+void finalize_river_graph_metrics(RiverNetworkPlan& plan, int outlet) {
+    rebuild_river_graph_topology(plan);
+    const float max_discharge = std::max(compute_river_graph_discharge(plan, outlet), 1.0F);
+    static_cast<void>(compute_river_graph_stream_order(plan, outlet));
+    for (RiverGraphNode& node : plan.nodes) {
+        if (node.active) {
+            node.normalized_discharge = cubey::procedural::saturate(node.discharge / max_discharge);
+        }
+    }
+
+    plan.mainstem.clear();
+    int current = outlet;
+    while (current >= 0) {
+        plan.nodes[static_cast<std::size_t>(current)].trunk = true;
+        plan.mainstem.push_back(current);
+        const RiverGraphNode& node = plan.nodes[static_cast<std::size_t>(current)];
+        int best_upstream = -1;
+        float best_discharge = -1.0F;
+        for (const int upstream : node.upstream) {
+            const float discharge = plan.nodes[static_cast<std::size_t>(upstream)].discharge;
+            if (discharge > best_discharge) {
+                best_discharge = discharge;
+                best_upstream = upstream;
+            }
+        }
+        current = best_upstream;
+    }
+    std::reverse(plan.mainstem.begin(), plan.mainstem.end());
+}
+
+[[nodiscard]] RiverNetworkPlan make_river_network_plan(const RoutingContext& context,
+                                                       std::uint64_t seed) {
+    RiverNetworkPlan plan{
+        .nodes = make_river_graph_nodes(context, seed + 31'337U),
+    };
+    const int outlet = select_river_graph_outlet(plan, context.domain);
+    if (outlet < 0) {
+        return plan;
+    }
+    plan.nodes[static_cast<std::size_t>(outlet)].active = true;
+
+    const int trunk_source = select_river_graph_trunk_source(plan, context.domain, outlet);
+    if (trunk_source >= 0) {
+        std::vector<int> trunk_path = find_river_graph_path_to_active(plan, trunk_source, 0.0F);
+        if (visible_nodes_in_path(plan, context.domain, trunk_path) >= 4U) {
+            add_river_graph_path(plan, trunk_path, true);
+        }
+    }
+
+    constexpr std::uint32_t kTileCount = 5U;
+    std::vector<bool> active_tiles(kTileCount * kTileCount, false);
+    for (const RiverGraphPath& path : plan.paths) {
+        mark_river_graph_path_tiles(plan, context.domain, path.nodes, active_tiles, kTileCount);
+    }
+
+    std::vector<int> used_sources;
+    const std::uint32_t visible_min =
+        std::min(context.domain.visible_desc.width, context.domain.visible_desc.height);
+    const std::size_t target_branch_count = visible_min >= 513U ? 18U : 12U;
+    const float near_active_radius = std::max(32.0F, static_cast<float>(visible_min) * 0.10F);
+    for (std::size_t branch = 0U; branch < target_branch_count; ++branch) {
+        const int source = select_river_graph_branch_source(plan, context.domain, active_tiles,
+                                                            kTileCount, used_sources);
+        if (source < 0) {
+            break;
+        }
+        used_sources.push_back(source);
+        std::vector<int> path = find_river_graph_path_to_active(plan, source, near_active_radius);
+        if (visible_nodes_in_path(plan, context.domain, path) < 3U) {
+            continue;
+        }
+        if (river_graph_path_length(plan, path) < 60.0F) {
+            continue;
+        }
+        const std::size_t new_tiles =
+            river_graph_path_new_coarse_tiles(plan, context.domain, path, active_tiles, kTileCount);
+        const bool still_expanding =
+            std::count(active_tiles.begin(), active_tiles.end(), true) < 11;
+        if (still_expanding && new_tiles == 0U) {
+            continue;
+        }
+        add_river_graph_path(plan, path, false);
+        mark_river_graph_path_tiles(plan, context.domain, path, active_tiles, kTileCount);
+    }
+
+    finalize_river_graph_metrics(plan, outlet);
+    return plan;
+}
+
+[[nodiscard]] std::vector<ChannelPathPoint> river_graph_points_for_path(
+    const RiverNetworkPlan& plan, const std::vector<int>& path, bool trunk,
+    std::uint64_t seed) {
+    std::vector<ChannelPathPoint> points;
+    points.reserve(path.size() * 2U);
+    const auto make_point = [&](int node_index) {
+        const RiverGraphNode& node = plan.nodes[static_cast<std::size_t>(node_index)];
+        const float discharge = cubey::procedural::saturate(node.normalized_discharge);
+        return ChannelPathPoint{
+            .x = node.x,
+            .y = node.y,
+            .strength = trunk ? cubey::procedural::lerp(0.62F, 0.78F, std::sqrt(discharge))
+                              : cubey::procedural::lerp(0.52F, 0.70F, std::sqrt(discharge)),
+            .width_scale = trunk ? cubey::procedural::lerp(0.68F, 1.22F, std::sqrt(discharge))
+                                 : cubey::procedural::lerp(0.64F, 1.08F, std::sqrt(discharge)),
+        };
+    };
+
+    for (std::size_t index = 0; index < path.size(); ++index) {
+        const ChannelPathPoint point = make_point(path[index]);
+        if (index == 0U) {
+            points.push_back(point);
+            continue;
+        }
+
+        const ChannelPathPoint& previous = points.back();
+        const float dx = point.x - previous.x;
+        const float dy = point.y - previous.y;
+        const float distance = std::sqrt((dx * dx) + (dy * dy));
+        if (distance > 12.0F) {
+            const float nx = -dy / distance;
+            const float ny = dx / distance;
+            const std::uint32_t salt =
+                static_cast<std::uint32_t>((index * 17U) + static_cast<std::size_t>(path[index]));
+            const float side =
+                cubey::procedural::random01(seed, "terrain.river.graph.curve", salt, 0U) < 0.5F
+                    ? -1.0F
+                    : 1.0F;
+            const float amount =
+                std::min(distance * (trunk ? 0.28F : 0.28F), trunk ? 26.0F : 16.0F) * side;
+            points.push_back(ChannelPathPoint{
+                .x = (previous.x + point.x) * 0.5F + (nx * amount),
+                .y = (previous.y + point.y) * 0.5F + (ny * amount),
+                .strength = (previous.strength + point.strength) * 0.5F,
+                .width_scale = (previous.width_scale + point.width_scale) * 0.5F,
+            });
+        }
+        points.push_back(point);
+    }
+    smooth_channel_path(points, trunk ? 2 : 1);
+    return points;
+}
+
+void paint_river_graph_debug_fields(RiverFields& fields, const RiverNetworkPlan& plan,
+                                    const RoutingDomain& domain) {
+    for (std::size_t index = 0; index < plan.nodes.size(); ++index) {
+        const RiverGraphNode& node = plan.nodes[index];
+        if (!node.active || node.downstream < 0) {
+            continue;
+        }
+        const RiverGraphNode& downstream = plan.nodes[static_cast<std::size_t>(node.downstream)];
+        const std::vector<ChannelPathPoint> edge_points{
+            ChannelPathPoint{
+                .x = node.x,
+                .y = node.y,
+                .strength = node.trunk ? 1.0F : 0.62F,
+                .width_scale = node.trunk ? 1.25F : 0.72F,
+            },
+            ChannelPathPoint{
+                .x = downstream.x,
+                .y = downstream.y,
+                .strength = downstream.trunk ? 1.0F : 0.62F,
+                .width_scale = downstream.trunk ? 1.25F : 0.72F,
+            },
+        };
+        rasterize_channel_segments(fields.river_graph_plan, edge_points, 0.35F, 1.15F, domain);
+
+        std::vector<ChannelPathPoint> discharge_points = edge_points;
+        discharge_points[0].strength = node.normalized_discharge;
+        discharge_points[1].strength = downstream.normalized_discharge;
+        discharge_points[0].width_scale = 1.0F;
+        discharge_points[1].width_scale = 1.0F;
+        rasterize_channel_segments(fields.river_graph_discharge, discharge_points, 0.45F, 1.55F,
+                                   domain);
+    }
+}
+
+[[nodiscard]] std::vector<std::vector<int>> collect_river_graph_tributary_paths(
+    const RiverNetworkPlan& plan) {
+    std::vector<std::vector<int>> paths;
+    for (std::size_t index = 0; index < plan.nodes.size(); ++index) {
+        const RiverGraphNode& node = plan.nodes[index];
+        if (!node.active || node.trunk || !node.upstream.empty()) {
+            continue;
+        }
+        std::vector<int> path;
+        int current = static_cast<int>(index);
+        while (current >= 0) {
+            path.push_back(current);
+            const RiverGraphNode& current_node = plan.nodes[static_cast<std::size_t>(current)];
+            if (current_node.trunk && path.size() > 1U) {
+                break;
+            }
+            current = current_node.downstream;
+        }
+        if (path.size() >= 2U) {
+            paths.push_back(std::move(path));
+        }
+    }
+    std::sort(paths.begin(), paths.end(), [&plan](const auto& lhs, const auto& rhs) {
+        return river_graph_path_length(plan, lhs) > river_graph_path_length(plan, rhs);
+    });
+    return paths;
+}
+
+void activate_graph_river_network(RiverFields& fields, const RoutingContext& context,
+                                  std::uint64_t seed, const RiverNetworkSettings& settings) {
+    RiverNetworkPlan plan = make_river_network_plan(context, seed);
+    if (plan.mainstem.size() < 2U) {
+        activate_river_network_fallback(fields, context, seed, settings);
+        return;
+    }
+
+    paint_river_graph_debug_fields(fields, plan, context.domain);
+
+    std::vector<ChannelPathPoint> trunk_points =
+        river_graph_points_for_path(plan, plan.mainstem, true, seed + 24'011U);
+    if (trunk_points.size() >= 2U) {
+        extend_channel_endpoint_to_visible_edge_along_tangent(trunk_points.front(),
+                                                             trunk_points[1U],
+                                                             context.domain, 128.0F);
+        extend_channel_endpoint_to_visible_edge_along_tangent(trunk_points.back(),
+                                                             trunk_points[trunk_points.size() - 2U],
+                                                             context.domain, 128.0F);
+    }
+    paint_channel_path(fields.river_trunk, std::move(trunk_points), context.domain,
+                       settings.trunk_core_radius_cells, settings.trunk_falloff_radius_cells,
+                       context.routing_surface, seed + 24'011U, 8.0F);
+
+    std::vector<std::vector<int>> tributary_paths = collect_river_graph_tributary_paths(plan);
+    const std::size_t max_tributaries =
+        std::min<std::size_t>(tributary_paths.size(),
+                              context.domain.visible_desc.width >= 513U ? 12U : 8U);
+    for (std::size_t index = 0; index < max_tributaries; ++index) {
+        std::vector<ChannelPathPoint> points =
+            river_graph_points_for_path(plan, tributary_paths[index], false,
+                                        seed + 25'003U + (index * 173U));
+        if (visible_path_sample_count(context.domain, points) == 0U) {
+            continue;
+        }
+        paint_channel_path(fields.tributaries, std::move(points), context.domain,
+                           settings.tributary_core_radius_cells * 1.15F,
+                           settings.tributary_falloff_radius_cells * 1.20F,
+                           context.routing_surface, seed + 25'003U + (index * 173U), 5.6F);
+    }
+
+    soften_channel_field(fields.river_trunk, 2, 1.0F);
+    soften_channel_field(fields.tributaries, 2, 1.0F);
+    combine_river_mask(fields);
+}
+
 void paint_support_disc(cubey::procedural::ScalarField2D& field,
                         const RoutingDomain& domain, int hidden_index, float strength,
                         float core_radius_cells, float falloff_radius_cells) {
@@ -4646,6 +5438,8 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
         .river_mask = cubey::procedural::ScalarField2D(desc, 0.0F),
         .river_trunk = cubey::procedural::ScalarField2D(desc, 0.0F),
         .tributaries = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .river_graph_plan = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .river_graph_discharge = cubey::procedural::ScalarField2D(desc, 0.0F),
         .sink_mask = make_visible_sink_mask(context),
         .channel_width = cubey::procedural::ScalarField2D(desc, 0.0F),
         .valley_width = cubey::procedural::ScalarField2D(desc, 0.0F),
@@ -4655,7 +5449,11 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
     const float max_accumulation = std::max(fields.flow_accumulation.summarize().max, 1.0F);
     const float log_max_accumulation = std::log1p(max_accumulation);
 
-    activate_river_network(fields, context, config.seed, settings);
+    if (config.recipe_id == kTerrainRecipeTemperateMountainRiverStress) {
+        activate_graph_river_network(fields, context, config.seed, settings);
+    } else {
+        activate_river_network(fields, context, config.seed, settings);
+    }
 
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
@@ -4663,12 +5461,16 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
             const float discharge =
                 log_max_accumulation <= 0.0F ? 0.0F : std::log1p(accumulation) /
                                                         log_max_accumulation;
+            const float graph_discharge = fields.river_graph_discharge.at(x, y);
+            const float width_discharge =
+                graph_discharge > 0.0F ? cubey::procedural::saturate(graph_discharge) : discharge;
             const float active_river = fields.river_mask.at(x, y);
             fields.channel_width.at(x, y) =
-                active_river * cubey::procedural::lerp(5.0F, 58.0F, discharge * discharge);
+                active_river *
+                cubey::procedural::lerp(5.0F, 58.0F, width_discharge * width_discharge);
             fields.valley_width.at(x, y) =
                 active_river * cubey::procedural::lerp(70.0F, 420.0F,
-                                                       std::pow(discharge, 1.35F));
+                                                       std::pow(width_discharge, 1.35F));
         }
     }
 
@@ -4729,6 +5531,8 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
         .river_mask = std::move(fields.river_mask),
         .river_trunk = std::move(fields.river_trunk),
         .tributaries = std::move(fields.tributaries),
+        .river_graph_plan = std::move(fields.river_graph_plan),
+        .river_graph_discharge = std::move(fields.river_graph_discharge),
         .sink_mask = std::move(fields.sink_mask),
         .channel_width = std::move(fields.channel_width),
         .valley_width = std::move(fields.valley_width),
@@ -4833,6 +5637,10 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldRiverMask, std::move(river_fields.river_mask));
     add_field(product.fields, kTerrainFieldRiverTrunk, std::move(river_fields.river_trunk));
     add_field(product.fields, kTerrainFieldTributaries, std::move(river_fields.tributaries));
+    add_field(product.fields, kTerrainFieldRiverGraphPlan,
+              std::move(river_fields.river_graph_plan));
+    add_field(product.fields, kTerrainFieldRiverGraphDischarge,
+              std::move(river_fields.river_graph_discharge));
     add_field(product.fields, kTerrainFieldSinkMask, std::move(river_fields.sink_mask));
     add_field(product.fields, kTerrainFieldChannelWidth, std::move(river_fields.channel_width));
     add_field(product.fields, kTerrainFieldValleyWidth, std::move(river_fields.valley_width));

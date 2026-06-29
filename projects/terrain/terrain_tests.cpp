@@ -428,7 +428,7 @@ void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 25> required_fields{
+    const std::array<std::string_view, 27> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
         cubey::projects::terrain::kTerrainFieldBroadRelief,
@@ -445,6 +445,8 @@ void test_terrain_product_emits_required_fields() {
         cubey::projects::terrain::kTerrainFieldRiverMask,
         cubey::projects::terrain::kTerrainFieldRiverTrunk,
         cubey::projects::terrain::kTerrainFieldTributaries,
+        cubey::projects::terrain::kTerrainFieldRiverGraphPlan,
+        cubey::projects::terrain::kTerrainFieldRiverGraphDischarge,
         cubey::projects::terrain::kTerrainFieldSinkMask,
         cubey::projects::terrain::kTerrainFieldChannelWidth,
         cubey::projects::terrain::kTerrainFieldValleyWidth,
@@ -573,12 +575,17 @@ void test_terrain_review_river_coverage_is_meaningful() {
     const auto& stress_trunk = field(stress, cubey::projects::terrain::kTerrainFieldRiverTrunk);
     const auto& stress_tributaries =
         field(stress, cubey::projects::terrain::kTerrainFieldTributaries);
+    const auto& stress_graph_plan =
+        field(stress, cubey::projects::terrain::kTerrainFieldRiverGraphPlan);
+    const auto& stress_graph_discharge =
+        field(stress, cubey::projects::terrain::kTerrainFieldRiverGraphDischarge);
     constexpr float kVisibleNetworkThreshold = 0.001F;
     const std::size_t baseline_samples = count_active_samples(baseline_river, 0.30F);
     const std::size_t stress_samples = count_active_samples(stress_river, 0.30F);
     const std::size_t baseline_trunk_samples = count_active_samples(baseline_trunk, 0.30F);
     const std::size_t stress_trunk_samples = count_active_samples(stress_trunk, 0.30F);
     const std::size_t stress_tributary_samples = count_active_samples(stress_tributaries, 0.30F);
+    const std::size_t stress_graph_samples = count_active_samples(stress_graph_plan, 0.10F);
     const std::size_t stress_endpoint_samples =
         count_active_endpoint_samples(stress_tributaries, 0.30F);
     const std::size_t stress_trunk_largest_component =
@@ -596,6 +603,8 @@ void test_terrain_review_river_coverage_is_meaningful() {
         count_active_coarse_tiles(stress_river, kVisibleNetworkThreshold, 5U);
     const std::size_t stress_trunk_coarse_tiles =
         count_active_coarse_tiles(stress_trunk, 0.30F, 5U);
+    const std::size_t stress_graph_coarse_tiles =
+        count_active_coarse_tiles(stress_graph_plan, 0.10F, 5U);
     const std::size_t total_samples = baseline_river.sample_count();
 
     require(baseline_samples >= 1'200U,
@@ -606,6 +615,22 @@ void test_terrain_review_river_coverage_is_meaningful() {
             "baseline=" +
             std::to_string(baseline_samples) + " stress=" + std::to_string(stress_samples));
     }
+    if (stress_graph_samples < 96U) {
+        throw std::runtime_error(
+            "terrain stress graph plan should expose non-trivial source topology: samples=" +
+            std::to_string(stress_graph_samples));
+    }
+    if (stress_graph_coarse_tiles < 8U) {
+        throw std::runtime_error(
+            "terrain stress graph plan should span multiple coarse regions: tiles=" +
+            std::to_string(stress_graph_coarse_tiles));
+    }
+    const cubey::procedural::ScalarFieldStats graph_discharge_stats =
+        stress_graph_discharge.summarize();
+    require(graph_discharge_stats.max > graph_discharge_stats.min,
+            "terrain stress graph discharge should vary");
+    require(graph_discharge_stats.max <= 1.0F,
+            "terrain stress graph discharge should stay normalized");
     if (stress_footprint * 100U < total_samples * 5U) {
         throw std::runtime_error(
             "terrain stress review river should span a non-tiny network footprint: baseline=" +
@@ -860,6 +885,12 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("tributaries") ==
                 cubey::projects::terrain::TerrainDebugView::Tributaries,
             "terrain debug view should parse tributaries");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("river_graph_plan") ==
+                cubey::projects::terrain::TerrainDebugView::RiverGraphPlan,
+            "terrain debug view should parse river graph plan aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("river_graph_discharge") ==
+                cubey::projects::terrain::TerrainDebugView::RiverGraphDischarge,
+            "terrain debug view should parse river graph discharge aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("sink_mask") ==
                 cubey::projects::terrain::TerrainDebugView::SinkMask,
             "terrain debug view should parse sink mask aliases");

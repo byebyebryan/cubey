@@ -21,6 +21,8 @@ enum class TerrainDebugView {
     RiverMask,
     RiverTrunk,
     Tributaries,
+    RiverGraphPlan,
+    RiverGraphDischarge,
     SinkMask,
     ChannelWidth,
     Wetness,

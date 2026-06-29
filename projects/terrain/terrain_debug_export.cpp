@@ -32,7 +32,7 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 18> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 20> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::Height, "height"},
     DebugViewName{TerrainDebugView::Slope, "slope"},
@@ -45,6 +45,8 @@ inline constexpr std::array<DebugViewName, 18> kDebugViewNames{
     DebugViewName{TerrainDebugView::RiverMask, "river-mask"},
     DebugViewName{TerrainDebugView::RiverTrunk, "river-trunk"},
     DebugViewName{TerrainDebugView::Tributaries, "tributaries"},
+    DebugViewName{TerrainDebugView::RiverGraphPlan, "river-graph-plan"},
+    DebugViewName{TerrainDebugView::RiverGraphDischarge, "river-graph-discharge"},
     DebugViewName{TerrainDebugView::SinkMask, "sink-mask"},
     DebugViewName{TerrainDebugView::ChannelWidth, "channel-width"},
     DebugViewName{TerrainDebugView::Wetness, "wetness"},
@@ -53,7 +55,7 @@ inline constexpr std::array<DebugViewName, 18> kDebugViewNames{
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 18> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 20> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::Height,
     TerrainDebugView::Slope,
@@ -66,6 +68,8 @@ inline constexpr std::array<TerrainDebugView, 18> kTerrainDebugReviewViews{
     TerrainDebugView::RiverMask,
     TerrainDebugView::RiverTrunk,
     TerrainDebugView::Tributaries,
+    TerrainDebugView::RiverGraphPlan,
+    TerrainDebugView::RiverGraphDischarge,
     TerrainDebugView::SinkMask,
     TerrainDebugView::ChannelWidth,
     TerrainDebugView::Wetness,
@@ -215,6 +219,10 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldRiverTrunk);
     case TerrainDebugView::Tributaries:
         return terrain_product_field(product, kTerrainFieldTributaries);
+    case TerrainDebugView::RiverGraphPlan:
+        return terrain_product_field(product, kTerrainFieldRiverGraphPlan);
+    case TerrainDebugView::RiverGraphDischarge:
+        return terrain_product_field(product, kTerrainFieldRiverGraphDischarge);
     case TerrainDebugView::SinkMask:
         return terrain_product_field(product, kTerrainFieldSinkMask);
     case TerrainDebugView::ChannelWidth:
