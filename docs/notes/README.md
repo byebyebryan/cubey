@@ -92,8 +92,8 @@ the detailed foundation notes under `docs/architecture/`.
   revision 16 outcome for rendered trunk-connectivity gating, anti-straight
   stress support filters, and the remaining broad-network driver gap.
 - [Terrain graph-first river plan](terrain-graph-first-river-plan.md):
-  next river-quality pivot: make the stress recipe generate a non-grid river
-  graph first, then rasterize it into the existing terrain process fields.
+  revision 17 river-quality pivot: make the stress recipe generate a non-grid
+  river graph first, then rasterize it into the existing terrain process fields.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.

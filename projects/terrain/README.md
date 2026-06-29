@@ -17,7 +17,7 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `16`. It emits source fields, height/slope
+The current generator revision is `17`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass now repairs local routing pits with a bounded priority-flood
@@ -43,10 +43,12 @@ trunk promotion provisional at render time: candidates are accepted only if the
 painted trunk remains dominated by one connected component. It also tightens
 grid-aligned support caps and pre-curves connected support/order-seed/corridor
 branches before rasterization to reduce obvious D8-looking tributary strokes.
-The next stress-river batch pivots away from this raster-routing-derived source
-model: stress topology should be generated as a deterministic non-grid river
-graph first, with D-Infinity accumulation kept as a diagnostic and validation
-field.
+Revision 17 pivots the stress recipe away from raster-routing-derived topology:
+stress topology now comes from a deterministic jittered river graph over the
+padded hidden domain, computes graph discharge/order, and then rasterizes
+accepted graph paths through the existing channel pipeline. D-Infinity
+accumulation remains a diagnostic and validation field, not the stress recipe's
+visible source of truth.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -60,14 +62,15 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain
 ./build/dev/projects/terrain/terrain --headless --terrain-debug-view final --output outputs/terrain/current/final.png
 ./build/dev/projects/terrain/terrain --headless --terrain-debug-view flow-accumulation --grid-size 129 --output outputs/terrain/current/flow-accumulation.png
-./build/dev/projects/terrain/terrain --headless --grid-size 513 --terrain-debug-view all --terrain-output-dir outputs/terrain/current
+./build/dev/projects/terrain/terrain --headless --grid-size 513 --terrain-debug-view all --terrain-output-dir outputs/terrain/current-river-network
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network
+./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
 ```
 
 ## Current Review Outputs
 
-Use `--terrain-debug-view all --terrain-output-dir outputs/terrain/current` for
-the standard review set. The current local review images are generated at
+Use `--terrain-debug-view all --terrain-output-dir outputs/terrain/current-river-network`
+for the standard review set. The current local review images are generated at
 `513x513`, large enough to inspect the field structure rather than just a tiny
 thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
 review artifact.
@@ -83,6 +86,8 @@ The review set includes:
 - `flow-direction.png`
 - `flow-accumulation.png`
 - `stream-order.png`
+- `river-graph-plan.png`
+- `river-graph-discharge.png`
 - `river-mask.png`
 - `river-trunk.png`
 - `tributaries.png`
@@ -94,10 +99,11 @@ The review set includes:
 - `vegetation.png`
 
 The optional `temperate-mountain-river-stress` recipe keeps the same source
-terrain and routing diagnostics but expands active channel extraction for review
-stress testing. It uses a stronger basin-grade routing profile, selects one
-connected support basin, spaces accepted support confluences, and paints extra
-support paths through the same de-gridded channel pipeline. Revision 12 also
+terrain and routing diagnostics but uses a graph-first visible river source for
+review stress testing. Earlier revisions used a stronger basin-grade routing
+profile, selected one connected support basin, spaced accepted support
+confluences, and painted extra support paths through the same de-gridded channel
+pipeline. Revision 12 also
 spaces support paths against previously accepted support paths so
 `outputs/terrain/stress-river-network` exposes more of the patch to
 river-network artifacts without rendering unrelated watershed clusters.
@@ -111,10 +117,15 @@ this exposes more network coverage without turning side branches into
 disconnected trunk fragments. Revision 16 keeps that hierarchy but rejects
 rendered trunk promotions that would fragment the trunk and filters the worst
 straight support paths before they become visible tributaries.
+Revision 17 replaces the stress recipe's visible topology source with a
+deterministic graph-first drainage tree, then paints accepted graph paths
+through the same smoothing, lateral-offset, relaxation, and width pipeline. It
+also exports `river-graph-plan.png` and `river-graph-discharge.png` so the
+source topology can be reviewed independently from the rendered river mask.
 Treat it as a diagnostic recipe, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
-plus routed flow accumulation over a padded hidden routing domain. Revision `16`
+plus routed flow accumulation over a padded hidden routing domain. Revision `17`
 routes over a priority-flood-repaired drainage surface and exposes the
 raw-to-repaired delta as `routing_fill_delta`. Continuous D-Infinity-style flow
 angles and fractional accumulation remain the diagnostic catchment path, while
@@ -124,17 +135,12 @@ branch network. Additional branches are accepted only when they visibly reach an
 existing active channel, which avoids independent local strokes and straight
 snap connectors. Before rasterization, grid-selected paths are resampled into
 sub-cell centerlines, smoothed, constrained by the continuous flow field, and
-given discharge/stream-order width and strength variation. The stress recipe
-still applies a procedural basin convergence, but now prunes low-value support
-branches more aggressively, spaces accepted confluences, and rejects support
-paths that run too near previously accepted support paths to reduce parallel
-branch fans without starving the network. Revision 14 promoted only distinct
-major branches into `river_trunk` and skipped redundant near-parallel paths
-against the already promoted trunk skeleton. Revision 15 disables extra stress
-trunk promotion again, adds reach and continuity gates, and uses a connected
-basin-growth pass to paint long attached tributaries until the visible patch has
-a broader review footprint. Revision 16 adds rendered trunk-component gating,
-directional promotion checks, and additional pre-curving for stress support
-paths. Some tributary runs can still read too schematic because the source
-hierarchy remains static routing rather than evolved hydrology. See
+given discharge/stream-order width and strength variation. Revisions 14 through
+16 tried to improve the stress recipe by pruning near-parallel support paths,
+gating rendered trunk connectivity, and pre-curving support branches. Revision
+17 keeps the default path but switches stress river masks to the graph-first
+source model, using graph discharge to drive stress channel and valley widths.
+Some tributary joins can still read too angular because this is not yet a
+Delaunay/Poisson river graph, hydraulic erosion pass, or lake/breach routing
+model. See
 [Terrain routing repair plan](../../docs/notes/terrain-routing-repair-plan.md).

@@ -2,6 +2,9 @@
 
 Date: 2026-06-28
 
+Status: implemented for `temperate-mountain-river-stress` in generator revision
+17.
+
 Revision 16 made the stress river cleaner, but it still exposes the same
 source-model problem: river coverage and organic shape are being solved after
 the topology has already been constrained by raster routing. Relaxing the
@@ -65,3 +68,23 @@ rasterization:
   trunk and confluences.
 - Existing `flow-accumulation.png` and `stream-order.png` remain diagnostic
   products, not the visible stress source of truth.
+
+## Outcome
+
+- Added stress-only graph planning over the padded hidden routing domain using
+  deterministic jittered nodes and local k-nearest adjacency.
+- Added graph discharge/order metrics and exported them as
+  `river-graph-plan.png` and `river-graph-discharge.png`.
+- Routed accepted graph paths through the existing channel rasterization path
+  instead of painting graph edges directly.
+- Kept the default recipe on the prior repaired-routing path so the graph-first
+  work can mature in the stress recipe first.
+- Fixed the first graph painter issue where shared downstream tributary
+  segments were painted once per upstream leaf, creating artificial parallel
+  offset copies.
+
+Remaining caveats: this is still a jittered-grid/k-nearest graph, not a
+Poisson-disc plus Delaunay graph, hydraulic erosion model, lake/breach router,
+or evolved river system. The generated network is materially less D8-shaped than
+the raster-routing stress source, but branch joins can still be angular and the
+topology builder needs another pass before it becomes the default river driver.

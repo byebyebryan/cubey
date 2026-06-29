@@ -1,22 +1,23 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 16
-stress trunk-connectivity and tributary de-straightening pass.
+This note records the current terrain reboot capture set after the revision 17
+graph-first stress river pass.
 
 ## Capture Command
 
 ```sh
-./build/dev/projects/terrain/terrain --headless --grid-size 513 --terrain-debug-view all --terrain-output-dir outputs/terrain/current
+./build/dev/projects/terrain/terrain --headless --grid-size 513 --terrain-debug-view all --terrain-output-dir outputs/terrain/current-river-network
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network
+./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
 ```
 
-The review images are `513x513` PNGs under `outputs/`, which is intentionally
+The primary review images are `513x513` PNGs under `outputs/`, with a `1025x1025`
+stress capture for larger network inspection. `outputs/` is intentionally
 ignored by git. This replaced the earlier tiny local output set so field
 structure, channel continuity, and material response are easier to inspect.
-`outputs/terrain/current` is the default product review. The optional
+`outputs/terrain/current-river-network` is the default product review. The optional
 `outputs/terrain/stress-river-network` set uses the diagnostic stress recipe to
-apply a stronger basin-grade routing profile and paint extra connected support
-paths across the patch through the same de-gridded channel pipeline. Revision 12
+stress-test broader river-network shape and coverage. Revision 12
 restores some active network coverage after the first degrid/pruning pass while
 spacing accepted support paths to avoid near-duplicate branch bundles. Revision
 13 keeps the same routing source but promotes major stress support/order-seed
@@ -29,6 +30,10 @@ basin-tree tributaries from edge-biased stream-order candidates. Revision 16
 keeps promotion available only when the rendered trunk remains connected, then
 tightens and pre-curves stress support paths so the worst straight tributary
 fingers are filtered before export.
+Revision 17 replaces the stress recipe's visible source topology with a
+deterministic jittered river graph over the padded hidden domain. The 1025
+stress capture is included as a larger artifact-hunting view because the graph
+network reads differently at thumbnail and high resolution.
 
 ## What To Inspect
 
@@ -45,15 +50,21 @@ fingers are filtered before export.
 - `flow-accumulation.png`: D-Infinity-style fractional routed catchment field.
   This should show regional organization without the obvious horizontal,
   vertical, and 45-degree D8 lattice.
+- `river-graph-plan.png`: revision 17 stress source topology before channel
+  painting. This should show one connected drainage graph with an obvious trunk
+  and attached branches, independent of rendered channel thickness.
+- `river-graph-discharge.png`: graph discharge/order diagnostic used by the
+  stress recipe for channel and valley width. It should brighten downstream and
+  at confluences instead of showing uniform branch widths.
 - `sink-mask.png`: visible crop outlets and true terminal routing cells, useful
   for spotting where the larger hidden routing domain leaves the review patch.
 - `river-trunk.png`: soft active main-channel product field traced from a
   connected stream-order support corridor, converted to a sub-cell flow-guided
   centerline, relaxed over drainage potential, and rasterized as channel
   segments. In the stress set, this should now read as one continuous mainstem
-  rather than disconnected promoted branch fragments.
+  from the graph plan rather than disconnected promoted branch fragments.
 - `tributaries.png`: conservative connected branch field feeding the trunk,
-  with the stress recipe using basin-tree growth to carry broad diagnostic
+  with the stress recipe using accepted graph paths to carry broad diagnostic
   reach while keeping those branches attached to the active network.
 - `river-mask.png`: combined active river product used by channel width,
   valley width, wetness, deposition, material, and final debug rendering.
@@ -74,7 +85,8 @@ allows tributaries to carry more of the broad stress footprint, so use
 mainstem continuity. Revision 16 keeps that split but rejects rendered trunk
 branches that would create disconnected high-strength components. The current
 stress capture should read as a clean connected mainstem with attached
-tributaries; it is no longer trying to force a three-edge trunk skeleton.
+tributaries and visible width variation; the 1025 stress image is the best
+current stress read.
 
 The current capture set intentionally keeps the lesson from the reverted
 revision 4 graph-routing attempt without rendering graph edges directly.
@@ -82,9 +94,9 @@ Revision 11 routes over the priority-flood-repaired hidden drainage surface,
 publishes `routing_fill_delta`, keeps the default product on traced
 trunk/tributary channels instead of raw support-cell painting, and converts
 selected grid paths into flow-guided sub-cell centerlines before rasterization.
-The stress recipe still paints connected support paths through the normal
+Prior stress revisions painted connected support paths through the normal
 channel pipeline instead of painting raw support cells or multiple unrelated
-corridors, but it now spaces support confluences and reduces low-order branch
+corridors, then spaced support confluences and reduced low-order branch
 clutter. Revision 12 loosens default tributary/order-seed selection and lets
 order-seed paths trace farther upstream, then restores more stress support
 coverage while rejecting support paths that run too near previously accepted
@@ -100,7 +112,11 @@ candidate, and paints connected basin-tree paths into `tributaries` until the
 visible review footprint broadens. Revision 16 promotes stress trunk branches
 only after a temporary rendered-field connectivity check passes, adds direction
 and straight-run gates for promoted candidates, and pre-curves stress support
-paths before rasterization. The
+paths before rasterization. Revision 17 returns to graph-first topology, but
+keeps the lesson from the rejected revision 4 attempt: graph edges are a source
+plan and diagnostic, not a product mask. Accepted graph paths still go through
+the channel rasterization pipeline, and merged tributary segments are painted
+once so shared downstream paths do not become parallel offset copies. The
 rejected revision 4 attempt made the visible product worse by rendering selected
 graph edges directly, producing disconnected snippets and hard straight or
 diagonal runs. See
@@ -110,21 +126,19 @@ diagonal runs. See
 
 The active river no longer depends on an authored center line, and the visible
 trunk/mask now use a padded hidden routing domain instead of treating the review
-patch as the whole watershed. Revision `16` routes accumulation with continuous
+patch as the whole watershed. Revision `17` routes accumulation with continuous
 D-Infinity-style flow angles and fractional receivers over the repaired routing
 surface, selects active channels from connected `stream_order` support, accepts
 extra branches only when they visibly terminate at an existing active channel,
-converts visible paths to de-gridded centerlines, and gives the stress recipe a
-basin-convergent routing source plus extra but spaced connected support paths.
-The stress recipe now keeps its trunk continuous and uses connected tributary
-basin growth for broader diagnostic reach, but remains intentionally better for
-artifact hunting than composition review.
+and converts visible paths to de-gridded centerlines. The default recipe still
+follows that route. The stress recipe now uses a deterministic graph-first
+topology source and graph discharge for channel width, but remains intentionally
+better for artifact hunting than composition review.
 
 Remaining limitations are now concentrated in the river source model. The
-revision 16 stress recipe still chooses topology from raster routing products
-and then tries to smooth, curve, reject, or promote paths after the fact. That
-has produced an oscillation between sparse coverage and visible D8-like
-straight or diagonal runs. The next river-quality pass should make the stress
-recipe graph-first: generate a deterministic non-grid drainage tree, compute
-graph discharge/order, rasterize through the existing channel pipeline, and keep
-flow accumulation as validation rather than the visible network source.
+revision 17 graph is still a jittered-grid/k-nearest graph, not a Poisson-disc
+plus Delaunay river graph, evolved hydraulic network, lake/breach router, or
+erosion model. Some branch joins still read angular, and the graph can still
+produce short spurs or sparse local reach in parts of the map. The next
+river-quality pass should improve graph topology construction before adding
+more high-level terrain features.
