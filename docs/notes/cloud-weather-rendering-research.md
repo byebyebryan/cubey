@@ -1196,6 +1196,31 @@ view, preserve the current metadata-aware resolve for comparison, and add a
 TerrainEngine-style post resolve that filters the premultiplied cloud product
 with enough alpha/distance guarding to avoid obvious horizon or terrain smears.
 
+## Terrain-Post Resolve Checkpoint 2026-06-29
+
+The production cloud layer now has an explicit final resolve mode:
+`terrain-post` is the default and applies a TerrainEngine-style 3x3 cloud-product
+filter, while `metadata-bilateral` preserves the previous guarded 5x5 resolve
+for A/B comparison. The mode is exposed as `clouds.resolve_mode`,
+`--cloud-resolve-mode`, and the Atmosphere/Planet cloud lighting controls.
+
+Use the focused capture matrix when judging this work:
+
+```sh
+projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
+```
+
+Interpretation:
+
+- `raw-final` should remain unfiltered and is expected to expose raw edge
+  stipple;
+- `final` should hide more edge noise in `terrain-post` than in
+  `metadata-bilateral`, especially in `surface-up` and `high-oblique`;
+- `cloud-alpha` and `edge-mask` should be used to verify the resolve is hiding
+  under-resolved cloud boundaries, not changing placement or weather shape;
+- the secondary half-quality final captures are a quick regression check, not
+  the quality target.
+
 ## Cloud Edge Stability Attempt and Rollback 2026-06-29
 
 The adaptive edge-march attempt was reverted after GUI review. It reduced the

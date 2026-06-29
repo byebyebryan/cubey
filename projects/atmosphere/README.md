@@ -55,6 +55,7 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
 projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
+projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
 ```
 
 The cloud review script writes a stable set of labeled captures plus
@@ -64,6 +65,11 @@ current practical target; set `WIDTH`, `HEIGHT`, `QUALITY`, or `DEEP=1` for
 faster smoke runs or full-quality reference comparisons. The high-oblique row
 includes a no-cloud comparison so cloud handoff artifacts can be separated from
 the clear-sky background.
+
+The edge resolve script is the focused A/B for cloud-edge artifacts. It captures
+`terrain-post` and `metadata-bilateral` resolve modes for `surface-up` and
+`high-oblique` views, with `final`, `raw-final`, `cloud-alpha`, and `edge-mask`
+diagnostics plus a secondary half-quality final check.
 
 Controls:
 
