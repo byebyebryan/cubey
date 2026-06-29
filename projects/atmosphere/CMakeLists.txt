@@ -78,7 +78,6 @@ if (BUILD_TESTING)
         0.005
         0.005
     )
-    set_tests_properties(atmosphere_headless_writes_png PROPERTIES TIMEOUT 35)
 
     set(CUBEY_ATMOSPHERE_SOLAR_NOON_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-solar-noon.png"

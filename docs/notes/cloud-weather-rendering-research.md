@@ -1160,33 +1160,39 @@ Reference comparison:
   marches coarse while empty, backs up and enters a smaller-step mode on first
   cloud hit, then returns to coarse stepping after several misses.
 
-The next batch should therefore fix the march before more horizon tuning:
+That diagnosis led to an adaptive local-march experiment, but GUI review showed
+the cost/quality tradeoff was not acceptable. Keep these conclusions, but do
+not repeat that exact adaptive path as the default:
 
 - keep Bayer as the production default until sparse temporal reconstruction is
   robust;
-- add adaptive local hit refinement so thin cloud edges are not sampled by one
-  coarse step;
-- widen/filter density remaps as the sample footprint grows and fade high
-  frequency erosion under that same footprint;
+- avoid frame-varying jitter unless it is paired with real sparse
+  reconstruction;
+- filter or pre-integrate unresolved density edges before adding more visual
+  detail;
 - keep the far-horizon layer broad and low detail, with stable stratified sample
   phases rather than another detailed local march.
 
-## Cloud Edge Stability Checkpoint 2026-06-29
+## Cloud Edge Stability Attempt and Rollback 2026-06-29
 
-This batch implements the edge-integration direction above:
+The adaptive edge-march attempt was reverted after GUI review. It reduced the
+obvious row-like slicing in some overhead captures, but it did not remove edge
+noise at half or full quality and degraded performance enough that half quality
+could no longer sustain the 144 fps cap while full quality dropped below 20 fps.
+Do not reintroduce that path as the default without a separate performance
+budget and a clearly better edge result.
 
-- local cloud rays now march coarse while empty, back up on first cloud hit, and
-  enter a smaller-step refinement mode until several misses return the ray to
-  coarse stepping;
-- density coverage and high-frequency erosion are filtered by the active sample
-  footprint so distant/grazing samples do not carve unresolved cloud-edge detail;
-- the far-horizon assist remains a low-detail integrated layer, but now uses
-  stable Bayer-stratified sample phases and stronger broad filtering;
-- atmosphere and shared cloud defaults now use stable Bayer sampling with 0.65
-  jitter strength, while blue noise and temporal reconstruction remain explicit
-  diagnostics/future sparse-reconstruction work.
+Current kept changes:
 
-Validation passed with:
+- atmosphere and shared cloud defaults use stable Bayer sampling with 0.65
+  jitter strength;
+- blue noise and temporal reconstruction remain explicit diagnostics/future
+  sparse-reconstruction work;
+- the artifact diagnosis remains: random jitter is not the fix, and a future
+  solution needs either true sparse temporal reconstruction, a cached/cloud-top
+  product, or a cheaper deterministic integration strategy.
+
+Validation before the rollback passed with:
 
 ```sh
 cmake --build --preset dev --target atmosphere planet cubey_project_atmosphere_tests
@@ -1195,7 +1201,14 @@ ctest --preset dev -R '^(render_apps_use_dynamic_rendering|atmosphere_headless_w
 ctest --preset dev --output-on-failure
 ```
 
-The full suite reported 159/159 passing tests.
+The full suite reported 159/159 passing tests before the adaptive shader revert.
+After the rollback and timeout cleanup, focused validation passed with:
+
+```sh
+cmake --build --preset dev --target atmosphere planet cubey_project_atmosphere_tests
+ctest --preset dev -R '^atmosphere_config_tests$' --output-on-failure
+ctest --preset dev -R '^(render_apps_use_dynamic_rendering|atmosphere_headless_writes_png|atmosphere_headless_writes_png_stats)$' --output-on-failure
+```
 
 Review captures:
 
@@ -1204,11 +1217,9 @@ outputs/atmosphere-cloud-edge-stability-20260629/
 outputs/atmosphere-cloud-edge-stability-20260629-targeted/
 ```
 
-The overhead/surface-up captures no longer show the old obvious horizontal
-slice bands. Bayer stipple is still visible on some high-contrast cloud edges,
-especially at half quality, but the 0.65 default is less harsh than full Bayer
-jitter and does not shimmer. Horizon and high-oblique frames still expose a
-separate atmosphere/background boundary problem in the no-cloud comparison, so
-do not treat this batch as the final horizon fix. The next cloud-specific step
-should be a real sparse temporal/reconstruction path or a more explicit cached
-far-cloud product, not more random jitter.
+The targeted captures are still useful for comparing Bayer jitter strength, but
+they should not be treated as a solved quality checkpoint. Horizon and
+high-oblique frames also expose a separate atmosphere/background boundary
+problem in the no-cloud comparison. The next cloud-specific step should be a
+real sparse temporal/reconstruction path or a more explicit cached far-cloud
+product, not more random jitter or the reverted adaptive march.
