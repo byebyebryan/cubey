@@ -35,6 +35,14 @@ deterministic jittered river graph over the padded hidden domain. The 1025
 stress capture is included as a larger artifact-hunting view because the graph
 network reads differently at thumbnail and high resolution.
 
+For the next hierarchy pass, keep the field contract unchanged but interpret
+`river_trunk` as major channels: the mainstem plus selected high-discharge or
+high-order tributaries. `tributaries` should hold smaller attached branches.
+The graph fields stay diagnostic source views. This revision 17 graph is still
+patch-local over the padded hidden domain; later world-scale terrain work should
+move topology planning into deterministic world-coordinate basin graph data and
+let local products rasterize only the tile plus halo.
+
 ## What To Inspect
 
 - `final.png`: debug composition of height, material masks, slope shade, and
@@ -58,11 +66,9 @@ network reads differently at thumbnail and high resolution.
   at confluences instead of showing uniform branch widths.
 - `sink-mask.png`: visible crop outlets and true terminal routing cells, useful
   for spotting where the larger hidden routing domain leaves the review patch.
-- `river-trunk.png`: soft active main-channel product field traced from a
-  connected stream-order support corridor, converted to a sub-cell flow-guided
-  centerline, relaxed over drainage potential, and rasterized as channel
-  segments. In the stress set, this should now read as one continuous mainstem
-  from the graph plan rather than disconnected promoted branch fragments.
+- `river-trunk.png`: soft active major-channel product field. In the stress set,
+  this should read as the mainstem plus selected major tributaries from the
+  graph plan, not every branch and not only a single line.
 - `tributaries.png`: conservative connected branch field feeding the trunk,
   with the stress recipe using accepted graph paths to carry broad diagnostic
   reach while keeping those branches attached to the active network.

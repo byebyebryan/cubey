@@ -88,3 +88,31 @@ Poisson-disc plus Delaunay graph, hydraulic erosion model, lake/breach router,
 or evolved river system. The generated network is materially less D8-shaped than
 the raster-routing stress source, but branch joins can still be angular and the
 topology builder needs another pass before it becomes the default river driver.
+
+## Next Hierarchy And Scale Direction
+
+The next revision should treat `river_trunk` as the major-channel product field,
+not only the single downstream mainstem. Keep the public field contract stable
+for now:
+
+- `river_trunk`: mainstem plus major/high-discharge tributaries.
+- `tributaries`: minor attached branches.
+- `river_graph_plan` and `river_graph_discharge`: source diagnostics, not
+  separate product hierarchy fields.
+
+This keeps the product simple while matching how river networks read visually:
+large tributaries should affect channel width, valley width, material response,
+and final composition similarly to the mainstem.
+
+The revision 17 graph pass is still patch-local. Nodes are generated inside the
+padded hidden domain for the requested product, and topology only knows that
+finite local graph. That is acceptable for current stress testing but not a
+world-scale terrain model.
+
+The scalable direction is to separate river topology from local rasterization:
+build deterministic basin/segment graph data in stable world coordinates, query
+only the tile plus halo at product time, and rasterize the relevant graph
+segments into local fields. Coarse basin graphs should feed sub-basin tributary
+graphs, then local channel detail. Segment IDs, chunk caches, and tile-border
+continuity are future work; this batch should avoid making the patch-local
+implementation look like a permanent global model.
