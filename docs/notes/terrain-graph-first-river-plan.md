@@ -2,8 +2,8 @@
 
 Date: 2026-06-28
 
-Status: implemented for `temperate-mountain-river-stress` in generator revision
-17.
+Status: implemented for `temperate-mountain-river-stress` through generator
+revision 18.
 
 Revision 16 made the stress river cleaner, but it still exposes the same
 source-model problem: river coverage and organic shape are being solved after
@@ -89,11 +89,10 @@ or evolved river system. The generated network is materially less D8-shaped than
 the raster-routing stress source, but branch joins can still be angular and the
 topology builder needs another pass before it becomes the default river driver.
 
-## Next Hierarchy And Scale Direction
+## Hierarchy And Scale Direction
 
-The next revision should treat `river_trunk` as the major-channel product field,
-not only the single downstream mainstem. Keep the public field contract stable
-for now:
+Revision 18 treats `river_trunk` as the major-channel product field, not only
+the single downstream mainstem. The public field contract stays stable:
 
 - `river_trunk`: mainstem plus major/high-discharge tributaries.
 - `tributaries`: minor attached branches.
@@ -104,7 +103,7 @@ This keeps the product simple while matching how river networks read visually:
 large tributaries should affect channel width, valley width, material response,
 and final composition similarly to the mainstem.
 
-The revision 17 graph pass is still patch-local. Nodes are generated inside the
+The revision 18 graph pass is still patch-local. Nodes are generated inside the
 padded hidden domain for the requested product, and topology only knows that
 finite local graph. That is acceptable for current stress testing but not a
 world-scale terrain model.
@@ -116,3 +115,13 @@ segments into local fields. Coarse basin graphs should feed sub-basin tributary
 graphs, then local channel detail. Segment IDs, chunk caches, and tile-border
 continuity are future work; this batch should avoid making the patch-local
 implementation look like a permanent global model.
+
+Revision 18 implementation outcome:
+
+- Promotes selected non-mainstem graph paths into `river_trunk` by graph
+  discharge, stream order, visible length, and coarse-tile novelty.
+- Rejects graph paths that mostly run inside the current trunk skeleton
+  neighborhood, so promoted channels add visible basin area rather than parallel
+  duplicates.
+- Leaves smaller accepted graph paths in `tributaries`.
+- Keeps the graph fields diagnostic; no extra public hierarchy fields were added.

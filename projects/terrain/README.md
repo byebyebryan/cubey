@@ -17,7 +17,7 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `17`. It emits source fields, height/slope
+The current generator revision is `18`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass now repairs local routing pits with a bounded priority-flood
@@ -49,6 +49,10 @@ padded hidden domain, computes graph discharge/order, and then rasterizes
 accepted graph paths through the existing channel pipeline. D-Infinity
 accumulation remains a diagnostic and validation field, not the stress recipe's
 visible source of truth.
+Revision 18 keeps the public field contract stable but changes stress hierarchy:
+`river_trunk` now means major channels, so selected high-discharge/high-order
+graph tributaries are painted with the mainstem while smaller attached branches
+remain in `tributaries`.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -122,6 +126,8 @@ deterministic graph-first drainage tree, then paints accepted graph paths
 through the same smoothing, lateral-offset, relaxation, and width pipeline. It
 also exports `river-graph-plan.png` and `river-graph-discharge.png` so the
 source topology can be reviewed independently from the rendered river mask.
+Revision 18 promotes selected major graph tributaries into `river_trunk` while
+leaving smaller graph paths in `tributaries`.
 Treat it as a diagnostic recipe, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
@@ -140,7 +146,8 @@ given discharge/stream-order width and strength variation. Revisions 14 through
 gating rendered trunk connectivity, and pre-curving support branches. Revision
 17 keeps the default path but switches stress river masks to the graph-first
 source model, using graph discharge to drive stress channel and valley widths.
-Some tributary joins can still read too angular because this is not yet a
-Delaunay/Poisson river graph, hydraulic erosion pass, or lake/breach routing
-model. See
+Revision 18 adds graph-major-channel promotion to that stress path. Some
+tributary joins can still read too angular because this is not yet a
+Delaunay/Poisson river graph, hydraulic erosion pass, lake/breach routing model,
+or tiled world-coordinate basin graph. See
 [Terrain routing repair plan](../../docs/notes/terrain-routing-repair-plan.md).

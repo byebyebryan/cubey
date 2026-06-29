@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 17
-graph-first stress river pass.
+This note records the current terrain reboot capture set after the revision 18
+graph major-channel promotion pass.
 
 ## Capture Command
 
@@ -34,14 +34,13 @@ Revision 17 replaces the stress recipe's visible source topology with a
 deterministic jittered river graph over the padded hidden domain. The 1025
 stress capture is included as a larger artifact-hunting view because the graph
 network reads differently at thumbnail and high resolution.
-
-For the next hierarchy pass, keep the field contract unchanged but interpret
-`river_trunk` as major channels: the mainstem plus selected high-discharge or
-high-order tributaries. `tributaries` should hold smaller attached branches.
-The graph fields stay diagnostic source views. This revision 17 graph is still
-patch-local over the padded hidden domain; later world-scale terrain work should
-move topology planning into deterministic world-coordinate basin graph data and
-let local products rasterize only the tile plus halo.
+Revision 18 keeps the field contract unchanged but interprets `river_trunk` as
+major channels: the mainstem plus selected high-discharge or high-order graph
+tributaries. `tributaries` holds smaller attached branches. The graph fields
+stay diagnostic source views. This graph is still patch-local over the padded
+hidden domain; later world-scale terrain work should move topology planning into
+deterministic world-coordinate basin graph data and let local products rasterize
+only the tile plus halo.
 
 ## What To Inspect
 
@@ -58,7 +57,7 @@ let local products rasterize only the tile plus halo.
 - `flow-accumulation.png`: D-Infinity-style fractional routed catchment field.
   This should show regional organization without the obvious horizontal,
   vertical, and 45-degree D8 lattice.
-- `river-graph-plan.png`: revision 17 stress source topology before channel
+- `river-graph-plan.png`: stress source topology before channel
   painting. This should show one connected drainage graph with an obvious trunk
   and attached branches, independent of rendered channel thickness.
 - `river-graph-discharge.png`: graph discharge/order diagnostic used by the
@@ -88,9 +87,9 @@ as the desired default composition. Revision 14 intentionally prunes some stress
 trunk coverage to reduce the obvious parallel-corridor failure. Revision 15
 allows tributaries to carry more of the broad stress footprint, so use
 `river-mask.png` and `final.png` for reach review and `river-trunk.png` for
-mainstem continuity. Revision 16 keeps that split but rejects rendered trunk
-branches that would create disconnected high-strength components. The current
-stress capture should read as a clean connected mainstem with attached
+major-channel hierarchy. Revision 16 keeps that split but rejects rendered trunk
+branches that would create disconnected high-strength components. Revision 18
+should read as a clean connected major-channel network with smaller attached
 tributaries and visible width variation; the 1025 stress image is the best
 current stress read.
 
@@ -123,6 +122,9 @@ keeps the lesson from the rejected revision 4 attempt: graph edges are a source
 plan and diagnostic, not a product mask. Accepted graph paths still go through
 the channel rasterization pipeline, and merged tributary segments are painted
 once so shared downstream paths do not become parallel offset copies. The
+revision 18 hierarchy pass promotes selected graph paths into `river_trunk`
+based on graph discharge, stream order, visible length, and novelty against the
+current trunk skeleton, then leaves the remaining graph paths in `tributaries`.
 rejected revision 4 attempt made the visible product worse by rendering selected
 graph edges directly, producing disconnected snippets and hard straight or
 diagonal runs. See
@@ -138,13 +140,16 @@ surface, selects active channels from connected `stream_order` support, accepts
 extra branches only when they visibly terminate at an existing active channel,
 and converts visible paths to de-gridded centerlines. The default recipe still
 follows that route. The stress recipe now uses a deterministic graph-first
-topology source and graph discharge for channel width, but remains intentionally
-better for artifact hunting than composition review.
+topology source, graph discharge for channel width, and major-tributary
+promotion for `river_trunk`, but remains intentionally better for artifact
+hunting than composition review.
 
 Remaining limitations are now concentrated in the river source model. The
-revision 17 graph is still a jittered-grid/k-nearest graph, not a Poisson-disc
+revision 18 graph is still a jittered-grid/k-nearest graph, not a Poisson-disc
 plus Delaunay river graph, evolved hydraulic network, lake/breach router, or
 erosion model. Some branch joins still read angular, and the graph can still
-produce short spurs or sparse local reach in parts of the map. The next
-river-quality pass should improve graph topology construction before adding
-more high-level terrain features.
+produce short spurs or sparse local reach in parts of the map. The 1025 stress
+capture also shows the patch-local limitation: some promoted major channels are
+cut by the visible crop without the larger basin context that would make their
+upstream/downstream role clearer. The next river-quality pass should improve
+graph topology construction before adding more high-level terrain features.
