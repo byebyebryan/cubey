@@ -14,8 +14,13 @@ namespace cubey::projects::terrain {
 inline constexpr std::string_view kTerrainFieldHeightM = "height_m";
 inline constexpr std::string_view kTerrainFieldBaseElevation = "base_elevation";
 inline constexpr std::string_view kTerrainFieldBroadRelief = "broad_relief";
+inline constexpr std::string_view kTerrainFieldMountainRangeSpine = "mountain_range_spine";
 inline constexpr std::string_view kTerrainFieldMountainSupport = "mountain_support";
+inline constexpr std::string_view kTerrainFieldMountainRidgeHierarchy =
+    "mountain_ridge_hierarchy";
 inline constexpr std::string_view kTerrainFieldRidgeSupport = "ridge_support";
+inline constexpr std::string_view kTerrainFieldMountainPeakCandidates =
+    "mountain_peak_candidates";
 inline constexpr std::string_view kTerrainFieldPeakSupport = "peak_support";
 inline constexpr std::string_view kTerrainFieldMountainUplift = "mountain_uplift";
 inline constexpr std::string_view kTerrainFieldRidgeUplift = "ridge_uplift";

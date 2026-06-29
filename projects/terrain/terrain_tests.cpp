@@ -428,12 +428,15 @@ void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 32> required_fields{
+    const std::array<std::string_view, 35> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
         cubey::projects::terrain::kTerrainFieldBroadRelief,
+        cubey::projects::terrain::kTerrainFieldMountainRangeSpine,
         cubey::projects::terrain::kTerrainFieldMountainSupport,
+        cubey::projects::terrain::kTerrainFieldMountainRidgeHierarchy,
         cubey::projects::terrain::kTerrainFieldRidgeSupport,
+        cubey::projects::terrain::kTerrainFieldMountainPeakCandidates,
         cubey::projects::terrain::kTerrainFieldPeakSupport,
         cubey::projects::terrain::kTerrainFieldMountainUplift,
         cubey::projects::terrain::kTerrainFieldRidgeUplift,
@@ -578,10 +581,20 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
         field(baseline, cubey::projects::terrain::kTerrainFieldMountainUplift);
     const auto& baseline_peak_uplift =
         field(baseline, cubey::projects::terrain::kTerrainFieldPeakUplift);
+    const auto& baseline_range_spine =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainRangeSpine);
+    const auto& baseline_peak_candidates =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainPeakCandidates);
+    const auto& range_spine =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainRangeSpine);
     const auto& mountain_support =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainSupport);
+    const auto& ridge_hierarchy =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgeHierarchy);
     const auto& ridge_support =
         field(mountain, cubey::projects::terrain::kTerrainFieldRidgeSupport);
+    const auto& peak_candidates =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainPeakCandidates);
     const auto& peak_support =
         field(mountain, cubey::projects::terrain::kTerrainFieldPeakSupport);
     const auto& mountain_uplift =
@@ -602,22 +615,46 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
             "default terrain recipe should keep broad mountain uplift disabled");
     require(baseline_peak_uplift.summarize().max == 0.0F,
             "default terrain recipe should keep peak uplift disabled");
+    require(baseline_range_spine.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain range spine disabled");
+    require(baseline_peak_candidates.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain peak candidates disabled");
 
     const std::size_t total_samples = mountain_support.sample_count();
+    const std::size_t range_spine_samples = count_active_samples(range_spine, 0.30F);
     const std::size_t mountain_support_samples = count_active_samples(mountain_support, 0.30F);
+    const std::size_t ridge_hierarchy_samples = count_active_samples(ridge_hierarchy, 0.30F);
     const std::size_t ridge_support_samples = count_active_samples(ridge_support, 0.30F);
+    const std::size_t peak_candidate_samples = count_active_samples(peak_candidates, 0.20F);
     const std::size_t peak_support_samples = count_active_samples(peak_support, 0.20F);
+    if (range_spine_samples * 100U < total_samples * 6U ||
+        range_spine_samples * 100U > total_samples * 62U) {
+        throw std::runtime_error(
+            "terrain range spine should be broad but not full-map: samples=" +
+            std::to_string(range_spine_samples) + " total=" + std::to_string(total_samples));
+    }
     if (mountain_support_samples * 100U < total_samples * 12U ||
         mountain_support_samples * 100U > total_samples * 78U) {
         throw std::runtime_error(
             "terrain mountain support should be broad but bounded: samples=" +
             std::to_string(mountain_support_samples) + " total=" + std::to_string(total_samples));
     }
+    if (ridge_hierarchy_samples * 100U < total_samples * 3U ||
+        ridge_hierarchy_samples * 100U > total_samples * 52U) {
+        throw std::runtime_error(
+            "terrain ridge hierarchy should be visible but ranked: samples=" +
+            std::to_string(ridge_hierarchy_samples) + " total=" + std::to_string(total_samples));
+    }
     if (ridge_support_samples * 100U < total_samples * 3U ||
         ridge_support_samples * 100U > total_samples * 58U) {
         throw std::runtime_error(
             "terrain ridge support should be visible but not full-map: samples=" +
             std::to_string(ridge_support_samples) + " total=" + std::to_string(total_samples));
+    }
+    if (peak_candidate_samples < 32U || peak_candidate_samples * 100U > total_samples * 30U) {
+        throw std::runtime_error(
+            "terrain peak candidates should be sparse and attached: samples=" +
+            std::to_string(peak_candidate_samples) + " total=" + std::to_string(total_samples));
     }
     if (peak_support_samples < 32U || peak_support_samples * 100U > total_samples * 34U) {
         throw std::runtime_error(
@@ -955,12 +992,21 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_relief") ==
                 cubey::projects::terrain::TerrainDebugView::MountainRelief,
             "terrain debug view should parse mountain relief aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_range_spine") ==
+                cubey::projects::terrain::TerrainDebugView::MountainRangeSpine,
+            "terrain debug view should parse mountain range spine aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_support") ==
                 cubey::projects::terrain::TerrainDebugView::MountainSupport,
             "terrain debug view should parse mountain support aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_ridge_hierarchy") ==
+                cubey::projects::terrain::TerrainDebugView::MountainRidgeHierarchy,
+            "terrain debug view should parse mountain ridge hierarchy aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("ridge_support") ==
                 cubey::projects::terrain::TerrainDebugView::RidgeSupport,
             "terrain debug view should parse ridge support aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_peak_candidates") ==
+                cubey::projects::terrain::TerrainDebugView::MountainPeakCandidates,
+            "terrain debug view should parse mountain peak candidates aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("peak_support") ==
                 cubey::projects::terrain::TerrainDebugView::PeakSupport,
             "terrain debug view should parse peak support aliases");
