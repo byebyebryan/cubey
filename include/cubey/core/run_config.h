@@ -242,6 +242,7 @@ struct RunConfig {
         std::string render_path{};
         std::string sampling_mode{};
         std::string density_model{};
+        std::string resolve_mode{};
         std::string background_mode{};
         std::string distance_mode{};
         std::string orbit_representation{};

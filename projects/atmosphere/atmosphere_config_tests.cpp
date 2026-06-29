@@ -332,6 +332,14 @@ int main() {
     require(atmosphere_cloud_density_model_from_name("cloud-ref-compatible") ==
                 CloudLayerDensityModel::CloudRefCompatible,
             "cloud-ref-compatible density model should parse");
+    require(atmosphere_cloud_resolve_mode_from_name("") == CloudLayerResolveMode::TerrainPost,
+            "empty cloud resolve mode should default to terrain post");
+    require(atmosphere_cloud_resolve_mode_from_name("metadata-bilateral") ==
+                CloudLayerResolveMode::MetadataBilateral,
+            "metadata-bilateral cloud resolve mode should parse");
+    require(atmosphere_cloud_resolve_mode_from_name("gaussian") ==
+                CloudLayerResolveMode::TerrainPost,
+            "terrain post cloud resolve alias should parse");
 
     {
         const TimeOfDayConfig defaults;
@@ -515,6 +523,7 @@ int main() {
         run_config.clouds.distance_mode = "orbit-shell";
         run_config.clouds.orbit_representation = "volume";
         run_config.clouds.density_model = "procedural";
+        run_config.clouds.resolve_mode = "metadata-bilateral";
         run_config.clouds.planet_radius_m = 700000.0F;
         run_config.clouds.coverage = 0.25F;
         run_config.clouds.shape_domain_km = 840.0F;
@@ -543,6 +552,8 @@ int main() {
                 "atmosphere run config should map cloud orbit representation");
         require(config.clouds.layer.density_model == CloudLayerDensityModel::Procedural,
                 "atmosphere run config should map cloud density model");
+        require(config.clouds.layer.resolve_mode == CloudLayerResolveMode::MetadataBilateral,
+                "atmosphere run config should map cloud resolve mode");
         require_near(config.clouds.layer.planet_radius_m, 700000.0F, 0.001F,
                      "atmosphere run config should map cloud planet radius");
         require_near(config.clouds.layer.coverage, 0.25F, 0.001F,

@@ -10,6 +10,10 @@ float cloud_edge_resolve_strength() {
     return clamp(params.edge_options.z, 0.0, 1.0);
 }
 
+int cloud_resolve_mode() {
+    return int(clamp(params.edge_options.w, 0.0, 1.0) + 0.5);
+}
+
 float cloud_alpha_at(vec2 uv) {
     return cloud_metadata_alpha(texture(cloud_product_texture, uv),
                                 texture(cloud_metadata_texture, uv));
@@ -36,6 +40,67 @@ float cloud_edge_mask(vec2 uv, vec4 cloud, vec4 metadata, vec3 direction, vec2 t
                      mix(0.82, 1.24, horizon),
                  0.0,
                  1.0);
+}
+
+float cloud_terrain_post_kernel_weight(ivec2 offset) {
+    int manhattan = abs(offset.x) + abs(offset.y);
+    if (manhattan == 0) {
+        return 4.0 / 16.0;
+    }
+    if (manhattan == 1) {
+        return 2.0 / 16.0;
+    }
+    return 1.0 / 16.0;
+}
+
+float cloud_terrain_post_neighbor_weight(vec4 center_cloud, vec4 center_metadata,
+                                         vec4 sample_cloud, vec4 sample_metadata,
+                                         ivec2 offset) {
+    float kernel_weight = cloud_terrain_post_kernel_weight(offset);
+    float center_alpha = cloud_metadata_alpha(center_cloud, center_metadata);
+    float sample_alpha = cloud_metadata_alpha(sample_cloud, sample_metadata);
+    if (max(center_alpha, sample_alpha) < 0.002) {
+        return kernel_weight;
+    }
+
+    float alpha_weight = exp(-abs(sample_alpha - center_alpha) * 1.35);
+    float center_distance = max(center_metadata.r, 0.0);
+    float sample_distance = max(sample_metadata.r, 0.0);
+    float distance_weight = 1.0;
+    if (center_distance > 0.0 && sample_distance > 0.0 &&
+        max(center_alpha, sample_alpha) > 0.02) {
+        float distance_scale = max(min(center_distance, sample_distance) * 0.08, 2500.0);
+        distance_weight = exp(-abs(sample_distance - center_distance) / distance_scale);
+    }
+    return kernel_weight * alpha_weight * distance_weight;
+}
+
+vec4 cloud_resolve_cloud_product_terrain_post(vec2 uv) {
+    ivec2 size = textureSize(cloud_product_texture, 0);
+    vec2 texel = 1.0 / vec2(max(size, ivec2(1)));
+    vec4 center = texture(cloud_product_texture, uv);
+    vec4 center_metadata = texture(cloud_metadata_texture, uv);
+    vec4 total = vec4(0.0);
+    float total_weight = 0.0;
+
+    for (int y = -1; y <= 1; ++y) {
+        for (int x = -1; x <= 1; ++x) {
+            ivec2 offset_i = ivec2(x, y);
+            vec2 offset = vec2(float(x), float(y)) * texel;
+            vec4 sample_value = texture(cloud_product_texture, uv + offset);
+            vec4 sample_metadata = texture(cloud_metadata_texture, uv + offset);
+            float weight = cloud_terrain_post_neighbor_weight(center, center_metadata,
+                                                              sample_value, sample_metadata,
+                                                              offset_i);
+            total += sample_value * weight;
+            total_weight += weight;
+        }
+    }
+
+    vec4 resolved = total / max(total_weight, 0.0001);
+    resolved.rgb = max(resolved.rgb, vec3(0.0));
+    resolved.a = clamp(resolved.a, 0.0, 1.0);
+    return resolved;
 }
 
 float cloud_resolve_neighbor_weight(vec4 center_cloud, vec4 center_metadata,
@@ -71,7 +136,7 @@ float cloud_resolve_neighbor_weight(vec4 center_cloud, vec4 center_metadata,
     return kernel_weight * alpha_weight * distance_weight * confidence_weight;
 }
 
-vec4 cloud_resolve_cloud_product(vec2 uv, vec3 direction) {
+vec4 cloud_resolve_cloud_product_metadata_bilateral(vec2 uv, vec3 direction) {
     ivec2 size = textureSize(cloud_product_texture, 0);
     vec2 texel = 1.0 / vec2(max(size, ivec2(1)));
     vec4 center = texture(cloud_product_texture, uv);
@@ -107,6 +172,13 @@ vec4 cloud_resolve_cloud_product(vec2 uv, vec3 direction) {
         }
     }
     return total / max(total_weight, 0.0001);
+}
+
+vec4 cloud_resolve_cloud_product(vec2 uv, vec3 direction) {
+    if (cloud_resolve_mode() == CLOUD_RESOLVE_METADATA_BILATERAL) {
+        return cloud_resolve_cloud_product_metadata_bilateral(uv, direction);
+    }
+    return cloud_resolve_cloud_product_terrain_post(uv);
 }
 
 float cloud_resolve_strength(vec2 uv, vec4 raw_cloud, vec4 raw_metadata, vec3 direction) {

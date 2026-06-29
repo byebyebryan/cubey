@@ -142,6 +142,7 @@ struct MoonConfig {
     config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
     config.distance_mode = cubey::render::CloudLayerDistanceMode::Auto;
     config.density_model = cubey::render::CloudLayerDensityModel::Procedural;
+    config.resolve_mode = cubey::render::CloudLayerResolveMode::TerrainPost;
     config.debug_view = cubey::render::CloudLayerDebugView::Final;
     config.sampling_mode = cubey::render::CloudLayerSamplingMode::Bayer;
     config.temporal_enabled = false;
@@ -255,6 +256,12 @@ inline constexpr std::array<cubey::render::CloudLayerDensityModel, 3>
         cubey::render::CloudLayerDensityModel::RefDensity,
         cubey::render::CloudLayerDensityModel::Procedural,
         cubey::render::CloudLayerDensityModel::CloudRefCompatible,
+    };
+
+inline constexpr std::array<cubey::render::CloudLayerResolveMode, 2>
+    kAtmosphereCloudResolveModes{
+        cubey::render::CloudLayerResolveMode::TerrainPost,
+        cubey::render::CloudLayerResolveMode::MetadataBilateral,
     };
 
 [[nodiscard]] inline const char*
@@ -432,6 +439,28 @@ atmosphere_cloud_density_model_from_name(std::string_view name) {
         return cubey::render::CloudLayerDensityModel::CloudRefCompatible;
     }
     throw std::runtime_error("unknown atmosphere cloud density model: " + std::string(name));
+}
+
+[[nodiscard]] inline const char*
+atmosphere_cloud_resolve_mode_name(cubey::render::CloudLayerResolveMode mode) {
+    switch (mode) {
+    case cubey::render::CloudLayerResolveMode::TerrainPost:
+        return "terrain-post";
+    case cubey::render::CloudLayerResolveMode::MetadataBilateral:
+        return "metadata-bilateral";
+    }
+    return "terrain-post";
+}
+
+[[nodiscard]] inline cubey::render::CloudLayerResolveMode
+atmosphere_cloud_resolve_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "terrain-post" || name == "terrain" || name == "gaussian") {
+        return cubey::render::CloudLayerResolveMode::TerrainPost;
+    }
+    if (name == "metadata-bilateral" || name == "bilateral" || name == "metadata") {
+        return cubey::render::CloudLayerResolveMode::MetadataBilateral;
+    }
+    throw std::runtime_error("unknown atmosphere cloud resolve mode: " + std::string(name));
 }
 
 struct AtmosphereCloudWeatherPresetSettings {
@@ -1018,6 +1047,10 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
     if (!run_clouds.density_model.empty()) {
         config.layer.density_model =
             atmosphere_cloud_density_model_from_name(run_clouds.density_model);
+    }
+    if (!run_clouds.resolve_mode.empty()) {
+        config.layer.resolve_mode =
+            atmosphere_cloud_resolve_mode_from_name(run_clouds.resolve_mode);
     }
     if (!run_clouds.weather_preset.empty()) {
         apply_atmosphere_cloud_weather_preset(

@@ -77,6 +77,9 @@ const int CLOUD_DISTANCE_BLEND_DEBUG = 3;
 const int CLOUD_ORBIT_REPRESENTATION_VOLUME = 0;
 const int CLOUD_ORBIT_REPRESENTATION_SURFACE_SHELL = 1;
 
+const int CLOUD_RESOLVE_TERRAIN_POST = 0;
+const int CLOUD_RESOLVE_METADATA_BILATERAL = 1;
+
 layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 camera_right_aspect;
     vec4 camera_up_tan_half_fovy;

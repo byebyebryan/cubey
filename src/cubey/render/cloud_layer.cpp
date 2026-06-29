@@ -177,6 +177,10 @@ namespace {
     return static_cast<float>(static_cast<std::uint32_t>(model));
 }
 
+[[nodiscard]] float resolve_mode_value(CloudLayerResolveMode mode) {
+    return static_cast<float>(static_cast<std::uint32_t>(mode));
+}
+
 [[nodiscard]] float cloud_style_value(CloudLayerCloudStyle style) {
     return static_cast<float>(static_cast<std::uint32_t>(style));
 }
@@ -791,7 +795,7 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
         .density_options = {density_model_value(config.density_model), config.shape_domain_km,
                             config.footprint_filter_strength, 0.0F},
         .edge_options = {config.edge_softness, config.edge_detail_fade,
-                         config.edge_resolve_strength, 0.0F},
+                         config.edge_resolve_strength, resolve_mode_value(config.resolve_mode)},
     };
 }
 

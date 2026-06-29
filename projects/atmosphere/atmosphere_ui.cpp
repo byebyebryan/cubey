@@ -321,6 +321,10 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
                                             "%.2f", "Final cloud contrast multiplier.");
             cubey::host::imgui_slider_float("Saturation", &layer.final_saturation, 0.0F, 3.0F,
                                             "%.2f", "Final cloud saturation multiplier.");
+            cubey::host::imgui_enum_combo(
+                "Resolve mode", layer.resolve_mode, kAtmosphereCloudResolveModes,
+                atmosphere_cloud_resolve_mode_name,
+                "Final cloud resolve filter. Terrain-post follows the reference post blur; metadata-bilateral keeps the previous guarded filter.");
             cubey::host::imgui_slider_float("Resolve", &layer.resolve_strength, 0.0F, 1.0F,
                                             "%.2f", "Alpha-aware cloud resolve strength.");
             cubey::host::imgui_slider_float("Horizon glow", &layer.horizon_glow_strength, 0.0F,

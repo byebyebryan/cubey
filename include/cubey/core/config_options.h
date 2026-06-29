@@ -158,6 +158,7 @@ enum class RunConfigOptionId {
     CloudCacheTextureSize,
     CloudRenderPath,
     CloudDensityModel,
+    CloudResolveMode,
     CloudBackgroundMode,
     CloudDistanceMode,
     CloudOrbitRepresentation,

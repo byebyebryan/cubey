@@ -89,6 +89,11 @@ enum class CloudLayerDensityModel : std::uint32_t {
     CloudRefCompatible = 2,
 };
 
+enum class CloudLayerResolveMode : std::uint32_t {
+    TerrainPost = 0,
+    MetadataBilateral = 1,
+};
+
 enum class CloudLayerCloudStyle : std::uint32_t {
     FairWeather = 0,
     BrokenCumulus = 1,
@@ -228,6 +233,7 @@ struct CloudLayerConfig {
     CloudLayerOrbitRepresentation orbit_representation =
         CloudLayerOrbitRepresentation::SurfaceShell;
     CloudLayerDensityModel density_model = CloudLayerDensityModel::Procedural;
+    CloudLayerResolveMode resolve_mode = CloudLayerResolveMode::TerrainPost;
     CloudLayerDebugView debug_view = CloudLayerDebugView::Final;
     bool temporal_enabled = false;
     bool powder_enabled = true;
