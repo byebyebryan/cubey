@@ -120,9 +120,11 @@ The stress recipe now keeps its trunk continuous and uses connected tributary
 basin growth for broader diagnostic reach, but remains intentionally better for
 artifact hunting than composition review.
 
-Remaining limitations are now concentrated in hydrology, basin hierarchy, and
-corridor scoring rather than only flow accumulation. Stress captures can still
-read too sparse and side-branch hierarchy is not yet broad enough to feel like a
-mature river network. The next river-quality pass should evaluate breach
-routing and process erosion references, then improve organic tributary
-curvature, basin reach, stress performance, and default composition scoring.
+Remaining limitations are now concentrated in the river source model. The
+revision 16 stress recipe still chooses topology from raster routing products
+and then tries to smooth, curve, reject, or promote paths after the fact. That
+has produced an oscillation between sparse coverage and visible D8-like
+straight or diagonal runs. The next river-quality pass should make the stress
+recipe graph-first: generate a deterministic non-grid drainage tree, compute
+graph discharge/order, rasterize through the existing channel pipeline, and keep
+flow accumulation as validation rather than the visible network source.

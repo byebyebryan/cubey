@@ -43,6 +43,10 @@ trunk promotion provisional at render time: candidates are accepted only if the
 painted trunk remains dominated by one connected component. It also tightens
 grid-aligned support caps and pre-curves connected support/order-seed/corridor
 branches before rasterization to reduce obvious D8-looking tributary strokes.
+The next stress-river batch pivots away from this raster-routing-derived source
+model: stress topology should be generated as a deterministic non-grid river
+graph first, with D-Infinity accumulation kept as a diagnostic and validation
+field.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
