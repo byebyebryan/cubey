@@ -98,6 +98,7 @@ Authoritative current docs:
 - [Architecture notes](docs/architecture/README.md)
 - [Vulkan abstraction map](docs/architecture/vulkan-abstractions.md)
 - [Renderer foundation](docs/architecture/renderer-foundation.md)
+- [Reference-first rendering feature workflow](docs/architecture/rendering-feature-workflow.md)
 - [PBR and IBL direction](docs/architecture/pbr-ibl.md)
 - [Render graph direction](docs/architecture/render-graph.md)
 - [Entity and component foundation](docs/architecture/entity-component-foundation.md)
