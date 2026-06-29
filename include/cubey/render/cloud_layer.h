@@ -240,6 +240,9 @@ struct CloudLayerConfig {
     float weather_scale_km = 120.0F;
     float shape_domain_km = 600.0F;
     float footprint_filter_strength = 1.0F;
+    float edge_softness = 1.0F;
+    float edge_detail_fade = 0.75F;
+    float edge_resolve_strength = 0.70F;
     float vertical_shear_fraction = 0.0F;
     float wind_offset_m = 0.0F;
     float shadow_strength = 0.82F;
@@ -330,9 +333,10 @@ struct CloudLayerFrameUniforms {
     math::Vec4 orbit_shell_options;
     math::Vec4 scene_depth_options;
     math::Vec4 density_options;
+    math::Vec4 edge_options;
 };
 
-static_assert(sizeof(CloudLayerFrameUniforms) == sizeof(float) * 88U);
+static_assert(sizeof(CloudLayerFrameUniforms) == sizeof(float) * 92U);
 
 struct CloudLayerTemporalUniforms {
     math::Vec4 current_camera_right_aspect;

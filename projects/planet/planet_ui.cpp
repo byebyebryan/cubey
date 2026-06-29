@@ -363,6 +363,15 @@ void draw_cloud_controls(PlanetUiContext& ui) {
                                             &layer.footprint_filter_strength, 0.0F, 2.0F,
                                             "%.2f",
                                             "Deterministic mip filtering for distant or grazing cloud detail.");
+            cubey::host::imgui_slider_float("Edge softness", &layer.edge_softness, 0.0F, 2.0F,
+                                            "%.2f",
+                                            "Footprint-aware softening applied to unresolved cloud density edges.");
+            cubey::host::imgui_slider_float("Edge detail fade", &layer.edge_detail_fade, 0.0F,
+                                            2.0F, "%.2f",
+                                            "Fade high-frequency erosion where the edge is under-resolved.");
+            cubey::host::imgui_slider_float("Edge resolve", &layer.edge_resolve_strength, 0.0F,
+                                            1.0F, "%.2f",
+                                            "Final-composite resolve strength for cloud edge pixels.");
             cubey::host::imgui_slider_float("Crispiness", &layer.crispiness, 1.0F, 80.0F,
                                             "%.1f", "Base density texture frequency/sharpness.");
             cubey::host::imgui_slider_float("Curliness", &layer.curliness, 0.0F, 1.0F, "%.2f",

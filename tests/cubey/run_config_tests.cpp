@@ -352,6 +352,9 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.weather_scale_km",
         "clouds.shape_domain_km",
         "clouds.footprint_filter_strength",
+        "clouds.edge_softness",
+        "clouds.edge_detail_fade",
+        "clouds.edge_resolve_strength",
         "clouds.vertical_shear_fraction",
         "clouds.wind_speed_mps",
         "clouds.shadow_strength",
@@ -1037,6 +1040,12 @@ void test_run_config_parses_cloud_options() {
     std::string shape_domain_value = "840";
     std::string footprint_filter_flag = "--cloud-footprint-filter-strength";
     std::string footprint_filter_value = "1.35";
+    std::string edge_softness_flag = "--cloud-edge-softness";
+    std::string edge_softness_value = "1.20";
+    std::string edge_detail_fade_flag = "--cloud-edge-detail-fade";
+    std::string edge_detail_fade_value = "0.55";
+    std::string edge_resolve_flag = "--cloud-edge-resolve-strength";
+    std::string edge_resolve_value = "0.80";
     std::string vertical_shear_flag = "--cloud-vertical-shear-fraction";
     std::string vertical_shear_value = "0.16";
     std::string wind_flag = "--cloud-wind-speed-mps";
@@ -1063,7 +1072,7 @@ void test_run_config_parses_cloud_options() {
     std::string debug_flag = "--cloud-debug-view";
     std::string debug_value = "transition-weights";
     std::string temporal_flag = "--no-cloud-temporal";
-    std::array<char*, 59> argv{
+    std::array<char*, 65> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -1097,6 +1106,12 @@ void test_run_config_parses_cloud_options() {
         shape_domain_value.data(),
         footprint_filter_flag.data(),
         footprint_filter_value.data(),
+        edge_softness_flag.data(),
+        edge_softness_value.data(),
+        edge_detail_fade_flag.data(),
+        edge_detail_fade_value.data(),
+        edge_resolve_flag.data(),
+        edge_resolve_value.data(),
         vertical_shear_flag.data(),
         vertical_shear_value.data(),
         wind_flag.data(),
@@ -1159,6 +1174,12 @@ void test_run_config_parses_cloud_options() {
             "run config should parse cloud shape domain");
     require(config.clouds.footprint_filter_strength == 1.35F,
             "run config should parse cloud footprint filter strength");
+    require(config.clouds.edge_softness == 1.20F,
+            "run config should parse cloud edge softness");
+    require(config.clouds.edge_detail_fade == 0.55F,
+            "run config should parse cloud edge detail fade");
+    require(config.clouds.edge_resolve_strength == 0.80F,
+            "run config should parse cloud edge resolve strength");
     require(config.clouds.vertical_shear_fraction == 0.16F,
             "run config should parse cloud vertical shear fraction");
     require(config.clouds.wind_speed_mps == 32.0F, "run config should parse cloud wind speed");

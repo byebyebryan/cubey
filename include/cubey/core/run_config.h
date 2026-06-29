@@ -254,6 +254,9 @@ struct RunConfig {
         float weather_scale_km = kRunConfigUnsetFloat;
         float shape_domain_km = kRunConfigUnsetFloat;
         float footprint_filter_strength = kRunConfigUnsetFloat;
+        float edge_softness = kRunConfigUnsetFloat;
+        float edge_detail_fade = kRunConfigUnsetFloat;
+        float edge_resolve_strength = kRunConfigUnsetFloat;
         float vertical_shear_fraction = kRunConfigUnsetFloat;
         float wind_speed_mps = kRunConfigUnsetFloat;
         float shadow_strength = kRunConfigUnsetFloat;

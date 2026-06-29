@@ -152,6 +152,9 @@ struct MoonConfig {
     config.weather_scale_km = 120.0F;
     config.shape_domain_km = 600.0F;
     config.footprint_filter_strength = 1.0F;
+    config.edge_softness = 1.0F;
+    config.edge_detail_fade = 0.75F;
+    config.edge_resolve_strength = 0.70F;
     config.shadow_strength = 0.82F;
     config.horizon_strength = 0.48F;
     config.weather_softness = 0.22F;
@@ -1029,6 +1032,9 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
     apply_float(run_clouds.weather_scale_km, config.layer.weather_scale_km);
     apply_float(run_clouds.shape_domain_km, config.layer.shape_domain_km);
     apply_float(run_clouds.footprint_filter_strength, config.layer.footprint_filter_strength);
+    apply_float(run_clouds.edge_softness, config.layer.edge_softness);
+    apply_float(run_clouds.edge_detail_fade, config.layer.edge_detail_fade);
+    apply_float(run_clouds.edge_resolve_strength, config.layer.edge_resolve_strength);
     apply_float(run_clouds.vertical_shear_fraction, config.layer.vertical_shear_fraction);
     apply_float(run_clouds.wind_speed_mps, config.wind_speed_mps);
     apply_float(run_clouds.shadow_strength, config.layer.shadow_strength);

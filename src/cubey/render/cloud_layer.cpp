@@ -785,6 +785,8 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
                                 std::max(frame.scene_depth_fade_m, 1.0F)},
         .density_options = {density_model_value(config.density_model), config.shape_domain_km,
                             config.footprint_filter_strength, 0.0F},
+        .edge_options = {config.edge_softness, config.edge_detail_fade,
+                         config.edge_resolve_strength, 0.0F},
     };
 }
 
@@ -938,7 +940,9 @@ namespace {
            cloud_layer_near(previous.distance_options, current.distance_options) &&
            cloud_layer_near(previous.orbit_options, current.orbit_options) &&
            cloud_layer_near(previous.orbit_shell_options, current.orbit_shell_options) &&
-           cloud_layer_near(previous.scene_depth_options, current.scene_depth_options);
+           cloud_layer_near(previous.scene_depth_options, current.scene_depth_options) &&
+           cloud_layer_near(previous.density_options, current.density_options) &&
+           cloud_layer_near(previous.edge_options, current.edge_options);
 }
 
 [[nodiscard]] bool cloud_layer_extent_equal(VkExtent2D lhs, VkExtent2D rhs) {

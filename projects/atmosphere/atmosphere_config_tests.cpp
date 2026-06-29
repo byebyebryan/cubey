@@ -516,6 +516,9 @@ int main() {
         run_config.clouds.coverage = 0.25F;
         run_config.clouds.shape_domain_km = 840.0F;
         run_config.clouds.footprint_filter_strength = 1.35F;
+        run_config.clouds.edge_softness = 1.20F;
+        run_config.clouds.edge_detail_fade = 0.55F;
+        run_config.clouds.edge_resolve_strength = 0.80F;
         run_config.clouds.wind_speed_mps = 42.0F;
         run_config.clouds.temporal = 0;
         run_config.clouds.local_volume = 0;
@@ -545,6 +548,12 @@ int main() {
                      "atmosphere run config should map cloud shape domain");
         require_near(config.clouds.layer.footprint_filter_strength, 1.35F, 0.001F,
                      "atmosphere run config should map cloud footprint filter strength");
+        require_near(config.clouds.layer.edge_softness, 1.20F, 0.001F,
+                     "atmosphere run config should map cloud edge softness");
+        require_near(config.clouds.layer.edge_detail_fade, 0.55F, 0.001F,
+                     "atmosphere run config should map cloud edge detail fade");
+        require_near(config.clouds.layer.edge_resolve_strength, 0.80F, 0.001F,
+                     "atmosphere run config should map cloud edge resolve strength");
         require_near(config.clouds.wind_speed_mps, 42.0F, 0.001F,
                      "atmosphere run config explicit cloud wind should override preset");
         require(!config.clouds.layer.temporal_enabled,

@@ -128,7 +128,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 236> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 239> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -633,6 +633,18 @@ constexpr std::array<ConfigOptionDescriptor, 236> kRunConfigOptions{
            "--cloud-footprint-filter-strength", "Footprint Filter", "Clouds",
            "Strength of deterministic footprint filtering for far and grazing cloud detail.",
            ConfigOptionType::Float, bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudEdgeSoftness, "clouds.edge_softness",
+           "--cloud-edge-softness", "Edge Softness", "Clouds",
+           "Strength of footprint-aware density edge softening.", ConfigOptionType::Float,
+           bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudEdgeDetailFade, "clouds.edge_detail_fade",
+           "--cloud-edge-detail-fade", "Edge Detail Fade", "Clouds",
+           "Amount of unresolved high-frequency detail erosion faded at cloud edges.",
+           ConfigOptionType::Float, bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudEdgeResolveStrength, "clouds.edge_resolve_strength",
+           "--cloud-edge-resolve-strength", "Edge Resolve", "Clouds",
+           "Strength of edge-aware cloud resolve in the final composite.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudVerticalShearFraction, "clouds.vertical_shear_fraction",
            "--cloud-vertical-shear-fraction", "Vertical Shear", "Clouds",
            "Fraction of weather feature size used for altitude-dependent cloud shear.",
@@ -1434,6 +1446,12 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.shape_domain_km);
     case RunConfigOptionId::CloudFootprintFilterStrength:
         return optional_float(config.clouds.footprint_filter_strength);
+    case RunConfigOptionId::CloudEdgeSoftness:
+        return optional_float(config.clouds.edge_softness);
+    case RunConfigOptionId::CloudEdgeDetailFade:
+        return optional_float(config.clouds.edge_detail_fade);
+    case RunConfigOptionId::CloudEdgeResolveStrength:
+        return optional_float(config.clouds.edge_resolve_strength);
     case RunConfigOptionId::CloudVerticalShearFraction:
         return optional_float(config.clouds.vertical_shear_fraction);
     case RunConfigOptionId::CloudWindSpeed:
@@ -1918,6 +1936,9 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("weather_scale_km", options.weather_scale_km);
     adapter.writeField<float>("shape_domain_km", options.shape_domain_km);
     adapter.writeField<float>("footprint_filter_strength", options.footprint_filter_strength);
+    adapter.writeField<float>("edge_softness", options.edge_softness);
+    adapter.writeField<float>("edge_detail_fade", options.edge_detail_fade);
+    adapter.writeField<float>("edge_resolve_strength", options.edge_resolve_strength);
     adapter.writeField<float>("vertical_shear_fraction", options.vertical_shear_fraction);
     adapter.writeField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.writeField<float>("shadow_strength", options.shadow_strength);
@@ -1975,6 +1996,9 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("weather_scale_km", options.weather_scale_km);
     adapter.readField<float>("shape_domain_km", options.shape_domain_km);
     adapter.readField<float>("footprint_filter_strength", options.footprint_filter_strength);
+    adapter.readField<float>("edge_softness", options.edge_softness);
+    adapter.readField<float>("edge_detail_fade", options.edge_detail_fade);
+    adapter.readField<float>("edge_resolve_strength", options.edge_resolve_strength);
     adapter.readField<float>("vertical_shear_fraction", options.vertical_shear_fraction);
     adapter.readField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.readField<float>("shadow_strength", options.shadow_strength);
@@ -2668,6 +2692,18 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudFootprintFilterStrength:
         config.clouds.footprint_filter_strength = parse_config_float(value, option);
         validate_range(config.clouds.footprint_filter_strength, option);
+        break;
+    case RunConfigOptionId::CloudEdgeSoftness:
+        config.clouds.edge_softness = parse_config_float(value, option);
+        validate_range(config.clouds.edge_softness, option);
+        break;
+    case RunConfigOptionId::CloudEdgeDetailFade:
+        config.clouds.edge_detail_fade = parse_config_float(value, option);
+        validate_range(config.clouds.edge_detail_fade, option);
+        break;
+    case RunConfigOptionId::CloudEdgeResolveStrength:
+        config.clouds.edge_resolve_strength = parse_config_float(value, option);
+        validate_range(config.clouds.edge_resolve_strength, option);
         break;
     case RunConfigOptionId::CloudVerticalShearFraction:
         config.clouds.vertical_shear_fraction = parse_config_float(value, option);
