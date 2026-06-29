@@ -163,6 +163,8 @@ capture_named surface-horizon-cloud-alpha "Surface horizon cloud alpha" horizon-
     "${surface_horizon_day[@]}" --cloud-debug-view cloud-alpha
 capture_named surface-horizon-metadata-confidence "Surface horizon metadata confidence" \
     horizon-diagnostics "${surface_horizon_day[@]}" --cloud-debug-view metadata-confidence
+capture_named surface-horizon-edge-mask "Surface horizon edge mask" horizon-diagnostics \
+    "${surface_horizon_day[@]}" --cloud-debug-view edge-mask
 capture_named surface-horizon-steps "Surface horizon steps" horizon-diagnostics \
     "${surface_horizon_day[@]}" --cloud-debug-view steps
 capture_named surface-horizon-far-shell-alpha "Surface horizon far-shell alpha" \
@@ -192,6 +194,8 @@ capture_named surface-up-raw-final "Surface upward raw final" diagnostics \
     "${surface_up_day[@]}" --cloud-debug-view raw-final
 capture_named surface-up-cloud-alpha "Surface upward cloud alpha" diagnostics \
     "${surface_up_day[@]}" --cloud-debug-view cloud-alpha
+capture_named surface-up-edge-mask "Surface upward edge mask" diagnostics \
+    "${surface_up_day[@]}" --cloud-debug-view edge-mask
 capture_named surface-up-density "Surface upward density" diagnostics \
     "${surface_up_day[@]}" --cloud-debug-view density
 capture_named surface-up-lighting "Surface upward lighting" diagnostics \
@@ -215,6 +219,8 @@ capture_named high-oblique-cloud-alpha "High oblique cloud alpha" transition-dia
     "${high_oblique_day[@]}" --cloud-debug-view cloud-alpha
 capture_named high-oblique-metadata-confidence "High oblique metadata confidence" \
     transition-diagnostics "${high_oblique_day[@]}" --cloud-debug-view metadata-confidence
+capture_named high-oblique-edge-mask "High oblique edge mask" transition-diagnostics \
+    "${high_oblique_day[@]}" --cloud-debug-view edge-mask
 capture_named high-oblique-steps "High oblique steps" transition-diagnostics \
     "${high_oblique_day[@]}" --cloud-debug-view steps
 capture_named high-oblique-far-shell-alpha "High oblique far-shell alpha" \
@@ -284,6 +290,8 @@ if [[ "${DEEP}" != "0" ]]; then
         "${surface_up_day[@]}" --cloud-debug-view phase-light
     capture_named surface-up-metadata-confidence "Surface upward metadata confidence" deep-diagnostics \
         "${surface_up_day[@]}" --cloud-debug-view metadata-confidence
+    capture_named surface-up-edge-mask-deep "Surface upward edge mask" deep-diagnostics \
+        "${surface_up_day[@]}" --cloud-debug-view edge-mask
     capture_named surface-up-steps "Surface upward steps" deep-diagnostics \
         "${surface_up_day[@]}" --cloud-debug-view steps
 fi

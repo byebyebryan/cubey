@@ -148,8 +148,8 @@ Initial scope:
   image polish can be isolated from raw march quality;
 - deterministic static sampling controls for interleaved-gradient, Bayer,
   blue-noise, and center-of-step ray starts, plus a metadata-aware final resolve
-  that uses opacity, mean distance, and confidence while leaving `raw-final`
-  unfiltered;
+  that uses opacity, mean distance, confidence, and a cloud-edge mask while
+  leaving `raw-final` unfiltered;
 - stable Bayer ray-start jitter is the default production sampling path until
   sparse temporal reconstruction is stronger. Blue-noise remains available for
   diagnostics and future spatiotemporal resolve work, but frame-varying jitter by
@@ -223,7 +223,13 @@ clouds therefore split the controls:
 - `weather_scale_km`: macro weather placement, broad coverage, and type fields;
 - `shape_domain_km`: local base/detail density texture projection;
 - `footprint_filter_strength`: deterministic mip/filter response for distant or
-  grazing cloud detail.
+  grazing cloud detail;
+- `edge_softness`: footprint-aware widening of procedural density thresholds so
+  under-resolved cloud boundaries do not collapse into binary Bayer dots;
+- `edge_detail_fade`: reduction of high-frequency erosion only where the density
+  edge is under-resolved;
+- `edge_resolve_strength`: final-composite edge resolve weight. It is applied
+  through the `edge-mask` debug diagnostic, not as a whole-image blur.
 
 `cloud-ref-compatible` should be kept as a diagnostic mode, but it should match
 the reference through `shape_domain_km`, not by pretending the atmosphere has a
@@ -348,7 +354,8 @@ absorbed into atmosphere. The next milestone should be small and hard to fake:
 3. Improve high-altitude and horizon continuity without regressing the credible
    surface cloud look.
 4. Keep sampling and resolve controls isolated so capture bundles can compare
-   blue-noise/temporal, Bayer, interleaved, and no-jitter output.
+   blue-noise/temporal, Bayer, interleaved, no-jitter, raw-final, and edge-mask
+   output.
 5. Expose cloud outputs only when a second consumer has a concrete contract for
    radiance/transmittance, metadata, shadow, or reflection data.
 
@@ -361,8 +368,8 @@ Acceptance for this milestone:
 - half-resolution final captures do not rely on full-res supersampling to hide
   horizon/far-field noise;
 - atmosphere exposes enough controls to isolate density, detail erosion,
-  weather map, local shape domain, footprint filtering, sampling, lighting,
-  composition, and metadata output;
+  weather map, local shape domain, footprint filtering, edge softening,
+  sampling, lighting, composition, and metadata output;
 - the implementation does not duplicate project-local atmosphere horizon logic.
 
 Only after that should the production layer add the cached hemisphere path from
