@@ -118,6 +118,10 @@ float cloud_interleaved_gradient_noise(ivec2 pixel) {
     return fract(52.9829189 * fract(0.06711056 * p.x + 0.00583715 * p.y));
 }
 
+float cloud_stable_bayer_jitter(ivec2 pixel) {
+    return BAYER[(pixel.y & 3) * 4 + (pixel.x & 3)];
+}
+
 ivec2 cloud_temporal_pixel(ivec2 pixel) {
     if (params.temporal_options.y < 0.5) {
         return pixel;
@@ -136,7 +140,7 @@ float cloud_ray_jitter(ivec2 pixel) {
         jitter = cloud_interleaved_gradient_noise(
             temporal_pixel + ivec2(int(params.temporal_options.x + 0.5) * 17, 0));
     } else if (mode == CLOUD_SAMPLING_BAYER) {
-        jitter = BAYER[(temporal_pixel.y & 3) * 4 + (temporal_pixel.x & 3)];
+        jitter = cloud_stable_bayer_jitter(temporal_pixel);
     } else if (mode == CLOUD_SAMPLING_OFF) {
         jitter = 0.5;
     } else if (mode == CLOUD_SAMPLING_BLUE_NOISE) {
@@ -150,6 +154,29 @@ float cloud_ray_jitter(ivec2 pixel) {
         jitter = fract(base + 0.61803398875 * float(frame % 32));
     }
     return mix(0.5, jitter, strength);
+}
+
+float cloud_density_footprint_filter(float lod) {
+    return smoothstep(0.45, 3.65, lod);
+}
+
+float cloud_filtered_coverage_density(float value, float coverage, float filter_amount) {
+    float filtered = clamp(filter_amount, 0.0, 1.0);
+    float width = mix(0.0, 0.18, filtered);
+    float lower = clamp(coverage - width, 0.0, 0.995);
+    float hard = cloud_remap(value, coverage, 1.0, 0.0, 1.0);
+    float soft = smoothstep(lower, 1.0, value);
+    return mix(hard, soft, filtered * 0.68);
+}
+
+int cloud_local_iteration_budget(int requested_steps) {
+    if (requested_steps <= 32) {
+        return 48;
+    }
+    if (requested_steps <= 48) {
+        return 72;
+    }
+    return 96;
 }
 
 float cloud_height_fraction(vec3 position) {
@@ -714,6 +741,7 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     LocalWeatherSample local_weather =
         cloud_local_weather_sample(position, animation, height_fraction);
     float far_detail_filter = smoothstep(1.15, 4.25, lod);
+    float footprint_filter = cloud_density_footprint_filter(lod);
     local_weather.edge_detail =
         mix(local_weather.edge_detail, local_weather.structure, far_detail_filter * 0.70);
     local_weather.structure =
@@ -738,7 +766,8 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
     float coverage_bias = mix(local_scatter, softened_authored_weather, weather_influence);
     float local_coverage = clamp(global_coverage * coverage_bias, 0.0, 1.0);
     float base_with_coverage =
-        cloud_remap(base_cloud, local_coverage, 1.0, 0.0, 1.0) * local_coverage;
+        cloud_filtered_coverage_density(base_cloud, local_coverage, footprint_filter) *
+        local_coverage;
     float detail_density = 0.0;
 
     if (expensive) {
@@ -749,11 +778,13 @@ DensitySample cloud_sample_density(vec3 position, bool expensive, float lod) {
         float high_fbm = dot(detail, vec3(0.625, 0.25, 0.125));
         float high_modifier =
             mix(high_fbm, 1.0 - high_fbm, clamp(height_fraction * 10.0, 0.0, 1.0));
+        high_modifier = mix(high_modifier, 0.5, footprint_filter * 0.45);
         detail_density = high_modifier;
         float edge_bias = mix(local_weather.edge_detail, weather_edge, weather_influence);
         float erosion_strength =
             clamp(params.weather_feature_weights.w * mix(0.82, 1.20, edge_bias), 0.0, 1.0);
         erosion_strength *= mix(1.0, 0.42, far_detail_filter);
+        erosion_strength *= mix(1.0, 0.34, footprint_filter);
         float eroded = base_with_coverage -
                        high_modifier * (1.0 - base_with_coverage) * erosion_strength;
         float remapped =
@@ -1612,21 +1643,24 @@ MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, 
 MarchResult cloud_local_volume_march(vec3 origin, vec3 direction, float start_t, float end_t,
                                      ivec2 pixel, int requested_steps, float lod_bias,
                                      bool expensive_detail) {
-    int max_steps = clamp(requested_steps, 1, 96);
-    float length_km = max(end_t - start_t, 0.001);
-    float ds = length_km / float(max_steps);
-    vec3 step_vec = direction * ds;
-    float sample_t = start_t + ds * cloud_ray_jitter(pixel);
-    vec3 pos = origin + direction * sample_t;
+    int coarse_steps = clamp(requested_steps, 1, 64);
+    int max_iterations = cloud_local_iteration_budget(coarse_steps);
+    float length_m = max(end_t - start_t, 0.001);
+    float coarse_ds = length_m / float(coarse_steps);
+    float fine_ds = coarse_ds * 0.35;
+    float jitter = cloud_ray_jitter(pixel);
+    float first_sample_t = start_t + coarse_ds * jitter;
+    float sample_t = first_sample_t;
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     vec3 sun_color = vec3(1.20, 1.12, 0.92) * max(params.sun_direction_intensity.w, 0.0);
     float light_dot_eye = dot(sun_dir, direction);
     float density_factor = max(params.weather.y, 0.0);
-    float sigma_ds = -ds * density_factor;
     bool ends_at_inner_boundary =
-        cloud_segment_ends_at_inner_boundary(origin, direction, start_t, end_t, ds);
+        cloud_segment_ends_at_inner_boundary(origin, direction, start_t, end_t, coarse_ds);
     float inner_boundary_ray_fade = cloud_inner_boundary_ray_fade(origin, direction);
     float horizon_handoff = cloud_horizon_handoff_weight(origin, direction, start_t, end_t);
+    bool fine_mode = false;
+    int fine_misses = 0;
     float transmittance = 1.0;
     vec3 color = vec3(0.0);
     float density_sum = 0.0;
@@ -1640,11 +1674,14 @@ MarchResult cloud_local_volume_march(vec3 origin, vec3 direction, float start_t,
     vec3 phase_sum = vec3(0.0);
 
     for (int i = 0; i < 96; ++i) {
-        if (i >= max_steps) {
+        if (i >= max_iterations || sample_t >= end_t) {
             break;
         }
+        float step_size =
+            min(fine_mode ? fine_ds : coarse_ds, max(end_t - sample_t, 0.001));
+        vec3 pos = origin + direction * sample_t;
         float density_lod =
-            lod_bias + cloud_sample_filter_lod(origin, direction, pos, sample_t, ds) +
+            lod_bias + cloud_sample_filter_lod(origin, direction, pos, sample_t, step_size) +
             float(i) / 24.0;
         DensitySample sample_data =
             cloud_sample_density(pos, expensive_detail, density_lod);
@@ -1654,13 +1691,21 @@ MarchResult cloud_local_volume_march(vec3 origin, vec3 direction, float start_t,
             pos, direction, sample_data.height_fraction);
         sample_data.density *= inner_boundary_ray_fade;
         sample_data.density *= cloud_local_horizon_visibility(sample_t, horizon_handoff);
+        steps_taken += 1.0;
+        if (!fine_mode && sample_data.density > 0.008) {
+            sample_t = max(first_sample_t, sample_t - coarse_ds);
+            fine_mode = true;
+            fine_misses = 0;
+            continue;
+        }
         if (sample_data.density > 0.0) {
             float sample_distance = length(pos - origin);
             if (first_distance < 0.0) {
                 first_distance = sample_distance;
             }
+            float sigma_ds = -step_size * density_factor;
             float light_transmittance =
-                cloud_light_transmittance(pos, ds * 0.1, sun_dir, sample_data.density,
+                cloud_light_transmittance(pos, step_size * 0.1, sun_dir, sample_data.density,
                                               light_dot_eye);
             vec3 local_up = cloud_local_up(pos);
             float sun_elevation = max(dot(sun_dir, local_up), 0.0);
@@ -1712,12 +1757,21 @@ MarchResult cloud_local_volume_march(vec3 origin, vec3 direction, float start_t,
             distance_weight_sum += sample_data.density;
             last_light = light_transmittance;
         }
+        if (fine_mode) {
+            if (sample_data.density <= 0.002) {
+                fine_misses += 1;
+                if (fine_misses >= 5) {
+                    fine_mode = false;
+                    fine_misses = 0;
+                }
+            } else {
+                fine_misses = 0;
+            }
+        }
         if (transmittance <= 0.01) {
             break;
         }
-        pos += step_vec;
-        sample_t += ds;
-        steps_taken += 1.0;
+        sample_t += step_size;
     }
 
     float alpha = 1.0 - transmittance;
@@ -1731,7 +1785,8 @@ MarchResult cloud_local_volume_march(vec3 origin, vec3 direction, float start_t,
     float mean_distance = distance_weight_sum > 0.0
                               ? weighted_distance_sum / max(distance_weight_sum, 0.0001)
                               : -1.0;
-    return MarchResult(color, transmittance, alpha, density_sum / float(max_steps), last_light,
+    return MarchResult(color, transmittance, alpha, density_sum / max(steps_taken, 1.0),
+                       last_light,
                        first_distance, mean_distance, steps_taken, ambient_sum, direct_sum,
                        phase_sum);
 }
@@ -1786,11 +1841,11 @@ DensitySample cloud_far_horizon_density_sample(vec3 position, float lod) {
         height_fraction * WIND_DIRECTION * top_offset + WIND_DIRECTION * params.weather.w;
     LocalWeatherSample local_weather =
         cloud_local_weather_sample(position, animation, height_fraction);
-    float far_detail_filter = smoothstep(0.35, 3.65, lod);
+    float far_detail_filter = smoothstep(0.18, 3.20, lod);
     local_weather.structure =
-        mix(local_weather.structure, local_weather.coverage, far_detail_filter * 0.72);
+        mix(local_weather.structure, local_weather.coverage, far_detail_filter * 0.84);
     local_weather.edge_detail =
-        mix(local_weather.edge_detail, local_weather.structure, far_detail_filter * 0.92);
+        mix(local_weather.edge_detail, local_weather.structure, far_detail_filter);
     float height_multiplier =
         max(cloud_density_gradient(height_fraction, local_weather.cloud_type), 0.0);
     float broad_mass = smoothstep(0.10, 0.58, local_weather.coverage);
@@ -1798,10 +1853,10 @@ DensitySample cloud_far_horizon_density_sample(vec3 position, float lod) {
     float edge_mass = smoothstep(0.18, 0.72, local_weather.edge_detail);
     float continuity = clamp(broad_mass * 0.70 + structure_mass * 0.20 + edge_mass * 0.10,
                              0.0, 1.0);
-    float broken_continuity =
-        cloud_coverage_modulation(continuity, local_weather.edge_detail, 0.52);
+    float broken_continuity = cloud_coverage_modulation(
+        continuity, local_weather.edge_detail, mix(0.52, 0.78, far_detail_filter));
     float density =
-        mix(continuity, broken_continuity, mix(0.18, 0.04, far_detail_filter)) *
+        mix(continuity, broken_continuity, mix(0.10, 0.015, far_detail_filter)) *
         height_multiplier *
         mix(0.72, 1.0, local_weather.clear_gate);
 
@@ -1855,13 +1910,14 @@ MarchResult cloud_far_horizon_layer(vec3 origin, vec3 direction, float start_t, 
             break;
         }
 
-        float u = (float(i) + 0.5) / float(max_steps);
+        float u = (float(i) + cloud_stable_bayer_jitter(pixel + ivec2(i, i * 3))) /
+                  float(max_steps);
         float sample_t = mix(bridge_start, end_t, u);
         vec3 pos = origin + direction * sample_t;
-        float sample_lod = base_lod +
+        float sample_lod = base_lod + 0.55 +
                            cloud_sample_filter_lod(origin, direction, pos, sample_t,
                                                    length_m / float(max_steps)) * 0.35 +
-                           u * 1.15;
+                           u * 1.05;
         DensitySample sample_data = cloud_far_horizon_density_sample(pos, sample_lod);
         float sample_distance = max(sample_t - start_t, 0.0);
         float distance_gate =
