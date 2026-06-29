@@ -264,8 +264,11 @@ int main() {
                 CloudLayerDebugView::HorizonHandoff,
             "cloud layer debug view should include horizon handoff diagnostics");
     require(next_cloud_layer_debug_view(CloudLayerDebugView::IntegratedHorizonRadiance) ==
-                CloudLayerDebugView::SceneDepthOcclusion,
+                CloudLayerDebugView::EdgeMask,
             "cloud layer debug view should include integrated horizon diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::EdgeMask) ==
+                CloudLayerDebugView::SceneDepthOcclusion,
+            "cloud layer debug view should include edge resolve diagnostics");
     require(next_cloud_layer_debug_view(CloudLayerDebugView::SceneDepthOcclusion) ==
                 CloudLayerDebugView::Final,
             "cloud layer debug view should wrap");

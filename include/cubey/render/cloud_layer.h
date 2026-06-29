@@ -152,9 +152,10 @@ enum class CloudLayerDebugView : std::uint32_t {
     LocalTruncation = 56,
     IntegratedHorizonAlpha = 57,
     IntegratedHorizonRadiance = 58,
+    EdgeMask = 59,
 };
 
-inline constexpr std::array<CloudLayerDebugView, 54> kCloudLayerDebugViews{
+inline constexpr std::array<CloudLayerDebugView, 55> kCloudLayerDebugViews{
     CloudLayerDebugView::Final,
     CloudLayerDebugView::RawFinal,
     CloudLayerDebugView::AuthoredWeather,
@@ -208,6 +209,7 @@ inline constexpr std::array<CloudLayerDebugView, 54> kCloudLayerDebugViews{
     CloudLayerDebugView::LocalTruncation,
     CloudLayerDebugView::IntegratedHorizonAlpha,
     CloudLayerDebugView::IntegratedHorizonRadiance,
+    CloudLayerDebugView::EdgeMask,
     CloudLayerDebugView::SceneDepthOcclusion,
 };
 

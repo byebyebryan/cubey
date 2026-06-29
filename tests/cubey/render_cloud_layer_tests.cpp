@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <string_view>
 
 namespace {
 
@@ -71,4 +72,14 @@ void test_cloud_layer_view_regime_promotes_grazing_high_camera() {
                  "grazing cloud camera should use transition mode for far shell support");
     require(regime.horizon_grazing > 0.95F,
             "grazing cloud camera should report strong horizon factor");
+}
+
+void test_cloud_layer_edge_mask_debug_view_round_trips() {
+    const cubey::render::CloudLayerDebugView view =
+        cubey::render::cloud_layer_debug_view_from_name("edge-mask");
+
+    require(view == cubey::render::CloudLayerDebugView::EdgeMask,
+            "cloud debug parser should recognize edge-mask");
+    require(cubey::render::cloud_layer_debug_view_name(view) == std::string_view{"edge-mask"},
+            "cloud debug names should round-trip edge-mask");
 }

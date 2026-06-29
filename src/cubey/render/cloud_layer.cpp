@@ -583,6 +583,9 @@ CloudLayerDebugView cloud_layer_debug_view_from_name(std::string_view value) {
     if (value == "integrated-horizon-radiance" || value == "horizon-integrated-radiance") {
         return CloudLayerDebugView::IntegratedHorizonRadiance;
     }
+    if (value == "edge-mask" || value == "resolve-edge") {
+        return CloudLayerDebugView::EdgeMask;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -696,6 +699,8 @@ const char* cloud_layer_debug_view_name(CloudLayerDebugView view) {
         return "integrated-horizon-alpha";
     case CloudLayerDebugView::IntegratedHorizonRadiance:
         return "integrated-horizon-radiance";
+    case CloudLayerDebugView::EdgeMask:
+        return "edge-mask";
     }
     return "final";
 }

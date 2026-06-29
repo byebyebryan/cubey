@@ -17,9 +17,24 @@ float cloud_metadata_alpha(vec4 cloud, vec4 metadata) {
     return max(cloud_product_alpha(cloud), clamp(metadata.g, 0.0, 1.0));
 }
 
+float cloud_edge_resolve_strength() {
+    return clamp(params.edge_options.z, 0.0, 1.0);
+}
+
+float cloud_edge_mask(vec4 cloud, vec4 metadata, vec3 direction) {
+    float alpha = cloud_metadata_alpha(cloud, metadata);
+    float confidence = clamp(metadata.b, 0.0, 1.0);
+    float horizon = pow(max(1.0 - abs(direction.y), 0.0), 2.0);
+    float lower_edge = smoothstep(0.004, 0.10, alpha);
+    float upper_edge = 1.0 - smoothstep(0.48, 0.90, alpha);
+    float confidence_boost = mix(1.20, 0.82, confidence);
+    return clamp(lower_edge * upper_edge * confidence_boost * mix(0.82, 1.24, horizon),
+                 0.0, 1.0);
+}
+
 float cloud_resolve_neighbor_weight(vec4 center_cloud, vec4 center_metadata,
                                     vec4 sample_cloud, vec4 sample_metadata,
-                                    ivec2 offset) {
+                                    ivec2 offset, vec3 direction) {
     float center_alpha = cloud_metadata_alpha(center_cloud, center_metadata);
     float sample_alpha = cloud_metadata_alpha(sample_cloud, sample_metadata);
     float offset_distance = length(vec2(offset));
@@ -28,17 +43,25 @@ float cloud_resolve_neighbor_weight(vec4 center_cloud, vec4 center_metadata,
         return kernel_weight;
     }
 
-    float alpha_weight = exp(-abs(sample_alpha - center_alpha) * mix(4.5, 8.0, center_alpha));
+    float center_edge = cloud_edge_mask(center_cloud, center_metadata, direction);
+    float sample_edge = cloud_edge_mask(sample_cloud, sample_metadata, direction);
+    float edge_resolve = max(center_edge, sample_edge) * cloud_edge_resolve_strength();
+    float alpha_sharpness = mix(mix(4.5, 8.0, center_alpha), 1.25, edge_resolve);
+    float alpha_weight = exp(-abs(sample_alpha - center_alpha) * alpha_sharpness);
     float center_confidence = clamp(center_metadata.b, 0.0, 1.0);
     float sample_confidence = clamp(sample_metadata.b, 0.0, 1.0);
     float confidence = min(center_confidence, sample_confidence);
-    float confidence_weight = mix(0.22, 1.0, confidence);
+    float confidence_weight = mix(mix(0.22, 1.0, confidence),
+                                  mix(0.52, 1.0, confidence),
+                                  edge_resolve);
 
     float distance_weight = 1.0;
     float center_distance = max(center_metadata.r, 0.0);
     float sample_distance = max(sample_metadata.r, 0.0);
     if (confidence > 0.01 && max(center_alpha, sample_alpha) > 0.02) {
-        float distance_scale = max(min(center_distance, sample_distance) * 0.024, 850.0);
+        float distance_scale =
+            max(min(center_distance, sample_distance) * mix(0.024, 0.045, edge_resolve),
+                mix(850.0, 1450.0, edge_resolve));
         distance_weight = exp(-abs(sample_distance - center_distance) / distance_scale);
     }
     return kernel_weight * alpha_weight * distance_weight * confidence_weight;
@@ -51,7 +74,11 @@ vec4 cloud_resolve_cloud_product(vec2 uv, vec3 direction) {
     vec4 center_metadata = texture(cloud_metadata_texture, uv);
     float horizon = pow(max(1.0 - abs(direction.y), 0.0), 2.0);
     float center_confidence = clamp(center_metadata.b, 0.0, 1.0);
-    float center_weight = mix(1.05, 2.05, center_confidence) * mix(0.82, 1.0, horizon);
+    float center_edge = cloud_edge_mask(center, center_metadata, direction) *
+                        cloud_edge_resolve_strength();
+    float center_weight =
+        mix(1.05, 2.05, center_confidence) * mix(0.82, 1.0, horizon) *
+        mix(1.0, 0.68, center_edge);
     vec4 total = center * center_weight;
     float total_weight = center_weight;
 
@@ -67,7 +94,8 @@ vec4 cloud_resolve_cloud_product(vec2 uv, vec3 direction) {
             vec4 sample_value = texture(cloud_product_texture, uv + offset);
             vec4 sample_metadata = texture(cloud_metadata_texture, uv + offset);
             float weight = cloud_resolve_neighbor_weight(center, center_metadata, sample_value,
-                                                         sample_metadata, ivec2(x, y));
+                                                         sample_metadata, ivec2(x, y),
+                                                         direction);
             weight *= mix(0.68, 1.0, horizon);
             total += sample_value * weight;
             total_weight += weight;
@@ -130,8 +158,14 @@ void main() {
     vec3 direction = cloud_view_direction(frag_position);
     vec3 background = cloud_background(direction);
     vec4 raw_cloud = texture(cloud_product_texture, uv);
+    vec4 raw_metadata = texture(cloud_metadata_texture, uv);
     vec4 resolved_cloud = cloud_resolve_cloud_product(uv, direction);
-    float resolve_strength = clamp(params.composite_options.x, 0.0, 1.0);
+    float edge_mask = cloud_edge_mask(raw_cloud, raw_metadata, direction);
+    float resolve_strength =
+        clamp(params.composite_options.x +
+                  edge_mask * cloud_edge_resolve_strength() *
+                      (1.0 - clamp(params.composite_options.x, 0.0, 1.0)),
+              0.0, 1.0);
     vec4 cloud = final_view ? mix(raw_cloud, resolved_cloud, resolve_strength)
                             : raw_cloud;
     vec3 color = background * clamp(cloud.a, 0.0, 1.0) + cloud.rgb;
@@ -144,6 +178,8 @@ void main() {
         color = cloud_metadata_debug_color(uv, debug_view);
     } else if (debug_view == CLOUD_DEBUG_BACKGROUND) {
         color = background;
+    } else if (debug_view == CLOUD_DEBUG_EDGE_MASK) {
+        color = vec3(edge_mask);
     } else if (raw_final_view) {
         color = max(color, vec3(0.0));
     } else if (!final_view) {

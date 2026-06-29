@@ -51,6 +51,7 @@ void test_cloud_layer_view_regime_resolves_surface_camera();
 void test_cloud_layer_view_regime_resolves_high_transition_camera();
 void test_cloud_layer_view_regime_resolves_orbit_camera();
 void test_cloud_layer_view_regime_promotes_grazing_high_camera();
+void test_cloud_layer_edge_mask_debug_view_round_trips();
 void test_adaptive_patch_lod_selects_quadtree_children();
 void test_adaptive_patch_lod_hysteresis_delays_split_and_merge();
 void test_adaptive_patch_lod_falls_back_at_patch_budget();
@@ -263,6 +264,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_cloud_layer_view_regime_resolves_high_transition_camera),
         CUBEY_TEST(test_cloud_layer_view_regime_resolves_orbit_camera),
         CUBEY_TEST(test_cloud_layer_view_regime_promotes_grazing_high_camera),
+        CUBEY_TEST(test_cloud_layer_edge_mask_debug_view_round_trips),
         CUBEY_TEST(test_adaptive_patch_lod_selects_quadtree_children),
         CUBEY_TEST(test_adaptive_patch_lod_hysteresis_delays_split_and_merge),
         CUBEY_TEST(test_adaptive_patch_lod_falls_back_at_patch_budget),
