@@ -210,7 +210,7 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
             cubey::host::imgui_enum_combo("Sampling", layer.sampling_mode,
                                           kAtmosphereCloudSamplingModes,
                                           atmosphere_cloud_sampling_mode_name,
-                                          "Ray sampling pattern used to hide banding.");
+                                          "Ray-start pattern. Bayer is stable; blue noise is diagnostic until temporal reconstruction improves.");
             cubey::host::imgui_enum_combo(
                 "Distance mode", layer.distance_mode, kAtmosphereCloudDistanceModes,
                 atmosphere_cloud_distance_mode_name,
@@ -220,7 +220,7 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
                 atmosphere_cloud_orbit_representation_name,
                 "Representation used when the camera is above the local volume regime.");
             cubey::host::imgui_checkbox("Temporal", &layer.temporal_enabled,
-                                        "Enable temporal reconstruction for the cloud product.");
+                                        "Enable experimental temporal reconstruction for the cloud product.");
             cubey::host::imgui_checkbox("Local volume", &layer.local_volume_enabled,
                                         "Render near and overhead volumetric cloud detail.");
             cubey::host::imgui_checkbox("Horizon layer", &layer.horizon_layer_enabled,

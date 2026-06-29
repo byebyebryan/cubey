@@ -142,8 +142,8 @@ struct MoonConfig {
     config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
     config.distance_mode = cubey::render::CloudLayerDistanceMode::Auto;
     config.debug_view = cubey::render::CloudLayerDebugView::Final;
-    config.sampling_mode = cubey::render::CloudLayerSamplingMode::BlueNoise;
-    config.temporal_enabled = true;
+    config.sampling_mode = cubey::render::CloudLayerSamplingMode::Bayer;
+    config.temporal_enabled = false;
     config.bottom_altitude_m = 5000.0F;
     config.top_altitude_m = 22000.0F;
     config.coverage = 0.45F;
@@ -325,13 +325,13 @@ atmosphere_cloud_sampling_mode_name(cubey::render::CloudLayerSamplingMode mode) 
     case cubey::render::CloudLayerSamplingMode::Off:
         return "off";
     }
-    return "blue-noise";
+    return "bayer";
 }
 
 [[nodiscard]] inline cubey::render::CloudLayerSamplingMode
 atmosphere_cloud_sampling_mode_from_name(std::string_view name) {
     if (name.empty()) {
-        return cubey::render::CloudLayerSamplingMode::BlueNoise;
+        return cubey::render::CloudLayerSamplingMode::Bayer;
     }
     for (const cubey::render::CloudLayerSamplingMode mode : kAtmosphereCloudSamplingModes) {
         if (name == atmosphere_cloud_sampling_mode_name(mode)) {

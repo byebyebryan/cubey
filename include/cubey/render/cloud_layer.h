@@ -214,7 +214,7 @@ struct CloudLayerQualityBudget {
 struct CloudLayerConfig {
     CloudLayerQuality quality = CloudLayerQuality::Full;
     CloudLayerCloudStyle cloud_style = CloudLayerCloudStyle::BrokenCumulus;
-    CloudLayerSamplingMode sampling_mode = CloudLayerSamplingMode::BlueNoise;
+    CloudLayerSamplingMode sampling_mode = CloudLayerSamplingMode::Bayer;
     CloudLayerBackgroundMode background_mode = CloudLayerBackgroundMode::Atmosphere;
     CloudLayerDistanceMode distance_mode = CloudLayerDistanceMode::Auto;
     CloudLayerOrbitRepresentation orbit_representation =
