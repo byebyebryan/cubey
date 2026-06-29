@@ -125,7 +125,7 @@ once so shared downstream paths do not become parallel offset copies. The
 revision 18 hierarchy pass promotes selected graph paths into `river_trunk`
 based on graph discharge, stream order, visible length, and novelty against the
 current trunk skeleton, then leaves the remaining graph paths in `tributaries`.
-rejected revision 4 attempt made the visible product worse by rendering selected
+The rejected revision 4 attempt made the visible product worse by rendering selected
 graph edges directly, producing disconnected snippets and hard straight or
 diagonal runs. See
 `docs/notes/terrain-river-graph-routing-attempt.md` for the retained learnings.

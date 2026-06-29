@@ -95,6 +95,9 @@ the detailed foundation notes under `docs/architecture/`.
   revision 17/18 river-quality pivot: generate a non-grid river graph first,
   then rasterize graph mainstem, major tributaries, and minor tributaries into
   existing terrain process fields.
+- [Terrain water bodies scope](terrain-water-bodies-scope.md):
+  river/lake/wetland/coast/ocean boundaries before moving from river work to the
+  next terrain driver.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.
