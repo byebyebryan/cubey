@@ -329,7 +329,11 @@ void draw_cloud_controls(PlanetUiContext& ui) {
             cubey::host::imgui_slider_float("Density", &layer.density, 0.0F, 0.08F, "%.3f",
                                             "Volume density multiplier.");
             cubey::host::imgui_slider_float("Weather scale", &layer.weather_scale_km, 40.0F,
-                                            500.0F, "%.0f km", "Broad weather feature scale.");
+                                            500.0F, "%.0f km",
+                                            "Broad weather organization scale.");
+            cubey::host::imgui_slider_float("Shape domain", &layer.shape_domain_km, 120.0F,
+                                            2400.0F, "%.0f km",
+                                            "Local cloud density texture domain scale.");
             cubey::host::imgui_slider_float("Wind", &clouds.wind_speed_mps, 0.0F, 900.0F,
                                             "%.0f m/s", "Advection speed for cloud sampling.");
         }
@@ -355,10 +359,14 @@ void draw_cloud_controls(PlanetUiContext& ui) {
                                             "Wind-aligned weather feature contribution.");
             cubey::host::imgui_slider_float("Detail erosion", &layer.detail_erosion, 0.0F, 1.0F,
                                             "%.2f", "High-frequency erosion contribution.");
+            cubey::host::imgui_slider_float("Footprint filter",
+                                            &layer.footprint_filter_strength, 0.0F, 2.0F,
+                                            "%.2f",
+                                            "Deterministic mip filtering for distant or grazing cloud detail.");
             cubey::host::imgui_slider_float("Crispiness", &layer.crispiness, 1.0F, 80.0F,
-                                            "%.1f", "Density threshold sharpness.");
+                                            "%.1f", "Base density texture frequency/sharpness.");
             cubey::host::imgui_slider_float("Curliness", &layer.curliness, 0.0F, 1.0F, "%.2f",
-                                            "Curl-like distortion applied to local density.");
+                                            "Detail density frequency/distortion multiplier.");
             cubey::host::imgui_slider_float("Vertical shear", &layer.vertical_shear_fraction,
                                             0.0F, 0.5F, "%.2f",
                                             "Altitude-dependent shift as a weather-scale fraction.");

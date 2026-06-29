@@ -496,6 +496,8 @@ int main() {
                 "atmosphere cloud weather preset should select cloud style");
         require_near(clouds.layer.coverage, 0.64F, 0.001F,
                      "atmosphere cloud weather preset should apply coverage");
+        require_near(clouds.layer.shape_domain_km, 525.0F, 0.001F,
+                     "atmosphere cloud weather preset should apply shape domain");
         require_near(clouds.wind_speed_mps, 650.0F, 0.001F,
                      "atmosphere cloud weather preset should apply wind");
     }
