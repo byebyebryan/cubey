@@ -1173,6 +1173,29 @@ not repeat that exact adaptive path as the default:
 - keep the far-horizon layer broad and low detail, with stable stratified sample
   phases rather than another detailed local march.
 
+## TerrainEngine Resolve Recheck 2026-06-29
+
+A closer crop review changed the reference read: `cloud_ref` is not an
+artifact-free oracle. Its `cloud-alpha` and `raw-final` captures show the same
+stippled cloud-edge sampling noise, but the final view hides it behind lower
+contrast and flatter lighting. TerrainEngine's captured final image stands up
+better because it keeps the raw model simple and then presents it through the
+source post chain.
+
+Relevant TerrainEngine source details:
+
+- `CloudsModel.cpp` defaults `postProcess = true`;
+- `VolumetricClouds::getCloudsTexture()` returns the post-processed cloud
+  texture when that flag is set;
+- `shaders/clouds_post.frag` applies a small 3x3 Gaussian blur to the cloud
+  color product before scene composition.
+
+The next production attempt should therefore target the final cloud resolve
+rather than another density model. Keep `raw-final` as the unfiltered diagnostic
+view, preserve the current metadata-aware resolve for comparison, and add a
+TerrainEngine-style post resolve that filters the premultiplied cloud product
+with enough alpha/distance guarding to avoid obvious horizon or terrain smears.
+
 ## Cloud Edge Stability Attempt and Rollback 2026-06-29
 
 The adaptive edge-march attempt was reverted after GUI review. It reduced the
