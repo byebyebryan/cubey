@@ -147,9 +147,10 @@ Initial scope:
   blue-noise, and center-of-step ray starts, plus a metadata-aware final resolve
   that uses opacity, mean distance, and confidence while leaving `raw-final`
   unfiltered;
-- blue-noise ray-start jitter and temporal convergence should be the default
-  production anti-banding path; Bayer remains only as an inspection fallback for
-  static sampling comparisons;
+- stable Bayer ray-start jitter is the default production sampling path until
+  sparse temporal reconstruction is stronger. Blue-noise remains available for
+  diagnostics and future spatiotemporal resolve work, but frame-varying jitter by
+  itself turns unresolved cloud-edge bands into shimmer;
 - the shared cloud layer has a compute temporal resolve for the final view: the ray
   march writes current product/metadata, a ping-pong history pass reprojects by
   mean cloud distance, clamps against the current neighborhood, and resets on
@@ -319,9 +320,8 @@ absorbed into atmosphere. The next milestone should be small and hard to fake:
 
 1. Keep atmosphere final/no-cloud/debug captures visually comparable through
    `projects/atmosphere/capture_cloud_review.sh`.
-2. Make half-resolution atmo clouds the practical horizon-quality target while
-   keeping full resolution as the reference ceiling and quarter as a rough
-   fallback.
+2. Make full and half-resolution Bayer captures stable enough to diagnose raw
+   cloud integration without hiding bands behind stochastic shimmer.
 3. Improve high-altitude and horizon continuity without regressing the credible
    surface cloud look.
 4. Keep sampling and resolve controls isolated so capture bundles can compare

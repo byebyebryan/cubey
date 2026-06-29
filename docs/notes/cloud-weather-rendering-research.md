@@ -1137,3 +1137,36 @@ the hard black strip at the surface horizon is already present with `--no-clouds
 that is an atmo/background or horizon-composition issue, not a cloud-march
 artifact. Treat that as a separate atmo fix before judging further cloud
 horizon tuning.
+
+## Cloud Edge Artifact Diagnosis 2026-06-29
+
+The latest review showed the artifact is not limited to the far field: overhead
+cloud edges also show row/band structure. That changes the diagnosis from a
+horizon-only handoff bug to a cloud-edge integration problem. Center sampling
+and Bayer reveal stable under-sampling bands, while frame-varying blue noise
+makes those bands move and therefore shimmer unless it is paired with a real
+sparse temporal reconstruction path.
+
+Reference comparison:
+
+- `TerrainEngine-OpenGL` keeps the active cloud shape simpler: one coherent
+  texture-backed density field, stable Bayer ray-start offset, smooth remaps,
+  mipmapped volume textures, 64 direct steps, fog/background fade, and a small
+  Gaussian post blur. It does not depend on animated blue-noise jitter.
+- `flower`, `Meteoros`, and the stronger Shadertoy examples use stochastic
+  samples only with reprojection, history, neighborhood/variance clamping, or
+  phased 4x4 sparse updates.
+- `Project-Marshmallow` is the most directly useful integration reference: it
+  marches coarse while empty, backs up and enters a smaller-step mode on first
+  cloud hit, then returns to coarse stepping after several misses.
+
+The next batch should therefore fix the march before more horizon tuning:
+
+- keep Bayer as the production default until sparse temporal reconstruction is
+  robust;
+- add adaptive local hit refinement so thin cloud edges are not sampled by one
+  coarse step;
+- widen/filter density remaps as the sample footprint grows and fade high
+  frequency erosion under that same footprint;
+- keep the far-horizon layer broad and low detail, with stable stratified sample
+  phases rather than another detailed local march.
