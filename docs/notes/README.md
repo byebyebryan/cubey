@@ -101,6 +101,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain mountain driver plan](terrain-mountain-driver-plan.md):
   revision 19 implementation for explicit mountain support, ridge, peak, and uplift
   fields in an isolated mountain-range stress recipe.
+- [Terrain mountain hierarchy plan](terrain-mountain-hierarchy-plan.md):
+  revision 20 plan for range spine, ridge hierarchy, and peak-candidate source
+  fields before alpine biome polish.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.
