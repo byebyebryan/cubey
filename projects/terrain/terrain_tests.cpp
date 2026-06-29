@@ -657,9 +657,10 @@ void test_terrain_review_river_coverage_is_meaningful() {
             "terrain stress trunk should reach a visible crop edge without disconnecting: edges=" +
             std::to_string(stress_trunk_edge_touches));
     }
-    if (stress_trunk_coarse_tiles < 3U) {
+    if (stress_trunk_coarse_tiles < 4U) {
         throw std::runtime_error(
-            "terrain stress trunk should occupy multiple coarse basin regions: tiles=" +
+            "terrain stress trunk major channels should occupy multiple coarse basin regions: "
+            "tiles=" +
             std::to_string(stress_trunk_coarse_tiles));
     }
     if (stress_edge_touches < 2U) {
@@ -682,9 +683,10 @@ void test_terrain_review_river_coverage_is_meaningful() {
             std::to_string(baseline_trunk_samples) + " stress=" +
             std::to_string(stress_trunk_samples));
     }
-    if (stress_trunk_samples * 100U < stress_samples * 25U) {
+    if (stress_trunk_samples * 100U < stress_samples * 35U) {
         throw std::runtime_error(
-            "terrain stress trunk should carry a visible mainstem share of active network: trunk=" +
+            "terrain stress trunk should carry a visible major-channel share of active network: "
+            "trunk=" +
             std::to_string(stress_trunk_samples) + " river=" +
             std::to_string(stress_samples));
     }
