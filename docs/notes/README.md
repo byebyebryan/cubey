@@ -104,6 +104,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain mountain hierarchy plan](terrain-mountain-hierarchy-plan.md):
   revision 20 plan for range spine, ridge hierarchy, and peak-candidate source
   fields before alpine biome polish.
+- [Terrain peak-first mountain skeleton plan](terrain-peak-first-mountain-skeleton-plan.md):
+  revision 21 plan for envelope, peak anchors, peak prominence, ridge skeleton,
+  and ridge influence fields.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.
