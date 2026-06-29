@@ -1170,3 +1170,45 @@ The next batch should therefore fix the march before more horizon tuning:
   frequency erosion under that same footprint;
 - keep the far-horizon layer broad and low detail, with stable stratified sample
   phases rather than another detailed local march.
+
+## Cloud Edge Stability Checkpoint 2026-06-29
+
+This batch implements the edge-integration direction above:
+
+- local cloud rays now march coarse while empty, back up on first cloud hit, and
+  enter a smaller-step refinement mode until several misses return the ray to
+  coarse stepping;
+- density coverage and high-frequency erosion are filtered by the active sample
+  footprint so distant/grazing samples do not carve unresolved cloud-edge detail;
+- the far-horizon assist remains a low-detail integrated layer, but now uses
+  stable Bayer-stratified sample phases and stronger broad filtering;
+- atmosphere and shared cloud defaults now use stable Bayer sampling with 0.65
+  jitter strength, while blue noise and temporal reconstruction remain explicit
+  diagnostics/future sparse-reconstruction work.
+
+Validation passed with:
+
+```sh
+cmake --build --preset dev --target atmosphere planet cubey_project_atmosphere_tests
+ctest --preset dev -R '^atmosphere_config_tests$' --output-on-failure
+ctest --preset dev -R '^(render_apps_use_dynamic_rendering|atmosphere_headless_writes_png|atmosphere_headless_writes_png_stats)$' --output-on-failure
+ctest --preset dev --output-on-failure
+```
+
+The full suite reported 159/159 passing tests.
+
+Review captures:
+
+```text
+outputs/atmosphere-cloud-edge-stability-20260629/
+outputs/atmosphere-cloud-edge-stability-20260629-targeted/
+```
+
+The overhead/surface-up captures no longer show the old obvious horizontal
+slice bands. Bayer stipple is still visible on some high-contrast cloud edges,
+especially at half quality, but the 0.65 default is less harsh than full Bayer
+jitter and does not shimmer. Horizon and high-oblique frames still expose a
+separate atmosphere/background boundary problem in the no-cloud comparison, so
+do not treat this batch as the final horizon fix. The next cloud-specific step
+should be a real sparse temporal/reconstruction path or a more explicit cached
+far-cloud product, not more random jitter.

@@ -164,7 +164,7 @@ struct MoonConfig {
     config.final_saturation = 1.12F;
     config.horizon_glow_strength = 0.55F;
     config.sun_glare_strength = 1.0F;
-    config.jitter_strength = 1.0F;
+    config.jitter_strength = 0.65F;
     return config;
 }
 
