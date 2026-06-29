@@ -949,6 +949,12 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("final") ==
                 cubey::projects::terrain::TerrainDebugView::Final,
             "terrain debug view should parse final");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain-relief") ==
+                cubey::projects::terrain::TerrainDebugView::MountainRelief,
+            "terrain debug view should parse mountain relief");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_relief") ==
+                cubey::projects::terrain::TerrainDebugView::MountainRelief,
+            "terrain debug view should parse mountain relief aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_support") ==
                 cubey::projects::terrain::TerrainDebugView::MountainSupport,
             "terrain debug view should parse mountain support aliases");
@@ -1014,6 +1020,20 @@ void test_terrain_debug_export_writes_png() {
     require(std::filesystem::file_size(output) > 64U,
             "terrain debug export should write a non-empty PNG");
     std::filesystem::remove(output);
+
+    config.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress);
+    const cubey::projects::terrain::TerrainRegionProduct mountain_product =
+        cubey::projects::terrain::generate_terrain_region(config);
+    const std::filesystem::path mountain_output =
+        std::filesystem::temp_directory_path() / "cubey_terrain_mountain_relief_export_test.png";
+    std::filesystem::remove(mountain_output);
+    cubey::projects::terrain::write_terrain_debug_png(
+        mountain_product, cubey::projects::terrain::TerrainDebugView::MountainRelief,
+        mountain_output);
+    require(std::filesystem::file_size(mountain_output) > 64U,
+            "terrain mountain relief debug export should write a non-empty PNG");
+    std::filesystem::remove(mountain_output);
 }
 
 void test_terrain_debug_export_writes_review_set() {
