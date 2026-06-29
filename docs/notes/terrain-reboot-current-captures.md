@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
 This note records the current terrain reboot capture set after the revision 19
-mountain-driver pass.
+mountain-driver pass and the follow-up mountain relief review view.
 
 ## Capture Command
 
@@ -22,7 +22,9 @@ structure, channel continuity, and material response are easier to inspect.
 stress-test broader river-network shape and coverage. The optional
 `outputs/terrain/mountain-range-stress` set uses the isolated revision 19
 mountain source profile to inspect range support, ridge structure, and peak
-uplift without retuning the river graph stress recipe. Revision 12
+uplift without retuning the river graph stress recipe. Its primary rendered
+inspection image is `mountain-relief.png`; `final.png` remains the normal
+river/material product composition. Revision 12
 restores some active network coverage after the first degrid/pruning pass while
 spacing accepted support paths to avoid near-duplicate branch bundles. Revision
 13 keeps the same routing source but promotes major stress support/order-seed
@@ -56,6 +58,9 @@ recipe opts into them for mountain-driver review.
 
 - `final.png`: debug composition of height, material masks, slope shade, and
   active river/wetness response.
+- `mountain-relief.png`: mountain-specific rendered review image. It hillshades
+  `height_m`, tints broad range support, and highlights ridge/peak accents
+  without river, wetness, vegetation, or material overlays.
 - `drainage-potential.png`: scalar routing surface before flow routing. This
   is the repaired routing surface and should remain smooth even when later river
   products expose routing artifacts.
@@ -96,8 +101,9 @@ recipe opts into them for mountain-driver review.
   `height.png`, because the final height also includes base relief and residual
   detail.
 - `height.png` and `slope.png`: combined terrain shape and derivative response.
-  The mountain stress recipe is the best current view for checking whether the
-  new driver creates recognizable range mass before biome or glacial polish.
+  In the mountain stress recipe, pair these scalar views with
+  `mountain-relief.png` before judging whether the new driver creates
+  recognizable range mass before biome or glacial polish.
 
 For `outputs/terrain/stress-river-network`, look for failures that the smaller
 default network may hide: repeated parallel channels, schematic branch fans,

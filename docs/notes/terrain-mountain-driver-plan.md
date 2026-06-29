@@ -100,9 +100,9 @@ the river/material debug composition. It mixes material masks, slope shade, and
 the active river overlay, so the mountain stress recipe can look too close to the
 river review even when the underlying support and uplift fields differ.
 
-The next capture batch should add a mountain-specific rendered debug view instead
+The follow-up capture batch adds a mountain-specific rendered debug view instead
 of tuning the generator against `final.png`. The primary mountain inspection
-image should:
+image is `mountain-relief.png`, which should:
 
 - remove river, wetness, vegetation, and material overlays;
 - hillshade `height_m` with stronger relief contrast;

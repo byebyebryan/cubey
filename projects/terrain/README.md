@@ -57,7 +57,9 @@ Revision 19 adds explicit mountain source products: broad mountain support,
 ridge support, peak support, mountain uplift, and peak uplift. The new
 `temperate-mountain-range-stress` recipe is an isolated mountain-driver review
 slice; existing river recipes emit the fields but keep broad mountain and peak
-uplift disabled for stability.
+uplift disabled for stability. Use `mountain-relief.png` as the primary rendered
+review image for that recipe; `final.png` remains the river/material debug
+composition.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -89,6 +91,7 @@ review artifact.
 The review set includes:
 
 - `final.png`
+- `mountain-relief.png`
 - `height.png`
 - `slope.png`
 - `mountain-support.png`
@@ -146,7 +149,10 @@ contract to review mountain shape independently from the river stress graph. It
 adds broad mountain mass from `mountain-support.png`, sharper ridge structure
 from `ridge-support.png`, localized summit accents from `peak-support.png`, and
 routes over a softened combination of those uplifts without including fine
-detail.
+detail. The intended first-pass visual review is `mountain-relief.png`, which
+hillshades height and tints the mountain source fields without river, wetness,
+vegetation, or material overlays. `final.png` is still useful as a product
+composition check, but it is not the right image for judging mountain form.
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential

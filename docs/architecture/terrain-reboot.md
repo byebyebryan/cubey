@@ -347,6 +347,8 @@ Known limitations:
   alpine biome. It does not yet include erosion time, talus, snow/ice, glacial
   valley carving, or world-scale range continuity.
 - The final PNG is an inspectable debug composition, not the target renderer.
+  Use `mountain-relief.png` for mountain-form review because `final.png` still
+  includes the river/material overlays.
 
 A revision 4 experiment tried replacing the active river product with direct
 channel-graph edge rendering after an epsilon fill pass. It was reverted because
