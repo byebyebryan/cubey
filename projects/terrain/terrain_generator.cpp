@@ -4690,24 +4690,12 @@ void paint_river_graph_debug_fields(RiverFields& fields, const RiverNetworkPlan&
 [[nodiscard]] std::vector<std::vector<int>> collect_river_graph_tributary_paths(
     const RiverNetworkPlan& plan) {
     std::vector<std::vector<int>> paths;
-    for (std::size_t index = 0; index < plan.nodes.size(); ++index) {
-        const RiverGraphNode& node = plan.nodes[index];
-        if (!node.active || node.trunk || !node.upstream.empty()) {
+    paths.reserve(plan.paths.size());
+    for (const RiverGraphPath& path : plan.paths) {
+        if (path.trunk || path.nodes.size() < 2U) {
             continue;
         }
-        std::vector<int> path;
-        int current = static_cast<int>(index);
-        while (current >= 0) {
-            path.push_back(current);
-            const RiverGraphNode& current_node = plan.nodes[static_cast<std::size_t>(current)];
-            if (current_node.trunk && path.size() > 1U) {
-                break;
-            }
-            current = current_node.downstream;
-        }
-        if (path.size() >= 2U) {
-            paths.push_back(std::move(path));
-        }
+        paths.push_back(path.nodes);
     }
     std::sort(paths.begin(), paths.end(), [&plan](const auto& lhs, const auto& rhs) {
         return river_graph_path_length(plan, lhs) > river_graph_path_length(plan, rhs);
