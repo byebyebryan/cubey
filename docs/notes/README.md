@@ -98,6 +98,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain water bodies scope](terrain-water-bodies-scope.md):
   river/lake/wetland/coast/ocean boundaries before moving from river work to the
   next terrain driver.
+- [Terrain mountain driver plan](terrain-mountain-driver-plan.md):
+  revision 19 target for explicit mountain support, ridge, peak, and uplift
+  fields in an isolated mountain-range stress recipe.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.
