@@ -10,6 +10,7 @@ namespace cubey::projects::terrain {
 
 enum class TerrainDebugView {
     Final,
+    MountainRelief,
     Height,
     Slope,
     MountainSupport,

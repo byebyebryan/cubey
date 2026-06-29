@@ -32,8 +32,9 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 25> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 26> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
+    DebugViewName{TerrainDebugView::MountainRelief, "mountain-relief"},
     DebugViewName{TerrainDebugView::Height, "height"},
     DebugViewName{TerrainDebugView::Slope, "slope"},
     DebugViewName{TerrainDebugView::MountainSupport, "mountain-support"},
@@ -60,8 +61,9 @@ inline constexpr std::array<DebugViewName, 25> kDebugViewNames{
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 25> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 26> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
+    TerrainDebugView::MountainRelief,
     TerrainDebugView::Height,
     TerrainDebugView::Slope,
     TerrainDebugView::MountainSupport,
@@ -192,6 +194,70 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
     return color;
 }
 
+[[nodiscard]] float field_at_clamped(const cubey::procedural::ScalarField2D& field, int x, int y) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    const int clamped_x = std::clamp(x, 0, static_cast<int>(desc.width) - 1);
+    const int clamped_y = std::clamp(y, 0, static_cast<int>(desc.height) - 1);
+    return field.at(static_cast<std::uint32_t>(clamped_x),
+                    static_cast<std::uint32_t>(clamped_y));
+}
+
+[[nodiscard]] float hillshade(const cubey::procedural::ScalarField2D& height, std::uint32_t x,
+                              std::uint32_t y) {
+    const float cell_size = std::max(height.desc().cell_size, 1.0F);
+    const int ix = static_cast<int>(x);
+    const int iy = static_cast<int>(y);
+    const float dzdx =
+        (field_at_clamped(height, ix + 1, iy) - field_at_clamped(height, ix - 1, iy)) /
+        (cell_size * 2.0F);
+    const float dzdy =
+        (field_at_clamped(height, ix, iy + 1) - field_at_clamped(height, ix, iy - 1)) /
+        (cell_size * 2.0F);
+
+    constexpr float kVerticalExaggeration = 1.45F;
+    const float nx = -dzdx * kVerticalExaggeration;
+    const float ny = -dzdy * kVerticalExaggeration;
+    constexpr float nz = 1.0F;
+    const float inv_length = 1.0F / std::sqrt((nx * nx) + (ny * ny) + (nz * nz));
+
+    constexpr float kLightX = -0.42F;
+    constexpr float kLightY = -0.52F;
+    constexpr float kLightZ = 0.74F;
+    const float lit = std::max(0.0F, ((nx * inv_length) * kLightX) +
+                                        ((ny * inv_length) * kLightY) +
+                                        ((nz * inv_length) * kLightZ));
+    return 0.32F + (lit * 0.78F);
+}
+
+[[nodiscard]] Rgb mountain_relief_color(const TerrainRegionProduct& product, std::uint32_t x,
+                                        std::uint32_t y,
+                                        const FieldNormalization& height_normalization,
+                                        const FieldNormalization& relief_normalization) {
+    const auto& height = terrain_product_field(product, kTerrainFieldHeightM);
+    const auto& local_relief = terrain_product_field(product, kTerrainFieldLocalRelief);
+    const auto& mountain_support = terrain_product_field(product, kTerrainFieldMountainSupport);
+    const auto& ridge_support = terrain_product_field(product, kTerrainFieldRidgeSupport);
+    const auto& peak_support = terrain_product_field(product, kTerrainFieldPeakSupport);
+
+    const float h = normalized_field_value(height, x, y, height_normalization);
+    const float relief = normalized_field_value(local_relief, x, y, relief_normalization);
+    const float mountain = cubey::procedural::saturate(mountain_support.at(x, y));
+    const float ridge = cubey::procedural::saturate(ridge_support.at(x, y));
+    const float peak = cubey::procedural::saturate(peak_support.at(x, y));
+
+    Rgb color = terrain_ramp(h);
+    color = lerp_rgb(color, Rgb{0.36F, 0.35F, 0.30F}, mountain * 0.28F);
+    color = lerp_rgb(color, Rgb{0.78F, 0.72F, 0.56F}, ridge * 0.34F);
+    color = lerp_rgb(color, Rgb{0.92F, 0.90F, 0.82F}, peak * 0.54F);
+
+    const float shade = hillshade(height, x, y);
+    const float relief_boost = 0.86F + (cubey::procedural::smoothstep(0.18F, 0.86F, relief) * 0.34F);
+    color.r *= shade * relief_boost;
+    color.g *= shade * relief_boost;
+    color.b *= shade * relief_boost;
+    return color;
+}
+
 [[nodiscard]] Rgb material_color(const TerrainRegionProduct& product, std::uint32_t x,
                                  std::uint32_t y) {
     const auto& rock = terrain_product_field(product, kTerrainFieldMaterialRock);
@@ -254,6 +320,7 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
     case TerrainDebugView::Vegetation:
         return terrain_product_field(product, kTerrainFieldVegetationPotential);
     case TerrainDebugView::Final:
+    case TerrainDebugView::MountainRelief:
     case TerrainDebugView::Material:
         break;
     }
@@ -266,9 +333,15 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
     const cubey::procedural::ScalarField2D* scalar_field = nullptr;
     FieldNormalization scalar_normalization{};
     FieldNormalization height_normalization{};
-    if (view == TerrainDebugView::Final) {
+    FieldNormalization relief_normalization{};
+    if (view == TerrainDebugView::Final || view == TerrainDebugView::MountainRelief) {
         height_normalization =
             make_field_normalization(terrain_product_field(product, kTerrainFieldHeightM), false);
+        if (view == TerrainDebugView::MountainRelief) {
+            relief_normalization =
+                make_field_normalization(terrain_product_field(product, kTerrainFieldLocalRelief),
+                                         false);
+        }
     } else if (view != TerrainDebugView::Material) {
         scalar_field = &field_for_debug_view(product, view);
         scalar_normalization =
@@ -282,6 +355,9 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
             Rgb color{};
             if (view == TerrainDebugView::Final) {
                 color = final_color(product, x, y, height_normalization);
+            } else if (view == TerrainDebugView::MountainRelief) {
+                color = mountain_relief_color(product, x, y, height_normalization,
+                                              relief_normalization);
             } else if (view == TerrainDebugView::Material) {
                 color = material_color(product, x, y);
             } else {
