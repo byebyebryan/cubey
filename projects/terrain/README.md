@@ -60,6 +60,10 @@ slice; existing river recipes emit the fields but keep broad mountain and peak
 uplift disabled for stability. Use `mountain-relief.png` as the primary rendered
 review image for that recipe; `final.png` remains the river/material debug
 composition.
+Revision 20 adds a mountain hierarchy layer for that stress recipe:
+`mountain_range_spine`, `mountain_ridge_hierarchy`, and
+`mountain_peak_candidates`. The default river recipes keep range spine and peak
+candidate fields disabled while preserving their existing ridge source.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -94,8 +98,11 @@ The review set includes:
 - `mountain-relief.png`
 - `height.png`
 - `slope.png`
+- `mountain-range-spine.png`
 - `mountain-support.png`
+- `mountain-ridge-hierarchy.png`
 - `ridge-support.png`
+- `mountain-peak-candidates.png`
 - `peak-support.png`
 - `mountain-uplift.png`
 - `ridge-uplift.png`
@@ -153,6 +160,10 @@ detail. The intended first-pass visual review is `mountain-relief.png`, which
 hillshades height and tints the mountain source fields without river, wetness,
 vegetation, or material overlays. `final.png` is still useful as a product
 composition check, but it is not the right image for judging mountain form.
+Revision 20 makes the source hierarchy inspectable: `mountain-range-spine.png`
+shows broad range organization, `mountain-ridge-hierarchy.png` shows ranked
+primary/secondary ridge structure, and `mountain-peak-candidates.png` shows
+sparse summit candidates before they become peak support.
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential

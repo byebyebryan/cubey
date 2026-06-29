@@ -324,6 +324,10 @@ mountain structure first-class in the product: `mountain_support`,
 `ridge_support`, `peak_support`, `mountain_uplift`, `ridge_uplift`, and
 `peak_uplift`. Existing river recipes still emit the new fields, but broad
 mountain and peak uplift are disabled there so the river work remains stable.
+Revision 20 adds `mountain_range_spine`, `mountain_ridge_hierarchy`, and
+`mountain_peak_candidates` so the mountain stress recipe exposes macro range
+organization, ranked ridge source, and sparse summit candidates before material
+or biome polish.
 
 Known limitations:
 
@@ -345,7 +349,8 @@ Known limitations:
   revisited before adding heavier hydrology checks.
 - The mountain stress recipe is an early diagnostic driver, not a finished
   alpine biome. It does not yet include erosion time, talus, snow/ice, glacial
-  valley carving, or world-scale range continuity.
+  valley carving, or world-scale range continuity. Revision 20 improves the
+  source hierarchy but the ridge field can still read busy without erosion.
 - The final PNG is an inspectable debug composition, not the target renderer.
   Use `mountain-relief.png` for mountain-form review because `final.png` still
   includes the river/material overlays.
@@ -381,7 +386,7 @@ more biome labels:
 3. Replace the current support-path hierarchy and distinctness classifier with a
    more principled basin/tributary model so visual coverage does not depend on
    capped promoted branch counts.
-4. Refine the revision 19 mountain driver with better range continuity, ridge
-   hierarchy, peak placement, and slope/detail layering.
+4. Refine the revision 20 mountain driver with erosion-aware ridge cleanup,
+   alpine material/valley contrast, and better world-scale range continuity.
 5. Add capture summaries or manifest metadata for the review set so image
    artifacts can be compared without relying only on manual inspection.

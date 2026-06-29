@@ -1,5 +1,7 @@
 # Terrain Mountain Hierarchy Plan
 
+Status: implemented in revision 20.
+
 Revision 19 made mountain fields explicit, but the stress capture still reads
 too much like noisy rough terrain in places. The next correction should improve
 the source hierarchy before adding alpine biome polish.
@@ -59,3 +61,17 @@ Review `mountain-relief.png` first, then the source fields:
 - Thermal/hydraulic erosion time.
 - Glacial valley carving, snow/ice, treeline, or biome material polish.
 - Applying mountain uplift to the default river recipe.
+
+## Outcome
+
+Revision 20 adds the three source fields to the product contract and debug
+review set. `temperate-mountain-range-stress` now builds broad support from the
+range spine, derives ridge support from a ranked hierarchy field, attaches peak
+support to sparse peak candidates, and dampens fine detail where broad mountain
+support is weak. The generated review sets now contain 29 PNGs per capture
+directory.
+
+This is still not a finished mountain model. The ridge hierarchy is more
+organized than the revision 19 one-step ridged field, but it can still read busy
+because there is no erosion, talus, glacial carving, or world-scale range graph
+yet.
