@@ -245,11 +245,14 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
 
     constexpr std::array promoted_flags{
         "--grid-width",         "--profile-output",        "--profile-diagnostic-interval",
+        "--grid-size",
         "--smoke-injectors",    "--smoke-pressure-solver", "--pyro-sources",
         "--pyro-source-radius", "--shadow-grid-width",     "--water2d-transfer",
         "--water2d-hose",       "--water3d-transfer",      "--water3d-p2g-mode",
         "--water3d-whitewater", "--ocean-field-precision", "--planet-max-lod-level",
         "--planet-lod-hysteresis", "--planet-time-hours",  "--planet-camera-mode",
+        "--terrain-recipe",        "--terrain-camera-preset",
+        "--terrain-vertical-scale",
         "--terrain-lab-slice",     "--terrain-lab-camera-preset",
         "--terrain-lab-noise-source",
         "--cloud-camera-mode",     "--cloud-quality",      "--cloud-coverage",
@@ -265,6 +268,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
     constexpr std::array project_control_paths{
         "grid.width",
         "grid.height",
+        "grid.size",
         "grid.depth",
         "profile.output",
         "profile.warmup_frames",
@@ -320,6 +324,9 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "planet.camera_mode",
         "planet.atmosphere_mode",
         "terrain.cell_size",
+        "terrain.recipe",
+        "terrain.camera_preset",
+        "terrain.vertical_scale",
         "terrain.sea_level",
         "terrain.water_surface",
         "terrain_lab.slice_preset",
@@ -461,6 +468,9 @@ void test_run_config_loads_json_config_file() {
   },
   "terrain": {
     "seed": 12345,
+    "recipe": "temperate-mountain-range-stress",
+    "camera_preset": "profile",
+    "vertical_scale": 0.75,
     "water_surface": false
   },
   "terrain_lab": {
@@ -539,6 +549,12 @@ void test_run_config_loads_json_config_file() {
             "config file should set planet atmosphere mode");
     require(config.terrain.seed_set && config.terrain.seed == 12345U,
             "config file should mark terrain seed as explicit");
+    require(config.terrain.recipe == "temperate-mountain-range-stress",
+            "config file should set terrain recipe");
+    require(config.terrain.camera_preset == "profile",
+            "config file should set terrain camera preset");
+    require(config.terrain.vertical_scale == 0.75F,
+            "config file should set terrain vertical scale");
     require(config.terrain.water_surface == 0, "config file should set terrain booleans");
     require(config.terrain_lab.slice_preset == "arid-mesa-canyon",
             "config file should set Terrain Lab slice preset");
@@ -1333,6 +1349,16 @@ void test_run_config_parses_grid_dimensions() {
     require(config.grid.width == 1024, "run config should parse grid width");
     require(config.grid.height == 768, "run config should parse grid height");
     require(config.grid.depth == 96, "run config should parse grid depth");
+
+    std::array<char, 12> grid_size_flag{'-', '-', 'g', 'r', 'i', 'd', '-',
+                                        's', 'i', 'z', 'e', '\0'};
+    std::array<char, 4> grid_size_value{'2', '5', '7', '\0'};
+    std::array<char*, 3> square_argv{program.data(), grid_size_flag.data(),
+                                     grid_size_value.data()};
+    const cubey::RunConfig square_config =
+        cubey::parse_run_config(static_cast<int>(square_argv.size()), square_argv.data());
+    require(square_config.grid.width == 257 && square_config.grid.height == 257,
+            "run config should parse square grid size");
 }
 
 void test_run_config_parses_water_controls() {
@@ -1458,14 +1484,22 @@ void test_run_config_parses_terrain_controls() {
     std::string ridges_value = "0.85";
     std::string valleys_flag = "--terrain-valleys";
     std::string valleys_value = "1.15";
+    std::string recipe_flag = "--terrain-recipe";
+    std::string recipe_value = "temperate-mountain-range-stress";
+    std::string camera_flag = "--terrain-camera-preset";
+    std::string camera_value = "top";
+    std::string vertical_scale_flag = "--terrain-vertical-scale";
+    std::string vertical_scale_value = "0.75";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 18> argv{
+    std::array<char*, 24> argv{
         program.data(),          seed_flag.data(),         seed_value.data(),
         cell_size_flag.data(),   cell_size_value.data(),   sea_level_flag.data(),
         sea_level_value.data(),  land_extent_flag.data(),  land_extent_value.data(),
         coast_noise_flag.data(), coast_noise_value.data(), relief_flag.data(),
         relief_value.data(),     ridges_flag.data(),       ridges_value.data(),
-        valleys_flag.data(),     valleys_value.data(),     water_surface_flag.data()};
+        valleys_flag.data(),     valleys_value.data(),     recipe_flag.data(),
+        recipe_value.data(),     camera_flag.data(),       camera_value.data(),
+        vertical_scale_flag.data(), vertical_scale_value.data(), water_surface_flag.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -1478,6 +1512,12 @@ void test_run_config_parses_terrain_controls() {
     require(config.terrain.relief == 1.35F, "run config should parse terrain relief");
     require(config.terrain.ridges == 0.85F, "run config should parse terrain ridges");
     require(config.terrain.valleys == 1.15F, "run config should parse terrain valleys");
+    require(config.terrain.recipe == "temperate-mountain-range-stress",
+            "run config should parse terrain recipe");
+    require(config.terrain.camera_preset == "top",
+            "run config should parse terrain camera preset");
+    require(config.terrain.vertical_scale == 0.75F,
+            "run config should parse terrain vertical scale");
     require(config.terrain.water_surface == 0,
             "run config should parse disabled terrain water surface");
 
@@ -1535,6 +1575,17 @@ void test_run_config_rejects_invalid_ocean_controls() {
                                     terrain_lab_camera_argv.data());
         },
         "run config should reject unsupported Terrain Lab camera preset");
+
+    std::string terrain_camera_flag = "--terrain-camera-preset";
+    std::string terrain_camera_value = "telephoto";
+    std::array<char*, 3> terrain_camera_argv{program.data(), terrain_camera_flag.data(),
+                                             terrain_camera_value.data()};
+    require_throws(
+        [&terrain_camera_argv]() {
+            cubey::parse_run_config(static_cast<int>(terrain_camera_argv.size()),
+                                    terrain_camera_argv.data());
+        },
+        "run config should reject unsupported terrain camera preset");
 
     std::string terrain_lab_noise_flag = "--terrain-lab-noise-source";
     std::string terrain_lab_noise_value = "shader-noise";

@@ -38,6 +38,8 @@ if (BUILD_TESTING)
     add_executable(cubey_project_terrain_tests
         terrain_debug_export.cpp
         terrain_generator.cpp
+        terrain_preview_config.cpp
+        terrain_preview_mesh.cpp
         terrain_product.cpp
         terrain_tests.cpp
     )
@@ -46,6 +48,7 @@ if (BUILD_TESTING)
         cubey_project_terrain_tests
         PRIVATE
             cubey::core
+            cubey::render
             cubey_project_warnings
     )
     add_test(NAME terrain_product_tests COMMAND cubey_project_terrain_tests)
@@ -104,6 +107,30 @@ if (BUILD_TESTING)
     cubey_add_png_stats_test(
         terrain_headless_stress_river_network_writes_png
         "${CUBEY_TERRAIN_HEADLESS_STRESS_RIVER_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
+    set(CUBEY_TERRAIN_PREVIEW_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-preview-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_preview_headless_writes_png
+        cubey_project_terrain_preview
+        "${CUBEY_TERRAIN_PREVIEW_HEADLESS_OUTPUT}"
+        --headless
+        --width
+        320
+        --height
+        180
+        --grid-size
+        65
+        --terrain-recipe
+        temperate-mountain-range-stress
+    )
+    cubey_add_png_stats_test(
+        terrain_preview_headless_writes_png
+        "${CUBEY_TERRAIN_PREVIEW_HEADLESS_OUTPUT}"
         0.00001
         0.00005
     )

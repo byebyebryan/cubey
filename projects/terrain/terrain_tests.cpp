@@ -1,5 +1,7 @@
 #include "terrain_debug_export.h"
 #include "terrain_generator.h"
+#include "terrain_preview_config.h"
+#include "terrain_preview_mesh.h"
 
 #include <algorithm>
 #include <array>
@@ -1223,6 +1225,100 @@ void test_terrain_debug_export_writes_review_set() {
     std::filesystem::remove_all(output_dir);
 }
 
+void test_terrain_preview_config_uses_run_config_controls() {
+    cubey::RunConfig run_config;
+    cubey::projects::terrain::TerrainPreviewConfig preview =
+        cubey::projects::terrain::terrain_preview_config_from_run_config(run_config);
+    require(preview.region.recipe_id ==
+                cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress,
+            "terrain preview should default to the mountain stress recipe");
+    require(preview.camera_preset ==
+                cubey::projects::terrain::TerrainPreviewCameraPreset::Oblique,
+            "terrain preview should default to the oblique camera");
+    require(preview.vertical_scale == cubey::projects::terrain::kTerrainPreviewDefaultVerticalScale,
+            "terrain preview should default to the documented vertical scale");
+
+    run_config.grid.width = 33;
+    run_config.grid.height = 65;
+    run_config.terrain.seed = 99U;
+    run_config.terrain.seed_set = true;
+    run_config.terrain.cell_size = 64.0F;
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRiverStress);
+    run_config.terrain.camera_preset = "profile";
+    run_config.terrain.vertical_scale = 0.55F;
+    preview = cubey::projects::terrain::terrain_preview_config_from_run_config(run_config);
+
+    require(preview.region.grid_width == 33 && preview.region.grid_height == 65,
+            "terrain preview should use shared grid dimensions");
+    require(preview.region.seed == 99U, "terrain preview should use terrain seed");
+    require(preview.region.cell_size_m == 64.0F, "terrain preview should use terrain cell size");
+    require(preview.region.recipe_id ==
+                cubey::projects::terrain::kTerrainRecipeTemperateMountainRiverStress,
+            "terrain preview should use the selected terrain recipe");
+    require(preview.camera_preset ==
+                cubey::projects::terrain::TerrainPreviewCameraPreset::Profile,
+            "terrain preview should parse the profile camera");
+    require(preview.vertical_scale == 0.55F,
+            "terrain preview should use explicit vertical scale");
+
+    run_config.terrain.camera_preset = "telephoto";
+    require_throws(
+        [&run_config] {
+            static_cast<void>(
+                cubey::projects::terrain::terrain_preview_config_from_run_config(run_config));
+        },
+        "terrain preview should reject unknown camera presets");
+}
+
+void test_terrain_preview_mesh_represents_heightfield() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 33;
+    config.grid_height = 33;
+    config.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress);
+    const cubey::projects::terrain::TerrainRegionProduct product =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    cubey::projects::terrain::TerrainPreviewConfig preview;
+    preview.region = config;
+    preview.vertical_scale = 0.5F;
+    const cubey::projects::terrain::TerrainPreviewMeshData mesh =
+        cubey::projects::terrain::make_terrain_preview_mesh(product, preview);
+
+    const std::size_t sample_count =
+        static_cast<std::size_t>(config.grid_width) * static_cast<std::size_t>(config.grid_height);
+    const std::size_t quad_count =
+        static_cast<std::size_t>(config.grid_width - 1U) *
+        static_cast<std::size_t>(config.grid_height - 1U);
+    require(mesh.vertices.size() == sample_count,
+            "terrain preview mesh should emit one vertex per height sample");
+    require(mesh.indices.size() == quad_count * 6U,
+            "terrain preview mesh should emit two indexed triangles per quad");
+    require(cubey::projects::terrain::terrain_preview_triangle_count(mesh) == quad_count * 2U,
+            "terrain preview mesh should report triangle count");
+
+    const cubey::render::VertexPositionColorNormal& first = mesh.vertices.front();
+    require(std::isfinite(first.position[0]) && std::isfinite(first.position[1]) &&
+                std::isfinite(first.position[2]),
+            "terrain preview mesh vertex positions should be finite");
+    require(std::isfinite(first.normal[0]) && std::isfinite(first.normal[1]) &&
+                std::isfinite(first.normal[2]),
+            "terrain preview mesh normals should be finite");
+    require(first.color[0] >= 0.0F && first.color[0] <= 1.0F && first.color[1] >= 0.0F &&
+                first.color[1] <= 1.0F && first.color[2] >= 0.0F && first.color[2] <= 1.0F,
+            "terrain preview mesh colors should be normalized");
+
+    require_throws(
+        [&product, &preview] {
+            cubey::projects::terrain::TerrainPreviewConfig bad_preview = preview;
+            bad_preview.vertical_scale = 0.0F;
+            static_cast<void>(
+                cubey::projects::terrain::make_terrain_preview_mesh(product, bad_preview));
+        },
+        "terrain preview mesh should reject invalid vertical scale");
+}
+
 } // namespace
 
 int main() {
@@ -1239,5 +1335,7 @@ int main() {
     test_terrain_river_uses_larger_routing_context();
     test_terrain_debug_export_writes_png();
     test_terrain_debug_export_writes_review_set();
+    test_terrain_preview_config_uses_run_config_controls();
+    test_terrain_preview_mesh_represents_heightfield();
     return 0;
 }
