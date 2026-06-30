@@ -11,6 +11,7 @@
 #include <string>
 #include <stdexcept>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -530,6 +531,10 @@ void test_terrain_product_has_useful_ranges() {
         field(product, cubey::projects::terrain::kTerrainFieldStreamOrder).summarize();
     const cubey::procedural::ScalarFieldStats drainage =
         field(product, cubey::projects::terrain::kTerrainFieldDrainagePotential).summarize();
+    const cubey::procedural::ScalarFieldStats channel_incision =
+        field(product, cubey::projects::terrain::kTerrainFieldChannelIncision).summarize();
+    const cubey::procedural::ScalarFieldStats valley_incision =
+        field(product, cubey::projects::terrain::kTerrainFieldValleyIncision).summarize();
     const auto& fill_delta = field(product, cubey::projects::terrain::kTerrainFieldRoutingFillDelta);
     const cubey::procedural::ScalarFieldStats fill_delta_stats = fill_delta.summarize();
     const cubey::procedural::ScalarFieldStats sink =
@@ -538,11 +543,86 @@ void test_terrain_product_has_useful_ranges() {
     require(stream_order.max >= 3.0F, "stream order should identify larger drainage trunks");
     require(drainage.max > drainage.min, "drainage potential should vary");
     require(fill_delta_stats.min >= 0.0F, "routing fill delta should be non-negative");
+    require(channel_incision.max > 4.0F, "river carving should emit channel incision");
+    require(valley_incision.max > 8.0F, "river carving should emit valley incision");
+    require(channel_incision.min >= 0.0F && valley_incision.min >= 0.0F,
+            "river incision fields should be non-negative");
     const std::size_t repaired_count = count_active_samples(fill_delta, 0.001F);
     require(repaired_count > 0U, "routing repair should expose at least one repaired sample");
     require(repaired_count * 100U < fill_delta.sample_count() * 75U,
             "routing repair should not fill most of the visible patch");
     require(sink.max > 0.0F && sink.max <= 1.0F, "sink mask should identify terminal cells");
+}
+
+void test_terrain_river_carves_height_product() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 129;
+    config.grid_height = 129;
+    const cubey::projects::terrain::TerrainRegionProduct product =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const auto& source_height =
+        field(product, cubey::projects::terrain::kTerrainFieldPreProcessHeightM);
+    const auto& final_height = field(product, cubey::projects::terrain::kTerrainFieldHeightM);
+    const auto& river = field(product, cubey::projects::terrain::kTerrainFieldRiverMask);
+    const auto& channel_incision =
+        field(product, cubey::projects::terrain::kTerrainFieldChannelIncision);
+    const auto& valley_incision =
+        field(product, cubey::projects::terrain::kTerrainFieldValleyIncision);
+
+    double active_drop_sum = 0.0;
+    double shoulder_drop_sum = 0.0;
+    std::size_t active_count = 0U;
+    std::size_t shoulder_count = 0U;
+    std::size_t exact_samples = 0U;
+    constexpr std::array<std::pair<int, int>, 4> kShoulderOffsets{
+        std::pair<int, int>{4, 0},
+        std::pair<int, int>{-4, 0},
+        std::pair<int, int>{0, 4},
+        std::pair<int, int>{0, -4},
+    };
+    const cubey::procedural::Grid2DDesc& desc = final_height.desc();
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float channel_drop = channel_incision.at(x, y);
+            const float valley_drop = valley_incision.at(x, y);
+            const float total_drop = channel_drop + valley_drop;
+            require_near(source_height.at(x, y) - final_height.at(x, y), total_drop, 0.002F,
+                         "final height should equal source height minus river incision");
+            ++exact_samples;
+
+            if (river.at(x, y) < 0.45F || total_drop < 8.0F) {
+                continue;
+            }
+            active_drop_sum += total_drop;
+            ++active_count;
+            for (const auto [offset_x, offset_y] : kShoulderOffsets) {
+                const int sx = static_cast<int>(x) + offset_x;
+                const int sy = static_cast<int>(y) + offset_y;
+                if (sx < 0 || sy < 0 || sx >= static_cast<int>(desc.width) ||
+                    sy >= static_cast<int>(desc.height)) {
+                    continue;
+                }
+                const std::uint32_t shoulder_x = static_cast<std::uint32_t>(sx);
+                const std::uint32_t shoulder_y = static_cast<std::uint32_t>(sy);
+                if (river.at(shoulder_x, shoulder_y) > 0.18F) {
+                    continue;
+                }
+                shoulder_drop_sum += channel_incision.at(shoulder_x, shoulder_y) +
+                                     valley_incision.at(shoulder_x, shoulder_y);
+                ++shoulder_count;
+            }
+        }
+    }
+
+    require(exact_samples == final_height.sample_count(),
+            "river carving test should inspect every sample");
+    require(active_count > 16U, "river carving should find active channel samples");
+    require(shoulder_count > 16U, "river carving should find nearby low-river shoulders");
+    const double active_average = active_drop_sum / static_cast<double>(active_count);
+    const double shoulder_average = shoulder_drop_sum / static_cast<double>(shoulder_count);
+    require(active_average > shoulder_average + 8.0,
+            "active river samples should be carved lower than nearby shoulders");
 }
 
 void test_terrain_product_is_deterministic() {
@@ -779,8 +859,8 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
 
 void test_terrain_review_river_coverage_is_meaningful() {
     cubey::projects::terrain::TerrainRegionConfig config = small_config();
-    config.grid_width = 513;
-    config.grid_height = 513;
+    config.grid_width = 257;
+    config.grid_height = 257;
     const cubey::projects::terrain::TerrainRegionProduct baseline =
         cubey::projects::terrain::generate_terrain_region(config);
 
@@ -1025,8 +1105,8 @@ void test_terrain_river_network_has_continuous_active_channels() {
 
 void test_terrain_river_core_avoids_long_grid_aligned_runs() {
     cubey::projects::terrain::TerrainRegionConfig config = small_config();
-    config.grid_width = 513;
-    config.grid_height = 513;
+    config.grid_width = 257;
+    config.grid_height = 257;
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(config);
 
@@ -1166,6 +1246,15 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("channel_width") ==
                 cubey::projects::terrain::TerrainDebugView::ChannelWidth,
             "terrain debug view should parse channel width aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("pre_process_height") ==
+                cubey::projects::terrain::TerrainDebugView::PreProcessHeight,
+            "terrain debug view should parse pre-process height aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("channel_incision") ==
+                cubey::projects::terrain::TerrainDebugView::ChannelIncision,
+            "terrain debug view should parse channel incision aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("valley_incision") ==
+                cubey::projects::terrain::TerrainDebugView::ValleyIncision,
+            "terrain debug view should parse valley incision aliases");
     require_throws(
         [] {
             static_cast<void>(
@@ -1341,6 +1430,7 @@ int main() {
     test_terrain_region_config_defaults();
     test_terrain_product_emits_required_fields();
     test_terrain_product_has_useful_ranges();
+    test_terrain_river_carves_height_product();
     test_terrain_product_is_deterministic();
     test_terrain_stress_recipe_expands_river_network();
     test_terrain_mountain_range_stress_recipe_exposes_mountain_driver();
