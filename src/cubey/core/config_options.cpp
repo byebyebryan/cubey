@@ -83,6 +83,7 @@ constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip"
                                                               "pic/flip"};
 constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-faces", "tiled",
                                                            "tiled-faces"};
+constexpr std::array<std::string_view, 3> kTerrainCameraPresets{"oblique", "profile", "top"};
 constexpr std::array<std::string_view, 6> kTerrainLabSlicePresets{
     "arid-mesa-canyon",
     "temperate-mountain-rivers",
@@ -125,7 +126,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 229> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 233> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -160,6 +161,9 @@ constexpr std::array<ConfigOptionDescriptor, 229> kRunConfigOptions{
            ConfigOptionType::UInt32, min_range(1.0)),
     option(RunConfigOptionId::GridHeight, "grid.height", "--grid-height", "Height", "Grid",
            "Project grid height. Zero or null leaves the project default in place.",
+           ConfigOptionType::UInt32, min_range(1.0)),
+    option(RunConfigOptionId::GridSize, "grid.size", "--grid-size", "Size", "Grid",
+           "Set project grid width and height to the same value.",
            ConfigOptionType::UInt32, min_range(1.0)),
     option(RunConfigOptionId::GridDepth, "grid.depth", "--grid-depth", "Depth", "Grid",
            "Project grid depth. Zero or null leaves the project default in place.",
@@ -423,6 +427,17 @@ constexpr std::array<ConfigOptionDescriptor, 229> kRunConfigOptions{
            "--terrain-water-surface", "Water Surface", "Terrain",
            "Enable the terrain water surface.", ConfigOptionType::Bool, no_range(), {},
            "--no-terrain-water-surface"),
+    option(RunConfigOptionId::TerrainRecipe, "terrain.recipe", "--terrain-recipe", "Recipe",
+           "Terrain", "Named terrain recipe for terrain product consumers.",
+           ConfigOptionType::String),
+    option(RunConfigOptionId::TerrainCameraPreset, "terrain.camera_preset",
+           "--terrain-camera-preset", "Camera Preset", "Terrain",
+           "Initial terrain review camera framing.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kTerrainCameraPresets)),
+    option(RunConfigOptionId::TerrainVerticalScale, "terrain.vertical_scale",
+           "--terrain-vertical-scale", "Vertical Scale", "Terrain",
+           "Display scale applied to terrain height in renderer-backed preview consumers.",
+           ConfigOptionType::Float, min_range(0.000001)),
     option(RunConfigOptionId::TerrainLabSlicePreset, "terrain_lab.slice_preset",
            "--terrain-lab-slice", "Slice Preset", "Terrain Lab",
            "Terrain Lab biome slice preset.", ConfigOptionType::Enum, no_range(),
@@ -1093,6 +1108,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_uint32(config.grid.width);
     case RunConfigOptionId::GridHeight:
         return optional_uint32(config.grid.height);
+    case RunConfigOptionId::GridSize:
+        return config.grid.width != 0U && config.grid.width == config.grid.height
+                   ? nlohmann::json(config.grid.width)
+                   : nlohmann::json(nullptr);
     case RunConfigOptionId::GridDepth:
         return optional_uint32(config.grid.depth);
     case RunConfigOptionId::ProfileOutput:
@@ -1265,6 +1284,15 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.terrain.valleys);
     case RunConfigOptionId::TerrainWaterSurface:
         return optional_bool(config.terrain.water_surface);
+    case RunConfigOptionId::TerrainRecipe:
+        return config.terrain.recipe.empty() ? nlohmann::json(nullptr)
+                                             : nlohmann::json(config.terrain.recipe);
+    case RunConfigOptionId::TerrainCameraPreset:
+        return config.terrain.camera_preset.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain.camera_preset);
+    case RunConfigOptionId::TerrainVerticalScale:
+        return optional_float(config.terrain.vertical_scale);
     case RunConfigOptionId::TerrainLabSlicePreset:
         return config.terrain_lab.slice_preset.empty()
                    ? nlohmann::json(nullptr)
@@ -1748,6 +1776,9 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<float>("relief", options.relief);
     adapter.writeField<float>("ridges", options.ridges);
     adapter.writeField<float>("valleys", options.valleys);
+    adapter.writeField<std::string>("recipe", options.recipe);
+    adapter.writeField<std::string>("camera_preset", options.camera_preset);
+    adapter.writeField<float>("vertical_scale", options.vertical_scale);
     adapter.writeField<int>("water_surface", options.water_surface);
 }
 
@@ -1760,6 +1791,9 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<float>("relief", options.relief);
     adapter.readField<float>("ridges", options.ridges);
     adapter.readField<float>("valleys", options.valleys);
+    adapter.readField<std::string>("recipe", options.recipe);
+    adapter.readField<std::string>("camera_preset", options.camera_preset);
+    adapter.readField<float>("vertical_scale", options.vertical_scale);
     adapter.readField<int>("water_surface", options.water_surface);
 }
 
@@ -2102,6 +2136,14 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.grid.height = parse_number<std::uint32_t>(value, option, "unsigned integer");
         validate_range(config.grid.height, option);
         break;
+    case RunConfigOptionId::GridSize: {
+        const std::uint32_t grid_size =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(grid_size, option);
+        config.grid.width = grid_size;
+        config.grid.height = grid_size;
+        break;
+    }
     case RunConfigOptionId::GridDepth:
         config.grid.depth = parse_number<std::uint32_t>(value, option, "unsigned integer");
         validate_range(config.grid.depth, option);
@@ -2393,6 +2435,16 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainWaterSurface:
         config.terrain.water_surface = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::TerrainRecipe:
+        config.terrain.recipe = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainCameraPreset:
+        config.terrain.camera_preset = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainVerticalScale:
+        config.terrain.vertical_scale = parse_config_float(value, option);
+        validate_range(config.terrain.vertical_scale, option);
         break;
     case RunConfigOptionId::TerrainLabSlicePreset:
         config.terrain_lab.slice_preset = std::string(value);

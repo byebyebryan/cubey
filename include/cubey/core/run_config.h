@@ -185,6 +185,9 @@ struct RunConfig {
         float relief = kRunConfigUnsetFloat;
         float ridges = kRunConfigUnsetFloat;
         float valleys = kRunConfigUnsetFloat;
+        float vertical_scale = kRunConfigUnsetFloat;
+        std::string recipe{};
+        std::string camera_preset{};
         int water_surface = -1;
         bool seed_set = false;
     };
