@@ -2,12 +2,16 @@
 #include "terrain_generator.h"
 #include "terrain_preview_config.h"
 #include "terrain_preview_mesh.h"
+#include "terrain_process_fields.h"
+
+#include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <stdexcept>
 #include <string_view>
@@ -47,6 +51,14 @@ template <typename Fn> void require_throws(Fn&& fn, const char* message) {
 [[nodiscard]] const cubey::procedural::ScalarField2D&
 field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string_view name) {
     return cubey::projects::terrain::terrain_product_field(product, name);
+}
+
+[[nodiscard]] nlohmann::json read_json_file(const std::filesystem::path& path) {
+    std::ifstream input(path);
+    require(static_cast<bool>(input), "test should open JSON file");
+    nlohmann::json document;
+    input >> document;
+    return document;
 }
 
 [[nodiscard]] std::size_t count_active_samples(const cubey::procedural::ScalarField2D& field,
@@ -447,6 +459,99 @@ void test_terrain_region_config_defaults() {
             cubey::projects::terrain::validate_terrain_region_config(invalid);
         },
         "terrain config should reject invalid grid dimensions");
+}
+
+void test_terrain_process_field_helpers() {
+    const cubey::procedural::Grid2DDesc desc{
+        .width = 5,
+        .height = 5,
+        .cell_size = 10.0F,
+    };
+    cubey::procedural::ScalarField2D source(desc, 0.0F);
+    source.at(2, 2) = 10.0F;
+
+    const cubey::procedural::ScalarField2D one_step =
+        cubey::projects::terrain::spread_max_decay_field(source, 1, 0.5F);
+    require_near(source.at(1, 2), 0.0F, 0.001F,
+                 "terrain process spread should not mutate the source field");
+    require_near(one_step.at(2, 2), 10.0F, 0.001F,
+                 "terrain process spread should preserve the source peak");
+    require_near(one_step.at(1, 2), 5.0F, 0.001F,
+                 "terrain process spread should decay to adjacent samples");
+    require_near(one_step.at(1, 1), 5.0F, 0.001F,
+                 "terrain process spread should use diagonal support");
+
+    const cubey::procedural::ScalarField2D two_step =
+        cubey::projects::terrain::spread_max_decay_field(source, 2, 0.5F);
+    require_near(two_step.at(0, 2), 2.5F, 0.001F,
+                 "terrain process spread should continue across iterations");
+    require_near(two_step.at(0, 0), 2.5F, 0.001F,
+                 "terrain process spread should continue diagonally across iterations");
+
+    cubey::procedural::ScalarField2D primary(desc, 0.0F);
+    cubey::procedural::ScalarField2D secondary(desc, 0.0F);
+    cubey::procedural::ScalarField2D local_relief(desc, 0.0F);
+    primary.at(2, 2) = 12.0F;
+    secondary.at(2, 2) = 18.0F;
+    local_relief.at(2, 2) = 10.0F;
+    primary.at(1, 1) = 3.0F;
+    secondary.at(1, 1) = 2.0F;
+
+    const cubey::projects::terrain::TerrainProcessSplitLoweringFields lowering =
+        cubey::projects::terrain::clamp_split_lowering_to_relief(
+            primary, secondary, local_relief,
+            cubey::projects::terrain::TerrainProcessLoweringLimit{
+                .base_limit_m = 5.0F,
+                .relief_fraction = 0.5F,
+                .max_total_m = 20.0F,
+            });
+    require_near(lowering.primary.at(2, 2), 4.0F, 0.001F,
+                 "terrain process clamp should preserve primary/secondary ratio");
+    require_near(lowering.secondary.at(2, 2), 6.0F, 0.001F,
+                 "terrain process clamp should preserve secondary/primary ratio");
+    require_near(lowering.total.at(2, 2), 10.0F, 0.001F,
+                 "terrain process clamp should limit against local relief");
+    require_near(lowering.total.at(1, 1), 5.0F, 0.001F,
+                 "terrain process clamp should allow values inside the base limit");
+
+    cubey::procedural::ScalarField2D height(desc, 100.0F);
+    const cubey::procedural::ScalarField2D lowered =
+        cubey::projects::terrain::subtract_lowering_from_height(height, lowering.total);
+    require_near(lowered.at(2, 2), 90.0F, 0.001F,
+                 "terrain process lowering should subtract from height");
+    require_near(lowered.at(1, 1), 95.0F, 0.001F,
+                 "terrain process lowering should subtract unclamped samples");
+
+    require_throws(
+        [&source] {
+            static_cast<void>(
+                cubey::projects::terrain::spread_max_decay_field(source, -1, 0.5F));
+        },
+        "terrain process spread should reject negative iterations");
+    require_throws(
+        [&source] {
+            static_cast<void>(
+                cubey::projects::terrain::spread_max_decay_field(source, 1, 1.5F));
+        },
+        "terrain process spread should reject invalid decay");
+
+    const cubey::procedural::Grid2DDesc wider_desc{
+        .width = 6,
+        .height = 5,
+        .cell_size = 10.0F,
+    };
+    const cubey::procedural::ScalarField2D mismatched(wider_desc, 0.0F);
+    require_throws(
+        [&primary, &secondary, &mismatched] {
+            static_cast<void>(cubey::projects::terrain::clamp_split_lowering_to_relief(
+                primary, secondary, mismatched,
+                cubey::projects::terrain::TerrainProcessLoweringLimit{
+                    .base_limit_m = 1.0F,
+                    .relief_fraction = 0.0F,
+                    .max_total_m = 1.0F,
+                }));
+        },
+        "terrain process clamp should reject grid mismatches");
 }
 
 void test_terrain_product_emits_required_fields() {
@@ -1314,6 +1419,53 @@ void test_terrain_debug_export_writes_review_set() {
                 "terrain debug review export should write each PNG");
     }
 
+    const std::filesystem::path manifest_path = output_dir / "manifest.json";
+    require(std::filesystem::file_size(manifest_path) > 64U,
+            "terrain debug review export should write a non-empty manifest");
+    const nlohmann::json manifest = read_json_file(manifest_path);
+    require(manifest.at("schema") == "cubey.terrain.scalar_capture.v1",
+            "terrain debug manifest should identify its schema");
+    require(manifest.at("recipe_id") == product.config.recipe_id,
+            "terrain debug manifest should record the recipe");
+    require(manifest.at("generator_revision") == product.config.generator_revision,
+            "terrain debug manifest should record the generator revision");
+    require(manifest.at("seed_hex").get<std::string>().starts_with("0x"),
+            "terrain debug manifest should record a hex seed");
+    require(manifest.at("summary").at("content_hash_hex").get<std::string>().starts_with("0x"),
+            "terrain debug manifest should record a hex content hash");
+    require(manifest.at("grid").at("width") == product.fields.desc().width,
+            "terrain debug manifest should record grid width");
+    require(manifest.at("grid").at("height") == product.fields.desc().height,
+            "terrain debug manifest should record grid height");
+    require(manifest.at("field_count") == product.fields.field_count(),
+            "terrain debug manifest should record field count");
+    require(manifest.at("views").size() ==
+                cubey::projects::terrain::terrain_debug_review_views().size(),
+            "terrain debug manifest should record review view count");
+    require(manifest.at("outputs").size() ==
+                cubey::projects::terrain::terrain_debug_review_views().size(),
+            "terrain debug manifest should record review output count");
+    const std::vector<std::string> outputs =
+        manifest.at("outputs").get<std::vector<std::string>>();
+    require(std::find(outputs.begin(), outputs.end(), "final.png") != outputs.end(),
+            "terrain debug manifest should list final PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "channel-incision.png") != outputs.end(),
+            "terrain debug manifest should list incision PNG output");
+
+    const nlohmann::json& height_stats =
+        manifest.at("fields").at(std::string(cubey::projects::terrain::kTerrainFieldHeightM));
+    require(height_stats.at("sample_count") ==
+                product.fields.desc().width * product.fields.desc().height,
+            "terrain debug manifest should record field sample counts");
+    require_near(height_stats.at("span").get<float>(), product.summary.height.span, 0.01F,
+                 "terrain debug manifest should record height stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldChannelIncision)),
+            "terrain debug manifest should include channel incision stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldValleyIncision)),
+            "terrain debug manifest should include valley incision stats");
+
     std::filesystem::remove_all(output_dir);
 }
 
@@ -1428,6 +1580,7 @@ void test_terrain_preview_mesh_represents_heightfield() {
 
 int main() {
     test_terrain_region_config_defaults();
+    test_terrain_process_field_helpers();
     test_terrain_product_emits_required_fields();
     test_terrain_product_has_useful_ranges();
     test_terrain_river_carves_height_product();
