@@ -23,6 +23,9 @@ Detailed current foundation notes live under
 - [Renderer foundation](architecture/renderer-foundation.md): `cubey::render`
   contracts that sit above Vulkan without introducing scene, material, or
   render-graph policy.
+- [Reference-first rendering feature workflow](architecture/rendering-feature-workflow.md):
+  start complex visual features from known-good references, then integrate and
+  extend once a captured baseline exists.
 - [Render graph direction](architecture/render-graph.md): current and future
   pass/resource graph vocabulary, execution boundary, adoption triggers, and
   deferred complexity.
