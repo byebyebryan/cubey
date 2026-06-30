@@ -161,6 +161,10 @@ namespace {
     return static_cast<float>(static_cast<std::uint32_t>(mode));
 }
 
+[[nodiscard]] float view_sample_mode_value(CloudLayerViewSampleMode mode) {
+    return static_cast<float>(static_cast<std::uint32_t>(mode));
+}
+
 [[nodiscard]] float background_mode_value(CloudLayerBackgroundMode mode) {
     return static_cast<float>(static_cast<std::uint32_t>(mode));
 }
@@ -736,6 +740,12 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
                              : static_cast<float>(frame.target_extent.width) /
                                    static_cast<float>(frame.target_extent.height);
     const CloudLayerQualityBudget budget = cloud_layer_quality_budget(config.quality);
+    const std::int32_t view_steps =
+        config.view_steps_override > 0 ? std::clamp(config.view_steps_override, 1, 128)
+                                       : budget.view_steps;
+    const std::int32_t view_samples = config.view_samples >= 4 ? 4
+                                     : config.view_samples >= 2 ? 2
+                                                               : 1;
     const math::Vec3 cloud_top_color{1.12F, 1.04F, 0.82F};
     const math::Vec3 cloud_bottom_color{0.24F, 0.30F, 0.38F};
 
@@ -756,7 +766,7 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
         .sun_direction_intensity = {frame.sun_direction.x, frame.sun_direction.y,
                                     frame.sun_direction.z, frame.sun_intensity},
         .ref_options = {static_cast<float>(static_cast<std::uint32_t>(config.debug_view)),
-                        static_cast<float>(budget.view_steps),
+                        static_cast<float>(view_steps),
                         static_cast<float>(budget.light_steps),
                         static_cast<float>(frame.target_extent.width)},
         .shape_options = {config.crispiness, config.curliness, config.absorption,
@@ -774,7 +784,8 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
         .sampling_options = {sampling_mode_value(config.sampling_mode), config.jitter_strength,
                              config.weather_softness, config.weather_influence},
         .temporal_options = {static_cast<float>(frame.temporal_frame_index % 256U),
-                             config.temporal_enabled ? 1.0F : 0.0F, 0.14F, 0.0F},
+                             config.temporal_enabled ? 1.0F : 0.0F, 0.14F,
+                             view_sample_mode_value(config.view_sample_mode)},
         .background_options = {background_mode_value(config.background_mode),
                                config.horizon_layer_enabled ? 1.0F : 0.0F,
                                config.local_volume_enabled ? 1.0F : 0.0F,
@@ -793,7 +804,7 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
                                 frame.scene_depth_occlusion_enabled ? 1.0F : 0.0F,
                                 std::max(frame.scene_depth_fade_m, 1.0F)},
         .density_options = {density_model_value(config.density_model), config.shape_domain_km,
-                            config.footprint_filter_strength, 0.0F},
+                            config.footprint_filter_strength, static_cast<float>(view_samples)},
         .edge_options = {config.edge_softness, config.edge_detail_fade,
                          config.edge_resolve_strength, resolve_mode_value(config.resolve_mode)},
     };
@@ -933,6 +944,18 @@ namespace {
         current.weather.z,
         0.0F,
     };
+    const math::Vec4 previous_temporal_static{
+        0.0F,
+        0.0F,
+        0.0F,
+        previous.temporal_options.w,
+    };
+    const math::Vec4 current_temporal_static{
+        0.0F,
+        0.0F,
+        0.0F,
+        current.temporal_options.w,
+    };
     return cloud_layer_near(previous.cloud_shell, current.cloud_shell) &&
            cloud_layer_near(previous_weather_static, current_weather_static) &&
            cloud_layer_near(previous.sun_direction_intensity, current.sun_direction_intensity) &&
@@ -945,6 +968,7 @@ namespace {
            cloud_layer_near(previous.lighting_strengths, current.lighting_strengths) &&
            cloud_layer_near(previous.composite_options, current.composite_options) &&
            cloud_layer_near(previous.sampling_options, current.sampling_options) &&
+           cloud_layer_near(previous_temporal_static, current_temporal_static) &&
            cloud_layer_near(previous.background_options, current.background_options) &&
            cloud_layer_near(previous.distance_options, current.distance_options) &&
            cloud_layer_near(previous.orbit_options, current.orbit_options) &&

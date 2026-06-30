@@ -238,6 +238,7 @@ struct RunConfig {
         std::string quality{};
         std::uint32_t view_steps = 0;
         std::uint32_t view_samples = 0;
+        std::string view_sample_mode{};
         std::string weather_preset{};
         std::string cache_frames{};
         std::uint32_t cache_texture_size = 0;

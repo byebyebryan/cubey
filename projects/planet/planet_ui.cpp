@@ -289,6 +289,20 @@ void draw_cloud_controls(PlanetUiContext& ui) {
                 cubey::projects::atmosphere::kAtmosphereCloudSamplingModes,
                 cubey::projects::atmosphere::atmosphere_cloud_sampling_mode_name,
                 "Ray-start pattern. Bayer is stable; blue noise is diagnostic until temporal reconstruction improves.");
+            cubey::host::imgui_slider_int(
+                "View steps", &layer.view_steps_override, 0, 128,
+                "Ray-march step override. 0 uses the selected quality preset.");
+            cubey::host::imgui_slider_int("View samples", &layer.view_samples, 1, 4,
+                                          "Ray-start samples per pixel. 1, 2, and 4 are valid; higher values are diagnostic.");
+            if (layer.view_samples != 1 && layer.view_samples != 2 &&
+                layer.view_samples != 4) {
+                layer.view_samples = layer.view_samples < 2 ? 1 : 4;
+            }
+            cubey::host::imgui_enum_combo(
+                "Sample mode", layer.view_sample_mode,
+                cubey::projects::atmosphere::kAtmosphereCloudViewSampleModes,
+                cubey::projects::atmosphere::atmosphere_cloud_view_sample_mode_name,
+                "Single-frame marches all selected samples now; temporal-phased alternates one deterministic phase per frame through temporal history.");
             cubey::host::imgui_enum_combo(
                 "Density model", layer.density_model,
                 cubey::projects::atmosphere::kAtmosphereCloudDensityModels,

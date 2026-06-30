@@ -345,6 +345,8 @@ void test_config_descriptors() {
     cubey::RunConfig config{};
     cubey::set_run_config_option_from_string(config, "clouds.camera_mode", "high");
     cubey::set_run_config_option_from_string(config, "clouds.quality", "full");
+    cubey::set_run_config_option_from_string(config, "clouds.view_sample_mode",
+                                             "temporal-phased");
     cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
     cubey::set_run_config_option_from_string(config, "clouds.cache_frames", "256");
     cubey::set_run_config_option_from_string(config, "clouds.cache_texture_size", "512");
@@ -362,6 +364,8 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.horizon_layer", "true");
     require(config.clouds.camera_mode == "high", "cloud camera mode descriptor should set");
     require(config.clouds.quality == "full", "cloud quality descriptor should set");
+    require(config.clouds.view_sample_mode == "temporal-phased",
+            "cloud view sample mode descriptor should set");
     require(config.clouds.weather_preset == "storm",
             "cloud weather preset descriptor should set");
     require(config.clouds.cache_frames == "256", "cloud cache frames descriptor should set");

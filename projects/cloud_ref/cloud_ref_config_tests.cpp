@@ -247,6 +247,8 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.quality", "full");
     cubey::set_run_config_option_from_string(config, "clouds.view_steps", "96");
     cubey::set_run_config_option_from_string(config, "clouds.view_samples", "2");
+    cubey::set_run_config_option_from_string(config, "clouds.view_sample_mode",
+                                             "temporal-phased");
     cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.wind_speed_mps", "22");
@@ -265,6 +267,8 @@ void test_config_descriptors() {
     require(config.clouds.quality == "full", "cloud quality descriptor should set");
     require(config.clouds.view_steps == 96, "cloud view steps descriptor should set");
     require(config.clouds.view_samples == 2, "cloud view samples descriptor should set");
+    require(config.clouds.view_sample_mode == "temporal-phased",
+            "cloud view sample mode descriptor should set");
     require(config.clouds.weather_preset == "storm",
             "cloud weather preset descriptor should set");
     require_near(config.clouds.coverage, 0.44F, 0.001F,

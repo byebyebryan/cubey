@@ -237,6 +237,12 @@ inline constexpr std::array<cubey::render::CloudLayerSamplingMode, 4>
         cubey::render::CloudLayerSamplingMode::Off,
     };
 
+inline constexpr std::array<cubey::render::CloudLayerViewSampleMode, 2>
+    kAtmosphereCloudViewSampleModes{
+        cubey::render::CloudLayerViewSampleMode::SingleFrame,
+        cubey::render::CloudLayerViewSampleMode::TemporalPhased,
+    };
+
 inline constexpr std::array<cubey::render::CloudLayerDistanceMode, 4>
     kAtmosphereCloudDistanceModes{
         cubey::render::CloudLayerDistanceMode::Auto,
@@ -359,6 +365,32 @@ atmosphere_cloud_sampling_mode_from_name(std::string_view name) {
         }
     }
     throw std::runtime_error("unknown atmosphere cloud sampling mode: " + std::string(name));
+}
+
+[[nodiscard]] inline const char*
+atmosphere_cloud_view_sample_mode_name(cubey::render::CloudLayerViewSampleMode mode) {
+    switch (mode) {
+    case cubey::render::CloudLayerViewSampleMode::SingleFrame:
+        return "single-frame";
+    case cubey::render::CloudLayerViewSampleMode::TemporalPhased:
+        return "temporal-phased";
+    }
+    return "single-frame";
+}
+
+[[nodiscard]] inline cubey::render::CloudLayerViewSampleMode
+atmosphere_cloud_view_sample_mode_from_name(std::string_view name) {
+    if (name.empty()) {
+        return cubey::render::CloudLayerViewSampleMode::SingleFrame;
+    }
+    for (const cubey::render::CloudLayerViewSampleMode mode :
+         kAtmosphereCloudViewSampleModes) {
+        if (name == atmosphere_cloud_view_sample_mode_name(mode)) {
+            return mode;
+        }
+    }
+    throw std::runtime_error("unknown atmosphere cloud view sample mode: " +
+                             std::string(name));
 }
 
 [[nodiscard]] inline const char*
@@ -1036,6 +1068,10 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
         config.layer.sampling_mode =
             atmosphere_cloud_sampling_mode_from_name(run_clouds.sampling_mode);
     }
+    if (!run_clouds.view_sample_mode.empty()) {
+        config.layer.view_sample_mode =
+            atmosphere_cloud_view_sample_mode_from_name(run_clouds.view_sample_mode);
+    }
     if (!run_clouds.distance_mode.empty()) {
         config.layer.distance_mode =
             atmosphere_cloud_distance_mode_from_name(run_clouds.distance_mode);
@@ -1055,6 +1091,13 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
     if (!run_clouds.weather_preset.empty()) {
         apply_atmosphere_cloud_weather_preset(
             config, atmosphere_cloud_weather_preset_from_name(run_clouds.weather_preset));
+    }
+
+    if (run_clouds.view_steps > 0U) {
+        config.layer.view_steps_override = static_cast<std::int32_t>(run_clouds.view_steps);
+    }
+    if (run_clouds.view_samples > 0U) {
+        config.layer.view_samples = static_cast<std::int32_t>(run_clouds.view_samples);
     }
 
     apply_float(run_clouds.bottom_altitude_m, config.layer.bottom_altitude_m);

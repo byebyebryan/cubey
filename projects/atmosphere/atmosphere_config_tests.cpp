@@ -318,6 +318,12 @@ int main() {
     require(atmosphere_cloud_sampling_mode_from_name("blue-noise") ==
                 CloudLayerSamplingMode::BlueNoise,
             "blue-noise cloud sampling mode should parse");
+    require(atmosphere_cloud_view_sample_mode_from_name("") ==
+                CloudLayerViewSampleMode::SingleFrame,
+            "empty cloud view sample mode should default to single-frame");
+    require(atmosphere_cloud_view_sample_mode_from_name("temporal-phased") ==
+                CloudLayerViewSampleMode::TemporalPhased,
+            "temporal phased cloud view sample mode should parse");
     require(atmosphere_cloud_density_model_from_name("") == CloudLayerDensityModel::Procedural,
             "empty cloud density model should default to procedural");
     require(atmosphere_cloud_density_model_from_name("procedural") ==
@@ -493,6 +499,11 @@ int main() {
     require(defaults.clouds.layer.sampling_mode == CloudLayerSamplingMode::Bayer &&
                 !defaults.clouds.layer.temporal_enabled,
             "default atmosphere clouds should use stable Bayer sampling");
+    require(defaults.clouds.layer.view_steps_override == 0 &&
+                defaults.clouds.layer.view_samples == 1 &&
+                defaults.clouds.layer.view_sample_mode ==
+                    CloudLayerViewSampleMode::SingleFrame,
+            "default atmosphere clouds should use preset steps and one single-frame sample");
     require(defaults.clouds.layer.distance_mode == CloudLayerDistanceMode::Auto,
             "default atmosphere clouds should use distance-aware rendering");
     require(defaults.clouds.layer.density_model == CloudLayerDensityModel::Procedural,
@@ -519,6 +530,9 @@ int main() {
         run_config.clouds.debug_view = "orbit-weather";
         run_config.clouds.weather_preset = "storm";
         run_config.clouds.quality = "quarter";
+        run_config.clouds.view_steps = 64;
+        run_config.clouds.view_samples = 2;
+        run_config.clouds.view_sample_mode = "temporal-phased";
         run_config.clouds.sampling_mode = "off";
         run_config.clouds.distance_mode = "orbit-shell";
         run_config.clouds.orbit_representation = "volume";
@@ -543,6 +557,13 @@ int main() {
                 "atmosphere run config should map cloud debug view");
         require(config.clouds.layer.quality == CloudLayerQuality::Quarter,
                 "atmosphere run config should map cloud quality");
+        require(config.clouds.layer.view_steps_override == 64,
+                "atmosphere run config should map cloud view steps");
+        require(config.clouds.layer.view_samples == 2,
+                "atmosphere run config should map cloud view samples");
+        require(config.clouds.layer.view_sample_mode ==
+                    CloudLayerViewSampleMode::TemporalPhased,
+                "atmosphere run config should map cloud view sample mode");
         require(config.clouds.layer.sampling_mode == CloudLayerSamplingMode::Off,
                 "atmosphere run config should map cloud sampling");
         require(config.clouds.layer.distance_mode == CloudLayerDistanceMode::OrbitShell,

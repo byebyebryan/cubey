@@ -68,6 +68,8 @@ constexpr std::array<std::string_view, 4> kCloudRenderPaths{
     "cached", "direct", "diff", "alpha-diff"};
 constexpr std::array<std::string_view, 4> kCloudSamplingModes{
     "interleaved", "bayer", "blue-noise", "off"};
+constexpr std::array<std::string_view, 2> kCloudViewSampleModes{"single-frame",
+                                                                "temporal-phased"};
 constexpr std::array<std::string_view, 3> kCloudDensityModels{"ref-density", "procedural",
                                                               "cloud-ref-compatible"};
 constexpr std::array<std::string_view, 2> kCloudResolveModes{"terrain-post",
@@ -130,7 +132,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 243> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 244> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -571,6 +573,10 @@ constexpr std::array<ConfigOptionDescriptor, 243> kRunConfigOptions{
     option(RunConfigOptionId::CloudViewSamples, "clouds.view_samples", "--cloud-view-samples",
            "View Samples", "Clouds", "Cloud ray-start samples per pixel.",
            ConfigOptionType::UInt32, bounded_range(1.0, 4.0)),
+    option(RunConfigOptionId::CloudViewSampleMode, "clouds.view_sample_mode",
+           "--cloud-view-sample-mode", "View Sample Mode", "Clouds",
+           "Cloud view-sample strategy: single-frame or temporal-phased.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudViewSampleModes)),
     option(RunConfigOptionId::CloudWeatherPreset, "clouds.weather_preset",
            "--cloud-weather-preset", "Weather Preset", "Clouds",
            "Cloud coverage, density, scale, and wind preset.", ConfigOptionType::Enum, no_range(),
@@ -1419,6 +1425,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_uint32(config.clouds.view_steps);
     case RunConfigOptionId::CloudViewSamples:
         return optional_uint32(config.clouds.view_samples);
+    case RunConfigOptionId::CloudViewSampleMode:
+        return config.clouds.view_sample_mode.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.clouds.view_sample_mode);
     case RunConfigOptionId::CloudWeatherPreset:
         return config.clouds.weather_preset.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.clouds.weather_preset);
@@ -1945,6 +1955,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<std::string>("quality", options.quality);
     adapter.writeField<std::uint32_t>("view_steps", options.view_steps);
     adapter.writeField<std::uint32_t>("view_samples", options.view_samples);
+    adapter.writeField<std::string>("view_sample_mode", options.view_sample_mode);
     adapter.writeField<std::string>("weather_preset", options.weather_preset);
     adapter.writeField<std::string>("cache_frames", options.cache_frames);
     adapter.writeField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
@@ -2009,6 +2020,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<std::string>("quality", options.quality);
     adapter.readField<std::uint32_t>("view_steps", options.view_steps);
     adapter.readField<std::uint32_t>("view_samples", options.view_samples);
+    adapter.readField<std::string>("view_sample_mode", options.view_sample_mode);
     adapter.readField<std::string>("weather_preset", options.weather_preset);
     adapter.readField<std::string>("cache_frames", options.cache_frames);
     adapter.readField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
@@ -2674,6 +2686,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
             config.clouds.view_samples != 4U) {
             throw std::runtime_error("--cloud-view-samples must be 1, 2, or 4");
         }
+        break;
+    case RunConfigOptionId::CloudViewSampleMode:
+        config.clouds.view_sample_mode = std::string(value);
         break;
     case RunConfigOptionId::CloudWeatherPreset:
         config.clouds.weather_preset = std::string(value);

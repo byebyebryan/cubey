@@ -66,6 +66,11 @@ enum class CloudLayerSamplingMode : std::uint32_t {
     BlueNoise = 3,
 };
 
+enum class CloudLayerViewSampleMode : std::uint32_t {
+    SingleFrame = 0,
+    TemporalPhased = 1,
+};
+
 enum class CloudLayerBackgroundMode : std::uint32_t {
     Atmosphere = 0,
     WaterContext = 1,
@@ -228,6 +233,7 @@ struct CloudLayerConfig {
     CloudLayerQuality quality = CloudLayerQuality::Full;
     CloudLayerCloudStyle cloud_style = CloudLayerCloudStyle::BrokenCumulus;
     CloudLayerSamplingMode sampling_mode = CloudLayerSamplingMode::Bayer;
+    CloudLayerViewSampleMode view_sample_mode = CloudLayerViewSampleMode::SingleFrame;
     CloudLayerBackgroundMode background_mode = CloudLayerBackgroundMode::Atmosphere;
     CloudLayerDistanceMode distance_mode = CloudLayerDistanceMode::Auto;
     CloudLayerOrbitRepresentation orbit_representation =
@@ -239,6 +245,9 @@ struct CloudLayerConfig {
     bool powder_enabled = true;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;
+
+    std::int32_t view_steps_override = 0;
+    std::int32_t view_samples = 1;
 
     float planet_radius_m = 600000.0F;
     float bottom_altitude_m = 5000.0F;
