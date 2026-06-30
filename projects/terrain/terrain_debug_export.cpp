@@ -176,6 +176,20 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
     return lerp_rgb(mid, high, (value - 0.55F) / 0.45F);
 }
 
+[[nodiscard]] Rgb mountain_relief_ramp(float value) {
+    const Rgb low{0.15F, 0.18F, 0.13F};
+    const Rgb foothill{0.34F, 0.42F, 0.27F};
+    const Rgb highland{0.58F, 0.54F, 0.40F};
+    const Rgb summit{0.88F, 0.86F, 0.74F};
+    if (value < 0.44F) {
+        return lerp_rgb(low, foothill, value / 0.44F);
+    }
+    if (value < 0.76F) {
+        return lerp_rgb(foothill, highland, (value - 0.44F) / 0.32F);
+    }
+    return lerp_rgb(highland, summit, (value - 0.76F) / 0.24F);
+}
+
 [[nodiscard]] Rgb scalar_color(const cubey::procedural::ScalarField2D& field, std::uint32_t x,
                                std::uint32_t y,
                                const FieldNormalization& normalization) {
@@ -230,19 +244,19 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
         (field_at_clamped(height, ix, iy + 1) - field_at_clamped(height, ix, iy - 1)) /
         (cell_size * 2.0F);
 
-    constexpr float kVerticalExaggeration = 1.45F;
+    constexpr float kVerticalExaggeration = 0.72F;
     const float nx = -dzdx * kVerticalExaggeration;
     const float ny = -dzdy * kVerticalExaggeration;
     constexpr float nz = 1.0F;
     const float inv_length = 1.0F / std::sqrt((nx * nx) + (ny * ny) + (nz * nz));
 
-    constexpr float kLightX = -0.42F;
-    constexpr float kLightY = -0.52F;
-    constexpr float kLightZ = 0.74F;
+    constexpr float kLightX = -0.38F;
+    constexpr float kLightY = -0.44F;
+    constexpr float kLightZ = 0.82F;
     const float lit = std::max(0.0F, ((nx * inv_length) * kLightX) +
                                         ((ny * inv_length) * kLightY) +
                                         ((nz * inv_length) * kLightZ));
-    return 0.32F + (lit * 0.78F);
+    return 0.74F + (lit * 0.30F);
 }
 
 [[nodiscard]] Rgb mountain_relief_color(const TerrainRegionProduct& product, std::uint32_t x,
@@ -265,7 +279,8 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
     const auto& ridge_influence =
         terrain_product_field(product, kTerrainFieldMountainRidgeInfluence);
 
-    const float h = normalized_field_value(height, x, y, height_normalization);
+    const float h =
+        std::pow(normalized_field_value(height, x, y, height_normalization), 0.88F);
     const float relief = normalized_field_value(local_relief, x, y, relief_normalization);
     const float spine = cubey::procedural::saturate(range_spine.at(x, y));
     const float envelope_value = cubey::procedural::saturate(envelope.at(x, y));
@@ -277,19 +292,20 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
     const float peak = cubey::procedural::saturate(peak_support.at(x, y));
     const float influence = cubey::procedural::saturate(ridge_influence.at(x, y));
 
-    Rgb color = terrain_ramp(h);
-    color = lerp_rgb(color, Rgb{0.30F, 0.34F, 0.25F}, envelope_value * 0.20F);
-    color = lerp_rgb(color, Rgb{0.34F, 0.34F, 0.28F}, mountain * 0.24F);
-    color = lerp_rgb(color, Rgb{0.50F, 0.48F, 0.36F}, spine * 0.12F);
-    color = lerp_rgb(color, Rgb{0.68F, 0.62F, 0.44F}, influence * 0.26F);
-    color = lerp_rgb(color, Rgb{0.78F, 0.70F, 0.50F}, hierarchy * 0.18F);
-    color = lerp_rgb(color, Rgb{0.84F, 0.78F, 0.58F}, ridge * 0.20F);
-    color = lerp_rgb(color, Rgb{0.88F, 0.82F, 0.64F}, candidate * 0.18F);
-    color = lerp_rgb(color, Rgb{0.95F, 0.92F, 0.78F}, prominence * 0.34F);
-    color = lerp_rgb(color, Rgb{0.96F, 0.95F, 0.86F}, peak * 0.36F);
+    Rgb color = mountain_relief_ramp(h);
+    color = lerp_rgb(color, Rgb{0.28F, 0.34F, 0.22F}, envelope_value * 0.10F);
+    color = lerp_rgb(color, Rgb{0.32F, 0.36F, 0.26F}, mountain * 0.10F);
+    color = lerp_rgb(color, Rgb{0.48F, 0.46F, 0.34F}, spine * 0.05F);
+    color = lerp_rgb(color, Rgb{0.70F, 0.64F, 0.46F}, influence * 0.12F);
+    color = lerp_rgb(color, Rgb{0.78F, 0.71F, 0.52F}, hierarchy * 0.08F);
+    color = lerp_rgb(color, Rgb{0.84F, 0.78F, 0.60F}, ridge * 0.10F);
+    color = lerp_rgb(color, Rgb{0.90F, 0.84F, 0.68F}, candidate * 0.05F);
+    color = lerp_rgb(color, Rgb{0.96F, 0.93F, 0.80F}, prominence * 0.18F);
+    color = lerp_rgb(color, Rgb{0.98F, 0.96F, 0.88F}, peak * 0.24F);
 
     const float shade = hillshade(height, x, y);
-    const float relief_boost = 0.86F + (cubey::procedural::smoothstep(0.18F, 0.86F, relief) * 0.34F);
+    const float relief_boost =
+        0.95F + (cubey::procedural::smoothstep(0.18F, 0.86F, relief) * 0.12F);
     color.r *= shade * relief_boost;
     color.g *= shade * relief_boost;
     color.b *= shade * relief_boost;
