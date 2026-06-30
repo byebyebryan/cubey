@@ -199,20 +199,19 @@ as a deeper sampling/reconstruction issue, not as a solved tuning problem.
 
 ## Reference Code Pass 2026-06-13
 
-The following external projects were cloned beside Cubey for source review:
+The following external projects were inspected in a historical source review:
 
 - `/home/bryan/code/Mesh-Cloud-Rendering`
 - `/home/bryan/code/UnityVolumetricCloudsURP`
 - `/home/bryan/code/CloudRenderer`
 
-`Mesh-Cloud-Rendering` is not a volumetric renderer. It uses authored cloud
-meshes, precomputed per-vertex occlusion/transmittance data, a half-resolution
-cloud target, quarter-resolution blur/distortion passes, and a final composite.
-That makes it a poor source for local volumetric low-cloud marching, but a
-useful reminder that distant clouds do not have to come from the same expensive
-raymarch as nearby clouds. A stable mesh, impostor, or shell layer with
-intentional blur/distortion could be a better horizon/far-cloud path than a
-grazing finite-volume march.
+Only `UnityVolumetricCloudsURP` remains an active local reference. The later
+reference-shelf quality pass removed `Mesh-Cloud-Rendering` and `CloudRenderer`
+because they were stale, superseded, or too weak to keep as source references.
+The durable lesson from `Mesh-Cloud-Rendering` is conceptual: distant clouds do
+not have to come from the same expensive raymarch as nearby clouds. A stable
+mesh, impostor, or shell layer with intentional blur/distortion could be a
+better horizon/far-cloud path than a grazing finite-volume march.
 
 `UnityVolumetricCloudsURP` is the most relevant implementation reference. It is
 a URP port of Unity/HDRP-style volumetric clouds and reinforces several
@@ -232,10 +231,10 @@ patterns Cubey should keep or adopt:
 - blur or filter cloud shadow maps separately because shadow integration often
   uses far fewer steps than the main view march.
 
-`CloudRenderer` is a straightforward OpenGL volume raycaster with cellular
-automata density, fixed view samples, and per-sample light rays. It is useful as
-an intentionally simple baseline, but it is not a practical scale/performance
-model for Cubey's ocean/planet horizon cases.
+The durable lesson from `CloudRenderer` is also only conceptual: simple fixed
+view samples plus per-sample light rays are useful as a failure baseline, but
+not as a practical scale/performance model for Cubey's ocean/planet horizon
+cases.
 
 The previous Cubey attempts and this reference pass point to the same
 conclusion: the visible surface/high streaking is not primarily a temporal
@@ -681,10 +680,10 @@ New reference checkouts under `/home/bryan/code/ref`:
 
 - `Skybolt`: <https://github.com/Prograda/Skybolt>
 - `godot-volumetric-clouds`: <https://github.com/kb173/godot-volumetric-clouds>
-- `godot-planet-fly-through-cloud-volume`:
-  <https://github.com/appxmod/godot-planet-fly-through-cloud-volume>
-- `volumetric_cloud_atmosphere_scattering`:
-  <https://github.com/leoawen/volumetric_cloud_atmosphere_scattering>
+
+The low-star `godot-planet-fly-through-cloud-volume` checkout was later removed
+from the local reference shelf. Its cubemap/sphere-space coverage idea remains
+a possible future spike, but it is not an active source reference.
 
 Skybolt is the primary reference because it is explicitly built for clouds seen
 from the planet surface, outer space, and the transition between them:
@@ -723,12 +722,11 @@ targets:
 - `godot-volumetric-clouds` uses a weather texture whose channels drive density,
   rain/darkness, and type/scale. This matches the direction that weather should
   control local density parameters rather than directly draw final cloud opacity.
-- `godot-planet-fly-through-cloud-volume` has useful shell intersection,
-  blue-noise jitter, and fly-through mechanics, but the shader is less clear as a
-  weather organization reference.
-- `volumetric_cloud_atmosphere_scattering` is useful as a compact WebGL/Three.js
-  planetary prototype with weather, TAA, and atmosphere composition ideas. It is
-  not yet as trustworthy as Skybolt for coverage architecture.
+
+The low-star `volumetric_cloud_atmosphere_scattering` prototype was later
+removed from the local reference shelf. Its screenshots were useful as rough
+visual sketches, but the landed code/provenance was too weak to keep as an
+active source reference.
 
 Implementation implications for `projects/cloud`:
 
@@ -967,9 +965,10 @@ Reference direction:
 - Horizon/Nubis-style cloud shaping still applies: large weather fields gate
   where clouds may exist, while noise/detail fields erode and shape the visible
   cloud body;
-- `godot-planet-fly-through-cloud-volume` is a useful local reference because
-  it uses cubemap/sphere-space cloud coverage instead of a naive equirectangular
-  product;
+- the deleted `godot-planet-fly-through-cloud-volume` checkout was a useful
+  conceptual prompt for cubemap/sphere-space cloud coverage instead of a naive
+  equirectangular product, but it should be recloned only for a focused
+  cubemap-coverage spike;
 - the failed generated 2D orbit-weather product should not be revived in this
   batch. If cached products return later, use cubemap or octahedral storage with
   mip/filtering.
