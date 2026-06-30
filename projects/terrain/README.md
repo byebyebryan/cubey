@@ -13,9 +13,10 @@ inspect and eventually consume:
 - summaries and debug exports.
 
 The current first slice is a temperate mountain river catchment over a local
-kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
-rendering, and physically complete erosion are deferred until the product fields
-are credible.
+kilometer-scale grid. A renderer-backed preview app now consumes the product for
+perspective review, but final terrain rendering, ocean integration, planet
+streaming, foliage rendering, and physically complete erosion remain deferred
+until the product fields are credible.
 
 The current generator revision is `22`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
@@ -82,7 +83,7 @@ the current design checkpoint.
 ## Commands
 
 ```sh
-cmake --build --preset dev --target cubey_project_terrain cubey_project_terrain_tests
+cmake --build --preset dev --target cubey_project_terrain cubey_project_terrain_preview cubey_project_terrain_tests
 ctest --preset dev -R terrain --output-on-failure
 
 ./build/dev/projects/terrain/terrain
@@ -93,6 +94,8 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress-1025
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --output outputs/terrain/mountain-range-stress/mountain-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset profile --output outputs/terrain/mountain-range-stress/mountain-profile.png
 ```
 
 ## Current Review Outputs
@@ -103,7 +106,7 @@ for the standard review set. The current local review images are generated at
 thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
 review artifact.
 
-The review set includes 34 views:
+The scalar review set includes 34 views:
 
 - `final.png`
 - `mountain-relief.png`
@@ -139,6 +142,15 @@ The review set includes 34 views:
 - `deposition.png`
 - `material.png`
 - `vegetation.png`
+
+`terrain_preview` is a separate renderer-backed consumer for perspective
+review. It turns the selected `TerrainRegionProduct` height field into a lit
+mesh through the normal Vulkan windowed/headless app path. For the mountain
+stress recipe, `mountain-perspective.png` is the primary 3D read for peak,
+basin, and valley hierarchy, while `mountain-profile.png` is a lower side view
+for checking whether peak height and valley contrast are plausible. The current
+`outputs/terrain/mountain-range-stress` directory holds 36 PNGs after those two
+captures are generated.
 
 The optional `temperate-mountain-river-stress` recipe keeps the same source
 terrain and routing diagnostics but uses a graph-first visible river source for
@@ -190,7 +202,9 @@ Revision 22 keeps `mountain-relief.png` as the primary visual review image, but
 it now uses a clearer elevation ramp and softer hillshade. For hierarchy review,
 inspect `mountain-relief.png`, `height.png`, `mountain-envelope.png`,
 `mountain-ridge-influence.png`, `mountain-peak-prominence.png`, and
-`peak-uplift.png` together.
+`peak-uplift.png` together. For height readability, inspect
+`mountain-perspective.png` and `mountain-profile.png` after the scalar views;
+these are renderer-backed mesh captures, not CPU software perspective exports.
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential

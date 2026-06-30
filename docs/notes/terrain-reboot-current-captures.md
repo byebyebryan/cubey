@@ -1,7 +1,8 @@
 # Terrain Reboot Current Captures
 
 This note records the current terrain reboot capture set after the revision 22
-mountain peak readability pass.
+mountain peak readability pass and the renderer-backed perspective preview
+addition.
 
 ## Capture Command
 
@@ -11,15 +12,20 @@ mountain peak readability pass.
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress-1025
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --output outputs/terrain/mountain-range-stress/mountain-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset profile --output outputs/terrain/mountain-range-stress/mountain-profile.png
 ```
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
 stress captures for larger river-network and mountain-driver inspection. The
-revision 22 review set emits 34 PNG views per capture. The refreshed mountain
-stress directories currently hold 68 PNGs total across the 513 and 1025
-captures. `outputs/` is intentionally ignored by git. This replaced the earlier
-tiny local output set so field structure, channel continuity, and material
-response are easier to inspect.
+revision 22 scalar review set emits 34 PNG views per capture. The 513 mountain
+stress directory now also includes `mountain-perspective.png` and
+`mountain-profile.png` from the renderer-backed preview app, so it holds 36 PNGs
+after the full mountain review command sequence. The 1025 mountain stress set
+remains scalar-only unless a matching preview capture is explicitly generated.
+`outputs/` is intentionally ignored by git. This replaced the earlier tiny
+local output set so field structure, channel continuity, and material response
+are easier to inspect.
 `outputs/terrain/current-river-network` is the default product review. The optional
 `outputs/terrain/stress-river-network` set uses the diagnostic stress recipe to
 stress-test broader river-network shape and coverage. The optional
@@ -79,6 +85,12 @@ over high-contrast shadow texture.
 - `mountain-relief.png`: mountain-specific rendered review image. It uses an
   elevation-first ramp with softer hillshade and subtle ridge/peak tinting,
   without river, wetness, vegetation, or material overlays.
+- `mountain-perspective.png`: renderer-backed oblique mesh capture from
+  `terrain_preview`. Use this to judge whether broad support, basins, valleys,
+  ridges, and high peaks are readable in 3D.
+- `mountain-profile.png`: renderer-backed low side view from `terrain_preview`.
+  Use this to check height contrast and to expose the current sharp-peak
+  character that flat scalar PNGs can hide.
 - `mountain-envelope.png`: smooth macro mountain support. It should show broad
   uplift regions before ridges, peaks, or residual detail are applied.
 - `mountain-peak-anchors.png`: sparse deterministic summit anchors selected
@@ -230,10 +242,13 @@ graph topology construction before adding more high-level terrain features.
 
 The revision 22 mountain driver is still an early diagnostic source profile, not
 a polished alpine biome. It now makes peak hierarchy more visible in
-`height.png` and `mountain-relief.png`, but peak prominence remains mostly
-radial and the skeleton is generated rather than erosion-evolved. It does not
-yet model tectonic plates, erosion time, talus, snow/ice, glacial valley
-carving, or a world-scale range graph. The next mountain-quality pass should
-focus on anisotropic peak shaping, erosion-aware ridge cleanup, and alpine
+`height.png`, `mountain-relief.png`, `mountain-perspective.png`, and
+`mountain-profile.png`, but peak prominence remains mostly radial and the
+skeleton is generated rather than erosion-evolved. The perspective preview is a
+local heightfield mesh consumer; it does not yet include clipmaps, tiled world
+continuity, water surfaces, foliage, or planet integration. It does not yet
+model tectonic plates, erosion time, talus, snow/ice, glacial valley carving,
+or a world-scale range graph. The next mountain-quality pass should focus on
+anisotropic peak shaping, erosion-aware ridge cleanup, and alpine
 material/valley contrast before turning these fields into final biome
 compositions.

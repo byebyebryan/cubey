@@ -342,6 +342,13 @@ elevation instead of the generic regional tilt, increases peak uplift, broadens
 ridge shoulders, gates residual detail against mountain structure, and retunes
 `mountain-relief.png` around a softer elevation-first ramp.
 
+The terrain workbench now also has a renderer-backed `terrain_preview` app. It
+consumes `TerrainRegionProduct`, adapts `height_m` into an indexed local
+heightfield mesh with normals and review colors, and renders through the normal
+Vulkan windowed/headless host. It is a preview consumer for judging relief in
+perspective, not a replacement for the CPU product generator, planet terrain, or
+future clipmap renderer.
+
 Known limitations:
 
 - Fractional accumulation reduces receiver quantization, but active trunk
@@ -368,6 +375,9 @@ Known limitations:
 - The final PNG is an inspectable debug composition, not the target renderer.
   Use `mountain-relief.png` for mountain-form review because `final.png` still
   includes the river/material overlays.
+- `terrain_preview` is a local mesh preview only. It improves peak/basin
+  readability, but it deliberately does not solve tiled scale, LOD, water,
+  foliage, atmosphere integration, or terrain algorithm quality.
 
 A revision 4 experiment tried replacing the active river product with direct
 channel-graph edge rendering after an epsilon fill pass. It was reverted because

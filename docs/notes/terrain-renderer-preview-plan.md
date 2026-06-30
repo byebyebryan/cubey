@@ -52,3 +52,18 @@ Out of scope:
 - Oblique and profile captures make the mountain range's peaks and basins
   easier to inspect than `mountain-relief.png` alone.
 - The existing scalar terrain exporter and tests keep their current behavior.
+
+## Outcome
+
+Implemented as `cubey_project_terrain_preview` / `terrain_preview`.
+
+- The app uses shared run-config controls: `--grid-size`, `--terrain-recipe`,
+  `--terrain-camera-preset`, and `--terrain-vertical-scale`.
+- The first mesh adapter uses 32-bit indexed CPU mesh data uploaded to the
+  renderer, preserving the distinction between a renderer-backed preview and a
+  CPU rasterizer.
+- `outputs/terrain/mountain-range-stress/mountain-perspective.png` and
+  `outputs/terrain/mountain-range-stress/mountain-profile.png` are the current
+  review captures for 3D mountain readability.
+- Focused validation passed with terrain product tests, core run-config tests,
+  and the `terrain_preview_headless_writes_png` smoke test.
