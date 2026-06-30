@@ -53,6 +53,8 @@ enum class TerrainDebugView {
 [[nodiscard]] TerrainDebugView terrain_debug_view_from_name(std::string_view name);
 void write_terrain_debug_png(const TerrainRegionProduct& product, TerrainDebugView view,
                              const std::filesystem::path& output_path);
+void write_terrain_debug_manifest(const TerrainRegionProduct& product,
+                                  const std::filesystem::path& output_dir);
 void write_terrain_debug_review_pngs(const TerrainRegionProduct& product,
                                      const std::filesystem::path& output_dir);
 

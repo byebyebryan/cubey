@@ -11,6 +11,7 @@ target_link_libraries(
     cubey_project_terrain
     PRIVATE
         cubey::core
+        nlohmann_json::nlohmann_json
         cubey_project_warnings
 )
 
@@ -35,6 +36,7 @@ cubey_add_app_target(
         shaders/terrain_preview.vert
         shaders/terrain_preview.frag
 )
+target_link_libraries(cubey_project_terrain_preview PRIVATE nlohmann_json::nlohmann_json)
 
 if (BUILD_TESTING)
     add_executable(cubey_project_terrain_tests
@@ -52,6 +54,7 @@ if (BUILD_TESTING)
         PRIVATE
             cubey::core
             cubey::render
+            nlohmann_json::nlohmann_json
             cubey_project_warnings
     )
     add_test(NAME terrain_product_tests COMMAND cubey_project_terrain_tests)

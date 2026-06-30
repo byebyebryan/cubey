@@ -3,13 +3,18 @@
 #include <cubey/core/image_io.h>
 #include <cubey/procedural/operators.h>
 
+#include <nlohmann/json.hpp>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <fstream>
 #include <filesystem>
+#include <iomanip>
 #include <stdexcept>
 #include <string>
+#include <sstream>
 #include <vector>
 
 namespace cubey::projects::terrain {
@@ -454,6 +459,72 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
     return pixels;
 }
 
+[[nodiscard]] std::string hex_u64(std::uint64_t value) {
+    std::ostringstream stream;
+    stream << "0x" << std::hex << std::setw(16) << std::setfill('0') << value;
+    return stream.str();
+}
+
+[[nodiscard]] nlohmann::json
+stats_to_json(const cubey::procedural::ScalarFieldStats& stats) {
+    return nlohmann::json{
+        {"sample_count", stats.sample_count},
+        {"min", stats.min},
+        {"max", stats.max},
+        {"span", stats.span},
+        {"mean", stats.mean},
+    };
+}
+
+[[nodiscard]] nlohmann::json grid_to_json(const cubey::procedural::Grid2DDesc& desc) {
+    return nlohmann::json{
+        {"width", desc.width},
+        {"height", desc.height},
+        {"cell_size_m", desc.cell_size},
+        {"origin_x_m", desc.origin_x},
+        {"origin_y_m", desc.origin_y},
+    };
+}
+
+[[nodiscard]] nlohmann::json make_terrain_debug_manifest(const TerrainRegionProduct& product) {
+    const TerrainRegionConfig& config = product.config;
+    const cubey::procedural::Grid2DDesc& desc = product.fields.desc();
+
+    nlohmann::json fields = nlohmann::json::object();
+    for (const std::string& field_name : product.fields.field_names()) {
+        fields[field_name] = stats_to_json(product.fields.summarize_field(field_name));
+    }
+
+    nlohmann::json views = nlohmann::json::array();
+    nlohmann::json outputs = nlohmann::json::array();
+    for (const TerrainDebugView view : terrain_debug_review_views()) {
+        const std::string name(terrain_debug_view_name(view));
+        views.push_back(name);
+        outputs.push_back(name + ".png");
+    }
+
+    return nlohmann::json{
+        {"schema", "cubey.terrain.scalar_capture.v1"},
+        {"recipe_id", config.recipe_id},
+        {"generator_revision", config.generator_revision},
+        {"seed", config.seed},
+        {"seed_hex", hex_u64(config.seed)},
+        {"grid", grid_to_json(desc)},
+        {"summary",
+         {{"height", stats_to_json(product.summary.height)},
+          {"slope", stats_to_json(product.summary.slope)},
+          {"wetness", stats_to_json(product.summary.wetness)},
+          {"river_coverage", product.summary.river_coverage},
+          {"max_channel_width_m", product.summary.max_channel_width_m},
+          {"content_hash", product.summary.content_hash},
+          {"content_hash_hex", hex_u64(product.summary.content_hash)}}},
+        {"field_count", product.fields.field_count()},
+        {"fields", std::move(fields)},
+        {"views", std::move(views)},
+        {"outputs", std::move(outputs)},
+    };
+}
+
 } // namespace
 
 std::string_view terrain_debug_view_name(TerrainDebugView view) {
@@ -494,6 +565,21 @@ void write_terrain_debug_png(const TerrainRegionProduct& product, TerrainDebugVi
     cubey::write_png_rgba8(output_path, desc.width, desc.height, pixels);
 }
 
+void write_terrain_debug_manifest(const TerrainRegionProduct& product,
+                                  const std::filesystem::path& output_dir) {
+    if (output_dir.empty()) {
+        throw std::runtime_error("terrain debug manifest output directory must be non-empty");
+    }
+    std::filesystem::create_directories(output_dir);
+    const std::filesystem::path output_path = output_dir / "manifest.json";
+    std::ofstream output(output_path);
+    if (!output) {
+        throw std::runtime_error("failed to open terrain debug manifest output: " +
+                                 output_path.string());
+    }
+    output << make_terrain_debug_manifest(product).dump(2) << '\n';
+}
+
 void write_terrain_debug_review_pngs(const TerrainRegionProduct& product,
                                      const std::filesystem::path& output_dir) {
     if (output_dir.empty()) {
@@ -505,6 +591,7 @@ void write_terrain_debug_review_pngs(const TerrainRegionProduct& product,
             output_dir / (std::string(terrain_debug_view_name(view)) + ".png");
         write_terrain_debug_png(product, view, output_path);
     }
+    write_terrain_debug_manifest(product, output_dir);
 }
 
 } // namespace cubey::projects::terrain
