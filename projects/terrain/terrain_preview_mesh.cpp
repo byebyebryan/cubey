@@ -75,12 +75,51 @@ namespace {
     return mix(high, peak, (height_t - 0.82F) / 0.18F);
 }
 
+[[nodiscard]] cubey::math::Vec3 channel_color(const TerrainRegionProduct& product,
+                                              std::uint32_t x, std::uint32_t y) {
+    const cubey::procedural::ScalarField2D* channel =
+        optional_field(product, kTerrainFieldChannelWidth);
+    const cubey::procedural::ScalarField2D* valley =
+        optional_field(product, kTerrainFieldValleyWidth);
+    const float channel_t = std::clamp(optional_at(channel, x, y) / 96.0F, 0.0F, 1.0F);
+    const float valley_t = std::clamp(optional_at(valley, x, y) / 360.0F, 0.0F, 1.0F);
+    cubey::math::Vec3 color = mix({0.18F, 0.19F, 0.18F}, {0.45F, 0.40F, 0.24F}, valley_t);
+    return mix(color, {0.04F, 0.20F, 0.28F}, channel_t);
+}
+
+[[nodiscard]] cubey::math::Vec3 river_color(const TerrainRegionProduct& product, std::uint32_t x,
+                                            std::uint32_t y) {
+    const cubey::procedural::ScalarField2D* river = optional_field(product, kTerrainFieldRiverMask);
+    const cubey::procedural::ScalarField2D* trunk = optional_field(product, kTerrainFieldRiverTrunk);
+    const cubey::procedural::ScalarField2D* tributaries =
+        optional_field(product, kTerrainFieldTributaries);
+    const cubey::procedural::ScalarField2D* discharge =
+        optional_field(product, kTerrainFieldRiverGraphDischarge);
+    const float river_t = std::clamp(optional_at(river, x, y), 0.0F, 1.0F);
+    const float trunk_t = std::clamp(optional_at(trunk, x, y), 0.0F, 1.0F);
+    const float tributary_t = std::clamp(optional_at(tributaries, x, y), 0.0F, 1.0F);
+    const float discharge_t = std::clamp(optional_at(discharge, x, y), 0.0F, 1.0F);
+    cubey::math::Vec3 color = mix({0.12F, 0.13F, 0.12F}, {0.22F, 0.27F, 0.30F}, river_t);
+    color = mix(color, {0.05F, 0.36F, 0.50F}, tributary_t * 0.75F);
+    color = mix(color, {0.02F, 0.20F, 0.56F}, trunk_t);
+    return mix(color, {0.78F, 0.86F, 0.92F}, discharge_t * 0.35F);
+}
+
 [[nodiscard]] cubey::render::PrimitiveVec3 review_color(
     const TerrainRegionProduct& product, const cubey::procedural::ScalarField2D& height,
-    std::uint32_t x, std::uint32_t y) {
+    std::uint32_t x, std::uint32_t y, TerrainPreviewColorMode color_mode) {
     const float height_t = normalize01(height.at(x, y), product.summary.height.min,
                                        product.summary.height.max);
     cubey::math::Vec3 color = height_ramp(height_t);
+    if (color_mode == TerrainPreviewColorMode::Height) {
+        return cubey::render::srgb_to_linear_rgb(to_primitive(color));
+    }
+    if (color_mode == TerrainPreviewColorMode::River) {
+        return cubey::render::srgb_to_linear_rgb(to_primitive(river_color(product, x, y)));
+    }
+    if (color_mode == TerrainPreviewColorMode::Channel) {
+        return cubey::render::srgb_to_linear_rgb(to_primitive(channel_color(product, x, y)));
+    }
 
     const cubey::procedural::ScalarField2D* rock = optional_field(product, kTerrainFieldMaterialRock);
     const cubey::procedural::ScalarField2D* soil = optional_field(product, kTerrainFieldMaterialSoil);
@@ -145,7 +184,7 @@ TerrainPreviewMeshData make_terrain_preview_mesh(const TerrainRegionProduct& pro
             mesh.vertices.push_back({
                 .position =
                     {world_x, height_at(height, x, y, config.vertical_scale), world_z},
-                .color = review_color(product, height, x, y),
+                .color = review_color(product, height, x, y, config.color_mode),
                 .normal = to_primitive(normal_at(height, x, y, config.vertical_scale)),
             });
         }

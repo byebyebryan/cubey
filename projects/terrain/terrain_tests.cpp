@@ -1235,6 +1235,8 @@ void test_terrain_preview_config_uses_run_config_controls() {
     require(preview.camera_preset ==
                 cubey::projects::terrain::TerrainPreviewCameraPreset::Oblique,
             "terrain preview should default to the oblique camera");
+    require(preview.color_mode == cubey::projects::terrain::TerrainPreviewColorMode::Material,
+            "terrain preview should default to material color");
     require(preview.vertical_scale == cubey::projects::terrain::kTerrainPreviewDefaultVerticalScale,
             "terrain preview should default to the documented vertical scale");
 
@@ -1246,6 +1248,7 @@ void test_terrain_preview_config_uses_run_config_controls() {
     run_config.terrain.recipe =
         std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRiverStress);
     run_config.terrain.camera_preset = "profile";
+    run_config.terrain.preview_color = "height";
     run_config.terrain.vertical_scale = 0.55F;
     preview = cubey::projects::terrain::terrain_preview_config_from_run_config(run_config);
 
@@ -1259,6 +1262,8 @@ void test_terrain_preview_config_uses_run_config_controls() {
     require(preview.camera_preset ==
                 cubey::projects::terrain::TerrainPreviewCameraPreset::Profile,
             "terrain preview should parse the profile camera");
+    require(preview.color_mode == cubey::projects::terrain::TerrainPreviewColorMode::Height,
+            "terrain preview should parse the height color mode");
     require(preview.vertical_scale == 0.55F,
             "terrain preview should use explicit vertical scale");
 
@@ -1269,6 +1274,14 @@ void test_terrain_preview_config_uses_run_config_controls() {
                 cubey::projects::terrain::terrain_preview_config_from_run_config(run_config));
         },
         "terrain preview should reject unknown camera presets");
+    run_config.terrain.camera_preset = "profile";
+    run_config.terrain.preview_color = "thermal";
+    require_throws(
+        [&run_config] {
+            static_cast<void>(
+                cubey::projects::terrain::terrain_preview_config_from_run_config(run_config));
+        },
+        "terrain preview should reject unknown color modes");
 }
 
 void test_terrain_preview_mesh_represents_heightfield() {

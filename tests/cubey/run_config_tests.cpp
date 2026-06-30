@@ -1490,8 +1490,10 @@ void test_run_config_parses_terrain_controls() {
     std::string camera_value = "top";
     std::string vertical_scale_flag = "--terrain-vertical-scale";
     std::string vertical_scale_value = "0.75";
+    std::string preview_color_flag = "--terrain-preview-color";
+    std::string preview_color_value = "height";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 24> argv{
+    std::array<char*, 26> argv{
         program.data(),          seed_flag.data(),         seed_value.data(),
         cell_size_flag.data(),   cell_size_value.data(),   sea_level_flag.data(),
         sea_level_value.data(),  land_extent_flag.data(),  land_extent_value.data(),
@@ -1499,7 +1501,8 @@ void test_run_config_parses_terrain_controls() {
         relief_value.data(),     ridges_flag.data(),       ridges_value.data(),
         valleys_flag.data(),     valleys_value.data(),     recipe_flag.data(),
         recipe_value.data(),     camera_flag.data(),       camera_value.data(),
-        vertical_scale_flag.data(), vertical_scale_value.data(), water_surface_flag.data()};
+        vertical_scale_flag.data(), vertical_scale_value.data(), preview_color_flag.data(),
+        preview_color_value.data(), water_surface_flag.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -1518,6 +1521,8 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse terrain camera preset");
     require(config.terrain.vertical_scale == 0.75F,
             "run config should parse terrain vertical scale");
+    require(config.terrain.preview_color == "height",
+            "run config should parse terrain preview color");
     require(config.terrain.water_surface == 0,
             "run config should parse disabled terrain water surface");
 

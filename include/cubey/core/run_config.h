@@ -188,6 +188,7 @@ struct RunConfig {
         float vertical_scale = kRunConfigUnsetFloat;
         std::string recipe{};
         std::string camera_preset{};
+        std::string preview_color{};
         int water_surface = -1;
         bool seed_set = false;
     };

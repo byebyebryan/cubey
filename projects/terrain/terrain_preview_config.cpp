@@ -31,6 +31,37 @@ TerrainPreviewCameraPreset terrain_preview_camera_preset_from_name(std::string_v
     throw std::runtime_error("terrain camera preset must be oblique, profile, or top");
 }
 
+std::string_view terrain_preview_color_mode_name(TerrainPreviewColorMode mode) {
+    switch (mode) {
+    case TerrainPreviewColorMode::Material:
+        return "material";
+    case TerrainPreviewColorMode::Height:
+        return "height";
+    case TerrainPreviewColorMode::River:
+        return "river";
+    case TerrainPreviewColorMode::Channel:
+        return "channel";
+    }
+    return "material";
+}
+
+TerrainPreviewColorMode terrain_preview_color_mode_from_name(std::string_view name) {
+    if (name == "material") {
+        return TerrainPreviewColorMode::Material;
+    }
+    if (name == "height") {
+        return TerrainPreviewColorMode::Height;
+    }
+    if (name == "river") {
+        return TerrainPreviewColorMode::River;
+    }
+    if (name == "channel") {
+        return TerrainPreviewColorMode::Channel;
+    }
+    throw std::runtime_error(
+        "terrain preview color mode must be material, height, river, or channel");
+}
+
 TerrainPreviewConfig terrain_preview_config_from_run_config(const cubey::RunConfig& config) {
     TerrainPreviewConfig preview;
     preview.region.grid_width =
@@ -50,6 +81,9 @@ TerrainPreviewConfig terrain_preview_config_from_run_config(const cubey::RunConf
     preview.camera_preset = terrain_preview_camera_preset_from_name(
         config.terrain.camera_preset.empty() ? kTerrainPreviewDefaultCameraPreset
                                              : std::string_view(config.terrain.camera_preset));
+    preview.color_mode = terrain_preview_color_mode_from_name(
+        config.terrain.preview_color.empty() ? kTerrainPreviewDefaultColorMode
+                                             : std::string_view(config.terrain.preview_color));
     preview.vertical_scale = cubey::run_config_float_is_set(config.terrain.vertical_scale)
                                  ? config.terrain.vertical_scale
                                  : kTerrainPreviewDefaultVerticalScale;
