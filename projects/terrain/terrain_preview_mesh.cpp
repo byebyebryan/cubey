@@ -136,6 +136,10 @@ namespace {
         optional_field(product, kTerrainFieldMaterialGrass);
     const cubey::procedural::ScalarField2D* wetness = optional_field(product, kTerrainFieldWetness);
     const cubey::procedural::ScalarField2D* river = optional_field(product, kTerrainFieldRiverMask);
+    const cubey::procedural::ScalarField2D* channel_incision =
+        optional_field(product, kTerrainFieldChannelIncision);
+    const cubey::procedural::ScalarField2D* valley_incision =
+        optional_field(product, kTerrainFieldValleyIncision);
     const cubey::procedural::ScalarField2D* peak =
         optional_field(product, kTerrainFieldMountainPeakProminence);
     const cubey::procedural::ScalarField2D* ridge =
@@ -146,6 +150,10 @@ namespace {
     const float grass_t = std::clamp(optional_at(grass, x, y), 0.0F, 1.0F);
     const float wet_t = std::clamp(optional_at(wetness, x, y), 0.0F, 1.0F);
     const float river_t = std::clamp(optional_at(river, x, y), 0.0F, 1.0F);
+    const float channel_floor_t =
+        std::clamp(optional_at(channel_incision, x, y) / 70.0F, 0.0F, 1.0F);
+    const float valley_floor_t =
+        std::clamp(optional_at(valley_incision, x, y) / 150.0F, 0.0F, 1.0F);
     const float peak_t = std::clamp(optional_at(peak, x, y), 0.0F, 1.0F);
     const float ridge_t = std::clamp(optional_at(ridge, x, y), 0.0F, 1.0F);
 
@@ -155,7 +163,9 @@ namespace {
     color = mix(color, {0.16F, 0.30F, 0.31F}, wet_t * 0.15F);
     color = mix(color, {0.80F, 0.81F, 0.76F}, peak_t * 0.24F);
     color = mix(color, {0.58F, 0.55F, 0.48F}, ridge_t * 0.18F);
-    color = mix(color, {0.05F, 0.24F, 0.30F}, river_t * 0.58F);
+    color = mix(color, {0.18F, 0.20F, 0.15F}, valley_floor_t * 0.38F);
+    color = mix(color, {0.06F, 0.10F, 0.10F}, river_t * channel_floor_t * 0.58F);
+    color = mix(color, {0.05F, 0.18F, 0.21F}, river_t * channel_floor_t * wet_t * 0.18F);
 
     return cubey::render::srgb_to_linear_rgb(to_primitive(color));
 }

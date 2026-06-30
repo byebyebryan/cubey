@@ -54,12 +54,12 @@ struct RiverFields {
 };
 
 struct RiverCarvingSettings {
-    float channel_depth_m = 28.0F;
-    float valley_depth_m = 58.0F;
-    float base_incision_limit_m = 24.0F;
-    float relief_incision_fraction = 0.28F;
-    float max_total_incision_m = 118.0F;
-    float valley_radius_scale = 1.15F;
+    float channel_depth_m = 42.0F;
+    float valley_depth_m = 92.0F;
+    float base_incision_limit_m = 42.0F;
+    float relief_incision_fraction = 0.40F;
+    float max_total_incision_m = 190.0F;
+    float valley_radius_scale = 1.22F;
 };
 
 struct RiverCarvingFields {
@@ -463,22 +463,22 @@ struct MountainSkeletonFields {
 [[nodiscard]] RiverCarvingSettings river_carving_settings(std::string_view recipe_id) {
     if (recipe_id == kTerrainRecipeTemperateMountainRiverStress) {
         return RiverCarvingSettings{
-            .channel_depth_m = 34.0F,
-            .valley_depth_m = 74.0F,
-            .base_incision_limit_m = 30.0F,
-            .relief_incision_fraction = 0.32F,
-            .max_total_incision_m = 148.0F,
-            .valley_radius_scale = 1.22F,
+            .channel_depth_m = 50.0F,
+            .valley_depth_m = 118.0F,
+            .base_incision_limit_m = 52.0F,
+            .relief_incision_fraction = 0.46F,
+            .max_total_incision_m = 240.0F,
+            .valley_radius_scale = 1.30F,
         };
     }
     if (recipe_id == kTerrainRecipeTemperateMountainRangeStress) {
         return RiverCarvingSettings{
-            .channel_depth_m = 42.0F,
-            .valley_depth_m = 92.0F,
-            .base_incision_limit_m = 36.0F,
-            .relief_incision_fraction = 0.34F,
-            .max_total_incision_m = 190.0F,
-            .valley_radius_scale = 1.18F,
+            .channel_depth_m = 54.0F,
+            .valley_depth_m = 126.0F,
+            .base_incision_limit_m = 58.0F,
+            .relief_incision_fraction = 0.42F,
+            .max_total_incision_m = 260.0F,
+            .valley_radius_scale = 1.24F,
         };
     }
     return {};
