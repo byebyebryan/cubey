@@ -287,6 +287,27 @@ CloudsDebugView next_clouds_debug_view(CloudsDebugView view) {
     return *std::next(it);
 }
 
+CloudsResolveMode clouds_resolve_mode_from_string(std::string_view value) {
+    if (value.empty() || value == "terrain-post" || value == "terrain" ||
+        value == "gaussian") {
+        return CloudsResolveMode::TerrainPost;
+    }
+    if (value == "metadata-bilateral" || value == "bilateral" || value == "metadata") {
+        return CloudsResolveMode::MetadataBilateral;
+    }
+    throw std::runtime_error("unknown cloud resolve mode: " + std::string(value));
+}
+
+const char* clouds_resolve_mode_name(CloudsResolveMode mode) {
+    switch (mode) {
+    case CloudsResolveMode::TerrainPost:
+        return "terrain-post";
+    case CloudsResolveMode::MetadataBilateral:
+        return "metadata-bilateral";
+    }
+    return "terrain-post";
+}
+
 CloudsQualityBudget clouds_quality_budget(CloudsQuality quality) {
     switch (quality) {
     case CloudsQuality::Quarter:
@@ -383,6 +404,9 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     }
     if (run_config_float_is_set(run_config.clouds.detail_erosion)) {
         config.detail_erosion = run_config.clouds.detail_erosion;
+    }
+    if (!run_config.clouds.resolve_mode.empty()) {
+        config.resolve_mode = clouds_resolve_mode_from_string(run_config.clouds.resolve_mode);
     }
     if (run_config_float_is_set(run_config.clouds.resolve_strength)) {
         config.post_blur_strength = run_config.clouds.resolve_strength;

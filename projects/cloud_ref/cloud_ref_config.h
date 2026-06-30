@@ -62,6 +62,11 @@ enum class CloudsDebugView : std::uint32_t {
     PhaseLight = 20,
 };
 
+enum class CloudsResolveMode : std::uint32_t {
+    TerrainPost = 0,
+    MetadataBilateral = 1,
+};
+
 inline constexpr std::array<CloudsDebugView, 16> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
     CloudsDebugView::Weather,      CloudsDebugView::Density,
@@ -115,6 +120,7 @@ struct CloudsConfig {
     float curliness = 0.10F;
     float absorption = 0.28F;
     bool post_blur_enabled = true;
+    CloudsResolveMode resolve_mode = CloudsResolveMode::TerrainPost;
     float post_blur_strength = 1.0F;
     float post_blur_radius_px = 1.0F;
     bool powder_enabled = false;
@@ -138,6 +144,8 @@ void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset prese
 [[nodiscard]] CloudsDebugView clouds_debug_view_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_debug_view_name(CloudsDebugView view);
 [[nodiscard]] CloudsDebugView next_clouds_debug_view(CloudsDebugView view);
+[[nodiscard]] CloudsResolveMode clouds_resolve_mode_from_string(std::string_view value);
+[[nodiscard]] const char* clouds_resolve_mode_name(CloudsResolveMode mode);
 [[nodiscard]] CloudsQualityBudget clouds_quality_budget(CloudsQuality quality);
 [[nodiscard]] float clouds_default_camera_altitude_m(CloudsCameraMode mode);
 [[nodiscard]] CloudsConfig clouds_config_from_run_config(const RunConfig& run_config);

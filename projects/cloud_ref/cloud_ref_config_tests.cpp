@@ -38,6 +38,19 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref::clouds_quality_from_string("full") ==
                 cubey::projects::cloud_ref::CloudsQuality::Full,
             "full quality should parse");
+    require(cubey::projects::cloud_ref::clouds_resolve_mode_from_string("") ==
+                cubey::projects::cloud_ref::CloudsResolveMode::TerrainPost,
+            "empty cloud resolve mode should use terrain post");
+    require(cubey::projects::cloud_ref::clouds_resolve_mode_from_string("gaussian") ==
+                cubey::projects::cloud_ref::CloudsResolveMode::TerrainPost,
+            "gaussian alias should use terrain post resolve");
+    require(cubey::projects::cloud_ref::clouds_resolve_mode_from_string("metadata-bilateral") ==
+                cubey::projects::cloud_ref::CloudsResolveMode::MetadataBilateral,
+            "metadata-bilateral resolve mode should parse");
+    require(cubey::projects::cloud_ref::clouds_resolve_mode_name(
+                cubey::projects::cloud_ref::CloudsResolveMode::MetadataBilateral) ==
+                std::string_view("metadata-bilateral"),
+            "cloud resolve mode should report canonical spelling");
     require(cubey::projects::cloud_ref::clouds_weather_preset_from_string("storm-cells") ==
                 cubey::projects::cloud_ref::CloudsWeatherPreset::StormCells,
             "storm-cells weather preset should parse");
@@ -127,6 +140,7 @@ void test_run_config_mapping() {
     run_config.clouds.weather_cells = 0.5F;
     run_config.clouds.weather_streaks = 0.75F;
     run_config.clouds.detail_erosion = 0.35F;
+    run_config.clouds.resolve_mode = "metadata-bilateral";
     run_config.clouds.resolve_strength = 0.65F;
     run_config.clouds.resolve_radius_px = 4.0F;
     run_config.clouds.temporal = 0;
@@ -169,6 +183,9 @@ void test_run_config_mapping() {
                  "cloud weather streaks should map");
     require_near(config.detail_erosion, 0.35F, 0.001F,
                  "cloud detail erosion should map");
+    require(config.resolve_mode ==
+                cubey::projects::cloud_ref::CloudsResolveMode::MetadataBilateral,
+            "cloud resolve mode should map from run config");
     require(config.post_blur_enabled, "cloud resolve strength should keep post blur enabled");
     require_near(config.post_blur_strength, 0.65F, 0.001F,
                  "cloud resolve strength should map to post blur strength");
@@ -258,6 +275,8 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.weather_cells", "0.4");
     cubey::set_run_config_option_from_string(config, "clouds.weather_streaks", "0.6");
     cubey::set_run_config_option_from_string(config, "clouds.detail_erosion", "0.5");
+    cubey::set_run_config_option_from_string(config, "clouds.resolve_mode",
+                                             "metadata-bilateral");
     cubey::set_run_config_option_from_string(config, "clouds.resolve_strength", "0.25");
     cubey::set_run_config_option_from_string(config, "clouds.resolve_radius_px", "3.5");
     cubey::set_run_config_option_from_string(config, "clouds.temporal", "false");
@@ -287,6 +306,8 @@ void test_config_descriptors() {
                  "cloud weather streaks descriptor should set");
     require_near(config.clouds.detail_erosion, 0.5F, 0.001F,
                  "cloud detail erosion descriptor should set");
+    require(config.clouds.resolve_mode == "metadata-bilateral",
+            "cloud resolve mode descriptor should set");
     require_near(config.clouds.resolve_strength, 0.25F, 0.001F,
                  "cloud resolve strength descriptor should set");
     require_near(config.clouds.resolve_radius_px, 3.5F, 0.001F,

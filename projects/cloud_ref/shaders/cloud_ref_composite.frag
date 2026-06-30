@@ -24,6 +24,50 @@ vec4 cloud_ref_resolve_cloud_layer(vec2 uv, float radius_px) {
     return vec4(max(total.rgb, vec3(0.0)), clamp(total.a, 0.0, 1.0));
 }
 
+float cloud_ref_edge_coverage_weight(float alpha) {
+    return smoothstep(0.004, 0.34, alpha) * (1.0 - smoothstep(0.66, 0.985, alpha));
+}
+
+vec4 cloud_ref_resolve_coverage_layer(vec2 uv, vec4 raw_layer, float radius_px) {
+    ivec2 size = textureSize(cloud_product_texture, 0);
+    vec2 base_texel = 1.0 / vec2(max(size, ivec2(1)));
+    vec2 texel = base_texel * max(radius_px, 0.0);
+    if (texel.x <= 0.0 || texel.y <= 0.0) {
+        return raw_layer;
+    }
+
+    vec4 total = vec4(0.0);
+    float total_weight = 0.0;
+    float alpha_min = raw_layer.a;
+    float alpha_max = raw_layer.a;
+    float alpha_center = clamp(raw_layer.a, 0.0, 1.0);
+
+    for (int y = -2; y <= 2; ++y) {
+        for (int x = -2; x <= 2; ++x) {
+            vec2 offset = vec2(float(x), float(y));
+            float spatial = exp(-dot(offset, offset) * 0.32);
+            vec4 sample_layer = texture(cloud_product_texture, uv + offset * texel);
+            float sample_alpha = clamp(sample_layer.a, 0.0, 1.0);
+            float weight = spatial;
+            total += vec4(max(sample_layer.rgb, vec3(0.0)), sample_alpha) * weight;
+            total_weight += weight;
+            alpha_min = min(alpha_min, sample_alpha);
+            alpha_max = max(alpha_max, sample_alpha);
+        }
+    }
+
+    vec4 resolved = total / max(total_weight, 0.00001);
+    resolved.a = clamp(resolved.a, 0.0, 1.0);
+    float neighborhood_transition =
+        smoothstep(0.006, 0.20, alpha_max) * (1.0 - smoothstep(0.70, 0.99, alpha_min));
+    float alpha_variation = smoothstep(0.012, 0.22, alpha_max - alpha_min);
+    float center_transition = max(cloud_ref_edge_coverage_weight(alpha_center),
+                                  cloud_ref_edge_coverage_weight(resolved.a));
+    float edge_weight =
+        clamp(max(center_transition, neighborhood_transition * alpha_variation) * 1.15, 0.0, 1.0);
+    return mix(raw_layer, resolved, edge_weight);
+}
+
 vec3 cloud_ref_composite_layer(vec3 background, vec4 layer) {
     float alpha = clamp(layer.a, 0.0, 1.0);
     return background * (1.0 - alpha) + max(layer.rgb, vec3(0.0));
@@ -40,7 +84,11 @@ void main() {
     float blur_enabled = params.composite_options.x;
     float blur_strength = clamp(params.composite_options.y, 0.0, 1.0);
     float blur_radius_px = max(params.composite_options.z, 0.0);
-    vec4 resolved_layer = cloud_ref_resolve_cloud_layer(uv, blur_radius_px);
+    int resolve_mode = int(params.composite_options.w + 0.5);
+    vec4 resolved_layer =
+        resolve_mode == CLOUD_REF_RESOLVE_METADATA_BILATERAL
+            ? cloud_ref_resolve_coverage_layer(uv, raw_layer, blur_radius_px)
+            : cloud_ref_resolve_cloud_layer(uv, blur_radius_px);
     vec4 layer = final_view && blur_enabled > 0.5
                      ? mix(raw_layer, resolved_layer, blur_strength)
                      : raw_layer;

@@ -20,6 +20,9 @@ const int CLOUD_REF_DEBUG_AMBIENT_LIGHT = 18;
 const int CLOUD_REF_DEBUG_DIRECT_LIGHT = 19;
 const int CLOUD_REF_DEBUG_PHASE_LIGHT = 20;
 
+const int CLOUD_REF_RESOLVE_TERRAIN_POST = 0;
+const int CLOUD_REF_RESOLVE_METADATA_BILATERAL = 1;
+
 layout(std140, set = 0, binding = 0) uniform CloudRefFrame {
     vec4 camera_right_aspect;
     vec4 camera_up_tan_half_fovy;

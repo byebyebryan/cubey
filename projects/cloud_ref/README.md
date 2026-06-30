@@ -35,6 +35,7 @@ Useful runs:
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-weather-preset storm-cells
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-view-steps 96
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-view-samples 2
+./build/dev/projects/cloud_ref/cloud_ref --cloud-view-samples 1 --cloud-resolve-mode metadata-bilateral --cloud-resolve-radius-px 1.5
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view weather
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view base-density
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view detail-density
@@ -53,6 +54,7 @@ Useful runs:
 ./build/dev/projects/cloud_ref/cloud_ref --headless --frames 2 --cloud-camera-mode surface --output outputs/cloud-ref-surface.png
 ./build/dev/projects/cloud_ref/cloud_ref --headless --frames 2 --cloud-camera-mode high --output outputs/cloud-ref-high.png
 projects/cloud_ref/capture_review.sh outputs/cloud-ref-review
+projects/cloud_ref/capture_sampling_compare.sh outputs/cloud-ref-sampling-compare
 ```
 
 Reference captures from the original TerrainEngine app are kept in
@@ -106,6 +108,16 @@ the near-term visual target for edge stability. Treat that as a reference point:
 production cloud rendering should approximate it with cheaper temporal or cached
 coverage reconstruction instead of promoting brute-force 2x full-screen march
 work by default.
+
+`cloud_ref` also exposes an experimental single-frame spatial reconstruction
+path through `--cloud-resolve-mode metadata-bilateral`. In this reference target
+the mode is alpha/coverage-aware rather than true metadata-aware: it keeps
+`--cloud-view-samples 1`, uses the existing deterministic Bayer phase variation
+between neighboring pixels, then resolves premultiplied cloud color and coverage
+mostly at transitional cloud edges. It is a diagnostic candidate, not a proven
+replacement for brute-force `s2`. Use
+`projects/cloud_ref/capture_sampling_compare.sh` to compare `s1 terrain-post`,
+`s1 metadata-bilateral`, and brute-force `s2 terrain-post` from the same views.
 
 Controls:
 

@@ -81,6 +81,10 @@ constexpr std::array<CloudsWeatherPreset, 5> kCloudRefWeatherPresets{
     CloudsWeatherPreset::StormCells,
     CloudsWeatherPreset::HighCirrus,
 };
+constexpr std::array<CloudsResolveMode, 2> kCloudRefResolveModes{
+    CloudsResolveMode::TerrainPost,
+    CloudsResolveMode::MetadataBilateral,
+};
 constexpr std::array<CloudsDebugView, 16> kCloudRefDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
@@ -289,6 +293,16 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
     return static_cast<float>(static_cast<std::uint32_t>(style));
 }
 
+[[nodiscard]] float cloud_ref_resolve_mode_value(CloudsResolveMode mode) {
+    switch (mode) {
+    case CloudsResolveMode::TerrainPost:
+        return 0.0F;
+    case CloudsResolveMode::MetadataBilateral:
+        return 1.0F;
+    }
+    return 0.0F;
+}
+
 [[nodiscard]] CloudRefViewBasis cloud_ref_view_basis(const CloudsConfig& config, float yaw,
                                                      float pitch_offset) {
     const cubey::math::Vec3 surface_up{0.0F, 1.0F, 0.0F};
@@ -353,7 +367,8 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
         .cloud_color_bottom_horizon = {cloud_bottom_color.x, cloud_bottom_color.y,
                                        cloud_bottom_color.z, config.horizon_strength},
         .composite_options = {config.post_blur_enabled ? 1.0F : 0.0F,
-                              config.post_blur_strength, config.post_blur_radius_px, 0.0F},
+                              config.post_blur_strength, config.post_blur_radius_px,
+                              cloud_ref_resolve_mode_value(config.resolve_mode)},
     };
 }
 
@@ -662,6 +677,8 @@ class CloudRefApp {
         ImGui::SliderInt("View steps", &config_.view_steps_override, 0, 128);
         draw_view_samples_combo();
         ImGui::Checkbox("Post blur", &config_.post_blur_enabled);
+        draw_enum_combo("Resolve", config_.resolve_mode, kCloudRefResolveModes,
+                        clouds_resolve_mode_name);
         ImGui::SliderFloat("Blur strength", &config_.post_blur_strength, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Blur radius", &config_.post_blur_radius_px, 0.0F, 8.0F, "%.2f px");
         ImGui::Checkbox("Powder", &config_.powder_enabled);
