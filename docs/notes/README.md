@@ -107,6 +107,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain peak-first mountain skeleton plan](terrain-peak-first-mountain-skeleton-plan.md):
   revision 21 plan for envelope, peak anchors, peak prominence, ridge skeleton,
   and ridge influence fields.
+- [Terrain mountain peak readability plan](terrain-mountain-peak-readability-plan.md):
+  revision 22 plan for making the peak-first mountain stress recipe visibly
+  build from broad support into high peaks.
 - [Procedural consumer inventory](procedural-consumer-inventory.md):
   current inventory of atmosphere, cloud, ocean, fluid, planet, and future
   terrain procedural consumers that should shape shared foundation work.
