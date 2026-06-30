@@ -5,7 +5,7 @@ much like a random field with bumps. The named hierarchy is not yet a form
 hierarchy: peaks do not dominate the composition, ridges do not visibly build
 toward those peaks, and height still mostly follows processed noise.
 
-Status: planned for revision 21.
+Status: implemented in revision 21.
 
 ## Direction
 
@@ -56,6 +56,28 @@ become derived from the skeleton model instead of being the primary source.
 - `mountain-ridge-influence.png` should widen the skeleton into ridge shoulders.
 - `mountain-relief.png` should read as broad mass building to peaks through
   ridges, even before erosion, talus, snow, or glacial shaping exists.
+
+## Outcome
+
+Revision 21 adds the five planned source fields and debug views. The mountain
+stress recipe now starts from a smooth envelope, selects sparse deterministic
+peak anchors, derives peak prominence from those anchors, traces a generated
+ridge skeleton, widens that skeleton into ridge influence, and derives the
+existing mountain support/ridge/peak fields from that source path.
+
+The refreshed mountain stress captures are available at:
+
+- `outputs/terrain/mountain-range-stress`
+- `outputs/terrain/mountain-range-stress-1025`
+
+Each refreshed mountain stress directory has 34 PNG views. The primary review
+image is still `mountain-relief.png`; the raw skeleton and anchor views are
+source diagnostics and are intentionally not drawn over the relief render.
+
+Remaining limitations are expected for this pass. Peak prominence is still
+mostly radial around anchors, ridge paths are generated rather than
+erosion-evolved, and the recipe still lacks talus, snow/ice, glacial carving,
+alpine material contrast, and world-scale range continuity.
 
 ## Deferred
 

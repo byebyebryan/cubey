@@ -220,7 +220,7 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `19` emits deterministic source fields,
+local region. Generator revision `21` emits deterministic source fields,
 explicit mountain support/ridge/peak/uplift fields, height/slope analysis,
 repaired routing diagnostics, smoothed active river trunk and tributary masks,
 wetness/deposition, material masks, vegetation potential, summaries, and tests.
@@ -329,6 +329,13 @@ Revision 20 adds `mountain_range_spine`, `mountain_ridge_hierarchy`, and
 organization, ranked ridge source, and sparse summit candidates before material
 or biome polish.
 
+Revision 21 adds a peak-first mountain skeleton source path for the mountain
+stress recipe: `mountain_envelope`, `mountain_peak_anchors`,
+`mountain_peak_prominence`, `mountain_ridge_skeleton`, and
+`mountain_ridge_influence`. The stress recipe now derives the revision 19 and
+20 support/ridge/peak fields from that envelope/anchor/skeleton model. Default
+river recipes still emit inactive values for the new stress-only diagnostics.
+
 Known limitations:
 
 - Fractional accumulation reduces receiver quantization, but active trunk
@@ -349,8 +356,10 @@ Known limitations:
   revisited before adding heavier hydrology checks.
 - The mountain stress recipe is an early diagnostic driver, not a finished
   alpine biome. It does not yet include erosion time, talus, snow/ice, glacial
-  valley carving, or world-scale range continuity. Revision 20 improves the
-  source hierarchy but the ridge field can still read busy without erosion.
+  valley carving, or world-scale range continuity. Revision 21 improves the
+  source hierarchy with envelope, peak anchor, prominence, skeleton, and ridge
+  influence fields, but peak prominence remains mostly radial and the skeleton
+  is generated rather than erosion-evolved.
 - The final PNG is an inspectable debug composition, not the target renderer.
   Use `mountain-relief.png` for mountain-form review because `final.png` still
   includes the river/material overlays.
@@ -386,7 +395,8 @@ more biome labels:
 3. Replace the current support-path hierarchy and distinctness classifier with a
    more principled basin/tributary model so visual coverage does not depend on
    capped promoted branch counts.
-4. Refine the revision 20 mountain driver with erosion-aware ridge cleanup,
-   alpine material/valley contrast, and better world-scale range continuity.
+4. Refine the revision 21 mountain driver with anisotropic peak shaping,
+   erosion-aware ridge cleanup, alpine material/valley contrast, and better
+   world-scale range continuity.
 5. Add capture summaries or manifest metadata for the review set so image
    artifacts can be compared without relying only on manual inspection.

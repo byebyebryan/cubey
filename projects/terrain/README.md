@@ -17,7 +17,7 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `19`. It emits source fields, height/slope
+The current generator revision is `21`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass now repairs local routing pits with a bounded priority-flood
@@ -64,6 +64,12 @@ Revision 20 adds a mountain hierarchy layer for that stress recipe:
 `mountain_range_spine`, `mountain_ridge_hierarchy`, and
 `mountain_peak_candidates`. The default river recipes keep range spine and peak
 candidate fields disabled while preserving their existing ridge source.
+Revision 21 pivots the stress recipe to a peak-first mountain skeleton:
+`mountain_envelope`, `mountain_peak_anchors`, `mountain_peak_prominence`,
+`mountain_ridge_skeleton`, and `mountain_ridge_influence`. The older mountain
+support, ridge hierarchy, and peak-candidate fields are now derived from that
+envelope/anchor/skeleton source path in the mountain stress recipe. Default
+river recipes still emit inactive values for the new stress-only diagnostics.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -92,12 +98,17 @@ for the standard review set. The current local review images are generated at
 thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
 review artifact.
 
-The review set includes:
+The review set includes 34 views:
 
 - `final.png`
 - `mountain-relief.png`
 - `height.png`
 - `slope.png`
+- `mountain-envelope.png`
+- `mountain-peak-anchors.png`
+- `mountain-peak-prominence.png`
+- `mountain-ridge-skeleton.png`
+- `mountain-ridge-influence.png`
 - `mountain-range-spine.png`
 - `mountain-support.png`
 - `mountain-ridge-hierarchy.png`
@@ -164,6 +175,12 @@ Revision 20 makes the source hierarchy inspectable: `mountain-range-spine.png`
 shows broad range organization, `mountain-ridge-hierarchy.png` shows ranked
 primary/secondary ridge structure, and `mountain-peak-candidates.png` shows
 sparse summit candidates before they become peak support.
+Revision 21 changes the primary review order for this recipe. Inspect
+`mountain-relief.png` first, then compare `mountain-envelope.png`,
+`mountain-peak-anchors.png`, `mountain-peak-prominence.png`,
+`mountain-ridge-skeleton.png`, and `mountain-ridge-influence.png`. The raw
+skeleton view is a source diagnostic; the relief view intentionally does not
+draw raw graph strokes over the surface.
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential

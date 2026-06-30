@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 20
-mountain hierarchy pass.
+This note records the current terrain reboot capture set after the revision 21
+peak-first mountain skeleton pass.
 
 ## Capture Command
 
@@ -14,9 +14,12 @@ mountain hierarchy pass.
 ```
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
-stress captures for larger river-network and mountain-driver inspection. `outputs/` is intentionally
-ignored by git. This replaced the earlier tiny local output set so field
-structure, channel continuity, and material response are easier to inspect.
+stress captures for larger river-network and mountain-driver inspection. The
+revision 21 review set emits 34 PNG views per capture. The refreshed mountain
+stress directories currently hold 68 PNGs total across the 513 and 1025
+captures. `outputs/` is intentionally ignored by git. This replaced the earlier
+tiny local output set so field structure, channel continuity, and material
+response are easier to inspect.
 `outputs/terrain/current-river-network` is the default product review. The optional
 `outputs/terrain/stress-river-network` set uses the diagnostic stress recipe to
 stress-test broader river-network shape and coverage. The optional
@@ -56,6 +59,12 @@ recipe opts into them for mountain-driver review.
 Revision 20 adds `mountain_range_spine`, `mountain_ridge_hierarchy`, and
 `mountain_peak_candidates` as source diagnostics for the mountain stress recipe.
 The default river recipes keep range spine and peak candidates at zero.
+Revision 21 adds `mountain_envelope`, `mountain_peak_anchors`,
+`mountain_peak_prominence`, `mountain_ridge_skeleton`, and
+`mountain_ridge_influence`. The mountain stress recipe now derives support,
+ridge hierarchy, and peak support from that envelope/anchor/skeleton source
+path instead of treating layered ridged noise as the primary form driver. The
+default river recipes keep these new stress-only source diagnostics inactive.
 
 ## What To Inspect
 
@@ -64,6 +73,19 @@ The default river recipes keep range spine and peak candidates at zero.
 - `mountain-relief.png`: mountain-specific rendered review image. It hillshades
   `height_m`, tints broad range support, and highlights ridge/peak accents
   without river, wetness, vegetation, or material overlays.
+- `mountain-envelope.png`: smooth macro mountain support. It should show broad
+  uplift regions before ridges, peaks, or residual detail are applied.
+- `mountain-peak-anchors.png`: sparse deterministic summit anchors selected
+  from the envelope and summit score. It should not read as a noisy full-field
+  mask.
+- `mountain-peak-prominence.png`: peak dominance grown from anchors. It should
+  explain where peak uplift comes from, even though revision 21 still leaves it
+  mostly radial before later anisotropic shaping.
+- `mountain-ridge-skeleton.png`: generated primary/secondary ridge source. It
+  is a structural debug view, not a final surface overlay.
+- `mountain-ridge-influence.png`: widened shoulder field derived from the ridge
+  skeleton. It should connect peak anchors into readable ridge mass before
+  support and uplift fields consume it.
 - `drainage-potential.png`: scalar routing surface before flow routing. This
   is the repaired routing surface and should remain smooth even when later river
   products expose routing artifacts.
@@ -166,7 +188,10 @@ current trunk skeleton, then leaves the remaining graph paths in `tributaries`.
 Revision 19 keeps the river graph path unchanged and adds mountain source fields
 as product diagnostics instead of hiding them inside `ridge_uplift`. Revision 20
 adds range spine, ridge hierarchy, and peak-candidate diagnostics before
-turning the stress recipe into an alpine biome.
+turning the stress recipe into an alpine biome. Revision 21 adds a peak-first
+mountain skeleton source path and derives the existing mountain support/ridge
+fields from it, so the source hierarchy can be reviewed before erosion or
+material polish.
 The rejected revision 4 attempt made the visible product worse by rendering selected
 graph edges directly, producing disconnected snippets and hard straight or
 diagonal runs. See
@@ -196,10 +221,12 @@ cut by the visible crop without the larger basin context that would make their
 upstream/downstream role clearer. The next river-quality pass should improve
 graph topology construction before adding more high-level terrain features.
 
-The revision 20 mountain driver is still an early diagnostic source profile, not
-a polished alpine biome. It separates range spine, broad support, ridge
-hierarchy, peak candidates, and peak accents, but it does not yet model tectonic
-plates, erosion time, talus, snow/ice, glacial valley carving, or a world-scale
-range graph. The next mountain-quality pass should focus on erosion-aware ridge
-cleanup and alpine material/valley contrast before turning these fields into
-final biome compositions.
+The revision 21 mountain driver is still an early diagnostic source profile, not
+a polished alpine biome. It separates macro envelope, peak anchors, peak
+prominence, ridge skeleton, ridge influence, broad support, ridge hierarchy, and
+peak accents, but peak prominence remains mostly radial and the skeleton is
+generated rather than erosion-evolved. It does not yet model tectonic plates,
+erosion time, talus, snow/ice, glacial valley carving, or a world-scale range
+graph. The next mountain-quality pass should focus on anisotropic peak shaping,
+erosion-aware ridge cleanup, and alpine material/valley contrast before turning
+these fields into final biome compositions.
