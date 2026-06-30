@@ -1274,6 +1274,37 @@ ctest --preset dev -R '^atmosphere_config_tests$' --output-on-failure
 ctest --preset dev -R '^(render_apps_use_dynamic_rendering|atmosphere_headless_writes_png|atmosphere_headless_writes_png_stats)$' --output-on-failure
 ```
 
+## Far-Field Handoff Checkpoint 2026-06-29
+
+The far-field handoff batch adds a focused capture matrix and starts separating
+near/overhead cloud rendering from lower-sky grazing rays:
+
+```sh
+projects/atmosphere/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
+```
+
+The production shader now fades local volumetric density and local high
+frequency detail earlier along grazing surface-view rays, raises local sample
+LOD near the lower-sky handoff, and makes the integrated far-horizon replacement
+use more filtered weather/structure samples. Debug views added to the capture
+matrix show the active handoff, local truncation, integrated horizon alpha,
+integrated horizon radiance, and distance regime.
+
+Full-resolution review pack:
+`outputs/atmosphere-cloud-farfield-handoff-final-20260629/`.
+
+Result:
+
+- overhead edges remain similar to the accepted `terrain-post` result;
+- lower and far-field clouds are softer and less broken than the raw local
+  march;
+- the remaining lower-sky stripe pattern is stable and still visible in
+  `surface-up-cloud-alpha` and `surface-up-integrated-horizon-alpha`;
+- the remaining problem is therefore not a final resolve issue alone. It needs a
+  cleaner far-cloud product, such as a cached/preintegrated cloud-top layer or a
+  proper temporal reconstruction path, if the current stable far-field artifact
+  is not acceptable.
+
 Review captures:
 
 ```text
