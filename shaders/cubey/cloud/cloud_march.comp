@@ -1650,19 +1650,29 @@ float cloud_horizon_handoff_weight(vec3 origin, vec3 direction, float start_t, f
     return clamp(max(surface_handoff, elevated_handoff) * strength, 0.0, 1.0);
 }
 
-float cloud_local_horizon_visibility(float sample_t, float handoff_weight) {
+float cloud_local_horizon_filter_weight(float sample_t, float handoff_weight) {
     if (handoff_weight <= 0.0) {
-        return 1.0;
+        return 0.0;
     }
 
     float surface_view = cloud_surface_view_factor();
     float far_start = params.orbit_options.x;
     float far_end = max(params.orbit_options.y, far_start + 1.0);
-    float fade_start = mix(far_start * 0.88, far_start * 0.62, surface_view);
-    float fade_end = mix(far_end * 0.58, far_start * 1.18, surface_view);
+    float fade_start = mix(far_start * 0.78, far_start * 0.34, surface_view);
+    float fade_end = mix(far_end * 0.52, far_start * 0.92, surface_view);
     fade_end = max(fade_end, fade_start + 1000.0);
     float distance_fade = smoothstep(fade_start, fade_end, sample_t);
-    return clamp(1.0 - handoff_weight * distance_fade, 0.0, 1.0);
+    return clamp(handoff_weight * distance_fade, 0.0, 1.0);
+}
+
+float cloud_local_horizon_visibility(float sample_t, float handoff_weight) {
+    float handoff_filter = cloud_local_horizon_filter_weight(sample_t, handoff_weight);
+    return clamp(1.0 - handoff_filter * mix(0.92, 0.985, cloud_surface_view_factor()), 0.0, 1.0);
+}
+
+float cloud_local_horizon_lod_bias(float sample_t, float handoff_weight) {
+    float handoff_filter = cloud_local_horizon_filter_weight(sample_t, handoff_weight);
+    return handoff_filter * mix(2.25, 3.85, cloud_surface_view_factor());
 }
 
 MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, float end_t,
@@ -1793,7 +1803,8 @@ MarchResult cloud_local_volume_march(vec3 origin, vec3 direction, float start_t,
         }
         float density_lod =
             lod_bias + cloud_sample_filter_lod(origin, direction, pos, sample_t, ds) +
-            float(i) / 24.0;
+            float(i) / 24.0 +
+            cloud_local_horizon_lod_bias(sample_t, horizon_handoff);
         DensitySample sample_data =
             cloud_sample_density(pos, expensive_detail, density_lod);
         sample_data.density *= cloud_inner_boundary_end_fade(sample_t, end_t,
