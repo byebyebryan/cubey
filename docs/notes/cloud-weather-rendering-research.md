@@ -1318,3 +1318,40 @@ high-oblique frames also expose a separate atmosphere/background boundary
 problem in the no-cloud comparison. The next cloud-specific step should be a
 real sparse temporal/reconstruction path or a more explicit cached far-cloud
 product, not more random jitter or the reverted adaptive march.
+
+## Cloud Ref Sampling/Resolve Checkpoint 2026-06-30
+
+The `cloud_ref` baseline now separates cloud-layer output from final scene
+composition. The march pass writes premultiplied cloud radiance plus continuous
+alpha for `final`/`raw-final`; the composite pass resolves that layer, then
+composites once over the generated sky/background. This removes the old
+thresholded-alpha/final-color blur contract, which was not a useful basis for
+coverage-aware reconstruction.
+
+New controls:
+
+- `clouds.view_steps` / `--cloud-view-steps`: explicit 1..128 view-step
+  override, with 0 in project config meaning "use the quality preset";
+- `clouds.view_samples` / `--cloud-view-samples`: deterministic 1, 2, or 4
+  ray-start samples per pixel.
+
+Review pack:
+
+```text
+outputs/cloud-ref-sampling-coverage-review-20260630/
+```
+
+Result:
+
+- the layer/alpha product is the right diagnostic contract and should be kept;
+- 2x and 4x static ray-start averaging reduce some pixel-level breakup, but do
+  not eliminate the visible structured edge/far-field pattern;
+- increasing view steps changes the artifact frequency and can reveal the same
+  marching structure in a different place, so this is not just a too-few-steps
+  issue;
+- stronger 3x3 blur hides more pattern but visibly softens cloud structure.
+
+Treat this as evidence against "just add more static samples or blur" as the
+production answer. The next serious fix should either reconstruct over time
+with confidence/history, preintegrate/cache a far-cloud product, or reduce
+unresolved density-frequency before the raymarch emits a binary-looking edge.

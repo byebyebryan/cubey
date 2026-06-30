@@ -33,6 +33,8 @@ Useful runs:
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-weather-preset fair-weather
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-weather-preset broken-cumulus
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-weather-preset storm-cells
+./build/dev/projects/cloud_ref/cloud_ref --cloud-view-steps 96
+./build/dev/projects/cloud_ref/cloud_ref --cloud-view-samples 2
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view weather
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view base-density
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view detail-density
@@ -91,6 +93,15 @@ powder enabled by default, and a slightly more contrast-preserving final pass.
 This is a cloud-only pass: it does not pursue TerrainEngine water, terrain,
 bloom, or god-ray context, so the final views still depend heavily on the
 placeholder horizon scene.
+
+The sampling/coverage checkpoint in
+`outputs/cloud-ref-sampling-coverage-review-20260630/` changes final output to a
+true cloud layer: march writes premultiplied cloud radiance plus continuous
+alpha, and the composite pass resolves that layer before applying it over the
+sky/background. It also adds explicit `--cloud-view-steps` and
+`--cloud-view-samples` controls. The review captures show this is a better
+diagnostic/reconstruction contract, but static 2x/4x ray-start averaging and
+stronger 3x3 blur do not fully remove the structured edge/far-field pattern.
 
 Controls:
 
