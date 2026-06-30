@@ -452,8 +452,9 @@ void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 40> required_fields{
+    const std::array<std::string_view, 43> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
+        cubey::projects::terrain::kTerrainFieldPreProcessHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
         cubey::projects::terrain::kTerrainFieldBroadRelief,
         cubey::projects::terrain::kTerrainFieldMountainRangeSpine,
@@ -487,6 +488,8 @@ void test_terrain_product_emits_required_fields() {
         cubey::projects::terrain::kTerrainFieldSinkMask,
         cubey::projects::terrain::kTerrainFieldChannelWidth,
         cubey::projects::terrain::kTerrainFieldValleyWidth,
+        cubey::projects::terrain::kTerrainFieldChannelIncision,
+        cubey::projects::terrain::kTerrainFieldValleyIncision,
         cubey::projects::terrain::kTerrainFieldWetness,
         cubey::projects::terrain::kTerrainFieldDeposition,
         cubey::projects::terrain::kTerrainFieldMaterialRock,

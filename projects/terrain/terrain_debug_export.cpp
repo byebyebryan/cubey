@@ -32,10 +32,11 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 34> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 37> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::MountainRelief, "mountain-relief"},
     DebugViewName{TerrainDebugView::Height, "height"},
+    DebugViewName{TerrainDebugView::PreProcessHeight, "pre-process-height"},
     DebugViewName{TerrainDebugView::Slope, "slope"},
     DebugViewName{TerrainDebugView::MountainRangeSpine, "mountain-range-spine"},
     DebugViewName{TerrainDebugView::MountainEnvelope, "mountain-envelope"},
@@ -63,16 +64,19 @@ inline constexpr std::array<DebugViewName, 34> kDebugViewNames{
     DebugViewName{TerrainDebugView::RiverGraphDischarge, "river-graph-discharge"},
     DebugViewName{TerrainDebugView::SinkMask, "sink-mask"},
     DebugViewName{TerrainDebugView::ChannelWidth, "channel-width"},
+    DebugViewName{TerrainDebugView::ChannelIncision, "channel-incision"},
+    DebugViewName{TerrainDebugView::ValleyIncision, "valley-incision"},
     DebugViewName{TerrainDebugView::Wetness, "wetness"},
     DebugViewName{TerrainDebugView::Deposition, "deposition"},
     DebugViewName{TerrainDebugView::Material, "material"},
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 34> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 37> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::MountainRelief,
     TerrainDebugView::Height,
+    TerrainDebugView::PreProcessHeight,
     TerrainDebugView::Slope,
     TerrainDebugView::MountainRangeSpine,
     TerrainDebugView::MountainEnvelope,
@@ -100,6 +104,8 @@ inline constexpr std::array<TerrainDebugView, 34> kTerrainDebugReviewViews{
     TerrainDebugView::RiverGraphDischarge,
     TerrainDebugView::SinkMask,
     TerrainDebugView::ChannelWidth,
+    TerrainDebugView::ChannelIncision,
+    TerrainDebugView::ValleyIncision,
     TerrainDebugView::Wetness,
     TerrainDebugView::Deposition,
     TerrainDebugView::Material,
@@ -329,6 +335,8 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
     switch (view) {
     case TerrainDebugView::Height:
         return terrain_product_field(product, kTerrainFieldHeightM);
+    case TerrainDebugView::PreProcessHeight:
+        return terrain_product_field(product, kTerrainFieldPreProcessHeightM);
     case TerrainDebugView::Slope:
         return terrain_product_field(product, kTerrainFieldSlope);
     case TerrainDebugView::MountainRangeSpine:
@@ -383,6 +391,10 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldSinkMask);
     case TerrainDebugView::ChannelWidth:
         return terrain_product_field(product, kTerrainFieldChannelWidth);
+    case TerrainDebugView::ChannelIncision:
+        return terrain_product_field(product, kTerrainFieldChannelIncision);
+    case TerrainDebugView::ValleyIncision:
+        return terrain_product_field(product, kTerrainFieldValleyIncision);
     case TerrainDebugView::Wetness:
         return terrain_product_field(product, kTerrainFieldWetness);
     case TerrainDebugView::Deposition:

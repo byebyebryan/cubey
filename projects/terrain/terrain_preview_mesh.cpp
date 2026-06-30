@@ -81,10 +81,19 @@ namespace {
         optional_field(product, kTerrainFieldChannelWidth);
     const cubey::procedural::ScalarField2D* valley =
         optional_field(product, kTerrainFieldValleyWidth);
+    const cubey::procedural::ScalarField2D* channel_incision =
+        optional_field(product, kTerrainFieldChannelIncision);
+    const cubey::procedural::ScalarField2D* valley_incision =
+        optional_field(product, kTerrainFieldValleyIncision);
     const float channel_t = std::clamp(optional_at(channel, x, y) / 96.0F, 0.0F, 1.0F);
     const float valley_t = std::clamp(optional_at(valley, x, y) / 360.0F, 0.0F, 1.0F);
+    const float incision_t = std::clamp((optional_at(channel_incision, x, y) +
+                                         optional_at(valley_incision, x, y)) /
+                                            150.0F,
+                                        0.0F, 1.0F);
     cubey::math::Vec3 color = mix({0.18F, 0.19F, 0.18F}, {0.45F, 0.40F, 0.24F}, valley_t);
-    return mix(color, {0.04F, 0.20F, 0.28F}, channel_t);
+    color = mix(color, {0.04F, 0.20F, 0.28F}, channel_t);
+    return mix(color, {0.84F, 0.72F, 0.28F}, incision_t * 0.55F);
 }
 
 [[nodiscard]] cubey::math::Vec3 river_color(const TerrainRegionProduct& product, std::uint32_t x,

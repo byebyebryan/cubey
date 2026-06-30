@@ -53,6 +53,21 @@ struct RiverFields {
     cubey::procedural::ScalarField2D deposition{};
 };
 
+struct RiverCarvingSettings {
+    float channel_depth_m = 28.0F;
+    float valley_depth_m = 58.0F;
+    float base_incision_limit_m = 24.0F;
+    float relief_incision_fraction = 0.28F;
+    float max_total_incision_m = 118.0F;
+    float valley_radius_scale = 1.15F;
+};
+
+struct RiverCarvingFields {
+    cubey::procedural::ScalarField2D height{};
+    cubey::procedural::ScalarField2D channel_incision{};
+    cubey::procedural::ScalarField2D valley_incision{};
+};
+
 struct RiverNetworkSettings {
     float routing_height_weight = 0.16F;
     float routing_variation_scale = 950.0F;
@@ -440,6 +455,30 @@ struct MountainSkeletonFields {
             .support_tributary_falloff_radius_cells = 0.85F,
             .support_trunk_core_radius_cells = 0.45F,
             .support_trunk_falloff_radius_cells = 1.25F,
+        };
+    }
+    return {};
+}
+
+[[nodiscard]] RiverCarvingSettings river_carving_settings(std::string_view recipe_id) {
+    if (recipe_id == kTerrainRecipeTemperateMountainRiverStress) {
+        return RiverCarvingSettings{
+            .channel_depth_m = 34.0F,
+            .valley_depth_m = 74.0F,
+            .base_incision_limit_m = 30.0F,
+            .relief_incision_fraction = 0.32F,
+            .max_total_incision_m = 148.0F,
+            .valley_radius_scale = 1.22F,
+        };
+    }
+    if (recipe_id == kTerrainRecipeTemperateMountainRangeStress) {
+        return RiverCarvingSettings{
+            .channel_depth_m = 42.0F,
+            .valley_depth_m = 92.0F,
+            .base_incision_limit_m = 36.0F,
+            .relief_incision_fraction = 0.34F,
+            .max_total_incision_m = 190.0F,
+            .valley_radius_scale = 1.18F,
         };
     }
     return {};
@@ -6253,8 +6292,64 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
     return sink_mask;
 }
 
+void update_river_moisture_fields(RiverFields& fields,
+                                  const cubey::procedural::ScalarField2D& slope) {
+    const cubey::procedural::Grid2DDesc& desc = slope.desc();
+    const float max_accumulation = std::max(fields.flow_accumulation.summarize().max, 1.0F);
+    const float log_max_accumulation = std::log1p(max_accumulation);
+    fields.wetness.fill(0.0F);
+    fields.deposition.fill(0.0F);
+
+    constexpr int kWetnessRadius = 12;
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            float river_influence = 0.0F;
+            float nearest_valley_width = 0.0F;
+            for (int oy = -kWetnessRadius; oy <= kWetnessRadius; ++oy) {
+                const int sy = static_cast<int>(y) + oy;
+                if (sy < 0 || sy >= static_cast<int>(desc.height)) {
+                    continue;
+                }
+                for (int ox = -kWetnessRadius; ox <= kWetnessRadius; ++ox) {
+                    const int sx = static_cast<int>(x) + ox;
+                    if (sx < 0 || sx >= static_cast<int>(desc.width)) {
+                        continue;
+                    }
+                    const float river = fields.river_mask.at(static_cast<std::uint32_t>(sx),
+                                                             static_cast<std::uint32_t>(sy));
+                    if (river <= 0.0F) {
+                        continue;
+                    }
+                    const float valley_width =
+                        std::max(fields.valley_width.at(static_cast<std::uint32_t>(sx),
+                                                        static_cast<std::uint32_t>(sy)),
+                                 desc.cell_size * 1.5F);
+                    const float distance = std::sqrt(static_cast<float>((ox * ox) + (oy * oy))) *
+                                           desc.cell_size;
+                    const float influence = river * std::exp(-distance / valley_width);
+                    if (influence > river_influence) {
+                        river_influence = influence;
+                        nearest_valley_width = valley_width;
+                    }
+                }
+            }
+
+            const float slope_dryness = cubey::procedural::smoothstep(0.08F, 0.42F, slope.at(x, y));
+            const float background_wetness = cubey::procedural::smoothstep(
+                0.55F, 0.88F,
+                std::log1p(fields.flow_accumulation.at(x, y)) / log_max_accumulation);
+            const float wetness =
+                cubey::procedural::saturate((river_influence * 0.85F) +
+                                            (background_wetness * 0.25F) - (slope_dryness * 0.22F));
+            fields.wetness.at(x, y) = wetness;
+            fields.deposition.at(x, y) =
+                wetness * (1.0F - cubey::procedural::smoothstep(0.04F, 0.30F, slope.at(x, y))) *
+                cubey::procedural::saturate(nearest_valley_width / 260.0F);
+        }
+    }
+}
+
 [[nodiscard]] RiverFields make_river_fields(const cubey::procedural::ScalarField2D& height,
-                                            const cubey::procedural::ScalarField2D& slope,
                                             const TerrainRegionConfig& config) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
     const RiverNetworkSettings settings = river_network_settings(config.recipe_id);
@@ -6307,54 +6402,6 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
         }
     }
 
-    constexpr int kWetnessRadius = 12;
-    for (std::uint32_t y = 0; y < desc.height; ++y) {
-        for (std::uint32_t x = 0; x < desc.width; ++x) {
-            float river_influence = 0.0F;
-            float nearest_valley_width = 0.0F;
-            for (int oy = -kWetnessRadius; oy <= kWetnessRadius; ++oy) {
-                const int sy = static_cast<int>(y) + oy;
-                if (sy < 0 || sy >= static_cast<int>(desc.height)) {
-                    continue;
-                }
-                for (int ox = -kWetnessRadius; ox <= kWetnessRadius; ++ox) {
-                    const int sx = static_cast<int>(x) + ox;
-                    if (sx < 0 || sx >= static_cast<int>(desc.width)) {
-                        continue;
-                    }
-                    const float river = fields.river_mask.at(static_cast<std::uint32_t>(sx),
-                                                             static_cast<std::uint32_t>(sy));
-                    if (river <= 0.0F) {
-                        continue;
-                    }
-                    const float valley_width =
-                        std::max(fields.valley_width.at(static_cast<std::uint32_t>(sx),
-                                                        static_cast<std::uint32_t>(sy)),
-                                 desc.cell_size * 1.5F);
-                    const float distance = std::sqrt(static_cast<float>((ox * ox) + (oy * oy))) *
-                                           desc.cell_size;
-                    const float influence = river * std::exp(-distance / valley_width);
-                    if (influence > river_influence) {
-                        river_influence = influence;
-                        nearest_valley_width = valley_width;
-                    }
-                }
-            }
-
-            const float slope_dryness = cubey::procedural::smoothstep(0.08F, 0.42F, slope.at(x, y));
-            const float background_wetness = cubey::procedural::smoothstep(
-                0.55F, 0.88F,
-                std::log1p(fields.flow_accumulation.at(x, y)) / log_max_accumulation);
-            const float wetness =
-                cubey::procedural::saturate((river_influence * 0.85F) +
-                                            (background_wetness * 0.25F) - (slope_dryness * 0.22F));
-            fields.wetness.at(x, y) = wetness;
-            fields.deposition.at(x, y) =
-                wetness * (1.0F - cubey::procedural::smoothstep(0.04F, 0.30F, slope.at(x, y))) *
-                cubey::procedural::saturate(nearest_valley_width / 260.0F);
-        }
-    }
-
     return RiverFields{
         .drainage_potential = std::move(fields.drainage_potential),
         .routing_fill_delta = std::move(fields.routing_fill_delta),
@@ -6372,6 +6419,110 @@ void populate_sink_mask(cubey::procedural::ScalarField2D& sink_mask,
         .wetness = std::move(fields.wetness),
         .deposition = std::move(fields.deposition),
     };
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D spread_incision_field(
+    const cubey::procedural::ScalarField2D& source, int iterations, float decay_per_cell) {
+    cubey::procedural::ScalarField2D current = source;
+    for (int iteration = 0; iteration < iterations; ++iteration) {
+        cubey::procedural::ScalarField2D next = current;
+        const cubey::procedural::Grid2DDesc& desc = current.desc();
+        for (std::uint32_t y = 0; y < desc.height; ++y) {
+            for (std::uint32_t x = 0; x < desc.width; ++x) {
+                float best = current.at(x, y);
+                for (int oy = -1; oy <= 1; ++oy) {
+                    const int sy = static_cast<int>(y) + oy;
+                    if (sy < 0 || sy >= static_cast<int>(desc.height)) {
+                        continue;
+                    }
+                    for (int ox = -1; ox <= 1; ++ox) {
+                        const int sx = static_cast<int>(x) + ox;
+                        if (sx < 0 || sx >= static_cast<int>(desc.width) ||
+                            (ox == 0 && oy == 0)) {
+                            continue;
+                        }
+                        best = std::max(
+                            best, current.at(static_cast<std::uint32_t>(sx),
+                                             static_cast<std::uint32_t>(sy)) *
+                                      decay_per_cell);
+                    }
+                }
+                next.at(x, y) = best;
+            }
+        }
+        current = std::move(next);
+    }
+    return current;
+}
+
+[[nodiscard]] RiverCarvingFields apply_river_carving(
+    const cubey::procedural::ScalarField2D& height,
+    const cubey::procedural::ScalarField2D& local_relief, const RiverFields& river_fields,
+    std::string_view recipe_id) {
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    const RiverCarvingSettings settings = river_carving_settings(recipe_id);
+    cubey::procedural::ScalarField2D channel_source(desc, 0.0F);
+    cubey::procedural::ScalarField2D valley_source(desc, 0.0F);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float river = cubey::procedural::saturate(river_fields.river_mask.at(x, y));
+            if (river < 0.16F) {
+                continue;
+            }
+            const float active = cubey::procedural::smoothstep(0.12F, 0.86F, river);
+            const float channel_width =
+                std::max(river_fields.channel_width.at(x, y), desc.cell_size * 0.40F);
+            const float trunk = cubey::procedural::saturate(river_fields.river_trunk.at(x, y));
+            const float tributary =
+                cubey::procedural::saturate(river_fields.tributaries.at(x, y));
+            const float discharge =
+                cubey::procedural::saturate(river_fields.river_graph_discharge.at(x, y));
+            const float order =
+                cubey::procedural::saturate(river_fields.stream_order.at(x, y) / 5.0F);
+            const float width = cubey::procedural::saturate(channel_width / 58.0F);
+            const float size =
+                std::max({active, trunk, tributary * 0.82F, discharge, order * 0.75F, width});
+            channel_source.at(x, y) =
+                settings.channel_depth_m * (0.42F + (size * 0.88F)) * active;
+            valley_source.at(x, y) =
+                settings.valley_depth_m * (0.22F + (size * 0.82F)) * active;
+        }
+    }
+
+    const int channel_iterations =
+        std::clamp(static_cast<int>(std::ceil(72.0F / std::max(desc.cell_size, 1.0F))), 1, 4);
+    const int valley_iterations =
+        std::clamp(static_cast<int>(std::ceil((260.0F * settings.valley_radius_scale) /
+                                             std::max(desc.cell_size, 1.0F))),
+                   3, 12);
+    RiverCarvingFields fields{
+        .height = height,
+        .channel_incision = spread_incision_field(channel_source, channel_iterations, 0.74F),
+        .valley_incision = spread_incision_field(valley_source, valley_iterations, 0.88F),
+    };
+
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            float channel_incision = fields.channel_incision.at(x, y);
+            float valley_incision = fields.valley_incision.at(x, y);
+
+            const float incision_limit =
+                std::min(settings.max_total_incision_m,
+                         settings.base_incision_limit_m +
+                             (local_relief.at(x, y) * settings.relief_incision_fraction));
+            const float raw_total = channel_incision + valley_incision;
+            if (raw_total > incision_limit && raw_total > 0.0F) {
+                const float scale = incision_limit / raw_total;
+                channel_incision *= scale;
+                valley_incision *= scale;
+            }
+            fields.channel_incision.at(x, y) = channel_incision;
+            fields.valley_incision.at(x, y) = valley_incision;
+            fields.height.at(x, y) = height.at(x, y) - channel_incision - valley_incision;
+        }
+    }
+
+    return fields;
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D make_material_field(
@@ -6433,20 +6584,27 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
 
     TerrainSourceFields source_fields =
         make_terrain_source_fields(desc, config.seed, config.recipe_id);
-    const cubey::procedural::SlopeCurvature2D slope_curvature =
-        cubey::procedural::compute_slope_curvature(source_fields.height);
-    const cubey::procedural::LocalRelief2D local_relief =
-        cubey::procedural::compute_local_relief(source_fields.height, 4U);
+    cubey::procedural::ScalarField2D pre_process_height = std::move(source_fields.height);
+    const cubey::procedural::LocalRelief2D source_local_relief =
+        cubey::procedural::compute_local_relief(pre_process_height, 4U);
     RiverFields river_fields =
-        make_river_fields(source_fields.height, slope_curvature.slope, config);
+        make_river_fields(pre_process_height, config);
+    RiverCarvingFields carving_fields =
+        apply_river_carving(pre_process_height, source_local_relief.local_span, river_fields,
+                            config.recipe_id);
+    const cubey::procedural::SlopeCurvature2D slope_curvature =
+        cubey::procedural::compute_slope_curvature(carving_fields.height);
+    const cubey::procedural::LocalRelief2D local_relief =
+        cubey::procedural::compute_local_relief(carving_fields.height, 4U);
+    update_river_moisture_fields(river_fields, slope_curvature.slope);
     cubey::procedural::ScalarField2D material_rock =
-        make_material_field(source_fields.height, slope_curvature.slope, river_fields.wetness,
+        make_material_field(carving_fields.height, slope_curvature.slope, river_fields.wetness,
                             source_fields.ridge_uplift, kTerrainFieldMaterialRock);
     cubey::procedural::ScalarField2D material_soil =
-        make_material_field(source_fields.height, slope_curvature.slope, river_fields.wetness,
+        make_material_field(carving_fields.height, slope_curvature.slope, river_fields.wetness,
                             source_fields.ridge_uplift, kTerrainFieldMaterialSoil);
     cubey::procedural::ScalarField2D material_grass =
-        make_material_field(source_fields.height, slope_curvature.slope, river_fields.wetness,
+        make_material_field(carving_fields.height, slope_curvature.slope, river_fields.wetness,
                             source_fields.ridge_uplift, kTerrainFieldMaterialGrass);
     cubey::procedural::ScalarField2D vegetation_potential =
         make_vegetation_potential_field(slope_curvature.slope, river_fields.wetness,
@@ -6479,7 +6637,8 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldRidgeUplift, std::move(source_fields.ridge_uplift));
     add_field(product.fields, kTerrainFieldPeakUplift, std::move(source_fields.peak_uplift));
     add_field(product.fields, kTerrainFieldDetailResidual, std::move(source_fields.detail_residual));
-    add_field(product.fields, kTerrainFieldHeightM, std::move(source_fields.height));
+    add_field(product.fields, kTerrainFieldPreProcessHeightM, std::move(pre_process_height));
+    add_field(product.fields, kTerrainFieldHeightM, std::move(carving_fields.height));
     add_field(product.fields, kTerrainFieldSlope, slope_curvature.slope);
     add_field(product.fields, kTerrainFieldCurvature, slope_curvature.curvature);
     add_field(product.fields, kTerrainFieldLocalRelief, local_relief.local_span);
@@ -6501,6 +6660,10 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldSinkMask, std::move(river_fields.sink_mask));
     add_field(product.fields, kTerrainFieldChannelWidth, std::move(river_fields.channel_width));
     add_field(product.fields, kTerrainFieldValleyWidth, std::move(river_fields.valley_width));
+    add_field(product.fields, kTerrainFieldChannelIncision,
+              std::move(carving_fields.channel_incision));
+    add_field(product.fields, kTerrainFieldValleyIncision,
+              std::move(carving_fields.valley_incision));
     add_field(product.fields, kTerrainFieldWetness, std::move(river_fields.wetness));
     add_field(product.fields, kTerrainFieldDeposition, std::move(river_fields.deposition));
     add_field(product.fields, kTerrainFieldMaterialRock, std::move(material_rock));
