@@ -1,4 +1,5 @@
 #include "terrain_generator.h"
+#include "terrain_process_fields.h"
 
 #include <cubey/procedural/operators.h>
 #include <cubey/procedural/seed.h>
@@ -6421,40 +6422,6 @@ void update_river_moisture_fields(RiverFields& fields,
     };
 }
 
-[[nodiscard]] cubey::procedural::ScalarField2D spread_incision_field(
-    const cubey::procedural::ScalarField2D& source, int iterations, float decay_per_cell) {
-    cubey::procedural::ScalarField2D current = source;
-    for (int iteration = 0; iteration < iterations; ++iteration) {
-        cubey::procedural::ScalarField2D next = current;
-        const cubey::procedural::Grid2DDesc& desc = current.desc();
-        for (std::uint32_t y = 0; y < desc.height; ++y) {
-            for (std::uint32_t x = 0; x < desc.width; ++x) {
-                float best = current.at(x, y);
-                for (int oy = -1; oy <= 1; ++oy) {
-                    const int sy = static_cast<int>(y) + oy;
-                    if (sy < 0 || sy >= static_cast<int>(desc.height)) {
-                        continue;
-                    }
-                    for (int ox = -1; ox <= 1; ++ox) {
-                        const int sx = static_cast<int>(x) + ox;
-                        if (sx < 0 || sx >= static_cast<int>(desc.width) ||
-                            (ox == 0 && oy == 0)) {
-                            continue;
-                        }
-                        best = std::max(
-                            best, current.at(static_cast<std::uint32_t>(sx),
-                                             static_cast<std::uint32_t>(sy)) *
-                                      decay_per_cell);
-                    }
-                }
-                next.at(x, y) = best;
-            }
-        }
-        current = std::move(next);
-    }
-    return current;
-}
-
 [[nodiscard]] RiverCarvingFields apply_river_carving(
     const cubey::procedural::ScalarField2D& height,
     const cubey::procedural::ScalarField2D& local_relief, const RiverFields& river_fields,
@@ -6495,34 +6462,23 @@ void update_river_moisture_fields(RiverFields& fields,
         std::clamp(static_cast<int>(std::ceil((260.0F * settings.valley_radius_scale) /
                                              std::max(desc.cell_size, 1.0F))),
                    3, 12);
-    RiverCarvingFields fields{
-        .height = height,
-        .channel_incision = spread_incision_field(channel_source, channel_iterations, 0.74F),
-        .valley_incision = spread_incision_field(valley_source, valley_iterations, 0.88F),
+    const cubey::procedural::ScalarField2D spread_channel_incision =
+        spread_max_decay_field(channel_source, channel_iterations, 0.74F);
+    const cubey::procedural::ScalarField2D spread_valley_incision =
+        spread_max_decay_field(valley_source, valley_iterations, 0.88F);
+    TerrainProcessSplitLoweringFields lowering = clamp_split_lowering_to_relief(
+        spread_channel_incision, spread_valley_incision, local_relief,
+        TerrainProcessLoweringLimit{
+            .base_limit_m = settings.base_incision_limit_m,
+            .relief_fraction = settings.relief_incision_fraction,
+            .max_total_m = settings.max_total_incision_m,
+        });
+
+    return RiverCarvingFields{
+        .height = subtract_lowering_from_height(height, lowering.total),
+        .channel_incision = std::move(lowering.primary),
+        .valley_incision = std::move(lowering.secondary),
     };
-
-    for (std::uint32_t y = 0; y < desc.height; ++y) {
-        for (std::uint32_t x = 0; x < desc.width; ++x) {
-            float channel_incision = fields.channel_incision.at(x, y);
-            float valley_incision = fields.valley_incision.at(x, y);
-
-            const float incision_limit =
-                std::min(settings.max_total_incision_m,
-                         settings.base_incision_limit_m +
-                             (local_relief.at(x, y) * settings.relief_incision_fraction));
-            const float raw_total = channel_incision + valley_incision;
-            if (raw_total > incision_limit && raw_total > 0.0F) {
-                const float scale = incision_limit / raw_total;
-                channel_incision *= scale;
-                valley_incision *= scale;
-            }
-            fields.channel_incision.at(x, y) = channel_incision;
-            fields.valley_incision.at(x, y) = valley_incision;
-            fields.height.at(x, y) = height.at(x, y) - channel_incision - valley_incision;
-        }
-    }
-
-    return fields;
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D make_material_field(
