@@ -190,6 +190,7 @@ enum class RunConfigOptionId {
     CloudFinalContrast,
     CloudFinalSaturation,
     CloudResolveStrength,
+    CloudResolveRadius,
     CloudHorizonGlowStrength,
     CloudSunGlareStrength,
     CloudSamplingMode,

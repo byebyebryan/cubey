@@ -130,7 +130,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 240> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 241> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -713,6 +713,10 @@ constexpr std::array<ConfigOptionDescriptor, 240> kRunConfigOptions{
            "--cloud-resolve-strength", "Resolve Strength", "Clouds",
            "Amount of alpha-aware cloud product resolve in final view.", ConfigOptionType::Float,
            bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudResolveRadius, "clouds.resolve_radius_px",
+           "--cloud-resolve-radius-px", "Resolve Radius", "Clouds",
+           "Cloud final resolve blur radius in pixels.", ConfigOptionType::Float,
+           bounded_range(0.0, 8.0)),
     option(RunConfigOptionId::CloudHorizonGlowStrength, "clouds.horizon_glow_strength",
            "--cloud-horizon-glow-strength", "Horizon Glow", "Clouds",
            "Final composite horizon fill/glow multiplier.", ConfigOptionType::Float,
@@ -1493,6 +1497,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.final_saturation);
     case RunConfigOptionId::CloudResolveStrength:
         return optional_float(config.clouds.resolve_strength);
+    case RunConfigOptionId::CloudResolveRadius:
+        return optional_float(config.clouds.resolve_radius_px);
     case RunConfigOptionId::CloudHorizonGlowStrength:
         return optional_float(config.clouds.horizon_glow_strength);
     case RunConfigOptionId::CloudSunGlareStrength:
@@ -1965,6 +1971,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("final_contrast", options.final_contrast);
     adapter.writeField<float>("final_saturation", options.final_saturation);
     adapter.writeField<float>("resolve_strength", options.resolve_strength);
+    adapter.writeField<float>("resolve_radius_px", options.resolve_radius_px);
     adapter.writeField<float>("horizon_glow_strength", options.horizon_glow_strength);
     adapter.writeField<float>("sun_glare_strength", options.sun_glare_strength);
     adapter.writeField<float>("jitter_strength", options.jitter_strength);
@@ -2026,6 +2033,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("final_contrast", options.final_contrast);
     adapter.readField<float>("final_saturation", options.final_saturation);
     adapter.readField<float>("resolve_strength", options.resolve_strength);
+    adapter.readField<float>("resolve_radius_px", options.resolve_radius_px);
     adapter.readField<float>("horizon_glow_strength", options.horizon_glow_strength);
     adapter.readField<float>("sun_glare_strength", options.sun_glare_strength);
     adapter.readField<float>("jitter_strength", options.jitter_strength);
@@ -2782,6 +2790,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudResolveStrength:
         config.clouds.resolve_strength = parse_config_float(value, option);
         validate_range(config.clouds.resolve_strength, option);
+        break;
+    case RunConfigOptionId::CloudResolveRadius:
+        config.clouds.resolve_radius_px = parse_config_float(value, option);
+        validate_range(config.clouds.resolve_radius_px, option);
         break;
     case RunConfigOptionId::CloudHorizonGlowStrength:
         config.clouds.horizon_glow_strength = parse_config_float(value, option);

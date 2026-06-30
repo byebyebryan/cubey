@@ -125,6 +125,8 @@ void test_run_config_mapping() {
     run_config.clouds.weather_cells = 0.5F;
     run_config.clouds.weather_streaks = 0.75F;
     run_config.clouds.detail_erosion = 0.35F;
+    run_config.clouds.resolve_strength = 0.65F;
+    run_config.clouds.resolve_radius_px = 4.0F;
     run_config.clouds.temporal = 0;
     run_config.clouds.local_volume = 0;
     run_config.clouds.horizon_layer = 1;
@@ -163,6 +165,11 @@ void test_run_config_mapping() {
                  "cloud weather streaks should map");
     require_near(config.detail_erosion, 0.35F, 0.001F,
                  "cloud detail erosion should map");
+    require(config.post_blur_enabled, "cloud resolve strength should keep post blur enabled");
+    require_near(config.post_blur_strength, 0.65F, 0.001F,
+                 "cloud resolve strength should map to post blur strength");
+    require_near(config.post_blur_radius_px, 4.0F, 0.001F,
+                 "cloud resolve radius should map to post blur radius");
     require(!config.temporal_enabled, "cloud temporal option should map");
     require(!config.local_volume_enabled, "cloud local volume option should map");
     require(config.horizon_layer_enabled, "cloud horizon layer option should map");
@@ -243,6 +250,8 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.weather_cells", "0.4");
     cubey::set_run_config_option_from_string(config, "clouds.weather_streaks", "0.6");
     cubey::set_run_config_option_from_string(config, "clouds.detail_erosion", "0.5");
+    cubey::set_run_config_option_from_string(config, "clouds.resolve_strength", "0.25");
+    cubey::set_run_config_option_from_string(config, "clouds.resolve_radius_px", "3.5");
     cubey::set_run_config_option_from_string(config, "clouds.temporal", "false");
     cubey::set_run_config_option_from_string(config, "clouds.local_volume", "false");
     cubey::set_run_config_option_from_string(config, "clouds.horizon_layer", "true");
@@ -266,6 +275,10 @@ void test_config_descriptors() {
                  "cloud weather streaks descriptor should set");
     require_near(config.clouds.detail_erosion, 0.5F, 0.001F,
                  "cloud detail erosion descriptor should set");
+    require_near(config.clouds.resolve_strength, 0.25F, 0.001F,
+                 "cloud resolve strength descriptor should set");
+    require_near(config.clouds.resolve_radius_px, 3.5F, 0.001F,
+                 "cloud resolve radius descriptor should set");
     require(config.clouds.temporal == 0, "cloud temporal descriptor should set");
     require(config.clouds.local_volume == 0, "cloud local volume descriptor should set");
     require(config.clouds.horizon_layer == 1, "cloud horizon layer descriptor should set");

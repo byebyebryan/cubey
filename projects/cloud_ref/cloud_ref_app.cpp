@@ -103,9 +103,10 @@ struct CloudRefFrameUniforms {
     cubey::math::Vec4 weather_feature_weights;
     cubey::math::Vec4 cloud_color_top_shadow;
     cubey::math::Vec4 cloud_color_bottom_horizon;
+    cubey::math::Vec4 composite_options;
 };
 
-static_assert(sizeof(CloudRefFrameUniforms) == sizeof(float) * 48U);
+static_assert(sizeof(CloudRefFrameUniforms) == sizeof(float) * 52U);
 
 struct CloudRefViewBasis {
     cubey::math::Vec3 position{0.0F, 0.0F, 0.0F};
@@ -319,8 +320,10 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
     const float tan_half_fovy = std::tan(kDefaultFovyRadians * 0.5F);
     const CloudsQualityBudget budget = clouds_quality_budget(config.quality);
     const cubey::math::Vec3 sun_direction = cloud_ref_source_sun_direction();
-    const cubey::math::Vec3 cloud_top_color{1.12F, 1.04F, 0.82F};
-    const cubey::math::Vec3 cloud_bottom_color{0.24F, 0.30F, 0.38F};
+    const cubey::math::Vec3 cloud_top_color =
+        cubey::math::Vec3{169.0F, 149.0F, 149.0F} * (1.5F / 255.0F);
+    const cubey::math::Vec3 cloud_bottom_color =
+        cubey::math::Vec3{65.0F, 70.0F, 80.0F} * (1.5F / 255.0F);
     return {
         .camera_right_aspect = {basis.right.x, basis.right.y, basis.right.z, aspect},
         .camera_up_tan_half_fovy = {basis.up.x, basis.up.y, basis.up.z, tan_half_fovy},
@@ -346,6 +349,8 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
                                    config.shadow_strength},
         .cloud_color_bottom_horizon = {cloud_bottom_color.x, cloud_bottom_color.y,
                                        cloud_bottom_color.z, config.horizon_strength},
+        .composite_options = {config.post_blur_enabled ? 1.0F : 0.0F,
+                              config.post_blur_strength, config.post_blur_radius_px, 0.0F},
     };
 }
 
@@ -651,7 +656,16 @@ class CloudRefApp {
         ImGui::SliderFloat("Absorption", &config_.absorption, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Shadow strength", &config_.shadow_strength, 0.0F, 2.0F, "%.2f");
         ImGui::SliderFloat("Horizon fill", &config_.horizon_strength, 0.0F, 2.0F, "%.2f");
+        ImGui::Checkbox("Post blur", &config_.post_blur_enabled);
+        ImGui::SliderFloat("Blur strength", &config_.post_blur_strength, 0.0F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Blur radius", &config_.post_blur_radius_px, 0.0F, 8.0F, "%.2f px");
         ImGui::Checkbox("Powder", &config_.powder_enabled);
+        ImGui::SliderFloat("Bottom height", &config_.bottom_altitude_m, 1000.0F, 15000.0F,
+                           "%.0f m");
+        ImGui::SliderFloat("Top height", &config_.top_altitude_m, 1000.0F, 40000.0F, "%.0f m");
+        if (config_.top_altitude_m <= config_.bottom_altitude_m) {
+            config_.top_altitude_m = config_.bottom_altitude_m + 1000.0F;
+        }
         ImGui::SliderFloat("Weather scale", &config_.weather_scale_km, 40.0F, 500.0F, "%.0f km");
         ImGui::Separator();
         ImGui::Text("FPS: %.1f / %.2f ms", latest_fps_, latest_frame_ms_);

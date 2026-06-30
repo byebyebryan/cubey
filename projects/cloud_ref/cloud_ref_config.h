@@ -112,7 +112,10 @@ struct CloudsConfig {
     float crispiness = 40.0F;
     float curliness = 0.10F;
     float absorption = 0.28F;
-    bool powder_enabled = true;
+    bool post_blur_enabled = true;
+    float post_blur_strength = 1.0F;
+    float post_blur_radius_px = 1.0F;
+    bool powder_enabled = false;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;
 };

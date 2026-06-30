@@ -33,6 +33,7 @@ layout(std140, set = 0, binding = 0) uniform CloudRefFrame {
     vec4 weather_feature_weights;
     vec4 cloud_color_top_shadow;
     vec4 cloud_color_bottom_horizon;
+    vec4 composite_options;
 } params;
 
 float cloud_ref_saturate(float value) {
@@ -196,11 +197,6 @@ vec3 cloud_ref_background(vec3 direction) {
         sky = mix(water, sky, smoothstep(-0.045, 0.018, view_height));
     }
     return sky;
-}
-
-vec3 cloud_ref_tonemap(vec3 color) {
-    vec3 mapped = color / (vec3(1.0) + color);
-    return pow(max(mapped, vec3(0.0)), vec3(1.0 / 2.2));
 }
 
 #endif

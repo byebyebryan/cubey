@@ -8,47 +8,20 @@ layout(set = 0, binding = 1) uniform sampler2D cloud_product_texture;
 layout(location = 0) in vec2 frag_position;
 layout(location = 0) out vec4 out_color;
 
-vec4 cloud_ref_resolve_cloud_product(vec2 uv) {
+vec4 cloud_ref_resolve_cloud_product(vec2 uv, float radius_px) {
     ivec2 size = textureSize(cloud_product_texture, 0);
-    vec2 texel = 1.0 / vec2(max(size, ivec2(1)));
-    vec4 center = texture(cloud_product_texture, uv);
-    float center_alpha = 1.0 - clamp(center.a, 0.0, 1.0);
-    vec4 total = center * 1.6;
-    float total_weight = 1.6;
-
-    for (int y = -1; y <= 1; ++y) {
-        for (int x = -1; x <= 1; ++x) {
-            if (x == 0 && y == 0) {
-                continue;
-            }
-            vec2 offset = vec2(float(x), float(y)) * texel;
-            vec4 sample_value = texture(cloud_product_texture, uv + offset);
-            float sample_alpha = 1.0 - clamp(sample_value.a, 0.0, 1.0);
-            float edge_weight = exp(-abs(sample_alpha - center_alpha) * 5.5);
-            float kernel_weight = (abs(x) + abs(y) == 1) ? 0.52 : 0.32;
-            float weight = kernel_weight * edge_weight;
-            total += sample_value * weight;
-            total_weight += weight;
-        }
-    }
-    return total / max(total_weight, 0.0001);
-}
-
-vec3 cloud_ref_final_post(vec3 color, vec3 direction, float cloud_alpha) {
-    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
-    float sun_alignment = max(dot(direction, sun_dir), 0.0);
-    float horizon = pow(max(1.0 - abs(direction.y), 0.0), 3.0);
-    float halo = pow(sun_alignment, 38.0) * params.sun_direction_intensity.w;
-    float tight_glare = pow(sun_alignment, 420.0) * params.sun_direction_intensity.w;
-
-    color += vec3(1.0, 0.58, 0.22) * halo * (0.10 + 0.16 * cloud_alpha);
-    color += vec3(1.0, 0.82, 0.50) * tight_glare * 1.25;
-    color += vec3(0.10, 0.12, 0.13) * horizon * (1.0 - cloud_alpha) * 0.22;
-    float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
-    color = mix(vec3(luma), color, 1.08);
-    color = max((color - vec3(0.018)) * 1.10, vec3(0.0));
-    color = pow(max(color, vec3(0.0)), vec3(1.02));
-    return color;
+    vec2 texel = radius_px / vec2(max(size, ivec2(1)));
+    vec4 total = vec4(0.0);
+    total += texture(cloud_product_texture, uv + vec2(-texel.x, texel.y)) * (1.0 / 16.0);
+    total += texture(cloud_product_texture, uv + vec2(0.0, texel.y)) * (2.0 / 16.0);
+    total += texture(cloud_product_texture, uv + vec2(texel.x, texel.y)) * (1.0 / 16.0);
+    total += texture(cloud_product_texture, uv + vec2(-texel.x, 0.0)) * (2.0 / 16.0);
+    total += texture(cloud_product_texture, uv) * (4.0 / 16.0);
+    total += texture(cloud_product_texture, uv + vec2(texel.x, 0.0)) * (2.0 / 16.0);
+    total += texture(cloud_product_texture, uv + vec2(-texel.x, -texel.y)) * (1.0 / 16.0);
+    total += texture(cloud_product_texture, uv + vec2(0.0, -texel.y)) * (2.0 / 16.0);
+    total += texture(cloud_product_texture, uv + vec2(texel.x, -texel.y)) * (1.0 / 16.0);
+    return total;
 }
 
 void main() {
@@ -58,9 +31,15 @@ void main() {
     bool raw_final_view = debug_view == CLOUD_REF_DEBUG_RAW_FINAL;
     vec3 direction = cloud_ref_view_direction(frag_position);
     vec3 background = cloud_ref_background(direction);
-    vec4 cloud = final_view ? cloud_ref_resolve_cloud_product(uv)
-                            : texture(cloud_product_texture, uv);
-    vec3 color = background * clamp(cloud.a, 0.0, 1.0) + cloud.rgb;
+    vec4 raw_cloud = texture(cloud_product_texture, uv);
+    float blur_enabled = params.composite_options.x;
+    float blur_strength = clamp(params.composite_options.y, 0.0, 1.0);
+    float blur_radius_px = max(params.composite_options.z, 0.0);
+    vec4 blurred_cloud = cloud_ref_resolve_cloud_product(uv, blur_radius_px);
+    vec4 cloud = final_view && blur_enabled > 0.5
+                     ? mix(raw_cloud, blurred_cloud, blur_strength)
+                     : raw_cloud;
+    vec3 color = cloud.rgb;
     if (debug_view == CLOUD_REF_DEBUG_BACKGROUND) {
         color = background;
     } else if (raw_final_view) {
@@ -68,7 +47,7 @@ void main() {
     } else if (!final_view) {
         color = cloud.rgb;
     } else {
-        color = cloud_ref_final_post(color, direction, 1.0 - clamp(cloud.a, 0.0, 1.0));
+        color = cloud.rgb;
     }
-    out_color = vec4(cloud_ref_tonemap(color), 1.0);
+    out_color = vec4(clamp(color, vec3(0.0), vec3(1.0)), 1.0);
 }

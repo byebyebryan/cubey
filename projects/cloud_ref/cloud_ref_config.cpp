@@ -378,6 +378,13 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (run_config_float_is_set(run_config.clouds.detail_erosion)) {
         config.detail_erosion = run_config.clouds.detail_erosion;
     }
+    if (run_config_float_is_set(run_config.clouds.resolve_strength)) {
+        config.post_blur_strength = run_config.clouds.resolve_strength;
+        config.post_blur_enabled = config.post_blur_strength > 0.0F;
+    }
+    if (run_config_float_is_set(run_config.clouds.resolve_radius_px)) {
+        config.post_blur_radius_px = run_config.clouds.resolve_radius_px;
+    }
     if (run_config.clouds.temporal >= 0) {
         config.temporal_enabled = run_config.clouds.temporal != 0;
     }
@@ -499,6 +506,14 @@ void validate_clouds_config(const CloudsConfig& config) {
     }
     if (!finite_nonnegative(config.absorption)) {
         throw std::runtime_error("cloud absorption must be finite and nonnegative");
+    }
+    if (!std::isfinite(config.post_blur_strength) || config.post_blur_strength < 0.0F ||
+        config.post_blur_strength > 1.0F) {
+        throw std::runtime_error("cloud post blur strength must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.post_blur_radius_px) || config.post_blur_radius_px < 0.0F ||
+        config.post_blur_radius_px > 8.0F) {
+        throw std::runtime_error("cloud post blur radius must be finite and in [0, 8]");
     }
 }
 

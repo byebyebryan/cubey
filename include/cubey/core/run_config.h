@@ -274,6 +274,7 @@ struct RunConfig {
         float final_contrast = kRunConfigUnsetFloat;
         float final_saturation = kRunConfigUnsetFloat;
         float resolve_strength = kRunConfigUnsetFloat;
+        float resolve_radius_px = kRunConfigUnsetFloat;
         float horizon_glow_strength = kRunConfigUnsetFloat;
         float sun_glare_strength = kRunConfigUnsetFloat;
         float jitter_strength = kRunConfigUnsetFloat;
