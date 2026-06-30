@@ -100,8 +100,12 @@ true cloud layer: march writes premultiplied cloud radiance plus continuous
 alpha, and the composite pass resolves that layer before applying it over the
 sky/background. It also adds explicit `--cloud-view-steps` and
 `--cloud-view-samples` controls. The review captures show this is a better
-diagnostic/reconstruction contract, but static 2x/4x ray-start averaging and
-stronger 3x3 blur do not fully remove the structured edge/far-field pattern.
+diagnostic/reconstruction contract. Follow-up inspection selected
+`--cloud-view-steps 64 --cloud-view-samples 2` with the default resolve radius as
+the near-term visual target for edge stability. Treat that as a reference point:
+production cloud rendering should approximate it with cheaper temporal or cached
+coverage reconstruction instead of promoting brute-force 2x full-screen march
+work by default.
 
 Controls:
 

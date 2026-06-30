@@ -1344,14 +1344,23 @@ outputs/cloud-ref-sampling-coverage-review-20260630/
 Result:
 
 - the layer/alpha product is the right diagnostic contract and should be kept;
-- 2x and 4x static ray-start averaging reduce some pixel-level breakup, but do
-  not eliminate the visible structured edge/far-field pattern;
+- 2x and 4x static ray-start averaging reduce pixel-level breakup; follow-up
+  inspection found `s2 / steps64 / r1` good enough to serve as the near-term
+  visual target for cloud-edge stability;
 - increasing view steps changes the artifact frequency and can reveal the same
   marching structure in a different place, so this is not just a too-few-steps
   issue;
 - stronger 3x3 blur hides more pattern but visibly softens cloud structure.
 
-Treat this as evidence against "just add more static samples or blur" as the
-production answer. The next serious fix should either reconstruct over time
-with confidence/history, preintegrate/cache a far-cloud product, or reduce
-unresolved density-frequency before the raymarch emits a binary-looking edge.
+Treat this as evidence that brute-force `s2` is a useful reference, not
+automatically a production default. Clouds are a background component, and
+doubling the full-screen march cost is not acceptable until measured. The next
+serious fix should profile the shared `CloudLayer`, expose the same sampling
+controls there, then approximate the `s2 / steps64 / r1` target with
+deterministic temporal reconstruction or another cheaper coverage resolve.
+
+Review helper:
+
+```text
+projects/atmosphere/capture_cloud_sampling_perf.sh
+```
