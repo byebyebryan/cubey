@@ -1221,6 +1221,23 @@ Interpretation:
 - the secondary half-quality final captures are a quick regression check, not
   the quality target.
 
+Full-resolution review accepted the post resolve as a partial fix: overhead
+`surface-up` edges are calmer, but the lower/far-field banding is still visible
+in `raw-final`, `cloud-alpha`, and `edge-mask`. Treat the far-field problem as a
+source sampling/handoff issue, not as a stronger final blur problem.
+
+Next direction:
+
+- nearby and overhead clouds should keep the local volumetric march plus
+  `terrain-post` resolve;
+- lower-sky, grazing, and long-distance rays should fade local detail and local
+  density earlier;
+- the integrated far-horizon layer should become the visible replacement in that
+  region, using broad filtered weather/structure with stable deterministic
+  samples;
+- do not reintroduce frame-varying jitter or the reverted adaptive march path
+  unless a separate temporal reconstruction/performance budget exists.
+
 ## Cloud Edge Stability Attempt and Rollback 2026-06-29
 
 The adaptive edge-march attempt was reverted after GUI review. It reduced the
