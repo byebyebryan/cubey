@@ -20,7 +20,8 @@ until the product fields are credible.
 
 The current generator revision is `23`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
-tributary fields, wetness/deposition, material masks, and vegetation potential.
+tributary fields, incision/process diagnostics, wetness/deposition, material
+masks, and vegetation potential.
 The drainage pass now repairs local routing pits with a bounded priority-flood
 epsilon fill. River topology still uses D8 graph traversal where that is useful
 for connectivity, but selected channel paths are converted to sub-cell
@@ -83,6 +84,11 @@ relief, material masks, and vegetation potential from that carved height.
 Renderer-backed previews now support material, height, river, and channel color
 modes so reviewers can separate geometry from river tint.
 
+The current foundation pass keeps the same product revision while extracting
+terrain-local process helpers for spread, relief-clamped lowering, and height
+lowering. The scalar review export now also writes `manifest.json` with recipe,
+grid, summary, field stats, view names, and output filenames.
+
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
 
@@ -117,7 +123,7 @@ for the standard review set. The current local review images are generated at
 thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
 review artifact.
 
-The scalar review set includes 37 views:
+The scalar review set includes 37 PNG views plus `manifest.json`:
 
 - `final.png`
 - `mountain-relief.png`
@@ -166,7 +172,9 @@ for checking whether peak height and valley contrast are plausible. The current
 `outputs/terrain/mountain-range-stress` directory holds 39 PNGs after those two
 captures are generated. River review directories hold 41 PNGs after the scalar
 set plus material/profile, height-only, and channel diagnostic perspective
-captures are generated.
+captures are generated. `manifest.json` is not a rendered view; use it to check
+the recipe, seed, generator revision, grid size, field ranges, and content hash
+for a scalar capture directory.
 
 The optional `temperate-mountain-river-stress` recipe keeps the same source
 terrain and routing diagnostics but uses a graph-first visible river source for

@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
 This note records the current terrain reboot capture set after the revision 23
-river terrain-coupling pass.
+river terrain-coupling pass and the follow-up process-helper/manifest reset.
 
 ## Capture Command
 
@@ -25,9 +25,10 @@ river terrain-coupling pass.
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
 stress captures for larger river-network and mountain-driver inspection. The
-revision 23 scalar review set emits 37 PNG views per capture. Current and
-stress river directories hold 41 PNGs after material/profile, height-only, and
-channel diagnostic perspective captures are generated. The 513 mountain stress
+revision 23 scalar review set emits 37 PNG views plus `manifest.json` per
+capture. Current and stress river directories hold 41 PNGs after
+material/profile, height-only, and channel diagnostic perspective captures are
+generated. The 513 mountain stress
 directory now also includes `mountain-perspective.png` and
 `mountain-profile.png` from the renderer-backed preview app, so it holds 39 PNGs
 after the full mountain review command sequence. The 1025 mountain stress set
@@ -91,11 +92,18 @@ Revision 23 expands the product contract with `pre_process_height_m`,
 river-carved final surface. Slope, local relief, material masks, wetness,
 deposition, and vegetation potential are recomputed against that final height,
 so active rivers are terrain-form drivers instead of only color overlays.
+The follow-up foundation reset extracts the spread/clamp/lowering operations
+into `terrain_process_fields` and writes `manifest.json` beside scalar review
+PNGs so capture directories include config, field ranges, output names, and the
+content hash.
 
 ## What To Inspect
 
 - `final.png`: debug composition of height, material masks, slope shade, and
   active river/wetness response.
+- `manifest.json`: machine-readable capture metadata. Use it to compare recipe,
+  seed, generator revision, grid size, scalar field ranges, output filenames,
+  and content hashes between local review directories.
 - `mountain-relief.png`: mountain-specific rendered review image. It uses an
   elevation-first ramp with softer hillshade and subtle ridge/peak tinting,
   without river, wetness, vegetation, or material overlays.

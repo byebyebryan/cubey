@@ -365,6 +365,9 @@ recipes as diagnostics while extracting reusable process-field helpers, adding
 capture manifests, and using those outputs to tune incision and hierarchy. The
 working roadmap lives in
 [`docs/notes/terrain-process-roadmap.md`](../notes/terrain-process-roadmap.md).
+That first foundation pass is now in place: `terrain_process_fields` owns the
+spread and relief-clamped lowering helpers used by river incision, and scalar
+review directories write `manifest.json` beside their PNGs.
 
 Known limitations:
 
@@ -421,18 +424,17 @@ Keep the first implementation narrow. Defer:
 
 ## Next Implementation Batches
 
-The next terrain batches should improve the underlying process/product
-foundation before adding more biome labels:
+The next terrain batches should use the new process/product evidence before
+adding more biome labels:
 
-1. Extract reusable terrain-local process field helpers for spread, clamped
-   lowering, and simple height composition.
-2. Add capture summaries or manifest metadata for the review set so image
-   artifacts can be compared without relying only on manual inspection.
-3. Use those diagnostics to tune river incision against height-only and channel
+1. Use manifest ranges and renderer-backed captures to tune river incision
+   against height-only and channel
    perspective captures.
-4. Refine the current mountain driver with anisotropic peak shaping,
+2. Refine the current mountain driver with anisotropic peak shaping,
    erosion-aware ridge cleanup, alpine material/valley contrast, and better
    world-scale range continuity.
-5. Revisit breach routing, simple process erosion, lakes/wetlands, dunes,
+3. Promote additional process helpers only when they prove reusable across
+   river, mountain, water-body, or material passes.
+4. Revisit breach routing, simple process erosion, lakes/wetlands, dunes,
    snow/talus, and foliage eligibility after the process fields are easier to
    inspect and compose.
