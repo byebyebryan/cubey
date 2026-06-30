@@ -24,6 +24,8 @@ layout(std140, set = 0, binding = 4) uniform CloudTemporalFrame {
 layout(rgba16f, set = 0, binding = 5) uniform writeonly image2D output_cloud;
 layout(rgba16f, set = 0, binding = 6) uniform writeonly image2D output_metadata;
 
+const int CLOUD_VIEW_SAMPLE_TEMPORAL_PHASED = 1;
+
 vec3 view_direction_from_basis(vec2 position, vec4 right_aspect, vec4 up_tan_half_fovy,
                                vec4 forward_mode) {
     vec3 right = right_aspect.xyz;
@@ -83,11 +85,14 @@ float temporal_history_valid(vec2 previous_uv, float previous_depth, vec4 curren
     if (!projected || frame.options.y > 0.5 || frame.options.z < 0.5) {
         return 0.0;
     }
+    bool temporal_phased =
+        int(frame.options.w + 0.5) == CLOUD_VIEW_SAMPLE_TEMPORAL_PHASED;
     float current_alpha = clamp(current_metadata.y, 0.0, 1.0);
     float history_alpha = clamp(history_metadata.y, 0.0, 1.0);
     float current_confidence = clamp(current_metadata.z, 0.0, 1.0);
     float history_confidence = clamp(history_metadata.z, 0.0, 1.0);
-    if (current_alpha <= 0.01 || history_alpha <= 0.01 ||
+    float min_alpha = temporal_phased ? 0.004 : 0.01;
+    if (current_alpha <= min_alpha || history_alpha <= min_alpha ||
         current_confidence <= 0.01 || history_confidence <= 0.01) {
         return 0.0;
     }
@@ -100,9 +105,15 @@ float temporal_history_valid(vec2 previous_uv, float previous_depth, vec4 curren
 
     float wind_delta = abs(frame.current_weather.w - frame.previous_weather.w);
     float wind_fade = 1.0 - smoothstep(900.0, 4200.0, wind_delta);
-    float alpha_fade = 1.0 - smoothstep(0.12, 0.36, abs(history_alpha - current_alpha));
+    float alpha_fade =
+        temporal_phased
+            ? 1.0 - smoothstep(0.24, 0.72, abs(history_alpha - current_alpha))
+            : 1.0 - smoothstep(0.12, 0.36, abs(history_alpha - current_alpha));
     float confidence = min(current_confidence, history_confidence);
-    float opacity_confidence = smoothstep(0.01, 0.16, min(current_alpha, history_alpha));
+    float opacity_confidence =
+        temporal_phased
+            ? smoothstep(0.004, 0.10, min(current_alpha, history_alpha))
+            : smoothstep(0.01, 0.16, min(current_alpha, history_alpha));
     float edge_fade = min(min(previous_uv.x, previous_uv.y), min(1.0 - previous_uv.x,
                                                                  1.0 - previous_uv.y));
     return confidence * opacity_confidence * alpha_fade * wind_fade *

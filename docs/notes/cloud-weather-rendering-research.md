@@ -1364,3 +1364,36 @@ Review helper:
 ```text
 projects/atmosphere/capture_cloud_sampling_perf.sh
 ```
+
+The helper is intentionally a PNG review pack, so its default warmup is zero:
+the shared headless PNG host records the captured frame only. Use it to compare
+captured-frame profile rows and visual output; convert a case to
+`--capture video` before treating the numbers as steady-state frame timing.
+
+## Shared CloudLayer View Sampling 2026-06-30
+
+The shared `CloudLayer` used by atmosphere and planet now consumes the same
+`clouds.view_steps` / `clouds.view_samples` run-config controls instead of
+leaving them `cloud_ref`-only. It also adds:
+
+- `clouds.view_sample_mode=single-frame`: march all requested local-volume
+  Bayer phases in the current frame. This is the direct quality/reference path
+  and costs roughly one local march per requested sample;
+- `clouds.view_sample_mode=temporal-phased`: march one deterministic phase per
+  frame and let cloud temporal history reconstruct the multi-phase result. This
+  is the production candidate for approaching the `s2 / steps64 / r1` look
+  without making every frame pay the full brute-force sample cost.
+
+Defaults remain unchanged: half-quality atmosphere clouds, one view sample,
+single-frame mode, and temporal reconstruction off. Temporal-phased mode must be
+enabled explicitly with both `--cloud-view-samples 2` and `--cloud-temporal`.
+The mode also disables the old frame-varying pixel shift for deterministic
+phased sampling, because that shift made temporal noise shimmer instead of
+reconstructing stable coverage.
+
+Validation notes:
+
+```text
+cmake --build --preset dev
+ctest --preset dev -R '^(cubey_core_tests|atmosphere_config_tests|cloud_ref_config_tests|cloud_ref_2_config_tests|clouds_legacy_config_tests|atmosphere_headless_writes_png|cloud_ref_surface_headless_writes_png|cloud_ref_high_headless_writes_png)$' --output-on-failure
+```

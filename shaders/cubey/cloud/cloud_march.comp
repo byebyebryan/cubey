@@ -36,6 +36,7 @@ const float BAYER[16] = float[](
     12.0 / 16.0, 4.0 / 16.0, 14.0 / 16.0, 6.0 / 16.0,
     3.0 / 16.0, 11.0 / 16.0, 1.0 / 16.0, 9.0 / 16.0,
     15.0 / 16.0, 7.0 / 16.0, 13.0 / 16.0, 5.0 / 16.0);
+const float VIEW_SAMPLE_OFFSETS[4] = float[](0.0, 0.5, 0.25, 0.75);
 
 struct DensitySample {
     float density;
@@ -121,7 +122,8 @@ float cloud_interleaved_gradient_noise(ivec2 pixel) {
 }
 
 ivec2 cloud_temporal_pixel(ivec2 pixel) {
-    if (params.temporal_options.y < 0.5) {
+    if (params.temporal_options.y < 0.5 ||
+        int(params.temporal_options.w + 0.5) == CLOUD_VIEW_SAMPLE_TEMPORAL_PHASED) {
         return pixel;
     }
     int frame = int(params.temporal_options.x + 0.5);
@@ -129,27 +131,62 @@ ivec2 cloud_temporal_pixel(ivec2 pixel) {
     return pixel + offset;
 }
 
-float cloud_ray_jitter(ivec2 pixel) {
+int cloud_view_sample_count() {
+    int samples = int(params.density_options.w + 0.5);
+    return samples >= 4 ? 4 : (samples >= 2 ? 2 : 1);
+}
+
+bool cloud_temporal_phased_sampling_enabled() {
+    return params.temporal_options.y > 0.5 &&
+           int(params.temporal_options.w + 0.5) == CLOUD_VIEW_SAMPLE_TEMPORAL_PHASED &&
+           cloud_view_sample_count() > 1;
+}
+
+int cloud_single_frame_sample_count() {
+    return cloud_temporal_phased_sampling_enabled() ? 1 : cloud_view_sample_count();
+}
+
+int cloud_view_sample_index(int iteration) {
+    int samples = cloud_view_sample_count();
+    if (cloud_temporal_phased_sampling_enabled()) {
+        return int(params.temporal_options.x + 0.5) % samples;
+    }
+    return iteration % samples;
+}
+
+float cloud_view_sample_offset(int sample_index) {
+    return VIEW_SAMPLE_OFFSETS[clamp(sample_index, 0, 3)];
+}
+
+float cloud_ray_jitter(ivec2 pixel, int sample_index) {
     int mode = int(params.sampling_options.x + 0.5);
     float strength = clamp(params.sampling_options.y, 0.0, 1.0);
     ivec2 temporal_pixel = cloud_temporal_pixel(pixel);
     float jitter = 0.5;
     if (mode == CLOUD_SAMPLING_INTERLEAVED) {
+        int frame_offset =
+            cloud_temporal_phased_sampling_enabled() ? 0
+                                                     : int(params.temporal_options.x + 0.5) * 17;
         jitter = cloud_interleaved_gradient_noise(
-            temporal_pixel + ivec2(int(params.temporal_options.x + 0.5) * 17, 0));
+            temporal_pixel + ivec2(frame_offset, 0));
     } else if (mode == CLOUD_SAMPLING_BAYER) {
         jitter = BAYER[(temporal_pixel.y & 3) * 4 + (temporal_pixel.x & 3)];
     } else if (mode == CLOUD_SAMPLING_OFF) {
         jitter = 0.5;
     } else if (mode == CLOUD_SAMPLING_BLUE_NOISE) {
         ivec2 size = textureSize(blue_noise_texture, 0);
-        int frame = int(params.temporal_options.x + 0.5);
+        int frame = cloud_temporal_phased_sampling_enabled()
+                        ? sample_index
+                        : int(params.temporal_options.x + 0.5);
         ivec2 offset = ivec2(frame * 47, frame * 29);
         vec2 uv = (vec2((temporal_pixel + offset) % size) + vec2(0.5)) / vec2(size);
         vec3 ranks = texture(blue_noise_texture, uv).rgb;
         int channel = frame % 3;
         float base = channel == 0 ? ranks.r : (channel == 1 ? ranks.g : ranks.b);
         jitter = fract(base + 0.61803398875 * float(frame % 32));
+    }
+    if (mode != CLOUD_SAMPLING_OFF) {
+        jitter = fract(jitter + cloud_view_sample_offset(sample_index));
     }
     return mix(0.5, jitter, strength);
 }
@@ -1229,6 +1266,47 @@ MarchResult cloud_empty_result() {
                        vec3(0.0), vec3(0.0), vec3(0.0));
 }
 
+MarchResult cloud_zero_sum_result() {
+    return MarchResult(vec3(0.0), 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0,
+                       vec3(0.0), vec3(0.0), vec3(0.0));
+}
+
+MarchResult cloud_accumulate_result(MarchResult total, MarchResult sample_result) {
+    total.radiance += sample_result.radiance;
+    total.transmittance += sample_result.transmittance;
+    total.alpha += sample_result.alpha;
+    total.avg_density += sample_result.avg_density;
+    total.last_light += sample_result.last_light;
+    if (sample_result.first_distance >= 0.0 &&
+        (total.first_distance < 0.0 || sample_result.first_distance < total.first_distance)) {
+        total.first_distance = sample_result.first_distance;
+    }
+    total.mean_distance += max(sample_result.mean_distance, 0.0);
+    total.steps += sample_result.steps;
+    total.ambient_light += sample_result.ambient_light;
+    total.direct_light += sample_result.direct_light;
+    total.phase_light += sample_result.phase_light;
+    return total;
+}
+
+MarchResult cloud_average_result(MarchResult total, int sample_count) {
+    float inv_sample_count = 1.0 / float(max(sample_count, 1));
+    total.radiance *= inv_sample_count;
+    total.transmittance *= inv_sample_count;
+    total.alpha *= inv_sample_count;
+    total.avg_density *= inv_sample_count;
+    total.last_light *= inv_sample_count;
+    total.mean_distance *= inv_sample_count;
+    total.steps *= inv_sample_count;
+    total.ambient_light *= inv_sample_count;
+    total.direct_light *= inv_sample_count;
+    total.phase_light *= inv_sample_count;
+    if (total.first_distance < 0.0) {
+        total.mean_distance = -1.0;
+    }
+    return total;
+}
+
 MarchResult cloud_mix_results(MarchResult local_result, MarchResult orbit_result,
                                   float orbit_blend) {
     float blend = clamp(orbit_blend, 0.0, 1.0);
@@ -1680,12 +1758,12 @@ float cloud_local_horizon_lod_bias(float sample_t, float handoff_weight) {
 }
 
 MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, float end_t,
-                                        ivec2 pixel) {
+                                    ivec2 pixel, int sample_index) {
     int max_steps = clamp(int(params.ref_options.y * 0.36 + 0.5), 8, 28);
     float length_km = max(end_t - start_t, 0.001);
     float ds = length_km / float(max_steps);
     vec3 step_vec = direction * ds;
-    vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel));
+    vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel, sample_index));
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     vec3 sun_color = vec3(1.18, 1.10, 0.92) * max(params.sun_direction_intensity.w, 0.0);
     float light_dot_eye = dot(sun_dir, direction);
@@ -1773,12 +1851,12 @@ MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, 
 
 MarchResult cloud_local_volume_march(vec3 origin, vec3 direction, float start_t, float end_t,
                                      ivec2 pixel, int requested_steps, float lod_bias,
-                                     bool expensive_detail) {
+                                     bool expensive_detail, int sample_index) {
     int max_steps = clamp(requested_steps, 1, 96);
     float length_km = max(end_t - start_t, 0.001);
     float ds = length_km / float(max_steps);
     vec3 step_vec = direction * ds;
-    float sample_t = start_t + ds * cloud_ray_jitter(pixel);
+    float sample_t = start_t + ds * cloud_ray_jitter(pixel, sample_index);
     vec3 pos = origin + direction * sample_t;
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     vec3 sun_color = vec3(1.20, 1.12, 0.92) * max(params.sun_direction_intensity.w, 0.0);
@@ -1929,14 +2007,12 @@ float cloud_ref_compatible_light_transmittance(vec3 start, float step_size, vec3
 }
 
 MarchResult cloud_ref_compatible_march(vec3 origin, vec3 direction, float start_t, float end_t,
-                                       vec3 background, ivec2 pixel) {
+                                       vec3 background, ivec2 pixel, int sample_index) {
     int max_steps = clamp(int(params.ref_options.y + 0.5), 1, 96);
     float length_km = max(end_t - start_t, 0.001);
     float ds = length_km / float(max_steps);
     vec3 step_vec = direction * ds;
-    int bx = pixel.x & 3;
-    int by = pixel.y & 3;
-    vec3 pos = origin + direction * (start_t + ds * BAYER[by * 4 + bx]);
+    vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel, sample_index));
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     vec3 sun_color = vec3(1.20, 1.12, 0.92) * max(params.sun_direction_intensity.w, 0.0);
     float light_dot_eye = dot(sun_dir, direction);
@@ -2272,8 +2348,19 @@ MarchResult cloud_march(vec3 origin, vec3 direction, float start_t, float end_t,
         return cloud_empty_result();
     }
     int max_steps = clamp(int(params.ref_options.y + 0.5), 1, 96);
-    return cloud_local_volume_march(origin, direction, start_t, end_t, pixel, max_steps,
-                                    0.0, true);
+    int sample_count = cloud_single_frame_sample_count();
+    MarchResult total = cloud_zero_sum_result();
+    for (int sample_iteration = 0; sample_iteration < 4; ++sample_iteration) {
+        if (sample_iteration >= sample_count) {
+            break;
+        }
+        int sample_index = cloud_view_sample_index(sample_iteration);
+        MarchResult sample_result =
+            cloud_local_volume_march(origin, direction, start_t, end_t, pixel, max_steps,
+                                     0.0, true, sample_index);
+        total = cloud_accumulate_result(total, sample_result);
+    }
+    return cloud_average_result(total, sample_count);
 }
 
 DebugRayFields cloud_debug_ray_fields(vec3 origin, vec3 direction, float start_t, float end_t,
@@ -2282,7 +2369,7 @@ DebugRayFields cloud_debug_ray_fields(vec3 origin, vec3 direction, float start_t
     float length_km = max(end_t - start_t, 0.001);
     float ds = length_km / float(max_steps);
     vec3 step_vec = direction * ds;
-    vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel));
+    vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel, 0));
     float max_density = 0.0;
     float cloud_type_sum = 0.0;
     float cloud_type_weight = 0.0;
@@ -2311,7 +2398,7 @@ OrbitDebugFields cloud_orbit_debug_ray_fields(vec3 origin, vec3 direction, float
     float length_km = max(end_t - start_t, 0.001);
     float ds = length_km / float(max_steps);
     vec3 step_vec = direction * ds;
-    vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel));
+    vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel, 0));
     float max_coverage = 0.0;
     float max_detail = 0.0;
     float max_hull = 0.0;
@@ -2341,7 +2428,7 @@ void main() {
     vec3 background = cloud_background(direction);
     int debug_view = int(params.ref_options.x + 0.5);
     if (debug_view == CLOUD_DEBUG_JITTER_PATTERN) {
-        float jitter = cloud_ray_jitter(pixel);
+        float jitter = cloud_ray_jitter(pixel, cloud_view_sample_index(0));
         imageStore(cloud_product, pixel, vec4(vec3(jitter), 1.0));
         imageStore(cloud_metadata, pixel, vec4(0.0));
         return;
@@ -2359,8 +2446,19 @@ void main() {
     }
 
     if (cloud_ref_compatible_mode_enabled()) {
-        MarchResult result =
-            cloud_ref_compatible_march(origin, direction, start_t, end_t, background, pixel);
+        int sample_count = cloud_single_frame_sample_count();
+        MarchResult result = cloud_zero_sum_result();
+        for (int sample_iteration = 0; sample_iteration < 4; ++sample_iteration) {
+            if (sample_iteration >= sample_count) {
+                break;
+            }
+            int sample_index = cloud_view_sample_index(sample_iteration);
+            MarchResult sample_result =
+                cloud_ref_compatible_march(origin, direction, start_t, end_t, background,
+                                           pixel, sample_index);
+            result = cloud_accumulate_result(result, sample_result);
+        }
+        result = cloud_average_result(result, sample_count);
         vec3 debug_color = result.radiance;
         float debug_alpha = 1.0;
 
@@ -2505,7 +2603,8 @@ void main() {
             full_orbit_result = cloud_orbit_surface_shell(origin, direction);
         } else {
             full_orbit_result =
-                cloud_orbit_shell_march(origin, direction, start_t, end_t, pixel);
+                cloud_orbit_shell_march(origin, direction, start_t, end_t, pixel,
+                                        cloud_view_sample_index(0));
         }
     }
     MarchResult far_shell_result =

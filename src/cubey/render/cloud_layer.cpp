@@ -1468,7 +1468,7 @@ CloudLayerTemporalUniforms CloudLayerRuntime::temporal_frame_uniforms(
                 current_weight,
                 reset ? 1.0F : 0.0F,
                 current.temporal_options.y,
-                current.temporal_options.x,
+                current.temporal_options.w,
             },
     };
 }

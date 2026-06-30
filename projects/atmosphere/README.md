@@ -40,7 +40,10 @@ products, descriptors, and temporal history; atmosphere consumes it in
 external-background mode so clouds are composited over the clear-sky background.
 The Clouds panel exposes the shared quality, sampling, layer, weather, shape,
 lighting, transition, and debug controls, and existing `clouds.*` config/CLI
-overrides apply here too. Cloud shadows and cloud-driven reflection or
+overrides apply here too. `--cloud-view-samples 2 --cloud-view-sample-mode
+single-frame` is the direct local-volume sampling reference; `--cloud-temporal
+--cloud-view-samples 2 --cloud-view-sample-mode temporal-phased` is the cheaper
+temporal reconstruction candidate. Cloud shadows and cloud-driven reflection or
 environment-lighting outputs remain deferred.
 
 Useful runs:
