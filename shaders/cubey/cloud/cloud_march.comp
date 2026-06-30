@@ -1672,7 +1672,11 @@ float cloud_local_horizon_visibility(float sample_t, float handoff_weight) {
 
 float cloud_local_horizon_lod_bias(float sample_t, float handoff_weight) {
     float handoff_filter = cloud_local_horizon_filter_weight(sample_t, handoff_weight);
-    return handoff_filter * mix(2.25, 3.85, cloud_surface_view_factor());
+    float surface_view = cloud_surface_view_factor();
+    float grazing_prefilter = handoff_weight * mix(0.28, 0.58, surface_view);
+    return clamp(grazing_prefilter * 1.25 +
+                     handoff_filter * mix(2.25, 3.85, surface_view),
+                 0.0, 5.25);
 }
 
 MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, float end_t,
@@ -2038,7 +2042,7 @@ float cloud_far_horizon_ray_weight(vec3 origin, vec3 direction, float start_t, f
 }
 
 float cloud_far_horizon_bridge_start(float start_t) {
-    return max(start_t, params.orbit_options.x * 0.58);
+    return max(start_t, params.orbit_options.x * 0.36);
 }
 
 float cloud_far_horizon_filter_lod(vec3 origin, vec3 direction, float start_t, float end_t) {
@@ -2087,26 +2091,29 @@ DensitySample cloud_far_horizon_density_sample(vec3 position, float lod) {
         height_fraction * WIND_DIRECTION * top_offset + WIND_DIRECTION * params.weather.w;
     LocalWeatherSample local_weather =
         cloud_local_weather_sample(position, animation, height_fraction);
-    float far_detail_filter = smoothstep(0.35, 3.65, lod);
+    float far_detail_filter = smoothstep(0.18, 2.65, lod);
     local_weather.structure =
-        mix(local_weather.structure, local_weather.coverage, far_detail_filter * 0.72);
+        mix(local_weather.structure, local_weather.coverage, far_detail_filter * 0.88);
     local_weather.edge_detail =
-        mix(local_weather.edge_detail, local_weather.structure, far_detail_filter * 0.92);
+        mix(local_weather.edge_detail, local_weather.structure, far_detail_filter);
     float height_multiplier =
         max(cloud_density_gradient(height_fraction, local_weather.cloud_type), 0.0);
-    float broad_mass = smoothstep(0.10, 0.58, local_weather.coverage);
-    float structure_mass = smoothstep(0.12, 0.64, local_weather.structure);
-    float edge_mass = smoothstep(0.18, 0.72, local_weather.edge_detail);
-    float continuity = clamp(broad_mass * 0.70 + structure_mass * 0.20 + edge_mass * 0.10,
+    float broad_mass = smoothstep(0.08, 0.56, local_weather.coverage);
+    float structure_mass = smoothstep(0.12, 0.66, local_weather.structure);
+    float edge_mass = smoothstep(0.24, 0.74, local_weather.edge_detail) *
+                      (1.0 - far_detail_filter) * 0.12;
+    float continuity = clamp(broad_mass * mix(0.76, 0.90, far_detail_filter) +
+                                 structure_mass * mix(0.22, 0.12, far_detail_filter) +
+                                 edge_mass,
                              0.0, 1.0);
     float broken_continuity =
         cloud_coverage_modulation(continuity, local_weather.edge_detail, 0.52);
     float unresolved_edge = cloud_unresolved_edge_factor(continuity, lod);
     float density =
         mix(continuity, broken_continuity,
-            mix(0.18, 0.04, far_detail_filter) * (1.0 - unresolved_edge * 0.65)) *
+            mix(0.12, 0.015, far_detail_filter) * (1.0 - unresolved_edge * 0.80)) *
         height_multiplier *
-        mix(0.72, 1.0, local_weather.clear_gate);
+        mix(0.62, 0.96, local_weather.clear_gate);
 
     return DensitySample(clamp(density, 0.0, 1.0),
                          continuity,
@@ -2163,12 +2170,13 @@ MarchResult cloud_far_horizon_layer(vec3 origin, vec3 direction, float start_t, 
         vec3 pos = origin + direction * sample_t;
         float sample_lod = base_lod +
                            cloud_sample_filter_lod(origin, direction, pos, sample_t,
-                                                   length_m / float(max_steps)) * 0.35 +
-                           u * 1.15;
+                                                   length_m / float(max_steps)) * 0.55 +
+                           ray_weight * 1.25 +
+                           u * 1.55;
         DensitySample sample_data = cloud_far_horizon_density_sample(pos, sample_lod);
         float sample_distance = max(sample_t - start_t, 0.0);
         float distance_gate =
-            smoothstep(params.orbit_options.x * 0.36,
+            smoothstep(params.orbit_options.x * 0.24,
                        max(params.orbit_options.y, params.orbit_options.x + 1.0),
                        sample_distance);
         float endpoint_weight =
@@ -2225,9 +2233,9 @@ MarchResult cloud_far_horizon_layer(vec3 origin, vec3 direction, float start_t, 
         min(length_m, max(params.orbit_options.y, params.orbit_options.x + 1.0));
     float optical_depth =
         average_mass * max(params.weather.y, 0.0) * optical_length *
-        mix(0.000036, 0.000030, surface_view);
+        mix(0.000050, 0.000044, surface_view);
     float alpha = 1.0 - exp(-optical_depth);
-    alpha = clamp(alpha, 0.0, mix(0.72, 0.58, surface_view));
+    alpha = clamp(alpha, 0.0, mix(0.78, 0.66, surface_view));
     float transmittance = 1.0 - alpha;
     float mean_distance = distance_weight_sum > 0.0
                               ? weighted_distance_sum / max(distance_weight_sum, 0.0001)
@@ -2237,14 +2245,14 @@ MarchResult cloud_far_horizon_layer(vec3 origin, vec3 direction, float start_t, 
     vec3 local_up = cloud_local_up(representative_pos);
     vec3 sky_floor = cloud_sky_color(cloud_horizon_direction(direction, local_up));
     vec3 lighting = lighting_sum / max(mass_sum, 0.0001);
-    lighting = max(lighting, sky_floor * mix(0.22, 0.34, surface_view));
+    lighting = max(lighting, sky_floor * mix(0.28, 0.42, surface_view));
     float haze =
         clamp(ray_weight *
                   smoothstep(params.orbit_options.x * 0.55,
                              max(params.orbit_options.y, params.orbit_options.x + 1.0),
                              length_m) *
-                  mix(0.48, 0.66, surface_view),
-              0.0, 0.78);
+                  mix(0.36, 0.50, surface_view),
+              0.0, 0.62);
     vec3 color = mix(lighting, sky_floor, haze) * alpha;
     return MarchResult(max(color, vec3(0.0)), transmittance, alpha,
                        average_mass, last_light, first_distance, mean_distance, steps_taken,
