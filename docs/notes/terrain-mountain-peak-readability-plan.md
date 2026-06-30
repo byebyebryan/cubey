@@ -6,7 +6,7 @@ peak-first driver exists in diagnostics; the final height composition and
 `mountain-relief.png` review image do not yet make the broad buildup into high
 peaks obvious.
 
-Status: planned for revision 22.
+Status: implemented in revision 22.
 
 ## Direction
 
@@ -42,6 +42,24 @@ foothill, highland, ridge, and peak progression more clearly than revision 21.
 - `mountain-ridge-influence.png` should explain ridge shoulders leading toward
   peaks.
 - `peak-uplift.png` should be strong enough to explain the highest terrain.
+
+## Outcome
+
+Revision 22 keeps the revision 21 field contract but changes how the mountain
+stress recipe composes height. The generic base-elevation tilt is replaced with
+an envelope-driven mountain base, peak uplift is strengthened into a visible
+summit contribution, ridge influence is widened into broader shoulders, and
+residual detail is damped unless mountain/ridge/peak support is present.
+
+`mountain-relief.png` now uses a dedicated elevation-first ramp with softer
+hillshade and subtler source-field tinting. The refreshed mountain stress
+captures are available at:
+
+- `outputs/terrain/mountain-range-stress`
+- `outputs/terrain/mountain-range-stress-1025`
+
+The pass improves the broad buildup into high peaks, but it is still not an
+erosion, talus, snow, glacial, or world-scale mountain-range solution.
 
 ## Deferred
 

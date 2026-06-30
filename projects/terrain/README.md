@@ -17,7 +17,7 @@ kilometer-scale grid. Rendering, ocean integration, planet streaming, foliage
 rendering, and physically complete erosion are deferred until the product fields
 are credible.
 
-The current generator revision is `21`. It emits source fields, height/slope
+The current generator revision is `22`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass now repairs local routing pits with a bounded priority-flood
@@ -70,6 +70,11 @@ Revision 21 pivots the stress recipe to a peak-first mountain skeleton:
 support, ridge hierarchy, and peak-candidate fields are now derived from that
 envelope/anchor/skeleton source path in the mountain stress recipe. Default
 river recipes still emit inactive values for the new stress-only diagnostics.
+Revision 22 keeps that field contract but makes the mountain stress recipe read
+more clearly as terrain building into high peaks. It replaces the generic
+base-elevation tilt with an envelope-driven mountain base, strengthens peak
+uplift, broadens ridge shoulders, gates residual detail against the mountain
+source fields, and retunes `mountain-relief.png` around elevation hierarchy.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -181,6 +186,11 @@ Revision 21 changes the primary review order for this recipe. Inspect
 `mountain-ridge-skeleton.png`, and `mountain-ridge-influence.png`. The raw
 skeleton view is a source diagnostic; the relief view intentionally does not
 draw raw graph strokes over the surface.
+Revision 22 keeps `mountain-relief.png` as the primary visual review image, but
+it now uses a clearer elevation ramp and softer hillshade. For hierarchy review,
+inspect `mountain-relief.png`, `height.png`, `mountain-envelope.png`,
+`mountain-ridge-influence.png`, `mountain-peak-prominence.png`, and
+`peak-uplift.png` together.
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential

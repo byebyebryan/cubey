@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 21
-peak-first mountain skeleton pass.
+This note records the current terrain reboot capture set after the revision 22
+mountain peak readability pass.
 
 ## Capture Command
 
@@ -15,7 +15,7 @@ peak-first mountain skeleton pass.
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
 stress captures for larger river-network and mountain-driver inspection. The
-revision 21 review set emits 34 PNG views per capture. The refreshed mountain
+revision 22 review set emits 34 PNG views per capture. The refreshed mountain
 stress directories currently hold 68 PNGs total across the 513 and 1025
 captures. `outputs/` is intentionally ignored by git. This replaced the earlier
 tiny local output set so field structure, channel continuity, and material
@@ -65,13 +65,19 @@ Revision 21 adds `mountain_envelope`, `mountain_peak_anchors`,
 ridge hierarchy, and peak support from that envelope/anchor/skeleton source
 path instead of treating layered ridged noise as the primary form driver. The
 default river recipes keep these new stress-only source diagnostics inactive.
+Revision 22 keeps the same field contract but makes the mountain stress recipe
+visibly build into high peaks. The stress recipe now uses an envelope-driven
+base elevation instead of the generic regional tilt, gives peak uplift a larger
+height role, broadens ridge influence, gates residual detail against mountain
+structure, and retunes `mountain-relief.png` to prioritize elevation hierarchy
+over high-contrast shadow texture.
 
 ## What To Inspect
 
 - `final.png`: debug composition of height, material masks, slope shade, and
   active river/wetness response.
-- `mountain-relief.png`: mountain-specific rendered review image. It hillshades
-  `height_m`, tints broad range support, and highlights ridge/peak accents
+- `mountain-relief.png`: mountain-specific rendered review image. It uses an
+  elevation-first ramp with softer hillshade and subtle ridge/peak tinting,
   without river, wetness, vegetation, or material overlays.
 - `mountain-envelope.png`: smooth macro mountain support. It should show broad
   uplift regions before ridges, peaks, or residual detail are applied.
@@ -79,7 +85,7 @@ default river recipes keep these new stress-only source diagnostics inactive.
   from the envelope and summit score. It should not read as a noisy full-field
   mask.
 - `mountain-peak-prominence.png`: peak dominance grown from anchors. It should
-  explain where peak uplift comes from, even though revision 21 still leaves it
+  explain where peak uplift comes from, even though revision 22 still leaves it
   mostly radial before later anisotropic shaping.
 - `mountain-ridge-skeleton.png`: generated primary/secondary ridge source. It
   is a structural debug view, not a final surface overlay.
@@ -130,13 +136,12 @@ default river recipes keep these new stress-only source diagnostics inactive.
 - `peak-support.png`: localized summit accents derived from the coherent ridge
   fields. It should stay sparse and attached to ridge regions.
 - `mountain-uplift.png`, `ridge-uplift.png`, and `peak-uplift.png`: height
-  contributions from the support fields. Review these before judging
-  `height.png`, because the final height also includes base relief and residual
-  detail.
+  contributions from the support fields. In revision 22, `peak-uplift.png`
+  should be strong enough to explain the highest terrain.
 - `height.png` and `slope.png`: combined terrain shape and derivative response.
   In the mountain stress recipe, pair these scalar views with
-  `mountain-relief.png` before judging whether the new driver creates
-  recognizable range mass before biome or glacial polish.
+  `mountain-relief.png` before judging whether the driver creates recognizable
+  range mass before biome or glacial polish.
 
 For `outputs/terrain/stress-river-network`, look for failures that the smaller
 default network may hide: repeated parallel channels, schematic branch fans,
@@ -191,7 +196,9 @@ adds range spine, ridge hierarchy, and peak-candidate diagnostics before
 turning the stress recipe into an alpine biome. Revision 21 adds a peak-first
 mountain skeleton source path and derives the existing mountain support/ridge
 fields from it, so the source hierarchy can be reviewed before erosion or
-material polish.
+material polish. Revision 22 changes the stress height composition and relief
+review image so the generated range reads more clearly as broad support
+building into high peaks.
 The rejected revision 4 attempt made the visible product worse by rendering selected
 graph edges directly, producing disconnected snippets and hard straight or
 diagonal runs. See
@@ -221,12 +228,12 @@ cut by the visible crop without the larger basin context that would make their
 upstream/downstream role clearer. The next river-quality pass should improve
 graph topology construction before adding more high-level terrain features.
 
-The revision 21 mountain driver is still an early diagnostic source profile, not
-a polished alpine biome. It separates macro envelope, peak anchors, peak
-prominence, ridge skeleton, ridge influence, broad support, ridge hierarchy, and
-peak accents, but peak prominence remains mostly radial and the skeleton is
-generated rather than erosion-evolved. It does not yet model tectonic plates,
-erosion time, talus, snow/ice, glacial valley carving, or a world-scale range
-graph. The next mountain-quality pass should focus on anisotropic peak shaping,
-erosion-aware ridge cleanup, and alpine material/valley contrast before turning
-these fields into final biome compositions.
+The revision 22 mountain driver is still an early diagnostic source profile, not
+a polished alpine biome. It now makes peak hierarchy more visible in
+`height.png` and `mountain-relief.png`, but peak prominence remains mostly
+radial and the skeleton is generated rather than erosion-evolved. It does not
+yet model tectonic plates, erosion time, talus, snow/ice, glacial valley
+carving, or a world-scale range graph. The next mountain-quality pass should
+focus on anisotropic peak shaping, erosion-aware ridge cleanup, and alpine
+material/valley contrast before turning these fields into final biome
+compositions.
