@@ -359,6 +359,13 @@ wetness/deposition, and vegetation potential are computed against the carved
 height. The renderer-backed preview adds material, height, river, and channel
 color modes so geometry review can be separated from water/material tint.
 
+The next work should be foundation-shaped inside the terrain project rather
+than another isolated biome image. Keep the per-revision river and mountain
+recipes as diagnostics while extracting reusable process-field helpers, adding
+capture manifests, and using those outputs to tune incision and hierarchy. The
+working roadmap lives in
+[`docs/notes/terrain-process-roadmap.md`](../notes/terrain-process-roadmap.md).
+
 Known limitations:
 
 - Fractional accumulation reduces receiver quantization, but active trunk
@@ -414,18 +421,18 @@ Keep the first implementation narrow. Defer:
 
 ## Next Implementation Batches
 
-The next terrain batches should improve the underlying drivers before adding
-more biome labels:
+The next terrain batches should improve the underlying process/product
+foundation before adding more biome labels:
 
-1. Evaluate breach routing and simple process erosion references now that the
-   routing surface has a bounded fill pass.
-2. Improve corridor scoring/tiling so the default review composition is less
-   sparse without turning into the stress recipe.
-3. Replace the current support-path hierarchy and distinctness classifier with a
-   more principled basin/tributary model so visual coverage does not depend on
-   capped promoted branch counts.
+1. Extract reusable terrain-local process field helpers for spread, clamped
+   lowering, and simple height composition.
+2. Add capture summaries or manifest metadata for the review set so image
+   artifacts can be compared without relying only on manual inspection.
+3. Use those diagnostics to tune river incision against height-only and channel
+   perspective captures.
 4. Refine the current mountain driver with anisotropic peak shaping,
    erosion-aware ridge cleanup, alpine material/valley contrast, and better
    world-scale range continuity.
-5. Add capture summaries or manifest metadata for the review set so image
-   artifacts can be compared without relying only on manual inspection.
+5. Revisit breach routing, simple process erosion, lakes/wetlands, dunes,
+   snow/talus, and foliage eligibility after the process fields are easier to
+   inspect and compose.
