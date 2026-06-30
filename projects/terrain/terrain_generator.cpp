@@ -449,11 +449,11 @@ struct MountainSkeletonFields {
     if (recipe_id == kTerrainRecipeTemperateMountainRangeStress) {
         return TerrainSourceProfile{
             .explicit_mountain_driver = true,
-            .mountain_uplift_m = 340.0F,
-            .ridge_uplift_m = 640.0F,
-            .peak_uplift_m = 260.0F,
-            .detail_min_m = -24.0F,
-            .detail_max_m = 36.0F,
+            .mountain_uplift_m = 460.0F,
+            .ridge_uplift_m = 560.0F,
+            .peak_uplift_m = 760.0F,
+            .detail_min_m = -18.0F,
+            .detail_max_m = 26.0F,
         };
     }
     return {};
@@ -831,7 +831,7 @@ void rasterize_mountain_ridge_path(
     const float min_dimension = static_cast<float>(std::min(desc.width, desc.height));
     const float anchor_radius = std::clamp(min_dimension * 0.010F, 1.5F, 5.0F);
     const float peak_radius = std::clamp(min_dimension * 0.095F, 18.0F, 96.0F);
-    const float ridge_radius = std::clamp(min_dimension * 0.032F, 7.0F, 30.0F);
+    const float ridge_radius = std::clamp(min_dimension * 0.045F, 9.0F, 42.0F);
 
     for (const MountainPeakAnchor& anchor : anchors) {
         paint_disc(fields.peak_anchors, static_cast<float>(anchor.x),
@@ -865,7 +865,7 @@ void rasterize_mountain_ridge_path(
                                       strength, ridge_radius);
     }
 
-    fields.ridge_influence = repeated_box_blur(std::move(fields.ridge_influence), 1U);
+    fields.ridge_influence = repeated_box_blur(std::move(fields.ridge_influence), 2U);
     return fields;
 }
 
@@ -969,6 +969,48 @@ void rasterize_mountain_ridge_path(
         }
     }
     return result;
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D mountain_range_base_elevation_field(
+    cubey::procedural::Grid2DDesc desc,
+    const cubey::procedural::ScalarField2D& broad_noise,
+    const cubey::procedural::ScalarField2D& mountain_envelope) {
+    cubey::procedural::ScalarField2D result(desc, 0.0F);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float envelope =
+                cubey::procedural::smoothstep(0.04F, 0.92F, mountain_envelope.at(x, y));
+            const float lowland_noise = (broad_noise.at(x, y) - 0.5F) * 90.0F;
+            const float foothill_build = std::pow(envelope, 1.34F) * 360.0F;
+            result.at(x, y) = 120.0F + lowland_noise + foothill_build;
+        }
+    }
+    return repeated_box_blur(std::move(result), 2U);
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D mountain_range_broad_relief_field(
+    cubey::procedural::Grid2DDesc desc,
+    const cubey::procedural::ScalarField2D& broad_relief,
+    const cubey::procedural::ScalarField2D& mountain_envelope,
+    const cubey::procedural::ScalarField2D& ridge_influence,
+    const cubey::procedural::ScalarField2D& peak_prominence) {
+    cubey::procedural::ScalarField2D result(desc, 0.0F);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float envelope =
+                cubey::procedural::smoothstep(0.08F, 0.88F, mountain_envelope.at(x, y));
+            const float ridge =
+                cubey::procedural::smoothstep(0.05F, 0.74F, ridge_influence.at(x, y));
+            const float peak =
+                cubey::procedural::smoothstep(0.06F, 0.76F, peak_prominence.at(x, y));
+            const float source_noise =
+                cubey::procedural::saturate((broad_relief.at(x, y) + 80.0F) / 440.0F);
+            const float noise = (source_noise - 0.5F) * (50.0F + (envelope * 90.0F));
+            result.at(x, y) = -70.0F + (std::pow(envelope, 1.18F) * 310.0F) +
+                              (ridge * 120.0F) + (peak * 95.0F) + noise;
+        }
+    }
+    return repeated_box_blur(std::move(result), 1U);
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D make_base_elevation_field(
@@ -1078,6 +1120,11 @@ void rasterize_mountain_ridge_path(
         fields.mountain_peak_prominence = skeleton.peak_prominence;
         fields.mountain_ridge_skeleton = skeleton.ridge_skeleton;
         fields.mountain_ridge_influence = skeleton.ridge_influence;
+        fields.base_elevation = mountain_range_base_elevation_field(
+            desc, fields.broad_noise, fields.mountain_envelope);
+        fields.broad_relief = mountain_range_broad_relief_field(
+            desc, fields.broad_relief, fields.mountain_envelope, fields.mountain_ridge_influence,
+            fields.mountain_peak_prominence);
         fields.mountain_support = mountain_support_field(
             desc, fields.mountain_envelope, fields.mountain_ridge_influence);
         fields.mountain_ridge_hierarchy = mountain_ridge_hierarchy_field(
@@ -1117,10 +1164,18 @@ void rasterize_mountain_ridge_path(
     if (profile.explicit_mountain_driver) {
         for (std::uint32_t y = 0; y < desc.height; ++y) {
             for (std::uint32_t x = 0; x < desc.width; ++x) {
-                const float detail_gate = 0.52F + (cubey::procedural::smoothstep(
-                                                       0.18F, 0.78F,
-                                                       fields.mountain_support.at(x, y)) *
-                                                   0.48F);
+                const float mountain_gate =
+                    cubey::procedural::smoothstep(0.18F, 0.78F,
+                                                  fields.mountain_support.at(x, y));
+                const float ridge_gate =
+                    cubey::procedural::smoothstep(0.06F, 0.70F,
+                                                  fields.mountain_ridge_influence.at(x, y));
+                const float peak_gate =
+                    cubey::procedural::smoothstep(0.08F, 0.78F,
+                                                  fields.mountain_peak_prominence.at(x, y));
+                const float detail_gate = cubey::procedural::saturate(
+                    0.22F + (mountain_gate * 0.18F) + (ridge_gate * 0.36F) +
+                    (peak_gate * 0.30F));
                 fields.detail_residual.at(x, y) *= detail_gate;
             }
         }

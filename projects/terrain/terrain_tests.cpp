@@ -57,6 +57,28 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return count;
 }
 
+[[nodiscard]] float average_where(const cubey::procedural::ScalarField2D& values,
+                                  const cubey::procedural::ScalarField2D& mask,
+                                  float min_mask, float max_mask = 1.0F) {
+    const cubey::procedural::Grid2DDesc& desc = values.desc();
+    double sum = 0.0;
+    std::size_t count = 0U;
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float mask_value = mask.at(x, y);
+            if (mask_value < min_mask || mask_value > max_mask) {
+                continue;
+            }
+            sum += static_cast<double>(values.at(x, y));
+            ++count;
+        }
+    }
+    if (count == 0U) {
+        throw std::runtime_error("average_where mask selected no samples");
+    }
+    return static_cast<float>(sum / static_cast<double>(count));
+}
+
 [[nodiscard]] std::size_t active_bounds_area(const cubey::procedural::ScalarField2D& field,
                                              float threshold) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
@@ -628,6 +650,7 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
         field(mountain, cubey::projects::terrain::kTerrainFieldRidgeUplift);
     const auto& peak_uplift =
         field(mountain, cubey::projects::terrain::kTerrainFieldPeakUplift);
+    const auto& height = field(mountain, cubey::projects::terrain::kTerrainFieldHeightM);
 
     require(mountain.config.recipe_id ==
                 cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress,
@@ -737,8 +760,16 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
             "terrain mountain recipe should emit broad mountain uplift");
     require(ridge_uplift.summarize().max > 220.0F,
             "terrain mountain recipe should emit stronger ridge uplift");
-    require(peak_uplift.summarize().max > 24.0F,
-            "terrain mountain recipe should emit peak uplift");
+    require(peak_uplift.summarize().max > 160.0F,
+            "terrain mountain recipe should emit dominant peak uplift");
+
+    const float lowland_average_height = average_where(height, mountain_support, 0.0F, 0.12F);
+    const float mountain_average_height = average_where(height, mountain_support, 0.42F);
+    const float peak_average_height = average_where(height, peak_support, 0.36F);
+    require(mountain_average_height > lowland_average_height + 220.0F,
+            "terrain mountain support should build above lowland samples");
+    require(peak_average_height > mountain_average_height + 120.0F,
+            "terrain peak support should build above broad mountain samples");
 }
 
 void test_terrain_review_river_coverage_is_meaningful() {
