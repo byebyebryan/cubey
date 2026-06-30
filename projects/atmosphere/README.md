@@ -56,6 +56,7 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
 projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
 projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
+projects/atmosphere/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
 ```
 
 The cloud review script writes a stable set of labeled captures plus
@@ -70,6 +71,11 @@ The edge resolve script is the focused A/B for cloud-edge artifacts. It captures
 `terrain-post` and `metadata-bilateral` resolve modes for `surface-up` and
 `high-oblique` views, with `final`, `raw-final`, `cloud-alpha`, and `edge-mask`
 diagnostics plus a secondary half-quality final check.
+
+The far-field handoff script focuses on horizon and grazing-ray artifacts. It
+captures full-resolution `surface-horizon`, `surface-up`, and `high-oblique`
+views with handoff, local-truncation, integrated-horizon, edge, and distance
+regime diagnostics.
 
 Controls:
 
