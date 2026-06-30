@@ -153,6 +153,8 @@ enum class RunConfigOptionId {
     CloudDebugView,
     CloudCameraMode,
     CloudQuality,
+    CloudViewSteps,
+    CloudViewSamples,
     CloudWeatherPreset,
     CloudCacheFrames,
     CloudCacheTextureSize,

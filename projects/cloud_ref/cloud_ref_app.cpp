@@ -73,6 +73,7 @@ constexpr std::array<CloudsQuality, 3> kCloudRefQualityModes{
     CloudsQuality::Half,
     CloudsQuality::Full,
 };
+constexpr std::array<std::int32_t, 3> kCloudRefViewSamples{1, 2, 4};
 constexpr std::array<CloudsWeatherPreset, 5> kCloudRefWeatherPresets{
     CloudsWeatherPreset::FairWeather,
     CloudsWeatherPreset::BrokenCumulus,
@@ -319,6 +320,8 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
         static_cast<float>(target_extent.width) / static_cast<float>(target_extent.height);
     const float tan_half_fovy = std::tan(kDefaultFovyRadians * 0.5F);
     const CloudsQualityBudget budget = clouds_quality_budget(config.quality);
+    const std::int32_t view_steps =
+        config.view_steps_override > 0 ? config.view_steps_override : budget.view_steps;
     const cubey::math::Vec3 sun_direction = cloud_ref_source_sun_direction();
     const cubey::math::Vec3 cloud_top_color =
         cubey::math::Vec3{169.0F, 149.0F, 149.0F} * (1.5F / 255.0F);
@@ -338,9 +341,9 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
                     elapsed_seconds * config.wind_speed_mps},
         .sun_direction_intensity = {sun_direction.x, sun_direction.y, sun_direction.z, 1.0F},
         .ref_options = {static_cast<float>(static_cast<std::uint32_t>(config.debug_view)),
-                        static_cast<float>(budget.view_steps),
+                        static_cast<float>(view_steps),
                         static_cast<float>(budget.light_steps),
-                        static_cast<float>(target_extent.width)},
+                        static_cast<float>(config.view_samples)},
         .shape_options = {config.crispiness, config.curliness, config.absorption,
                           config.powder_enabled ? 1.0F : 0.0F},
         .weather_feature_weights = {config.weather_fronts, config.weather_cells,
@@ -656,6 +659,8 @@ class CloudRefApp {
         ImGui::SliderFloat("Absorption", &config_.absorption, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Shadow strength", &config_.shadow_strength, 0.0F, 2.0F, "%.2f");
         ImGui::SliderFloat("Horizon fill", &config_.horizon_strength, 0.0F, 2.0F, "%.2f");
+        ImGui::SliderInt("View steps", &config_.view_steps_override, 0, 128);
+        draw_view_samples_combo();
         ImGui::Checkbox("Post blur", &config_.post_blur_enabled);
         ImGui::SliderFloat("Blur strength", &config_.post_blur_strength, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Blur radius", &config_.post_blur_radius_px, 0.0F, 8.0F, "%.2f px");
@@ -689,6 +694,23 @@ class CloudRefApp {
                     } else if constexpr (std::is_same_v<T, CloudsWeatherPreset>) {
                         apply_clouds_weather_preset(config_, value);
                     }
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+    }
+
+    void draw_view_samples_combo() {
+        const std::string preview = std::to_string(config_.view_samples);
+        if (ImGui::BeginCombo("View samples", preview.c_str())) {
+            for (std::int32_t candidate : kCloudRefViewSamples) {
+                const bool selected = candidate == config_.view_samples;
+                const std::string label = std::to_string(candidate);
+                if (ImGui::Selectable(label.c_str(), selected)) {
+                    config_.view_samples = candidate;
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();

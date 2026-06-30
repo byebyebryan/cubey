@@ -94,6 +94,8 @@ struct CloudsConfig {
     CloudsDebugView debug_view = CloudsDebugView::Final;
     bool temporal_enabled = true;
     CloudsTimeConfig time{};
+    std::int32_t view_steps_override = 0;
+    std::int32_t view_samples = 1;
 
     float planet_radius_m = kCloudsDefaultPlanetRadiusM;
     float camera_altitude_m = 800.0F;

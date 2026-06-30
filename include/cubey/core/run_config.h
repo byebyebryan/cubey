@@ -236,6 +236,8 @@ struct RunConfig {
         std::string debug_view{};
         std::string camera_mode{};
         std::string quality{};
+        std::uint32_t view_steps = 0;
+        std::uint32_t view_samples = 0;
         std::string weather_preset{};
         std::string cache_frames{};
         std::uint32_t cache_texture_size = 0;

@@ -328,6 +328,12 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     if (!run_config.clouds.quality.empty()) {
         config.quality = clouds_quality_from_string(run_config.clouds.quality);
     }
+    if (run_config.clouds.view_steps > 0) {
+        config.view_steps_override = static_cast<std::int32_t>(run_config.clouds.view_steps);
+    }
+    if (run_config.clouds.view_samples > 0) {
+        config.view_samples = static_cast<std::int32_t>(run_config.clouds.view_samples);
+    }
     if (!run_config.clouds.weather_preset.empty()) {
         config.weather_preset =
             clouds_weather_preset_from_string(run_config.clouds.weather_preset);
@@ -506,6 +512,12 @@ void validate_clouds_config(const CloudsConfig& config) {
     }
     if (!finite_nonnegative(config.absorption)) {
         throw std::runtime_error("cloud absorption must be finite and nonnegative");
+    }
+    if (config.view_steps_override < 0 || config.view_steps_override > 128) {
+        throw std::runtime_error("cloud view steps override must be in [0, 128]");
+    }
+    if (config.view_samples != 1 && config.view_samples != 2 && config.view_samples != 4) {
+        throw std::runtime_error("cloud view samples must be 1, 2, or 4");
     }
     if (!std::isfinite(config.post_blur_strength) || config.post_blur_strength < 0.0F ||
         config.post_blur_strength > 1.0F) {

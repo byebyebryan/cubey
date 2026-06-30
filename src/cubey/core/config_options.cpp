@@ -130,7 +130,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 241> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 243> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -565,6 +565,12 @@ constexpr std::array<ConfigOptionDescriptor, 241> kRunConfigOptions{
     option(RunConfigOptionId::CloudQuality, "clouds.quality", "--cloud-quality", "Quality",
            "Clouds", "Cloud render quality preset.", ConfigOptionType::Enum, no_range(),
            enum_choices(kCloudQualities)),
+    option(RunConfigOptionId::CloudViewSteps, "clouds.view_steps", "--cloud-view-steps",
+           "View Steps", "Clouds", "Cloud ray-march view steps override.",
+           ConfigOptionType::UInt32, bounded_range(1.0, 128.0)),
+    option(RunConfigOptionId::CloudViewSamples, "clouds.view_samples", "--cloud-view-samples",
+           "View Samples", "Clouds", "Cloud ray-start samples per pixel.",
+           ConfigOptionType::UInt32, bounded_range(1.0, 4.0)),
     option(RunConfigOptionId::CloudWeatherPreset, "clouds.weather_preset",
            "--cloud-weather-preset", "Weather Preset", "Clouds",
            "Cloud coverage, density, scale, and wind preset.", ConfigOptionType::Enum, no_range(),
@@ -1409,6 +1415,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::CloudQuality:
         return config.clouds.quality.empty() ? nlohmann::json(nullptr)
                                              : nlohmann::json(config.clouds.quality);
+    case RunConfigOptionId::CloudViewSteps:
+        return optional_uint32(config.clouds.view_steps);
+    case RunConfigOptionId::CloudViewSamples:
+        return optional_uint32(config.clouds.view_samples);
     case RunConfigOptionId::CloudWeatherPreset:
         return config.clouds.weather_preset.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.clouds.weather_preset);
@@ -1933,6 +1943,8 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<std::string>("debug_view", options.debug_view);
     adapter.writeField<std::string>("camera_mode", options.camera_mode);
     adapter.writeField<std::string>("quality", options.quality);
+    adapter.writeField<std::uint32_t>("view_steps", options.view_steps);
+    adapter.writeField<std::uint32_t>("view_samples", options.view_samples);
     adapter.writeField<std::string>("weather_preset", options.weather_preset);
     adapter.writeField<std::string>("cache_frames", options.cache_frames);
     adapter.writeField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
@@ -1995,6 +2007,8 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<std::string>("debug_view", options.debug_view);
     adapter.readField<std::string>("camera_mode", options.camera_mode);
     adapter.readField<std::string>("quality", options.quality);
+    adapter.readField<std::uint32_t>("view_steps", options.view_steps);
+    adapter.readField<std::uint32_t>("view_samples", options.view_samples);
     adapter.readField<std::string>("weather_preset", options.weather_preset);
     adapter.readField<std::string>("cache_frames", options.cache_frames);
     adapter.readField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
@@ -2646,6 +2660,20 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::CloudQuality:
         config.clouds.quality = std::string(value);
+        break;
+    case RunConfigOptionId::CloudViewSteps:
+        config.clouds.view_steps =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.clouds.view_steps, option);
+        break;
+    case RunConfigOptionId::CloudViewSamples:
+        config.clouds.view_samples =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.clouds.view_samples, option);
+        if (config.clouds.view_samples != 1U && config.clouds.view_samples != 2U &&
+            config.clouds.view_samples != 4U) {
+            throw std::runtime_error("--cloud-view-samples must be 1, 2, or 4");
+        }
         break;
     case RunConfigOptionId::CloudWeatherPreset:
         config.clouds.weather_preset = std::string(value);

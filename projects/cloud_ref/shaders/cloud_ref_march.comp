@@ -30,6 +30,7 @@ const float BAYER[16] = float[](
     12.0 / 16.0, 4.0 / 16.0, 14.0 / 16.0, 6.0 / 16.0,
     3.0 / 16.0, 11.0 / 16.0, 1.0 / 16.0, 9.0 / 16.0,
     15.0 / 16.0, 7.0 / 16.0, 13.0 / 16.0, 5.0 / 16.0);
+const float VIEW_SAMPLE_OFFSETS[4] = float[](0.0, 0.5, 0.25, 0.75);
 
 struct DensitySample {
     float density;
@@ -244,15 +245,19 @@ bool cloud_ref_shell_segment(vec3 origin, vec3 direction, out float start_t, out
     return end_t > start_t;
 }
 
-MarchResult cloud_ref_march(vec3 origin, vec3 direction, float start_t, float end_t,
-                            vec3 background, ivec2 pixel) {
-    int max_steps = clamp(int(params.ref_options.y + 0.5), 1, 96);
+float cloud_ref_view_sample_phase(ivec2 pixel, int sample_index) {
+    int bx = pixel.x & 3;
+    int by = pixel.y & 3;
+    return fract(BAYER[bx * 4 + by] + VIEW_SAMPLE_OFFSETS[sample_index]);
+}
+
+MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, float end_t,
+                                   vec3 background, float sample_phase) {
+    int max_steps = clamp(int(params.ref_options.y + 0.5), 1, 128);
     float length_km = max(end_t - start_t, 0.001);
     float ds = length_km / float(max_steps);
     vec3 step_vec = direction * ds;
-    int bx = pixel.x & 3;
-    int by = pixel.y & 3;
-    vec3 pos = origin + direction * (start_t + ds * BAYER[bx * 4 + by]);
+    vec3 pos = origin + direction * (start_t + ds * sample_phase);
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     vec3 sun_color = vec3(1.10, 1.10, 0.86) * max(params.sun_direction_intensity.w, 0.0);
     float light_dot_eye = dot(sun_dir, direction);
@@ -268,7 +273,7 @@ MarchResult cloud_ref_march(vec3 origin, vec3 direction, float start_t, float en
     vec3 direct_sum = vec3(0.0);
     vec3 phase_sum = vec3(0.0);
 
-    for (int i = 0; i < 96; ++i) {
+    for (int i = 0; i < 128; ++i) {
         if (i >= max_steps) {
             break;
         }
@@ -331,6 +336,48 @@ MarchResult cloud_ref_march(vec3 origin, vec3 direction, float start_t, float en
                        first_distance, steps_taken, ambient_sum, direct_sum, phase_sum);
 }
 
+MarchResult cloud_ref_march(vec3 origin, vec3 direction, float start_t, float end_t,
+                            vec3 background, ivec2 pixel) {
+    int requested_samples = clamp(int(params.ref_options.w + 0.5), 1, 4);
+    int sample_count = requested_samples >= 4 ? 4 : (requested_samples >= 2 ? 2 : 1);
+    MarchResult total = MarchResult(vec3(0.0), 0.0, 0.0, 0.0, 0.0, -1.0, 0.0,
+                                    vec3(0.0), vec3(0.0), vec3(0.0));
+
+    for (int sample_index = 0; sample_index < 4; ++sample_index) {
+        if (sample_index >= sample_count) {
+            break;
+        }
+        MarchResult sample_result =
+            cloud_ref_march_sample(origin, direction, start_t, end_t, background,
+                                   cloud_ref_view_sample_phase(pixel, sample_index));
+        total.radiance += sample_result.radiance;
+        total.transmittance += sample_result.transmittance;
+        total.alpha += sample_result.alpha;
+        total.avg_density += sample_result.avg_density;
+        total.last_light += sample_result.last_light;
+        if (sample_result.first_distance >= 0.0 &&
+            (total.first_distance < 0.0 || sample_result.first_distance < total.first_distance)) {
+            total.first_distance = sample_result.first_distance;
+        }
+        total.steps += sample_result.steps;
+        total.ambient_light += sample_result.ambient_light;
+        total.direct_light += sample_result.direct_light;
+        total.phase_light += sample_result.phase_light;
+    }
+
+    float inv_sample_count = 1.0 / float(sample_count);
+    total.radiance *= inv_sample_count;
+    total.transmittance *= inv_sample_count;
+    total.alpha *= inv_sample_count;
+    total.avg_density *= inv_sample_count;
+    total.last_light *= inv_sample_count;
+    total.steps *= inv_sample_count;
+    total.ambient_light *= inv_sample_count;
+    total.direct_light *= inv_sample_count;
+    total.phase_light *= inv_sample_count;
+    return total;
+}
+
 void main() {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size = imageSize(cloud_product);
@@ -353,7 +400,7 @@ void main() {
     if (!has_segment) {
         vec3 debug_color = debug_view == CLOUD_REF_DEBUG_BACKGROUND ? background : vec3(0.0);
         if (source_final_view) {
-            imageStore(cloud_product, pixel, vec4(background, 0.0));
+            imageStore(cloud_product, pixel, vec4(0.0));
             return;
         }
         imageStore(cloud_product, pixel,
@@ -401,9 +448,8 @@ void main() {
     } else if (debug_view == CLOUD_REF_DEBUG_DISTANCE) {
         debug_color = vec3(clamp(result.first_distance / 500.0, 0.0, 1.0));
     } else if (source_final_view) {
-        float cloud_alphaness = result.alpha > 0.2 ? result.alpha : 0.0;
-        vec3 source_product = background * (1.0 - result.alpha) + result.radiance;
-        imageStore(cloud_product, pixel, vec4(max(source_product, vec3(0.0)), cloud_alphaness));
+        imageStore(cloud_product, pixel,
+                   vec4(max(result.radiance, vec3(0.0)), clamp(result.alpha, 0.0, 1.0)));
         return;
     }
 

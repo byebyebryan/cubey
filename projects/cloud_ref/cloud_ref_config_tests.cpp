@@ -111,6 +111,8 @@ void test_run_config_mapping() {
     run_config.debug_view = "density";
     run_config.clouds.camera_mode = "orbit";
     run_config.clouds.quality = "quarter";
+    run_config.clouds.view_steps = 96;
+    run_config.clouds.view_samples = 4;
     run_config.clouds.weather_preset = "storm";
     run_config.clouds.planet_radius_m = 1000000.0F;
     run_config.clouds.bottom_altitude_m = 2000.0F;
@@ -141,6 +143,8 @@ void test_run_config_mapping() {
             "cloud camera mode should map from run config");
     require(config.quality == cubey::projects::cloud_ref::CloudsQuality::Quarter,
             "cloud quality should map from run config");
+    require(config.view_steps_override == 96, "cloud view steps should map from run config");
+    require(config.view_samples == 4, "cloud view samples should map from run config");
     require(config.weather_preset == cubey::projects::cloud_ref::CloudsWeatherPreset::StormCells,
             "cloud weather preset should map from run config");
     require(config.cloud_style == cubey::projects::cloud_ref::CloudsCloudStyle::StormCells,
@@ -241,6 +245,8 @@ void test_config_descriptors() {
     cubey::RunConfig config{};
     cubey::set_run_config_option_from_string(config, "clouds.camera_mode", "high");
     cubey::set_run_config_option_from_string(config, "clouds.quality", "full");
+    cubey::set_run_config_option_from_string(config, "clouds.view_steps", "96");
+    cubey::set_run_config_option_from_string(config, "clouds.view_samples", "2");
     cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.wind_speed_mps", "22");
@@ -257,6 +263,8 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.horizon_layer", "true");
     require(config.clouds.camera_mode == "high", "cloud camera mode descriptor should set");
     require(config.clouds.quality == "full", "cloud quality descriptor should set");
+    require(config.clouds.view_steps == 96, "cloud view steps descriptor should set");
+    require(config.clouds.view_samples == 2, "cloud view samples descriptor should set");
     require(config.clouds.weather_preset == "storm",
             "cloud weather preset descriptor should set");
     require_near(config.clouds.coverage, 0.44F, 0.001F,
