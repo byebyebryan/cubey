@@ -220,9 +220,10 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `22` emits deterministic source fields,
+local region. Generator revision `23` emits deterministic source fields,
 explicit mountain support/ridge/peak/uplift fields, height/slope analysis,
 repaired routing diagnostics, smoothed active river trunk and tributary masks,
+pre-process and carved height fields, channel/valley incision diagnostics,
 wetness/deposition, material masks, vegetation potential, summaries, and tests.
 
 The river driver intentionally moved away from a single authored line. It routes
@@ -349,6 +350,15 @@ Vulkan windowed/headless host. It is a preview consumer for judging relief in
 perspective, not a replacement for the CPU product generator, planet terrain, or
 future clipmap renderer.
 
+Revision 23 changes the river product from a mostly visual overlay into a
+terrain-form process. The generator now preserves `pre_process_height_m`, uses
+active river, trunk, tributary, stream-order, discharge, channel-width, and
+valley-width fields to derive `channel_incision` and `valley_incision`, and
+publishes the carved surface as `height_m`. Slope, local relief, material masks,
+wetness/deposition, and vegetation potential are computed against the carved
+height. The renderer-backed preview adds material, height, river, and channel
+color modes so geometry review can be separated from water/material tint.
+
 Known limitations:
 
 - Fractional accumulation reduces receiver quantization, but active trunk
@@ -356,6 +366,10 @@ Known limitations:
   and some bends can remain less organic than real rivers.
 - The drainage pass performs only an epsilon fill for routing continuity. It
   does not yet perform breach routing, erosion, or lake/wetland resolution.
+- Revision 23 incision is a deterministic field-propagation pass over active
+  river sources, not hydraulic erosion. It makes channels visible in geometry,
+  but it does not yet enforce longitudinal bed profiles, sediment budgets, or
+  bank/terrace formation.
 - Padded routing makes local review slices less artificial, but the route model
   is still static and should not be mistaken for simulated river evolution.
 - Default river composition now has a stronger review footprint than the
@@ -410,7 +424,7 @@ more biome labels:
 3. Replace the current support-path hierarchy and distinctness classifier with a
    more principled basin/tributary model so visual coverage does not depend on
    capped promoted branch counts.
-4. Refine the revision 22 mountain driver with anisotropic peak shaping,
+4. Refine the current mountain driver with anisotropic peak shaping,
    erosion-aware ridge cleanup, alpine material/valley contrast, and better
    world-scale range continuity.
 5. Add capture summaries or manifest metadata for the review set so image

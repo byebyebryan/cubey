@@ -95,6 +95,9 @@ the detailed foundation notes under `docs/architecture/`.
   revision 17/18 river-quality pivot: generate a non-grid river graph first,
   then rasterize graph mainstem, major tributaries, and minor tributaries into
   existing terrain process fields.
+- [Terrain river terrain coupling plan](terrain-river-terrain-coupling-plan.md):
+  revision 23 correction that makes river fields carve final terrain height
+  instead of reading as material-only overlays in 3D previews.
 - [Terrain water bodies scope](terrain-water-bodies-scope.md):
   river/lake/wetland/coast/ocean boundaries before moving from river work to the
   next terrain driver.

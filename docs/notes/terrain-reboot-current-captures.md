@@ -1,8 +1,7 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 22
-mountain peak readability pass and the renderer-backed perspective preview
-addition.
+This note records the current terrain reboot capture set after the revision 23
+river terrain-coupling pass.
 
 ## Capture Command
 
@@ -12,15 +11,25 @@ addition.
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress-1025
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color material --output outputs/terrain/current-river-network/river-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset profile --terrain-preview-color material --output outputs/terrain/current-river-network/river-profile.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color height --output outputs/terrain/current-river-network/river-height-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color channel --output outputs/terrain/current-river-network/river-channel-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset oblique --terrain-preview-color material --output outputs/terrain/stress-river-network/river-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset profile --terrain-preview-color material --output outputs/terrain/stress-river-network/river-profile.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset oblique --terrain-preview-color height --output outputs/terrain/stress-river-network/river-height-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset oblique --terrain-preview-color channel --output outputs/terrain/stress-river-network/river-channel-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --output outputs/terrain/mountain-range-stress/mountain-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset profile --output outputs/terrain/mountain-range-stress/mountain-profile.png
 ```
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
 stress captures for larger river-network and mountain-driver inspection. The
-revision 22 scalar review set emits 34 PNG views per capture. The 513 mountain
-stress directory now also includes `mountain-perspective.png` and
-`mountain-profile.png` from the renderer-backed preview app, so it holds 36 PNGs
+revision 23 scalar review set emits 37 PNG views per capture. Current and
+stress river directories hold 41 PNGs after material/profile, height-only, and
+channel diagnostic perspective captures are generated. The 513 mountain stress
+directory now also includes `mountain-perspective.png` and
+`mountain-profile.png` from the renderer-backed preview app, so it holds 39 PNGs
 after the full mountain review command sequence. The 1025 mountain stress set
 remains scalar-only unless a matching preview capture is explicitly generated.
 `outputs/` is intentionally ignored by git. This replaced the earlier tiny
@@ -77,6 +86,11 @@ base elevation instead of the generic regional tilt, gives peak uplift a larger
 height role, broadens ridge influence, gates residual detail against mountain
 structure, and retunes `mountain-relief.png` to prioritize elevation hierarchy
 over high-contrast shadow texture.
+Revision 23 expands the product contract with `pre_process_height_m`,
+`channel_incision`, and `valley_incision`, then publishes `height_m` as the
+river-carved final surface. Slope, local relief, material masks, wetness,
+deposition, and vegetation potential are recomputed against that final height,
+so active rivers are terrain-form drivers instead of only color overlays.
 
 ## What To Inspect
 
@@ -91,6 +105,19 @@ over high-contrast shadow texture.
 - `mountain-profile.png`: renderer-backed low side view from `terrain_preview`.
   Use this to check height contrast and to expose the current sharp-peak
   character that flat scalar PNGs can hide.
+- `river-perspective.png`: renderer-backed material view for current or stress
+  river recipes. It is useful for reviewing the normal water/material read, but
+  it should be paired with height/channel modes so water color does not hide
+  product-shape failures.
+- `river-height-perspective.png`: renderer-backed height-only river view. Use
+  this to check whether channels are visible in geometry without river tint.
+- `river-channel-perspective.png`: renderer-backed channel diagnostic view. The
+  gold bands show where channel and valley incision were applied to the mesh.
+- `pre-process-height.png`: source surface before river carving. Compare with
+  `height.png` to see what the river process changed.
+- `channel-incision.png` and `valley-incision.png`: scalar incision fields that
+  should align with active river masks while spreading enough to read as carved
+  beds and valley shoulders rather than single-pixel painted lines.
 - `mountain-envelope.png`: smooth macro mountain support. It should show broad
   uplift regions before ridges, peaks, or residual detail are applied.
 - `mountain-peak-anchors.png`: sparse deterministic summit anchors selected
@@ -151,7 +178,8 @@ over high-contrast shadow texture.
   contributions from the support fields. In revision 22, `peak-uplift.png`
   should be strong enough to explain the highest terrain.
 - `height.png` and `slope.png`: combined terrain shape and derivative response.
-  In the mountain stress recipe, pair these scalar views with
+  In revision 23, `height.png` is the final carved height product. In the
+  mountain stress recipe, pair these scalar views with
   `mountain-relief.png` before judging whether the driver creates recognizable
   range mass before biome or glacial polish.
 
@@ -210,7 +238,10 @@ mountain skeleton source path and derives the existing mountain support/ridge
 fields from it, so the source hierarchy can be reviewed before erosion or
 material polish. Revision 22 changes the stress height composition and relief
 review image so the generated range reads more clearly as broad support
-building into high peaks.
+building into high peaks. Revision 23 changes the height product contract: the
+river network now carves channel and valley incision into the final surface.
+The scalar source/final height pair plus renderer height/channel modes are now
+the required way to check that rivers are not merely blue material overlays.
 The rejected revision 4 attempt made the visible product worse by rendering selected
 graph edges directly, producing disconnected snippets and hard straight or
 diagonal runs. See
@@ -240,7 +271,12 @@ cut by the visible crop without the larger basin context that would make their
 upstream/downstream role clearer. The next river-quality pass should improve
 graph topology construction before adding more high-level terrain features.
 
-The revision 22 mountain driver is still an early diagnostic source profile, not
+The revision 23 river incision is a deterministic field-propagation pass over
+the active river product, not erosion. It gives the mesh visible channels and
+valley shoulders, but it does not yet solve bed-profile monotonicity, bank
+shape, sediment transport, lakes, floodplains, or terrace formation.
+
+The current mountain driver is still an early diagnostic source profile, not
 a polished alpine biome. It now makes peak hierarchy more visible in
 `height.png`, `mountain-relief.png`, `mountain-perspective.png`, and
 `mountain-profile.png`, but peak prominence remains mostly radial and the

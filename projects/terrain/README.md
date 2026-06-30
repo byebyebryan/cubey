@@ -18,7 +18,7 @@ perspective review, but final terrain rendering, ocean integration, planet
 streaming, foliage rendering, and physically complete erosion remain deferred
 until the product fields are credible.
 
-The current generator revision is `22`. It emits source fields, height/slope
+The current generator revision is `23`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, wetness/deposition, material masks, and vegetation potential.
 The drainage pass now repairs local routing pits with a bounded priority-flood
@@ -76,6 +76,12 @@ more clearly as terrain building into high peaks. It replaces the generic
 base-elevation tilt with an envelope-driven mountain base, strengthens peak
 uplift, broadens ridge shoulders, gates residual detail against the mountain
 source fields, and retunes `mountain-relief.png` around elevation hierarchy.
+Revision 23 makes active rivers modify the terrain height product. It preserves
+`pre_process_height_m`, applies channel and valley incision driven by the river
+fields, publishes the carved result as `height_m`, and recomputes slope, local
+relief, material masks, and vegetation potential from that carved height.
+Renderer-backed previews now support material, height, river, and channel color
+modes so reviewers can separate geometry from river tint.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint.
@@ -94,6 +100,11 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress-1025
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color material --output outputs/terrain/current-river-network/river-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color height --output outputs/terrain/current-river-network/river-height-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color channel --output outputs/terrain/current-river-network/river-channel-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset oblique --terrain-preview-color material --output outputs/terrain/stress-river-network/river-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset oblique --terrain-preview-color channel --output outputs/terrain/stress-river-network/river-channel-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --output outputs/terrain/mountain-range-stress/mountain-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset profile --output outputs/terrain/mountain-range-stress/mountain-profile.png
 ```
@@ -106,11 +117,12 @@ for the standard review set. The current local review images are generated at
 thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
 review artifact.
 
-The scalar review set includes 34 views:
+The scalar review set includes 37 views:
 
 - `final.png`
 - `mountain-relief.png`
 - `height.png`
+- `pre-process-height.png`
 - `slope.png`
 - `mountain-envelope.png`
 - `mountain-peak-anchors.png`
@@ -138,6 +150,8 @@ The scalar review set includes 34 views:
 - `tributaries.png`
 - `sink-mask.png`
 - `channel-width.png`
+- `channel-incision.png`
+- `valley-incision.png`
 - `wetness.png`
 - `deposition.png`
 - `material.png`
@@ -149,7 +163,9 @@ mesh through the normal Vulkan windowed/headless app path. For the mountain
 stress recipe, `mountain-perspective.png` is the primary 3D read for peak,
 basin, and valley hierarchy, while `mountain-profile.png` is a lower side view
 for checking whether peak height and valley contrast are plausible. The current
-`outputs/terrain/mountain-range-stress` directory holds 36 PNGs after those two
+`outputs/terrain/mountain-range-stress` directory holds 39 PNGs after those two
+captures are generated. River review directories hold 41 PNGs after the scalar
+set plus material/profile, height-only, and channel diagnostic perspective
 captures are generated.
 
 The optional `temperate-mountain-river-stress` recipe keeps the same source
@@ -228,3 +244,11 @@ tributary joins can still read too angular because this is not yet a
 Delaunay/Poisson river graph, hydraulic erosion pass, lake/breach routing model,
 or tiled world-coordinate basin graph. See
 [Terrain routing repair plan](../../docs/notes/terrain-routing-repair-plan.md).
+Revision 23 makes those active river fields terrain-form drivers by carving
+broad valley incision and narrower channel incision into `height_m`. Use
+`pre-process-height.png` to inspect the source surface, `height.png` to inspect
+the carved product, and `channel-incision.png` / `valley-incision.png` plus
+`river-channel-perspective.png` to verify where the network actually cuts the
+mesh. `river-height-perspective.png` is intentionally color-neutral; if a river
+only appears in `river-perspective.png`, the product is back to a texture-overlay
+failure.

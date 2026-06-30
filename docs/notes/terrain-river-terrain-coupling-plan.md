@@ -39,3 +39,23 @@ height consumed by preview meshes and downstream users.
   painted fragments.
 - Product tests prove active river samples sit lower than nearby shoulders on
   average.
+
+## Implemented Checkpoint
+
+Revision 23 implements this correction. `height_m` is now the carved terrain
+surface, while `pre_process_height_m` preserves the source height for review.
+`channel_incision` and `valley_incision` expose the carving masks used to lower
+the final surface, and slope/material/vegetation fields are recomputed from the
+carved height.
+
+Refreshed review outputs:
+
+- `outputs/terrain/current-river-network`
+- `outputs/terrain/stress-river-network`
+
+Each directory includes the 37-view scalar set plus:
+
+- `river-perspective.png`
+- `river-profile.png`
+- `river-height-perspective.png`
+- `river-channel-perspective.png`
