@@ -156,11 +156,16 @@ struct TerrainSourceFields {
     cubey::procedural::ScalarField2D base_elevation{};
     cubey::procedural::ScalarField2D broad_relief{};
     cubey::procedural::ScalarField2D mountain_range_spine{};
+    cubey::procedural::ScalarField2D mountain_envelope{};
     cubey::procedural::ScalarField2D mountain_support{};
     cubey::procedural::ScalarField2D mountain_ridge_hierarchy{};
     cubey::procedural::ScalarField2D ridge_support{};
     cubey::procedural::ScalarField2D mountain_peak_candidates{};
+    cubey::procedural::ScalarField2D mountain_peak_anchors{};
+    cubey::procedural::ScalarField2D mountain_peak_prominence{};
     cubey::procedural::ScalarField2D peak_support{};
+    cubey::procedural::ScalarField2D mountain_ridge_skeleton{};
+    cubey::procedural::ScalarField2D mountain_ridge_influence{};
     cubey::procedural::ScalarField2D mountain_uplift{};
     cubey::procedural::ScalarField2D ridge_uplift{};
     cubey::procedural::ScalarField2D peak_uplift{};
@@ -288,6 +293,20 @@ struct RiverNetworkPlan {
 struct RoutingRepairResult {
     cubey::procedural::ScalarField2D surface{};
     cubey::procedural::ScalarField2D fill_delta{};
+};
+
+struct MountainPeakAnchor {
+    std::uint32_t x = 0U;
+    std::uint32_t y = 0U;
+    float score = 0.0F;
+};
+
+struct MountainSkeletonFields {
+    cubey::procedural::ScalarField2D envelope{};
+    cubey::procedural::ScalarField2D peak_anchors{};
+    cubey::procedural::ScalarField2D peak_prominence{};
+    cubey::procedural::ScalarField2D ridge_skeleton{};
+    cubey::procedural::ScalarField2D ridge_influence{};
 };
 
 [[nodiscard]] cubey::procedural::NoiseSource2D coherent_source(std::uint64_t seed,
@@ -550,92 +569,346 @@ struct RoutingRepairResult {
     return cubey::procedural::pow_unit_field(field, 1.55F);
 }
 
-[[nodiscard]] cubey::procedural::ScalarField2D mountain_support_field(
+[[nodiscard]] cubey::procedural::ScalarField2D repeated_box_blur(
+    cubey::procedural::ScalarField2D field, std::uint32_t passes) {
+    for (std::uint32_t pass = 0; pass < passes; ++pass) {
+        field = cubey::procedural::box_blur_3x3(field);
+    }
+    return field;
+}
+
+[[nodiscard]] float sample_field_clamped(const cubey::procedural::ScalarField2D& field, int x,
+                                         int y) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    const int clamped_x = std::clamp(x, 0, static_cast<int>(desc.width) - 1);
+    const int clamped_y = std::clamp(y, 0, static_cast<int>(desc.height) - 1);
+    return field.at(static_cast<std::uint32_t>(clamped_x),
+                    static_cast<std::uint32_t>(clamped_y));
+}
+
+[[nodiscard]] float distance_cells(float ax, float ay, float bx, float by) {
+    const float dx = ax - bx;
+    const float dy = ay - by;
+    return std::sqrt((dx * dx) + (dy * dy));
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D mountain_envelope_field(
     cubey::procedural::Grid2DDesc desc, std::uint64_t seed,
     const cubey::procedural::ScalarField2D& range_spine) {
-    cubey::procedural::ScalarField2D broad_support =
-        unit_source_field(desc, seed, 0.00013F, 4U);
-    broad_support = cubey::procedural::box_blur_3x3(broad_support);
-    broad_support = cubey::procedural::box_blur_3x3(broad_support);
-    broad_support = shape_unit_field(broad_support, 0.28F, 0.82F, 0.86F);
+    cubey::procedural::ScalarField2D broad = unit_source_field(desc, seed, 0.00011F, 4U);
+    broad = repeated_box_blur(std::move(broad), 5U);
+    broad = shape_unit_field(broad, 0.26F, 0.84F, 0.90F);
 
     cubey::procedural::ScalarField2D result(desc, 0.0F);
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
-            const float spine =
-                cubey::procedural::smoothstep(0.10F, 0.88F, range_spine.at(x, y));
-            const float support = cubey::procedural::saturate((spine * 0.76F) +
-                                                              (broad_support.at(x, y) * 0.42F) -
-                                                              0.10F);
-            result.at(x, y) = std::pow(support, 0.84F);
+            const float spine = cubey::procedural::smoothstep(0.08F, 0.82F,
+                                                              range_spine.at(x, y));
+            const float mass =
+                cubey::procedural::saturate((broad.at(x, y) * 0.68F) + (spine * 0.46F) - 0.10F);
+            result.at(x, y) = std::pow(mass, 0.92F);
         }
     }
-    result = cubey::procedural::box_blur_3x3(result);
+    return repeated_box_blur(std::move(result), 2U);
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D mountain_peak_score_field(
+    cubey::procedural::Grid2DDesc desc, std::uint64_t seed,
+    const cubey::procedural::ScalarField2D& envelope) {
+    cubey::procedural::ScalarField2D summit_noise = unit_source_field(desc, seed, 0.00072F, 4U);
+    summit_noise = cubey::procedural::box_blur_3x3(summit_noise);
+    cubey::procedural::ScalarField2D result(desc, 0.0F);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float support = cubey::procedural::smoothstep(0.30F, 0.94F, envelope.at(x, y));
+            const float score =
+                cubey::procedural::saturate((support * 0.72F) + (summit_noise.at(x, y) * 0.38F) -
+                                            0.18F);
+            result.at(x, y) = std::pow(score, 1.35F);
+        }
+    }
+    return result;
+}
+
+[[nodiscard]] bool is_local_maximum(const cubey::procedural::ScalarField2D& field,
+                                    std::uint32_t x, std::uint32_t y) {
+    const float value = field.at(x, y);
+    for (int oy = -1; oy <= 1; ++oy) {
+        for (int ox = -1; ox <= 1; ++ox) {
+            if (ox == 0 && oy == 0) {
+                continue;
+            }
+            if (sample_field_clamped(field, static_cast<int>(x) + ox,
+                                     static_cast<int>(y) + oy) > value) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+[[nodiscard]] std::vector<MountainPeakAnchor> select_mountain_peak_anchors(
+    const cubey::procedural::ScalarField2D& score) {
+    const cubey::procedural::Grid2DDesc& desc = score.desc();
+    const std::uint32_t min_dimension = std::min(desc.width, desc.height);
+    const std::size_t target_count =
+        std::clamp<std::size_t>(static_cast<std::size_t>(min_dimension / 64U) + 4U, 5U, 18U);
+    const float min_distance = std::max(12.0F, static_cast<float>(min_dimension) * 0.115F);
+
+    std::vector<MountainPeakAnchor> candidates{};
+    candidates.reserve(static_cast<std::size_t>(desc.width) * static_cast<std::size_t>(desc.height) /
+                       32U);
+    for (std::uint32_t y = 1U; y + 1U < desc.height; ++y) {
+        for (std::uint32_t x = 1U; x + 1U < desc.width; ++x) {
+            const float value = score.at(x, y);
+            if (value < 0.42F || !is_local_maximum(score, x, y)) {
+                continue;
+            }
+            candidates.push_back(MountainPeakAnchor{.x = x, .y = y, .score = value});
+        }
+    }
+    std::sort(candidates.begin(), candidates.end(), [](const MountainPeakAnchor& lhs,
+                                                       const MountainPeakAnchor& rhs) {
+        return lhs.score > rhs.score;
+    });
+
+    std::vector<MountainPeakAnchor> anchors{};
+    anchors.reserve(target_count);
+    for (const MountainPeakAnchor& candidate : candidates) {
+        bool spaced = true;
+        for (const MountainPeakAnchor& anchor : anchors) {
+            if (distance_cells(static_cast<float>(candidate.x), static_cast<float>(candidate.y),
+                               static_cast<float>(anchor.x), static_cast<float>(anchor.y)) <
+                min_distance) {
+                spaced = false;
+                break;
+            }
+        }
+        if (!spaced) {
+            continue;
+        }
+        anchors.push_back(candidate);
+        if (anchors.size() >= target_count) {
+            break;
+        }
+    }
+
+    if (anchors.size() < 3U) {
+        for (const MountainPeakAnchor& candidate : candidates) {
+            if (std::find_if(anchors.begin(), anchors.end(), [&](const MountainPeakAnchor& anchor) {
+                    return anchor.x == candidate.x && anchor.y == candidate.y;
+                }) != anchors.end()) {
+                continue;
+            }
+            anchors.push_back(candidate);
+            if (anchors.size() >= 3U) {
+                break;
+            }
+        }
+    }
+    return anchors;
+}
+
+void paint_disc(cubey::procedural::ScalarField2D& field, float center_x, float center_y,
+                float radius_cells, float strength) {
+    const cubey::procedural::Grid2DDesc& desc = field.desc();
+    const int min_x = std::max(0, static_cast<int>(std::floor(center_x - radius_cells)));
+    const int max_x =
+        std::min(static_cast<int>(desc.width) - 1, static_cast<int>(std::ceil(center_x + radius_cells)));
+    const int min_y = std::max(0, static_cast<int>(std::floor(center_y - radius_cells)));
+    const int max_y = std::min(static_cast<int>(desc.height) - 1,
+                               static_cast<int>(std::ceil(center_y + radius_cells)));
+    const float radius = std::max(radius_cells, 0.001F);
+    for (int y = min_y; y <= max_y; ++y) {
+        for (int x = min_x; x <= max_x; ++x) {
+            const float distance =
+                distance_cells(center_x, center_y, static_cast<float>(x), static_cast<float>(y));
+            if (distance > radius) {
+                continue;
+            }
+            const float falloff = std::pow(1.0F - (distance / radius), 2.0F);
+            const float value = cubey::procedural::saturate(strength * falloff);
+            float& sample = field.at(static_cast<std::uint32_t>(x),
+                                     static_cast<std::uint32_t>(y));
+            sample = std::max(sample, value);
+        }
+    }
+}
+
+[[nodiscard]] std::vector<std::pair<std::uint32_t, std::uint32_t>> trace_mountain_ridge_path(
+    const cubey::procedural::ScalarField2D& envelope,
+    const cubey::procedural::ScalarField2D& peak_prominence,
+    const cubey::procedural::ScalarField2D& ridge_guide,
+    const MountainPeakAnchor& start, const MountainPeakAnchor& end) {
+    const cubey::procedural::Grid2DDesc& desc = envelope.desc();
+    std::vector<std::pair<std::uint32_t, std::uint32_t>> path{};
+    path.reserve(static_cast<std::size_t>(desc.width + desc.height));
+    std::vector<std::uint8_t> visited(static_cast<std::size_t>(desc.width) *
+                                          static_cast<std::size_t>(desc.height),
+                                      0U);
+    auto index = [width = desc.width](std::uint32_t x, std::uint32_t y) {
+        return static_cast<std::size_t>(y) * static_cast<std::size_t>(width) +
+               static_cast<std::size_t>(x);
+    };
+
+    std::uint32_t x = start.x;
+    std::uint32_t y = start.y;
+    const std::size_t max_steps = static_cast<std::size_t>(desc.width + desc.height) * 4U;
+    for (std::size_t step = 0; step < max_steps; ++step) {
+        path.emplace_back(x, y);
+        visited[index(x, y)] = 1U;
+        if (x == end.x && y == end.y) {
+            break;
+        }
+
+        float best_score = std::numeric_limits<float>::max();
+        std::uint32_t best_x = x;
+        std::uint32_t best_y = y;
+        for (int oy = -1; oy <= 1; ++oy) {
+            for (int ox = -1; ox <= 1; ++ox) {
+                if (ox == 0 && oy == 0) {
+                    continue;
+                }
+                const int nx = static_cast<int>(x) + ox;
+                const int ny = static_cast<int>(y) + oy;
+                if (nx < 0 || ny < 0 || nx >= static_cast<int>(desc.width) ||
+                    ny >= static_cast<int>(desc.height)) {
+                    continue;
+                }
+                const auto ux = static_cast<std::uint32_t>(nx);
+                const auto uy = static_cast<std::uint32_t>(ny);
+                const float target_distance =
+                    distance_cells(static_cast<float>(ux), static_cast<float>(uy),
+                                   static_cast<float>(end.x), static_cast<float>(end.y));
+                const float terrain_bias =
+                    (envelope.at(ux, uy) * 3.5F) + (peak_prominence.at(ux, uy) * 1.8F) +
+                    (ridge_guide.at(ux, uy) * 12.0F);
+                const float revisit_penalty = visited[index(ux, uy)] != 0U ? 250.0F : 0.0F;
+                const float score = target_distance - terrain_bias + revisit_penalty;
+                if (score < best_score) {
+                    best_score = score;
+                    best_x = ux;
+                    best_y = uy;
+                }
+            }
+        }
+        if (best_x == x && best_y == y) {
+            break;
+        }
+        x = best_x;
+        y = best_y;
+    }
+    return path;
+}
+
+void rasterize_mountain_ridge_path(
+    cubey::procedural::ScalarField2D& skeleton,
+    cubey::procedural::ScalarField2D& influence,
+    const std::vector<std::pair<std::uint32_t, std::uint32_t>>& path, float strength,
+    float influence_radius_cells) {
+    for (const auto& [x, y] : path) {
+        paint_disc(skeleton, static_cast<float>(x), static_cast<float>(y), 1.2F, strength);
+        paint_disc(influence, static_cast<float>(x), static_cast<float>(y),
+                   influence_radius_cells, strength * 0.82F);
+    }
+}
+
+[[nodiscard]] MountainSkeletonFields make_mountain_skeleton_fields(
+    cubey::procedural::Grid2DDesc desc, std::uint64_t seed,
+    const cubey::procedural::ScalarField2D& range_spine) {
+    MountainSkeletonFields fields{
+        .envelope = mountain_envelope_field(desc, seed + 11U, range_spine),
+        .peak_anchors = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .peak_prominence = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .ridge_skeleton = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .ridge_influence = cubey::procedural::ScalarField2D(desc, 0.0F),
+    };
+
+    const cubey::procedural::ScalarField2D peak_score =
+        mountain_peak_score_field(desc, seed + 101U, fields.envelope);
+    const cubey::procedural::ScalarField2D ridge_guide = ridge_source_field(desc, seed + 151U);
+    const std::vector<MountainPeakAnchor> anchors = select_mountain_peak_anchors(peak_score);
+    const float min_dimension = static_cast<float>(std::min(desc.width, desc.height));
+    const float anchor_radius = std::clamp(min_dimension * 0.010F, 1.5F, 5.0F);
+    const float peak_radius = std::clamp(min_dimension * 0.095F, 18.0F, 96.0F);
+    const float ridge_radius = std::clamp(min_dimension * 0.032F, 7.0F, 30.0F);
+
+    for (const MountainPeakAnchor& anchor : anchors) {
+        paint_disc(fields.peak_anchors, static_cast<float>(anchor.x),
+                   static_cast<float>(anchor.y), anchor_radius, anchor.score);
+        paint_disc(fields.peak_prominence, static_cast<float>(anchor.x),
+                   static_cast<float>(anchor.y), peak_radius, anchor.score);
+    }
+
+    for (std::size_t index = 1U; index < anchors.size(); ++index) {
+        std::size_t best_parent = 0U;
+        float best_score = std::numeric_limits<float>::max();
+        for (std::size_t candidate = 0U; candidate < index; ++candidate) {
+            const float distance =
+                distance_cells(static_cast<float>(anchors[index].x),
+                               static_cast<float>(anchors[index].y),
+                               static_cast<float>(anchors[candidate].x),
+                               static_cast<float>(anchors[candidate].y));
+            const float score = distance - (anchors[candidate].score * min_dimension * 0.08F);
+            if (score < best_score) {
+                best_score = score;
+                best_parent = candidate;
+            }
+        }
+        const std::vector<std::pair<std::uint32_t, std::uint32_t>> path =
+            trace_mountain_ridge_path(fields.envelope, fields.peak_prominence, ridge_guide,
+                                      anchors[index], anchors[best_parent]);
+        const float strength =
+            cubey::procedural::saturate((anchors[index].score + anchors[best_parent].score) *
+                                        0.52F);
+        rasterize_mountain_ridge_path(fields.ridge_skeleton, fields.ridge_influence, path,
+                                      strength, ridge_radius);
+    }
+
+    fields.ridge_influence = repeated_box_blur(std::move(fields.ridge_influence), 1U);
+    return fields;
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D mountain_support_field(
+    cubey::procedural::Grid2DDesc desc,
+    const cubey::procedural::ScalarField2D& mountain_envelope,
+    const cubey::procedural::ScalarField2D& ridge_influence) {
+    cubey::procedural::ScalarField2D result(desc, 0.0F);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float envelope =
+                cubey::procedural::smoothstep(0.16F, 0.86F, mountain_envelope.at(x, y));
+            const float ridge =
+                cubey::procedural::smoothstep(0.06F, 0.72F, ridge_influence.at(x, y));
+            const float support = cubey::procedural::saturate((envelope * 0.86F) +
+                                                              (ridge * 0.30F));
+            result.at(x, y) = std::pow(support, 0.90F);
+        }
+    }
     return cubey::procedural::clamp_field(result, 0.0F, 1.0F);
 }
 
-[[nodiscard]] cubey::procedural::ScalarField2D primary_mountain_ridge_field(
-    cubey::procedural::Grid2DDesc desc, std::uint64_t seed) {
-    cubey::procedural::ScalarField2D field = cubey::procedural::sample_noise_source_field_2d(
-        desc,
-        cubey::procedural::NoiseSource2D{
-            .backend = cubey::procedural::NoiseSource2DBackend::CoherentNoise,
-            .output = cubey::procedural::NoiseSource2DOutput::Unit,
-            .seed = seed,
-            .coherent =
-                {
-                    .frequency = 0.00034F,
-                    .noise_type = cubey::procedural::CoherentNoiseType::OpenSimplex2,
-                    .fractal_type = cubey::procedural::CoherentFractalType::Ridged,
-                    .octaves = 4U,
-                    .lacunarity = 2.02F,
-                    .gain = 0.50F,
-                    .weighted_strength = 0.12F,
-                },
-            .warp =
-                {
-                    .enabled = true,
-                    .seed_offset = 6823U,
-                    .coherent =
-                        {
-                            .frequency = 0.00012F,
-                            .warp_type =
-                                cubey::procedural::CoherentDomainWarpType::OpenSimplex2Reduced,
-                            .fractal_type =
-                                cubey::procedural::CoherentDomainWarpFractalType::Progressive,
-                            .octaves = 3U,
-                            .lacunarity = 2.0F,
-                            .gain = 0.5F,
-                            .amplitude = 1250.0F,
-                        },
-                },
-        });
-    field = cubey::procedural::percentile_remap_field(field, 0.06F, 0.985F, 0.0F, 1.0F);
-    return cubey::procedural::pow_unit_field(field, 1.12F);
-}
-
 [[nodiscard]] cubey::procedural::ScalarField2D mountain_ridge_hierarchy_field(
-    cubey::procedural::Grid2DDesc desc, std::uint64_t seed,
-    const cubey::procedural::ScalarField2D& range_spine,
+    cubey::procedural::Grid2DDesc desc,
+    const cubey::procedural::ScalarField2D& ridge_skeleton,
+    const cubey::procedural::ScalarField2D& ridge_influence,
+    const cubey::procedural::ScalarField2D& peak_prominence,
     const cubey::procedural::ScalarField2D& mountain_support) {
-    const cubey::procedural::ScalarField2D primary =
-        primary_mountain_ridge_field(desc, seed + 17U);
-    const cubey::procedural::ScalarField2D secondary = ridge_source_field(desc, seed + 37U);
     cubey::procedural::ScalarField2D result(desc, 0.0F);
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const float support_gate =
                 cubey::procedural::smoothstep(0.12F, 0.78F, mountain_support.at(x, y));
-            const float spine_gate =
-                cubey::procedural::smoothstep(0.14F, 0.86F, range_spine.at(x, y));
-            const float primary_rank =
-                std::pow(cubey::procedural::saturate(primary.at(x, y)), 0.84F) * spine_gate;
-            const float secondary_rank =
-                std::pow(cubey::procedural::saturate(secondary.at(x, y)), 1.40F) *
-                support_gate * (0.22F + (primary_rank * 0.78F));
-            result.at(x, y) =
-                cubey::procedural::saturate((primary_rank * 0.78F) +
-                                            (secondary_rank * 0.48F));
+            const float skeleton =
+                cubey::procedural::smoothstep(0.02F, 0.56F, ridge_skeleton.at(x, y));
+            const float influence =
+                cubey::procedural::smoothstep(0.04F, 0.64F, ridge_influence.at(x, y));
+            const float peak =
+                cubey::procedural::smoothstep(0.10F, 0.82F, peak_prominence.at(x, y));
+            result.at(x, y) = support_gate *
+                              cubey::procedural::saturate((skeleton * 0.78F) +
+                                                          (influence * 0.54F) +
+                                                          (peak * 0.18F));
         }
     }
     return cubey::procedural::clamp_field(result, 0.0F, 1.0F);
@@ -649,9 +922,9 @@ struct RoutingRepairResult {
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const float support_gate =
-                cubey::procedural::smoothstep(0.10F, 0.76F, mountain_support.at(x, y));
+                cubey::procedural::smoothstep(0.08F, 0.70F, mountain_support.at(x, y));
             const float hierarchy =
-                cubey::procedural::smoothstep(0.12F, 0.94F, mountain_ridge_hierarchy.at(x, y));
+                cubey::procedural::smoothstep(0.08F, 0.86F, mountain_ridge_hierarchy.at(x, y));
             result.at(x, y) = std::pow(cubey::procedural::saturate(hierarchy * support_gate),
                                        0.96F);
         }
@@ -660,32 +933,18 @@ struct RoutingRepairResult {
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D mountain_peak_candidates_field(
-    cubey::procedural::Grid2DDesc desc, std::uint64_t seed,
-    const cubey::procedural::ScalarField2D& range_spine,
-    const cubey::procedural::ScalarField2D& mountain_support,
-    const cubey::procedural::ScalarField2D& mountain_ridge_hierarchy) {
-    const cubey::procedural::ScalarField2D summit_noise =
-        unit_source_field(desc, seed, 0.00105F, 4U);
-    const cubey::procedural::ScalarField2D local_noise =
-        unit_source_field(desc, seed + 61U, 0.00215F, 3U);
+    cubey::procedural::Grid2DDesc desc,
+    const cubey::procedural::ScalarField2D& peak_anchors,
+    const cubey::procedural::ScalarField2D& peak_prominence) {
     cubey::procedural::ScalarField2D result(desc, 0.0F);
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
-            const float spine_gate =
-                cubey::procedural::smoothstep(0.34F, 0.96F, range_spine.at(x, y));
-            const float support_gate =
-                cubey::procedural::smoothstep(0.48F, 0.96F, mountain_support.at(x, y));
-            const float ridge_gate =
-                cubey::procedural::smoothstep(0.54F, 0.98F,
-                                              mountain_ridge_hierarchy.at(x, y));
-            const float summit_gate =
-                cubey::procedural::smoothstep(0.60F, 0.96F, summit_noise.at(x, y));
-            const float local_gate =
-                cubey::procedural::smoothstep(0.52F, 0.96F, local_noise.at(x, y));
-            const float candidate =
-                cubey::procedural::saturate((ridge_gate * 0.62F) + (summit_gate * 0.40F) +
-                                            (local_gate * 0.24F) - 0.34F);
-            result.at(x, y) = spine_gate * support_gate * std::pow(candidate, 2.10F);
+            const float anchor = cubey::procedural::smoothstep(0.08F, 0.86F,
+                                                               peak_anchors.at(x, y));
+            const float prominence = cubey::procedural::smoothstep(0.12F, 0.88F,
+                                                                   peak_prominence.at(x, y));
+            result.at(x, y) = cubey::procedural::saturate((anchor * 0.72F) +
+                                                          (prominence * 0.58F));
         }
     }
     return result;
@@ -694,17 +953,19 @@ struct RoutingRepairResult {
 [[nodiscard]] cubey::procedural::ScalarField2D peak_support_field(
     cubey::procedural::Grid2DDesc desc,
     const cubey::procedural::ScalarField2D& mountain_support,
-    const cubey::procedural::ScalarField2D& mountain_ridge_hierarchy,
-    const cubey::procedural::ScalarField2D& mountain_peak_candidates) {
+    const cubey::procedural::ScalarField2D& ridge_influence,
+    const cubey::procedural::ScalarField2D& peak_prominence) {
     cubey::procedural::ScalarField2D result(desc, 0.0F);
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const float mountain_gate =
-                cubey::procedural::smoothstep(0.42F, 0.96F, mountain_support.at(x, y));
+                cubey::procedural::smoothstep(0.34F, 0.92F, mountain_support.at(x, y));
             const float ridge_gate =
-                cubey::procedural::smoothstep(0.50F, 0.96F, mountain_ridge_hierarchy.at(x, y));
-            const float candidate = cubey::procedural::saturate(mountain_peak_candidates.at(x, y));
-            result.at(x, y) = mountain_gate * ridge_gate * std::pow(candidate, 0.92F);
+                cubey::procedural::smoothstep(0.08F, 0.76F, ridge_influence.at(x, y));
+            const float peak = cubey::procedural::smoothstep(0.18F, 0.92F,
+                                                             peak_prominence.at(x, y));
+            result.at(x, y) = mountain_gate * (0.46F + (ridge_gate * 0.54F)) *
+                              std::pow(peak, 0.86F);
         }
     }
     return result;
@@ -810,25 +1071,37 @@ struct RoutingRepairResult {
         scale_unit_field(unit_source_field(desc, seed + 202U, 0.00042F, 5U), -80.0F, 360.0F);
     if (profile.explicit_mountain_driver) {
         fields.mountain_range_spine = mountain_range_spine_field(desc, seed + 229U);
-        fields.mountain_support =
-            mountain_support_field(desc, seed + 251U, fields.mountain_range_spine);
+        const MountainSkeletonFields skeleton =
+            make_mountain_skeleton_fields(desc, seed + 251U, fields.mountain_range_spine);
+        fields.mountain_envelope = skeleton.envelope;
+        fields.mountain_peak_anchors = skeleton.peak_anchors;
+        fields.mountain_peak_prominence = skeleton.peak_prominence;
+        fields.mountain_ridge_skeleton = skeleton.ridge_skeleton;
+        fields.mountain_ridge_influence = skeleton.ridge_influence;
+        fields.mountain_support = mountain_support_field(
+            desc, fields.mountain_envelope, fields.mountain_ridge_influence);
         fields.mountain_ridge_hierarchy = mountain_ridge_hierarchy_field(
-            desc, seed + 303U, fields.mountain_range_spine, fields.mountain_support);
+            desc, fields.mountain_ridge_skeleton, fields.mountain_ridge_influence,
+            fields.mountain_peak_prominence, fields.mountain_support);
         fields.ridge_support = mountain_ridge_support_field(
             desc, fields.mountain_ridge_hierarchy, fields.mountain_support);
         fields.mountain_peak_candidates = mountain_peak_candidates_field(
-            desc, seed + 505U, fields.mountain_range_spine, fields.mountain_support,
-            fields.mountain_ridge_hierarchy);
+            desc, fields.mountain_peak_anchors, fields.mountain_peak_prominence);
         fields.peak_support =
-            peak_support_field(desc, fields.mountain_support, fields.mountain_ridge_hierarchy,
-                               fields.mountain_peak_candidates);
+            peak_support_field(desc, fields.mountain_support, fields.mountain_ridge_influence,
+                               fields.mountain_peak_prominence);
     } else {
         fields.mountain_range_spine = zero_field(desc);
+        fields.mountain_envelope = zero_field(desc);
         fields.mountain_support = zero_field(desc);
         fields.mountain_ridge_hierarchy = ridge_source_field(desc, seed + 303U);
         fields.ridge_support = fields.mountain_ridge_hierarchy;
         fields.mountain_peak_candidates = zero_field(desc);
+        fields.mountain_peak_anchors = zero_field(desc);
+        fields.mountain_peak_prominence = zero_field(desc);
         fields.peak_support = zero_field(desc);
+        fields.mountain_ridge_skeleton = zero_field(desc);
+        fields.mountain_ridge_influence = zero_field(desc);
     }
     fields.mountain_uplift =
         make_mountain_uplift_field(fields.mountain_support, profile.mountain_uplift_m);
@@ -6128,6 +6401,8 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldBroadRelief, std::move(source_fields.broad_relief));
     add_field(product.fields, kTerrainFieldMountainRangeSpine,
               std::move(source_fields.mountain_range_spine));
+    add_field(product.fields, kTerrainFieldMountainEnvelope,
+              std::move(source_fields.mountain_envelope));
     add_field(product.fields, kTerrainFieldMountainSupport,
               std::move(source_fields.mountain_support));
     add_field(product.fields, kTerrainFieldMountainRidgeHierarchy,
@@ -6135,7 +6410,15 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldRidgeSupport, std::move(source_fields.ridge_support));
     add_field(product.fields, kTerrainFieldMountainPeakCandidates,
               std::move(source_fields.mountain_peak_candidates));
+    add_field(product.fields, kTerrainFieldMountainPeakAnchors,
+              std::move(source_fields.mountain_peak_anchors));
+    add_field(product.fields, kTerrainFieldMountainPeakProminence,
+              std::move(source_fields.mountain_peak_prominence));
     add_field(product.fields, kTerrainFieldPeakSupport, std::move(source_fields.peak_support));
+    add_field(product.fields, kTerrainFieldMountainRidgeSkeleton,
+              std::move(source_fields.mountain_ridge_skeleton));
+    add_field(product.fields, kTerrainFieldMountainRidgeInfluence,
+              std::move(source_fields.mountain_ridge_influence));
     add_field(product.fields, kTerrainFieldMountainUplift,
               std::move(source_fields.mountain_uplift));
     add_field(product.fields, kTerrainFieldRidgeUplift, std::move(source_fields.ridge_uplift));
