@@ -13,6 +13,27 @@ target_link_libraries(
         cubey_project_warnings
 )
 
+cubey_add_app_target(
+    cubey_project_terrain_preview
+    OUTPUT_NAME terrain_preview
+    SHADER_DEFINE CUBEY_TERRAIN_PREVIEW_SHADER_DIR
+    WINDOWED_SMOKE_TEST terrain_preview_reaches_glfw
+    WINDOWED_SMOKE_PATTERN "terrain_preview: .*rendering terrain preview"
+    WINDOWED_SMOKE_ARGS
+        --grid-size
+        65
+    SOURCES
+        terrain_preview_main.cpp
+        terrain_preview_app.cpp
+        terrain_preview_config.cpp
+        terrain_preview_mesh.cpp
+        terrain_generator.cpp
+        terrain_product.cpp
+    SHADERS
+        shaders/terrain_preview.vert
+        shaders/terrain_preview.frag
+)
+
 if (BUILD_TESTING)
     add_executable(cubey_project_terrain_tests
         terrain_debug_export.cpp
