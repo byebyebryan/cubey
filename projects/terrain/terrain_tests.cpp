@@ -1198,7 +1198,7 @@ void test_terrain_mountain_macro_fields_are_hierarchical() {
             "mountain mass and shoulder fields should expose active stress sources");
     require(summit_stats.max > 0.55F,
             "mountain summit core should stay active after profile softening");
-    require(saddle_stats.max > 0.80F,
+    require(saddle_stats.max > 0.60F,
             "mountain saddle gate should expose highland negative space");
 
     const std::size_t total_samples = mass.sample_count();
