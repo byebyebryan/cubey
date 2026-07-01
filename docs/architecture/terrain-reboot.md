@@ -220,7 +220,7 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `24` emits deterministic source fields,
+local region. Generator revision `25` emits deterministic source fields,
 explicit mountain support/ridge/peak/uplift fields, height/slope analysis,
 repaired routing diagnostics, smoothed active river trunk and tributary masks,
 pre-process and carved height fields, channel/valley incision diagnostics,
@@ -228,6 +228,10 @@ wetness/deposition, material masks, vegetation potential, summaries, and tests.
 Revision `24` extends that product with diagnostic-only mountain gully fields:
 `erosion_delta_m`, `gully_mask`, `crease_proxy`, and
 `post_erosion_height_m`.
+Revision `25` adds mountain macro source fields:
+`mountain_mass`, `mountain_shoulder`, and `mountain_summit_core`. These expose
+broad highland mass, foothill/shoulder buildup, and sparse summit cores before
+local detail and diagnostic erosion are judged.
 
 The river driver intentionally moved away from a single authored line. It routes
 over a coherent low-frequency drainage potential derived from the terrain seed
@@ -370,6 +374,13 @@ unchanged, and downstream slope, material, wetness, vegetation, and river fields
 still describe the current carved product rather than the post-erosion review
 height.
 
+Revision 25 improves the mountain stress recipe's source hierarchy rather than
+applying the gully diagnostic to final terrain. `mountain_mass` carries broad
+highland support, `mountain_shoulder` widens foothill/shoulder buildup around
+that mass, and `mountain_summit_core` isolates sparse high-summit support. The
+renderer-backed preview can now select `height`, `post-erosion`, or
+`pre-process` surfaces, which makes diagnostic geometry comparisons explicit.
+
 The next work should be foundation-shaped inside the terrain project rather
 than another isolated biome image. Keep the per-revision river and mountain
 recipes as diagnostics while extracting reusable process-field helpers, adding
@@ -420,9 +431,10 @@ Known limitations:
   revisited before adding heavier hydrology checks.
 - The mountain stress recipe is an early diagnostic driver, not a finished
   alpine biome. It does not yet include erosion time, talus, snow/ice, glacial
-  valley carving, or world-scale range continuity. Revision 22 improves the
-  visible buildup into peaks, but peak prominence remains mostly radial and the
-  skeleton is generated rather than erosion-evolved.
+  valley carving, or world-scale range continuity. Revision 25 makes broad mass,
+  shoulders, and sparse summit cores inspectable, but the resulting summit
+  shapes can still read too pointy and stylized because the peak/ridge source is
+  generated rather than erosion-evolved.
 - The final PNG is an inspectable debug composition, not the target renderer.
   Use `mountain-relief.png` for mountain-form review because `final.png` still
   includes the river/material overlays.
@@ -459,7 +471,7 @@ adding more biome labels:
    perspective captures.
 2. Review the clean-room gully/erosion diagnostic over the mountain stress
    recipe before deciding whether any erosion-like pass should affect height.
-3. Refine the current mountain source hierarchy with anisotropic peak shaping,
+3. Refine the current mountain source hierarchy with anisotropic summit shaping,
    erosion-aware ridge cleanup, alpine material/valley contrast, and better
    world-scale range continuity.
 4. Return to river topology with graph/hydrology references once mountain

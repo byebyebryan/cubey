@@ -18,7 +18,9 @@ coherent source fields -> terrain process fields -> product fields -> consumers
 
 The current implementation already emits named scalar fields, summaries,
 headless PNG review sets, scalar capture manifests, and renderer-backed preview
-captures. It also has separate diagnostic recipes for the normal temperate
+captures. Revision 25 adds selectable preview surfaces so `height_m`,
+`post_erosion_height_m`, and `pre_process_height_m` can be compared in the same
+mesh consumer. It also has separate diagnostic recipes for the normal temperate
 mountain river slice, a stress river network, and an isolated mountain range.
 
 Those are still diagnostic recipes, not finished biome definitions. Rivers,
@@ -51,7 +53,7 @@ review consumers, or integration adapters.
 | --- | --- | --- |
 | Process helpers | Terrain-local spread, relief-clamped lowering, height-lowering, and diagnostic gully helpers now exist in `terrain_process_fields`. | Keep new process math routed through helper APIs before broadening erosion, deposition, talus, snow, sand, or wetness work. |
 | River carving | Rivers now lower `height_m`, but channel depth still reads weak in 3D and water/material tint can obscure geometry. | Keep incision fields explicit, use manifests to compare field ranges, then tune against height-only and channel preview modes. |
-| Mountain form | The stress recipe has envelope, peak, skeleton, and uplift fields, but it can still read noisy or artificial in perspective. | Treat mountains as a hierarchy problem: broad mass, peak anchors, ridge connection, shoulder influence, then local detail. |
+| Mountain form | The stress recipe now exposes mass, shoulder, summit core, envelope, peak, skeleton, and uplift fields, but summit shapes can still read pointy or artificial in perspective. | Treat mountains as a hierarchy problem: broad mass, peak anchors, ridge connection, shoulder influence, summit shaping, then local detail. |
 | Scale | Rivers and mountains are still patch-local with a padded halo. | Later world/tile work should generate deterministic world-coordinate basin and range sources, then rasterize local products plus halo. |
 | Capture evidence | Scalar review directories now write `manifest.json` beside the PNGs. | Use manifest ranges and hashes when comparing captures instead of relying only on manual image inspection. |
 
@@ -83,12 +85,12 @@ The detailed extraction and guardrails are in
 
 1. Preserve the current river and mountain evidence: scalar exports, manifests,
    renderer-backed previews, and deterministic stress recipes.
-2. Use the new process helpers and manifests to tune river incision and mountain
-   hierarchy in small passes.
-3. Review the revision 24 clean-room gully/erosion diagnostic for the mountain
-   stress recipe before opening lakes or shoreline work.
-4. Use that diagnostic evidence to improve the mountain source hierarchy or add
-   the next bounded process diagnostic.
+2. Use the new process helpers, manifests, and preview surface selector to tune
+   river incision and mountain hierarchy in small passes.
+3. Review the revision 25 mountain macro fields before deciding whether the
+   revision 24 clean-room gully/erosion diagnostic should affect final height.
+4. Use that evidence to improve summit/ridge source shape or add the next
+   bounded process diagnostic.
 5. Return to river topology with graph/hydrology references after mountain
    process/source quality is clearer.
 6. Only then add another terrain process or water body. Lakes, coast, dunes,

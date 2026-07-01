@@ -52,4 +52,23 @@ The preview path should also be able to render alternate product surfaces:
 
 ## Outcome
 
-Pending revision 25 implementation.
+Implemented in revision 25.
+
+- `terrain.preview_surface` and `--terrain-preview-surface` select `height`,
+  `post-erosion`, or `pre-process` geometry for `terrain_preview`.
+- The mountain stress recipe emits `mountain_mass`, `mountain_shoulder`, and
+  `mountain_summit_core` with matching scalar debug views.
+- Default river recipes keep those macro fields inactive.
+- Tests cover the inactive default fields, active mountain stress hierarchy,
+  debug export coverage, and alternate preview surfaces.
+- Refreshed local captures:
+  - `outputs/terrain/mountain-range-stress/` at `513x513`, revision 25, 50
+    fields, 44 scalar views, plus oblique/profile/post-erosion previews.
+  - `outputs/terrain/mountain-range-stress-1025/` at `1025x1025`, revision 25,
+    50 fields, 44 scalar views.
+
+Visual read: broad mass and shoulder buildup are clearer in perspective, and
+summit support is sparse enough to inspect separately. The remaining visible
+problem is source shape quality: some peaks still read too pointy/stylized, so
+the next mountain batch should refine summit/ridge source shape before adding
+more erosion detail.
