@@ -98,6 +98,60 @@ useful contract is coverage, type, edge softness, and erosion as separate
 parameter biases over the local 3D density field before lighting and
 composition.
 
+### Cloud Ref Lighting Test Bed
+
+`projects/cloud_ref` should now serve as the clean lighting/rendering test bed
+for the local volumetric cloud path. It should keep the TerrainEngine-style
+density, shell, noise, weather, and basic cone-light march as the stable raw
+signal, but lighting is allowed to diverge from TerrainEngine where the source
+demo is too presentation-specific or too crude for Cubey.
+
+The corrected lighting direction is additive rather than a mix between ambient
+fill and direct sun:
+
+1. march density through the view ray and update view transmittance with
+   Beer-Lambert extinction;
+2. evaluate sun visibility with the existing short cone march;
+3. evaluate directional response with dual or stacked Henyey-Greenstein phase
+   functions;
+4. apply a powder or cheap multi-scattering approximation as a modifier of the
+   sun contribution, not as a switch that suppresses direct light;
+5. evaluate ambient as a separate sky/top/ground term, initially from the
+   standalone `cloud_ref` sky context and later from shared atmosphere/sky
+   inputs;
+6. integrate `direct + ambient` into linear cloud radiance, and output
+   radiance plus view transmittance/alpha for final resolve and composition.
+
+The current `cloud_ref` powder toggle should be treated as experimental. It
+multiplies the direct-light mix weight by a local density term, so thin cloud
+edges can lose direct sun when the toggle is enabled. That is the opposite of
+the useful Beer-Powder role seen in the references, where powder is a controlled
+local-scattering approximation layered on top of Beer transmittance and phase.
+
+Reference alignment for this lighting direction:
+
+- `TerrainEngine-OpenGL`: still the source-faithful density/march baseline, but
+  its final source mix is not the production lighting target;
+- `godot-volumetric-cloud-demo-v2`: good compact model for sky-LUT-derived sun,
+  ambient, and ground terms plus stacked phase and Beer-Powder-style lighting;
+- `UnityVolumetricCloudsURP`: strongest product-level model for separating
+  scattering/transmittance, ambient probe, powder intensity, multi-scattering,
+  light steps, mean distance, and upscale/resolve metadata;
+- `diharaw-volumetric-clouds`: compact cross-check for Beer-plus-powder energy,
+  dual HG phase, cone-density lighting, and simple ambient/sun controls;
+- `Meteoros` and `Project-Marshmallow`: useful explanatory references for the
+  Horizon/Decima vocabulary: directional scattering, absorption/out-scattering,
+  in-scattering, cone samples, and silver-lining behavior;
+- ShaderToy cloud refs: useful visual/look-dev checks, especially derivative
+  lighting, horizon-specific clouds, moonlit fill, and storm flash lighting, but
+  not direct code donors because of mixed licenses and flat/AABB assumptions.
+
+The first implementation pass should make `cloud_ref` lighting honest before
+adding more features: remove or relabel inactive controls, make debug views show
+real ambient/direct/phase/source terms, replace the ambient/direct mix with an
+additive source equation, then reintroduce powder as a scalar intensity with
+off/current/new comparisons in the capture pack.
+
 ## Lessons From Cloud Ref 2
 
 `cloud_ref_2` is not a useful visual target yet. It deliberately reused Cubey

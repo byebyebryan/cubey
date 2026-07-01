@@ -91,10 +91,9 @@ shows the same composition before final resolve/post.
 The lighting checkpoint in `outputs/cloud-ref-lighting-review/` splits cloud
 lighting diagnostics into `ambient-light`, `direct-light`, and `phase-light`,
 then retunes the standalone march for less ambient wash, warmer direct light,
-powder enabled by default, and a slightly more contrast-preserving final pass.
-This is a cloud-only pass: it does not pursue TerrainEngine water, terrain,
-bloom, or god-ray context, so the final views still depend heavily on the
-placeholder horizon scene.
+and a slightly more contrast-preserving final pass. This is a cloud-only pass:
+it does not pursue TerrainEngine water, terrain, bloom, or god-ray context, so
+the final views still depend heavily on the placeholder horizon scene.
 
 The sampling/coverage checkpoint in
 `outputs/cloud-ref-sampling-coverage-review-20260630/` changes final output to a
@@ -125,6 +124,24 @@ not model true towering cumulus structure, and an overly tall ordinary volume
 stretched clouds vertically enough to make edge/far-field sampling artifacts
 more visible. Storm and cirrus presets keep higher ceilings because those
 presets explicitly represent taller or higher-altitude cloud types.
+
+Rendering test-bed direction:
+
+- `cloud_ref` is still the stable local-density and sampling baseline, but cloud
+  lighting is allowed to diverge from TerrainEngine.
+- The target lighting equation is additive: Beer view extinction, cone-marched
+  sun transmittance, dual/stacked HG phase, optional powder/multi-scatter boost,
+  and separate sky/ground ambient.
+- Final output should remain a cloud layer containing linear radiance plus
+  transmittance/alpha; final resolve/composite should be isolated from raw
+  lighting diagnostics.
+- The current `Powder` toggle is experimental and defaults off. It currently
+  reduces the direct-light mix factor in thin regions, which can make the image
+  flatter or darker instead of producing useful Beer-Powder edge response.
+- Ref alignment: TerrainEngine guards density/march parity; Godot v2 and
+  UnityVolumetricCloudsURP are stronger lighting/product references; diharaw,
+  Meteoros, Project-Marshmallow, and ShaderToy examples are comparison and
+  look-dev references.
 
 Controls:
 
