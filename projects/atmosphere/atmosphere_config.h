@@ -91,15 +91,17 @@ enum class AtmosphereCloudWeatherPreset : std::uint32_t {
     OvercastStratus = 3,
     StormCells = 4,
     HighCirrus = 5,
+    ReferenceParity = 6,
 };
 
-inline constexpr std::array<AtmosphereCloudWeatherPreset, 6> kAtmosphereCloudWeatherPresets{
+inline constexpr std::array<AtmosphereCloudWeatherPreset, 7> kAtmosphereCloudWeatherPresets{
     AtmosphereCloudWeatherPreset::Clear,
     AtmosphereCloudWeatherPreset::FairWeather,
     AtmosphereCloudWeatherPreset::BrokenCumulus,
     AtmosphereCloudWeatherPreset::OvercastStratus,
     AtmosphereCloudWeatherPreset::StormCells,
     AtmosphereCloudWeatherPreset::HighCirrus,
+    AtmosphereCloudWeatherPreset::ReferenceParity,
 };
 
 struct TimeOfDayConfig {
@@ -285,6 +287,8 @@ atmosphere_cloud_weather_preset_name(AtmosphereCloudWeatherPreset preset) {
         return "storm-cells";
     case AtmosphereCloudWeatherPreset::HighCirrus:
         return "high-cirrus";
+    case AtmosphereCloudWeatherPreset::ReferenceParity:
+        return "reference-parity";
     }
     return "broken-cumulus";
 }
@@ -309,6 +313,10 @@ atmosphere_cloud_weather_preset_from_name(std::string_view name) {
     }
     if (name == "high-cirrus") {
         return AtmosphereCloudWeatherPreset::HighCirrus;
+    }
+    if (name == "reference-parity" || name == "ref-parity" ||
+        name == "cloud-ref-parity") {
+        return AtmosphereCloudWeatherPreset::ReferenceParity;
     }
     throw std::runtime_error("unknown atmosphere cloud weather preset: " + std::string(name));
 }
@@ -569,8 +577,46 @@ atmosphere_cloud_weather_preset_settings(AtmosphereCloudWeatherPreset preset) {
                 .bottom_altitude_m = 11000.0F,
                 .top_altitude_m = 22000.0F,
                 .cloud_style = cubey::render::CloudLayerCloudStyle::HighCirrus};
+    case AtmosphereCloudWeatherPreset::ReferenceParity:
+        return {.coverage = 0.30F,
+                .density = 0.016F,
+                .weather_scale_km = 260.0F,
+                .shape_domain_km = 600.0F,
+                .wind_speed_mps = 260.0F,
+                .bottom_altitude_m = 5000.0F,
+                .top_altitude_m = 14000.0F,
+                .horizon_strength = 0.62F,
+                .horizon_glow_strength = 1.05F,
+                .cloud_style = cubey::render::CloudLayerCloudStyle::FairWeather};
     }
     return atmosphere_cloud_weather_preset_settings(AtmosphereCloudWeatherPreset::BrokenCumulus);
+}
+
+inline void apply_atmosphere_cloud_reference_parity(AtmosphereCloudConfig& config) {
+    config.layer.quality = cubey::render::CloudLayerQuality::Full;
+    config.layer.sampling_mode = cubey::render::CloudLayerSamplingMode::Bayer;
+    config.layer.view_sample_mode = cubey::render::CloudLayerViewSampleMode::SingleFrame;
+    config.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    config.layer.density_model = cubey::render::CloudLayerDensityModel::CloudRefCompatible;
+    config.layer.resolve_mode = cubey::render::CloudLayerResolveMode::TerrainPost;
+    config.layer.temporal_enabled = false;
+    config.layer.local_volume_enabled = true;
+    config.layer.horizon_layer_enabled = false;
+    config.layer.view_steps_override = 64;
+    config.layer.view_samples = 1;
+    config.layer.footprint_filter_strength = 1.0F;
+    config.layer.edge_softness = 1.0F;
+    config.layer.edge_detail_fade = 0.75F;
+    config.layer.edge_resolve_strength = 0.70F;
+    config.layer.shadow_strength = 0.15F;
+    config.layer.ambient_strength = 1.30F;
+    config.layer.direct_strength = 1.15F;
+    config.layer.phase_strength = 1.20F;
+    config.layer.final_contrast = 0.98F;
+    config.layer.final_saturation = 1.0F;
+    config.layer.resolve_strength = 1.0F;
+    config.layer.sun_glare_strength = 1.0F;
+    config.layer.jitter_strength = 0.65F;
 }
 
 inline void apply_atmosphere_cloud_weather_preset(AtmosphereCloudConfig& config,
@@ -589,6 +635,9 @@ inline void apply_atmosphere_cloud_weather_preset(AtmosphereCloudConfig& config,
     config.layer.horizon_strength = settings.horizon_strength;
     config.layer.horizon_glow_strength = settings.horizon_glow_strength;
     config.layer.cloud_style = settings.cloud_style;
+    if (preset == AtmosphereCloudWeatherPreset::ReferenceParity) {
+        apply_atmosphere_cloud_reference_parity(config);
+    }
 }
 
 using SolarPosition = cubey::render::AtmosphereEnvironmentSolarPosition;
@@ -1054,6 +1103,10 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
         }
     };
 
+    if (!run_clouds.weather_preset.empty()) {
+        apply_atmosphere_cloud_weather_preset(
+            config, atmosphere_cloud_weather_preset_from_name(run_clouds.weather_preset));
+    }
     if (!run_clouds.quality.empty()) {
         config.layer.quality = atmosphere_cloud_quality_from_name(run_clouds.quality);
     }
@@ -1088,11 +1141,6 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
         config.layer.resolve_mode =
             atmosphere_cloud_resolve_mode_from_name(run_clouds.resolve_mode);
     }
-    if (!run_clouds.weather_preset.empty()) {
-        apply_atmosphere_cloud_weather_preset(
-            config, atmosphere_cloud_weather_preset_from_name(run_clouds.weather_preset));
-    }
-
     if (run_clouds.view_steps > 0U) {
         config.layer.view_steps_override = static_cast<std::int32_t>(run_clouds.view_steps);
     }

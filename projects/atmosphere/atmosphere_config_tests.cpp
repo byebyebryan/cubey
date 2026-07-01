@@ -240,6 +240,9 @@ int main() {
     require(atmosphere_cloud_weather_preset_from_name("inspection") ==
                 AtmosphereCloudWeatherPreset::BrokenCumulus,
             "inspection cloud weather preset alias should parse");
+    require(atmosphere_cloud_weather_preset_from_name("cloud-ref-parity") ==
+                AtmosphereCloudWeatherPreset::ReferenceParity,
+            "cloud reference parity preset alias should parse");
     require_throws([] {
         static_cast<void>(atmosphere_cloud_weather_preset_from_name("planetary-storm"));
     }, "atmosphere cloud weather preset parser should reject unknown presets");
@@ -523,6 +526,30 @@ int main() {
         require_near(clouds.wind_speed_mps, 650.0F, 0.001F,
                      "atmosphere cloud weather preset should apply wind");
     }
+    {
+        AtmosphereCloudConfig clouds;
+        apply_atmosphere_cloud_weather_preset(clouds,
+                                              AtmosphereCloudWeatherPreset::ReferenceParity);
+        require(clouds.weather_preset == AtmosphereCloudWeatherPreset::ReferenceParity,
+                "reference parity preset should preserve selected preset");
+        require(clouds.layer.quality == CloudLayerQuality::Full,
+                "reference parity preset should force full-quality local comparison");
+        require(clouds.layer.distance_mode == CloudLayerDistanceMode::Local,
+                "reference parity preset should force local cloud distance mode");
+        require(clouds.layer.density_model == CloudLayerDensityModel::CloudRefCompatible,
+                "reference parity preset should use the cloud-ref-compatible density path");
+        require(clouds.layer.resolve_mode == CloudLayerResolveMode::TerrainPost,
+                "reference parity preset should use terrain-post resolve");
+        require(!clouds.layer.temporal_enabled && clouds.layer.local_volume_enabled &&
+                    !clouds.layer.horizon_layer_enabled,
+                "reference parity preset should isolate the local volume path");
+        require(clouds.layer.view_steps_override == 64 && clouds.layer.view_samples == 1,
+                "reference parity preset should match cloud_ref full-quality sampling");
+        require_near(clouds.layer.top_altitude_m, 14000.0F, 0.001F,
+                     "reference parity preset should use the lower cloud_ref ceiling");
+        require_near(clouds.layer.shadow_strength, 0.15F, 0.001F,
+                     "reference parity preset should use the cloud_ref fair-weather shadow");
+    }
 
     {
         cubey::RunConfig run_config{};
@@ -597,6 +624,27 @@ int main() {
                 "atmosphere run config should map local volume flag");
         require(config.clouds.layer.horizon_layer_enabled,
                 "atmosphere run config should map horizon layer flag");
+    }
+    {
+        cubey::RunConfig run_config{};
+        run_config.clouds.weather_preset = "reference-parity";
+        run_config.clouds.quality = "half";
+        run_config.clouds.distance_mode = "auto";
+        run_config.clouds.horizon_layer = 1;
+        run_config.clouds.view_steps = 48;
+        const AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
+        require(config.clouds.weather_preset == AtmosphereCloudWeatherPreset::ReferenceParity,
+                "atmosphere run config should map reference parity preset");
+        require(config.clouds.layer.quality == CloudLayerQuality::Half,
+                "explicit cloud quality should override reference parity preset");
+        require(config.clouds.layer.distance_mode == CloudLayerDistanceMode::Auto,
+                "explicit cloud distance mode should override reference parity preset");
+        require(config.clouds.layer.horizon_layer_enabled,
+                "explicit horizon layer flag should override reference parity preset");
+        require(config.clouds.layer.view_steps_override == 48,
+                "explicit view steps should override reference parity preset");
+        require(config.clouds.layer.density_model == CloudLayerDensityModel::CloudRefCompatible,
+                "reference parity preset should keep cloud-ref-compatible density by default");
     }
 
     {

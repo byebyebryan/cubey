@@ -8,7 +8,8 @@ OUT_DIR="${1:-${ROOT_DIR}/outputs/cloud-ref-parity-$(date +%Y%m%d-%H%M%S)}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"
-PRESET="${PRESET:-fair-weather}"
+CLOUD_REF_PRESET="${CLOUD_REF_PRESET:-fair-weather}"
+ATMOSPHERE_PRESET="${ATMOSPHERE_PRESET:-reference-parity}"
 VIEW_STEPS="${VIEW_STEPS:-64}"
 
 mkdir -p "${OUT_DIR}/cloud_ref" "${OUT_DIR}/atmosphere"
@@ -33,7 +34,8 @@ write_header() {
         printf '# Cloud Ref / Atmosphere Parity Captures\n\n'
         printf -- '- Size: %sx%s\n' "${WIDTH}" "${HEIGHT}"
         printf -- '- Frames: %s\n' "${FRAMES}"
-        printf -- '- Weather preset: %s\n' "${PRESET}"
+        printf -- '- Cloud ref preset: %s\n' "${CLOUD_REF_PRESET}"
+        printf -- '- Atmosphere preset: %s\n' "${ATMOSPHERE_PRESET}"
         printf -- '- View steps: %s\n\n' "${VIEW_STEPS}"
         printf '| Capture | Project | View | Case | Debug | Args |\n'
         printf '|---|---|---|---|---|---|\n'
@@ -71,7 +73,7 @@ capture_cloud_ref() {
         --width "${WIDTH}" \
         --height "${HEIGHT}" \
         --cloud-quality full \
-        --cloud-weather-preset "${PRESET}" \
+        --cloud-weather-preset "${CLOUD_REF_PRESET}" \
         --cloud-view-steps "${VIEW_STEPS}" \
         --cloud-view-samples 1 \
         --cloud-resolve-mode terrain-post \
@@ -93,27 +95,9 @@ capture_atmosphere() {
     local rel_file="atmosphere/${name}.png"
     local local_args=(
         --time-of-day-mode solar
-        --cloud-quality full
-        --cloud-weather-preset "${PRESET}"
-        --cloud-density-model cloud-ref-compatible
-        --cloud-distance-mode local
+        --cloud-weather-preset "${ATMOSPHERE_PRESET}"
         --cloud-view-steps "${VIEW_STEPS}"
-        --cloud-view-samples 1
-        --cloud-view-sample-mode single-frame
-        --cloud-sampling-mode bayer
-        --cloud-resolve-mode terrain-post
         --cloud-resolve-radius-px 1.5
-        --cloud-resolve-strength 1.0
-        --no-cloud-temporal
-        --no-cloud-horizon-layer
-        --cloud-footprint-filter-strength 1.0
-        --cloud-edge-softness 1.0
-        --cloud-edge-detail-fade 0.75
-        --cloud-shadow-strength 0.15
-        --cloud-ambient-strength 1.30
-        --cloud-direct-strength 1.15
-        --cloud-phase-strength 1.20
-        --cloud-horizon-glow-strength 1.05
         --cloud-debug-view "${debug}"
         "$@"
     )

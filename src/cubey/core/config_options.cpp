@@ -80,10 +80,11 @@ constexpr std::array<std::string_view, 4> kCloudDistanceModes{"auto", "local", "
                                                               "blend-debug"};
 constexpr std::array<std::string_view, 2> kCloudOrbitRepresentations{"volume",
                                                                      "surface-shell"};
-constexpr std::array<std::string_view, 10> kCloudWeatherPresets{
+constexpr std::array<std::string_view, 13> kCloudWeatherPresets{
     "fair-weather",     "broken-cumulus", "overcast-stratus", "storm-cells",
     "high-cirrus",      "clear",          "scattered",        "inspection",
-    "overcast",         "storm",
+    "overcast",         "storm",          "reference-parity", "ref-parity",
+    "cloud-ref-parity",
 };
 constexpr std::array<std::string_view, 3> kSmokePressureSolvers{"jacobi", "rbgs",
                                                                 "red-black-gauss-seidel"};
