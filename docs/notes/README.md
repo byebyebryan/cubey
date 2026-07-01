@@ -81,6 +81,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain mountain gully diagnostic plan](terrain-mountain-gully-diagnostic-plan.md):
   revision 24 plan for diagnostic-only gully / erosion fields over the mountain
   stress recipe before any height-affecting erosion pass.
+- [Terrain mountain macro shape plan](terrain-mountain-macro-shape-plan.md):
+  revision 25 plan for preview surface selection and stronger mountain mass,
+  shoulder, and summit source fields.
 - [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
   next river-quality pivot: promote `stream_order` and `flow_accumulation` into
   connected corridor selection while avoiding direct graph-edge rendering.
