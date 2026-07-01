@@ -605,13 +605,16 @@ void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 47> required_fields{
+    const std::array<std::string_view, 50> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldPreProcessHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
         cubey::projects::terrain::kTerrainFieldBroadRelief,
         cubey::projects::terrain::kTerrainFieldMountainRangeSpine,
         cubey::projects::terrain::kTerrainFieldMountainEnvelope,
+        cubey::projects::terrain::kTerrainFieldMountainMass,
+        cubey::projects::terrain::kTerrainFieldMountainShoulder,
+        cubey::projects::terrain::kTerrainFieldMountainSummitCore,
         cubey::projects::terrain::kTerrainFieldMountainSupport,
         cubey::projects::terrain::kTerrainFieldMountainRidgeHierarchy,
         cubey::projects::terrain::kTerrainFieldRidgeSupport,
@@ -1011,6 +1014,76 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
             "terrain mountain support should build above lowland samples");
     require(peak_average_height > mountain_average_height + 120.0F,
             "terrain peak support should build above broad mountain samples");
+}
+
+void test_terrain_mountain_macro_fields_are_hierarchical() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 257;
+    config.grid_height = 257;
+    const cubey::projects::terrain::TerrainRegionProduct baseline =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    config.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress);
+    const cubey::projects::terrain::TerrainRegionProduct mountain =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const auto& baseline_mass =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainMass);
+    const auto& baseline_shoulder =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainShoulder);
+    const auto& baseline_summit =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainSummitCore);
+    require(baseline_mass.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain mass inactive");
+    require(baseline_shoulder.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain shoulder inactive");
+    require(baseline_summit.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain summit core inactive");
+
+    const auto& height = field(mountain, cubey::projects::terrain::kTerrainFieldHeightM);
+    const auto& mass = field(mountain, cubey::projects::terrain::kTerrainFieldMountainMass);
+    const auto& shoulder =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainShoulder);
+    const auto& summit =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainSummitCore);
+
+    const cubey::procedural::ScalarFieldStats mass_stats = mass.summarize();
+    const cubey::procedural::ScalarFieldStats shoulder_stats = shoulder.summarize();
+    const cubey::procedural::ScalarFieldStats summit_stats = summit.summarize();
+    require(mass_stats.max > 0.95F && shoulder_stats.max > 0.95F &&
+                summit_stats.max > 0.95F,
+            "mountain macro fields should normalize active stress sources");
+
+    const std::size_t total_samples = mass.sample_count();
+    const std::size_t mass_samples = count_active_samples(mass, 0.35F);
+    const std::size_t shoulder_samples = count_active_samples(shoulder, 0.30F);
+    const std::size_t summit_samples = count_active_samples(summit, 0.25F);
+    if (mass_samples * 100U < total_samples * 15U ||
+        mass_samples * 100U > total_samples * 70U) {
+        throw std::runtime_error(
+            "mountain mass should be broad but bounded: samples=" +
+            std::to_string(mass_samples) + " total=" + std::to_string(total_samples));
+    }
+    if (shoulder_samples * 100U < total_samples * 10U ||
+        shoulder_samples * 100U > total_samples * 68U) {
+        throw std::runtime_error(
+            "mountain shoulder should build foothills without filling the patch: samples=" +
+            std::to_string(shoulder_samples) + " total=" + std::to_string(total_samples));
+    }
+    if (summit_samples < 8U || summit_samples * 100U > total_samples * 12U) {
+        throw std::runtime_error(
+            "mountain summit core should be sparse: samples=" +
+            std::to_string(summit_samples) + " total=" + std::to_string(total_samples));
+    }
+
+    const float lowland_average_height = average_where(height, mass, 0.0F, 0.10F);
+    const float mass_average_height = average_where(height, mass, 0.42F);
+    const float summit_average_height = average_where(height, summit, 0.32F);
+    require(mass_average_height > lowland_average_height + 240.0F,
+            "mountain mass should lift above lowland samples");
+    require(summit_average_height > mass_average_height + 220.0F,
+            "mountain summit core should build above broad mountain mass");
 }
 
 void test_terrain_mountain_gully_diagnostic_is_bounded() {
@@ -1416,6 +1489,15 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_envelope") ==
                 cubey::projects::terrain::TerrainDebugView::MountainEnvelope,
             "terrain debug view should parse mountain envelope aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_mass") ==
+                cubey::projects::terrain::TerrainDebugView::MountainMass,
+            "terrain debug view should parse mountain mass aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_shoulder") ==
+                cubey::projects::terrain::TerrainDebugView::MountainShoulder,
+            "terrain debug view should parse mountain shoulder aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_summit_core") ==
+                cubey::projects::terrain::TerrainDebugView::MountainSummitCore,
+            "terrain debug view should parse mountain summit core aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_support") ==
                 cubey::projects::terrain::TerrainDebugView::MountainSupport,
             "terrain debug view should parse mountain support aliases");
@@ -1601,6 +1683,11 @@ void test_terrain_debug_export_writes_review_set() {
             "terrain debug manifest should list erosion delta PNG output");
     require(std::find(outputs.begin(), outputs.end(), "post-erosion-height.png") != outputs.end(),
             "terrain debug manifest should list post-erosion height PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "mountain-mass.png") != outputs.end(),
+            "terrain debug manifest should list mountain mass PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "mountain-summit-core.png") !=
+                outputs.end(),
+            "terrain debug manifest should list mountain summit core PNG output");
 
     const nlohmann::json& height_stats =
         manifest.at("fields").at(std::string(cubey::projects::terrain::kTerrainFieldHeightM));
@@ -1621,6 +1708,12 @@ void test_terrain_debug_export_writes_review_set() {
     require(manifest.at("fields").contains(
                 std::string(cubey::projects::terrain::kTerrainFieldPostErosionHeightM)),
             "terrain debug manifest should include post-erosion height stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldMountainMass)),
+            "terrain debug manifest should include mountain mass stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldMountainSummitCore)),
+            "terrain debug manifest should include mountain summit core stats");
 
     std::filesystem::remove_all(output_dir);
 }
@@ -1637,6 +1730,8 @@ void test_terrain_preview_config_uses_run_config_controls() {
             "terrain preview should default to the oblique camera");
     require(preview.color_mode == cubey::projects::terrain::TerrainPreviewColorMode::Material,
             "terrain preview should default to material color");
+    require(preview.surface == cubey::projects::terrain::TerrainPreviewSurface::Height,
+            "terrain preview should default to final height surface");
     require(preview.vertical_scale == cubey::projects::terrain::kTerrainPreviewDefaultVerticalScale,
             "terrain preview should default to the documented vertical scale");
 
@@ -1649,6 +1744,7 @@ void test_terrain_preview_config_uses_run_config_controls() {
         std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRiverStress);
     run_config.terrain.camera_preset = "profile";
     run_config.terrain.preview_color = "height";
+    run_config.terrain.preview_surface = "post-erosion";
     run_config.terrain.vertical_scale = 0.55F;
     preview = cubey::projects::terrain::terrain_preview_config_from_run_config(run_config);
 
@@ -1664,6 +1760,8 @@ void test_terrain_preview_config_uses_run_config_controls() {
             "terrain preview should parse the profile camera");
     require(preview.color_mode == cubey::projects::terrain::TerrainPreviewColorMode::Height,
             "terrain preview should parse the height color mode");
+    require(preview.surface == cubey::projects::terrain::TerrainPreviewSurface::PostErosion,
+            "terrain preview should parse the post-erosion surface");
     require(preview.vertical_scale == 0.55F,
             "terrain preview should use explicit vertical scale");
 
@@ -1682,6 +1780,14 @@ void test_terrain_preview_config_uses_run_config_controls() {
                 cubey::projects::terrain::terrain_preview_config_from_run_config(run_config));
         },
         "terrain preview should reject unknown color modes");
+    run_config.terrain.preview_color = "height";
+    run_config.terrain.preview_surface = "bedrock";
+    require_throws(
+        [&run_config] {
+            static_cast<void>(
+                cubey::projects::terrain::terrain_preview_config_from_run_config(run_config));
+        },
+        "terrain preview should reject unknown surfaces");
 }
 
 void test_terrain_preview_mesh_represents_heightfield() {
@@ -1730,6 +1836,29 @@ void test_terrain_preview_mesh_represents_heightfield() {
                 cubey::projects::terrain::make_terrain_preview_mesh(product, bad_preview));
         },
         "terrain preview mesh should reject invalid vertical scale");
+
+    cubey::projects::terrain::TerrainPreviewConfig post_preview = preview;
+    post_preview.surface = cubey::projects::terrain::TerrainPreviewSurface::PostErosion;
+    post_preview.color_mode = cubey::projects::terrain::TerrainPreviewColorMode::Height;
+    const cubey::projects::terrain::TerrainPreviewMeshData post_mesh =
+        cubey::projects::terrain::make_terrain_preview_mesh(product, post_preview);
+    require(post_mesh.vertices.size() == mesh.vertices.size(),
+            "terrain post-erosion preview mesh should preserve vertex count");
+    float max_height_delta = 0.0F;
+    for (std::size_t index = 0; index < mesh.vertices.size(); ++index) {
+        max_height_delta = std::max(
+            max_height_delta,
+            std::abs(mesh.vertices[index].position[1] - post_mesh.vertices[index].position[1]));
+    }
+    require(max_height_delta > 0.1F,
+            "terrain post-erosion preview surface should change mesh vertex heights");
+
+    cubey::projects::terrain::TerrainPreviewConfig pre_preview = preview;
+    pre_preview.surface = cubey::projects::terrain::TerrainPreviewSurface::PreProcess;
+    const cubey::projects::terrain::TerrainPreviewMeshData pre_mesh =
+        cubey::projects::terrain::make_terrain_preview_mesh(product, pre_preview);
+    require(pre_mesh.vertices.size() == mesh.vertices.size(),
+            "terrain pre-process preview mesh should preserve vertex count");
 }
 
 } // namespace
@@ -1743,6 +1872,7 @@ int main() {
     test_terrain_product_is_deterministic();
     test_terrain_stress_recipe_expands_river_network();
     test_terrain_mountain_range_stress_recipe_exposes_mountain_driver();
+    test_terrain_mountain_macro_fields_are_hierarchical();
     test_terrain_mountain_gully_diagnostic_is_bounded();
     test_terrain_review_river_coverage_is_meaningful();
     test_terrain_materials_and_vegetation_are_bounded();
