@@ -37,11 +37,12 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 44> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 45> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::MountainRelief, "mountain-relief"},
     DebugViewName{TerrainDebugView::Height, "height"},
     DebugViewName{TerrainDebugView::PreProcessHeight, "pre-process-height"},
+    DebugViewName{TerrainDebugView::MountainProfileHeight, "mountain-profile-height"},
     DebugViewName{TerrainDebugView::Slope, "slope"},
     DebugViewName{TerrainDebugView::ErosionDelta, "erosion-delta"},
     DebugViewName{TerrainDebugView::GullyMask, "gully-mask"},
@@ -84,11 +85,12 @@ inline constexpr std::array<DebugViewName, 44> kDebugViewNames{
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 44> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 45> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::MountainRelief,
     TerrainDebugView::Height,
     TerrainDebugView::PreProcessHeight,
+    TerrainDebugView::MountainProfileHeight,
     TerrainDebugView::Slope,
     TerrainDebugView::ErosionDelta,
     TerrainDebugView::GullyMask,
@@ -365,6 +367,8 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldHeightM);
     case TerrainDebugView::PreProcessHeight:
         return terrain_product_field(product, kTerrainFieldPreProcessHeightM);
+    case TerrainDebugView::MountainProfileHeight:
+        return terrain_product_field(product, kTerrainFieldMountainProfileHeightM);
     case TerrainDebugView::Slope:
         return terrain_product_field(product, kTerrainFieldSlope);
     case TerrainDebugView::ErosionDelta:

@@ -13,6 +13,7 @@ enum class TerrainDebugView {
     MountainRelief,
     Height,
     PreProcessHeight,
+    MountainProfileHeight,
     Slope,
     ErosionDelta,
     GullyMask,
