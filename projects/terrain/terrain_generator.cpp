@@ -6836,6 +6836,33 @@ void update_river_moisture_fields(RiverFields& fields,
     };
 }
 
+[[nodiscard]] TerrainProcessThermalTalusFields make_inactive_thermal_talus_fields(
+    const cubey::procedural::ScalarField2D& height) {
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    return TerrainProcessThermalTalusFields{
+        .thermal_erosion_delta_m = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .talus_deposition_m = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .slope_instability = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .post_erosion_height_m = height,
+    };
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D make_post_erosion_review_height(
+    const cubey::procedural::ScalarField2D& height,
+    const cubey::procedural::ScalarField2D& gully_erosion_delta,
+    const cubey::procedural::ScalarField2D& thermal_erosion_delta,
+    const cubey::procedural::ScalarField2D& talus_deposition) {
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    cubey::procedural::ScalarField2D result(desc, 0.0F);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            result.at(x, y) = height.at(x, y) - gully_erosion_delta.at(x, y) -
+                              thermal_erosion_delta.at(x, y) + talus_deposition.at(x, y);
+        }
+    }
+    return result;
+}
+
 } // namespace
 
 TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) {
@@ -6864,6 +6891,16 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
                                                source_fields.mountain_support,
                                                TerrainProcessGullyDiagnosticConfig{})
             : make_inactive_gully_diagnostic_fields(carving_fields.height);
+    TerrainProcessThermalTalusFields talus_fields =
+        config.recipe_id == kTerrainRecipeTemperateMountainRangeStress
+            ? compute_thermal_talus_diagnostic(carving_fields.height, slope_curvature.slope,
+                                               local_relief.local_span,
+                                               source_fields.mountain_support,
+                                               TerrainProcessThermalTalusConfig{})
+            : make_inactive_thermal_talus_fields(carving_fields.height);
+    cubey::procedural::ScalarField2D post_erosion_height = make_post_erosion_review_height(
+        carving_fields.height, gully_fields.erosion_delta_m,
+        talus_fields.thermal_erosion_delta_m, talus_fields.talus_deposition_m);
     update_river_moisture_fields(river_fields, slope_curvature.slope);
     cubey::procedural::ScalarField2D material_rock =
         make_material_field(carving_fields.height, slope_curvature.slope, river_fields.wetness,
@@ -6923,8 +6960,14 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
               std::move(gully_fields.erosion_delta_m));
     add_field(product.fields, kTerrainFieldGullyMask, std::move(gully_fields.gully_mask));
     add_field(product.fields, kTerrainFieldCreaseProxy, std::move(gully_fields.crease_proxy));
+    add_field(product.fields, kTerrainFieldThermalErosionDeltaM,
+              std::move(talus_fields.thermal_erosion_delta_m));
+    add_field(product.fields, kTerrainFieldTalusDepositionM,
+              std::move(talus_fields.talus_deposition_m));
+    add_field(product.fields, kTerrainFieldSlopeInstability,
+              std::move(talus_fields.slope_instability));
     add_field(product.fields, kTerrainFieldPostErosionHeightM,
-              std::move(gully_fields.post_erosion_height_m));
+              std::move(post_erosion_height));
     add_field(product.fields, kTerrainFieldDrainagePotential,
               std::move(river_fields.drainage_potential));
     add_field(product.fields, kTerrainFieldRoutingFillDelta,

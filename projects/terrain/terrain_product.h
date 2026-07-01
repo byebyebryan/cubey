@@ -48,6 +48,10 @@ inline constexpr std::string_view kTerrainFieldErosionDeltaM = "erosion_delta_m"
 inline constexpr std::string_view kTerrainFieldGullyMask = "gully_mask";
 inline constexpr std::string_view kTerrainFieldCreaseProxy = "crease_proxy";
 inline constexpr std::string_view kTerrainFieldPostErosionHeightM = "post_erosion_height_m";
+inline constexpr std::string_view kTerrainFieldThermalErosionDeltaM =
+    "thermal_erosion_delta_m";
+inline constexpr std::string_view kTerrainFieldTalusDepositionM = "talus_deposition_m";
+inline constexpr std::string_view kTerrainFieldSlopeInstability = "slope_instability";
 inline constexpr std::string_view kTerrainFieldDrainagePotential = "drainage_potential";
 inline constexpr std::string_view kTerrainFieldRoutingFillDelta = "routing_fill_delta";
 inline constexpr std::string_view kTerrainFieldFlowDirection = "flow_direction";
