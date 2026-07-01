@@ -70,7 +70,7 @@ Current Cubey port checkpoint:
   formulas;
 - the default cloud shell uses the TerrainEngine coordinate model: 600 km
   planet radius, camera height above the local ground plane, 5 km cloud base,
-  and a shorter 9 km broken-cumulus thickness;
+  and a shorter 11 km broken-cumulus thickness;
 - cloud density, coverage, erosion, Beer transmittance, cone light march, and
   source-style fixed sun direction are now closer to TerrainEngine than to the
   earlier Cubey cloud prototype.
@@ -119,12 +119,12 @@ replacement for brute-force `s2`. Use
 `projects/cloud_ref/capture_sampling_compare.sh` to compare `s1 terrain-post`,
 `s1 metadata-bilateral`, and brute-force `s2 terrain-post` from the same views.
 
-The default and broken-cumulus ceiling is intentionally lower than the earlier
-22 km value. The current reference does not model true towering cumulus
-structure, and the taller volume stretched ordinary clouds vertically enough to
-make edge/far-field sampling artifacts more visible. Storm and cirrus presets
-keep higher ceilings because those presets explicitly represent taller or
-higher-altitude cloud types.
+The default and broken-cumulus ceiling is intentionally below the earlier 22 km
+value but still in a practical mid/high cloud range. The current reference does
+not model true towering cumulus structure, and an overly tall ordinary volume
+stretched clouds vertically enough to make edge/far-field sampling artifacts
+more visible. Storm and cirrus presets keep higher ceilings because those
+presets explicitly represent taller or higher-altitude cloud types.
 
 Controls:
 

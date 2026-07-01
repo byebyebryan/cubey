@@ -10,7 +10,7 @@ namespace cubey::projects::cloud_ref {
 
 inline constexpr float kCloudsDefaultPlanetRadiusM = 600000.0F;
 inline constexpr float kCloudsDefaultBottomAltitudeM = 5000.0F;
-inline constexpr float kCloudsDefaultTopAltitudeM = 14000.0F;
+inline constexpr float kCloudsDefaultTopAltitudeM = 16000.0F;
 
 enum class CloudsCameraMode : std::uint32_t {
     Surface = 0,

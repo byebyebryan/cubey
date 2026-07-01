@@ -36,7 +36,7 @@ struct CloudsWeatherPresetSettings {
                 .weather_scale_km = 260.0F,
                 .wind_speed_mps = 260.0F,
                 .bottom_altitude_m = 5000.0F,
-                .top_altitude_m = 12000.0F,
+                .top_altitude_m = 14000.0F,
                 .cloud_style = CloudsCloudStyle::FairWeather};
     case CloudsWeatherPreset::BrokenCumulus:
         return {.coverage = 0.45F,
@@ -44,7 +44,7 @@ struct CloudsWeatherPresetSettings {
                 .weather_scale_km = 210.0F,
                 .wind_speed_mps = 450.0F,
                 .bottom_altitude_m = 5000.0F,
-                .top_altitude_m = 14000.0F,
+                .top_altitude_m = 16000.0F,
                 .cloud_style = CloudsCloudStyle::BrokenCumulus};
     case CloudsWeatherPreset::OvercastStratus:
         return {.coverage = 0.72F,
