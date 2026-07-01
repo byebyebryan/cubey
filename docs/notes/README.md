@@ -93,6 +93,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain mountain profile correction plan](terrain-mountain-profile-correction-plan.md):
   revision 28 target for correcting bulgy summits, fin-like crests, and stepped
   shoulders while keeping the coherent height rule.
+- [Terrain mountain thermal talus plan](terrain-mountain-thermal-talus-plan.md):
+  revision 29 target for adding a bounded thermal/talus process diagnostic
+  before more local mountain source tuning.
 - [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
   next river-quality pivot: promote `stream_order` and `flow_accumulation` into
   connected corridor selection while avoiding direct graph-edge rendering.
