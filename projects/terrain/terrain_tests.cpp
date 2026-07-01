@@ -631,6 +631,55 @@ void test_terrain_process_field_helpers() {
     require_near(height.at(2, 2), 100.0F, 0.001F,
                  "terrain gully diagnostic should not mutate input height");
 
+    const cubey::projects::terrain::TerrainProcessThermalTalusFields flat_talus =
+        cubey::projects::terrain::compute_thermal_talus_diagnostic(
+            height, slope, local_relief, support,
+            cubey::projects::terrain::TerrainProcessThermalTalusConfig{
+                .support_start = 0.0F,
+                .support_full = 0.5F,
+                .talus_slope = 0.50F,
+                .iterations = 2,
+            });
+    require_near(flat_talus.thermal_erosion_delta_m.summarize().max, 0.0F, 0.001F,
+                 "terrain thermal talus should leave flat heightfields unchanged");
+    require_near(flat_talus.talus_deposition_m.summarize().max, 0.0F, 0.001F,
+                 "terrain thermal talus should not deposit without over-steep samples");
+    require_near(flat_talus.post_erosion_height_m.at(2, 2), 100.0F, 0.001F,
+                 "terrain thermal talus should preserve flat post-process height");
+
+    cubey::procedural::ScalarField2D talus_height(desc, 100.0F);
+    cubey::procedural::ScalarField2D talus_slope(desc, 1.0F);
+    cubey::procedural::ScalarField2D talus_relief(desc, 0.0F);
+    cubey::procedural::ScalarField2D talus_support(desc, 1.0F);
+    talus_height.at(2, 2) = 180.0F;
+    talus_relief.at(2, 2) = 100.0F;
+    const cubey::projects::terrain::TerrainProcessThermalTalusFields talus =
+        cubey::projects::terrain::compute_thermal_talus_diagnostic(
+            talus_height, talus_slope, talus_relief, talus_support,
+            cubey::projects::terrain::TerrainProcessThermalTalusConfig{
+                .support_start = 0.0F,
+                .support_full = 0.5F,
+                .talus_slope = 0.50F,
+                .iterations = 1,
+                .transfer_fraction = 0.50F,
+                .base_transfer_limit_m = 0.0F,
+                .relief_transfer_fraction = 0.10F,
+                .max_total_erosion_m = 3.0F,
+            });
+    require(talus.thermal_erosion_delta_m.at(2, 2) > 0.0F,
+            "terrain thermal talus should erode over-steep supported peaks");
+    require(talus.thermal_erosion_delta_m.at(2, 2) <= 3.001F,
+            "terrain thermal talus should clamp erosion by configured limits");
+    require(talus.talus_deposition_m.at(1, 2) > 0.0F,
+            "terrain thermal talus should deposit material into lower neighbors");
+    require(talus.post_erosion_height_m.at(2, 2) < talus_height.at(2, 2),
+            "terrain thermal talus should lower eroded peak samples");
+    require(talus.post_erosion_height_m.at(1, 2) > talus_height.at(1, 2),
+            "terrain thermal talus should raise deposition samples");
+    require(talus.slope_instability.at(2, 2) > 0.0F &&
+                talus.slope_instability.at(2, 2) <= 1.0F,
+            "terrain thermal talus should publish bounded residual instability");
+
     require_throws(
         [&source] {
             static_cast<void>(
@@ -652,6 +701,14 @@ void test_terrain_process_field_helpers() {
                 height, slope, curvature, local_relief, support, invalid));
         },
         "terrain gully diagnostic should reject invalid config ranges");
+    require_throws(
+        [&height, &slope, &local_relief, &support] {
+            cubey::projects::terrain::TerrainProcessThermalTalusConfig invalid{};
+            invalid.talus_slope = 0.0F;
+            static_cast<void>(cubey::projects::terrain::compute_thermal_talus_diagnostic(
+                height, slope, local_relief, support, invalid));
+        },
+        "terrain thermal talus should reject invalid config ranges");
 
     const cubey::procedural::Grid2DDesc wider_desc{
         .width = 6,
@@ -677,13 +734,20 @@ void test_terrain_process_field_helpers() {
                 cubey::projects::terrain::TerrainProcessGullyDiagnosticConfig{}));
         },
         "terrain gully diagnostic should reject grid mismatches");
+    require_throws(
+        [&height, &slope, &local_relief, &mismatched] {
+            static_cast<void>(cubey::projects::terrain::compute_thermal_talus_diagnostic(
+                height, slope, local_relief, mismatched,
+                cubey::projects::terrain::TerrainProcessThermalTalusConfig{}));
+        },
+        "terrain thermal talus should reject grid mismatches");
 }
 
 void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 52> required_fields{
+    const std::array<std::string_view, 55> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldPreProcessHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
@@ -714,6 +778,9 @@ void test_terrain_product_emits_required_fields() {
         cubey::projects::terrain::kTerrainFieldErosionDeltaM,
         cubey::projects::terrain::kTerrainFieldGullyMask,
         cubey::projects::terrain::kTerrainFieldCreaseProxy,
+        cubey::projects::terrain::kTerrainFieldThermalErosionDeltaM,
+        cubey::projects::terrain::kTerrainFieldTalusDepositionM,
+        cubey::projects::terrain::kTerrainFieldSlopeInstability,
         cubey::projects::terrain::kTerrainFieldPostErosionHeightM,
         cubey::projects::terrain::kTerrainFieldDrainagePotential,
         cubey::projects::terrain::kTerrainFieldRoutingFillDelta,
@@ -1303,8 +1370,6 @@ void test_terrain_mountain_gully_diagnostic_is_bounded() {
     const auto& gully_mask = field(mountain, cubey::projects::terrain::kTerrainFieldGullyMask);
     const auto& crease_proxy =
         field(mountain, cubey::projects::terrain::kTerrainFieldCreaseProxy);
-    const auto& post_erosion_height =
-        field(mountain, cubey::projects::terrain::kTerrainFieldPostErosionHeightM);
     const cubey::procedural::ScalarFieldStats erosion_stats = erosion_delta.summarize();
     const cubey::procedural::ScalarFieldStats gully_stats = gully_mask.summarize();
     const cubey::procedural::ScalarFieldStats crease_stats = crease_proxy.summarize();
@@ -1326,17 +1391,94 @@ void test_terrain_mountain_gully_diagnostic_is_bounded() {
         for (std::uint32_t x = 0; x < height.desc().width; ++x) {
             const float delta = erosion_delta.at(x, y);
             require(delta >= 0.0F, "mountain gully erosion should be non-negative");
-            require_near(post_erosion_height.at(x, y), height.at(x, y) - delta, 0.002F,
-                         "post-erosion height should equal height minus diagnostic delta");
             if (delta > 1.0F) {
                 ++lowered_samples;
-                require(post_erosion_height.at(x, y) < height.at(x, y),
-                        "diagnostic lowered height should stay separate from final height");
             }
         }
     }
     require(lowered_samples > 32U,
             "mountain gully diagnostic should produce reviewable lowered samples");
+}
+
+void test_terrain_mountain_thermal_talus_diagnostic_is_bounded() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 257;
+    config.grid_height = 257;
+    const cubey::projects::terrain::TerrainRegionProduct baseline =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    config.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress);
+    const cubey::projects::terrain::TerrainRegionProduct mountain =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const auto& baseline_height =
+        field(baseline, cubey::projects::terrain::kTerrainFieldHeightM);
+    const auto& baseline_thermal =
+        field(baseline, cubey::projects::terrain::kTerrainFieldThermalErosionDeltaM);
+    const auto& baseline_talus =
+        field(baseline, cubey::projects::terrain::kTerrainFieldTalusDepositionM);
+    const auto& baseline_instability =
+        field(baseline, cubey::projects::terrain::kTerrainFieldSlopeInstability);
+    const auto& baseline_post =
+        field(baseline, cubey::projects::terrain::kTerrainFieldPostErosionHeightM);
+    require(baseline_thermal.summarize().max == 0.0F,
+            "default terrain recipe should keep thermal erosion inactive");
+    require(baseline_talus.summarize().max == 0.0F,
+            "default terrain recipe should keep talus deposition inactive");
+    require(baseline_instability.summarize().max == 0.0F,
+            "default terrain recipe should keep slope instability inactive");
+    for (std::uint32_t y = 0; y < baseline_height.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < baseline_height.desc().width; ++x) {
+            require_near(baseline_post.at(x, y), baseline_height.at(x, y), 0.001F,
+                         "inactive thermal talus post height should equal final height");
+        }
+    }
+
+    const auto& height = field(mountain, cubey::projects::terrain::kTerrainFieldHeightM);
+    const auto& gully_delta =
+        field(mountain, cubey::projects::terrain::kTerrainFieldErosionDeltaM);
+    const auto& thermal_delta =
+        field(mountain, cubey::projects::terrain::kTerrainFieldThermalErosionDeltaM);
+    const auto& talus_deposition =
+        field(mountain, cubey::projects::terrain::kTerrainFieldTalusDepositionM);
+    const auto& instability =
+        field(mountain, cubey::projects::terrain::kTerrainFieldSlopeInstability);
+    const auto& post_erosion_height =
+        field(mountain, cubey::projects::terrain::kTerrainFieldPostErosionHeightM);
+    const cubey::procedural::ScalarFieldStats thermal_stats = thermal_delta.summarize();
+    const cubey::procedural::ScalarFieldStats talus_stats = talus_deposition.summarize();
+    const cubey::procedural::ScalarFieldStats instability_stats = instability.summarize();
+    require(thermal_stats.max > 1.0F,
+            "mountain stress recipe should emit visible thermal erosion diagnostics");
+    require(thermal_stats.max <= 96.001F,
+            "mountain thermal erosion diagnostic should stay bounded");
+    require(talus_stats.max > 1.0F,
+            "mountain stress recipe should emit visible talus deposition diagnostics");
+    require(instability_stats.max > 0.01F && instability_stats.max <= 1.0F,
+            "mountain slope instability should stay normalized and active");
+    require(count_active_samples(thermal_delta, 0.50F) > thermal_delta.sample_count() / 500U,
+            "mountain thermal erosion should cover enough samples to review");
+    require(count_active_samples(thermal_delta, 0.50F) < thermal_delta.sample_count() / 2U,
+            "mountain thermal erosion should not affect most of the patch");
+    require(count_active_samples(talus_deposition, 0.25F) >
+                talus_deposition.sample_count() / 700U,
+            "mountain talus deposition should cover enough samples to review");
+
+    std::size_t changed_samples = 0U;
+    for (std::uint32_t y = 0; y < height.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < height.desc().width; ++x) {
+            const float expected = height.at(x, y) - gully_delta.at(x, y) -
+                                   thermal_delta.at(x, y) + talus_deposition.at(x, y);
+            require_near(post_erosion_height.at(x, y), expected, 0.003F,
+                         "post-erosion height should combine gully and talus diagnostics");
+            if (std::abs(post_erosion_height.at(x, y) - height.at(x, y)) > 1.0F) {
+                ++changed_samples;
+            }
+        }
+    }
+    require(changed_samples > 32U,
+            "mountain thermal talus diagnostic should produce reviewable height changes");
 }
 
 void test_terrain_review_river_coverage_is_meaningful() {
@@ -1755,6 +1897,15 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("post_erosion_height") ==
                 cubey::projects::terrain::TerrainDebugView::PostErosionHeight,
             "terrain debug view should parse post-erosion height aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("thermal_erosion_delta") ==
+                cubey::projects::terrain::TerrainDebugView::ThermalErosionDelta,
+            "terrain debug view should parse thermal erosion aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("talus_deposition") ==
+                cubey::projects::terrain::TerrainDebugView::TalusDeposition,
+            "terrain debug view should parse talus deposition aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("slope_instability") ==
+                cubey::projects::terrain::TerrainDebugView::SlopeInstability,
+            "terrain debug view should parse slope instability aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("channel_incision") ==
                 cubey::projects::terrain::TerrainDebugView::ChannelIncision,
             "terrain debug view should parse channel incision aliases");
@@ -1804,6 +1955,16 @@ void test_terrain_debug_export_writes_png() {
     require(std::filesystem::file_size(gully_output) > 64U,
             "terrain gully debug export should write a non-empty PNG");
     std::filesystem::remove(gully_output);
+
+    const std::filesystem::path talus_output =
+        std::filesystem::temp_directory_path() / "cubey_terrain_talus_export_test.png";
+    std::filesystem::remove(talus_output);
+    cubey::projects::terrain::write_terrain_debug_png(
+        mountain_product, cubey::projects::terrain::TerrainDebugView::TalusDeposition,
+        talus_output);
+    require(std::filesystem::file_size(talus_output) > 64U,
+            "terrain talus debug export should write a non-empty PNG");
+    std::filesystem::remove(talus_output);
 }
 
 void test_terrain_debug_export_writes_review_set() {
@@ -1865,6 +2026,13 @@ void test_terrain_debug_export_writes_review_set() {
             "terrain debug manifest should list erosion delta PNG output");
     require(std::find(outputs.begin(), outputs.end(), "post-erosion-height.png") != outputs.end(),
             "terrain debug manifest should list post-erosion height PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "thermal-erosion-delta.png") !=
+                outputs.end(),
+            "terrain debug manifest should list thermal erosion PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "talus-deposition.png") != outputs.end(),
+            "terrain debug manifest should list talus deposition PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "slope-instability.png") != outputs.end(),
+            "terrain debug manifest should list slope instability PNG output");
     require(std::find(outputs.begin(), outputs.end(), "mountain-profile-height.png") !=
                 outputs.end(),
             "terrain debug manifest should list mountain profile height PNG output");
@@ -1896,6 +2064,15 @@ void test_terrain_debug_export_writes_review_set() {
     require(manifest.at("fields").contains(
                 std::string(cubey::projects::terrain::kTerrainFieldPostErosionHeightM)),
             "terrain debug manifest should include post-erosion height stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldThermalErosionDeltaM)),
+            "terrain debug manifest should include thermal erosion stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldTalusDepositionM)),
+            "terrain debug manifest should include talus deposition stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldSlopeInstability)),
+            "terrain debug manifest should include slope instability stats");
     require(manifest.at("fields").contains(
                 std::string(cubey::projects::terrain::kTerrainFieldMountainProfileHeightM)),
             "terrain debug manifest should include mountain profile height stats");
@@ -2068,6 +2245,7 @@ int main() {
     test_terrain_mountain_range_stress_recipe_exposes_mountain_driver();
     test_terrain_mountain_macro_fields_are_hierarchical();
     test_terrain_mountain_gully_diagnostic_is_bounded();
+    test_terrain_mountain_thermal_talus_diagnostic_is_bounded();
     test_terrain_review_river_coverage_is_meaningful();
     test_terrain_materials_and_vegetation_are_bounded();
     test_terrain_river_network_has_continuous_active_channels();
