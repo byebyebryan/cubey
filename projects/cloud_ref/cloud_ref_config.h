@@ -116,6 +116,14 @@ struct CloudsConfig {
     float weather_cells = 1.0F;
     float weather_streaks = 1.0F;
     float detail_erosion = 1.0F;
+    float ambient_strength = 0.82F;
+    float direct_strength = 1.28F;
+    float phase_strength = 1.14F;
+    float powder_strength = 0.0F;
+    float final_contrast = 1.17F;
+    float final_saturation = 1.12F;
+    float horizon_glow_strength = 0.55F;
+    float sun_glare_strength = 1.0F;
     float crispiness = 40.0F;
     float curliness = 0.10F;
     float absorption = 0.28F;
@@ -123,7 +131,6 @@ struct CloudsConfig {
     CloudsResolveMode resolve_mode = CloudsResolveMode::TerrainPost;
     float post_blur_strength = 1.0F;
     float post_blur_radius_px = 1.0F;
-    bool powder_enabled = false;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;
 };

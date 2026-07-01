@@ -34,6 +34,8 @@ layout(std140, set = 0, binding = 0) uniform CloudRefFrame {
     vec4 ref_options;
     vec4 shape_options;
     vec4 weather_feature_weights;
+    vec4 lighting_strengths;
+    vec4 final_options;
     vec4 cloud_color_top_shadow;
     vec4 cloud_color_bottom_horizon;
     vec4 composite_options;

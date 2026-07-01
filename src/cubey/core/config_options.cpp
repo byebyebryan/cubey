@@ -132,7 +132,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 244> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 245> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -713,6 +713,10 @@ constexpr std::array<ConfigOptionDescriptor, 244> kRunConfigOptions{
            "--cloud-phase-strength", "Phase Strength", "Clouds",
            "Cloud forward/rim phase-light multiplier used by the production cloud renderer.",
            ConfigOptionType::Float, bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudPowderStrength, "clouds.powder_strength",
+           "--cloud-powder-strength", "Powder Strength", "Clouds",
+           "Cloud Beer-powder lighting boost used by cloud_ref lighting diagnostics.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudFinalContrast, "clouds.final_contrast",
            "--cloud-final-contrast", "Final Contrast", "Clouds",
            "Final cloud composite contrast multiplier.", ConfigOptionType::Float,
@@ -1511,6 +1515,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.direct_strength);
     case RunConfigOptionId::CloudPhaseStrength:
         return optional_float(config.clouds.phase_strength);
+    case RunConfigOptionId::CloudPowderStrength:
+        return optional_float(config.clouds.powder_strength);
     case RunConfigOptionId::CloudFinalContrast:
         return optional_float(config.clouds.final_contrast);
     case RunConfigOptionId::CloudFinalSaturation:
@@ -1991,6 +1997,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("ambient_strength", options.ambient_strength);
     adapter.writeField<float>("direct_strength", options.direct_strength);
     adapter.writeField<float>("phase_strength", options.phase_strength);
+    adapter.writeField<float>("powder_strength", options.powder_strength);
     adapter.writeField<float>("final_contrast", options.final_contrast);
     adapter.writeField<float>("final_saturation", options.final_saturation);
     adapter.writeField<float>("resolve_strength", options.resolve_strength);
@@ -2056,6 +2063,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("ambient_strength", options.ambient_strength);
     adapter.readField<float>("direct_strength", options.direct_strength);
     adapter.readField<float>("phase_strength", options.phase_strength);
+    adapter.readField<float>("powder_strength", options.powder_strength);
     adapter.readField<float>("final_contrast", options.final_contrast);
     adapter.readField<float>("final_saturation", options.final_saturation);
     adapter.readField<float>("resolve_strength", options.resolve_strength);
@@ -2821,6 +2829,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudPhaseStrength:
         config.clouds.phase_strength = parse_config_float(value, option);
         validate_range(config.clouds.phase_strength, option);
+        break;
+    case RunConfigOptionId::CloudPowderStrength:
+        config.clouds.powder_strength = parse_config_float(value, option);
+        validate_range(config.clouds.powder_strength, option);
         break;
     case RunConfigOptionId::CloudFinalContrast:
         config.clouds.final_contrast = parse_config_float(value, option);

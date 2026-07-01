@@ -190,6 +190,7 @@ enum class RunConfigOptionId {
     CloudAmbientStrength,
     CloudDirectStrength,
     CloudPhaseStrength,
+    CloudPowderStrength,
     CloudFinalContrast,
     CloudFinalSaturation,
     CloudResolveStrength,

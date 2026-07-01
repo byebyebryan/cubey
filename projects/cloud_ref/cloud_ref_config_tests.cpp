@@ -140,6 +140,14 @@ void test_run_config_mapping() {
     run_config.clouds.weather_cells = 0.5F;
     run_config.clouds.weather_streaks = 0.75F;
     run_config.clouds.detail_erosion = 0.35F;
+    run_config.clouds.ambient_strength = 0.7F;
+    run_config.clouds.direct_strength = 1.4F;
+    run_config.clouds.phase_strength = 0.9F;
+    run_config.clouds.powder_strength = 0.35F;
+    run_config.clouds.final_contrast = 1.2F;
+    run_config.clouds.final_saturation = 1.1F;
+    run_config.clouds.horizon_glow_strength = 0.6F;
+    run_config.clouds.sun_glare_strength = 0.8F;
     run_config.clouds.resolve_mode = "metadata-bilateral";
     run_config.clouds.resolve_strength = 0.65F;
     run_config.clouds.resolve_radius_px = 4.0F;
@@ -183,6 +191,22 @@ void test_run_config_mapping() {
                  "cloud weather streaks should map");
     require_near(config.detail_erosion, 0.35F, 0.001F,
                  "cloud detail erosion should map");
+    require_near(config.ambient_strength, 0.7F, 0.001F,
+                 "cloud ambient strength should map");
+    require_near(config.direct_strength, 1.4F, 0.001F,
+                 "cloud direct strength should map");
+    require_near(config.phase_strength, 0.9F, 0.001F,
+                 "cloud phase strength should map");
+    require_near(config.powder_strength, 0.35F, 0.001F,
+                 "cloud powder strength should map");
+    require_near(config.final_contrast, 1.2F, 0.001F,
+                 "cloud final contrast should map");
+    require_near(config.final_saturation, 1.1F, 0.001F,
+                 "cloud final saturation should map");
+    require_near(config.horizon_glow_strength, 0.6F, 0.001F,
+                 "cloud horizon glow strength should map");
+    require_near(config.sun_glare_strength, 0.8F, 0.001F,
+                 "cloud sun glare strength should map");
     require(config.resolve_mode ==
                 cubey::projects::cloud_ref::CloudsResolveMode::MetadataBilateral,
             "cloud resolve mode should map from run config");
@@ -275,6 +299,14 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.weather_cells", "0.4");
     cubey::set_run_config_option_from_string(config, "clouds.weather_streaks", "0.6");
     cubey::set_run_config_option_from_string(config, "clouds.detail_erosion", "0.5");
+    cubey::set_run_config_option_from_string(config, "clouds.ambient_strength", "0.7");
+    cubey::set_run_config_option_from_string(config, "clouds.direct_strength", "1.4");
+    cubey::set_run_config_option_from_string(config, "clouds.phase_strength", "0.9");
+    cubey::set_run_config_option_from_string(config, "clouds.powder_strength", "0.35");
+    cubey::set_run_config_option_from_string(config, "clouds.final_contrast", "1.2");
+    cubey::set_run_config_option_from_string(config, "clouds.final_saturation", "1.1");
+    cubey::set_run_config_option_from_string(config, "clouds.horizon_glow_strength", "0.6");
+    cubey::set_run_config_option_from_string(config, "clouds.sun_glare_strength", "0.8");
     cubey::set_run_config_option_from_string(config, "clouds.resolve_mode",
                                              "metadata-bilateral");
     cubey::set_run_config_option_from_string(config, "clouds.resolve_strength", "0.25");
@@ -306,6 +338,22 @@ void test_config_descriptors() {
                  "cloud weather streaks descriptor should set");
     require_near(config.clouds.detail_erosion, 0.5F, 0.001F,
                  "cloud detail erosion descriptor should set");
+    require_near(config.clouds.ambient_strength, 0.7F, 0.001F,
+                 "cloud ambient strength descriptor should set");
+    require_near(config.clouds.direct_strength, 1.4F, 0.001F,
+                 "cloud direct strength descriptor should set");
+    require_near(config.clouds.phase_strength, 0.9F, 0.001F,
+                 "cloud phase strength descriptor should set");
+    require_near(config.clouds.powder_strength, 0.35F, 0.001F,
+                 "cloud powder strength descriptor should set");
+    require_near(config.clouds.final_contrast, 1.2F, 0.001F,
+                 "cloud final contrast descriptor should set");
+    require_near(config.clouds.final_saturation, 1.1F, 0.001F,
+                 "cloud final saturation descriptor should set");
+    require_near(config.clouds.horizon_glow_strength, 0.6F, 0.001F,
+                 "cloud horizon glow strength descriptor should set");
+    require_near(config.clouds.sun_glare_strength, 0.8F, 0.001F,
+                 "cloud sun glare strength descriptor should set");
     require(config.clouds.resolve_mode == "metadata-bilateral",
             "cloud resolve mode descriptor should set");
     require_near(config.clouds.resolve_strength, 0.25F, 0.001F,

@@ -274,6 +274,7 @@ struct RunConfig {
         float ambient_strength = kRunConfigUnsetFloat;
         float direct_strength = kRunConfigUnsetFloat;
         float phase_strength = kRunConfigUnsetFloat;
+        float powder_strength = kRunConfigUnsetFloat;
         float final_contrast = kRunConfigUnsetFloat;
         float final_saturation = kRunConfigUnsetFloat;
         float resolve_strength = kRunConfigUnsetFloat;

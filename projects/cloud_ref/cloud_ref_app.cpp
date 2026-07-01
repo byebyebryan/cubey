@@ -106,12 +106,14 @@ struct CloudRefFrameUniforms {
     cubey::math::Vec4 ref_options;
     cubey::math::Vec4 shape_options;
     cubey::math::Vec4 weather_feature_weights;
+    cubey::math::Vec4 lighting_strengths;
+    cubey::math::Vec4 final_options;
     cubey::math::Vec4 cloud_color_top_shadow;
     cubey::math::Vec4 cloud_color_bottom_horizon;
     cubey::math::Vec4 composite_options;
 };
 
-static_assert(sizeof(CloudRefFrameUniforms) == sizeof(float) * 52U);
+static_assert(sizeof(CloudRefFrameUniforms) == sizeof(float) * 60U);
 
 struct CloudRefViewBasis {
     cubey::math::Vec3 position{0.0F, 0.0F, 0.0F};
@@ -358,10 +360,13 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
                         static_cast<float>(view_steps),
                         static_cast<float>(budget.light_steps),
                         static_cast<float>(config.view_samples)},
-        .shape_options = {config.crispiness, config.curliness, config.absorption,
-                          config.powder_enabled ? 1.0F : 0.0F},
+        .shape_options = {config.crispiness, config.curliness, config.absorption, 0.0F},
         .weather_feature_weights = {config.weather_fronts, config.weather_cells,
                                     config.weather_streaks, config.detail_erosion},
+        .lighting_strengths = {config.ambient_strength, config.direct_strength,
+                               config.phase_strength, config.powder_strength},
+        .final_options = {config.final_contrast, config.final_saturation,
+                          config.horizon_glow_strength, config.sun_glare_strength},
         .cloud_color_top_shadow = {cloud_top_color.x, cloud_top_color.y, cloud_top_color.z,
                                    config.shadow_strength},
         .cloud_color_bottom_horizon = {cloud_bottom_color.x, cloud_bottom_color.y,
@@ -674,6 +679,14 @@ class CloudRefApp {
         ImGui::SliderFloat("Absorption", &config_.absorption, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Shadow strength", &config_.shadow_strength, 0.0F, 2.0F, "%.2f");
         ImGui::SliderFloat("Horizon fill", &config_.horizon_strength, 0.0F, 2.0F, "%.2f");
+        ImGui::SliderFloat("Ambient strength", &config_.ambient_strength, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Direct strength", &config_.direct_strength, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Phase strength", &config_.phase_strength, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Powder strength", &config_.powder_strength, 0.0F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Final contrast", &config_.final_contrast, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Final saturation", &config_.final_saturation, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Horizon glow", &config_.horizon_glow_strength, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Sun glare", &config_.sun_glare_strength, 0.0F, 3.0F, "%.2f");
         ImGui::SliderInt("View steps", &config_.view_steps_override, 0, 128);
         draw_view_samples_combo();
         ImGui::Checkbox("Post blur", &config_.post_blur_enabled);
@@ -681,7 +694,6 @@ class CloudRefApp {
                         clouds_resolve_mode_name);
         ImGui::SliderFloat("Blur strength", &config_.post_blur_strength, 0.0F, 1.0F, "%.2f");
         ImGui::SliderFloat("Blur radius", &config_.post_blur_radius_px, 0.0F, 8.0F, "%.2f px");
-        ImGui::Checkbox("Powder", &config_.powder_enabled);
         ImGui::SliderFloat("Bottom height", &config_.bottom_altitude_m, 1000.0F, 15000.0F,
                            "%.0f m");
         ImGui::SliderFloat("Top height", &config_.top_altitude_m, 1000.0F, 40000.0F, "%.0f m");

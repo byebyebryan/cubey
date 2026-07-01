@@ -359,6 +359,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.vertical_shear_fraction",
         "clouds.wind_speed_mps",
         "clouds.shadow_strength",
+        "clouds.powder_strength",
         "clouds.jitter_strength",
         "clouds.orbit_transition_start_m",
         "clouds.orbit_transition_end_m",
@@ -507,7 +508,7 @@ void test_run_config_loads_json_config_file() {
     "camera_pitch_offset_degrees": -18.0,
     "moon": false
   },
-  "clouds": {
+    "clouds": {
     "enabled": false,
     "debug_view": "orbit-weather",
     "camera_mode": "high",
@@ -520,6 +521,7 @@ void test_run_config_loads_json_config_file() {
     "coverage": 0.62,
     "wind_speed_mps": 24.0,
     "shadow_strength": 0.75,
+    "powder_strength": 0.35,
     "jitter_strength": 0.25,
     "orbit_fill": 1.4,
     "temporal": false
@@ -591,6 +593,7 @@ void test_run_config_loads_json_config_file() {
                 config.clouds.background_mode == "water-context" &&
                 config.clouds.coverage == 0.62F && config.clouds.wind_speed_mps == 24.0F &&
                 config.clouds.shadow_strength == 0.75F &&
+                config.clouds.powder_strength == 0.35F &&
                 config.clouds.jitter_strength == 0.25F &&
                 config.clouds.orbit_fill == 1.4F && config.clouds.temporal == 0,
             "config file should set cloud controls");
