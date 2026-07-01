@@ -201,13 +201,15 @@ float cloud_ref_direct_phase(float cos_theta) {
 }
 
 float cloud_ref_rim_phase(float cos_theta, float light_transmittance,
-                          DensitySample sample_data) {
+                          float view_thickness, float light_thickness,
+                          float height_fraction) {
     float forward_rim = pow(max(cos_theta, 0.0), 7.0);
-    float edge = smoothstep(0.04, 0.18, sample_data.density) *
-                 (1.0 - smoothstep(0.32, 0.70, sample_data.density));
-    float top_bias = smoothstep(0.18, 0.92, sample_data.height_fraction);
+    float optical_edge = smoothstep(0.035, 0.22, view_thickness) *
+                         (1.0 - smoothstep(0.58, 0.94,
+                                             max(view_thickness, light_thickness * 0.70)));
+    float top_bias = smoothstep(0.18, 0.92, height_fraction);
     return forward_rim * (0.30 + 0.70 * light_transmittance) *
-           (0.45 + 0.55 * top_bias) * (0.28 + 1.10 * edge);
+           (0.45 + 0.55 * top_bias) * (0.28 + 1.10 * optical_edge);
 }
 
 bool cloud_ref_shell_segment(vec3 origin, vec3 direction, out float start_t, out float end_t) {
@@ -298,38 +300,42 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
             float light_transmittance = light_result.transmittance;
             float sample_optical_depth = sample_data.density * max(-sigma_ds, 0.0);
             float d_transmittance = exp(-sample_optical_depth);
+            float view_thickness = 1.0 - exp(-sample_optical_depth);
+            float light_thickness = 1.0 - exp(-light_result.optical_depth);
             float shadow_strength = max(params.cloud_color_top_shadow.w, 0.0);
             float forward_alignment = smoothstep(0.22, 0.94, light_dot_eye);
-            float dense_core = smoothstep(0.24, 0.76, sample_data.density);
-            float lit_edge = smoothstep(0.03, 0.28, sample_data.density) *
-                             (1.0 - smoothstep(0.42, 0.84, sample_data.density));
+            float optical_core =
+                smoothstep(0.40, 0.90, max(view_thickness, light_thickness * 0.72));
+            float optical_edge =
+                smoothstep(0.035, 0.22, view_thickness) *
+                (1.0 - smoothstep(0.58, 0.94, max(view_thickness, light_thickness * 0.70)));
             float forward_shadow_boost =
-                mix(1.0, 1.0 + 0.90 * dense_core, forward_alignment);
+                mix(1.0, 1.0 + 0.75 * optical_core, forward_alignment);
             float shadowed_light =
                 pow(clamp(light_transmittance, 0.001, 1.0),
                     shadow_strength * forward_shadow_boost);
             float direct_response = cloud_ref_direct_phase(light_dot_eye);
-            float rim_response = cloud_ref_rim_phase(light_dot_eye, shadowed_light, sample_data);
+            float rim_response =
+                cloud_ref_rim_phase(light_dot_eye, shadowed_light, view_thickness,
+                                    light_thickness, sample_data.height_fraction);
             float powder_shape =
-                (1.0 - exp(-2.0 * sample_data.density)) *
+                (1.0 - exp(-2.0 * max(sample_optical_depth, light_result.optical_depth))) *
                 (0.35 + 0.65 * smoothstep(-0.25, 0.75, light_dot_eye));
-            float forward_powder_gate =
-                mix(1.0, 1.0 - 0.62 * dense_core, forward_alignment);
+            float powder_edge_weight = 0.55 + 0.45 * max(optical_edge, 1.0 - optical_core);
             float powder_multiplier =
                 1.0 + clamp(params.lighting_strengths.w, 0.0, 1.0) *
-                          clamp(powder_shape * forward_powder_gate, 0.0, 0.65);
+                          clamp(powder_shape * powder_edge_weight, 0.0, 0.58);
 
             vec3 ambient_source =
                 cloud_ref_cloud_ambient(pos, direction, sample_data) *
                 max(params.lighting_strengths.x, 0.0);
-            float backlit_core_shadow = forward_alignment *
-                                        smoothstep(0.05, 0.38, sample_data.density);
-            ambient_source *= mix(1.0, 0.72, backlit_core_shadow);
+            ambient_source *= mix(1.0, 0.78, forward_alignment * optical_core);
             float forward_direct_gate =
-                mix(1.0, 0.42 + 0.58 * lit_edge, forward_alignment);
+                mix(1.0, 0.46 + 0.54 * optical_edge, forward_alignment);
             float direct_core_gate =
                 forward_direct_gate *
-                mix(1.0, mix(0.34, 1.0, lit_edge), forward_alignment * dense_core);
+                mix(1.0, mix(0.42, 1.0, optical_edge),
+                    forward_alignment * optical_core);
             vec3 direct_source = sun_color * shadowed_light * direct_response *
                                  direct_core_gate * powder_multiplier *
                                  max(params.lighting_strengths.y, 0.0);
