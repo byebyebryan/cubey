@@ -18,7 +18,7 @@ perspective review, but final terrain rendering, ocean integration, planet
 streaming, foliage rendering, and physically complete erosion remain deferred
 until the product fields are credible.
 
-The current generator revision is `23`. It emits source fields, height/slope
+The current generator revision is `24`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, incision/process diagnostics, wetness/deposition, material
 masks, and vegetation potential.
@@ -83,11 +83,15 @@ fields, publishes the carved result as `height_m`, and recomputes slope, local
 relief, material masks, and vegetation potential from that carved height.
 Renderer-backed previews now support material, height, river, and channel color
 modes so reviewers can separate geometry from river tint.
+Revision 24 adds a clean-room mountain gully diagnostic for
+`temperate-mountain-range-stress`: `erosion_delta_m`, `gully_mask`,
+`crease_proxy`, and `post_erosion_height_m`. These fields are review-only; they
+do not modify `height_m`, materials, rivers, wetness, or vegetation.
 
-The current foundation pass keeps the same product revision while extracting
-terrain-local process helpers for spread, relief-clamped lowering, and height
-lowering. The scalar review export now also writes `manifest.json` with recipe,
-grid, summary, field stats, view names, and output filenames.
+The current foundation pass keeps terrain process math in terrain-local helpers:
+spread, relief-clamped lowering, height lowering, and the diagnostic gully pass.
+The scalar review export writes `manifest.json` with recipe, grid, summary,
+field stats, view names, and output filenames.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint. The staged lane map is captured in
@@ -129,13 +133,17 @@ for the standard review set. The current local review images are generated at
 thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
 review artifact.
 
-The scalar review set includes 37 PNG views plus `manifest.json`:
+The scalar review set includes 41 PNG views plus `manifest.json`:
 
 - `final.png`
 - `mountain-relief.png`
 - `height.png`
 - `pre-process-height.png`
 - `slope.png`
+- `erosion-delta.png`
+- `gully-mask.png`
+- `crease-proxy.png`
+- `post-erosion-height.png`
 - `mountain-envelope.png`
 - `mountain-peak-anchors.png`
 - `mountain-peak-prominence.png`
@@ -175,8 +183,8 @@ mesh through the normal Vulkan windowed/headless app path. For the mountain
 stress recipe, `mountain-perspective.png` is the primary 3D read for peak,
 basin, and valley hierarchy, while `mountain-profile.png` is a lower side view
 for checking whether peak height and valley contrast are plausible. The current
-`outputs/terrain/mountain-range-stress` directory holds 39 PNGs after those two
-captures are generated. River review directories hold 41 PNGs after the scalar
+`outputs/terrain/mountain-range-stress` directory holds 43 PNGs after those two
+captures are generated. River review directories hold 45 PNGs after the scalar
 set plus material/profile, height-only, and channel diagnostic perspective
 captures are generated. `manifest.json` is not a rendered view; use it to check
 the recipe, seed, generator revision, grid size, field ranges, and content hash
@@ -235,6 +243,11 @@ inspect `mountain-relief.png`, `height.png`, `mountain-envelope.png`,
 `peak-uplift.png` together. For height readability, inspect
 `mountain-perspective.png` and `mountain-profile.png` after the scalar views;
 these are renderer-backed mesh captures, not CPU software perspective exports.
+Revision 24 adds diagnostic erosion-shaped fields for the same recipe. Inspect
+`erosion-delta.png`, `gully-mask.png`, `crease-proxy.png`, and
+`post-erosion-height.png` next to `height.png` and `mountain-perspective.png`.
+The manifest for the regenerated 513 review set reports 47 fields, 41 scalar
+views, and bounded diagnostic ranges (`erosion_delta_m.max = 78.0`).
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential

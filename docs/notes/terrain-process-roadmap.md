@@ -49,7 +49,7 @@ review consumers, or integration adapters.
 
 | Area | Current state | Needed direction |
 | --- | --- | --- |
-| Process helpers | Terrain-local spread, relief-clamped lowering, and height-lowering helpers now exist in `terrain_process_fields`. | Keep new process math routed through helper APIs before broadening erosion, deposition, talus, snow, sand, or wetness work. |
+| Process helpers | Terrain-local spread, relief-clamped lowering, height-lowering, and diagnostic gully helpers now exist in `terrain_process_fields`. | Keep new process math routed through helper APIs before broadening erosion, deposition, talus, snow, sand, or wetness work. |
 | River carving | Rivers now lower `height_m`, but channel depth still reads weak in 3D and water/material tint can obscure geometry. | Keep incision fields explicit, use manifests to compare field ranges, then tune against height-only and channel preview modes. |
 | Mountain form | The stress recipe has envelope, peak, skeleton, and uplift fields, but it can still read noisy or artificial in perspective. | Treat mountains as a hierarchy problem: broad mass, peak anchors, ridge connection, shoulder influence, then local detail. |
 | Scale | Rivers and mountains are still patch-local with a padded halo. | Later world/tile work should generate deterministic world-coordinate basin and range sources, then rasterize local products plus halo. |
@@ -63,9 +63,10 @@ vocabulary references, not as renderer or river-topology donors.
 
 Near-term borrow targets:
 
-- clean-room gully/erosion diagnostics over `height_m`, slope/derivatives, local
-  relief, and optional mountain support, producing fields such as
-  `erosion_delta_m`, `gully_mask`, and `crease_proxy`;
+- the revision 24 clean-room gully/erosion diagnostic over `height_m`,
+  slope/derivatives, local relief, and mountain support, producing
+  `erosion_delta_m`, `gully_mask`, `crease_proxy`, and
+  `post_erosion_height_m`;
 - later shallow-water/lake relaxation diagnostics over `height_m + water_depth_m`
   with explicit outflow, boundary, and mass-change fields;
 - shoreline and water-contact visual vocabulary for future terrain/ocean handoff
@@ -84,10 +85,10 @@ The detailed extraction and guardrails are in
    renderer-backed previews, and deterministic stress recipes.
 2. Use the new process helpers and manifests to tune river incision and mountain
    hierarchy in small passes.
-3. Start the next process-helper batch with a clean-room gully/erosion
-   diagnostic for the mountain stress recipe before opening lakes or shoreline
-   work.
-4. Use that diagnostic evidence to improve the mountain source hierarchy.
+3. Review the revision 24 clean-room gully/erosion diagnostic for the mountain
+   stress recipe before opening lakes or shoreline work.
+4. Use that diagnostic evidence to improve the mountain source hierarchy or add
+   the next bounded process diagnostic.
 5. Return to river topology with graph/hydrology references after mountain
    process/source quality is clearer.
 6. Only then add another terrain process or water body. Lakes, coast, dunes,

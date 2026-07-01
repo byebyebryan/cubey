@@ -53,4 +53,20 @@ review target for before/after comparisons.
 
 ## Outcome
 
-Pending revision 24 implementation.
+Implemented in revision 24.
+
+- Added `erosion_delta_m`, `gully_mask`, `crease_proxy`, and
+  `post_erosion_height_m` to the terrain product and scalar review set.
+- Kept the pass diagnostic-only: `height_m` remains unchanged, and default river
+  recipes emit inactive gully fields with `post_erosion_height_m == height_m`.
+- The regenerated 513 mountain stress manifest reports 47 fields, 41 scalar
+  views, and bounded diagnostic ranges: `erosion_delta_m.max = 78.0`,
+  `gully_mask.max = 1.0`, and `crease_proxy.max = 1.0`.
+- Refreshed local review captures under `outputs/terrain/mountain-range-stress`
+  and `outputs/terrain/mountain-range-stress-1025`.
+
+Remaining question: whether the diagnostic improves mountain readability enough
+to justify a later height-affecting pass. That decision should be made from
+`height.png`, `post-erosion-height.png`, `erosion-delta.png`, `gully-mask.png`,
+`mountain-perspective.png`, and `mountain-profile.png`, not from `final.png`
+alone.

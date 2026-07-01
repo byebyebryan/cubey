@@ -220,11 +220,14 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `23` emits deterministic source fields,
+local region. Generator revision `24` emits deterministic source fields,
 explicit mountain support/ridge/peak/uplift fields, height/slope analysis,
 repaired routing diagnostics, smoothed active river trunk and tributary masks,
 pre-process and carved height fields, channel/valley incision diagnostics,
 wetness/deposition, material masks, vegetation potential, summaries, and tests.
+Revision `24` extends that product with diagnostic-only mountain gully fields:
+`erosion_delta_m`, `gully_mask`, `crease_proxy`, and
+`post_erosion_height_m`.
 
 The river driver intentionally moved away from a single authored line. It routes
 over a coherent low-frequency drainage potential derived from the terrain seed
@@ -359,6 +362,14 @@ wetness/deposition, and vegetation potential are computed against the carved
 height. The renderer-backed preview adds material, height, river, and channel
 color modes so geometry review can be separated from water/material tint.
 
+Revision 24 adds a clean-room gully diagnostic over the mountain stress recipe.
+It consumes `height_m`, slope, curvature, local relief, and mountain support to
+publish `erosion_delta_m`, `gully_mask`, `crease_proxy`, and
+`post_erosion_height_m`. It is deliberately diagnostic-only: `height_m` remains
+unchanged, and downstream slope, material, wetness, vegetation, and river fields
+still describe the current carved product rather than the post-erosion review
+height.
+
 The next work should be foundation-shaped inside the terrain project rather
 than another isolated biome image. Keep the per-revision river and mountain
 recipes as diagnostics while extracting reusable process-field helpers, adding
@@ -370,7 +381,9 @@ review consumers, and integration adapters lives in
 [`docs/notes/terrain-project-map.md`](../notes/terrain-project-map.md).
 That first foundation pass is now in place: `terrain_process_fields` owns the
 spread and relief-clamped lowering helpers used by river incision, and scalar
-review directories write `manifest.json` beside their PNGs.
+review directories write `manifest.json` beside their PNGs. The first
+ShaderToy-informed process diagnostic is also in place as terrain-local gully
+fields, without promoting it into shared procedural foundation.
 
 The ShaderToy terrain/hydro review does not change the pipeline. It adds a
 reference-backed operator lane inside the terrain project: clean-room
@@ -391,6 +404,9 @@ Known limitations:
   river sources, not hydraulic erosion. It makes channels visible in geometry,
   but it does not yet enforce longitudinal bed profiles, sediment budgets, or
   bank/terrace formation.
+- Revision 24 gully fields are also not hydraulic erosion. They are bounded
+  slope/curvature/local-relief diagnostics for mountain review and do not affect
+  final height or downstream fields yet.
 - Padded routing makes local review slices less artificial, but the route model
   is still static and should not be mistaken for simulated river evolution.
 - Default river composition now has a stronger review footprint than the
@@ -441,8 +457,8 @@ adding more biome labels:
 1. Use manifest ranges and renderer-backed captures to tune river incision
    against height-only and channel
    perspective captures.
-2. Add a clean-room gully/erosion diagnostic over the mountain stress recipe so
-   slope-aware process cues can be reviewed before deeper simulation.
+2. Review the clean-room gully/erosion diagnostic over the mountain stress
+   recipe before deciding whether any erosion-like pass should affect height.
 3. Refine the current mountain source hierarchy with anisotropic peak shaping,
    erosion-aware ridge cleanup, alpine material/valley contrast, and better
    world-scale range continuity.

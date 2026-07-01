@@ -27,7 +27,7 @@ first owner of mountain, river, lake, dune, coast, or foliage logic.
 | Lane | Owns | Current state | Direction |
 | --- | --- | --- | --- |
 | Source drivers | Coherent macro structure before process effects. | River graph source, mountain envelope/peak/ridge source, broad relief, drainage potential. | Build reusable mountain, basin/river, lake-basin, dune, coast, plains, and glacial source drivers. |
-| Process operators | Terrain morphology and derived process fields. | River incision, spread/lowering helpers, wetness/deposition proxies. | Add clean-room gully/erosion diagnostics first, then talus, snow, sand, shallow water, and process-memory experiments. |
+| Process operators | Terrain morphology and derived process fields. | River incision, spread/lowering helpers, diagnostic gully fields, wetness/deposition proxies. | Review the gully diagnostics, then add talus, snow, sand, shallow water, and process-memory experiments. |
 | Product fields | The public terrain truth. | Named `TerrainRegionProduct` fields, summaries, hashes, manifests, scalar PNG views. | Keep every meaningful output inspectable before feeding renderers or adapters. |
 | Review consumers | Ways to see field quality. | Scalar exports, manifests, `terrain_preview`, stress recipes. | Add focused debug renders and scenic review only after field truth exists. |
 | Integration adapters | Translation into other Cubey systems. | Deferred, with legacy terrain/ocean and planet contracts as targets. | Feed ocean, planet, foliage, and fluid/water only after local fields are stable. |
@@ -70,17 +70,14 @@ Current operators:
 - relief-clamped split lowering;
 - subtract lowering from height;
 - river channel and valley incision over active river fields.
+- clean-room gully / erosion diagnostic for mountain stress:
+  `erosion_delta_m`, `gully_mask`, `crease_proxy`, and
+  `post_erosion_height_m`.
 
 Next operator:
 
-- clean-room gully/erosion diagnostic for mountain stress.
-
-Expected fields for the first gully pass:
-
-- `erosion_delta_m`
-- `gully_mask`
-- `crease_proxy`
-- optional `post_erosion_height_m` while diagnostic-only
+- review-driven mountain cleanup or a new bounded process diagnostic such as
+  talus/scree or shallow-water/lake relaxation.
 
 Guardrails:
 
@@ -197,6 +194,8 @@ Done when:
 ### Phase 1: Mountain Process Diagnostic
 
 Add the clean-room gully/erosion diagnostic over the mountain stress recipe.
+
+Status: implemented in revision 24 as diagnostic-only fields.
 
 Done when:
 
