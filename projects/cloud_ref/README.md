@@ -98,7 +98,10 @@ then retunes the standalone march for less ambient wash, warmer direct light,
 and a slightly more contrast-preserving final pass. The follow-up optical-depth
 pass adds `view-optical-depth` and `light-optical-depth` diagnostics, bases
 powder/rim/backlit response on optical thickness rather than raw density gates,
-and moves the extra sun glare from marched cloud radiance into final composite.
+softens backlit core suppression so `--cloud-shadow-strength 0` is a true
+no-shadow diagnostic, and moves the extra sun glare from marched cloud radiance
+into final composite. The fair-weather default keeps shadow strength mild so
+backlit clouds retain depth without forming heavy storm-front cores.
 This is a cloud-only pass: it does not pursue TerrainEngine water, terrain,
 bloom, or god-ray context, so the final views still depend heavily on the
 placeholder horizon scene.

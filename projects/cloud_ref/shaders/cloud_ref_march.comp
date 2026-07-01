@@ -310,7 +310,7 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
                 smoothstep(0.035, 0.22, view_thickness) *
                 (1.0 - smoothstep(0.58, 0.94, max(view_thickness, light_thickness * 0.70)));
             float forward_shadow_boost =
-                mix(1.0, 1.0 + 0.75 * optical_core, forward_alignment);
+                mix(1.0, 1.0 + 0.35 * optical_core, forward_alignment);
             float shadowed_light =
                 pow(clamp(light_transmittance, 0.001, 1.0),
                     shadow_strength * forward_shadow_boost);
@@ -329,12 +329,12 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
             vec3 ambient_source =
                 cloud_ref_cloud_ambient(pos, direction, sample_data) *
                 max(params.lighting_strengths.x, 0.0);
-            ambient_source *= mix(1.0, 0.78, forward_alignment * optical_core);
+            ambient_source *= mix(1.0, 0.97, forward_alignment * optical_core);
             float forward_direct_gate =
-                mix(1.0, 0.46 + 0.54 * optical_edge, forward_alignment);
+                mix(1.0, 0.86 + 0.14 * optical_edge, forward_alignment);
             float direct_core_gate =
                 forward_direct_gate *
-                mix(1.0, mix(0.42, 1.0, optical_edge),
+                mix(1.0, mix(0.90, 1.0, optical_edge),
                     forward_alignment * optical_core);
             vec3 direct_source = sun_color * shadowed_light * direct_response *
                                  direct_core_gate * powder_multiplier *

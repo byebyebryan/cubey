@@ -115,7 +115,7 @@ struct CloudsConfig {
     float density = 0.016F;
     float weather_scale_km = 260.0F;
     float wind_speed_mps = 260.0F;
-    float shadow_strength = 0.30F;
+    float shadow_strength = 0.15F;
     float horizon_strength = 0.62F;
     float weather_fronts = 1.0F;
     float weather_cells = 1.0F;
