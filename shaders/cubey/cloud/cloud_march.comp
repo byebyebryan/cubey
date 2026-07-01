@@ -1009,8 +1009,11 @@ vec3 cloud_horizon_direction(vec3 direction, vec3 local_up) {
 vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_data) {
     vec3 local_up = cloud_local_up(position);
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
+    vec3 moon_dir = normalize(params.moon_direction_intensity.xyz);
     float sun_elevation = dot(sun_dir, local_up);
     float day = smoothstep(-0.16, 0.10, sun_elevation) * params.sun_direction_intensity.w;
+    float night = 1.0 - smoothstep(-0.14, 0.08, sun_elevation);
+    float moon_elevation = max(dot(moon_dir, local_up), 0.0);
     float low_sun = 1.0 - smoothstep(0.05, 0.45, max(sun_elevation, 0.0));
     float height_fill = smoothstep(0.08, 0.92, sample_data.height_fraction);
 
@@ -1023,10 +1026,16 @@ vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_dat
     vec3 bottom_fill = params.cloud_color_bottom_horizon.rgb * (0.14 + 0.38 * day);
     vec3 horizon_fill = horizon_sky * params.cloud_color_bottom_horizon.w * (0.10 + 0.16 * day);
     vec3 twilight_fill = vec3(1.0, 0.48, 0.23) * low_sun * day * 0.18;
+    vec3 environment_fill =
+        cloud_environment_ambient_radiance() * (0.38 + 0.40 * height_fill);
+    vec3 moon_fill = cloud_moon_radiance() * night *
+                     (0.06 + 0.18 * moon_elevation) *
+                     (0.45 + 0.55 * height_fill);
 
     vec3 ambient = mix(bottom_fill, top_fill, height_fill);
     ambient += horizon_fill * (0.55 + 0.45 * (1.0 - height_fill));
     ambient += twilight_fill * (1.0 - 0.35 * height_fill);
+    ambient += environment_fill + moon_fill;
     return max(ambient, vec3(0.0));
 }
 
@@ -1623,7 +1632,7 @@ OrbitSurfaceSample cloud_orbit_surface_sample(vec3 origin, vec3 direction) {
                       orbit.coverage, 1.0, orbit.detail, orbit.weather_edge,
                       orbit.cloud_type, orbit.weather_edge, filtered_hull,
                       cloud_orbit_shell_surface_height_fraction());
-    vec3 sun_color = vec3(1.18, 1.10, 0.92) * sun_intensity;
+    vec3 sun_color = cloud_sun_radiance() * 1.18;
     vec3 ambient = cloud_cloud_ambient(hit_position, direction, density_sample) *
                    (0.16 + 0.78 * day + 0.18 * twilight) *
                    params.lighting_strengths.x;
@@ -1765,7 +1774,7 @@ MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, 
     vec3 step_vec = direction * ds;
     vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel, sample_index));
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
-    vec3 sun_color = vec3(1.18, 1.10, 0.92) * max(params.sun_direction_intensity.w, 0.0);
+    vec3 sun_color = cloud_sun_radiance() * 1.18;
     float light_dot_eye = dot(sun_dir, direction);
     float density_factor = max(params.weather.y, 0.0) * 0.86;
     float sigma_ds = -ds * density_factor;
@@ -1859,7 +1868,7 @@ MarchResult cloud_local_volume_march(vec3 origin, vec3 direction, float start_t,
     float sample_t = start_t + ds * cloud_ray_jitter(pixel, sample_index);
     vec3 pos = origin + direction * sample_t;
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
-    vec3 sun_color = vec3(1.20, 1.12, 0.92) * max(params.sun_direction_intensity.w, 0.0);
+    vec3 sun_color = cloud_sun_radiance() * 1.20;
     float light_dot_eye = dot(sun_dir, direction);
     float density_factor = max(params.weather.y, 0.0);
     float sigma_ds = -ds * density_factor;
@@ -2014,7 +2023,7 @@ MarchResult cloud_ref_compatible_march(vec3 origin, vec3 direction, float start_
     vec3 step_vec = direction * ds;
     vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel, sample_index));
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
-    vec3 sun_color = vec3(1.20, 1.12, 0.92) * max(params.sun_direction_intensity.w, 0.0);
+    vec3 sun_color = cloud_sun_radiance() * 1.20;
     float light_dot_eye = dot(sun_dir, direction);
     float density_factor = max(params.weather.y, 0.0);
     float sigma_ds = -ds * density_factor;
@@ -2221,7 +2230,7 @@ MarchResult cloud_far_horizon_layer(vec3 origin, vec3 direction, float start_t, 
     float length_m = max(end_t - bridge_start, 0.001);
     float base_lod = cloud_far_horizon_filter_lod(origin, direction, start_t, end_t);
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
-    vec3 sun_color = vec3(1.18, 1.10, 0.92) * max(params.sun_direction_intensity.w, 0.0);
+    vec3 sun_color = cloud_sun_radiance() * 1.18;
     float light_dot_eye = dot(sun_dir, direction);
     float mass_sum = 0.0;
     float sample_weight_sum = 0.0;

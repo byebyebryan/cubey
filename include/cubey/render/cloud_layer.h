@@ -301,7 +301,13 @@ struct CloudLayerFrameInfo {
     math::Vec3 camera_forward{0.0F, 0.0F, -1.0F};
     float tan_half_fovy = 0.0F;
     math::Vec3 sun_direction{0.0F, 1.0F, 0.0F};
+    math::Vec3 sun_color{1.0F, 0.94F, 0.82F};
     float sun_intensity = 1.0F;
+    math::Vec3 moon_direction{0.0F, 1.0F, 0.0F};
+    math::Vec3 moon_color{0.58F, 0.62F, 0.74F};
+    float moon_intensity = 0.0F;
+    math::Vec3 ambient_color{0.045F, 0.045F, 0.045F};
+    float ambient_intensity = 1.0F;
     VkExtent2D target_extent{};
     std::uint32_t temporal_frame_index = 0;
     float camera_mode = 0.0F;
@@ -335,6 +341,10 @@ struct CloudLayerFrameUniforms {
     math::Vec4 cloud_shell;
     math::Vec4 weather;
     math::Vec4 sun_direction_intensity;
+    math::Vec4 sun_color;
+    math::Vec4 moon_direction_intensity;
+    math::Vec4 moon_color;
+    math::Vec4 ambient_color_intensity;
     math::Vec4 ref_options;
     math::Vec4 shape_options;
     math::Vec4 weather_feature_weights;
@@ -353,7 +363,7 @@ struct CloudLayerFrameUniforms {
     math::Vec4 edge_options;
 };
 
-static_assert(sizeof(CloudLayerFrameUniforms) == sizeof(float) * 92U);
+static_assert(sizeof(CloudLayerFrameUniforms) == sizeof(float) * 108U);
 
 struct CloudLayerTemporalUniforms {
     math::Vec4 current_camera_right_aspect;

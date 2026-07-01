@@ -765,6 +765,12 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
                     config.wind_offset_m},
         .sun_direction_intensity = {frame.sun_direction.x, frame.sun_direction.y,
                                     frame.sun_direction.z, frame.sun_intensity},
+        .sun_color = {frame.sun_color.x, frame.sun_color.y, frame.sun_color.z, 0.0F},
+        .moon_direction_intensity = {frame.moon_direction.x, frame.moon_direction.y,
+                                     frame.moon_direction.z, frame.moon_intensity},
+        .moon_color = {frame.moon_color.x, frame.moon_color.y, frame.moon_color.z, 0.0F},
+        .ambient_color_intensity = {frame.ambient_color.x, frame.ambient_color.y,
+                                    frame.ambient_color.z, frame.ambient_intensity},
         .ref_options = {static_cast<float>(static_cast<std::uint32_t>(config.debug_view)),
                         static_cast<float>(view_steps),
                         static_cast<float>(budget.light_steps),
@@ -959,6 +965,12 @@ namespace {
     return cloud_layer_near(previous.cloud_shell, current.cloud_shell) &&
            cloud_layer_near(previous_weather_static, current_weather_static) &&
            cloud_layer_near(previous.sun_direction_intensity, current.sun_direction_intensity) &&
+           cloud_layer_near(previous.sun_color, current.sun_color) &&
+           cloud_layer_near(previous.moon_direction_intensity,
+                            current.moon_direction_intensity) &&
+           cloud_layer_near(previous.moon_color, current.moon_color) &&
+           cloud_layer_near(previous.ambient_color_intensity,
+                            current.ambient_color_intensity) &&
            cloud_layer_near(previous.ref_options, current.ref_options) &&
            cloud_layer_near(previous.shape_options, current.shape_options) &&
            cloud_layer_near(previous.weather_feature_weights, current.weather_feature_weights) &&
