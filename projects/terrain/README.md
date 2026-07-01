@@ -18,7 +18,7 @@ perspective review, but final terrain rendering, ocean integration, planet
 streaming, foliage rendering, and physically complete erosion remain deferred
 until the product fields are credible.
 
-The current generator revision is `29`. It emits source fields, height/slope
+The current generator revision is `30`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, incision/process diagnostics, wetness/deposition, material
 masks, and vegetation potential.
@@ -109,6 +109,9 @@ Revision 29 adds bounded thermal talus diagnostics for
 `temperate-mountain-range-stress`: `thermal_erosion_delta_m`,
 `talus_deposition_m`, and `slope_instability`. These fields only affect
 `post_erosion_height_m`; `height_m` remains the product surface.
+Revision 30 adds `mountain-process-review.png` and retunes the mountain stress
+source profile so mass and shoulder buildup carry more of the range shape before
+ridge and summit modulation.
 
 The current foundation pass keeps terrain process math in terrain-local helpers:
 spread, relief-clamped lowering, height lowering, the diagnostic gully pass, and
@@ -158,10 +161,11 @@ for the standard review set. The current local review images are generated at
 thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
 review artifact.
 
-The scalar review set includes 49 PNG views plus `manifest.json`:
+The scalar review set includes 50 PNG views plus `manifest.json`:
 
 - `final.png`
 - `mountain-relief.png`
+- `mountain-process-review.png`
 - `height.png`
 - `pre-process-height.png`
 - `mountain-profile-height.png`
@@ -218,7 +222,7 @@ for checking whether peak height and valley contrast are plausible.
 `mountain-post-erosion-perspective.png` renders the diagnostic
 `post_erosion_height_m` surface with height color so process detail can be
 compared against the actual `height_m` product. The current
-`outputs/terrain/mountain-range-stress` directory holds 53 PNGs after the
+`outputs/terrain/mountain-range-stress` directory holds 54 PNGs after the
 scalar set plus oblique, profile, post-erosion, and height-colored perspective
 captures are generated. `manifest.json` is not a rendered view; use it to check
 the recipe, seed, generator revision, grid size, field ranges, and content hash
@@ -323,6 +327,26 @@ reports generator revision 29, 55 fields, 49 scalar views,
 `slope_instability.mean = 0.0283`. The perspective comparison is smoother and
 less synthetically sharp, but the diagnostic masks still expose localized
 straight or stepped source artifacts.
+Revision 30 adds the compact `mountain-process-review.png` comparison and
+retunes the mountain stress profile toward broader mass and shoulder buildup.
+The regenerated 513 mountain manifest reports generator revision 30, 55 fields,
+50 scalar/review views, `height_m.span = 1695.575`,
+`mountain_profile_height_m.span = 1562.146`,
+`mountain_mass.mean = 0.4465`, `mountain_shoulder.mean = 0.3861`,
+`mountain_summit_core.mean = 0.0356`, `post_erosion_height_m.span = 1693.804`,
+`thermal_erosion_delta_m.max = 68.054`,
+`talus_deposition_m.max = 77.452`, and
+`slope_instability.mean = 0.0643`. The 1025 manifest reports generator revision
+30, 55 fields, 50 scalar/review views, `height_m.span = 1623.204`,
+`mountain_profile_height_m.span = 1607.322`,
+`mountain_mass.mean = 0.4633`, `mountain_shoulder.mean = 0.4104`,
+`mountain_summit_core.mean = 0.0436`,
+`post_erosion_height_m.span = 1622.455`,
+`thermal_erosion_delta_m.max = 64.265`,
+`talus_deposition_m.max = 71.355`, and
+`slope_instability.mean = 0.0518`. The visual read is more cohesive, but still
+not final mountain quality: rounded high areas and source-tied ridge/process
+bands remain visible.
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential

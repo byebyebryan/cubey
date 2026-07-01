@@ -58,3 +58,36 @@ For revision 30, inspect:
 Expected success is incremental: a more cohesive pre-process mountain shape and
 an easier review workflow. If the new source profile merely hides artifacts by
 flattening the range, revert the tuning and keep only the comparison export.
+
+## Revision 30 Result
+
+Implemented as a mountain-stress-focused review and source-profile pass.
+`height_m` remains the product surface, `post_erosion_height_m` remains the
+diagnostic process surface, and `mountain-process-review.png` now compares the
+key source/product/process stages in one image.
+
+The regenerated `513` mountain manifest reports revision 30, 55 fields, 50
+scalar/review outputs, `height_m.span = 1695.575`,
+`mountain_profile_height_m.span = 1562.146`,
+`mountain_mass.mean = 0.4465`, `mountain_shoulder.mean = 0.3861`,
+`mountain_summit_core.mean = 0.0356`,
+`post_erosion_height_m.span = 1693.804`,
+`thermal_erosion_delta_m.max = 68.054`,
+`talus_deposition_m.max = 77.452`, and
+`slope_instability.mean = 0.0643`. The `1025` stress capture reports the same
+revision and field/output counts, with `height_m.span = 1623.204`,
+`mountain_profile_height_m.span = 1607.322`,
+`mountain_mass.mean = 0.4633`, `mountain_shoulder.mean = 0.4104`,
+`mountain_summit_core.mean = 0.0436`,
+`post_erosion_height_m.span = 1622.455`,
+`thermal_erosion_delta_m.max = 64.265`,
+`talus_deposition_m.max = 71.355`, and
+`slope_instability.mean = 0.0518`.
+
+Visual read: the oblique and profile previews are more cohesive than revision
+29. Broad mass and shoulders now carry more of the visible range shape, and the
+comparison image makes it easier to see how talus changes the diagnostic
+surface. This is still not a finished mountain model. Rounded high areas remain,
+and the process masks still expose source-tied ridge bands. The next mountain
+pass should move toward a deliberate ridge/valley process model rather than more
+local source-profile tuning.

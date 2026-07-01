@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 29
-mountain thermal-talus diagnostic pass.
+This note records the current terrain reboot capture set after the revision 30
+mountain source/process review pass.
 
 ## Capture Command
 
@@ -27,7 +27,7 @@ mountain thermal-talus diagnostic pass.
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
 stress captures for larger river-network and mountain-driver inspection. The
-current revision 29 mountain stress scalar review emits 49 PNG views plus
+current revision 30 mountain stress scalar review emits 50 PNG views plus
 `manifest.json` per capture. Current and stress river directories hold their
 existing scalar/debug review sets after material/profile, height-only, and
 channel diagnostic perspective captures are generated. The 513 mountain stress
@@ -128,6 +128,25 @@ fields, 49 scalar outputs, `height_m.span = 1572.752`,
 `thermal_erosion_delta_m.max = 53.625`,
 `talus_deposition_m.max = 58.847`, and
 `slope_instability.mean = 0.0283`.
+Revision 30 adds `mountain-process-review.png` and retunes the source profile
+so broad mass and shoulder fields carry more of the visible range before ridge
+and summit modulation. The regenerated 513 mountain manifest reports revision
+30, 55 fields, 50 scalar/review outputs, `height_m.span = 1695.575`,
+`mountain_profile_height_m.span = 1562.146`,
+`mountain_mass.mean = 0.4465`, `mountain_shoulder.mean = 0.3861`,
+`mountain_summit_core.mean = 0.0356`,
+`post_erosion_height_m.span = 1693.804`,
+`thermal_erosion_delta_m.max = 68.054`,
+`talus_deposition_m.max = 77.452`, and
+`slope_instability.mean = 0.0643`. The 1025 manifest reports revision 30, 55
+fields, 50 scalar/review outputs, `height_m.span = 1623.204`,
+`mountain_profile_height_m.span = 1607.322`,
+`mountain_mass.mean = 0.4633`, `mountain_shoulder.mean = 0.4104`,
+`mountain_summit_core.mean = 0.0436`,
+`post_erosion_height_m.span = 1622.455`,
+`thermal_erosion_delta_m.max = 64.265`,
+`talus_deposition_m.max = 71.355`, and
+`slope_instability.mean = 0.0518`.
 
 ## What To Inspect
 
@@ -139,6 +158,10 @@ fields, 49 scalar outputs, `height_m.span = 1572.752`,
 - `mountain-relief.png`: mountain-specific rendered review image. It uses an
   elevation-first ramp with softer hillshade and subtle ridge/peak tinting,
   without river, wetness, vegetation, or material overlays.
+- `mountain-process-review.png`: compact source/product/process comparison.
+  The panels are profile/source height, final height, post-erosion height,
+  slope instability, thermal erosion delta, and talus deposition. Use this as
+  the first revision 30 mountain review image.
 - `mountain-perspective.png`: renderer-backed oblique mesh capture from
   `terrain_preview`. Use this to judge whether broad support, basins, valleys,
   ridges, and high peaks are readable in 3D.
@@ -146,7 +169,7 @@ fields, 49 scalar outputs, `height_m.span = 1572.752`,
   Use this to check height contrast and to expose the current sharp-peak
   character that flat scalar PNGs can hide.
 - `mountain-post-erosion-perspective.png`: renderer-backed diagnostic surface
-  from `post_erosion_height_m`. In revision 29 this includes bounded gully,
+  from `post_erosion_height_m`. In revision 30 this includes bounded gully,
   thermal erosion, and talus deposition review effects; it is not the product
   height.
 - `river-perspective.png`: renderer-backed material view for current or stress
@@ -336,13 +359,17 @@ The current mountain driver is still an early diagnostic source profile, not
 a polished alpine biome. Revision 28 improves the worst fin-like crests and
 hard shoulder shelves in `mountain-perspective.png` and
 `mountain-profile.png`; revision 29 shows that bounded local talus relaxation
-can reduce over-steep synthetic shoulders in the review surface. The range still
-reads rounded and procedural. Peak prominence is source-shaped rather than
-erosion-evolved, and the ridge skeleton is generated rather than produced by a
-process model. The thermal talus pass is local and bounded; it does not model
-long-timescale erosion, sediment routing, snow/ice, glacial valley carving,
-tectonic plates, or a world-scale range graph. The perspective preview is a
-local heightfield mesh consumer; it does not yet include clipmaps, tiled world
-continuity, water surfaces, foliage, or planet integration. The next
-mountain-quality pass should focus on a better mountain process/source loop
-before turning these fields into final biome compositions.
+can reduce over-steep synthetic shoulders in the review surface. Revision 30
+makes the massif and shoulder buildup more cohesive and adds
+`mountain-process-review.png` so source/product/process stages can be compared
+without flipping between files. The range still reads rounded and procedural,
+and the process masks still reveal source-tied ridge bands. Peak prominence is
+source-shaped rather than erosion-evolved, and the ridge skeleton is generated
+rather than produced by a process model. The thermal talus pass is local and
+bounded; it does not model long-timescale erosion, sediment routing, snow/ice,
+glacial valley carving, tectonic plates, or a world-scale range graph. The
+perspective preview is a local heightfield mesh consumer; it does not yet
+include clipmaps, tiled world continuity, water surfaces, foliage, or planet
+integration. The next mountain-quality pass should focus on a deliberate
+ridge/valley process model before turning these fields into final biome
+compositions.
