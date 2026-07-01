@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 23
-river terrain-coupling pass and the follow-up process-helper/manifest reset.
+This note records the current terrain reboot capture set after the revision 29
+mountain thermal-talus diagnostic pass.
 
 ## Capture Command
 
@@ -19,13 +19,15 @@ river terrain-coupling pass and the follow-up process-helper/manifest reset.
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset profile --terrain-preview-color material --output outputs/terrain/stress-river-network/river-profile.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset oblique --terrain-preview-color height --output outputs/terrain/stress-river-network/river-height-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset oblique --terrain-preview-color channel --output outputs/terrain/stress-river-network/river-channel-perspective.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --output outputs/terrain/mountain-range-stress/mountain-perspective.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset profile --output outputs/terrain/mountain-range-stress/mountain-profile.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/mountain-range-stress/mountain-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset profile --terrain-preview-surface height --output outputs/terrain/mountain-range-stress/mountain-profile.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-height-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-post-erosion-perspective.png
 ```
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
 stress captures for larger river-network and mountain-driver inspection. The
-current revision 28 mountain stress scalar review emits 46 PNG views plus
+current revision 29 mountain stress scalar review emits 49 PNG views plus
 `manifest.json` per capture. Current and stress river directories hold their
 existing scalar/debug review sets after material/profile, height-only, and
 channel diagnostic perspective captures are generated. The 513 mountain stress
@@ -112,6 +114,20 @@ revision 28, 52 fields, 46 scalar outputs, `height_m.span = 1548.804`,
 fields, 46 scalar outputs, `height_m.span = 1572.752`,
 `mountain_profile_height_m.span = 1507.812`, and
 `mountain_ridge_influence.mean = 0.2247`.
+Revision 29 adds mountain-stress-only thermal talus diagnostics:
+`thermal_erosion_delta_m`, `talus_deposition_m`, and `slope_instability`.
+`height_m` remains the product surface, while `post_erosion_height_m` composites
+the existing gully diagnostic with the thermal talus review fields. The
+regenerated 513 mountain manifest reports revision 29, 55 fields, 49 scalar
+outputs, `height_m.span = 1548.804`, `post_erosion_height_m.span = 1540.493`,
+`thermal_erosion_delta_m.max = 56.159`,
+`talus_deposition_m.max = 63.752`, and
+`slope_instability.mean = 0.0566`. The 1025 manifest reports revision 29, 55
+fields, 49 scalar outputs, `height_m.span = 1572.752`,
+`post_erosion_height_m.span = 1567.492`,
+`thermal_erosion_delta_m.max = 53.625`,
+`talus_deposition_m.max = 58.847`, and
+`slope_instability.mean = 0.0283`.
 
 ## What To Inspect
 
@@ -129,6 +145,10 @@ fields, 46 scalar outputs, `height_m.span = 1572.752`,
 - `mountain-profile.png`: renderer-backed low side view from `terrain_preview`.
   Use this to check height contrast and to expose the current sharp-peak
   character that flat scalar PNGs can hide.
+- `mountain-post-erosion-perspective.png`: renderer-backed diagnostic surface
+  from `post_erosion_height_m`. In revision 29 this includes bounded gully,
+  thermal erosion, and talus deposition review effects; it is not the product
+  height.
 - `river-perspective.png`: renderer-backed material view for current or stress
   river recipes. It is useful for reviewing the normal water/material read, but
   it should be paired with height/channel modes so water color does not hide
@@ -158,6 +178,15 @@ fields, 46 scalar outputs, `height_m.span = 1572.752`,
 - `mountain-saddle-gate.png`: highland negative-space gate. Bright areas mark
   broad mountain mass that should be suppressed because it is not supported by
   nearby crest or summit structure.
+- `thermal-erosion-delta.png`: mountain-stress-only local slope relaxation
+  removal. Bright areas mark over-steep supported mountain faces that the talus
+  diagnostic would lower in the review surface.
+- `talus-deposition.png`: paired local deposition from the thermal talus
+  diagnostic. This should sit below or beside steep removal areas, not become a
+  full-map blur.
+- `slope-instability.png`: residual over-steepness after the bounded diagnostic
+  iterations. Use this to distinguish source-shape problems from renderer or
+  material read problems.
 - `drainage-potential.png`: scalar routing surface before flow routing. This
   is the repaired routing surface and should remain smooth even when later river
   products expose routing artifacts.
@@ -306,12 +335,14 @@ shape, sediment transport, lakes, floodplains, or terrace formation.
 The current mountain driver is still an early diagnostic source profile, not
 a polished alpine biome. Revision 28 improves the worst fin-like crests and
 hard shoulder shelves in `mountain-perspective.png` and
-`mountain-profile.png`, but the range still reads rounded and procedural. Peak
-prominence is source-shaped rather than erosion-evolved, and the ridge skeleton
-is generated rather than produced by a process model. The perspective preview is
-a local heightfield mesh consumer; it does not yet include clipmaps, tiled world
-continuity, water surfaces, foliage, or planet integration. It does not yet
-model tectonic plates, erosion time, talus, snow/ice, glacial valley carving,
-or a world-scale range graph. The next mountain-quality pass should focus on a
-proper mountain process model before turning these fields into final biome
-compositions.
+`mountain-profile.png`; revision 29 shows that bounded local talus relaxation
+can reduce over-steep synthetic shoulders in the review surface. The range still
+reads rounded and procedural. Peak prominence is source-shaped rather than
+erosion-evolved, and the ridge skeleton is generated rather than produced by a
+process model. The thermal talus pass is local and bounded; it does not model
+long-timescale erosion, sediment routing, snow/ice, glacial valley carving,
+tectonic plates, or a world-scale range graph. The perspective preview is a
+local heightfield mesh consumer; it does not yet include clipmaps, tiled world
+continuity, water surfaces, foliage, or planet integration. The next
+mountain-quality pass should focus on a better mountain process/source loop
+before turning these fields into final biome compositions.

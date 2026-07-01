@@ -18,7 +18,7 @@ perspective review, but final terrain rendering, ocean integration, planet
 streaming, foliage rendering, and physically complete erosion remain deferred
 until the product fields are credible.
 
-The current generator revision is `26`. It emits source fields, height/slope
+The current generator revision is `29`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, incision/process diagnostics, wetness/deposition, material
 masks, and vegetation potential.
@@ -99,9 +99,20 @@ height for that recipe, ridge/peak/uplift fields are diagnostics and bounded
 attribution, and visible ridges come from smooth connection influence instead
 of 8-neighbor raster paths. This removes the worst flat shoulder shelves,
 needle peaks, and jagged ridge strokes from the revision 25 preview.
+Revision 27 curves the ridge source, elongates summit support, and adds
+`mountain_saddle_gate` so highland mass can be suppressed where it is not
+supported by nearby crest or summit structure.
+Revision 28 broadens ridge bodies, softens saturated mass/shoulder/saddle
+fields, and shifts more visible mountain shape into broad profile support
+instead of direct crest and summit spikes.
+Revision 29 adds bounded thermal talus diagnostics for
+`temperate-mountain-range-stress`: `thermal_erosion_delta_m`,
+`talus_deposition_m`, and `slope_instability`. These fields only affect
+`post_erosion_height_m`; `height_m` remains the product surface.
 
 The current foundation pass keeps terrain process math in terrain-local helpers:
-spread, relief-clamped lowering, height lowering, and the diagnostic gully pass.
+spread, relief-clamped lowering, height lowering, the diagnostic gully pass, and
+the bounded thermal talus diagnostic.
 The scalar review export writes `manifest.json` with recipe, grid, summary,
 field stats, view names, and output filenames.
 
@@ -147,7 +158,7 @@ for the standard review set. The current local review images are generated at
 thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
 review artifact.
 
-The scalar review set includes 46 PNG views plus `manifest.json`:
+The scalar review set includes 49 PNG views plus `manifest.json`:
 
 - `final.png`
 - `mountain-relief.png`
@@ -158,6 +169,9 @@ The scalar review set includes 46 PNG views plus `manifest.json`:
 - `erosion-delta.png`
 - `gully-mask.png`
 - `crease-proxy.png`
+- `thermal-erosion-delta.png`
+- `talus-deposition.png`
+- `slope-instability.png`
 - `post-erosion-height.png`
 - `mountain-envelope.png`
 - `mountain-peak-anchors.png`
@@ -202,9 +216,9 @@ stress recipe, `mountain-perspective.png` is the primary 3D read for peak,
 basin, and valley hierarchy, while `mountain-profile.png` is a lower side view
 for checking whether peak height and valley contrast are plausible.
 `mountain-post-erosion-perspective.png` renders the diagnostic
-`post_erosion_height_m` surface with height color so gully detail can be
+`post_erosion_height_m` surface with height color so process detail can be
 compared against the actual `height_m` product. The current
-`outputs/terrain/mountain-range-stress` directory holds 50 PNGs after the
+`outputs/terrain/mountain-range-stress` directory holds 53 PNGs after the
 scalar set plus oblique, profile, post-erosion, and height-colored perspective
 captures are generated. `manifest.json` is not a rendered view; use it to check
 the recipe, seed, generator revision, grid size, field ranges, and content hash
@@ -292,6 +306,23 @@ mountain manifest reports generator revision 28, 52 fields, 46 scalar views,
 perspective captures are less fin-like and less shelfy, but the mountain range
 still needs a better process model for natural peaks, shoulders, and ridge
 evolution.
+Revision 29 keeps `height_m` unchanged and layers a bounded thermal talus
+diagnostic into `post_erosion_height_m`. Inspect
+`thermal-erosion-delta.png`, `talus-deposition.png`, and
+`slope-instability.png` beside `mountain-perspective.png` and
+`mountain-post-erosion-perspective.png`. The regenerated 513 mountain manifest
+reports generator revision 29, 55 fields, 49 scalar views,
+`height_m.span = 1548.804`, `post_erosion_height_m.span = 1540.493`,
+`thermal_erosion_delta_m.max = 56.159`,
+`talus_deposition_m.max = 63.752`, and
+`slope_instability.mean = 0.0566`. The 1025 manifest reports generator revision
+29, 55 fields, 49 scalar views, `height_m.span = 1572.752`,
+`post_erosion_height_m.span = 1567.492`,
+`thermal_erosion_delta_m.max = 53.625`,
+`talus_deposition_m.max = 58.847`, and
+`slope_instability.mean = 0.0283`. The perspective comparison is smoother and
+less synthetically sharp, but the diagnostic masks still expose localized
+straight or stepped source artifacts.
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential

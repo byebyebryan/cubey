@@ -62,3 +62,28 @@ Expected success is modest: fewer obviously over-steep synthetic shoulders in
 the diagnostic surface. If the pass just smears peaks into mud or produces
 full-map noise, keep it diagnostic and tune or replace the process model before
 promoting anything into final height.
+
+## Revision 29 Result
+
+Implemented as a mountain-stress-only diagnostic process. `height_m` remains the
+product surface, while `post_erosion_height_m` now combines the existing gully
+diagnostic with thermal erosion and talus deposition for review.
+
+The regenerated `513` mountain stress manifest reports revision 29, 55 fields,
+49 scalar outputs, `height_m.span = 1548.804`,
+`post_erosion_height_m.span = 1540.493`,
+`thermal_erosion_delta_m.max = 56.159`,
+`talus_deposition_m.max = 63.752`, and
+`slope_instability.mean = 0.0566`. The `1025` stress capture reports the same
+revision and field/output counts, with `height_m.span = 1572.752`,
+`post_erosion_height_m.span = 1567.492`,
+`thermal_erosion_delta_m.max = 53.625`,
+`talus_deposition_m.max = 58.847`, and
+`slope_instability.mean = 0.0283`.
+
+Visual read: `mountain-post-erosion-perspective.png` is smoother and less
+synthetically sharp than `mountain-perspective.png`, especially along the most
+over-steep faces and shoulders. The diagnostic masks are sparse enough to be
+useful, but they still expose localized straight or stepped bands from the
+source terrain. Keep this as a review surface until the mountain source and
+process model are more mature.
