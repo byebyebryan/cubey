@@ -90,6 +90,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain anisotropic mountain profile plan](terrain-anisotropic-mountain-profile-plan.md):
   revision 27 target for replacing straight ridge bands and round summit blobs
   with curved crests, elongated summit support, and saddle suppression.
+- [Terrain mountain profile correction plan](terrain-mountain-profile-correction-plan.md):
+  revision 28 target for correcting bulgy summits, fin-like crests, and stepped
+  shoulders while keeping the coherent height rule.
 - [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
   next river-quality pivot: promote `stream_order` and `flow_accumulation` into
   connected corridor selection while avoiding direct graph-edge rendering.
