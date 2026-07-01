@@ -1,8 +1,9 @@
 # Cloud Ref
 
-`cloud_ref` is the active reference target for volumetric clouds. Its default
-path should stay deliberately close to the MIT-licensed TerrainEngine-OpenGL
-volumetric cloud renderer, even when that makes it less Cubey-native:
+`cloud_ref` is the active local surface-view reference target for volumetric
+clouds. Its default path should stay deliberately close to the MIT-licensed
+TerrainEngine-OpenGL volumetric cloud renderer, even when that makes it less
+Cubey-native:
 
 - one-time generated 128^3 Perlin-Worley base noise
 - one-time generated 32^3 Worley erosion/detail noise
@@ -11,11 +12,15 @@ volumetric cloud renderer, even when that makes it less Cubey-native:
   transmittance, Bayer jitter, and a short cone light march
 - fullscreen composite over a source-like sky/background
 
-The intent is to keep a known, concrete volumetric reference running inside
-Cubey before building a production `cloud` project. Cubey-specific weather
-systems, ocean/planet integration, temporal cache updates, and shared atmosphere
-adaptation belong in that later project unless they are required to reproduce
-the TerrainEngine reference.
+The intent is to keep a known, concrete local cloud reference running inside
+Cubey before promoting proven mechanics into the shared foundation cloud layer.
+This is deliberately a narrow reference: surface and near-surface views are the
+validation target. High-altitude and orbit views are useful diagnostics for
+showing where the local-dome model breaks down, not views that `cloud_ref`
+should try to solve. Cubey-specific planet-scale weather, ocean/planet
+integration, temporal cache updates, and shared atmosphere adaptation belong in
+the foundation renderer unless they are required to reproduce the TerrainEngine
+reference.
 
 Attribution: TerrainEngine-OpenGL is MIT licensed, copyright Federico Vaccaro.
 The TerrainEngine shaders also cite Sebastian Hillaire/Nubis-style tileable
@@ -87,10 +92,14 @@ grain, and Cubey's placeholder sky/ground composite instead of TerrainEngine's
 water, skybox, bloom, god rays, and post pipeline.
 
 The presentation checkpoint in `outputs/cloud-ref-presentation-review/` adds a
-shader-only sky/water horizon context, a final-view cloud resolve, and mild
+shader-only sky/water horizon context, a final-view cloud resolve, and
 source-style post shaping. `surface-up.png` is the best surface cloud framing;
 `surface.png` is intentionally a straight horizon review angle. `raw-final.png`
-shows the same composition before final resolve/post.
+shows the same composition before final resolve/post. The default horizon glow
+is intentionally stronger than a neutral diagnostic value because the local
+cloud shell is not expected to remain credible at the grazing horizon; final
+surface presentation should blend that transition back into the sky/water
+background instead of exposing below-horizon cloud continuation.
 
 The lighting checkpoint in `outputs/cloud-ref-lighting-review/` splits cloud
 lighting diagnostics into `ambient-light`, `direct-light`, and `phase-light`,
@@ -168,6 +177,10 @@ Controls:
 
 Known limits:
 
+- `cloud_ref` is a surface/local-volume reference. It is structurally limited by
+  a camera-following spherical shell, placeholder sky/water horizon context, and
+  horizon fog/blending. Do not use it as the target for high-altitude, orbit, or
+  planet-scale weather rendering.
 - `cloud_ref` is allowed to inherit TerrainEngine visual rough edges while it is
   serving as a fidelity baseline.
 - TerrainEngine water/skybox/post effects are approximated with shader-only
@@ -176,5 +189,5 @@ Known limits:
 - The latest lighting pass improves inspection and reduces flat grey lift, but
   richer final shots still need better scene context and/or a production cloud
   renderer rather than more one-off `cloud_ref` constants.
-- Orbit mode is a diagnostic preview, not a finished planet-scale weather
-  system.
+- High and orbit camera modes are diagnostic previews for structural failure
+  modes, not finished planet-scale weather systems.

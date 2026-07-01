@@ -127,7 +127,7 @@ struct CloudsConfig {
     float powder_strength = 0.20F;
     float final_contrast = 0.98F;
     float final_saturation = 1.0F;
-    float horizon_glow_strength = 0.68F;
+    float horizon_glow_strength = 1.05F;
     float sun_glare_strength = 1.0F;
     float crispiness = 40.0F;
     float curliness = 0.10F;
