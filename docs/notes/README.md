@@ -84,6 +84,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain mountain macro shape plan](terrain-mountain-macro-shape-plan.md):
   revision 25 plan for preview surface selection and stronger mountain mass,
   shoulder, and summit source fields.
+- [Terrain coherent height rule](terrain-coherent-height-rule.md): revision 26
+  guardrail against building visible terrain from independently pasted feature
+  masks.
 - [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
   next river-quality pivot: promote `stream_order` and `flow_accumulation` into
   connected corridor selection while avoiding direct graph-edge rendering.
