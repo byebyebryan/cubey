@@ -102,3 +102,30 @@ Current read:
   flatter cloud-top representation rather than the desired high-oblique handoff;
 - future work should keep the high-oblique comparison in the acceptance pack
   before promoting cloud shadows/reflections or planet-scale consumers.
+
+## Surface Reference Reboot 2026-07-01
+
+`projects/cloud_ref` is now locked as a narrow surface-view/local-volume
+reference. It is useful because its surface cloud shape, deterministic Bayer
+sampling, terrain-post resolve, lower ceiling, and optical-depth lighting give a
+stable local signal with much less visible edge noise than the absorbed
+foundation cloud path.
+
+It is not the high-altitude or orbit target. Its camera-following cloud dome,
+standalone sky/water context, and horizon masking are deliberate limitations
+that should not be copied as production architecture.
+
+The production reboot happens in the shared cloud layer through
+`projects/atmosphere`. Use:
+
+```sh
+projects/atmosphere/capture_cloud_ref_parity.sh outputs/cloud-ref-parity-current
+```
+
+as the comparison pack before changing shared cloud lighting or horizon
+handoff. The pack forces atmosphere into full-quality, local-only,
+`cloud-ref-compatible` mode with temporal off, Bayer sampling, terrain-post
+resolve, and no far-horizon cloud layer so shader and lighting differences stay
+visible. Surface noon/backlit parity is the first acceptance target; dawn,
+dusk, and night checks make sure the shared environment lighting contract does
+not keep clouds sunlit after the sun is below the horizon.
