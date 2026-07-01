@@ -58,17 +58,21 @@ Implemented in revision 25.
   `post-erosion`, or `pre-process` geometry for `terrain_preview`.
 - The mountain stress recipe emits `mountain_mass`, `mountain_shoulder`, and
   `mountain_summit_core` with matching scalar debug views.
+- Revision 26 adds `mountain_profile_height_m` and uses it as the coherent
+  source height for the mountain stress recipe.
 - Default river recipes keep those macro fields inactive.
 - Tests cover the inactive default fields, active mountain stress hierarchy,
-  debug export coverage, and alternate preview surfaces.
+  coherent profile guards, debug export coverage, and alternate preview
+  surfaces.
 - Refreshed local captures:
-  - `outputs/terrain/mountain-range-stress/` at `513x513`, revision 25, 50
-    fields, 44 scalar views, plus oblique/profile/post-erosion previews.
-  - `outputs/terrain/mountain-range-stress-1025/` at `1025x1025`, revision 25,
-    50 fields, 44 scalar views.
+  - `outputs/terrain/mountain-range-stress/` at `513x513`, revision 26, 51
+    fields, 45 scalar views, plus oblique/profile/post-erosion/height previews.
+  - `outputs/terrain/mountain-range-stress-1025/` at `1025x1025`, revision 26,
+    51 fields, 45 scalar views.
 
 Visual read: broad mass and shoulder buildup are clearer in perspective, and
-summit support is sparse enough to inspect separately. The remaining visible
-problem is source shape quality: some peaks still read too pointy/stylized, so
-the next mountain batch should refine summit/ridge source shape before adding
-more erosion detail.
+summit support is sparse enough to inspect separately. Revision 26 removes the
+worst pointy-peak and jagged-ridge artifacts from revision 25 by making the
+height profile coherent. The remaining visible problem is now different: the
+mountain shapes are too rounded/blobby, so the next mountain batch should refine
+anisotropic summit/ridge source shape before adding more erosion detail.

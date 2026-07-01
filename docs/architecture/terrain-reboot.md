@@ -220,7 +220,7 @@ Visual tests should follow:
 
 The reboot now has a CPU/reference `projects/terrain` product generator and
 headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `25` emits deterministic source fields,
+local region. Generator revision `26` emits deterministic source fields,
 explicit mountain support/ridge/peak/uplift fields, height/slope analysis,
 repaired routing diagnostics, smoothed active river trunk and tributary masks,
 pre-process and carved height fields, channel/valley incision diagnostics,
@@ -232,6 +232,10 @@ Revision `25` adds mountain macro source fields:
 `mountain_mass`, `mountain_shoulder`, and `mountain_summit_core`. These expose
 broad highland mass, foothill/shoulder buildup, and sparse summit cores before
 local detail and diagnostic erosion are judged.
+Revision `26` adds `mountain_profile_height_m` and changes the mountain stress
+recipe so `height_m` is generated from one coherent profile plus bounded
+detail. Ridge, peak, and uplift fields remain diagnostics and attribution
+fields instead of independently stacked visible height layers.
 
 The river driver intentionally moved away from a single authored line. It routes
 over a coherent low-frequency drainage potential derived from the terrain seed
@@ -381,6 +385,13 @@ that mass, and `mountain_summit_core` isolates sparse high-summit support. The
 renderer-backed preview can now select `height`, `post-erosion`, or
 `pre-process` surfaces, which makes diagnostic geometry comparisons explicit.
 
+Revision 26 applies the coherent height rule to the mountain stress recipe.
+`mountain_profile_height_m` is solved from range mass, shoulder ramp, smooth
+ridge influence, and broad summit influence; `pre_process_height_m` stays close
+to that profile plus bounded detail. Visible ridge influence now uses smooth
+distance-to-connection fields rather than 8-neighbor raster paths, and peak
+support is broadened so summits no longer become isolated needle cones.
+
 The next work should be foundation-shaped inside the terrain project rather
 than another isolated biome image. Keep the per-revision river and mountain
 recipes as diagnostics while extracting reusable process-field helpers, adding
@@ -431,10 +442,10 @@ Known limitations:
   revisited before adding heavier hydrology checks.
 - The mountain stress recipe is an early diagnostic driver, not a finished
   alpine biome. It does not yet include erosion time, talus, snow/ice, glacial
-  valley carving, or world-scale range continuity. Revision 25 makes broad mass,
-  shoulders, and sparse summit cores inspectable, but the resulting summit
-  shapes can still read too pointy and stylized because the peak/ridge source is
-  generated rather than erosion-evolved.
+  valley carving, or world-scale range continuity. Revision 26 removes the
+  worst pointy peaks and jagged ridge strokes by using a coherent mountain
+  profile, but the result can now read too rounded or blobby because summit and
+  ridge structure is broad and not yet erosion- or strata-shaped.
 - The final PNG is an inspectable debug composition, not the target renderer.
   Use `mountain-relief.png` for mountain-form review because `final.png` still
   includes the river/material overlays.
@@ -471,9 +482,9 @@ adding more biome labels:
    perspective captures.
 2. Review the clean-room gully/erosion diagnostic over the mountain stress
    recipe before deciding whether any erosion-like pass should affect height.
-3. Refine the current mountain source hierarchy with anisotropic summit shaping,
-   erosion-aware ridge cleanup, alpine material/valley contrast, and better
-   world-scale range continuity.
+3. Refine the coherent mountain profile with anisotropic summit shaping,
+   sharper-but-smooth ridge structure, alpine material/valley contrast, and
+   better world-scale range continuity.
 4. Return to river topology with graph/hydrology references once mountain
    process/source quality is easier to inspect.
 5. Promote additional process helpers only when they prove reusable across

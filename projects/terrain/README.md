@@ -18,7 +18,7 @@ perspective review, but final terrain rendering, ocean integration, planet
 streaming, foliage rendering, and physically complete erosion remain deferred
 until the product fields are credible.
 
-The current generator revision is `25`. It emits source fields, height/slope
+The current generator revision is `26`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, incision/process diagnostics, wetness/deposition, material
 masks, and vegetation potential.
@@ -93,6 +93,12 @@ source now separates broad highland mass, foothill/shoulder buildup, and sparse
 summit cores before local detail is applied. `terrain_preview` can also render
 `height`, `post-erosion`, or `pre-process` surfaces so diagnostic surfaces can
 be compared without changing the product contract.
+Revision 26 changes the mountain stress recipe from additive feature stacking
+to a coherent height profile. `mountain_profile_height_m` is now the source
+height for that recipe, ridge/peak/uplift fields are diagnostics and bounded
+attribution, and visible ridges come from smooth connection influence instead
+of 8-neighbor raster paths. This removes the worst flat shoulder shelves,
+needle peaks, and jagged ridge strokes from the revision 25 preview.
 
 The current foundation pass keeps terrain process math in terrain-local helpers:
 spread, relief-clamped lowering, height lowering, and the diagnostic gully pass.
@@ -130,6 +136,7 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/mountain-range-stress/mountain-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset profile --terrain-preview-surface height --output outputs/terrain/mountain-range-stress/mountain-profile.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-post-erosion-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-height-perspective.png
 ```
 
 ## Current Review Outputs
@@ -140,12 +147,13 @@ for the standard review set. The current local review images are generated at
 thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
 review artifact.
 
-The scalar review set includes 44 PNG views plus `manifest.json`:
+The scalar review set includes 45 PNG views plus `manifest.json`:
 
 - `final.png`
 - `mountain-relief.png`
 - `height.png`
 - `pre-process-height.png`
+- `mountain-profile-height.png`
 - `slope.png`
 - `erosion-delta.png`
 - `gully-mask.png`
@@ -196,12 +204,11 @@ for checking whether peak height and valley contrast are plausible.
 `mountain-post-erosion-perspective.png` renders the diagnostic
 `post_erosion_height_m` surface with height color so gully detail can be
 compared against the actual `height_m` product. The current
-`outputs/terrain/mountain-range-stress` directory holds 47 PNGs after those
-three captures are generated. River review directories hold 47 PNGs after the
-scalar set plus material/profile, height-only, and channel diagnostic
-perspective captures are generated. `manifest.json` is not a rendered view; use
-it to check the recipe, seed, generator revision, grid size, field ranges, and
-content hash for a scalar capture directory.
+`outputs/terrain/mountain-range-stress` directory holds 49 PNGs after the
+scalar set plus oblique, profile, post-erosion, and height-colored perspective
+captures are generated. `manifest.json` is not a rendered view; use it to check
+the recipe, seed, generator revision, grid size, field ranges, and content hash
+for a scalar capture directory.
 
 The optional `temperate-mountain-river-stress` recipe keeps the same source
 terrain and routing diagnostics but uses a graph-first visible river source for
@@ -262,10 +269,16 @@ Revision 24 adds diagnostic erosion-shaped fields for the same recipe. Inspect
 Revision 25 adds `mountain-mass.png`, `mountain-shoulder.png`, and
 `mountain-summit-core.png`. Inspect those before judging summit detail: the
 intended read is broad highland mass, shoulder buildup, then sparse summit core.
-The manifest for the regenerated 513 and 1025 mountain review sets reports
-generator revision 25, 50 fields, and 44 scalar views. The 513 manifest reports
-`height_m.span = 3133.851`, `mountain_mass.mean = 0.4035`,
-`mountain_shoulder.mean = 0.3985`, and `mountain_summit_core.mean = 0.0082`.
+Revision 26 adds `mountain-profile-height.png` and makes that field the
+coherent source height for the mountain stress recipe. Inspect
+`mountain-profile-height.png`, `pre-process-height.png`, and
+`mountain-perspective.png` together: pre-process height should differ from the
+profile mostly by bounded detail, not by independent ridge/peak uplift stacks.
+The regenerated 513 and 1025 mountain review sets report generator revision 26,
+51 fields, and 45 scalar views. The 513 manifest reports
+`height_m.span = 1895.587`, `mountain_profile_height_m.span = 1767.296`,
+`mountain_mass.mean = 0.4200`, `mountain_shoulder.mean = 0.3854`, and
+`mountain_summit_core.mean = 0.0420`.
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential

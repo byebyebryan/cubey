@@ -26,7 +26,7 @@ first owner of mountain, river, lake, dune, coast, or foliage logic.
 
 | Lane | Owns | Current state | Direction |
 | --- | --- | --- | --- |
-| Source drivers | Coherent macro structure before process effects. | River graph source, mountain envelope/peak/ridge source, mountain mass/shoulder/summit source, broad relief, drainage potential. | Build reusable mountain, basin/river, lake-basin, dune, coast, plains, and glacial source drivers. |
+| Source drivers | Coherent macro structure before process effects. | River graph source, coherent mountain profile source, mountain envelope/peak/ridge diagnostics, broad relief, drainage potential. | Build reusable mountain, basin/river, lake-basin, dune, coast, plains, and glacial source drivers. |
 | Process operators | Terrain morphology and derived process fields. | River incision, spread/lowering helpers, diagnostic gully fields, wetness/deposition proxies. | Review the gully diagnostics, then add talus, snow, sand, shallow water, and process-memory experiments. |
 | Product fields | The public terrain truth. | Named `TerrainRegionProduct` fields, summaries, hashes, manifests, scalar PNG views. | Keep every meaningful output inspectable before feeding renderers or adapters. |
 | Review consumers | Ways to see field quality. | Scalar exports, manifests, `terrain_preview`, stress recipes. | Add focused debug renders and scenic review only after field truth exists. |
@@ -40,10 +40,10 @@ sources, not authored local marks.
 
 Near-term source drivers:
 
-- **Mountain range / peaks / ridges**: broad mountain mass, foothill/shoulder
-  buildup, peak anchors, prominence, summit core, ridge skeleton, ridge
-  influence, and uplift. This is the active shape-quality priority after river
-  incision.
+- **Mountain range / peaks / ridges**: coherent mountain profile height, broad
+  mass, foothill/shoulder buildup, peak anchors, prominence, summit core, ridge
+  influence, and attribution fields. This is the active shape-quality priority
+  after river incision.
 - **River / basin graph**: connected trunk, major tributaries, minor tributaries,
   discharge, stream order, channel width, and valley width. The graph/hydrology
   refs remain the topology donors.
@@ -107,8 +107,8 @@ named field before it becomes a material or renderer effect.
 Field groups:
 
 - geometry: `height_m`, `pre_process_height_m`, slope, curvature, local relief;
-- mountain: envelope, mass, shoulder, summit core, support, ridge hierarchy,
-  peak anchors, prominence, skeleton, influence, uplift;
+- mountain: profile height, envelope, mass, shoulder, summit core, support,
+  ridge hierarchy, peak anchors, prominence, skeleton, influence, uplift;
 - river: drainage potential, flow direction, accumulation, stream order,
   graph plan, graph discharge, mask, trunk, tributaries, channel width, valley
   width, channel incision, valley incision;
@@ -210,9 +210,9 @@ Done when:
 
 ### Phase 2: Mountain Source Cleanup
 
-Status: started in revision 25 with explicit `mountain_mass`,
-`mountain_shoulder`, and `mountain_summit_core` fields plus preview surface
-selection.
+Status: revised in revision 26 so `mountain_profile_height_m` is the coherent
+mountain stress source, with mass, shoulder, summit, ridge, and uplift fields
+used as source diagnostics and attribution rather than pasted height layers.
 
 Use the diagnostic evidence to improve the mountain source hierarchy.
 

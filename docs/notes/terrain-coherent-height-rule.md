@@ -41,5 +41,8 @@ uplifts.
 - grid-walk ridge strokes that define the visible silhouette;
 - local detail or peak/ridge uplift dominating macro height.
 
-Revision 26 should use this rule to reboot the mountain stress source before
-adding more erosion, talus, snow, or biome work.
+Revision 26 applies this rule to the mountain stress source by introducing
+`mountain_profile_height_m` as the coherent source height. The result removes
+the worst stacked-layer artifacts, but it is still a midpoint: the next mountain
+work should make summit and ridge shaping less rounded without returning to
+independent pasted height layers.
