@@ -96,6 +96,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain mountain thermal talus plan](terrain-mountain-thermal-talus-plan.md):
   revision 29 target for adding a bounded thermal/talus process diagnostic
   before more local mountain source tuning.
+- [Terrain mountain source/process loop plan](terrain-mountain-source-process-loop-plan.md):
+  revision 30 target for comparing mountain source/product/process stages and
+  improving the source profile before more erosion or biome polish.
 - [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
   next river-quality pivot: promote `stream_order` and `flow_accumulation` into
   connected corridor selection while avoiding direct graph-edge rendering.
