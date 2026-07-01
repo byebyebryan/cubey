@@ -522,6 +522,37 @@ void test_terrain_process_field_helpers() {
     require_near(lowered.at(1, 1), 95.0F, 0.001F,
                  "terrain process lowering should subtract unclamped samples");
 
+    cubey::procedural::ScalarField2D slope(desc, 0.5F);
+    cubey::procedural::ScalarField2D curvature(desc, 0.0F);
+    cubey::procedural::ScalarField2D support(desc, 1.0F);
+    curvature.at(2, 2) = -40.0F;
+    const cubey::projects::terrain::TerrainProcessGullyDiagnosticFields gully =
+        cubey::projects::terrain::compute_gully_erosion_diagnostic(
+            height, slope, curvature, local_relief, support,
+            cubey::projects::terrain::TerrainProcessGullyDiagnosticConfig{
+                .support_start = 0.0F,
+                .support_full = 0.5F,
+                .slope_start = 0.0F,
+                .slope_full = 0.5F,
+                .relief_start_m = 1.0F,
+                .relief_full_m = 10.0F,
+                .mask_blur_iterations = 0,
+                .mask_spread_iterations = 0,
+                .base_delta_limit_m = 0.0F,
+                .relief_delta_fraction = 1.0F,
+                .max_delta_m = 20.0F,
+            });
+    require_near(gully.crease_proxy.at(2, 2), 1.0F, 0.001F,
+                 "terrain gully diagnostic should expose a crease proxy");
+    require_near(gully.gully_mask.at(2, 2), 1.0F, 0.001F,
+                 "terrain gully diagnostic should expose a gully mask");
+    require_near(gully.erosion_delta_m.at(2, 2), 10.0F, 0.001F,
+                 "terrain gully diagnostic should clamp erosion by local relief");
+    require_near(gully.post_erosion_height_m.at(2, 2), 90.0F, 0.001F,
+                 "terrain gully diagnostic should publish a lowered review height");
+    require_near(height.at(2, 2), 100.0F, 0.001F,
+                 "terrain gully diagnostic should not mutate input height");
+
     require_throws(
         [&source] {
             static_cast<void>(
@@ -534,6 +565,15 @@ void test_terrain_process_field_helpers() {
                 cubey::projects::terrain::spread_max_decay_field(source, 1, 1.5F));
         },
         "terrain process spread should reject invalid decay");
+    require_throws(
+        [&height, &slope, &curvature, &local_relief, &support] {
+            cubey::projects::terrain::TerrainProcessGullyDiagnosticConfig invalid{};
+            invalid.slope_start = 0.5F;
+            invalid.slope_full = 0.5F;
+            static_cast<void>(cubey::projects::terrain::compute_gully_erosion_diagnostic(
+                height, slope, curvature, local_relief, support, invalid));
+        },
+        "terrain gully diagnostic should reject invalid config ranges");
 
     const cubey::procedural::Grid2DDesc wider_desc{
         .width = 6,
@@ -552,13 +592,20 @@ void test_terrain_process_field_helpers() {
                 }));
         },
         "terrain process clamp should reject grid mismatches");
+    require_throws(
+        [&height, &slope, &curvature, &local_relief, &mismatched] {
+            static_cast<void>(cubey::projects::terrain::compute_gully_erosion_diagnostic(
+                height, slope, curvature, local_relief, mismatched,
+                cubey::projects::terrain::TerrainProcessGullyDiagnosticConfig{}));
+        },
+        "terrain gully diagnostic should reject grid mismatches");
 }
 
 void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 43> required_fields{
+    const std::array<std::string_view, 47> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldPreProcessHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
@@ -581,6 +628,10 @@ void test_terrain_product_emits_required_fields() {
         cubey::projects::terrain::kTerrainFieldSlope,
         cubey::projects::terrain::kTerrainFieldCurvature,
         cubey::projects::terrain::kTerrainFieldLocalRelief,
+        cubey::projects::terrain::kTerrainFieldErosionDeltaM,
+        cubey::projects::terrain::kTerrainFieldGullyMask,
+        cubey::projects::terrain::kTerrainFieldCreaseProxy,
+        cubey::projects::terrain::kTerrainFieldPostErosionHeightM,
         cubey::projects::terrain::kTerrainFieldDrainagePotential,
         cubey::projects::terrain::kTerrainFieldRoutingFillDelta,
         cubey::projects::terrain::kTerrainFieldFlowDirection,
@@ -960,6 +1011,83 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
             "terrain mountain support should build above lowland samples");
     require(peak_average_height > mountain_average_height + 120.0F,
             "terrain peak support should build above broad mountain samples");
+}
+
+void test_terrain_mountain_gully_diagnostic_is_bounded() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 257;
+    config.grid_height = 257;
+    const cubey::projects::terrain::TerrainRegionProduct baseline =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    config.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress);
+    const cubey::projects::terrain::TerrainRegionProduct mountain =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const auto& baseline_height =
+        field(baseline, cubey::projects::terrain::kTerrainFieldHeightM);
+    const auto& baseline_delta =
+        field(baseline, cubey::projects::terrain::kTerrainFieldErosionDeltaM);
+    const auto& baseline_gully =
+        field(baseline, cubey::projects::terrain::kTerrainFieldGullyMask);
+    const auto& baseline_crease =
+        field(baseline, cubey::projects::terrain::kTerrainFieldCreaseProxy);
+    const auto& baseline_post =
+        field(baseline, cubey::projects::terrain::kTerrainFieldPostErosionHeightM);
+    require(baseline_delta.summarize().max == 0.0F,
+            "default terrain recipe should keep gully erosion inactive");
+    require(baseline_gully.summarize().max == 0.0F,
+            "default terrain recipe should keep gully mask inactive");
+    require(baseline_crease.summarize().max == 0.0F,
+            "default terrain recipe should keep crease proxy inactive");
+    for (std::uint32_t y = 0; y < baseline_height.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < baseline_height.desc().width; ++x) {
+            require_near(baseline_post.at(x, y), baseline_height.at(x, y), 0.001F,
+                         "inactive post-erosion height should equal final height");
+        }
+    }
+
+    const auto& height = field(mountain, cubey::projects::terrain::kTerrainFieldHeightM);
+    const auto& erosion_delta =
+        field(mountain, cubey::projects::terrain::kTerrainFieldErosionDeltaM);
+    const auto& gully_mask = field(mountain, cubey::projects::terrain::kTerrainFieldGullyMask);
+    const auto& crease_proxy =
+        field(mountain, cubey::projects::terrain::kTerrainFieldCreaseProxy);
+    const auto& post_erosion_height =
+        field(mountain, cubey::projects::terrain::kTerrainFieldPostErosionHeightM);
+    const cubey::procedural::ScalarFieldStats erosion_stats = erosion_delta.summarize();
+    const cubey::procedural::ScalarFieldStats gully_stats = gully_mask.summarize();
+    const cubey::procedural::ScalarFieldStats crease_stats = crease_proxy.summarize();
+    require(erosion_stats.max > 1.0F,
+            "mountain stress recipe should emit visible gully erosion diagnostics");
+    require(erosion_stats.max <= 78.001F,
+            "mountain gully erosion diagnostic should stay bounded");
+    require(gully_stats.max > 0.05F && gully_stats.max <= 1.0F,
+            "mountain gully mask should stay normalized and active");
+    require(crease_stats.max > 0.05F && crease_stats.max <= 1.0F,
+            "mountain crease proxy should stay normalized and active");
+    require(count_active_samples(gully_mask, 0.20F) > gully_mask.sample_count() / 200U,
+            "mountain gully mask should cover enough samples to review");
+    require(count_active_samples(gully_mask, 0.20F) < gully_mask.sample_count() * 70U / 100U,
+            "mountain gully mask should not fill most of the patch");
+
+    std::size_t lowered_samples = 0U;
+    for (std::uint32_t y = 0; y < height.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < height.desc().width; ++x) {
+            const float delta = erosion_delta.at(x, y);
+            require(delta >= 0.0F, "mountain gully erosion should be non-negative");
+            require_near(post_erosion_height.at(x, y), height.at(x, y) - delta, 0.002F,
+                         "post-erosion height should equal height minus diagnostic delta");
+            if (delta > 1.0F) {
+                ++lowered_samples;
+                require(post_erosion_height.at(x, y) < height.at(x, y),
+                        "diagnostic lowered height should stay separate from final height");
+            }
+        }
+    }
+    require(lowered_samples > 32U,
+            "mountain gully diagnostic should produce reviewable lowered samples");
 }
 
 void test_terrain_review_river_coverage_is_meaningful() {
@@ -1354,6 +1482,15 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("pre_process_height") ==
                 cubey::projects::terrain::TerrainDebugView::PreProcessHeight,
             "terrain debug view should parse pre-process height aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("erosion_delta") ==
+                cubey::projects::terrain::TerrainDebugView::ErosionDelta,
+            "terrain debug view should parse erosion delta aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("gully_mask") ==
+                cubey::projects::terrain::TerrainDebugView::GullyMask,
+            "terrain debug view should parse gully mask aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("post_erosion_height") ==
+                cubey::projects::terrain::TerrainDebugView::PostErosionHeight,
+            "terrain debug view should parse post-erosion height aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("channel_incision") ==
                 cubey::projects::terrain::TerrainDebugView::ChannelIncision,
             "terrain debug view should parse channel incision aliases");
@@ -1394,6 +1531,15 @@ void test_terrain_debug_export_writes_png() {
     require(std::filesystem::file_size(mountain_output) > 64U,
             "terrain mountain relief debug export should write a non-empty PNG");
     std::filesystem::remove(mountain_output);
+
+    const std::filesystem::path gully_output =
+        std::filesystem::temp_directory_path() / "cubey_terrain_gully_mask_export_test.png";
+    std::filesystem::remove(gully_output);
+    cubey::projects::terrain::write_terrain_debug_png(
+        mountain_product, cubey::projects::terrain::TerrainDebugView::GullyMask, gully_output);
+    require(std::filesystem::file_size(gully_output) > 64U,
+            "terrain gully debug export should write a non-empty PNG");
+    std::filesystem::remove(gully_output);
 }
 
 void test_terrain_debug_export_writes_review_set() {
@@ -1451,6 +1597,10 @@ void test_terrain_debug_export_writes_review_set() {
             "terrain debug manifest should list final PNG output");
     require(std::find(outputs.begin(), outputs.end(), "channel-incision.png") != outputs.end(),
             "terrain debug manifest should list incision PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "erosion-delta.png") != outputs.end(),
+            "terrain debug manifest should list erosion delta PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "post-erosion-height.png") != outputs.end(),
+            "terrain debug manifest should list post-erosion height PNG output");
 
     const nlohmann::json& height_stats =
         manifest.at("fields").at(std::string(cubey::projects::terrain::kTerrainFieldHeightM));
@@ -1465,6 +1615,12 @@ void test_terrain_debug_export_writes_review_set() {
     require(manifest.at("fields").contains(
                 std::string(cubey::projects::terrain::kTerrainFieldValleyIncision)),
             "terrain debug manifest should include valley incision stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldErosionDeltaM)),
+            "terrain debug manifest should include erosion delta stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldPostErosionHeightM)),
+            "terrain debug manifest should include post-erosion height stats");
 
     std::filesystem::remove_all(output_dir);
 }
@@ -1587,6 +1743,7 @@ int main() {
     test_terrain_product_is_deterministic();
     test_terrain_stress_recipe_expands_river_network();
     test_terrain_mountain_range_stress_recipe_exposes_mountain_driver();
+    test_terrain_mountain_gully_diagnostic_is_bounded();
     test_terrain_review_river_coverage_is_meaningful();
     test_terrain_materials_and_vegetation_are_bounded();
     test_terrain_river_network_has_continuous_active_channels();
