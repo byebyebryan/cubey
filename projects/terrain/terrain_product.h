@@ -17,6 +17,9 @@ inline constexpr std::string_view kTerrainFieldBaseElevation = "base_elevation";
 inline constexpr std::string_view kTerrainFieldBroadRelief = "broad_relief";
 inline constexpr std::string_view kTerrainFieldMountainRangeSpine = "mountain_range_spine";
 inline constexpr std::string_view kTerrainFieldMountainEnvelope = "mountain_envelope";
+inline constexpr std::string_view kTerrainFieldMountainMass = "mountain_mass";
+inline constexpr std::string_view kTerrainFieldMountainShoulder = "mountain_shoulder";
+inline constexpr std::string_view kTerrainFieldMountainSummitCore = "mountain_summit_core";
 inline constexpr std::string_view kTerrainFieldMountainSupport = "mountain_support";
 inline constexpr std::string_view kTerrainFieldMountainRidgeHierarchy =
     "mountain_ridge_hierarchy";

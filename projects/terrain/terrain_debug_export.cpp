@@ -37,7 +37,7 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 41> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 44> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::MountainRelief, "mountain-relief"},
     DebugViewName{TerrainDebugView::Height, "height"},
@@ -49,6 +49,9 @@ inline constexpr std::array<DebugViewName, 41> kDebugViewNames{
     DebugViewName{TerrainDebugView::PostErosionHeight, "post-erosion-height"},
     DebugViewName{TerrainDebugView::MountainRangeSpine, "mountain-range-spine"},
     DebugViewName{TerrainDebugView::MountainEnvelope, "mountain-envelope"},
+    DebugViewName{TerrainDebugView::MountainMass, "mountain-mass"},
+    DebugViewName{TerrainDebugView::MountainShoulder, "mountain-shoulder"},
+    DebugViewName{TerrainDebugView::MountainSummitCore, "mountain-summit-core"},
     DebugViewName{TerrainDebugView::MountainSupport, "mountain-support"},
     DebugViewName{TerrainDebugView::MountainRidgeHierarchy, "mountain-ridge-hierarchy"},
     DebugViewName{TerrainDebugView::RidgeSupport, "ridge-support"},
@@ -81,7 +84,7 @@ inline constexpr std::array<DebugViewName, 41> kDebugViewNames{
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 41> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 44> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::MountainRelief,
     TerrainDebugView::Height,
@@ -93,6 +96,9 @@ inline constexpr std::array<TerrainDebugView, 41> kTerrainDebugReviewViews{
     TerrainDebugView::PostErosionHeight,
     TerrainDebugView::MountainRangeSpine,
     TerrainDebugView::MountainEnvelope,
+    TerrainDebugView::MountainMass,
+    TerrainDebugView::MountainShoulder,
+    TerrainDebugView::MountainSummitCore,
     TerrainDebugView::MountainSupport,
     TerrainDebugView::MountainRidgeHierarchy,
     TerrainDebugView::RidgeSupport,
@@ -286,6 +292,9 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
     const auto& local_relief = terrain_product_field(product, kTerrainFieldLocalRelief);
     const auto& range_spine = terrain_product_field(product, kTerrainFieldMountainRangeSpine);
     const auto& envelope = terrain_product_field(product, kTerrainFieldMountainEnvelope);
+    const auto& mountain_mass = terrain_product_field(product, kTerrainFieldMountainMass);
+    const auto& shoulder = terrain_product_field(product, kTerrainFieldMountainShoulder);
+    const auto& summit_core = terrain_product_field(product, kTerrainFieldMountainSummitCore);
     const auto& mountain_support = terrain_product_field(product, kTerrainFieldMountainSupport);
     const auto& ridge_hierarchy =
         terrain_product_field(product, kTerrainFieldMountainRidgeHierarchy);
@@ -303,6 +312,9 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
     const float relief = normalized_field_value(local_relief, x, y, relief_normalization);
     const float spine = cubey::procedural::saturate(range_spine.at(x, y));
     const float envelope_value = cubey::procedural::saturate(envelope.at(x, y));
+    const float mass = cubey::procedural::saturate(mountain_mass.at(x, y));
+    const float shoulder_value = cubey::procedural::saturate(shoulder.at(x, y));
+    const float summit = cubey::procedural::saturate(summit_core.at(x, y));
     const float mountain = cubey::procedural::saturate(mountain_support.at(x, y));
     const float hierarchy = cubey::procedural::saturate(ridge_hierarchy.at(x, y));
     const float ridge = cubey::procedural::saturate(ridge_support.at(x, y));
@@ -313,6 +325,8 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
 
     Rgb color = mountain_relief_ramp(h);
     color = lerp_rgb(color, Rgb{0.28F, 0.34F, 0.22F}, envelope_value * 0.10F);
+    color = lerp_rgb(color, Rgb{0.34F, 0.40F, 0.26F}, mass * 0.10F);
+    color = lerp_rgb(color, Rgb{0.48F, 0.43F, 0.28F}, shoulder_value * 0.10F);
     color = lerp_rgb(color, Rgb{0.32F, 0.36F, 0.26F}, mountain * 0.10F);
     color = lerp_rgb(color, Rgb{0.48F, 0.46F, 0.34F}, spine * 0.05F);
     color = lerp_rgb(color, Rgb{0.70F, 0.64F, 0.46F}, influence * 0.12F);
@@ -320,6 +334,7 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
     color = lerp_rgb(color, Rgb{0.84F, 0.78F, 0.60F}, ridge * 0.10F);
     color = lerp_rgb(color, Rgb{0.90F, 0.84F, 0.68F}, candidate * 0.05F);
     color = lerp_rgb(color, Rgb{0.96F, 0.93F, 0.80F}, prominence * 0.18F);
+    color = lerp_rgb(color, Rgb{0.98F, 0.95F, 0.84F}, summit * 0.14F);
     color = lerp_rgb(color, Rgb{0.98F, 0.96F, 0.88F}, peak * 0.24F);
 
     const float shade = hillshade(height, x, y);
@@ -364,6 +379,12 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldMountainRangeSpine);
     case TerrainDebugView::MountainEnvelope:
         return terrain_product_field(product, kTerrainFieldMountainEnvelope);
+    case TerrainDebugView::MountainMass:
+        return terrain_product_field(product, kTerrainFieldMountainMass);
+    case TerrainDebugView::MountainShoulder:
+        return terrain_product_field(product, kTerrainFieldMountainShoulder);
+    case TerrainDebugView::MountainSummitCore:
+        return terrain_product_field(product, kTerrainFieldMountainSummitCore);
     case TerrainDebugView::MountainSupport:
         return terrain_product_field(product, kTerrainFieldMountainSupport);
     case TerrainDebugView::MountainRidgeHierarchy:
