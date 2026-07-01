@@ -40,6 +40,11 @@ struct DensitySample {
     float height_fraction;
 };
 
+struct LightMarchResult {
+    float transmittance;
+    float optical_depth;
+};
+
 struct MarchResult {
     vec3 radiance;
     float transmittance;
@@ -48,6 +53,8 @@ struct MarchResult {
     float last_light;
     float first_distance;
     float steps;
+    float view_optical_depth;
+    float light_optical_depth;
     vec3 ambient_light;
     vec3 direct_light;
     vec3 phase_light;
@@ -120,14 +127,13 @@ DensitySample cloud_ref_sample_density(vec3 position, bool expensive, float lod)
                          height_fraction);
 }
 
-float cloud_ref_light_transmittance(vec3 start, float step_size, vec3 light_dir,
-                                    float original_density, float light_dot_eye) {
+LightMarchResult cloud_ref_march_light(vec3 start, float step_size, vec3 light_dir) {
     int light_steps = clamp(int(params.ref_options.z + 0.5), 1, 6);
     float ds = step_size * 6.0;
     vec3 ray_step = light_dir * ds;
-    float absorption = params.shape_options.z * 0.01;
-    float sigma_ds = -ds * absorption;
+    float absorption = max(params.shape_options.z, 0.0) * 0.01;
     float transmittance = 1.0;
+    float optical_depth = 0.0;
     float cone_radius = 1.0;
     float density_sum = 0.0;
     vec3 pos = start;
@@ -140,13 +146,15 @@ float cloud_ref_light_transmittance(vec3 start, float step_size, vec3 light_dir,
         DensitySample sample_data = cloud_ref_sample_density(cone_pos, density_sum > 0.3,
                                                              float(i / 16));
         if (sample_data.density > 0.0) {
-            transmittance *= exp(sample_data.density * sigma_ds);
+            float sample_optical_depth = sample_data.density * ds * absorption;
+            transmittance *= exp(-sample_optical_depth);
+            optical_depth += sample_optical_depth;
             density_sum += sample_data.density;
         }
         pos += ray_step;
         cone_radius += 1.0 / 6.0;
     }
-    return transmittance;
+    return LightMarchResult(transmittance, optical_depth);
 }
 
 vec3 cloud_ref_local_up(vec3 position) {
@@ -267,6 +275,9 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
     float transmittance = 1.0;
     vec3 color = vec3(0.0);
     float density_sum = 0.0;
+    float view_optical_depth = 0.0;
+    float light_optical_depth_sum = 0.0;
+    float light_optical_depth_count = 0.0;
     float last_light = 1.0;
     float first_distance = -1.0;
     float steps_taken = 0.0;
@@ -283,10 +294,10 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
             if (first_distance < 0.0) {
                 first_distance = length(pos - origin);
             }
-            float light_transmittance =
-                cloud_ref_light_transmittance(pos, ds * 0.1, sun_dir, sample_data.density,
-                                              light_dot_eye);
-            float d_transmittance = exp(sample_data.density * sigma_ds);
+            LightMarchResult light_result = cloud_ref_march_light(pos, ds * 0.1, sun_dir);
+            float light_transmittance = light_result.transmittance;
+            float sample_optical_depth = sample_data.density * max(-sigma_ds, 0.0);
+            float d_transmittance = exp(-sample_optical_depth);
             float shadow_strength = max(params.cloud_color_top_shadow.w, 0.0);
             float forward_alignment = smoothstep(0.22, 0.94, light_dot_eye);
             float dense_core = smoothstep(0.24, 0.76, sample_data.density);
@@ -336,6 +347,9 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
                          (1.0 - d_transmittance);
             transmittance *= d_transmittance;
             density_sum += sample_data.density;
+            view_optical_depth += sample_optical_depth;
+            light_optical_depth_sum += light_result.optical_depth;
+            light_optical_depth_count += 1.0;
             last_light = shadowed_light;
         }
         if (transmittance <= 0.01) {
@@ -346,6 +360,8 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
     }
 
     float alpha = 1.0 - transmittance;
+    float light_optical_depth =
+        light_optical_depth_sum / max(light_optical_depth_count, 1.0);
     color = max(color * 1.35, vec3(0.0));
     ambient_sum = max(ambient_sum * 1.35, vec3(0.0));
     direct_sum = max(direct_sum * 1.35, vec3(0.0));
@@ -364,14 +380,15 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
     color += vec3(1.0, 0.58, 0.24) * (sun_disk + sun_halo) *
              cloud_sun_visibility * clamp(params.final_options.w, 0.0, 3.0);
     return MarchResult(color, transmittance, alpha, density_sum / float(max_steps), last_light,
-                       first_distance, steps_taken, ambient_sum, direct_sum, phase_sum);
+                       first_distance, steps_taken, view_optical_depth, light_optical_depth,
+                       ambient_sum, direct_sum, phase_sum);
 }
 
 MarchResult cloud_ref_march(vec3 origin, vec3 direction, float start_t, float end_t,
                             vec3 background, ivec2 pixel) {
     int requested_samples = clamp(int(params.ref_options.w + 0.5), 1, 4);
     int sample_count = requested_samples >= 4 ? 4 : (requested_samples >= 2 ? 2 : 1);
-    MarchResult total = MarchResult(vec3(0.0), 0.0, 0.0, 0.0, 0.0, -1.0, 0.0,
+    MarchResult total = MarchResult(vec3(0.0), 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0,
                                     vec3(0.0), vec3(0.0), vec3(0.0));
 
     for (int sample_index = 0; sample_index < 4; ++sample_index) {
@@ -386,6 +403,8 @@ MarchResult cloud_ref_march(vec3 origin, vec3 direction, float start_t, float en
         total.alpha += sample_result.alpha;
         total.avg_density += sample_result.avg_density;
         total.last_light += sample_result.last_light;
+        total.view_optical_depth += sample_result.view_optical_depth;
+        total.light_optical_depth += sample_result.light_optical_depth;
         if (sample_result.first_distance >= 0.0 &&
             (total.first_distance < 0.0 || sample_result.first_distance < total.first_distance)) {
             total.first_distance = sample_result.first_distance;
@@ -402,6 +421,8 @@ MarchResult cloud_ref_march(vec3 origin, vec3 direction, float start_t, float en
     total.alpha *= inv_sample_count;
     total.avg_density *= inv_sample_count;
     total.last_light *= inv_sample_count;
+    total.view_optical_depth *= inv_sample_count;
+    total.light_optical_depth *= inv_sample_count;
     total.steps *= inv_sample_count;
     total.ambient_light *= inv_sample_count;
     total.direct_light *= inv_sample_count;
@@ -470,6 +491,10 @@ void main() {
         debug_color = result.phase_light;
     } else if (debug_view == CLOUD_REF_DEBUG_SHADOW) {
         debug_color = vec3(1.0 - result.last_light);
+    } else if (debug_view == CLOUD_REF_DEBUG_VIEW_OPTICAL_DEPTH) {
+        debug_color = vec3(1.0 - exp(-result.view_optical_depth));
+    } else if (debug_view == CLOUD_REF_DEBUG_LIGHT_OPTICAL_DEPTH) {
+        debug_color = vec3(1.0 - exp(-result.light_optical_depth));
     } else if (debug_view == CLOUD_REF_DEBUG_STEPS) {
         debug_color = vec3(result.steps / max(params.ref_options.y, 1.0));
     } else if (debug_view == CLOUD_REF_DEBUG_BACKGROUND) {

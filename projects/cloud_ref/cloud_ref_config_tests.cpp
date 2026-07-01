@@ -94,6 +94,10 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include base-density diagnostics");
     require(cubey::projects::cloud_ref::next_clouds_debug_view(
                 cubey::projects::cloud_ref::CloudsDebugView::DetailDensity) ==
+                cubey::projects::cloud_ref::CloudsDebugView::ViewOpticalDepth,
+            "cloud debug view should include view optical depth");
+    require(cubey::projects::cloud_ref::next_clouds_debug_view(
+                cubey::projects::cloud_ref::CloudsDebugView::LightOpticalDepth) ==
                 cubey::projects::cloud_ref::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::cloud_ref::clouds_debug_view_from_string("cloud-alpha") ==
@@ -120,6 +124,12 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref::clouds_debug_view_from_string("detail-density") ==
                 cubey::projects::cloud_ref::CloudsDebugView::DetailDensity,
             "cloud detail-density debug view should parse");
+    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("view-optical-depth") ==
+                cubey::projects::cloud_ref::CloudsDebugView::ViewOpticalDepth,
+            "cloud view optical depth debug view should parse");
+    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("light-optical-depth") ==
+                cubey::projects::cloud_ref::CloudsDebugView::LightOpticalDepth,
+            "cloud light optical depth debug view should parse");
 }
 
 void test_run_config_mapping() {

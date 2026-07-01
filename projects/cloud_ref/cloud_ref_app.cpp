@@ -87,7 +87,7 @@ constexpr std::array<CloudsResolveMode, 2> kCloudRefResolveModes{
     CloudsResolveMode::TerrainPost,
     CloudsResolveMode::MetadataBilateral,
 };
-constexpr std::array<CloudsDebugView, 16> kCloudRefDebugViews{
+constexpr std::array<CloudsDebugView, 18> kCloudRefDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
     CloudsDebugView::Lighting,     CloudsDebugView::AmbientLight,
@@ -95,6 +95,8 @@ constexpr std::array<CloudsDebugView, 16> kCloudRefDebugViews{
     CloudsDebugView::Shadow,       CloudsDebugView::Steps,    CloudsDebugView::Background,
     CloudsDebugView::CloudAlpha,   CloudsDebugView::Distance,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
+    CloudsDebugView::ViewOpticalDepth,
+    CloudsDebugView::LightOpticalDepth,
 };
 
 struct CloudRefFrameUniforms {

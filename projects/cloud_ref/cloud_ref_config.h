@@ -61,6 +61,8 @@ enum class CloudsDebugView : std::uint32_t {
     AmbientLight = 18,
     DirectLight = 19,
     PhaseLight = 20,
+    ViewOpticalDepth = 21,
+    LightOpticalDepth = 22,
 };
 
 enum class CloudsResolveMode : std::uint32_t {
@@ -68,7 +70,7 @@ enum class CloudsResolveMode : std::uint32_t {
     MetadataBilateral = 1,
 };
 
-inline constexpr std::array<CloudsDebugView, 16> kCloudsDebugViews{
+inline constexpr std::array<CloudsDebugView, 18> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
     CloudsDebugView::Weather,      CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting,
@@ -77,6 +79,8 @@ inline constexpr std::array<CloudsDebugView, 16> kCloudsDebugViews{
     CloudsDebugView::Steps,        CloudsDebugView::Background,
     CloudsDebugView::CloudAlpha,   CloudsDebugView::Distance,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
+    CloudsDebugView::ViewOpticalDepth,
+    CloudsDebugView::LightOpticalDepth,
 };
 
 struct CloudsTimeConfig {

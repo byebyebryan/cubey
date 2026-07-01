@@ -243,6 +243,12 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "detail-density") {
         return CloudsDebugView::DetailDensity;
     }
+    if (value == "view-optical-depth") {
+        return CloudsDebugView::ViewOpticalDepth;
+    }
+    if (value == "light-optical-depth") {
+        return CloudsDebugView::LightOpticalDepth;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -280,6 +286,10 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "base-density";
     case CloudsDebugView::DetailDensity:
         return "detail-density";
+    case CloudsDebugView::ViewOpticalDepth:
+        return "view-optical-depth";
+    case CloudsDebugView::LightOpticalDepth:
+        return "light-optical-depth";
     }
     return "final";
 }
