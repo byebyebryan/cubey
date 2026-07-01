@@ -78,6 +78,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain ShaderToy operator extraction](terrain-shadertoy-operator-extraction.md):
   deeper ShaderToy terrain/hydro review, what to borrow as clean-room process
   operators or visual cues, and what to keep out of river topology.
+- [Terrain mountain gully diagnostic plan](terrain-mountain-gully-diagnostic-plan.md):
+  revision 24 plan for diagnostic-only gully / erosion fields over the mountain
+  stress recipe before any height-affecting erosion pass.
 - [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
   next river-quality pivot: promote `stream_order` and `flow_accumulation` into
   connected corridor selection while avoiding direct graph-edge rendering.
