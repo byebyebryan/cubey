@@ -1118,12 +1118,13 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
             const float summit =
                 cubey::procedural::smoothstep(0.12F, 0.92F, summit_core.at(x, y));
             const float noise = broad_noise.at(x, y) - 0.5F;
-            const float potential = cubey::procedural::saturate(
+            const float raw_potential =
                 (mass * 0.78F) + (shoulder * 0.08F) + (ridge * 0.08F) +
-                (summit * 0.20F) + (noise * 0.06F));
+                (summit * 0.20F) + (noise * 0.06F);
+            const float potential = std::clamp(raw_potential, 0.0F, 1.35F) / 1.35F;
             const float foothill_ramp =
                 cubey::procedural::smoothstep(0.05F, 0.46F, potential) * 140.0F;
-            const float mountain_rise = std::pow(potential, 1.48F) * 1480.0F;
+            const float mountain_rise = std::pow(potential, 1.34F) * 1540.0F;
             const float ridge_modulation = ridge * (0.30F + (mass * 0.70F)) * 115.0F;
             const float summit_modulation = std::pow(summit, 1.42F) * 280.0F;
             const float rolling_lowland = noise * (70.0F + ((1.0F - mass) * 45.0F));
