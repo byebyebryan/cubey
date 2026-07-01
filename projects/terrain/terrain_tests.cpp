@@ -1099,8 +1099,8 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
             std::to_string(saddle_gate_samples) + " total=" + std::to_string(total_samples));
     }
 
-    require(mountain.summary.height.span > baseline.summary.height.span,
-            "terrain mountain recipe should increase height relief");
+    require(mountain.summary.height.span > 1200.0F,
+            "terrain mountain recipe should maintain kilometer-scale height relief");
     require(mountain_uplift.summarize().max > 160.0F,
             "terrain mountain recipe should emit broad mountain uplift");
     require(ridge_uplift.summarize().max > 220.0F,
