@@ -878,23 +878,24 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
         const float y1 = (omt1 * omt1 * ay) + (2.0F * omt1 * t1 * cy) + (t1 * t1 * by);
         const float mid_t = (t0 + t1) * 0.5F;
         const float segment_radius =
-            radius * (0.82F + (0.18F * std::sin(mid_t * 3.14159265F)));
+            radius * (0.90F + (0.20F * std::sin(mid_t * 3.14159265F)));
+        const float max_flank_radius = segment_radius * 1.42F;
         const int min_x =
-            std::max(0, static_cast<int>(std::floor(std::min(x0, x1) - segment_radius)));
+            std::max(0, static_cast<int>(std::floor(std::min(x0, x1) - max_flank_radius)));
         const int max_x = std::min(
             static_cast<int>(desc.width) - 1,
-            static_cast<int>(std::ceil(std::max(x0, x1) + segment_radius)));
+            static_cast<int>(std::ceil(std::max(x0, x1) + max_flank_radius)));
         const int min_y =
-            std::max(0, static_cast<int>(std::floor(std::min(y0, y1) - segment_radius)));
+            std::max(0, static_cast<int>(std::floor(std::min(y0, y1) - max_flank_radius)));
         const int max_y = std::min(
             static_cast<int>(desc.height) - 1,
-            static_cast<int>(std::ceil(std::max(y0, y1) + segment_radius)));
+            static_cast<int>(std::ceil(std::max(y0, y1) + max_flank_radius)));
         const float sx = x1 - x0;
         const float sy = y1 - y0;
         const float segment_length = std::max(std::sqrt((sx * sx) + (sy * sy)), 0.001F);
         const float side_x = -sy / segment_length;
         const float side_y = sx / segment_length;
-        const float skeleton_radius = std::clamp(segment_radius * 0.13F, 1.8F, 5.2F);
+        const float skeleton_radius = std::clamp(segment_radius * 0.11F, 1.8F, 5.0F);
         for (int y = min_y; y <= max_y; ++y) {
             for (int x = min_x; x <= max_x; ++x) {
                 const float px = static_cast<float>(x);
@@ -902,13 +903,13 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
                 const float distance = distance_to_segment_cells(px, py, x0, y0, x1, y1);
                 const float side = ((px - x0) * side_x) + ((py - y0) * side_y);
                 const float flank_radius =
-                    segment_radius * (side < 0.0F ? 0.72F : 1.18F);
+                    segment_radius * (side < 0.0F ? 0.96F : 1.42F);
                 if (distance > flank_radius) {
                     continue;
                 }
                 const float wide = std::pow(
                     1.0F - cubey::procedural::smoothstep(0.0F, flank_radius, distance),
-                    1.55F);
+                    1.24F);
                 const float narrow = std::pow(
                     1.0F - cubey::procedural::smoothstep(0.0F, skeleton_radius, distance),
                     1.05F);
@@ -941,7 +942,7 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
     const float anchor_radius = std::clamp(min_dimension * 0.010F, 1.5F, 5.0F);
     const float peak_major_radius = std::clamp(min_dimension * 0.170F, 36.0F, 165.0F);
     const float peak_minor_radius = std::clamp(min_dimension * 0.082F, 18.0F, 78.0F);
-    const float ridge_radius = std::clamp(min_dimension * 0.052F, 12.0F, 54.0F);
+    const float ridge_radius = std::clamp(min_dimension * 0.072F, 16.0F, 74.0F);
     std::vector<MountainRidgeConnection> connections{};
     connections.reserve(anchors.size());
     std::vector<float> anchor_axis_x(anchors.size(), 0.0F);
@@ -980,8 +981,8 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
             0.14F + (cubey::procedural::random01(seed, "mountain-ridge-bend", connection_index, 1U) *
                      0.24F);
         const float width_scale =
-            0.78F + (cubey::procedural::random01(seed, "mountain-ridge-width", connection_index, 0U) *
-                     0.34F);
+            0.88F + (cubey::procedural::random01(seed, "mountain-ridge-width", connection_index, 0U) *
+                     0.44F);
         const float anchor_distance =
             distance_cells(static_cast<float>(anchors[index].x),
                            static_cast<float>(anchors[index].y),
@@ -1031,7 +1032,7 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
 
     fields.peak_prominence = repeated_box_blur(std::move(fields.peak_prominence), 3U);
     fields.ridge_skeleton = repeated_box_blur(std::move(fields.ridge_skeleton), 1U);
-    fields.ridge_influence = repeated_box_blur(std::move(fields.ridge_influence), 3U);
+    fields.ridge_influence = repeated_box_blur(std::move(fields.ridge_influence), 4U);
     return fields;
 }
 
