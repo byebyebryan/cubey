@@ -25,14 +25,15 @@ river terrain-coupling pass and the follow-up process-helper/manifest reset.
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
 stress captures for larger river-network and mountain-driver inspection. The
-revision 23 scalar review set emits 37 PNG views plus `manifest.json` per
-capture. Current and stress river directories hold 41 PNGs after
-material/profile, height-only, and channel diagnostic perspective captures are
-generated. The 513 mountain stress
-directory now also includes `mountain-perspective.png` and
-`mountain-profile.png` from the renderer-backed preview app, so it holds 39 PNGs
-after the full mountain review command sequence. The 1025 mountain stress set
-remains scalar-only unless a matching preview capture is explicitly generated.
+current revision 27 mountain stress scalar review emits 46 PNG views plus
+`manifest.json` per capture. Current and stress river directories hold their
+existing scalar/debug review sets after material/profile, height-only, and
+channel diagnostic perspective captures are generated. The 513 mountain stress
+directory also includes `mountain-perspective.png`,
+`mountain-height-perspective.png`, `mountain-profile.png`, and
+`mountain-post-erosion-perspective.png` from the renderer-backed preview app.
+The 1025 mountain stress set remains scalar-only unless a matching preview
+capture is explicitly generated.
 `outputs/` is intentionally ignored by git. This replaced the earlier tiny
 local output set so field structure, channel continuity, and material response
 are easier to inspect.
@@ -96,6 +97,17 @@ The follow-up foundation reset extracts the spread/clamp/lowering operations
 into `terrain_process_fields` and writes `manifest.json` beside scalar review
 PNGs so capture directories include config, field ranges, output names, and the
 content hash.
+Revision 27 adds `mountain_saddle_gate` and changes the mountain stress source
+from straight ridge bands plus round summit blobs into curved ridge influence,
+elongated summit support, and saddle suppression in the coherent profile solve.
+The regenerated 513 mountain manifest reports generator revision 27, 52 fields,
+46 scalar outputs, `height_m.span = 1598.938`,
+`mountain_profile_height_m.span = 1505.036`,
+`mountain_saddle_gate.mean = 0.2554`,
+`mountain_ridge_influence.mean = 0.0659`, and
+`mountain_summit_core.mean = 0.0256`. The 1025 manifest reports revision 27, 52
+fields, 46 scalar outputs, `height_m.span = 1708.308`, and
+`mountain_profile_height_m.span = 1579.131`.
 
 ## What To Inspect
 
@@ -132,13 +144,16 @@ content hash.
   from the envelope and summit score. It should not read as a noisy full-field
   mask.
 - `mountain-peak-prominence.png`: peak dominance grown from anchors. It should
-  explain where peak uplift comes from, even though revision 22 still leaves it
-  mostly radial before later anisotropic shaping.
+  explain where peak uplift comes from. Revision 27 should read as elongated
+  summit support instead of round discs.
 - `mountain-ridge-skeleton.png`: generated primary/secondary ridge source. It
   is a structural debug view, not a final surface overlay.
 - `mountain-ridge-influence.png`: widened shoulder field derived from the ridge
-  skeleton. It should connect peak anchors into readable ridge mass before
-  support and uplift fields consume it.
+  skeleton. Revision 27 should connect peak anchors with curved crest influence,
+  not straight segment bands.
+- `mountain-saddle-gate.png`: highland negative-space gate. Bright areas mark
+  broad mountain mass that should be suppressed because it is not supported by
+  nearby crest or summit structure.
 - `drainage-potential.png`: scalar routing surface before flow routing. This
   is the repaired routing surface and should remain smooth even when later river
   products expose routing artifacts.

@@ -392,12 +392,13 @@ to that profile plus bounded detail. Visible ridge influence now uses smooth
 distance-to-connection fields rather than 8-neighbor raster paths, and peak
 support is broadened so summits no longer become isolated needle cones.
 
-The revision 26 review also exposed the next source-model problem: the mountains
-are coherent but too isotropic. Straight softened ridge bands and round summit
-blobs create inflated pillow-like forms. The revision 27 target is to keep
-`mountain_profile_height_m` as the visible height source while changing the
-drivers to curved crest fields, elongated summit support, and explicit saddle
-suppression between high structures.
+Revision 27 keeps `mountain_profile_height_m` as the visible height source while
+changing the mountain drivers to curved crest fields, elongated summit support,
+and explicit `mountain_saddle_gate` suppression between high structures. The
+result is directionally better than revision 26 because source fields no longer
+read as straight bands and round blobs, but the perspective captures still show
+that crest/summit shaping is synthetic and needs erosion, stratified ridge
+cleanup, or better process shaping before it reads as a finished mountain range.
 
 The next work should be foundation-shaped inside the terrain project rather
 than another isolated biome image. Keep the per-revision river and mountain
@@ -449,10 +450,10 @@ Known limitations:
   revisited before adding heavier hydrology checks.
 - The mountain stress recipe is an early diagnostic driver, not a finished
   alpine biome. It does not yet include erosion time, talus, snow/ice, glacial
-  valley carving, or world-scale range continuity. Revision 26 removes the
-  worst pointy peaks and jagged ridge strokes by using a coherent mountain
-  profile, but the result can now read too rounded or blobby because summit and
-  ridge structure is broad and not yet erosion- or strata-shaped.
+  valley carving, or world-scale range continuity. Revision 27 removes the
+  straight ridge bands and round summit blobs from revision 26, but the result
+  can still read synthetic because crests and summit lobes are source-shaped
+  rather than process-eroded.
 - The final PNG is an inspectable debug composition, not the target renderer.
   Use `mountain-relief.png` for mountain-form review because `final.png` still
   includes the river/material overlays.
@@ -489,9 +490,8 @@ adding more biome labels:
    perspective captures.
 2. Review the clean-room gully/erosion diagnostic over the mountain stress
    recipe before deciding whether any erosion-like pass should affect height.
-3. Refine the coherent mountain profile with anisotropic summit shaping,
-   sharper-but-smooth ridge structure, alpine material/valley contrast, and
-   better world-scale range continuity.
+3. Refine the coherent mountain profile with erosion-aware crest cleanup,
+   alpine material/valley contrast, and better world-scale range continuity.
 4. Return to river topology with graph/hydrology references once mountain
    process/source quality is easier to inspect.
 5. Promote additional process helpers only when they prove reusable across

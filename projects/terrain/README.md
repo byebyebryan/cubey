@@ -274,11 +274,13 @@ coherent source height for the mountain stress recipe. Inspect
 `mountain-profile-height.png`, `pre-process-height.png`, and
 `mountain-perspective.png` together: pre-process height should differ from the
 profile mostly by bounded detail, not by independent ridge/peak uplift stacks.
-The regenerated 513 and 1025 mountain review sets report generator revision 26,
-51 fields, and 45 scalar views. The 513 manifest reports
-`height_m.span = 1895.587`, `mountain_profile_height_m.span = 1767.296`,
-`mountain_mass.mean = 0.4200`, `mountain_shoulder.mean = 0.3854`, and
-`mountain_summit_core.mean = 0.0420`.
+Revision 27 adds `mountain-saddle-gate.png`, curves the ridge source, elongates
+summit support, and uses saddle suppression in the coherent profile solve. The
+regenerated 513 and 1025 mountain review sets report generator revision 27, 52
+fields, and 46 scalar views. The 513 manifest reports
+`height_m.span = 1598.938`, `mountain_profile_height_m.span = 1505.036`,
+`mountain_saddle_gate.mean = 0.2554`, `mountain_ridge_influence.mean = 0.0659`,
+and `mountain_summit_core.mean = 0.0256`.
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential

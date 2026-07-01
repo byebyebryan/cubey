@@ -35,3 +35,14 @@ For the revision 27 mountain stress pass, inspect these together:
 The target read is gradual mountain buildup with attached crests, saddles between
 high structures, and summits that feel supported by a ridge system. This pass is
 not expected to solve erosion, snow, vegetation, or biome material polish.
+
+## Outcome
+
+Revision 27 implements the target source pivot and regenerates local review
+captures under `outputs/terrain/mountain-range-stress` and
+`outputs/terrain/mountain-range-stress-1025`. The ridge and summit source views
+now read as curved crests and elongated support rather than straight bands and
+round discs. The perspective render is directionally better, but still not a
+finished mountain model: crests and summit lobes remain visibly synthetic because
+they are shaped by source fields rather than erosion, talus, strata, or
+world-scale range processes.

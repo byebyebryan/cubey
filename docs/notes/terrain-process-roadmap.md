@@ -21,7 +21,9 @@ headless PNG review sets, scalar capture manifests, and renderer-backed preview
 captures. Revision 25 adds selectable preview surfaces so `height_m`,
 `post_erosion_height_m`, and `pre_process_height_m` can be compared in the same
 mesh consumer. Revision 26 adds `mountain_profile_height_m` so the mountain
-stress recipe can be reviewed as one coherent height profile. It also has
+stress recipe can be reviewed as one coherent height profile. Revision 27 adds
+`mountain_saddle_gate`, curved ridge influence, and elongated summit support.
+It also has
 separate diagnostic recipes for the normal temperate mountain river slice, a
 stress river network, and an isolated mountain range.
 
@@ -55,7 +57,7 @@ review consumers, or integration adapters.
 | --- | --- | --- |
 | Process helpers | Terrain-local spread, relief-clamped lowering, height-lowering, and diagnostic gully helpers now exist in `terrain_process_fields`. | Keep new process math routed through helper APIs before broadening erosion, deposition, talus, snow, sand, or wetness work. |
 | River carving | Rivers now lower `height_m`, but channel depth still reads weak in 3D and water/material tint can obscure geometry. | Keep incision fields explicit, use manifests to compare field ranges, then tune against height-only and channel preview modes. |
-| Mountain form | The stress recipe now uses a coherent profile height and no longer stacks ridge/peak uplift into the visible mesh, but it can read too rounded or blobby in perspective. | Treat mountains as a hierarchy problem: broad mass, peak anchors, curved crest fields, shoulder influence, anisotropic summit/ridge shaping, saddle suppression, then local detail. |
+| Mountain form | The stress recipe now uses a coherent profile height with curved ridge influence, elongated summit support, and saddle suppression, but perspective captures still read synthetic because crests/summits are source-shaped rather than process-eroded. | Treat mountains as a process hierarchy: broad mass, peak anchors, curved crest fields, saddle suppression, erosion/talus/strata cleanup, then local detail. |
 | Scale | Rivers and mountains are still patch-local with a padded halo. | Later world/tile work should generate deterministic world-coordinate basin and range sources, then rasterize local products plus halo. |
 | Capture evidence | Scalar review directories now write `manifest.json` beside the PNGs. | Use manifest ranges and hashes when comparing captures instead of relying only on manual image inspection. |
 
@@ -89,11 +91,11 @@ The detailed extraction and guardrails are in
    renderer-backed previews, and deterministic stress recipes.
 2. Use the new process helpers, manifests, and preview surface selector to tune
    river incision and mountain hierarchy in small passes.
-3. Review the revision 26 coherent mountain profile before deciding whether the
-   revision 24 clean-room gully/erosion diagnostic should affect final height.
-4. Use that evidence to sharpen summit/ridge source shape with curved crests,
-   elongated summit support, and saddle suppression without returning to pasted
-   layers.
+3. Review the revision 27 coherent mountain profile before deciding whether the
+   revision 24 clean-room gully/erosion diagnostic or a new erosion-aware crest
+   cleanup should affect final height.
+4. Use that evidence to improve ridge/summit process shaping without returning
+   to pasted layers.
 5. Return to river topology with graph/hydrology references after mountain
    process/source quality is clearer.
 6. Only then add another terrain process or water body. Lakes, coast, dunes,
