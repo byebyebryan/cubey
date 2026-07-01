@@ -24,6 +24,7 @@ enum class TerrainDebugView {
     MountainMass,
     MountainShoulder,
     MountainSummitCore,
+    MountainSaddleGate,
     MountainSupport,
     MountainRidgeHierarchy,
     RidgeSupport,
