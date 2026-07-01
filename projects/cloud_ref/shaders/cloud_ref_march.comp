@@ -285,35 +285,36 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
             float light_transmittance =
                 cloud_ref_light_transmittance(pos, ds * 0.1, sun_dir, sample_data.density,
                                               light_dot_eye);
-            float phase_response =
-                max(mix(cloud_ref_hg(light_dot_eye, -0.08),
-                        cloud_ref_hg(light_dot_eye, 0.08),
-                        clamp(light_dot_eye * 0.5 + 0.5, 0.0, 1.0)),
-                    1.0);
-            float powder_term =
-                params.shape_options.w > 0.5 ? (1.0 - exp(-2.0 * sample_data.density)) : 1.0;
-            vec3 ambient_source = params.cloud_color_bottom_horizon.rgb * 1.8;
-            vec3 base_fill = mix(ambient_source, background, 0.2);
-            vec3 direct_source = phase_response * sun_color;
-            vec3 source = 0.6 * mix(base_fill, direct_source,
-                                    powder_term * light_transmittance) *
-                          sample_data.density;
             float d_transmittance = exp(sample_data.density * sigma_ds);
-            vec3 integral = (source - source * d_transmittance) /
-                            max(sample_data.density, 0.0001);
+            float shadow_strength = max(params.cloud_color_top_shadow.w, 0.0);
+            float shadowed_light =
+                pow(clamp(light_transmittance, 0.001, 1.0), shadow_strength);
+            float direct_response = cloud_ref_direct_phase(light_dot_eye);
+            float rim_response = cloud_ref_rim_phase(light_dot_eye, shadowed_light, sample_data);
+            float powder_shape =
+                (1.0 - exp(-2.0 * sample_data.density)) *
+                (0.35 + 0.65 * smoothstep(-0.25, 0.75, light_dot_eye));
+            float powder_multiplier =
+                1.0 + clamp(params.lighting_strengths.w, 0.0, 1.0) *
+                          clamp(powder_shape, 0.0, 0.85);
+
+            vec3 ambient_source =
+                cloud_ref_cloud_ambient(pos, direction, sample_data) *
+                max(params.lighting_strengths.x, 0.0);
+            vec3 direct_source = sun_color * shadowed_light * direct_response *
+                                 powder_multiplier *
+                                 max(params.lighting_strengths.y, 0.0);
+            vec3 phase_source =
+                sun_color * rim_response * max(params.lighting_strengths.z, 0.0);
+            vec3 source_terms = 0.6 * (ambient_source + direct_source + phase_source);
+            vec3 integral = source_terms * (1.0 - d_transmittance);
             color += transmittance * integral;
-            ambient_sum += transmittance *
-                           ((ambient_source * sample_data.density -
-                             ambient_source * sample_data.density * d_transmittance) /
-                            max(sample_data.density, 0.0001));
-            direct_sum += transmittance *
-                          ((direct_source * sample_data.density -
-                            direct_source * sample_data.density * d_transmittance) /
-                           max(sample_data.density, 0.0001));
-            phase_sum += vec3(0.0);
+            ambient_sum += transmittance * 0.6 * ambient_source * (1.0 - d_transmittance);
+            direct_sum += transmittance * 0.6 * direct_source * (1.0 - d_transmittance);
+            phase_sum += transmittance * 0.6 * phase_source * (1.0 - d_transmittance);
             transmittance *= d_transmittance;
             density_sum += sample_data.density;
-            last_light = light_transmittance;
+            last_light = shadowed_light;
         }
         if (transmittance <= 0.01) {
             break;
@@ -323,9 +324,10 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
     }
 
     float alpha = 1.0 - transmittance;
-    color = max(color * 1.8 - vec3(0.1), vec3(0.0));
-    ambient_sum = max(ambient_sum * 1.8, vec3(0.0));
-    direct_sum = max(direct_sum * 1.8, vec3(0.0));
+    color = max(color * 1.45, vec3(0.0));
+    ambient_sum = max(ambient_sum * 1.45, vec3(0.0));
+    direct_sum = max(direct_sum * 1.45, vec3(0.0));
+    phase_sum = max(phase_sum * 1.45, vec3(0.0));
     float fog_radius = max(length(origin - cloud_ref_sphere_center()) * 0.3, 1.0);
     float fog_alpha = max(start_t, 0.0) / fog_radius;
     float fog = 1.0 - exp(-start_t * fog_alpha * 0.00006);
