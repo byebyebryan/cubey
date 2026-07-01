@@ -392,6 +392,13 @@ to that profile plus bounded detail. Visible ridge influence now uses smooth
 distance-to-connection fields rather than 8-neighbor raster paths, and peak
 support is broadened so summits no longer become isolated needle cones.
 
+The revision 26 review also exposed the next source-model problem: the mountains
+are coherent but too isotropic. Straight softened ridge bands and round summit
+blobs create inflated pillow-like forms. The revision 27 target is to keep
+`mountain_profile_height_m` as the visible height source while changing the
+drivers to curved crest fields, elongated summit support, and explicit saddle
+suppression between high structures.
+
 The next work should be foundation-shaped inside the terrain project rather
 than another isolated biome image. Keep the per-revision river and mountain
 recipes as diagnostics while extracting reusable process-field helpers, adding

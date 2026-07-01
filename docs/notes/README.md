@@ -87,6 +87,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain coherent height rule](terrain-coherent-height-rule.md): revision 26
   guardrail against building visible terrain from independently pasted feature
   masks.
+- [Terrain anisotropic mountain profile plan](terrain-anisotropic-mountain-profile-plan.md):
+  revision 27 target for replacing straight ridge bands and round summit blobs
+  with curved crests, elongated summit support, and saddle suppression.
 - [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
   next river-quality pivot: promote `stream_order` and `flow_accumulation` into
   connected corridor selection while avoiding direct graph-edge rendering.

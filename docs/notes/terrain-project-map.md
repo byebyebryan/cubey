@@ -213,6 +213,9 @@ Done when:
 Status: revised in revision 26 so `mountain_profile_height_m` is the coherent
 mountain stress source, with mass, shoulder, summit, ridge, and uplift fields
 used as source diagnostics and attribution rather than pasted height layers.
+The next revision should keep that rule while replacing straight ridge bands and
+round summit blobs with anisotropic crests, elongated summit support, and saddle
+suppression.
 
 Use the diagnostic evidence to improve the mountain source hierarchy.
 
