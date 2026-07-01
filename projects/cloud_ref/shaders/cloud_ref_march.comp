@@ -306,12 +306,16 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
                                  max(params.lighting_strengths.y, 0.0);
             vec3 phase_source =
                 sun_color * rim_response * max(params.lighting_strengths.z, 0.0);
-            vec3 source_terms = 0.6 * (ambient_source + direct_source + phase_source);
+            float scatter_gain = 0.42;
+            vec3 source_terms = scatter_gain * (ambient_source + direct_source + phase_source);
             vec3 integral = source_terms * (1.0 - d_transmittance);
             color += transmittance * integral;
-            ambient_sum += transmittance * 0.6 * ambient_source * (1.0 - d_transmittance);
-            direct_sum += transmittance * 0.6 * direct_source * (1.0 - d_transmittance);
-            phase_sum += transmittance * 0.6 * phase_source * (1.0 - d_transmittance);
+            ambient_sum += transmittance * scatter_gain * ambient_source *
+                           (1.0 - d_transmittance);
+            direct_sum += transmittance * scatter_gain * direct_source *
+                          (1.0 - d_transmittance);
+            phase_sum += transmittance * scatter_gain * phase_source *
+                         (1.0 - d_transmittance);
             transmittance *= d_transmittance;
             density_sum += sample_data.density;
             last_light = shadowed_light;
@@ -324,16 +328,18 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
     }
 
     float alpha = 1.0 - transmittance;
-    color = max(color * 1.45, vec3(0.0));
-    ambient_sum = max(ambient_sum * 1.45, vec3(0.0));
-    direct_sum = max(direct_sum * 1.45, vec3(0.0));
-    phase_sum = max(phase_sum * 1.45, vec3(0.0));
+    color = max(color * 1.35, vec3(0.0));
+    ambient_sum = max(ambient_sum * 1.35, vec3(0.0));
+    direct_sum = max(direct_sum * 1.35, vec3(0.0));
+    phase_sum = max(phase_sum * 1.35, vec3(0.0));
     float fog_radius = max(length(origin - cloud_ref_sphere_center()) * 0.3, 1.0);
     float fog_alpha = max(start_t, 0.0) / fog_radius;
-    float fog = 1.0 - exp(-start_t * fog_alpha * 0.00006);
+    float fog = (1.0 - exp(-start_t * fog_alpha * 0.00006)) *
+                clamp(params.final_options.z, 0.0, 3.0);
     color = mix(color, background * alpha, clamp(fog, 0.0, 1.0));
     float sun = clamp(dot(sun_dir, direction), 0.0, 1.0);
-    color += 0.8 * vec3(1.0, 0.4, 0.2) * pow(sun, 256.0) * alpha;
+    color += 0.8 * vec3(1.0, 0.4, 0.2) * pow(sun, 256.0) * alpha *
+             clamp(params.final_options.w, 0.0, 3.0);
     return MarchResult(color, transmittance, alpha, density_sum / float(max_steps), last_light,
                        first_distance, steps_taken, ambient_sum, direct_sum, phase_sum);
 }

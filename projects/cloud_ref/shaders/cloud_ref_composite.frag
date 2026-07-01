@@ -73,6 +73,14 @@ vec3 cloud_ref_composite_layer(vec3 background, vec4 layer) {
     return background * (1.0 - alpha) + max(layer.rgb, vec3(0.0));
 }
 
+vec3 cloud_ref_apply_final_shaping(vec3 color) {
+    vec3 shaped = max(color, vec3(0.0));
+    float luma = dot(shaped, vec3(0.2126, 0.7152, 0.0722));
+    shaped = mix(vec3(luma), shaped, max(params.final_options.y, 0.0));
+    shaped = (shaped - vec3(0.18)) * max(params.final_options.x, 0.0) + vec3(0.18);
+    return max(shaped, vec3(0.0));
+}
+
 void main() {
     vec2 uv = frag_position * 0.5 + 0.5;
     int debug_view = int(params.ref_options.x + 0.5);
@@ -101,7 +109,7 @@ void main() {
     } else if (!final_view) {
         color = raw_layer.rgb;
     } else {
-        color = max(color, vec3(0.0));
+        color = cloud_ref_apply_final_shaping(color);
     }
     out_color = vec4(clamp(color, vec3(0.0), vec3(1.0)), 1.0);
 }

@@ -55,6 +55,7 @@ Useful runs:
 ./build/dev/projects/cloud_ref/cloud_ref --headless --frames 2 --cloud-camera-mode high --output outputs/cloud-ref-high.png
 projects/cloud_ref/capture_review.sh outputs/cloud-ref-review
 projects/cloud_ref/capture_sampling_compare.sh outputs/cloud-ref-sampling-compare
+projects/cloud_ref/capture_lighting_compare.sh outputs/cloud-ref-lighting-compare
 ```
 
 Reference captures from the original TerrainEngine app are kept in
@@ -135,9 +136,11 @@ Rendering test-bed direction:
 - Final output should remain a cloud layer containing linear radiance plus
   transmittance/alpha; final resolve/composite should be isolated from raw
   lighting diagnostics.
-- The current `Powder` toggle is experimental and defaults off. It currently
-  reduces the direct-light mix factor in thin regions, which can make the image
-  flatter or darker instead of producing useful Beer-Powder edge response.
+- Powder is a scalar boost and defaults off. It now modifies direct sun response
+  on top of Beer shadowing instead of acting as the ambient/direct mix gate.
+- `capture_lighting_compare.sh` captures final, isolated ambient/direct/phase,
+  powder, shadow, and debug-view comparisons for `surface-up` and
+  `high-oblique`.
 - Ref alignment: TerrainEngine guards density/march parity; Godot v2 and
   UnityVolumetricCloudsURP are stronger lighting/product references; diharaw,
   Meteoros, Project-Marshmallow, and ShaderToy examples are comparison and
