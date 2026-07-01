@@ -37,9 +37,26 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 49> kDebugViewNames{
+struct MountainProcessReviewNormalization {
+    FieldNormalization profile_height{};
+    FieldNormalization height{};
+    FieldNormalization post_erosion_height{};
+    FieldNormalization slope_instability{};
+    FieldNormalization thermal_erosion_delta{};
+    FieldNormalization talus_deposition{};
+};
+
+struct ReviewPanelSample {
+    std::size_t panel_index = 0U;
+    std::uint32_t x = 0U;
+    std::uint32_t y = 0U;
+    bool separator = false;
+};
+
+inline constexpr std::array<DebugViewName, 50> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::MountainRelief, "mountain-relief"},
+    DebugViewName{TerrainDebugView::MountainProcessReview, "mountain-process-review"},
     DebugViewName{TerrainDebugView::Height, "height"},
     DebugViewName{TerrainDebugView::PreProcessHeight, "pre-process-height"},
     DebugViewName{TerrainDebugView::MountainProfileHeight, "mountain-profile-height"},
@@ -89,9 +106,10 @@ inline constexpr std::array<DebugViewName, 49> kDebugViewNames{
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 49> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 50> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::MountainRelief,
+    TerrainDebugView::MountainProcessReview,
     TerrainDebugView::Height,
     TerrainDebugView::PreProcessHeight,
     TerrainDebugView::MountainProfileHeight,
@@ -230,6 +248,85 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
                                const FieldNormalization& normalization) {
     const float value = normalized_field_value(field, x, y, normalization);
     return lerp_rgb(Rgb{0.04F, 0.07F, 0.12F}, Rgb{0.95F, 0.86F, 0.45F}, value);
+}
+
+[[nodiscard]] ReviewPanelSample review_panel_sample(const cubey::procedural::Grid2DDesc& desc,
+                                                    std::uint32_t x, std::uint32_t y) {
+    constexpr std::uint32_t kColumns = 3U;
+    constexpr std::uint32_t kRows = 2U;
+    const std::uint32_t visual_y = desc.height - 1U - y;
+    const std::uint32_t column = std::min(kColumns - 1U, (x * kColumns) / desc.width);
+    const std::uint32_t row = std::min(kRows - 1U, (visual_y * kRows) / desc.height);
+    const std::uint32_t start_x = (column * desc.width) / kColumns;
+    const std::uint32_t end_x = ((column + 1U) * desc.width) / kColumns;
+    const std::uint32_t start_y = (row * desc.height) / kRows;
+    const std::uint32_t end_y = ((row + 1U) * desc.height) / kRows;
+    const std::uint32_t panel_width = std::max(1U, end_x - start_x);
+    const std::uint32_t panel_height = std::max(1U, end_y - start_y);
+    const std::uint32_t local_x = x - start_x;
+    const std::uint32_t local_visual_y = visual_y - start_y;
+    const std::uint32_t sample_x =
+        std::min(desc.width - 1U, (local_x * desc.width) / panel_width);
+    const std::uint32_t sample_visual_y =
+        std::min(desc.height - 1U, (local_visual_y * desc.height) / panel_height);
+    const bool separator = ((column > 0U) && (x == start_x)) ||
+                           ((row > 0U) && (visual_y == start_y));
+    return {
+        .panel_index = static_cast<std::size_t>((row * kColumns) + column),
+        .x = sample_x,
+        .y = desc.height - 1U - sample_visual_y,
+        .separator = separator,
+    };
+}
+
+[[nodiscard]] float hillshade(const cubey::procedural::ScalarField2D& height, std::uint32_t x,
+                              std::uint32_t y);
+
+[[nodiscard]] Rgb height_review_color(const cubey::procedural::ScalarField2D& height,
+                                      std::uint32_t x, std::uint32_t y,
+                                      const FieldNormalization& normalization) {
+    const float value = std::pow(normalized_field_value(height, x, y, normalization), 0.88F);
+    Rgb color = mountain_relief_ramp(value);
+    const float shade = hillshade(height, x, y);
+    color.r *= shade;
+    color.g *= shade;
+    color.b *= shade;
+    return color;
+}
+
+[[nodiscard]] Rgb mountain_process_review_color(
+    const TerrainRegionProduct& product, std::uint32_t x, std::uint32_t y,
+    const MountainProcessReviewNormalization& normalization) {
+    const cubey::procedural::Grid2DDesc& desc = product.fields.desc();
+    const ReviewPanelSample sample = review_panel_sample(desc, x, y);
+    if (sample.separator) {
+        return Rgb{0.02F, 0.025F, 0.03F};
+    }
+
+    switch (sample.panel_index) {
+    case 0U:
+        return height_review_color(
+            terrain_product_field(product, kTerrainFieldMountainProfileHeightM), sample.x,
+            sample.y, normalization.profile_height);
+    case 1U:
+        return height_review_color(terrain_product_field(product, kTerrainFieldHeightM),
+                                   sample.x, sample.y, normalization.height);
+    case 2U:
+        return height_review_color(
+            terrain_product_field(product, kTerrainFieldPostErosionHeightM), sample.x,
+            sample.y, normalization.post_erosion_height);
+    case 3U:
+        return scalar_color(terrain_product_field(product, kTerrainFieldSlopeInstability),
+                            sample.x, sample.y, normalization.slope_instability);
+    case 4U:
+        return scalar_color(terrain_product_field(product, kTerrainFieldThermalErosionDeltaM),
+                            sample.x, sample.y, normalization.thermal_erosion_delta);
+    case 5U:
+        return scalar_color(terrain_product_field(product, kTerrainFieldTalusDepositionM),
+                            sample.x, sample.y, normalization.talus_deposition);
+    default:
+        return Rgb{};
+    }
 }
 
 [[nodiscard]] Rgb final_color(const TerrainRegionProduct& product, std::uint32_t x,
@@ -468,6 +565,7 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldVegetationPotential);
     case TerrainDebugView::Final:
     case TerrainDebugView::MountainRelief:
+    case TerrainDebugView::MountainProcessReview:
     case TerrainDebugView::Material:
         break;
     }
@@ -481,6 +579,7 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
     FieldNormalization scalar_normalization{};
     FieldNormalization height_normalization{};
     FieldNormalization relief_normalization{};
+    MountainProcessReviewNormalization process_review_normalization{};
     if (view == TerrainDebugView::Final || view == TerrainDebugView::MountainRelief) {
         height_normalization =
             make_field_normalization(terrain_product_field(product, kTerrainFieldHeightM), false);
@@ -489,6 +588,22 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
                 make_field_normalization(terrain_product_field(product, kTerrainFieldLocalRelief),
                                          false);
         }
+    } else if (view == TerrainDebugView::MountainProcessReview) {
+        process_review_normalization = MountainProcessReviewNormalization{
+            .profile_height = make_field_normalization(
+                terrain_product_field(product, kTerrainFieldMountainProfileHeightM), false),
+            .height =
+                make_field_normalization(terrain_product_field(product, kTerrainFieldHeightM),
+                                         false),
+            .post_erosion_height = make_field_normalization(
+                terrain_product_field(product, kTerrainFieldPostErosionHeightM), false),
+            .slope_instability = make_field_normalization(
+                terrain_product_field(product, kTerrainFieldSlopeInstability), false),
+            .thermal_erosion_delta = make_field_normalization(
+                terrain_product_field(product, kTerrainFieldThermalErosionDeltaM), false),
+            .talus_deposition = make_field_normalization(
+                terrain_product_field(product, kTerrainFieldTalusDepositionM), false),
+        };
     } else if (view != TerrainDebugView::Material) {
         scalar_field = &field_for_debug_view(product, view);
         scalar_normalization =
@@ -505,6 +620,9 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
             } else if (view == TerrainDebugView::MountainRelief) {
                 color = mountain_relief_color(product, x, y, height_normalization,
                                               relief_normalization);
+            } else if (view == TerrainDebugView::MountainProcessReview) {
+                color = mountain_process_review_color(product, x, y,
+                                                      process_review_normalization);
             } else if (view == TerrainDebugView::Material) {
                 color = material_color(product, x, y);
             } else {

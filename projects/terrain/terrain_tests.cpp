@@ -1801,6 +1801,9 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_relief") ==
                 cubey::projects::terrain::TerrainDebugView::MountainRelief,
             "terrain debug view should parse mountain relief aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_process_review") ==
+                cubey::projects::terrain::TerrainDebugView::MountainProcessReview,
+            "terrain debug view should parse mountain process review aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_range_spine") ==
                 cubey::projects::terrain::TerrainDebugView::MountainRangeSpine,
             "terrain debug view should parse mountain range spine aliases");
@@ -1947,6 +1950,17 @@ void test_terrain_debug_export_writes_png() {
             "terrain mountain relief debug export should write a non-empty PNG");
     std::filesystem::remove(mountain_output);
 
+    const std::filesystem::path process_review_output =
+        std::filesystem::temp_directory_path() /
+        "cubey_terrain_mountain_process_review_export_test.png";
+    std::filesystem::remove(process_review_output);
+    cubey::projects::terrain::write_terrain_debug_png(
+        mountain_product, cubey::projects::terrain::TerrainDebugView::MountainProcessReview,
+        process_review_output);
+    require(std::filesystem::file_size(process_review_output) > 64U,
+            "terrain mountain process review export should write a non-empty PNG");
+    std::filesystem::remove(process_review_output);
+
     const std::filesystem::path gully_output =
         std::filesystem::temp_directory_path() / "cubey_terrain_gully_mask_export_test.png";
     std::filesystem::remove(gully_output);
@@ -2020,6 +2034,9 @@ void test_terrain_debug_export_writes_review_set() {
         manifest.at("outputs").get<std::vector<std::string>>();
     require(std::find(outputs.begin(), outputs.end(), "final.png") != outputs.end(),
             "terrain debug manifest should list final PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "mountain-process-review.png") !=
+                outputs.end(),
+            "terrain debug manifest should list mountain process review PNG output");
     require(std::find(outputs.begin(), outputs.end(), "channel-incision.png") != outputs.end(),
             "terrain debug manifest should list incision PNG output");
     require(std::find(outputs.begin(), outputs.end(), "erosion-delta.png") != outputs.end(),

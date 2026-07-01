@@ -1045,16 +1045,16 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const float envelope_t =
-                std::pow(cubey::procedural::saturate(envelope.at(x, y)), 0.70F);
+                std::pow(cubey::procedural::saturate(envelope.at(x, y)), 0.58F);
             const float ridge_t =
-                std::pow(cubey::procedural::saturate(ridge_influence.at(x, y)), 0.75F);
+                std::pow(cubey::procedural::saturate(ridge_influence.at(x, y)), 0.66F);
             const float peak_t =
-                std::pow(cubey::procedural::saturate(peak_prominence.at(x, y)), 1.15F);
+                std::pow(cubey::procedural::saturate(peak_prominence.at(x, y)), 1.08F);
             result.at(x, y) = cubey::procedural::saturate(
-                (envelope_t * 0.70F) + (ridge_t * 0.24F) + (peak_t * 0.10F) - 0.03F);
+                (envelope_t * 0.78F) + (ridge_t * 0.20F) + (peak_t * 0.06F) - 0.025F);
         }
     }
-    result = repeated_box_blur(std::move(result), 4U);
+    result = repeated_box_blur(std::move(result), 6U);
     return cubey::procedural::clamp_field(result, 0.0F, 1.0F);
 }
 
@@ -1071,16 +1071,18 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
             const float envelope_t = cubey::procedural::saturate(envelope.at(x, y));
             const float ridge_t = cubey::procedural::saturate(ridge_influence.at(x, y));
             const float peak_core = cubey::procedural::saturate(peak_prominence.at(x, y));
-            const float mass_ramp = std::pow(mass, 0.82F);
-            const float high_mass = std::pow(mass, 2.35F);
+            const float mass_ramp = std::pow(mass, 0.72F);
+            const float high_mass = std::pow(mass, 2.10F);
+            const float foothill =
+                mass_ramp * (1.0F - (high_mass * 0.22F));
             const float shoulder = cubey::procedural::saturate(
-                ((mass_ramp * (1.0F - (high_mass * 0.38F))) * 0.56F) +
-                (std::pow(envelope_t, 1.12F) * 0.12F) + (std::pow(ridge_t, 0.76F) * 0.24F) -
-                (std::pow(peak_core, 1.28F) * 0.10F));
-            result.at(x, y) = std::pow(shoulder, 1.04F);
+                (foothill * 0.60F) + (std::pow(envelope_t, 1.02F) * 0.16F) +
+                (std::pow(ridge_t, 0.66F) * 0.20F) -
+                (std::pow(peak_core, 1.15F) * 0.055F));
+            result.at(x, y) = std::pow(shoulder, 1.03F);
         }
     }
-    result = repeated_box_blur(std::move(result), 4U);
+    result = repeated_box_blur(std::move(result), 5U);
     return cubey::procedural::clamp_field(result, 0.0F, 1.0F);
 }
 
@@ -1094,19 +1096,19 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const float mass_gate =
-                std::pow(cubey::procedural::saturate(mountain_mass.at(x, y)), 1.35F);
+                std::pow(cubey::procedural::saturate(mountain_mass.at(x, y)), 1.42F);
             const float ridge_gate =
-                std::pow(cubey::procedural::saturate(ridge_influence.at(x, y)), 0.78F);
+                std::pow(cubey::procedural::saturate(ridge_influence.at(x, y)), 0.70F);
             const float prominence =
-                std::pow(cubey::procedural::saturate(peak_prominence.at(x, y)), 1.30F);
+                std::pow(cubey::procedural::saturate(peak_prominence.at(x, y)), 1.18F);
             const float anchor =
                 std::pow(cubey::procedural::saturate(peak_anchors.at(x, y)), 1.10F);
             result.at(x, y) = cubey::procedural::saturate(
-                mass_gate * (0.50F + (ridge_gate * 0.42F) + (anchor * 0.08F)) *
-                std::pow(prominence, 1.16F));
+                mass_gate * (0.54F + (ridge_gate * 0.38F) + (anchor * 0.08F)) *
+                std::pow(prominence, 1.04F));
         }
     }
-    result = repeated_box_blur(std::move(result), 3U);
+    result = repeated_box_blur(std::move(result), 4U);
     return cubey::procedural::clamp_field(result, 0.0F, 1.0F);
 }
 
@@ -1259,39 +1261,40 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const float mass =
-                std::pow(cubey::procedural::saturate(mountain_mass.at(x, y)), 0.95F);
+                std::pow(cubey::procedural::saturate(mountain_mass.at(x, y)), 0.86F);
             const float shoulder =
-                std::pow(cubey::procedural::saturate(mountain_shoulder.at(x, y)), 1.05F);
+                std::pow(cubey::procedural::saturate(mountain_shoulder.at(x, y)), 0.94F);
             const float ridge =
-                std::pow(cubey::procedural::saturate(ridge_influence.at(x, y)), 0.82F);
+                std::pow(cubey::procedural::saturate(ridge_influence.at(x, y)), 0.74F);
+            const float ridge_body = ridge * (0.28F + (mass * 0.72F));
             const float crest = std::pow(cubey::procedural::saturate(ridge_skeleton.at(x, y)),
-                                         1.45F) *
-                                (0.30F + (ridge * 0.70F));
+                                         1.70F) *
+                                (0.24F + (ridge_body * 0.76F));
             const float summit =
-                std::pow(cubey::procedural::saturate(summit_core.at(x, y)), 1.28F) * mass *
-                (0.38F + (ridge * 0.62F));
+                std::pow(cubey::procedural::saturate(summit_core.at(x, y)), 1.10F) * mass *
+                (0.44F + (ridge_body * 0.56F));
             const float saddle =
-                std::pow(cubey::procedural::saturate(saddle_gate.at(x, y)), 1.20F) * mass;
+                std::pow(cubey::procedural::saturate(saddle_gate.at(x, y)), 1.12F) * mass;
             const float noise = broad_noise.at(x, y) - 0.5F;
             const float raw_potential =
-                (mass * 0.62F) + (shoulder * 0.07F) + (ridge * 0.16F) +
-                (crest * 0.015F) + (summit * 0.060F) - (saddle * 0.075F) +
-                (noise * 0.045F);
+                (mass * 0.64F) + (shoulder * 0.14F) + (ridge_body * 0.12F) +
+                (summit * 0.045F) - (saddle * 0.060F) + (noise * 0.032F);
             const float potential = cubey::procedural::saturate(raw_potential);
             const float foothill_ramp =
-                cubey::procedural::smoothstep(0.02F, 0.58F, potential) * 185.0F;
-            const float mountain_rise = std::pow(potential, 1.46F) * 1500.0F;
-            const float ridge_modulation = ridge * (0.20F + (mass * 0.80F)) * 105.0F;
-            const float crest_modulation = crest * (0.35F + (mass * 0.65F)) * 30.0F;
-            const float summit_modulation = summit * 105.0F;
-            const float saddle_suppression = saddle * 58.0F;
-            const float rolling_lowland = noise * (62.0F + ((1.0F - mass) * 38.0F));
+                cubey::procedural::smoothstep(0.02F, 0.60F, potential) * 178.0F;
+            const float mountain_rise = std::pow(potential, 1.38F) * 1460.0F;
+            const float shoulder_rise = shoulder * (0.22F + (mass * 0.78F)) * 68.0F;
+            const float ridge_modulation = ridge_body * 82.0F;
+            const float crest_modulation = crest * (0.30F + (mass * 0.70F)) * 22.0F;
+            const float summit_modulation = summit * 92.0F;
+            const float saddle_suppression = saddle * 48.0F;
+            const float rolling_lowland = noise * (54.0F + ((1.0F - mass) * 34.0F));
             result.at(x, y) = 92.0F + rolling_lowland + foothill_ramp + mountain_rise +
-                              ridge_modulation + crest_modulation + summit_modulation -
-                              saddle_suppression;
+                              shoulder_rise + ridge_modulation + crest_modulation +
+                              summit_modulation - saddle_suppression;
         }
     }
-    return repeated_box_blur(std::move(result), 3U);
+    return repeated_box_blur(std::move(result), 4U);
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D mountain_profile_relief_field(
