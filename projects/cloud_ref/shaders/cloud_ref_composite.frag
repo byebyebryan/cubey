@@ -73,6 +73,21 @@ vec3 cloud_ref_composite_layer(vec3 background, vec4 layer) {
     return background * (1.0 - alpha) + max(layer.rgb, vec3(0.0));
 }
 
+vec3 cloud_ref_composite_sun_glare(vec3 direction, vec4 layer) {
+    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
+    float sun_alignment = clamp(dot(sun_dir, direction), 0.0, 1.0);
+    float alpha = clamp(layer.a, 0.0, 1.0);
+    float transmittance = 1.0 - alpha;
+    float cloud_presence = smoothstep(0.02, 0.24, alpha);
+    float sun_visibility = smoothstep(0.08, 0.82, transmittance);
+    float cloud_edge = cloud_ref_edge_coverage_weight(alpha);
+    float sun_disk = pow(sun_alignment, 360.0) * 0.30;
+    float sun_halo = pow(sun_alignment, 56.0) * 0.08;
+    float glare = (sun_disk + sun_halo) * cloud_presence * sun_visibility *
+                  (0.45 + 0.55 * cloud_edge) * clamp(params.final_options.w, 0.0, 3.0);
+    return vec3(1.0, 0.58, 0.24) * glare;
+}
+
 vec3 cloud_ref_apply_final_shaping(vec3 color) {
     vec3 shaped = max(color, vec3(0.0));
     float luma = dot(shaped, vec3(0.2126, 0.7152, 0.0722));
@@ -109,6 +124,7 @@ void main() {
     } else if (!final_view) {
         color = raw_layer.rgb;
     } else {
+        color += cloud_ref_composite_sun_glare(direction, layer);
         color = cloud_ref_apply_final_shaping(color);
     }
     out_color = vec4(clamp(color, vec3(0.0), vec3(1.0)), 1.0);

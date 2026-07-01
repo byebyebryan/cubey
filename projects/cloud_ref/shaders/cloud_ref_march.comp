@@ -377,14 +377,6 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
     float fog = (1.0 - exp(-start_t * fog_alpha * 0.00006)) *
                 clamp(params.final_options.z, 0.0, 3.0);
     color = mix(color, background * alpha, clamp(fog, 0.0, 1.0));
-    float sun = clamp(dot(sun_dir, direction), 0.0, 1.0);
-    float cloud_sun_visibility =
-        smoothstep(0.02, 0.24, alpha) *
-        mix(0.22, 1.0, smoothstep(0.08, 0.72, transmittance));
-    float sun_disk = pow(sun, 360.0) * 0.34;
-    float sun_halo = pow(sun, 56.0) * 0.10;
-    color += vec3(1.0, 0.58, 0.24) * (sun_disk + sun_halo) *
-             cloud_sun_visibility * clamp(params.final_options.w, 0.0, 3.0);
     return MarchResult(color, transmittance, alpha, density_sum / float(max_steps), last_light,
                        first_distance, steps_taken, view_optical_depth, light_optical_depth,
                        ambient_sum, direct_sum, phase_sum);
