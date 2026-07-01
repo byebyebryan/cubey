@@ -60,3 +60,28 @@ For revision 28, inspect these files together:
 The expected read is not a finished alpine model. This pass is specifically
 about making the source profile less blobby, less fin-like, and less shelfy
 before larger erosion, talus, snow, vegetation, or biome composition work.
+
+## Outcome
+
+Revision 28 broadens `mountain_ridge_influence` while keeping
+`mountain_ridge_skeleton` narrow, then retunes the coherent profile so broad
+mass and ridge body carry more height than the crest and summit diagnostics. It
+also softens `mountain_mass`, `mountain_shoulder`, and `mountain_saddle_gate` so
+the profile has fewer hard shelf transitions.
+
+The regenerated 513 capture reports generator revision 28, 52 fields, 46 scalar
+outputs, `height_m.span = 1548.804`,
+`mountain_profile_height_m.span = 1443.501`,
+`mountain_ridge_influence.mean = 0.1600`,
+`mountain_ridge_skeleton.mean = 0.0154`,
+`mountain_shoulder.max = 0.6974`, and
+`mountain_summit_core.mean = 0.0270`. The 1025 capture reports
+`height_m.span = 1572.752`, `mountain_profile_height_m.span = 1507.812`, and
+`mountain_ridge_influence.mean = 0.2247`.
+
+The visual result is an incremental correction, not a solved mountain model.
+`mountain-perspective.png` now reads less like thin fins over a plateau, but the
+range still has rounded synthetic peaks and broad procedural shoulders. The next
+meaningful improvement should come from a better mountain process model
+(ridge/valley evolution, erosion, talus, snow/ice, or world-scale range graph),
+not more local crest/summit height stacking.

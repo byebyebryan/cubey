@@ -147,7 +147,7 @@ for the standard review set. The current local review images are generated at
 thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
 review artifact.
 
-The scalar review set includes 45 PNG views plus `manifest.json`:
+The scalar review set includes 46 PNG views plus `manifest.json`:
 
 - `final.png`
 - `mountain-relief.png`
@@ -204,7 +204,7 @@ for checking whether peak height and valley contrast are plausible.
 `mountain-post-erosion-perspective.png` renders the diagnostic
 `post_erosion_height_m` surface with height color so gully detail can be
 compared against the actual `height_m` product. The current
-`outputs/terrain/mountain-range-stress` directory holds 49 PNGs after the
+`outputs/terrain/mountain-range-stress` directory holds 50 PNGs after the
 scalar set plus oblique, profile, post-erosion, and height-colored perspective
 captures are generated. `manifest.json` is not a rendered view; use it to check
 the recipe, seed, generator revision, grid size, field ranges, and content hash
@@ -281,6 +281,17 @@ fields, and 46 scalar views. The 513 manifest reports
 `height_m.span = 1598.938`, `mountain_profile_height_m.span = 1505.036`,
 `mountain_saddle_gate.mean = 0.2554`, `mountain_ridge_influence.mean = 0.0659`,
 and `mountain_summit_core.mean = 0.0256`.
+Revision 28 broadens ridge bodies, softens the saturated mountain mass,
+shoulder, and saddle fields, and reduces direct crest/summit height so broad
+support carries more of the visible mountain profile. The regenerated 513
+mountain manifest reports generator revision 28, 52 fields, 46 scalar views,
+`height_m.span = 1548.804`, `mountain_profile_height_m.span = 1443.501`,
+`mountain_ridge_influence.mean = 0.1600`,
+`mountain_ridge_skeleton.mean = 0.0154`, and
+`mountain_summit_core.mean = 0.0270`. This is still a diagnostic profile: the
+perspective captures are less fin-like and less shelfy, but the mountain range
+still needs a better process model for natural peaks, shoulders, and ridge
+evolution.
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential

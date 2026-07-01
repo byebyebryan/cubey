@@ -25,7 +25,7 @@ river terrain-coupling pass and the follow-up process-helper/manifest reset.
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
 stress captures for larger river-network and mountain-driver inspection. The
-current revision 27 mountain stress scalar review emits 46 PNG views plus
+current revision 28 mountain stress scalar review emits 46 PNG views plus
 `manifest.json` per capture. Current and stress river directories hold their
 existing scalar/debug review sets after material/profile, height-only, and
 channel diagnostic perspective captures are generated. The 513 mountain stress
@@ -100,14 +100,18 @@ content hash.
 Revision 27 adds `mountain_saddle_gate` and changes the mountain stress source
 from straight ridge bands plus round summit blobs into curved ridge influence,
 elongated summit support, and saddle suppression in the coherent profile solve.
-The regenerated 513 mountain manifest reports generator revision 27, 52 fields,
-46 scalar outputs, `height_m.span = 1598.938`,
-`mountain_profile_height_m.span = 1505.036`,
-`mountain_saddle_gate.mean = 0.2554`,
-`mountain_ridge_influence.mean = 0.0659`, and
-`mountain_summit_core.mean = 0.0256`. The 1025 manifest reports revision 27, 52
-fields, 46 scalar outputs, `height_m.span = 1708.308`, and
-`mountain_profile_height_m.span = 1579.131`.
+Revision 28 broadens ridge bodies before crest sharpening, softens saturated
+mass/shoulder/saddle fields, and reduces the direct summit/crest role in the
+coherent profile. The regenerated 513 mountain manifest reports generator
+revision 28, 52 fields, 46 scalar outputs, `height_m.span = 1548.804`,
+`mountain_profile_height_m.span = 1443.501`,
+`mountain_ridge_influence.mean = 0.1600`,
+`mountain_ridge_skeleton.mean = 0.0154`,
+`mountain_saddle_gate.mean = 0.3029`, and
+`mountain_summit_core.mean = 0.0270`. The 1025 manifest reports revision 28, 52
+fields, 46 scalar outputs, `height_m.span = 1572.752`,
+`mountain_profile_height_m.span = 1507.812`, and
+`mountain_ridge_influence.mean = 0.2247`.
 
 ## What To Inspect
 
@@ -300,14 +304,14 @@ valley shoulders, but it does not yet solve bed-profile monotonicity, bank
 shape, sediment transport, lakes, floodplains, or terrace formation.
 
 The current mountain driver is still an early diagnostic source profile, not
-a polished alpine biome. It now makes peak hierarchy more visible in
-`height.png`, `mountain-relief.png`, `mountain-perspective.png`, and
-`mountain-profile.png`, but peak prominence remains mostly radial and the
-skeleton is generated rather than erosion-evolved. The perspective preview is a
-local heightfield mesh consumer; it does not yet include clipmaps, tiled world
+a polished alpine biome. Revision 28 improves the worst fin-like crests and
+hard shoulder shelves in `mountain-perspective.png` and
+`mountain-profile.png`, but the range still reads rounded and procedural. Peak
+prominence is source-shaped rather than erosion-evolved, and the ridge skeleton
+is generated rather than produced by a process model. The perspective preview is
+a local heightfield mesh consumer; it does not yet include clipmaps, tiled world
 continuity, water surfaces, foliage, or planet integration. It does not yet
 model tectonic plates, erosion time, talus, snow/ice, glacial valley carving,
-or a world-scale range graph. The next mountain-quality pass should focus on
-anisotropic peak shaping, erosion-aware ridge cleanup, and alpine
-material/valley contrast before turning these fields into final biome
+or a world-scale range graph. The next mountain-quality pass should focus on a
+proper mountain process model before turning these fields into final biome
 compositions.
