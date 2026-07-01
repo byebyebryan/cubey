@@ -38,6 +38,24 @@ struct TerrainProcessGullyDiagnosticFields {
     cubey::procedural::ScalarField2D post_erosion_height_m{};
 };
 
+struct TerrainProcessThermalTalusConfig {
+    float support_start = 0.18F;
+    float support_full = 0.68F;
+    float talus_slope = 0.58F;
+    int iterations = 5;
+    float transfer_fraction = 0.36F;
+    float base_transfer_limit_m = 6.0F;
+    float relief_transfer_fraction = 0.08F;
+    float max_total_erosion_m = 96.0F;
+};
+
+struct TerrainProcessThermalTalusFields {
+    cubey::procedural::ScalarField2D thermal_erosion_delta_m{};
+    cubey::procedural::ScalarField2D talus_deposition_m{};
+    cubey::procedural::ScalarField2D slope_instability{};
+    cubey::procedural::ScalarField2D post_erosion_height_m{};
+};
+
 [[nodiscard]] cubey::procedural::ScalarField2D spread_max_decay_field(
     const cubey::procedural::ScalarField2D& source, int iterations, float decay_per_cell);
 
@@ -58,5 +76,12 @@ struct TerrainProcessGullyDiagnosticFields {
     const cubey::procedural::ScalarField2D& local_relief,
     const cubey::procedural::ScalarField2D& support,
     TerrainProcessGullyDiagnosticConfig config);
+
+[[nodiscard]] TerrainProcessThermalTalusFields compute_thermal_talus_diagnostic(
+    const cubey::procedural::ScalarField2D& height,
+    const cubey::procedural::ScalarField2D& slope,
+    const cubey::procedural::ScalarField2D& local_relief,
+    const cubey::procedural::ScalarField2D& support,
+    TerrainProcessThermalTalusConfig config);
 
 } // namespace cubey::projects::terrain

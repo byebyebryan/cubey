@@ -3,6 +3,7 @@
 #include <cubey/procedural/operators.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <stdexcept>
@@ -56,6 +57,30 @@ void validate_gully_config(TerrainProcessGullyDiagnosticConfig config) {
         !std::isfinite(config.max_delta_m) || config.max_delta_m < 0.0F) {
         throw std::runtime_error(
             "terrain gully diagnostic delta limits must be finite and non-negative");
+    }
+}
+
+void validate_thermal_talus_config(TerrainProcessThermalTalusConfig config) {
+    if (!std::isfinite(config.support_start) || !std::isfinite(config.support_full) ||
+        config.support_start >= config.support_full) {
+        throw std::runtime_error("terrain thermal talus support range must be increasing");
+    }
+    if (!std::isfinite(config.talus_slope) || config.talus_slope <= 0.0F) {
+        throw std::runtime_error("terrain thermal talus slope must be finite and positive");
+    }
+    if (config.iterations < 0) {
+        throw std::runtime_error("terrain thermal talus iterations must be non-negative");
+    }
+    if (!std::isfinite(config.transfer_fraction) || config.transfer_fraction <= 0.0F ||
+        config.transfer_fraction > 1.0F) {
+        throw std::runtime_error("terrain thermal talus transfer fraction must be in (0, 1]");
+    }
+    if (!std::isfinite(config.base_transfer_limit_m) || config.base_transfer_limit_m < 0.0F ||
+        !std::isfinite(config.relief_transfer_fraction) ||
+        config.relief_transfer_fraction < 0.0F ||
+        !std::isfinite(config.max_total_erosion_m) || config.max_total_erosion_m < 0.0F) {
+        throw std::runtime_error(
+            "terrain thermal talus transfer limits must be finite and non-negative");
     }
 }
 
@@ -237,6 +262,164 @@ TerrainProcessGullyDiagnosticFields compute_gully_erosion_diagnostic(
     fields.post_erosion_height_m =
         subtract_lowering_from_height(height, fields.erosion_delta_m);
 
+    return fields;
+}
+
+TerrainProcessThermalTalusFields compute_thermal_talus_diagnostic(
+    const cubey::procedural::ScalarField2D& height,
+    const cubey::procedural::ScalarField2D& slope,
+    const cubey::procedural::ScalarField2D& local_relief,
+    const cubey::procedural::ScalarField2D& support,
+    TerrainProcessThermalTalusConfig config) {
+    require_same_grid(height, slope, "terrain thermal talus slope must use the height grid");
+    require_same_grid(height, local_relief,
+                      "terrain thermal talus relief must use the height grid");
+    require_same_grid(height, support, "terrain thermal talus support must use the height grid");
+    validate_thermal_talus_config(config);
+
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    TerrainProcessThermalTalusFields fields{
+        .thermal_erosion_delta_m = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .talus_deposition_m = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .slope_instability = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .post_erosion_height_m = height,
+    };
+
+    cubey::procedural::ScalarField2D working_height = height;
+    constexpr std::array<std::array<int, 2>, 8> kNeighborOffsets{{
+        {{-1, -1}},
+        {{0, -1}},
+        {{1, -1}},
+        {{-1, 0}},
+        {{1, 0}},
+        {{-1, 1}},
+        {{0, 1}},
+        {{1, 1}},
+    }};
+
+    for (int iteration = 0; iteration < config.iterations; ++iteration) {
+        cubey::procedural::ScalarField2D erosion_step(desc, 0.0F);
+        cubey::procedural::ScalarField2D deposition_step(desc, 0.0F);
+        for (std::uint32_t y = 0; y < desc.height; ++y) {
+            for (std::uint32_t x = 0; x < desc.width; ++x) {
+                const float support_gate =
+                    cubey::procedural::smoothstep(config.support_start, config.support_full,
+                                                  support.at(x, y));
+                if (support_gate <= 0.0F) {
+                    continue;
+                }
+                const float slope_gate =
+                    cubey::procedural::smoothstep(config.talus_slope * 0.72F,
+                                                  config.talus_slope, slope.at(x, y));
+                if (slope_gate <= 0.0F) {
+                    continue;
+                }
+
+                const float erosion_limit = std::min(
+                    config.max_total_erosion_m,
+                    config.base_transfer_limit_m +
+                        (std::max(local_relief.at(x, y), 0.0F) *
+                         config.relief_transfer_fraction));
+                const float remaining_limit =
+                    std::max(0.0F, erosion_limit - fields.thermal_erosion_delta_m.at(x, y));
+                if (remaining_limit <= 0.0F) {
+                    continue;
+                }
+
+                float excess_sum = 0.0F;
+                const float center_height = working_height.at(x, y);
+                for (const std::array<int, 2>& offset : kNeighborOffsets) {
+                    const int nx = static_cast<int>(x) + offset[0];
+                    const int ny = static_cast<int>(y) + offset[1];
+                    if (nx < 0 || ny < 0 || nx >= static_cast<int>(desc.width) ||
+                        ny >= static_cast<int>(desc.height)) {
+                        continue;
+                    }
+                    const float dx = static_cast<float>(offset[0]);
+                    const float dy = static_cast<float>(offset[1]);
+                    const float neighbor_distance_m =
+                        std::sqrt((dx * dx) + (dy * dy)) * desc.cell_size;
+                    const float allowed_drop = config.talus_slope * neighbor_distance_m;
+                    const float drop =
+                        center_height - working_height.at(static_cast<std::uint32_t>(nx),
+                                                          static_cast<std::uint32_t>(ny));
+                    excess_sum += std::max(0.0F, drop - allowed_drop);
+                }
+                if (excess_sum <= 0.0F) {
+                    continue;
+                }
+
+                const float transfer_total =
+                    std::min(remaining_limit,
+                             excess_sum * config.transfer_fraction * support_gate * slope_gate);
+                for (const std::array<int, 2>& offset : kNeighborOffsets) {
+                    const int nx = static_cast<int>(x) + offset[0];
+                    const int ny = static_cast<int>(y) + offset[1];
+                    if (nx < 0 || ny < 0 || nx >= static_cast<int>(desc.width) ||
+                        ny >= static_cast<int>(desc.height)) {
+                        continue;
+                    }
+                    const float dx = static_cast<float>(offset[0]);
+                    const float dy = static_cast<float>(offset[1]);
+                    const float neighbor_distance_m =
+                        std::sqrt((dx * dx) + (dy * dy)) * desc.cell_size;
+                    const float allowed_drop = config.talus_slope * neighbor_distance_m;
+                    const float drop =
+                        center_height - working_height.at(static_cast<std::uint32_t>(nx),
+                                                          static_cast<std::uint32_t>(ny));
+                    const float excess = std::max(0.0F, drop - allowed_drop);
+                    if (excess <= 0.0F) {
+                        continue;
+                    }
+                    const float transfer = transfer_total * (excess / excess_sum);
+                    erosion_step.at(x, y) += transfer;
+                    deposition_step.at(static_cast<std::uint32_t>(nx),
+                                       static_cast<std::uint32_t>(ny)) += transfer;
+                }
+            }
+        }
+
+        for (std::uint32_t y = 0; y < desc.height; ++y) {
+            for (std::uint32_t x = 0; x < desc.width; ++x) {
+                fields.thermal_erosion_delta_m.at(x, y) += erosion_step.at(x, y);
+                fields.talus_deposition_m.at(x, y) += deposition_step.at(x, y);
+                working_height.at(x, y) += deposition_step.at(x, y) - erosion_step.at(x, y);
+            }
+        }
+    }
+
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float support_gate =
+                cubey::procedural::smoothstep(config.support_start, config.support_full,
+                                              support.at(x, y));
+            const float center_height = working_height.at(x, y);
+            float max_instability = 0.0F;
+            for (const std::array<int, 2>& offset : kNeighborOffsets) {
+                const int nx = static_cast<int>(x) + offset[0];
+                const int ny = static_cast<int>(y) + offset[1];
+                if (nx < 0 || ny < 0 || nx >= static_cast<int>(desc.width) ||
+                    ny >= static_cast<int>(desc.height)) {
+                    continue;
+                }
+                const float dx = static_cast<float>(offset[0]);
+                const float dy = static_cast<float>(offset[1]);
+                const float neighbor_distance_m =
+                    std::sqrt((dx * dx) + (dy * dy)) * desc.cell_size;
+                const float allowed_drop = config.talus_slope * neighbor_distance_m;
+                const float drop =
+                    center_height - working_height.at(static_cast<std::uint32_t>(nx),
+                                                      static_cast<std::uint32_t>(ny));
+                max_instability =
+                    std::max(max_instability, std::max(0.0F, drop - allowed_drop) /
+                                                  std::max(allowed_drop, 0.001F));
+            }
+            fields.slope_instability.at(x, y) =
+                cubey::procedural::saturate(max_instability * support_gate);
+        }
+    }
+
+    fields.post_erosion_height_m = std::move(working_height);
     return fields;
 }
 
