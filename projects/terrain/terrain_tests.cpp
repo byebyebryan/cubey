@@ -683,7 +683,7 @@ void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 51> required_fields{
+    const std::array<std::string_view, 52> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldPreProcessHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
@@ -694,6 +694,7 @@ void test_terrain_product_emits_required_fields() {
         cubey::projects::terrain::kTerrainFieldMountainMass,
         cubey::projects::terrain::kTerrainFieldMountainShoulder,
         cubey::projects::terrain::kTerrainFieldMountainSummitCore,
+        cubey::projects::terrain::kTerrainFieldMountainSaddleGate,
         cubey::projects::terrain::kTerrainFieldMountainSupport,
         cubey::projects::terrain::kTerrainFieldMountainRidgeHierarchy,
         cubey::projects::terrain::kTerrainFieldRidgeSupport,
@@ -947,6 +948,8 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
         field(baseline, cubey::projects::terrain::kTerrainFieldMountainRidgeSkeleton);
     const auto& baseline_ridge_influence =
         field(baseline, cubey::projects::terrain::kTerrainFieldMountainRidgeInfluence);
+    const auto& baseline_saddle_gate =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainSaddleGate);
     const auto& range_spine =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainRangeSpine);
     const auto& envelope =
@@ -969,6 +972,8 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgeSkeleton);
     const auto& ridge_influence =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgeInfluence);
+    const auto& saddle_gate =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainSaddleGate);
     const auto& mountain_uplift =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainUplift);
     const auto& ridge_uplift =
@@ -1008,6 +1013,8 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
             "default terrain recipe should keep mountain ridge skeleton disabled");
     require(baseline_ridge_influence.summarize().max == 0.0F,
             "default terrain recipe should keep mountain ridge influence disabled");
+    require(baseline_saddle_gate.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain saddle gate disabled");
 
     const std::size_t total_samples = mountain_support.sample_count();
     const std::size_t range_spine_samples = count_active_samples(range_spine, 0.30F);
@@ -1021,6 +1028,7 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
     const std::size_t peak_support_samples = count_active_samples(peak_support, 0.20F);
     const std::size_t ridge_skeleton_samples = count_active_samples(ridge_skeleton, 0.30F);
     const std::size_t ridge_influence_samples = count_active_samples(ridge_influence, 0.20F);
+    const std::size_t saddle_gate_samples = count_active_samples(saddle_gate, 0.35F);
     if (range_spine_samples * 100U < total_samples * 6U ||
         range_spine_samples * 100U > total_samples * 62U) {
         throw std::runtime_error(
@@ -1084,6 +1092,12 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
             "terrain ridge influence should broaden skeletons without filling the map: samples=" +
             std::to_string(ridge_influence_samples) + " total=" + std::to_string(total_samples));
     }
+    if (saddle_gate_samples * 100U < total_samples * 4U ||
+        saddle_gate_samples * 100U > total_samples * 58U) {
+        throw std::runtime_error(
+            "terrain saddle gate should suppress some highland mass without filling the map: samples=" +
+            std::to_string(saddle_gate_samples) + " total=" + std::to_string(total_samples));
+    }
 
     require(mountain.summary.height.span > baseline.summary.height.span,
             "terrain mountain recipe should increase height relief");
@@ -1101,10 +1115,16 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
     const float lowland_average_height = average_where(height, mountain_support, 0.0F, 0.12F);
     const float mountain_average_height = average_where(height, mountain_support, 0.42F);
     const float peak_average_height = average_where(height, peak_support, 0.36F);
+    const float crest_average_height = average_where(height, ridge_skeleton, 0.24F);
+    const float saddle_average_height = average_where(height, saddle_gate, 0.48F);
     require(mountain_average_height > lowland_average_height + 220.0F,
             "terrain mountain support should build above lowland samples");
     require(peak_average_height > mountain_average_height + 120.0F,
             "terrain peak support should build above broad mountain samples");
+    require(crest_average_height > saddle_average_height + 65.0F,
+            "terrain crest support should rise above saddle-gated highland mass");
+    require(peak_average_height > saddle_average_height + 160.0F,
+            "terrain peak support should rise above saddle-gated highland mass");
 }
 
 void test_terrain_mountain_macro_fields_are_hierarchical() {
@@ -1125,6 +1145,8 @@ void test_terrain_mountain_macro_fields_are_hierarchical() {
         field(baseline, cubey::projects::terrain::kTerrainFieldMountainShoulder);
     const auto& baseline_summit =
         field(baseline, cubey::projects::terrain::kTerrainFieldMountainSummitCore);
+    const auto& baseline_saddle =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainSaddleGate);
     const auto& baseline_profile =
         field(baseline, cubey::projects::terrain::kTerrainFieldMountainProfileHeightM);
     require(baseline_mass.summarize().max == 0.0F,
@@ -1133,6 +1155,8 @@ void test_terrain_mountain_macro_fields_are_hierarchical() {
             "default terrain recipe should keep mountain shoulder inactive");
     require(baseline_summit.summarize().max == 0.0F,
             "default terrain recipe should keep mountain summit core inactive");
+    require(baseline_saddle.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain saddle gate inactive");
     require(baseline_profile.summarize().max == 0.0F,
             "default terrain recipe should keep mountain profile height inactive");
 
@@ -1143,19 +1167,25 @@ void test_terrain_mountain_macro_fields_are_hierarchical() {
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainShoulder);
     const auto& summit =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainSummitCore);
+    const auto& saddle =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainSaddleGate);
 
     const cubey::procedural::ScalarFieldStats mass_stats = mass.summarize();
     const cubey::procedural::ScalarFieldStats shoulder_stats = shoulder.summarize();
     const cubey::procedural::ScalarFieldStats summit_stats = summit.summarize();
+    const cubey::procedural::ScalarFieldStats saddle_stats = saddle.summarize();
     require(mass_stats.max > 0.95F && shoulder_stats.max > 0.95F,
             "mountain mass and shoulder fields should normalize active stress sources");
     require(summit_stats.max > 0.80F,
             "mountain summit core should stay active after profile softening");
+    require(saddle_stats.max > 0.80F,
+            "mountain saddle gate should expose highland negative space");
 
     const std::size_t total_samples = mass.sample_count();
     const std::size_t mass_samples = count_active_samples(mass, 0.35F);
     const std::size_t shoulder_samples = count_active_samples(shoulder, 0.30F);
     const std::size_t summit_samples = count_active_samples(summit, 0.25F);
+    const std::size_t saddle_samples = count_active_samples(saddle, 0.35F);
     if (mass_samples * 100U < total_samples * 15U ||
         mass_samples * 100U > total_samples * 70U) {
         throw std::runtime_error(
@@ -1173,21 +1203,30 @@ void test_terrain_mountain_macro_fields_are_hierarchical() {
             "mountain summit core should be sparse: samples=" +
             std::to_string(summit_samples) + " total=" + std::to_string(total_samples));
     }
+    if (saddle_samples * 100U < total_samples * 4U ||
+        saddle_samples * 100U > total_samples * 58U) {
+        throw std::runtime_error(
+            "mountain saddle gate should stay bounded between crests: samples=" +
+            std::to_string(saddle_samples) + " total=" + std::to_string(total_samples));
+    }
 
     const float lowland_average_height = average_where(profile, mass, 0.0F, 0.10F);
     const float mass_average_height = average_where(profile, mass, 0.42F);
     const float shoulder_average_height = average_where(profile, shoulder, 0.42F);
     const float summit_average_height = average_where(profile, summit, 0.32F);
+    const float saddle_average_height = average_where(profile, saddle, 0.48F);
     require(mass_average_height > lowland_average_height + 240.0F,
             "mountain mass should lift above lowland samples");
     require(shoulder_average_height > lowland_average_height + 260.0F,
             "mountain shoulders should participate in the broad uphill profile");
     require(summit_average_height > mass_average_height + 120.0F,
             "mountain summit core should build above broad mountain mass");
+    require(summit_average_height > saddle_average_height + 160.0F,
+            "mountain summits should build above saddle-gated highland mass");
 
     const float shoulder_flat_fraction =
         masked_low_gradient_fraction(profile, shoulder, summit, 0.42F, 0.22F, 0.030F);
-    require(shoulder_flat_fraction < 0.72F,
+    require(shoulder_flat_fraction < 0.68F,
             "mountain shoulder regions should not be dominated by flat shelves");
 
     const cubey::procedural::ScalarFieldStats profile_stats = profile.summarize();
@@ -1609,6 +1648,9 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_summit_core") ==
                 cubey::projects::terrain::TerrainDebugView::MountainSummitCore,
             "terrain debug view should parse mountain summit core aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_saddle_gate") ==
+                cubey::projects::terrain::TerrainDebugView::MountainSaddleGate,
+            "terrain debug view should parse mountain saddle gate aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_support") ==
                 cubey::projects::terrain::TerrainDebugView::MountainSupport,
             "terrain debug view should parse mountain support aliases");
@@ -1805,6 +1847,9 @@ void test_terrain_debug_export_writes_review_set() {
     require(std::find(outputs.begin(), outputs.end(), "mountain-summit-core.png") !=
                 outputs.end(),
             "terrain debug manifest should list mountain summit core PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "mountain-saddle-gate.png") !=
+                outputs.end(),
+            "terrain debug manifest should list mountain saddle gate PNG output");
 
     const nlohmann::json& height_stats =
         manifest.at("fields").at(std::string(cubey::projects::terrain::kTerrainFieldHeightM));
@@ -1834,6 +1879,9 @@ void test_terrain_debug_export_writes_review_set() {
     require(manifest.at("fields").contains(
                 std::string(cubey::projects::terrain::kTerrainFieldMountainSummitCore)),
             "terrain debug manifest should include mountain summit core stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldMountainSaddleGate)),
+            "terrain debug manifest should include mountain saddle gate stats");
 
     std::filesystem::remove_all(output_dir);
 }
