@@ -189,6 +189,7 @@ struct RunConfig {
         std::string recipe{};
         std::string camera_preset{};
         std::string preview_color{};
+        std::string preview_surface{};
         int water_surface = -1;
         bool seed_set = false;
     };

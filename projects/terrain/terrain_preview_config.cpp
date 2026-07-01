@@ -1,5 +1,7 @@
 #include "terrain_preview_config.h"
 
+#include "terrain_product.h"
+
 #include <cmath>
 #include <stdexcept>
 #include <string>
@@ -62,6 +64,44 @@ TerrainPreviewColorMode terrain_preview_color_mode_from_name(std::string_view na
         "terrain preview color mode must be material, height, river, or channel");
 }
 
+std::string_view terrain_preview_surface_name(TerrainPreviewSurface surface) {
+    switch (surface) {
+    case TerrainPreviewSurface::Height:
+        return "height";
+    case TerrainPreviewSurface::PostErosion:
+        return "post-erosion";
+    case TerrainPreviewSurface::PreProcess:
+        return "pre-process";
+    }
+    return "height";
+}
+
+TerrainPreviewSurface terrain_preview_surface_from_name(std::string_view name) {
+    if (name == "height") {
+        return TerrainPreviewSurface::Height;
+    }
+    if (name == "post-erosion" || name == "post_erosion") {
+        return TerrainPreviewSurface::PostErosion;
+    }
+    if (name == "pre-process" || name == "pre_process") {
+        return TerrainPreviewSurface::PreProcess;
+    }
+    throw std::runtime_error(
+        "terrain preview surface must be height, post-erosion, or pre-process");
+}
+
+std::string_view terrain_preview_surface_field_name(TerrainPreviewSurface surface) {
+    switch (surface) {
+    case TerrainPreviewSurface::Height:
+        return kTerrainFieldHeightM;
+    case TerrainPreviewSurface::PostErosion:
+        return kTerrainFieldPostErosionHeightM;
+    case TerrainPreviewSurface::PreProcess:
+        return kTerrainFieldPreProcessHeightM;
+    }
+    return kTerrainFieldHeightM;
+}
+
 TerrainPreviewConfig terrain_preview_config_from_run_config(const cubey::RunConfig& config) {
     TerrainPreviewConfig preview;
     preview.region.grid_width =
@@ -84,6 +124,10 @@ TerrainPreviewConfig terrain_preview_config_from_run_config(const cubey::RunConf
     preview.color_mode = terrain_preview_color_mode_from_name(
         config.terrain.preview_color.empty() ? kTerrainPreviewDefaultColorMode
                                              : std::string_view(config.terrain.preview_color));
+    preview.surface = terrain_preview_surface_from_name(
+        config.terrain.preview_surface.empty()
+            ? kTerrainPreviewDefaultSurface
+            : std::string_view(config.terrain.preview_surface));
     preview.vertical_scale = cubey::run_config_float_is_set(config.terrain.vertical_scale)
                                  ? config.terrain.vertical_scale
                                  : kTerrainPreviewDefaultVerticalScale;

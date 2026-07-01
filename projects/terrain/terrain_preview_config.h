@@ -22,9 +22,16 @@ enum class TerrainPreviewColorMode : std::uint8_t {
     Channel,
 };
 
+enum class TerrainPreviewSurface : std::uint8_t {
+    Height,
+    PostErosion,
+    PreProcess,
+};
+
 inline constexpr float kTerrainPreviewDefaultVerticalScale = 1.0F;
 inline constexpr std::string_view kTerrainPreviewDefaultCameraPreset = "oblique";
 inline constexpr std::string_view kTerrainPreviewDefaultColorMode = "material";
+inline constexpr std::string_view kTerrainPreviewDefaultSurface = "height";
 inline constexpr std::string_view kTerrainPreviewDefaultRecipe =
     kTerrainRecipeTemperateMountainRangeStress;
 
@@ -32,6 +39,7 @@ struct TerrainPreviewConfig {
     TerrainRegionConfig region{};
     TerrainPreviewCameraPreset camera_preset = TerrainPreviewCameraPreset::Oblique;
     TerrainPreviewColorMode color_mode = TerrainPreviewColorMode::Material;
+    TerrainPreviewSurface surface = TerrainPreviewSurface::Height;
     float vertical_scale = kTerrainPreviewDefaultVerticalScale;
 };
 
@@ -41,6 +49,9 @@ struct TerrainPreviewConfig {
     std::string_view name);
 [[nodiscard]] std::string_view terrain_preview_color_mode_name(TerrainPreviewColorMode mode);
 [[nodiscard]] TerrainPreviewColorMode terrain_preview_color_mode_from_name(std::string_view name);
+[[nodiscard]] std::string_view terrain_preview_surface_name(TerrainPreviewSurface surface);
+[[nodiscard]] TerrainPreviewSurface terrain_preview_surface_from_name(std::string_view name);
+[[nodiscard]] std::string_view terrain_preview_surface_field_name(TerrainPreviewSurface surface);
 [[nodiscard]] TerrainPreviewConfig terrain_preview_config_from_run_config(
     const cubey::RunConfig& config);
 

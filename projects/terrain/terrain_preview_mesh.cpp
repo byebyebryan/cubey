@@ -116,9 +116,9 @@ namespace {
 
 [[nodiscard]] cubey::render::PrimitiveVec3 review_color(
     const TerrainRegionProduct& product, const cubey::procedural::ScalarField2D& height,
+    const cubey::procedural::ScalarFieldStats& height_stats,
     std::uint32_t x, std::uint32_t y, TerrainPreviewColorMode color_mode) {
-    const float height_t = normalize01(height.at(x, y), product.summary.height.min,
-                                       product.summary.height.max);
+    const float height_t = normalize01(height.at(x, y), height_stats.min, height_stats.max);
     cubey::math::Vec3 color = height_ramp(height_t);
     if (color_mode == TerrainPreviewColorMode::Height) {
         return cubey::render::srgb_to_linear_rgb(to_primitive(color));
@@ -182,7 +182,7 @@ cubey::render::MeshConfig TerrainPreviewMeshData::mesh_config() const {
 TerrainPreviewMeshData make_terrain_preview_mesh(const TerrainRegionProduct& product,
                                                  const TerrainPreviewConfig& config) {
     const cubey::procedural::ScalarField2D& height =
-        terrain_product_field(product, kTerrainFieldHeightM);
+        terrain_product_field(product, terrain_preview_surface_field_name(config.surface));
     const cubey::procedural::Grid2DDesc& desc = height.desc();
     if (desc.width < 2U || desc.height < 2U) {
         throw std::runtime_error("terrain preview mesh requires at least a 2x2 height field");
@@ -194,6 +194,7 @@ TerrainPreviewMeshData make_terrain_preview_mesh(const TerrainRegionProduct& pro
         throw std::runtime_error("terrain preview vertical scale must be positive");
     }
 
+    const cubey::procedural::ScalarFieldStats height_stats = height.summarize();
     TerrainPreviewMeshData mesh;
     mesh.vertices.reserve(height.sample_count());
     for (std::uint32_t y = 0; y < desc.height; ++y) {
@@ -203,7 +204,7 @@ TerrainPreviewMeshData make_terrain_preview_mesh(const TerrainRegionProduct& pro
             mesh.vertices.push_back({
                 .position =
                     {world_x, height_at(height, x, y, config.vertical_scale), world_z},
-                .color = review_color(product, height, x, y, config.color_mode),
+                .color = review_color(product, height, height_stats, x, y, config.color_mode),
                 .normal = to_primitive(normal_at(height, x, y, config.vertical_scale)),
             });
         }

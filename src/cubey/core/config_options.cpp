@@ -86,6 +86,8 @@ constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-fac
 constexpr std::array<std::string_view, 3> kTerrainCameraPresets{"oblique", "profile", "top"};
 constexpr std::array<std::string_view, 4> kTerrainPreviewColors{"material", "height", "river",
                                                                 "channel"};
+constexpr std::array<std::string_view, 3> kTerrainPreviewSurfaces{"height", "post-erosion",
+                                                                  "pre-process"};
 constexpr std::array<std::string_view, 6> kTerrainLabSlicePresets{
     "arid-mesa-canyon",
     "temperate-mountain-rivers",
@@ -128,7 +130,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 234> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 235> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -444,6 +446,10 @@ constexpr std::array<ConfigOptionDescriptor, 234> kRunConfigOptions{
            "--terrain-preview-color", "Preview Color", "Terrain",
            "Terrain preview diagnostic color mode.", ConfigOptionType::Enum, no_range(),
            enum_choices(kTerrainPreviewColors)),
+    option(RunConfigOptionId::TerrainPreviewSurface, "terrain.preview_surface",
+           "--terrain-preview-surface", "Preview Surface", "Terrain",
+           "Terrain product height field used as preview mesh geometry.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kTerrainPreviewSurfaces)),
     option(RunConfigOptionId::TerrainLabSlicePreset, "terrain_lab.slice_preset",
            "--terrain-lab-slice", "Slice Preset", "Terrain Lab",
            "Terrain Lab biome slice preset.", ConfigOptionType::Enum, no_range(),
@@ -1303,6 +1309,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.terrain.preview_color.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.terrain.preview_color);
+    case RunConfigOptionId::TerrainPreviewSurface:
+        return config.terrain.preview_surface.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain.preview_surface);
     case RunConfigOptionId::TerrainLabSlicePreset:
         return config.terrain_lab.slice_preset.empty()
                    ? nlohmann::json(nullptr)
@@ -1789,6 +1799,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<std::string>("recipe", options.recipe);
     adapter.writeField<std::string>("camera_preset", options.camera_preset);
     adapter.writeField<std::string>("preview_color", options.preview_color);
+    adapter.writeField<std::string>("preview_surface", options.preview_surface);
     adapter.writeField<float>("vertical_scale", options.vertical_scale);
     adapter.writeField<int>("water_surface", options.water_surface);
 }
@@ -1805,6 +1816,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<std::string>("recipe", options.recipe);
     adapter.readField<std::string>("camera_preset", options.camera_preset);
     adapter.readField<std::string>("preview_color", options.preview_color);
+    adapter.readField<std::string>("preview_surface", options.preview_surface);
     adapter.readField<float>("vertical_scale", options.vertical_scale);
     adapter.readField<int>("water_surface", options.water_surface);
 }
@@ -2460,6 +2472,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainPreviewColor:
         config.terrain.preview_color = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainPreviewSurface:
+        config.terrain.preview_surface = std::string(value);
         break;
     case RunConfigOptionId::TerrainLabSlicePreset:
         config.terrain_lab.slice_preset = std::string(value);
