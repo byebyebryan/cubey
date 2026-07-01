@@ -37,12 +37,16 @@ struct FieldNormalization {
     bool log_scale = false;
 };
 
-inline constexpr std::array<DebugViewName, 37> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 41> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::MountainRelief, "mountain-relief"},
     DebugViewName{TerrainDebugView::Height, "height"},
     DebugViewName{TerrainDebugView::PreProcessHeight, "pre-process-height"},
     DebugViewName{TerrainDebugView::Slope, "slope"},
+    DebugViewName{TerrainDebugView::ErosionDelta, "erosion-delta"},
+    DebugViewName{TerrainDebugView::GullyMask, "gully-mask"},
+    DebugViewName{TerrainDebugView::CreaseProxy, "crease-proxy"},
+    DebugViewName{TerrainDebugView::PostErosionHeight, "post-erosion-height"},
     DebugViewName{TerrainDebugView::MountainRangeSpine, "mountain-range-spine"},
     DebugViewName{TerrainDebugView::MountainEnvelope, "mountain-envelope"},
     DebugViewName{TerrainDebugView::MountainSupport, "mountain-support"},
@@ -77,12 +81,16 @@ inline constexpr std::array<DebugViewName, 37> kDebugViewNames{
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 37> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 41> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::MountainRelief,
     TerrainDebugView::Height,
     TerrainDebugView::PreProcessHeight,
     TerrainDebugView::Slope,
+    TerrainDebugView::ErosionDelta,
+    TerrainDebugView::GullyMask,
+    TerrainDebugView::CreaseProxy,
+    TerrainDebugView::PostErosionHeight,
     TerrainDebugView::MountainRangeSpine,
     TerrainDebugView::MountainEnvelope,
     TerrainDebugView::MountainSupport,
@@ -344,6 +352,14 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldPreProcessHeightM);
     case TerrainDebugView::Slope:
         return terrain_product_field(product, kTerrainFieldSlope);
+    case TerrainDebugView::ErosionDelta:
+        return terrain_product_field(product, kTerrainFieldErosionDeltaM);
+    case TerrainDebugView::GullyMask:
+        return terrain_product_field(product, kTerrainFieldGullyMask);
+    case TerrainDebugView::CreaseProxy:
+        return terrain_product_field(product, kTerrainFieldCreaseProxy);
+    case TerrainDebugView::PostErosionHeight:
+        return terrain_product_field(product, kTerrainFieldPostErosionHeightM);
     case TerrainDebugView::MountainRangeSpine:
         return terrain_product_field(product, kTerrainFieldMountainRangeSpine);
     case TerrainDebugView::MountainEnvelope:

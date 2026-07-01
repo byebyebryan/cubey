@@ -6532,6 +6532,17 @@ void update_river_moisture_fields(RiverFields& fields,
     return result;
 }
 
+[[nodiscard]] TerrainProcessGullyDiagnosticFields make_inactive_gully_diagnostic_fields(
+    const cubey::procedural::ScalarField2D& height) {
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    return TerrainProcessGullyDiagnosticFields{
+        .erosion_delta_m = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .gully_mask = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .crease_proxy = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .post_erosion_height_m = height,
+    };
+}
+
 } // namespace
 
 TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) {
@@ -6552,6 +6563,14 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
         cubey::procedural::compute_slope_curvature(carving_fields.height);
     const cubey::procedural::LocalRelief2D local_relief =
         cubey::procedural::compute_local_relief(carving_fields.height, 4U);
+    TerrainProcessGullyDiagnosticFields gully_fields =
+        config.recipe_id == kTerrainRecipeTemperateMountainRangeStress
+            ? compute_gully_erosion_diagnostic(carving_fields.height, slope_curvature.slope,
+                                               slope_curvature.curvature,
+                                               local_relief.local_span,
+                                               source_fields.mountain_support,
+                                               TerrainProcessGullyDiagnosticConfig{})
+            : make_inactive_gully_diagnostic_fields(carving_fields.height);
     update_river_moisture_fields(river_fields, slope_curvature.slope);
     cubey::procedural::ScalarField2D material_rock =
         make_material_field(carving_fields.height, slope_curvature.slope, river_fields.wetness,
@@ -6598,6 +6617,12 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldSlope, slope_curvature.slope);
     add_field(product.fields, kTerrainFieldCurvature, slope_curvature.curvature);
     add_field(product.fields, kTerrainFieldLocalRelief, local_relief.local_span);
+    add_field(product.fields, kTerrainFieldErosionDeltaM,
+              std::move(gully_fields.erosion_delta_m));
+    add_field(product.fields, kTerrainFieldGullyMask, std::move(gully_fields.gully_mask));
+    add_field(product.fields, kTerrainFieldCreaseProxy, std::move(gully_fields.crease_proxy));
+    add_field(product.fields, kTerrainFieldPostErosionHeightM,
+              std::move(gully_fields.post_erosion_height_m));
     add_field(product.fields, kTerrainFieldDrainagePotential,
               std::move(river_fields.drainage_potential));
     add_field(product.fields, kTerrainFieldRoutingFillDelta,
