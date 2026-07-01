@@ -129,3 +129,37 @@ resolve, and no far-horizon cloud layer so shader and lighting differences stay
 visible. Surface noon/backlit parity is the first acceptance target; dawn,
 dusk, and night checks make sure the shared environment lighting contract does
 not keep clouds sunlit after the sun is below the horizon.
+
+## Reference-Parity Implementation Checkpoint 2026-07-01
+
+The shared atmosphere path now has an explicit `reference-parity` cloud preset
+that selects the local `cloud-ref-compatible` renderer rather than the high or
+orbit cloud paths. This is intended as a narrow surface-cloud testbed, not a
+replacement for the later high-oblique/orbit solution.
+
+The shared cloud frame also receives resolved environment lighting from
+`AtmosphereEnvironmentLighting`: separate sun, moon, and ambient terms are now
+packed into cloud uniforms instead of assuming a fixed sun-only input. This
+keeps the parity path compatible with the day/night environment contract before
+cloud lighting is promoted to a fuller production model.
+
+`cloud-ref-compatible` now uses the same local idea as `projects/cloud_ref` for
+direct lighting: march light optical depth, integrate view transmittance through
+optical thickness, keep deterministic single-frame sampling, and rely on the
+terrain-post resolve for the final edge cleanup. The current capture pack is:
+
+```sh
+projects/atmosphere/capture_cloud_ref_parity.sh outputs/cloud-ref-parity-current
+```
+
+Current read:
+
+- atmosphere surface-up/noon captures now recover the high-frequency local cloud
+  shape closely enough to use as the next shared-cloud tuning baseline;
+- `cloud_ref` remains the cleaner surface/horizon reference because it owns its
+  own dome, water, and horizon masking;
+- atmosphere horizon captures still expose integration artifacts, especially the
+  hard horizon handoff and night/twilight contrast, so horizon polish is not
+  accepted yet;
+- high-oblique/orbit weather remains deliberately out of scope for this parity
+  step.
