@@ -122,11 +122,12 @@ fill and direct sun:
 6. integrate `direct + ambient` into linear cloud radiance, and output
    radiance plus view transmittance/alpha for final resolve and composition.
 
-The current `cloud_ref` powder toggle should be treated as experimental. It
-multiplies the direct-light mix weight by a local density term, so thin cloud
-edges can lose direct sun when the toggle is enabled. That is the opposite of
-the useful Beer-Powder role seen in the references, where powder is a controlled
-local-scattering approximation layered on top of Beer transmittance and phase.
+The earlier `cloud_ref` powder toggle was treated as experimental because it
+multiplied the direct-light mix weight by a local density term. Current
+`cloud_ref` lighting should keep powder/rim/backlit controls tied to view and
+light optical depth diagnostics instead. That keeps the Beer-Powder role closer
+to the references: a controlled local-scattering approximation layered on top of
+Beer transmittance and phase, not a density switch that suppresses direct light.
 
 Reference alignment for this lighting direction:
 

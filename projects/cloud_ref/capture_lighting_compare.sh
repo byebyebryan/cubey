@@ -102,7 +102,8 @@ for view in surface-up surface-sun high-oblique; do
         "${DEFAULT_DIRECT}" "${DEFAULT_PHASE}" "${DEFAULT_POWDER}" 2.00
 done
 
-for debug in ambient-light direct-light phase-light lighting shadow cloud-alpha raw-final; do
+for debug in ambient-light direct-light phase-light lighting shadow \
+    view-optical-depth light-optical-depth cloud-alpha raw-final; do
     capture "surface-up-${debug}" surface-up "debug ${debug}" "${debug}" \
         "${DEFAULT_AMBIENT}" "${DEFAULT_DIRECT}" "${DEFAULT_PHASE}" "${DEFAULT_POWDER}" \
         "${DEFAULT_SHADOW}"

@@ -47,6 +47,8 @@ Useful runs:
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view direct-light
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view phase-light
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view shadow
+./build/dev/projects/cloud_ref/cloud_ref --debug-view view-optical-depth
+./build/dev/projects/cloud_ref/cloud_ref --debug-view light-optical-depth
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view cloud-alpha
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view distance
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view steps
@@ -93,9 +95,13 @@ shows the same composition before final resolve/post.
 The lighting checkpoint in `outputs/cloud-ref-lighting-review/` splits cloud
 lighting diagnostics into `ambient-light`, `direct-light`, and `phase-light`,
 then retunes the standalone march for less ambient wash, warmer direct light,
-and a slightly more contrast-preserving final pass. This is a cloud-only pass:
-it does not pursue TerrainEngine water, terrain, bloom, or god-ray context, so
-the final views still depend heavily on the placeholder horizon scene.
+and a slightly more contrast-preserving final pass. The follow-up optical-depth
+pass adds `view-optical-depth` and `light-optical-depth` diagnostics, bases
+powder/rim/backlit response on optical thickness rather than raw density gates,
+and moves the extra sun glare from marched cloud radiance into final composite.
+This is a cloud-only pass: it does not pursue TerrainEngine water, terrain,
+bloom, or god-ray context, so the final views still depend heavily on the
+placeholder horizon scene.
 
 The sampling/coverage checkpoint in
 `outputs/cloud-ref-sampling-coverage-review-20260630/` changes final output to a
@@ -138,10 +144,13 @@ Rendering test-bed direction:
   transmittance/alpha; final resolve/composite should be isolated from raw
   lighting diagnostics.
 - Powder is a scalar boost. It now modifies direct sun response on top of Beer
-  shadowing instead of acting as the ambient/direct mix gate.
+  shadowing and uses optical thickness instead of acting as the ambient/direct
+  mix gate.
+- Sun disk/glare is a composite concern. The march should output cloud radiance
+  and alpha; final composite can add attenuated sun-through-cloud presentation.
 - `capture_lighting_compare.sh` captures final, isolated ambient/direct/phase,
-  powder, shadow, and debug-view comparisons for `surface-up` and
-  `high-oblique`.
+  powder, shadow, optical-depth, and debug-view comparisons for `surface-up`,
+  `surface-sun`, and `high-oblique`.
 - Ref alignment: TerrainEngine guards density/march parity; Godot v2 and
   UnityVolumetricCloudsURP are stronger lighting/product references; diharaw,
   Meteoros, Project-Marshmallow, and ShaderToy examples are comparison and

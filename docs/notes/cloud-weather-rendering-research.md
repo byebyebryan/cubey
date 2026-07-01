@@ -1397,3 +1397,23 @@ Validation notes:
 cmake --build --preset dev
 ctest --preset dev -R '^(cubey_core_tests|atmosphere_config_tests|cloud_ref_config_tests|cloud_ref_2_config_tests|clouds_legacy_config_tests|atmosphere_headless_writes_png|cloud_ref_surface_headless_writes_png|cloud_ref_high_headless_writes_png)$' --output-on-failure
 ```
+
+## Cloud Ref Optical Lighting Checkpoint 2026-07-01
+
+`cloud_ref` now has a cleaner local-lighting diagnostic loop before propagating
+changes back to shared `CloudLayer`:
+
+- `view-optical-depth` exposes normalized Beer depth accumulated along the view
+  ray;
+- `light-optical-depth` exposes normalized average cone-light depth at cloud
+  samples;
+- backlit core, rim, and powder controls now use optical thickness rather than
+  raw per-sample density gates;
+- the extra sun disk/halo presentation moved from cloud march radiance to final
+  composite, where it is attenuated by the resolved cloud layer alpha.
+
+This keeps `raw-final` closer to a cloud-layer diagnostic while leaving final
+presentation free to approximate sun-through-cloud glare. The next review should
+use `projects/cloud_ref/capture_lighting_compare.sh` and inspect
+`surface-up`, `surface-sun`, and `high-oblique` before deciding whether to copy
+any lighting mechanics into shared atmosphere clouds.
