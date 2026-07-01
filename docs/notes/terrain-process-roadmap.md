@@ -25,6 +25,11 @@ Those are still diagnostic recipes, not finished biome definitions. Rivers,
 mountains, materials, and vegetation should become outputs of shared drivers and
 processes, then recipes can combine them into biome slices.
 
+The broader project lane map is captured in
+[Terrain project map](terrain-project-map.md). Use that note when choosing
+whether a batch belongs to source drivers, process operators, product fields,
+review consumers, or integration adapters.
+
 ## Lessons To Preserve
 
 - Hand-authored feature masks do not scale. Single lines, disks, centered
@@ -50,13 +55,42 @@ processes, then recipes can combine them into biome slices.
 | Scale | Rivers and mountains are still patch-local with a padded halo. | Later world/tile work should generate deterministic world-coordinate basin and range sources, then rasterize local products plus halo. |
 | Capture evidence | Scalar review directories now write `manifest.json` beside the PNGs. | Use manifest ranges and hashes when comparing captures instead of relying only on manual image inspection. |
 
+## ShaderToy Operator Extraction
+
+The ShaderToy terrain/hydro references are useful, but only when routed through
+Cubey's field pipeline. Treat them as compact process-operator and visual
+vocabulary references, not as renderer or river-topology donors.
+
+Near-term borrow targets:
+
+- clean-room gully/erosion diagnostics over `height_m`, slope/derivatives, local
+  relief, and optional mountain support, producing fields such as
+  `erosion_delta_m`, `gully_mask`, and `crease_proxy`;
+- later shallow-water/lake relaxation diagnostics over `height_m + water_depth_m`
+  with explicit outflow, boundary, and mass-change fields;
+- shoreline and water-contact visual vocabulary for future terrain/ocean handoff
+  work, such as water-depth tint, wet sand, foam bands, and seabed visibility.
+
+Do not use ShaderToy-authored river curves as river topology. River network
+source work should stay tied to the graph/hydrology references, while ShaderToy
+informs how the fields are reviewed and composed visually.
+
+The detailed extraction and guardrails are in
+[Terrain ShaderToy operator extraction](terrain-shadertoy-operator-extraction.md).
+
 ## Near-Term Order
 
-1. Use the new process helpers and manifests to tune river incision and
-   mountain hierarchy in small passes.
-2. Add new process helpers only when the current helper set is too narrow for a
-   real terrain operation.
-3. Only then add another terrain process or water body. Lakes, coast, dunes,
+1. Preserve the current river and mountain evidence: scalar exports, manifests,
+   renderer-backed previews, and deterministic stress recipes.
+2. Use the new process helpers and manifests to tune river incision and mountain
+   hierarchy in small passes.
+3. Start the next process-helper batch with a clean-room gully/erosion
+   diagnostic for the mountain stress recipe before opening lakes or shoreline
+   work.
+4. Use that diagnostic evidence to improve the mountain source hierarchy.
+5. Return to river topology with graph/hydrology references after mountain
+   process/source quality is clearer.
+6. Only then add another terrain process or water body. Lakes, coast, dunes,
    snow, talus, and foliage eligibility should build on these product/process
    pieces instead of restarting from authored shapes.
 

@@ -69,9 +69,15 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain reboot current captures](terrain-reboot-current-captures.md):
   current `projects/terrain` 513 PNG review set, what to inspect, and river
   driver limitations.
+- [Terrain project map](terrain-project-map.md): lane map for source drivers,
+  process operators, product fields, review consumers, integration adapters, and
+  staged terrain work after the reference and ShaderToy passes.
 - [Terrain process roadmap](terrain-process-roadmap.md): current reset point
   after river/mountain experiments, reusable process-field gaps, and the
   near-term order before adding more biome slices.
+- [Terrain ShaderToy operator extraction](terrain-shadertoy-operator-extraction.md):
+  deeper ShaderToy terrain/hydro review, what to borrow as clean-room process
+  operators or visual cues, and what to keep out of river topology.
 - [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
   next river-quality pivot: promote `stream_order` and `flow_accumulation` into
   connected corridor selection while avoiding direct graph-edge rendering.

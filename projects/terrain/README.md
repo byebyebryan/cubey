@@ -90,7 +90,13 @@ lowering. The scalar review export now also writes `manifest.json` with recipe,
 grid, summary, field stats, view names, and output filenames.
 
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
-the current design checkpoint.
+the current design checkpoint. The staged lane map is captured in
+[Terrain project map](../../docs/notes/terrain-project-map.md): source drivers,
+process operators, product fields, review consumers, and integration adapters.
+The ShaderToy terrain/hydro extraction boundary is captured in
+[Terrain ShaderToy operator extraction](../../docs/notes/terrain-shadertoy-operator-extraction.md):
+use those refs for clean-room process diagnostics and visual vocabulary, not
+river topology or shader ports.
 
 ## Commands
 
