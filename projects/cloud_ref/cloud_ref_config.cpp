@@ -95,6 +95,9 @@ CloudsCameraMode clouds_camera_mode_from_string(std::string_view value) {
     if (value == "surface-up") {
         return CloudsCameraMode::SurfaceUp;
     }
+    if (value == "surface-sun") {
+        return CloudsCameraMode::SurfaceSun;
+    }
     if (value == "high" || value == "high-top") {
         return CloudsCameraMode::High;
     }
@@ -116,6 +119,8 @@ const char* clouds_camera_mode_name(CloudsCameraMode mode) {
         return "surface";
     case CloudsCameraMode::SurfaceUp:
         return "surface-up";
+    case CloudsCameraMode::SurfaceSun:
+        return "surface-sun";
     case CloudsCameraMode::High:
         return "high";
     case CloudsCameraMode::HighOblique:
@@ -325,6 +330,8 @@ float clouds_default_camera_altitude_m(CloudsCameraMode mode) {
     case CloudsCameraMode::Surface:
         return 800.0F;
     case CloudsCameraMode::SurfaceUp:
+        return 800.0F;
+    case CloudsCameraMode::SurfaceSun:
         return 800.0F;
     case CloudsCameraMode::High:
         return 12000.0F;

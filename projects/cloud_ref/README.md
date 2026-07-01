@@ -28,6 +28,7 @@ Useful runs:
 ./build/dev/projects/cloud_ref/cloud_ref
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-camera-mode surface
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-camera-mode surface-up
+./build/dev/projects/cloud_ref/cloud_ref --cloud-camera-mode surface-sun
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-camera-mode high
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-camera-mode high-oblique
 ./build/dev/projects/cloud_ref/cloud_ref --cloud-weather-preset fair-weather
@@ -69,9 +70,9 @@ Current Cubey port checkpoint:
 - generated 3D base/detail noise now uses mip chains like the OpenGL source;
 - Perlin-Worley, Worley, and weather texture generation use source-aligned
   formulas;
-- the default cloud shell uses the TerrainEngine coordinate model: 600 km
-  planet radius, camera height above the local ground plane, 5 km cloud base,
-  and a shorter 11 km broken-cumulus thickness;
+- the default fair-weather cloud shell uses the TerrainEngine coordinate model:
+  600 km planet radius, camera height above the local ground plane, 5 km cloud
+  base, and a shorter 9 km ordinary-cloud thickness;
 - cloud density, coverage, erosion, Beer transmittance, cone light march, and
   source-style fixed sun direction are now closer to TerrainEngine than to the
   earlier Cubey cloud prototype.
@@ -119,12 +120,12 @@ replacement for brute-force `s2`. Use
 `projects/cloud_ref/capture_sampling_compare.sh` to compare `s1 terrain-post`,
 `s1 metadata-bilateral`, and brute-force `s2 terrain-post` from the same views.
 
-The default and broken-cumulus ceiling is intentionally below the earlier 22 km
-value but still in a practical mid/high cloud range. The current reference does
-not model true towering cumulus structure, and an overly tall ordinary volume
-stretched clouds vertically enough to make edge/far-field sampling artifacts
-more visible. Storm and cirrus presets keep higher ceilings because those
-presets explicitly represent taller or higher-altitude cloud types.
+The fair-weather and broken-cumulus ceilings are intentionally below the earlier
+22 km value but still in a practical mid/high cloud range. The current reference
+does not model true towering cumulus structure, and an overly tall ordinary
+volume stretched clouds vertically enough to make edge/far-field sampling
+artifacts more visible. Storm and cirrus presets keep higher ceilings because
+those presets explicitly represent taller or higher-altitude cloud types.
 
 Rendering test-bed direction:
 
@@ -136,8 +137,8 @@ Rendering test-bed direction:
 - Final output should remain a cloud layer containing linear radiance plus
   transmittance/alpha; final resolve/composite should be isolated from raw
   lighting diagnostics.
-- Powder is a scalar boost and defaults off. It now modifies direct sun response
-  on top of Beer shadowing instead of acting as the ambient/direct mix gate.
+- Powder is a scalar boost. It now modifies direct sun response on top of Beer
+  shadowing instead of acting as the ambient/direct mix gate.
 - `capture_lighting_compare.sh` captures final, isolated ambient/direct/phase,
   powder, shadow, and debug-view comparisons for `surface-up` and
   `high-oblique`.

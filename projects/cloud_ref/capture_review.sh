@@ -8,7 +8,7 @@ WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"
 QUALITY="${QUALITY:-full}"
-PRESET="${PRESET:-broken-cumulus}"
+PRESET="${PRESET:-fair-weather}"
 
 mkdir -p "${OUT_DIR}"
 
@@ -28,6 +28,7 @@ capture() {
 
 capture surface --cloud-camera-mode surface
 capture surface-up --cloud-camera-mode surface-up
+capture surface-sun --cloud-camera-mode surface-sun
 capture high --cloud-camera-mode high
 capture high-oblique --cloud-camera-mode high-oblique
 capture orbit-preview --cloud-camera-mode orbit

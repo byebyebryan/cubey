@@ -29,6 +29,9 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref::clouds_camera_mode_from_string("surface-up") ==
                 cubey::projects::cloud_ref::CloudsCameraMode::SurfaceUp,
             "surface-up camera mode should parse");
+    require(cubey::projects::cloud_ref::clouds_camera_mode_from_string("surface-sun") ==
+                cubey::projects::cloud_ref::CloudsCameraMode::SurfaceSun,
+            "surface-sun camera mode should parse");
     require(cubey::projects::cloud_ref::clouds_camera_mode_from_string("high-oblique") ==
                 cubey::projects::cloud_ref::CloudsCameraMode::HighOblique,
             "high-oblique camera mode should parse");

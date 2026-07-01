@@ -50,6 +50,7 @@ constexpr float kDefaultFovyRadians = 62.0F * (glm::pi<float>() / 180.0F);
 constexpr float kCameraDragRadiansPerPixel = 0.006F;
 constexpr float kSurfaceMinPitchRadians = -1.50F;
 constexpr float kSurfaceMaxPitchRadians = 1.35F;
+constexpr float kCloudRefSunYawRadians = -2.6779451F;
 constexpr std::uint32_t kBaseNoiseSize = 128U;
 constexpr std::uint32_t kDetailNoiseSize = 32U;
 constexpr std::uint32_t kWeatherTextureSize = 1024U;
@@ -64,9 +65,10 @@ constexpr std::uint32_t kCloudRefDetailNoiseBinding = 3;
 constexpr std::uint32_t kCloudRefWeatherBinding = 4;
 constexpr std::uint32_t kCloudRefCompositeCloudBinding = 1;
 
-constexpr std::array<CloudsCameraMode, 6> kCloudRefCameraModes{
-    CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
-    CloudsCameraMode::HighOblique, CloudsCameraMode::Orbit, CloudsCameraMode::OrbitTerminator,
+constexpr std::array<CloudsCameraMode, 7> kCloudRefCameraModes{
+    CloudsCameraMode::Surface,        CloudsCameraMode::SurfaceUp, CloudsCameraMode::SurfaceSun,
+    CloudsCameraMode::High,           CloudsCameraMode::HighOblique,
+    CloudsCameraMode::Orbit,          CloudsCameraMode::OrbitTerminator,
 };
 constexpr std::array<CloudsQuality, 3> kCloudRefQualityModes{
     CloudsQuality::Quarter,
@@ -268,6 +270,8 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
     switch (mode) {
     case CloudsCameraMode::SurfaceUp:
         return 0.45F;
+    case CloudsCameraMode::SurfaceSun:
+        return 0.40F;
     case CloudsCameraMode::High:
         return -0.18F;
     case CloudsCameraMode::HighOblique:
@@ -278,6 +282,21 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
     case CloudsCameraMode::Surface:
     default:
         return -0.06F;
+    }
+}
+
+[[nodiscard]] float cloud_ref_camera_base_yaw(CloudsCameraMode mode) {
+    switch (mode) {
+    case CloudsCameraMode::SurfaceSun:
+        return kCloudRefSunYawRadians;
+    case CloudsCameraMode::Surface:
+    case CloudsCameraMode::SurfaceUp:
+    case CloudsCameraMode::High:
+    case CloudsCameraMode::HighOblique:
+    case CloudsCameraMode::Orbit:
+    case CloudsCameraMode::OrbitTerminator:
+    default:
+        return 0.0F;
     }
 }
 
@@ -308,8 +327,9 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
 [[nodiscard]] CloudRefViewBasis cloud_ref_view_basis(const CloudsConfig& config, float yaw,
                                                      float pitch_offset) {
     const cubey::math::Vec3 surface_up{0.0F, 1.0F, 0.0F};
-    const float yaw_sin = std::sin(yaw);
-    const float yaw_cos = std::cos(yaw);
+    const float camera_yaw = yaw + cloud_ref_camera_base_yaw(config.camera_mode);
+    const float yaw_sin = std::sin(camera_yaw);
+    const float yaw_cos = std::cos(camera_yaw);
     const cubey::math::Vec3 flat_forward{yaw_sin, 0.0F, -yaw_cos};
     const cubey::math::Vec3 right{yaw_cos, 0.0F, yaw_sin};
     const float pitch = cloud_ref_camera_base_pitch(config.camera_mode) + pitch_offset;
@@ -340,9 +360,9 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
         config.view_steps_override > 0 ? config.view_steps_override : budget.view_steps;
     const cubey::math::Vec3 sun_direction = cloud_ref_source_sun_direction();
     const cubey::math::Vec3 cloud_top_color =
-        cubey::math::Vec3{169.0F, 149.0F, 149.0F} * (1.5F / 255.0F);
+        cubey::math::Vec3{238.0F, 240.0F, 235.0F} * (1.08F / 255.0F);
     const cubey::math::Vec3 cloud_bottom_color =
-        cubey::math::Vec3{65.0F, 70.0F, 80.0F} * (1.5F / 255.0F);
+        cubey::math::Vec3{128.0F, 140.0F, 150.0F} * (1.15F / 255.0F);
     return {
         .camera_right_aspect = {basis.right.x, basis.right.y, basis.right.z, aspect},
         .camera_up_tan_half_fovy = {basis.up.x, basis.up.y, basis.up.z, tan_half_fovy},

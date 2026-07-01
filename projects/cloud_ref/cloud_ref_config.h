@@ -19,6 +19,7 @@ enum class CloudsCameraMode : std::uint32_t {
     HighOblique = 3,
     Orbit = 4,
     OrbitTerminator = 5,
+    SurfaceSun = 6,
 };
 
 enum class CloudsQuality : std::uint32_t {
@@ -94,8 +95,8 @@ struct CloudsTimeConfig {
 struct CloudsConfig {
     CloudsCameraMode camera_mode = CloudsCameraMode::Surface;
     CloudsQuality quality = CloudsQuality::Full;
-    CloudsWeatherPreset weather_preset = CloudsWeatherPreset::BrokenCumulus;
-    CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
+    CloudsWeatherPreset weather_preset = CloudsWeatherPreset::FairWeather;
+    CloudsCloudStyle cloud_style = CloudsCloudStyle::FairWeather;
     CloudsDebugView debug_view = CloudsDebugView::Final;
     bool temporal_enabled = true;
     CloudsTimeConfig time{};
@@ -105,24 +106,24 @@ struct CloudsConfig {
     float planet_radius_m = kCloudsDefaultPlanetRadiusM;
     float camera_altitude_m = 800.0F;
     float bottom_altitude_m = kCloudsDefaultBottomAltitudeM;
-    float top_altitude_m = kCloudsDefaultTopAltitudeM;
-    float coverage = 0.45F;
-    float density = 0.02F;
-    float weather_scale_km = 210.0F;
-    float wind_speed_mps = 450.0F;
-    float shadow_strength = 0.82F;
+    float top_altitude_m = 14000.0F;
+    float coverage = 0.30F;
+    float density = 0.016F;
+    float weather_scale_km = 260.0F;
+    float wind_speed_mps = 260.0F;
+    float shadow_strength = 0.30F;
     float horizon_strength = 0.62F;
     float weather_fronts = 1.0F;
     float weather_cells = 1.0F;
     float weather_streaks = 1.0F;
     float detail_erosion = 1.0F;
-    float ambient_strength = 0.82F;
-    float direct_strength = 1.28F;
-    float phase_strength = 1.14F;
-    float powder_strength = 0.0F;
-    float final_contrast = 1.17F;
-    float final_saturation = 1.12F;
-    float horizon_glow_strength = 0.55F;
+    float ambient_strength = 1.30F;
+    float direct_strength = 1.15F;
+    float phase_strength = 1.20F;
+    float powder_strength = 0.20F;
+    float final_contrast = 0.98F;
+    float final_saturation = 1.0F;
+    float horizon_glow_strength = 0.68F;
     float sun_glare_strength = 1.0F;
     float crispiness = 40.0F;
     float curliness = 0.10F;
@@ -130,7 +131,7 @@ struct CloudsConfig {
     bool post_blur_enabled = true;
     CloudsResolveMode resolve_mode = CloudsResolveMode::TerrainPost;
     float post_blur_strength = 1.0F;
-    float post_blur_radius_px = 1.0F;
+    float post_blur_radius_px = 1.5F;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;
 };

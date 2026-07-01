@@ -8,11 +8,16 @@ WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"
 QUALITY="${QUALITY:-full}"
-PRESET="${PRESET:-broken-cumulus}"
+PRESET="${PRESET:-fair-weather}"
 VIEW_STEPS="${VIEW_STEPS:-64}"
 RESOLVE_MODE="${RESOLVE_MODE:-terrain-post}"
 RESOLVE_RADIUS="${RESOLVE_RADIUS:-1.5}"
 RESOLVE_STRENGTH="${RESOLVE_STRENGTH:-1.0}"
+DEFAULT_AMBIENT="${DEFAULT_AMBIENT:-1.30}"
+DEFAULT_DIRECT="${DEFAULT_DIRECT:-1.15}"
+DEFAULT_PHASE="${DEFAULT_PHASE:-1.20}"
+DEFAULT_POWDER="${DEFAULT_POWDER:-0.20}"
+DEFAULT_SHADOW="${DEFAULT_SHADOW:-0.30}"
 
 mkdir -p "${OUT_DIR}"
 INDEX="${OUT_DIR}/index.md"
@@ -76,21 +81,31 @@ capture() {
 
 write_header
 
-for view in surface-up high-oblique; do
-    capture "${view}-final" "${view}" "default final" final 0.82 1.28 1.14 0.00 0.82
-    capture "${view}-ambient-only" "${view}" "ambient only" final 0.82 0.00 0.00 0.00 0.82
-    capture "${view}-direct-only" "${view}" "direct only" final 0.00 1.28 0.00 0.00 0.82
-    capture "${view}-phase-only" "${view}" "phase only" final 0.00 0.00 1.14 0.00 0.82
-    capture "${view}-powder-035" "${view}" "powder 0.35" final 0.82 1.28 1.14 0.35 0.82
-    capture "${view}-powder-070" "${view}" "powder 0.70" final 0.82 1.28 1.14 0.70 0.82
-    capture "${view}-shadow-000" "${view}" "shadow 0.00" final 0.82 1.28 1.14 0.00 0.00
-    capture "${view}-shadow-100" "${view}" "shadow 1.00" final 0.82 1.28 1.14 0.00 1.00
-    capture "${view}-shadow-200" "${view}" "shadow 2.00" final 0.82 1.28 1.14 0.00 2.00
+for view in surface-up surface-sun high-oblique; do
+    capture "${view}-final" "${view}" "default final" final "${DEFAULT_AMBIENT}" \
+        "${DEFAULT_DIRECT}" "${DEFAULT_PHASE}" "${DEFAULT_POWDER}" "${DEFAULT_SHADOW}"
+    capture "${view}-ambient-only" "${view}" "ambient only" final "${DEFAULT_AMBIENT}" \
+        0.00 0.00 "${DEFAULT_POWDER}" "${DEFAULT_SHADOW}"
+    capture "${view}-direct-only" "${view}" "direct only" final 0.00 "${DEFAULT_DIRECT}" \
+        0.00 "${DEFAULT_POWDER}" "${DEFAULT_SHADOW}"
+    capture "${view}-phase-only" "${view}" "phase only" final 0.00 0.00 \
+        "${DEFAULT_PHASE}" "${DEFAULT_POWDER}" "${DEFAULT_SHADOW}"
+    capture "${view}-powder-035" "${view}" "powder 0.35" final "${DEFAULT_AMBIENT}" \
+        "${DEFAULT_DIRECT}" "${DEFAULT_PHASE}" 0.35 "${DEFAULT_SHADOW}"
+    capture "${view}-powder-070" "${view}" "powder 0.70" final "${DEFAULT_AMBIENT}" \
+        "${DEFAULT_DIRECT}" "${DEFAULT_PHASE}" 0.70 "${DEFAULT_SHADOW}"
+    capture "${view}-shadow-000" "${view}" "shadow 0.00" final "${DEFAULT_AMBIENT}" \
+        "${DEFAULT_DIRECT}" "${DEFAULT_PHASE}" "${DEFAULT_POWDER}" 0.00
+    capture "${view}-shadow-100" "${view}" "shadow 1.00" final "${DEFAULT_AMBIENT}" \
+        "${DEFAULT_DIRECT}" "${DEFAULT_PHASE}" "${DEFAULT_POWDER}" 1.00
+    capture "${view}-shadow-200" "${view}" "shadow 2.00" final "${DEFAULT_AMBIENT}" \
+        "${DEFAULT_DIRECT}" "${DEFAULT_PHASE}" "${DEFAULT_POWDER}" 2.00
 done
 
 for debug in ambient-light direct-light phase-light lighting shadow cloud-alpha raw-final; do
     capture "surface-up-${debug}" surface-up "debug ${debug}" "${debug}" \
-        0.82 1.28 1.14 0.00 0.82
+        "${DEFAULT_AMBIENT}" "${DEFAULT_DIRECT}" "${DEFAULT_PHASE}" "${DEFAULT_POWDER}" \
+        "${DEFAULT_SHADOW}"
 done
 
 if command -v magick >/dev/null 2>&1; then

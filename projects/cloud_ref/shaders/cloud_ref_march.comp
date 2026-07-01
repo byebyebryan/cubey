@@ -176,7 +176,7 @@ vec3 cloud_ref_cloud_ambient(vec3 position, vec3 direction, DensitySample sample
                     (0.36 + 0.46 * day + 0.32 * max(sun_elevation, 0.0));
     top_fill += sky_top * (0.12 + 0.12 * day);
 
-    vec3 bottom_fill = params.cloud_color_bottom_horizon.rgb * (0.14 + 0.38 * day);
+    vec3 bottom_fill = params.cloud_color_bottom_horizon.rgb * (0.20 + 0.45 * day);
     vec3 horizon_fill = horizon_sky * params.cloud_color_bottom_horizon.w * (0.10 + 0.16 * day);
     vec3 twilight_fill = vec3(1.0, 0.48, 0.23) * low_sun * day * 0.18;
 
@@ -187,18 +187,19 @@ vec3 cloud_ref_cloud_ambient(vec3 position, vec3 direction, DensitySample sample
 }
 
 float cloud_ref_direct_phase(float cos_theta) {
-    float forward = cloud_ref_hg(cos_theta, 0.58) * 5.0;
-    float backward = cloud_ref_hg(cos_theta, -0.20) * 1.4;
-    return clamp(0.64 + forward + backward, 0.55, 4.2);
+    float forward = cloud_ref_hg(cos_theta, 0.46) * 1.55;
+    float backward = cloud_ref_hg(cos_theta, -0.16) * 1.0;
+    return clamp(0.58 + forward + backward, 0.48, 1.60);
 }
 
 float cloud_ref_rim_phase(float cos_theta, float light_transmittance,
                           DensitySample sample_data) {
     float forward_rim = pow(max(cos_theta, 0.0), 7.0);
-    float edge = 1.0 - smoothstep(0.16, 0.82, sample_data.density);
+    float edge = smoothstep(0.04, 0.18, sample_data.density) *
+                 (1.0 - smoothstep(0.32, 0.70, sample_data.density));
     float top_bias = smoothstep(0.18, 0.92, sample_data.height_fraction);
     return forward_rim * (0.30 + 0.70 * light_transmittance) *
-           (0.45 + 0.55 * top_bias) * (0.55 + 0.45 * edge);
+           (0.45 + 0.55 * top_bias) * (0.28 + 1.10 * edge);
 }
 
 bool cloud_ref_shell_segment(vec3 origin, vec3 direction, out float start_t, out float end_t) {
@@ -259,7 +260,7 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
     vec3 step_vec = direction * ds;
     vec3 pos = origin + direction * (start_t + ds * sample_phase);
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
-    vec3 sun_color = vec3(1.10, 1.10, 0.86) * max(params.sun_direction_intensity.w, 0.0);
+    vec3 sun_color = vec3(1.05, 1.035, 0.98) * max(params.sun_direction_intensity.w, 0.0);
     float light_dot_eye = dot(sun_dir, direction);
     float density_factor = max(params.weather.y, 0.0);
     float sigma_ds = -ds * density_factor;
@@ -287,22 +288,39 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
                                               light_dot_eye);
             float d_transmittance = exp(sample_data.density * sigma_ds);
             float shadow_strength = max(params.cloud_color_top_shadow.w, 0.0);
+            float forward_alignment = smoothstep(0.22, 0.94, light_dot_eye);
+            float dense_core = smoothstep(0.24, 0.76, sample_data.density);
+            float lit_edge = smoothstep(0.03, 0.28, sample_data.density) *
+                             (1.0 - smoothstep(0.42, 0.84, sample_data.density));
+            float forward_shadow_boost =
+                mix(1.0, 1.0 + 0.90 * dense_core, forward_alignment);
             float shadowed_light =
-                pow(clamp(light_transmittance, 0.001, 1.0), shadow_strength);
+                pow(clamp(light_transmittance, 0.001, 1.0),
+                    shadow_strength * forward_shadow_boost);
             float direct_response = cloud_ref_direct_phase(light_dot_eye);
             float rim_response = cloud_ref_rim_phase(light_dot_eye, shadowed_light, sample_data);
             float powder_shape =
                 (1.0 - exp(-2.0 * sample_data.density)) *
                 (0.35 + 0.65 * smoothstep(-0.25, 0.75, light_dot_eye));
+            float forward_powder_gate =
+                mix(1.0, 1.0 - 0.62 * dense_core, forward_alignment);
             float powder_multiplier =
                 1.0 + clamp(params.lighting_strengths.w, 0.0, 1.0) *
-                          clamp(powder_shape, 0.0, 0.85);
+                          clamp(powder_shape * forward_powder_gate, 0.0, 0.65);
 
             vec3 ambient_source =
                 cloud_ref_cloud_ambient(pos, direction, sample_data) *
                 max(params.lighting_strengths.x, 0.0);
+            float backlit_core_shadow = forward_alignment *
+                                        smoothstep(0.05, 0.38, sample_data.density);
+            ambient_source *= mix(1.0, 0.72, backlit_core_shadow);
+            float forward_direct_gate =
+                mix(1.0, 0.42 + 0.58 * lit_edge, forward_alignment);
+            float direct_core_gate =
+                forward_direct_gate *
+                mix(1.0, mix(0.34, 1.0, lit_edge), forward_alignment * dense_core);
             vec3 direct_source = sun_color * shadowed_light * direct_response *
-                                 powder_multiplier *
+                                 direct_core_gate * powder_multiplier *
                                  max(params.lighting_strengths.y, 0.0);
             vec3 phase_source =
                 sun_color * rim_response * max(params.lighting_strengths.z, 0.0);
@@ -338,8 +356,13 @@ MarchResult cloud_ref_march_sample(vec3 origin, vec3 direction, float start_t, f
                 clamp(params.final_options.z, 0.0, 3.0);
     color = mix(color, background * alpha, clamp(fog, 0.0, 1.0));
     float sun = clamp(dot(sun_dir, direction), 0.0, 1.0);
-    color += 0.8 * vec3(1.0, 0.4, 0.2) * pow(sun, 256.0) * alpha *
-             clamp(params.final_options.w, 0.0, 3.0);
+    float cloud_sun_visibility =
+        smoothstep(0.02, 0.24, alpha) *
+        mix(0.22, 1.0, smoothstep(0.08, 0.72, transmittance));
+    float sun_disk = pow(sun, 360.0) * 0.34;
+    float sun_halo = pow(sun, 56.0) * 0.10;
+    color += vec3(1.0, 0.58, 0.24) * (sun_disk + sun_halo) *
+             cloud_sun_visibility * clamp(params.final_options.w, 0.0, 3.0);
     return MarchResult(color, transmittance, alpha, density_sum / float(max_steps), last_light,
                        first_distance, steps_taken, ambient_sum, direct_sum, phase_sum);
 }
