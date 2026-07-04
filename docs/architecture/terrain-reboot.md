@@ -439,6 +439,12 @@ Known limitations:
   tile streaming. Add phase profiling before parallelizing generation/export so
   the first threading pass targets a measured bottleneck rather than the most
   visible loop.
+- The first phase profiles confirm that the fixed-extent surface previews are
+  generation-bound. Height-color preview on the `16.384km` mountain stress
+  patch spends about `47.56s`, `96.27s`, and `412.75s` in generation at `513`,
+  `1025`, and `2049`; host rendering remains below half a second. Material
+  color adds a secondary mesh-build cost because it samples more fields per
+  vertex.
 - Fractional accumulation reduces receiver quantization, but active trunk
   tracing still uses support-graph and local routing fallbacks. Branch placement
   and some bends can remain less organic than real rivers.
@@ -474,6 +480,10 @@ Known limitations:
 - `terrain_preview` is a local mesh preview only. It improves peak/basin
   readability, but it deliberately does not solve tiled scale, LOD, water,
   foliage, atmosphere integration, or terrain algorithm quality.
+- The `surface` and `surface-low` preview cameras make foreground terrain
+  softness visible. They are useful review tools, but higher resolution mostly
+  cleans silhouettes; it does not create the missing near-field detail or fix
+  synthetic source/process shape.
 
 A revision 4 experiment tried replacing the active river product with direct
 channel-graph edge rendering after an epsilon fill pass. It was reverted because

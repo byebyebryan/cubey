@@ -40,6 +40,10 @@ Fixed-extent mountain resolution audit commands keep the patch at roughly
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/513/mountain-post-erosion-perspective.png
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/1025/mountain-post-erosion-perspective.png
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/2049/mountain-post-erosion-perspective.png
+
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/513/mountain-surface-height.png --profile-output terrain-res-mountain-16km-513-surface-height
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/1025/mountain-surface-height.png --profile-output terrain-res-mountain-16km-1025-surface-height
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/2049/mountain-surface-height.png --profile-output terrain-res-mountain-16km-2049-surface-height
 ```
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
@@ -65,6 +69,18 @@ source/model artifacts more crisply: ridge connector arcs, shoulder/process
 banding, and terrace-like buildup. Treat `2049` as an occasional stress/artifact
 view, not as the default workbench scale. The next mountain-quality work should
 improve the source/process model before raising default resolution.
+
+The newer `surface` and `surface-low` preview captures are the first
+player-angle checks for this workbench. They are useful for exposing foreground
+terrain softness and missing near-field detail, but they do not change the
+resolution conclusion: the 1025 and 2049 captures look cleaner, not
+fundamentally more natural. Phase profiles written to `outputs/profiles` show
+that CPU generation dominates the measured surface runs. On the fixed-extent
+mountain stress patch, height-color surface previews took about `48.06s`,
+`97.21s`, and `415.44s` total for `513`, `1025`, and `2049`; generation alone
+accounted for about `47.56s`, `96.27s`, and `412.75s`. Material-color surface
+preview adds a visible mesh-build cost because the mesh samples more product
+fields per vertex: about `1.94s` at `513` and `7.76s` at `1025`.
 `outputs/` is intentionally ignored by git. This replaced the earlier tiny
 local output set so field structure, channel continuity, and material response
 are easier to inspect.

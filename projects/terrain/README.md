@@ -118,6 +118,9 @@ spread, relief-clamped lowering, height lowering, the diagnostic gully pass, and
 the bounded thermal talus diagnostic.
 The scalar review export writes `manifest.json` with recipe, grid, summary,
 field stats, view names, and output filenames.
+`terrain` and `terrain_preview` also accept `--profile-output <prefix>`. Bare
+prefixes are written under `outputs/profiles/`, and each run emits
+`<prefix>.terrain_phases.json` with coarse CPU phase timings and run metadata.
 
 The current terrain path is intentionally a CPU debug/product workbench. The
 large retained field set and scalar export matrix buy inspectability while the
@@ -175,6 +178,10 @@ Fixed-extent mountain resolution audit:
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/513/mountain-post-erosion-perspective.png
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/1025/mountain-post-erosion-perspective.png
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/2049/mountain-post-erosion-perspective.png
+
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/513/mountain-surface-height.png --profile-output terrain-res-mountain-16km-513-surface-height
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/1025/mountain-surface-height.png --profile-output terrain-res-mountain-16km-1025-surface-height
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/2049/mountain-surface-height.png --profile-output terrain-res-mountain-16km-2049-surface-height
 ```
 
 The fixed-extent audit currently confirms that `1025` improves normal review
@@ -184,6 +191,24 @@ roughly 7-9 minutes per scalar/preview capture and peaked around `1.8 GB` RSS in
 the preview path, so keep it stress-only. Scene-scale detail should eventually
 come from tiled or clipmap-style terrain rendering, not from making this
 single-patch workbench mesh the default.
+
+Surface-perspective profiling makes the bottleneck explicit:
+
+| Grid | Surface/color | Generate | Mesh build | Host render | Total |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| `513` | `height`/`height` | `47.56s` | `0.14s` | `0.34s` | `48.06s` |
+| `1025` | `height`/`height` | `96.27s` | `0.56s` | `0.36s` | `97.21s` |
+| `2049` | `height`/`height` | `412.75s` | `2.24s` | `0.42s` | `415.44s` |
+| `513` | `height`/`material` | `47.74s` | `1.94s` | `0.35s` | `50.06s` |
+| `1025` | `height`/`material` | `96.89s` | `7.76s` | `0.37s` | `105.03s` |
+
+The generator dominates these captures. Material previews add a secondary mesh
+cost because each vertex samples the product fields needed for material color,
+but the renderer host path is not the current problem. `surface` and
+`surface-low` make near-field review possible; they also show that additional
+samples mostly improve edge cleanliness. The foreground still reads smooth and
+synthetic because the source/process model lacks local terrain detail and an
+LOD/shader-detail path.
 
 ## Current Review Outputs
 

@@ -121,3 +121,38 @@ draw one giant mesh. It should use tiles, clipmaps, view-dependent shader detail
 and a much smaller runtime field set. Multithreading can make the workbench less
 painful, but it should follow phase timing evidence and should not be treated as
 the answer to LOD or to-horizon scale.
+
+## Surface View And Phase Profiling
+
+The follow-up pass added terrain-local phase profiling and two lower camera
+presets, `surface` and `surface-low`, so the same fixed-extent patch can be
+reviewed closer to the ground. Both `terrain` and `terrain_preview` accept
+`--profile-output <prefix>` and emit `<prefix>.terrain_phases.json`; bare
+prefixes resolve under `outputs/profiles/`.
+
+The surface captures used the same `16.384km` mountain stress patch:
+
+| Grid | Camera | Color | Generate | Mesh build | Host render | Total |
+| ---: | --- | --- | ---: | ---: | ---: | ---: |
+| `513` | `surface` | `material` | `47.74s` | `1.94s` | `0.35s` | `50.06s` |
+| `513` | `surface` | `height` | `47.56s` | `0.14s` | `0.34s` | `48.06s` |
+| `513` | `surface-low` | `height` | `47.61s` | `0.14s` | `0.33s` | `48.11s` |
+| `1025` | `surface` | `material` | `96.89s` | `7.76s` | `0.37s` | `105.03s` |
+| `1025` | `surface` | `height` | `96.27s` | `0.56s` | `0.36s` | `97.21s` |
+| `1025` | `surface-low` | `height` | `96.84s` | `0.54s` | `0.35s` | `97.75s` |
+| `2049` | `surface` | `height` | `412.75s` | `2.24s` | `0.42s` | `415.44s` |
+
+The result is clear enough for planning: CPU generation dominates by a large
+margin, not host rendering. Material preview mesh construction is the main
+secondary cost because it samples more product fields per vertex than
+height-color preview. CPU multithreading should therefore start by measuring and
+parallelizing generation phases if this workbench remains useful, but it will
+not change the scene-readiness conclusion by itself.
+
+The visual conclusion also stayed the same. `1025` and `2049` surface views
+make the terrain easier to inspect from a player-like angle, but they mostly
+clean the mesh silhouette and expose the current source/process limitations:
+smooth foreground slopes, synthetic shoulder/ridge structure, and little
+near-field detail. A future scene path needs tiled or clipmap terrain with
+view-dependent detail, while terrain quality work still needs better coherent
+source/process models.
