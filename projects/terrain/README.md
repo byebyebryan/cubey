@@ -163,7 +163,19 @@ Fixed-extent mountain resolution audit:
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/513/mountain-perspective.png
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/1025/mountain-perspective.png
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/2049/mountain-perspective.png
+
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/513/mountain-post-erosion-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/1025/mountain-post-erosion-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/2049/mountain-post-erosion-perspective.png
 ```
+
+The fixed-extent audit currently confirms that `1025` improves normal review
+readability and that `2049` is useful for artifact hunting, but raw resolution
+does not solve the current mountain source-shape problems. The `2049` path took
+roughly 7-9 minutes per scalar/preview capture and peaked around `1.8 GB` RSS in
+the preview path, so keep it stress-only. Scene-scale detail should eventually
+come from tiled or clipmap-style terrain rendering, not from making this
+single-patch workbench mesh the default.
 
 ## Current Review Outputs
 

@@ -36,6 +36,10 @@ Fixed-extent mountain resolution audit commands keep the patch at roughly
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/513/mountain-perspective.png
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/1025/mountain-perspective.png
 /usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/2049/mountain-perspective.png
+
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/513/mountain-post-erosion-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/1025/mountain-post-erosion-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/2049/mountain-post-erosion-perspective.png
 ```
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
@@ -49,6 +53,18 @@ directory also includes `mountain-perspective.png`,
 `mountain-post-erosion-perspective.png` from the renderer-backed preview app.
 The 1025 mountain stress set remains scalar-only unless a matching preview
 capture is explicitly generated.
+
+The fixed-extent resolution audit under
+`outputs/terrain/resolution-mountain-16km` keeps the patch near `16.384km` and
+uses `513/32m`, `1025/16m`, and `2049/8m` variants. All three generated
+revision 30 manifests with 55 fields and 50 scalar/review outputs. Scalar
+exports took `53.64s`, `123.53s`, and `513.81s` respectively; the `2049`
+preview path peaked at roughly `1830172 KB` RSS. The higher-density captures
+make silhouettes and local detail clearer, but they also expose the same
+source/model artifacts more crisply: ridge connector arcs, shoulder/process
+banding, and terrace-like buildup. Treat `2049` as an occasional stress/artifact
+view, not as the default workbench scale. The next mountain-quality work should
+improve the source/process model before raising default resolution.
 `outputs/` is intentionally ignored by git. This replaced the earlier tiny
 local output set so field structure, channel continuity, and material response
 are easier to inspect.
