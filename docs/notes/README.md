@@ -99,6 +99,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain mountain source/process loop plan](terrain-mountain-source-process-loop-plan.md):
   revision 30 target for comparing mountain source/product/process stages and
   improving the source profile before more erosion or biome polish.
+- [Terrain resolution scene-readiness plan](terrain-resolution-scene-readiness-plan.md):
+  fixed-extent `513`/`1025`/`2049` audit for separating sample density limits
+  from source/process model failures before terrain LOD work.
 - [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
   next river-quality pivot: promote `stream_order` and `flow_accumulation` into
   connected corridor selection while avoiding direct graph-edge rendering.
