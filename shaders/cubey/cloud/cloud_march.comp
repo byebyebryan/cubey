@@ -1016,31 +1016,44 @@ vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_dat
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     vec3 moon_dir = normalize(params.moon_direction_intensity.xyz);
     float sun_elevation = dot(sun_dir, local_up);
-    float day = smoothstep(-0.16, 0.10, sun_elevation) * params.sun_direction_intensity.w;
+    float sun_visibility = smoothstep(-0.16, 0.10, sun_elevation);
+    float day = sun_visibility * clamp(params.sun_direction_intensity.w, 0.0, 1.0);
     float night = 1.0 - smoothstep(-0.14, 0.08, sun_elevation);
     float moon_elevation = max(dot(moon_dir, local_up), 0.0);
     float low_sun = 1.0 - smoothstep(0.05, 0.45, max(sun_elevation, 0.0));
+    float twilight =
+        smoothstep(-0.24, 0.02, sun_elevation) *
+        (1.0 - smoothstep(0.04, 0.30, sun_elevation));
+    float lit_sky = max(day, twilight * 0.55);
     float height_fill = smoothstep(0.08, 0.92, sample_data.height_fraction);
 
     vec3 sky_top = cloud_sky_color(local_up);
     vec3 horizon_sky = cloud_sky_color(cloud_horizon_direction(direction, local_up));
     vec3 top_fill = params.cloud_color_top_shadow.rgb *
-                    (0.36 + 0.46 * day + 0.32 * max(sun_elevation, 0.0));
-    top_fill += sky_top * (0.12 + 0.12 * day);
+                    (0.24 + 0.58 * lit_sky + 0.32 * max(sun_elevation, 0.0));
+    top_fill += sky_top * (0.08 + 0.14 * lit_sky);
 
-    vec3 bottom_fill = params.cloud_color_bottom_horizon.rgb * (0.14 + 0.38 * day);
-    vec3 horizon_fill = horizon_sky * params.cloud_color_bottom_horizon.w * (0.10 + 0.16 * day);
-    vec3 twilight_fill = vec3(1.0, 0.48, 0.23) * low_sun * day * 0.18;
+    vec3 bottom_fill = params.cloud_color_bottom_horizon.rgb * (0.10 + 0.42 * lit_sky);
+    vec3 horizon_fill =
+        horizon_sky * params.cloud_color_bottom_horizon.w * (0.07 + 0.17 * lit_sky);
+    vec3 twilight_fill = vec3(1.0, 0.48, 0.23) * low_sun * twilight * 0.13;
     vec3 environment_fill =
-        cloud_environment_ambient_radiance() * (0.38 + 0.40 * height_fill);
+        cloud_environment_ambient_radiance() *
+        mix(0.050 + 0.035 * height_fill, 0.38 + 0.40 * height_fill,
+            max(day, twilight * 0.55));
     vec3 moon_fill = cloud_moon_radiance() * night *
-                     (0.06 + 0.18 * moon_elevation) *
+                     (0.014 + 0.060 * moon_elevation) *
                      (0.45 + 0.55 * height_fill);
 
     vec3 ambient = mix(bottom_fill, top_fill, height_fill);
     ambient += horizon_fill * (0.55 + 0.45 * (1.0 - height_fill));
     ambient += twilight_fill * (1.0 - 0.35 * height_fill);
     ambient += environment_fill + moon_fill;
+    float ambient_luma = dot(ambient, vec3(0.2126, 0.7152, 0.0722));
+    vec3 night_ambient =
+        vec3(ambient_luma) * vec3(0.60, 0.66, 0.82) * 0.30 +
+        cloud_moon_radiance() * 0.014 * (0.35 + 0.65 * height_fill);
+    ambient = mix(ambient, night_ambient, night * 0.92);
     return max(ambient, vec3(0.0));
 }
 
@@ -2081,9 +2094,8 @@ MarchResult cloud_ref_compatible_march(vec3 origin, vec3 direction, float start_
             float view_thickness = 1.0 - exp(-sample_optical_depth);
             float light_thickness = 1.0 - exp(-light_result.optical_depth);
             vec3 local_up = cloud_local_up(pos);
-            float sun_elevation = max(dot(sun_dir, local_up), 0.0);
-            float day = smoothstep(-0.16, 0.10, dot(sun_dir, local_up)) *
-                        params.sun_direction_intensity.w;
+            float sun_elevation = dot(sun_dir, local_up);
+            float direct_visibility = smoothstep(-0.10, 0.06, sun_elevation);
             float shadow_strength = max(params.cloud_color_top_shadow.w, 0.0);
             float forward_alignment = smoothstep(0.22, 0.94, light_dot_eye);
             float optical_core =
@@ -2118,11 +2130,12 @@ MarchResult cloud_ref_compatible_march(vec3 origin, vec3 direction, float start_
                 forward_direct_gate *
                 mix(1.0, mix(0.90, 1.0, optical_edge),
                     forward_alignment * optical_core);
-            vec3 direct_source = sun_color * shadowed_light * phase_response *
+            vec3 direct_source = sun_color * direct_visibility * shadowed_light * phase_response *
                                  direct_core_gate * powder_multiplier *
                                  max(params.lighting_strengths.y, 0.0);
             vec3 phase_source =
-                sun_color * rim_phase * max(params.lighting_strengths.z, 0.0);
+                sun_color * direct_visibility * rim_phase *
+                max(params.lighting_strengths.z, 0.0);
             float scatter_gain = 0.42;
             vec3 source_terms = scatter_gain * (ambient_source + direct_source + phase_source);
             color += transmittance * source_terms * (1.0 - d_transmittance);
