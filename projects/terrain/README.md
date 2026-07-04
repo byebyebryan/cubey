@@ -119,6 +119,14 @@ the bounded thermal talus diagnostic.
 The scalar review export writes `manifest.json` with recipe, grid, summary,
 field stats, view names, and output filenames.
 
+The current terrain path is intentionally a CPU debug/product workbench. The
+large retained field set and scalar export matrix buy inspectability while the
+source/process model is still changing, but they are not the intended
+scene-scale runtime shape. Future scene and planet terrain should consume a
+smaller runtime product through tiles, clipmaps, shader-side detail, or other
+view-dependent sampling. CPU multithreading may reduce review latency after
+profiling identifies the hot phases, but it does not replace LOD or streaming.
+
 See [Terrain reboot direction](../../docs/architecture/terrain-reboot.md) for
 the current design checkpoint. The staged lane map is captured in
 [Terrain project map](../../docs/notes/terrain-project-map.md): source drivers,

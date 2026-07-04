@@ -106,3 +106,18 @@ scene-scale detail, a single full-resolution mesh is the wrong default. Keep
 and reserve `2049` for occasional artifact hunts. A future renderer path should
 plan tiled terrain or clipmap-style local detail instead of promoting the
 stress mesh as the main capture architecture.
+
+## Workbench Compromise
+
+The current cost is acceptable only as a diagnostic tradeoff. The terrain
+workbench keeps many named CPU fields because that makes source drivers, process
+operators, product fields, and regressions inspectable. It also writes many PNGs
+because field-by-field review is more useful at this stage than a single pretty
+render.
+
+That is not the target runtime model. A scene or planet terrain path should not
+retain the full debug product at every visible sample, export every field, or
+draw one giant mesh. It should use tiles, clipmaps, view-dependent shader detail,
+and a much smaller runtime field set. Multithreading can make the workbench less
+painful, but it should follow phase timing evidence and should not be treated as
+the answer to LOD or to-horizon scale.

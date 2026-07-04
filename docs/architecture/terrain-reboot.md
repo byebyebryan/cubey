@@ -425,6 +425,20 @@ graph and hydrology references. See
 
 Known limitations:
 
+- The terrain reboot is currently a CPU debug/product workbench. Retaining many
+  named fields, writing scalar PNGs, and building dense preview meshes is
+  intentional because it gives source/process visibility, stable manifests, and
+  reviewable regressions. This is a temporary compromise, not the runtime terrain
+  architecture for scene-scale or planet-scale terrain.
+- ShaderToy-style terrain examples remain relevant to the runtime direction even
+  when their topology is not directly reusable: scene terrain should eventually
+  use view-dependent sampling, shader-side detail, tiled or clipmap meshes, and
+  minimal retained state. The current 55-field product path should stay a debug
+  artifact unless a downstream consumer explicitly needs a field.
+- CPU multithreading can improve the workbench, but it does not replace LOD or
+  tile streaming. Add phase profiling before parallelizing generation/export so
+  the first threading pass targets a measured bottleneck rather than the most
+  visible loop.
 - Fractional accumulation reduces receiver quantization, but active trunk
   tracing still uses support-graph and local routing fallbacks. Branch placement
   and some bends can remain less organic than real rivers.
