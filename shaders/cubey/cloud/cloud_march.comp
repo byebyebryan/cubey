@@ -2052,6 +2052,23 @@ LightMarchResult cloud_ref_compatible_march_light(vec3 start, float step_size, v
     return LightMarchResult(transmittance, optical_depth);
 }
 
+float cloud_ref_compatible_surface_horizon_fade(vec3 direction, float first_distance,
+                                                float mean_distance) {
+    float surface_view = cloud_surface_view_factor();
+    if (surface_view <= 0.001) {
+        return 0.0;
+    }
+
+    float visible_distance = mean_distance > 0.0 ? mean_distance : first_distance;
+    if (visible_distance <= 0.0) {
+        return 0.0;
+    }
+
+    float grazing_view = 1.0 - smoothstep(0.025, 0.145, abs(dot(direction, cloud_planet_up())));
+    float distance_gate = smoothstep(55000.0, 170000.0, visible_distance);
+    return clamp(surface_view * grazing_view * distance_gate * 0.92, 0.0, 0.92);
+}
+
 MarchResult cloud_ref_compatible_march(vec3 origin, vec3 direction, float start_t, float end_t,
                                        vec3 background, ivec2 pixel, int sample_index) {
     int max_steps = clamp(int(params.ref_options.y + 0.5), 1, 96);
@@ -2171,6 +2188,17 @@ MarchResult cloud_ref_compatible_march(vec3 origin, vec3 direction, float start_
     float mean_distance = distance_weight_sum > 0.0
                               ? weighted_distance_sum / max(distance_weight_sum, 0.0001)
                               : -1.0;
+    float horizon_fade =
+        cloud_ref_compatible_surface_horizon_fade(direction, first_distance, mean_distance);
+    if (horizon_fade > 0.0) {
+        float keep = 1.0 - horizon_fade;
+        color *= keep;
+        ambient_sum *= keep;
+        direct_sum *= keep;
+        phase_sum *= keep;
+        alpha *= keep;
+        transmittance = 1.0 - alpha;
+    }
     return MarchResult(color, transmittance, alpha, density_sum / float(max_steps), last_light,
                        first_distance, mean_distance, steps_taken, ambient_sum, direct_sum,
                        phase_sum);
