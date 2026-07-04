@@ -1,5 +1,6 @@
 #include "terrain_generator.h"
 #include "terrain_debug_export.h"
+#include "terrain_phase_profile.h"
 
 #include <cstdlib>
 #include <exception>
@@ -7,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace {
 
@@ -16,6 +18,7 @@ struct TerrainCliConfig {
         cubey::projects::terrain::TerrainDebugView::Final;
     std::filesystem::path output_path{};
     std::filesystem::path output_dir{};
+    std::filesystem::path profile_output_prefix{};
     bool export_all_views = false;
     bool headless = false;
 };
@@ -105,6 +108,10 @@ struct TerrainCliConfig {
         } else if (arg == "--terrain-output-dir") {
             config.output_dir = std::filesystem::path{
                 std::string(require_value(index, argc, argv, arg))};
+        } else if (arg == "--profile-output") {
+            config.profile_output_prefix =
+                cubey::projects::terrain::terrain_phase_profile_output_prefix(
+                    require_value(index, argc, argv, arg));
         } else {
             throw std::runtime_error("unknown argument: " + std::string(arg));
         }
@@ -123,8 +130,20 @@ int main(int argc, char** argv) {
         if (cli_config.export_all_views && cli_config.output_dir.empty()) {
             throw std::runtime_error("terrain debug view all requires --terrain-output-dir");
         }
-        const cubey::projects::terrain::TerrainRegionProduct product =
-            cubey::projects::terrain::generate_terrain_region(cli_config.terrain);
+        cubey::projects::terrain::TerrainPhaseProfile phase_profile(
+            cli_config.profile_output_prefix);
+        const auto total_start = cubey::projects::terrain::TerrainPhaseProfile::now();
+
+        cubey::projects::terrain::TerrainRegionProduct product;
+        {
+            cubey::projects::terrain::TerrainPhaseScope phase(phase_profile, "generate_region");
+            product = cubey::projects::terrain::generate_terrain_region(cli_config.terrain);
+        }
+
+        cubey::projects::terrain::TerrainPhaseProfileMetadata metadata =
+            cubey::projects::terrain::terrain_phase_profile_metadata("terrain",
+                                                                     product.config);
+        metadata.field_count = static_cast<std::uint32_t>(product.fields.field_count());
         if (cli_config.headless || !cli_config.output_path.empty() ||
             !cli_config.output_dir.empty()) {
             if (cli_config.output_path.empty() && cli_config.output_dir.empty()) {
@@ -132,17 +151,42 @@ int main(int argc, char** argv) {
                     "terrain headless export requires --output or --terrain-output-dir");
             }
             if (cli_config.export_all_views) {
-                cubey::projects::terrain::write_terrain_debug_review_pngs(product,
-                                                                          cli_config.output_dir);
+                metadata.output_count = static_cast<std::uint32_t>(
+                    cubey::projects::terrain::terrain_debug_review_views().size());
+                {
+                    cubey::projects::terrain::TerrainPhaseScope phase(phase_profile,
+                                                                      "write_debug_views");
+                    for (const cubey::projects::terrain::TerrainDebugView view :
+                         cubey::projects::terrain::terrain_debug_review_views()) {
+                        const std::filesystem::path output_path =
+                            cli_config.output_dir /
+                            (std::string(cubey::projects::terrain::terrain_debug_view_name(view)) +
+                             ".png");
+                        cubey::projects::terrain::write_terrain_debug_png(product, view,
+                                                                          output_path);
+                    }
+                }
+                {
+                    cubey::projects::terrain::TerrainPhaseScope phase(phase_profile,
+                                                                      "write_manifest");
+                    cubey::projects::terrain::write_terrain_debug_manifest(
+                        product, cli_config.output_dir);
+                }
             } else if (!cli_config.output_dir.empty()) {
                 const std::filesystem::path output_path =
                     cli_config.output_dir /
                     (std::string(cubey::projects::terrain::terrain_debug_view_name(
                          cli_config.debug_view)) +
                      ".png");
+                metadata.output_count = 1U;
+                cubey::projects::terrain::TerrainPhaseScope phase(phase_profile,
+                                                                  "write_debug_view");
                 cubey::projects::terrain::write_terrain_debug_png(product, cli_config.debug_view,
                                                                   output_path);
             } else {
+                metadata.output_count = 1U;
+                cubey::projects::terrain::TerrainPhaseScope phase(phase_profile,
+                                                                  "write_debug_view");
                 cubey::projects::terrain::write_terrain_debug_png(product, cli_config.debug_view,
                                                                   cli_config.output_path);
             }
@@ -164,6 +208,9 @@ int main(int argc, char** argv) {
             }
         }
         std::cout << '\n';
+        phase_profile.set_metadata(std::move(metadata));
+        phase_profile.record_elapsed("total", total_start);
+        phase_profile.write();
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {
         std::cerr << "terrain: " << error.what() << '\n';

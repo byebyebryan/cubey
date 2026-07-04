@@ -13,6 +13,8 @@ enum class TerrainPreviewCameraPreset : std::uint8_t {
     Oblique,
     Profile,
     Top,
+    Surface,
+    SurfaceLow,
 };
 
 enum class TerrainPreviewColorMode : std::uint8_t {

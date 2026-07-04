@@ -1,5 +1,6 @@
 #include "terrain_debug_export.h"
 #include "terrain_generator.h"
+#include "terrain_phase_profile.h"
 #include "terrain_preview_config.h"
 #include "terrain_preview_mesh.h"
 #include "terrain_process_fields.h"
@@ -2153,6 +2154,15 @@ void test_terrain_preview_config_uses_run_config_controls() {
     require(preview.vertical_scale == 0.55F,
             "terrain preview should use explicit vertical scale");
 
+    run_config.terrain.camera_preset = "surface";
+    preview = cubey::projects::terrain::terrain_preview_config_from_run_config(run_config);
+    require(preview.camera_preset ==
+                cubey::projects::terrain::TerrainPreviewCameraPreset::Surface,
+            "terrain preview should parse the surface camera");
+    require(cubey::projects::terrain::terrain_preview_camera_preset_from_name("surface_low") ==
+                cubey::projects::terrain::TerrainPreviewCameraPreset::SurfaceLow,
+            "terrain preview should parse the surface-low camera alias");
+
     run_config.terrain.camera_preset = "telephoto";
     require_throws(
         [&run_config] {
@@ -2176,6 +2186,33 @@ void test_terrain_preview_config_uses_run_config_controls() {
                 cubey::projects::terrain::terrain_preview_config_from_run_config(run_config));
         },
         "terrain preview should reject unknown surfaces");
+}
+
+void test_terrain_phase_profile_paths() {
+    const std::filesystem::path normalized =
+        cubey::projects::terrain::terrain_phase_profile_output_prefix("terrain-smoke");
+    require(normalized == std::filesystem::path("outputs") / "profiles" / "terrain-smoke",
+            "terrain phase profile should place bare prefixes under outputs/profiles");
+    require(cubey::projects::terrain::terrain_phase_profile_output_path(normalized) ==
+                (std::filesystem::path("outputs") / "profiles" /
+                 "terrain-smoke.terrain_phases.json"),
+            "terrain phase profile should use the terrain phases suffix");
+
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.recipe_id = std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRiver);
+    const cubey::projects::terrain::TerrainPhaseProfileMetadata metadata =
+        cubey::projects::terrain::terrain_phase_profile_metadata("terrain", config);
+    require(metadata.app_name == "terrain" && metadata.recipe_id == config.recipe_id &&
+                metadata.grid_width == config.grid_width &&
+                metadata.generator_revision == config.generator_revision,
+            "terrain phase profile metadata should capture app and region identity");
+
+    require_throws(
+        [] {
+            static_cast<void>(
+                cubey::projects::terrain::terrain_phase_profile_output_prefix(""));
+        },
+        "terrain phase profile should reject an empty output prefix");
 }
 
 void test_terrain_preview_mesh_represents_heightfield() {
@@ -2271,6 +2308,7 @@ int main() {
     test_terrain_debug_export_writes_png();
     test_terrain_debug_export_writes_review_set();
     test_terrain_preview_config_uses_run_config_controls();
+    test_terrain_phase_profile_paths();
     test_terrain_preview_mesh_represents_heightfield();
     return 0;
 }

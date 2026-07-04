@@ -1,6 +1,7 @@
 #include "terrain_preview_app.h"
 
 #include "terrain_generator.h"
+#include "terrain_phase_profile.h"
 #include "terrain_preview_config.h"
 #include "terrain_preview_mesh.h"
 
@@ -77,8 +78,52 @@ static_assert(sizeof(TerrainPreviewPushConstants) <= 128U);
             .distance_extent_scale = 1.15F,
             .target_height_fraction = 0.35F,
         };
+    case TerrainPreviewCameraPreset::Surface:
+        return {
+            .pitch_radians = -0.14F,
+            .yaw_radians = 0.62F,
+            .distance_extent_scale = 0.28F,
+            .target_height_fraction = 0.24F,
+        };
+    case TerrainPreviewCameraPreset::SurfaceLow:
+        return {
+            .pitch_radians = -0.08F,
+            .yaw_radians = 0.62F,
+            .distance_extent_scale = 0.22F,
+            .target_height_fraction = 0.22F,
+        };
     }
     return {};
+}
+
+[[nodiscard]] TerrainRegionProduct generate_terrain_region_profiled(
+    const TerrainRegionConfig& config, TerrainPhaseProfile& phase_profile) {
+    TerrainPhaseScope phase(phase_profile, "generate_region");
+    return generate_terrain_region(config);
+}
+
+[[nodiscard]] TerrainPreviewMeshData make_terrain_preview_mesh_profiled(
+    const TerrainRegionProduct& product, const TerrainPreviewConfig& config,
+    TerrainPhaseProfile& phase_profile) {
+    TerrainPhaseScope phase(phase_profile, "build_preview_mesh");
+    return make_terrain_preview_mesh(product, config);
+}
+
+[[nodiscard]] TerrainPhaseProfileMetadata terrain_preview_phase_metadata(
+    const TerrainPreviewConfig& preview_config, const TerrainRegionProduct& product,
+    const TerrainPreviewMeshData& mesh_data) {
+    TerrainPhaseProfileMetadata metadata =
+        terrain_phase_profile_metadata("terrain_preview", product.config);
+    metadata.camera_preset =
+        std::string(terrain_preview_camera_preset_name(preview_config.camera_preset));
+    metadata.preview_surface = std::string(terrain_preview_surface_name(preview_config.surface));
+    metadata.preview_color = std::string(terrain_preview_color_mode_name(preview_config.color_mode));
+    metadata.field_count = static_cast<std::uint32_t>(product.fields.field_count());
+    metadata.output_count = 1U;
+    metadata.vertex_count = static_cast<std::uint64_t>(mesh_data.vertices.size());
+    metadata.index_count = static_cast<std::uint64_t>(mesh_data.indices.size());
+    metadata.triangle_count = terrain_preview_triangle_count(mesh_data);
+    return metadata;
 }
 
 [[nodiscard]] float terrain_preview_height_span_m(const TerrainRegionProduct& product,
@@ -119,8 +164,9 @@ class TerrainPreviewApp {
   public:
     explicit TerrainPreviewApp(RunConfig config)
         : config_(std::move(config)), preview_config_(terrain_preview_config_from_run_config(config_)),
-          product_(generate_terrain_region(preview_config_.region)),
-          mesh_data_(make_terrain_preview_mesh(product_, preview_config_)),
+          total_start_(TerrainPhaseProfile::now()), phase_profile_(config_.profile_output_prefix),
+          product_(generate_terrain_region_profiled(preview_config_.region, phase_profile_)),
+          mesh_data_(make_terrain_preview_mesh_profiled(product_, preview_config_, phase_profile_)),
           orbit_controller_(cubey::OrbitControllerConfig{
               .distance = terrain_preview_camera_distance(preview_config_, product_),
               .min_distance = std::max(terrain_preview_scene_extent_m(preview_config_, product_) *
@@ -134,16 +180,19 @@ class TerrainPreviewApp {
               .near_z = 1.0F,
               .far_z = std::max(terrain_preview_scene_extent_m(preview_config_, product_) * 5.0F,
                                 16000.0F),
-          }) {}
+          }) {
+        phase_profile_.set_metadata(
+            terrain_preview_phase_metadata(preview_config_, product_, mesh_data_));
+    }
 
     TerrainPreviewApp(const TerrainPreviewApp&) = delete;
     TerrainPreviewApp& operator=(const TerrainPreviewApp&) = delete;
 
     int run() {
-        if (config_.headless) {
-            return run_headless();
-        }
-        return run_windowed();
+        const int result = config_.headless ? run_headless() : run_windowed();
+        phase_profile_.record_elapsed("total", total_start_);
+        phase_profile_.write();
+        return result;
     }
 
   private:
@@ -180,6 +229,7 @@ class TerrainPreviewApp {
         };
         callbacks.shutdown = [this](cubey::host::WindowedAppContext&) { destroy_all_resources(); };
 
+        TerrainPhaseScope phase(phase_profile_, "run_preview_host");
         return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
@@ -216,6 +266,7 @@ class TerrainPreviewApp {
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) { destroy_all_resources(); };
 
         cubey::host::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
+        TerrainPhaseScope phase(phase_profile_, "run_preview_host");
         return host.run();
     }
 
@@ -370,6 +421,8 @@ class TerrainPreviewApp {
 
     RunConfig config_;
     TerrainPreviewConfig preview_config_{};
+    TerrainPhaseProfile::TimePoint total_start_{};
+    TerrainPhaseProfile phase_profile_{};
     TerrainRegionProduct product_{};
     TerrainPreviewMeshData mesh_data_{};
     cubey::OrbitController orbit_controller_;

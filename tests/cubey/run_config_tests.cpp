@@ -1487,7 +1487,7 @@ void test_run_config_parses_terrain_controls() {
     std::string recipe_flag = "--terrain-recipe";
     std::string recipe_value = "temperate-mountain-range-stress";
     std::string camera_flag = "--terrain-camera-preset";
-    std::string camera_value = "top";
+    std::string camera_value = "surface";
     std::string vertical_scale_flag = "--terrain-vertical-scale";
     std::string vertical_scale_value = "0.75";
     std::string preview_color_flag = "--terrain-preview-color";
@@ -1517,7 +1517,7 @@ void test_run_config_parses_terrain_controls() {
     require(config.terrain.valleys == 1.15F, "run config should parse terrain valleys");
     require(config.terrain.recipe == "temperate-mountain-range-stress",
             "run config should parse terrain recipe");
-    require(config.terrain.camera_preset == "top",
+    require(config.terrain.camera_preset == "surface",
             "run config should parse terrain camera preset");
     require(config.terrain.vertical_scale == 0.75F,
             "run config should parse terrain vertical scale");

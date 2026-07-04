@@ -16,6 +16,10 @@ std::string_view terrain_preview_camera_preset_name(TerrainPreviewCameraPreset p
         return "profile";
     case TerrainPreviewCameraPreset::Top:
         return "top";
+    case TerrainPreviewCameraPreset::Surface:
+        return "surface";
+    case TerrainPreviewCameraPreset::SurfaceLow:
+        return "surface-low";
     }
     return "oblique";
 }
@@ -30,7 +34,14 @@ TerrainPreviewCameraPreset terrain_preview_camera_preset_from_name(std::string_v
     if (name == "top") {
         return TerrainPreviewCameraPreset::Top;
     }
-    throw std::runtime_error("terrain camera preset must be oblique, profile, or top");
+    if (name == "surface") {
+        return TerrainPreviewCameraPreset::Surface;
+    }
+    if (name == "surface-low" || name == "surface_low") {
+        return TerrainPreviewCameraPreset::SurfaceLow;
+    }
+    throw std::runtime_error(
+        "terrain camera preset must be oblique, profile, top, surface, or surface-low");
 }
 
 std::string_view terrain_preview_color_mode_name(TerrainPreviewColorMode mode) {

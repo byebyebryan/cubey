@@ -2,6 +2,7 @@ add_executable(cubey_project_terrain
     main.cpp
     terrain_debug_export.cpp
     terrain_generator.cpp
+    terrain_phase_profile.cpp
     terrain_process_fields.cpp
     terrain_product.cpp
 )
@@ -30,6 +31,7 @@ cubey_add_app_target(
         terrain_preview_config.cpp
         terrain_preview_mesh.cpp
         terrain_generator.cpp
+        terrain_phase_profile.cpp
         terrain_process_fields.cpp
         terrain_product.cpp
     SHADERS
@@ -44,6 +46,7 @@ if (BUILD_TESTING)
         terrain_generator.cpp
         terrain_preview_config.cpp
         terrain_preview_mesh.cpp
+        terrain_phase_profile.cpp
         terrain_process_fields.cpp
         terrain_product.cpp
         terrain_tests.cpp
