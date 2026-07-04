@@ -163,3 +163,32 @@ Current read:
   accepted yet;
 - high-oblique/orbit weather remains deliberately out of scope for this parity
   step.
+
+## Surface Lighting Regime Checkpoint 2026-07-04
+
+The `reference-parity` path now treats surface/night lighting as a separate
+regime instead of allowing moonlit ambient and post contrast to reuse the same
+strength as daylight. This removes the obvious blue-white cloud silhouette that
+showed up at night while keeping stars and moonlight visible in the background.
+
+The local `cloud-ref-compatible` march also has a surface-only grazing horizon
+fade. This is not an orbit/high-oblique cloud solution; it is a scoped handoff
+for the clean surface reference mode, where the cloud dome can otherwise expose
+hard local-volume edges near the horizon. The fade works even when the optional
+far-horizon layer is disabled by `reference-parity`.
+
+Use this capture pack for future lighting changes:
+
+```sh
+projects/atmosphere/capture_cloud_lighting_regimes.sh outputs/cloud-lighting-regimes-current
+```
+
+Current read:
+
+- surface-up noon remains the baseline for local cloud shape and high-frequency
+  detail;
+- surface-up night no longer reads as sunlit clouds against a dark sky;
+- twilight is intentionally softer than noon, but should not wash the cloud
+  layer into a flat pale blanket;
+- horizon captures are diagnostic only for this surface reference pass. A
+  production high-oblique/orbit handoff still needs separate treatment.

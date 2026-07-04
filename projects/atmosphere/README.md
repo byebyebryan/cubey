@@ -60,6 +60,7 @@ Useful runs:
 projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
 projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
 projects/atmosphere/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
+projects/atmosphere/capture_cloud_lighting_regimes.sh outputs/atmosphere-cloud-lighting-regimes
 ```
 
 The cloud review script writes a stable set of labeled captures plus
@@ -79,6 +80,11 @@ The far-field handoff script focuses on horizon and grazing-ray artifacts. It
 captures full-resolution `surface-horizon`, `surface-up`, and `high-oblique`
 views with handoff, local-truncation, integrated-horizon, edge, and distance
 regime diagnostics.
+
+The lighting-regime script focuses on the `reference-parity` surface cloud path.
+It captures noon, twilight, and night in surface-up and horizon views with
+lighting, alpha, background, edge, and distance diagnostics, and disables the
+standalone reference grid so cloud/sky transitions are easier to inspect.
 
 Controls:
 
