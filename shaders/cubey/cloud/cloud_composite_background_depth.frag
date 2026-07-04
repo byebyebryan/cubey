@@ -43,7 +43,7 @@ vec3 cloud_external_final_post(vec3 color, vec3 direction, float cloud_alpha) {
     float twilight =
         smoothstep(-0.24, 0.02, sun_elevation) *
         (1.0 - smoothstep(0.04, 0.30, sun_elevation));
-    float lit_post = max(day, twilight * 0.55);
+    float lit_post = max(day, twilight * 0.42);
     float sun_alignment = max(dot(direction, sun_dir), 0.0);
     float horizon = pow(max(1.0 - abs(direction.y), 0.0), 3.0);
     float sun_post_intensity = params.sun_direction_intensity.w * lit_post;
@@ -61,7 +61,7 @@ vec3 cloud_external_final_post(vec3 color, vec3 direction, float cloud_alpha) {
     color += vec3(1.0, 0.82, 0.50) * tight_glare * 1.25 * glare_strength *
              mix(1.0, 0.34, surface_view);
     color += vec3(0.10, 0.12, 0.13) * horizon * (1.0 - cloud_alpha) * 0.22 *
-             horizon_strength * mix(0.22, 1.0, lit_post) *
+             horizon_strength * mix(0.18, 1.0, lit_post) *
              mix(1.0, 0.54, surface_view) * surface_haze;
     color *= mix(1.0, mix(0.92, 0.82, surface_view), lit_post);
 

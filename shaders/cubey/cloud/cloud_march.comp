@@ -1024,7 +1024,7 @@ vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_dat
     float twilight =
         smoothstep(-0.24, 0.02, sun_elevation) *
         (1.0 - smoothstep(0.04, 0.30, sun_elevation));
-    float lit_sky = max(day, twilight * 0.55);
+    float lit_sky = max(day, twilight * 0.42);
     float height_fill = smoothstep(0.08, 0.92, sample_data.height_fraction);
 
     vec3 sky_top = cloud_sky_color(local_up);
@@ -1036,11 +1036,11 @@ vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_dat
     vec3 bottom_fill = params.cloud_color_bottom_horizon.rgb * (0.10 + 0.42 * lit_sky);
     vec3 horizon_fill =
         horizon_sky * params.cloud_color_bottom_horizon.w * (0.07 + 0.17 * lit_sky);
-    vec3 twilight_fill = vec3(1.0, 0.48, 0.23) * low_sun * twilight * 0.13;
+    vec3 twilight_fill = vec3(1.0, 0.48, 0.23) * low_sun * twilight * 0.08;
     vec3 environment_fill =
         cloud_environment_ambient_radiance() *
         mix(0.050 + 0.035 * height_fill, 0.38 + 0.40 * height_fill,
-            max(day, twilight * 0.55));
+            max(day, twilight * 0.42));
     vec3 moon_fill = cloud_moon_radiance() * night *
                      (0.014 + 0.060 * moon_elevation) *
                      (0.45 + 0.55 * height_fill);
