@@ -25,6 +25,19 @@ mountain source/process review pass.
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-post-erosion-perspective.png
 ```
 
+Fixed-extent mountain resolution audit commands keep the patch at roughly
+`16.384km` while increasing sample density:
+
+```sh
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain --headless --grid-size 513 --cell-size 32 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/513
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --cell-size 16 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/1025
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain --headless --grid-size 2049 --cell-size 8 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/2049
+
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/513/mountain-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/1025/mountain-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/2049/mountain-perspective.png
+```
+
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
 stress captures for larger river-network and mountain-driver inspection. The
 current revision 30 mountain stress scalar review emits 50 PNG views plus

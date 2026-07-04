@@ -153,6 +153,18 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-height-perspective.png
 ```
 
+Fixed-extent mountain resolution audit:
+
+```sh
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain --headless --grid-size 513 --cell-size 32 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/513
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --cell-size 16 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/1025
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain --headless --grid-size 2049 --cell-size 8 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/2049
+
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/513/mountain-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/1025/mountain-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/2049/mountain-perspective.png
+```
+
 ## Current Review Outputs
 
 Use `--terrain-debug-view all --terrain-output-dir outputs/terrain/current-river-network`
