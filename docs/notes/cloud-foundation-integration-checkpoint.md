@@ -213,3 +213,19 @@ subtle by default and is applied through top/edge/rim cloud lighting rather than
 as a global post tint. The lighting-regime capture pack now includes an
 `afterglow` showcase row using a stronger temporary value so the accent can be
 reviewed without changing the normal twilight default.
+
+## Surface Horizon Handoff Target 2026-07-04
+
+The current `reference-parity` preset is deliberately local-only: it disables
+automatic distance selection and the optional far-horizon layer so the
+`cloud-ref-compatible` surface volume stays easy to compare with
+`projects/cloud_ref`. That also means the horizon rows in the lighting-regime
+pack expose the local-volume fade by itself. They should not be treated as proof
+that the production horizon bridge is working.
+
+The next scoped target is the surface lower-sky handoff in
+`projects/atmosphere`: compare local-only reference parity against the same
+preset with `--cloud-distance-mode auto --cloud-horizon-layer`, then tune the
+existing integrated horizon bridge so it softly replaces distant grazing local
+samples. This is not a new cloud color model and not the high-oblique/orbit
+weather solution. Near and upward local clouds should stay visually unchanged.

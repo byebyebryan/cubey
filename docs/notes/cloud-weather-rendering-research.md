@@ -1459,3 +1459,23 @@ all cloud mass uniformly, should not brighten night clouds, and should not hide
 existing horizon handoff issues. The first implementation target remains the
 surface `reference-parity` path in `projects/atmosphere`; high-oblique and
 orbit cloud topology stay separate.
+
+## Surface Horizon Handoff Target 2026-07-04
+
+The afterglow capture pass made the surface horizon failure more obvious because
+the `reference-parity` preset keeps the cloud path in local-only mode. That is a
+useful baseline for local cloud shape, but it intentionally bypasses the
+distance-aware horizon bridge. Horizon review should therefore use three
+comparisons per lighting regime:
+
+- local-only `reference-parity`, to preserve the known surface reference;
+- the same preset with automatic distance mode and the horizon layer enabled,
+  to exercise the production handoff;
+- no-cloud background, to separate cloud handoff artifacts from clear-sky or
+  atmosphere/background horizon bands.
+
+The expected fix is a softer surface lower-sky bridge: fade distant grazing
+local samples smoothly, add only a broad low-detail horizon layer, and bias that
+layer toward sky-colored radiance so it reads as distant haze/cloud continuity
+instead of a new dark cloud type. Keep upward and near local cloud detail out of
+this pass.
