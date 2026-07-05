@@ -1027,6 +1027,24 @@ vec3 cloud_twilight_sky_radiance(vec3 sun_dir, vec3 local_up) {
     return max(mix(horizon_sky, low_sun_color, 0.48), vec3(0.0));
 }
 
+float cloud_afterglow_response(float sun_elevation) {
+    return smoothstep(-0.16, -0.015, sun_elevation) *
+           (1.0 - smoothstep(0.045, 0.18, sun_elevation));
+}
+
+vec3 cloud_afterglow_radiance(vec3 twilight_radiance, float sun_elevation) {
+    float below_horizon = 1.0 - smoothstep(-0.03, 0.08, sun_elevation);
+    float purple_shift = 1.0 - smoothstep(-0.10, -0.025, sun_elevation);
+    vec3 gold = vec3(1.0, 0.42, 0.12);
+    vec3 rose = vec3(1.0, 0.24, 0.30);
+    vec3 violet = vec3(0.68, 0.30, 0.92);
+    vec3 accent = mix(gold, rose, below_horizon * 0.70);
+    accent = mix(accent, violet, purple_shift * 0.32);
+    float energy = max(max(twilight_radiance.r, twilight_radiance.g),
+                       max(twilight_radiance.b, 0.07));
+    return mix(twilight_radiance, accent * energy, 0.72);
+}
+
 vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_data) {
     vec3 local_up = cloud_local_up(position);
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
@@ -1050,9 +1068,14 @@ vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_dat
     vec3 bottom_fill = params.cloud_color_bottom_horizon.rgb * (0.10 + 0.42 * lit_sky);
     vec3 horizon_fill =
         horizon_sky * params.cloud_color_bottom_horizon.w * (0.07 + 0.17 * lit_sky);
-    vec3 twilight_fill =
-        cloud_twilight_sky_radiance(sun_dir, local_up) * low_sun * twilight *
-        clamp(params.twilight_options.x, 0.0, 2.0) * 0.18;
+    vec3 twilight_radiance = cloud_twilight_sky_radiance(sun_dir, local_up);
+    vec3 twilight_fill = twilight_radiance * low_sun * twilight *
+                          clamp(params.twilight_options.x, 0.0, 2.0) * 0.18;
+    float afterglow =
+        cloud_afterglow_response(sun_elevation) * clamp(params.twilight_options.w, 0.0, 2.0);
+    float afterglow_top = smoothstep(0.32, 0.95, sample_data.height_fraction);
+    vec3 afterglow_fill = cloud_afterglow_radiance(twilight_radiance, sun_elevation) *
+                          afterglow * low_sun * (0.035 + 0.095 * afterglow_top);
     vec3 environment_fill =
         cloud_environment_ambient_radiance() *
         mix(0.050 + 0.035 * height_fill, 0.38 + 0.40 * height_fill,
@@ -1064,6 +1087,7 @@ vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_dat
     vec3 ambient = mix(bottom_fill, top_fill, height_fill);
     ambient += horizon_fill * (0.55 + 0.45 * (1.0 - height_fill));
     ambient += twilight_fill * (1.0 - 0.35 * height_fill);
+    ambient += afterglow_fill;
     ambient += environment_fill + moon_fill;
     float ambient_luma = dot(ambient, vec3(0.2126, 0.7152, 0.0722));
     vec3 night_ambient =
@@ -2178,6 +2202,17 @@ MarchResult cloud_ref_compatible_march(vec3 origin, vec3 direction, float start_
             vec3 twilight_edge_source =
                 twilight_radiance * twilight_edge * (0.18 + 0.82 * shadowed_light);
             phase_source += twilight_edge_source * max(params.lighting_strengths.z, 0.0);
+            float afterglow =
+                cloud_afterglow_response(sun_elevation) *
+                clamp(params.twilight_options.w, 0.0, 2.0);
+            float afterglow_top = smoothstep(0.24, 0.96, sample_data.height_fraction);
+            float afterglow_edge =
+                afterglow * direct_visibility * (0.25 + 0.75 * forward_alignment) *
+                max(optical_edge, rim_phase * 0.45) * (0.30 + 0.70 * afterglow_top);
+            vec3 afterglow_edge_source =
+                cloud_afterglow_radiance(twilight_radiance, sun_elevation) *
+                afterglow_edge * (0.18 + 0.82 * shadowed_light) * 0.65;
+            phase_source += afterglow_edge_source * max(params.lighting_strengths.z, 0.0);
             float scatter_gain = 0.42;
             vec3 source_terms = scatter_gain * (ambient_source + direct_source + phase_source);
             color += transmittance * source_terms * (1.0 - d_transmittance);
