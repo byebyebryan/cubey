@@ -48,8 +48,7 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                                       "Inspect the cloud product and diagnostic buffers."),
                      changed);
         if (imgui_enum_combo("Weather preset", clouds.weather_preset,
-                             kCloudEnvironmentWeatherPresets,
-                             cloud_environment_weather_preset_name,
+                             kCloudEnvironmentWeatherPresets, cloud_environment_weather_preset_name,
                              "Apply a tuned cloud coverage and layer preset.")) {
             apply_cloud_environment_weather_preset(clouds, clouds.weather_preset);
             changed = true;
@@ -70,7 +69,7 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                 "Sampling",
                 {.default_open = true,
                  .level = 1,
-                 .help = "Resolution, sampling, and distance regime controls."}};
+                 .help = "Resolution and sampling controls for the shared cloud product."}};
             subgroup) {
             mark_changed(imgui_enum_combo("Quality", layer.quality, kCloudEnvironmentQualities,
                                           cloud_environment_quality_name,
@@ -82,10 +81,10 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                                           "Ray-start pattern. Bayer is stable; blue noise is "
                                           "diagnostic until temporal reconstruction improves."),
                          changed);
-            mark_changed(imgui_slider_int(
-                             "View steps", &layer.view_steps_override, 0, 128,
-                             "Ray-march step override. 0 uses the selected quality preset."),
-                         changed);
+            mark_changed(
+                imgui_slider_int("View steps", &layer.view_steps_override, 0, 128,
+                                 "Ray-march step override. 0 uses the selected quality preset."),
+                changed);
             mark_changed(imgui_slider_int("View samples", &layer.view_samples, 1, 4,
                                           "Ray-start samples per pixel. 1, 2, and 4 are valid; "
                                           "higher values are diagnostic."),
@@ -94,28 +93,28 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                 layer.view_samples = layer.view_samples < 2 ? 1 : 4;
                 changed = true;
             }
+            mark_changed(
+                imgui_enum_combo("Sample mode", layer.view_sample_mode,
+                                 kCloudEnvironmentViewSampleModes,
+                                 cloud_environment_view_sample_mode_name,
+                                 "Single-frame marches all selected samples now; temporal-phased "
+                                 "is experimental and alternates one deterministic phase per frame "
+                                 "through temporal history."),
+                changed);
             mark_changed(imgui_enum_combo(
-                             "Sample mode", layer.view_sample_mode,
-                             kCloudEnvironmentViewSampleModes,
-                             cloud_environment_view_sample_mode_name,
-                             "Single-frame marches all selected samples now; temporal-phased "
-                             "alternates one deterministic phase per frame through temporal "
-                             "history."),
-                         changed);
-            mark_changed(imgui_enum_combo(
-                             "Density model", layer.density_model,
-                             kCloudEnvironmentDensityModels, cloud_environment_density_model_name,
+                             "Density model", layer.density_model, kCloudEnvironmentDensityModels,
+                             cloud_environment_density_model_name,
                              "Cloud density and placement path. Surface-volume is the production "
-                             "local cloud path; experimental-aerial-orbit preserves unfinished "
-                             "high/orbit scaffolding."),
+                             "local cloud path; experimental-aerial-orbit and ref-density are "
+                             "kept for unfinished scale/reference work."),
                          changed);
             if (config.show_aerial_orbit_controls) {
-                mark_changed(imgui_enum_combo(
-                                 "Distance mode", layer.distance_mode,
-                                 kCloudEnvironmentDistanceModes,
-                                 cloud_environment_distance_mode_name,
-                                 "Local, orbit shell, or blended cloud distance behavior."),
-                             changed);
+                mark_changed(
+                    imgui_enum_combo("Distance mode", layer.distance_mode,
+                                     kCloudEnvironmentDistanceModes,
+                                     cloud_environment_distance_mode_name,
+                                     "Local, orbit shell, or blended cloud distance behavior."),
+                    changed);
                 mark_changed(imgui_enum_combo(
                                  "Orbit repr.", layer.orbit_representation,
                                  kCloudEnvironmentOrbitRepresentations,
@@ -124,15 +123,16 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                                  "regime."),
                              changed);
             }
-            mark_changed(imgui_checkbox(
-                             "Temporal", &layer.temporal_enabled,
-                             "Enable experimental temporal reconstruction for the cloud product."),
-                         changed);
+            mark_changed(
+                imgui_checkbox("Temporal", &layer.temporal_enabled,
+                               "Enable experimental temporal reconstruction for the cloud product; "
+                               "off by default until shimmer is solved."),
+                changed);
             mark_changed(imgui_checkbox("Local volume", &layer.local_volume_enabled,
                                         "Render near and overhead volumetric cloud detail."),
                          changed);
             mark_changed(imgui_checkbox("Horizon layer", &layer.horizon_layer_enabled,
-                                        "Add far cloud support near the horizon."),
+                                        "Add experimental far cloud support near the horizon."),
                          changed);
         }
 
@@ -156,17 +156,14 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
             mark_changed(imgui_slider_float("Density", &layer.density, 0.0F, 0.08F, "%.3f",
                                             "Volume density multiplier."),
                          changed);
-            mark_changed(imgui_slider_float("Weather scale", &layer.weather_scale_km, 40.0F,
-                                            500.0F, "%.0f km",
-                                            "Broad weather organization scale."),
+            mark_changed(imgui_slider_float("Weather scale", &layer.weather_scale_km, 40.0F, 500.0F,
+                                            "%.0f km", "Broad weather organization scale."),
                          changed);
-            mark_changed(imgui_slider_float("Shape domain", &layer.shape_domain_km, 120.0F,
-                                            2400.0F, "%.0f km",
-                                            "Local cloud density texture domain scale."),
+            mark_changed(imgui_slider_float("Shape domain", &layer.shape_domain_km, 120.0F, 2400.0F,
+                                            "%.0f km", "Local cloud density texture domain scale."),
                          changed);
             mark_changed(imgui_slider_float("Wind", &clouds.wind_speed_mps, 0.0F, 900.0F,
-                                            "%.0f m/s",
-                                            "Advection speed for cloud sampling."),
+                                            "%.0f m/s", "Advection speed for cloud sampling."),
                          changed);
         }
 
@@ -190,9 +187,8 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
             mark_changed(imgui_slider_float("Weather cells", &layer.weather_cells, 0.0F, 1.0F,
                                             "%.2f", "Cellular weather feature contribution."),
                          changed);
-            mark_changed(imgui_slider_float("Weather streaks", &layer.weather_streaks, 0.0F,
-                                            1.0F, "%.2f",
-                                            "Wind-aligned weather feature contribution."),
+            mark_changed(imgui_slider_float("Weather streaks", &layer.weather_streaks, 0.0F, 1.0F,
+                                            "%.2f", "Wind-aligned weather feature contribution."),
                          changed);
             mark_changed(imgui_slider_float("Detail erosion", &layer.detail_erosion, 0.0F, 1.0F,
                                             "%.2f", "High-frequency erosion contribution."),
@@ -202,32 +198,31 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                              "%.2f",
                              "Deterministic mip filtering for distant or grazing cloud detail."),
                          changed);
-            mark_changed(imgui_slider_float(
-                             "Edge softness", &layer.edge_softness, 0.0F, 2.0F, "%.2f",
-                             "Footprint-aware softening applied to unresolved cloud density edges."),
-                         changed);
-            mark_changed(imgui_slider_float(
-                             "Edge detail fade", &layer.edge_detail_fade, 0.0F, 2.0F, "%.2f",
-                             "Fade high-frequency erosion where the edge is under-resolved."),
-                         changed);
-            mark_changed(imgui_slider_float(
-                             "Edge resolve", &layer.edge_resolve_strength, 0.0F, 1.0F, "%.2f",
-                             "Final-composite resolve strength for cloud edge pixels."),
-                         changed);
-            mark_changed(imgui_slider_float("Crispiness", &layer.crispiness, 1.0F, 80.0F,
-                                            "%.1f",
+            mark_changed(
+                imgui_slider_float(
+                    "Edge softness", &layer.edge_softness, 0.0F, 2.0F, "%.2f",
+                    "Footprint-aware softening applied to unresolved cloud density edges."),
+                changed);
+            mark_changed(
+                imgui_slider_float("Edge detail fade", &layer.edge_detail_fade, 0.0F, 2.0F, "%.2f",
+                                   "Fade high-frequency erosion where the edge is under-resolved."),
+                changed);
+            mark_changed(
+                imgui_slider_float("Edge resolve", &layer.edge_resolve_strength, 0.0F, 1.0F, "%.2f",
+                                   "Final-composite resolve strength for cloud edge pixels."),
+                changed);
+            mark_changed(imgui_slider_float("Crispiness", &layer.crispiness, 1.0F, 80.0F, "%.1f",
                                             "Base density texture frequency/sharpness."),
                          changed);
             mark_changed(imgui_slider_float("Curliness", &layer.curliness, 0.0F, 1.0F, "%.2f",
                                             "Detail density frequency/distortion multiplier."),
                          changed);
-            mark_changed(imgui_slider_float(
-                             "Vertical shear", &layer.vertical_shear_fraction, 0.0F, 0.5F,
-                             "%.2f", "Altitude-dependent shift as a weather-scale fraction."),
-                         changed);
-            mark_changed(imgui_checkbox(
-                             "Powder", &layer.powder_enabled,
-                             "Enable powder-style brightening on thin cloud edges."),
+            mark_changed(
+                imgui_slider_float("Vertical shear", &layer.vertical_shear_fraction, 0.0F, 0.5F,
+                                   "%.2f", "Altitude-dependent shift as a weather-scale fraction."),
+                changed);
+            mark_changed(imgui_checkbox("Powder", &layer.powder_enabled,
+                                        "Enable powder-style brightening on thin cloud edges."),
                          changed);
         }
 
@@ -240,24 +235,23 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
             mark_changed(imgui_slider_float("Shadow", &layer.shadow_strength, 0.0F, 2.0F, "%.2f",
                                             "Cloud self-shadow and prototype shadow weight."),
                          changed);
-            mark_changed(imgui_slider_float("Horizon", &layer.horizon_strength, 0.0F, 2.0F,
-                                            "%.2f",
+            mark_changed(imgui_slider_float("Horizon", &layer.horizon_strength, 0.0F, 2.0F, "%.2f",
                                             "Dedicated far-horizon cloud layer strength."),
                          changed);
             mark_changed(imgui_slider_float("Absorption", &layer.absorption, 0.0F, 2.0F, "%.2f",
                                             "Light absorption through dense cloud."),
                          changed);
-            mark_changed(imgui_slider_float("Ambient", &layer.ambient_strength, 0.0F, 3.0F,
-                                            "%.2f", "Cloud ambient-light multiplier."),
+            mark_changed(imgui_slider_float("Ambient", &layer.ambient_strength, 0.0F, 3.0F, "%.2f",
+                                            "Cloud ambient-light multiplier."),
                          changed);
-            mark_changed(imgui_slider_float("Direct", &layer.direct_strength, 0.0F, 3.0F,
-                                            "%.2f", "Direct sunlight multiplier."),
+            mark_changed(imgui_slider_float("Direct", &layer.direct_strength, 0.0F, 3.0F, "%.2f",
+                                            "Direct sunlight multiplier."),
                          changed);
             mark_changed(imgui_slider_float("Phase", &layer.phase_strength, 0.0F, 3.0F, "%.2f",
                                             "Forward/rim phase-light multiplier."),
                          changed);
-            mark_changed(imgui_slider_float("Twilight color", &layer.twilight_color_strength,
-                                            0.0F, 2.0F, "%.2f",
+            mark_changed(imgui_slider_float("Twilight color", &layer.twilight_color_strength, 0.0F,
+                                            2.0F, "%.2f",
                                             "Warm low-sun cloud color from sun and horizon sky "
                                             "radiance."),
                          changed);
@@ -267,17 +261,16 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                                             "response."),
                          changed);
             mark_changed(imgui_slider_float("Twilight saturation",
-                                            &layer.twilight_saturation_strength, 0.0F, 2.0F,
-                                            "%.2f",
+                                            &layer.twilight_saturation_strength, 0.0F, 2.0F, "%.2f",
                                             "Twilight color saturation preserved in final "
                                             "composite."),
                          changed);
-            mark_changed(imgui_slider_float(
-                             "Afterglow", &layer.afterglow_strength, 0.0F, 2.0F, "%.2f",
-                             "Art-directed red, pink, or purple cloud accent near low sun."),
-                         changed);
-            mark_changed(imgui_slider_float("Contrast", &layer.final_contrast, 0.0F, 3.0F,
-                                            "%.2f", "Final cloud contrast multiplier."),
+            mark_changed(
+                imgui_slider_float("Afterglow", &layer.afterglow_strength, 0.0F, 2.0F, "%.2f",
+                                   "Art-directed red, pink, or purple cloud accent near low sun."),
+                changed);
+            mark_changed(imgui_slider_float("Contrast", &layer.final_contrast, 0.0F, 3.0F, "%.2f",
+                                            "Final cloud contrast multiplier."),
                          changed);
             mark_changed(imgui_slider_float("Saturation", &layer.final_saturation, 0.0F, 3.0F,
                                             "%.2f", "Final cloud saturation multiplier."),
@@ -288,8 +281,8 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                              "Final cloud resolve filter. Terrain-post follows the reference post "
                              "blur; metadata-bilateral keeps the previous guarded filter."),
                          changed);
-            mark_changed(imgui_slider_float("Resolve", &layer.resolve_strength, 0.0F, 1.0F,
-                                            "%.2f", "Alpha-aware cloud resolve strength."),
+            mark_changed(imgui_slider_float("Resolve", &layer.resolve_strength, 0.0F, 1.0F, "%.2f",
+                                            "Alpha-aware cloud resolve strength."),
                          changed);
             mark_changed(imgui_slider_float("Horizon glow", &layer.horizon_glow_strength, 0.0F,
                                             3.0F, "%.2f",
@@ -298,17 +291,17 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
             mark_changed(imgui_slider_float("Sun glare", &layer.sun_glare_strength, 0.0F, 3.0F,
                                             "%.2f", "Final composite sun halo multiplier."),
                          changed);
-            mark_changed(imgui_slider_float("Jitter", &layer.jitter_strength, 0.0F, 1.0F,
-                                            "%.2f", "Ray-start jitter amount."),
+            mark_changed(imgui_slider_float("Jitter", &layer.jitter_strength, 0.0F, 1.0F, "%.2f",
+                                            "Ray-start jitter amount."),
                          changed);
         }
 
         if (config.show_aerial_orbit_controls) {
             if (const ScopedImGuiGroup subgroup{
-                    "Transition",
+                    "Aerial / Orbit",
                     {.default_open = false,
                      .level = 1,
-                     .help = "High-altitude and orbit shell transition controls."}};
+                     .help = "Experimental high-altitude and orbit shell transition controls."}};
                 subgroup) {
                 mark_changed(imgui_slider_float("Orbit start", &layer.orbit_transition_start_m,
                                                 0.0F, 300000.0F, "%.0f m",
@@ -323,33 +316,30 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                                                 "View distance where far shell contribution "
                                                 "starts."),
                              changed);
-                mark_changed(imgui_slider_float("Far end", &layer.far_shell_end_m, 0.0F,
-                                                500000.0F, "%.0f m",
+                mark_changed(imgui_slider_float("Far end", &layer.far_shell_end_m, 0.0F, 500000.0F,
+                                                "%.0f m",
                                                 "View distance where far shell contribution is "
                                                 "full."),
                              changed);
                 mark_changed(imgui_slider_float("Far strength", &layer.far_shell_strength, 0.0F,
-                                                1.5F, "%.2f",
-                                                "Far shell blend contribution."),
+                                                1.5F, "%.2f", "Far shell blend contribution."),
                              changed);
-                mark_changed(imgui_slider_float("Orbit detail", &layer.orbit_detail_strength,
-                                                0.0F, 1.0F, "%.2f",
+                mark_changed(imgui_slider_float("Orbit detail", &layer.orbit_detail_strength, 0.0F,
+                                                1.0F, "%.2f",
                                                 "High-frequency detail retained by orbit clouds."),
                              changed);
                 mark_changed(imgui_slider_float("Orbit density", &layer.orbit_density_scale, 0.0F,
-                                                2.0F, "%.2f",
-                                                "Orbit shell density multiplier."),
+                                                2.0F, "%.2f", "Orbit shell density multiplier."),
                              changed);
-                mark_changed(imgui_slider_float("Orbit fill", &layer.orbit_fill, 0.0F, 2.0F,
-                                                "%.2f", "Broad orbit cloud fill bias."),
+                mark_changed(imgui_slider_float("Orbit fill", &layer.orbit_fill, 0.0F, 2.0F, "%.2f",
+                                                "Broad orbit cloud fill bias."),
                              changed);
-                mark_changed(imgui_slider_float("Orbit motion", &layer.orbit_motion_strength,
-                                                0.0F, 4.0F, "%.2f",
+                mark_changed(imgui_slider_float("Orbit motion", &layer.orbit_motion_strength, 0.0F,
+                                                4.0F, "%.2f",
                                                 "Motion multiplier for orbit weather advection."),
                              changed);
-                mark_changed(imgui_slider_float("Orbit extinction",
-                                                &layer.orbit_shell_extinction, 0.0F, 8.0F,
-                                                "%.2f",
+                mark_changed(imgui_slider_float("Orbit extinction", &layer.orbit_shell_extinction,
+                                                0.0F, 8.0F, "%.2f",
                                                 "Cloud-top shell optical depth multiplier."),
                              changed);
             }
