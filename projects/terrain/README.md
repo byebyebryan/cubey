@@ -164,6 +164,14 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-height-perspective.png
 ```
 
+Scalar debug PNG exports hand completed RGBA buffers to the shared
+`cubey::CaptureQueue`. Multi-view exports use a small encode worker pool and
+finish all queued tickets before writing `manifest.json`. This overlaps PNG
+encoding with later debug-view rasterization, but terrain generation and
+debug-view rasterization are still serial CPU work. `terrain_preview` already
+uses the host capture path, so its PNG and video artifacts go through the same
+queued capture foundation.
+
 Fixed-extent mountain resolution audit:
 
 ```sh
