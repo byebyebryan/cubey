@@ -48,7 +48,7 @@ struct MountainProcessReviewNormalization {
     FieldNormalization post_erosion_height{};
     FieldNormalization crease_map{};
     FieldNormalization ridge_map{};
-    FieldNormalization valley_incision{};
+    FieldNormalization slope{};
 };
 
 struct ReviewPanelSample {
@@ -359,9 +359,8 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
         return scalar_color(terrain_product_field(product, kTerrainFieldMountainRidgeMap),
                             sample.x, sample.y, normalization.ridge_map);
     case 8U:
-        return scalar_color(
-            terrain_product_field(product, kTerrainFieldMountainValleyIncisionM), sample.x,
-            sample.y, normalization.valley_incision);
+        return scalar_color(terrain_product_field(product, kTerrainFieldSlope), sample.x,
+                            sample.y, normalization.slope);
     default:
         return Rgb{};
     }
@@ -663,8 +662,8 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
                 terrain_product_field(product, kTerrainFieldMountainCreaseMap), false),
             .ridge_map = make_field_normalization(
                 terrain_product_field(product, kTerrainFieldMountainRidgeMap), false),
-            .valley_incision = make_field_normalization(
-                terrain_product_field(product, kTerrainFieldMountainValleyIncisionM), false),
+            .slope = make_field_normalization(
+                terrain_product_field(product, kTerrainFieldSlope), false),
         };
     } else if (view != TerrainDebugView::Material) {
         scalar_field = &field_for_debug_view(product, view);

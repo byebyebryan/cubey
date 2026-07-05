@@ -1634,9 +1634,8 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
         fields.mountain_valley_incision = mountain_valley_incision_field(
             fields.mountain_visual_source_height, fields.mountain_valley_floor,
             fields.mountain_ridge_body, fields.mountain_summit_core);
-        cubey::procedural::ScalarField2D valley_shaped_height =
-            subtract_lowering_from_height(fields.mountain_visual_source_height,
-                                          fields.mountain_valley_incision);
+        const cubey::procedural::ScalarField2D& valley_shaped_height =
+            fields.mountain_visual_source_height;
         const cubey::procedural::SlopeCurvature2D visual_slope_curvature =
             cubey::procedural::compute_slope_curvature(valley_shaped_height);
         const cubey::procedural::LocalRelief2D visual_local_relief =
