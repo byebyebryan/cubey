@@ -4,8 +4,8 @@
 cached-sky architecture. It intentionally stays separate from both:
 
 - `cloud_ref`, the TerrainEngine-style per-view raymarch reference;
-- the future production `cloud` project, which can borrow pieces after the
-  references are understood.
+- the shared production cloud layer, which lives in
+  `cubey::render::CloudLayerRuntime` and is tuned through `projects/atmosphere`.
 
 The important difference is that `cloud_ref_2` does not raymarch a screen-sized
 cloud product every frame. It keeps three persistent `rgba16f` octahedral sky
@@ -16,11 +16,12 @@ textures:
 - after a full update cycle, the textures rotate and the composite blends from
   the previous complete sky to the newest complete sky.
 
-This project is an architecture-validation reference, not a faithful Godot
-visual port. It reuses Cubey-generated Perlin-Worley, Worley, and weather
-textures instead of importing the Godot `.bmp`/`.tga` assets, and it uses a
-standalone sky/background approximation instead of Godot's sky/transmittance
-LUTs. `cloud_ref` remains the stronger density/shape visual reference.
+This project is an architecture-validation reference, not a production path or a
+faithful Godot visual port. It reuses Cubey-generated Perlin-Worley, Worley, and
+weather textures instead of importing the Godot `.bmp`/`.tga` assets, and it
+uses a standalone sky/background approximation instead of Godot's
+sky/transmittance LUTs. `cloud_ref` remains the stronger density/shape visual
+reference.
 
 Useful runs:
 

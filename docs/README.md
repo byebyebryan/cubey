@@ -67,10 +67,9 @@ Detailed current foundation notes live under
 
 Project-specific design stays beside the project:
 
+Active projects:
+
 - [Atmosphere](../projects/atmosphere/README.md)
-- [Cloud Ref](../projects/cloud_ref/README.md)
-- [Cloud Ref 2](../projects/cloud_ref_2/README.md)
-- [Clouds Legacy](../projects/clouds_legacy/README.md)
 - [Smoke 2D](../projects/fluid/smoke_2d/README.md)
 - [Water 2D](../projects/fluid/water_2d/README.md)
 - [Water 3D](../projects/fluid/water_3d/README.md)
@@ -79,6 +78,15 @@ Project-specific design stays beside the project:
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [Ocean](../projects/ocean/README.md)
 - [Planet](../projects/planet/README.md)
+
+Reference projects:
+
+- [Cloud Ref](../projects/cloud_ref/README.md)
+- [Cloud Ref 2](../projects/cloud_ref_2/README.md)
+
+Legacy snapshots:
+
+- [Clouds Legacy](../projects/clouds_legacy/README.md)
 - [Terrain Lab Legacy](../projects/terrain_lab_legacy/README.md)
 - [Procedural Terrain Legacy](../projects/procedural_terrain_legacy/README.md)
 

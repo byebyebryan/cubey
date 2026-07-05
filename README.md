@@ -42,19 +42,19 @@ Current examples:
 - `particle_cubes`: compute-updated cube particles rendered as indexed cube
   instances.
 
-Current projects:
+Current active projects:
 
 - `atmosphere`: clear-sky scattering workbench with solar time of day, twilight,
-  procedural stars, moon rendering, Milky Way atlas layers, and headless output.
+  procedural stars, moon rendering, Milky Way atlas layers, the shared
+  production cloud layer, and headless output.
 - `planet`: Earth-scale planet rendering foundation with camera-relative
   cube-sphere LOD, procedural terrain fields, local-detail diagnostics,
   shared sky/celestial state, physical atmosphere preview, HDR post, and
   headless visual smoke coverage.
-- `terrain_lab_legacy`: local terrain generation workbench with deterministic CPU
-  fields, temperate mountain rivers, arid mesa canyon, and sentinel biome slices,
-  heightfield mesh rendering,
-  field/debug views, material and biome masks, headless visual smoke coverage,
-  and future adapters into planet, ocean, or environment projects.
+- `ocean`: active ocean renderer derived from the GodotOceanWaves
+  spectrum/FFT/unpack core, with configurable cascade slots, atmosphere
+  lighting, terrain-field hooks, shared cloud sky/background composition,
+  foam/debug views, and feature-isolation controls.
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, pressure projection, debug views, and
   deterministic headless capture output.
@@ -73,12 +73,6 @@ Current projects:
 - `explosion_3d`: the same shared 3D pyro solver presented as repeated impulse
   bursts with explosion-specific timing, boost controls, and shared environment
   lighting.
-- `ocean`: active ocean renderer derived from the GodotOceanWaves
-  spectrum/FFT/unpack core, with configurable cascade slots, atmosphere
-  lighting, terrain-field hooks, foam/debug views, and feature-isolation
-  controls.
-- `procedural_terrain_legacy`: deterministic heightfield terrain and bathymetry data
-  demo with shoreline/material debug views and headless capture output.
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
@@ -86,6 +80,21 @@ Current projects:
   rendering, shadow maps, and headless capture.
 - `pbr_furnace`: white-furnace PBR validation scene for roughness/metallic
   behavior under uniform generated IBL.
+
+Reference and legacy projects:
+
+- `cloud_ref`: TerrainEngine-style local surface cloud reference used to check
+  density, sampling, and lighting before promotion into the shared cloud layer.
+- `cloud_ref_2`: Godot-v2-style cached-sky architecture reference used to
+  inspect octahedral cache behavior, not a visual target.
+- `clouds_legacy`: frozen first-pass planet-aware cloud/weather prototype kept
+  as evidence for scale, horizon, UI, and integration failure modes.
+- `terrain_lab_legacy`: preserved local terrain generation R&D snapshot with
+  deterministic CPU fields, hydrology-oriented diagnostics, biome slices, and
+  headless visual smoke coverage.
+- `procedural_terrain_legacy`: preserved deterministic coastal terrain and
+  bathymetry demo with shoreline/material debug views and headless capture
+  output.
 
 ## Documentation
 
@@ -118,6 +127,9 @@ Authoritative current docs:
 Project-local docs:
 
 - [Atmosphere](projects/atmosphere/README.md)
+- [Cloud Ref](projects/cloud_ref/README.md)
+- [Cloud Ref 2](projects/cloud_ref_2/README.md)
+- [Clouds Legacy](projects/clouds_legacy/README.md)
 - [Fluid overview](projects/fluid/README.md)
 - [Smoke 2D](projects/fluid/smoke_2d/README.md)
 - [Water 2D](projects/fluid/water_2d/README.md)

@@ -1,8 +1,10 @@
 # Clouds Legacy
 
 `clouds_legacy` is the frozen first-pass planet-aware cloud and weather
-prototype. It is kept as a known comparison target while the active cloud work
-reboots around texture-backed density and cached sky/cloud products.
+prototype. It is kept as a known comparison target while active cloud work uses
+the shared `cubey::render::CloudLayerRuntime` tuned through
+`projects/atmosphere`. Do not add new production cloud work here unless the
+goal is explicitly to preserve or inspect legacy behavior.
 
 The legacy renderer is a v1 planet-aware cloud raymarch. Surface and high
 cameras use a capped spherical-shell local cloud segment with a distant horizon
@@ -16,9 +18,9 @@ procedural weather presets, front/cell/streak weather structure, type-specific
 density profiles, shared-atmosphere sun/moon lighting, cheap base/detail density
 separation, distance/grazing/footprint detail LOD, cheap self-shadowing,
 prototype surface cloud shadows, and raw product debug views for the major
-fields. It deliberately does not integrate into ocean or planet yet; those
-projects should later consume cloud sky/reflection and shadow outputs after this
-new cached-cloud path is stable.
+fields. It deliberately does not integrate into ocean or planet; current
+consumers should use the shared runtime and receive cloud sky/reflection or
+shadow outputs there when those products become stable.
 
 Useful runs:
 
