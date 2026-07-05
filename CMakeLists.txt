@@ -341,6 +341,7 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
             CUBEY_DYNAMIC_RENDERING_SCAN_DIRS
                 "${CMAKE_SOURCE_DIR}/projects/atmosphere"
                 "${CMAKE_SOURCE_DIR}/projects/cloud_ref"
+                "${CMAKE_SOURCE_DIR}/projects/cloud_ref_2"
                 "${CMAKE_SOURCE_DIR}/projects/clouds_legacy"
                 "${CMAKE_SOURCE_DIR}/projects/fractal_2d"
                 "${CMAKE_SOURCE_DIR}/projects/fluid"
@@ -349,6 +350,7 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
                 "${CMAKE_SOURCE_DIR}/projects/pbr_furnace"
                 "${CMAKE_SOURCE_DIR}/projects/planet"
                 "${CMAKE_SOURCE_DIR}/projects/procedural_terrain_legacy"
+                "${CMAKE_SOURCE_DIR}/projects/terrain_lab_legacy"
         )
     endif()
     add_test(
