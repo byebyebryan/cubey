@@ -37,6 +37,10 @@ inline constexpr std::string_view kTerrainFieldMountainRidgeSkeleton =
     "mountain_ridge_skeleton";
 inline constexpr std::string_view kTerrainFieldMountainRidgeInfluence =
     "mountain_ridge_influence";
+inline constexpr std::string_view kTerrainFieldMountainRidgeBody = "mountain_ridge_body";
+inline constexpr std::string_view kTerrainFieldMountainValleyFloor = "mountain_valley_floor";
+inline constexpr std::string_view kTerrainFieldMountainValleyIncisionM =
+    "mountain_valley_incision_m";
 inline constexpr std::string_view kTerrainFieldMountainUplift = "mountain_uplift";
 inline constexpr std::string_view kTerrainFieldRidgeUplift = "ridge_uplift";
 inline constexpr std::string_view kTerrainFieldPeakUplift = "peak_uplift";

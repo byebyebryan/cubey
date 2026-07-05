@@ -15,7 +15,7 @@ inline constexpr std::uint32_t kTerrainMinGridSize = 17U;
 inline constexpr std::uint32_t kTerrainMaxGridSize = 2049U;
 inline constexpr float kTerrainDefaultCellSizeM = 32.0F;
 inline constexpr std::uint64_t kTerrainDefaultSeed = 0x7465'7272'6169'6e01ULL;
-inline constexpr std::uint32_t kTerrainGeneratorRevision = 30U;
+inline constexpr std::uint32_t kTerrainGeneratorRevision = 31U;
 inline constexpr std::string_view kTerrainRecipeTemperateMountainRiver =
     "temperate-mountain-river";
 inline constexpr std::string_view kTerrainRecipeTemperateMountainRiverStress =

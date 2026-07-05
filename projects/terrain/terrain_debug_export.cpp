@@ -41,6 +41,9 @@ struct FieldNormalization {
 
 struct MountainProcessReviewNormalization {
     FieldNormalization profile_height{};
+    FieldNormalization ridge_body{};
+    FieldNormalization valley_floor{};
+    FieldNormalization valley_incision{};
     FieldNormalization height{};
     FieldNormalization post_erosion_height{};
     FieldNormalization slope_instability{};
@@ -58,7 +61,7 @@ struct ReviewPanelSample {
 inline constexpr std::size_t kTerrainDebugEncodeWorkerCount = 2U;
 inline constexpr std::size_t kTerrainDebugEncodeBacklog = 4U;
 
-inline constexpr std::array<DebugViewName, 50> kDebugViewNames{
+inline constexpr std::array<DebugViewName, 53> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
     DebugViewName{TerrainDebugView::MountainRelief, "mountain-relief"},
     DebugViewName{TerrainDebugView::MountainProcessReview, "mountain-process-review"},
@@ -88,6 +91,9 @@ inline constexpr std::array<DebugViewName, 50> kDebugViewNames{
     DebugViewName{TerrainDebugView::PeakSupport, "peak-support"},
     DebugViewName{TerrainDebugView::MountainRidgeSkeleton, "mountain-ridge-skeleton"},
     DebugViewName{TerrainDebugView::MountainRidgeInfluence, "mountain-ridge-influence"},
+    DebugViewName{TerrainDebugView::MountainRidgeBody, "mountain-ridge-body"},
+    DebugViewName{TerrainDebugView::MountainValleyFloor, "mountain-valley-floor"},
+    DebugViewName{TerrainDebugView::MountainValleyIncision, "mountain-valley-incision"},
     DebugViewName{TerrainDebugView::MountainUplift, "mountain-uplift"},
     DebugViewName{TerrainDebugView::RidgeUplift, "ridge-uplift"},
     DebugViewName{TerrainDebugView::PeakUplift, "peak-uplift"},
@@ -111,7 +117,7 @@ inline constexpr std::array<DebugViewName, 50> kDebugViewNames{
     DebugViewName{TerrainDebugView::Vegetation, "vegetation"},
 };
 
-inline constexpr std::array<TerrainDebugView, 50> kTerrainDebugReviewViews{
+inline constexpr std::array<TerrainDebugView, 53> kTerrainDebugReviewViews{
     TerrainDebugView::Final,
     TerrainDebugView::MountainRelief,
     TerrainDebugView::MountainProcessReview,
@@ -141,6 +147,9 @@ inline constexpr std::array<TerrainDebugView, 50> kTerrainDebugReviewViews{
     TerrainDebugView::PeakSupport,
     TerrainDebugView::MountainRidgeSkeleton,
     TerrainDebugView::MountainRidgeInfluence,
+    TerrainDebugView::MountainRidgeBody,
+    TerrainDebugView::MountainValleyFloor,
+    TerrainDebugView::MountainValleyIncision,
     TerrainDebugView::MountainUplift,
     TerrainDebugView::RidgeUplift,
     TerrainDebugView::PeakUplift,
@@ -258,7 +267,7 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
 [[nodiscard]] ReviewPanelSample review_panel_sample(const cubey::procedural::Grid2DDesc& desc,
                                                     std::uint32_t x, std::uint32_t y) {
     constexpr std::uint32_t kColumns = 3U;
-    constexpr std::uint32_t kRows = 2U;
+    constexpr std::uint32_t kRows = 3U;
     const std::uint32_t visual_y = desc.height - 1U - y;
     const std::uint32_t column = std::min(kColumns - 1U, (x * kColumns) / desc.width);
     const std::uint32_t row = std::min(kRows - 1U, (visual_y * kRows) / desc.height);
@@ -314,19 +323,29 @@ make_field_normalization(const cubey::procedural::ScalarField2D& field, bool log
             terrain_product_field(product, kTerrainFieldMountainProfileHeightM), sample.x,
             sample.y, normalization.profile_height);
     case 1U:
+        return scalar_color(terrain_product_field(product, kTerrainFieldMountainRidgeBody),
+                            sample.x, sample.y, normalization.ridge_body);
+    case 2U:
+        return scalar_color(terrain_product_field(product, kTerrainFieldMountainValleyFloor),
+                            sample.x, sample.y, normalization.valley_floor);
+    case 3U:
+        return scalar_color(
+            terrain_product_field(product, kTerrainFieldMountainValleyIncisionM), sample.x,
+            sample.y, normalization.valley_incision);
+    case 4U:
         return height_review_color(terrain_product_field(product, kTerrainFieldHeightM),
                                    sample.x, sample.y, normalization.height);
-    case 2U:
+    case 5U:
         return height_review_color(
             terrain_product_field(product, kTerrainFieldPostErosionHeightM), sample.x,
             sample.y, normalization.post_erosion_height);
-    case 3U:
+    case 6U:
         return scalar_color(terrain_product_field(product, kTerrainFieldSlopeInstability),
                             sample.x, sample.y, normalization.slope_instability);
-    case 4U:
+    case 7U:
         return scalar_color(terrain_product_field(product, kTerrainFieldThermalErosionDeltaM),
                             sample.x, sample.y, normalization.thermal_erosion_delta);
-    case 5U:
+    case 8U:
         return scalar_color(terrain_product_field(product, kTerrainFieldTalusDepositionM),
                             sample.x, sample.y, normalization.talus_deposition);
     default:
@@ -528,6 +547,12 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         return terrain_product_field(product, kTerrainFieldMountainRidgeSkeleton);
     case TerrainDebugView::MountainRidgeInfluence:
         return terrain_product_field(product, kTerrainFieldMountainRidgeInfluence);
+    case TerrainDebugView::MountainRidgeBody:
+        return terrain_product_field(product, kTerrainFieldMountainRidgeBody);
+    case TerrainDebugView::MountainValleyFloor:
+        return terrain_product_field(product, kTerrainFieldMountainValleyFloor);
+    case TerrainDebugView::MountainValleyIncision:
+        return terrain_product_field(product, kTerrainFieldMountainValleyIncisionM);
     case TerrainDebugView::MountainUplift:
         return terrain_product_field(product, kTerrainFieldMountainUplift);
     case TerrainDebugView::RidgeUplift:
@@ -597,6 +622,12 @@ field_for_debug_view(const TerrainRegionProduct& product, TerrainDebugView view)
         process_review_normalization = MountainProcessReviewNormalization{
             .profile_height = make_field_normalization(
                 terrain_product_field(product, kTerrainFieldMountainProfileHeightM), false),
+            .ridge_body = make_field_normalization(
+                terrain_product_field(product, kTerrainFieldMountainRidgeBody), false),
+            .valley_floor = make_field_normalization(
+                terrain_product_field(product, kTerrainFieldMountainValleyFloor), false),
+            .valley_incision = make_field_normalization(
+                terrain_product_field(product, kTerrainFieldMountainValleyIncisionM), false),
             .height =
                 make_field_normalization(terrain_product_field(product, kTerrainFieldHeightM),
                                          false),
