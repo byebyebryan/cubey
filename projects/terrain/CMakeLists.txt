@@ -1,6 +1,7 @@
 add_executable(cubey_project_terrain
     main.cpp
     terrain_debug_export.cpp
+    terrain_engine_reference.cpp
     terrain_generator.cpp
     terrain_phase_profile.cpp
     terrain_process_fields.cpp
@@ -30,6 +31,7 @@ cubey_add_app_target(
         terrain_preview_main.cpp
         terrain_preview_app.cpp
         terrain_preview_config.cpp
+        terrain_engine_reference.cpp
         terrain_preview_mesh.cpp
         terrain_generator.cpp
         terrain_phase_profile.cpp
@@ -44,6 +46,7 @@ target_link_libraries(cubey_project_terrain_preview PRIVATE nlohmann_json::nlohm
 if (BUILD_TESTING)
     add_executable(cubey_project_terrain_tests
         terrain_debug_export.cpp
+        terrain_engine_reference.cpp
         terrain_generator.cpp
         terrain_preview_config.cpp
         terrain_preview_mesh.cpp
