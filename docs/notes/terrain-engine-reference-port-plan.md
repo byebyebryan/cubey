@@ -23,8 +23,10 @@ Reference repository:
 
 TerrainEngine is mainly a renderer-side terrain implementation. It draws a
 moving grid of tessellated terrain tiles and samples height directly in GLSL.
-The first port should therefore map its height and material recipe into Cubey's
-CPU terrain product contract, not port the OpenGL draw stack.
+The first port mapped its height and material recipe into Cubey's CPU terrain
+product contract. The next port should add a renderer-backed runtime reference
+mode that samples the same function in GLSL over a view-scale grid, without
+turning TerrainEngine's OpenGL draw stack into Cubey runtime infrastructure.
 
 ## Capability Review
 
@@ -138,11 +140,11 @@ Do not treat TerrainEngine as a reference for:
 - vegetation or forest rendering;
 - large-world terrain streaming beyond simple recentered tiles.
 
-## What To Port First
+## Completed First Port
 
-Add an isolated recipe named `terrain-engine-ref`.
+Revision 34 added an isolated recipe named `terrain-engine-ref`.
 
-The recipe should:
+The recipe:
 
 - sample the TerrainEngine height function using the same broad controls:
   `octaves = 13`, `freq = 0.01`, `gDispFactor = 20`, `power = 3`, persistence
@@ -153,22 +155,45 @@ The recipe should:
   systems work unchanged;
 - keep river, gully, talus, and current mountain-driver process fields inactive
   for this recipe;
-- use current `terrain_preview` mesh captures for review.
+- uses current `terrain_preview` mesh captures for CPU-product review.
 
-The first implementation can map TerrainEngine material output onto Cubey's
-existing `material_soil`, `material_grass`, and `material_rock` fields. Sand is
+The implementation maps TerrainEngine material output onto Cubey's existing
+`material_soil`, `material_grass`, and `material_rock` fields. Sand is
 represented by `material_soil`.
+
+## Runtime Reference Step
+
+Add a `terrain_preview` runtime mode for `terrain-engine-ref`.
+
+The mode should:
+
+- build a camera-scale clipmap mesh from Cubey's existing
+  `clipmap_grid_2d` helper;
+- keep vertex height sampling in GLSL using the same TerrainEngine-inspired
+  function as the CPU recipe;
+- pass deterministic seed components to the shader instead of baking a
+  per-vertex heightfield;
+- color terrain from the same water-height, slope, grass, soil, and rock rules
+  used by the CPU recipe;
+- optionally clamp sub-water vertices to the TerrainEngine reference waterline
+  as a first water-intersection preview;
+- keep the existing CPU-product preview as the default mode.
+
+This is not a finished terrain runtime. It is a known-good midpoint for checking
+whether coherent shader-side source sampling, view-scale grids, and simple
+material rules give a better visual baseline than the process-heavy debug mesh.
 
 ## What Not To Port Yet
 
-Do not port these pieces in the first batch:
+Do not port these pieces in the runtime-reference batch:
 
 - TerrainEngine's app shell, windowing, camera, ImGui controls, or resource
   loader;
 - OpenGL tessellation shader stages as runtime infrastructure;
-- water, clouds, forest, atmosphere, stars, or fog from the reference app;
+- reflection/refraction water FBOs, clouds, forest, atmosphere, stars, or fog
+  from the reference app;
 - TerrainEngine texture assets into Cubey shipping assets;
-- a new terrain LOD or clipmap runtime.
+- a full streaming terrain product, planet-scale terrain paging, or hydrology.
 
 Those are useful study material, but they are separate from the first reference
 height/material lane.
