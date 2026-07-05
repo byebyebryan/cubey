@@ -4,6 +4,7 @@
 #include "ocean_surface_frame.h"
 
 #include <cubey/engine/atmosphere_environment_config.h>
+#include <cubey/engine/cloud_environment_config.h>
 #include <cubey/host/performance_ui.h>
 
 #include <cstdint>
@@ -43,6 +44,7 @@ struct OceanUiContext {
     OceanSurfaceFrame surface_frame;
     OceanMeshDrawStats draw_stats;
     cubey::AtmosphereEnvironmentRunState& atmosphere;
+    cubey::CloudEnvironmentConfig& clouds;
     cubey::host::PerformanceUiContext performance;
     OceanRenderView& render_view;
     OceanCameraPreset& camera_preset;
