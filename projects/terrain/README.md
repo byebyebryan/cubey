@@ -164,6 +164,11 @@ port TerrainEngine's OpenGL app or tessellation stack. The same note captures
 the broader reference review: TerrainEngine has a useful distance-adaptive
 tessellated runtime and water presentation path, but it does not provide biome
 recipes, hydraulic erosion, lake generation, or foliage rendering.
+The preview app now has a `terrain-engine-ref` runtime mode that samples that
+reference height function in GLSL over a Cubey clipmap review mesh. This is a
+runtime visual reference, not a full infinite terrain renderer: the current
+captures still show a finite review patch edge and the water pass is only a
+waterline clamp/tint, not reflection/refraction water.
 
 ## Commands
 
@@ -180,6 +185,9 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress-1025
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe terrain-engine-ref --terrain-debug-view all --terrain-output-dir outputs/terrain/terrain-engine-ref
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-preview-runtime terrain-engine-ref --terrain-camera-preset oblique --terrain-water-surface --output outputs/terrain/terrain-engine-ref/runtime-oblique-water.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-preview-runtime terrain-engine-ref --terrain-camera-preset oblique --no-terrain-water-surface --output outputs/terrain/terrain-engine-ref/runtime-oblique-dry.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-preview-runtime terrain-engine-ref --terrain-camera-preset surface-low --terrain-water-surface --output outputs/terrain/terrain-engine-ref/runtime-surface-low-water.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color material --output outputs/terrain/current-river-network/river-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color height --output outputs/terrain/current-river-network/river-height-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color channel --output outputs/terrain/current-river-network/river-channel-perspective.png

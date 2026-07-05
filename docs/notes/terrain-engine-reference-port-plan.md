@@ -183,6 +183,28 @@ This is not a finished terrain runtime. It is a known-good midpoint for checking
 whether coherent shader-side source sampling, view-scale grids, and simple
 material rules give a better visual baseline than the process-heavy debug mesh.
 
+## Runtime Reference Status
+
+The first runtime-reference implementation adds:
+
+- `--terrain-preview-runtime terrain-engine-ref`, gated to the
+  `terrain-engine-ref` recipe;
+- a Cubey `clipmap_grid_2d` review mesh with vertex height displaced in GLSL;
+- shared C++/GLSL TerrainEngine-inspired height and material rules;
+- `--terrain-water-surface` / `--no-terrain-water-surface` review toggles for
+  the simple waterline clamp.
+
+Known limitations:
+
+- the clipmap is currently a finite review patch, so captures can expose hard
+  outer edges;
+- the mesh is regenerated as one static review mesh rather than streamed or
+  recentered around a moving camera;
+- water is a flat intersection tint/clamp, not a separate reflective,
+  refractive water renderer;
+- no biome, hydrology, foliage, or terrain-product paging is implied by this
+  runtime reference mode.
+
 ## What Not To Port Yet
 
 Do not port these pieces in the runtime-reference batch:
