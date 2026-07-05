@@ -212,6 +212,12 @@ struct TerrainSourceProfile {
     float detail_max_m = 52.0F;
 };
 
+struct TerrainEngineReferenceMaterialFields {
+    cubey::procedural::ScalarField2D rock{};
+    cubey::procedural::ScalarField2D soil{};
+    cubey::procedural::ScalarField2D grass{};
+};
+
 struct RoutingDomain {
     cubey::procedural::Grid2DDesc visible_desc{};
     cubey::procedural::Grid2DDesc hidden_desc{};
@@ -527,6 +533,10 @@ struct MountainVisualSourceFields {
     return {};
 }
 
+[[nodiscard]] bool is_terrain_engine_reference_recipe(std::string_view recipe_id) {
+    return recipe_id == kTerrainRecipeTerrainEngineRef;
+}
+
 [[nodiscard]] cubey::procedural::ScalarField2D unit_source_field(
     cubey::procedural::Grid2DDesc desc, std::uint64_t seed, float frequency,
     std::uint32_t octaves) {
@@ -539,6 +549,113 @@ struct MountainVisualSourceFields {
 [[nodiscard]] cubey::procedural::ScalarField2D zero_field(
     cubey::procedural::Grid2DDesc desc) {
     return cubey::procedural::ScalarField2D(desc, 0.0F);
+}
+
+[[nodiscard]] float fract_positive(float value) {
+    return value - std::floor(value);
+}
+
+[[nodiscard]] float terrain_engine_reference_seed_component(std::uint64_t seed, int shift,
+                                                            float scale) {
+    const std::uint64_t bits = (seed >> shift) & 0xffffULL;
+    return (static_cast<float>(bits) / 65535.0F) * scale;
+}
+
+[[nodiscard]] float terrain_engine_reference_random2d(float x, float y, float seed_x,
+                                                      float seed_y) {
+    const float dot_value = (x * (12.9898F + seed_x)) + (y * (78.233F + seed_y));
+    return fract_positive(std::sin(dot_value) * 43758.5453123F);
+}
+
+[[nodiscard]] float terrain_engine_reference_noise(float x, float y, std::uint64_t seed) {
+    const float seed_x = terrain_engine_reference_seed_component(seed, 0, 17.0F);
+    const float seed_y = terrain_engine_reference_seed_component(seed, 16, 31.0F);
+    const float integer_x = std::floor(x);
+    const float integer_y = std::floor(y);
+    const float fractional_x = x - integer_x;
+    const float fractional_y = y - integer_y;
+    const float a =
+        terrain_engine_reference_random2d(integer_x, integer_y, seed_x, seed_y);
+    const float b =
+        terrain_engine_reference_random2d(integer_x + 1.0F, integer_y, seed_x, seed_y);
+    const float c =
+        terrain_engine_reference_random2d(integer_x, integer_y + 1.0F, seed_x, seed_y);
+    const float d =
+        terrain_engine_reference_random2d(integer_x + 1.0F, integer_y + 1.0F, seed_x, seed_y);
+    const float wx = fractional_x * fractional_x * fractional_x *
+                     (10.0F + fractional_x * (-15.0F + 6.0F * fractional_x));
+    const float wy = fractional_y * fractional_y * fractional_y *
+                     (10.0F + fractional_y * (-15.0F + 6.0F * fractional_y));
+    const float k0 = a;
+    const float k1 = b - a;
+    const float k2 = c - a;
+    const float k3 = d - c - b + a;
+    return k0 + (k1 * wx) + (k2 * wy) + (k3 * wx * wy);
+}
+
+[[nodiscard]] float terrain_engine_reference_height(float world_x, float world_y,
+                                                    std::uint64_t seed) {
+    constexpr int kOctaves = 13;
+    constexpr float kInputFrequency = 0.01F;
+    constexpr float kDisplacementFactor = 20.0F;
+    constexpr float kPersistence = 0.5F;
+    constexpr float kPower = 3.0F;
+    float frequency = 0.005F * kInputFrequency;
+    float amplitude = kDisplacementFactor;
+    float total = 0.0F;
+    for (int octave = 0; octave < kOctaves; ++octave) {
+        frequency *= 2.0F;
+        amplitude *= kPersistence;
+        const float sample_x = frequency * ((0.8F * world_x) + (0.6F * world_y));
+        const float sample_y = frequency * ((-0.6F * world_x) + (0.8F * world_y));
+        total += terrain_engine_reference_noise(sample_x, sample_y, seed) * amplitude;
+    }
+    return std::pow(std::max(total, 0.0F), kPower);
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D terrain_engine_reference_height_field(
+    cubey::procedural::Grid2DDesc desc, std::uint64_t seed) {
+    cubey::procedural::ScalarField2D result(desc, 0.0F);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float world_x = desc.origin_x + (static_cast<float>(x) * desc.cell_size);
+            const float world_y = desc.origin_y + (static_cast<float>(y) * desc.cell_size);
+            result.at(x, y) = terrain_engine_reference_height(world_x, world_y, seed);
+        }
+    }
+    return result;
+}
+
+void set_inactive_source_fields(TerrainSourceFields& fields, cubey::procedural::Grid2DDesc desc) {
+    fields.mountain_profile_height = zero_field(desc);
+    fields.mountain_range_spine = zero_field(desc);
+    fields.mountain_envelope = zero_field(desc);
+    fields.mountain_mass = zero_field(desc);
+    fields.mountain_shoulder = zero_field(desc);
+    fields.mountain_summit_core = zero_field(desc);
+    fields.mountain_saddle_gate = zero_field(desc);
+    fields.mountain_support = zero_field(desc);
+    fields.mountain_ridge_hierarchy = zero_field(desc);
+    fields.ridge_support = zero_field(desc);
+    fields.mountain_peak_candidates = zero_field(desc);
+    fields.mountain_peak_anchors = zero_field(desc);
+    fields.mountain_peak_prominence = zero_field(desc);
+    fields.peak_support = zero_field(desc);
+    fields.mountain_ridge_skeleton = zero_field(desc);
+    fields.mountain_ridge_influence = zero_field(desc);
+    fields.mountain_ridge_body = zero_field(desc);
+    fields.mountain_valley_floor = zero_field(desc);
+    fields.mountain_valley_incision = zero_field(desc);
+    fields.mountain_visual_source_height = zero_field(desc);
+    fields.mountain_ridged_chain = zero_field(desc);
+    fields.mountain_detail_weight = zero_field(desc);
+    fields.mountain_morphology_delta = zero_field(desc);
+    fields.mountain_crease_map = zero_field(desc);
+    fields.mountain_ridge_map = zero_field(desc);
+    fields.mountain_uplift = zero_field(desc);
+    fields.ridge_uplift = zero_field(desc);
+    fields.peak_uplift = zero_field(desc);
+    fields.detail_residual = zero_field(desc);
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D shape_unit_field(
@@ -1603,6 +1720,13 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
     TerrainSourceFields fields{
         .broad_noise = unit_source_field(desc, seed + 101U, 0.00018F, 4U),
     };
+    if (is_terrain_engine_reference_recipe(recipe_id)) {
+        fields.base_elevation = terrain_engine_reference_height_field(desc, seed);
+        fields.broad_relief = zero_field(desc);
+        set_inactive_source_fields(fields, desc);
+        fields.height = fields.base_elevation;
+        return fields;
+    }
     fields.base_elevation = make_base_elevation_field(desc, fields.broad_noise);
     fields.broad_relief =
         scale_unit_field(unit_source_field(desc, seed + 202U, 0.00042F, 5U), -80.0F, 360.0F);
@@ -1690,11 +1814,11 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
         fields.mountain_peak_prominence = zero_field(desc);
         fields.peak_support = zero_field(desc);
         fields.mountain_ridge_skeleton = zero_field(desc);
-        fields.mountain_ridge_influence = zero_field(desc);
-        fields.mountain_ridge_body = zero_field(desc);
-        fields.mountain_valley_floor = zero_field(desc);
-        fields.mountain_valley_incision = zero_field(desc);
-        fields.mountain_visual_source_height = zero_field(desc);
+            fields.mountain_ridge_influence = zero_field(desc);
+            fields.mountain_ridge_body = zero_field(desc);
+            fields.mountain_valley_floor = zero_field(desc);
+            fields.mountain_valley_incision = zero_field(desc);
+            fields.mountain_visual_source_height = zero_field(desc);
         fields.mountain_ridged_chain = zero_field(desc);
         fields.mountain_detail_weight = zero_field(desc);
         fields.mountain_morphology_delta = zero_field(desc);
@@ -1726,7 +1850,8 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
 [[nodiscard]] cubey::procedural::ScalarField2D make_routing_source_height(
     cubey::procedural::Grid2DDesc desc, std::uint64_t seed, std::string_view recipe_id) {
     const TerrainSourceFields fields = make_terrain_source_fields(desc, seed, recipe_id);
-    if (recipe_id == kTerrainRecipeTemperateMountainRangeStress) {
+    if (recipe_id == kTerrainRecipeTemperateMountainRangeStress ||
+        is_terrain_engine_reference_recipe(recipe_id)) {
         return fields.height;
     }
     cubey::procedural::ScalarField2D result(desc, 0.0F);
@@ -6922,6 +7047,26 @@ void update_river_moisture_fields(RiverFields& fields,
     };
 }
 
+[[nodiscard]] RiverFields make_inactive_river_fields(cubey::procedural::Grid2DDesc desc) {
+    return RiverFields{
+        .drainage_potential = zero_field(desc),
+        .routing_fill_delta = zero_field(desc),
+        .flow_direction = zero_field(desc),
+        .flow_accumulation = zero_field(desc),
+        .stream_order = zero_field(desc),
+        .river_mask = zero_field(desc),
+        .river_trunk = zero_field(desc),
+        .tributaries = zero_field(desc),
+        .river_graph_plan = zero_field(desc),
+        .river_graph_discharge = zero_field(desc),
+        .sink_mask = zero_field(desc),
+        .channel_width = zero_field(desc),
+        .valley_width = zero_field(desc),
+        .wetness = zero_field(desc),
+        .deposition = zero_field(desc),
+    };
+}
+
 [[nodiscard]] RiverCarvingFields apply_river_carving(
     const cubey::procedural::ScalarField2D& height,
     const cubey::procedural::ScalarField2D& local_relief, const RiverFields& river_fields,
@@ -6981,6 +7126,16 @@ void update_river_moisture_fields(RiverFields& fields,
     };
 }
 
+[[nodiscard]] RiverCarvingFields make_inactive_river_carving_fields(
+    const cubey::procedural::ScalarField2D& height) {
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    return RiverCarvingFields{
+        .height = height,
+        .channel_incision = zero_field(desc),
+        .valley_incision = zero_field(desc),
+    };
+}
+
 [[nodiscard]] cubey::procedural::ScalarField2D make_material_field(
     const cubey::procedural::ScalarField2D& height, const cubey::procedural::ScalarField2D& slope,
     const cubey::procedural::ScalarField2D& wetness,
@@ -7014,6 +7169,68 @@ void update_river_moisture_fields(RiverFields& fields,
     return result;
 }
 
+[[nodiscard]] float terrain_engine_reference_normal_cos_v(float world_x, float world_y,
+                                                          std::uint64_t seed) {
+    constexpr float kStepM = 1.0F;
+    const float dhdu =
+        (terrain_engine_reference_height(world_x + kStepM, world_y, seed) -
+         terrain_engine_reference_height(world_x - kStepM, world_y, seed)) /
+        (2.0F * kStepM);
+    const float dhdv =
+        (terrain_engine_reference_height(world_x, world_y + kStepM, seed) -
+         terrain_engine_reference_height(world_x, world_y - kStepM, seed)) /
+        (2.0F * kStepM);
+    return 1.0F / std::sqrt(1.0F + (dhdu * dhdu) + (dhdv * dhdv));
+}
+
+[[nodiscard]] TerrainEngineReferenceMaterialFields make_terrain_engine_reference_material_fields(
+    const cubey::procedural::ScalarField2D& height, std::uint64_t seed) {
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    constexpr float kGrassCoverage = 0.65F;
+    constexpr float kTransitionM = 20.0F;
+    constexpr float kFallbackWaterHeightM = 100.0F;
+    const float ten_percent_grass = kGrassCoverage - (kGrassCoverage * 0.1F);
+    TerrainEngineReferenceMaterialFields fields{
+        .rock = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .soil = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .grass = cubey::procedural::ScalarField2D(desc, 0.0F),
+    };
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float world_x = desc.origin_x + (static_cast<float>(x) * desc.cell_size);
+            const float world_y = desc.origin_y + (static_cast<float>(y) * desc.cell_size);
+            const float sample_height = height.at(x, y);
+            const float cos_v = terrain_engine_reference_normal_cos_v(world_x, world_y, seed);
+            float rock = 0.0F;
+            float soil = 0.0F;
+            float grass = 0.0F;
+            if (sample_height <= kFallbackWaterHeightM + kTransitionM) {
+                soil = 1.0F;
+            } else if (sample_height <= kFallbackWaterHeightM + (2.0F * kTransitionM)) {
+                const float blend =
+                    cubey::procedural::saturate((sample_height - kFallbackWaterHeightM -
+                                                 kTransitionM) /
+                                                kTransitionM);
+                soil = 1.0F - blend;
+                grass = blend;
+            } else if (cos_v > kGrassCoverage) {
+                grass = 1.0F;
+            } else if (cos_v > ten_percent_grass) {
+                const float blend = cubey::procedural::saturate(
+                    (cos_v - ten_percent_grass) / (kGrassCoverage * 0.1F));
+                rock = 1.0F - blend;
+                grass = blend;
+            } else {
+                rock = 1.0F;
+            }
+            fields.rock.at(x, y) = rock;
+            fields.soil.at(x, y) = soil;
+            fields.grass.at(x, y) = grass;
+        }
+    }
+    return fields;
+}
+
 [[nodiscard]] cubey::procedural::ScalarField2D make_vegetation_potential_field(
     const cubey::procedural::ScalarField2D& slope,
     const cubey::procedural::ScalarField2D& wetness,
@@ -7027,6 +7244,20 @@ void update_river_moisture_fields(RiverFields& fields,
                 cubey::procedural::saturate((material_grass.at(x, y) * 0.72F) +
                                             (wetness.at(x, y) * 0.22F)) *
                 slope_limit;
+        }
+    }
+    return result;
+}
+
+[[nodiscard]] cubey::procedural::ScalarField2D make_material_vegetation_potential_field(
+    const cubey::procedural::ScalarField2D& slope,
+    const cubey::procedural::ScalarField2D& material_grass) {
+    cubey::procedural::ScalarField2D result(slope.desc(), 0.0F);
+    for (std::uint32_t y = 0; y < slope.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < slope.desc().width; ++x) {
+            const float slope_limit = 1.0F - cubey::procedural::smoothstep(0.20F, 0.70F,
+                                                                           slope.at(x, y));
+            result.at(x, y) = cubey::procedural::saturate(material_grass.at(x, y) * slope_limit);
         }
     }
     return result;
@@ -7075,6 +7306,8 @@ void update_river_moisture_fields(RiverFields& fields,
 TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) {
     TerrainRegionProduct product = make_empty_terrain_region_product(config);
     const cubey::procedural::Grid2DDesc desc = product.fields.desc();
+    const bool terrain_engine_reference =
+        is_terrain_engine_reference_recipe(config.recipe_id);
 
     TerrainSourceFields source_fields =
         make_terrain_source_fields(desc, config.seed, config.recipe_id);
@@ -7082,10 +7315,13 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     const cubey::procedural::LocalRelief2D source_local_relief =
         cubey::procedural::compute_local_relief(pre_process_height, 4U);
     RiverFields river_fields =
-        make_river_fields(pre_process_height, config);
+        terrain_engine_reference ? make_inactive_river_fields(desc)
+                                 : make_river_fields(pre_process_height, config);
     RiverCarvingFields carving_fields =
-        apply_river_carving(pre_process_height, source_local_relief.local_span, river_fields,
-                            config.recipe_id);
+        terrain_engine_reference
+            ? make_inactive_river_carving_fields(pre_process_height)
+            : apply_river_carving(pre_process_height, source_local_relief.local_span,
+                                  river_fields, config.recipe_id);
     const cubey::procedural::SlopeCurvature2D slope_curvature =
         cubey::procedural::compute_slope_curvature(carving_fields.height);
     const cubey::procedural::LocalRelief2D local_relief =
@@ -7109,18 +7345,33 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
         carving_fields.height, gully_fields.erosion_delta_m,
         talus_fields.thermal_erosion_delta_m, talus_fields.talus_deposition_m);
     update_river_moisture_fields(river_fields, slope_curvature.slope);
+    TerrainEngineReferenceMaterialFields terrain_engine_materials =
+        terrain_engine_reference
+            ? make_terrain_engine_reference_material_fields(carving_fields.height, config.seed)
+            : TerrainEngineReferenceMaterialFields{};
     cubey::procedural::ScalarField2D material_rock =
-        make_material_field(carving_fields.height, slope_curvature.slope, river_fields.wetness,
-                            source_fields.ridge_uplift, kTerrainFieldMaterialRock);
+        terrain_engine_reference
+            ? std::move(terrain_engine_materials.rock)
+            : make_material_field(carving_fields.height, slope_curvature.slope,
+                                  river_fields.wetness, source_fields.ridge_uplift,
+                                  kTerrainFieldMaterialRock);
     cubey::procedural::ScalarField2D material_soil =
-        make_material_field(carving_fields.height, slope_curvature.slope, river_fields.wetness,
-                            source_fields.ridge_uplift, kTerrainFieldMaterialSoil);
+        terrain_engine_reference
+            ? std::move(terrain_engine_materials.soil)
+            : make_material_field(carving_fields.height, slope_curvature.slope,
+                                  river_fields.wetness, source_fields.ridge_uplift,
+                                  kTerrainFieldMaterialSoil);
     cubey::procedural::ScalarField2D material_grass =
-        make_material_field(carving_fields.height, slope_curvature.slope, river_fields.wetness,
-                            source_fields.ridge_uplift, kTerrainFieldMaterialGrass);
+        terrain_engine_reference
+            ? std::move(terrain_engine_materials.grass)
+            : make_material_field(carving_fields.height, slope_curvature.slope,
+                                  river_fields.wetness, source_fields.ridge_uplift,
+                                  kTerrainFieldMaterialGrass);
     cubey::procedural::ScalarField2D vegetation_potential =
-        make_vegetation_potential_field(slope_curvature.slope, river_fields.wetness,
-                                        material_grass);
+        terrain_engine_reference
+            ? make_material_vegetation_potential_field(slope_curvature.slope, material_grass)
+            : make_vegetation_potential_field(slope_curvature.slope, river_fields.wetness,
+                                              material_grass);
 
     add_field(product.fields, kTerrainFieldBaseElevation, std::move(source_fields.base_elevation));
     add_field(product.fields, kTerrainFieldBroadRelief, std::move(source_fields.broad_relief));

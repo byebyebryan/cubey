@@ -18,7 +18,7 @@ perspective review, but final terrain rendering, ocean integration, planet
 streaming, foliage rendering, and physically complete erosion remain deferred
 until the product fields are credible.
 
-The current generator revision is `30`. It emits source fields, height/slope
+The current generator revision is `34`. It emits source fields, height/slope
 analysis, static drainage, routing diagnostics, smoothed active river trunk and
 tributary fields, incision/process diagnostics, wetness/deposition, material
 masks, and vegetation potential.
@@ -125,6 +125,11 @@ Revision 32 pivots the mountain stress recipe to a clean-room visual source:
 from the ridged visual source plus bounded morphology; the older graph
 ridge/valley fields remain diagnostics and no longer drive visible valley
 incision.
+Revision 34 adds `terrain-engine-ref`, an isolated TerrainEngine-inspired
+height/material reference recipe. It samples TerrainEngine's shader-side value
+noise/cubic height recipe into the existing CPU terrain product contract while
+keeping river carving, mountain source diagnostics, gully diagnostics, and
+thermal talus inactive for that recipe.
 
 The current foundation pass keeps terrain process math in terrain-local helpers:
 spread, relief-clamped lowering, height lowering, the diagnostic gully pass, and
@@ -171,6 +176,7 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress-1025
+./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe terrain-engine-ref --terrain-debug-view all --terrain-output-dir outputs/terrain/terrain-engine-ref
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color material --output outputs/terrain/current-river-network/river-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color height --output outputs/terrain/current-river-network/river-height-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color channel --output outputs/terrain/current-river-network/river-channel-perspective.png
@@ -182,6 +188,8 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-height-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-surface-height.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress-1025/mountain-surface-height.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color material --output outputs/terrain/terrain-engine-ref/terrain-engine-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/terrain-engine-ref/terrain-engine-surface-height.png
 ```
 
 Scalar debug PNG exports hand completed RGBA buffers to the shared

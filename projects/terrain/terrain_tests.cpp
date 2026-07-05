@@ -967,6 +967,137 @@ void test_terrain_product_is_deterministic() {
             "terrain product hash should change when seed changes");
 }
 
+void test_terrain_engine_reference_recipe_is_isolated() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 129;
+    config.grid_height = 129;
+    config.cell_size_m = 32.0F;
+    config.recipe_id = std::string(cubey::projects::terrain::kTerrainRecipeTerrainEngineRef);
+    const cubey::projects::terrain::TerrainRegionProduct product =
+        cubey::projects::terrain::generate_terrain_region(config);
+    const cubey::projects::terrain::TerrainRegionProduct repeat =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    cubey::projects::terrain::TerrainRegionConfig baseline_config = config;
+    baseline_config.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRiver);
+    const cubey::projects::terrain::TerrainRegionProduct baseline =
+        cubey::projects::terrain::generate_terrain_region(baseline_config);
+
+    require(product.config.recipe_id == cubey::projects::terrain::kTerrainRecipeTerrainEngineRef,
+            "terrain engine reference recipe should preserve the requested recipe id");
+    require(product.summary.content_hash == repeat.summary.content_hash,
+            "terrain engine reference recipe should be deterministic");
+    require(product.summary.content_hash != baseline.summary.content_hash,
+            "terrain engine reference recipe should produce a distinct product hash");
+    require(product.summary.height.span > 250.0F,
+            "terrain engine reference recipe should produce visible relief");
+    require(product.summary.slope.max > 0.02F,
+            "terrain engine reference recipe should produce nonzero slope");
+    require(product.summary.river_coverage == 0.0F,
+            "terrain engine reference recipe should not activate river coverage");
+    require(product.summary.max_channel_width_m == 0.0F,
+            "terrain engine reference recipe should not derive river channel widths");
+
+    const auto& height = field(product, cubey::projects::terrain::kTerrainFieldHeightM);
+    const auto& source_height =
+        field(product, cubey::projects::terrain::kTerrainFieldPreProcessHeightM);
+    const auto& base_elevation =
+        field(product, cubey::projects::terrain::kTerrainFieldBaseElevation);
+    const auto& post_erosion =
+        field(product, cubey::projects::terrain::kTerrainFieldPostErosionHeightM);
+    require(max_abs_difference(height, source_height) <= 0.001F,
+            "terrain engine reference recipe should bypass river carving");
+    require(max_abs_difference(height, base_elevation) <= 0.001F,
+            "terrain engine reference recipe should publish height as base elevation");
+    require(max_abs_difference(height, post_erosion) <= 0.001F,
+            "terrain engine reference recipe should bypass erosion diagnostics");
+
+    const std::array<std::string_view, 28> inactive_fields{
+        cubey::projects::terrain::kTerrainFieldMountainProfileHeightM,
+        cubey::projects::terrain::kTerrainFieldMountainVisualSourceHeightM,
+        cubey::projects::terrain::kTerrainFieldMountainRidgedChain,
+        cubey::projects::terrain::kTerrainFieldMountainDetailWeight,
+        cubey::projects::terrain::kTerrainFieldMountainMorphologyDeltaM,
+        cubey::projects::terrain::kTerrainFieldMountainCreaseMap,
+        cubey::projects::terrain::kTerrainFieldMountainRidgeMap,
+        cubey::projects::terrain::kTerrainFieldMountainRangeSpine,
+        cubey::projects::terrain::kTerrainFieldMountainEnvelope,
+        cubey::projects::terrain::kTerrainFieldMountainMass,
+        cubey::projects::terrain::kTerrainFieldMountainShoulder,
+        cubey::projects::terrain::kTerrainFieldMountainSummitCore,
+        cubey::projects::terrain::kTerrainFieldMountainSaddleGate,
+        cubey::projects::terrain::kTerrainFieldMountainSupport,
+        cubey::projects::terrain::kTerrainFieldMountainRidgeHierarchy,
+        cubey::projects::terrain::kTerrainFieldRidgeSupport,
+        cubey::projects::terrain::kTerrainFieldMountainPeakCandidates,
+        cubey::projects::terrain::kTerrainFieldMountainPeakAnchors,
+        cubey::projects::terrain::kTerrainFieldMountainPeakProminence,
+        cubey::projects::terrain::kTerrainFieldPeakSupport,
+        cubey::projects::terrain::kTerrainFieldMountainRidgeSkeleton,
+        cubey::projects::terrain::kTerrainFieldMountainRidgeInfluence,
+        cubey::projects::terrain::kTerrainFieldMountainRidgeBody,
+        cubey::projects::terrain::kTerrainFieldMountainValleyFloor,
+        cubey::projects::terrain::kTerrainFieldMountainValleyIncisionM,
+        cubey::projects::terrain::kTerrainFieldMountainUplift,
+        cubey::projects::terrain::kTerrainFieldRidgeUplift,
+        cubey::projects::terrain::kTerrainFieldPeakUplift,
+    };
+    for (const std::string_view name : inactive_fields) {
+        require(field(product, name).summarize().max == 0.0F,
+                "terrain engine reference recipe should keep process fields inactive");
+    }
+
+    const std::array<std::string_view, 14> inactive_river_fields{
+        cubey::projects::terrain::kTerrainFieldDrainagePotential,
+        cubey::projects::terrain::kTerrainFieldRoutingFillDelta,
+        cubey::projects::terrain::kTerrainFieldFlowDirection,
+        cubey::projects::terrain::kTerrainFieldFlowAccumulation,
+        cubey::projects::terrain::kTerrainFieldStreamOrder,
+        cubey::projects::terrain::kTerrainFieldRiverMask,
+        cubey::projects::terrain::kTerrainFieldRiverTrunk,
+        cubey::projects::terrain::kTerrainFieldTributaries,
+        cubey::projects::terrain::kTerrainFieldRiverGraphPlan,
+        cubey::projects::terrain::kTerrainFieldRiverGraphDischarge,
+        cubey::projects::terrain::kTerrainFieldSinkMask,
+        cubey::projects::terrain::kTerrainFieldChannelWidth,
+        cubey::projects::terrain::kTerrainFieldValleyWidth,
+        cubey::projects::terrain::kTerrainFieldWetness,
+    };
+    for (const std::string_view name : inactive_river_fields) {
+        require(field(product, name).summarize().max == 0.0F,
+                "terrain engine reference recipe should keep river fields inactive");
+    }
+    require(field(product, cubey::projects::terrain::kTerrainFieldChannelIncision)
+                .summarize()
+                .max == 0.0F,
+            "terrain engine reference recipe should keep channel incision inactive");
+    require(field(product, cubey::projects::terrain::kTerrainFieldValleyIncision)
+                .summarize()
+                .max == 0.0F,
+            "terrain engine reference recipe should keep valley incision inactive");
+
+    const auto& material_rock =
+        field(product, cubey::projects::terrain::kTerrainFieldMaterialRock);
+    const auto& material_soil =
+        field(product, cubey::projects::terrain::kTerrainFieldMaterialSoil);
+    const auto& material_grass =
+        field(product, cubey::projects::terrain::kTerrainFieldMaterialGrass);
+    require(material_grass.summarize().max > 0.5F,
+            "terrain engine reference recipe should emit grass material");
+    require(material_rock.summarize().max > 0.5F || material_soil.summarize().max > 0.5F,
+            "terrain engine reference recipe should emit non-grass material");
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float material_sum = material_rock.at(x, y) + material_soil.at(x, y) +
+                                       material_grass.at(x, y);
+            require_near(material_sum, 1.0F, 0.0001F,
+                         "terrain engine reference materials should be normalized");
+        }
+    }
+}
+
 void test_terrain_stress_recipe_expands_river_network() {
     cubey::projects::terrain::TerrainRegionConfig config = small_config();
     config.grid_width = 257;
@@ -2573,6 +2704,7 @@ int main() {
     test_terrain_product_has_useful_ranges();
     test_terrain_river_carves_height_product();
     test_terrain_product_is_deterministic();
+    test_terrain_engine_reference_recipe_is_isolated();
     test_terrain_stress_recipe_expands_river_network();
     test_terrain_mountain_range_stress_recipe_exposes_mountain_driver();
     test_terrain_mountain_macro_fields_are_hierarchical();
