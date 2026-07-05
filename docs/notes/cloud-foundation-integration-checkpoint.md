@@ -229,3 +229,24 @@ preset with `--cloud-distance-mode auto --cloud-horizon-layer`, then tune the
 existing integrated horizon bridge so it softly replaces distant grazing local
 samples. This is not a new cloud color model and not the high-oblique/orbit
 weather solution. Near and upward local clouds should stay visually unchanged.
+
+Implementation note: `cloud-ref-compatible` originally returned from the local
+march path before horizon diagnostics or the integrated bridge could run, so
+explicit `auto`/horizon overrides on the `reference-parity` preset were not
+actually exercising the bridge. The compatible path now keeps the local march as
+the foreground and composes the same integrated horizon layer behind it only
+when the distance mode and horizon layer are explicitly enabled. The far bridge
+uses a broader, prefiltered version of the ref-compatible density so horizon
+continuity remains low-detail and sky-biased instead of becoming another noisy
+local march.
+
+Use this review pack for the surface horizon handoff:
+
+```sh
+projects/atmosphere/capture_cloud_surface_horizon_regimes.sh outputs/cloud-surface-horizon-handoff
+```
+
+The handoff should be visible in `horizon-handoff` and
+`integrated-horizon-alpha`, while final color remains subtle. If a hard band is
+also present in the no-cloud row, treat it as a sky/background horizon issue
+rather than a cloud bridge regression.

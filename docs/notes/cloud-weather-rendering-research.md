@@ -1479,3 +1479,16 @@ local samples smoothly, add only a broad low-detail horizon layer, and bias that
 layer toward sky-colored radiance so it reads as distant haze/cloud continuity
 instead of a new dark cloud type. Keep upward and near local cloud detail out of
 this pass.
+
+Implementation checkpoint: the `cloud-ref-compatible` shader branch now exposes
+the horizon diagnostics and composes the integrated far-horizon layer when the
+caller explicitly enables automatic distance mode plus the horizon layer. This
+matters because `reference-parity` still uses the compatible density model; the
+first auto/horizon capture attempt looked unchanged because the shader returned
+from the local-compatible branch before the bridge code ran.
+
+The bridge is deliberately broad and low-contrast. In surface view, the useful
+signal is that `horizon-handoff` and `integrated-horizon-alpha` activate in the
+lower-sky grazing band, while final color changes stay subtle and no-cloud
+backgrounds remain available to identify non-cloud sky bands. The current
+target is a softer surface handoff, not a solved high-oblique/orbit transition.
