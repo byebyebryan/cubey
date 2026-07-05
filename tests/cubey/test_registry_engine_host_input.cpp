@@ -2,6 +2,9 @@
 
 void test_capture_queue_encodes_png_with_inline_executor();
 void test_capture_queue_propagates_encoding_errors();
+void test_capture_queue_encodes_video_frames_in_order();
+void test_capture_queue_video_encoder_rejects_dimension_mismatch();
+void test_capture_queue_video_encoder_propagates_worker_errors();
 void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment();
 void test_atmosphere_environment_runtime_reports_changed_environment();
 void test_atmosphere_environment_runtime_builds_frame_payload();
@@ -89,6 +92,9 @@ std::span<const TestCase> engine_host_input_test_cases() {
     static constexpr std::array tests{
         CUBEY_TEST(test_capture_queue_encodes_png_with_inline_executor),
         CUBEY_TEST(test_capture_queue_propagates_encoding_errors),
+        CUBEY_TEST(test_capture_queue_encodes_video_frames_in_order),
+        CUBEY_TEST(test_capture_queue_video_encoder_rejects_dimension_mismatch),
+        CUBEY_TEST(test_capture_queue_video_encoder_propagates_worker_errors),
         CUBEY_TEST(test_atmosphere_environment_run_config_resolves_manual_and_solar_modes),
         CUBEY_TEST(test_atmosphere_environment_run_config_advances_dynamic_time),
         CUBEY_TEST(test_atmosphere_environment_look_options_apply_without_time_or_sun),
