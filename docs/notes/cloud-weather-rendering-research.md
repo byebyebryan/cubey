@@ -1417,3 +1417,22 @@ presentation free to approximate sun-through-cloud glare. The next review should
 use `projects/cloud_ref/capture_lighting_compare.sh` and inspect
 `surface-up`, `surface-sun`, and `high-oblique` before deciding whether to copy
 any lighting mechanics into shared atmosphere clouds.
+
+## Shared Twilight Color Direction 2026-07-04
+
+The next shared-cloud lighting pass should make dawn and dusk color a real
+cloud-lighting response rather than a generic post tint. The relevant reference
+direction is consistent across the Horizon/Decima, Frostbite, TerrainEngine,
+and Skybolt notes/code:
+
+- ambient sky contribution should vary with height and horizon color;
+- direct lighting should use the active sun radiance, including low-sun warmth;
+- phase/rim response and optical edge/thickness should carry the visible
+  silver-lining and warm cloud-edge color;
+- aerial perspective/post should preserve twilight saturation instead of
+  desaturating it as if it were night.
+
+For this repo, the first target is the shared `CloudLayer` path in
+`projects/atmosphere` using the `reference-parity` preset. `cloud_ref` remains
+the local surface reference, and high-oblique/orbit handoff work remains
+separate.
