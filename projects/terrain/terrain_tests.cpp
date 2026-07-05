@@ -5,6 +5,9 @@
 #include "terrain_preview_mesh.h"
 #include "terrain_process_fields.h"
 
+#include <cubey/core/jobs.h>
+#include <cubey/engine/capture_queue.h>
+
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
@@ -1982,6 +1985,29 @@ void test_terrain_debug_export_writes_png() {
     std::filesystem::remove(talus_output);
 }
 
+void test_terrain_debug_export_queues_png() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 33;
+    config.grid_height = 33;
+    const cubey::projects::terrain::TerrainRegionProduct product =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const std::filesystem::path output =
+        std::filesystem::temp_directory_path() / "cubey_terrain_debug_queued_export_test.png";
+    std::filesystem::remove(output);
+
+    cubey::jobs::InlineExecutor encode_jobs;
+    cubey::CaptureQueue captures(encode_jobs);
+    cubey::CaptureTicket ticket = cubey::projects::terrain::enqueue_terrain_debug_png(
+        captures, product, cubey::projects::terrain::TerrainDebugView::Slope, output);
+    require(ticket.output_path() == output, "terrain queued debug export should track output path");
+    require(ticket.ready(), "terrain queued debug export should complete on inline executor");
+    ticket.finish();
+    require(std::filesystem::file_size(output) > 64U,
+            "terrain queued debug export should write a non-empty PNG");
+    std::filesystem::remove(output);
+}
+
 void test_terrain_debug_export_writes_review_set() {
     cubey::projects::terrain::TerrainRegionConfig config = small_config();
     config.grid_width = 129;
@@ -2306,6 +2332,7 @@ int main() {
     test_terrain_river_core_avoids_long_grid_aligned_runs();
     test_terrain_river_uses_larger_routing_context();
     test_terrain_debug_export_writes_png();
+    test_terrain_debug_export_queues_png();
     test_terrain_debug_export_writes_review_set();
     test_terrain_preview_config_uses_run_config_controls();
     test_terrain_phase_profile_paths();
