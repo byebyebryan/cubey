@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cubey/core/run_config.h>
-#include <cubey/render/cloud_layer.h>
+#include <cubey/render/cloud_layer_config.h>
 
 #include <algorithm>
 #include <array>

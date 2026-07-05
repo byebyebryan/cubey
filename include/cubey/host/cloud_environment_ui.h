@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cubey/engine/cloud_environment_config.h>
-#include <cubey/render/cloud_layer.h>
 
 #include <cstdint>
 

@@ -1,4 +1,4 @@
-#include <cubey/render/cloud_layer.h>
+#include <cubey/render/cloud_layer_config.h>
 
 #include <cmath>
 #include <stdexcept>
