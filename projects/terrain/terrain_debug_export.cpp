@@ -1,6 +1,6 @@
 #include "terrain_debug_export.h"
 
-#include <cubey/core/image_io.h>
+#include <cubey/core/jobs.h>
 #include <cubey/procedural/operators.h>
 
 #include <nlohmann/json.hpp>
@@ -9,12 +9,14 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <deque>
 #include <fstream>
 #include <filesystem>
 #include <iomanip>
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 namespace cubey::projects::terrain {
@@ -52,6 +54,9 @@ struct ReviewPanelSample {
     std::uint32_t y = 0U;
     bool separator = false;
 };
+
+inline constexpr std::size_t kTerrainDebugEncodeWorkerCount = 2U;
+inline constexpr std::size_t kTerrainDebugEncodeBacklog = 4U;
 
 inline constexpr std::array<DebugViewName, 50> kDebugViewNames{
     DebugViewName{TerrainDebugView::Final, "final"},
@@ -730,8 +735,9 @@ std::span<const TerrainDebugView> terrain_debug_review_views() {
     return kTerrainDebugReviewViews;
 }
 
-void write_terrain_debug_png(const TerrainRegionProduct& product, TerrainDebugView view,
-                             const std::filesystem::path& output_path) {
+CaptureTicket enqueue_terrain_debug_png(CaptureQueue& captures, const TerrainRegionProduct& product,
+                                        TerrainDebugView view,
+                                        const std::filesystem::path& output_path) {
     if (output_path.empty()) {
         throw std::runtime_error("terrain debug PNG output path must be non-empty");
     }
@@ -739,8 +745,21 @@ void write_terrain_debug_png(const TerrainRegionProduct& product, TerrainDebugVi
         std::filesystem::create_directories(output_path.parent_path());
     }
     const cubey::procedural::Grid2DDesc& desc = product.fields.desc();
-    const std::vector<std::uint8_t> pixels = render_debug_view(product, view);
-    cubey::write_png_rgba8(output_path, desc.width, desc.height, pixels);
+    std::vector<std::uint8_t> pixels = render_debug_view(product, view);
+    return captures.enqueue_png({
+        .output_path = output_path,
+        .width = desc.width,
+        .height = desc.height,
+        .rgba8 = std::move(pixels),
+    });
+}
+
+void write_terrain_debug_png(const TerrainRegionProduct& product, TerrainDebugView view,
+                             const std::filesystem::path& output_path) {
+    cubey::jobs::InlineExecutor encode_jobs;
+    CaptureQueue captures(encode_jobs);
+    CaptureTicket ticket = enqueue_terrain_debug_png(captures, product, view, output_path);
+    ticket.finish();
 }
 
 void write_terrain_debug_manifest(const TerrainRegionProduct& product,
@@ -764,10 +783,21 @@ void write_terrain_debug_review_pngs(const TerrainRegionProduct& product,
         throw std::runtime_error("terrain debug PNG output directory must be non-empty");
     }
     std::filesystem::create_directories(output_dir);
+    cubey::jobs::JobSystem encode_jobs(kTerrainDebugEncodeWorkerCount);
+    CaptureQueue captures(encode_jobs);
+    std::deque<CaptureTicket> pending_tickets;
     for (const TerrainDebugView view : terrain_debug_review_views()) {
         const std::filesystem::path output_path =
             output_dir / (std::string(terrain_debug_view_name(view)) + ".png");
-        write_terrain_debug_png(product, view, output_path);
+        pending_tickets.push_back(enqueue_terrain_debug_png(captures, product, view, output_path));
+        if (pending_tickets.size() >= kTerrainDebugEncodeBacklog) {
+            pending_tickets.front().finish();
+            pending_tickets.pop_front();
+        }
+    }
+    while (!pending_tickets.empty()) {
+        pending_tickets.front().finish();
+        pending_tickets.pop_front();
     }
     write_terrain_debug_manifest(product, output_dir);
 }

@@ -2,6 +2,8 @@
 
 #include "terrain_product.h"
 
+#include <cubey/engine/capture_queue.h>
+
 #include <filesystem>
 #include <span>
 #include <string_view>
@@ -64,6 +66,9 @@ enum class TerrainDebugView {
 [[nodiscard]] std::string_view terrain_debug_view_name(TerrainDebugView view);
 [[nodiscard]] std::span<const TerrainDebugView> terrain_debug_review_views();
 [[nodiscard]] TerrainDebugView terrain_debug_view_from_name(std::string_view name);
+[[nodiscard]] cubey::CaptureTicket
+enqueue_terrain_debug_png(cubey::CaptureQueue& captures, const TerrainRegionProduct& product,
+                          TerrainDebugView view, const std::filesystem::path& output_path);
 void write_terrain_debug_png(const TerrainRegionProduct& product, TerrainDebugView view,
                              const std::filesystem::path& output_path);
 void write_terrain_debug_manifest(const TerrainRegionProduct& product,

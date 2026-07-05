@@ -12,6 +12,7 @@ target_link_libraries(
     cubey_project_terrain
     PRIVATE
         cubey::core
+        cubey::engine
         nlohmann_json::nlohmann_json
         cubey_project_warnings
 )
@@ -56,6 +57,7 @@ if (BUILD_TESTING)
         cubey_project_terrain_tests
         PRIVATE
             cubey::core
+            cubey::engine
             cubey::render
             nlohmann_json::nlohmann_json
             cubey_project_warnings

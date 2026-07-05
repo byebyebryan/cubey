@@ -3,6 +3,7 @@
 #include "terrain_phase_profile.h"
 
 #include <cstdlib>
+#include <deque>
 #include <exception>
 #include <filesystem>
 #include <iostream>
@@ -11,6 +12,9 @@
 #include <utility>
 
 namespace {
+
+inline constexpr std::size_t kTerrainDebugEncodeWorkerCount = 2U;
+inline constexpr std::size_t kTerrainDebugEncodeBacklog = 4U;
 
 struct TerrainCliConfig {
     cubey::projects::terrain::TerrainRegionConfig terrain{};
@@ -150,20 +154,32 @@ int main(int argc, char** argv) {
                 throw std::runtime_error(
                     "terrain headless export requires --output or --terrain-output-dir");
             }
+            cubey::jobs::JobSystem encode_jobs(kTerrainDebugEncodeWorkerCount);
+            cubey::CaptureQueue captures(encode_jobs);
             if (cli_config.export_all_views) {
                 metadata.output_count = static_cast<std::uint32_t>(
                     cubey::projects::terrain::terrain_debug_review_views().size());
                 {
                     cubey::projects::terrain::TerrainPhaseScope phase(phase_profile,
                                                                       "write_debug_views");
+                    std::deque<cubey::CaptureTicket> pending_tickets;
                     for (const cubey::projects::terrain::TerrainDebugView view :
                          cubey::projects::terrain::terrain_debug_review_views()) {
                         const std::filesystem::path output_path =
                             cli_config.output_dir /
                             (std::string(cubey::projects::terrain::terrain_debug_view_name(view)) +
                              ".png");
-                        cubey::projects::terrain::write_terrain_debug_png(product, view,
-                                                                          output_path);
+                        pending_tickets.push_back(
+                            cubey::projects::terrain::enqueue_terrain_debug_png(
+                                captures, product, view, output_path));
+                        if (pending_tickets.size() >= kTerrainDebugEncodeBacklog) {
+                            pending_tickets.front().finish();
+                            pending_tickets.pop_front();
+                        }
+                    }
+                    while (!pending_tickets.empty()) {
+                        pending_tickets.front().finish();
+                        pending_tickets.pop_front();
                     }
                 }
                 {
@@ -181,14 +197,18 @@ int main(int argc, char** argv) {
                 metadata.output_count = 1U;
                 cubey::projects::terrain::TerrainPhaseScope phase(phase_profile,
                                                                   "write_debug_view");
-                cubey::projects::terrain::write_terrain_debug_png(product, cli_config.debug_view,
-                                                                  output_path);
+                cubey::CaptureTicket ticket =
+                    cubey::projects::terrain::enqueue_terrain_debug_png(
+                        captures, product, cli_config.debug_view, output_path);
+                ticket.finish();
             } else {
                 metadata.output_count = 1U;
                 cubey::projects::terrain::TerrainPhaseScope phase(phase_profile,
                                                                   "write_debug_view");
-                cubey::projects::terrain::write_terrain_debug_png(product, cli_config.debug_view,
-                                                                  cli_config.output_path);
+                cubey::CaptureTicket ticket =
+                    cubey::projects::terrain::enqueue_terrain_debug_png(
+                        captures, product, cli_config.debug_view, cli_config.output_path);
+                ticket.finish();
             }
         }
         std::cout << "terrain: generated product '" << product.config.recipe_id << "' "
