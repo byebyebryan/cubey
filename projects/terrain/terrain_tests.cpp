@@ -745,18 +745,31 @@ void test_terrain_process_field_helpers() {
                 cubey::projects::terrain::TerrainProcessThermalTalusConfig{}));
         },
         "terrain thermal talus should reject grid mismatches");
+    require_throws(
+        [&height, &slope, &curvature, &local_relief, &mismatched] {
+            static_cast<void>(cubey::projects::terrain::compute_mountain_morphology(
+                height, slope, curvature, local_relief, mismatched, height, height,
+                cubey::projects::terrain::TerrainProcessMountainMorphologyConfig{}));
+        },
+        "terrain mountain morphology should reject grid mismatches");
 }
 
 void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 58> required_fields{
+    const std::array<std::string_view, 64> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldPreProcessHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
         cubey::projects::terrain::kTerrainFieldBroadRelief,
         cubey::projects::terrain::kTerrainFieldMountainProfileHeightM,
+        cubey::projects::terrain::kTerrainFieldMountainVisualSourceHeightM,
+        cubey::projects::terrain::kTerrainFieldMountainRidgedChain,
+        cubey::projects::terrain::kTerrainFieldMountainDetailWeight,
+        cubey::projects::terrain::kTerrainFieldMountainMorphologyDeltaM,
+        cubey::projects::terrain::kTerrainFieldMountainCreaseMap,
+        cubey::projects::terrain::kTerrainFieldMountainRidgeMap,
         cubey::projects::terrain::kTerrainFieldMountainRangeSpine,
         cubey::projects::terrain::kTerrainFieldMountainEnvelope,
         cubey::projects::terrain::kTerrainFieldMountainMass,
@@ -1422,6 +1435,108 @@ void test_terrain_mountain_ridge_valley_process_is_bounded() {
             "mountain valley incision should avoid summit cores");
 }
 
+void test_terrain_mountain_visual_source_morphology_is_bounded() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 257;
+    config.grid_height = 257;
+    const cubey::projects::terrain::TerrainRegionProduct baseline =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    config.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress);
+    const cubey::projects::terrain::TerrainRegionProduct mountain =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const auto& baseline_visual =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainVisualSourceHeightM);
+    const auto& baseline_chain =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainRidgedChain);
+    const auto& baseline_detail =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainDetailWeight);
+    const auto& baseline_delta =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainMorphologyDeltaM);
+    const auto& baseline_crease =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainCreaseMap);
+    const auto& baseline_ridge =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainRidgeMap);
+    require(baseline_visual.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain visual source inactive");
+    require(baseline_chain.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain ridged chain inactive");
+    require(baseline_detail.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain detail weight inactive");
+    require(baseline_delta.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain morphology delta inactive");
+    require(baseline_crease.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain crease map inactive");
+    require(baseline_ridge.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain ridge map inactive");
+
+    const auto& visual =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainVisualSourceHeightM);
+    const auto& profile =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainProfileHeightM);
+    const auto& chain =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgedChain);
+    const auto& detail =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainDetailWeight);
+    const auto& delta =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainMorphologyDeltaM);
+    const auto& crease =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainCreaseMap);
+    const auto& ridge =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgeMap);
+    const auto& ridge_skeleton =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgeSkeleton);
+
+    const cubey::procedural::ScalarFieldStats visual_stats = visual.summarize();
+    const cubey::procedural::ScalarFieldStats chain_stats = chain.summarize();
+    const cubey::procedural::ScalarFieldStats detail_stats = detail.summarize();
+    const cubey::procedural::ScalarFieldStats delta_stats = delta.summarize();
+    const cubey::procedural::ScalarFieldStats crease_stats = crease.summarize();
+    const cubey::procedural::ScalarFieldStats ridge_stats = ridge.summarize();
+    require(visual_stats.span > 1400.0F,
+            "mountain visual source should provide strong elevation span");
+    require(chain_stats.max > 0.35F && chain_stats.max <= 1.0F,
+            "mountain ridged chain should be normalized and active");
+    require(detail_stats.max > 0.20F && detail_stats.max <= 1.0F,
+            "mountain detail weight should be normalized and active");
+    require(delta_stats.max > 1.0F && delta_stats.max <= 96.001F,
+            "mountain morphology delta should be visible and bounded");
+    require(crease_stats.max > 0.05F && crease_stats.max <= 1.0F,
+            "mountain crease map should be normalized and active");
+    require(ridge_stats.max > 0.05F && ridge_stats.max <= 1.0F,
+            "mountain ridge map should be normalized and active");
+
+    const std::size_t total_samples = visual.sample_count();
+    const std::size_t chain_samples = count_active_samples(chain, 0.20F);
+    const std::size_t skeleton_samples = count_active_samples(ridge_skeleton, 0.30F);
+    require(chain_samples > total_samples / 40U,
+            "mountain ridged chain should cover enough samples to read as a source field");
+    require(chain_samples * 100U < total_samples * 72U,
+            "mountain ridged chain should not fill the patch");
+    require(chain_samples > skeleton_samples * 4U,
+            "mountain ridged chain should be broader than the old graph skeleton");
+    require(count_active_samples(delta, 1.0F) > total_samples / 500U,
+            "mountain morphology should produce reviewable lowered samples");
+    require(count_active_samples(delta, 1.0F) < total_samples / 3U,
+            "mountain morphology should not lower most of the patch");
+
+    std::size_t lowered_profile_samples = 0U;
+    for (std::uint32_t y = 0; y < visual.desc().height; ++y) {
+        for (std::uint32_t x = 0; x < visual.desc().width; ++x) {
+            const float lowering = visual.at(x, y) - profile.at(x, y);
+            require(lowering >= -0.010F,
+                    "mountain profile should not rise above the raw visual source");
+            if (lowering > 1.0F) {
+                ++lowered_profile_samples;
+            }
+        }
+    }
+    require(lowered_profile_samples > total_samples / 200U,
+            "mountain profile should reflect valley/morphology shaping");
+}
+
 void test_terrain_mountain_gully_diagnostic_is_bounded() {
     cubey::projects::terrain::TerrainRegionConfig config = small_config();
     config.grid_width = 257;
@@ -1994,6 +2109,26 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_profile_height") ==
                 cubey::projects::terrain::TerrainDebugView::MountainProfileHeight,
             "terrain debug view should parse mountain profile height aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name(
+                "mountain_visual_source_height") ==
+                cubey::projects::terrain::TerrainDebugView::MountainVisualSourceHeight,
+            "terrain debug view should parse mountain visual source height aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_ridged_chain") ==
+                cubey::projects::terrain::TerrainDebugView::MountainRidgedChain,
+            "terrain debug view should parse mountain ridged chain aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_detail_weight") ==
+                cubey::projects::terrain::TerrainDebugView::MountainDetailWeight,
+            "terrain debug view should parse mountain detail weight aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name(
+                "mountain_morphology_delta") ==
+                cubey::projects::terrain::TerrainDebugView::MountainMorphologyDelta,
+            "terrain debug view should parse mountain morphology delta aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_crease_map") ==
+                cubey::projects::terrain::TerrainDebugView::MountainCreaseMap,
+            "terrain debug view should parse mountain crease map aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_ridge_map") ==
+                cubey::projects::terrain::TerrainDebugView::MountainRidgeMap,
+            "terrain debug view should parse mountain ridge map aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("erosion_delta") ==
                 cubey::projects::terrain::TerrainDebugView::ErosionDelta,
             "terrain debug view should parse erosion delta aliases");
@@ -2442,6 +2577,7 @@ int main() {
     test_terrain_mountain_range_stress_recipe_exposes_mountain_driver();
     test_terrain_mountain_macro_fields_are_hierarchical();
     test_terrain_mountain_ridge_valley_process_is_bounded();
+    test_terrain_mountain_visual_source_morphology_is_bounded();
     test_terrain_mountain_gully_diagnostic_is_bounded();
     test_terrain_mountain_thermal_talus_diagnostic_is_bounded();
     test_terrain_review_river_coverage_is_meaningful();
