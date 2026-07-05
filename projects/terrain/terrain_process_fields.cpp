@@ -84,6 +84,38 @@ void validate_thermal_talus_config(TerrainProcessThermalTalusConfig config) {
     }
 }
 
+void validate_mountain_morphology_config(TerrainProcessMountainMorphologyConfig config) {
+    if (!std::isfinite(config.support_start) || !std::isfinite(config.support_full) ||
+        config.support_start >= config.support_full) {
+        throw std::runtime_error("terrain mountain morphology support range must be increasing");
+    }
+    if (!std::isfinite(config.chain_start) || !std::isfinite(config.chain_full) ||
+        config.chain_start >= config.chain_full) {
+        throw std::runtime_error("terrain mountain morphology chain range must be increasing");
+    }
+    if (!std::isfinite(config.slope_start) || !std::isfinite(config.slope_full) ||
+        config.slope_start >= config.slope_full) {
+        throw std::runtime_error("terrain mountain morphology slope range must be increasing");
+    }
+    if (!std::isfinite(config.relief_start_m) || !std::isfinite(config.relief_full_m) ||
+        config.relief_start_m >= config.relief_full_m) {
+        throw std::runtime_error("terrain mountain morphology relief range must be increasing");
+    }
+    if (config.crease_blur_iterations < 0 || config.crease_spread_iterations < 0) {
+        throw std::runtime_error("terrain mountain morphology iterations must be non-negative");
+    }
+    if (!std::isfinite(config.spread_decay_per_cell) ||
+        config.spread_decay_per_cell < 0.0F || config.spread_decay_per_cell > 1.0F) {
+        throw std::runtime_error("terrain mountain morphology spread decay must be in [0, 1]");
+    }
+    if (!std::isfinite(config.base_delta_limit_m) || config.base_delta_limit_m < 0.0F ||
+        !std::isfinite(config.relief_delta_fraction) || config.relief_delta_fraction < 0.0F ||
+        !std::isfinite(config.max_delta_m) || config.max_delta_m < 0.0F) {
+        throw std::runtime_error(
+            "terrain mountain morphology delta limits must be finite and non-negative");
+    }
+}
+
 } // namespace
 
 cubey::procedural::ScalarField2D spread_max_decay_field(
@@ -420,6 +452,108 @@ TerrainProcessThermalTalusFields compute_thermal_talus_diagnostic(
     }
 
     fields.post_erosion_height_m = std::move(working_height);
+    return fields;
+}
+
+TerrainProcessMountainMorphologyFields compute_mountain_morphology(
+    const cubey::procedural::ScalarField2D& height,
+    const cubey::procedural::ScalarField2D& slope,
+    const cubey::procedural::ScalarField2D& curvature,
+    const cubey::procedural::ScalarField2D& local_relief,
+    const cubey::procedural::ScalarField2D& support,
+    const cubey::procedural::ScalarField2D& ridged_chain,
+    const cubey::procedural::ScalarField2D& detail_weight,
+    TerrainProcessMountainMorphologyConfig config) {
+    require_same_grid(height, slope,
+                      "terrain mountain morphology slope must use the height grid");
+    require_same_grid(height, curvature,
+                      "terrain mountain morphology curvature must use the height grid");
+    require_same_grid(height, local_relief,
+                      "terrain mountain morphology relief must use the height grid");
+    require_same_grid(height, support,
+                      "terrain mountain morphology support must use the height grid");
+    require_same_grid(height, ridged_chain,
+                      "terrain mountain morphology chain must use the height grid");
+    require_same_grid(height, detail_weight,
+                      "terrain mountain morphology detail weight must use the height grid");
+    validate_mountain_morphology_config(config);
+
+    const cubey::procedural::Grid2DDesc& desc = height.desc();
+    TerrainProcessMountainMorphologyFields fields{
+        .morphology_delta_m = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .crease_map = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .ridge_map = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .post_morphology_height_m = height,
+    };
+
+    cubey::procedural::ScalarField2D concave_curvature(desc, 0.0F);
+    cubey::procedural::ScalarField2D convex_curvature(desc, 0.0F);
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float value = curvature.at(x, y);
+            concave_curvature.at(x, y) = std::max(value, 0.0F);
+            convex_curvature.at(x, y) = std::max(-value, 0.0F);
+        }
+    }
+
+    const cubey::procedural::ScalarFieldDistribution concave_distribution =
+        cubey::procedural::summarize_scalar_field_distribution(concave_curvature);
+    const cubey::procedural::ScalarFieldDistribution convex_distribution =
+        cubey::procedural::summarize_scalar_field_distribution(convex_curvature);
+    const float concave_scale = std::max(concave_distribution.p95, 0.001F);
+    const float convex_scale = std::max(convex_distribution.p95, 0.001F);
+
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float support_gate =
+                cubey::procedural::smoothstep(config.support_start, config.support_full,
+                                              support.at(x, y));
+            const float chain_gate =
+                cubey::procedural::smoothstep(config.chain_start, config.chain_full,
+                                              ridged_chain.at(x, y));
+            const float slope_gate =
+                cubey::procedural::smoothstep(config.slope_start, config.slope_full,
+                                              slope.at(x, y));
+            const float relief_gate =
+                cubey::procedural::smoothstep(config.relief_start_m, config.relief_full_m,
+                                              local_relief.at(x, y));
+            const float detail_gate = cubey::procedural::saturate(detail_weight.at(x, y));
+            const float concave =
+                cubey::procedural::saturate(concave_curvature.at(x, y) / concave_scale);
+            const float convex =
+                cubey::procedural::saturate(convex_curvature.at(x, y) / convex_scale);
+
+            fields.ridge_map.at(x, y) = cubey::procedural::saturate(
+                std::pow(convex, 0.72F) * support_gate *
+                (0.32F + (chain_gate * 0.58F) + (detail_gate * 0.10F)));
+            fields.crease_map.at(x, y) = cubey::procedural::saturate(
+                std::pow(concave, 0.86F) * slope_gate * relief_gate * support_gate *
+                (0.30F + (chain_gate * 0.48F) + (detail_gate * 0.22F)));
+        }
+    }
+
+    cubey::procedural::ScalarField2D crease = fields.crease_map;
+    for (int iteration = 0; iteration < config.crease_blur_iterations; ++iteration) {
+        crease = cubey::procedural::box_blur_3x3(crease);
+    }
+    crease = spread_max_decay_field(crease, config.crease_spread_iterations,
+                                    config.spread_decay_per_cell);
+    fields.crease_map = cubey::procedural::clamp_field(crease, 0.0F, 1.0F);
+
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float relief_limit =
+                config.base_delta_limit_m +
+                (std::max(local_relief.at(x, y), 0.0F) * config.relief_delta_fraction);
+            const float raw_delta =
+                std::pow(fields.crease_map.at(x, y), 1.45F) * config.max_delta_m;
+            fields.morphology_delta_m.at(x, y) =
+                std::min(raw_delta, std::min(config.max_delta_m, relief_limit));
+        }
+    }
+    fields.post_morphology_height_m =
+        subtract_lowering_from_height(height, fields.morphology_delta_m);
+
     return fields;
 }
 

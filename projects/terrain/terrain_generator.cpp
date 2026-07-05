@@ -172,6 +172,12 @@ struct TerrainSourceFields {
     cubey::procedural::ScalarField2D base_elevation{};
     cubey::procedural::ScalarField2D broad_relief{};
     cubey::procedural::ScalarField2D mountain_profile_height{};
+    cubey::procedural::ScalarField2D mountain_visual_source_height{};
+    cubey::procedural::ScalarField2D mountain_ridged_chain{};
+    cubey::procedural::ScalarField2D mountain_detail_weight{};
+    cubey::procedural::ScalarField2D mountain_morphology_delta{};
+    cubey::procedural::ScalarField2D mountain_crease_map{};
+    cubey::procedural::ScalarField2D mountain_ridge_map{};
     cubey::procedural::ScalarField2D mountain_range_spine{};
     cubey::procedural::ScalarField2D mountain_envelope{};
     cubey::procedural::ScalarField2D mountain_mass{};
@@ -339,6 +345,12 @@ struct MountainSkeletonFields {
     cubey::procedural::ScalarField2D peak_prominence{};
     cubey::procedural::ScalarField2D ridge_skeleton{};
     cubey::procedural::ScalarField2D ridge_influence{};
+};
+
+struct MountainVisualSourceFields {
+    cubey::procedural::ScalarField2D visual_source_height{};
+    cubey::procedural::ScalarField2D ridged_chain{};
+    cubey::procedural::ScalarField2D detail_weight{};
 };
 
 [[nodiscard]] cubey::procedural::NoiseSource2D coherent_source(std::uint64_t seed,
@@ -1311,59 +1323,135 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
     return result;
 }
 
-[[nodiscard]] cubey::procedural::ScalarField2D mountain_profile_height_field(
-    cubey::procedural::Grid2DDesc desc,
-    const cubey::procedural::ScalarField2D& broad_noise,
+[[nodiscard]] cubey::procedural::ScalarField2D mountain_ridged_chain_field(
+    cubey::procedural::Grid2DDesc desc, std::uint64_t seed,
     const cubey::procedural::ScalarField2D& mountain_mass,
-    const cubey::procedural::ScalarField2D& mountain_shoulder,
-    const cubey::procedural::ScalarField2D& ridge_skeleton,
-    const cubey::procedural::ScalarField2D& ridge_body_field,
-    const cubey::procedural::ScalarField2D& summit_core,
-    const cubey::procedural::ScalarField2D& saddle_gate,
-    const cubey::procedural::ScalarField2D& valley_floor) {
+    const cubey::procedural::ScalarField2D& mountain_support) {
+    cubey::procedural::ScalarField2D ridged = cubey::procedural::sample_noise_source_field_2d(
+        desc,
+        cubey::procedural::NoiseSource2D{
+            .backend = cubey::procedural::NoiseSource2DBackend::CoherentNoise,
+            .output = cubey::procedural::NoiseSource2DOutput::Unit,
+            .seed = seed,
+            .coherent =
+                {
+                    .frequency = 0.00046F,
+                    .noise_type = cubey::procedural::CoherentNoiseType::OpenSimplex2,
+                    .fractal_type = cubey::procedural::CoherentFractalType::Ridged,
+                    .octaves = 6U,
+                    .lacunarity = 2.16F,
+                    .gain = 0.50F,
+                    .weighted_strength = 0.28F,
+                },
+            .warp =
+                {
+                    .enabled = true,
+                    .seed_offset = 11603U,
+                    .coherent =
+                        {
+                            .frequency = 0.00012F,
+                            .warp_type =
+                                cubey::procedural::CoherentDomainWarpType::OpenSimplex2Reduced,
+                            .fractal_type =
+                                cubey::procedural::CoherentDomainWarpFractalType::Progressive,
+                            .octaves = 3U,
+                            .lacunarity = 2.0F,
+                            .gain = 0.5F,
+                            .amplitude = 1180.0F,
+                        },
+                },
+        });
+    cubey::procedural::ScalarField2D chain_mask = unit_source_field(desc, seed + 43U, 0.000075F,
+                                                                    4U);
+    chain_mask = repeated_box_blur(std::move(chain_mask), 4U);
+    ridged = cubey::procedural::percentile_remap_field(ridged, 0.06F, 0.985F, 0.0F, 1.0F);
+
     cubey::procedural::ScalarField2D result(desc, 0.0F);
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
-            const float mass =
-                std::pow(cubey::procedural::saturate(mountain_mass.at(x, y)), 0.86F);
-            const float shoulder =
-                std::pow(cubey::procedural::saturate(mountain_shoulder.at(x, y)), 0.94F);
-            const float ridge_body =
-                std::pow(cubey::procedural::saturate(ridge_body_field.at(x, y)), 0.90F) *
-                (0.38F + (mass * 0.62F));
-            const float crest = std::pow(cubey::procedural::saturate(ridge_skeleton.at(x, y)),
-                                         1.70F) *
-                                (0.24F + (ridge_body * 0.76F));
-            const float summit =
-                std::pow(cubey::procedural::saturate(summit_core.at(x, y)), 1.10F) * mass *
-                (0.44F + (ridge_body * 0.56F));
-            const float saddle =
-                std::pow(cubey::procedural::saturate(saddle_gate.at(x, y)), 1.12F) * mass;
-            const float valley = std::pow(cubey::procedural::saturate(valley_floor.at(x, y)),
-                                          1.05F) *
-                                 mass * (1.0F - (summit * 0.42F));
-            const float noise = broad_noise.at(x, y) - 0.5F;
-            const float raw_potential =
-                (mass * 0.642F) + (shoulder * 0.142F) + (ridge_body * 0.160F) +
-                (summit * 0.010F) - (saddle * 0.046F) - (valley * 0.010F) +
-                (noise * 0.030F);
-            const float potential = cubey::procedural::saturate(raw_potential);
-            const float foothill_ramp =
-                cubey::procedural::smoothstep(0.02F, 0.60F, potential) * 178.0F;
-            const float mountain_rise = std::pow(potential, 1.22F) * 1430.0F;
-            const float shoulder_rise = shoulder * (0.22F + (mass * 0.78F)) * 68.0F;
-            const float ridge_modulation = ridge_body * 82.0F;
-            const float crest_modulation = crest * (0.30F + (mass * 0.70F)) * 14.0F;
-            const float summit_modulation = summit * 12.0F;
-            const float saddle_suppression = saddle * 48.0F;
-            const float valley_suppression = valley * 22.0F;
-            const float rolling_lowland = noise * (54.0F + ((1.0F - mass) * 34.0F));
-            result.at(x, y) = 92.0F + rolling_lowland + foothill_ramp + mountain_rise +
-                              shoulder_rise + ridge_modulation + crest_modulation +
-                              summit_modulation - saddle_suppression - valley_suppression;
+            const float mass_gate =
+                cubey::procedural::smoothstep(0.10F, 0.86F, mountain_mass.at(x, y));
+            const float support_gate =
+                cubey::procedural::smoothstep(0.12F, 0.78F, mountain_support.at(x, y));
+            const float chain_gate =
+                cubey::procedural::smoothstep(0.24F, 0.84F, chain_mask.at(x, y));
+            const float structure = std::pow(cubey::procedural::saturate(ridged.at(x, y)),
+                                             1.28F);
+            result.at(x, y) = cubey::procedural::saturate(
+                structure * (0.34F + (chain_gate * 0.30F) + (mass_gate * 0.22F) +
+                             (support_gate * 0.14F)));
         }
     }
-    return repeated_box_blur(std::move(result), 4U);
+    return cubey::procedural::clamp_field(result, 0.0F, 1.0F);
+}
+
+[[nodiscard]] MountainVisualSourceFields make_mountain_visual_source_fields(
+    cubey::procedural::Grid2DDesc desc, std::uint64_t seed,
+    const cubey::procedural::ScalarField2D& broad_noise,
+    const cubey::procedural::ScalarField2D& mountain_mass,
+    const cubey::procedural::ScalarField2D& mountain_shoulder,
+    const cubey::procedural::ScalarField2D& summit_core,
+    const cubey::procedural::ScalarField2D& saddle_gate,
+    const cubey::procedural::ScalarField2D& valley_floor,
+    const cubey::procedural::ScalarField2D& mountain_support) {
+    MountainVisualSourceFields fields{
+        .visual_source_height = cubey::procedural::ScalarField2D(desc, 0.0F),
+        .ridged_chain = mountain_ridged_chain_field(desc, seed + 1601U, mountain_mass,
+                                                    mountain_support),
+        .detail_weight = cubey::procedural::ScalarField2D(desc, 0.0F),
+    };
+    cubey::procedural::ScalarField2D fine_detail =
+        unit_source_field(desc, seed + 1703U, 0.00115F, 5U);
+    cubey::procedural::ScalarField2D coarse_detail =
+        unit_source_field(desc, seed + 1709U, 0.00062F, 4U);
+
+    for (std::uint32_t y = 0; y < desc.height; ++y) {
+        for (std::uint32_t x = 0; x < desc.width; ++x) {
+            const float mass =
+                std::pow(cubey::procedural::saturate(mountain_mass.at(x, y)), 0.88F);
+            const float shoulder =
+                std::pow(cubey::procedural::saturate(mountain_shoulder.at(x, y)), 0.92F);
+            const float ridge =
+                std::pow(cubey::procedural::saturate(fields.ridged_chain.at(x, y)), 1.05F);
+            const float summit =
+                std::pow(cubey::procedural::saturate(summit_core.at(x, y)), 0.78F);
+            const float saddle =
+                std::pow(cubey::procedural::saturate(saddle_gate.at(x, y)), 1.05F) * mass;
+            const float valley =
+                std::pow(cubey::procedural::saturate(valley_floor.at(x, y)), 1.02F) * mass;
+            const float support =
+                cubey::procedural::smoothstep(0.10F, 0.78F, mountain_support.at(x, y));
+            const float detail_weight = cubey::procedural::saturate(
+                (support * 0.24F) +
+                (cubey::procedural::smoothstep(0.10F, 0.72F, ridge) * 0.54F) +
+                (cubey::procedural::smoothstep(0.12F, 0.68F, summit) * 0.18F) -
+                (saddle * 0.08F));
+            fields.detail_weight.at(x, y) = detail_weight;
+
+            const float noise = broad_noise.at(x, y) - 0.5F;
+            const float fine = (fine_detail.at(x, y) - 0.5F) * 2.0F;
+            const float coarse = (coarse_detail.at(x, y) - 0.5F) * 2.0F;
+            const float foothill_rise =
+                cubey::procedural::smoothstep(0.02F, 0.62F, mass) * 210.0F;
+            const float mass_rise = std::pow(mass, 1.04F) * 1220.0F;
+            const float shoulder_rise = shoulder * (0.32F + (mass * 0.68F)) * 176.0F;
+            const float ridge_rise = std::pow(ridge, 1.18F) *
+                                     (250.0F + (mass * 600.0F) + (summit * 54.0F));
+            const float summit_rise = summit * (54.0F + (mass * 92.0F) + (ridge * 42.0F));
+            const float saddle_suppression = saddle * (72.0F + (ridge * 48.0F));
+            const float valley_suppression = valley * (82.0F + (mass * 78.0F));
+            const float local_detail = ((coarse * 42.0F) + (fine * 76.0F)) *
+                                       (0.18F + (detail_weight * 0.82F));
+            const float rolling_lowland = noise * (64.0F + ((1.0F - mass) * 42.0F));
+
+            fields.visual_source_height.at(x, y) =
+                92.0F + rolling_lowland + foothill_rise + mass_rise + shoulder_rise +
+                ridge_rise + summit_rise + local_detail - saddle_suppression -
+                valley_suppression;
+        }
+    }
+
+    return fields;
 }
 
 [[nodiscard]] cubey::procedural::ScalarField2D mountain_valley_incision_field(
@@ -1402,18 +1490,6 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
     for (std::uint32_t y = 0; y < profile_height.desc().height; ++y) {
         for (std::uint32_t x = 0; x < profile_height.desc().width; ++x) {
             result.at(x, y) = std::max(0.0F, profile_height.at(x, y) - low_reference);
-        }
-    }
-    return result;
-}
-
-[[nodiscard]] cubey::procedural::ScalarField2D add_bounded_detail_to_profile(
-    const cubey::procedural::ScalarField2D& profile_height,
-    const cubey::procedural::ScalarField2D& detail_residual) {
-    cubey::procedural::ScalarField2D result(profile_height.desc(), 0.0F);
-    for (std::uint32_t y = 0; y < profile_height.desc().height; ++y) {
-        for (std::uint32_t x = 0; x < profile_height.desc().width; ++x) {
-            result.at(x, y) = profile_height.at(x, y) + detail_residual.at(x, y);
         }
     }
     return result;
@@ -1545,20 +1621,37 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
         fields.mountain_valley_floor = mountain_valley_floor_field(
             fields.mountain_mass, fields.mountain_shoulder, fields.mountain_ridge_body,
             fields.mountain_summit_core, fields.mountain_saddle_gate);
-        fields.mountain_profile_height = mountain_profile_height_field(
-            desc, fields.broad_noise, fields.mountain_mass, fields.mountain_shoulder,
-            fields.mountain_ridge_skeleton, fields.mountain_ridge_body,
-            fields.mountain_summit_core, fields.mountain_saddle_gate,
-            fields.mountain_valley_floor);
-        fields.mountain_valley_incision = mountain_valley_incision_field(
-            fields.mountain_profile_height, fields.mountain_valley_floor,
-            fields.mountain_ridge_body, fields.mountain_summit_core);
-        fields.mountain_profile_height = subtract_lowering_from_height(
-            fields.mountain_profile_height, fields.mountain_valley_incision);
-        fields.base_elevation = fields.mountain_profile_height;
-        fields.broad_relief = mountain_profile_relief_field(fields.mountain_profile_height);
         fields.mountain_support = mountain_support_field(
             fields.mountain_mass, fields.mountain_shoulder, fields.mountain_ridge_influence);
+        MountainVisualSourceFields visual_source = make_mountain_visual_source_fields(
+            desc, seed + 271U, fields.broad_noise, fields.mountain_mass,
+            fields.mountain_shoulder, fields.mountain_summit_core,
+            fields.mountain_saddle_gate, fields.mountain_valley_floor,
+            fields.mountain_support);
+        fields.mountain_visual_source_height = std::move(visual_source.visual_source_height);
+        fields.mountain_ridged_chain = std::move(visual_source.ridged_chain);
+        fields.mountain_detail_weight = std::move(visual_source.detail_weight);
+        fields.mountain_valley_incision = mountain_valley_incision_field(
+            fields.mountain_visual_source_height, fields.mountain_valley_floor,
+            fields.mountain_ridge_body, fields.mountain_summit_core);
+        cubey::procedural::ScalarField2D valley_shaped_height =
+            subtract_lowering_from_height(fields.mountain_visual_source_height,
+                                          fields.mountain_valley_incision);
+        const cubey::procedural::SlopeCurvature2D visual_slope_curvature =
+            cubey::procedural::compute_slope_curvature(valley_shaped_height);
+        const cubey::procedural::LocalRelief2D visual_local_relief =
+            cubey::procedural::compute_local_relief(valley_shaped_height, 4U);
+        TerrainProcessMountainMorphologyFields morphology = compute_mountain_morphology(
+            valley_shaped_height, visual_slope_curvature.slope,
+            visual_slope_curvature.curvature, visual_local_relief.local_span,
+            fields.mountain_support, fields.mountain_ridged_chain,
+            fields.mountain_detail_weight, TerrainProcessMountainMorphologyConfig{});
+        fields.mountain_morphology_delta = std::move(morphology.morphology_delta_m);
+        fields.mountain_crease_map = std::move(morphology.crease_map);
+        fields.mountain_ridge_map = std::move(morphology.ridge_map);
+        fields.mountain_profile_height = std::move(morphology.post_morphology_height_m);
+        fields.base_elevation = fields.mountain_profile_height;
+        fields.broad_relief = mountain_profile_relief_field(fields.mountain_profile_height);
         fields.mountain_ridge_hierarchy = mountain_ridge_hierarchy_field(
             desc, fields.mountain_ridge_skeleton, fields.mountain_ridge_influence,
             fields.mountain_peak_prominence, fields.mountain_support);
@@ -1589,6 +1682,12 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
         fields.mountain_ridge_body = zero_field(desc);
         fields.mountain_valley_floor = zero_field(desc);
         fields.mountain_valley_incision = zero_field(desc);
+        fields.mountain_visual_source_height = zero_field(desc);
+        fields.mountain_ridged_chain = zero_field(desc);
+        fields.mountain_detail_weight = zero_field(desc);
+        fields.mountain_morphology_delta = zero_field(desc);
+        fields.mountain_crease_map = zero_field(desc);
+        fields.mountain_ridge_map = zero_field(desc);
     }
     fields.mountain_uplift =
         make_mountain_uplift_field(fields.mountain_support, profile.mountain_uplift_m);
@@ -1597,33 +1696,14 @@ void rasterize_mountain_ridge_connection(cubey::procedural::ScalarField2D& skele
                                 profile.ridge_uplift_m);
     fields.peak_uplift =
         make_peak_uplift_field(fields.peak_support, fields.broad_relief, profile.peak_uplift_m);
-    fields.detail_residual =
-        scale_unit_field(unit_source_field(desc, seed + 404U, 0.0018F, 4U),
-                         profile.detail_min_m, profile.detail_max_m);
-    fields.detail_residual = cubey::procedural::box_blur_3x3(fields.detail_residual);
     if (profile.explicit_mountain_driver) {
-        for (std::uint32_t y = 0; y < desc.height; ++y) {
-            for (std::uint32_t x = 0; x < desc.width; ++x) {
-                const float mountain_gate =
-                    cubey::procedural::smoothstep(0.18F, 0.78F,
-                                                  fields.mountain_support.at(x, y));
-                const float ridge_gate =
-                    cubey::procedural::smoothstep(0.06F, 0.70F,
-                                                  fields.mountain_ridge_influence.at(x, y));
-                const float peak_gate =
-                    cubey::procedural::smoothstep(0.08F, 0.78F,
-                                                  fields.mountain_peak_prominence.at(x, y));
-                const float detail_gate = cubey::procedural::saturate(
-                    0.22F + (mountain_gate * 0.18F) + (ridge_gate * 0.36F) +
-                    (peak_gate * 0.30F));
-                fields.detail_residual.at(x, y) *= detail_gate;
-            }
-        }
-    }
-    if (profile.explicit_mountain_driver) {
-        fields.height =
-            add_bounded_detail_to_profile(fields.mountain_profile_height, fields.detail_residual);
+        fields.detail_residual = zero_field(desc);
+        fields.height = fields.mountain_profile_height;
     } else {
+        fields.detail_residual =
+            scale_unit_field(unit_source_field(desc, seed + 404U, 0.0018F, 4U),
+                             profile.detail_min_m, profile.detail_max_m);
+        fields.detail_residual = cubey::procedural::box_blur_3x3(fields.detail_residual);
         fields.height = add_height_fields(fields.base_elevation, fields.broad_relief,
                                           fields.mountain_uplift, fields.ridge_uplift,
                                           fields.peak_uplift, fields.detail_residual);
@@ -7034,6 +7114,18 @@ TerrainRegionProduct generate_terrain_region(const TerrainRegionConfig& config) 
     add_field(product.fields, kTerrainFieldBroadRelief, std::move(source_fields.broad_relief));
     add_field(product.fields, kTerrainFieldMountainProfileHeightM,
               std::move(source_fields.mountain_profile_height));
+    add_field(product.fields, kTerrainFieldMountainVisualSourceHeightM,
+              std::move(source_fields.mountain_visual_source_height));
+    add_field(product.fields, kTerrainFieldMountainRidgedChain,
+              std::move(source_fields.mountain_ridged_chain));
+    add_field(product.fields, kTerrainFieldMountainDetailWeight,
+              std::move(source_fields.mountain_detail_weight));
+    add_field(product.fields, kTerrainFieldMountainMorphologyDeltaM,
+              std::move(source_fields.mountain_morphology_delta));
+    add_field(product.fields, kTerrainFieldMountainCreaseMap,
+              std::move(source_fields.mountain_crease_map));
+    add_field(product.fields, kTerrainFieldMountainRidgeMap,
+              std::move(source_fields.mountain_ridge_map));
     add_field(product.fields, kTerrainFieldMountainRangeSpine,
               std::move(source_fields.mountain_range_spine));
     add_field(product.fields, kTerrainFieldMountainEnvelope,
