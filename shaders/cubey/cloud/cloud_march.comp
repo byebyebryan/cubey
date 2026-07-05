@@ -1786,8 +1786,8 @@ float cloud_horizon_handoff_weight(vec3 origin, vec3 direction, float start_t, f
 
     float view_height = dot(direction, cloud_planet_up());
     float lower_sky_band =
-        smoothstep(-0.080, 0.055, view_height) *
-        (1.0 - smoothstep(0.18, 0.40, view_height));
+        smoothstep(-0.140, 0.095, view_height) *
+        (1.0 - smoothstep(0.22, 0.50, view_height));
     float surface_camera_gate =
         cloud_surface_view_factor() *
         (1.0 - smoothstep(params.cloud_shell.x * 0.22,
@@ -1821,8 +1821,8 @@ float cloud_local_horizon_filter_weight(float sample_t, float handoff_weight) {
     float surface_view = cloud_surface_view_factor();
     float far_start = params.orbit_options.x;
     float far_end = max(params.orbit_options.y, far_start + 1.0);
-    float fade_start = mix(far_start * 0.78, far_start * 0.42, surface_view);
-    float fade_end = mix(far_end * 0.52, far_start * 1.08, surface_view);
+    float fade_start = mix(far_start * 0.78, far_start * 0.30, surface_view);
+    float fade_end = mix(far_end * 0.52, far_end * 0.84, surface_view);
     fade_end = max(fade_end, fade_start + 1000.0);
     float distance_fade = smoothstep(fade_start, fade_end, sample_t);
     return clamp(handoff_weight * distance_fade, 0.0, 1.0);
@@ -1830,16 +1830,16 @@ float cloud_local_horizon_filter_weight(float sample_t, float handoff_weight) {
 
 float cloud_local_horizon_visibility(float sample_t, float handoff_weight) {
     float handoff_filter = cloud_local_horizon_filter_weight(sample_t, handoff_weight);
-    return clamp(1.0 - handoff_filter * mix(0.90, 0.94, cloud_surface_view_factor()), 0.0, 1.0);
+    return clamp(1.0 - handoff_filter * mix(0.30, 0.42, cloud_surface_view_factor()), 0.0, 1.0);
 }
 
 float cloud_local_horizon_lod_bias(float sample_t, float handoff_weight) {
     float handoff_filter = cloud_local_horizon_filter_weight(sample_t, handoff_weight);
     float surface_view = cloud_surface_view_factor();
-    float grazing_prefilter = handoff_weight * mix(0.28, 0.58, surface_view);
-    return clamp(grazing_prefilter * 1.25 +
-                     handoff_filter * mix(2.25, 3.85, surface_view),
-                 0.0, 5.25);
+    float grazing_prefilter = handoff_weight * mix(0.22, 0.40, surface_view);
+    return clamp(grazing_prefilter * 1.10 +
+                     handoff_filter * mix(1.35, 2.10, surface_view),
+                 0.0, 3.0);
 }
 
 MarchResult cloud_orbit_shell_march(vec3 origin, vec3 direction, float start_t, float end_t,
@@ -2104,9 +2104,9 @@ float cloud_ref_compatible_surface_horizon_fade(vec3 direction, float first_dist
         return 0.0;
     }
 
-    float grazing_view = 1.0 - smoothstep(0.025, 0.145, abs(dot(direction, cloud_planet_up())));
-    float distance_gate = smoothstep(55000.0, 170000.0, visible_distance);
-    return clamp(surface_view * grazing_view * distance_gate * 0.92, 0.0, 0.92);
+    float grazing_view = 1.0 - smoothstep(0.018, 0.180, abs(dot(direction, cloud_planet_up())));
+    float distance_gate = smoothstep(80000.0, 260000.0, visible_distance);
+    return clamp(surface_view * grazing_view * distance_gate * 0.36, 0.0, 0.36);
 }
 
 MarchResult cloud_ref_compatible_march(vec3 origin, vec3 direction, float start_t, float end_t,
