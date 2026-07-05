@@ -1444,3 +1444,18 @@ optical-edge twilight source, and final composite preserves twilight saturation
 separately from day/night brightness. Validate with
 `projects/atmosphere/capture_cloud_lighting_regimes.sh` before treating the
 defaults as final art direction.
+
+## Cloud Afterglow Art Direction 2026-07-04
+
+Use "afterglow" as the user-facing cloud control for dramatic red, pink, or
+purple sunset cloud accents. Alpenglow and purple-light references are useful
+visual guides, but this is intentionally an art-directed beauty layer rather
+than a strict spectral or meteorological model.
+
+The effect should be subtle by default because clouds usually sit in the
+background. It should appear only in the low-sun twilight window, mostly on
+cloud tops, thin optical edges, and sun-facing rim regions. It should not tint
+all cloud mass uniformly, should not brighten night clouds, and should not hide
+existing horizon handoff issues. The first implementation target remains the
+surface `reference-parity` path in `projects/atmosphere`; high-oblique and
+orbit cloud topology stay separate.
