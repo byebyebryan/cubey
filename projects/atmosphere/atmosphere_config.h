@@ -171,6 +171,7 @@ struct MoonConfig {
     config.twilight_color_strength = 0.72F;
     config.twilight_edge_strength = 0.45F;
     config.twilight_saturation_strength = 0.82F;
+    config.afterglow_strength = 0.22F;
     config.resolve_strength = 0.48F;
     config.final_contrast = 1.17F;
     config.final_saturation = 1.12F;
@@ -618,6 +619,7 @@ inline void apply_atmosphere_cloud_reference_parity(AtmosphereCloudConfig& confi
     config.layer.twilight_color_strength = 0.85F;
     config.layer.twilight_edge_strength = 0.55F;
     config.layer.twilight_saturation_strength = 0.90F;
+    config.layer.afterglow_strength = 0.32F;
     config.layer.final_contrast = 0.98F;
     config.layer.final_saturation = 1.0F;
     config.layer.resolve_strength = 1.0F;
@@ -1182,6 +1184,7 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
     apply_float(run_clouds.twilight_edge_strength, config.layer.twilight_edge_strength);
     apply_float(run_clouds.twilight_saturation_strength,
                 config.layer.twilight_saturation_strength);
+    apply_float(run_clouds.afterglow_strength, config.layer.afterglow_strength);
     apply_float(run_clouds.final_contrast, config.layer.final_contrast);
     apply_float(run_clouds.final_saturation, config.layer.final_saturation);
     apply_float(run_clouds.resolve_strength, config.layer.resolve_strength);

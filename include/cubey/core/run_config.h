@@ -277,6 +277,7 @@ struct RunConfig {
         float twilight_color_strength = kRunConfigUnsetFloat;
         float twilight_edge_strength = kRunConfigUnsetFloat;
         float twilight_saturation_strength = kRunConfigUnsetFloat;
+        float afterglow_strength = kRunConfigUnsetFloat;
         float powder_strength = kRunConfigUnsetFloat;
         float final_contrast = kRunConfigUnsetFloat;
         float final_saturation = kRunConfigUnsetFloat;

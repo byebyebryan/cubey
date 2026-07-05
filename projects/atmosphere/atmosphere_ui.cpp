@@ -339,6 +339,9 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
             cubey::host::imgui_slider_float(
                 "Twilight saturation", &layer.twilight_saturation_strength, 0.0F, 2.0F,
                 "%.2f", "Twilight color saturation preserved in final composite.");
+            cubey::host::imgui_slider_float(
+                "Afterglow", &layer.afterglow_strength, 0.0F, 2.0F, "%.2f",
+                "Art-directed red, pink, or purple cloud accent near low sun.");
             cubey::host::imgui_slider_float("Contrast", &layer.final_contrast, 0.0F, 3.0F,
                                             "%.2f", "Final cloud contrast multiplier.");
             cubey::host::imgui_slider_float("Saturation", &layer.final_saturation, 0.0F, 3.0F,

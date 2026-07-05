@@ -786,7 +786,7 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
         .lighting_strengths = {config.ambient_strength, config.direct_strength,
                                config.phase_strength, config.sun_glare_strength},
         .twilight_options = {config.twilight_color_strength, config.twilight_edge_strength,
-                             config.twilight_saturation_strength, 0.0F},
+                             config.twilight_saturation_strength, config.afterglow_strength},
         .composite_options = {config.resolve_strength, config.final_contrast,
                               config.final_saturation, config.horizon_glow_strength},
         .sampling_options = {sampling_mode_value(config.sampling_mode), config.jitter_strength,

@@ -193,6 +193,7 @@ enum class RunConfigOptionId {
     CloudTwilightColorStrength,
     CloudTwilightEdgeStrength,
     CloudTwilightSaturationStrength,
+    CloudAfterglowStrength,
     CloudPowderStrength,
     CloudFinalContrast,
     CloudFinalSaturation,

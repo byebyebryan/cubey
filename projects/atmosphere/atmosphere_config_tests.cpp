@@ -517,6 +517,8 @@ int main() {
                      "default atmosphere clouds should include twilight edge controls");
         require_near(defaults.clouds.layer.twilight_saturation_strength, 0.82F, 0.001F,
                      "default atmosphere clouds should include twilight saturation controls");
+        require_near(defaults.clouds.layer.afterglow_strength, 0.22F, 0.001F,
+                     "default atmosphere clouds should include a subtle afterglow control");
 
     {
         AtmosphereCloudConfig clouds;
@@ -561,6 +563,8 @@ int main() {
                      "reference parity preset should strengthen twilight cloud edges");
         require_near(clouds.layer.twilight_saturation_strength, 0.90F, 0.001F,
                      "reference parity preset should preserve twilight cloud saturation");
+        require_near(clouds.layer.afterglow_strength, 0.32F, 0.001F,
+                     "reference parity preset should expose a subtle afterglow accent");
     }
 
     {
@@ -588,6 +592,7 @@ int main() {
         run_config.clouds.twilight_color_strength = 1.10F;
         run_config.clouds.twilight_edge_strength = 0.95F;
         run_config.clouds.twilight_saturation_strength = 1.25F;
+        run_config.clouds.afterglow_strength = 0.70F;
         run_config.clouds.temporal = 0;
         run_config.clouds.local_volume = 0;
         run_config.clouds.horizon_layer = 1;
@@ -639,6 +644,8 @@ int main() {
                      "atmosphere run config should map cloud twilight edge strength");
         require_near(config.clouds.layer.twilight_saturation_strength, 1.25F, 0.001F,
                      "atmosphere run config should map cloud twilight saturation strength");
+        require_near(config.clouds.layer.afterglow_strength, 0.70F, 0.001F,
+                     "atmosphere run config should map cloud afterglow strength");
         require(!config.clouds.layer.temporal_enabled,
                 "atmosphere run config should map cloud temporal flag");
         require(!config.clouds.layer.local_volume_enabled,

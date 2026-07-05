@@ -134,7 +134,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 248> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 249> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -727,6 +727,10 @@ constexpr std::array<ConfigOptionDescriptor, 248> kRunConfigOptions{
            "clouds.twilight_saturation_strength", "--cloud-twilight-saturation-strength",
            "Twilight Saturation", "Clouds",
            "Amount of cloud color saturation preserved during twilight final composite.",
+           ConfigOptionType::Float, bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudAfterglowStrength, "clouds.afterglow_strength",
+           "--cloud-afterglow-strength", "Afterglow", "Clouds",
+           "Art-directed red, pink, or purple low-sun cloud edge accent.",
            ConfigOptionType::Float, bounded_range(0.0, 2.0)),
     option(RunConfigOptionId::CloudPowderStrength, "clouds.powder_strength",
            "--cloud-powder-strength", "Powder Strength", "Clouds",
@@ -1536,6 +1540,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.twilight_edge_strength);
     case RunConfigOptionId::CloudTwilightSaturationStrength:
         return optional_float(config.clouds.twilight_saturation_strength);
+    case RunConfigOptionId::CloudAfterglowStrength:
+        return optional_float(config.clouds.afterglow_strength);
     case RunConfigOptionId::CloudPowderStrength:
         return optional_float(config.clouds.powder_strength);
     case RunConfigOptionId::CloudFinalContrast:
@@ -2018,6 +2024,10 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("ambient_strength", options.ambient_strength);
     adapter.writeField<float>("direct_strength", options.direct_strength);
     adapter.writeField<float>("phase_strength", options.phase_strength);
+    adapter.writeField<float>("twilight_color_strength", options.twilight_color_strength);
+    adapter.writeField<float>("twilight_edge_strength", options.twilight_edge_strength);
+    adapter.writeField<float>("twilight_saturation_strength", options.twilight_saturation_strength);
+    adapter.writeField<float>("afterglow_strength", options.afterglow_strength);
     adapter.writeField<float>("powder_strength", options.powder_strength);
     adapter.writeField<float>("final_contrast", options.final_contrast);
     adapter.writeField<float>("final_saturation", options.final_saturation);
@@ -2084,6 +2094,10 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("ambient_strength", options.ambient_strength);
     adapter.readField<float>("direct_strength", options.direct_strength);
     adapter.readField<float>("phase_strength", options.phase_strength);
+    adapter.readField<float>("twilight_color_strength", options.twilight_color_strength);
+    adapter.readField<float>("twilight_edge_strength", options.twilight_edge_strength);
+    adapter.readField<float>("twilight_saturation_strength", options.twilight_saturation_strength);
+    adapter.readField<float>("afterglow_strength", options.afterglow_strength);
     adapter.readField<float>("powder_strength", options.powder_strength);
     adapter.readField<float>("final_contrast", options.final_contrast);
     adapter.readField<float>("final_saturation", options.final_saturation);
@@ -2862,6 +2876,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudTwilightSaturationStrength:
         config.clouds.twilight_saturation_strength = parse_config_float(value, option);
         validate_range(config.clouds.twilight_saturation_strength, option);
+        break;
+    case RunConfigOptionId::CloudAfterglowStrength:
+        config.clouds.afterglow_strength = parse_config_float(value, option);
+        validate_range(config.clouds.afterglow_strength, option);
         break;
     case RunConfigOptionId::CloudPowderStrength:
         config.clouds.powder_strength = parse_config_float(value, option);

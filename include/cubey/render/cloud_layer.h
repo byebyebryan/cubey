@@ -279,6 +279,7 @@ struct CloudLayerConfig {
     float twilight_color_strength = 0.72F;
     float twilight_edge_strength = 0.45F;
     float twilight_saturation_strength = 0.82F;
+    float afterglow_strength = 0.22F;
     float final_contrast = 1.17F;
     float final_saturation = 1.12F;
     float resolve_strength = 0.48F;
