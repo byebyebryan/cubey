@@ -80,10 +80,10 @@ static_assert(sizeof(TerrainPreviewPushConstants) <= 128U);
         };
     case TerrainPreviewCameraPreset::Surface:
         return {
-            .pitch_radians = -0.14F,
+            .pitch_radians = -0.26F,
             .yaw_radians = 0.62F,
-            .distance_extent_scale = 0.28F,
-            .target_height_fraction = 0.24F,
+            .distance_extent_scale = 0.40F,
+            .target_height_fraction = 0.32F,
         };
     case TerrainPreviewCameraPreset::SurfaceLow:
         return {

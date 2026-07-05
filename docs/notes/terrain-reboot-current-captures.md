@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
-This note records the current terrain reboot capture set after the revision 31
-mountain ridge/valley process pass.
+This note records the current terrain reboot capture set after the revision 33
+mountain visual source retune.
 
 ## Capture Command
 
@@ -49,25 +49,40 @@ Fixed-extent mountain resolution audit commands keep the patch at roughly
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
 stress captures for larger river-network and mountain-driver inspection.
-Revision 32 expands the scalar contract to 64 product fields and 59 scalar/review
-views. The refreshed mountain stress manifest reports `height_m.span = 2470.630`,
-`mountain_visual_source_height_m.span = 2387.518`,
-`mountain_profile_height_m.span = 2380.816`,
-`mountain_ridged_chain.mean = 0.2343`, and
-`mountain_morphology_delta_m.max = 47.635`. The 1025 mountain stress manifest
-reports `height_m.span = 2539.712`,
-`mountain_visual_source_height_m.span = 2451.250`, and
-`mountain_morphology_delta_m.max = 55.093`. Perspective captures are generated
+Revision 33 keeps the scalar contract at 64 product fields and 59 scalar/review
+views, but retunes the mountain visual source so broad mass/support carries the
+range height and ridged-chain/detail fields no longer dominate geometry. The
+refreshed 513 mountain stress manifest reports `height_m.span = 2632.857`,
+`mountain_visual_source_height_m.span = 2458.848`,
+`mountain_profile_height_m.span = 2458.848`,
+`mountain_ridged_chain.mean = 0.0922`, and
+`mountain_morphology_delta_m.max = 5.459`. The 1025 mountain stress manifest
+reports `height_m.span = 2472.466`,
+`mountain_visual_source_height_m.span = 2472.466`,
+`mountain_profile_height_m.span = 2472.466`,
+`mountain_ridged_chain.mean = 0.0961`, and
+`mountain_morphology_delta_m.max = 5.134`. Perspective captures are generated
 as needed after the scalar set; the 513 mountain stress directory also includes
 `mountain-perspective.png`,
 `mountain-height-perspective.png`, `mountain-profile.png`, and
 `mountain-post-erosion-perspective.png` from the renderer-backed preview app.
 `mountain-surface-height.png` is now promoted into the normal mountain review
 bundle because it exposes near-ground smoothness, rounded peaks, and missing
-local detail more directly than the oblique captures.
+local detail more directly than the oblique captures. Revision 33 also raises
+and backs off the `surface` preset so this image is not dominated by foreground
+occlusion; `surface-low` remains available for the intentionally closer angle.
 The 1025 mountain stress set is scalar-first, with
 `mountain-surface-height.png` generated when a higher-resolution surface check is
 needed.
+
+The revision 33 mountain result is a correction, not the final mountain look.
+It fixes the too-noisy/high-frequency ridge failure mode and makes the source
+more cohesive, but both oblique and surface captures still read softer and more
+rounded than the ShaderToy and TerrainEngine references. The next mountain
+quality pass should add an alpine face/detail model over the coherent macro
+height, likely borrowing the reference split between low-frequency geometry and
+high-frequency normal/material detail instead of pushing more noise into mesh
+height.
 
 The fixed-extent resolution audit under
 `outputs/terrain/resolution-mountain-16km` keeps the patch near `16.384km` and
@@ -230,6 +245,21 @@ mountain manifest reports revision 32, 64 fields, 59 scalar/review outputs,
 The revised `mountain-process-review.png` compares visual source, ridged chain,
 detail weight, morphology delta, final height, post-erosion height, crease map,
 ridge map, and slope.
+Revision 33 keeps the same field contract but lowers ridged-chain/detail
+amplitude, shifts the visible height back to broad mountain mass/support, and
+reduces the morphology pass to small crease shaping. The regenerated 513
+mountain manifest reports revision 33, 64 fields, 59 scalar/review outputs,
+`height_m.span = 2632.857`,
+`mountain_visual_source_height_m.span = 2458.848`,
+`mountain_profile_height_m.span = 2458.848`,
+`mountain_ridged_chain.mean = 0.0922`,
+`mountain_morphology_delta_m.max = 5.459`,
+`mountain_crease_map.mean = 0.0022`, and `mountain_ridge_map.mean = 0.0354`.
+The 1025 manifest reports `height_m.span = 2472.466`,
+`mountain_visual_source_height_m.span = 2472.466`,
+`mountain_profile_height_m.span = 2472.466`,
+`mountain_ridged_chain.mean = 0.0961`, and
+`mountain_morphology_delta_m.max = 5.134`.
 
 ## What To Inspect
 
@@ -447,10 +477,12 @@ hard shoulder shelves in `mountain-perspective.png` and
 `mountain-profile.png`; revision 29 shows that bounded local talus relaxation
 can reduce over-steep synthetic shoulders in the review surface. Revision 30
 makes the massif and shoulder buildup more cohesive, and revision 31 adds
-explicit ridge-body and valley-floor process fields. The range still reads
-rounded and procedural, and the process masks still reveal source-tied ridge and
-valley bands. Peak prominence is source-shaped rather than erosion-evolved, and
-the ridge/valley structure is generated rather than produced by a process model.
+explicit ridge-body and valley-floor process fields. Revisions 32 and 33 pivot
+the visible mountain stress height to a coherent visual source with low-amplitude
+ridged-chain and morphology shaping. The range still reads rounded and
+procedural, and the process masks still reveal source-tied ridge and valley
+bands. Peak prominence is source-shaped rather than erosion-evolved, and the
+ridge/valley structure is generated rather than produced by a process model.
 The thermal talus pass is local and bounded; it does not model long-timescale
 erosion, sediment routing, snow/ice, glacial valley carving, tectonic plates, or
 a world-scale range graph. The

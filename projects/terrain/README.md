@@ -304,15 +304,19 @@ The scalar review set includes 59 PNG views plus `manifest.json`:
 - `vegetation.png`
 
 Revision 32 expands the product contract to 64 fields and 59 scalar/debug views.
+Revision 33 retunes the mountain stress visual source away from high-frequency
+ridged height. Broad mass/support now carries more of the elevation, summit
+support is a bounded accent, ridged-chain detail has much lower geometric
+weight, and bounded morphology is restricted to a few meters of crease shaping.
 The refreshed `outputs/terrain/mountain-range-stress` manifest reports
-`generator_revision = 32`, `height_m.span = 2470.630`,
-`mountain_visual_source_height_m.span = 2387.518`,
-`mountain_profile_height_m.span = 2380.816`,
-`mountain_ridged_chain.mean = 0.2343`, and
-`mountain_morphology_delta_m.max = 47.635`. The 1025 mountain stress manifest
-reports `height_m.span = 2539.712`,
-`mountain_visual_source_height_m.span = 2451.250`, and
-`mountain_morphology_delta_m.max = 55.093`.
+`generator_revision = 33`, `height_m.span = 2632.857`,
+`mountain_visual_source_height_m.span = 2458.848`,
+`mountain_profile_height_m.span = 2458.848`,
+`mountain_ridged_chain.mean = 0.0922`, and
+`mountain_morphology_delta_m.max = 5.459`. The 1025 mountain stress manifest
+reports `height_m.span = 2472.466`,
+`mountain_visual_source_height_m.span = 2472.466`, and
+`mountain_morphology_delta_m.max = 5.134`.
 
 `terrain_preview` is a separate renderer-backed consumer for perspective
 review. It turns the selected `TerrainRegionProduct` height field into a lit
@@ -322,7 +326,10 @@ basin, and valley hierarchy, while `mountain-profile.png` is a lower side view
 for checking whether peak height and valley contrast are plausible.
 `mountain-surface-height.png` is the near-ground shape diagnostic; keep it in the
 normal mountain review bundle because it exposes smooth foreground slopes,
-rounded peaks, and missing local detail that oblique views can hide.
+rounded peaks, and missing local detail that oblique views can hide. Revision 33
+raises and backs off the `surface` camera preset so the capture is a usable
+diagnostic instead of a foreground-occluded close view; use `surface-low` when a
+more aggressive near-ground angle is intentionally needed.
 `mountain-post-erosion-perspective.png` renders the diagnostic
 `post_erosion_height_m` surface with height color so process detail can be
 compared against the actual `height_m` product. The current

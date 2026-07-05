@@ -57,20 +57,20 @@ struct TerrainProcessThermalTalusFields {
 };
 
 struct TerrainProcessMountainMorphologyConfig {
-    float support_start = 0.18F;
-    float support_full = 0.76F;
-    float chain_start = 0.24F;
-    float chain_full = 0.86F;
-    float slope_start = 0.12F;
-    float slope_full = 0.62F;
-    float relief_start_m = 82.0F;
-    float relief_full_m = 560.0F;
+    float support_start = 0.30F;
+    float support_full = 0.82F;
+    float chain_start = 0.34F;
+    float chain_full = 0.88F;
+    float slope_start = 0.18F;
+    float slope_full = 0.66F;
+    float relief_start_m = 140.0F;
+    float relief_full_m = 620.0F;
     int crease_blur_iterations = 1;
     int crease_spread_iterations = 1;
-    float spread_decay_per_cell = 0.52F;
-    float base_delta_limit_m = 4.0F;
-    float relief_delta_fraction = 0.10F;
-    float max_delta_m = 86.0F;
+    float spread_decay_per_cell = 0.45F;
+    float base_delta_limit_m = 2.0F;
+    float relief_delta_fraction = 0.055F;
+    float max_delta_m = 42.0F;
 };
 
 struct TerrainProcessMountainMorphologyFields {

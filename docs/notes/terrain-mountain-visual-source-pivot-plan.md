@@ -94,3 +94,35 @@ views, `height_m.span = 2470.630`,
 `mountain_profile_height_m.span = 2380.816`, and
 `mountain_morphology_delta_m.max = 47.635`. The 1025 surface capture was also
 refreshed locally for close-range scale checking.
+
+## Revision 33 Correction
+
+The first visual-source landing overcorrected in the wrong direction during
+review: it reduced the graph-stroke artifacts, but the ridged source and
+morphology still put too much high-frequency shape into geometry. That made the
+range read as noisy ridged terrain rather than dramatic macro buildup into
+large peaks and valley contrast.
+
+Revision 33 keeps the same field contract and corrects the height split:
+
+- broad mass/support carries most of the mountain height;
+- summit support is a bounded accent, not a second peak stack;
+- ridged-chain and local detail are lower-frequency and much lower-amplitude;
+- morphology is a small crease-shaping pass, not a visible erosion substitute.
+
+The refreshed 513 mountain stress manifest reports 64 fields, 59 scalar/debug
+views, `height_m.span = 2632.857`,
+`mountain_visual_source_height_m.span = 2458.848`,
+`mountain_profile_height_m.span = 2458.848`,
+`mountain_ridged_chain.mean = 0.0922`, and
+`mountain_morphology_delta_m.max = 5.459`. The 1025 manifest reports
+`height_m.span = 2472.466`,
+`mountain_visual_source_height_m.span = 2472.466`, and
+`mountain_morphology_delta_m.max = 5.134`.
+
+This is still not the ShaderToy/TerrainEngine visual bar. The corrected failure
+mode is now broad rounded massifs and too little alpine face detail, rather
+than high-frequency fin/ridge noise. The next pass should not simply raise
+detail amplitude again; it should add a separate alpine process/detail layer
+over coherent macro geometry, preferably with high-frequency material/normal
+detail kept separate from mesh height.
