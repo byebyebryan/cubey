@@ -85,6 +85,9 @@ The lighting-regime script focuses on the `reference-parity` surface cloud path.
 It captures noon, twilight, and night in surface-up and horizon views with
 lighting, alpha, background, edge, and distance diagnostics, and disables the
 standalone reference grid so cloud/sky transitions are easier to inspect.
+Use it when changing `clouds.twilight_color_strength`,
+`clouds.twilight_edge_strength`, or `clouds.twilight_saturation_strength`;
+twilight should pick up low-sun warmth without making night clouds look sunlit.
 
 Controls:
 

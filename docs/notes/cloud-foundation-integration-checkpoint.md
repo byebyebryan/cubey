@@ -192,3 +192,17 @@ Current read:
   layer into a flat pale blanket;
 - horizon captures are diagnostic only for this surface reference pass. A
   production high-oblique/orbit handoff still needs separate treatment.
+
+The shared twilight pass adds three explicit controls:
+`clouds.twilight_color_strength` boosts low-sun ambient color from the horizon
+sky/sun radiance, `clouds.twilight_edge_strength` boosts optical-edge rim color
+in the `cloud-ref-compatible` marcher, and
+`clouds.twilight_saturation_strength` lets final composite saturation treat
+twilight as its own regime instead of collapsing toward the night grade. These
+are color-response controls only; they do not change cloud density, weather
+placement, horizon handoff, or orbit/high-oblique cloud topology.
+
+Use the lighting-regime capture pack before retuning those values. Noon should
+stay the shape/detail reference, twilight should gain warmer cloud edges and
+less grey desaturation, and night should remain mostly silhouette/moonlight
+without reintroducing daylight-colored clouds.

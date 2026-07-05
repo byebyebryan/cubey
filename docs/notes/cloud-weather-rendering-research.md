@@ -1436,3 +1436,11 @@ For this repo, the first target is the shared `CloudLayer` path in
 `projects/atmosphere` using the `reference-parity` preset. `cloud_ref` remains
 the local surface reference, and high-oblique/orbit handoff work remains
 separate.
+
+Implementation checkpoint: shared cloud uniforms now carry twilight color,
+edge, and saturation strengths. The local ambient fill samples horizon
+sky/sun radiance near low sun, `cloud-ref-compatible` adds a bounded
+optical-edge twilight source, and final composite preserves twilight saturation
+separately from day/night brightness. Validate with
+`projects/atmosphere/capture_cloud_lighting_regimes.sh` before treating the
+defaults as final art direction.
