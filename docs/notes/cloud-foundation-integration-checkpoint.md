@@ -206,3 +206,10 @@ Use the lighting-regime capture pack before retuning those values. Noon should
 stay the shape/detail reference, twilight should gain warmer cloud edges and
 less grey desaturation, and night should remain mostly silhouette/moonlight
 without reintroducing daylight-colored clouds.
+
+`clouds.afterglow_strength` is the optional beauty control for a stronger
+afterglow look: red, pink, or purple accents near the low sun. It is intentionally
+subtle by default and is applied through top/edge/rim cloud lighting rather than
+as a global post tint. The lighting-regime capture pack now includes an
+`afterglow` showcase row using a stronger temporary value so the accent can be
+reviewed without changing the normal twilight default.
