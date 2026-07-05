@@ -184,8 +184,10 @@ amplifies bad cloud shape.
 ## Production Shape
 
 The production cloud renderer now lives as the shared cloud layer consumed by
-`projects/atmosphere`. It should continue to be tested and tuned there before
-ocean, planet, or PBR viewers consume cloud products directly.
+`projects/atmosphere` and by `projects/ocean` for surface-view sky composition.
+It should continue to be tested and tuned in atmosphere before ocean water
+materials, planet high/orbit views, or PBR viewers consume cloud products
+directly.
 
 Initial scope:
 

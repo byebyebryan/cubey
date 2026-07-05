@@ -288,7 +288,9 @@ diagnostics. The GUI's Feature Isolation section exposes global shape and foam
 strength, foam history, active cascade-slot work toggles, shape/detail
 anti-repeat, split atmosphere material influence, shape/normal/foam fade
 distances, and terrain foam controls for checking which additions help or hurt
-the reference-derived core.
+the reference-derived core. Final view also composites the shared surface cloud
+layer over the atmosphere sky by default; use `--no-clouds` for the clear-sky
+A/B path while cloud shadows/reflections remain deferred.
 The old `ocean_ref` and `ocean_legacy` projects were retired after their useful
 comparison and donor work landed in `ocean`; use git history if a deleted
 implementation detail is needed for archaeology.

@@ -2,8 +2,9 @@
 
 This note checkpoints the integration scope that promoted the former
 `projects/cloud` standalone renderer into a shared weather layer. Current cloud
-tuning happens through `projects/atmosphere`; planet now consumes the shared
-runtime as an opt-in integration target.
+tuning happens through `projects/atmosphere`; ocean consumes the accepted
+surface-view path in final sky, and planet consumes the shared runtime as an
+opt-in integration target.
 
 ## Batch Scope
 
@@ -11,8 +12,9 @@ runtime as an opt-in integration target.
   low-frequency shadowing, and a future reflection contribution.
 - Keep the production cloud app as the primary tuning surface while moving stable
   render vocabulary and shader assets into shared engine/render locations.
-- Integrate clouded sky first through the atmosphere testbed, then add ocean
-  shadow consumption smoke coverage.
+- Integrate clouded sky first through the atmosphere testbed, then let ocean
+  consume the surface-view sky composite without pushing clouds into the water
+  material yet.
 - Do not integrate planet in this batch. Current planet sky/horizon issues are
   tracked separately in `docs/notes/sky-celestial-current-state.md`.
 - Do not build a dynamic cloud reflection cubemap in this batch. The reflection
@@ -25,8 +27,8 @@ runtime as an opt-in integration target.
 - Shared cloud contracts are available without importing `projects/cloud`.
 - Atmosphere can render a clouded-sky path without folding cloud noise into the
   clear-sky atmosphere shader.
-- Ocean can consume a cloud shadow factor without raymarching clouds in the water
-  shader.
+- Ocean can render shared clouds in the sky/background pass without raymarching
+  clouds in the water shader.
 
 ## Landed Status
 
@@ -46,9 +48,14 @@ runtime as an opt-in integration target.
   clear-sky atmosphere in final view, and exposes a collapsed Clouds control
   group backed by the same `clouds.*` run-config overrides used by the
   standalone cloud project.
-- `projects/ocean` now has a cloud-shadow diagnostic view and controls that
-  consume the shared `CloudLayerShadowProduct` shape. The current shadow is
-  procedural and local to ocean so water does not import the cloud raymarcher.
+- `projects/ocean` now compiles the shared cloud shaders, owns a
+  `CloudLayerRuntime`, and composites surface-volume clouds over the atmosphere
+  sky in final view by default. The cloud product uses ocean scene depth for sky
+  composition and the shared atmosphere sun/moon/ambient lighting state.
+  `--no-clouds` keeps the clear-sky A/B path. Ocean still has the older
+  cloud-shadow diagnostic view and controls that consume the shared
+  `CloudLayerShadowProduct` shape; that shadow remains procedural and local to
+  ocean.
 - `projects/planet` now has an opt-in `--clouds` path that composites the shared
   cloud product over the planet HDR scene using scene depth. It is an integration
   checkpoint, not a finished cloud shadow/reflection/environment-lighting path.
@@ -61,9 +68,9 @@ runtime as an opt-in integration target.
 - Atmosphere has runtime-backed cloud controls and can enable temporal resolve,
   but cloud debug-view surfacing, lighting feedback into the atmosphere, and
   cloud-driven environment/reflection outputs remain deferred.
-- Ocean receives only a diagnostic analytic cloud shadow factor. It does not
-  sample a real cloud shadow texture, cloud reflection product, or clouded
-  sky-probe contribution.
+- Ocean clouds are sky/background composition only. Ocean does not sample a real
+  cloud shadow texture, cloud reflection product, or clouded sky-probe
+  contribution in the water material yet.
 - Planet cloud shadows, reflections, and final high-oblique/orbit transition
   polish remain deferred until the active planet sky/horizon issues are
   stabilized.
