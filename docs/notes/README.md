@@ -81,6 +81,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain ShaderToy operator extraction](terrain-shadertoy-operator-extraction.md):
   deeper ShaderToy terrain/hydro review, what to borrow as clean-room process
   operators or visual cues, and what to keep out of river topology.
+- [TerrainEngine reference port plan](terrain-engine-reference-port-plan.md):
+  isolated recipe plan for porting TerrainEngine's shader-side height/material
+  model into the terrain product contract as a known-good reference lane.
 - [Terrain mountain gully diagnostic plan](terrain-mountain-gully-diagnostic-plan.md):
   revision 24 plan for diagnostic-only gully / erosion fields over the mountain
   stress recipe before any height-affecting erosion pass.

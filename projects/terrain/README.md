@@ -152,6 +152,10 @@ The ShaderToy terrain/hydro extraction boundary is captured in
 [Terrain ShaderToy operator extraction](../../docs/notes/terrain-shadertoy-operator-extraction.md):
 use those refs for clean-room process diagnostics and visual vocabulary, not
 river topology or shader ports.
+The TerrainEngine reference lane is captured in
+[TerrainEngine reference port plan](../../docs/notes/terrain-engine-reference-port-plan.md):
+use it as an isolated known-good height/material recipe, not as a commitment to
+port TerrainEngine's OpenGL app or tessellation stack.
 
 ## Commands
 
