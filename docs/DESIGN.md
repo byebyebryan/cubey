@@ -199,8 +199,8 @@ Cubey now has two narrow hosts:
 - `cubey_host` owns GLFW window/surface hosting and the shared windowed loop.
 - `cubey::host::HeadlessPngHost` owns no-window Vulkan setup, an offscreen RGBA
   target, deterministic capture-frame timing, capture transitions, ticketed
-  RGBA8 readback, PNG artifact writing, and optional MP4 video capture through
-  the engine video encoder.
+  RGBA8 readback, queued PNG artifact writing, and optional MP4 video capture
+  through the shared queued video encoder.
 - `cubey::Engine` owns project runtime services and created scenes. Windowed
   and headless hosts still own platform and Vulkan setup until a later renderer
   ownership pass. Engine-created scenes validate renderable mesh/material
@@ -400,7 +400,7 @@ cubey/
         pan_zoom_2d_controller.h -- input-driven 2D camera controller
         orbit_controller.h -- basic orbit input state
       engine/
-        capture_queue.h    -- job-backed PNG capture encoding queue
+        capture_queue.h    -- queued PNG and video capture encoding
         engine.h           -- scoped root owner for runtime, scenes, and registries
         gltf_scene_importer.h -- glTF scene/resource/deformation bridge
         forward_pbr_renderer_3d.h -- reusable shadow/skybox/PBR forward renderer
