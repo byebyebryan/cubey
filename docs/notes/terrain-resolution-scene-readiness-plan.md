@@ -2,7 +2,7 @@
 
 Date: 2026-07-04
 
-Revision 30 improved the mountain stress recipe, but the result still raises a
+Revision 31 improved the local mountain stress recipe, but the result still raises a
 separate question: can the current terrain workbench scale from local review
 patches to a scene view with enough detail?
 
@@ -83,8 +83,10 @@ Each directory contains the scalar review set, `manifest.json`,
 The `2049` preview path peaked around `1830172 KB` RSS, so it should remain a
 stress path rather than a default review path.
 
-The manifests all report generator revision 30, 55 fields, and 50 scalar/review
-outputs. Fixed-extent field summaries:
+The fixed-extent audit below used generator revision 30, 55 fields, and 50
+scalar/review outputs. Revision 31 adds ridge/valley process fields at the 513
+review scale, but it does not change the scene-readiness conclusion. Fixed-extent
+field summaries:
 
 | Grid | `height_m.span` | `mountain_profile_height_m.span` | `mountain_mass.mean` | `mountain_shoulder.mean` | `mountain_summit_core.mean` | `slope_instability.mean` |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |

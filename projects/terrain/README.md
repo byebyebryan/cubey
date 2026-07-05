@@ -112,10 +112,17 @@ Revision 29 adds bounded thermal talus diagnostics for
 Revision 30 adds `mountain-process-review.png` and retunes the mountain stress
 source profile so mass and shoulder buildup carry more of the range shape before
 ridge and summit modulation.
+Revision 31 adds explicit mountain ridge/valley process fields:
+`mountain_ridge_body`, `mountain_valley_floor`, and
+`mountain_valley_incision_m`. The mountain stress profile now routes more shape
+through broad ridge bodies and a bounded valley-floor lowering stage before
+detail is applied. This improves the perspective read, but the new scalar
+diagnostics still expose the generated ridge skeleton as source-shaped bands.
 
 The current foundation pass keeps terrain process math in terrain-local helpers:
 spread, relief-clamped lowering, height lowering, the diagnostic gully pass, and
-the bounded thermal talus diagnostic.
+the bounded thermal talus diagnostic, and the mountain stress ridge/valley
+process fields.
 The scalar review export writes `manifest.json` with recipe, grid, summary,
 field stats, view names, and output filenames.
 `terrain` and `terrain_preview` also accept `--profile-output <prefix>`. Bare
@@ -226,7 +233,7 @@ for the standard review set. The current local review images are generated at
 thumbnail. `outputs/` is ignored by git, so this directory is a disposable local
 review artifact.
 
-The scalar review set includes 50 PNG views plus `manifest.json`:
+The scalar review set includes 53 PNG views plus `manifest.json`:
 
 - `final.png`
 - `mountain-relief.png`
@@ -247,6 +254,9 @@ The scalar review set includes 50 PNG views plus `manifest.json`:
 - `mountain-peak-prominence.png`
 - `mountain-ridge-skeleton.png`
 - `mountain-ridge-influence.png`
+- `mountain-ridge-body.png`
+- `mountain-valley-floor.png`
+- `mountain-valley-incision.png`
 - `mountain-range-spine.png`
 - `mountain-mass.png`
 - `mountain-shoulder.png`
@@ -278,14 +288,14 @@ The scalar review set includes 50 PNG views plus `manifest.json`:
 - `material.png`
 - `vegetation.png`
 
-The refreshed revision 30 scalar baseline keeps
+The refreshed revision 31 scalar baseline keeps
 `outputs/terrain/current-river-network`,
 `outputs/terrain/stress-river-network`, and
 `outputs/terrain/mountain-range-stress` on the same 513x513 review contract:
-55 fields, 50 PNG views, and one manifest per directory. The current river
+58 fields, 53 PNG views, and one manifest per directory. The current river
 manifest reports `river_coverage = 0.00736`; the stress river manifest reports
 `river_coverage = 0.02117`; the mountain stress manifest reports
-`height_m.span = 1695.575`.
+`height_m.span = 1750.187`.
 
 `terrain_preview` is a separate renderer-backed consumer for perspective
 review. It turns the selected `TerrainRegionProduct` height field into a lit
@@ -421,6 +431,15 @@ The regenerated 513 mountain manifest reports generator revision 30, 55 fields,
 `slope_instability.mean = 0.0518`. The visual read is more cohesive, but still
 not final mountain quality: rounded high areas and source-tied ridge/process
 bands remain visible.
+Revision 31 adds the ridge/valley process fields and expands
+`mountain-process-review.png` to a 3x3 source/product/process comparison. The
+regenerated 513 mountain manifest reports generator revision 31, 58 fields, 53
+scalar/review views, `height_m.span = 1750.187`,
+`mountain_profile_height_m.span = 1606.441`, `mountain_ridge_body.mean = 0.1750`,
+`mountain_valley_floor.mean = 0.1976`, `mountain_valley_incision_m.max = 37.287`,
+and `post_erosion_height_m.span = 1748.110`. The perspective read is broader
+and less fin-like, but rounded high areas and source-shaped ridge/valley bands
+remain visible in the scalar diagnostics.
 Both stress recipes are diagnostic recipes, not the default product target.
 
 The active river fields come from a coherent low-frequency drainage potential
