@@ -21,14 +21,16 @@ namespace {
     if (!metadata.camera_preset.empty()) {
         preview["camera_preset"] = metadata.camera_preset;
     }
+    if (!metadata.preview_runtime.empty()) {
+        preview["runtime"] = metadata.preview_runtime;
+    }
     if (!metadata.preview_surface.empty()) {
         preview["surface"] = metadata.preview_surface;
     }
     if (!metadata.preview_color.empty()) {
         preview["color"] = metadata.preview_color;
     }
-    if (metadata.vertex_count > 0U || metadata.index_count > 0U ||
-        metadata.triangle_count > 0U) {
+    if (metadata.vertex_count > 0U || metadata.index_count > 0U || metadata.triangle_count > 0U) {
         preview["vertices"] = metadata.vertex_count;
         preview["indices"] = metadata.index_count;
         preview["triangles"] = metadata.triangle_count;
@@ -95,8 +97,7 @@ void TerrainPhaseProfile::write() const {
     }
     std::ofstream file(output_path);
     if (!file) {
-        throw std::runtime_error("failed to write terrain phase profile: " +
-                                 output_path.string());
+        throw std::runtime_error("failed to write terrain phase profile: " + output_path.string());
     }
     file << std::setw(2) << output << '\n';
 }
@@ -144,8 +145,8 @@ std::filesystem::path terrain_phase_profile_output_prefix(std::string_view value
     return prefix;
 }
 
-std::filesystem::path terrain_phase_profile_output_path(
-    const std::filesystem::path& output_prefix) {
+std::filesystem::path
+terrain_phase_profile_output_path(const std::filesystem::path& output_prefix) {
     std::filesystem::path output_path = output_prefix;
     output_path += ".terrain_phases.json";
     return output_path;

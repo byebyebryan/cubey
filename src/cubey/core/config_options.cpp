@@ -61,29 +61,24 @@ constexpr std::array<std::string_view, 6> kMilkyWayLayers{
     "final", "stellar-emission", "dust-tau", "star-clouds", "hii-emission", "speckles",
 };
 constexpr std::array<std::string_view, 7> kCloudCameraModes{
-    "surface", "surface-up", "surface-sun", "high", "high-oblique", "orbit",
-    "orbit-terminator"};
+    "surface", "surface-up", "surface-sun", "high", "high-oblique", "orbit", "orbit-terminator"};
 constexpr std::array<std::string_view, 3> kCloudQualities{"quarter", "half", "full"};
 constexpr std::array<std::string_view, 4> kCloudCacheFrames{"4", "16", "64", "256"};
-constexpr std::array<std::string_view, 4> kCloudRenderPaths{
-    "cached", "direct", "diff", "alpha-diff"};
-constexpr std::array<std::string_view, 4> kCloudSamplingModes{
-    "interleaved", "bayer", "blue-noise", "off"};
-constexpr std::array<std::string_view, 2> kCloudViewSampleModes{"single-frame",
-                                                                "temporal-phased"};
+constexpr std::array<std::string_view, 4> kCloudRenderPaths{"cached", "direct", "diff",
+                                                            "alpha-diff"};
+constexpr std::array<std::string_view, 4> kCloudSamplingModes{"interleaved", "bayer", "blue-noise",
+                                                              "off"};
+constexpr std::array<std::string_view, 2> kCloudViewSampleModes{"single-frame", "temporal-phased"};
 constexpr std::array<std::string_view, 3> kCloudDensityModels{"ref-density", "procedural",
                                                               "cloud-ref-compatible"};
-constexpr std::array<std::string_view, 2> kCloudResolveModes{"terrain-post",
-                                                             "metadata-bilateral"};
+constexpr std::array<std::string_view, 2> kCloudResolveModes{"terrain-post", "metadata-bilateral"};
 constexpr std::array<std::string_view, 2> kCloudBackgroundModes{"atmosphere", "water-context"};
 constexpr std::array<std::string_view, 4> kCloudDistanceModes{"auto", "local", "orbit-shell",
                                                               "blend-debug"};
-constexpr std::array<std::string_view, 2> kCloudOrbitRepresentations{"volume",
-                                                                     "surface-shell"};
+constexpr std::array<std::string_view, 2> kCloudOrbitRepresentations{"volume", "surface-shell"};
 constexpr std::array<std::string_view, 10> kCloudWeatherPresets{
-    "fair-weather",     "broken-cumulus", "overcast-stratus", "storm-cells",
-    "high-cirrus",      "clear",          "scattered",        "inspection",
-    "overcast",         "storm",
+    "fair-weather", "broken-cumulus", "overcast-stratus", "storm-cells", "high-cirrus",
+    "clear",        "scattered",      "inspection",       "overcast",    "storm",
 };
 constexpr std::array<std::string_view, 3> kSmokePressureSolvers{"jacobi", "rbgs",
                                                                 "red-black-gauss-seidel"};
@@ -91,19 +86,17 @@ constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip"
                                                               "pic/flip"};
 constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-faces", "tiled",
                                                            "tiled-faces"};
-constexpr std::array<std::string_view, 5> kTerrainCameraPresets{
-    "oblique", "profile", "top", "surface", "surface-low"};
+constexpr std::array<std::string_view, 5> kTerrainCameraPresets{"oblique", "profile", "top",
+                                                                "surface", "surface-low"};
+constexpr std::array<std::string_view, 2> kTerrainPreviewRuntimeModes{"cpu-product",
+                                                                      "terrain-engine-ref"};
 constexpr std::array<std::string_view, 4> kTerrainPreviewColors{"material", "height", "river",
                                                                 "channel"};
 constexpr std::array<std::string_view, 3> kTerrainPreviewSurfaces{"height", "post-erosion",
                                                                   "pre-process"};
 constexpr std::array<std::string_view, 6> kTerrainLabSlicePresets{
-    "arid-mesa-canyon",
-    "temperate-mountain-rivers",
-    "desert-dunes",
-    "alpine-glacial-valley",
-    "mountain-ridges-peaks",
-    "temperate-mountain-watershed",
+    "arid-mesa-canyon",      "temperate-mountain-rivers", "desert-dunes",
+    "alpine-glacial-valley", "mountain-ridges-peaks",     "temperate-mountain-watershed",
 };
 constexpr std::array<std::string_view, 2> kTerrainLabCameraPresets{
     "orbit",
@@ -139,7 +132,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 252> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -176,8 +169,8 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "Project grid height. Zero or null leaves the project default in place.",
            ConfigOptionType::UInt32, min_range(1.0)),
     option(RunConfigOptionId::GridSize, "grid.size", "--grid-size", "Size", "Grid",
-           "Set project grid width and height to the same value.",
-           ConfigOptionType::UInt32, min_range(1.0)),
+           "Set project grid width and height to the same value.", ConfigOptionType::UInt32,
+           min_range(1.0)),
     option(RunConfigOptionId::GridDepth, "grid.depth", "--grid-depth", "Depth", "Grid",
            "Project grid depth. Zero or null leaves the project default in place.",
            ConfigOptionType::UInt32, min_range(1.0)),
@@ -228,10 +221,9 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
     option(RunConfigOptionId::OceanSurfaceMode, "ocean.surface_mode", "--ocean-surface-mode",
            "Surface Mode", "Ocean", "Ocean surface mapping mode: flat or curved far field.",
            ConfigOptionType::Enum, no_range(), enum_choices(kOceanSurfaceModes)),
-    option(RunConfigOptionId::OceanCameraPreset, "ocean.camera_preset",
-           "--ocean-camera-preset", "Camera Preset", "Ocean",
-           "Initial ocean camera preset for repeatable captures.", ConfigOptionType::Enum,
-           no_range(), enum_choices(kOceanCameraPresets)),
+    option(RunConfigOptionId::OceanCameraPreset, "ocean.camera_preset", "--ocean-camera-preset",
+           "Camera Preset", "Ocean", "Initial ocean camera preset for repeatable captures.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kOceanCameraPresets)),
     option(RunConfigOptionId::OceanPlanetRadiusScale, "ocean.planet_radius_scale",
            "--ocean-planet-radius-scale", "Planet Radius Scale", "Ocean",
            "Scale applied to the atmosphere planet radius for ocean surface curvature.",
@@ -276,8 +268,7 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "--planet-camera-altitude-m", "Camera Altitude", "Planet",
            "Default camera altitude above the planet surface in meters.", ConfigOptionType::Float,
            min_range(0.0)),
-    option(RunConfigOptionId::PlanetCameraOrbitSpin,
-           "planet.camera_orbit_spin_degrees_per_second",
+    option(RunConfigOptionId::PlanetCameraOrbitSpin, "planet.camera_orbit_spin_degrees_per_second",
            "--planet-camera-orbit-spin-deg-per-sec", "Orbit Spin", "Planet",
            "Headless capture orbit-camera yaw spin rate in degrees per second.",
            ConfigOptionType::Float, bounded_range(-360.0, 360.0)),
@@ -352,7 +343,8 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            ConfigOptionType::Bool, no_range(), {}, "--no-planet-terrain"),
     option(RunConfigOptionId::PlanetTerrainHeightScale, "planet.terrain_height_scale_m",
            "--planet-terrain-height-scale-m", "Terrain Height", "Planet",
-           "Project-local terrain height scale in meters.", ConfigOptionType::Float, min_range(0.0)),
+           "Project-local terrain height scale in meters.", ConfigOptionType::Float,
+           min_range(0.0)),
     option(RunConfigOptionId::PlanetTerrainNoiseScale, "planet.terrain_noise_scale",
            "--planet-terrain-noise-scale", "Terrain Noise", "Planet",
            "Project-local procedural terrain noise scale.", ConfigOptionType::Float,
@@ -451,6 +443,10 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "--terrain-vertical-scale", "Vertical Scale", "Terrain",
            "Display scale applied to terrain height in renderer-backed preview consumers.",
            ConfigOptionType::Float, min_range(0.000001)),
+    option(RunConfigOptionId::TerrainPreviewRuntime, "terrain.preview_runtime",
+           "--terrain-preview-runtime", "Preview Runtime", "Terrain",
+           "Terrain preview geometry path: cpu-product or terrain-engine-ref.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kTerrainPreviewRuntimeModes)),
     option(RunConfigOptionId::TerrainPreviewColor, "terrain.preview_color",
            "--terrain-preview-color", "Preview Color", "Terrain",
            "Terrain preview diagnostic color mode.", ConfigOptionType::Enum, no_range(),
@@ -460,9 +456,8 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "Terrain product height field used as preview mesh geometry.", ConfigOptionType::Enum,
            no_range(), enum_choices(kTerrainPreviewSurfaces)),
     option(RunConfigOptionId::TerrainLabSlicePreset, "terrain_lab.slice_preset",
-           "--terrain-lab-slice", "Slice Preset", "Terrain Lab",
-           "Terrain Lab biome slice preset.", ConfigOptionType::Enum, no_range(),
-           enum_choices(kTerrainLabSlicePresets)),
+           "--terrain-lab-slice", "Slice Preset", "Terrain Lab", "Terrain Lab biome slice preset.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kTerrainLabSlicePresets)),
     option(RunConfigOptionId::TerrainLabCameraPreset, "terrain_lab.camera_preset",
            "--terrain-lab-camera-preset", "Camera Preset", "Terrain Lab",
            "Initial Terrain Lab review camera framing.", ConfigOptionType::Enum, no_range(),
@@ -493,14 +488,12 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
     option(RunConfigOptionId::AtmosphereCameraAltitude, "atmosphere.camera_altitude_km",
            "--camera-altitude-km", "Camera Altitude", "Atmosphere",
            "Observer altitude above sea level.", ConfigOptionType::Float, min_range(0.0)),
-    option(RunConfigOptionId::AtmosphereCameraYawOffset,
-           "atmosphere.camera_yaw_offset_degrees", "--camera-yaw-offset-deg",
-           "Camera Yaw Offset", "Atmosphere",
+    option(RunConfigOptionId::AtmosphereCameraYawOffset, "atmosphere.camera_yaw_offset_degrees",
+           "--camera-yaw-offset-deg", "Camera Yaw Offset", "Atmosphere",
            "Additional yaw offset from the default atmosphere review direction.",
            ConfigOptionType::Float, bounded_range(-360.0, 360.0)),
-    option(RunConfigOptionId::AtmosphereCameraPitchOffset,
-           "atmosphere.camera_pitch_offset_degrees", "--camera-pitch-offset-deg",
-           "Camera Pitch Offset", "Atmosphere",
+    option(RunConfigOptionId::AtmosphereCameraPitchOffset, "atmosphere.camera_pitch_offset_degrees",
+           "--camera-pitch-offset-deg", "Camera Pitch Offset", "Atmosphere",
            "Additional pitch offset from the default atmosphere review direction.",
            ConfigOptionType::Float, bounded_range(-89.0, 89.0)),
     option(RunConfigOptionId::AtmosphereRayleighScale, "atmosphere.rayleigh_scale",
@@ -597,49 +590,48 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "Clouds", "Cloud render quality preset.", ConfigOptionType::Enum, no_range(),
            enum_choices(kCloudQualities)),
     option(RunConfigOptionId::CloudViewSteps, "clouds.view_steps", "--cloud-view-steps",
-           "View Steps", "Clouds", "Cloud ray-march view steps override.",
-           ConfigOptionType::UInt32, bounded_range(1.0, 128.0)),
+           "View Steps", "Clouds", "Cloud ray-march view steps override.", ConfigOptionType::UInt32,
+           bounded_range(1.0, 128.0)),
     option(RunConfigOptionId::CloudViewSamples, "clouds.view_samples", "--cloud-view-samples",
-           "View Samples", "Clouds", "Cloud ray-start samples per pixel.",
-           ConfigOptionType::UInt32, bounded_range(1.0, 4.0)),
+           "View Samples", "Clouds", "Cloud ray-start samples per pixel.", ConfigOptionType::UInt32,
+           bounded_range(1.0, 4.0)),
     option(RunConfigOptionId::CloudViewSampleMode, "clouds.view_sample_mode",
            "--cloud-view-sample-mode", "View Sample Mode", "Clouds",
-           "Cloud view-sample strategy: single-frame or temporal-phased.",
-           ConfigOptionType::Enum, no_range(), enum_choices(kCloudViewSampleModes)),
-    option(RunConfigOptionId::CloudWeatherPreset, "clouds.weather_preset",
-           "--cloud-weather-preset", "Weather Preset", "Clouds",
-           "Cloud coverage, density, scale, and wind preset.", ConfigOptionType::Enum, no_range(),
-           enum_choices(kCloudWeatherPresets)),
-    option(RunConfigOptionId::CloudCacheFrames, "clouds.cache_frames",
-           "--cloud-cache-frames", "Cache Frames", "Clouds",
+           "Cloud view-sample strategy: single-frame or temporal-phased.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kCloudViewSampleModes)),
+    option(RunConfigOptionId::CloudWeatherPreset, "clouds.weather_preset", "--cloud-weather-preset",
+           "Weather Preset", "Clouds", "Cloud coverage, density, scale, and wind preset.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudWeatherPresets)),
+    option(RunConfigOptionId::CloudCacheFrames, "clouds.cache_frames", "--cloud-cache-frames",
+           "Cache Frames", "Clouds",
            "Frames used to refresh one complete cached cloud sky texture.", ConfigOptionType::Enum,
            no_range(), enum_choices(kCloudCacheFrames)),
     option(RunConfigOptionId::CloudCacheTextureSize, "clouds.cache_texture_size",
            "--cloud-cache-texture-size", "Cache Texture Size", "Clouds",
            "Square cached cloud sky texture size in pixels.", ConfigOptionType::UInt32,
            min_range(1.0)),
-    option(RunConfigOptionId::CloudRenderPath, "clouds.render_path",
-           "--cloud-render-path", "Render Path", "Clouds",
+    option(RunConfigOptionId::CloudRenderPath, "clouds.render_path", "--cloud-render-path",
+           "Render Path", "Clouds",
            "Cloud validation render path: cached, direct, diff, or alpha-diff.",
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudRenderPaths)),
-    option(RunConfigOptionId::CloudSamplingMode, "clouds.sampling_mode",
-           "--cloud-sampling-mode", "Sampling Mode", "Clouds",
+    option(RunConfigOptionId::CloudSamplingMode, "clouds.sampling_mode", "--cloud-sampling-mode",
+           "Sampling Mode", "Clouds",
            "Cloud ray-start sampling mode: interleaved, bayer, blue-noise, or off.",
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudSamplingModes)),
-    option(RunConfigOptionId::CloudDensityModel, "clouds.density_model",
-           "--cloud-density-model", "Density Model", "Clouds",
+    option(RunConfigOptionId::CloudDensityModel, "clouds.density_model", "--cloud-density-model",
+           "Density Model", "Clouds",
            "Cloud density and placement model: ref-density, procedural, or cloud-ref-compatible.",
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudDensityModels)),
-    option(RunConfigOptionId::CloudResolveMode, "clouds.resolve_mode",
-           "--cloud-resolve-mode", "Resolve Mode", "Clouds",
-           "Cloud final resolve mode: terrain-post or metadata-bilateral.",
-           ConfigOptionType::Enum, no_range(), enum_choices(kCloudResolveModes)),
+    option(RunConfigOptionId::CloudResolveMode, "clouds.resolve_mode", "--cloud-resolve-mode",
+           "Resolve Mode", "Clouds",
+           "Cloud final resolve mode: terrain-post or metadata-bilateral.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kCloudResolveModes)),
     option(RunConfigOptionId::CloudBackgroundMode, "clouds.background_mode",
            "--cloud-background-mode", "Background Mode", "Clouds",
-           "Standalone cloud background mode: atmosphere or water-context.",
-           ConfigOptionType::Enum, no_range(), enum_choices(kCloudBackgroundModes)),
-    option(RunConfigOptionId::CloudDistanceMode, "clouds.distance_mode",
-           "--cloud-distance-mode", "Distance Mode", "Clouds",
+           "Standalone cloud background mode: atmosphere or water-context.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kCloudBackgroundModes)),
+    option(RunConfigOptionId::CloudDistanceMode, "clouds.distance_mode", "--cloud-distance-mode",
+           "Distance Mode", "Clouds",
            "Cloud distance regime: auto, local, orbit-shell, or blend-debug.",
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudDistanceModes)),
     option(RunConfigOptionId::CloudOrbitRepresentation, "clouds.orbit_representation",
@@ -658,9 +650,8 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "--cloud-bottom-altitude-m", "Cloud Bottom", "Clouds",
            "Cloud layer bottom altitude above the planet surface in meters.",
            ConfigOptionType::Float, min_range(0.0)),
-    option(RunConfigOptionId::CloudTopAltitude, "clouds.top_altitude_m",
-           "--cloud-top-altitude-m", "Cloud Top", "Clouds",
-           "Cloud layer top altitude above the planet surface in meters.",
+    option(RunConfigOptionId::CloudTopAltitude, "clouds.top_altitude_m", "--cloud-top-altitude-m",
+           "Cloud Top", "Clouds", "Cloud layer top altitude above the planet surface in meters.",
            ConfigOptionType::Float, min_range(0.0)),
     option(RunConfigOptionId::CloudCoverage, "clouds.coverage", "--cloud-coverage", "Coverage",
            "Clouds", "Base cloud coverage fraction.", ConfigOptionType::Float,
@@ -670,28 +661,27 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            min_range(0.0)),
     option(RunConfigOptionId::CloudWeatherScale, "clouds.weather_scale_km",
            "--cloud-weather-scale-km", "Weather Scale", "Clouds",
-           "Approximate broad cloud weather feature size in kilometers.",
-           ConfigOptionType::Float, min_range(0.001)),
-    option(RunConfigOptionId::CloudShapeDomain, "clouds.shape_domain_km",
-           "--cloud-shape-domain-km", "Shape Domain", "Clouds",
+           "Approximate broad cloud weather feature size in kilometers.", ConfigOptionType::Float,
+           min_range(0.001)),
+    option(RunConfigOptionId::CloudShapeDomain, "clouds.shape_domain_km", "--cloud-shape-domain-km",
+           "Shape Domain", "Clouds",
            "Approximate local cloud density texture domain size in kilometers.",
            ConfigOptionType::Float, min_range(0.001)),
     option(RunConfigOptionId::CloudFootprintFilterStrength, "clouds.footprint_filter_strength",
            "--cloud-footprint-filter-strength", "Footprint Filter", "Clouds",
            "Strength of deterministic footprint filtering for far and grazing cloud detail.",
            ConfigOptionType::Float, bounded_range(0.0, 2.0)),
-    option(RunConfigOptionId::CloudEdgeSoftness, "clouds.edge_softness",
-           "--cloud-edge-softness", "Edge Softness", "Clouds",
-           "Strength of footprint-aware density edge softening.", ConfigOptionType::Float,
-           bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudEdgeSoftness, "clouds.edge_softness", "--cloud-edge-softness",
+           "Edge Softness", "Clouds", "Strength of footprint-aware density edge softening.",
+           ConfigOptionType::Float, bounded_range(0.0, 2.0)),
     option(RunConfigOptionId::CloudEdgeDetailFade, "clouds.edge_detail_fade",
            "--cloud-edge-detail-fade", "Edge Detail Fade", "Clouds",
            "Amount of unresolved high-frequency detail erosion faded at cloud edges.",
            ConfigOptionType::Float, bounded_range(0.0, 2.0)),
     option(RunConfigOptionId::CloudEdgeResolveStrength, "clouds.edge_resolve_strength",
            "--cloud-edge-resolve-strength", "Edge Resolve", "Clouds",
-           "Strength of edge-aware cloud resolve in the final composite.",
-           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+           "Strength of edge-aware cloud resolve in the final composite.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudVerticalShearFraction, "clouds.vertical_shear_fraction",
            "--cloud-vertical-shear-fraction", "Vertical Shear", "Clouds",
            "Fraction of weather feature size used for altitude-dependent cloud shear.",
@@ -707,17 +697,16 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "--cloud-horizon-strength", "Horizon Strength", "Clouds",
            "Strength of the dedicated far-horizon cloud layer.", ConfigOptionType::Float,
            bounded_range(0.0, 2.0)),
-    option(RunConfigOptionId::CloudWeatherFronts, "clouds.weather_fronts",
-           "--cloud-weather-fronts", "Weather Fronts", "Clouds",
-           "Feature-isolation weight for frontal cloud structures.", ConfigOptionType::Float,
-           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudWeatherFronts, "clouds.weather_fronts", "--cloud-weather-fronts",
+           "Weather Fronts", "Clouds", "Feature-isolation weight for frontal cloud structures.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudWeatherCells, "clouds.weather_cells", "--cloud-weather-cells",
            "Weather Cells", "Clouds", "Feature-isolation weight for cellular cloud structures.",
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudWeatherStreaks, "clouds.weather_streaks",
            "--cloud-weather-streaks", "Weather Streaks", "Clouds",
-           "Feature-isolation weight for wind-aligned streak structures.",
-           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+           "Feature-isolation weight for wind-aligned streak structures.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudWeatherSoftness, "clouds.weather_softness",
            "--cloud-weather-softness", "Weather Softness", "Clouds",
            "Softness of broad weather bias transitions.", ConfigOptionType::Float,
@@ -726,10 +715,9 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "--cloud-weather-influence", "Weather Influence", "Clouds",
            "How strongly the broad weather map biases local cloud density.",
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
-    option(RunConfigOptionId::CloudDetailErosion, "clouds.detail_erosion",
-           "--cloud-detail-erosion", "Detail Erosion", "Clouds",
-           "Feature-isolation weight for high-frequency cloud erosion.", ConfigOptionType::Float,
-           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudDetailErosion, "clouds.detail_erosion", "--cloud-detail-erosion",
+           "Detail Erosion", "Clouds", "Feature-isolation weight for high-frequency cloud erosion.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudAmbientStrength, "clouds.ambient_strength",
            "--cloud-ambient-strength", "Ambient Strength", "Clouds",
            "Cloud ambient-light multiplier used by the production cloud renderer.",
@@ -738,18 +726,17 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "--cloud-direct-strength", "Direct Strength", "Clouds",
            "Cloud direct sun-light multiplier used by the production cloud renderer.",
            ConfigOptionType::Float, bounded_range(0.0, 3.0)),
-    option(RunConfigOptionId::CloudPhaseStrength, "clouds.phase_strength",
-           "--cloud-phase-strength", "Phase Strength", "Clouds",
+    option(RunConfigOptionId::CloudPhaseStrength, "clouds.phase_strength", "--cloud-phase-strength",
+           "Phase Strength", "Clouds",
            "Cloud forward/rim phase-light multiplier used by the production cloud renderer.",
            ConfigOptionType::Float, bounded_range(0.0, 3.0)),
     option(RunConfigOptionId::CloudPowderStrength, "clouds.powder_strength",
            "--cloud-powder-strength", "Powder Strength", "Clouds",
            "Cloud Beer-powder lighting boost used by cloud_ref lighting diagnostics.",
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
-    option(RunConfigOptionId::CloudFinalContrast, "clouds.final_contrast",
-           "--cloud-final-contrast", "Final Contrast", "Clouds",
-           "Final cloud composite contrast multiplier.", ConfigOptionType::Float,
-           bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudFinalContrast, "clouds.final_contrast", "--cloud-final-contrast",
+           "Final Contrast", "Clouds", "Final cloud composite contrast multiplier.",
+           ConfigOptionType::Float, bounded_range(0.0, 3.0)),
     option(RunConfigOptionId::CloudFinalSaturation, "clouds.final_saturation",
            "--cloud-final-saturation", "Final Saturation", "Clouds",
            "Final cloud composite saturation multiplier.", ConfigOptionType::Float,
@@ -786,8 +773,8 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "--cloud-far-shell-start-m", "Far Shell Start", "Clouds",
            "View-ray distance where high-altitude rays start preferring the orbit shell.",
            ConfigOptionType::Float, min_range(0.0)),
-    option(RunConfigOptionId::CloudFarShellEnd, "clouds.far_shell_end_m",
-           "--cloud-far-shell-end-m", "Far Shell End", "Clouds",
+    option(RunConfigOptionId::CloudFarShellEnd, "clouds.far_shell_end_m", "--cloud-far-shell-end-m",
+           "Far Shell End", "Clouds",
            "View-ray distance where high-altitude rays fully prefer the orbit shell.",
            ConfigOptionType::Float, min_range(0.0)),
     option(RunConfigOptionId::CloudFarShellStrength, "clouds.far_shell_strength",
@@ -802,10 +789,9 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "--cloud-orbit-density-scale", "Orbit Density", "Clouds",
            "Density multiplier for the broad orbit cloud shell.", ConfigOptionType::Float,
            bounded_range(0.0, 2.0)),
-    option(RunConfigOptionId::CloudOrbitFill, "clouds.orbit_fill",
-           "--cloud-orbit-fill", "Orbit Fill", "Clouds",
-           "Fill bias for broad orbit cloud weather coverage.", ConfigOptionType::Float,
-           bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudOrbitFill, "clouds.orbit_fill", "--cloud-orbit-fill",
+           "Orbit Fill", "Clouds", "Fill bias for broad orbit cloud weather coverage.",
+           ConfigOptionType::Float, bounded_range(0.0, 2.0)),
     option(RunConfigOptionId::CloudOrbitMotionStrength, "clouds.orbit_motion_strength",
            "--cloud-orbit-motion-strength", "Orbit Motion", "Clouds",
            "Motion multiplier for procedural orbit weather advection.", ConfigOptionType::Float,
@@ -814,8 +800,8 @@ constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
            "--cloud-orbit-shell-extinction", "Orbit Extinction", "Clouds",
            "Extinction multiplier for cloud-top shell optical depth.", ConfigOptionType::Float,
            bounded_range(0.0, 8.0)),
-    option(RunConfigOptionId::CloudTemporal, "clouds.temporal", "--cloud-temporal",
-           "Temporal", "Clouds", "Enable temporal reconstruction for the cloud product.",
+    option(RunConfigOptionId::CloudTemporal, "clouds.temporal", "--cloud-temporal", "Temporal",
+           "Clouds", "Enable temporal reconstruction for the cloud product.",
            ConfigOptionType::Bool, no_range(), {}, "--no-cloud-temporal"),
     option(RunConfigOptionId::CloudLocalVolume, "clouds.local_volume", "--cloud-local-volume",
            "Local Volume", "Clouds", "Enable near and overhead volumetric cloud marching.",
@@ -1371,15 +1357,17 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.terrain.recipe.empty() ? nlohmann::json(nullptr)
                                              : nlohmann::json(config.terrain.recipe);
     case RunConfigOptionId::TerrainCameraPreset:
-        return config.terrain.camera_preset.empty()
-                   ? nlohmann::json(nullptr)
-                   : nlohmann::json(config.terrain.camera_preset);
+        return config.terrain.camera_preset.empty() ? nlohmann::json(nullptr)
+                                                    : nlohmann::json(config.terrain.camera_preset);
     case RunConfigOptionId::TerrainVerticalScale:
         return optional_float(config.terrain.vertical_scale);
-    case RunConfigOptionId::TerrainPreviewColor:
-        return config.terrain.preview_color.empty()
+    case RunConfigOptionId::TerrainPreviewRuntime:
+        return config.terrain.preview_runtime.empty()
                    ? nlohmann::json(nullptr)
-                   : nlohmann::json(config.terrain.preview_color);
+                   : nlohmann::json(config.terrain.preview_runtime);
+    case RunConfigOptionId::TerrainPreviewColor:
+        return config.terrain.preview_color.empty() ? nlohmann::json(nullptr)
+                                                    : nlohmann::json(config.terrain.preview_color);
     case RunConfigOptionId::TerrainPreviewSurface:
         return config.terrain.preview_surface.empty()
                    ? nlohmann::json(nullptr)
@@ -1508,9 +1496,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.clouds.background_mode);
     case RunConfigOptionId::CloudDistanceMode:
-        return config.clouds.distance_mode.empty()
-                   ? nlohmann::json(nullptr)
-                   : nlohmann::json(config.clouds.distance_mode);
+        return config.clouds.distance_mode.empty() ? nlohmann::json(nullptr)
+                                                   : nlohmann::json(config.clouds.distance_mode);
     case RunConfigOptionId::CloudOrbitRepresentation:
         return config.clouds.orbit_representation.empty()
                    ? nlohmann::json(nullptr)
@@ -1906,6 +1893,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<float>("valleys", options.valleys);
     adapter.writeField<std::string>("recipe", options.recipe);
     adapter.writeField<std::string>("camera_preset", options.camera_preset);
+    adapter.writeField<std::string>("preview_runtime", options.preview_runtime);
     adapter.writeField<std::string>("preview_color", options.preview_color);
     adapter.writeField<std::string>("preview_surface", options.preview_surface);
     adapter.writeField<float>("vertical_scale", options.vertical_scale);
@@ -1923,6 +1911,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<float>("valleys", options.valleys);
     adapter.readField<std::string>("recipe", options.recipe);
     adapter.readField<std::string>("camera_preset", options.camera_preset);
+    adapter.readField<std::string>("preview_runtime", options.preview_runtime);
     adapter.readField<std::string>("preview_color", options.preview_color);
     adapter.readField<std::string>("preview_surface", options.preview_surface);
     adapter.readField<float>("vertical_scale", options.vertical_scale);
@@ -2610,6 +2599,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.terrain.vertical_scale = parse_config_float(value, option);
         validate_range(config.terrain.vertical_scale, option);
         break;
+    case RunConfigOptionId::TerrainPreviewRuntime:
+        config.terrain.preview_runtime = std::string(value);
+        break;
     case RunConfigOptionId::TerrainPreviewColor:
         config.terrain.preview_color = std::string(value);
         break;
@@ -2766,13 +2758,11 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.clouds.quality = std::string(value);
         break;
     case RunConfigOptionId::CloudViewSteps:
-        config.clouds.view_steps =
-            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        config.clouds.view_steps = parse_number<std::uint32_t>(value, option, "unsigned integer");
         validate_range(config.clouds.view_steps, option);
         break;
     case RunConfigOptionId::CloudViewSamples:
-        config.clouds.view_samples =
-            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        config.clouds.view_samples = parse_number<std::uint32_t>(value, option, "unsigned integer");
         validate_range(config.clouds.view_samples, option);
         if (config.clouds.view_samples != 1U && config.clouds.view_samples != 2U &&
             config.clouds.view_samples != 4U) {

@@ -1,5 +1,6 @@
 #include "terrain_preview_config.h"
 
+#include "terrain_engine_reference.h"
 #include "terrain_product.h"
 
 #include <cmath>
@@ -113,6 +114,27 @@ std::string_view terrain_preview_surface_field_name(TerrainPreviewSurface surfac
     return kTerrainFieldHeightM;
 }
 
+std::string_view terrain_preview_runtime_mode_name(TerrainPreviewRuntimeMode runtime_mode) {
+    switch (runtime_mode) {
+    case TerrainPreviewRuntimeMode::CpuProduct:
+        return "cpu-product";
+    case TerrainPreviewRuntimeMode::TerrainEngineReference:
+        return "terrain-engine-ref";
+    }
+    return "cpu-product";
+}
+
+TerrainPreviewRuntimeMode terrain_preview_runtime_mode_from_name(std::string_view name) {
+    if (name == "cpu-product" || name == "cpu_product") {
+        return TerrainPreviewRuntimeMode::CpuProduct;
+    }
+    if (name == "terrain-engine-ref" || name == "terrain_engine_ref") {
+        return TerrainPreviewRuntimeMode::TerrainEngineReference;
+    }
+    throw std::runtime_error(
+        "terrain preview runtime mode must be cpu-product or terrain-engine-ref");
+}
+
 TerrainPreviewConfig terrain_preview_config_from_run_config(const cubey::RunConfig& config) {
     TerrainPreviewConfig preview;
     preview.region.grid_width =
@@ -122,11 +144,10 @@ TerrainPreviewConfig terrain_preview_config_from_run_config(const cubey::RunConf
     preview.region.cell_size_m = cubey::run_config_float_is_set(config.terrain.cell_size)
                                      ? config.terrain.cell_size
                                      : kTerrainDefaultCellSizeM;
-    preview.region.seed =
-        config.terrain.seed_set ? config.terrain.seed : kTerrainDefaultSeed;
-    preview.region.recipe_id =
-        config.terrain.recipe.empty() ? std::string(kTerrainPreviewDefaultRecipe)
-                                      : config.terrain.recipe;
+    preview.region.seed = config.terrain.seed_set ? config.terrain.seed : kTerrainDefaultSeed;
+    preview.region.recipe_id = config.terrain.recipe.empty()
+                                   ? std::string(kTerrainPreviewDefaultRecipe)
+                                   : config.terrain.recipe;
     preview.region.generator_revision = kTerrainGeneratorRevision;
 
     preview.camera_preset = terrain_preview_camera_preset_from_name(
@@ -136,14 +157,25 @@ TerrainPreviewConfig terrain_preview_config_from_run_config(const cubey::RunConf
         config.terrain.preview_color.empty() ? kTerrainPreviewDefaultColorMode
                                              : std::string_view(config.terrain.preview_color));
     preview.surface = terrain_preview_surface_from_name(
-        config.terrain.preview_surface.empty()
-            ? kTerrainPreviewDefaultSurface
-            : std::string_view(config.terrain.preview_surface));
+        config.terrain.preview_surface.empty() ? kTerrainPreviewDefaultSurface
+                                               : std::string_view(config.terrain.preview_surface));
+    preview.runtime_mode = terrain_preview_runtime_mode_from_name(
+        config.terrain.preview_runtime.empty() ? kTerrainPreviewDefaultRuntimeMode
+                                               : std::string_view(config.terrain.preview_runtime));
     preview.vertical_scale = cubey::run_config_float_is_set(config.terrain.vertical_scale)
                                  ? config.terrain.vertical_scale
                                  : kTerrainPreviewDefaultVerticalScale;
     if (!std::isfinite(preview.vertical_scale) || preview.vertical_scale <= 0.0F) {
         throw std::runtime_error("terrain preview vertical scale must be positive");
+    }
+    preview.water_surface =
+        config.terrain.water_surface >= 0
+            ? config.terrain.water_surface != 0
+            : preview.runtime_mode == TerrainPreviewRuntimeMode::TerrainEngineReference;
+    if (preview.runtime_mode == TerrainPreviewRuntimeMode::TerrainEngineReference &&
+        !is_terrain_engine_reference_recipe(preview.region.recipe_id)) {
+        throw std::runtime_error(
+            "terrain-engine-ref preview runtime requires terrain-engine-ref recipe");
     }
 
     validate_terrain_region_config(preview.region);

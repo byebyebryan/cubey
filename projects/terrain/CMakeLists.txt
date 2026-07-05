@@ -40,6 +40,12 @@ cubey_add_app_target(
     SHADERS
         shaders/terrain_preview.vert
         shaders/terrain_preview.frag
+        shaders/terrain_engine_runtime.vert
+        shaders/terrain_engine_runtime.frag
+    SHADER_INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+    SHADER_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/terrain_engine_reference.glsl"
 )
 target_link_libraries(cubey_project_terrain_preview PRIVATE nlohmann_json::nlohmann_json)
 

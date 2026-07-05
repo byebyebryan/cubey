@@ -14,8 +14,8 @@
 namespace cubey::projects::terrain {
 namespace {
 
-[[nodiscard]] const cubey::procedural::ScalarField2D* optional_field(
-    const TerrainRegionProduct& product, std::string_view name) {
+[[nodiscard]] const cubey::procedural::ScalarField2D*
+optional_field(const TerrainRegionProduct& product, std::string_view name) {
     return product.fields.try_field(name);
 }
 
@@ -33,14 +33,18 @@ namespace {
     return std::clamp((value - min_value) / span, 0.0F, 1.0F);
 }
 
+[[nodiscard]] float preview_region_extent_m(const TerrainRegionConfig& config) {
+    return static_cast<float>(std::max(config.grid_width, config.grid_height) - 1U) *
+           config.cell_size_m;
+}
+
 [[nodiscard]] float height_at(const cubey::procedural::ScalarField2D& height, std::uint32_t x,
                               std::uint32_t y, float vertical_scale) {
     return height.at(x, y) * vertical_scale;
 }
 
 [[nodiscard]] cubey::math::Vec3 normal_at(const cubey::procedural::ScalarField2D& height,
-                                          std::uint32_t x, std::uint32_t y,
-                                          float vertical_scale) {
+                                          std::uint32_t x, std::uint32_t y, float vertical_scale) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
     const std::uint32_t left = x == 0U ? x : x - 1U;
     const std::uint32_t right = std::min(x + 1U, desc.width - 1U);
@@ -48,12 +52,12 @@ namespace {
     const std::uint32_t up = std::min(y + 1U, desc.height - 1U);
     const float dx = static_cast<float>(right - left) * desc.cell_size;
     const float dz = static_cast<float>(up - down) * desc.cell_size;
-    const float dhdx = (height_at(height, right, y, vertical_scale) -
-                        height_at(height, left, y, vertical_scale)) /
-                       std::max(dx, desc.cell_size);
-    const float dhdz = (height_at(height, x, up, vertical_scale) -
-                        height_at(height, x, down, vertical_scale)) /
-                       std::max(dz, desc.cell_size);
+    const float dhdx =
+        (height_at(height, right, y, vertical_scale) - height_at(height, left, y, vertical_scale)) /
+        std::max(dx, desc.cell_size);
+    const float dhdz =
+        (height_at(height, x, up, vertical_scale) - height_at(height, x, down, vertical_scale)) /
+        std::max(dz, desc.cell_size);
     return glm::normalize(cubey::math::Vec3{-dhdx, 1.0F, -dhdz});
 }
 
@@ -75,8 +79,8 @@ namespace {
     return mix(high, peak, (height_t - 0.82F) / 0.18F);
 }
 
-[[nodiscard]] cubey::math::Vec3 channel_color(const TerrainRegionProduct& product,
-                                              std::uint32_t x, std::uint32_t y) {
+[[nodiscard]] cubey::math::Vec3 channel_color(const TerrainRegionProduct& product, std::uint32_t x,
+                                              std::uint32_t y) {
     const cubey::procedural::ScalarField2D* channel =
         optional_field(product, kTerrainFieldChannelWidth);
     const cubey::procedural::ScalarField2D* valley =
@@ -87,10 +91,9 @@ namespace {
         optional_field(product, kTerrainFieldValleyIncision);
     const float channel_t = std::clamp(optional_at(channel, x, y) / 96.0F, 0.0F, 1.0F);
     const float valley_t = std::clamp(optional_at(valley, x, y) / 360.0F, 0.0F, 1.0F);
-    const float incision_t = std::clamp((optional_at(channel_incision, x, y) +
-                                         optional_at(valley_incision, x, y)) /
-                                            150.0F,
-                                        0.0F, 1.0F);
+    const float incision_t = std::clamp(
+        (optional_at(channel_incision, x, y) + optional_at(valley_incision, x, y)) / 150.0F, 0.0F,
+        1.0F);
     cubey::math::Vec3 color = mix({0.18F, 0.19F, 0.18F}, {0.45F, 0.40F, 0.24F}, valley_t);
     color = mix(color, {0.04F, 0.20F, 0.28F}, channel_t);
     return mix(color, {0.84F, 0.72F, 0.28F}, incision_t * 0.55F);
@@ -99,7 +102,8 @@ namespace {
 [[nodiscard]] cubey::math::Vec3 river_color(const TerrainRegionProduct& product, std::uint32_t x,
                                             std::uint32_t y) {
     const cubey::procedural::ScalarField2D* river = optional_field(product, kTerrainFieldRiverMask);
-    const cubey::procedural::ScalarField2D* trunk = optional_field(product, kTerrainFieldRiverTrunk);
+    const cubey::procedural::ScalarField2D* trunk =
+        optional_field(product, kTerrainFieldRiverTrunk);
     const cubey::procedural::ScalarField2D* tributaries =
         optional_field(product, kTerrainFieldTributaries);
     const cubey::procedural::ScalarField2D* discharge =
@@ -114,10 +118,10 @@ namespace {
     return mix(color, {0.78F, 0.86F, 0.92F}, discharge_t * 0.35F);
 }
 
-[[nodiscard]] cubey::render::PrimitiveVec3 review_color(
-    const TerrainRegionProduct& product, const cubey::procedural::ScalarField2D& height,
-    const cubey::procedural::ScalarFieldStats& height_stats,
-    std::uint32_t x, std::uint32_t y, TerrainPreviewColorMode color_mode) {
+[[nodiscard]] cubey::render::PrimitiveVec3
+review_color(const TerrainRegionProduct& product, const cubey::procedural::ScalarField2D& height,
+             const cubey::procedural::ScalarFieldStats& height_stats, std::uint32_t x,
+             std::uint32_t y, TerrainPreviewColorMode color_mode) {
     const float height_t = normalize01(height.at(x, y), height_stats.min, height_stats.max);
     cubey::math::Vec3 color = height_ramp(height_t);
     if (color_mode == TerrainPreviewColorMode::Height) {
@@ -130,8 +134,10 @@ namespace {
         return cubey::render::srgb_to_linear_rgb(to_primitive(channel_color(product, x, y)));
     }
 
-    const cubey::procedural::ScalarField2D* rock = optional_field(product, kTerrainFieldMaterialRock);
-    const cubey::procedural::ScalarField2D* soil = optional_field(product, kTerrainFieldMaterialSoil);
+    const cubey::procedural::ScalarField2D* rock =
+        optional_field(product, kTerrainFieldMaterialRock);
+    const cubey::procedural::ScalarField2D* soil =
+        optional_field(product, kTerrainFieldMaterialSoil);
     const cubey::procedural::ScalarField2D* grass =
         optional_field(product, kTerrainFieldMaterialGrass);
     const cubey::procedural::ScalarField2D* wetness = optional_field(product, kTerrainFieldWetness);
@@ -174,8 +180,7 @@ namespace {
 
 cubey::render::MeshConfig TerrainPreviewMeshData::mesh_config() const {
     return cubey::render::indexed_mesh_config(
-        std::span<const cubey::render::VertexPositionColorNormal>(vertices.data(),
-                                                                  vertices.size()),
+        std::span<const cubey::render::VertexPositionColorNormal>(vertices.data(), vertices.size()),
         std::span<const std::uint32_t>(indices.data(), indices.size()));
 }
 
@@ -202,16 +207,15 @@ TerrainPreviewMeshData make_terrain_preview_mesh(const TerrainRegionProduct& pro
         for (std::uint32_t x = 0; x < desc.width; ++x) {
             const float world_x = cubey::procedural::grid_sample_x(desc, x);
             mesh.vertices.push_back({
-                .position =
-                    {world_x, height_at(height, x, y, config.vertical_scale), world_z},
+                .position = {world_x, height_at(height, x, y, config.vertical_scale), world_z},
                 .color = review_color(product, height, height_stats, x, y, config.color_mode),
                 .normal = to_primitive(normal_at(height, x, y, config.vertical_scale)),
             });
         }
     }
 
-    const std::uint64_t quad_count = static_cast<std::uint64_t>(desc.width - 1U) *
-                                     static_cast<std::uint64_t>(desc.height - 1U);
+    const std::uint64_t quad_count =
+        static_cast<std::uint64_t>(desc.width - 1U) * static_cast<std::uint64_t>(desc.height - 1U);
     if (quad_count > static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max() / 6U)) {
         throw std::runtime_error("terrain preview mesh exceeds uint32 index range");
     }
@@ -226,6 +230,72 @@ TerrainPreviewMeshData make_terrain_preview_mesh(const TerrainRegionProduct& pro
         }
     }
 
+    return mesh;
+}
+
+cubey::render::ClipmapGrid2DConfig
+terrain_engine_runtime_preview_clipmap_config(const TerrainPreviewConfig& config) {
+    const float region_extent = preview_region_extent_m(config.region);
+    return cubey::render::ClipmapGrid2DConfig{
+        .lod_levels = 5U,
+        .cells_per_axis = 96U,
+        .outer_half_extent = std::max(region_extent * 1.5F, 8192.0F),
+        .transition_cells = 16.0F,
+        .max_transition_ratio = 0.35F,
+    };
+}
+
+TerrainPreviewMeshData
+make_terrain_engine_runtime_preview_mesh(const TerrainPreviewConfig& config) {
+    const cubey::render::ClipmapGrid2DConfig clipmap_config =
+        terrain_engine_runtime_preview_clipmap_config(config);
+    const auto patches = cubey::render::clipmap_grid_2d_patches<32U>(clipmap_config);
+    const cubey::render::ClipmapGrid2DDiagnostics diagnostics =
+        cubey::render::clipmap_grid_2d_diagnostics(clipmap_config, patches);
+
+    TerrainPreviewMeshData mesh;
+    mesh.vertices.reserve(diagnostics.total_vertices);
+    mesh.indices.reserve(diagnostics.total_vertices);
+
+    auto append_vertex = [&mesh, lod_levels = clipmap_config.lod_levels](float x, float z,
+                                                                         std::uint32_t level) {
+        const float level_t = lod_levels <= 1U
+                                  ? 0.0F
+                                  : static_cast<float>(level) / static_cast<float>(lod_levels - 1U);
+        mesh.vertices.push_back({
+            .position = {x, 0.0F, z},
+            .color = {level_t, 0.0F, 0.0F},
+            .normal = {0.0F, 1.0F, 0.0F},
+        });
+        const std::size_t index = mesh.vertices.size() - 1U;
+        if (index > static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max())) {
+            throw std::runtime_error("terrain runtime preview mesh exceeds uint32 index range");
+        }
+        mesh.indices.push_back(static_cast<std::uint32_t>(index));
+    };
+
+    for (const cubey::render::ClipmapGrid2DPatch& patch : patches) {
+        const float span_x = patch.bounds.max_x - patch.bounds.min_x;
+        const float span_z = patch.bounds.max_z - patch.bounds.min_z;
+        for (std::uint32_t z = 0; z < patch.cells_z; ++z) {
+            const float z0 = patch.bounds.min_z +
+                             span_z * (static_cast<float>(z) / static_cast<float>(patch.cells_z));
+            const float z1 = patch.bounds.min_z + span_z * (static_cast<float>(z + 1U) /
+                                                            static_cast<float>(patch.cells_z));
+            for (std::uint32_t x = 0; x < patch.cells_x; ++x) {
+                const float x0 = patch.bounds.min_x + span_x * (static_cast<float>(x) /
+                                                                static_cast<float>(patch.cells_x));
+                const float x1 = patch.bounds.min_x + span_x * (static_cast<float>(x + 1U) /
+                                                                static_cast<float>(patch.cells_x));
+                append_vertex(x0, z0, patch.level);
+                append_vertex(x1, z0, patch.level);
+                append_vertex(x0, z1, patch.level);
+                append_vertex(x1, z0, patch.level);
+                append_vertex(x1, z1, patch.level);
+                append_vertex(x0, z1, patch.level);
+            }
+        }
+    }
     return mesh;
 }
 

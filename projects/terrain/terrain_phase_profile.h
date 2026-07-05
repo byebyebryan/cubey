@@ -15,6 +15,7 @@ struct TerrainPhaseProfileMetadata {
     std::string app_name{};
     std::string recipe_id{};
     std::string camera_preset{};
+    std::string preview_runtime{};
     std::string preview_surface{};
     std::string preview_color{};
     std::uint32_t grid_width = 0;
@@ -82,9 +83,9 @@ class TerrainPhaseScope {
 };
 
 [[nodiscard]] std::filesystem::path terrain_phase_profile_output_prefix(std::string_view value);
-[[nodiscard]] std::filesystem::path terrain_phase_profile_output_path(
-    const std::filesystem::path& output_prefix);
-[[nodiscard]] TerrainPhaseProfileMetadata terrain_phase_profile_metadata(
-    std::string_view app_name, const TerrainRegionConfig& config);
+[[nodiscard]] std::filesystem::path
+terrain_phase_profile_output_path(const std::filesystem::path& output_prefix);
+[[nodiscard]] TerrainPhaseProfileMetadata
+terrain_phase_profile_metadata(std::string_view app_name, const TerrainRegionConfig& config);
 
 } // namespace cubey::projects::terrain

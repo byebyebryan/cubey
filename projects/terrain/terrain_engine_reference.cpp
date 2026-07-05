@@ -54,8 +54,7 @@ bool is_terrain_engine_reference_recipe(std::string_view recipe_id) {
     return recipe_id == kTerrainRecipeTerrainEngineRef;
 }
 
-TerrainEngineReferenceSeedComponents terrain_engine_reference_seed_components(
-    std::uint64_t seed) {
+TerrainEngineReferenceSeedComponents terrain_engine_reference_seed_components(std::uint64_t seed) {
     return {
         .x = terrain_engine_reference_seed_component(seed, 0, 17.0F),
         .y = terrain_engine_reference_seed_component(seed, 16, 31.0F),
@@ -81,8 +80,8 @@ float terrain_engine_reference_height(float world_x, float world_y, std::uint64_
     return std::pow(std::max(total, 0.0F), kPower);
 }
 
-cubey::procedural::ScalarField2D terrain_engine_reference_height_field(
-    cubey::procedural::Grid2DDesc desc, std::uint64_t seed) {
+cubey::procedural::ScalarField2D
+terrain_engine_reference_height_field(cubey::procedural::Grid2DDesc desc, std::uint64_t seed) {
     cubey::procedural::ScalarField2D result(desc, 0.0F);
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
@@ -96,14 +95,12 @@ cubey::procedural::ScalarField2D terrain_engine_reference_height_field(
 
 float terrain_engine_reference_normal_cos_v(float world_x, float world_y, std::uint64_t seed) {
     constexpr float kStepM = 1.0F;
-    const float dhdu =
-        (terrain_engine_reference_height(world_x + kStepM, world_y, seed) -
-         terrain_engine_reference_height(world_x - kStepM, world_y, seed)) /
-        (2.0F * kStepM);
-    const float dhdv =
-        (terrain_engine_reference_height(world_x, world_y + kStepM, seed) -
-         terrain_engine_reference_height(world_x, world_y - kStepM, seed)) /
-        (2.0F * kStepM);
+    const float dhdu = (terrain_engine_reference_height(world_x + kStepM, world_y, seed) -
+                        terrain_engine_reference_height(world_x - kStepM, world_y, seed)) /
+                       (2.0F * kStepM);
+    const float dhdv = (terrain_engine_reference_height(world_x, world_y + kStepM, seed) -
+                        terrain_engine_reference_height(world_x, world_y - kStepM, seed)) /
+                       (2.0F * kStepM);
     return 1.0F / std::sqrt(1.0F + (dhdu * dhdu) + (dhdv * dhdv));
 }
 

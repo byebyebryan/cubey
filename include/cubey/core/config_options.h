@@ -116,6 +116,7 @@ enum class RunConfigOptionId {
     TerrainRecipe,
     TerrainCameraPreset,
     TerrainVerticalScale,
+    TerrainPreviewRuntime,
     TerrainPreviewColor,
     TerrainPreviewSurface,
     TerrainLabSlicePreset,

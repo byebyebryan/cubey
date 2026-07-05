@@ -16,8 +16,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -77,8 +77,8 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
 }
 
 [[nodiscard]] float average_where(const cubey::procedural::ScalarField2D& values,
-                                  const cubey::procedural::ScalarField2D& mask,
-                                  float min_mask, float max_mask = 1.0F) {
+                                  const cubey::procedural::ScalarField2D& mask, float min_mask,
+                                  float max_mask = 1.0F) {
     const cubey::procedural::Grid2DDesc& desc = values.desc();
     double sum = 0.0;
     std::size_t count = 0U;
@@ -111,11 +111,11 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return max_delta;
 }
 
-[[nodiscard]] float masked_low_gradient_fraction(
-    const cubey::procedural::ScalarField2D& height,
-    const cubey::procedural::ScalarField2D& include_mask,
-    const cubey::procedural::ScalarField2D& exclude_mask, float include_threshold,
-    float exclude_max, float gradient_threshold) {
+[[nodiscard]] float
+masked_low_gradient_fraction(const cubey::procedural::ScalarField2D& height,
+                             const cubey::procedural::ScalarField2D& include_mask,
+                             const cubey::procedural::ScalarField2D& exclude_mask,
+                             float include_threshold, float exclude_max, float gradient_threshold) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
     std::size_t selected = 0U;
     std::size_t low_gradient = 0U;
@@ -141,10 +141,11 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return static_cast<float>(low_gradient) / static_cast<float>(selected);
 }
 
-[[nodiscard]] std::size_t unsupported_high_summit_samples(
-    const cubey::procedural::ScalarField2D& height,
-    const cubey::procedural::ScalarField2D& summit, float high_height_threshold,
-    float support_threshold, std::uint32_t radius_cells, std::size_t min_support_samples) {
+[[nodiscard]] std::size_t
+unsupported_high_summit_samples(const cubey::procedural::ScalarField2D& height,
+                                const cubey::procedural::ScalarField2D& summit,
+                                float high_height_threshold, float support_threshold,
+                                std::uint32_t radius_cells, std::size_t min_support_samples) {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
     std::size_t unsupported = 0U;
     const int radius = static_cast<int>(radius_cells);
@@ -162,8 +163,8 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
                         sy >= static_cast<int>(desc.height)) {
                         continue;
                     }
-                    if (summit.at(static_cast<std::uint32_t>(sx),
-                                  static_cast<std::uint32_t>(sy)) >= support_threshold) {
+                    if (summit.at(static_cast<std::uint32_t>(sx), static_cast<std::uint32_t>(sy)) >=
+                        support_threshold) {
                         ++support_count;
                     }
                 }
@@ -203,8 +204,8 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
            static_cast<std::size_t>(max_y - min_y + 1U);
 }
 
-[[nodiscard]] std::size_t count_active_coarse_tiles(
-    const cubey::procedural::ScalarField2D& field, float threshold, std::uint32_t tile_count) {
+[[nodiscard]] std::size_t count_active_coarse_tiles(const cubey::procedural::ScalarField2D& field,
+                                                    float threshold, std::uint32_t tile_count) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
     if (tile_count == 0U) {
         return 0U;
@@ -212,15 +213,13 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
 
     std::size_t active_tiles = 0U;
     for (std::uint32_t tile_y = 0; tile_y < tile_count; ++tile_y) {
-        const std::uint32_t y0 =
-            static_cast<std::uint32_t>((static_cast<std::uint64_t>(tile_y) * desc.height) /
-                                       tile_count);
+        const std::uint32_t y0 = static_cast<std::uint32_t>(
+            (static_cast<std::uint64_t>(tile_y) * desc.height) / tile_count);
         const std::uint32_t y1 = static_cast<std::uint32_t>(
             (static_cast<std::uint64_t>(tile_y + 1U) * desc.height) / tile_count);
         for (std::uint32_t tile_x = 0; tile_x < tile_count; ++tile_x) {
-            const std::uint32_t x0 =
-                static_cast<std::uint32_t>((static_cast<std::uint64_t>(tile_x) * desc.width) /
-                                           tile_count);
+            const std::uint32_t x0 = static_cast<std::uint32_t>(
+                (static_cast<std::uint64_t>(tile_x) * desc.width) / tile_count);
             const std::uint32_t x1 = static_cast<std::uint32_t>(
                 (static_cast<std::uint64_t>(tile_x + 1U) * desc.width) / tile_count);
             bool has_active_sample = false;
@@ -238,8 +237,8 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return active_tiles;
 }
 
-[[nodiscard]] std::size_t max_active_window_samples(
-    const cubey::procedural::ScalarField2D& field, float threshold, std::uint32_t window_size) {
+[[nodiscard]] std::size_t max_active_window_samples(const cubey::procedural::ScalarField2D& field,
+                                                    float threshold, std::uint32_t window_size) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
     if (window_size == 0U || window_size > desc.width || window_size > desc.height) {
         return 0U;
@@ -247,8 +246,7 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
 
     const std::uint32_t integral_width = desc.width + 1U;
     std::vector<std::uint32_t> integral(
-        static_cast<std::size_t>(integral_width) * static_cast<std::size_t>(desc.height + 1U),
-        0U);
+        static_cast<std::size_t>(integral_width) * static_cast<std::size_t>(desc.height + 1U), 0U);
     const auto integral_index = [integral_width](std::uint32_t x, std::uint32_t y) {
         return static_cast<std::size_t>(y) * static_cast<std::size_t>(integral_width) +
                static_cast<std::size_t>(x);
@@ -276,8 +274,8 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return best;
 }
 
-[[nodiscard]] std::size_t count_active_samples_with_neighbor(
-    const cubey::procedural::ScalarField2D& field, float threshold) {
+[[nodiscard]] std::size_t
+count_active_samples_with_neighbor(const cubey::procedural::ScalarField2D& field, float threshold) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
     std::size_t count = 0U;
     for (std::uint32_t y = 0; y < desc.height; ++y) {
@@ -299,8 +297,8 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
                     if (sx < 0 || sx >= static_cast<int>(desc.width)) {
                         continue;
                     }
-                    if (field.at(static_cast<std::uint32_t>(sx),
-                                 static_cast<std::uint32_t>(sy)) >= threshold) {
+                    if (field.at(static_cast<std::uint32_t>(sx), static_cast<std::uint32_t>(sy)) >=
+                        threshold) {
                         has_neighbor = true;
                         break;
                     }
@@ -314,8 +312,8 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return count;
 }
 
-[[nodiscard]] std::size_t count_active_endpoint_samples(
-    const cubey::procedural::ScalarField2D& field, float threshold) {
+[[nodiscard]] std::size_t
+count_active_endpoint_samples(const cubey::procedural::ScalarField2D& field, float threshold) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
     std::size_t count = 0U;
     for (std::uint32_t y = 0; y < desc.height; ++y) {
@@ -337,8 +335,8 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
                     if (sx < 0 || sx >= static_cast<int>(desc.width)) {
                         continue;
                     }
-                    if (field.at(static_cast<std::uint32_t>(sx),
-                                 static_cast<std::uint32_t>(sy)) >= threshold) {
+                    if (field.at(static_cast<std::uint32_t>(sx), static_cast<std::uint32_t>(sy)) >=
+                        threshold) {
                         ++neighbor_count;
                     }
                 }
@@ -375,8 +373,8 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
            static_cast<std::size_t>(top) + static_cast<std::size_t>(bottom);
 }
 
-[[nodiscard]] std::size_t largest_active_component_size(
-    const cubey::procedural::ScalarField2D& field, float threshold) {
+[[nodiscard]] std::size_t
+largest_active_component_size(const cubey::procedural::ScalarField2D& field, float threshold) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
     std::vector<bool> visited(field.sample_count(), false);
     std::size_t best = 0U;
@@ -469,16 +467,15 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return best;
 }
 
-[[nodiscard]] std::size_t max_axis_aligned_active_run(
-    const cubey::procedural::ScalarField2D& field, float threshold, std::uint32_t margin = 0U) {
+[[nodiscard]] std::size_t max_axis_aligned_active_run(const cubey::procedural::ScalarField2D& field,
+                                                      float threshold, std::uint32_t margin = 0U) {
     return std::max(max_horizontal_active_run(field, threshold, margin),
                     max_vertical_active_run(field, threshold, margin));
 }
 
 [[nodiscard]] std::size_t max_direction_active_run(const cubey::procedural::ScalarField2D& field,
                                                    float threshold, int direction_x,
-                                                   int direction_y,
-                                                   std::uint32_t margin = 0U) {
+                                                   int direction_y, std::uint32_t margin = 0U) {
     const cubey::procedural::Grid2DDesc& desc = field.desc();
     const int x_begin = static_cast<int>(std::min(margin, desc.width));
     const int x_end = static_cast<int>(desc.width > margin ? desc.width - margin : margin);
@@ -488,8 +485,7 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
         return x >= x_begin && x < x_end && y >= y_begin && y < y_end;
     };
     const auto active = [&](int x, int y) {
-        return field.at(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)) >=
-               threshold;
+        return field.at(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)) >= threshold;
     };
 
     std::size_t best = 0U;
@@ -518,8 +514,8 @@ field(const cubey::projects::terrain::TerrainRegionProduct& product, std::string
     return best;
 }
 
-[[nodiscard]] std::size_t max_diagonal_active_run(
-    const cubey::procedural::ScalarField2D& field, float threshold, std::uint32_t margin = 0U) {
+[[nodiscard]] std::size_t max_diagonal_active_run(const cubey::procedural::ScalarField2D& field,
+                                                  float threshold, std::uint32_t margin = 0U) {
     return std::max(max_direction_active_run(field, threshold, 1, 1, margin),
                     max_direction_active_run(field, threshold, 1, -1, margin));
 }
@@ -680,20 +676,17 @@ void test_terrain_process_field_helpers() {
             "terrain thermal talus should lower eroded peak samples");
     require(talus.post_erosion_height_m.at(1, 2) > talus_height.at(1, 2),
             "terrain thermal talus should raise deposition samples");
-    require(talus.slope_instability.at(2, 2) > 0.0F &&
-                talus.slope_instability.at(2, 2) <= 1.0F,
+    require(talus.slope_instability.at(2, 2) > 0.0F && talus.slope_instability.at(2, 2) <= 1.0F,
             "terrain thermal talus should publish bounded residual instability");
 
     require_throws(
         [&source] {
-            static_cast<void>(
-                cubey::projects::terrain::spread_max_decay_field(source, -1, 0.5F));
+            static_cast<void>(cubey::projects::terrain::spread_max_decay_field(source, -1, 0.5F));
         },
         "terrain process spread should reject negative iterations");
     require_throws(
         [&source] {
-            static_cast<void>(
-                cubey::projects::terrain::spread_max_decay_field(source, 1, 1.5F));
+            static_cast<void>(cubey::projects::terrain::spread_max_decay_field(source, 1, 1.5F));
         },
         "terrain process spread should reject invalid decay");
     require_throws(
@@ -861,7 +854,8 @@ void test_terrain_product_has_useful_ranges() {
         field(product, cubey::projects::terrain::kTerrainFieldChannelIncision).summarize();
     const cubey::procedural::ScalarFieldStats valley_incision =
         field(product, cubey::projects::terrain::kTerrainFieldValleyIncision).summarize();
-    const auto& fill_delta = field(product, cubey::projects::terrain::kTerrainFieldRoutingFillDelta);
+    const auto& fill_delta =
+        field(product, cubey::projects::terrain::kTerrainFieldRoutingFillDelta);
     const cubey::procedural::ScalarFieldStats fill_delta_stats = fill_delta.summarize();
     const cubey::procedural::ScalarFieldStats sink =
         field(product, cubey::projects::terrain::kTerrainFieldSinkMask).summarize();
@@ -1068,19 +1062,16 @@ void test_terrain_engine_reference_recipe_is_isolated() {
         require(field(product, name).summarize().max == 0.0F,
                 "terrain engine reference recipe should keep river fields inactive");
     }
-    require(field(product, cubey::projects::terrain::kTerrainFieldChannelIncision)
-                .summarize()
-                .max == 0.0F,
-            "terrain engine reference recipe should keep channel incision inactive");
-    require(field(product, cubey::projects::terrain::kTerrainFieldValleyIncision)
-                .summarize()
-                .max == 0.0F,
+    require(
+        field(product, cubey::projects::terrain::kTerrainFieldChannelIncision).summarize().max ==
+            0.0F,
+        "terrain engine reference recipe should keep channel incision inactive");
+    require(field(product, cubey::projects::terrain::kTerrainFieldValleyIncision).summarize().max ==
+                0.0F,
             "terrain engine reference recipe should keep valley incision inactive");
 
-    const auto& material_rock =
-        field(product, cubey::projects::terrain::kTerrainFieldMaterialRock);
-    const auto& material_soil =
-        field(product, cubey::projects::terrain::kTerrainFieldMaterialSoil);
+    const auto& material_rock = field(product, cubey::projects::terrain::kTerrainFieldMaterialRock);
+    const auto& material_soil = field(product, cubey::projects::terrain::kTerrainFieldMaterialSoil);
     const auto& material_grass =
         field(product, cubey::projects::terrain::kTerrainFieldMaterialGrass);
     require(material_grass.summarize().max > 0.5F,
@@ -1090,8 +1081,8 @@ void test_terrain_engine_reference_recipe_is_isolated() {
     const cubey::procedural::Grid2DDesc& desc = height.desc();
     for (std::uint32_t y = 0; y < desc.height; ++y) {
         for (std::uint32_t x = 0; x < desc.width; ++x) {
-            const float material_sum = material_rock.at(x, y) + material_soil.at(x, y) +
-                                       material_grass.at(x, y);
+            const float material_sum =
+                material_rock.at(x, y) + material_soil.at(x, y) + material_grass.at(x, y);
             require_near(material_sum, 1.0F, 0.0001F,
                          "terrain engine reference materials should be normalized");
         }
@@ -1110,8 +1101,7 @@ void test_terrain_stress_recipe_expands_river_network() {
     const cubey::projects::terrain::TerrainRegionProduct stress =
         cubey::projects::terrain::generate_terrain_region(config);
 
-    const auto& baseline_river =
-        field(baseline, cubey::projects::terrain::kTerrainFieldRiverMask);
+    const auto& baseline_river = field(baseline, cubey::projects::terrain::kTerrainFieldRiverMask);
     const auto& stress_river = field(stress, cubey::projects::terrain::kTerrainFieldRiverMask);
     const std::size_t baseline_samples = count_active_samples(baseline_river, 0.30F);
     const std::size_t stress_samples = count_active_samples(stress_river, 0.30F);
@@ -1170,8 +1160,7 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
         field(baseline, cubey::projects::terrain::kTerrainFieldMountainSaddleGate);
     const auto& range_spine =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainRangeSpine);
-    const auto& envelope =
-        field(mountain, cubey::projects::terrain::kTerrainFieldMountainEnvelope);
+    const auto& envelope = field(mountain, cubey::projects::terrain::kTerrainFieldMountainEnvelope);
     const auto& mountain_support =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainSupport);
     const auto& ridge_hierarchy =
@@ -1184,8 +1173,7 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainPeakAnchors);
     const auto& peak_prominence =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainPeakProminence);
-    const auto& peak_support =
-        field(mountain, cubey::projects::terrain::kTerrainFieldPeakSupport);
+    const auto& peak_support = field(mountain, cubey::projects::terrain::kTerrainFieldPeakSupport);
     const auto& ridge_skeleton =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgeSkeleton);
     const auto& ridge_influence =
@@ -1194,10 +1182,8 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainSaddleGate);
     const auto& mountain_uplift =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainUplift);
-    const auto& ridge_uplift =
-        field(mountain, cubey::projects::terrain::kTerrainFieldRidgeUplift);
-    const auto& peak_uplift =
-        field(mountain, cubey::projects::terrain::kTerrainFieldPeakUplift);
+    const auto& ridge_uplift = field(mountain, cubey::projects::terrain::kTerrainFieldRidgeUplift);
+    const auto& peak_uplift = field(mountain, cubey::projects::terrain::kTerrainFieldPeakUplift);
     const auto& profile_height =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainProfileHeightM);
     const auto& pre_process_height =
@@ -1250,27 +1236,27 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
     const std::size_t saddle_gate_samples = count_active_samples(saddle_gate, 0.35F);
     if (range_spine_samples * 100U < total_samples * 6U ||
         range_spine_samples * 100U > total_samples * 62U) {
-        throw std::runtime_error(
-            "terrain range spine should be broad but not full-map: samples=" +
-            std::to_string(range_spine_samples) + " total=" + std::to_string(total_samples));
+        throw std::runtime_error("terrain range spine should be broad but not full-map: samples=" +
+                                 std::to_string(range_spine_samples) +
+                                 " total=" + std::to_string(total_samples));
     }
     if (envelope_samples * 100U < total_samples * 10U ||
         envelope_samples * 100U > total_samples * 82U) {
-        throw std::runtime_error(
-            "terrain mountain envelope should be broad but bounded: samples=" +
-            std::to_string(envelope_samples) + " total=" + std::to_string(total_samples));
+        throw std::runtime_error("terrain mountain envelope should be broad but bounded: samples=" +
+                                 std::to_string(envelope_samples) +
+                                 " total=" + std::to_string(total_samples));
     }
     if (mountain_support_samples * 100U < total_samples * 12U ||
         mountain_support_samples * 100U > total_samples * 78U) {
-        throw std::runtime_error(
-            "terrain mountain support should be broad but bounded: samples=" +
-            std::to_string(mountain_support_samples) + " total=" + std::to_string(total_samples));
+        throw std::runtime_error("terrain mountain support should be broad but bounded: samples=" +
+                                 std::to_string(mountain_support_samples) +
+                                 " total=" + std::to_string(total_samples));
     }
     if (ridge_hierarchy_samples * 100U < total_samples * 3U ||
         ridge_hierarchy_samples * 100U > total_samples * 52U) {
-        throw std::runtime_error(
-            "terrain ridge hierarchy should be visible but ranked: samples=" +
-            std::to_string(ridge_hierarchy_samples) + " total=" + std::to_string(total_samples));
+        throw std::runtime_error("terrain ridge hierarchy should be visible but ranked: samples=" +
+                                 std::to_string(ridge_hierarchy_samples) +
+                                 " total=" + std::to_string(total_samples));
     }
     if (ridge_support_samples * 100U < total_samples * 3U ||
         ridge_support_samples * 100U > total_samples * 58U) {
@@ -1279,9 +1265,9 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
             std::to_string(ridge_support_samples) + " total=" + std::to_string(total_samples));
     }
     if (peak_candidate_samples < 32U || peak_candidate_samples * 100U > total_samples * 30U) {
-        throw std::runtime_error(
-            "terrain peak candidates should be sparse and attached: samples=" +
-            std::to_string(peak_candidate_samples) + " total=" + std::to_string(total_samples));
+        throw std::runtime_error("terrain peak candidates should be sparse and attached: samples=" +
+                                 std::to_string(peak_candidate_samples) +
+                                 " total=" + std::to_string(total_samples));
     }
     if (peak_anchor_samples < 3U || peak_anchor_samples > 160U) {
         throw std::runtime_error(
@@ -1290,9 +1276,10 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
     }
     if (peak_prominence_samples * 100U < total_samples * 2U ||
         peak_prominence_samples * 100U > total_samples * 42U) {
-        throw std::runtime_error(
-            "terrain peak prominence should build around anchors without filling the map: samples=" +
-            std::to_string(peak_prominence_samples) + " total=" + std::to_string(total_samples));
+        throw std::runtime_error("terrain peak prominence should build around anchors without "
+                                 "filling the map: samples=" +
+                                 std::to_string(peak_prominence_samples) +
+                                 " total=" + std::to_string(total_samples));
     }
     if (peak_support_samples < 32U || peak_support_samples * 100U > total_samples * 34U) {
         throw std::runtime_error(
@@ -1314,14 +1301,15 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
     if (ridge_body_samples <= ridge_skeleton_samples * 4U) {
         throw std::runtime_error(
             "terrain ridge influence should expose a broad body around narrow crests: body=" +
-            std::to_string(ridge_body_samples) + " skeleton=" +
-            std::to_string(ridge_skeleton_samples));
+            std::to_string(ridge_body_samples) +
+            " skeleton=" + std::to_string(ridge_skeleton_samples));
     }
     if (saddle_gate_samples * 100U < total_samples * 4U ||
         saddle_gate_samples * 100U > total_samples * 58U) {
-        throw std::runtime_error(
-            "terrain saddle gate should suppress some highland mass without filling the map: samples=" +
-            std::to_string(saddle_gate_samples) + " total=" + std::to_string(total_samples));
+        throw std::runtime_error("terrain saddle gate should suppress some highland mass without "
+                                 "filling the map: samples=" +
+                                 std::to_string(saddle_gate_samples) +
+                                 " total=" + std::to_string(total_samples));
     }
 
     require(mountain.summary.height.span > 1200.0F,
@@ -1350,14 +1338,14 @@ void test_terrain_mountain_range_stress_recipe_exposes_mountain_driver() {
     if (peak_average_height >= mountain_average_height + 620.0F) {
         throw std::runtime_error(
             "terrain peak support should not become unsupported summit bulges: peak=" +
-            std::to_string(peak_average_height) + " mountain=" +
-            std::to_string(mountain_average_height));
+            std::to_string(peak_average_height) +
+            " mountain=" + std::to_string(mountain_average_height));
     }
     if (crest_average_height >= ridge_body_average_height + 230.0F) {
-        throw std::runtime_error(
-            "terrain crest support should sharpen broad ridge bodies without becoming fins: crest=" +
-            std::to_string(crest_average_height) + " body=" +
-            std::to_string(ridge_body_average_height));
+        throw std::runtime_error("terrain crest support should sharpen broad ridge bodies without "
+                                 "becoming fins: crest=" +
+                                 std::to_string(crest_average_height) +
+                                 " body=" + std::to_string(ridge_body_average_height));
     }
     require(crest_average_height > saddle_average_height + 65.0F,
             "terrain crest support should rise above saddle-gated highland mass");
@@ -1401,12 +1389,9 @@ void test_terrain_mountain_macro_fields_are_hierarchical() {
     const auto& profile =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainProfileHeightM);
     const auto& mass = field(mountain, cubey::projects::terrain::kTerrainFieldMountainMass);
-    const auto& shoulder =
-        field(mountain, cubey::projects::terrain::kTerrainFieldMountainShoulder);
-    const auto& summit =
-        field(mountain, cubey::projects::terrain::kTerrainFieldMountainSummitCore);
-    const auto& saddle =
-        field(mountain, cubey::projects::terrain::kTerrainFieldMountainSaddleGate);
+    const auto& shoulder = field(mountain, cubey::projects::terrain::kTerrainFieldMountainShoulder);
+    const auto& summit = field(mountain, cubey::projects::terrain::kTerrainFieldMountainSummitCore);
+    const auto& saddle = field(mountain, cubey::projects::terrain::kTerrainFieldMountainSaddleGate);
 
     const cubey::procedural::ScalarFieldStats mass_stats = mass.summarize();
     const cubey::procedural::ScalarFieldStats shoulder_stats = shoulder.summarize();
@@ -1416,19 +1401,17 @@ void test_terrain_mountain_macro_fields_are_hierarchical() {
             "mountain mass and shoulder fields should expose active stress sources");
     require(summit_stats.max > 0.55F,
             "mountain summit core should stay active after profile softening");
-    require(saddle_stats.max > 0.60F,
-            "mountain saddle gate should expose highland negative space");
+    require(saddle_stats.max > 0.60F, "mountain saddle gate should expose highland negative space");
 
     const std::size_t total_samples = mass.sample_count();
     const std::size_t mass_samples = count_active_samples(mass, 0.35F);
     const std::size_t shoulder_samples = count_active_samples(shoulder, 0.30F);
     const std::size_t summit_samples = count_active_samples(summit, 0.25F);
     const std::size_t saddle_samples = count_active_samples(saddle, 0.35F);
-    if (mass_samples * 100U < total_samples * 15U ||
-        mass_samples * 100U > total_samples * 70U) {
+    if (mass_samples * 100U < total_samples * 15U || mass_samples * 100U > total_samples * 70U) {
         throw std::runtime_error(
-            "mountain mass should be broad but bounded: samples=" +
-            std::to_string(mass_samples) + " total=" + std::to_string(total_samples));
+            "mountain mass should be broad but bounded: samples=" + std::to_string(mass_samples) +
+            " total=" + std::to_string(total_samples));
     }
     if (shoulder_samples * 100U < total_samples * 10U ||
         shoulder_samples * 100U > total_samples * 68U) {
@@ -1438,11 +1421,10 @@ void test_terrain_mountain_macro_fields_are_hierarchical() {
     }
     if (summit_samples < 8U || summit_samples * 100U > total_samples * 12U) {
         throw std::runtime_error(
-            "mountain summit core should be sparse: samples=" +
-            std::to_string(summit_samples) + " total=" + std::to_string(total_samples));
+            "mountain summit core should be sparse: samples=" + std::to_string(summit_samples) +
+            " total=" + std::to_string(total_samples));
     }
-    if (saddle_samples * 100U < total_samples * 4U ||
-        saddle_samples * 100U > total_samples * 58U) {
+    if (saddle_samples * 100U < total_samples * 4U || saddle_samples * 100U > total_samples * 58U) {
         throw std::runtime_error(
             "mountain saddle gate should stay bounded between crests: samples=" +
             std::to_string(saddle_samples) + " total=" + std::to_string(total_samples));
@@ -1462,8 +1444,7 @@ void test_terrain_mountain_macro_fields_are_hierarchical() {
     if (summit_average_height >= mass_average_height + 650.0F) {
         throw std::runtime_error(
             "mountain summit core should sharpen mass without creating isolated bulges: summit=" +
-            std::to_string(summit_average_height) + " mass=" +
-            std::to_string(mass_average_height));
+            std::to_string(summit_average_height) + " mass=" + std::to_string(mass_average_height));
     }
     require(summit_average_height > saddle_average_height + 160.0F,
             "mountain summits should build above saddle-gated highland mass");
@@ -1475,8 +1456,7 @@ void test_terrain_mountain_macro_fields_are_hierarchical() {
 
     const cubey::procedural::ScalarFieldStats profile_stats = profile.summarize();
     const float high_threshold = profile_stats.max - (profile_stats.span * 0.035F);
-    require(unsupported_high_summit_samples(profile, summit, high_threshold, 0.24F, 4U, 18U) ==
-                0U,
+    require(unsupported_high_summit_samples(profile, summit, high_threshold, 0.24F, 4U, 18U) == 0U,
             "mountain high points should have surrounding summit support");
 }
 
@@ -1515,13 +1495,11 @@ void test_terrain_mountain_ridge_valley_process_is_bounded() {
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainValleyFloor);
     const auto& valley_incision =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainValleyIncisionM);
-    const auto& summit =
-        field(mountain, cubey::projects::terrain::kTerrainFieldMountainSummitCore);
+    const auto& summit = field(mountain, cubey::projects::terrain::kTerrainFieldMountainSummitCore);
 
     const cubey::procedural::ScalarFieldStats ridge_body_stats = ridge_body.summarize();
     const cubey::procedural::ScalarFieldStats valley_floor_stats = valley_floor.summarize();
-    const cubey::procedural::ScalarFieldStats valley_incision_stats =
-        valley_incision.summarize();
+    const cubey::procedural::ScalarFieldStats valley_incision_stats = valley_incision.summarize();
     require(ridge_body_stats.max > 0.40F,
             "mountain ridge body should be visible as a process field");
     require(valley_floor_stats.max > 0.35F,
@@ -1543,12 +1521,11 @@ void test_terrain_mountain_ridge_valley_process_is_bounded() {
     }
     if (valley_floor_samples * 100U < total_samples * 3U ||
         valley_floor_samples * 100U > total_samples * 58U) {
-        throw std::runtime_error(
-            "mountain valley floor should be broad but bounded: samples=" +
-            std::to_string(valley_floor_samples) + " total=" + std::to_string(total_samples));
+        throw std::runtime_error("mountain valley floor should be broad but bounded: samples=" +
+                                 std::to_string(valley_floor_samples) +
+                                 " total=" + std::to_string(total_samples));
     }
-    if (incision_samples * 100U < total_samples ||
-        incision_samples * 100U > total_samples * 45U) {
+    if (incision_samples * 100U < total_samples || incision_samples * 100U > total_samples * 45U) {
         throw std::runtime_error(
             "mountain valley incision should affect a bounded reviewable area: samples=" +
             std::to_string(incision_samples) + " total=" + std::to_string(total_samples));
@@ -1559,8 +1536,7 @@ void test_terrain_mountain_ridge_valley_process_is_bounded() {
     require(ridge_body_average_height > valley_floor_average_height + 70.0F,
             "mountain ridge bodies should stand above processed valley floors");
 
-    const float valley_floor_average_incision =
-        average_where(valley_incision, valley_floor, 0.34F);
+    const float valley_floor_average_incision = average_where(valley_incision, valley_floor, 0.34F);
     const float summit_average_incision = average_where(valley_incision, summit, 0.30F);
     require(valley_floor_average_incision > summit_average_incision + 5.0F,
             "mountain valley incision should avoid summit cores");
@@ -1607,16 +1583,13 @@ void test_terrain_mountain_visual_source_morphology_is_bounded() {
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainVisualSourceHeightM);
     const auto& profile =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainProfileHeightM);
-    const auto& chain =
-        field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgedChain);
+    const auto& chain = field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgedChain);
     const auto& detail =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainDetailWeight);
     const auto& delta =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainMorphologyDeltaM);
-    const auto& crease =
-        field(mountain, cubey::projects::terrain::kTerrainFieldMountainCreaseMap);
-    const auto& ridge =
-        field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgeMap);
+    const auto& crease = field(mountain, cubey::projects::terrain::kTerrainFieldMountainCreaseMap);
+    const auto& ridge = field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgeMap);
     const auto& ridge_skeleton =
         field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgeSkeleton);
 
@@ -1680,12 +1653,10 @@ void test_terrain_mountain_gully_diagnostic_is_bounded() {
     const cubey::projects::terrain::TerrainRegionProduct mountain =
         cubey::projects::terrain::generate_terrain_region(config);
 
-    const auto& baseline_height =
-        field(baseline, cubey::projects::terrain::kTerrainFieldHeightM);
+    const auto& baseline_height = field(baseline, cubey::projects::terrain::kTerrainFieldHeightM);
     const auto& baseline_delta =
         field(baseline, cubey::projects::terrain::kTerrainFieldErosionDeltaM);
-    const auto& baseline_gully =
-        field(baseline, cubey::projects::terrain::kTerrainFieldGullyMask);
+    const auto& baseline_gully = field(baseline, cubey::projects::terrain::kTerrainFieldGullyMask);
     const auto& baseline_crease =
         field(baseline, cubey::projects::terrain::kTerrainFieldCreaseProxy);
     const auto& baseline_post =
@@ -1707,15 +1678,13 @@ void test_terrain_mountain_gully_diagnostic_is_bounded() {
     const auto& erosion_delta =
         field(mountain, cubey::projects::terrain::kTerrainFieldErosionDeltaM);
     const auto& gully_mask = field(mountain, cubey::projects::terrain::kTerrainFieldGullyMask);
-    const auto& crease_proxy =
-        field(mountain, cubey::projects::terrain::kTerrainFieldCreaseProxy);
+    const auto& crease_proxy = field(mountain, cubey::projects::terrain::kTerrainFieldCreaseProxy);
     const cubey::procedural::ScalarFieldStats erosion_stats = erosion_delta.summarize();
     const cubey::procedural::ScalarFieldStats gully_stats = gully_mask.summarize();
     const cubey::procedural::ScalarFieldStats crease_stats = crease_proxy.summarize();
     require(erosion_stats.max > 1.0F,
             "mountain stress recipe should emit visible gully erosion diagnostics");
-    require(erosion_stats.max <= 78.001F,
-            "mountain gully erosion diagnostic should stay bounded");
+    require(erosion_stats.max <= 78.001F, "mountain gully erosion diagnostic should stay bounded");
     require(gully_stats.max > 0.05F && gully_stats.max <= 1.0F,
             "mountain gully mask should stay normalized and active");
     require(crease_stats.max > 0.05F && crease_stats.max <= 1.0F,
@@ -1751,8 +1720,7 @@ void test_terrain_mountain_thermal_talus_diagnostic_is_bounded() {
     const cubey::projects::terrain::TerrainRegionProduct mountain =
         cubey::projects::terrain::generate_terrain_region(config);
 
-    const auto& baseline_height =
-        field(baseline, cubey::projects::terrain::kTerrainFieldHeightM);
+    const auto& baseline_height = field(baseline, cubey::projects::terrain::kTerrainFieldHeightM);
     const auto& baseline_thermal =
         field(baseline, cubey::projects::terrain::kTerrainFieldThermalErosionDeltaM);
     const auto& baseline_talus =
@@ -1775,8 +1743,7 @@ void test_terrain_mountain_thermal_talus_diagnostic_is_bounded() {
     }
 
     const auto& height = field(mountain, cubey::projects::terrain::kTerrainFieldHeightM);
-    const auto& gully_delta =
-        field(mountain, cubey::projects::terrain::kTerrainFieldErosionDeltaM);
+    const auto& gully_delta = field(mountain, cubey::projects::terrain::kTerrainFieldErosionDeltaM);
     const auto& thermal_delta =
         field(mountain, cubey::projects::terrain::kTerrainFieldThermalErosionDeltaM);
     const auto& talus_deposition =
@@ -1800,15 +1767,14 @@ void test_terrain_mountain_thermal_talus_diagnostic_is_bounded() {
             "mountain thermal erosion should cover enough samples to review");
     require(count_active_samples(thermal_delta, 0.50F) < thermal_delta.sample_count() / 2U,
             "mountain thermal erosion should not affect most of the patch");
-    require(count_active_samples(talus_deposition, 0.25F) >
-                talus_deposition.sample_count() / 700U,
+    require(count_active_samples(talus_deposition, 0.25F) > talus_deposition.sample_count() / 700U,
             "mountain talus deposition should cover enough samples to review");
 
     std::size_t changed_samples = 0U;
     for (std::uint32_t y = 0; y < height.desc().height; ++y) {
         for (std::uint32_t x = 0; x < height.desc().width; ++x) {
-            const float expected = height.at(x, y) - gully_delta.at(x, y) -
-                                   thermal_delta.at(x, y) + talus_deposition.at(x, y);
+            const float expected = height.at(x, y) - gully_delta.at(x, y) - thermal_delta.at(x, y) +
+                                   talus_deposition.at(x, y);
             require_near(post_erosion_height.at(x, y), expected, 0.003F,
                          "post-erosion height should combine gully and talus diagnostics");
             if (std::abs(post_erosion_height.at(x, y) - height.at(x, y)) > 1.0F) {
@@ -1832,11 +1798,9 @@ void test_terrain_review_river_coverage_is_meaningful() {
     const cubey::projects::terrain::TerrainRegionProduct stress =
         cubey::projects::terrain::generate_terrain_region(config);
 
-    const auto& baseline_river =
-        field(baseline, cubey::projects::terrain::kTerrainFieldRiverMask);
+    const auto& baseline_river = field(baseline, cubey::projects::terrain::kTerrainFieldRiverMask);
     const auto& stress_river = field(stress, cubey::projects::terrain::kTerrainFieldRiverMask);
-    const auto& baseline_trunk =
-        field(baseline, cubey::projects::terrain::kTerrainFieldRiverTrunk);
+    const auto& baseline_trunk = field(baseline, cubey::projects::terrain::kTerrainFieldRiverTrunk);
     const auto& stress_trunk = field(stress, cubey::projects::terrain::kTerrainFieldRiverTrunk);
     const auto& stress_tributaries =
         field(stress, cubey::projects::terrain::kTerrainFieldTributaries);
@@ -1857,8 +1821,7 @@ void test_terrain_review_river_coverage_is_meaningful() {
         largest_active_component_size(stress_trunk, 0.30F);
     const std::size_t baseline_footprint =
         active_bounds_area(baseline_river, kVisibleNetworkThreshold);
-    const std::size_t stress_footprint =
-        active_bounds_area(stress_river, kVisibleNetworkThreshold);
+    const std::size_t stress_footprint = active_bounds_area(stress_river, kVisibleNetworkThreshold);
     const std::size_t stress_largest_component =
         largest_active_component_size(stress_river, kVisibleNetworkThreshold);
     const std::size_t stress_edge_touches =
@@ -1899,23 +1862,23 @@ void test_terrain_review_river_coverage_is_meaningful() {
     if (stress_footprint * 100U < total_samples * 5U) {
         throw std::runtime_error(
             "terrain stress review river should span a non-tiny network footprint: baseline=" +
-            std::to_string(baseline_footprint) + " stress=" +
-            std::to_string(stress_footprint) + " total=" + std::to_string(total_samples));
+            std::to_string(baseline_footprint) + " stress=" + std::to_string(stress_footprint) +
+            " total=" + std::to_string(total_samples));
     }
     const std::size_t stress_visible_network_samples =
         count_active_samples(stress_river, kVisibleNetworkThreshold);
     if (stress_largest_component * 100U < stress_visible_network_samples * 80U) {
         throw std::runtime_error(
             "terrain stress review river should be dominated by one connected network: largest=" +
-            std::to_string(stress_largest_component) + " active=" +
-            std::to_string(stress_visible_network_samples) + " footprint=" +
-            std::to_string(stress_footprint));
+            std::to_string(stress_largest_component) +
+            " active=" + std::to_string(stress_visible_network_samples) +
+            " footprint=" + std::to_string(stress_footprint));
     }
     if (stress_trunk_largest_component * 100U < stress_trunk_samples * 90U) {
         throw std::runtime_error(
             "terrain stress trunk should be dominated by one continuous trunk component: largest=" +
-            std::to_string(stress_trunk_largest_component) + " active=" +
-            std::to_string(stress_trunk_samples));
+            std::to_string(stress_trunk_largest_component) +
+            " active=" + std::to_string(stress_trunk_samples));
     }
     if (stress_trunk_edge_touches < 1U) {
         throw std::runtime_error(
@@ -1943,39 +1906,37 @@ void test_terrain_review_river_coverage_is_meaningful() {
     require(stress_samples * 100U < total_samples * 12U,
             "terrain stress review river should not flood the patch");
     if (stress_trunk_samples * 100U < baseline_trunk_samples * 90U) {
-        throw std::runtime_error(
-            "terrain stress trunk should retain most baseline high-order trunk coverage: baseline=" +
-            std::to_string(baseline_trunk_samples) + " stress=" +
-            std::to_string(stress_trunk_samples));
+        throw std::runtime_error("terrain stress trunk should retain most baseline high-order "
+                                 "trunk coverage: baseline=" +
+                                 std::to_string(baseline_trunk_samples) +
+                                 " stress=" + std::to_string(stress_trunk_samples));
     }
     if (stress_trunk_samples * 100U < stress_samples * 35U) {
         throw std::runtime_error(
             "terrain stress trunk should carry a visible major-channel share of active network: "
             "trunk=" +
-            std::to_string(stress_trunk_samples) + " river=" +
-            std::to_string(stress_samples));
+            std::to_string(stress_trunk_samples) + " river=" + std::to_string(stress_samples));
     }
     if (stress_trunk_samples * 100U < stress_tributary_samples * 25U) {
         throw std::runtime_error(
             "terrain stress trunk should stay visible within the broader tributary network: "
             "trunk=" +
-            std::to_string(stress_trunk_samples) + " tributaries=" +
-            std::to_string(stress_tributary_samples));
+            std::to_string(stress_trunk_samples) +
+            " tributaries=" + std::to_string(stress_tributary_samples));
     }
-    const std::size_t stress_trunk_max_window =
-        max_active_window_samples(stress_trunk, 0.30F, 64U);
+    const std::size_t stress_trunk_max_window = max_active_window_samples(stress_trunk, 0.30F, 64U);
     if (stress_trunk_max_window * 100U > stress_trunk_samples * 60U) {
         throw std::runtime_error(
             "terrain stress trunk should not pack most promoted branches into one corridor: "
             "window=" +
-            std::to_string(stress_trunk_max_window) + " trunk=" +
-            std::to_string(stress_trunk_samples));
+            std::to_string(stress_trunk_max_window) +
+            " trunk=" + std::to_string(stress_trunk_samples));
     }
     if (stress_endpoint_samples * 100U > stress_tributary_samples * 8U) {
         throw std::runtime_error(
             "terrain stress tributaries should not collapse into hairy endpoints: endpoints=" +
-            std::to_string(stress_endpoint_samples) + " active=" +
-            std::to_string(stress_tributary_samples));
+            std::to_string(stress_endpoint_samples) +
+            " active=" + std::to_string(stress_tributary_samples));
     }
     const std::size_t stress_tributary_axis_run =
         max_axis_aligned_active_run(stress_tributaries, 0.45F, 16U);
@@ -1991,10 +1952,8 @@ void test_terrain_review_river_coverage_is_meaningful() {
             "terrain stress tributaries should avoid long diagonal mid-strength runs: diagonal=" +
             std::to_string(stress_tributary_diagonal_run));
     }
-    const std::size_t stress_axis_run =
-        max_axis_aligned_active_run(stress_river, 0.80F, 16U);
-    const std::size_t stress_diagonal_run =
-        max_diagonal_active_run(stress_river, 0.80F, 16U);
+    const std::size_t stress_axis_run = max_axis_aligned_active_run(stress_river, 0.80F, 16U);
+    const std::size_t stress_diagonal_run = max_diagonal_active_run(stress_river, 0.80F, 16U);
     if (stress_axis_run > 36U) {
         throw std::runtime_error(
             "terrain stress river should avoid long straight high-strength runs: axis=" +
@@ -2047,8 +2006,7 @@ void test_terrain_river_network_has_continuous_active_channels() {
 
     const std::size_t connected_trunk_count = count_active_samples_with_neighbor(trunk, 0.45F);
     const std::size_t connected_river_count = count_active_samples_with_neighbor(river_mask, 0.30F);
-    const std::size_t largest_river_component =
-        largest_active_component_size(river_mask, 0.30F);
+    const std::size_t largest_river_component = largest_active_component_size(river_mask, 0.30F);
     require(connected_trunk_count * 100U >= trunk_count * 90U,
             "terrain river trunk samples should be locally continuous");
     require(connected_river_count * 100U >= river_count * 80U,
@@ -2076,18 +2034,15 @@ void test_terrain_river_core_avoids_long_grid_aligned_runs() {
     const auto& trunk = field(product, cubey::projects::terrain::kTerrainFieldRiverTrunk);
     const auto& river_mask = field(product, cubey::projects::terrain::kTerrainFieldRiverMask);
     constexpr std::uint32_t kInteriorMargin = 16U;
-    const std::size_t trunk_axis_run =
-        max_axis_aligned_active_run(trunk, 0.80F, kInteriorMargin);
+    const std::size_t trunk_axis_run = max_axis_aligned_active_run(trunk, 0.80F, kInteriorMargin);
     const std::size_t mask_axis_run =
         max_axis_aligned_active_run(river_mask, 0.80F, kInteriorMargin);
-    const std::size_t trunk_diagonal_run =
-        max_diagonal_active_run(trunk, 0.80F, kInteriorMargin);
+    const std::size_t trunk_diagonal_run = max_diagonal_active_run(trunk, 0.80F, kInteriorMargin);
     const std::size_t mask_diagonal_run =
         max_diagonal_active_run(river_mask, 0.80F, kInteriorMargin);
     if (trunk_axis_run > 18U) {
-        throw std::runtime_error(
-            "terrain river trunk should avoid long straight core runs: axis=" +
-            std::to_string(trunk_axis_run));
+        throw std::runtime_error("terrain river trunk should avoid long straight core runs: axis=" +
+                                 std::to_string(trunk_axis_run));
     }
     if (mask_axis_run > 24U) {
         throw std::runtime_error(
@@ -2194,8 +2149,7 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_valley_floor") ==
                 cubey::projects::terrain::TerrainDebugView::MountainValleyFloor,
             "terrain debug view should parse mountain valley floor aliases");
-    require(cubey::projects::terrain::terrain_debug_view_from_name(
-                "mountain_valley_incision") ==
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_valley_incision") ==
                 cubey::projects::terrain::TerrainDebugView::MountainValleyIncision,
             "terrain debug view should parse mountain valley incision aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_uplift") ==
@@ -2240,18 +2194,17 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_profile_height") ==
                 cubey::projects::terrain::TerrainDebugView::MountainProfileHeight,
             "terrain debug view should parse mountain profile height aliases");
-    require(cubey::projects::terrain::terrain_debug_view_from_name(
-                "mountain_visual_source_height") ==
-                cubey::projects::terrain::TerrainDebugView::MountainVisualSourceHeight,
-            "terrain debug view should parse mountain visual source height aliases");
+    require(
+        cubey::projects::terrain::terrain_debug_view_from_name("mountain_visual_source_height") ==
+            cubey::projects::terrain::TerrainDebugView::MountainVisualSourceHeight,
+        "terrain debug view should parse mountain visual source height aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_ridged_chain") ==
                 cubey::projects::terrain::TerrainDebugView::MountainRidgedChain,
             "terrain debug view should parse mountain ridged chain aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_detail_weight") ==
                 cubey::projects::terrain::TerrainDebugView::MountainDetailWeight,
             "terrain debug view should parse mountain detail weight aliases");
-    require(cubey::projects::terrain::terrain_debug_view_from_name(
-                "mountain_morphology_delta") ==
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_morphology_delta") ==
                 cubey::projects::terrain::TerrainDebugView::MountainMorphologyDelta,
             "terrain debug view should parse mountain morphology delta aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_crease_map") ==
@@ -2390,8 +2343,8 @@ void test_terrain_debug_export_writes_review_set() {
     for (const cubey::projects::terrain::TerrainDebugView view :
          cubey::projects::terrain::terrain_debug_review_views()) {
         const std::filesystem::path output =
-            output_dir / (std::string(cubey::projects::terrain::terrain_debug_view_name(view)) +
-                          ".png");
+            output_dir /
+            (std::string(cubey::projects::terrain::terrain_debug_view_name(view)) + ".png");
         require(std::filesystem::file_size(output) > 64U,
                 "terrain debug review export should write each PNG");
     }
@@ -2422,8 +2375,7 @@ void test_terrain_debug_export_writes_review_set() {
     require(manifest.at("outputs").size() ==
                 cubey::projects::terrain::terrain_debug_review_views().size(),
             "terrain debug manifest should record review output count");
-    const std::vector<std::string> outputs =
-        manifest.at("outputs").get<std::vector<std::string>>();
+    const std::vector<std::string> outputs = manifest.at("outputs").get<std::vector<std::string>>();
     require(std::find(outputs.begin(), outputs.end(), "final.png") != outputs.end(),
             "terrain debug manifest should list final PNG output");
     require(std::find(outputs.begin(), outputs.end(), "mountain-process-review.png") !=
@@ -2435,8 +2387,7 @@ void test_terrain_debug_export_writes_review_set() {
             "terrain debug manifest should list erosion delta PNG output");
     require(std::find(outputs.begin(), outputs.end(), "post-erosion-height.png") != outputs.end(),
             "terrain debug manifest should list post-erosion height PNG output");
-    require(std::find(outputs.begin(), outputs.end(), "thermal-erosion-delta.png") !=
-                outputs.end(),
+    require(std::find(outputs.begin(), outputs.end(), "thermal-erosion-delta.png") != outputs.end(),
             "terrain debug manifest should list thermal erosion PNG output");
     require(std::find(outputs.begin(), outputs.end(), "talus-deposition.png") != outputs.end(),
             "terrain debug manifest should list talus deposition PNG output");
@@ -2447,17 +2398,13 @@ void test_terrain_debug_export_writes_review_set() {
             "terrain debug manifest should list mountain profile height PNG output");
     require(std::find(outputs.begin(), outputs.end(), "mountain-mass.png") != outputs.end(),
             "terrain debug manifest should list mountain mass PNG output");
-    require(std::find(outputs.begin(), outputs.end(), "mountain-summit-core.png") !=
-                outputs.end(),
+    require(std::find(outputs.begin(), outputs.end(), "mountain-summit-core.png") != outputs.end(),
             "terrain debug manifest should list mountain summit core PNG output");
-    require(std::find(outputs.begin(), outputs.end(), "mountain-saddle-gate.png") !=
-                outputs.end(),
+    require(std::find(outputs.begin(), outputs.end(), "mountain-saddle-gate.png") != outputs.end(),
             "terrain debug manifest should list mountain saddle gate PNG output");
-    require(std::find(outputs.begin(), outputs.end(), "mountain-ridge-body.png") !=
-                outputs.end(),
+    require(std::find(outputs.begin(), outputs.end(), "mountain-ridge-body.png") != outputs.end(),
             "terrain debug manifest should list mountain ridge body PNG output");
-    require(std::find(outputs.begin(), outputs.end(), "mountain-valley-floor.png") !=
-                outputs.end(),
+    require(std::find(outputs.begin(), outputs.end(), "mountain-valley-floor.png") != outputs.end(),
             "terrain debug manifest should list mountain valley floor PNG output");
     require(std::find(outputs.begin(), outputs.end(), "mountain-valley-incision.png") !=
                 outputs.end(),
@@ -2523,15 +2470,18 @@ void test_terrain_preview_config_uses_run_config_controls() {
     require(preview.region.recipe_id ==
                 cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress,
             "terrain preview should default to the mountain stress recipe");
-    require(preview.camera_preset ==
-                cubey::projects::terrain::TerrainPreviewCameraPreset::Oblique,
+    require(preview.camera_preset == cubey::projects::terrain::TerrainPreviewCameraPreset::Oblique,
             "terrain preview should default to the oblique camera");
     require(preview.color_mode == cubey::projects::terrain::TerrainPreviewColorMode::Material,
             "terrain preview should default to material color");
     require(preview.surface == cubey::projects::terrain::TerrainPreviewSurface::Height,
             "terrain preview should default to final height surface");
+    require(preview.runtime_mode == cubey::projects::terrain::TerrainPreviewRuntimeMode::CpuProduct,
+            "terrain preview should default to CPU product runtime");
     require(preview.vertical_scale == cubey::projects::terrain::kTerrainPreviewDefaultVerticalScale,
             "terrain preview should default to the documented vertical scale");
+    require(!preview.water_surface,
+            "terrain preview should not enable water by default for CPU products");
 
     run_config.grid.width = 33;
     run_config.grid.height = 65;
@@ -2553,20 +2503,42 @@ void test_terrain_preview_config_uses_run_config_controls() {
     require(preview.region.recipe_id ==
                 cubey::projects::terrain::kTerrainRecipeTemperateMountainRiverStress,
             "terrain preview should use the selected terrain recipe");
-    require(preview.camera_preset ==
-                cubey::projects::terrain::TerrainPreviewCameraPreset::Profile,
+    require(preview.camera_preset == cubey::projects::terrain::TerrainPreviewCameraPreset::Profile,
             "terrain preview should parse the profile camera");
     require(preview.color_mode == cubey::projects::terrain::TerrainPreviewColorMode::Height,
             "terrain preview should parse the height color mode");
     require(preview.surface == cubey::projects::terrain::TerrainPreviewSurface::PostErosion,
             "terrain preview should parse the post-erosion surface");
-    require(preview.vertical_scale == 0.55F,
-            "terrain preview should use explicit vertical scale");
+    require(preview.vertical_scale == 0.55F, "terrain preview should use explicit vertical scale");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain::kTerrainRecipeTerrainEngineRef);
+    run_config.terrain.preview_runtime = "terrain-engine-ref";
+    run_config.terrain.water_surface = -1;
+    preview = cubey::projects::terrain::terrain_preview_config_from_run_config(run_config);
+    require(preview.runtime_mode ==
+                cubey::projects::terrain::TerrainPreviewRuntimeMode::TerrainEngineReference,
+            "terrain preview should parse the TerrainEngine reference runtime");
+    require(preview.water_surface,
+            "terrain preview should default water on for the TerrainEngine runtime");
+    run_config.terrain.water_surface = 0;
+    preview = cubey::projects::terrain::terrain_preview_config_from_run_config(run_config);
+    require(!preview.water_surface,
+            "terrain preview should allow disabling TerrainEngine runtime water");
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRiverStress);
+    require_throws(
+        [&run_config] {
+            static_cast<void>(
+                cubey::projects::terrain::terrain_preview_config_from_run_config(run_config));
+        },
+        "terrain preview should reject TerrainEngine runtime with non-reference recipes");
+    run_config.terrain.preview_runtime = "cpu-product";
+    run_config.terrain.water_surface = -1;
 
     run_config.terrain.camera_preset = "surface";
     preview = cubey::projects::terrain::terrain_preview_config_from_run_config(run_config);
-    require(preview.camera_preset ==
-                cubey::projects::terrain::TerrainPreviewCameraPreset::Surface,
+    require(preview.camera_preset == cubey::projects::terrain::TerrainPreviewCameraPreset::Surface,
             "terrain preview should parse the surface camera");
     require(cubey::projects::terrain::terrain_preview_camera_preset_from_name("surface_low") ==
                 cubey::projects::terrain::TerrainPreviewCameraPreset::SurfaceLow,
@@ -2597,15 +2569,43 @@ void test_terrain_preview_config_uses_run_config_controls() {
         "terrain preview should reject unknown surfaces");
 }
 
+void test_terrain_engine_runtime_preview_mesh_uses_clipmap() {
+    cubey::projects::terrain::TerrainPreviewConfig config;
+    config.region.grid_width = 65U;
+    config.region.grid_height = 65U;
+    config.region.cell_size_m = 32.0F;
+    config.region.recipe_id = std::string(cubey::projects::terrain::kTerrainRecipeTerrainEngineRef);
+    config.runtime_mode =
+        cubey::projects::terrain::TerrainPreviewRuntimeMode::TerrainEngineReference;
+
+    const cubey::render::ClipmapGrid2DConfig clipmap_config =
+        cubey::projects::terrain::terrain_engine_runtime_preview_clipmap_config(config);
+    const auto patches = cubey::render::clipmap_grid_2d_patches<32U>(clipmap_config);
+    const cubey::render::ClipmapGrid2DDiagnostics diagnostics =
+        cubey::render::clipmap_grid_2d_diagnostics(clipmap_config, patches);
+    const cubey::projects::terrain::TerrainPreviewMeshData mesh =
+        cubey::projects::terrain::make_terrain_engine_runtime_preview_mesh(config);
+
+    require(mesh.vertices.size() == diagnostics.total_vertices,
+            "TerrainEngine runtime preview mesh should use clipmap vertex budget");
+    require(mesh.indices.size() == diagnostics.total_vertices,
+            "TerrainEngine runtime preview mesh should emit indexed clipmap triangles");
+    require(cubey::projects::terrain::terrain_preview_triangle_count(mesh) ==
+                diagnostics.total_triangles,
+            "TerrainEngine runtime preview mesh should match clipmap triangle diagnostics");
+    require(mesh.vertices.front().position[1] == 0.0F,
+            "TerrainEngine runtime mesh should leave height displacement to the shader");
+}
+
 void test_terrain_phase_profile_paths() {
     const std::filesystem::path normalized =
         cubey::projects::terrain::terrain_phase_profile_output_prefix("terrain-smoke");
     require(normalized == std::filesystem::path("outputs") / "profiles" / "terrain-smoke",
             "terrain phase profile should place bare prefixes under outputs/profiles");
-    require(cubey::projects::terrain::terrain_phase_profile_output_path(normalized) ==
-                (std::filesystem::path("outputs") / "profiles" /
-                 "terrain-smoke.terrain_phases.json"),
-            "terrain phase profile should use the terrain phases suffix");
+    require(
+        cubey::projects::terrain::terrain_phase_profile_output_path(normalized) ==
+            (std::filesystem::path("outputs") / "profiles" / "terrain-smoke.terrain_phases.json"),
+        "terrain phase profile should use the terrain phases suffix");
 
     cubey::projects::terrain::TerrainRegionConfig config = small_config();
     config.recipe_id = std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRiver);
@@ -2618,8 +2618,7 @@ void test_terrain_phase_profile_paths() {
 
     require_throws(
         [] {
-            static_cast<void>(
-                cubey::projects::terrain::terrain_phase_profile_output_prefix(""));
+            static_cast<void>(cubey::projects::terrain::terrain_phase_profile_output_prefix(""));
         },
         "terrain phase profile should reject an empty output prefix");
 }
@@ -2641,9 +2640,8 @@ void test_terrain_preview_mesh_represents_heightfield() {
 
     const std::size_t sample_count =
         static_cast<std::size_t>(config.grid_width) * static_cast<std::size_t>(config.grid_height);
-    const std::size_t quad_count =
-        static_cast<std::size_t>(config.grid_width - 1U) *
-        static_cast<std::size_t>(config.grid_height - 1U);
+    const std::size_t quad_count = static_cast<std::size_t>(config.grid_width - 1U) *
+                                   static_cast<std::size_t>(config.grid_height - 1U);
     require(mesh.vertices.size() == sample_count,
             "terrain preview mesh should emit one vertex per height sample");
     require(mesh.indices.size() == quad_count * 6U,
@@ -2680,9 +2678,9 @@ void test_terrain_preview_mesh_represents_heightfield() {
             "terrain post-erosion preview mesh should preserve vertex count");
     float max_height_delta = 0.0F;
     for (std::size_t index = 0; index < mesh.vertices.size(); ++index) {
-        max_height_delta = std::max(
-            max_height_delta,
-            std::abs(mesh.vertices[index].position[1] - post_mesh.vertices[index].position[1]));
+        max_height_delta =
+            std::max(max_height_delta, std::abs(mesh.vertices[index].position[1] -
+                                                post_mesh.vertices[index].position[1]));
     }
     require(max_height_delta > 0.1F,
             "terrain post-erosion preview surface should change mesh vertex heights");
@@ -2721,6 +2719,7 @@ int main() {
     test_terrain_debug_export_queues_png();
     test_terrain_debug_export_writes_review_set();
     test_terrain_preview_config_uses_run_config_controls();
+    test_terrain_engine_runtime_preview_mesh_uses_clipmap();
     test_terrain_phase_profile_paths();
     test_terrain_preview_mesh_represents_heightfield();
     return 0;
