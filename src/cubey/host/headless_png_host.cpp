@@ -1,7 +1,5 @@
 #include <cubey/host/headless_png_host.h>
 
-#include <cubey/core/image_io.h>
-#include <cubey/engine/video_encoder.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/image.h>
@@ -10,17 +8,13 @@
 #include <cubey/vulkan/queue_submit.h>
 #include <cubey/vulkan/vk_check.h>
 
-#include <condition_variable>
 #include <cstdio>
-#include <deque>
 #include <exception>
 #include <limits>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <thread>
 #include <utility>
 #include <vector>
 
@@ -46,93 +40,6 @@ void validate_config(const HeadlessPngHostConfig& config,
         throw std::runtime_error("headless PNG host requires a record callback");
     }
 }
-
-class VideoEncodeWorker {
-  public:
-    explicit VideoEncodeWorker(std::unique_ptr<VideoEncoder> encoder)
-        : encoder_(std::move(encoder)), thread_([this] { run(); }) {}
-
-    ~VideoEncodeWorker() {
-        if (!joined_) {
-            try {
-                finish();
-            } catch (...) {
-            }
-        }
-    }
-
-    VideoEncodeWorker(const VideoEncodeWorker&) = delete;
-    VideoEncodeWorker& operator=(const VideoEncodeWorker&) = delete;
-
-    void enqueue(ProjectGpuReadbackResult frame) {
-        rethrow_if_failed();
-        validate_video_frame_size(frame.width, frame.height, frame.rgba8.size());
-        {
-            std::lock_guard lock(mutex_);
-            if (closed_) {
-                throw std::runtime_error("cannot enqueue video frames after finish");
-            }
-            frames_.push_back(std::move(frame.rgba8));
-        }
-        condition_.notify_one();
-    }
-
-    void finish() {
-        {
-            std::lock_guard lock(mutex_);
-            closed_ = true;
-        }
-        condition_.notify_one();
-        if (thread_.joinable()) {
-            thread_.join();
-        }
-        joined_ = true;
-        rethrow_if_failed();
-    }
-
-  private:
-    void run() noexcept {
-        try {
-            while (true) {
-                std::vector<std::uint8_t> frame;
-                {
-                    std::unique_lock lock(mutex_);
-                    condition_.wait(lock, [this] { return closed_ || !frames_.empty(); });
-                    if (frames_.empty()) {
-                        break;
-                    }
-                    frame = std::move(frames_.front());
-                    frames_.pop_front();
-                }
-                encoder_->write_frame(frame);
-            }
-            encoder_->finish();
-        } catch (...) {
-            std::lock_guard lock(mutex_);
-            error_ = std::current_exception();
-        }
-    }
-
-    void rethrow_if_failed() {
-        std::exception_ptr error;
-        {
-            std::lock_guard lock(mutex_);
-            error = error_;
-        }
-        if (error != nullptr) {
-            std::rethrow_exception(error);
-        }
-    }
-
-    std::unique_ptr<VideoEncoder> encoder_;
-    std::thread thread_;
-    std::mutex mutex_;
-    std::condition_variable condition_;
-    std::deque<std::vector<std::uint8_t>> frames_;
-    std::exception_ptr error_;
-    bool closed_ = false;
-    bool joined_ = false;
-};
 
 struct HeadlessCaptureSlot {
     HeadlessCaptureSlot(cubey::vulkan::Device& device, VkExtent2D extent, VkFormat format)
@@ -330,7 +237,8 @@ void install_headless_simulation_driver(HeadlessPngHostCallbacks& callbacks, Run
 }
 
 HeadlessPngHost::HeadlessPngHost(HeadlessPngHostConfig config, HeadlessPngHostCallbacks callbacks)
-    : config_(std::move(config)), callbacks_(std::move(callbacks)) {
+    : config_(std::move(config)), callbacks_(std::move(callbacks)), encoding_jobs_(1),
+      captures_(encoding_jobs_) {
     validate_config(config_, callbacks_);
     create_profile_recorder();
 }
@@ -541,10 +449,14 @@ ProjectGpuReadbackResult HeadlessPngHost::readback_target(const HeadlessRenderTa
 }
 
 void HeadlessPngHost::write_png(const HeadlessRenderTarget& target) {
-    const ProjectGpuReadbackResult readback =
-        readback_target(target, "headless PNG RGBA8 readback");
-    cubey::write_png_rgba8(config_.run_config.output_path, readback.width, readback.height,
-                           readback.rgba8);
+    ProjectGpuReadbackResult readback = readback_target(target, "headless PNG RGBA8 readback");
+    CaptureTicket ticket = captures_.enqueue_png({
+        .output_path = config_.run_config.output_path,
+        .width = readback.width,
+        .height = readback.height,
+        .rgba8 = std::move(readback.rgba8),
+    });
+    ticket.finish();
 
     const std::string output_path = config_.run_config.output_path.string();
     std::printf("headless_png: %s wrote %s at %ux%u\n", device().device_name(), output_path.c_str(),
@@ -558,12 +470,12 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
     }
     (void)context;
 
-    VideoEncodeWorker encoder(create_video_encoder({
+    QueuedVideoEncoder encoder = captures_.start_video_encoding({
         .output_path = config_.run_config.output_path,
         .width = target.extent.width,
         .height = target.extent.height,
         .fps = config_.run_config.fps,
-    }));
+    });
 
     const std::uint32_t slot_count = headless_capture_frame_slot_count(config_.run_config);
     std::vector<std::unique_ptr<HeadlessCaptureSlot>> slots;
@@ -582,17 +494,15 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
             "vkWaitForFences headless video capture");
         gpu().mark_submission_completed(slot.ticket);
 
-        ProjectGpuReadbackResult readback{
-            .ticket = {},
+        VideoFrameEncodeRequest frame{
             .width = slot.target.extent.width,
             .height = slot.target.extent.height,
             .rgba8 = std::vector<std::uint8_t>(
                 video_frame_byte_size(slot.target.extent.width, slot.target.extent.height)),
         };
-        slot.readback.download(readback.rgba8.data(),
-                               static_cast<VkDeviceSize>(readback.rgba8.size()));
+        slot.readback.download(frame.rgba8.data(), static_cast<VkDeviceSize>(frame.rgba8.size()));
         slot.submitted = false;
-        encoder.enqueue(std::move(readback));
+        encoder.enqueue_frame(std::move(frame));
     };
 
     auto submit_slot = [this](HeadlessPngContext& frame_context, HeadlessCaptureSlot& slot,

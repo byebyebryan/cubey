@@ -33,6 +33,9 @@ than the root design and roadmap.
   morph targets, skinning, GPU deformation, and validation asset direction.
 - [PBR and IBL direction](pbr-ibl.md): generated and HDR-backed cubemap IBL,
   PBR shader contract, and future environment asset boundaries.
+- [Reference-first rendering feature workflow](rendering-feature-workflow.md):
+  default workflow for complex visual features: port a known-good reference,
+  capture a baseline, then integrate and extend inside Cubey.
 - [Render graph direction](render-graph.md): current and future pass/resource
   graph vocabulary, execution boundary, adoption triggers, and deferred
   complexity.

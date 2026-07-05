@@ -114,6 +114,26 @@ physical exposure calibration, eclipses, and real ephemeris remain deferred.
 - Legacy sky-frame captures remain useful as historical references, but runtime
   comparison now happens through the unified path and atmosphere-mode controls.
 
+## Planet GUI Issues Observed 2026-06-24
+
+These were observed interactively in `projects/planet` after the
+`sky-rendering` merge. They are tracked here so fixed and remaining issues stay
+separate.
+
+- The low-surface twilight black band was addressed by a planet-surface
+  horizon-fill pass after physical aerial perspective. A 2026-06-28 recapture
+  with `projects/planet/capture_horizon_review.sh
+  outputs/planet-horizon-review-current` did not reproduce the prior
+  high-altitude no-cloud notch; keep watching cloud/limb composition separately.
+- The surface sky-frame mismatch was addressed by feeding the planet unified
+  atmosphere adapter with the explicit `LocalTangentFrame` used by clouds,
+  instead of deriving tangent space from the current view ray.
+- Orbit space backgrounds now use a separate night-sky visibility path for rays
+  that miss the atmosphere, so stars/Milky Way are no longer suppressed by the
+  surface-horizon term.
+- In orbit view, the sun glare has visible banding and does not yet read like a
+  clean solar glow.
+
 ## Cleanup Outcome
 
 The first cleanup batch before new feature work is complete. It reduced

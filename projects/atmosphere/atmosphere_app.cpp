@@ -15,9 +15,13 @@
 #include <cubey/render/atmosphere_night_sky_atlas.h>
 #include <cubey/render/celestial_body_frame.h>
 #include <cubey/render/celestial_system.h>
+#include <cubey/render/cloud_layer.h>
 #include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/lunar_surface_map.h>
+#include <cubey/render/material_instance.h>
+#include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
+#include <cubey/render/pipeline_resource.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/target.h>
@@ -81,11 +85,35 @@ struct PendingNightSkyAtlasJob {
 
 struct CompiledAtmosphereGraph {
     cubey::render::CompiledRenderGraph graph{};
-    cubey::render::RenderGraphTextureHandle scene_color{};
+    cubey::render::RenderGraphTextureHandle post_scene_color{};
+    cubey::render::RenderGraphTextureHandle atmosphere_scene_color{};
+    cubey::render::RenderGraphTextureHandle cloud_scene_color{};
+    cubey::render::CloudLayerRuntimeFrame cloud{};
+    bool clouds_enabled = false;
 };
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_ATMOSPHERE_SHADER_DIR) / filename;
+}
+
+[[nodiscard]] cubey::render::CloudLayerRuntimeShaderFiles cloud_runtime_shader_files() {
+    return {
+        .generated =
+            {
+                .base_noise =
+                    cubey::render::compute_shader_file(shader_path("cloud_perlin_worley.comp.spv")),
+                .detail_noise =
+                    cubey::render::compute_shader_file(shader_path("cloud_worley.comp.spv")),
+                .weather = cubey::render::compute_shader_file(shader_path("cloud_weather.comp.spv")),
+                .blue_noise =
+                    cubey::render::compute_shader_file(shader_path("cloud_blue_noise.comp.spv")),
+            },
+        .march = cubey::render::compute_shader_file(shader_path("cloud_march.comp.spv")),
+        .temporal = cubey::render::compute_shader_file(shader_path("cloud_temporal.comp.spv")),
+        .composite_vertex = cubey::render::vertex_shader_file(shader_path("cloud.vert.spv")),
+        .composite_fragment =
+            cubey::render::fragment_shader_file(shader_path("cloud_composite_background.frag.spv")),
+    };
 }
 
 [[nodiscard]] ResolvedNightSkyAtlas resolve_night_sky_atlas(const AtmosphereConfig& config) {
@@ -178,6 +206,7 @@ class AtmosphereApp {
         };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
+            refresh_cloud_weather_if_needed(context.device(), context.gpu());
             record_windowed_frame(context.device(), frame);
         };
         callbacks.frame_stats_sample =
@@ -195,7 +224,7 @@ class AtmosphereApp {
                 .run_config = run_config_,
                 .app_name = "atmosphere",
                 .ready_status = "rendering atmosphere project",
-                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
+                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
                 .close_on_escape = true,
@@ -206,7 +235,7 @@ class AtmosphereApp {
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
         host_config.run_config = run_config_;
-        host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
+        host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
 
@@ -221,6 +250,7 @@ class AtmosphereApp {
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
             update_headless_time(frame);
+            refresh_cloud_weather_if_needed(context.device(), context.gpu());
             record_atmosphere_target(context.device(), command_buffer, target, frame.frame_slot);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
@@ -255,6 +285,7 @@ class AtmosphereApp {
             reset_requested_ = false;
         }
         advance_atmosphere_time_of_day(atmosphere_config_, timing.delta_seconds);
+        cloud_elapsed_seconds_ += static_cast<float>(timing.delta_seconds);
         resolve_atmosphere_time_of_day(atmosphere_config_);
         atmosphere_config_.render_view = render_view_;
         validate_atmosphere_config(atmosphere_config_);
@@ -273,6 +304,7 @@ class AtmosphereApp {
                                              headless_base_time_hours_, headless_base_day_of_year_,
                                              frame.timing.elapsed_seconds);
         }
+        cloud_elapsed_seconds_ = static_cast<float>(frame.timing.elapsed_seconds);
         resolve_atmosphere_time_of_day(atmosphere_config_);
         validate_atmosphere_config(atmosphere_config_);
     }
@@ -308,6 +340,7 @@ class AtmosphereApp {
                                           std::uint32_t frame_slot_count) {
         atmosphere_atlases_.emplace(
             cubey::render::create_atmosphere_background_placeholder_textures(device, gpu));
+        create_cloud_resources(device, gpu);
         lunar_surface_map_ready_ = false;
         current_night_sky_atlas_.reset();
         create_atmosphere_descriptors(device, frame_slot_count);
@@ -323,6 +356,7 @@ class AtmosphereApp {
         const GeneratedNightSkyAtlas generated = generate_resolved_night_sky_atlas(resolved);
         atmosphere_atlases_.emplace(cubey::render::create_atmosphere_background_atlas_resources(
             device, gpu, generate_lunar_surface_map(), generated.atlas));
+        create_cloud_resources(device, gpu);
         lunar_surface_map_ready_ = true;
         lunar_surface_map_error_.clear();
         current_night_sky_atlas_ = generated.resolved;
@@ -331,6 +365,34 @@ class AtmosphereApp {
         create_atmosphere_descriptors(device, frame_slot_count);
         update_atmosphere_descriptor_bindings(device);
         refresh_loading_status();
+    }
+
+    [[nodiscard]] cubey::render::CloudLayerConfig atmosphere_cloud_config(
+        float elapsed_seconds) const {
+        cubey::render::CloudLayerConfig config = atmosphere_config_.clouds.layer;
+        config.planet_radius_m = atmosphere_config_.bottom_radius_km * 1000.0F;
+        config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+        config.wind_offset_m = elapsed_seconds * atmosphere_config_.clouds.wind_speed_mps;
+        return config;
+    }
+
+    void create_cloud_resources(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
+        if (cloud_global_resources_created_) {
+            return;
+        }
+        cloud_runtime_.create_generated_resources(device, gpu, cloud_runtime_shader_files().generated,
+                                                  atmosphere_cloud_config(cloud_elapsed_seconds_));
+        cloud_global_resources_created_ = true;
+    }
+
+    void refresh_cloud_weather_if_needed(cubey::vulkan::Device& device,
+                                         cubey::vulkan::GpuRuntime& gpu) {
+        if (!cloud_global_resources_created_) {
+            return;
+        }
+        cloud_runtime_.update_weather_texture(device, gpu,
+                                              cloud_runtime_shader_files().generated.weather,
+                                              atmosphere_cloud_config(cloud_elapsed_seconds_));
     }
 
     void upload_lunar_surface_map(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
@@ -497,6 +559,7 @@ class AtmosphereApp {
                         .shader_stage_files = atmosphere_shader_stage_files,
                     });
         create_moon_body_frame_pipeline(device, extent);
+        create_cloud_pipelines(device, extent);
 
         const std::array<cubey::render::ShaderStageFile, 2> post_shader_stage_files{
             cubey::render::ShaderStageFile{
@@ -514,6 +577,14 @@ class AtmosphereApp {
                                                     .shader_stage_files = post_shader_stage_files,
                                                 });
         pipeline_color_format_ = color_format;
+    }
+
+    void create_cloud_pipelines(const cubey::vulkan::Device& device, VkExtent2D extent) {
+        cloud_runtime_.create_swapchain_resources(
+            device, cloud_runtime_shader_files(),
+            cubey::render::CloudLayerCompositeMode::ExternalBackground,
+            kAtmosphereSceneColorFormat, extent, graph_executor_.frame_slot_count(),
+            atmosphere_cloud_config(cloud_elapsed_seconds_));
     }
 
     void create_moon_mesh_if_needed(cubey::vulkan::GpuRuntime& gpu) {
@@ -566,6 +637,7 @@ class AtmosphereApp {
         }
         hdr_post_frame_.destroy_pipeline();
         moon_body_frame_.destroy_pipeline();
+        cloud_runtime_.destroy_swapchain_resources();
         atmosphere_background_.destroy_pipeline();
         pipeline_color_format_ = VK_FORMAT_UNDEFINED;
     }
@@ -574,6 +646,9 @@ class AtmosphereApp {
         shutdown_atlas_jobs();
         graph_executor_.clear();
         hdr_post_frame_.destroy();
+        cloud_runtime_.destroy_swapchain_resources();
+        cloud_runtime_.destroy_generated_resources();
+        cloud_global_resources_created_ = false;
         moon_body_frame_.destroy();
         atmosphere_background_.destroy();
         moon_mesh_.reset();
@@ -591,17 +666,60 @@ class AtmosphereApp {
     }
 
     [[nodiscard]] AtmosphereFrameUniforms frame_uniforms(VkExtent2D extent) const {
-        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        const cubey::math::Quat rotation =
-            cubey::math::angle_axis_quat(kBaseYaw + view_controller_.yaw(), {0.0F, 1.0F, 0.0F}) *
-            cubey::math::angle_axis_quat(kBasePitch + view_controller_.pitch(), {1.0F, 0.0F, 0.0F});
-        const cubey::render::ViewRayBasis3D view_rays =
-            cubey::render::view_ray_basis_3d(rotation, aspect, kDefaultFovyRadians);
         return atmosphere_frame_uniforms(atmosphere_background_config(), {
-                                                                             .view_rays = view_rays,
+                                                                             .view_rays =
+                                                                                 atmosphere_view_rays(
+                                                                                     extent),
                                                                              .render_view =
                                                                                  background_render_view(),
                                                                          });
+    }
+
+    [[nodiscard]] cubey::render::ViewRayBasis3D atmosphere_view_rays(VkExtent2D extent) const {
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
+        return cubey::render::view_ray_basis_3d(atmosphere_view_rotation(), aspect,
+                                                kDefaultFovyRadians);
+    }
+
+    [[nodiscard]] cubey::render::CloudLayerFrameUniforms
+    cloud_frame_uniforms(VkExtent2D extent) const {
+        const cubey::render::ViewRayBasis3D view_rays = atmosphere_view_rays(extent);
+        const cubey::render::AtmosphereEnvironmentConfig environment =
+            atmosphere_environment_config(atmosphere_config_);
+        const cubey::math::Vec3 cloud_camera_position{
+            0.0F,
+            atmosphere_config_.camera_altitude_km * 1000.0F,
+            0.0F,
+        };
+        const cubey::render::CloudLayerConfig cloud_config =
+            atmosphere_cloud_config(cloud_elapsed_seconds_);
+        const cubey::render::CloudLayerViewRegime view_regime =
+            cubey::render::cloud_layer_view_regime({
+                .camera_position = {0.0F,
+                                    cloud_config.planet_radius_m + cloud_camera_position.y,
+                                    0.0F},
+                .camera_forward = cubey::math::Vec3{view_rays.forward},
+                .planet_radius_m = cloud_config.planet_radius_m,
+                .orbit_transition_start_m = cloud_config.orbit_transition_start_m,
+                .orbit_transition_end_m = cloud_config.orbit_transition_end_m,
+            });
+        return cubey::render::cloud_layer_frame_uniforms(
+            cloud_config,
+            cubey::render::CloudLayerFrameInfo{
+                .camera_position = cloud_camera_position,
+                .camera_right = cubey::math::Vec3{view_rays.right_aspect},
+                .camera_up = cubey::math::Vec3{view_rays.up_tan_half_fovy},
+                .camera_forward = cubey::math::Vec3{view_rays.forward},
+                .tan_half_fovy = view_rays.up_tan_half_fovy.w,
+                .sun_direction = cubey::render::atmosphere_environment_sun_direction(environment),
+                .sun_intensity = 1.0F,
+                .target_extent = extent,
+                .temporal_frame_index = cloud_runtime_.temporal_frame_index(),
+                .camera_mode = view_regime.camera_mode,
+                .external_background = true,
+            });
     }
 
     [[nodiscard]] cubey::render::PbrPostUniforms post_uniforms() const {
@@ -616,6 +734,10 @@ class AtmosphereApp {
                                       cubey::render::FrameSlot frame_slot) const {
         atmosphere_background_.upload(frame_slot, frame_uniforms(target.extent));
         atmosphere_background_.record_pass(recorder, target, frame_slot);
+    }
+
+    [[nodiscard]] bool cloud_layer_enabled() const noexcept {
+        return render_view_ == AtmosphereRenderView::Final && atmosphere_config_.clouds.enabled;
     }
 
     void record_atmosphere_post_pass(const cubey::vulkan::CommandRecorder& recorder,
@@ -639,12 +761,19 @@ class AtmosphereApp {
 
     [[nodiscard]] cubey::Transform3D atmosphere_camera_transform() const {
         return {
-            .rotation =
-                cubey::math::angle_axis_quat(kBaseYaw + view_controller_.yaw(),
-                                             {0.0F, 1.0F, 0.0F}) *
-                cubey::math::angle_axis_quat(kBasePitch + view_controller_.pitch(),
-                                             {1.0F, 0.0F, 0.0F}),
+            .rotation = atmosphere_view_rotation(),
         };
+    }
+
+    [[nodiscard]] cubey::math::Quat atmosphere_view_rotation() const {
+        const float yaw_offset = atmosphere_degrees_to_radians(
+            atmosphere_config_.camera_yaw_offset_degrees);
+        const float pitch_offset = atmosphere_degrees_to_radians(
+            atmosphere_config_.camera_pitch_offset_degrees);
+        return cubey::math::angle_axis_quat(kBaseYaw + yaw_offset + view_controller_.yaw(),
+                                            {0.0F, 1.0F, 0.0F}) *
+               cubey::math::angle_axis_quat(kBasePitch + pitch_offset + view_controller_.pitch(),
+                                            {1.0F, 0.0F, 0.0F});
     }
 
     [[nodiscard]] bool moon_body_render_enabled() const {
@@ -741,13 +870,17 @@ class AtmosphereApp {
     [[nodiscard]] CompiledAtmosphereGraph
     current_render_graph(cubey::render::ColorTargetView target, cubey::render::FrameSlot frame_slot,
                          cubey::render::RenderGraphTextureState target_initial_state,
-                         cubey::render::RenderGraphTextureState target_final_state) const {
+                         cubey::render::RenderGraphTextureState target_final_state,
+                         std::optional<cubey::render::CloudLayerFrameUniforms> cloud_uniforms) const {
         cubey::render::RenderGraphBuilder graph;
         const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
             "backbuffer", target, target_initial_state, target_final_state);
         const cubey::render::RenderGraphTextureHandle scene_color =
             graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
                 "atmosphere scene color", target.extent, kAtmosphereSceneColorFormat));
+        cubey::render::RenderGraphTextureHandle post_scene_color = scene_color;
+        cubey::render::RenderGraphTextureHandle cloud_scene_color{};
+        cubey::render::CloudLayerRuntimeFrame cloud_frame{};
 
         graph.add_pass("atmosphere sky", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(scene_color)
@@ -771,8 +904,20 @@ class AtmosphereApp {
                         frame_slot);
                 });
         }
+        const bool clouds_enabled = cloud_layer_enabled() && cloud_uniforms.has_value();
+        if (clouds_enabled) {
+            cloud_scene_color =
+                graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
+                    "atmosphere cloud scene color", target.extent, kAtmosphereSceneColorFormat));
+            cloud_frame = cloud_runtime_.declare_product(
+                graph, target.extent, atmosphere_cloud_config(cloud_elapsed_seconds_), frame_slot,
+                cloud_uniforms.value());
+            cloud_runtime_.declare_composite(graph, cloud_scene_color, cloud_frame, frame_slot,
+                                             scene_color);
+            post_scene_color = cloud_scene_color;
+        }
         graph.add_pass("atmosphere post", cubey::render::RenderGraphQueueDomain::Graphics)
-            .read_texture(scene_color)
+            .read_texture(post_scene_color)
             .write_color(backbuffer)
             .material_pass(cubey::render::pbr_post_pass_info())
             .execute([this, target,
@@ -782,7 +927,11 @@ class AtmosphereApp {
 
         return {
             .graph = graph.compile(),
-            .scene_color = scene_color,
+            .post_scene_color = post_scene_color,
+            .atmosphere_scene_color = scene_color,
+            .cloud_scene_color = cloud_scene_color,
+            .cloud = cloud_frame,
+            .clouds_enabled = clouds_enabled,
         };
     }
 
@@ -802,8 +951,13 @@ class AtmosphereApp {
                                  cubey::render::RenderGraphTextureState target_final_state,
                                  cubey::render::RenderGraphCommandBufferMode command_buffer_mode) {
         hdr_post_frame_.upload(frame_slot, post_uniforms());
-        const CompiledAtmosphereGraph render_graph =
-            current_render_graph(target, frame_slot, target_initial_state, target_final_state);
+        std::optional<cubey::render::CloudLayerFrameUniforms> cloud_uniforms{};
+        if (cloud_layer_enabled()) {
+            cloud_uniforms = cloud_frame_uniforms(target.extent);
+            cloud_runtime_.upload_frame_uniforms(frame_slot, cloud_uniforms.value());
+        }
+        const CompiledAtmosphereGraph render_graph = current_render_graph(
+            target, frame_slot, target_initial_state, target_final_state, cloud_uniforms);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &device,
@@ -816,8 +970,17 @@ class AtmosphereApp {
             [this, &device, frame_slot,
              &render_graph](const cubey::render::RenderGraphResourceSet& resources) {
                 update_post_descriptor(device, frame_slot, render_graph.graph, resources,
-                                       render_graph.scene_color);
+                                       render_graph.post_scene_color);
+                if (!render_graph.clouds_enabled) {
+                    return;
+                }
+                cloud_runtime_.update_descriptors(device, frame_slot, render_graph.graph, resources,
+                                                  render_graph.cloud,
+                                                  render_graph.atmosphere_scene_color);
             });
+        if (render_graph.clouds_enabled) {
+            cloud_runtime_.complete_frame(frame_slot, render_graph.cloud);
+        }
     }
 
     void record_windowed_frame(cubey::vulkan::Device& device,
@@ -876,6 +1039,7 @@ class AtmosphereApp {
     double latest_frame_ms_ = 0.0;
     float headless_base_time_hours_ = 12.0F;
     float headless_base_day_of_year_ = 80.0F;
+    float cloud_elapsed_seconds_ = 0.0F;
     std::uint32_t windowed_update_count_ = 0;
     bool reset_requested_ = false;
 
@@ -885,6 +1049,8 @@ class AtmosphereApp {
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_;
     cubey::render::CelestialBodyFrame moon_body_frame_;
     cubey::render::HdrPostFrame hdr_post_frame_;
+    cubey::render::CloudLayerRuntime cloud_runtime_{};
+    bool cloud_global_resources_created_ = false;
     std::optional<cubey::render::Mesh> moon_mesh_;
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
     cubey::jobs::JobSystem atlas_jobs_{2};

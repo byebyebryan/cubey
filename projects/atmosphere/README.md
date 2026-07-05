@@ -34,6 +34,18 @@ still owns presets, UI, debug view selection, generated sky assets, and
 render-graph wiring; the render helpers are intended to be reusable by ocean and
 later terrain/environment work.
 
+Final view also uses the shared cloud-layer runtime. `CloudLayerRuntime` owns
+generated cloud resources, march/temporal/composite pipelines, render-graph
+products, descriptors, and temporal history; atmosphere consumes it in
+external-background mode so clouds are composited over the clear-sky background.
+The Clouds panel exposes the shared quality, sampling, layer, weather, shape,
+lighting, transition, and debug controls, and existing `clouds.*` config/CLI
+overrides apply here too. `--cloud-view-samples 2 --cloud-view-sample-mode
+single-frame` is the direct local-volume sampling reference; `--cloud-temporal
+--cloud-view-samples 2 --cloud-view-sample-mode temporal-phased` is the cheaper
+temporal reconstruction candidate. Cloud shadows and cloud-driven reflection or
+environment-lighting outputs remain deferred.
+
 Useful runs:
 
 ```sh
@@ -45,7 +57,28 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
+projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
+projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
+projects/atmosphere/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
 ```
+
+The cloud review script writes a stable set of labeled captures plus
+`manifest.tsv`, `index.md`, and `contact-sheet.png` for quick visual comparison.
+It defaults to 1920x1080 half-quality captures, because half resolution is the
+current practical target; set `WIDTH`, `HEIGHT`, `QUALITY`, or `DEEP=1` for
+faster smoke runs or full-quality reference comparisons. The high-oblique row
+includes a no-cloud comparison so cloud handoff artifacts can be separated from
+the clear-sky background.
+
+The edge resolve script is the focused A/B for cloud-edge artifacts. It captures
+`terrain-post` and `metadata-bilateral` resolve modes for `surface-up` and
+`high-oblique` views, with `final`, `raw-final`, `cloud-alpha`, and `edge-mask`
+diagnostics plus a secondary half-quality final check.
+
+The far-field handoff script focuses on horizon and grazing-ray artifacts. It
+captures full-resolution `surface-horizon`, `surface-up`, and `high-oblique`
+views with handoff, local-truncation, integrated-horizon, edge, and distance
+regime diagnostics.
 
 Controls:
 
@@ -57,6 +90,8 @@ Controls:
 - The Time panel switches between manual sun direction and local solar time.
 - The Reference panel controls the ground grid, local red/cyan axes, and origin
   marker used for orientation.
+- The Clouds panel controls the shared cloud layer used in final view, including
+  cloud diagnostic views through `--cloud-debug-view` / Debug view.
 - The Night sky panel switches diagnostic layer, human/camera response, Milky
   Way intensity/contrast, light pollution, and procedural variation.
 - Escape: close.

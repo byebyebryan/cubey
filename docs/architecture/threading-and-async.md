@@ -215,14 +215,17 @@ interactive path non-stalling.
 
 Initial implementation: `cubey::CaptureQueue` accepts completed RGBA8 pixel
 buffers and schedules PNG encoding through `cubey::jobs`, returning a
-`CaptureTicket` whose `finish()` call makes the blocking wait explicit.
+`CaptureTicket` whose `finish()` call makes the blocking wait explicit. It also
+creates fixed-dimension `QueuedVideoEncoder` sessions for ordered MP4 frame
+encoding.
 `cubey::ProjectGpuServices` now provides the GPU-side counterpart for RGBA8
 image readback: enqueue a readback ticket, drain the GPU runtime at an explicit
 boundary, then take the completed pixel payload. Headless video capture uses a
 small capture-slot ring with per-slot render targets, readback buffers, and
-fences, then moves CPU H.264 encoding to a worker so frame production does not
-also perform MP4 packet writing inline. PNG capture remains a single-artifact
-blocking path.
+fences, then hands completed frames to the shared queued video encoder so frame
+production does not also perform MP4 packet writing inline. PNG capture remains
+a single-artifact blocking path, but the encoding wait now goes through the
+shared capture queue.
 
 `cubey::UploadQueue` is the first upload-side request queue. It owns submitted
 CPU bytes, returns monotonic `UploadTicket` values, and tracks pending,
@@ -382,10 +385,12 @@ Status: initial pass complete.
 
 Status: initial pass complete.
 
-- Added a CPU-side PNG capture queue for already-completed RGBA8 pixels.
+- Added a CPU-side capture queue for already-completed RGBA8 pixels.
 - Kept GPU readback unchanged while making PNG encoding job-backed and
   ticket-based.
-- Blocking waits now happen through explicit `CaptureTicket::finish()`.
+- Added ordered queued video sessions for fixed-dimension RGBA8 frame streams.
+- Blocking waits now happen through explicit `CaptureTicket::finish()` or
+  `QueuedVideoEncoder::finish()`.
 - Added a CPU-side upload request queue that owns submitted bytes until the GPU
   owner drains them.
 
@@ -457,5 +462,5 @@ Status: threaded default plus inline test mode complete.
 - Should `ProjectRuntimeAdapter` grow into a project host, or should the next
   project keep using the windowed/headless hosts directly?
 - Should GPU capture polling integrate directly with `CaptureQueue`, or remain
-  a separate project-facing ticket API that hands completed pixels to the
-  capture queue?
+  a separate project-facing ticket API that hands completed pixels or frames to
+  the capture queue?

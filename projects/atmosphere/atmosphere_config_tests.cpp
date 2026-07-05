@@ -229,6 +229,124 @@ int main() {
     require_throws([] { static_cast<void>(night_sky_layer_view_from_name("hydrogen")); },
                    "night sky layer parser should reject unknown layers");
 
+    for (const AtmosphereCloudWeatherPreset preset : kAtmosphereCloudWeatherPresets) {
+        require(atmosphere_cloud_weather_preset_from_name(
+                    atmosphere_cloud_weather_preset_name(preset)) == preset,
+                "atmosphere cloud weather preset names should round trip");
+    }
+    require(atmosphere_cloud_weather_preset_from_name("storm") ==
+                AtmosphereCloudWeatherPreset::StormCells,
+            "legacy storm cloud weather preset alias should parse");
+    require(atmosphere_cloud_weather_preset_from_name("inspection") ==
+                AtmosphereCloudWeatherPreset::BrokenCumulus,
+            "inspection cloud weather preset alias should parse");
+    require_throws([] {
+        static_cast<void>(atmosphere_cloud_weather_preset_from_name("planetary-storm"));
+    }, "atmosphere cloud weather preset parser should reject unknown presets");
+
+    for (const CloudLayerDebugView view : kCloudLayerDebugViews) {
+        require(cloud_layer_debug_view_from_name(cloud_layer_debug_view_name(view)) == view,
+                "cloud layer debug view names should round trip");
+    }
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::Final) ==
+                CloudLayerDebugView::RawFinal,
+            "cloud layer debug view should expose raw final after final");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::Lighting) ==
+                CloudLayerDebugView::AmbientLight,
+            "cloud layer debug view should include ambient-light diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::OrbitShellShadow) ==
+                CloudLayerDebugView::OrbitShellFootprint,
+            "cloud layer debug view should include shell footprint diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::OrbitShellMass) ==
+                CloudLayerDebugView::JitterPattern,
+            "cloud layer debug view should include sampling diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::HorizonFilterLod) ==
+                CloudLayerDebugView::HorizonHandoff,
+            "cloud layer debug view should include horizon handoff diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::IntegratedHorizonRadiance) ==
+                CloudLayerDebugView::EdgeMask,
+            "cloud layer debug view should include integrated horizon diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::EdgeMask) ==
+                CloudLayerDebugView::SceneDepthOcclusion,
+            "cloud layer debug view should include edge resolve diagnostics");
+    require(next_cloud_layer_debug_view(CloudLayerDebugView::SceneDepthOcclusion) ==
+                CloudLayerDebugView::Final,
+            "cloud layer debug view should wrap");
+    require(cloud_layer_debug_view_from_name("weather") == CloudLayerDebugView::AuthoredWeather,
+            "cloud weather debug alias should parse");
+    require(cloud_layer_debug_view_from_name("weather-mask") == CloudLayerDebugView::CoverageBias,
+            "cloud weather mask debug alias should parse");
+    require(cloud_layer_debug_view_from_name("orbit-weather") ==
+                CloudLayerDebugView::OrbitCoverage,
+            "cloud orbit weather debug alias should parse");
+    require(cloud_layer_debug_view_from_name("shell-normal") ==
+                CloudLayerDebugView::OrbitShellNormal,
+            "cloud shell normal debug alias should parse");
+    require(cloud_layer_debug_view_from_name("shell-footprint") ==
+                CloudLayerDebugView::OrbitShellFootprint,
+            "cloud shell footprint debug alias should parse");
+    require(cloud_layer_debug_view_from_name("shell-filter") ==
+                CloudLayerDebugView::OrbitShellFilter,
+            "cloud shell filter debug alias should parse");
+    require(cloud_layer_debug_view_from_name("shell-mass") ==
+                CloudLayerDebugView::OrbitShellMass,
+            "cloud shell mass debug alias should parse");
+    require(cloud_layer_debug_view_from_name("jitter") == CloudLayerDebugView::JitterPattern,
+            "cloud jitter debug alias should parse");
+    require(cloud_layer_debug_view_from_name("horizon-lod") ==
+                CloudLayerDebugView::HorizonFilterLod,
+            "cloud horizon LOD debug alias should parse");
+    require(cloud_layer_debug_view_from_name("horizon-gate") ==
+                CloudLayerDebugView::HorizonHandoff,
+            "cloud horizon handoff debug alias should parse");
+    require(cloud_layer_debug_view_from_name("horizon-local-truncation") ==
+                CloudLayerDebugView::LocalTruncation,
+            "cloud local truncation debug alias should parse");
+    require(cloud_layer_debug_view_from_name("horizon-integrated-alpha") ==
+                CloudLayerDebugView::IntegratedHorizonAlpha,
+            "cloud integrated horizon alpha debug alias should parse");
+    require(cloud_layer_debug_view_from_name("horizon-integrated-radiance") ==
+                CloudLayerDebugView::IntegratedHorizonRadiance,
+            "cloud integrated horizon radiance debug alias should parse");
+    require(cloud_layer_debug_view_from_name("depth-mask") ==
+                CloudLayerDebugView::SceneDepthOcclusion,
+            "cloud scene depth debug alias should parse");
+    require_throws([] { static_cast<void>(cloud_layer_debug_view_from_name("humidity")); },
+                   "cloud layer debug view parser should reject unknown views");
+    require(atmosphere_cloud_sampling_mode_from_name("") == CloudLayerSamplingMode::Bayer,
+            "empty cloud sampling mode should default to stable Bayer");
+    require(atmosphere_cloud_sampling_mode_from_name("blue-noise") ==
+                CloudLayerSamplingMode::BlueNoise,
+            "blue-noise cloud sampling mode should parse");
+    require(atmosphere_cloud_view_sample_mode_from_name("") ==
+                CloudLayerViewSampleMode::SingleFrame,
+            "empty cloud view sample mode should default to single-frame");
+    require(atmosphere_cloud_view_sample_mode_from_name("temporal-phased") ==
+                CloudLayerViewSampleMode::TemporalPhased,
+            "temporal phased cloud view sample mode should parse");
+    require(atmosphere_cloud_density_model_from_name("") == CloudLayerDensityModel::Procedural,
+            "empty cloud density model should default to procedural");
+    require(atmosphere_cloud_density_model_from_name("procedural") ==
+                CloudLayerDensityModel::Procedural,
+            "procedural cloud density model should parse");
+    require(atmosphere_cloud_density_model_from_name("ref-density") ==
+                CloudLayerDensityModel::RefDensity,
+            "ref-density cloud density model should parse");
+    require(atmosphere_cloud_density_model_from_name("terrain-ref") ==
+                CloudLayerDensityModel::RefDensity,
+            "legacy terrain-ref cloud density model alias should parse");
+    require(atmosphere_cloud_density_model_from_name("cloud-ref-compatible") ==
+                CloudLayerDensityModel::CloudRefCompatible,
+            "cloud-ref-compatible density model should parse");
+    require(atmosphere_cloud_resolve_mode_from_name("") == CloudLayerResolveMode::TerrainPost,
+            "empty cloud resolve mode should default to terrain post");
+    require(atmosphere_cloud_resolve_mode_from_name("metadata-bilateral") ==
+                CloudLayerResolveMode::MetadataBilateral,
+            "metadata-bilateral cloud resolve mode should parse");
+    require(atmosphere_cloud_resolve_mode_from_name("gaussian") ==
+                CloudLayerResolveMode::TerrainPost,
+            "terrain post cloud resolve alias should parse");
+
     {
         const TimeOfDayConfig defaults;
         require_near(defaults.time_hours, 5.5F, 0.0001F,
@@ -374,6 +492,112 @@ int main() {
                 defaults.moon.moonlight_intensity > 0.0F &&
                 defaults.moon.phase_offset_days > 0.0F && defaults.moon.angular_radius_scale > 0.0F,
             "default atmosphere config should include moon controls");
+    require(defaults.clouds.enabled &&
+                defaults.clouds.weather_preset == AtmosphereCloudWeatherPreset::BrokenCumulus &&
+                defaults.clouds.layer.debug_view == CloudLayerDebugView::Final,
+            "default atmosphere config should include production clouds");
+    require(defaults.clouds.layer.sampling_mode == CloudLayerSamplingMode::Bayer &&
+                !defaults.clouds.layer.temporal_enabled,
+            "default atmosphere clouds should use stable Bayer sampling");
+    require(defaults.clouds.layer.view_steps_override == 0 &&
+                defaults.clouds.layer.view_samples == 1 &&
+                defaults.clouds.layer.view_sample_mode ==
+                    CloudLayerViewSampleMode::SingleFrame,
+            "default atmosphere clouds should use preset steps and one single-frame sample");
+    require(defaults.clouds.layer.distance_mode == CloudLayerDistanceMode::Auto,
+            "default atmosphere clouds should use distance-aware rendering");
+    require(defaults.clouds.layer.density_model == CloudLayerDensityModel::Procedural,
+            "default atmosphere clouds should keep the tuned procedural density model");
+
+    {
+        AtmosphereCloudConfig clouds;
+        apply_atmosphere_cloud_weather_preset(clouds, AtmosphereCloudWeatherPreset::StormCells);
+        require(clouds.weather_preset == AtmosphereCloudWeatherPreset::StormCells,
+                "atmosphere cloud weather preset should preserve selected preset");
+        require(clouds.layer.cloud_style == CloudLayerCloudStyle::StormCells,
+                "atmosphere cloud weather preset should select cloud style");
+        require_near(clouds.layer.coverage, 0.64F, 0.001F,
+                     "atmosphere cloud weather preset should apply coverage");
+        require_near(clouds.layer.shape_domain_km, 525.0F, 0.001F,
+                     "atmosphere cloud weather preset should apply shape domain");
+        require_near(clouds.wind_speed_mps, 650.0F, 0.001F,
+                     "atmosphere cloud weather preset should apply wind");
+    }
+
+    {
+        cubey::RunConfig run_config{};
+        run_config.clouds.enabled = 0;
+        run_config.clouds.debug_view = "orbit-weather";
+        run_config.clouds.weather_preset = "storm";
+        run_config.clouds.quality = "quarter";
+        run_config.clouds.view_steps = 64;
+        run_config.clouds.view_samples = 2;
+        run_config.clouds.view_sample_mode = "temporal-phased";
+        run_config.clouds.sampling_mode = "off";
+        run_config.clouds.distance_mode = "orbit-shell";
+        run_config.clouds.orbit_representation = "volume";
+        run_config.clouds.density_model = "procedural";
+        run_config.clouds.resolve_mode = "metadata-bilateral";
+        run_config.clouds.planet_radius_m = 700000.0F;
+        run_config.clouds.coverage = 0.25F;
+        run_config.clouds.shape_domain_km = 840.0F;
+        run_config.clouds.footprint_filter_strength = 1.35F;
+        run_config.clouds.edge_softness = 1.20F;
+        run_config.clouds.edge_detail_fade = 0.55F;
+        run_config.clouds.edge_resolve_strength = 0.80F;
+        run_config.clouds.wind_speed_mps = 42.0F;
+        run_config.clouds.temporal = 0;
+        run_config.clouds.local_volume = 0;
+        run_config.clouds.horizon_layer = 1;
+        const AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
+        require(!config.clouds.enabled, "atmosphere run config should disable clouds");
+        require(config.clouds.weather_preset == AtmosphereCloudWeatherPreset::StormCells,
+                "atmosphere run config should map cloud weather preset");
+        require(config.clouds.layer.debug_view == CloudLayerDebugView::OrbitCoverage,
+                "atmosphere run config should map cloud debug view");
+        require(config.clouds.layer.quality == CloudLayerQuality::Quarter,
+                "atmosphere run config should map cloud quality");
+        require(config.clouds.layer.view_steps_override == 64,
+                "atmosphere run config should map cloud view steps");
+        require(config.clouds.layer.view_samples == 2,
+                "atmosphere run config should map cloud view samples");
+        require(config.clouds.layer.view_sample_mode ==
+                    CloudLayerViewSampleMode::TemporalPhased,
+                "atmosphere run config should map cloud view sample mode");
+        require(config.clouds.layer.sampling_mode == CloudLayerSamplingMode::Off,
+                "atmosphere run config should map cloud sampling");
+        require(config.clouds.layer.distance_mode == CloudLayerDistanceMode::OrbitShell,
+                "atmosphere run config should map cloud distance mode");
+        require(config.clouds.layer.orbit_representation ==
+                    CloudLayerOrbitRepresentation::VolumeRaymarch,
+                "atmosphere run config should map cloud orbit representation");
+        require(config.clouds.layer.density_model == CloudLayerDensityModel::Procedural,
+                "atmosphere run config should map cloud density model");
+        require(config.clouds.layer.resolve_mode == CloudLayerResolveMode::MetadataBilateral,
+                "atmosphere run config should map cloud resolve mode");
+        require_near(config.clouds.layer.planet_radius_m, 700000.0F, 0.001F,
+                     "atmosphere run config should map cloud planet radius");
+        require_near(config.clouds.layer.coverage, 0.25F, 0.001F,
+                     "atmosphere run config explicit cloud coverage should override preset");
+        require_near(config.clouds.layer.shape_domain_km, 840.0F, 0.001F,
+                     "atmosphere run config should map cloud shape domain");
+        require_near(config.clouds.layer.footprint_filter_strength, 1.35F, 0.001F,
+                     "atmosphere run config should map cloud footprint filter strength");
+        require_near(config.clouds.layer.edge_softness, 1.20F, 0.001F,
+                     "atmosphere run config should map cloud edge softness");
+        require_near(config.clouds.layer.edge_detail_fade, 0.55F, 0.001F,
+                     "atmosphere run config should map cloud edge detail fade");
+        require_near(config.clouds.layer.edge_resolve_strength, 0.80F, 0.001F,
+                     "atmosphere run config should map cloud edge resolve strength");
+        require_near(config.clouds.wind_speed_mps, 42.0F, 0.001F,
+                     "atmosphere run config explicit cloud wind should override preset");
+        require(!config.clouds.layer.temporal_enabled,
+                "atmosphere run config should map cloud temporal flag");
+        require(!config.clouds.layer.local_volume_enabled,
+                "atmosphere run config should map local volume flag");
+        require(config.clouds.layer.horizon_layer_enabled,
+                "atmosphere run config should map horizon layer flag");
+    }
 
     {
         require(lunar_surface_map_mip_count(kLunarSurfaceMapWidth, kLunarSurfaceMapHeight) == 11U,
@@ -770,6 +994,12 @@ int main() {
                        "atmosphere config should reject invalid moon controls");
     }
     {
+        AtmosphereConfig invalid = defaults;
+        invalid.camera_pitch_offset_degrees = 95.0F;
+        require_throws([&invalid] { validate_atmosphere_config(invalid); },
+                       "atmosphere config should reject invalid camera view offsets");
+    }
+    {
         cubey::RunConfig run_config;
         run_config.atmosphere.preset = "sunset";
         run_config.debug_view = "moon";
@@ -778,6 +1008,8 @@ int main() {
         run_config.atmosphere.sun_elevation_degrees = 6.0F;
         run_config.atmosphere.sun_azimuth_degrees = 33.0F;
         run_config.atmosphere.camera_altitude_km = 2.0F;
+        run_config.atmosphere.camera_yaw_offset_degrees = 18.0F;
+        run_config.atmosphere.camera_pitch_offset_degrees = -24.0F;
         run_config.atmosphere.mie_scale = 2.25F;
         run_config.atmosphere.twilight_strength = 1.50F;
         run_config.atmosphere.twilight_horizon_warmth = 0.80F;
@@ -804,6 +1036,9 @@ int main() {
         require(config.sun_elevation_degrees == 6.0F && config.sun_azimuth_degrees == 33.0F &&
                     config.camera_altitude_km == 2.0F && config.mie_density_scale == 2.25F,
                 "run config atmosphere overrides should win over preset defaults");
+        require(config.camera_yaw_offset_degrees == 18.0F &&
+                    config.camera_pitch_offset_degrees == -24.0F,
+                "run config atmosphere camera view offsets should map");
         require(config.night_sky.twilight_strength == 1.50F &&
                     config.night_sky.twilight_horizon_warmth == 0.80F &&
                     config.night_sky.star_intensity == 1.70F &&
@@ -877,6 +1112,8 @@ int main() {
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere.frag");
     const std::string celestial_shader_source =
         read_text_file(repo_root / "shaders/cubey/sky/celestial_body.frag");
+    const std::string cloud_march_source =
+        read_text_file(repo_root / "shaders/cubey/cloud/cloud_march.comp");
     const std::string lunar_surface_source =
         read_text_file(repo_root / "src/cubey/render/lunar_surface_map.cpp");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
@@ -982,6 +1219,14 @@ int main() {
                      "atmosphere app should use the shared HDR scene color descriptor helper");
     require_contains(app_source, "forward_pbr_post.frag.spv",
                      "atmosphere app should load the shared PBR post shader");
+    require_contains(app_source, ".external_background = true",
+                     "atmosphere clouds should declare external background composition");
+    require_contains(cloud_march_source, "float cloud_shape_domain_m()",
+                     "local cloud detail projection should use explicit domain scale");
+    require_contains(cloud_march_source, "params.density_options.y * 1000.0",
+                     "local cloud domain scale should come from cloud uniforms");
+    require_contains(cloud_march_source, "!cloud_external_background_enabled()",
+                     "external-background clouds should not force the standalone horizon assist");
     require_contains(cmake_source, "forward_pbr_post.frag",
                      "atmosphere build should compile the shared PBR post fragment shader");
     require_contains(cmake_source, "sky/celestial_body.vert",

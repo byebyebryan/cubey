@@ -169,11 +169,12 @@ Current checkpoint:
 - Reusable `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` provide
   the first CPU job facade behind Cubey APIs without exposing a third-party
   executor.
-- Reusable `cubey::CaptureQueue` and `CaptureTicket` provide the first
-  async-shaped PNG encoding path over completed RGBA pixel buffers.
+- Reusable `cubey::CaptureQueue`, `CaptureTicket`, and `QueuedVideoEncoder`
+  provide async-shaped PNG encoding and ordered MP4 frame encoding over
+  completed RGBA pixel buffers.
 - Reusable `cubey::VideoEncoder` provides optional libav/FFmpeg-backed H.264
-  MP4 output for headless captures when the system development packages are
-  available.
+  MP4 output for queued headless capture sessions when the system development
+  packages are available.
 - Reusable `cubey::UploadQueue`, `UploadTicket`, and `QueuedUpload` provide the
   first CPU-owned upload request queue for GPU-owner draining, with pending,
   completed, and failed ticket status.
@@ -479,10 +480,11 @@ building a full threaded renderer too early.
 
 - Added a small `cubey::jobs` facade around a standard-library worker executor.
 - Keep third-party task/executor types out of public Cubey APIs.
-- Added job-backed PNG capture encoding as the first queued work consumer.
+- Added job-backed PNG capture encoding as the first queued work consumer, then
+  extended the same capture queue with ordered video encoding sessions.
 - Added optional headless MP4 capture: deterministic capture-frame timing,
   `--capture video`, `--fps`, default `cubey-output.mp4`, and CPU video encoding
-  on a worker behind the headless host.
+  on a shared queued encoder behind the headless host.
 - Added CPU-owned upload requests that can be drained by the GPU owner.
 - Added GPU submission tickets and deferred destruction helpers for future
   in-flight GPU lifetime tracking.
@@ -537,16 +539,18 @@ Project checkpoints:
   simulation compute followed by fullscreen rendering; solver-internal barriers
   remain project-owned, while the compute-to-render boundary uses graph-owned
   buffer barriers and the backbuffer acquire/release path.
-- `projects/cloud` is the active standalone production cloud/weather project.
-  It starts from `cloud_ref`'s texture-backed coherent density path with
-  generated 3D base/detail noise, a generated 2D weather map, a spherical-shell
-  direct march, cloud product/composite passes, and diagnostics for raw density,
-  transmittance, lighting, distance, and steps. `projects/clouds_legacy` remains
-  the frozen planet-aware pressure project for surface/high/orbit integration
+- `projects/atmosphere` now hosts the active production cloud/weather layer.
+  The shared `CloudLayerRuntime` keeps the texture-backed coherent density path,
+  generated 3D base/detail noise, generated 2D weather map, spherical-shell
+  direct march, cloud product/composite passes, nested controls, and diagnostics
+  for raw density, transmittance, lighting, distance, and steps. `clouds_legacy`
+  remains the frozen planet-aware pressure project for surface/high/orbit
   lessons, while `projects/cloud_ref_2` remains the cached-sky architecture
-  reference. Cloud outputs should not be integrated into ocean or planet until
-  the active project shows credible raw cloud masses without relying on cache,
-  temporal reconstruction, or final blur.
+  reference. Planet now has an opt-in shared-cloud composition path for
+  integration pressure. Production cloud shadows, reflections, and clouded
+  environment outputs should wait until the atmosphere-hosted layer shows stable
+  high-altitude/horizon behavior without relying on cache, temporal
+  reconstruction, or final blur.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer

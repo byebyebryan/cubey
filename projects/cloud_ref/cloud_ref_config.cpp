@@ -36,7 +36,7 @@ struct CloudsWeatherPresetSettings {
                 .weather_scale_km = 260.0F,
                 .wind_speed_mps = 260.0F,
                 .bottom_altitude_m = 5000.0F,
-                .top_altitude_m = 17000.0F,
+                .top_altitude_m = 14000.0F,
                 .cloud_style = CloudsCloudStyle::FairWeather};
     case CloudsWeatherPreset::BrokenCumulus:
         return {.coverage = 0.45F,
@@ -44,7 +44,7 @@ struct CloudsWeatherPresetSettings {
                 .weather_scale_km = 210.0F,
                 .wind_speed_mps = 450.0F,
                 .bottom_altitude_m = 5000.0F,
-                .top_altitude_m = 22000.0F,
+                .top_altitude_m = 16000.0F,
                 .cloud_style = CloudsCloudStyle::BrokenCumulus};
     case CloudsWeatherPreset::OvercastStratus:
         return {.coverage = 0.72F,
@@ -95,6 +95,9 @@ CloudsCameraMode clouds_camera_mode_from_string(std::string_view value) {
     if (value == "surface-up") {
         return CloudsCameraMode::SurfaceUp;
     }
+    if (value == "surface-sun") {
+        return CloudsCameraMode::SurfaceSun;
+    }
     if (value == "high" || value == "high-top") {
         return CloudsCameraMode::High;
     }
@@ -116,6 +119,8 @@ const char* clouds_camera_mode_name(CloudsCameraMode mode) {
         return "surface";
     case CloudsCameraMode::SurfaceUp:
         return "surface-up";
+    case CloudsCameraMode::SurfaceSun:
+        return "surface-sun";
     case CloudsCameraMode::High:
         return "high";
     case CloudsCameraMode::HighOblique:
@@ -238,6 +243,12 @@ CloudsDebugView clouds_debug_view_from_string(std::string_view value) {
     if (value == "detail-density") {
         return CloudsDebugView::DetailDensity;
     }
+    if (value == "view-optical-depth") {
+        return CloudsDebugView::ViewOpticalDepth;
+    }
+    if (value == "light-optical-depth") {
+        return CloudsDebugView::LightOpticalDepth;
+    }
     throw std::runtime_error("unknown cloud debug view: " + std::string(value));
 }
 
@@ -275,6 +286,10 @@ const char* clouds_debug_view_name(CloudsDebugView view) {
         return "base-density";
     case CloudsDebugView::DetailDensity:
         return "detail-density";
+    case CloudsDebugView::ViewOpticalDepth:
+        return "view-optical-depth";
+    case CloudsDebugView::LightOpticalDepth:
+        return "light-optical-depth";
     }
     return "final";
 }
@@ -285,6 +300,27 @@ CloudsDebugView next_clouds_debug_view(CloudsDebugView view) {
         return kCloudsDebugViews.front();
     }
     return *std::next(it);
+}
+
+CloudsResolveMode clouds_resolve_mode_from_string(std::string_view value) {
+    if (value.empty() || value == "terrain-post" || value == "terrain" ||
+        value == "gaussian") {
+        return CloudsResolveMode::TerrainPost;
+    }
+    if (value == "metadata-bilateral" || value == "bilateral" || value == "metadata") {
+        return CloudsResolveMode::MetadataBilateral;
+    }
+    throw std::runtime_error("unknown cloud resolve mode: " + std::string(value));
+}
+
+const char* clouds_resolve_mode_name(CloudsResolveMode mode) {
+    switch (mode) {
+    case CloudsResolveMode::TerrainPost:
+        return "terrain-post";
+    case CloudsResolveMode::MetadataBilateral:
+        return "metadata-bilateral";
+    }
+    return "terrain-post";
 }
 
 CloudsQualityBudget clouds_quality_budget(CloudsQuality quality) {
@@ -304,6 +340,8 @@ float clouds_default_camera_altitude_m(CloudsCameraMode mode) {
     case CloudsCameraMode::Surface:
         return 800.0F;
     case CloudsCameraMode::SurfaceUp:
+        return 800.0F;
+    case CloudsCameraMode::SurfaceSun:
         return 800.0F;
     case CloudsCameraMode::High:
         return 12000.0F;
@@ -327,6 +365,12 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     bool time_hours_overridden = false;
     if (!run_config.clouds.quality.empty()) {
         config.quality = clouds_quality_from_string(run_config.clouds.quality);
+    }
+    if (run_config.clouds.view_steps > 0) {
+        config.view_steps_override = static_cast<std::int32_t>(run_config.clouds.view_steps);
+    }
+    if (run_config.clouds.view_samples > 0) {
+        config.view_samples = static_cast<std::int32_t>(run_config.clouds.view_samples);
     }
     if (!run_config.clouds.weather_preset.empty()) {
         config.weather_preset =
@@ -377,6 +421,40 @@ CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
     }
     if (run_config_float_is_set(run_config.clouds.detail_erosion)) {
         config.detail_erosion = run_config.clouds.detail_erosion;
+    }
+    if (run_config_float_is_set(run_config.clouds.ambient_strength)) {
+        config.ambient_strength = run_config.clouds.ambient_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.direct_strength)) {
+        config.direct_strength = run_config.clouds.direct_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.phase_strength)) {
+        config.phase_strength = run_config.clouds.phase_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.powder_strength)) {
+        config.powder_strength = run_config.clouds.powder_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.final_contrast)) {
+        config.final_contrast = run_config.clouds.final_contrast;
+    }
+    if (run_config_float_is_set(run_config.clouds.final_saturation)) {
+        config.final_saturation = run_config.clouds.final_saturation;
+    }
+    if (run_config_float_is_set(run_config.clouds.horizon_glow_strength)) {
+        config.horizon_glow_strength = run_config.clouds.horizon_glow_strength;
+    }
+    if (run_config_float_is_set(run_config.clouds.sun_glare_strength)) {
+        config.sun_glare_strength = run_config.clouds.sun_glare_strength;
+    }
+    if (!run_config.clouds.resolve_mode.empty()) {
+        config.resolve_mode = clouds_resolve_mode_from_string(run_config.clouds.resolve_mode);
+    }
+    if (run_config_float_is_set(run_config.clouds.resolve_strength)) {
+        config.post_blur_strength = run_config.clouds.resolve_strength;
+        config.post_blur_enabled = config.post_blur_strength > 0.0F;
+    }
+    if (run_config_float_is_set(run_config.clouds.resolve_radius_px)) {
+        config.post_blur_radius_px = run_config.clouds.resolve_radius_px;
     }
     if (run_config.clouds.temporal >= 0) {
         config.temporal_enabled = run_config.clouds.temporal != 0;
@@ -491,6 +569,38 @@ void validate_clouds_config(const CloudsConfig& config) {
         config.detail_erosion > 1.0F) {
         throw std::runtime_error("cloud detail erosion must be finite and in [0, 1]");
     }
+    if (!std::isfinite(config.ambient_strength) || config.ambient_strength < 0.0F ||
+        config.ambient_strength > 3.0F) {
+        throw std::runtime_error("cloud ambient strength must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.direct_strength) || config.direct_strength < 0.0F ||
+        config.direct_strength > 3.0F) {
+        throw std::runtime_error("cloud direct strength must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.phase_strength) || config.phase_strength < 0.0F ||
+        config.phase_strength > 3.0F) {
+        throw std::runtime_error("cloud phase strength must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.powder_strength) || config.powder_strength < 0.0F ||
+        config.powder_strength > 1.0F) {
+        throw std::runtime_error("cloud powder strength must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.final_contrast) || config.final_contrast < 0.0F ||
+        config.final_contrast > 3.0F) {
+        throw std::runtime_error("cloud final contrast must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.final_saturation) || config.final_saturation < 0.0F ||
+        config.final_saturation > 3.0F) {
+        throw std::runtime_error("cloud final saturation must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.horizon_glow_strength) ||
+        config.horizon_glow_strength < 0.0F || config.horizon_glow_strength > 3.0F) {
+        throw std::runtime_error("cloud horizon glow strength must be finite and in [0, 3]");
+    }
+    if (!std::isfinite(config.sun_glare_strength) || config.sun_glare_strength < 0.0F ||
+        config.sun_glare_strength > 3.0F) {
+        throw std::runtime_error("cloud sun glare strength must be finite and in [0, 3]");
+    }
     if (!std::isfinite(config.crispiness) || config.crispiness <= 0.0F) {
         throw std::runtime_error("cloud crispiness must be finite and positive");
     }
@@ -499,6 +609,20 @@ void validate_clouds_config(const CloudsConfig& config) {
     }
     if (!finite_nonnegative(config.absorption)) {
         throw std::runtime_error("cloud absorption must be finite and nonnegative");
+    }
+    if (config.view_steps_override < 0 || config.view_steps_override > 128) {
+        throw std::runtime_error("cloud view steps override must be in [0, 128]");
+    }
+    if (config.view_samples != 1 && config.view_samples != 2 && config.view_samples != 4) {
+        throw std::runtime_error("cloud view samples must be 1, 2, or 4");
+    }
+    if (!std::isfinite(config.post_blur_strength) || config.post_blur_strength < 0.0F ||
+        config.post_blur_strength > 1.0F) {
+        throw std::runtime_error("cloud post blur strength must be finite and in [0, 1]");
+    }
+    if (!std::isfinite(config.post_blur_radius_px) || config.post_blur_radius_px < 0.0F ||
+        config.post_blur_radius_px > 8.0F) {
+        throw std::runtime_error("cloud post blur radius must be finite and in [0, 8]");
     }
 }
 

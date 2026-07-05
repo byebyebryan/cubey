@@ -23,6 +23,9 @@ Detailed current foundation notes live under
 - [Renderer foundation](architecture/renderer-foundation.md): `cubey::render`
   contracts that sit above Vulkan without introducing scene, material, or
   render-graph policy.
+- [Reference-first rendering feature workflow](architecture/rendering-feature-workflow.md):
+  start complex visual features from known-good references, then integrate and
+  extend once a captured baseline exists.
 - [Render graph direction](architecture/render-graph.md): current and future
   pass/resource graph vocabulary, execution boundary, adoption triggers, and
   deferred complexity.
@@ -51,8 +54,9 @@ Detailed current foundation notes live under
   product contract, and first vertical slice.
 - [Ocean adjacent systems](architecture/ocean-adjacent-systems.md): atmosphere,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
-- [Cloud rendering](architecture/cloud-rendering.md): production cloud renderer
-  direction from the legacy, TerrainEngine, and Godot-v2 reference passes.
+- [Cloud rendering](architecture/cloud-rendering.md): production cloud layer
+  direction hosted by atmosphere from the legacy, TerrainEngine, and Godot-v2
+  reference passes.
 - [glTF assets and PBR](architecture/gltf-assets.md): glTF import, PBR material
   contract, animation/deformation, texture upload, HDR environments, and viewer
   boundaries.
@@ -67,7 +71,6 @@ Detailed current foundation notes live under
 Project-specific design stays beside the project:
 
 - [Atmosphere](../projects/atmosphere/README.md)
-- [Cloud](../projects/cloud/README.md)
 - [Cloud Ref](../projects/cloud_ref/README.md)
 - [Cloud Ref 2](../projects/cloud_ref_2/README.md)
 - [Clouds Legacy](../projects/clouds_legacy/README.md)

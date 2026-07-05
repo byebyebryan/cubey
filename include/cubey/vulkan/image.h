@@ -137,7 +137,7 @@ void copy_image_to_buffer(GpuRuntime& gpu, VkImage source, VkBuffer destination,
 
 class DepthAttachment {
   public:
-    DepthAttachment(const Device& device, VkExtent2D extent);
+    DepthAttachment(const Device& device, VkExtent2D extent, bool sampled = false);
     ~DepthAttachment() = default;
 
     DepthAttachment(const DepthAttachment&) = delete;

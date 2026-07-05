@@ -29,6 +29,9 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref::clouds_camera_mode_from_string("surface-up") ==
                 cubey::projects::cloud_ref::CloudsCameraMode::SurfaceUp,
             "surface-up camera mode should parse");
+    require(cubey::projects::cloud_ref::clouds_camera_mode_from_string("surface-sun") ==
+                cubey::projects::cloud_ref::CloudsCameraMode::SurfaceSun,
+            "surface-sun camera mode should parse");
     require(cubey::projects::cloud_ref::clouds_camera_mode_from_string("high-oblique") ==
                 cubey::projects::cloud_ref::CloudsCameraMode::HighOblique,
             "high-oblique camera mode should parse");
@@ -38,6 +41,19 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref::clouds_quality_from_string("full") ==
                 cubey::projects::cloud_ref::CloudsQuality::Full,
             "full quality should parse");
+    require(cubey::projects::cloud_ref::clouds_resolve_mode_from_string("") ==
+                cubey::projects::cloud_ref::CloudsResolveMode::TerrainPost,
+            "empty cloud resolve mode should use terrain post");
+    require(cubey::projects::cloud_ref::clouds_resolve_mode_from_string("gaussian") ==
+                cubey::projects::cloud_ref::CloudsResolveMode::TerrainPost,
+            "gaussian alias should use terrain post resolve");
+    require(cubey::projects::cloud_ref::clouds_resolve_mode_from_string("metadata-bilateral") ==
+                cubey::projects::cloud_ref::CloudsResolveMode::MetadataBilateral,
+            "metadata-bilateral resolve mode should parse");
+    require(cubey::projects::cloud_ref::clouds_resolve_mode_name(
+                cubey::projects::cloud_ref::CloudsResolveMode::MetadataBilateral) ==
+                std::string_view("metadata-bilateral"),
+            "cloud resolve mode should report canonical spelling");
     require(cubey::projects::cloud_ref::clouds_weather_preset_from_string("storm-cells") ==
                 cubey::projects::cloud_ref::CloudsWeatherPreset::StormCells,
             "storm-cells weather preset should parse");
@@ -78,6 +94,10 @@ void test_names_and_next_debug_view() {
             "cloud debug view should include base-density diagnostics");
     require(cubey::projects::cloud_ref::next_clouds_debug_view(
                 cubey::projects::cloud_ref::CloudsDebugView::DetailDensity) ==
+                cubey::projects::cloud_ref::CloudsDebugView::ViewOpticalDepth,
+            "cloud debug view should include view optical depth");
+    require(cubey::projects::cloud_ref::next_clouds_debug_view(
+                cubey::projects::cloud_ref::CloudsDebugView::LightOpticalDepth) ==
                 cubey::projects::cloud_ref::CloudsDebugView::Final,
             "cloud debug view should wrap");
     require(cubey::projects::cloud_ref::clouds_debug_view_from_string("cloud-alpha") ==
@@ -104,6 +124,12 @@ void test_names_and_next_debug_view() {
     require(cubey::projects::cloud_ref::clouds_debug_view_from_string("detail-density") ==
                 cubey::projects::cloud_ref::CloudsDebugView::DetailDensity,
             "cloud detail-density debug view should parse");
+    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("view-optical-depth") ==
+                cubey::projects::cloud_ref::CloudsDebugView::ViewOpticalDepth,
+            "cloud view optical depth debug view should parse");
+    require(cubey::projects::cloud_ref::clouds_debug_view_from_string("light-optical-depth") ==
+                cubey::projects::cloud_ref::CloudsDebugView::LightOpticalDepth,
+            "cloud light optical depth debug view should parse");
 }
 
 void test_run_config_mapping() {
@@ -111,6 +137,8 @@ void test_run_config_mapping() {
     run_config.debug_view = "density";
     run_config.clouds.camera_mode = "orbit";
     run_config.clouds.quality = "quarter";
+    run_config.clouds.view_steps = 96;
+    run_config.clouds.view_samples = 4;
     run_config.clouds.weather_preset = "storm";
     run_config.clouds.planet_radius_m = 1000000.0F;
     run_config.clouds.bottom_altitude_m = 2000.0F;
@@ -125,6 +153,17 @@ void test_run_config_mapping() {
     run_config.clouds.weather_cells = 0.5F;
     run_config.clouds.weather_streaks = 0.75F;
     run_config.clouds.detail_erosion = 0.35F;
+    run_config.clouds.ambient_strength = 0.7F;
+    run_config.clouds.direct_strength = 1.4F;
+    run_config.clouds.phase_strength = 0.9F;
+    run_config.clouds.powder_strength = 0.35F;
+    run_config.clouds.final_contrast = 1.2F;
+    run_config.clouds.final_saturation = 1.1F;
+    run_config.clouds.horizon_glow_strength = 0.6F;
+    run_config.clouds.sun_glare_strength = 0.8F;
+    run_config.clouds.resolve_mode = "metadata-bilateral";
+    run_config.clouds.resolve_strength = 0.65F;
+    run_config.clouds.resolve_radius_px = 4.0F;
     run_config.clouds.temporal = 0;
     run_config.clouds.local_volume = 0;
     run_config.clouds.horizon_layer = 1;
@@ -139,6 +178,8 @@ void test_run_config_mapping() {
             "cloud camera mode should map from run config");
     require(config.quality == cubey::projects::cloud_ref::CloudsQuality::Quarter,
             "cloud quality should map from run config");
+    require(config.view_steps_override == 96, "cloud view steps should map from run config");
+    require(config.view_samples == 4, "cloud view samples should map from run config");
     require(config.weather_preset == cubey::projects::cloud_ref::CloudsWeatherPreset::StormCells,
             "cloud weather preset should map from run config");
     require(config.cloud_style == cubey::projects::cloud_ref::CloudsCloudStyle::StormCells,
@@ -163,6 +204,30 @@ void test_run_config_mapping() {
                  "cloud weather streaks should map");
     require_near(config.detail_erosion, 0.35F, 0.001F,
                  "cloud detail erosion should map");
+    require_near(config.ambient_strength, 0.7F, 0.001F,
+                 "cloud ambient strength should map");
+    require_near(config.direct_strength, 1.4F, 0.001F,
+                 "cloud direct strength should map");
+    require_near(config.phase_strength, 0.9F, 0.001F,
+                 "cloud phase strength should map");
+    require_near(config.powder_strength, 0.35F, 0.001F,
+                 "cloud powder strength should map");
+    require_near(config.final_contrast, 1.2F, 0.001F,
+                 "cloud final contrast should map");
+    require_near(config.final_saturation, 1.1F, 0.001F,
+                 "cloud final saturation should map");
+    require_near(config.horizon_glow_strength, 0.6F, 0.001F,
+                 "cloud horizon glow strength should map");
+    require_near(config.sun_glare_strength, 0.8F, 0.001F,
+                 "cloud sun glare strength should map");
+    require(config.resolve_mode ==
+                cubey::projects::cloud_ref::CloudsResolveMode::MetadataBilateral,
+            "cloud resolve mode should map from run config");
+    require(config.post_blur_enabled, "cloud resolve strength should keep post blur enabled");
+    require_near(config.post_blur_strength, 0.65F, 0.001F,
+                 "cloud resolve strength should map to post blur strength");
+    require_near(config.post_blur_radius_px, 4.0F, 0.001F,
+                 "cloud resolve radius should map to post blur radius");
     require(!config.temporal_enabled, "cloud temporal option should map");
     require(!config.local_volume_enabled, "cloud local volume option should map");
     require(config.horizon_layer_enabled, "cloud horizon layer option should map");
@@ -234,6 +299,10 @@ void test_config_descriptors() {
     cubey::RunConfig config{};
     cubey::set_run_config_option_from_string(config, "clouds.camera_mode", "high");
     cubey::set_run_config_option_from_string(config, "clouds.quality", "full");
+    cubey::set_run_config_option_from_string(config, "clouds.view_steps", "96");
+    cubey::set_run_config_option_from_string(config, "clouds.view_samples", "2");
+    cubey::set_run_config_option_from_string(config, "clouds.view_sample_mode",
+                                             "temporal-phased");
     cubey::set_run_config_option_from_string(config, "clouds.weather_preset", "storm");
     cubey::set_run_config_option_from_string(config, "clouds.coverage", "0.44");
     cubey::set_run_config_option_from_string(config, "clouds.wind_speed_mps", "22");
@@ -243,11 +312,27 @@ void test_config_descriptors() {
     cubey::set_run_config_option_from_string(config, "clouds.weather_cells", "0.4");
     cubey::set_run_config_option_from_string(config, "clouds.weather_streaks", "0.6");
     cubey::set_run_config_option_from_string(config, "clouds.detail_erosion", "0.5");
+    cubey::set_run_config_option_from_string(config, "clouds.ambient_strength", "0.7");
+    cubey::set_run_config_option_from_string(config, "clouds.direct_strength", "1.4");
+    cubey::set_run_config_option_from_string(config, "clouds.phase_strength", "0.9");
+    cubey::set_run_config_option_from_string(config, "clouds.powder_strength", "0.35");
+    cubey::set_run_config_option_from_string(config, "clouds.final_contrast", "1.2");
+    cubey::set_run_config_option_from_string(config, "clouds.final_saturation", "1.1");
+    cubey::set_run_config_option_from_string(config, "clouds.horizon_glow_strength", "0.6");
+    cubey::set_run_config_option_from_string(config, "clouds.sun_glare_strength", "0.8");
+    cubey::set_run_config_option_from_string(config, "clouds.resolve_mode",
+                                             "metadata-bilateral");
+    cubey::set_run_config_option_from_string(config, "clouds.resolve_strength", "0.25");
+    cubey::set_run_config_option_from_string(config, "clouds.resolve_radius_px", "3.5");
     cubey::set_run_config_option_from_string(config, "clouds.temporal", "false");
     cubey::set_run_config_option_from_string(config, "clouds.local_volume", "false");
     cubey::set_run_config_option_from_string(config, "clouds.horizon_layer", "true");
     require(config.clouds.camera_mode == "high", "cloud camera mode descriptor should set");
     require(config.clouds.quality == "full", "cloud quality descriptor should set");
+    require(config.clouds.view_steps == 96, "cloud view steps descriptor should set");
+    require(config.clouds.view_samples == 2, "cloud view samples descriptor should set");
+    require(config.clouds.view_sample_mode == "temporal-phased",
+            "cloud view sample mode descriptor should set");
     require(config.clouds.weather_preset == "storm",
             "cloud weather preset descriptor should set");
     require_near(config.clouds.coverage, 0.44F, 0.001F,
@@ -266,6 +351,28 @@ void test_config_descriptors() {
                  "cloud weather streaks descriptor should set");
     require_near(config.clouds.detail_erosion, 0.5F, 0.001F,
                  "cloud detail erosion descriptor should set");
+    require_near(config.clouds.ambient_strength, 0.7F, 0.001F,
+                 "cloud ambient strength descriptor should set");
+    require_near(config.clouds.direct_strength, 1.4F, 0.001F,
+                 "cloud direct strength descriptor should set");
+    require_near(config.clouds.phase_strength, 0.9F, 0.001F,
+                 "cloud phase strength descriptor should set");
+    require_near(config.clouds.powder_strength, 0.35F, 0.001F,
+                 "cloud powder strength descriptor should set");
+    require_near(config.clouds.final_contrast, 1.2F, 0.001F,
+                 "cloud final contrast descriptor should set");
+    require_near(config.clouds.final_saturation, 1.1F, 0.001F,
+                 "cloud final saturation descriptor should set");
+    require_near(config.clouds.horizon_glow_strength, 0.6F, 0.001F,
+                 "cloud horizon glow strength descriptor should set");
+    require_near(config.clouds.sun_glare_strength, 0.8F, 0.001F,
+                 "cloud sun glare strength descriptor should set");
+    require(config.clouds.resolve_mode == "metadata-bilateral",
+            "cloud resolve mode descriptor should set");
+    require_near(config.clouds.resolve_strength, 0.25F, 0.001F,
+                 "cloud resolve strength descriptor should set");
+    require_near(config.clouds.resolve_radius_px, 3.5F, 0.001F,
+                 "cloud resolve radius descriptor should set");
     require(config.clouds.temporal == 0, "cloud temporal descriptor should set");
     require(config.clouds.local_volume == 0, "cloud local volume descriptor should set");
     require(config.clouds.horizon_layer == 1, "cloud horizon layer descriptor should set");

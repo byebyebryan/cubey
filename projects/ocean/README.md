@@ -41,6 +41,7 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view energy-lod
 ./build/dev/projects/ocean/ocean --debug-view foam-filtered
 ./build/dev/projects/ocean/ocean --debug-view far-field
+./build/dev/projects/ocean/ocean --debug-view cloud-shadow
 ./build/dev/projects/ocean/ocean --debug-view sky-radiance
 ./build/dev/projects/ocean/ocean --debug-view reflection
 ./build/dev/projects/ocean/ocean --debug-view direct-light
@@ -84,6 +85,13 @@ generated lunar and night-sky atlas path. A diagnostic terrain-ocean field
 texture is bound for terrain depth/shore/slope debug views; enabling
 `--ocean-terrain-fields` only proves a small shoreline foam hook and is not yet
 full bathymetry, seafloor visibility, or surf-zone rendering.
+
+Cloud integration is intentionally limited to lighting diagnostics for now.
+`cloud-shadow` shows a procedural direct-light attenuation factor packed through
+the shared `cubey::render::CloudLayerShadowProduct` shape, and the Shading panel
+exposes cloud-shadow strength, scale, and drift. Ocean does not raymarch clouds,
+sample a real cloud shadow texture, or use clouded reflection/environment
+products yet.
 
 Cascades are now treated as regular slots. The default `Core` preset enables
 only C0 and C1, which are the reference-derived wave pair carrying the current

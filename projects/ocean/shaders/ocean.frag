@@ -109,6 +109,7 @@ const uint OCEAN_VIEW_FOOTPRINT = 22u;
 const uint OCEAN_VIEW_ENERGY_LOD = 23u;
 const uint OCEAN_VIEW_FOAM_FILTERED = 24u;
 const uint OCEAN_VIEW_FAR_FIELD = 25u;
+const uint OCEAN_VIEW_CLOUD_SHADOW = 26u;
 const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
@@ -253,12 +254,24 @@ float ocean_far_field_end_m() {
     return max(ocean_features.far_field_options.z, ocean_far_field_start_m() + 0.001);
 }
 
+float ocean_cloud_shadow_strength() {
+    return clamp(ocean_features.far_field_options.w, 0.0, 1.0);
+}
+
 float ocean_far_roughness_strength() {
     return max(ocean_features.far_field_options2.x, 0.0);
 }
 
 float ocean_far_glint_strength() {
     return max(ocean_features.far_field_options2.y, 0.0);
+}
+
+float ocean_cloud_shadow_scale_m() {
+    return max(ocean_features.far_field_options2.z, 1.0);
+}
+
+float ocean_cloud_shadow_speed_mps() {
+    return ocean_features.far_field_options2.w;
 }
 
 float ocean_far_field_factor(float dist) {
@@ -289,6 +302,26 @@ float ocean_far_reflection_variation_strength() {
 
 float ocean_sun_glitter_width() {
     return clamp(ocean_features.far_detail_options.w, 0.001, 0.5);
+}
+
+float ocean_cloud_shadow_factor(vec2 position, vec3 light_dir) {
+    float strength = ocean_cloud_shadow_strength();
+    if (strength <= 0.0 || light_dir.y <= 0.0) {
+        return 1.0;
+    }
+
+    float scale = ocean_cloud_shadow_scale_m();
+    float time = ocean.camera_time.w;
+    vec2 wind = normalize(vec2(0.94, 0.34));
+    vec2 uv = (position + wind * time * ocean_cloud_shadow_speed_mps()) / scale;
+    float broad = cubey_proc_value_noise_pcg_2d(uv + vec2(17.0, -9.0));
+    vec2 rotated = vec2(position.x * 0.9171208 - position.y * 0.3986093,
+                        position.x * 0.3986093 + position.y * 0.9171208);
+    float mid = cubey_proc_value_noise_pcg_2d(rotated / (scale * 0.42) + vec2(-3.0, 11.0) -
+                                              wind.yx * time * 0.009);
+    float cover = smoothstep(0.40, 0.74, broad * 0.72 + mid * 0.28);
+    float sun_visibility = smoothstep(0.02, 0.36, light_dir.y);
+    return clamp(1.0 - cover * strength * sun_visibility, 0.18, 1.0);
 }
 
 bool ocean_terrain_fields_enabled() {
@@ -1154,7 +1187,8 @@ void main() {
     float wave_shadow = ocean_wave_self_shadow(frag_sample_position,
                                                ocean_surface_water_datum_y() + frag_displacement.y,
                                                sun_dir, frag_mesh_cell_size);
-    float direct_shadow = min(reference_shadow, wave_shadow);
+    float cloud_shadow = ocean_cloud_shadow_factor(frag_sample_position, sun_dir);
+    float direct_shadow = min(min(reference_shadow, wave_shadow), cloud_shadow);
     float shadowed_direct_light = direct_light * direct_shadow;
     float roughness = clamp(ocean.water_color.w, 0.02, 1.0);
     roughness = mix(roughness, max(roughness, 0.78), material_distance);
@@ -1248,6 +1282,8 @@ void main() {
         color = vec3(filtered.x, filtered.y, max(filtered.x, filtered.y));
     } else if (view == OCEAN_VIEW_FAR_FIELD) {
         color = vec3(far_field_energy, far_material_energy, far_detail_filter);
+    } else if (view == OCEAN_VIEW_CLOUD_SHADOW) {
+        color = vec3(cloud_shadow);
     }
 
     if (ocean.debug_options.w > 0.0) {

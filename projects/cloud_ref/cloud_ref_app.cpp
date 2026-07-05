@@ -50,6 +50,7 @@ constexpr float kDefaultFovyRadians = 62.0F * (glm::pi<float>() / 180.0F);
 constexpr float kCameraDragRadiansPerPixel = 0.006F;
 constexpr float kSurfaceMinPitchRadians = -1.50F;
 constexpr float kSurfaceMaxPitchRadians = 1.35F;
+constexpr float kCloudRefSunYawRadians = -2.6779451F;
 constexpr std::uint32_t kBaseNoiseSize = 128U;
 constexpr std::uint32_t kDetailNoiseSize = 32U;
 constexpr std::uint32_t kWeatherTextureSize = 1024U;
@@ -64,15 +65,17 @@ constexpr std::uint32_t kCloudRefDetailNoiseBinding = 3;
 constexpr std::uint32_t kCloudRefWeatherBinding = 4;
 constexpr std::uint32_t kCloudRefCompositeCloudBinding = 1;
 
-constexpr std::array<CloudsCameraMode, 6> kCloudRefCameraModes{
-    CloudsCameraMode::Surface, CloudsCameraMode::SurfaceUp, CloudsCameraMode::High,
-    CloudsCameraMode::HighOblique, CloudsCameraMode::Orbit, CloudsCameraMode::OrbitTerminator,
+constexpr std::array<CloudsCameraMode, 7> kCloudRefCameraModes{
+    CloudsCameraMode::Surface,        CloudsCameraMode::SurfaceUp, CloudsCameraMode::SurfaceSun,
+    CloudsCameraMode::High,           CloudsCameraMode::HighOblique,
+    CloudsCameraMode::Orbit,          CloudsCameraMode::OrbitTerminator,
 };
 constexpr std::array<CloudsQuality, 3> kCloudRefQualityModes{
     CloudsQuality::Quarter,
     CloudsQuality::Half,
     CloudsQuality::Full,
 };
+constexpr std::array<std::int32_t, 3> kCloudRefViewSamples{1, 2, 4};
 constexpr std::array<CloudsWeatherPreset, 5> kCloudRefWeatherPresets{
     CloudsWeatherPreset::FairWeather,
     CloudsWeatherPreset::BrokenCumulus,
@@ -80,7 +83,11 @@ constexpr std::array<CloudsWeatherPreset, 5> kCloudRefWeatherPresets{
     CloudsWeatherPreset::StormCells,
     CloudsWeatherPreset::HighCirrus,
 };
-constexpr std::array<CloudsDebugView, 16> kCloudRefDebugViews{
+constexpr std::array<CloudsResolveMode, 2> kCloudRefResolveModes{
+    CloudsResolveMode::TerrainPost,
+    CloudsResolveMode::MetadataBilateral,
+};
+constexpr std::array<CloudsDebugView, 18> kCloudRefDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal, CloudsDebugView::Weather,
     CloudsDebugView::Density,      CloudsDebugView::Transmittance,
     CloudsDebugView::Lighting,     CloudsDebugView::AmbientLight,
@@ -88,6 +95,8 @@ constexpr std::array<CloudsDebugView, 16> kCloudRefDebugViews{
     CloudsDebugView::Shadow,       CloudsDebugView::Steps,    CloudsDebugView::Background,
     CloudsDebugView::CloudAlpha,   CloudsDebugView::Distance,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
+    CloudsDebugView::ViewOpticalDepth,
+    CloudsDebugView::LightOpticalDepth,
 };
 
 struct CloudRefFrameUniforms {
@@ -101,11 +110,14 @@ struct CloudRefFrameUniforms {
     cubey::math::Vec4 ref_options;
     cubey::math::Vec4 shape_options;
     cubey::math::Vec4 weather_feature_weights;
+    cubey::math::Vec4 lighting_strengths;
+    cubey::math::Vec4 final_options;
     cubey::math::Vec4 cloud_color_top_shadow;
     cubey::math::Vec4 cloud_color_bottom_horizon;
+    cubey::math::Vec4 composite_options;
 };
 
-static_assert(sizeof(CloudRefFrameUniforms) == sizeof(float) * 48U);
+static_assert(sizeof(CloudRefFrameUniforms) == sizeof(float) * 60U);
 
 struct CloudRefViewBasis {
     cubey::math::Vec3 position{0.0F, 0.0F, 0.0F};
@@ -260,6 +272,8 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
     switch (mode) {
     case CloudsCameraMode::SurfaceUp:
         return 0.45F;
+    case CloudsCameraMode::SurfaceSun:
+        return 0.40F;
     case CloudsCameraMode::High:
         return -0.18F;
     case CloudsCameraMode::HighOblique:
@@ -270,6 +284,21 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
     case CloudsCameraMode::Surface:
     default:
         return -0.06F;
+    }
+}
+
+[[nodiscard]] float cloud_ref_camera_base_yaw(CloudsCameraMode mode) {
+    switch (mode) {
+    case CloudsCameraMode::SurfaceSun:
+        return kCloudRefSunYawRadians;
+    case CloudsCameraMode::Surface:
+    case CloudsCameraMode::SurfaceUp:
+    case CloudsCameraMode::High:
+    case CloudsCameraMode::HighOblique:
+    case CloudsCameraMode::Orbit:
+    case CloudsCameraMode::OrbitTerminator:
+    default:
+        return 0.0F;
     }
 }
 
@@ -287,11 +316,22 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
     return static_cast<float>(static_cast<std::uint32_t>(style));
 }
 
+[[nodiscard]] float cloud_ref_resolve_mode_value(CloudsResolveMode mode) {
+    switch (mode) {
+    case CloudsResolveMode::TerrainPost:
+        return 0.0F;
+    case CloudsResolveMode::MetadataBilateral:
+        return 1.0F;
+    }
+    return 0.0F;
+}
+
 [[nodiscard]] CloudRefViewBasis cloud_ref_view_basis(const CloudsConfig& config, float yaw,
                                                      float pitch_offset) {
     const cubey::math::Vec3 surface_up{0.0F, 1.0F, 0.0F};
-    const float yaw_sin = std::sin(yaw);
-    const float yaw_cos = std::cos(yaw);
+    const float camera_yaw = yaw + cloud_ref_camera_base_yaw(config.camera_mode);
+    const float yaw_sin = std::sin(camera_yaw);
+    const float yaw_cos = std::cos(camera_yaw);
     const cubey::math::Vec3 flat_forward{yaw_sin, 0.0F, -yaw_cos};
     const cubey::math::Vec3 right{yaw_cos, 0.0F, yaw_sin};
     const float pitch = cloud_ref_camera_base_pitch(config.camera_mode) + pitch_offset;
@@ -318,9 +358,13 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
         static_cast<float>(target_extent.width) / static_cast<float>(target_extent.height);
     const float tan_half_fovy = std::tan(kDefaultFovyRadians * 0.5F);
     const CloudsQualityBudget budget = clouds_quality_budget(config.quality);
+    const std::int32_t view_steps =
+        config.view_steps_override > 0 ? config.view_steps_override : budget.view_steps;
     const cubey::math::Vec3 sun_direction = cloud_ref_source_sun_direction();
-    const cubey::math::Vec3 cloud_top_color{1.12F, 1.04F, 0.82F};
-    const cubey::math::Vec3 cloud_bottom_color{0.24F, 0.30F, 0.38F};
+    const cubey::math::Vec3 cloud_top_color =
+        cubey::math::Vec3{238.0F, 240.0F, 235.0F} * (1.08F / 255.0F);
+    const cubey::math::Vec3 cloud_bottom_color =
+        cubey::math::Vec3{128.0F, 140.0F, 150.0F} * (1.15F / 255.0F);
     return {
         .camera_right_aspect = {basis.right.x, basis.right.y, basis.right.z, aspect},
         .camera_up_tan_half_fovy = {basis.up.x, basis.up.y, basis.up.z, tan_half_fovy},
@@ -335,17 +379,23 @@ cloud_ref_color_texture_desc(std::string label, VkExtent2D extent) {
                     elapsed_seconds * config.wind_speed_mps},
         .sun_direction_intensity = {sun_direction.x, sun_direction.y, sun_direction.z, 1.0F},
         .ref_options = {static_cast<float>(static_cast<std::uint32_t>(config.debug_view)),
-                        static_cast<float>(budget.view_steps),
+                        static_cast<float>(view_steps),
                         static_cast<float>(budget.light_steps),
-                        static_cast<float>(target_extent.width)},
-        .shape_options = {config.crispiness, config.curliness, config.absorption,
-                          config.powder_enabled ? 1.0F : 0.0F},
+                        static_cast<float>(config.view_samples)},
+        .shape_options = {config.crispiness, config.curliness, config.absorption, 0.0F},
         .weather_feature_weights = {config.weather_fronts, config.weather_cells,
                                     config.weather_streaks, config.detail_erosion},
+        .lighting_strengths = {config.ambient_strength, config.direct_strength,
+                               config.phase_strength, config.powder_strength},
+        .final_options = {config.final_contrast, config.final_saturation,
+                          config.horizon_glow_strength, config.sun_glare_strength},
         .cloud_color_top_shadow = {cloud_top_color.x, cloud_top_color.y, cloud_top_color.z,
                                    config.shadow_strength},
         .cloud_color_bottom_horizon = {cloud_bottom_color.x, cloud_bottom_color.y,
                                        cloud_bottom_color.z, config.horizon_strength},
+        .composite_options = {config.post_blur_enabled ? 1.0F : 0.0F,
+                              config.post_blur_strength, config.post_blur_radius_px,
+                              cloud_ref_resolve_mode_value(config.resolve_mode)},
     };
 }
 
@@ -651,7 +701,27 @@ class CloudRefApp {
         ImGui::SliderFloat("Absorption", &config_.absorption, 0.0F, 1.5F, "%.2f");
         ImGui::SliderFloat("Shadow strength", &config_.shadow_strength, 0.0F, 2.0F, "%.2f");
         ImGui::SliderFloat("Horizon fill", &config_.horizon_strength, 0.0F, 2.0F, "%.2f");
-        ImGui::Checkbox("Powder", &config_.powder_enabled);
+        ImGui::SliderFloat("Ambient strength", &config_.ambient_strength, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Direct strength", &config_.direct_strength, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Phase strength", &config_.phase_strength, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Powder strength", &config_.powder_strength, 0.0F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Final contrast", &config_.final_contrast, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Final saturation", &config_.final_saturation, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Horizon glow", &config_.horizon_glow_strength, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderFloat("Sun glare", &config_.sun_glare_strength, 0.0F, 3.0F, "%.2f");
+        ImGui::SliderInt("View steps", &config_.view_steps_override, 0, 128);
+        draw_view_samples_combo();
+        ImGui::Checkbox("Post blur", &config_.post_blur_enabled);
+        draw_enum_combo("Resolve", config_.resolve_mode, kCloudRefResolveModes,
+                        clouds_resolve_mode_name);
+        ImGui::SliderFloat("Blur strength", &config_.post_blur_strength, 0.0F, 1.0F, "%.2f");
+        ImGui::SliderFloat("Blur radius", &config_.post_blur_radius_px, 0.0F, 8.0F, "%.2f px");
+        ImGui::SliderFloat("Bottom height", &config_.bottom_altitude_m, 1000.0F, 15000.0F,
+                           "%.0f m");
+        ImGui::SliderFloat("Top height", &config_.top_altitude_m, 1000.0F, 40000.0F, "%.0f m");
+        if (config_.top_altitude_m <= config_.bottom_altitude_m) {
+            config_.top_altitude_m = config_.bottom_altitude_m + 1000.0F;
+        }
         ImGui::SliderFloat("Weather scale", &config_.weather_scale_km, 40.0F, 500.0F, "%.0f km");
         ImGui::Separator();
         ImGui::Text("FPS: %.1f / %.2f ms", latest_fps_, latest_frame_ms_);
@@ -675,6 +745,23 @@ class CloudRefApp {
                     } else if constexpr (std::is_same_v<T, CloudsWeatherPreset>) {
                         apply_clouds_weather_preset(config_, value);
                     }
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+    }
+
+    void draw_view_samples_combo() {
+        const std::string preview = std::to_string(config_.view_samples);
+        if (ImGui::BeginCombo("View samples", preview.c_str())) {
+            for (std::int32_t candidate : kCloudRefViewSamples) {
+                const bool selected = candidate == config_.view_samples;
+                const std::string label = std::to_string(candidate);
+                if (ImGui::Selectable(label.c_str(), selected)) {
+                    config_.view_samples = candidate;
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();

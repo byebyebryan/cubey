@@ -48,10 +48,26 @@ const int CLOUD_DEBUG_LOCAL_EDGE_DETAIL = 44;
 const int CLOUD_DEBUG_FAR_SHELL_ALPHA = 45;
 const int CLOUD_DEBUG_LOCAL_WITH_SHELL_ALPHA = 46;
 const int CLOUD_DEBUG_TRANSITION_WEIGHTS = 47;
+const int CLOUD_DEBUG_SCENE_DEPTH_OCCLUSION = 48;
+const int CLOUD_DEBUG_ORBIT_SHELL_FOOTPRINT = 49;
+const int CLOUD_DEBUG_ORBIT_SHELL_FILTER = 50;
+const int CLOUD_DEBUG_ORBIT_SHELL_MASS = 51;
+const int CLOUD_DEBUG_JITTER_PATTERN = 52;
+const int CLOUD_DEBUG_HORIZON_STEP_LENGTH = 53;
+const int CLOUD_DEBUG_HORIZON_FILTER_LOD = 54;
+const int CLOUD_DEBUG_HORIZON_HANDOFF = 55;
+const int CLOUD_DEBUG_LOCAL_TRUNCATION = 56;
+const int CLOUD_DEBUG_INTEGRATED_HORIZON_ALPHA = 57;
+const int CLOUD_DEBUG_INTEGRATED_HORIZON_RADIANCE = 58;
+const int CLOUD_DEBUG_EDGE_MASK = 59;
 
 const int CLOUD_SAMPLING_INTERLEAVED = 0;
 const int CLOUD_SAMPLING_BAYER = 1;
 const int CLOUD_SAMPLING_OFF = 2;
+const int CLOUD_SAMPLING_BLUE_NOISE = 3;
+
+const int CLOUD_VIEW_SAMPLE_SINGLE_FRAME = 0;
+const int CLOUD_VIEW_SAMPLE_TEMPORAL_PHASED = 1;
 
 const int CLOUD_BACKGROUND_ATMOSPHERE = 0;
 const int CLOUD_BACKGROUND_WATER_CONTEXT = 1;
@@ -63,6 +79,9 @@ const int CLOUD_DISTANCE_BLEND_DEBUG = 3;
 
 const int CLOUD_ORBIT_REPRESENTATION_VOLUME = 0;
 const int CLOUD_ORBIT_REPRESENTATION_SURFACE_SHELL = 1;
+
+const int CLOUD_RESOLVE_TERRAIN_POST = 0;
+const int CLOUD_RESOLVE_METADATA_BILATERAL = 1;
 
 layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 camera_right_aspect;
@@ -85,6 +104,9 @@ layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 distance_options;
     vec4 orbit_options;
     vec4 orbit_shell_options;
+    vec4 scene_depth_options;
+    vec4 density_options;
+    vec4 edge_options;
 } params;
 
 float cloud_saturate(float value) {

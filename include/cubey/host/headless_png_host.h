@@ -3,6 +3,7 @@
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/profiling.h>
 #include <cubey/core/run_config.h>
+#include <cubey/engine/capture_queue.h>
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/target.h>
@@ -146,6 +147,8 @@ class HeadlessPngHost {
     HeadlessPngHostConfig config_;
     HeadlessPngHostCallbacks callbacks_;
     bool shutdown_called_ = false;
+    jobs::JobSystem encoding_jobs_;
+    CaptureQueue captures_;
     UploadQueue uploads_;
     vulkan::DeferredGpuDestructionQueue deferred_destruction_;
     std::optional<cubey::vulkan::Instance> instance_;

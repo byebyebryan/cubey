@@ -10,7 +10,7 @@ namespace cubey::projects::cloud_ref {
 
 inline constexpr float kCloudsDefaultPlanetRadiusM = 600000.0F;
 inline constexpr float kCloudsDefaultBottomAltitudeM = 5000.0F;
-inline constexpr float kCloudsDefaultTopAltitudeM = 22000.0F;
+inline constexpr float kCloudsDefaultTopAltitudeM = 16000.0F;
 
 enum class CloudsCameraMode : std::uint32_t {
     Surface = 0,
@@ -19,6 +19,7 @@ enum class CloudsCameraMode : std::uint32_t {
     HighOblique = 3,
     Orbit = 4,
     OrbitTerminator = 5,
+    SurfaceSun = 6,
 };
 
 enum class CloudsQuality : std::uint32_t {
@@ -60,9 +61,16 @@ enum class CloudsDebugView : std::uint32_t {
     AmbientLight = 18,
     DirectLight = 19,
     PhaseLight = 20,
+    ViewOpticalDepth = 21,
+    LightOpticalDepth = 22,
 };
 
-inline constexpr std::array<CloudsDebugView, 16> kCloudsDebugViews{
+enum class CloudsResolveMode : std::uint32_t {
+    TerrainPost = 0,
+    MetadataBilateral = 1,
+};
+
+inline constexpr std::array<CloudsDebugView, 18> kCloudsDebugViews{
     CloudsDebugView::Final,        CloudsDebugView::RawFinal,
     CloudsDebugView::Weather,      CloudsDebugView::Density,
     CloudsDebugView::Transmittance, CloudsDebugView::Lighting,
@@ -71,6 +79,8 @@ inline constexpr std::array<CloudsDebugView, 16> kCloudsDebugViews{
     CloudsDebugView::Steps,        CloudsDebugView::Background,
     CloudsDebugView::CloudAlpha,   CloudsDebugView::Distance,
     CloudsDebugView::BaseDensity,  CloudsDebugView::DetailDensity,
+    CloudsDebugView::ViewOpticalDepth,
+    CloudsDebugView::LightOpticalDepth,
 };
 
 struct CloudsTimeConfig {
@@ -89,30 +99,43 @@ struct CloudsTimeConfig {
 struct CloudsConfig {
     CloudsCameraMode camera_mode = CloudsCameraMode::Surface;
     CloudsQuality quality = CloudsQuality::Full;
-    CloudsWeatherPreset weather_preset = CloudsWeatherPreset::BrokenCumulus;
-    CloudsCloudStyle cloud_style = CloudsCloudStyle::BrokenCumulus;
+    CloudsWeatherPreset weather_preset = CloudsWeatherPreset::FairWeather;
+    CloudsCloudStyle cloud_style = CloudsCloudStyle::FairWeather;
     CloudsDebugView debug_view = CloudsDebugView::Final;
     bool temporal_enabled = true;
     CloudsTimeConfig time{};
+    std::int32_t view_steps_override = 0;
+    std::int32_t view_samples = 1;
 
     float planet_radius_m = kCloudsDefaultPlanetRadiusM;
     float camera_altitude_m = 800.0F;
     float bottom_altitude_m = kCloudsDefaultBottomAltitudeM;
-    float top_altitude_m = kCloudsDefaultTopAltitudeM;
-    float coverage = 0.45F;
-    float density = 0.02F;
-    float weather_scale_km = 210.0F;
-    float wind_speed_mps = 450.0F;
-    float shadow_strength = 0.82F;
+    float top_altitude_m = 14000.0F;
+    float coverage = 0.30F;
+    float density = 0.016F;
+    float weather_scale_km = 260.0F;
+    float wind_speed_mps = 260.0F;
+    float shadow_strength = 0.15F;
     float horizon_strength = 0.62F;
     float weather_fronts = 1.0F;
     float weather_cells = 1.0F;
     float weather_streaks = 1.0F;
     float detail_erosion = 1.0F;
+    float ambient_strength = 1.30F;
+    float direct_strength = 1.15F;
+    float phase_strength = 1.20F;
+    float powder_strength = 0.20F;
+    float final_contrast = 0.98F;
+    float final_saturation = 1.0F;
+    float horizon_glow_strength = 1.05F;
+    float sun_glare_strength = 1.0F;
     float crispiness = 40.0F;
     float curliness = 0.10F;
     float absorption = 0.28F;
-    bool powder_enabled = true;
+    bool post_blur_enabled = true;
+    CloudsResolveMode resolve_mode = CloudsResolveMode::TerrainPost;
+    float post_blur_strength = 1.0F;
+    float post_blur_radius_px = 1.5F;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;
 };
@@ -133,6 +156,8 @@ void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset prese
 [[nodiscard]] CloudsDebugView clouds_debug_view_from_string(std::string_view value);
 [[nodiscard]] const char* clouds_debug_view_name(CloudsDebugView view);
 [[nodiscard]] CloudsDebugView next_clouds_debug_view(CloudsDebugView view);
+[[nodiscard]] CloudsResolveMode clouds_resolve_mode_from_string(std::string_view value);
+[[nodiscard]] const char* clouds_resolve_mode_name(CloudsResolveMode mode);
 [[nodiscard]] CloudsQualityBudget clouds_quality_budget(CloudsQuality quality);
 [[nodiscard]] float clouds_default_camera_altitude_m(CloudsCameraMode mode);
 [[nodiscard]] CloudsConfig clouds_config_from_run_config(const RunConfig& run_config);

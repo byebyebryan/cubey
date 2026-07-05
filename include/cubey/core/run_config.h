@@ -208,6 +208,8 @@ struct RunConfig {
         float sun_elevation_degrees = kRunConfigUnsetFloat;
         float sun_azimuth_degrees = kRunConfigUnsetFloat;
         float camera_altitude_km = kRunConfigUnsetFloat;
+        float camera_yaw_offset_degrees = kRunConfigUnsetFloat;
+        float camera_pitch_offset_degrees = kRunConfigUnsetFloat;
         float rayleigh_scale = kRunConfigUnsetFloat;
         float mie_scale = kRunConfigUnsetFloat;
         float ozone_scale = kRunConfigUnsetFloat;
@@ -236,13 +238,19 @@ struct RunConfig {
     };
 
     struct CloudOptions {
+        std::string debug_view{};
         std::string camera_mode{};
         std::string quality{};
+        std::uint32_t view_steps = 0;
+        std::uint32_t view_samples = 0;
+        std::string view_sample_mode{};
         std::string weather_preset{};
         std::string cache_frames{};
         std::uint32_t cache_texture_size = 0;
         std::string render_path{};
         std::string sampling_mode{};
+        std::string density_model{};
+        std::string resolve_mode{};
         std::string background_mode{};
         std::string distance_mode{};
         std::string orbit_representation{};
@@ -253,6 +261,11 @@ struct RunConfig {
         float coverage = kRunConfigUnsetFloat;
         float density = kRunConfigUnsetFloat;
         float weather_scale_km = kRunConfigUnsetFloat;
+        float shape_domain_km = kRunConfigUnsetFloat;
+        float footprint_filter_strength = kRunConfigUnsetFloat;
+        float edge_softness = kRunConfigUnsetFloat;
+        float edge_detail_fade = kRunConfigUnsetFloat;
+        float edge_resolve_strength = kRunConfigUnsetFloat;
         float vertical_shear_fraction = kRunConfigUnsetFloat;
         float wind_speed_mps = kRunConfigUnsetFloat;
         float shadow_strength = kRunConfigUnsetFloat;
@@ -266,9 +279,11 @@ struct RunConfig {
         float ambient_strength = kRunConfigUnsetFloat;
         float direct_strength = kRunConfigUnsetFloat;
         float phase_strength = kRunConfigUnsetFloat;
+        float powder_strength = kRunConfigUnsetFloat;
         float final_contrast = kRunConfigUnsetFloat;
         float final_saturation = kRunConfigUnsetFloat;
         float resolve_strength = kRunConfigUnsetFloat;
+        float resolve_radius_px = kRunConfigUnsetFloat;
         float horizon_glow_strength = kRunConfigUnsetFloat;
         float sun_glare_strength = kRunConfigUnsetFloat;
         float jitter_strength = kRunConfigUnsetFloat;
@@ -282,6 +297,7 @@ struct RunConfig {
         float orbit_fill = kRunConfigUnsetFloat;
         float orbit_motion_strength = kRunConfigUnsetFloat;
         float orbit_shell_extinction = kRunConfigUnsetFloat;
+        int enabled = -1;
         int temporal = -1;
         int local_volume = -1;
         int horizon_layer = -1;

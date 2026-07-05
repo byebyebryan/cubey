@@ -4,8 +4,8 @@
 // TerrainEngine-OpenGL reference port.
 // Weather map channels: authored coverage, cloud type, edge breakup, local scatter.
 
-#include "cloud_noise_common.glsl"
-#include "cloud_weather_common.glsl"
+#include "cubey/cloud/cloud_noise_common.glsl"
+#include "cubey/cloud/cloud_weather_common.glsl"
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 layout(rgba8, set = 0, binding = 0) uniform writeonly image2D out_weather;
@@ -14,6 +14,7 @@ layout(push_constant) uniform CloudWeatherGeneration {
     float cells;
     float streaks;
     float cloud_style;
+    float density_model;
 } weather_params;
 
 float cloud_select_style(float fair_weather, float broken_cumulus, float overcast_stratus,
@@ -43,6 +44,17 @@ void main() {
 
     vec2 uv = vec2(float(pixel.x) + 2.0, float(pixel.y)) / 1024.0;
     vec2 shifted_uv = uv + vec2(5.5);
+
+    int density_model = int(clamp(weather_params.density_model, 0.0, 2.0) + 0.5);
+    if (density_model == CLOUD_DENSITY_REF_DENSITY ||
+        density_model == CLOUD_DENSITY_CLOUD_REF_COMPATIBLE) {
+        float ref_cloud_type =
+            clamp(cloud_perlin_noise_2d(shifted_uv, 100.0 * 3.0, 0.3, 0.7, 10), 0.0, 1.0);
+        float ref_coverage = cloud_perlin_noise_2d(uv, 100.0 * 0.95, 0.8, 0.5, 4);
+        imageStore(out_weather, pixel,
+                   vec4(clamp(ref_coverage, 0.0, 1.0), ref_cloud_type, 0.0, 1.0));
+        return;
+    }
 
     float type_noise =
         clamp(cloud_perlin_noise_2d(shifted_uv, CLOUD_WEATHER_TYPE_SCALE,

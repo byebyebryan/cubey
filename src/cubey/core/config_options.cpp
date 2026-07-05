@@ -60,13 +60,21 @@ constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
     "final", "stellar-emission", "dust-tau", "star-clouds", "hii-emission", "speckles",
 };
-constexpr std::array<std::string_view, 6> kCloudCameraModes{
-    "surface", "surface-up", "high", "high-oblique", "orbit", "orbit-terminator"};
+constexpr std::array<std::string_view, 7> kCloudCameraModes{
+    "surface", "surface-up", "surface-sun", "high", "high-oblique", "orbit",
+    "orbit-terminator"};
 constexpr std::array<std::string_view, 3> kCloudQualities{"quarter", "half", "full"};
 constexpr std::array<std::string_view, 4> kCloudCacheFrames{"4", "16", "64", "256"};
 constexpr std::array<std::string_view, 4> kCloudRenderPaths{
     "cached", "direct", "diff", "alpha-diff"};
-constexpr std::array<std::string_view, 3> kCloudSamplingModes{"interleaved", "bayer", "off"};
+constexpr std::array<std::string_view, 4> kCloudSamplingModes{
+    "interleaved", "bayer", "blue-noise", "off"};
+constexpr std::array<std::string_view, 2> kCloudViewSampleModes{"single-frame",
+                                                                "temporal-phased"};
+constexpr std::array<std::string_view, 3> kCloudDensityModels{"ref-density", "procedural",
+                                                              "cloud-ref-compatible"};
+constexpr std::array<std::string_view, 2> kCloudResolveModes{"terrain-post",
+                                                             "metadata-bilateral"};
 constexpr std::array<std::string_view, 2> kCloudBackgroundModes{"atmosphere", "water-context"};
 constexpr std::array<std::string_view, 4> kCloudDistanceModes{"auto", "local", "orbit-shell",
                                                               "blend-debug"};
@@ -131,7 +139,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 235> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 251> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -485,6 +493,16 @@ constexpr std::array<ConfigOptionDescriptor, 235> kRunConfigOptions{
     option(RunConfigOptionId::AtmosphereCameraAltitude, "atmosphere.camera_altitude_km",
            "--camera-altitude-km", "Camera Altitude", "Atmosphere",
            "Observer altitude above sea level.", ConfigOptionType::Float, min_range(0.0)),
+    option(RunConfigOptionId::AtmosphereCameraYawOffset,
+           "atmosphere.camera_yaw_offset_degrees", "--camera-yaw-offset-deg",
+           "Camera Yaw Offset", "Atmosphere",
+           "Additional yaw offset from the default atmosphere review direction.",
+           ConfigOptionType::Float, bounded_range(-360.0, 360.0)),
+    option(RunConfigOptionId::AtmosphereCameraPitchOffset,
+           "atmosphere.camera_pitch_offset_degrees", "--camera-pitch-offset-deg",
+           "Camera Pitch Offset", "Atmosphere",
+           "Additional pitch offset from the default atmosphere review direction.",
+           ConfigOptionType::Float, bounded_range(-89.0, 89.0)),
     option(RunConfigOptionId::AtmosphereRayleighScale, "atmosphere.rayleigh_scale",
            "--rayleigh-scale", "Rayleigh Scale", "Atmosphere",
            "Rayleigh molecular scattering density multiplier.", ConfigOptionType::Float,
@@ -566,12 +584,28 @@ constexpr std::array<ConfigOptionDescriptor, 235> kRunConfigOptions{
            "--reference-geometry", "Reference Geometry", "Atmosphere",
            "Enable the standalone atmosphere ground reference grid.", ConfigOptionType::Bool,
            no_range(), {}, "--no-reference-geometry"),
+    option(RunConfigOptionId::CloudEnabled, "clouds.enabled", "--clouds", "Clouds", "Clouds",
+           "Enable cloud layer rendering in shared atmosphere-backed projects.",
+           ConfigOptionType::Bool, no_range(), {}, "--no-clouds"),
+    option(RunConfigOptionId::CloudDebugView, "clouds.debug_view", "--cloud-debug-view",
+           "Debug View", "Clouds", "Cloud layer debug or diagnostic view.",
+           ConfigOptionType::String),
     option(RunConfigOptionId::CloudCameraMode, "clouds.camera_mode", "--cloud-camera-mode",
            "Camera Mode", "Clouds", "Initial cloud camera mode.", ConfigOptionType::Enum,
            no_range(), enum_choices(kCloudCameraModes)),
     option(RunConfigOptionId::CloudQuality, "clouds.quality", "--cloud-quality", "Quality",
            "Clouds", "Cloud render quality preset.", ConfigOptionType::Enum, no_range(),
            enum_choices(kCloudQualities)),
+    option(RunConfigOptionId::CloudViewSteps, "clouds.view_steps", "--cloud-view-steps",
+           "View Steps", "Clouds", "Cloud ray-march view steps override.",
+           ConfigOptionType::UInt32, bounded_range(1.0, 128.0)),
+    option(RunConfigOptionId::CloudViewSamples, "clouds.view_samples", "--cloud-view-samples",
+           "View Samples", "Clouds", "Cloud ray-start samples per pixel.",
+           ConfigOptionType::UInt32, bounded_range(1.0, 4.0)),
+    option(RunConfigOptionId::CloudViewSampleMode, "clouds.view_sample_mode",
+           "--cloud-view-sample-mode", "View Sample Mode", "Clouds",
+           "Cloud view-sample strategy: single-frame or temporal-phased.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudViewSampleModes)),
     option(RunConfigOptionId::CloudWeatherPreset, "clouds.weather_preset",
            "--cloud-weather-preset", "Weather Preset", "Clouds",
            "Cloud coverage, density, scale, and wind preset.", ConfigOptionType::Enum, no_range(),
@@ -590,8 +624,16 @@ constexpr std::array<ConfigOptionDescriptor, 235> kRunConfigOptions{
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudRenderPaths)),
     option(RunConfigOptionId::CloudSamplingMode, "clouds.sampling_mode",
            "--cloud-sampling-mode", "Sampling Mode", "Clouds",
-           "Cloud ray-start sampling mode: interleaved, bayer, or off.",
+           "Cloud ray-start sampling mode: interleaved, bayer, blue-noise, or off.",
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudSamplingModes)),
+    option(RunConfigOptionId::CloudDensityModel, "clouds.density_model",
+           "--cloud-density-model", "Density Model", "Clouds",
+           "Cloud density and placement model: ref-density, procedural, or cloud-ref-compatible.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudDensityModels)),
+    option(RunConfigOptionId::CloudResolveMode, "clouds.resolve_mode",
+           "--cloud-resolve-mode", "Resolve Mode", "Clouds",
+           "Cloud final resolve mode: terrain-post or metadata-bilateral.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kCloudResolveModes)),
     option(RunConfigOptionId::CloudBackgroundMode, "clouds.background_mode",
            "--cloud-background-mode", "Background Mode", "Clouds",
            "Standalone cloud background mode: atmosphere or water-context.",
@@ -630,6 +672,26 @@ constexpr std::array<ConfigOptionDescriptor, 235> kRunConfigOptions{
            "--cloud-weather-scale-km", "Weather Scale", "Clouds",
            "Approximate broad cloud weather feature size in kilometers.",
            ConfigOptionType::Float, min_range(0.001)),
+    option(RunConfigOptionId::CloudShapeDomain, "clouds.shape_domain_km",
+           "--cloud-shape-domain-km", "Shape Domain", "Clouds",
+           "Approximate local cloud density texture domain size in kilometers.",
+           ConfigOptionType::Float, min_range(0.001)),
+    option(RunConfigOptionId::CloudFootprintFilterStrength, "clouds.footprint_filter_strength",
+           "--cloud-footprint-filter-strength", "Footprint Filter", "Clouds",
+           "Strength of deterministic footprint filtering for far and grazing cloud detail.",
+           ConfigOptionType::Float, bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudEdgeSoftness, "clouds.edge_softness",
+           "--cloud-edge-softness", "Edge Softness", "Clouds",
+           "Strength of footprint-aware density edge softening.", ConfigOptionType::Float,
+           bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudEdgeDetailFade, "clouds.edge_detail_fade",
+           "--cloud-edge-detail-fade", "Edge Detail Fade", "Clouds",
+           "Amount of unresolved high-frequency detail erosion faded at cloud edges.",
+           ConfigOptionType::Float, bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudEdgeResolveStrength, "clouds.edge_resolve_strength",
+           "--cloud-edge-resolve-strength", "Edge Resolve", "Clouds",
+           "Strength of edge-aware cloud resolve in the final composite.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudVerticalShearFraction, "clouds.vertical_shear_fraction",
            "--cloud-vertical-shear-fraction", "Vertical Shear", "Clouds",
            "Fraction of weather feature size used for altitude-dependent cloud shear.",
@@ -680,6 +742,10 @@ constexpr std::array<ConfigOptionDescriptor, 235> kRunConfigOptions{
            "--cloud-phase-strength", "Phase Strength", "Clouds",
            "Cloud forward/rim phase-light multiplier used by the production cloud renderer.",
            ConfigOptionType::Float, bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudPowderStrength, "clouds.powder_strength",
+           "--cloud-powder-strength", "Powder Strength", "Clouds",
+           "Cloud Beer-powder lighting boost used by cloud_ref lighting diagnostics.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudFinalContrast, "clouds.final_contrast",
            "--cloud-final-contrast", "Final Contrast", "Clouds",
            "Final cloud composite contrast multiplier.", ConfigOptionType::Float,
@@ -692,6 +758,10 @@ constexpr std::array<ConfigOptionDescriptor, 235> kRunConfigOptions{
            "--cloud-resolve-strength", "Resolve Strength", "Clouds",
            "Amount of alpha-aware cloud product resolve in final view.", ConfigOptionType::Float,
            bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::CloudResolveRadius, "clouds.resolve_radius_px",
+           "--cloud-resolve-radius-px", "Resolve Radius", "Clouds",
+           "Cloud final resolve blur radius in pixels.", ConfigOptionType::Float,
+           bounded_range(0.0, 8.0)),
     option(RunConfigOptionId::CloudHorizonGlowStrength, "clouds.horizon_glow_strength",
            "--cloud-horizon-glow-strength", "Horizon Glow", "Clouds",
            "Final composite horizon fill/glow multiplier.", ConfigOptionType::Float,
@@ -1340,6 +1410,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.atmosphere.sun_azimuth_degrees);
     case RunConfigOptionId::AtmosphereCameraAltitude:
         return optional_float(config.atmosphere.camera_altitude_km);
+    case RunConfigOptionId::AtmosphereCameraYawOffset:
+        return optional_float(config.atmosphere.camera_yaw_offset_degrees);
+    case RunConfigOptionId::AtmosphereCameraPitchOffset:
+        return optional_float(config.atmosphere.camera_pitch_offset_degrees);
     case RunConfigOptionId::AtmosphereRayleighScale:
         return optional_float(config.atmosphere.rayleigh_scale);
     case RunConfigOptionId::AtmosphereMieScale:
@@ -1390,12 +1464,25 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_bool(config.atmosphere.moon);
     case RunConfigOptionId::AtmosphereReferenceGeometry:
         return optional_bool(config.atmosphere.reference_geometry);
+    case RunConfigOptionId::CloudEnabled:
+        return optional_bool(config.clouds.enabled);
+    case RunConfigOptionId::CloudDebugView:
+        return config.clouds.debug_view.empty() ? nlohmann::json(nullptr)
+                                                : nlohmann::json(config.clouds.debug_view);
     case RunConfigOptionId::CloudCameraMode:
         return config.clouds.camera_mode.empty() ? nlohmann::json(nullptr)
                                                  : nlohmann::json(config.clouds.camera_mode);
     case RunConfigOptionId::CloudQuality:
         return config.clouds.quality.empty() ? nlohmann::json(nullptr)
                                              : nlohmann::json(config.clouds.quality);
+    case RunConfigOptionId::CloudViewSteps:
+        return optional_uint32(config.clouds.view_steps);
+    case RunConfigOptionId::CloudViewSamples:
+        return optional_uint32(config.clouds.view_samples);
+    case RunConfigOptionId::CloudViewSampleMode:
+        return config.clouds.view_sample_mode.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.clouds.view_sample_mode);
     case RunConfigOptionId::CloudWeatherPreset:
         return config.clouds.weather_preset.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.clouds.weather_preset);
@@ -1410,6 +1497,12 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::CloudSamplingMode:
         return config.clouds.sampling_mode.empty() ? nlohmann::json(nullptr)
                                                    : nlohmann::json(config.clouds.sampling_mode);
+    case RunConfigOptionId::CloudDensityModel:
+        return config.clouds.density_model.empty() ? nlohmann::json(nullptr)
+                                                   : nlohmann::json(config.clouds.density_model);
+    case RunConfigOptionId::CloudResolveMode:
+        return config.clouds.resolve_mode.empty() ? nlohmann::json(nullptr)
+                                                  : nlohmann::json(config.clouds.resolve_mode);
     case RunConfigOptionId::CloudBackgroundMode:
         return config.clouds.background_mode.empty()
                    ? nlohmann::json(nullptr)
@@ -1436,6 +1529,16 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.density);
     case RunConfigOptionId::CloudWeatherScale:
         return optional_float(config.clouds.weather_scale_km);
+    case RunConfigOptionId::CloudShapeDomain:
+        return optional_float(config.clouds.shape_domain_km);
+    case RunConfigOptionId::CloudFootprintFilterStrength:
+        return optional_float(config.clouds.footprint_filter_strength);
+    case RunConfigOptionId::CloudEdgeSoftness:
+        return optional_float(config.clouds.edge_softness);
+    case RunConfigOptionId::CloudEdgeDetailFade:
+        return optional_float(config.clouds.edge_detail_fade);
+    case RunConfigOptionId::CloudEdgeResolveStrength:
+        return optional_float(config.clouds.edge_resolve_strength);
     case RunConfigOptionId::CloudVerticalShearFraction:
         return optional_float(config.clouds.vertical_shear_fraction);
     case RunConfigOptionId::CloudWindSpeed:
@@ -1462,12 +1565,16 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.direct_strength);
     case RunConfigOptionId::CloudPhaseStrength:
         return optional_float(config.clouds.phase_strength);
+    case RunConfigOptionId::CloudPowderStrength:
+        return optional_float(config.clouds.powder_strength);
     case RunConfigOptionId::CloudFinalContrast:
         return optional_float(config.clouds.final_contrast);
     case RunConfigOptionId::CloudFinalSaturation:
         return optional_float(config.clouds.final_saturation);
     case RunConfigOptionId::CloudResolveStrength:
         return optional_float(config.clouds.resolve_strength);
+    case RunConfigOptionId::CloudResolveRadius:
+        return optional_float(config.clouds.resolve_radius_px);
     case RunConfigOptionId::CloudHorizonGlowStrength:
         return optional_float(config.clouds.horizon_glow_strength);
     case RunConfigOptionId::CloudSunGlareStrength:
@@ -1842,6 +1949,8 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::AtmosphereOptions& 
     adapter.writeField<float>("sun_elevation_degrees", options.sun_elevation_degrees);
     adapter.writeField<float>("sun_azimuth_degrees", options.sun_azimuth_degrees);
     adapter.writeField<float>("camera_altitude_km", options.camera_altitude_km);
+    adapter.writeField<float>("camera_yaw_offset_degrees", options.camera_yaw_offset_degrees);
+    adapter.writeField<float>("camera_pitch_offset_degrees", options.camera_pitch_offset_degrees);
     adapter.writeField<float>("rayleigh_scale", options.rayleigh_scale);
     adapter.writeField<float>("mie_scale", options.mie_scale);
     adapter.writeField<float>("ozone_scale", options.ozone_scale);
@@ -1877,6 +1986,8 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::AtmosphereOptions& opti
     adapter.readField<float>("sun_elevation_degrees", options.sun_elevation_degrees);
     adapter.readField<float>("sun_azimuth_degrees", options.sun_azimuth_degrees);
     adapter.readField<float>("camera_altitude_km", options.camera_altitude_km);
+    adapter.readField<float>("camera_yaw_offset_degrees", options.camera_yaw_offset_degrees);
+    adapter.readField<float>("camera_pitch_offset_degrees", options.camera_pitch_offset_degrees);
     adapter.readField<float>("rayleigh_scale", options.rayleigh_scale);
     adapter.readField<float>("mie_scale", options.mie_scale);
     adapter.readField<float>("ozone_scale", options.ozone_scale);
@@ -1905,13 +2016,19 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::AtmosphereOptions& opti
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& options) {
+    adapter.writeField<std::string>("debug_view", options.debug_view);
     adapter.writeField<std::string>("camera_mode", options.camera_mode);
     adapter.writeField<std::string>("quality", options.quality);
+    adapter.writeField<std::uint32_t>("view_steps", options.view_steps);
+    adapter.writeField<std::uint32_t>("view_samples", options.view_samples);
+    adapter.writeField<std::string>("view_sample_mode", options.view_sample_mode);
     adapter.writeField<std::string>("weather_preset", options.weather_preset);
     adapter.writeField<std::string>("cache_frames", options.cache_frames);
     adapter.writeField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
     adapter.writeField<std::string>("render_path", options.render_path);
     adapter.writeField<std::string>("sampling_mode", options.sampling_mode);
+    adapter.writeField<std::string>("density_model", options.density_model);
+    adapter.writeField<std::string>("resolve_mode", options.resolve_mode);
     adapter.writeField<std::string>("background_mode", options.background_mode);
     adapter.writeField<std::string>("distance_mode", options.distance_mode);
     adapter.writeField<std::string>("orbit_representation", options.orbit_representation);
@@ -1922,6 +2039,11 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("coverage", options.coverage);
     adapter.writeField<float>("density", options.density);
     adapter.writeField<float>("weather_scale_km", options.weather_scale_km);
+    adapter.writeField<float>("shape_domain_km", options.shape_domain_km);
+    adapter.writeField<float>("footprint_filter_strength", options.footprint_filter_strength);
+    adapter.writeField<float>("edge_softness", options.edge_softness);
+    adapter.writeField<float>("edge_detail_fade", options.edge_detail_fade);
+    adapter.writeField<float>("edge_resolve_strength", options.edge_resolve_strength);
     adapter.writeField<float>("vertical_shear_fraction", options.vertical_shear_fraction);
     adapter.writeField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.writeField<float>("shadow_strength", options.shadow_strength);
@@ -1935,9 +2057,11 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("ambient_strength", options.ambient_strength);
     adapter.writeField<float>("direct_strength", options.direct_strength);
     adapter.writeField<float>("phase_strength", options.phase_strength);
+    adapter.writeField<float>("powder_strength", options.powder_strength);
     adapter.writeField<float>("final_contrast", options.final_contrast);
     adapter.writeField<float>("final_saturation", options.final_saturation);
     adapter.writeField<float>("resolve_strength", options.resolve_strength);
+    adapter.writeField<float>("resolve_radius_px", options.resolve_radius_px);
     adapter.writeField<float>("horizon_glow_strength", options.horizon_glow_strength);
     adapter.writeField<float>("sun_glare_strength", options.sun_glare_strength);
     adapter.writeField<float>("jitter_strength", options.jitter_strength);
@@ -1951,19 +2075,26 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::CloudOptions& optio
     adapter.writeField<float>("orbit_fill", options.orbit_fill);
     adapter.writeField<float>("orbit_motion_strength", options.orbit_motion_strength);
     adapter.writeField<float>("orbit_shell_extinction", options.orbit_shell_extinction);
+    adapter.writeField<int>("enabled", options.enabled);
     adapter.writeField<int>("temporal", options.temporal);
     adapter.writeField<int>("local_volume", options.local_volume);
     adapter.writeField<int>("horizon_layer", options.horizon_layer);
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) {
+    adapter.readField<std::string>("debug_view", options.debug_view);
     adapter.readField<std::string>("camera_mode", options.camera_mode);
     adapter.readField<std::string>("quality", options.quality);
+    adapter.readField<std::uint32_t>("view_steps", options.view_steps);
+    adapter.readField<std::uint32_t>("view_samples", options.view_samples);
+    adapter.readField<std::string>("view_sample_mode", options.view_sample_mode);
     adapter.readField<std::string>("weather_preset", options.weather_preset);
     adapter.readField<std::string>("cache_frames", options.cache_frames);
     adapter.readField<std::uint32_t>("cache_texture_size", options.cache_texture_size);
     adapter.readField<std::string>("render_path", options.render_path);
     adapter.readField<std::string>("sampling_mode", options.sampling_mode);
+    adapter.readField<std::string>("density_model", options.density_model);
+    adapter.readField<std::string>("resolve_mode", options.resolve_mode);
     adapter.readField<std::string>("background_mode", options.background_mode);
     adapter.readField<std::string>("distance_mode", options.distance_mode);
     adapter.readField<std::string>("orbit_representation", options.orbit_representation);
@@ -1974,6 +2105,11 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("coverage", options.coverage);
     adapter.readField<float>("density", options.density);
     adapter.readField<float>("weather_scale_km", options.weather_scale_km);
+    adapter.readField<float>("shape_domain_km", options.shape_domain_km);
+    adapter.readField<float>("footprint_filter_strength", options.footprint_filter_strength);
+    adapter.readField<float>("edge_softness", options.edge_softness);
+    adapter.readField<float>("edge_detail_fade", options.edge_detail_fade);
+    adapter.readField<float>("edge_resolve_strength", options.edge_resolve_strength);
     adapter.readField<float>("vertical_shear_fraction", options.vertical_shear_fraction);
     adapter.readField<float>("wind_speed_mps", options.wind_speed_mps);
     adapter.readField<float>("shadow_strength", options.shadow_strength);
@@ -1987,9 +2123,11 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("ambient_strength", options.ambient_strength);
     adapter.readField<float>("direct_strength", options.direct_strength);
     adapter.readField<float>("phase_strength", options.phase_strength);
+    adapter.readField<float>("powder_strength", options.powder_strength);
     adapter.readField<float>("final_contrast", options.final_contrast);
     adapter.readField<float>("final_saturation", options.final_saturation);
     adapter.readField<float>("resolve_strength", options.resolve_strength);
+    adapter.readField<float>("resolve_radius_px", options.resolve_radius_px);
     adapter.readField<float>("horizon_glow_strength", options.horizon_glow_strength);
     adapter.readField<float>("sun_glare_strength", options.sun_glare_strength);
     adapter.readField<float>("jitter_strength", options.jitter_strength);
@@ -2003,6 +2141,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::CloudOptions& options) 
     adapter.readField<float>("orbit_fill", options.orbit_fill);
     adapter.readField<float>("orbit_motion_strength", options.orbit_motion_strength);
     adapter.readField<float>("orbit_shell_extinction", options.orbit_shell_extinction);
+    adapter.readField<int>("enabled", options.enabled);
     adapter.readField<int>("temporal", options.temporal);
     adapter.readField<int>("local_volume", options.local_volume);
     adapter.readField<int>("horizon_layer", options.horizon_layer);
@@ -2510,6 +2649,14 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.atmosphere.camera_altitude_km = parse_config_float(value, option);
         validate_range(config.atmosphere.camera_altitude_km, option);
         break;
+    case RunConfigOptionId::AtmosphereCameraYawOffset:
+        config.atmosphere.camera_yaw_offset_degrees = parse_config_float(value, option);
+        validate_range(config.atmosphere.camera_yaw_offset_degrees, option);
+        break;
+    case RunConfigOptionId::AtmosphereCameraPitchOffset:
+        config.atmosphere.camera_pitch_offset_degrees = parse_config_float(value, option);
+        validate_range(config.atmosphere.camera_pitch_offset_degrees, option);
+        break;
     case RunConfigOptionId::AtmosphereRayleighScale:
         config.atmosphere.rayleigh_scale = parse_config_float(value, option);
         validate_range(config.atmosphere.rayleigh_scale, option);
@@ -2606,11 +2753,34 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::AtmosphereReferenceGeometry:
         config.atmosphere.reference_geometry = parse_config_bool(value, option) ? 1 : 0;
         break;
+    case RunConfigOptionId::CloudEnabled:
+        config.clouds.enabled = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::CloudDebugView:
+        config.clouds.debug_view = std::string(value);
+        break;
     case RunConfigOptionId::CloudCameraMode:
         config.clouds.camera_mode = std::string(value);
         break;
     case RunConfigOptionId::CloudQuality:
         config.clouds.quality = std::string(value);
+        break;
+    case RunConfigOptionId::CloudViewSteps:
+        config.clouds.view_steps =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.clouds.view_steps, option);
+        break;
+    case RunConfigOptionId::CloudViewSamples:
+        config.clouds.view_samples =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.clouds.view_samples, option);
+        if (config.clouds.view_samples != 1U && config.clouds.view_samples != 2U &&
+            config.clouds.view_samples != 4U) {
+            throw std::runtime_error("--cloud-view-samples must be 1, 2, or 4");
+        }
+        break;
+    case RunConfigOptionId::CloudViewSampleMode:
+        config.clouds.view_sample_mode = std::string(value);
         break;
     case RunConfigOptionId::CloudWeatherPreset:
         config.clouds.weather_preset = std::string(value);
@@ -2628,6 +2798,12 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::CloudSamplingMode:
         config.clouds.sampling_mode = std::string(value);
+        break;
+    case RunConfigOptionId::CloudDensityModel:
+        config.clouds.density_model = std::string(value);
+        break;
+    case RunConfigOptionId::CloudResolveMode:
+        config.clouds.resolve_mode = std::string(value);
         break;
     case RunConfigOptionId::CloudBackgroundMode:
         config.clouds.background_mode = std::string(value);
@@ -2665,6 +2841,26 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudWeatherScale:
         config.clouds.weather_scale_km = parse_config_float(value, option);
         validate_range(config.clouds.weather_scale_km, option);
+        break;
+    case RunConfigOptionId::CloudShapeDomain:
+        config.clouds.shape_domain_km = parse_config_float(value, option);
+        validate_range(config.clouds.shape_domain_km, option);
+        break;
+    case RunConfigOptionId::CloudFootprintFilterStrength:
+        config.clouds.footprint_filter_strength = parse_config_float(value, option);
+        validate_range(config.clouds.footprint_filter_strength, option);
+        break;
+    case RunConfigOptionId::CloudEdgeSoftness:
+        config.clouds.edge_softness = parse_config_float(value, option);
+        validate_range(config.clouds.edge_softness, option);
+        break;
+    case RunConfigOptionId::CloudEdgeDetailFade:
+        config.clouds.edge_detail_fade = parse_config_float(value, option);
+        validate_range(config.clouds.edge_detail_fade, option);
+        break;
+    case RunConfigOptionId::CloudEdgeResolveStrength:
+        config.clouds.edge_resolve_strength = parse_config_float(value, option);
+        validate_range(config.clouds.edge_resolve_strength, option);
         break;
     case RunConfigOptionId::CloudVerticalShearFraction:
         config.clouds.vertical_shear_fraction = parse_config_float(value, option);
@@ -2718,6 +2914,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.clouds.phase_strength = parse_config_float(value, option);
         validate_range(config.clouds.phase_strength, option);
         break;
+    case RunConfigOptionId::CloudPowderStrength:
+        config.clouds.powder_strength = parse_config_float(value, option);
+        validate_range(config.clouds.powder_strength, option);
+        break;
     case RunConfigOptionId::CloudFinalContrast:
         config.clouds.final_contrast = parse_config_float(value, option);
         validate_range(config.clouds.final_contrast, option);
@@ -2729,6 +2929,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudResolveStrength:
         config.clouds.resolve_strength = parse_config_float(value, option);
         validate_range(config.clouds.resolve_strength, option);
+        break;
+    case RunConfigOptionId::CloudResolveRadius:
+        config.clouds.resolve_radius_px = parse_config_float(value, option);
+        validate_range(config.clouds.resolve_radius_px, option);
         break;
     case RunConfigOptionId::CloudHorizonGlowStrength:
         config.clouds.horizon_glow_strength = parse_config_float(value, option);

@@ -385,7 +385,13 @@ void copy_image_to_buffer(GpuRuntime& gpu, VkImage source, VkBuffer destination,
     }));
 }
 
-DepthAttachment::DepthAttachment(const Device& device, VkExtent2D extent)
-    : image_(device, depth_image_config(extent, choose_depth_format(device))) {}
+DepthAttachment::DepthAttachment(const Device& device, VkExtent2D extent, bool sampled)
+    : image_(device, [extent, sampled, &device] {
+          ImageConfig config = depth_image_config(extent, choose_depth_format(device));
+          if (sampled) {
+              config.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+          }
+          return config;
+      }()) {}
 
 } // namespace cubey::vulkan

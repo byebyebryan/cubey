@@ -273,6 +273,16 @@ vec3 surface_apply_physical_aerial_perspective(vec3 color, vec3 world_position, 
     return mix(color, aerial_color, aerial_strength);
 }
 
+float surface_horizon_fill_weight(float distance_ratio, vec3 view_dir, vec3 sphere_normal) {
+    float camera_altitude =
+        max(surface_frame.camera_world_radius.w - surface_frame.render_origin_radius.w, 0.0);
+    float low_camera = 1.0 - smoothstep(8000.0, 45000.0, camera_altitude);
+    float tangent_view =
+        1.0 - smoothstep(0.025, 0.175, abs(dot(normalize(view_dir), normalize(sphere_normal))));
+    float far_surface = smoothstep(0.38, 0.96, distance_ratio);
+    return clamp(low_camera * tangent_view * far_surface * 0.58, 0.0, 0.58);
+}
+
 vec3 celestial_planes_color() {
     vec3 sphere_normal = normalize(in_sphere_normal);
     float equator = celestial_plane_band(sphere_normal, surface_frame.celestial_equator_plane.xyz, 0.010);
@@ -538,11 +548,17 @@ void main() {
     float haze = clamp(max(band_haze * 0.58, optical_haze * 0.72) + horizon_graze * 0.10, 0.0, 1.0) *
                  haze_strength;
     vec3 view_dir = normalize(in_render_position - surface_frame.camera_horizon.xyz);
+    vec3 final_haze_color =
+        surface_haze_color(haze_color, normalize(in_sphere_normal), light_dir, view_dir, haze);
     if (physical_surface_atmosphere_enabled() && final_view > 0.5) {
         color = surface_apply_physical_aerial_perspective(color, world_position, light_dir);
+        float horizon_fill =
+            surface_horizon_fill_weight(distance_ratio, view_dir, in_sphere_normal) * final_view;
+        vec3 horizon_fill_color = surface_haze_color(
+            haze_color, normalize(in_sphere_normal), light_dir, view_dir,
+            clamp(distance_ratio, 0.0, 1.0));
+        color = mix(color, horizon_fill_color, horizon_fill);
     } else {
-        vec3 final_haze_color =
-            surface_haze_color(haze_color, normalize(in_sphere_normal), light_dir, view_dir, haze);
         color = mix(color, final_haze_color, haze * final_view);
     }
     out_color = vec4(color, 1.0);

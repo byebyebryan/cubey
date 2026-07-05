@@ -17,6 +17,7 @@ struct ForwardScenePass3DConfig {
         .color = color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
         .depth = depth_clear_value(),
     };
+    bool sampled_depth = false;
 };
 
 class ForwardScenePass3D {

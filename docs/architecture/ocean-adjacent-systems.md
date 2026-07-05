@@ -15,10 +15,8 @@ Build adjacent systems as separate projects first, then integrate them into the
 ocean renderer through small data and shader contracts:
 
 - `projects/atmosphere`: clear-sky scattering, atmosphere debug disks, and
-  horizon aerial perspective.
-- `projects/cloud`: production cloud/weather renderer, starting from
-  texture-backed coherent density before later cloud shadows and scale-specific
-  sky/cloud output for ocean and planet integration.
+  horizon aerial perspective, now also hosting the production cloud/weather
+  layer through the shared cloud runtime.
 - `projects/procedural_terrain_legacy`: heightfield terrain, bathymetry, shoreline
   masks, material masks, and terrain/scene depth rendering.
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
@@ -65,7 +63,8 @@ additional layer with its own weather map, coverage, density, lighting, and
 shadow controls rather than folding cloud noise into the base atmosphere pass.
 The first cloud implementation is frozen in `projects/clouds_legacy`, where it
 proved surface, above-cloud, and orbit pressure before any shared renderer
-promotion. Active production cloud work now lives in `projects/cloud`.
+promotion. Active production cloud work now lives in `projects/atmosphere`
+through `cubey::render::CloudLayerRuntime`.
 
 Ocean integration target:
 
@@ -226,8 +225,8 @@ outside that helper.
    the same shoreline/bathymetry contract.
 6. Continue `projects/planet` as the planet-frame, LOD, local sky, and
    celestial owner before trying to make ocean itself planet-scale.
-7. Continue `projects/cloud` as the standalone production weather/cloud renderer
-   and integrate its outputs only after surface/high/orbit captures are stable.
+7. Continue the atmosphere-hosted production weather/cloud layer and integrate
+   its outputs only after surface/high/orbit captures are stable.
 
 This sequence keeps each project independently useful while aiming every slice
 at concrete ocean integration points.

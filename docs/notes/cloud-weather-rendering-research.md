@@ -199,20 +199,19 @@ as a deeper sampling/reconstruction issue, not as a solved tuning problem.
 
 ## Reference Code Pass 2026-06-13
 
-The following external projects were cloned beside Cubey for source review:
+The following external projects were inspected in a historical source review:
 
 - `/home/bryan/code/Mesh-Cloud-Rendering`
 - `/home/bryan/code/UnityVolumetricCloudsURP`
 - `/home/bryan/code/CloudRenderer`
 
-`Mesh-Cloud-Rendering` is not a volumetric renderer. It uses authored cloud
-meshes, precomputed per-vertex occlusion/transmittance data, a half-resolution
-cloud target, quarter-resolution blur/distortion passes, and a final composite.
-That makes it a poor source for local volumetric low-cloud marching, but a
-useful reminder that distant clouds do not have to come from the same expensive
-raymarch as nearby clouds. A stable mesh, impostor, or shell layer with
-intentional blur/distortion could be a better horizon/far-cloud path than a
-grazing finite-volume march.
+Only `UnityVolumetricCloudsURP` remains an active local reference. The later
+reference-shelf quality pass removed `Mesh-Cloud-Rendering` and `CloudRenderer`
+because they were stale, superseded, or too weak to keep as source references.
+The durable lesson from `Mesh-Cloud-Rendering` is conceptual: distant clouds do
+not have to come from the same expensive raymarch as nearby clouds. A stable
+mesh, impostor, or shell layer with intentional blur/distortion could be a
+better horizon/far-cloud path than a grazing finite-volume march.
 
 `UnityVolumetricCloudsURP` is the most relevant implementation reference. It is
 a URP port of Unity/HDRP-style volumetric clouds and reinforces several
@@ -232,10 +231,10 @@ patterns Cubey should keep or adopt:
 - blur or filter cloud shadow maps separately because shadow integration often
   uses far fewer steps than the main view march.
 
-`CloudRenderer` is a straightforward OpenGL volume raycaster with cellular
-automata density, fixed view samples, and per-sample light rays. It is useful as
-an intentionally simple baseline, but it is not a practical scale/performance
-model for Cubey's ocean/planet horizon cases.
+The durable lesson from `CloudRenderer` is also only conceptual: simple fixed
+view samples plus per-sample light rays are useful as a failure baseline, but
+not as a practical scale/performance model for Cubey's ocean/planet horizon
+cases.
 
 The previous Cubey attempts and this reference pass point to the same
 conclusion: the visible surface/high streaking is not primarily a temporal
@@ -475,13 +474,17 @@ Perlin-Worley shape textures, Worley erosion textures, or orbit/planet-scale
 clouds. The older implementation is frozen in `projects/clouds_legacy` for
 side-by-side comparison.
 
-The remaining promotion blockers are now less about first visibility and more
-about renderer contracts:
+The first foundation promotion pass moved common `CloudLayer*` contracts,
+shader assets, generated-resource helpers, atmosphere backdrop composition, and
+an ocean cloud-shadow diagnostic into shared/consumer code. The remaining
+promotion blockers are less about first visibility and more about full renderer
+ownership:
 
-- promote cloud radiance/transmittance out of the standalone project so ocean
-  and planet can compose clouds with their own scene passes;
-- promote the current analytic sun-shadow factor into a reusable cloud shadow
-  texture or sampled lighting input for surface and ocean lighting;
+- turn the shared cloud contract into a reusable runtime so ocean and planet can
+  compose real cloud radiance/transmittance products with their own scene
+  passes;
+- promote the current analytic sun-shadow diagnostic into a real reusable cloud
+  shadow texture or sampled lighting input for surface and ocean lighting;
 - improve horizon-layer shape/lighting before promotion; temporal/blue-noise
   sampling is still useful, but the current surface artifact is no longer being
   hidden by a final composite blur;
@@ -677,10 +680,10 @@ New reference checkouts under `/home/bryan/code/ref`:
 
 - `Skybolt`: <https://github.com/Prograda/Skybolt>
 - `godot-volumetric-clouds`: <https://github.com/kb173/godot-volumetric-clouds>
-- `godot-planet-fly-through-cloud-volume`:
-  <https://github.com/appxmod/godot-planet-fly-through-cloud-volume>
-- `volumetric_cloud_atmosphere_scattering`:
-  <https://github.com/leoawen/volumetric_cloud_atmosphere_scattering>
+
+The low-star `godot-planet-fly-through-cloud-volume` checkout was later removed
+from the local reference shelf. Its cubemap/sphere-space coverage idea remains
+a possible future spike, but it is not an active source reference.
 
 Skybolt is the primary reference because it is explicitly built for clouds seen
 from the planet surface, outer space, and the transition between them:
@@ -719,12 +722,11 @@ targets:
 - `godot-volumetric-clouds` uses a weather texture whose channels drive density,
   rain/darkness, and type/scale. This matches the direction that weather should
   control local density parameters rather than directly draw final cloud opacity.
-- `godot-planet-fly-through-cloud-volume` has useful shell intersection,
-  blue-noise jitter, and fly-through mechanics, but the shader is less clear as a
-  weather organization reference.
-- `volumetric_cloud_atmosphere_scattering` is useful as a compact WebGL/Three.js
-  planetary prototype with weather, TAA, and atmosphere composition ideas. It is
-  not yet as trustworthy as Skybolt for coverage architecture.
+
+The low-star `volumetric_cloud_atmosphere_scattering` prototype was later
+removed from the local reference shelf. Its screenshots were useful as rough
+visual sketches, but the landed code/provenance was too weak to keep as an
+active source reference.
 
 Implementation implications for `projects/cloud`:
 
@@ -963,9 +965,10 @@ Reference direction:
 - Horizon/Nubis-style cloud shaping still applies: large weather fields gate
   where clouds may exist, while noise/detail fields erode and shape the visible
   cloud body;
-- `godot-planet-fly-through-cloud-volume` is a useful local reference because
-  it uses cubemap/sphere-space cloud coverage instead of a naive equirectangular
-  product;
+- the deleted `godot-planet-fly-through-cloud-volume` checkout was a useful
+  conceptual prompt for cubemap/sphere-space cloud coverage instead of a naive
+  equirectangular product, but it should be recloned only for a focused
+  cubemap-coverage spike;
 - the failed generated 2D orbit-weather product should not be revived in this
   batch. If cached products return later, use cubemap or octahedral storage with
   mip/filtering.
@@ -988,3 +991,429 @@ Implementation target:
   render resolution so high-frequency detail fades before it shimmers;
 - hide shell flatness with grazing-angle alpha feather, cloud-top normals,
   limb/rim lighting, and atmosphere blending.
+
+## Absorbed Atmosphere Baseline 2026-06-28
+
+After the standalone cloud project was absorbed into `projects/atmosphere`, the
+current review command is:
+
+```sh
+projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review-current
+```
+
+The script now captures full-quality 1920x1080 output by default and includes
+`high-oblique-no-clouds` alongside `high-oblique-final`. That comparison matters:
+the no-cloud high-oblique frame has a clean clear-sky/reference horizon, while
+the final frame still shows the cloud layer becoming a hard, noisy far band.
+This points the next fix back at cloud handoff/LOD, not at the shared
+atmosphere background.
+
+The current visual split is:
+
+- surface and upward views are the strongest baseline for local volumetric cloud
+  body shape;
+- high-oblique final is acceptable as a checkpoint, but the far handoff is still
+  visibly rough;
+- orbit-shell oblique gives useful broad weather/shell diagnostics, but it is
+  too flat and translucent to be the high-oblique target by itself.
+
+Next transition work should preserve the no-cloud comparison, then decide
+whether high-oblique needs local march truncation, a dedicated cached
+hemisphere/shell product, or a more explicit far-cloud LOD bridge before cloud
+shadows/reflections are treated as foundation-ready.
+
+## Shadertoy Horizon Artifact Inventory 2026-06-28
+
+The local reference folder is `/home/bryan/code/ref/ShaderToy`. The important
+lesson from the inventory is that the current atmo artifacts are not unusual:
+real-time cloud examples either spend many more samples near grazing rays, filter
+distant density/detail aggressively, or rely on temporal reconstruction designed
+for stochastic samples. Bayer ray-start jitter without temporal convergence
+mostly turns bands into visible noise.
+
+Highest-value references for the current atmo failure:
+
+- `enscape_cube_*`: spherical Earth/cloud-shell setup with hash jitter, temporal
+  accumulation, and neighborhood clamping. It is the closest reference to the
+  Cubey atmo/ocean/planet camera problem.
+- `starry_night_*`: blue-noise and golden-ratio frame offsets are used
+  specifically to hide banding under temporal accumulation.
+- `clouds_raymarching_*`: an expensive but clear slab marcher with reprojection,
+  variance clipping, and enough samples to show what quality the sparse path is
+  approximating.
+- `clouds.glsl`: IQ-style fBM volume marching uses progressive step growth and
+  lowers density/noise detail with distance instead of sampling the same detail
+  field everywhere.
+- `overcast_cloud.glsl`, `wather.glsl`, and `horizon_clouds.glsl`: useful
+  horizon/slab comparisons, including explicit comments about noisy horizon
+  behavior and grazing-ray step issues.
+- `sun_sky_clouds.glsl` and `tiny_planet_clouds.glsl`: useful secondary checks
+  for atmosphere/cloud distance caps and planet-scale shell composition.
+
+The active Cubey path matches the known bad case: half quality traces a reduced
+cloud product, uses static Bayer jitter by default, keeps temporal accumulation
+off, and gives the far-horizon bridge only a small number of samples across very
+long tangent rays. Full resolution hides some upsample damage, but the raw march
+still undersamples the far field. The next fix should target half-res atmo
+output: blue-noise or spatiotemporal jitter, confidence-aware temporal resolve,
+distance/footprint density LOD, and a stronger metadata-aware composite resolve.
+Quarter quality can remain a rough fallback until a cached hemisphere/impostor
+path exists.
+
+## Atmo Horizon Sampling Checkpoint 2026-06-28
+
+This batch moved the active atmo cloud path from static Bayer half-res sampling
+toward the reference-backed strategy above:
+
+- added diagnostic views for jitter, horizon step length, and horizon filter LOD;
+- made half-res atmosphere clouds the default quality target;
+- added a generated blue-noise texture with frame-varying temporal sampling;
+- tightened temporal neighborhood clamping and history validity;
+- filtered local density detail by distance, step footprint, and grazing angle;
+- replaced the half-res composite with a metadata-aware 5x5 bilateral resolve.
+
+Validation passed with:
+
+```sh
+cmake --build --preset dev --target atmosphere planet
+ctest --preset dev --output-on-failure
+```
+
+The full test suite reported 159/159 passing tests. The review pack is:
+
+```text
+outputs/atmosphere-cloud-horizon-noise-20260628/
+```
+
+That pack includes the standard cloud review frames plus targeted horizon
+diagnostics and full/quarter high-oblique comparison frames. The high-oblique
+transition is more legible and the debug views now expose the sampling regime,
+but surface-horizon dark silhouettes/holes are still visible. That residual
+failure now looks less like pure stochastic noise and more like a far-horizon
+lighting/opacity/handoff problem. The next visual pass should target far-cloud
+radiance, alpha, and the near/far handoff before adding more resolution tweaks.
+
+## Integrated Horizon Handoff Checkpoint 2026-06-28
+
+This follow-up implements the handoff direction from the Shadertoy inventory:
+near/local cloud samples are truncated as rays become horizon-grazing, then a
+deterministic integrated far-horizon layer reconstructs the distant cloud band.
+The intent is to avoid throwing more stochastic samples at extremely long
+tangent rays while keeping the same weather/local-detail field as the source.
+
+Landed changes:
+
+- the architecture note now defines the far cloud target as an integrated
+  low-detail horizon layer, not another detailed local march;
+- the local volume march fades density in the grazing/far handoff region;
+- the old far bridge no longer runs a noisy secondary local march;
+- atmosphere clouds now default to `auto` distance mode so the atmo project
+  actually exercises the distance-aware cloud path;
+- new diagnostics expose `horizon-handoff`, `local-truncation`,
+  `integrated-horizon-alpha`, and `integrated-horizon-radiance`;
+- the atmosphere cloud review script now captures horizon on/off comparisons
+  plus the handoff diagnostics for surface and high-oblique views.
+
+Validation passed with:
+
+```sh
+cmake --build --preset dev --target atmosphere cubey_project_atmosphere_tests
+ctest --preset dev -R '^atmosphere_config_tests$' --output-on-failure
+```
+
+Review captures:
+
+```text
+outputs/atmosphere-cloud-horizon-handoff-20260628/
+outputs/atmosphere-cloud-horizon-handoff-20260628-auto-fix/
+```
+
+The mechanical handoff now activates in surface and high-oblique views, and the
+debug masks clearly show where local samples are being removed. The visible
+final/no-horizon delta is intentionally subtle because the integrated layer is a
+soft far cloud band, not a new cloud type. The full-size captures also show that
+the hard black strip at the surface horizon is already present with `--no-clouds`;
+that is an atmo/background or horizon-composition issue, not a cloud-march
+artifact. Treat that as a separate atmo fix before judging further cloud
+horizon tuning.
+
+## Cloud Edge Artifact Diagnosis 2026-06-29
+
+The latest review showed the artifact is not limited to the far field: overhead
+cloud edges also show row/band structure. That changes the diagnosis from a
+horizon-only handoff bug to a cloud-edge integration problem. Center sampling
+and Bayer reveal stable under-sampling bands, while frame-varying blue noise
+makes those bands move and therefore shimmer unless it is paired with a real
+sparse temporal reconstruction path.
+
+Reference comparison:
+
+- `TerrainEngine-OpenGL` keeps the active cloud shape simpler: one coherent
+  texture-backed density field, stable Bayer ray-start offset, smooth remaps,
+  mipmapped volume textures, 64 direct steps, fog/background fade, and a small
+  Gaussian post blur. It does not depend on animated blue-noise jitter.
+- `flower`, `Meteoros`, and the stronger Shadertoy examples use stochastic
+  samples only with reprojection, history, neighborhood/variance clamping, or
+  phased 4x4 sparse updates.
+- `Project-Marshmallow` is the most directly useful integration reference: it
+  marches coarse while empty, backs up and enters a smaller-step mode on first
+  cloud hit, then returns to coarse stepping after several misses.
+
+That diagnosis led to an adaptive local-march experiment, but GUI review showed
+the cost/quality tradeoff was not acceptable. Keep these conclusions, but do
+not repeat that exact adaptive path as the default:
+
+- keep Bayer as the production default until sparse temporal reconstruction is
+  robust;
+- avoid frame-varying jitter unless it is paired with real sparse
+  reconstruction;
+- filter or pre-integrate unresolved density edges before adding more visual
+  detail;
+- keep the far-horizon layer broad and low detail, with stable stratified sample
+  phases rather than another detailed local march.
+
+## TerrainEngine Resolve Recheck 2026-06-29
+
+A closer crop review changed the reference read: `cloud_ref` is not an
+artifact-free oracle. Its `cloud-alpha` and `raw-final` captures show the same
+stippled cloud-edge sampling noise, but the final view hides it behind lower
+contrast and flatter lighting. TerrainEngine's captured final image stands up
+better because it keeps the raw model simple and then presents it through the
+source post chain.
+
+Relevant TerrainEngine source details:
+
+- `CloudsModel.cpp` defaults `postProcess = true`;
+- `VolumetricClouds::getCloudsTexture()` returns the post-processed cloud
+  texture when that flag is set;
+- `shaders/clouds_post.frag` applies a small 3x3 Gaussian blur to the cloud
+  color product before scene composition.
+
+The next production attempt should therefore target the final cloud resolve
+rather than another density model. Keep `raw-final` as the unfiltered diagnostic
+view, preserve the current metadata-aware resolve for comparison, and add a
+TerrainEngine-style post resolve that filters the premultiplied cloud product
+with enough alpha/distance guarding to avoid obvious horizon or terrain smears.
+
+## Terrain-Post Resolve Checkpoint 2026-06-29
+
+The production cloud layer now has an explicit final resolve mode:
+`terrain-post` is the default and applies a TerrainEngine-style 3x3 cloud-product
+filter, while `metadata-bilateral` preserves the previous guarded 5x5 resolve
+for A/B comparison. The mode is exposed as `clouds.resolve_mode`,
+`--cloud-resolve-mode`, and the Atmosphere/Planet cloud lighting controls.
+
+Use the focused capture matrix when judging this work:
+
+```sh
+projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
+```
+
+Interpretation:
+
+- `raw-final` should remain unfiltered and is expected to expose raw edge
+  stipple;
+- `final` should hide more edge noise in `terrain-post` than in
+  `metadata-bilateral`, especially in `surface-up` and `high-oblique`;
+- `cloud-alpha` and `edge-mask` should be used to verify the resolve is hiding
+  under-resolved cloud boundaries, not changing placement or weather shape;
+- the secondary half-quality final captures are a quick regression check, not
+  the quality target.
+
+Full-resolution review accepted the post resolve as a partial fix: overhead
+`surface-up` edges are calmer, but the lower/far-field banding is still visible
+in `raw-final`, `cloud-alpha`, and `edge-mask`. Treat the far-field problem as a
+source sampling/handoff issue, not as a stronger final blur problem.
+
+Next direction:
+
+- nearby and overhead clouds should keep the local volumetric march plus
+  `terrain-post` resolve;
+- lower-sky, grazing, and long-distance rays should fade local detail and local
+  density earlier;
+- the integrated far-horizon layer should become the visible replacement in that
+  region, using broad filtered weather/structure with stable deterministic
+  samples;
+- do not reintroduce frame-varying jitter or the reverted adaptive march path
+  unless a separate temporal reconstruction/performance budget exists.
+
+## Cloud Edge Stability Attempt and Rollback 2026-06-29
+
+The adaptive edge-march attempt was reverted after GUI review. It reduced the
+obvious row-like slicing in some overhead captures, but it did not remove edge
+noise at half or full quality and degraded performance enough that half quality
+could no longer sustain the 144 fps cap while full quality dropped below 20 fps.
+Do not reintroduce that path as the default without a separate performance
+budget and a clearly better edge result.
+
+Current kept changes:
+
+- atmosphere and shared cloud defaults use stable Bayer sampling with 0.65
+  jitter strength;
+- blue noise and temporal reconstruction remain explicit diagnostics/future
+  sparse-reconstruction work;
+- the artifact diagnosis remains: random jitter is not the fix, and a future
+  solution needs either true sparse temporal reconstruction, a cached/cloud-top
+  product, or a cheaper deterministic integration strategy.
+
+Validation before the rollback passed with:
+
+```sh
+cmake --build --preset dev --target atmosphere planet cubey_project_atmosphere_tests
+ctest --preset dev -R '^atmosphere_config_tests$' --output-on-failure
+ctest --preset dev -R '^(render_apps_use_dynamic_rendering|atmosphere_headless_writes_png|atmosphere_headless_writes_png_stats)$' --output-on-failure
+ctest --preset dev --output-on-failure
+```
+
+The full suite reported 159/159 passing tests before the adaptive shader revert.
+After the rollback and timeout cleanup, focused validation passed with:
+
+```sh
+cmake --build --preset dev --target atmosphere planet cubey_project_atmosphere_tests
+ctest --preset dev -R '^atmosphere_config_tests$' --output-on-failure
+ctest --preset dev -R '^(render_apps_use_dynamic_rendering|atmosphere_headless_writes_png|atmosphere_headless_writes_png_stats)$' --output-on-failure
+```
+
+## Far-Field Handoff Checkpoint 2026-06-29
+
+The far-field handoff batch adds a focused capture matrix and starts separating
+near/overhead cloud rendering from lower-sky grazing rays:
+
+```sh
+projects/atmosphere/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
+```
+
+The production shader now fades local volumetric density and local high
+frequency detail earlier along grazing surface-view rays, raises local sample
+LOD near the lower-sky handoff, and makes the integrated far-horizon replacement
+use more filtered weather/structure samples. Debug views added to the capture
+matrix show the active handoff, local truncation, integrated horizon alpha,
+integrated horizon radiance, and distance regime.
+
+Full-resolution review pack:
+`outputs/atmosphere-cloud-farfield-handoff-final-20260629/`.
+
+Result:
+
+- overhead edges remain similar to the accepted `terrain-post` result;
+- lower and far-field clouds are softer and less broken than the raw local
+  march;
+- the remaining lower-sky stripe pattern is stable and still visible in
+  `surface-up-cloud-alpha` and `surface-up-integrated-horizon-alpha`;
+- the remaining problem is therefore not a final resolve issue alone. It needs a
+  cleaner far-cloud product, such as a cached/preintegrated cloud-top layer or a
+  proper temporal reconstruction path, if the current stable far-field artifact
+  is not acceptable.
+
+Review captures:
+
+```text
+outputs/atmosphere-cloud-edge-stability-20260629/
+outputs/atmosphere-cloud-edge-stability-20260629-targeted/
+```
+
+The targeted captures are still useful for comparing Bayer jitter strength, but
+they should not be treated as a solved quality checkpoint. Horizon and
+high-oblique frames also expose a separate atmosphere/background boundary
+problem in the no-cloud comparison. The next cloud-specific step should be a
+real sparse temporal/reconstruction path or a more explicit cached far-cloud
+product, not more random jitter or the reverted adaptive march.
+
+## Cloud Ref Sampling/Resolve Checkpoint 2026-06-30
+
+The `cloud_ref` baseline now separates cloud-layer output from final scene
+composition. The march pass writes premultiplied cloud radiance plus continuous
+alpha for `final`/`raw-final`; the composite pass resolves that layer, then
+composites once over the generated sky/background. This removes the old
+thresholded-alpha/final-color blur contract, which was not a useful basis for
+coverage-aware reconstruction.
+
+New controls:
+
+- `clouds.view_steps` / `--cloud-view-steps`: explicit 1..128 view-step
+  override, with 0 in project config meaning "use the quality preset";
+- `clouds.view_samples` / `--cloud-view-samples`: deterministic 1, 2, or 4
+  ray-start samples per pixel.
+
+Review pack:
+
+```text
+outputs/cloud-ref-sampling-coverage-review-20260630/
+```
+
+Result:
+
+- the layer/alpha product is the right diagnostic contract and should be kept;
+- 2x and 4x static ray-start averaging reduce pixel-level breakup; follow-up
+  inspection found `s2 / steps64 / r1` good enough to serve as the near-term
+  visual target for cloud-edge stability;
+- increasing view steps changes the artifact frequency and can reveal the same
+  marching structure in a different place, so this is not just a too-few-steps
+  issue;
+- stronger 3x3 blur hides more pattern but visibly softens cloud structure.
+
+Treat this as evidence that brute-force `s2` is a useful reference, not
+automatically a production default. Clouds are a background component, and
+doubling the full-screen march cost is not acceptable until measured. The next
+serious fix should profile the shared `CloudLayer`, expose the same sampling
+controls there, then approximate the `s2 / steps64 / r1` target with
+deterministic temporal reconstruction or another cheaper coverage resolve.
+
+Review helper:
+
+```text
+projects/atmosphere/capture_cloud_sampling_perf.sh
+```
+
+The helper is intentionally a PNG review pack, so its default warmup is zero:
+the shared headless PNG host records the captured frame only. Use it to compare
+captured-frame profile rows and visual output; convert a case to
+`--capture video` before treating the numbers as steady-state frame timing.
+
+## Shared CloudLayer View Sampling 2026-06-30
+
+The shared `CloudLayer` used by atmosphere and planet now consumes the same
+`clouds.view_steps` / `clouds.view_samples` run-config controls instead of
+leaving them `cloud_ref`-only. It also adds:
+
+- `clouds.view_sample_mode=single-frame`: march all requested local-volume
+  Bayer phases in the current frame. This is the direct quality/reference path
+  and costs roughly one local march per requested sample;
+- `clouds.view_sample_mode=temporal-phased`: march one deterministic phase per
+  frame and let cloud temporal history reconstruct the multi-phase result. This
+  is the production candidate for approaching the `s2 / steps64 / r1` look
+  without making every frame pay the full brute-force sample cost.
+
+Defaults remain unchanged: half-quality atmosphere clouds, one view sample,
+single-frame mode, and temporal reconstruction off. Temporal-phased mode must be
+enabled explicitly with both `--cloud-view-samples 2` and `--cloud-temporal`.
+The mode also disables the old frame-varying pixel shift for deterministic
+phased sampling, because that shift made temporal noise shimmer instead of
+reconstructing stable coverage.
+
+Validation notes:
+
+```text
+cmake --build --preset dev
+ctest --preset dev -R '^(cubey_core_tests|atmosphere_config_tests|cloud_ref_config_tests|cloud_ref_2_config_tests|clouds_legacy_config_tests|atmosphere_headless_writes_png|cloud_ref_surface_headless_writes_png|cloud_ref_high_headless_writes_png)$' --output-on-failure
+```
+
+## Cloud Ref Optical Lighting Checkpoint 2026-07-01
+
+`cloud_ref` now has a cleaner local-lighting diagnostic loop before propagating
+changes back to shared `CloudLayer`:
+
+- `view-optical-depth` exposes normalized Beer depth accumulated along the view
+  ray;
+- `light-optical-depth` exposes normalized average cone-light depth at cloud
+  samples;
+- backlit core, rim, and powder controls now use optical thickness rather than
+  raw per-sample density gates;
+- the extra sun disk/halo presentation moved from cloud march radiance to final
+  composite, where it is attenuated by the resolved cloud layer alpha.
+
+This keeps `raw-final` closer to a cloud-layer diagnostic while leaving final
+presentation free to approximate sun-through-cloud glare. The next review should
+use `projects/cloud_ref/capture_lighting_compare.sh` and inspect
+`surface-up`, `surface-sun`, and `high-oblique` before deciding whether to copy
+any lighting mechanics into shared atmosphere clouds.

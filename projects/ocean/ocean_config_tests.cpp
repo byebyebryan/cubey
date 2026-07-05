@@ -591,6 +591,9 @@ int main() {
         require(ocean::ocean_render_view_from_name("far-field") ==
                     ocean::OceanRenderView::FarField,
                 "far-field debug view should parse");
+        require(ocean::ocean_render_view_from_name("cloud-shadow") ==
+                    ocean::OceanRenderView::CloudShadow,
+                "cloud shadow debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Foam) ==
                     ocean::OceanRenderView::FoamSource,
                 "ocean debug view cycle should include the foam source view");
@@ -634,8 +637,11 @@ int main() {
                     ocean::OceanRenderView::FarField,
                 "ocean debug view cycle should include far-field after filtered foam");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::FarField) ==
+                    ocean::OceanRenderView::CloudShadow,
+                "ocean debug view cycle should include cloud shadow after far-field");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::CloudShadow) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap after far-field diagnostics");
+                "ocean debug view cycle should wrap after cloud shadow diagnostics");
 
         bool rejected = false;
         try {

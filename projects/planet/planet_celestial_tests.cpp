@@ -575,9 +575,16 @@ void test_planet_unified_atmosphere_frame_uses_local_tangent_up() {
     inputs.moon_angular_radius_rad = 0.004F;
     inputs.moon_phase_fraction = 0.33F;
     const cubey::render::ViewRayBasis3D view_rays{
-        .right_aspect = {0.0F, 0.0F, 1.0F, 1.5F},
+        .right_aspect = {0.0F, 1.0F, 0.0F, 1.5F},
         .up_tan_half_fovy = {1.0F, 0.0F, 0.0F, 0.6F},
-        .forward = {0.0F, -1.0F, 0.0F, 0.0F},
+        .forward = {0.0F, 0.0F, -1.0F, 0.0F},
+    };
+    const cubey::render::LocalTangentFrame local_frame{
+        .world_origin_m = {600000.0, 0.0, 0.0},
+        .right = {0.0F, 0.0F, 1.0F},
+        .up = {1.0F, 0.0F, 0.0F},
+        .forward = {0.0F, 1.0F, 0.0F},
+        .planet_radius_m = 600000.0F,
     };
     cubey::render::AtmosphereEnvironmentConfig look_config;
     look_config.rayleigh_density_scale = 1.2F;
@@ -585,13 +592,14 @@ void test_planet_unified_atmosphere_frame_uses_local_tangent_up() {
 
     const cubey::render::AtmosphereEnvironmentFrameUniforms uniforms =
         cubey::projects::planet::planet_unified_atmosphere_frame_uniforms(
-            inputs, {.view_rays = view_rays, .look_config = look_config});
+            inputs,
+            {.view_rays = view_rays, .local_frame = local_frame, .look_config = look_config});
 
     require_vec_near(cubey::math::Vec3{uniforms.camera_up_tan_half_fovy}, {0.0F, 1.0F, 0.0F},
                      "unified atmosphere view up should become local planet up");
-    require_vec_near(cubey::math::Vec3{uniforms.camera_right_aspect}, {1.0F, 0.0F, 0.0F},
-                     "unified atmosphere view right should stay tangent to local horizon");
-    require_vec_near(cubey::math::Vec3{uniforms.camera_forward_debug_view}, {0.0F, 0.0F, -1.0F},
+    require_vec_near(cubey::math::Vec3{uniforms.camera_right_aspect}, {0.0F, 0.0F, 1.0F},
+                     "unified atmosphere view right should use the explicit tangent frame");
+    require_vec_near(cubey::math::Vec3{uniforms.camera_forward_debug_view}, {-1.0F, 0.0F, 0.0F},
                      "unified atmosphere view forward should preserve camera orientation");
     require_near(uniforms.camera_right_aspect.w, 1.5F, 0.000001F,
                  "unified atmosphere adapter should preserve aspect");

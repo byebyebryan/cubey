@@ -4,7 +4,7 @@
 // TerrainEngine-OpenGL reference port.
 // Fills the base 3D texture with Perlin-Worley and packed Worley FBM channels.
 
-#include "cloud_noise_common.glsl"
+#include "cubey/cloud/cloud_noise_common.glsl"
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 layout(rgba8, set = 0, binding = 0) uniform writeonly image3D out_volume;

@@ -337,12 +337,18 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "atmosphere.rayleigh_scale",
         "atmosphere.mie_scale",
         "atmosphere.ozone_scale",
+        "atmosphere.camera_yaw_offset_degrees",
+        "atmosphere.camera_pitch_offset_degrees",
         "atmosphere.time_speed_hours_per_second",
         "atmosphere.auto_exposure",
         "atmosphere.moon",
+        "clouds.enabled",
+        "clouds.debug_view",
         "clouds.camera_mode",
         "clouds.quality",
         "clouds.sampling_mode",
+        "clouds.density_model",
+        "clouds.resolve_mode",
         "clouds.background_mode",
         "clouds.distance_mode",
         "clouds.planet_radius_m",
@@ -352,9 +358,15 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "clouds.coverage",
         "clouds.density",
         "clouds.weather_scale_km",
+        "clouds.shape_domain_km",
+        "clouds.footprint_filter_strength",
+        "clouds.edge_softness",
+        "clouds.edge_detail_fade",
+        "clouds.edge_resolve_strength",
         "clouds.vertical_shear_fraction",
         "clouds.wind_speed_mps",
         "clouds.shadow_strength",
+        "clouds.powder_strength",
         "clouds.jitter_strength",
         "clouds.orbit_transition_start_m",
         "clouds.orbit_transition_end_m",
@@ -502,17 +514,24 @@ void test_run_config_loads_json_config_file() {
   "atmosphere": {
     "time_of_day_mode": "solar",
     "time_hours": 18.5,
+    "camera_yaw_offset_degrees": 12.0,
+    "camera_pitch_offset_degrees": -18.0,
     "moon": false
   },
-  "clouds": {
+    "clouds": {
+    "enabled": false,
+    "debug_view": "orbit-weather",
     "camera_mode": "high",
     "quality": "full",
     "weather_preset": "inspection",
     "sampling_mode": "bayer",
+    "density_model": "ref-density",
+    "resolve_mode": "metadata-bilateral",
     "background_mode": "water-context",
     "coverage": 0.62,
     "wind_speed_mps": 24.0,
     "shadow_strength": 0.75,
+    "powder_strength": 0.35,
     "jitter_strength": 0.25,
     "orbit_fill": 1.4,
     "temporal": false
@@ -576,14 +595,21 @@ void test_run_config_loads_json_config_file() {
                 config.water3d.p2g_mode == "active-faces" && config.water3d.whitewater == 1,
             "config file should set water 3D controls");
     require(config.atmosphere.time_of_day_mode == "solar" &&
-                config.atmosphere.time_hours == 18.5F && config.atmosphere.moon == 0,
+                config.atmosphere.time_hours == 18.5F &&
+                config.atmosphere.camera_yaw_offset_degrees == 12.0F &&
+                config.atmosphere.camera_pitch_offset_degrees == -18.0F &&
+                config.atmosphere.moon == 0,
             "config file should set atmosphere controls");
-    require(config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
+    require(config.clouds.enabled == 0 && config.clouds.debug_view == "orbit-weather" &&
+                config.clouds.camera_mode == "high" && config.clouds.quality == "full" &&
                 config.clouds.weather_preset == "inspection" &&
                 config.clouds.sampling_mode == "bayer" &&
+                config.clouds.density_model == "ref-density" &&
+                config.clouds.resolve_mode == "metadata-bilateral" &&
                 config.clouds.background_mode == "water-context" &&
                 config.clouds.coverage == 0.62F && config.clouds.wind_speed_mps == 24.0F &&
                 config.clouds.shadow_strength == 0.75F &&
+                config.clouds.powder_strength == 0.35F &&
                 config.clouds.jitter_strength == 0.25F &&
                 config.clouds.orbit_fill == 1.4F && config.clouds.temporal == 0,
             "config file should set cloud controls");
@@ -862,6 +888,10 @@ void test_run_config_parses_atmosphere_options() {
     std::string azimuth_value = "-28.0";
     std::string altitude_flag = "--camera-altitude-km";
     std::string altitude_value = "2.25";
+    std::string camera_yaw_flag = "--camera-yaw-offset-deg";
+    std::string camera_yaw_value = "18";
+    std::string camera_pitch_flag = "--camera-pitch-offset-deg";
+    std::string camera_pitch_value = "-22";
     std::string rayleigh_flag = "--rayleigh-scale";
     std::string rayleigh_value = "1.15";
     std::string mie_flag = "--mie-scale";
@@ -901,7 +931,7 @@ void test_run_config_parses_atmosphere_options() {
     std::string moon_size_scale_flag = "--moon-size-scale";
     std::string moon_size_scale_value = "1.8";
     std::string no_moon_flag = "--no-moon";
-    std::array<char*, 48> argv{program.data(),
+    std::array<char*, 52> argv{program.data(),
                                preset_flag.data(),
                                preset_value.data(),
                                elevation_flag.data(),
@@ -910,6 +940,10 @@ void test_run_config_parses_atmosphere_options() {
                                azimuth_value.data(),
                                altitude_flag.data(),
                                altitude_value.data(),
+                               camera_yaw_flag.data(),
+                               camera_yaw_value.data(),
+                               camera_pitch_flag.data(),
+                               camera_pitch_value.data(),
                                rayleigh_flag.data(),
                                rayleigh_value.data(),
                                mie_flag.data(),
@@ -958,6 +992,10 @@ void test_run_config_parses_atmosphere_options() {
     require(config.atmosphere.sun_azimuth_degrees == -28.0F, "run config should parse sun azimuth");
     require(config.atmosphere.camera_altitude_km == 2.25F,
             "run config should parse camera altitude");
+    require(config.atmosphere.camera_yaw_offset_degrees == 18.0F,
+            "run config should parse camera yaw offset");
+    require(config.atmosphere.camera_pitch_offset_degrees == -22.0F,
+            "run config should parse camera pitch offset");
     require(config.atmosphere.rayleigh_scale == 1.15F,
             "run config should parse Rayleigh scale");
     require(config.atmosphere.mie_scale == 1.75F, "run config should parse Mie scale");
@@ -1000,6 +1038,10 @@ void test_run_config_parses_cloud_options() {
     std::string weather_preset_value = "storm";
     std::string sampling_mode_flag = "--cloud-sampling-mode";
     std::string sampling_mode_value = "bayer";
+    std::string density_model_flag = "--cloud-density-model";
+    std::string density_model_value = "cloud-ref-compatible";
+    std::string resolve_mode_flag = "--cloud-resolve-mode";
+    std::string resolve_mode_value = "metadata-bilateral";
     std::string background_mode_flag = "--cloud-background-mode";
     std::string background_mode_value = "water-context";
     std::string distance_mode_flag = "--cloud-distance-mode";
@@ -1018,6 +1060,16 @@ void test_run_config_parses_cloud_options() {
     std::string density_value = "1.25";
     std::string weather_scale_flag = "--cloud-weather-scale-km";
     std::string weather_scale_value = "260";
+    std::string shape_domain_flag = "--cloud-shape-domain-km";
+    std::string shape_domain_value = "840";
+    std::string footprint_filter_flag = "--cloud-footprint-filter-strength";
+    std::string footprint_filter_value = "1.35";
+    std::string edge_softness_flag = "--cloud-edge-softness";
+    std::string edge_softness_value = "1.20";
+    std::string edge_detail_fade_flag = "--cloud-edge-detail-fade";
+    std::string edge_detail_fade_value = "0.55";
+    std::string edge_resolve_flag = "--cloud-edge-resolve-strength";
+    std::string edge_resolve_value = "0.80";
     std::string vertical_shear_flag = "--cloud-vertical-shear-fraction";
     std::string vertical_shear_value = "0.16";
     std::string wind_flag = "--cloud-wind-speed-mps";
@@ -1040,8 +1092,11 @@ void test_run_config_parses_cloud_options() {
     std::string orbit_density_value = "1.10";
     std::string orbit_fill_flag = "--cloud-orbit-fill";
     std::string orbit_fill_value = "1.40";
+    std::string clouds_flag = "--no-clouds";
+    std::string debug_flag = "--cloud-debug-view";
+    std::string debug_value = "transition-weights";
     std::string temporal_flag = "--no-cloud-temporal";
-    std::array<char*, 50> argv{
+    std::array<char*, 67> argv{
         program.data(),
         camera_flag.data(),
         camera_value.data(),
@@ -1051,6 +1106,10 @@ void test_run_config_parses_cloud_options() {
         weather_preset_value.data(),
         sampling_mode_flag.data(),
         sampling_mode_value.data(),
+        density_model_flag.data(),
+        density_model_value.data(),
+        resolve_mode_flag.data(),
+        resolve_mode_value.data(),
         background_mode_flag.data(),
         background_mode_value.data(),
         distance_mode_flag.data(),
@@ -1069,6 +1128,16 @@ void test_run_config_parses_cloud_options() {
         density_value.data(),
         weather_scale_flag.data(),
         weather_scale_value.data(),
+        shape_domain_flag.data(),
+        shape_domain_value.data(),
+        footprint_filter_flag.data(),
+        footprint_filter_value.data(),
+        edge_softness_flag.data(),
+        edge_softness_value.data(),
+        edge_detail_fade_flag.data(),
+        edge_detail_fade_value.data(),
+        edge_resolve_flag.data(),
+        edge_resolve_value.data(),
         vertical_shear_flag.data(),
         vertical_shear_value.data(),
         wind_flag.data(),
@@ -1091,6 +1160,9 @@ void test_run_config_parses_cloud_options() {
         orbit_density_value.data(),
         orbit_fill_flag.data(),
         orbit_fill_value.data(),
+        clouds_flag.data(),
+        debug_flag.data(),
+        debug_value.data(),
         temporal_flag.data(),
     };
 
@@ -1101,8 +1173,15 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.quality == "full", "run config should parse cloud quality");
     require(config.clouds.weather_preset == "storm",
             "run config should parse cloud weather preset");
+    require(config.clouds.enabled == 0, "run config should parse negative cloud enable flag");
+    require(config.clouds.debug_view == "transition-weights",
+            "run config should parse cloud debug view");
     require(config.clouds.sampling_mode == "bayer",
             "run config should parse cloud sampling mode");
+    require(config.clouds.density_model == "cloud-ref-compatible",
+            "run config should parse cloud density model");
+    require(config.clouds.resolve_mode == "metadata-bilateral",
+            "run config should parse cloud resolve mode");
     require(config.clouds.background_mode == "water-context",
             "run config should parse cloud background mode");
     require(config.clouds.distance_mode == "orbit-shell",
@@ -1119,6 +1198,16 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.density == 1.25F, "run config should parse cloud density");
     require(config.clouds.weather_scale_km == 260.0F,
             "run config should parse cloud weather scale");
+    require(config.clouds.shape_domain_km == 840.0F,
+            "run config should parse cloud shape domain");
+    require(config.clouds.footprint_filter_strength == 1.35F,
+            "run config should parse cloud footprint filter strength");
+    require(config.clouds.edge_softness == 1.20F,
+            "run config should parse cloud edge softness");
+    require(config.clouds.edge_detail_fade == 0.55F,
+            "run config should parse cloud edge detail fade");
+    require(config.clouds.edge_resolve_strength == 0.80F,
+            "run config should parse cloud edge resolve strength");
     require(config.clouds.vertical_shear_fraction == 0.16F,
             "run config should parse cloud vertical shear fraction");
     require(config.clouds.wind_speed_mps == 32.0F, "run config should parse cloud wind speed");

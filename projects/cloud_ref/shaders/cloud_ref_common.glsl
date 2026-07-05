@@ -19,6 +19,11 @@ const int CLOUD_REF_DEBUG_DETAIL_DENSITY = 17;
 const int CLOUD_REF_DEBUG_AMBIENT_LIGHT = 18;
 const int CLOUD_REF_DEBUG_DIRECT_LIGHT = 19;
 const int CLOUD_REF_DEBUG_PHASE_LIGHT = 20;
+const int CLOUD_REF_DEBUG_VIEW_OPTICAL_DEPTH = 21;
+const int CLOUD_REF_DEBUG_LIGHT_OPTICAL_DEPTH = 22;
+
+const int CLOUD_REF_RESOLVE_TERRAIN_POST = 0;
+const int CLOUD_REF_RESOLVE_METADATA_BILATERAL = 1;
 
 layout(std140, set = 0, binding = 0) uniform CloudRefFrame {
     vec4 camera_right_aspect;
@@ -31,8 +36,11 @@ layout(std140, set = 0, binding = 0) uniform CloudRefFrame {
     vec4 ref_options;
     vec4 shape_options;
     vec4 weather_feature_weights;
+    vec4 lighting_strengths;
+    vec4 final_options;
     vec4 cloud_color_top_shadow;
     vec4 cloud_color_bottom_horizon;
+    vec4 composite_options;
 } params;
 
 float cloud_ref_saturate(float value) {
@@ -196,11 +204,6 @@ vec3 cloud_ref_background(vec3 direction) {
         sky = mix(water, sky, smoothstep(-0.045, 0.018, view_height));
     }
     return sky;
-}
-
-vec3 cloud_ref_tonemap(vec3 color) {
-    vec3 mapped = color / (vec3(1.0) + color);
-    return pow(max(mapped, vec3(0.0)), vec3(1.0 / 2.2));
 }
 
 #endif

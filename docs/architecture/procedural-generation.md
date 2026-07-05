@@ -195,8 +195,8 @@ through shared primitives where the formulas already matched:
 - Shared atmosphere/sky shaders consume shared GLSL PCG hash and 2D value-noise
   helpers for procedural stars and moon terminator breakup while keeping the
   star population, moon lighting, and visibility recipes domain-owned.
-- `projects/cloud` uses the shared GLSL remap primitive in the active cloud
-  common shaders while leaving source-aligned Perlin/Worley recipes intact.
+- The shared cloud shaders used by `projects/atmosphere` consume the shared GLSL
+  remap primitive while leaving source-aligned Perlin/Worley recipes intact.
 
 ## Migration Tiers
 

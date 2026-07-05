@@ -1,0 +1,43 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(rgba8, set = 0, binding = 0) uniform writeonly image2D output_texture;
+
+float cloud_blue_hash(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
+float cloud_blue_rank(ivec2 pixel, ivec2 size, float seed) {
+    vec2 p = vec2((pixel % size + size) % size);
+    float center = cloud_blue_hash(p + seed);
+    float neighbor_sum = 0.0;
+    for (int y = -2; y <= 2; ++y) {
+        for (int x = -2; x <= 2; ++x) {
+            if (x == 0 && y == 0) {
+                continue;
+            }
+            vec2 q = vec2(((pixel + ivec2(x, y)) % size + size) % size);
+            neighbor_sum += cloud_blue_hash(q + seed);
+        }
+    }
+    float low = neighbor_sum / 24.0;
+    return clamp((center - low) * 0.72 + center * 0.36 + 0.32, 0.0, 1.0);
+}
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(output_texture);
+    if (any(greaterThanEqual(pixel, size))) {
+        return;
+    }
+
+    vec4 value = vec4(
+        cloud_blue_rank(pixel, size, 0.0),
+        cloud_blue_rank(pixel, size, 17.31),
+        cloud_blue_rank(pixel, size, 41.77),
+        1.0);
+    imageStore(output_texture, pixel, value);
+}

@@ -2,14 +2,15 @@
 
 This document promotes the lessons from `projects/clouds_legacy`,
 `projects/cloud_ref`, and `projects/cloud_ref_2` into the direction for the
-production `projects/cloud` renderer. The reference projects should remain
-available as guardrails, but new cloud feature work should not keep tuning
-throwaway ports.
+production cloud layer hosted by `projects/atmosphere`. The reference projects
+should remain available as guardrails, but new cloud feature work should not
+keep tuning throwaway ports or a separate standalone production app.
 
 ## Decision
 
-Start a new production cloud project instead of continuing `clouds_legacy` or
-pulling `cloud_ref_2` toward visual quality.
+Use the shared `cubey::render::CloudLayerRuntime` through `projects/atmosphere`
+instead of continuing `clouds_legacy`, reviving a standalone `projects/cloud`,
+or pulling `cloud_ref_2` toward visual quality.
 
 The production renderer should combine:
 
@@ -97,6 +98,61 @@ useful contract is coverage, type, edge softness, and erosion as separate
 parameter biases over the local 3D density field before lighting and
 composition.
 
+### Cloud Ref Lighting Test Bed
+
+`projects/cloud_ref` should now serve as the clean lighting/rendering test bed
+for the local volumetric cloud path. It should keep the TerrainEngine-style
+density, shell, noise, weather, and basic cone-light march as the stable raw
+signal, but lighting is allowed to diverge from TerrainEngine where the source
+demo is too presentation-specific or too crude for Cubey.
+
+The corrected lighting direction is additive rather than a mix between ambient
+fill and direct sun:
+
+1. march density through the view ray and update view transmittance with
+   Beer-Lambert extinction;
+2. evaluate sun visibility with the existing short cone march;
+3. evaluate directional response with dual or stacked Henyey-Greenstein phase
+   functions;
+4. apply a powder or cheap multi-scattering approximation as a modifier of the
+   sun contribution, not as a switch that suppresses direct light;
+5. evaluate ambient as a separate sky/top/ground term, initially from the
+   standalone `cloud_ref` sky context and later from shared atmosphere/sky
+   inputs;
+6. integrate `direct + ambient` into linear cloud radiance, and output
+   radiance plus view transmittance/alpha for final resolve and composition.
+
+The earlier `cloud_ref` powder toggle was treated as experimental because it
+multiplied the direct-light mix weight by a local density term. Current
+`cloud_ref` lighting should keep powder/rim/backlit controls tied to view and
+light optical depth diagnostics instead. That keeps the Beer-Powder role closer
+to the references: a controlled local-scattering approximation layered on top of
+Beer transmittance and phase, not a density switch that suppresses direct light.
+
+Reference alignment for this lighting direction:
+
+- `TerrainEngine-OpenGL`: still the source-faithful density/march baseline, but
+  its final source mix is not the production lighting target;
+- `godot-volumetric-cloud-demo-v2`: good compact model for sky-LUT-derived sun,
+  ambient, and ground terms plus stacked phase and Beer-Powder-style lighting;
+- `UnityVolumetricCloudsURP`: strongest product-level model for separating
+  scattering/transmittance, ambient probe, powder intensity, multi-scattering,
+  light steps, mean distance, and upscale/resolve metadata;
+- `diharaw-volumetric-clouds`: compact cross-check for Beer-plus-powder energy,
+  dual HG phase, cone-density lighting, and simple ambient/sun controls;
+- `Meteoros` and `Project-Marshmallow`: useful explanatory references for the
+  Horizon/Decima vocabulary: directional scattering, absorption/out-scattering,
+  in-scattering, cone samples, and silver-lining behavior;
+- ShaderToy cloud refs: useful visual/look-dev checks, especially derivative
+  lighting, horizon-specific clouds, moonlit fill, and storm flash lighting, but
+  not direct code donors because of mixed licenses and flat/AABB assumptions.
+
+The first implementation pass should make `cloud_ref` lighting honest before
+adding more features: remove or relabel inactive controls, make debug views show
+real ambient/direct/phase/source terms, replace the ambient/direct mix with an
+additive source equation, then reintroduce powder as a scalar intensity with
+off/current/new comparisons in the capture pack.
+
 ## Lessons From Cloud Ref 2
 
 `cloud_ref_2` is not a useful visual target yet. It deliberately reused Cubey
@@ -121,8 +177,9 @@ amplifies bad cloud shape.
 
 ## Production Shape
 
-The production cloud renderer should be a standalone `projects/cloud` project
-first. It should not start inside ocean or planet.
+The production cloud renderer now lives as the shared cloud layer consumed by
+`projects/atmosphere`. It should continue to be tested and tuned there before
+ocean, planet, or PBR viewers consume cloud products directly.
 
 Initial scope:
 
@@ -130,6 +187,9 @@ Initial scope:
 - texture-backed cloud density: base volume, detail/erosion volume, weather map;
 - world-scale weather/type sampling where `clouds.weather_scale_km` means
   approximate broad feature size rather than texture period;
+- explicit local density projection scale where `clouds.shape_domain_km` owns
+  base/detail cloud texture frequency. Physical planet radius must not stretch
+  or shrink local cloud breakup;
 - raw weather/type diagnostics plus ray-marched visible density/type diagnostics
   so map artifacts and visible artifacts can be separated before changing
   production shaping;
@@ -141,18 +201,21 @@ Initial scope:
   inputs;
 - tunable direct/ambient/phase lighting and final resolve controls so final
   image polish can be isolated from raw march quality;
-- deterministic static sampling controls for interleaved-gradient, Bayer, and
-  center-of-step ray starts, plus a metadata-aware final resolve that uses
-  opacity, mean distance, and confidence while leaving `raw-final` unfiltered;
-- Bayer ray-start jitter should remain the default static anti-banding path
-  until temporal reprojection or blue-noise sampling is available;
-- active cloud now has a compute temporal resolve for the final view: the ray
+- deterministic static sampling controls for interleaved-gradient, Bayer,
+  blue-noise, and center-of-step ray starts, plus a metadata-aware final resolve
+  that uses opacity, mean distance, confidence, and a cloud-edge mask while
+  leaving `raw-final` unfiltered;
+- stable Bayer ray-start jitter is the default production sampling path until
+  sparse temporal reconstruction is stronger. Blue-noise remains available for
+  diagnostics and future spatiotemporal resolve work, but frame-varying jitter by
+  itself turns unresolved cloud-edge bands into shimmer;
+- the shared cloud layer has a compute temporal resolve for the final view: the ray
   march writes current product/metadata, a ping-pong history pass reprojects by
   mean cloud distance, clamps against the current neighborhood, and resets on
   incompatible cloud parameter changes;
-- the default standalone background is atmosphere-only. The earlier water proxy
-  remains available as `clouds.background_mode = water-context` for ocean
-  inspection captures, but it should not be part of the baseline cloud read;
+- the default composite background is atmosphere-only. The earlier water proxy
+  remains as a historical standalone-capture lesson, but it should not be part
+  of the baseline cloud read;
 - distance-regime controls are now explicit: `clouds.distance_mode` can force
   local or orbit-shell behavior, while `auto` blends high and orbit views toward
   a broad low-detail shell before the full cached sky product exists;
@@ -181,6 +244,9 @@ Initial scope:
   cells, streaks, and micro fragments drive scatter and erosion;
 - orbit shell detail should be filtered by pixel footprint and grazing angle so
   disk detail survives while limb/edge shimmer does not define the image;
+- local volume detail should use deterministic footprint filtering from camera
+  distance, step length, pixel size, grazing angle, shape domain, and generated
+  noise texture size. `clouds.footprint_filter_strength` controls that filter;
 - the cloud-top shell should composite from column optical depth, not an
   arbitrary alpha curve, so orbit opacity can be tuned through density and
   extinction controls that map to a plausible cloud mass;
@@ -190,10 +256,39 @@ Initial scope:
 - shared `RunConfig` descriptors plus existing ImGui helper controls from the
   start.
 
-Even while standalone, the project must keep planet handoff constraints visible:
-use meters, carry planet radius/cloud-shell metadata explicitly, keep camera GPU
-state camera-relative, and define weather coordinates so they can later map onto
-a planet frame, local tangent frame, or stable global weather address.
+The absorption pass keeps the shared `cubey::render::CloudLayer*` contract,
+common shader assets, shared generated-resource helpers, atmosphere backdrop
+composition, cloud config/UI controls, and cloud diagnostics in the atmosphere
+project. Treat this as the production pressure surface, not a finished
+multi-consumer cloud product.
+
+The layer must keep planet handoff constraints visible: use meters, carry planet
+radius/cloud-shell metadata explicitly, keep camera GPU state camera-relative,
+and define weather coordinates so they can later map onto a planet frame, local
+tangent frame, or stable global weather address.
+
+The TerrainEngine/cloud_ref diagnostic exposed a specific scale trap: the
+reference density projection originally divided local `position.xz` by the cloud
+inner radius. That made the same density field look detailed on the 600 km
+reference sphere but smooth and capped on an Earth-radius atmosphere. Production
+clouds therefore split the controls:
+
+- physical `planet_radius_m`: shell intersection, horizon curvature, altitude,
+  and orbit/planet geometry;
+- `weather_scale_km`: macro weather placement, broad coverage, and type fields;
+- `shape_domain_km`: local base/detail density texture projection;
+- `footprint_filter_strength`: deterministic mip/filter response for distant or
+  grazing cloud detail;
+- `edge_softness`: footprint-aware widening of procedural density thresholds so
+  under-resolved cloud boundaries do not collapse into binary Bayer dots;
+- `edge_detail_fade`: reduction of high-frequency erosion only where the density
+  edge is under-resolved;
+- `edge_resolve_strength`: final-composite edge resolve weight. It is applied
+  through the `edge-mask` debug diagnostic, not as a whole-image blur.
+
+`cloud-ref-compatible` should be kept as a diagnostic mode, but it should match
+the reference through `shape_domain_km`, not by pretending the atmosphere has a
+600 km planet radius.
 
 Deferred until the shape is credible:
 
@@ -206,7 +301,8 @@ Deferred until the shape is credible:
 - orbit motion/shimmer review against the satellite capture pack;
 - a stronger planet-scale weather model than fixed experimental synoptic
   anchors, dry slots, and procedural breakup;
-- cloud shadow consumption by ocean/terrain;
+- production cloud shadow consumption by ocean/terrain from a real projected
+  cloud shadow product;
 - full cached octahedral sky blending;
 - temporal reconstruction beyond basic diagnostic toggles;
 - blue-noise/spatiotemporal sampling until a useful temporal path exists;
@@ -232,13 +328,13 @@ The transition between near volume and far cached/cloud-shell output should be
 an explicit feature with debug views. It should not be hidden in final color
 grading.
 
-The current production cloud project implements the `auto` transition as three
+The current production cloud layer implements the `auto` transition as three
 separate contributors:
 
 - `local`: the normal surface volume march, responsible for foreground thickness
   and parallax;
-- `far shell`: an adaptive low-detail march of the same local volume field,
-  limited to the later high-oblique ray segment;
+- `far shell`: an integrated low-detail horizon layer from the same local weather
+  field, used after local volumetric detail fades out of grazing long rays;
 - `full orbit`: the orbit shell as the replacement path for true orbit/high
   altitude views.
 
@@ -261,9 +357,11 @@ shell is correctly limb/grazing-filtered for full-disk views, but it becomes a
 faint haze source rather than readable high-oblique cloud mass. It should also
 not use the orbit weather volume as its primary source, because that swaps cloud
 domains during the surface-to-orbit transition and reads as a different cloud
-type. The intended bridge is a lower-step, higher-LOD march of the local density
-field over only the distant ray segment. Full orbit remains a separate
-cloud-top shell problem.
+type. The intended bridge is a deterministic integrated layer over the distant
+horizon segment: it should sample broad local/weather mass, suppress
+high-frequency erosion by distance and grazing angle, lift far-cloud lighting,
+and blend into sky haze. It should not use stochastic long-ray starts as its
+primary anti-banding tool. Full orbit remains a separate cloud-top shell problem.
 
 The diagnostic contract is: `distance-regime` shows full orbit, effective
 high-view bridge, and residual local regime; `transition-weights` shows
@@ -271,8 +369,8 @@ local-branch availability, final bridge contribution, and full orbit takeover.
 `local-alpha`, `far-shell-alpha`, `local-with-shell-alpha`, and `orbit-alpha`
 isolate the visible alpha at each stage. The `far-shell` debug name is a
 historical compatibility label for the high-view far bridge.
-`projects/cloud/capture_review.sh` includes these views for surface,
-high-oblique, and orbit review.
+`projects/atmosphere/capture_cloud_review.sh` includes these views for
+atmosphere-hosted surface, high-altitude, and orbit-shell review.
 
 ## Renderer Contract
 
@@ -294,26 +392,27 @@ should sample cloud outputs or composed sky/environment products.
 
 V1 should use `RenderGraphBuilder` to make the cloud product and composite
 passes explicit. Descriptor sets, textures, material instances, and synchronization
-policy remain project-owned until at least two consumers need a shared cloud
-renderer contract. Until promotion, downstream branches should use the
-standalone app's quarter-resolution consumer smoke recipe to check visual and
-contract assumptions without adopting cloud internals.
+policy remain owned by the atmosphere integration until at least two consumers
+need direct cloud products. Downstream branches should use the atmosphere cloud
+capture helper and shared `clouds.*` config options to check visual and contract
+assumptions without adopting cloud internals.
 
-## First Milestone
+## Current Milestone
 
-The first production milestone should be small and hard to fake:
+The standalone production pressure project has served its purpose and has been
+absorbed into atmosphere. The next milestone should be small and hard to fake:
 
-1. Create `projects/cloud` as a new standalone project.
-2. Port or reuse the `cloud_ref` texture-backed density path, but wire it to
-   shared sky/celestial/atmosphere inputs and shared config descriptors from day
-   one.
-3. Render a cloud radiance/transmittance product and composite it in a separate
-   pass.
-4. Add raw diagnostics and a repeatable capture script before tuning.
-5. Validate surface-up and high-oblique captures against `cloud_ref`, not
-   `cloud_ref_2`.
-6. Keep sampling and resolve controls isolated so capture bundles can compare
-   default, Bayer, and no-jitter output before adding temporal accumulation.
+1. Keep atmosphere final/no-cloud/debug captures visually comparable through
+   `projects/atmosphere/capture_cloud_review.sh`.
+2. Make full and half-resolution Bayer captures stable enough to diagnose raw
+   cloud integration without hiding bands behind stochastic shimmer.
+3. Improve high-altitude and horizon continuity without regressing the credible
+   surface cloud look.
+4. Keep sampling and resolve controls isolated so capture bundles can compare
+   blue-noise/temporal, Bayer, interleaved, no-jitter, raw-final, and edge-mask
+   output.
+5. Expose cloud outputs only when a second consumer has a concrete contract for
+   radiance/transmittance, metadata, shadow, or reflection data.
 
 Acceptance for this milestone:
 
@@ -321,9 +420,12 @@ Acceptance for this milestone:
 - final view still reads without relying on temporal smear or final blur;
 - surface/high captures do not show the legacy horizontal streaking as the
   dominant artifact;
-- the project exposes enough controls to isolate density, detail erosion,
-  weather map, sampling, lighting, composition, and metadata output;
+- half-resolution final captures do not rely on full-res supersampling to hide
+  horizon/far-field noise;
+- atmosphere exposes enough controls to isolate density, detail erosion,
+  weather map, local shape domain, footprint filtering, edge softening,
+  sampling, lighting, composition, and metadata output;
 - the implementation does not duplicate project-local atmosphere horizon logic.
 
-Only after that should the production project add the cached hemisphere path
-from `cloud_ref_2`.
+Only after that should the production layer add the cached hemisphere path from
+`cloud_ref_2` or promote direct cloud-product consumption into ocean/planet.
