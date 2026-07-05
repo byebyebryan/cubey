@@ -48,11 +48,14 @@ Fixed-extent mountain resolution audit commands keep the patch at roughly
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
 stress captures for larger river-network and mountain-driver inspection. The
-current revision 30 mountain stress scalar review emits 50 PNG views plus
-`manifest.json` per capture. Current and stress river directories hold their
-existing scalar/debug review sets after material/profile, height-only, and
-channel diagnostic perspective captures are generated. The 513 mountain stress
-directory also includes `mountain-perspective.png`,
+refreshed revision 30 scalar baseline keeps `outputs/terrain/current-river-network`,
+`outputs/terrain/stress-river-network`, and
+`outputs/terrain/mountain-range-stress` on 55 product fields and 50 scalar/review
+views. The current river manifest reports `river_coverage = 0.00736`, the stress
+river manifest reports `river_coverage = 0.02117`, and the mountain stress
+manifest reports `height_m.span = 1695.575`. Perspective captures are generated
+as needed after the scalar set; the 513 mountain stress directory also includes
+`mountain-perspective.png`,
 `mountain-height-perspective.png`, `mountain-profile.png`, and
 `mountain-post-erosion-perspective.png` from the renderer-backed preview app.
 The 1025 mountain stress set remains scalar-only unless a matching preview

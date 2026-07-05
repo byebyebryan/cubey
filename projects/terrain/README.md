@@ -278,6 +278,15 @@ The scalar review set includes 50 PNG views plus `manifest.json`:
 - `material.png`
 - `vegetation.png`
 
+The refreshed revision 30 scalar baseline keeps
+`outputs/terrain/current-river-network`,
+`outputs/terrain/stress-river-network`, and
+`outputs/terrain/mountain-range-stress` on the same 513x513 review contract:
+55 fields, 50 PNG views, and one manifest per directory. The current river
+manifest reports `river_coverage = 0.00736`; the stress river manifest reports
+`river_coverage = 0.02117`; the mountain stress manifest reports
+`height_m.span = 1695.575`.
+
 `terrain_preview` is a separate renderer-backed consumer for perspective
 review. It turns the selected `TerrainRegionProduct` height field into a lit
 mesh through the normal Vulkan windowed/headless app path. For the mountain
