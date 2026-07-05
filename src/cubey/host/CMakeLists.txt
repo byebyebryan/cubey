@@ -1,5 +1,6 @@
 add_library(cubey_host STATIC
     atmosphere_environment_ui.cpp
+    cloud_environment_ui.cpp
     frame_stats.cpp
     glfw_window.cpp
     headless_png_host.cpp

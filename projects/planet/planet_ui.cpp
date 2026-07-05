@@ -3,6 +3,7 @@
 #include "planet_local_detail.h"
 
 #include <cubey/host/atmosphere_environment_ui.h>
+#include <cubey/host/cloud_environment_ui.h>
 #include <cubey/host/imgui_helpers.h>
 
 #include <imgui.h>
@@ -81,16 +82,6 @@ struct CameraLocationReadout {
             static_cast<float>(std::asin(std::clamp(y / radius, -1.0, 1.0)) * kRadiansToDegrees),
         .longitude_degrees = static_cast<float>(std::atan2(x, z) * kRadiansToDegrees),
     };
-}
-
-[[nodiscard]] const char* cloud_view_regime_name(float camera_mode) {
-    if (camera_mode >= 3.5F) {
-        return "orbit";
-    }
-    if (camera_mode >= 0.5F) {
-        return "high-oblique";
-    }
-    return "local";
 }
 
 void draw_panel_actions(PlanetUiContext& ui) {
@@ -238,245 +229,13 @@ void draw_atmosphere_controls(PlanetUiContext& ui) {
 }
 
 void draw_cloud_controls(PlanetUiContext& ui) {
-    if (const cubey::host::ScopedImGuiGroup group{
-            "Clouds",
-            {.default_open = false,
-             .help = "Shared cloud layer composited into the planet scene."}};
-        group) {
-        const cubey::host::ScopedImGuiId section_id("Clouds");
-        cubey::projects::atmosphere::AtmosphereCloudConfig& clouds = ui.clouds_config;
-        cubey::render::CloudLayerConfig& layer = clouds.layer;
-        cubey::host::imgui_checkbox("Clouds", &clouds.enabled,
-                                    "Composite the shared cloud layer in final view.");
-        if (!clouds.enabled) {
-            ImGui::BeginDisabled();
-        }
-        cubey::host::imgui_enum_combo("Debug view", layer.debug_view,
-                                      cubey::render::kCloudLayerDebugViews,
-                                      cubey::render::cloud_layer_debug_view_name,
-                                      "Inspect cloud products and diagnostic buffers.");
-        if (cubey::host::imgui_enum_combo(
-                "Weather preset", clouds.weather_preset,
-                cubey::projects::atmosphere::kAtmosphereCloudWeatherPresets,
-                cubey::projects::atmosphere::atmosphere_cloud_weather_preset_name,
-                "Apply tuned cloud coverage and layer settings.")) {
-            cubey::projects::atmosphere::apply_atmosphere_cloud_weather_preset(
-                clouds, clouds.weather_preset);
-        }
-        const cubey::render::CloudLayerViewRegime& regime = ui.cloud_view_regime;
-        ImGui::Text("Regime: %s  altitude %.0f m", cloud_view_regime_name(regime.camera_mode),
-                    regime.altitude_m);
-        ImGui::Text("Blend: orbit %.0f%%  grazing %.0f%%", regime.altitude_blend * 100.0F,
-                    regime.horizon_grazing * 100.0F);
-        ImGui::Text("Depth mask: %s  fade %.0f m",
-                    ui.cloud_scene_depth_occlusion_enabled ? "on" : "off",
-                    ui.cloud_scene_depth_fade_m);
-
-        if (const cubey::host::ScopedImGuiGroup subgroup{
-                "Sampling",
-                {.default_open = true,
-                 .level = 1,
-                 .help = "Resolution, sampling, and distance regime controls."}};
-            subgroup) {
-            cubey::host::imgui_enum_combo(
-                "Quality", layer.quality, cubey::projects::atmosphere::kAtmosphereCloudQualities,
-                cubey::projects::atmosphere::atmosphere_cloud_quality_name,
-                "Cloud render resolution and ray-step budget.");
-            cubey::host::imgui_enum_combo(
-                "Sampling", layer.sampling_mode,
-                cubey::projects::atmosphere::kAtmosphereCloudSamplingModes,
-                cubey::projects::atmosphere::atmosphere_cloud_sampling_mode_name,
-                "Ray-start pattern. Bayer is stable; blue noise is diagnostic until temporal "
-                "reconstruction improves.");
-            cubey::host::imgui_slider_int(
-                "View steps", &layer.view_steps_override, 0, 128,
-                "Ray-march step override. 0 uses the selected quality preset.");
-            cubey::host::imgui_slider_int("View samples", &layer.view_samples, 1, 4,
-                                          "Ray-start samples per pixel. 1, 2, and 4 are valid; "
-                                          "higher values are diagnostic.");
-            if (layer.view_samples != 1 && layer.view_samples != 2 && layer.view_samples != 4) {
-                layer.view_samples = layer.view_samples < 2 ? 1 : 4;
-            }
-            cubey::host::imgui_enum_combo(
-                "Sample mode", layer.view_sample_mode,
-                cubey::projects::atmosphere::kAtmosphereCloudViewSampleModes,
-                cubey::projects::atmosphere::atmosphere_cloud_view_sample_mode_name,
-                "Single-frame marches all selected samples now; temporal-phased alternates one "
-                "deterministic phase per frame through temporal history.");
-            cubey::host::imgui_enum_combo(
-                "Density model", layer.density_model,
-                cubey::projects::atmosphere::kAtmosphereCloudDensityModels,
-                cubey::projects::atmosphere::atmosphere_cloud_density_model_name,
-                "Cloud density and placement path. Surface-volume is the production local cloud "
-                "path; experimental-aerial-orbit preserves unfinished high/orbit scaffolding.");
-            cubey::host::imgui_enum_combo(
-                "Distance mode", layer.distance_mode,
-                cubey::projects::atmosphere::kAtmosphereCloudDistanceModes,
-                cubey::projects::atmosphere::atmosphere_cloud_distance_mode_name,
-                "Local, orbit shell, or blended cloud distance behavior.");
-            cubey::host::imgui_enum_combo(
-                "Orbit repr.", layer.orbit_representation,
-                cubey::projects::atmosphere::kAtmosphereCloudOrbitRepresentations,
-                cubey::projects::atmosphere::atmosphere_cloud_orbit_representation_name,
-                "Representation used above the local volume regime.");
-            cubey::host::imgui_checkbox(
-                "Temporal", &layer.temporal_enabled,
-                "Enable experimental temporal reconstruction for the cloud product.");
-            cubey::host::imgui_checkbox("Local volume", &layer.local_volume_enabled,
-                                        "Render near and overhead volumetric cloud detail.");
-            cubey::host::imgui_checkbox("Horizon layer", &layer.horizon_layer_enabled,
-                                        "Add far cloud support near the horizon.");
-        }
-
-        if (const cubey::host::ScopedImGuiGroup subgroup{
-                "Layer",
-                {.default_open = true,
-                 .level = 1,
-                 .help = "Cloud shell bounds and broad coverage controls."}};
-            subgroup) {
-            cubey::host::imgui_slider_float("Base altitude", &layer.bottom_altitude_m, 0.0F,
-                                            14000.0F, "%.0f m",
-                                            "Lower boundary of the cloud layer.");
-            cubey::host::imgui_slider_float("Top altitude", &layer.top_altitude_m, 1000.0F,
-                                            30000.0F, "%.0f m",
-                                            "Upper boundary of the cloud layer.");
-            cubey::host::imgui_slider_float("Coverage", &layer.coverage, 0.0F, 1.0F, "%.2f",
-                                            "Base cloud coverage before weather/detail carving.");
-            cubey::host::imgui_slider_float("Density", &layer.density, 0.0F, 0.08F, "%.3f",
-                                            "Volume density multiplier.");
-            cubey::host::imgui_slider_float("Weather scale", &layer.weather_scale_km, 40.0F, 500.0F,
-                                            "%.0f km", "Broad weather organization scale.");
-            cubey::host::imgui_slider_float("Shape domain", &layer.shape_domain_km, 120.0F, 2400.0F,
-                                            "%.0f km", "Local cloud density texture domain scale.");
-            cubey::host::imgui_slider_float("Wind", &clouds.wind_speed_mps, 0.0F, 900.0F,
-                                            "%.0f m/s", "Advection speed for cloud sampling.");
-        }
-
-        if (const cubey::host::ScopedImGuiGroup subgroup{
-                "Shape",
-                {.default_open = false,
-                 .level = 1,
-                 .help = "Weather mask, erosion, and local cloud form controls."}};
-            subgroup) {
-            cubey::host::imgui_slider_float("Weather softness", &layer.weather_softness, 0.02F,
-                                            0.60F, "%.2f",
-                                            "Softness of broad weather transitions.");
-            cubey::host::imgui_slider_float("Weather influence", &layer.weather_influence, 0.0F,
-                                            1.0F, "%.2f",
-                                            "How strongly the weather map biases density.");
-            cubey::host::imgui_slider_float("Weather fronts", &layer.weather_fronts, 0.0F, 1.0F,
-                                            "%.2f", "Frontal weather feature contribution.");
-            cubey::host::imgui_slider_float("Weather cells", &layer.weather_cells, 0.0F, 1.0F,
-                                            "%.2f", "Cellular weather feature contribution.");
-            cubey::host::imgui_slider_float("Weather streaks", &layer.weather_streaks, 0.0F, 1.0F,
-                                            "%.2f", "Wind-aligned weather feature contribution.");
-            cubey::host::imgui_slider_float("Detail erosion", &layer.detail_erosion, 0.0F, 1.0F,
-                                            "%.2f", "High-frequency erosion contribution.");
-            cubey::host::imgui_slider_float(
-                "Footprint filter", &layer.footprint_filter_strength, 0.0F, 2.0F, "%.2f",
-                "Deterministic mip filtering for distant or grazing cloud detail.");
-            cubey::host::imgui_slider_float(
-                "Edge softness", &layer.edge_softness, 0.0F, 2.0F, "%.2f",
-                "Footprint-aware softening applied to unresolved cloud density edges.");
-            cubey::host::imgui_slider_float(
-                "Edge detail fade", &layer.edge_detail_fade, 0.0F, 2.0F, "%.2f",
-                "Fade high-frequency erosion where the edge is under-resolved.");
-            cubey::host::imgui_slider_float(
-                "Edge resolve", &layer.edge_resolve_strength, 0.0F, 1.0F, "%.2f",
-                "Final-composite resolve strength for cloud edge pixels.");
-            cubey::host::imgui_slider_float("Crispiness", &layer.crispiness, 1.0F, 80.0F, "%.1f",
-                                            "Base density texture frequency/sharpness.");
-            cubey::host::imgui_slider_float("Curliness", &layer.curliness, 0.0F, 1.0F, "%.2f",
-                                            "Detail density frequency/distortion multiplier.");
-            cubey::host::imgui_slider_float(
-                "Vertical shear", &layer.vertical_shear_fraction, 0.0F, 0.5F, "%.2f",
-                "Altitude-dependent shift as a weather-scale fraction.");
-            cubey::host::imgui_checkbox("Powder", &layer.powder_enabled,
-                                        "Enable powder-style brightening on thin cloud edges.");
-        }
-
-        if (const cubey::host::ScopedImGuiGroup subgroup{
-                "Lighting",
-                {.default_open = false,
-                 .level = 1,
-                 .help = "Cloud lighting, contrast, and final composite controls."}};
-            subgroup) {
-            cubey::host::imgui_slider_float("Shadow", &layer.shadow_strength, 0.0F, 2.0F, "%.2f",
-                                            "Cloud self-shadow and prototype shadow weight.");
-            cubey::host::imgui_slider_float("Horizon", &layer.horizon_strength, 0.0F, 2.0F, "%.2f",
-                                            "Dedicated far-horizon cloud layer strength.");
-            cubey::host::imgui_slider_float("Absorption", &layer.absorption, 0.0F, 2.0F, "%.2f",
-                                            "Light absorption through dense cloud.");
-            cubey::host::imgui_slider_float("Ambient", &layer.ambient_strength, 0.0F, 3.0F, "%.2f",
-                                            "Cloud ambient-light multiplier.");
-            cubey::host::imgui_slider_float("Direct", &layer.direct_strength, 0.0F, 3.0F, "%.2f",
-                                            "Direct sunlight multiplier.");
-            cubey::host::imgui_slider_float("Phase", &layer.phase_strength, 0.0F, 3.0F, "%.2f",
-                                            "Forward/rim phase-light multiplier.");
-            cubey::host::imgui_slider_float("Contrast", &layer.final_contrast, 0.0F, 3.0F, "%.2f",
-                                            "Final cloud contrast multiplier.");
-            cubey::host::imgui_slider_float("Saturation", &layer.final_saturation, 0.0F, 3.0F,
-                                            "%.2f", "Final cloud saturation multiplier.");
-            cubey::host::imgui_enum_combo(
-                "Resolve mode", layer.resolve_mode,
-                cubey::projects::atmosphere::kAtmosphereCloudResolveModes,
-                cubey::projects::atmosphere::atmosphere_cloud_resolve_mode_name,
-                "Final cloud resolve filter. Terrain-post follows the reference post blur; "
-                "metadata-bilateral keeps the previous guarded filter.");
-            cubey::host::imgui_slider_float("Resolve", &layer.resolve_strength, 0.0F, 1.0F, "%.2f",
-                                            "Alpha-aware cloud resolve strength.");
-            cubey::host::imgui_slider_float("Horizon glow", &layer.horizon_glow_strength, 0.0F,
-                                            3.0F, "%.2f",
-                                            "Final composite horizon fill/glow multiplier.");
-            cubey::host::imgui_slider_float("Sun glare", &layer.sun_glare_strength, 0.0F, 3.0F,
-                                            "%.2f", "Final composite sun halo multiplier.");
-            cubey::host::imgui_slider_float("Jitter", &layer.jitter_strength, 0.0F, 1.0F, "%.2f",
-                                            "Ray-start jitter amount.");
-        }
-
-        if (const cubey::host::ScopedImGuiGroup subgroup{
-                "Transition",
-                {.default_open = false,
-                 .level = 1,
-                 .help = "High-altitude and orbit shell transition controls."}};
-            subgroup) {
-            cubey::host::imgui_slider_float("Orbit start", &layer.orbit_transition_start_m, 0.0F,
-                                            300000.0F, "%.0f m",
-                                            "Altitude where orbit shell blend starts.");
-            cubey::host::imgui_slider_float("Orbit end", &layer.orbit_transition_end_m, 0.0F,
-                                            500000.0F, "%.0f m",
-                                            "Altitude where orbit shell blend is complete.");
-            cubey::host::imgui_slider_float("Far start", &layer.far_shell_start_m, 0.0F, 300000.0F,
-                                            "%.0f m",
-                                            "View distance where far shell contribution starts.");
-            cubey::host::imgui_slider_float("Far end", &layer.far_shell_end_m, 0.0F, 500000.0F,
-                                            "%.0f m",
-                                            "View distance where far shell contribution is full.");
-            cubey::host::imgui_slider_float("Far strength", &layer.far_shell_strength, 0.0F, 1.5F,
-                                            "%.2f", "Far shell blend contribution.");
-            cubey::host::imgui_slider_float("Orbit detail", &layer.orbit_detail_strength, 0.0F,
-                                            1.0F, "%.2f",
-                                            "High-frequency detail retained by orbit clouds.");
-            cubey::host::imgui_slider_float("Orbit density", &layer.orbit_density_scale, 0.0F, 2.0F,
-                                            "%.2f", "Orbit shell density multiplier.");
-            cubey::host::imgui_slider_float("Orbit fill", &layer.orbit_fill, 0.0F, 2.0F, "%.2f",
-                                            "Broad orbit cloud fill bias.");
-            cubey::host::imgui_slider_float("Orbit motion", &layer.orbit_motion_strength, 0.0F,
-                                            4.0F, "%.2f",
-                                            "Motion multiplier for orbit weather advection.");
-            cubey::host::imgui_slider_float("Orbit extinction", &layer.orbit_shell_extinction, 0.0F,
-                                            8.0F, "%.2f",
-                                            "Cloud-top shell optical depth multiplier.");
-        }
-
-        layer.top_altitude_m = std::max(layer.top_altitude_m, layer.bottom_altitude_m + 1.0F);
-        layer.orbit_transition_end_m =
-            std::max(layer.orbit_transition_end_m, layer.orbit_transition_start_m);
-        layer.far_shell_end_m = std::max(layer.far_shell_end_m, layer.far_shell_start_m);
-        if (!clouds.enabled) {
-            ImGui::EndDisabled();
-        }
-    }
+    static_cast<void>(cubey::host::draw_cloud_environment_controls(
+        ui.clouds_config,
+        {.help = "Shared cloud layer composited into the planet scene.",
+         .show_regime_status = true,
+         .regime = ui.cloud_view_regime,
+         .scene_depth_occlusion_enabled = ui.cloud_scene_depth_occlusion_enabled,
+         .scene_depth_fade_m = ui.cloud_scene_depth_fade_m}));
 }
 
 void draw_celestial_controls(PlanetUiContext& ui) {
