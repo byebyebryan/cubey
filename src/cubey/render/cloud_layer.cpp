@@ -785,6 +785,8 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
                                        cloud_bottom_color.z, config.horizon_strength},
         .lighting_strengths = {config.ambient_strength, config.direct_strength,
                                config.phase_strength, config.sun_glare_strength},
+        .twilight_options = {config.twilight_color_strength, config.twilight_edge_strength,
+                             config.twilight_saturation_strength, 0.0F},
         .composite_options = {config.resolve_strength, config.final_contrast,
                               config.final_saturation, config.horizon_glow_strength},
         .sampling_options = {sampling_mode_value(config.sampling_mode), config.jitter_strength,
@@ -978,6 +980,7 @@ namespace {
            cloud_layer_near(previous.cloud_color_bottom_horizon,
                             current.cloud_color_bottom_horizon) &&
            cloud_layer_near(previous.lighting_strengths, current.lighting_strengths) &&
+           cloud_layer_near(previous.twilight_options, current.twilight_options) &&
            cloud_layer_near(previous.composite_options, current.composite_options) &&
            cloud_layer_near(previous.sampling_options, current.sampling_options) &&
            cloud_layer_near(previous_temporal_static, current_temporal_static) &&

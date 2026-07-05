@@ -276,6 +276,9 @@ struct CloudLayerConfig {
     float ambient_strength = 0.82F;
     float direct_strength = 1.28F;
     float phase_strength = 1.14F;
+    float twilight_color_strength = 0.72F;
+    float twilight_edge_strength = 0.45F;
+    float twilight_saturation_strength = 0.82F;
     float final_contrast = 1.17F;
     float final_saturation = 1.12F;
     float resolve_strength = 0.48F;
@@ -351,6 +354,7 @@ struct CloudLayerFrameUniforms {
     math::Vec4 cloud_color_top_shadow;
     math::Vec4 cloud_color_bottom_horizon;
     math::Vec4 lighting_strengths;
+    math::Vec4 twilight_options;
     math::Vec4 composite_options;
     math::Vec4 sampling_options;
     math::Vec4 temporal_options;
@@ -363,7 +367,7 @@ struct CloudLayerFrameUniforms {
     math::Vec4 edge_options;
 };
 
-static_assert(sizeof(CloudLayerFrameUniforms) == sizeof(float) * 108U);
+static_assert(sizeof(CloudLayerFrameUniforms) == sizeof(float) * 112U);
 
 struct CloudLayerTemporalUniforms {
     math::Vec4 current_camera_right_aspect;

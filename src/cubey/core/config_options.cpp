@@ -134,7 +134,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 245> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 248> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -715,6 +715,19 @@ constexpr std::array<ConfigOptionDescriptor, 245> kRunConfigOptions{
            "--cloud-phase-strength", "Phase Strength", "Clouds",
            "Cloud forward/rim phase-light multiplier used by the production cloud renderer.",
            ConfigOptionType::Float, bounded_range(0.0, 3.0)),
+    option(RunConfigOptionId::CloudTwilightColorStrength, "clouds.twilight_color_strength",
+           "--cloud-twilight-color-strength", "Twilight Color", "Clouds",
+           "Low-sun cloud color contribution from warm sun and horizon sky radiance.",
+           ConfigOptionType::Float, bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudTwilightEdgeStrength, "clouds.twilight_edge_strength",
+           "--cloud-twilight-edge-strength", "Twilight Edge", "Clouds",
+           "Low-sun color boost for cloud optical edges and rim response.",
+           ConfigOptionType::Float, bounded_range(0.0, 2.0)),
+    option(RunConfigOptionId::CloudTwilightSaturationStrength,
+           "clouds.twilight_saturation_strength", "--cloud-twilight-saturation-strength",
+           "Twilight Saturation", "Clouds",
+           "Amount of cloud color saturation preserved during twilight final composite.",
+           ConfigOptionType::Float, bounded_range(0.0, 2.0)),
     option(RunConfigOptionId::CloudPowderStrength, "clouds.powder_strength",
            "--cloud-powder-strength", "Powder Strength", "Clouds",
            "Cloud Beer-powder lighting boost used by cloud_ref lighting diagnostics.",
@@ -1517,6 +1530,12 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.clouds.direct_strength);
     case RunConfigOptionId::CloudPhaseStrength:
         return optional_float(config.clouds.phase_strength);
+    case RunConfigOptionId::CloudTwilightColorStrength:
+        return optional_float(config.clouds.twilight_color_strength);
+    case RunConfigOptionId::CloudTwilightEdgeStrength:
+        return optional_float(config.clouds.twilight_edge_strength);
+    case RunConfigOptionId::CloudTwilightSaturationStrength:
+        return optional_float(config.clouds.twilight_saturation_strength);
     case RunConfigOptionId::CloudPowderStrength:
         return optional_float(config.clouds.powder_strength);
     case RunConfigOptionId::CloudFinalContrast:
@@ -2831,6 +2850,18 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::CloudPhaseStrength:
         config.clouds.phase_strength = parse_config_float(value, option);
         validate_range(config.clouds.phase_strength, option);
+        break;
+    case RunConfigOptionId::CloudTwilightColorStrength:
+        config.clouds.twilight_color_strength = parse_config_float(value, option);
+        validate_range(config.clouds.twilight_color_strength, option);
+        break;
+    case RunConfigOptionId::CloudTwilightEdgeStrength:
+        config.clouds.twilight_edge_strength = parse_config_float(value, option);
+        validate_range(config.clouds.twilight_edge_strength, option);
+        break;
+    case RunConfigOptionId::CloudTwilightSaturationStrength:
+        config.clouds.twilight_saturation_strength = parse_config_float(value, option);
+        validate_range(config.clouds.twilight_saturation_strength, option);
         break;
     case RunConfigOptionId::CloudPowderStrength:
         config.clouds.powder_strength = parse_config_float(value, option);

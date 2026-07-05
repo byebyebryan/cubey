@@ -509,8 +509,14 @@ int main() {
             "default atmosphere clouds should use preset steps and one single-frame sample");
     require(defaults.clouds.layer.distance_mode == CloudLayerDistanceMode::Auto,
             "default atmosphere clouds should use distance-aware rendering");
-    require(defaults.clouds.layer.density_model == CloudLayerDensityModel::Procedural,
-            "default atmosphere clouds should keep the tuned procedural density model");
+        require(defaults.clouds.layer.density_model == CloudLayerDensityModel::Procedural,
+                "default atmosphere clouds should keep the tuned procedural density model");
+        require_near(defaults.clouds.layer.twilight_color_strength, 0.72F, 0.001F,
+                     "default atmosphere clouds should include twilight color controls");
+        require_near(defaults.clouds.layer.twilight_edge_strength, 0.45F, 0.001F,
+                     "default atmosphere clouds should include twilight edge controls");
+        require_near(defaults.clouds.layer.twilight_saturation_strength, 0.82F, 0.001F,
+                     "default atmosphere clouds should include twilight saturation controls");
 
     {
         AtmosphereCloudConfig clouds;
@@ -549,6 +555,12 @@ int main() {
                      "reference parity preset should use the lower cloud_ref ceiling");
         require_near(clouds.layer.shadow_strength, 0.15F, 0.001F,
                      "reference parity preset should use the cloud_ref fair-weather shadow");
+        require_near(clouds.layer.twilight_color_strength, 0.85F, 0.001F,
+                     "reference parity preset should strengthen twilight cloud color");
+        require_near(clouds.layer.twilight_edge_strength, 0.55F, 0.001F,
+                     "reference parity preset should strengthen twilight cloud edges");
+        require_near(clouds.layer.twilight_saturation_strength, 0.90F, 0.001F,
+                     "reference parity preset should preserve twilight cloud saturation");
     }
 
     {
@@ -573,6 +585,9 @@ int main() {
         run_config.clouds.edge_detail_fade = 0.55F;
         run_config.clouds.edge_resolve_strength = 0.80F;
         run_config.clouds.wind_speed_mps = 42.0F;
+        run_config.clouds.twilight_color_strength = 1.10F;
+        run_config.clouds.twilight_edge_strength = 0.95F;
+        run_config.clouds.twilight_saturation_strength = 1.25F;
         run_config.clouds.temporal = 0;
         run_config.clouds.local_volume = 0;
         run_config.clouds.horizon_layer = 1;
@@ -618,6 +633,12 @@ int main() {
                      "atmosphere run config should map cloud edge resolve strength");
         require_near(config.clouds.wind_speed_mps, 42.0F, 0.001F,
                      "atmosphere run config explicit cloud wind should override preset");
+        require_near(config.clouds.layer.twilight_color_strength, 1.10F, 0.001F,
+                     "atmosphere run config should map cloud twilight color strength");
+        require_near(config.clouds.layer.twilight_edge_strength, 0.95F, 0.001F,
+                     "atmosphere run config should map cloud twilight edge strength");
+        require_near(config.clouds.layer.twilight_saturation_strength, 1.25F, 0.001F,
+                     "atmosphere run config should map cloud twilight saturation strength");
         require(!config.clouds.layer.temporal_enabled,
                 "atmosphere run config should map cloud temporal flag");
         require(!config.clouds.layer.local_volume_enabled,

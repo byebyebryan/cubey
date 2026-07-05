@@ -330,6 +330,15 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
                                             "%.2f", "Direct sunlight multiplier.");
             cubey::host::imgui_slider_float("Phase", &layer.phase_strength, 0.0F, 3.0F,
                                             "%.2f", "Forward/rim phase-light multiplier.");
+            cubey::host::imgui_slider_float(
+                "Twilight color", &layer.twilight_color_strength, 0.0F, 2.0F, "%.2f",
+                "Warm low-sun cloud color from sun and horizon sky radiance.");
+            cubey::host::imgui_slider_float(
+                "Twilight edge", &layer.twilight_edge_strength, 0.0F, 2.0F, "%.2f",
+                "Warm low-sun boost for cloud optical edges and rim response.");
+            cubey::host::imgui_slider_float(
+                "Twilight saturation", &layer.twilight_saturation_strength, 0.0F, 2.0F,
+                "%.2f", "Twilight color saturation preserved in final composite.");
             cubey::host::imgui_slider_float("Contrast", &layer.final_contrast, 0.0F, 3.0F,
                                             "%.2f", "Final cloud contrast multiplier.");
             cubey::host::imgui_slider_float("Saturation", &layer.final_saturation, 0.0F, 3.0F,

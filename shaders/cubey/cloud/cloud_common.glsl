@@ -101,6 +101,7 @@ layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 cloud_color_top_shadow;
     vec4 cloud_color_bottom_horizon;
     vec4 lighting_strengths;
+    vec4 twilight_options;
     vec4 composite_options;
     vec4 sampling_options;
     vec4 temporal_options;
