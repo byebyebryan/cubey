@@ -167,6 +167,13 @@ void test_run_config_descriptors_have_help_text() {
     bool saw_ocean = false;
     bool saw_atmosphere = false;
     bool saw_clouds = false;
+    bool saw_cloud_general = false;
+    bool saw_cloud_sampling = false;
+    bool saw_cloud_layer = false;
+    bool saw_cloud_shape = false;
+    bool saw_cloud_lighting = false;
+    bool saw_cloud_reference = false;
+    bool saw_cloud_aerial_orbit = false;
     bool saw_profile = false;
     bool saw_smoke = false;
     bool saw_water3d = false;
@@ -184,6 +191,26 @@ void test_run_config_descriptors_have_help_text() {
         if (option.path == "clouds.camera_mode") {
             saw_clouds = true;
         }
+        if (option.path.rfind("clouds.", 0) == 0) {
+            require(option.group_path != std::string_view{"Clouds"},
+                    "cloud config descriptors should not use the flat Clouds group");
+            saw_cloud_general =
+                saw_cloud_general || option.group_path == std::string_view{"Clouds/General"};
+            saw_cloud_sampling =
+                saw_cloud_sampling || option.group_path == std::string_view{"Clouds/Sampling"};
+            saw_cloud_layer =
+                saw_cloud_layer || option.group_path == std::string_view{"Clouds/Layer"};
+            saw_cloud_shape =
+                saw_cloud_shape || option.group_path == std::string_view{"Clouds/Shape"};
+            saw_cloud_lighting =
+                saw_cloud_lighting || option.group_path == std::string_view{"Clouds/Lighting"};
+            saw_cloud_reference =
+                saw_cloud_reference ||
+                option.group_path == std::string_view{"Clouds/Reference Diagnostics"};
+            saw_cloud_aerial_orbit =
+                saw_cloud_aerial_orbit ||
+                option.group_path == std::string_view{"Clouds/Aerial Orbit Experimental"};
+        }
         if (option.path == "profile.output") {
             saw_profile = true;
         }
@@ -197,6 +224,9 @@ void test_run_config_descriptors_have_help_text() {
     require(saw_ocean, "config descriptors should include active ocean controls");
     require(saw_atmosphere, "config descriptors should include atmosphere controls");
     require(saw_clouds, "config descriptors should include cloud controls");
+    require(saw_cloud_general && saw_cloud_sampling && saw_cloud_layer && saw_cloud_shape &&
+                saw_cloud_lighting && saw_cloud_reference && saw_cloud_aerial_orbit,
+            "cloud descriptors should expose tiered UI/config groups");
     require(saw_profile, "config descriptors should include profiling controls");
     require(saw_smoke, "config descriptors should include smoke controls");
     require(saw_water3d, "config descriptors should include water 3D controls");

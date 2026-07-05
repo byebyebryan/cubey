@@ -111,6 +111,13 @@ int main() {
         require(default_clouds.layer.density_model ==
                     cubey::render::CloudLayerDensityModel::SurfaceVolume,
                 "ocean clouds should use the shared surface-volume density model");
+        require(default_clouds.layer.quality == cubey::render::CloudLayerQuality::Full &&
+                    default_clouds.layer.sampling_mode == cubey::render::CloudLayerSamplingMode::Bayer &&
+                    default_clouds.layer.resolve_mode ==
+                        cubey::render::CloudLayerResolveMode::TerrainPost &&
+                    !default_clouds.layer.temporal_enabled &&
+                    !default_clouds.layer.horizon_layer_enabled,
+                "ocean clouds should inherit stable surface-volume defaults");
         cubey::RunConfig no_clouds_config;
         no_clouds_config.clouds.enabled = 0;
         require(!ocean::ocean_cloud_config_from_run_config(no_clouds_config).enabled,

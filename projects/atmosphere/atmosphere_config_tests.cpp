@@ -536,6 +536,10 @@ int main() {
             "default atmosphere clouds should use the stable local surface path");
     require(defaults.clouds.layer.density_model == CloudLayerDensityModel::SurfaceVolume,
             "default atmosphere clouds should use the accepted surface-volume density model");
+    require(defaults.clouds.layer.quality == CloudLayerQuality::Full &&
+                defaults.clouds.layer.resolve_mode == CloudLayerResolveMode::TerrainPost &&
+                !defaults.clouds.layer.horizon_layer_enabled,
+            "default atmosphere clouds should keep the stable production surface defaults");
     require_near(defaults.clouds.layer.top_altitude_m, 14000.0F, 0.001F,
                  "default atmosphere clouds should use the accepted lower surface cloud ceiling");
     require_near(defaults.clouds.layer.twilight_color_strength, 0.85F, 0.001F,

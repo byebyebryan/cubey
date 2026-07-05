@@ -1,8 +1,14 @@
 #include <cubey/render/cloud_layer_config.h>
 
+#include <cctype>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 #include <string_view>
+#include <unordered_map>
 
 namespace {
 
@@ -18,8 +24,52 @@ void require_near(float actual, float expected, float tolerance, const char* mes
     }
 }
 
-cubey::render::CloudLayerViewRegimeInput regime_input(float altitude_m,
-                                                      cubey::math::Vec3 forward) {
+std::filesystem::path source_root_path() {
+    return std::filesystem::path(CUBEY_SOURCE_DIR);
+}
+
+std::unordered_map<std::string, int> cloud_debug_glsl_constants() {
+    const std::filesystem::path path = source_root_path() / "shaders/cubey/cloud/cloud_common.glsl";
+    std::ifstream input(path);
+    if (!input) {
+        throw std::runtime_error("could not open cloud_common.glsl");
+    }
+
+    std::unordered_map<std::string, int> constants;
+    std::string line;
+    constexpr std::string_view prefix = "const int CLOUD_DEBUG_";
+    while (std::getline(input, line)) {
+        if (line.rfind(prefix, 0) != 0) {
+            continue;
+        }
+        const std::size_t name_start = prefix.size();
+        const std::size_t name_end = line.find(' ', name_start);
+        const std::size_t value_start = line.find('=', name_end);
+        const std::size_t value_end = line.find(';', value_start);
+        if (name_end == std::string::npos || value_start == std::string::npos ||
+            value_end == std::string::npos) {
+            throw std::runtime_error("malformed cloud debug constant line");
+        }
+
+        constants.emplace("CLOUD_DEBUG_" + line.substr(name_start, name_end - name_start),
+                          std::stoi(line.substr(value_start + 1, value_end - value_start - 1)));
+    }
+    return constants;
+}
+
+std::string cloud_debug_constant_name(cubey::render::CloudLayerDebugView view) {
+    std::string name = "CLOUD_DEBUG_";
+    for (const char c : std::string_view{cubey::render::cloud_layer_debug_view_name(view)}) {
+        if (c == '-') {
+            name.push_back('_');
+        } else {
+            name.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
+        }
+    }
+    return name;
+}
+
+cubey::render::CloudLayerViewRegimeInput regime_input(float altitude_m, cubey::math::Vec3 forward) {
     constexpr float kRadius = 6371000.0F;
     return {
         .camera_position = {0.0F, kRadius + altitude_m, 0.0F},
@@ -36,10 +86,8 @@ void test_cloud_layer_view_regime_resolves_surface_camera() {
     const cubey::render::CloudLayerViewRegime regime =
         cubey::render::cloud_layer_view_regime(regime_input(150.0F, {0.0F, 0.0F, -1.0F}));
 
-    require_near(regime.camera_mode, 0.0F, 0.001F,
-                 "surface cloud camera should use local mode");
-    require_near(regime.altitude_m, 150.0F, 0.5F,
-                 "surface cloud camera should report altitude");
+    require_near(regime.camera_mode, 0.0F, 0.001F, "surface cloud camera should use local mode");
+    require_near(regime.altitude_m, 150.0F, 0.5F, "surface cloud camera should report altitude");
     require(regime.horizon_grazing > 0.95F,
             "level surface cloud view should report grazing horizon factor");
 }
@@ -48,8 +96,7 @@ void test_cloud_layer_view_regime_resolves_high_transition_camera() {
     const cubey::render::CloudLayerViewRegime regime =
         cubey::render::cloud_layer_view_regime(regime_input(90000.0F, {0.0F, -1.0F, 0.0F}));
 
-    require_near(regime.camera_mode, 1.0F, 0.001F,
-                 "high cloud camera should use transition mode");
+    require_near(regime.camera_mode, 1.0F, 0.001F, "high cloud camera should use transition mode");
     require(regime.altitude_blend > 0.2F && regime.altitude_blend < 0.5F,
             "high cloud camera should be inside the transition band");
 }
@@ -84,6 +131,31 @@ void test_cloud_layer_edge_mask_debug_view_round_trips() {
             "cloud debug names should round-trip edge-mask");
 }
 
+void test_cloud_layer_debug_views_round_trip_all_names() {
+    cubey::render::CloudLayerDebugView current = cubey::render::kCloudLayerDebugViews.front();
+    for (const cubey::render::CloudLayerDebugView view : cubey::render::kCloudLayerDebugViews) {
+        const std::string_view name = cubey::render::cloud_layer_debug_view_name(view);
+        require(!name.empty(), "cloud debug view should have a name");
+        require(cubey::render::cloud_layer_debug_view_from_name(name) == view,
+                "cloud debug view names should round-trip");
+        require(current == view, "cloud debug next cycle should follow the public debug list");
+        current = cubey::render::next_cloud_layer_debug_view(current);
+    }
+    require(current == cubey::render::kCloudLayerDebugViews.front(),
+            "cloud debug next cycle should wrap");
+}
+
+void test_cloud_layer_debug_views_match_glsl_constants() {
+    const std::unordered_map<std::string, int> constants = cloud_debug_glsl_constants();
+    for (const cubey::render::CloudLayerDebugView view : cubey::render::kCloudLayerDebugViews) {
+        const std::string constant_name = cloud_debug_constant_name(view);
+        const auto it = constants.find(constant_name);
+        require(it != constants.end(), "cloud debug view should have a GLSL constant");
+        require(it->second == static_cast<int>(static_cast<std::uint32_t>(view)),
+                "cloud debug view enum should match GLSL constant value");
+    }
+}
+
 void test_cloud_layer_frame_uniforms_pack_environment_lighting() {
     cubey::render::CloudLayerConfig config{};
     cubey::render::CloudLayerFrameInfo frame{};
@@ -108,8 +180,7 @@ void test_cloud_layer_frame_uniforms_pack_environment_lighting() {
                  "cloud uniforms should pack moon direction");
     require_near(uniforms.moon_direction_intensity.w, 0.12F, 0.001F,
                  "cloud uniforms should pack moon intensity separately from sun");
-    require_near(uniforms.moon_color.z, 0.8F, 0.001F,
-                 "cloud uniforms should pack moon color");
+    require_near(uniforms.moon_color.z, 0.8F, 0.001F, "cloud uniforms should pack moon color");
     require_near(uniforms.ambient_color_intensity.z, 0.07F, 0.001F,
                  "cloud uniforms should pack environment ambient color");
     require_near(uniforms.ambient_color_intensity.w, 1.4F, 0.001F,
