@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/core/run_config.h>
+#include <cubey/engine/cloud_environment_config.h>
 
 #include <algorithm>
 #include <array>
@@ -684,6 +685,18 @@ inline void validate_ocean_config(const OceanConfig& config) {
     ocean.exposure = config.pbr.exposure;
     validate_ocean_config(ocean);
     return ocean;
+}
+
+[[nodiscard]] inline cubey::CloudEnvironmentConfig
+ocean_cloud_config_from_run_config(const RunConfig& config) {
+    cubey::CloudEnvironmentConfig clouds{};
+    clouds.enabled = true;
+    cubey::apply_cloud_environment_run_config(clouds, config.clouds);
+    clouds.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+    clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    clouds.layer.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
+    clouds.layer.orbit_representation = cubey::render::CloudLayerOrbitRepresentation::SurfaceShell;
+    return clouds;
 }
 
 } // namespace cubey::projects::ocean

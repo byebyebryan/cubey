@@ -2,6 +2,7 @@
 
 #include <cubey/core/math.h>
 #include <cubey/core/run_config.h>
+#include <cubey/engine/cloud_environment_config.h>
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/atmosphere_night_sky_atlas.h>
 #include <cubey/render/cloud_layer.h>
@@ -84,24 +85,6 @@ inline constexpr std::array<NightSkyVisualMode, 2> kNightSkyVisualModes{
     NightSkyVisualMode::Camera,
 };
 
-enum class AtmosphereCloudWeatherPreset : std::uint32_t {
-    Clear = 0,
-    FairWeather = 1,
-    BrokenCumulus = 2,
-    OvercastStratus = 3,
-    StormCells = 4,
-    HighCirrus = 5,
-};
-
-inline constexpr std::array<AtmosphereCloudWeatherPreset, 6> kAtmosphereCloudWeatherPresets{
-    AtmosphereCloudWeatherPreset::Clear,
-    AtmosphereCloudWeatherPreset::FairWeather,
-    AtmosphereCloudWeatherPreset::BrokenCumulus,
-    AtmosphereCloudWeatherPreset::OvercastStratus,
-    AtmosphereCloudWeatherPreset::StormCells,
-    AtmosphereCloudWeatherPreset::HighCirrus,
-};
-
 struct TimeOfDayConfig {
     SunControlMode mode = SunControlMode::SolarClock;
     float time_hours = cubey::render::kAtmosphereEnvironmentDefaultTimeHours;
@@ -136,51 +119,118 @@ struct MoonConfig {
     float angular_radius_scale = 1.0F;
 };
 
+using AtmosphereCloudWeatherPreset = cubey::CloudEnvironmentWeatherPreset;
+using AtmosphereCloudConfig = cubey::CloudEnvironmentConfig;
+
+inline constexpr auto kAtmosphereCloudWeatherPresets = cubey::kCloudEnvironmentWeatherPresets;
+inline constexpr auto kAtmosphereCloudQualities = cubey::kCloudEnvironmentQualities;
+inline constexpr auto kAtmosphereCloudSamplingModes = cubey::kCloudEnvironmentSamplingModes;
+inline constexpr auto kAtmosphereCloudViewSampleModes = cubey::kCloudEnvironmentViewSampleModes;
+inline constexpr auto kAtmosphereCloudDistanceModes = cubey::kCloudEnvironmentDistanceModes;
+inline constexpr auto kAtmosphereCloudOrbitRepresentations =
+    cubey::kCloudEnvironmentOrbitRepresentations;
+inline constexpr auto kAtmosphereCloudDensityModels = cubey::kCloudEnvironmentDensityModels;
+inline constexpr auto kAtmosphereCloudResolveModes = cubey::kCloudEnvironmentResolveModes;
+
 [[nodiscard]] inline cubey::render::CloudLayerConfig default_atmosphere_cloud_layer_config() {
-    cubey::render::CloudLayerConfig config{};
-    config.quality = cubey::render::CloudLayerQuality::Half;
-    config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
-    config.distance_mode = cubey::render::CloudLayerDistanceMode::Auto;
-    config.density_model = cubey::render::CloudLayerDensityModel::Procedural;
-    config.resolve_mode = cubey::render::CloudLayerResolveMode::TerrainPost;
-    config.debug_view = cubey::render::CloudLayerDebugView::Final;
-    config.sampling_mode = cubey::render::CloudLayerSamplingMode::Bayer;
-    config.temporal_enabled = false;
-    config.bottom_altitude_m = 5000.0F;
-    config.top_altitude_m = 22000.0F;
-    config.coverage = 0.45F;
-    config.density = 0.020F;
-    config.weather_scale_km = 120.0F;
-    config.shape_domain_km = 600.0F;
-    config.footprint_filter_strength = 1.0F;
-    config.edge_softness = 1.0F;
-    config.edge_detail_fade = 0.75F;
-    config.edge_resolve_strength = 0.70F;
-    config.shadow_strength = 0.82F;
-    config.horizon_strength = 0.48F;
-    config.weather_softness = 0.22F;
-    config.detail_erosion = 1.0F;
-    config.crispiness = 40.0F;
-    config.curliness = 0.10F;
-    config.absorption = 0.28F;
-    config.ambient_strength = 0.82F;
-    config.direct_strength = 1.28F;
-    config.phase_strength = 1.14F;
-    config.resolve_strength = 0.48F;
-    config.final_contrast = 1.17F;
-    config.final_saturation = 1.12F;
-    config.horizon_glow_strength = 0.55F;
-    config.sun_glare_strength = 1.0F;
-    config.jitter_strength = 0.65F;
-    return config;
+    return cubey::default_cloud_environment_layer_config();
 }
 
-struct AtmosphereCloudConfig {
-    bool enabled = true;
-    AtmosphereCloudWeatherPreset weather_preset = AtmosphereCloudWeatherPreset::BrokenCumulus;
-    float wind_speed_mps = 450.0F;
-    cubey::render::CloudLayerConfig layer = default_atmosphere_cloud_layer_config();
-};
+[[nodiscard]] inline const char*
+atmosphere_cloud_weather_preset_name(AtmosphereCloudWeatherPreset preset) {
+    return cubey::cloud_environment_weather_preset_name(preset);
+}
+
+[[nodiscard]] inline AtmosphereCloudWeatherPreset
+atmosphere_cloud_weather_preset_from_name(std::string_view name) {
+    return cubey::cloud_environment_weather_preset_from_name(name);
+}
+
+[[nodiscard]] inline const char*
+atmosphere_cloud_quality_name(cubey::render::CloudLayerQuality quality) {
+    return cubey::cloud_environment_quality_name(quality);
+}
+
+[[nodiscard]] inline cubey::render::CloudLayerQuality
+atmosphere_cloud_quality_from_name(std::string_view name) {
+    return cubey::cloud_environment_quality_from_name(name);
+}
+
+[[nodiscard]] inline const char*
+atmosphere_cloud_sampling_mode_name(cubey::render::CloudLayerSamplingMode mode) {
+    return cubey::cloud_environment_sampling_mode_name(mode);
+}
+
+[[nodiscard]] inline cubey::render::CloudLayerSamplingMode
+atmosphere_cloud_sampling_mode_from_name(std::string_view name) {
+    return cubey::cloud_environment_sampling_mode_from_name(name);
+}
+
+[[nodiscard]] inline const char*
+atmosphere_cloud_view_sample_mode_name(cubey::render::CloudLayerViewSampleMode mode) {
+    return cubey::cloud_environment_view_sample_mode_name(mode);
+}
+
+[[nodiscard]] inline cubey::render::CloudLayerViewSampleMode
+atmosphere_cloud_view_sample_mode_from_name(std::string_view name) {
+    return cubey::cloud_environment_view_sample_mode_from_name(name);
+}
+
+[[nodiscard]] inline const char*
+atmosphere_cloud_distance_mode_name(cubey::render::CloudLayerDistanceMode mode) {
+    return cubey::cloud_environment_distance_mode_name(mode);
+}
+
+[[nodiscard]] inline cubey::render::CloudLayerDistanceMode
+atmosphere_cloud_distance_mode_from_name(std::string_view name) {
+    return cubey::cloud_environment_distance_mode_from_name(name);
+}
+
+[[nodiscard]] inline const char*
+atmosphere_cloud_orbit_representation_name(cubey::render::CloudLayerOrbitRepresentation mode) {
+    return cubey::cloud_environment_orbit_representation_name(mode);
+}
+
+[[nodiscard]] inline cubey::render::CloudLayerOrbitRepresentation
+atmosphere_cloud_orbit_representation_from_name(std::string_view name) {
+    return cubey::cloud_environment_orbit_representation_from_name(name);
+}
+
+[[nodiscard]] inline const char*
+atmosphere_cloud_density_model_name(cubey::render::CloudLayerDensityModel model) {
+    return cubey::cloud_environment_density_model_name(model);
+}
+
+[[nodiscard]] inline cubey::render::CloudLayerDensityModel
+atmosphere_cloud_density_model_from_name(std::string_view name) {
+    return cubey::cloud_environment_density_model_from_name(name);
+}
+
+[[nodiscard]] inline const char*
+atmosphere_cloud_resolve_mode_name(cubey::render::CloudLayerResolveMode mode) {
+    return cubey::cloud_environment_resolve_mode_name(mode);
+}
+
+[[nodiscard]] inline cubey::render::CloudLayerResolveMode
+atmosphere_cloud_resolve_mode_from_name(std::string_view name) {
+    return cubey::cloud_environment_resolve_mode_from_name(name);
+}
+
+using AtmosphereCloudWeatherPresetSettings = cubey::CloudEnvironmentWeatherPresetSettings;
+
+[[nodiscard]] inline AtmosphereCloudWeatherPresetSettings
+atmosphere_cloud_weather_preset_settings(AtmosphereCloudWeatherPreset preset) {
+    return cubey::cloud_environment_weather_preset_settings(preset);
+}
+
+inline void apply_atmosphere_cloud_surface_volume(AtmosphereCloudConfig& config) {
+    cubey::apply_cloud_environment_surface_volume(config);
+}
+
+inline void apply_atmosphere_cloud_weather_preset(AtmosphereCloudConfig& config,
+                                                  AtmosphereCloudWeatherPreset preset) {
+    cubey::apply_cloud_environment_weather_preset(config, preset);
+}
 
 struct AtmosphereConfig {
     AtmospherePreset preset = AtmospherePreset::Noon;
@@ -214,6 +264,8 @@ struct AtmosphereConfig {
     float camera_yaw_offset_degrees = 0.0F;
     float camera_pitch_offset_degrees = 0.0F;
     float exposure = 0.0F;
+    cubey::render::AtmosphereEnvironmentGroundMode ground_mode =
+        cubey::render::AtmosphereEnvironmentGroundMode::Ground;
     bool render_celestial_content = true;
     bool render_sun_disk = true;
     bool render_night_sky = true;
@@ -222,374 +274,6 @@ struct AtmosphereConfig {
     float reference_grid_km = 1.0F;
     float reference_intensity = 0.72F;
 };
-
-inline constexpr std::array<cubey::render::CloudLayerQuality, 3> kAtmosphereCloudQualities{
-    cubey::render::CloudLayerQuality::Quarter,
-    cubey::render::CloudLayerQuality::Half,
-    cubey::render::CloudLayerQuality::Full,
-};
-
-inline constexpr std::array<cubey::render::CloudLayerSamplingMode, 4>
-    kAtmosphereCloudSamplingModes{
-        cubey::render::CloudLayerSamplingMode::Interleaved,
-        cubey::render::CloudLayerSamplingMode::Bayer,
-        cubey::render::CloudLayerSamplingMode::BlueNoise,
-        cubey::render::CloudLayerSamplingMode::Off,
-    };
-
-inline constexpr std::array<cubey::render::CloudLayerViewSampleMode, 2>
-    kAtmosphereCloudViewSampleModes{
-        cubey::render::CloudLayerViewSampleMode::SingleFrame,
-        cubey::render::CloudLayerViewSampleMode::TemporalPhased,
-    };
-
-inline constexpr std::array<cubey::render::CloudLayerDistanceMode, 4>
-    kAtmosphereCloudDistanceModes{
-        cubey::render::CloudLayerDistanceMode::Auto,
-        cubey::render::CloudLayerDistanceMode::Local,
-        cubey::render::CloudLayerDistanceMode::OrbitShell,
-        cubey::render::CloudLayerDistanceMode::BlendDebug,
-    };
-
-inline constexpr std::array<cubey::render::CloudLayerOrbitRepresentation, 2>
-    kAtmosphereCloudOrbitRepresentations{
-        cubey::render::CloudLayerOrbitRepresentation::VolumeRaymarch,
-        cubey::render::CloudLayerOrbitRepresentation::SurfaceShell,
-    };
-
-inline constexpr std::array<cubey::render::CloudLayerDensityModel, 3>
-    kAtmosphereCloudDensityModels{
-        cubey::render::CloudLayerDensityModel::RefDensity,
-        cubey::render::CloudLayerDensityModel::Procedural,
-        cubey::render::CloudLayerDensityModel::CloudRefCompatible,
-    };
-
-inline constexpr std::array<cubey::render::CloudLayerResolveMode, 2>
-    kAtmosphereCloudResolveModes{
-        cubey::render::CloudLayerResolveMode::TerrainPost,
-        cubey::render::CloudLayerResolveMode::MetadataBilateral,
-    };
-
-[[nodiscard]] inline const char*
-atmosphere_cloud_weather_preset_name(AtmosphereCloudWeatherPreset preset) {
-    switch (preset) {
-    case AtmosphereCloudWeatherPreset::Clear:
-        return "clear";
-    case AtmosphereCloudWeatherPreset::FairWeather:
-        return "fair-weather";
-    case AtmosphereCloudWeatherPreset::BrokenCumulus:
-        return "broken-cumulus";
-    case AtmosphereCloudWeatherPreset::OvercastStratus:
-        return "overcast-stratus";
-    case AtmosphereCloudWeatherPreset::StormCells:
-        return "storm-cells";
-    case AtmosphereCloudWeatherPreset::HighCirrus:
-        return "high-cirrus";
-    }
-    return "broken-cumulus";
-}
-
-[[nodiscard]] inline AtmosphereCloudWeatherPreset
-atmosphere_cloud_weather_preset_from_name(std::string_view name) {
-    if (name.empty() || name == "broken-cumulus" || name == "scattered" ||
-        name == "inspection") {
-        return AtmosphereCloudWeatherPreset::BrokenCumulus;
-    }
-    if (name == "clear") {
-        return AtmosphereCloudWeatherPreset::Clear;
-    }
-    if (name == "fair-weather") {
-        return AtmosphereCloudWeatherPreset::FairWeather;
-    }
-    if (name == "overcast-stratus" || name == "overcast") {
-        return AtmosphereCloudWeatherPreset::OvercastStratus;
-    }
-    if (name == "storm-cells" || name == "storm") {
-        return AtmosphereCloudWeatherPreset::StormCells;
-    }
-    if (name == "high-cirrus") {
-        return AtmosphereCloudWeatherPreset::HighCirrus;
-    }
-    throw std::runtime_error("unknown atmosphere cloud weather preset: " + std::string(name));
-}
-
-[[nodiscard]] inline const char*
-atmosphere_cloud_quality_name(cubey::render::CloudLayerQuality quality) {
-    switch (quality) {
-    case cubey::render::CloudLayerQuality::Quarter:
-        return "quarter";
-    case cubey::render::CloudLayerQuality::Half:
-        return "half";
-    case cubey::render::CloudLayerQuality::Full:
-        return "full";
-    }
-    return "half";
-}
-
-[[nodiscard]] inline cubey::render::CloudLayerQuality
-atmosphere_cloud_quality_from_name(std::string_view name) {
-    if (name.empty()) {
-        return cubey::render::CloudLayerQuality::Half;
-    }
-    for (const cubey::render::CloudLayerQuality quality : kAtmosphereCloudQualities) {
-        if (name == atmosphere_cloud_quality_name(quality)) {
-            return quality;
-        }
-    }
-    throw std::runtime_error("unknown atmosphere cloud quality: " + std::string(name));
-}
-
-[[nodiscard]] inline const char*
-atmosphere_cloud_sampling_mode_name(cubey::render::CloudLayerSamplingMode mode) {
-    switch (mode) {
-    case cubey::render::CloudLayerSamplingMode::Interleaved:
-        return "interleaved";
-    case cubey::render::CloudLayerSamplingMode::Bayer:
-        return "bayer";
-    case cubey::render::CloudLayerSamplingMode::BlueNoise:
-        return "blue-noise";
-    case cubey::render::CloudLayerSamplingMode::Off:
-        return "off";
-    }
-    return "bayer";
-}
-
-[[nodiscard]] inline cubey::render::CloudLayerSamplingMode
-atmosphere_cloud_sampling_mode_from_name(std::string_view name) {
-    if (name.empty()) {
-        return cubey::render::CloudLayerSamplingMode::Bayer;
-    }
-    for (const cubey::render::CloudLayerSamplingMode mode : kAtmosphereCloudSamplingModes) {
-        if (name == atmosphere_cloud_sampling_mode_name(mode)) {
-            return mode;
-        }
-    }
-    throw std::runtime_error("unknown atmosphere cloud sampling mode: " + std::string(name));
-}
-
-[[nodiscard]] inline const char*
-atmosphere_cloud_view_sample_mode_name(cubey::render::CloudLayerViewSampleMode mode) {
-    switch (mode) {
-    case cubey::render::CloudLayerViewSampleMode::SingleFrame:
-        return "single-frame";
-    case cubey::render::CloudLayerViewSampleMode::TemporalPhased:
-        return "temporal-phased";
-    }
-    return "single-frame";
-}
-
-[[nodiscard]] inline cubey::render::CloudLayerViewSampleMode
-atmosphere_cloud_view_sample_mode_from_name(std::string_view name) {
-    if (name.empty()) {
-        return cubey::render::CloudLayerViewSampleMode::SingleFrame;
-    }
-    for (const cubey::render::CloudLayerViewSampleMode mode :
-         kAtmosphereCloudViewSampleModes) {
-        if (name == atmosphere_cloud_view_sample_mode_name(mode)) {
-            return mode;
-        }
-    }
-    throw std::runtime_error("unknown atmosphere cloud view sample mode: " +
-                             std::string(name));
-}
-
-[[nodiscard]] inline const char*
-atmosphere_cloud_distance_mode_name(cubey::render::CloudLayerDistanceMode mode) {
-    switch (mode) {
-    case cubey::render::CloudLayerDistanceMode::Auto:
-        return "auto";
-    case cubey::render::CloudLayerDistanceMode::Local:
-        return "local";
-    case cubey::render::CloudLayerDistanceMode::OrbitShell:
-        return "orbit-shell";
-    case cubey::render::CloudLayerDistanceMode::BlendDebug:
-        return "blend-debug";
-    }
-    return "local";
-}
-
-[[nodiscard]] inline cubey::render::CloudLayerDistanceMode
-atmosphere_cloud_distance_mode_from_name(std::string_view name) {
-    if (name.empty()) {
-        return cubey::render::CloudLayerDistanceMode::Local;
-    }
-    for (const cubey::render::CloudLayerDistanceMode mode : kAtmosphereCloudDistanceModes) {
-        if (name == atmosphere_cloud_distance_mode_name(mode)) {
-            return mode;
-        }
-    }
-    throw std::runtime_error("unknown atmosphere cloud distance mode: " + std::string(name));
-}
-
-[[nodiscard]] inline const char*
-atmosphere_cloud_orbit_representation_name(cubey::render::CloudLayerOrbitRepresentation mode) {
-    switch (mode) {
-    case cubey::render::CloudLayerOrbitRepresentation::VolumeRaymarch:
-        return "volume";
-    case cubey::render::CloudLayerOrbitRepresentation::SurfaceShell:
-        return "surface-shell";
-    }
-    return "surface-shell";
-}
-
-[[nodiscard]] inline cubey::render::CloudLayerOrbitRepresentation
-atmosphere_cloud_orbit_representation_from_name(std::string_view name) {
-    if (name.empty() || name == "surface-shell" || name == "shell") {
-        return cubey::render::CloudLayerOrbitRepresentation::SurfaceShell;
-    }
-    if (name == "volume" || name == "raymarch" || name == "volume-raymarch") {
-        return cubey::render::CloudLayerOrbitRepresentation::VolumeRaymarch;
-    }
-    throw std::runtime_error("unknown atmosphere cloud orbit representation: " +
-                             std::string(name));
-}
-
-[[nodiscard]] inline const char*
-atmosphere_cloud_density_model_name(cubey::render::CloudLayerDensityModel model) {
-    switch (model) {
-    case cubey::render::CloudLayerDensityModel::RefDensity:
-        return "ref-density";
-    case cubey::render::CloudLayerDensityModel::Procedural:
-        return "procedural";
-    case cubey::render::CloudLayerDensityModel::CloudRefCompatible:
-        return "cloud-ref-compatible";
-    }
-    return "procedural";
-}
-
-[[nodiscard]] inline cubey::render::CloudLayerDensityModel
-atmosphere_cloud_density_model_from_name(std::string_view name) {
-    if (name.empty() || name == "procedural" || name == "active") {
-        return cubey::render::CloudLayerDensityModel::Procedural;
-    }
-    if (name == "ref-density" || name == "terrain-ref" || name == "terrain" ||
-        name == "ref") {
-        return cubey::render::CloudLayerDensityModel::RefDensity;
-    }
-    if (name == "cloud-ref-compatible" || name == "cloud-ref" ||
-        name == "compatible") {
-        return cubey::render::CloudLayerDensityModel::CloudRefCompatible;
-    }
-    throw std::runtime_error("unknown atmosphere cloud density model: " + std::string(name));
-}
-
-[[nodiscard]] inline const char*
-atmosphere_cloud_resolve_mode_name(cubey::render::CloudLayerResolveMode mode) {
-    switch (mode) {
-    case cubey::render::CloudLayerResolveMode::TerrainPost:
-        return "terrain-post";
-    case cubey::render::CloudLayerResolveMode::MetadataBilateral:
-        return "metadata-bilateral";
-    }
-    return "terrain-post";
-}
-
-[[nodiscard]] inline cubey::render::CloudLayerResolveMode
-atmosphere_cloud_resolve_mode_from_name(std::string_view name) {
-    if (name.empty() || name == "terrain-post" || name == "terrain" || name == "gaussian") {
-        return cubey::render::CloudLayerResolveMode::TerrainPost;
-    }
-    if (name == "metadata-bilateral" || name == "bilateral" || name == "metadata") {
-        return cubey::render::CloudLayerResolveMode::MetadataBilateral;
-    }
-    throw std::runtime_error("unknown atmosphere cloud resolve mode: " + std::string(name));
-}
-
-struct AtmosphereCloudWeatherPresetSettings {
-    float coverage = 0.0F;
-    float density = 0.0F;
-    float weather_scale_km = 0.0F;
-    float shape_domain_km = 600.0F;
-    float vertical_shear_fraction = 0.0F;
-    float wind_speed_mps = 0.0F;
-    float bottom_altitude_m = 5000.0F;
-    float top_altitude_m = 22000.0F;
-    float horizon_strength = 0.48F;
-    float horizon_glow_strength = 0.55F;
-    cubey::render::CloudLayerCloudStyle cloud_style =
-        cubey::render::CloudLayerCloudStyle::BrokenCumulus;
-};
-
-[[nodiscard]] inline AtmosphereCloudWeatherPresetSettings
-atmosphere_cloud_weather_preset_settings(AtmosphereCloudWeatherPreset preset) {
-    switch (preset) {
-    case AtmosphereCloudWeatherPreset::Clear:
-        return {.coverage = 0.08F,
-                .density = 0.007F,
-                .weather_scale_km = 420.0F,
-                .shape_domain_km = 2100.0F,
-                .wind_speed_mps = 180.0F,
-                .bottom_altitude_m = 6500.0F,
-                .top_altitude_m = 16000.0F,
-                .horizon_strength = 0.18F,
-                .horizon_glow_strength = 0.24F,
-                .cloud_style = cubey::render::CloudLayerCloudStyle::FairWeather};
-    case AtmosphereCloudWeatherPreset::FairWeather:
-        return {.coverage = 0.30F,
-                .density = 0.016F,
-                .weather_scale_km = 260.0F,
-                .shape_domain_km = 1300.0F,
-                .wind_speed_mps = 260.0F,
-                .bottom_altitude_m = 5000.0F,
-                .top_altitude_m = 17000.0F,
-                .cloud_style = cubey::render::CloudLayerCloudStyle::FairWeather};
-    case AtmosphereCloudWeatherPreset::BrokenCumulus:
-        return {.coverage = 0.45F,
-                .density = 0.020F,
-                .weather_scale_km = 120.0F,
-                .shape_domain_km = 600.0F,
-                .wind_speed_mps = 450.0F,
-                .bottom_altitude_m = 5000.0F,
-                .top_altitude_m = 22000.0F,
-                .cloud_style = cubey::render::CloudLayerCloudStyle::BrokenCumulus};
-    case AtmosphereCloudWeatherPreset::OvercastStratus:
-        return {.coverage = 0.72F,
-                .density = 0.018F,
-                .weather_scale_km = 280.0F,
-                .shape_domain_km = 1400.0F,
-                .wind_speed_mps = 320.0F,
-                .bottom_altitude_m = 3000.0F,
-                .top_altitude_m = 12000.0F,
-                .cloud_style = cubey::render::CloudLayerCloudStyle::OvercastStratus};
-    case AtmosphereCloudWeatherPreset::StormCells:
-        return {.coverage = 0.64F,
-                .density = 0.032F,
-                .weather_scale_km = 105.0F,
-                .shape_domain_km = 525.0F,
-                .wind_speed_mps = 650.0F,
-                .bottom_altitude_m = 2500.0F,
-                .top_altitude_m = 24000.0F,
-                .cloud_style = cubey::render::CloudLayerCloudStyle::StormCells};
-    case AtmosphereCloudWeatherPreset::HighCirrus:
-        return {.coverage = 0.36F,
-                .density = 0.010F,
-                .weather_scale_km = 360.0F,
-                .shape_domain_km = 1800.0F,
-                .wind_speed_mps = 700.0F,
-                .bottom_altitude_m = 11000.0F,
-                .top_altitude_m = 22000.0F,
-                .cloud_style = cubey::render::CloudLayerCloudStyle::HighCirrus};
-    }
-    return atmosphere_cloud_weather_preset_settings(AtmosphereCloudWeatherPreset::BrokenCumulus);
-}
-
-inline void apply_atmosphere_cloud_weather_preset(AtmosphereCloudConfig& config,
-                                                  AtmosphereCloudWeatherPreset preset) {
-    config.weather_preset = preset;
-    const AtmosphereCloudWeatherPresetSettings settings =
-        atmosphere_cloud_weather_preset_settings(preset);
-    config.layer.coverage = settings.coverage;
-    config.layer.density = settings.density;
-    config.layer.weather_scale_km = settings.weather_scale_km;
-    config.layer.shape_domain_km = settings.shape_domain_km;
-    config.layer.vertical_shear_fraction = settings.vertical_shear_fraction;
-    config.wind_speed_mps = settings.wind_speed_mps;
-    config.layer.bottom_altitude_m = settings.bottom_altitude_m;
-    config.layer.top_altitude_m = settings.top_altitude_m;
-    config.layer.horizon_strength = settings.horizon_strength;
-    config.layer.horizon_glow_strength = settings.horizon_glow_strength;
-    config.layer.cloud_style = settings.cloud_style;
-}
 
 using SolarPosition = cubey::render::AtmosphereEnvironmentSolarPosition;
 using LunarState = cubey::render::AtmosphereEnvironmentLunarState;
@@ -718,6 +402,33 @@ using LunarState = cubey::render::AtmosphereEnvironmentLunarState;
         }
     }
     throw std::runtime_error("unknown Milky Way layer: " + std::string(name));
+}
+
+[[nodiscard]] inline const char*
+atmosphere_ground_mode_name(cubey::render::AtmosphereEnvironmentGroundMode mode) {
+    switch (mode) {
+    case cubey::render::AtmosphereEnvironmentGroundMode::Ground:
+        return "ground";
+    case cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly:
+        return "sky-only";
+    case cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion:
+        return "sky-only-no-ground-occlusion";
+    }
+    return "ground";
+}
+
+[[nodiscard]] inline cubey::render::AtmosphereEnvironmentGroundMode
+atmosphere_ground_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "ground") {
+        return cubey::render::AtmosphereEnvironmentGroundMode::Ground;
+    }
+    if (name == "sky-only") {
+        return cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
+    }
+    if (name == "sky-only-no-ground-occlusion") {
+        return cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion;
+    }
+    throw std::runtime_error("unknown atmosphere ground mode: " + std::string(name));
 }
 
 [[nodiscard]] inline AtmosphereRenderView next_atmosphere_render_view(AtmosphereRenderView view) {
@@ -1004,10 +715,8 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     if (config.sun_angular_radius <= 0.0F || config.camera_altitude_km < 0.0F) {
         throw std::runtime_error("atmosphere sun radius must be positive and altitude nonnegative");
     }
-    if (config.camera_yaw_offset_degrees < -360.0F ||
-        config.camera_yaw_offset_degrees > 360.0F ||
-        config.camera_pitch_offset_degrees < -89.0F ||
-        config.camera_pitch_offset_degrees > 89.0F) {
+    if (config.camera_yaw_offset_degrees < -360.0F || config.camera_yaw_offset_degrees > 360.0F ||
+        config.camera_pitch_offset_degrees < -89.0F || config.camera_pitch_offset_degrees > 89.0F) {
         throw std::runtime_error("atmosphere camera view offsets are out of range");
     }
     if (config.reference_grid_km <= 0.0F || config.reference_intensity < 0.0F) {
@@ -1048,109 +757,7 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
 
 inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
                                               const RunConfig::CloudOptions& run_clouds) {
-    auto apply_float = [](float value, float& target) {
-        if (run_config_float_is_set(value)) {
-            target = value;
-        }
-    };
-
-    if (!run_clouds.quality.empty()) {
-        config.layer.quality = atmosphere_cloud_quality_from_name(run_clouds.quality);
-    }
-    if (run_clouds.enabled >= 0) {
-        config.enabled = run_clouds.enabled != 0;
-    }
-    if (!run_clouds.debug_view.empty()) {
-        config.layer.debug_view =
-            cubey::render::cloud_layer_debug_view_from_name(run_clouds.debug_view);
-    }
-    if (!run_clouds.sampling_mode.empty()) {
-        config.layer.sampling_mode =
-            atmosphere_cloud_sampling_mode_from_name(run_clouds.sampling_mode);
-    }
-    if (!run_clouds.view_sample_mode.empty()) {
-        config.layer.view_sample_mode =
-            atmosphere_cloud_view_sample_mode_from_name(run_clouds.view_sample_mode);
-    }
-    if (!run_clouds.distance_mode.empty()) {
-        config.layer.distance_mode =
-            atmosphere_cloud_distance_mode_from_name(run_clouds.distance_mode);
-    }
-    if (!run_clouds.orbit_representation.empty()) {
-        config.layer.orbit_representation =
-            atmosphere_cloud_orbit_representation_from_name(run_clouds.orbit_representation);
-    }
-    if (!run_clouds.density_model.empty()) {
-        config.layer.density_model =
-            atmosphere_cloud_density_model_from_name(run_clouds.density_model);
-    }
-    if (!run_clouds.resolve_mode.empty()) {
-        config.layer.resolve_mode =
-            atmosphere_cloud_resolve_mode_from_name(run_clouds.resolve_mode);
-    }
-    if (!run_clouds.weather_preset.empty()) {
-        apply_atmosphere_cloud_weather_preset(
-            config, atmosphere_cloud_weather_preset_from_name(run_clouds.weather_preset));
-    }
-
-    if (run_clouds.view_steps > 0U) {
-        config.layer.view_steps_override = static_cast<std::int32_t>(run_clouds.view_steps);
-    }
-    if (run_clouds.view_samples > 0U) {
-        config.layer.view_samples = static_cast<std::int32_t>(run_clouds.view_samples);
-    }
-
-    apply_float(run_clouds.bottom_altitude_m, config.layer.bottom_altitude_m);
-    apply_float(run_clouds.top_altitude_m, config.layer.top_altitude_m);
-    apply_float(run_clouds.planet_radius_m, config.layer.planet_radius_m);
-    apply_float(run_clouds.coverage, config.layer.coverage);
-    apply_float(run_clouds.density, config.layer.density);
-    apply_float(run_clouds.weather_scale_km, config.layer.weather_scale_km);
-    apply_float(run_clouds.shape_domain_km, config.layer.shape_domain_km);
-    apply_float(run_clouds.footprint_filter_strength, config.layer.footprint_filter_strength);
-    apply_float(run_clouds.edge_softness, config.layer.edge_softness);
-    apply_float(run_clouds.edge_detail_fade, config.layer.edge_detail_fade);
-    apply_float(run_clouds.edge_resolve_strength, config.layer.edge_resolve_strength);
-    apply_float(run_clouds.vertical_shear_fraction, config.layer.vertical_shear_fraction);
-    apply_float(run_clouds.wind_speed_mps, config.wind_speed_mps);
-    apply_float(run_clouds.shadow_strength, config.layer.shadow_strength);
-    apply_float(run_clouds.horizon_strength, config.layer.horizon_strength);
-    apply_float(run_clouds.weather_fronts, config.layer.weather_fronts);
-    apply_float(run_clouds.weather_cells, config.layer.weather_cells);
-    apply_float(run_clouds.weather_streaks, config.layer.weather_streaks);
-    apply_float(run_clouds.weather_softness, config.layer.weather_softness);
-    apply_float(run_clouds.weather_influence, config.layer.weather_influence);
-    apply_float(run_clouds.detail_erosion, config.layer.detail_erosion);
-    apply_float(run_clouds.ambient_strength, config.layer.ambient_strength);
-    apply_float(run_clouds.direct_strength, config.layer.direct_strength);
-    apply_float(run_clouds.phase_strength, config.layer.phase_strength);
-    apply_float(run_clouds.final_contrast, config.layer.final_contrast);
-    apply_float(run_clouds.final_saturation, config.layer.final_saturation);
-    apply_float(run_clouds.resolve_strength, config.layer.resolve_strength);
-    apply_float(run_clouds.horizon_glow_strength, config.layer.horizon_glow_strength);
-    apply_float(run_clouds.sun_glare_strength, config.layer.sun_glare_strength);
-    apply_float(run_clouds.jitter_strength, config.layer.jitter_strength);
-    apply_float(run_clouds.orbit_transition_start_m, config.layer.orbit_transition_start_m);
-    apply_float(run_clouds.orbit_transition_end_m, config.layer.orbit_transition_end_m);
-    apply_float(run_clouds.far_shell_start_m, config.layer.far_shell_start_m);
-    apply_float(run_clouds.far_shell_end_m, config.layer.far_shell_end_m);
-    apply_float(run_clouds.far_shell_strength, config.layer.far_shell_strength);
-    apply_float(run_clouds.orbit_detail_strength, config.layer.orbit_detail_strength);
-    apply_float(run_clouds.orbit_density_scale, config.layer.orbit_density_scale);
-    apply_float(run_clouds.orbit_fill, config.layer.orbit_fill);
-    apply_float(run_clouds.orbit_motion_strength, config.layer.orbit_motion_strength);
-    apply_float(run_clouds.orbit_shell_extinction, config.layer.orbit_shell_extinction);
-
-    if (run_clouds.temporal >= 0) {
-        config.layer.temporal_enabled = run_clouds.temporal != 0;
-    }
-    if (run_clouds.local_volume >= 0) {
-        config.layer.local_volume_enabled = run_clouds.local_volume != 0;
-    }
-    if (run_clouds.horizon_layer >= 0) {
-        config.layer.horizon_layer_enabled = run_clouds.horizon_layer != 0;
-    }
-    config.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+    cubey::apply_cloud_environment_run_config(config, run_clouds);
 }
 
 [[nodiscard]] inline AtmosphereConfig atmosphere_config_from_run_config(const RunConfig& run) {
@@ -1166,6 +773,9 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
     }
     if (!run.atmosphere.milky_way_layer.empty()) {
         config.night_sky.layer = night_sky_layer_view_from_name(run.atmosphere.milky_way_layer);
+    }
+    if (!run.atmosphere.ground_mode.empty()) {
+        config.ground_mode = atmosphere_ground_mode_from_name(run.atmosphere.ground_mode);
     }
     const bool manual_sun_override =
         run_config_float_is_set(run.atmosphere.sun_elevation_degrees) ||

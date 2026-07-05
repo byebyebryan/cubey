@@ -9,9 +9,9 @@ Scale-wise, `ocean` is intended to stop at horizon-scale and curved-local
 rendering. That is not a bad endpoint: the project already exercises the water
 renderer, FFT cascade cost model, atmosphere integration, terrain-field
 boundary, LOD diagnostics, and curvature controls. Full planet-scale navigation,
-surface patching, streaming terrain/bathymetry, weather, and clouds belong in a
-`projects/planet`; ocean should be ported or wrapped there when the planet
-frame, adaptive patch LOD, and render-order contracts are ready.
+surface patching, streaming terrain/bathymetry, and planet-scale weather/clouds
+belong in `projects/planet`; ocean should be ported or wrapped there when the
+planet frame, adaptive patch LOD, and render-order contracts are ready.
 
 GodotOceanWaves is MIT licensed; the required notice is kept in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
@@ -75,7 +75,9 @@ Headless captures can use
 `--ocean-curvature-strength 0.0..1.0`,
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
-`--ocean-terrain-fields`, and `--no-ocean-terrain-fields`.
+`--ocean-terrain-fields`, `--no-ocean-terrain-fields`,
+`--cloud-quality quarter|half|full`, `--cloud-weather-preset ...`, and
+`--no-clouds`.
 
 The visible sky now uses the shared `atmosphere` background path, and water
 lighting samples the runtime atmosphere sky/probe data for reflection, ambient
@@ -86,12 +88,15 @@ texture is bound for terrain depth/shore/slope debug views; enabling
 `--ocean-terrain-fields` only proves a small shoreline foam hook and is not yet
 full bathymetry, seafloor visibility, or surf-zone rendering.
 
-Cloud integration is intentionally limited to lighting diagnostics for now.
-`cloud-shadow` shows a procedural direct-light attenuation factor packed through
-the shared `cubey::render::CloudLayerShadowProduct` shape, and the Shading panel
-exposes cloud-shadow strength, scale, and drift. Ocean does not raymarch clouds,
-sample a real cloud shadow texture, or use clouded reflection/environment
-products yet.
+Final view now composites the shared surface-volume cloud layer over the
+atmosphere sky before ocean post. This is deliberately a sky/background
+integration only: clouds use ocean's camera, scene depth, and shared atmosphere
+sun/moon/ambient lighting, but the water material does not yet sample real cloud
+shadow, reflection, or clouded environment-lighting products. `--no-clouds`
+keeps the clear-sky ocean path for A/B checks. `cloud-shadow` remains the older
+procedural direct-light attenuation diagnostic packed through the shared
+`cubey::render::CloudLayerShadowProduct` shape, with strength, scale, and drift
+still exposed in the Shading panel.
 
 Cascades are now treated as regular slots. The default `Core` preset enables
 only C0 and C1, which are the reference-derived wave pair carrying the current
@@ -155,3 +160,9 @@ presentation path.
 
 Repeatable visual review commands are captured in
 [Ocean visual capture recipes](../../docs/notes/ocean-visual-captures.md).
+
+Cloud-specific ocean review captures:
+
+```sh
+projects/ocean/capture_cloud_review.sh outputs/ocean-cloud-review
+```

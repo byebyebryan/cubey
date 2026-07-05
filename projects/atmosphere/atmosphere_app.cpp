@@ -688,6 +688,8 @@ class AtmosphereApp {
         const cubey::render::ViewRayBasis3D view_rays = atmosphere_view_rays(extent);
         const cubey::render::AtmosphereEnvironmentConfig environment =
             atmosphere_environment_config(atmosphere_config_);
+        const cubey::render::AtmosphereEnvironmentLighting lighting =
+            cubey::render::atmosphere_environment_lighting(environment);
         const cubey::math::Vec3 cloud_camera_position{
             0.0F,
             atmosphere_config_.camera_altitude_km * 1000.0F,
@@ -713,8 +715,14 @@ class AtmosphereApp {
                 .camera_up = cubey::math::Vec3{view_rays.up_tan_half_fovy},
                 .camera_forward = cubey::math::Vec3{view_rays.forward},
                 .tan_half_fovy = view_rays.up_tan_half_fovy.w,
-                .sun_direction = cubey::render::atmosphere_environment_sun_direction(environment),
-                .sun_intensity = 1.0F,
+                .sun_direction = lighting.sun_direction,
+                .sun_color = lighting.sun_color,
+                .sun_intensity = lighting.sun_intensity,
+                .moon_direction = lighting.moon_direction,
+                .moon_color = lighting.moon_color,
+                .moon_intensity = lighting.moon_intensity,
+                .ambient_color = lighting.ambient_color,
+                .ambient_intensity = lighting.ambient_intensity,
                 .target_extent = extent,
                 .temporal_frame_index = cloud_runtime_.temporal_frame_index(),
                 .camera_mode = view_regime.camera_mode,

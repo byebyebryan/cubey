@@ -3,6 +3,7 @@
 #include "ocean_mesh.h"
 
 #include <cubey/host/atmosphere_environment_ui.h>
+#include <cubey/host/cloud_environment_ui.h>
 #include <cubey/host/imgui_helpers.h>
 
 #include <imgui.h>
@@ -720,6 +721,11 @@ void draw_ocean_ui(OceanUiContext ui) {
     ui.atmosphere_changed =
         cubey::host::draw_atmosphere_environment_controls(ui.atmosphere, {.default_open = false}) ||
         ui.atmosphere_changed;
+
+    static_cast<void>(cubey::host::draw_cloud_environment_controls(
+        ui.clouds,
+        {.help = "Shared surface-view cloud layer composited over the ocean sky.",
+         .show_aerial_orbit_controls = false}));
 
     if (const cubey::host::ScopedImGuiGroup group{
             "Cascades",

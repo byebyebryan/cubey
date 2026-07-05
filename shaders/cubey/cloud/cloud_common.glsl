@@ -91,12 +91,17 @@ layout(std140, set = 0, binding = 0) uniform CloudFrame {
     vec4 cloud_shell;
     vec4 weather;
     vec4 sun_direction_intensity;
+    vec4 sun_color;
+    vec4 moon_direction_intensity;
+    vec4 moon_color;
+    vec4 ambient_color_intensity;
     vec4 ref_options;
     vec4 shape_options;
     vec4 weather_feature_weights;
     vec4 cloud_color_top_shadow;
     vec4 cloud_color_bottom_horizon;
     vec4 lighting_strengths;
+    vec4 twilight_options;
     vec4 composite_options;
     vec4 sampling_options;
     vec4 temporal_options;
@@ -210,6 +215,21 @@ float cloud_phase(float cos_theta) {
     float blend = cloud_saturate(cos_theta * 0.5 + 0.5);
     float phase = mix(cloud_hg(cos_theta, -0.08), cloud_hg(cos_theta, 0.08), blend);
     return max(phase, 1.0);
+}
+
+vec3 cloud_sun_radiance() {
+    return max(params.sun_color.rgb, vec3(0.0)) *
+           max(params.sun_direction_intensity.w, 0.0);
+}
+
+vec3 cloud_moon_radiance() {
+    return max(params.moon_color.rgb, vec3(0.0)) *
+           max(params.moon_direction_intensity.w, 0.0);
+}
+
+vec3 cloud_environment_ambient_radiance() {
+    return max(params.ambient_color_intensity.rgb, vec3(0.0)) *
+           max(params.ambient_color_intensity.w, 0.0);
 }
 
 float cloud_hash(vec2 p) {

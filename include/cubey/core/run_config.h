@@ -199,6 +199,7 @@ struct RunConfig {
         std::string preset{};
         std::string time_of_day_mode{};
         std::string night_sky_mode{};
+        std::string ground_mode{};
         std::string milky_way_layer{};
         float sun_elevation_degrees = kRunConfigUnsetFloat;
         float sun_azimuth_degrees = kRunConfigUnsetFloat;
@@ -274,6 +275,10 @@ struct RunConfig {
         float ambient_strength = kRunConfigUnsetFloat;
         float direct_strength = kRunConfigUnsetFloat;
         float phase_strength = kRunConfigUnsetFloat;
+        float twilight_color_strength = kRunConfigUnsetFloat;
+        float twilight_edge_strength = kRunConfigUnsetFloat;
+        float twilight_saturation_strength = kRunConfigUnsetFloat;
+        float afterglow_strength = kRunConfigUnsetFloat;
         float powder_strength = kRunConfigUnsetFloat;
         float final_contrast = kRunConfigUnsetFloat;
         float final_saturation = kRunConfigUnsetFloat;

@@ -103,6 +103,18 @@ int main() {
                      "ocean should default far-surface curvature on");
         require(defaults.spectral_domains_enabled,
                 "ocean should default to spectral source-domain filtering");
+        const cubey::CloudEnvironmentConfig default_clouds =
+            ocean::ocean_cloud_config_from_run_config(cubey::RunConfig{});
+        require(default_clouds.enabled, "ocean clouds should be enabled by default");
+        require(default_clouds.layer.distance_mode == cubey::render::CloudLayerDistanceMode::Local,
+                "ocean clouds should use the surface-view local distance mode");
+        require(default_clouds.layer.density_model ==
+                    cubey::render::CloudLayerDensityModel::SurfaceVolume,
+                "ocean clouds should use the shared surface-volume density model");
+        cubey::RunConfig no_clouds_config;
+        no_clouds_config.clouds.enabled = 0;
+        require(!ocean::ocean_cloud_config_from_run_config(no_clouds_config).enabled,
+                "ocean should honor --no-clouds");
         require(std::string(ocean::ocean_surface_mode_name(ocean::OceanSurfaceMode::Flat)) ==
                     "flat",
                 "ocean should name the flat surface mode");

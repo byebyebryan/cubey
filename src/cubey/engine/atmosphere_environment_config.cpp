@@ -1,6 +1,9 @@
 #include <cubey/engine/atmosphere_environment_config.h>
 
 #include <cmath>
+#include <stdexcept>
+#include <string>
+#include <string_view>
 
 namespace cubey {
 namespace {
@@ -18,6 +21,20 @@ atmosphere_options_have_manual_sun(const RunConfig::AtmosphereOptions& atmospher
 [[nodiscard]] bool
 atmosphere_auto_exposure_enabled(const RunConfig::AtmosphereOptions& atmosphere) {
     return atmosphere.auto_exposure < 0 || atmosphere.auto_exposure == 1;
+}
+
+[[nodiscard]] render::AtmosphereEnvironmentGroundMode
+atmosphere_ground_mode_from_run_config(std::string_view mode) {
+    if (mode.empty() || mode == "ground") {
+        return render::AtmosphereEnvironmentGroundMode::Ground;
+    }
+    if (mode == "sky-only") {
+        return render::AtmosphereEnvironmentGroundMode::SkyOnly;
+    }
+    if (mode == "sky-only-no-ground-occlusion") {
+        return render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion;
+    }
+    throw std::runtime_error("unknown atmosphere ground mode: " + std::string(mode));
 }
 
 [[nodiscard]] float
@@ -145,7 +162,9 @@ atmosphere_environment_run_state_from_config(const RunConfig::AtmosphereOptions&
     render::AtmosphereEnvironmentConfig environment;
     environment.sun_elevation_degrees = defaults.sun_elevation_degrees;
     environment.sun_azimuth_degrees = defaults.sun_azimuth_degrees;
-    environment.ground_mode = defaults.ground_mode;
+    environment.ground_mode = atmosphere.ground_mode.empty()
+                                  ? defaults.ground_mode
+                                  : atmosphere_ground_mode_from_run_config(atmosphere.ground_mode);
     environment.reference_geometry_enabled = defaults.reference_geometry_enabled;
 
     apply_atmosphere_time_options(environment, atmosphere);

@@ -83,3 +83,35 @@ void test_cloud_layer_edge_mask_debug_view_round_trips() {
     require(cubey::render::cloud_layer_debug_view_name(view) == std::string_view{"edge-mask"},
             "cloud debug names should round-trip edge-mask");
 }
+
+void test_cloud_layer_frame_uniforms_pack_environment_lighting() {
+    cubey::render::CloudLayerConfig config{};
+    cubey::render::CloudLayerFrameInfo frame{};
+    frame.sun_direction = {0.0F, 0.8F, 0.6F};
+    frame.sun_color = {1.0F, 0.9F, 0.7F};
+    frame.sun_intensity = 0.35F;
+    frame.moon_direction = {0.2F, 0.7F, -0.1F};
+    frame.moon_color = {0.5F, 0.6F, 0.8F};
+    frame.moon_intensity = 0.12F;
+    frame.ambient_color = {0.04F, 0.05F, 0.07F};
+    frame.ambient_intensity = 1.4F;
+    frame.target_extent = {1280U, 720U};
+
+    const cubey::render::CloudLayerFrameUniforms uniforms =
+        cubey::render::cloud_layer_frame_uniforms(config, frame);
+
+    require_near(uniforms.sun_direction_intensity.w, 0.35F, 0.001F,
+                 "cloud uniforms should pack resolved sun intensity");
+    require_near(uniforms.sun_color.y, 0.9F, 0.001F,
+                 "cloud uniforms should pack resolved sun color");
+    require_near(uniforms.moon_direction_intensity.x, 0.2F, 0.001F,
+                 "cloud uniforms should pack moon direction");
+    require_near(uniforms.moon_direction_intensity.w, 0.12F, 0.001F,
+                 "cloud uniforms should pack moon intensity separately from sun");
+    require_near(uniforms.moon_color.z, 0.8F, 0.001F,
+                 "cloud uniforms should pack moon color");
+    require_near(uniforms.ambient_color_intensity.z, 0.07F, 0.001F,
+                 "cloud uniforms should pack environment ambient color");
+    require_near(uniforms.ambient_color_intensity.w, 1.4F, 0.001F,
+                 "cloud uniforms should pack environment ambient intensity");
+}

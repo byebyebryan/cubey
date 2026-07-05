@@ -10,6 +10,7 @@
 #include <cubey/core/math.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
+#include <cubey/engine/cloud_environment_config.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -163,8 +164,12 @@ enum class OceanRenderTargetMode : std::uint8_t {
 struct OceanFrameGraph {
     cubey::render::CompiledRenderGraph graph;
     cubey::render::RenderGraphTextureHandle backbuffer{};
+    cubey::render::RenderGraphTextureHandle post_scene_color{};
     cubey::render::RenderGraphTextureHandle scene_color{};
     cubey::render::RenderGraphTextureHandle surface_depth{};
+    cubey::render::RenderGraphTextureHandle cloud_scene_color{};
+    cubey::render::CloudLayerRuntimeFrame cloud{};
+    bool clouds_enabled = false;
 };
 
 struct OceanMeshDrawPlan {
@@ -436,6 +441,33 @@ ocean_atmosphere_run_state(const RunConfig& run_config) {
         });
 }
 
+[[nodiscard]] std::filesystem::path ocean_shader_path(const char* filename) {
+    return std::filesystem::path(CUBEY_OCEAN_SHADER_DIR) / filename;
+}
+
+[[nodiscard]] cubey::render::CloudLayerRuntimeShaderFiles cloud_runtime_shader_files() {
+    return {
+        .generated =
+            {
+                .base_noise = cubey::render::compute_shader_file(
+                    ocean_shader_path("cloud_perlin_worley.comp.spv")),
+                .detail_noise =
+                    cubey::render::compute_shader_file(ocean_shader_path("cloud_worley.comp.spv")),
+                .weather =
+                    cubey::render::compute_shader_file(ocean_shader_path("cloud_weather.comp.spv")),
+                .blue_noise = cubey::render::compute_shader_file(
+                    ocean_shader_path("cloud_blue_noise.comp.spv")),
+            },
+        .march = cubey::render::compute_shader_file(ocean_shader_path("cloud_march.comp.spv")),
+        .temporal =
+            cubey::render::compute_shader_file(ocean_shader_path("cloud_temporal.comp.spv")),
+        .composite_vertex =
+            cubey::render::vertex_shader_file(ocean_shader_path("cloud.vert.spv")),
+        .composite_fragment = cubey::render::fragment_shader_file(
+            ocean_shader_path("cloud_composite_background_depth.frag.spv")),
+    };
+}
+
 [[nodiscard]] float jonswap_alpha(float wind_speed, float fetch_length_m) {
     return 0.076F *
            std::pow((wind_speed * wind_speed) / std::max(fetch_length_m * kGravity, 0.001F), 0.22F);
@@ -673,6 +705,7 @@ class OceanApp {
   public:
     explicit OceanApp(RunConfig config)
         : config_(std::move(config)), ocean_config_(ocean_config_from_run_config(config_)),
+          clouds_config_(ocean_cloud_config_from_run_config(config_)),
           atmosphere_state_(ocean_atmosphere_run_state(config_)),
           atmosphere_lighting_(
               cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment)),
@@ -726,6 +759,7 @@ class OceanApp {
                 .surface_frame = draw_plan.surface_frame,
                 .draw_stats = draw_plan.stats,
                 .atmosphere = atmosphere_state_,
+                .clouds = clouds_config_,
                 .performance =
                     {
                         .frame_stats = latest_frame_stats_,
@@ -930,6 +964,10 @@ class OceanApp {
         ocean_gpu_.update_atmosphere_probe_descriptors(device, atmosphere_probe.prefiltered_cube(),
                                                        atmosphere_probe.sky_radiance_cube());
         create_atmosphere_background_frame(device, extent, frame_slot_count);
+        if (clouds_config_.enabled) {
+            create_cloud_resources(device, gpu);
+            create_cloud_pipelines(device, extent, frame_slot_count);
+        }
         create_reference_pillar_resources(device, gpu, extent);
         hdr_post_frame_.create_materials(device, {
                                                      .frame_slot_count = frame_slot_count,
@@ -1053,6 +1091,69 @@ class OceanApp {
                     });
     }
 
+    [[nodiscard]] cubey::render::CloudLayerConfig
+    ocean_cloud_config(float elapsed_seconds, const OceanSurfaceFrame& surface_frame) const {
+        cubey::render::CloudLayerConfig config = clouds_config_.layer;
+        config.planet_radius_m = surface_frame.local_frame.planet_radius_m;
+        config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+        config.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+        config.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
+        config.orbit_representation = cubey::render::CloudLayerOrbitRepresentation::SurfaceShell;
+        config.wind_offset_m = elapsed_seconds * clouds_config_.wind_speed_mps;
+        return config;
+    }
+
+    [[nodiscard]] bool cloud_layer_enabled() const noexcept {
+        return render_view_ == OceanRenderView::Final && clouds_config_.enabled &&
+               cloud_global_resources_created_;
+    }
+
+    void create_cloud_resources(const cubey::vulkan::Device& device,
+                                cubey::vulkan::GpuRuntime& gpu) {
+        if (cloud_global_resources_created_) {
+            return;
+        }
+        cloud_runtime_.create_generated_resources(
+            device, gpu, cloud_runtime_shader_files().generated,
+            ocean_cloud_config(static_cast<float>(time_seconds_), ocean_surface_frame()));
+        cloud_global_resources_created_ = true;
+    }
+
+    void create_cloud_pipelines(const cubey::vulkan::Device& device, VkExtent2D extent,
+                                std::uint32_t frame_slot_count) {
+        if (!cloud_global_resources_created_) {
+            return;
+        }
+        cloud_runtime_.create_swapchain_resources(
+            device, cloud_runtime_shader_files(),
+            cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth,
+            kOceanSceneColorFormat, extent, frame_slot_count,
+            ocean_cloud_config(static_cast<float>(time_seconds_), ocean_surface_frame()));
+    }
+
+    void refresh_cloud_weather_if_needed(const cubey::vulkan::Device& device,
+                                         cubey::vulkan::GpuRuntime& gpu) {
+        if (!cloud_global_resources_created_) {
+            return;
+        }
+        cloud_runtime_.update_weather_texture(
+            device, gpu, cloud_runtime_shader_files().generated.weather,
+            ocean_cloud_config(static_cast<float>(time_seconds_), ocean_surface_frame()));
+    }
+
+    void sync_cloud_runtime_after_ui(cubey::host::WindowedAppContext& context) {
+        if (!clouds_config_.enabled || cloud_global_resources_created_) {
+            return;
+        }
+        cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
+                             "vkDeviceWaitIdle ocean cloud enable");
+        static_cast<void>(context.gpu().drain());
+        create_cloud_resources(context.device(), context.gpu());
+        create_cloud_pipelines(context.device(), context.swapchain().extent(),
+                               context.frame_slot_count());
+        static_cast<void>(context.gpu().drain());
+    }
+
     void create_reference_pillar_resources(cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& gpu, VkExtent2D extent) {
         reference_pillar_pipeline_.reset();
@@ -1083,6 +1184,9 @@ class OceanApp {
 
     void destroy_swapchain_resources() {
         graph_executor_.clear();
+        cloud_runtime_.destroy_swapchain_resources();
+        cloud_runtime_.destroy_generated_resources();
+        cloud_global_resources_created_ = false;
         hdr_post_frame_.destroy();
         reference_pillar_pipeline_.reset();
         reference_pillar_mesh_.reset();
@@ -1130,6 +1234,8 @@ class OceanApp {
             foam_initialized_ = false;
         }
         gpu_config_ = ocean_config_;
+        sync_cloud_runtime_after_ui(context);
+        refresh_cloud_weather_if_needed(context.device(), context.gpu());
     }
 
     void apply_camera_preset(OceanCameraPreset preset) {
@@ -1424,6 +1530,53 @@ class OceanApp {
             });
     }
 
+    [[nodiscard]] cubey::render::CloudLayerFrameUniforms
+    cloud_frame_uniforms(VkExtent2D extent, const OceanSurfaceFrame& surface_frame) const {
+        const cubey::Transform3D transform = camera_transform();
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
+        const cubey::render::ViewRayBasis3D view_rays =
+            cubey::render::view_ray_basis_3d(transform.rotation, aspect, camera_.fovy_radians());
+        const cubey::render::CloudLayerConfig config =
+            ocean_cloud_config(static_cast<float>(time_seconds_), surface_frame);
+        const cubey::render::CloudLayerViewRegime view_regime =
+            cubey::render::cloud_layer_view_regime({
+                .camera_position = {transform.translation.x,
+                                    config.planet_radius_m + transform.translation.y,
+                                    transform.translation.z},
+                .camera_forward = cubey::math::Vec3{view_rays.forward},
+                .planet_radius_m = config.planet_radius_m,
+                .orbit_transition_start_m = config.orbit_transition_start_m,
+                .orbit_transition_end_m = config.orbit_transition_end_m,
+            });
+        return cubey::render::cloud_layer_frame_uniforms(
+            config,
+            cubey::render::CloudLayerFrameInfo{
+                .camera_position = transform.translation,
+                .camera_right = cubey::math::Vec3{view_rays.right_aspect},
+                .camera_up = cubey::math::Vec3{view_rays.up_tan_half_fovy},
+                .camera_forward = cubey::math::Vec3{view_rays.forward},
+                .tan_half_fovy = view_rays.up_tan_half_fovy.w,
+                .sun_direction = atmosphere_lighting_.sun_direction,
+                .sun_color = atmosphere_lighting_.sun_color,
+                .sun_intensity = atmosphere_lighting_.sun_intensity,
+                .moon_direction = atmosphere_lighting_.moon_direction,
+                .moon_color = atmosphere_lighting_.moon_color,
+                .moon_intensity = atmosphere_lighting_.moon_intensity,
+                .ambient_color = atmosphere_lighting_.ambient_color,
+                .ambient_intensity = atmosphere_lighting_.ambient_intensity,
+                .target_extent = extent,
+                .temporal_frame_index = cloud_runtime_.temporal_frame_index(),
+                .camera_mode = view_regime.camera_mode,
+                .external_background = true,
+                .near_plane_m = kCameraNearPlane,
+                .far_plane_m = surface_frame.projection_far_plane_m,
+                .scene_depth_occlusion_enabled = true,
+                .scene_depth_fade_m = 500.0F,
+            });
+    }
+
     [[nodiscard]] OceanSpectrumPushConstants
     spectrum_push_constants(std::uint32_t cascade_index) const {
         const OceanCascadeConfig& cascade = ocean_cascade(ocean_config_, cascade_index);
@@ -1620,7 +1773,9 @@ class OceanApp {
     [[nodiscard]] OceanFrameGraph
     build_ocean_frame_graph(cubey::render::ColorTargetView color_target,
                             cubey::render::FrameSlot frame_slot,
-                            OceanRenderTargetMode target_mode) const {
+                            OceanRenderTargetMode target_mode,
+                            std::optional<cubey::render::CloudLayerFrameUniforms>
+                                cloud_uniforms) const {
         cubey::render::RenderGraphBuilder graph;
         const cubey::render::RenderGraphTextureState initial_state =
             target_mode == OceanRenderTargetMode::Present
@@ -1635,6 +1790,9 @@ class OceanApp {
         const cubey::render::RenderGraphTextureHandle scene_color =
             graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
                 "ocean scene color", color_target.extent, kOceanSceneColorFormat));
+        cubey::render::RenderGraphTextureHandle post_scene_color = scene_color;
+        cubey::render::RenderGraphTextureHandle cloud_scene_color{};
+        cubey::render::CloudLayerRuntimeFrame cloud_frame{};
         const cubey::render::RenderGraphTextureHandle surface_depth =
             graph.create_texture(ocean_depth_texture_desc("ocean surface depth",
                                                           color_target.extent, kOceanDepthFormat));
@@ -1661,8 +1819,21 @@ class OceanApp {
                         record_reference_pillar_draw(draw_recorder, target.extent);
                     });
             });
+        const bool clouds_enabled = cloud_layer_enabled() && cloud_uniforms.has_value();
+        if (clouds_enabled) {
+            const OceanSurfaceFrame surface_frame = ocean_surface_frame();
+            cloud_scene_color = graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
+                "ocean cloud scene color", color_target.extent, kOceanSceneColorFormat));
+            cloud_frame = cloud_runtime_.declare_product(
+                graph, color_target.extent,
+                ocean_cloud_config(static_cast<float>(time_seconds_), surface_frame), frame_slot,
+                cloud_uniforms.value());
+            cloud_runtime_.declare_composite(graph, cloud_scene_color, cloud_frame, frame_slot,
+                                             scene_color, surface_depth);
+            post_scene_color = cloud_scene_color;
+        }
         graph.add_pass("ocean post", cubey::render::RenderGraphQueueDomain::Graphics)
-            .read_texture(scene_color)
+            .read_texture(post_scene_color)
             .write_color(backbuffer)
             .material_pass(cubey::render::pbr_post_pass_info())
             .execute([this, color_target,
@@ -1673,8 +1844,12 @@ class OceanApp {
         return {
             .graph = graph.compile(),
             .backbuffer = backbuffer,
+            .post_scene_color = post_scene_color,
             .scene_color = scene_color,
             .surface_depth = surface_depth,
+            .cloud_scene_color = cloud_scene_color,
+            .cloud = cloud_frame,
+            .clouds_enabled = clouds_enabled,
         };
     }
 
@@ -1906,8 +2081,14 @@ class OceanApp {
         record_ocean_compute(recorder, frame_slot);
         upload_terrain_ocean_field_uniform(frame_slot);
         hdr_post_frame_.upload(frame_slot, post_uniforms());
+        std::optional<cubey::render::CloudLayerFrameUniforms> cloud_uniforms{};
+        if (cloud_layer_enabled()) {
+            const OceanSurfaceFrame surface_frame = ocean_surface_frame();
+            cloud_uniforms = cloud_frame_uniforms(target.extent, surface_frame);
+            cloud_runtime_.upload_frame_uniforms(frame_slot, cloud_uniforms.value());
+        }
         const OceanFrameGraph frame_graph =
-            build_ocean_frame_graph(target, frame_slot, target_mode);
+            build_ocean_frame_graph(target, frame_slot, target_mode, cloud_uniforms);
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &device,
@@ -1922,8 +2103,17 @@ class OceanApp {
             [this, &device, frame_slot,
              &frame_graph](const cubey::render::RenderGraphResourceSet& resources) {
                 update_post_descriptor(device, frame_slot, frame_graph.graph, resources,
-                                       frame_graph.scene_color);
+                                       frame_graph.post_scene_color);
+                if (!frame_graph.clouds_enabled) {
+                    return;
+                }
+                cloud_runtime_.update_descriptors(device, frame_slot, frame_graph.graph, resources,
+                                                  frame_graph.cloud, frame_graph.scene_color,
+                                                  frame_graph.surface_depth);
             });
+        if (frame_graph.clouds_enabled) {
+            cloud_runtime_.complete_frame(frame_slot, frame_graph.cloud);
+        }
     }
 
     void record_windowed_frame(cubey::host::WindowedAppContext& context,
@@ -1940,6 +2130,7 @@ class OceanApp {
 
     RunConfig config_;
     OceanConfig ocean_config_;
+    cubey::CloudEnvironmentConfig clouds_config_{};
     cubey::AtmosphereEnvironmentRunState atmosphere_state_;
     cubey::render::AtmosphereEnvironmentLighting atmosphere_lighting_;
     OceanDiagnosticsConfig diagnostics_;
@@ -1958,6 +2149,7 @@ class OceanApp {
     cubey::render::HdrPostFrame hdr_post_frame_;
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
     cubey::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
+    cubey::render::CloudLayerRuntime cloud_runtime_{};
     cubey::render::TerrainOceanPackedFields terrain_ocean_fields_{};
     std::optional<cubey::render::Texture2D> terrain_ocean_fields_texture_;
     std::optional<cubey::render::FrameUniformBuffer<OceanTerrainFieldUniforms>>
@@ -1980,6 +2172,7 @@ class OceanApp {
     bool textures_initialized_ = false;
     bool spectrum_initialized_ = false;
     bool foam_initialized_ = false;
+    bool cloud_global_resources_created_ = false;
 };
 
 } // namespace

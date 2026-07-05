@@ -136,6 +136,12 @@ RunConfig parse_run_config(int argc, char** argv) {
         config.atmosphere.night_sky_mode != "camera") {
         throw std::runtime_error("atmosphere night sky mode must be human or camera");
     }
+    if (!config.atmosphere.ground_mode.empty() && config.atmosphere.ground_mode != "ground" &&
+        config.atmosphere.ground_mode != "sky-only" &&
+        config.atmosphere.ground_mode != "sky-only-no-ground-occlusion") {
+        throw std::runtime_error(
+            "atmosphere ground mode must be ground, sky-only, or sky-only-no-ground-occlusion");
+    }
     if (!config.atmosphere.milky_way_layer.empty() &&
         config.atmosphere.milky_way_layer != "final" &&
         config.atmosphere.milky_way_layer != "stellar-emission" &&

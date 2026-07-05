@@ -60,6 +60,8 @@ Useful runs:
 projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
 projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
 projects/atmosphere/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
+projects/atmosphere/capture_cloud_lighting_regimes.sh outputs/atmosphere-cloud-lighting-regimes
+projects/atmosphere/capture_cloud_surface_horizon_regimes.sh outputs/atmosphere-cloud-surface-horizon
 ```
 
 The cloud review script writes a stable set of labeled captures plus
@@ -79,6 +81,22 @@ The far-field handoff script focuses on horizon and grazing-ray artifacts. It
 captures full-resolution `surface-horizon`, `surface-up`, and `high-oblique`
 views with handoff, local-truncation, integrated-horizon, edge, and distance
 regime diagnostics.
+
+The lighting-regime script focuses on the `surface-volume` surface cloud path.
+It captures noon, twilight, afterglow, and night in surface-up and horizon views
+with lighting, alpha, background, edge, and distance diagnostics, and disables
+the standalone reference grid so cloud/sky transitions are easier to inspect.
+Use it when changing `clouds.twilight_color_strength`,
+`clouds.twilight_edge_strength`, `clouds.twilight_saturation_strength`, or
+`clouds.afterglow_strength`; twilight should pick up low-sun warmth and
+optional afterglow color without making night clouds look sunlit.
+
+The surface-horizon regime script is the focused A/B for the lower-sky handoff.
+For each noon, twilight, afterglow, and night case it captures local-only
+`surface-volume`, the same preset with `--cloud-distance-mode auto
+--cloud-horizon-layer`, and a no-cloud background comparison. Use the handoff,
+local-truncation, and integrated-horizon diagnostics there before judging
+surface horizon fixes from final color alone.
 
 Controls:
 

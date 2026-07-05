@@ -1417,3 +1417,78 @@ presentation free to approximate sun-through-cloud glare. The next review should
 use `projects/cloud_ref/capture_lighting_compare.sh` and inspect
 `surface-up`, `surface-sun`, and `high-oblique` before deciding whether to copy
 any lighting mechanics into shared atmosphere clouds.
+
+## Shared Twilight Color Direction 2026-07-04
+
+The next shared-cloud lighting pass should make dawn and dusk color a real
+cloud-lighting response rather than a generic post tint. The relevant reference
+direction is consistent across the Horizon/Decima, Frostbite, TerrainEngine,
+and Skybolt notes/code:
+
+- ambient sky contribution should vary with height and horizon color;
+- direct lighting should use the active sun radiance, including low-sun warmth;
+- phase/rim response and optical edge/thickness should carry the visible
+  silver-lining and warm cloud-edge color;
+- aerial perspective/post should preserve twilight saturation instead of
+  desaturating it as if it were night.
+
+For this repo, the first target is the shared `CloudLayer` path in
+`projects/atmosphere` using the production `surface-volume` preset. `cloud_ref`
+remains the local surface reference, and high-oblique/orbit handoff work remains
+separate.
+
+Implementation checkpoint: shared cloud uniforms now carry twilight color,
+edge, and saturation strengths. The local ambient fill samples horizon
+sky/sun radiance near low sun, `surface-volume` adds a bounded optical-edge
+twilight source, and final composite preserves twilight saturation
+separately from day/night brightness. Validate with
+`projects/atmosphere/capture_cloud_lighting_regimes.sh` before treating the
+defaults as final art direction.
+
+## Cloud Afterglow Art Direction 2026-07-04
+
+Use "afterglow" as the user-facing cloud control for dramatic red, pink, or
+purple sunset cloud accents. Alpenglow and purple-light references are useful
+visual guides, but this is intentionally an art-directed beauty layer rather
+than a strict spectral or meteorological model.
+
+The effect should be subtle by default because clouds usually sit in the
+background. It should appear only in the low-sun twilight window, mostly on
+cloud tops, thin optical edges, and sun-facing rim regions. It should not tint
+all cloud mass uniformly, should not brighten night clouds, and should not hide
+existing horizon handoff issues. The first implementation target remains the
+surface `surface-volume` path in `projects/atmosphere`; high-oblique and
+orbit cloud topology stay separate.
+
+## Surface Horizon Handoff Target 2026-07-04
+
+The afterglow capture pass made the surface horizon failure more obvious because
+the `surface-volume` preset keeps the cloud path in local-only mode. That is a
+useful baseline for local cloud shape, but it intentionally bypasses the
+distance-aware horizon bridge. Horizon review should therefore use three
+comparisons per lighting regime:
+
+- local-only `surface-volume`, to preserve the known surface reference;
+- the same preset with automatic distance mode and the horizon layer enabled,
+  to exercise the production handoff;
+- no-cloud background, to separate cloud handoff artifacts from clear-sky or
+  atmosphere/background horizon bands.
+
+The expected fix is a softer surface lower-sky bridge: fade distant grazing
+local samples smoothly, add only a broad low-detail horizon layer, and bias that
+layer toward sky-colored radiance so it reads as distant haze/cloud continuity
+instead of a new dark cloud type. Keep upward and near local cloud detail out of
+this pass.
+
+Implementation checkpoint: the `surface-volume` shader branch now exposes
+the horizon diagnostics and composes the integrated far-horizon layer when the
+caller explicitly enables automatic distance mode plus the horizon layer. This
+matters because the same branch is now the production `surface-volume` density
+model; the first auto/horizon capture attempt looked unchanged because the
+shader returned from the local-compatible branch before the bridge code ran.
+
+The bridge is deliberately broad and low-contrast. In surface view, the useful
+signal is that `horizon-handoff` and `integrated-horizon-alpha` activate in the
+lower-sky grazing band, while final color changes stay subtle and no-cloud
+backgrounds remain available to identify non-cloud sky bands. The current
+target is a softer surface handoff, not a solved high-oblique/orbit transition.
