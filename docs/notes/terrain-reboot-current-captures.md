@@ -1,7 +1,7 @@
 # Terrain Reboot Current Captures
 
 This note records the current terrain reboot capture set after the revision 33
-mountain visual source retune.
+mountain visual source retune and the revision 34 TerrainEngine reference lane.
 
 ## Capture Command
 
@@ -11,6 +11,7 @@ mountain visual source retune.
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
 ./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress
 ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress-1025
+./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe terrain-engine-ref --terrain-debug-view all --terrain-output-dir outputs/terrain/terrain-engine-ref
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color material --output outputs/terrain/current-river-network/river-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset profile --terrain-preview-color material --output outputs/terrain/current-river-network/river-profile.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color height --output outputs/terrain/current-river-network/river-height-perspective.png
@@ -24,6 +25,8 @@ mountain visual source retune.
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-height-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-post-erosion-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-surface-height.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color material --output outputs/terrain/terrain-engine-ref/terrain-engine-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/terrain-engine-ref/terrain-engine-surface-height.png
 ```
 
 Fixed-extent mountain resolution audit commands keep the patch at roughly
@@ -83,6 +86,26 @@ quality pass should add an alpine face/detail model over the coherent macro
 height, likely borrowing the reference split between low-frequency geometry and
 high-frequency normal/material detail instead of pushing more noise into mesh
 height.
+
+Revision 34 adds `outputs/terrain/terrain-engine-ref`, an isolated
+TerrainEngine-inspired reference lane. It keeps the normal 64 product fields and
+59 scalar/review outputs, but river/process diagnostics are inactive:
+`river_coverage = 0.0`, `max_channel_width_m = 0.0`, and
+`pre_process_height_m` equals `height_m` and `post_erosion_height_m`. The 513
+manifest reports `height_m.span = 4748.385`, `height_m.mean = 1359.338`,
+`slope.max = 3.180`, `material_grass.mean = 0.8197`,
+`material_rock.mean = 0.1331`, and `material_soil.mean = 0.0472`.
+The scalar all-view export completed in about 9 seconds, with renderer previews
+around 5-7 seconds on the current workstation.
+
+The TerrainEngine reference preview is already useful as a visual benchmark. It
+reads more coherent at macro scale than the current mountain stress pipeline:
+broad buildup, recognizable valleys, and stronger elevation contrast are
+visible without a long process chain. It is not a final terrain product. The
+oblique view exposes the usual patch-edge cliff from the finite workbench mesh,
+and the surface view still shows soft/noisy wrinkles rather than an intentional
+near-field detail/LOD model. Use this lane to compare against future mountain
+and terrain process work before adding more layers to the custom pipeline.
 
 The fixed-extent resolution audit under
 `outputs/terrain/resolution-mountain-16km` keeps the patch near `16.384km` and
