@@ -1011,6 +1011,22 @@ vec3 cloud_horizon_direction(vec3 direction, vec3 local_up) {
     return horizon / horizon_len;
 }
 
+float cloud_twilight_response(float sun_elevation) {
+    return smoothstep(-0.24, 0.03, sun_elevation) *
+           (1.0 - smoothstep(0.05, 0.34, sun_elevation));
+}
+
+vec3 cloud_twilight_sky_radiance(vec3 sun_dir, vec3 local_up) {
+    vec3 horizon_sun_dir = cloud_horizon_direction(sun_dir, local_up);
+    vec3 horizon_sky = cloud_sky_color(horizon_sun_dir);
+    vec3 sun_radiance = cloud_sun_radiance();
+    float sun_energy = max(max(sun_radiance.r, sun_radiance.g), sun_radiance.b);
+    vec3 sun_chroma =
+        sun_energy > 0.0001 ? sun_radiance / sun_energy : vec3(1.0, 0.55, 0.25);
+    vec3 low_sun_color = sun_chroma * max(sun_energy, 0.08);
+    return max(mix(horizon_sky, low_sun_color, 0.48), vec3(0.0));
+}
+
 vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_data) {
     vec3 local_up = cloud_local_up(position);
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
@@ -1021,9 +1037,7 @@ vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_dat
     float night = 1.0 - smoothstep(-0.14, 0.08, sun_elevation);
     float moon_elevation = max(dot(moon_dir, local_up), 0.0);
     float low_sun = 1.0 - smoothstep(0.05, 0.45, max(sun_elevation, 0.0));
-    float twilight =
-        smoothstep(-0.24, 0.02, sun_elevation) *
-        (1.0 - smoothstep(0.04, 0.30, sun_elevation));
+    float twilight = cloud_twilight_response(sun_elevation);
     float lit_sky = max(day, twilight * 0.42);
     float height_fill = smoothstep(0.08, 0.92, sample_data.height_fraction);
 
@@ -1036,7 +1050,9 @@ vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_dat
     vec3 bottom_fill = params.cloud_color_bottom_horizon.rgb * (0.10 + 0.42 * lit_sky);
     vec3 horizon_fill =
         horizon_sky * params.cloud_color_bottom_horizon.w * (0.07 + 0.17 * lit_sky);
-    vec3 twilight_fill = vec3(1.0, 0.48, 0.23) * low_sun * twilight * 0.08;
+    vec3 twilight_fill =
+        cloud_twilight_sky_radiance(sun_dir, local_up) * low_sun * twilight *
+        clamp(params.twilight_options.x, 0.0, 2.0) * 0.18;
     vec3 environment_fill =
         cloud_environment_ambient_radiance() *
         mix(0.050 + 0.035 * height_fill, 0.38 + 0.40 * height_fill,
@@ -2153,6 +2169,15 @@ MarchResult cloud_ref_compatible_march(vec3 origin, vec3 direction, float start_
             vec3 phase_source =
                 sun_color * direct_visibility * rim_phase *
                 max(params.lighting_strengths.z, 0.0);
+            float twilight = cloud_twilight_response(sun_elevation);
+            vec3 twilight_radiance = cloud_twilight_sky_radiance(sun_dir, local_up);
+            float twilight_edge =
+                twilight * direct_visibility * (0.35 + 0.65 * forward_alignment) *
+                max(optical_edge, rim_phase * 0.30) *
+                clamp(params.twilight_options.y, 0.0, 2.0);
+            vec3 twilight_edge_source =
+                twilight_radiance * twilight_edge * (0.18 + 0.82 * shadowed_light);
+            phase_source += twilight_edge_source * max(params.lighting_strengths.z, 0.0);
             float scatter_gain = 0.42;
             vec3 source_terms = scatter_gain * (ambient_source + direct_source + phase_source);
             color += transmittance * source_terms * (1.0 - d_transmittance);
