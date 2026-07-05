@@ -4,6 +4,13 @@ This note captures the first implementation direction for Cubey clouds. It is
 intended to keep the next project practical for game-style performance while
 still being compatible with ocean high cameras and planet orbit views.
 
+Historical note: this file is chronological. Sections that mention
+`projects/cloud` describe the former standalone production cloud project before
+it was absorbed into the shared `cubey::render::CloudLayerRuntime`. Current
+production cloud tuning happens through `projects/atmosphere`, with
+`cloud_ref`, `cloud_ref_2`, and `clouds_legacy` kept as reference or legacy
+targets.
+
 ## References
 
 - Unreal Engine Sky Atmosphere and Volumetric Clouds: use planet-scale sky
@@ -308,14 +315,14 @@ The straight `surface` camera remains a quiet horizon review angle; use
 full presentation stack: real water rendering, skybox textures, bloom FBOs,
 god rays, and separate cloud-distance outputs remain unported.
 
-## Production Cloud Sampling Checkpoint
+## Former Standalone Cloud Sampling Checkpoint
 
-`projects/cloud` now exposes deterministic static ray-start sampling as a
-first-class control instead of baking Bayer jitter into the marcher. The default
-mode is screen-space interleaved-gradient jitter, with Bayer retained for
-reference comparison and `off` mapped to center-of-step sampling. A
-`clouds.jitter_strength` control blends any selected pattern back toward center
-sampling.
+The former standalone cloud project exposed deterministic static ray-start
+sampling as a first-class control instead of baking Bayer jitter into the
+marcher. The default mode was screen-space interleaved-gradient jitter, with
+Bayer retained for reference comparison and `off` mapped to center-of-step
+sampling. A `clouds.jitter_strength` control blended any selected pattern back
+toward center sampling.
 
 The final composite resolve now reads the cloud metadata target as well as the
 cloud radiance/transmittance product. `final` resolves only across neighboring
@@ -324,20 +331,20 @@ samples with compatible opacity, mean distance, and confidence, while
 the final view useful for presentation without hiding whether an artifact comes
 from the raw march.
 
-Use `projects/cloud/capture_review.sh` to compare `surface-up`, `high-oblique`,
-their Bayer/no-jitter variants, and raw-final variants in one bundle. If
-interleaved, Bayer, and off still share the same cloud-shape failure, treat the
-issue as density/weather or distance-regime architecture rather than sampling
-noise.
+The historical `projects/cloud/capture_review.sh` bundle compared `surface-up`,
+`high-oblique`, their Bayer/no-jitter variants, and raw-final variants. If
+interleaved, Bayer, and off still shared the same cloud-shape failure, the issue
+was density/weather or distance-regime architecture rather than sampling noise.
 
-## Production Cloud Type Checkpoint
+## Former Standalone Cloud Type Checkpoint
 
-The center-view tower artifact in `projects/cloud` was traced to the raw cloud
-product, not final resolve or atmosphere composition. The weather map already
-stored cloud type, but the production marcher did not expose it in diagnostics.
-A trial that used cloud type to lower isolated weather islands into flatter
-profiles made the cloud deck too sparse and was not retained. The added
-`cloud-type` diagnostic and capture-review center crops make this class of
+The center-view tower artifact in the former standalone cloud project was traced
+to the raw cloud product, not final resolve or atmosphere composition. The
+weather map already stored cloud type, but the production marcher did not expose
+it in diagnostics. A trial that used cloud type to lower isolated weather
+islands into flatter profiles made the cloud deck too sparse and was not
+retained. The added `cloud-type` diagnostic and capture-review center crops make
+this class of
 extrusion visible without editing shader code.
 
 The retained production fix is scale-aware top shear. The source reference uses
@@ -360,13 +367,13 @@ Planar `position.xz` weather projection over the spherical cloud shell remains
 a likely cleanup once local cloud shape is stable and planet-scale handoff is
 ready.
 
-## Production Weather Authoring Checkpoint
+## Former Standalone Weather Authoring Checkpoint
 
-The current production `cloud` weather map is useful but too blunt as a final
-authoring model. It stores coverage and type, but the marcher mostly treats the
-weather sample as a single scalar coverage gate. That explains the abrupt
+The former standalone cloud weather map was useful but too blunt as a final
+authoring model. It stored coverage and type, but the marcher mostly treated the
+weather sample as a single scalar coverage gate. That explained the abrupt
 transition between dense cloud cover and clear sky: broad weather, edge
-softness, cloud type, and high-frequency erosion are coupled into one remap.
+softness, cloud type, and high-frequency erosion were coupled into one remap.
 
 The references point to a bounded next step rather than a full meteorological
 simulation:
@@ -526,8 +533,8 @@ The next `cloud_ref` work should prioritize fidelity over Cubey integration:
 TerrainEngine noise generation, mipmapped 3D textures, density/coverage math,
 camera-relative shell intersections, source-like lighting/fog/composition, and
 reference defaults. Cubey-specific atmosphere, ocean, planet, temporal cache,
-and weather-system changes should happen later in the production `cloud`
-project.
+and weather-system changes should happen later in the shared production cloud
+layer.
 
 ## Cloud Ref Lighting Checkpoint
 
@@ -603,7 +610,7 @@ rather than to judge final visual quality directly.
 
 The reference passes have now been promoted into
 [`docs/architecture/cloud-rendering.md`](../architecture/cloud-rendering.md).
-That architecture note is the current direction for `projects/cloud`.
+That architecture note is the current direction for the shared cloud layer.
 
 Summary:
 
@@ -622,13 +629,12 @@ promotion.
 
 ## Production Distance Regime Checkpoint 2026-06-16
 
-The current production `projects/cloud` surface view is credible enough to stop
-treating every high-view artifact as a local raymarch tuning problem. High and
-orbit captures reveal a separate failure mode: the visible dome/circular cloud
-boundary is the projected footprint of the same spherical cloud-shell segment
-that works for surface views. The artifact appears in cloud alpha/distance
-diagnostics rather than in the background, so it should be fixed as a
-distance-regime problem.
+The former standalone cloud surface view was credible enough to stop treating
+every high-view artifact as a local raymarch tuning problem. High and orbit
+captures revealed a separate failure mode: the visible dome/circular cloud
+boundary was the projected footprint of the same spherical cloud-shell segment
+that worked for surface views. The artifact appeared in cloud alpha/distance
+diagnostics rather than in the background, so it needed a distance-regime fix.
 
 External references line up with that read:
 
@@ -728,7 +734,7 @@ removed from the local reference shelf. Its screenshots were useful as rough
 visual sketches, but the landed code/provenance was too weak to keep as an
 active source reference.
 
-Implementation implications for `projects/cloud`:
+Historical implementation implications for the former standalone cloud project:
 
 - Add explicit orbit weather debug views before changing lighting: global
   coverage, detail modulation, density hull, low-res orbit alpha, and
@@ -749,13 +755,13 @@ views before cloud lighting, aerial perspective, or post-processing are judged.
 
 ## Orbit Weather Scale-Aware Checkpoint 2026-06-20
 
-`projects/cloud` now has the first direct implementation of the Skybolt-style
-coverage-first orbit rule without importing an asset-backed global cloud map.
-The orbit shell still samples procedural planet-normal fields, but the broad
-field, warp, texture breakup, and detail frequencies derive from
-`clouds.weather_scale_km` and the configured planet circumference. Detail noise
-is constrained toward edge and hull erosion, while the broad field owns the
-visible weather-system placement.
+The former standalone cloud project gained the first direct implementation of
+the Skybolt-style coverage-first orbit rule without importing an asset-backed
+global cloud map. The orbit shell still sampled procedural planet-normal
+fields, but the broad field, warp, texture breakup, and detail frequencies
+derived from `clouds.weather_scale_km` and the configured planet circumference.
+Detail noise was constrained toward edge and hull erosion, while the broad field
+owned the visible weather-system placement.
 
 This is a useful bridge for the standalone project because `Weather scale`
 finally affects orbit weather massing instead of only the surface-local weather
@@ -829,11 +835,11 @@ is proven.
 
 ## Direct Orbit Detail Checkpoint 2026-06-20
 
-`projects/cloud` now keeps orbit weather as a direct sphere-space procedural
-field. The generated 2D orbit-weather texture path was removed after the first
-attempt failed the believability target: it avoided repeated per-sample formula
-work, but it exposed map/projection discontinuities and still read too bare from
-orbit.
+The former standalone cloud project kept orbit weather as a direct sphere-space
+procedural field. The generated 2D orbit-weather texture path was removed after
+the first attempt failed the believability target: it avoided repeated
+per-sample formula work, but it exposed map/projection discontinuities and still
+read too bare from orbit.
 
 The active shader path separates the layers that matter for orbit read:
 

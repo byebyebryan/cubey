@@ -1,7 +1,10 @@
 # Cloud Pre-Merge Checkpoint
 
-This checkpoint records the current production `projects/cloud` state before
-syncing cloud work into the terrain and sky/atmo worktrees.
+Historical note: this checkpoint records the former standalone `projects/cloud`
+state before cloud work was absorbed into the shared
+`cubey::render::CloudLayerRuntime`. Current production cloud tuning happens
+through `projects/atmosphere`; the commands below are kept only as provenance
+for the pre-merge capture pack.
 
 ## Capture Pack
 
@@ -45,9 +48,10 @@ entrypoints are:
   raymarch code.
 - Ocean/planet/terrain integration should consume cloud products, metadata, and
   future shadow outputs through a shared contract.
-- Quick consumer checks should use the quarter-resolution smoke recipe in
-  `projects/cloud/README.md`; full-quality captures are for standalone visual
-  review.
+- Historical quick consumer checks used the quarter-resolution smoke recipe in
+  `projects/cloud/README.md`; current consumer checks should use the
+  atmosphere, ocean, or planet cloud capture scripts that exercise the shared
+  runtime.
 - The cached octahedral/hemisphere path from `cloud_ref_2` remains a later
   performance architecture candidate.
 - Motion/shimmer checks should be repeated before orbit clouds become a

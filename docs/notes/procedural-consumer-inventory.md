@@ -36,7 +36,8 @@ batch without a focused golden-value or image-review pass.
 Relevant consumers:
 
 - generated 3D Perlin-Worley base volume, Worley detail volume, and 2D weather
-  maps in `projects/cloud`;
+  maps in the shared `CloudLayerRuntime` path tuned through
+  `projects/atmosphere`;
 - local and orbit weather coverage/detail/hull procedural fields;
 - static sampling controls and deterministic jitter for ray starts.
 

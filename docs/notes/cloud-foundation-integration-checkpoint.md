@@ -10,7 +10,7 @@ opt-in integration target.
 
 - Promote reusable cloud contracts for cloud radiance/transmittance, metadata,
   low-frequency shadowing, and a future reflection contribution.
-- Keep the production cloud app as the primary tuning surface while moving stable
+- Keep `projects/atmosphere` as the primary tuning surface while moving stable
   render vocabulary and shader assets into shared engine/render locations.
 - Integrate clouded sky first through the atmosphere testbed, then let ocean
   consume the surface-view sky composite without pushing clouds into the water
@@ -24,7 +24,8 @@ opt-in integration target.
 
 - Cloud captures continue to render through the same visual model after the
   standalone app is absorbed.
-- Shared cloud contracts are available without importing `projects/cloud`.
+- Shared cloud contracts are available without depending on a standalone cloud
+  project.
 - Atmosphere can render a clouded-sky path without folding cloud noise into the
   clear-sky atmosphere shader.
 - Ocean can render shared clouds in the sky/background pass without raymarching
