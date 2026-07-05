@@ -33,6 +33,43 @@ shape reference. `cloud_ref_2` is the best cache architecture reference.
 `clouds_legacy` is the best warning about scale, horizon, UI, and integration
 failure modes.
 
+## Current Ownership
+
+The production cloud foundation is the shared cloud layer, not a standalone
+cloud app. The current stable path is:
+
+- `cubey::render::CloudLayerRuntime`: owns generated noise/weather textures,
+  the cloud product, optional temporal pass, metadata, and composition;
+- `cubey::CloudEnvironmentConfig`: owns the project-facing cloud settings,
+  defaults, weather presets, and run-config mapping;
+- `projects/atmosphere`: primary tuning and inspection surface for shared
+  clouds;
+- `projects/ocean`: surface-view consumer that composites shared clouds over
+  the atmosphere background;
+- `projects/planet`: experimental high/orbit consumer; not the source of
+  surface-cloud defaults yet.
+
+Treat the accepted production mode as `surface-volume`: full-resolution, local
+distance regime, TerrainEngine-style density/noise, Bayer sampling,
+single-frame sampling, terrain-post resolve, and no temporal reconstruction by
+default. This mode is expected to work for surface and ocean-style background
+use before aerial/orbit clouds are considered production.
+
+Keep the unfinished paths, but label them honestly:
+
+- aerial/orbit transition, orbit shell, far shell, and high-altitude controls
+  are experimental scale work;
+- temporal reconstruction is diagnostic until it stops turning cloud noise into
+  shimmer;
+- `cloud_ref` is the local/surface visual reference and lighting test bed;
+- `cloud_ref_2` is a cached-sky architecture reference, not a quality target;
+- `clouds_legacy` is frozen evidence of failed and useful ideas from the first
+  planet-aware cloud prototype.
+
+Compatibility aliases such as `reference-parity`, `cloud-ref-compatible`, and
+`procedural` can keep parsing old configs, but docs, UI, and generated config
+templates should present the canonical names above.
+
 ## Lessons From Legacy
 
 `clouds_legacy` proved the right product pressure:
