@@ -84,6 +84,7 @@ capture_atmosphere() {
         --camera-altitude-km 0.15
         --camera-pitch-offset-deg "${pitch}"
         --no-reference-geometry
+        --atmosphere-ground-mode sky-only-no-ground-occlusion
     )
     if ((${#CASE_EXTRA_ARGS[@]} > 0)); then
         local_args+=("${CASE_EXTRA_ARGS[@]}")

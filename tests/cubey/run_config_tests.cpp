@@ -326,6 +326,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain_lab.camera_preset",
         "terrain_lab.noise_source",
         "atmosphere.time_of_day_mode",
+        "atmosphere.ground_mode",
         "atmosphere.sun_elevation_degrees",
         "atmosphere.rayleigh_scale",
         "atmosphere.mie_scale",
@@ -503,6 +504,7 @@ void test_run_config_loads_json_config_file() {
   },
   "atmosphere": {
     "time_of_day_mode": "solar",
+    "ground_mode": "sky-only-no-ground-occlusion",
     "time_hours": 18.5,
     "camera_yaw_offset_degrees": 12.0,
     "camera_pitch_offset_degrees": -18.0,
@@ -579,6 +581,7 @@ void test_run_config_loads_json_config_file() {
                 config.water3d.p2g_mode == "active-faces" && config.water3d.whitewater == 1,
             "config file should set water 3D controls");
     require(config.atmosphere.time_of_day_mode == "solar" &&
+                config.atmosphere.ground_mode == "sky-only-no-ground-occlusion" &&
                 config.atmosphere.time_hours == 18.5F &&
                 config.atmosphere.camera_yaw_offset_degrees == 12.0F &&
                 config.atmosphere.camera_pitch_offset_degrees == -18.0F &&
@@ -748,6 +751,8 @@ void test_run_config_writes_json_template() {
             "config template should include common options");
     require(text.find("\"atmosphere\"") != std::string::npos,
             "config template should include nested atmosphere options");
+    require(text.find("\"ground_mode\"") != std::string::npos,
+            "config template should include atmosphere ground mode options");
     require(text.find("\"ocean\"") != std::string::npos,
             "config template should include nested ocean options");
     require(text.find("\"planet\"") != std::string::npos,
@@ -884,6 +889,8 @@ void test_run_config_parses_atmosphere_options() {
     std::string ozone_value = "1.25";
     std::string mode_flag = "--time-of-day-mode";
     std::string mode_value = "manual";
+    std::string ground_mode_flag = "--atmosphere-ground-mode";
+    std::string ground_mode_value = "sky-only-no-ground-occlusion";
     std::string time_flag = "--time-hours";
     std::string time_value = "18.5";
     std::string day_flag = "--day-of-year";
@@ -915,7 +922,7 @@ void test_run_config_parses_atmosphere_options() {
     std::string moon_size_scale_flag = "--moon-size-scale";
     std::string moon_size_scale_value = "1.8";
     std::string no_moon_flag = "--no-moon";
-    std::array<char*, 52> argv{program.data(),
+    std::array<char*, 54> argv{program.data(),
                                preset_flag.data(),
                                preset_value.data(),
                                elevation_flag.data(),
@@ -936,6 +943,8 @@ void test_run_config_parses_atmosphere_options() {
                                ozone_value.data(),
                                mode_flag.data(),
                                mode_value.data(),
+                               ground_mode_flag.data(),
+                               ground_mode_value.data(),
                                time_flag.data(),
                                time_value.data(),
                                day_flag.data(),
@@ -986,6 +995,8 @@ void test_run_config_parses_atmosphere_options() {
     require(config.atmosphere.ozone_scale == 1.25F, "run config should parse ozone scale");
     require(config.atmosphere.time_of_day_mode == "manual",
             "run config should parse atmosphere time mode");
+    require(config.atmosphere.ground_mode == "sky-only-no-ground-occlusion",
+            "run config should parse atmosphere ground mode");
     require(config.atmosphere.time_hours == 18.5F, "run config should parse time hours");
     require(config.atmosphere.day_of_year == 172.0F, "run config should parse day of year");
     require(config.atmosphere.latitude_degrees == 42.5F, "run config should parse latitude");
@@ -1260,6 +1271,15 @@ void test_run_config_rejects_invalid_atmosphere_options() {
         require_throws(
             [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
             "run config should reject unknown time-of-day mode");
+    }
+    {
+        std::string program = "cubey";
+        std::string mode_flag = "--atmosphere-ground-mode";
+        std::string mode_value = "underground";
+        std::array<char*, 3> argv{program.data(), mode_flag.data(), mode_value.data()};
+        require_throws(
+            [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
+            "run config should reject unknown atmosphere ground mode");
     }
     {
         std::string program = "cubey";

@@ -81,6 +81,7 @@ atmosphere_environment_config(const AtmosphereConfig& config) {
         .sun_elevation_degrees = config.sun_elevation_degrees,
         .sun_azimuth_degrees = config.sun_azimuth_degrees,
         .camera_altitude_km = config.camera_altitude_km,
+        .ground_mode = config.ground_mode,
         .render_celestial_content = config.render_celestial_content,
         .render_sun_disk = config.render_sun_disk,
         .render_night_sky = config.render_night_sky,

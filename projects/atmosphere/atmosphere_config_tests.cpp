@@ -229,6 +229,21 @@ int main() {
     require_throws([] { static_cast<void>(night_sky_layer_view_from_name("hydrogen")); },
                    "night sky layer parser should reject unknown layers");
 
+    constexpr std::array atmosphere_ground_modes{
+        cubey::render::AtmosphereEnvironmentGroundMode::Ground,
+        cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
+        cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
+    };
+    for (const cubey::render::AtmosphereEnvironmentGroundMode mode : atmosphere_ground_modes) {
+        require(atmosphere_ground_mode_from_name(atmosphere_ground_mode_name(mode)) == mode,
+                "atmosphere ground mode names should round trip");
+    }
+    require(atmosphere_ground_mode_from_name("") ==
+                cubey::render::AtmosphereEnvironmentGroundMode::Ground,
+            "empty atmosphere ground mode should default to ground");
+    require_throws([] { static_cast<void>(atmosphere_ground_mode_from_name("underground")); },
+                   "atmosphere ground mode parser should reject unknown modes");
+
     for (const AtmosphereCloudWeatherPreset preset : kAtmosphereCloudWeatherPresets) {
         require(atmosphere_cloud_weather_preset_from_name(
                     atmosphere_cloud_weather_preset_name(preset)) == preset,
@@ -411,6 +426,8 @@ int main() {
                     static_cast<float>(static_cast<std::uint32_t>(AtmosphereRenderView::Moon)),
                 "frame uniforms should pack the debug render view");
         require(uniforms.moon_options.x == 1.0F, "frame uniforms should pack the moon enable flag");
+        require(uniforms.render_options.x == 0.0F,
+                "frame uniforms should use grounded atmosphere mode by default");
         require(uniforms.render_options.y == 1.0F,
                 "frame uniforms should render inline celestial content by default");
         require(uniforms.celestial_render_options.x == 1.0F,
@@ -485,6 +502,8 @@ int main() {
     require(defaults.reference_geometry_enabled && defaults.reference_grid_km > 0.0F &&
                 defaults.reference_intensity > 0.0F,
             "default atmosphere config should expose reference ground geometry");
+    require(defaults.ground_mode == cubey::render::AtmosphereEnvironmentGroundMode::Ground,
+            "default atmosphere config should use grounded sky rendering");
     require(defaults.night_sky.twilight_strength > 0.0F &&
                 defaults.night_sky.star_intensity > 0.0F &&
                 defaults.night_sky.star_density > 0.0F && defaults.night_sky.star_density <= 1.0F &&
@@ -1101,6 +1120,7 @@ int main() {
         run_config.atmosphere.moon_phase_offset_days = 7.25F;
         run_config.atmosphere.moon_size_scale = 1.75F;
         run_config.atmosphere.reference_geometry = 0;
+        run_config.atmosphere.ground_mode = "sky-only-no-ground-occlusion";
         AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
         require(config.preset == AtmospherePreset::Sunset,
                 "run config should select atmosphere preset");
@@ -1131,6 +1151,12 @@ int main() {
                 "run config moon overrides should win over preset defaults");
         require(!config.reference_geometry_enabled,
                 "run config should disable atmosphere reference geometry");
+        require(config.ground_mode ==
+                    cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
+                "run config should select atmosphere ground mode");
+        require(atmosphere_environment_config(config).ground_mode ==
+                    cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
+                "atmosphere environment config should preserve selected ground mode");
         require(config.time_of_day.mode == SunControlMode::ManualSun,
                 "manual sun overrides should force manual sun mode");
         require(config.time_of_day.auto_exposure_enabled,

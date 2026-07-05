@@ -220,6 +220,8 @@ struct AtmosphereConfig {
     float camera_yaw_offset_degrees = 0.0F;
     float camera_pitch_offset_degrees = 0.0F;
     float exposure = 0.0F;
+    cubey::render::AtmosphereEnvironmentGroundMode ground_mode =
+        cubey::render::AtmosphereEnvironmentGroundMode::Ground;
     bool render_celestial_content = true;
     bool render_sun_disk = true;
     bool render_night_sky = true;
@@ -777,6 +779,33 @@ using LunarState = cubey::render::AtmosphereEnvironmentLunarState;
     throw std::runtime_error("unknown Milky Way layer: " + std::string(name));
 }
 
+[[nodiscard]] inline const char* atmosphere_ground_mode_name(
+    cubey::render::AtmosphereEnvironmentGroundMode mode) {
+    switch (mode) {
+    case cubey::render::AtmosphereEnvironmentGroundMode::Ground:
+        return "ground";
+    case cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly:
+        return "sky-only";
+    case cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion:
+        return "sky-only-no-ground-occlusion";
+    }
+    return "ground";
+}
+
+[[nodiscard]] inline cubey::render::AtmosphereEnvironmentGroundMode
+atmosphere_ground_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "ground") {
+        return cubey::render::AtmosphereEnvironmentGroundMode::Ground;
+    }
+    if (name == "sky-only") {
+        return cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly;
+    }
+    if (name == "sky-only-no-ground-occlusion") {
+        return cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion;
+    }
+    throw std::runtime_error("unknown atmosphere ground mode: " + std::string(name));
+}
+
 [[nodiscard]] inline AtmosphereRenderView next_atmosphere_render_view(AtmosphereRenderView view) {
     for (std::size_t index = 0; index < kAtmosphereRenderViews.size(); ++index) {
         if (kAtmosphereRenderViews[index] == view) {
@@ -1227,6 +1256,9 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
     }
     if (!run.atmosphere.milky_way_layer.empty()) {
         config.night_sky.layer = night_sky_layer_view_from_name(run.atmosphere.milky_way_layer);
+    }
+    if (!run.atmosphere.ground_mode.empty()) {
+        config.ground_mode = atmosphere_ground_mode_from_name(run.atmosphere.ground_mode);
     }
     const bool manual_sun_override =
         run_config_float_is_set(run.atmosphere.sun_elevation_degrees) ||

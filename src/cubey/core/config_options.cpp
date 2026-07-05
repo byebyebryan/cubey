@@ -57,6 +57,8 @@ constexpr std::array<std::string_view, 3> kPlanetAtmosphereModes{"analytic", "ph
                                                                  "physical-preview"};
 constexpr std::array<std::string_view, 2> kTimeOfDayModes{"manual", "solar"};
 constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
+constexpr std::array<std::string_view, 3> kAtmosphereGroundModes{
+    "ground", "sky-only", "sky-only-no-ground-occlusion"};
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
     "final", "stellar-emission", "dust-tau", "star-clouds", "hii-emission", "speckles",
 };
@@ -134,7 +136,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 249> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 250> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -453,6 +455,10 @@ constexpr std::array<ConfigOptionDescriptor, 249> kRunConfigOptions{
     option(RunConfigOptionId::AtmosphereNightSkyMode, "atmosphere.night_sky_mode",
            "--night-sky-mode", "Night Sky Mode", "Atmosphere", "Night-sky visibility model.",
            ConfigOptionType::Enum, no_range(), enum_choices(kNightSkyModes)),
+    option(RunConfigOptionId::AtmosphereGroundMode, "atmosphere.ground_mode",
+           "--atmosphere-ground-mode", "Ground Mode", "Atmosphere",
+           "Atmosphere ground handling for sky-only backgrounds and captures.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kAtmosphereGroundModes)),
     option(RunConfigOptionId::AtmosphereMilkyWayLayer, "atmosphere.milky_way_layer",
            "--milky-way-layer", "Milky Way Layer", "Atmosphere",
            "Generated Milky Way atlas layer to inspect.", ConfigOptionType::Enum, no_range(),
@@ -1371,6 +1377,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.atmosphere.time_of_day_mode;
     case RunConfigOptionId::AtmosphereNightSkyMode:
         return config.atmosphere.night_sky_mode;
+    case RunConfigOptionId::AtmosphereGroundMode:
+        return config.atmosphere.ground_mode.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.atmosphere.ground_mode);
     case RunConfigOptionId::AtmosphereMilkyWayLayer:
         return config.atmosphere.milky_way_layer;
     case RunConfigOptionId::AtmosphereSunElevation:
@@ -1912,6 +1922,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::AtmosphereOptions& 
     adapter.writeField<std::string>("preset", options.preset);
     adapter.writeField<std::string>("time_of_day_mode", options.time_of_day_mode);
     adapter.writeField<std::string>("night_sky_mode", options.night_sky_mode);
+    adapter.writeField<std::string>("ground_mode", options.ground_mode);
     adapter.writeField<std::string>("milky_way_layer", options.milky_way_layer);
     adapter.writeField<float>("sun_elevation_degrees", options.sun_elevation_degrees);
     adapter.writeField<float>("sun_azimuth_degrees", options.sun_azimuth_degrees);
@@ -1949,6 +1960,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::AtmosphereOptions& opti
     adapter.readField<std::string>("preset", options.preset);
     adapter.readField<std::string>("time_of_day_mode", options.time_of_day_mode);
     adapter.readField<std::string>("night_sky_mode", options.night_sky_mode);
+    adapter.readField<std::string>("ground_mode", options.ground_mode);
     adapter.readField<std::string>("milky_way_layer", options.milky_way_layer);
     adapter.readField<float>("sun_elevation_degrees", options.sun_elevation_degrees);
     adapter.readField<float>("sun_azimuth_degrees", options.sun_azimuth_degrees);
@@ -2584,6 +2596,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::AtmosphereNightSkyMode:
         config.atmosphere.night_sky_mode = std::string(value);
+        break;
+    case RunConfigOptionId::AtmosphereGroundMode:
+        config.atmosphere.ground_mode = std::string(value);
         break;
     case RunConfigOptionId::AtmosphereMilkyWayLayer:
         config.atmosphere.milky_way_layer = std::string(value);

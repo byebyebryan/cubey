@@ -66,6 +66,14 @@ void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes() {
     require(manual_state.auto_exposure_enabled,
             "manual sun options should still default to auto exposure");
 
+    cubey::RunConfig::AtmosphereOptions sky_only_no_ground;
+    sky_only_no_ground.ground_mode = "sky-only-no-ground-occlusion";
+    cubey::AtmosphereEnvironmentRunState sky_only_no_ground_state =
+        cubey::atmosphere_environment_run_state_from_config(sky_only_no_ground, defaults);
+    require(sky_only_no_ground_state.environment.ground_mode ==
+                cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
+            "shared atmosphere run config should override caller ground mode defaults");
+
     cubey::RunConfig::AtmosphereOptions solar;
     solar.time_of_day_mode = "solar";
     solar.time_hours = 12.0F;
