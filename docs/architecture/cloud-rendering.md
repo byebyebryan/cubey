@@ -12,6 +12,12 @@ Use the shared `cubey::render::CloudLayerRuntime` through `projects/atmosphere`
 instead of continuing `clouds_legacy`, reviving a standalone `projects/cloud`,
 or pulling `cloud_ref_2` toward visual quality.
 
+The accepted production baseline is now the surface/local volume path that was
+validated through the `cloud_ref` parity work. It should be named and treated as
+`surface-volume`, not as a temporary reference mode. Aerial and orbit clouds are
+separate unfinished distance-regime targets and should not drive surface cloud
+defaults.
+
 The production renderer should combine:
 
 - the texture-backed cloud density model from the TerrainEngine-style
@@ -286,9 +292,12 @@ clouds therefore split the controls:
 - `edge_resolve_strength`: final-composite edge resolve weight. It is applied
   through the `edge-mask` debug diagnostic, not as a whole-image blur.
 
-`cloud-ref-compatible` should be kept as a diagnostic mode, but it should match
-the reference through `shape_domain_km`, not by pretending the atmosphere has a
-600 km planet radius.
+The old `cloud-ref-compatible` name should stay as a config alias for the
+accepted surface path, but the production-facing name is `surface-volume`.
+That path should match the reference through `shape_domain_km`, not by
+pretending the atmosphere has a 600 km planet radius. The previous procedural
+surface/aerial path is useful only as explicit `experimental-aerial-orbit`
+scaffolding until a proper aerial bridge replaces it.
 
 Deferred until the shape is credible:
 

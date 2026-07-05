@@ -250,3 +250,27 @@ The handoff should be visible in `horizon-handoff` and
 `integrated-horizon-alpha`, while final color remains subtle. If a hard band is
 also present in the no-cloud row, treat it as a sky/background horizon issue
 rather than a cloud bridge regression.
+
+## Surface Volume Promotion 2026-07-05
+
+The surface/local cloud path is now accepted as the shared foundation baseline.
+The implementation should stop presenting it as `cloud-ref-compatible` except
+for config compatibility; the production name is `surface-volume`.
+
+The promotion deliberately does not declare aerial, high-oblique, or orbit
+clouds solved. The previous procedural shared-cloud path carried the auto/orbit
+branch, but it also carried the edge-noise and lighting problems that forced the
+reference reboot. Keep that code reachable only as explicit
+`experimental-aerial-orbit` scaffolding until a new aerial bridge can use the
+surface-volume local signal without regressing surface quality.
+
+Current split:
+
+- `surface-volume`: production surface/local clouds, tuned through
+  `projects/atmosphere` and cross-checked against `projects/cloud_ref`;
+- `experimental-aerial-orbit`: temporary high/orbit transition scaffold, not a
+  fallback for surface rendering;
+- `projects/cloud_ref`: known-good narrow reference/demo that should remain
+  available;
+- `projects/clouds_legacy` and git history: record of failed standalone and
+  absorbed approaches, not active implementation targets.

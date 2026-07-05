@@ -82,7 +82,7 @@ captures full-resolution `surface-horizon`, `surface-up`, and `high-oblique`
 views with handoff, local-truncation, integrated-horizon, edge, and distance
 regime diagnostics.
 
-The lighting-regime script focuses on the `reference-parity` surface cloud path.
+The lighting-regime script focuses on the `surface-volume` surface cloud path.
 It captures noon, twilight, afterglow, and night in surface-up and horizon views
 with lighting, alpha, background, edge, and distance diagnostics, and disables
 the standalone reference grid so cloud/sky transitions are easier to inspect.
@@ -93,7 +93,7 @@ optional afterglow color without making night clouds look sunlit.
 
 The surface-horizon regime script is the focused A/B for the lower-sky handoff.
 For each noon, twilight, afterglow, and night case it captures local-only
-`reference-parity`, the same preset with `--cloud-distance-mode auto
+`surface-volume`, the same preset with `--cloud-distance-mode auto
 --cloud-horizon-layer`, and a no-cloud background comparison. Use the handoff,
 local-truncation, and integrated-horizon diagnostics there before judging
 surface horizon fixes from final color alone.
