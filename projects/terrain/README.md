@@ -160,7 +160,10 @@ river topology or shader ports.
 The TerrainEngine reference lane is captured in
 [TerrainEngine reference port plan](../../docs/notes/terrain-engine-reference-port-plan.md):
 use it as an isolated known-good height/material recipe, not as a commitment to
-port TerrainEngine's OpenGL app or tessellation stack.
+port TerrainEngine's OpenGL app or tessellation stack. The same note captures
+the broader reference review: TerrainEngine has a useful distance-adaptive
+tessellated runtime and water presentation path, but it does not provide biome
+recipes, hydraulic erosion, lake generation, or foliage rendering.
 
 ## Commands
 

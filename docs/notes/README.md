@@ -83,7 +83,8 @@ the detailed foundation notes under `docs/architecture/`.
   operators or visual cues, and what to keep out of river topology.
 - [TerrainEngine reference port plan](terrain-engine-reference-port-plan.md):
   isolated recipe plan for porting TerrainEngine's shader-side height/material
-  model into the terrain product contract as a known-good reference lane.
+  model into the terrain product contract, plus capability review notes for
+  tessellation, water, materials, hydrology gaps, and foliage gaps.
 - [Terrain mountain gully diagnostic plan](terrain-mountain-gully-diagnostic-plan.md):
   revision 24 plan for diagnostic-only gully / erosion fields over the mountain
   stress recipe before any height-affecting erosion pass.
