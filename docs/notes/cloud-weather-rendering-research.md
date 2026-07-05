@@ -1433,14 +1433,14 @@ and Skybolt notes/code:
   desaturating it as if it were night.
 
 For this repo, the first target is the shared `CloudLayer` path in
-`projects/atmosphere` using the `reference-parity` preset. `cloud_ref` remains
-the local surface reference, and high-oblique/orbit handoff work remains
+`projects/atmosphere` using the production `surface-volume` preset. `cloud_ref`
+remains the local surface reference, and high-oblique/orbit handoff work remains
 separate.
 
 Implementation checkpoint: shared cloud uniforms now carry twilight color,
 edge, and saturation strengths. The local ambient fill samples horizon
-sky/sun radiance near low sun, `cloud-ref-compatible` adds a bounded
-optical-edge twilight source, and final composite preserves twilight saturation
+sky/sun radiance near low sun, `surface-volume` adds a bounded optical-edge
+twilight source, and final composite preserves twilight saturation
 separately from day/night brightness. Validate with
 `projects/atmosphere/capture_cloud_lighting_regimes.sh` before treating the
 defaults as final art direction.
@@ -1457,18 +1457,18 @@ background. It should appear only in the low-sun twilight window, mostly on
 cloud tops, thin optical edges, and sun-facing rim regions. It should not tint
 all cloud mass uniformly, should not brighten night clouds, and should not hide
 existing horizon handoff issues. The first implementation target remains the
-surface `reference-parity` path in `projects/atmosphere`; high-oblique and
+surface `surface-volume` path in `projects/atmosphere`; high-oblique and
 orbit cloud topology stay separate.
 
 ## Surface Horizon Handoff Target 2026-07-04
 
 The afterglow capture pass made the surface horizon failure more obvious because
-the `reference-parity` preset keeps the cloud path in local-only mode. That is a
+the `surface-volume` preset keeps the cloud path in local-only mode. That is a
 useful baseline for local cloud shape, but it intentionally bypasses the
 distance-aware horizon bridge. Horizon review should therefore use three
 comparisons per lighting regime:
 
-- local-only `reference-parity`, to preserve the known surface reference;
+- local-only `surface-volume`, to preserve the known surface reference;
 - the same preset with automatic distance mode and the horizon layer enabled,
   to exercise the production handoff;
 - no-cloud background, to separate cloud handoff artifacts from clear-sky or
@@ -1480,12 +1480,12 @@ layer toward sky-colored radiance so it reads as distant haze/cloud continuity
 instead of a new dark cloud type. Keep upward and near local cloud detail out of
 this pass.
 
-Implementation checkpoint: the `cloud-ref-compatible` shader branch now exposes
+Implementation checkpoint: the `surface-volume` shader branch now exposes
 the horizon diagnostics and composes the integrated far-horizon layer when the
 caller explicitly enables automatic distance mode plus the horizon layer. This
-matters because `reference-parity` still uses the compatible density model; the
-first auto/horizon capture attempt looked unchanged because the shader returned
-from the local-compatible branch before the bridge code ran.
+matters because the same branch is now the production `surface-volume` density
+model; the first auto/horizon capture attempt looked unchanged because the
+shader returned from the local-compatible branch before the bridge code ran.
 
 The bridge is deliberately broad and low-contrast. In surface view, the useful
 signal is that `horizon-handoff` and `integrated-horizon-alpha` activate in the
