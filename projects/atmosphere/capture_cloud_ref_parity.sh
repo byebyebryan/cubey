@@ -9,7 +9,7 @@ WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"
 CLOUD_REF_PRESET="${CLOUD_REF_PRESET:-fair-weather}"
-ATMOSPHERE_PRESET="${ATMOSPHERE_PRESET:-reference-parity}"
+ATMOSPHERE_PRESET="${ATMOSPHERE_PRESET:-surface-volume}"
 VIEW_STEPS="${VIEW_STEPS:-64}"
 
 mkdir -p "${OUT_DIR}/cloud_ref" "${OUT_DIR}/atmosphere"

@@ -127,16 +127,16 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 30U);
                     cubey::render::compute_shader_file(shader_path("cloud_perlin_worley.comp.spv")),
                 .detail_noise =
                     cubey::render::compute_shader_file(shader_path("cloud_worley.comp.spv")),
-                .weather = cubey::render::compute_shader_file(shader_path("cloud_weather.comp.spv")),
+                .weather =
+                    cubey::render::compute_shader_file(shader_path("cloud_weather.comp.spv")),
                 .blue_noise =
                     cubey::render::compute_shader_file(shader_path("cloud_blue_noise.comp.spv")),
             },
         .march = cubey::render::compute_shader_file(shader_path("cloud_march.comp.spv")),
         .temporal = cubey::render::compute_shader_file(shader_path("cloud_temporal.comp.spv")),
         .composite_vertex = cubey::render::vertex_shader_file(shader_path("cloud.vert.spv")),
-        .composite_fragment =
-            cubey::render::fragment_shader_file(
-                shader_path("cloud_composite_background_depth.frag.spv")),
+        .composite_fragment = cubey::render::fragment_shader_file(
+            shader_path("cloud_composite_background_depth.frag.spv")),
     };
 }
 
@@ -144,8 +144,9 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 30U);
 planet_cloud_config_from_run_config(const RunConfig& config) {
     atmosphere::AtmosphereCloudConfig clouds{};
     clouds.enabled = false;
-    clouds.layer.quality = cubey::render::CloudLayerQuality::Quarter;
-    clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Auto;
+    clouds.layer.quality = cubey::render::CloudLayerQuality::Full;
+    clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    clouds.layer.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
     clouds.layer.orbit_representation = cubey::render::CloudLayerOrbitRepresentation::SurfaceShell;
     clouds.layer.temporal_enabled = false;
     clouds.layer.orbit_transition_start_m = 80000.0F;
@@ -242,8 +243,9 @@ planet_cloud_config_from_run_config(const RunConfig& config) {
     return glm::normalize(value);
 }
 
-[[nodiscard]] cubey::math::Vec3 planet_cloud_local_direction(
-    cubey::math::Vec3 direction, const cubey::render::LocalTangentFrame& frame) {
+[[nodiscard]] cubey::math::Vec3
+planet_cloud_local_direction(cubey::math::Vec3 direction,
+                             const cubey::render::LocalTangentFrame& frame) {
     const cubey::math::Vec3 normalized = planet_cloud_normalize_or_up(direction);
     return {
         glm::dot(normalized, frame.right),
@@ -252,8 +254,8 @@ planet_cloud_config_from_run_config(const RunConfig& config) {
     };
 }
 
-[[nodiscard]] cubey::math::Vec3 planet_cloud_fixed_position(
-    cubey::math::DVec3 world_position_m, float planet_radius_m) {
+[[nodiscard]] cubey::math::Vec3 planet_cloud_fixed_position(cubey::math::DVec3 world_position_m,
+                                                            float planet_radius_m) {
     return {
         static_cast<float>(world_position_m.x),
         static_cast<float>(world_position_m.y - static_cast<double>(planet_radius_m)),
@@ -851,12 +853,11 @@ class PlanetApp {
         const bool horizon_inspection =
             planet_debug_view_uses_horizon_local_detail(planet_config_.debug_view);
         const float inspection_outer_half_extent =
-            horizon_inspection
-                ? std::max({planet_config_.local_detail_outer_half_extent_m,
-                            kPlanetLocalDetailInspectionMinimumOuterHalfExtentM,
-                            frame_.horizon_distance_m *
-                                kPlanetLocalDetailInspectionHorizonExtentScale})
-                : 0.0F;
+            horizon_inspection ? std::max({planet_config_.local_detail_outer_half_extent_m,
+                                           kPlanetLocalDetailInspectionMinimumOuterHalfExtentM,
+                                           frame_.horizon_distance_m *
+                                               kPlanetLocalDetailInspectionHorizonExtentScale})
+                               : 0.0F;
         return {
             .camera_clearance_m = std::max(frame_.camera_surface_clearance_m, 1.0F),
             .vertical_fov_radians = camera_.fovy_radians(),
@@ -1043,12 +1044,9 @@ class PlanetApp {
                 },
             .atmosphere_ozone =
                 {
-                    atmosphere_config.ozone_absorption.x *
-                        atmosphere_config.ozone_density_scale,
-                    atmosphere_config.ozone_absorption.y *
-                        atmosphere_config.ozone_density_scale,
-                    atmosphere_config.ozone_absorption.z *
-                        atmosphere_config.ozone_density_scale,
+                    atmosphere_config.ozone_absorption.x * atmosphere_config.ozone_density_scale,
+                    atmosphere_config.ozone_absorption.y * atmosphere_config.ozone_density_scale,
+                    atmosphere_config.ozone_absorption.z * atmosphere_config.ozone_density_scale,
                     atmosphere_config.ozone_center_altitude_km,
                 },
             .atmosphere_shared_options =
@@ -1132,8 +1130,7 @@ class PlanetApp {
                local_detail_runtime_.has_drawable_mesh() && local_detail_surface_weight() > 0.001F;
     }
 
-    [[nodiscard]] cubey::render::CloudLayerConfig planet_cloud_config(
-        float elapsed_seconds) const {
+    [[nodiscard]] cubey::render::CloudLayerConfig planet_cloud_config(float elapsed_seconds) const {
         cubey::render::CloudLayerConfig config = clouds_config_.layer;
         config.planet_radius_m = planet_config_.radius_m;
         config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
@@ -1157,7 +1154,8 @@ class PlanetApp {
         if (cloud_global_resources_created_) {
             return;
         }
-        cloud_runtime_.create_generated_resources(device, gpu, cloud_runtime_shader_files().generated,
+        cloud_runtime_.create_generated_resources(device, gpu,
+                                                  cloud_runtime_shader_files().generated,
                                                   planet_cloud_config(cloud_elapsed_seconds_));
         cloud_global_resources_created_ = true;
     }
@@ -1185,8 +1183,8 @@ class PlanetApp {
         static_cast<void>(context.gpu().drain());
     }
 
-    [[nodiscard]] cubey::render::CloudLayerViewRegime planet_cloud_view_regime(
-        VkExtent2D extent) const {
+    [[nodiscard]] cubey::render::CloudLayerViewRegime
+    planet_cloud_view_regime(VkExtent2D extent) const {
         const cubey::Transform3D transform = camera_transform();
         const float aspect = extent.height == 0U ? 1.0F
                                                  : static_cast<float>(extent.width) /
@@ -1198,12 +1196,10 @@ class PlanetApp {
             cubey::render::local_tangent_world_to_local_m(tangent, frame_.camera_world_position_m);
         const cubey::math::Vec3 camera_forward =
             planet_cloud_local_direction(cubey::math::Vec3{world_rays.forward}, tangent);
-        const cubey::render::CloudLayerConfig config =
-            planet_cloud_config(cloud_elapsed_seconds_);
+        const cubey::render::CloudLayerConfig config = planet_cloud_config(cloud_elapsed_seconds_);
 
         return cubey::render::cloud_layer_view_regime({
-            .camera_position = {camera_position.x,
-                                config.planet_radius_m + camera_position.y,
+            .camera_position = {camera_position.x, config.planet_radius_m + camera_position.y,
                                 camera_position.z},
             .camera_forward = camera_forward,
             .planet_radius_m = config.planet_radius_m,
@@ -1231,8 +1227,7 @@ class PlanetApp {
             planet_cloud_local_direction(cubey::math::Vec3{world_rays.forward}, tangent);
         const cubey::math::Vec3 local_sun_direction =
             planet_cloud_local_direction(celestial_lighting_.primary_light_direction, tangent);
-        const cubey::render::CloudLayerConfig config =
-            planet_cloud_config(cloud_elapsed_seconds_);
+        const cubey::render::CloudLayerConfig config = planet_cloud_config(cloud_elapsed_seconds_);
         const cubey::render::CloudLayerViewRegime view_regime =
             cubey::render::cloud_layer_view_regime({
                 .camera_position = {local_camera_position.x,
@@ -1247,10 +1242,9 @@ class PlanetApp {
         // surface/high regimes stay camera-relative to preserve local tangent precision.
         const bool fixed_orbit_frame = view_regime.camera_mode >= 3.5F;
         const cubey::math::Vec3 camera_position =
-            fixed_orbit_frame
-                ? planet_cloud_fixed_position(frame_.camera_world_position_m,
-                                              config.planet_radius_m)
-                : local_camera_position;
+            fixed_orbit_frame ? planet_cloud_fixed_position(frame_.camera_world_position_m,
+                                                            config.planet_radius_m)
+                              : local_camera_position;
         const cubey::math::Vec3 camera_right =
             fixed_orbit_frame ? cubey::math::Vec3{world_rays.right_aspect} : local_camera_right;
         const cubey::math::Vec3 camera_up =
@@ -1261,24 +1255,23 @@ class PlanetApp {
             fixed_orbit_frame ? celestial_lighting_.primary_light_direction : local_sun_direction;
 
         return cubey::render::cloud_layer_frame_uniforms(
-            config,
-            cubey::render::CloudLayerFrameInfo{
-                .camera_position = camera_position,
-                .camera_right = camera_right,
-                .camera_up = camera_up,
-                .camera_forward = camera_forward,
-                .tan_half_fovy = world_rays.up_tan_half_fovy.w,
-                .sun_direction = sun_direction,
-                .sun_intensity = celestial_lighting_.primary_light_intensity,
-                .target_extent = extent,
-                .temporal_frame_index = cloud_runtime_.temporal_frame_index(),
-                .camera_mode = view_regime.camera_mode,
-                .external_background = true,
-                .near_plane_m = frame_.near_plane_m,
-                .far_plane_m = frame_.far_plane_m,
-                .scene_depth_occlusion_enabled = true,
-                .scene_depth_fade_m = kPlanetCloudSceneDepthFadeM,
-            });
+            config, cubey::render::CloudLayerFrameInfo{
+                        .camera_position = camera_position,
+                        .camera_right = camera_right,
+                        .camera_up = camera_up,
+                        .camera_forward = camera_forward,
+                        .tan_half_fovy = world_rays.up_tan_half_fovy.w,
+                        .sun_direction = sun_direction,
+                        .sun_intensity = celestial_lighting_.primary_light_intensity,
+                        .target_extent = extent,
+                        .temporal_frame_index = cloud_runtime_.temporal_frame_index(),
+                        .camera_mode = view_regime.camera_mode,
+                        .external_background = true,
+                        .near_plane_m = frame_.near_plane_m,
+                        .far_plane_m = frame_.far_plane_m,
+                        .scene_depth_occlusion_enabled = true,
+                        .scene_depth_fade_m = kPlanetCloudSceneDepthFadeM,
+                    });
     }
 
     [[nodiscard]] float surface_direct_intensity() const {
@@ -1318,8 +1311,8 @@ class PlanetApp {
             planet_config_.radius_m, planet_config_.radius_m + planet_config_.atmosphere_height_m);
         return planet_unified_atmosphere_frame_uniforms(
             inputs, {
-                        .view_rays = cubey::render::view_ray_basis_3d(
-                            transform.rotation, aspect, camera_.fovy_radians()),
+                        .view_rays = cubey::render::view_ray_basis_3d(transform.rotation, aspect,
+                                                                      camera_.fovy_radians()),
                         .local_frame = frame_.local_frame,
                         .look_config = atmosphere_look_config_,
                     });
@@ -1514,9 +1507,8 @@ class PlanetApp {
             });
         const bool clouds_enabled = cloud_layer_enabled() && cloud_uniforms.has_value();
         if (clouds_enabled) {
-            cloud_scene_color =
-                graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
-                    "planet cloud scene color", color_target.extent, kPlanetSceneColorFormat));
+            cloud_scene_color = graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
+                "planet cloud scene color", color_target.extent, kPlanetSceneColorFormat));
             cloud_frame = cloud_runtime_.declare_product(
                 graph, color_target.extent, planet_cloud_config(cloud_elapsed_seconds_), frame_slot,
                 cloud_uniforms.value());
@@ -1643,9 +1635,10 @@ class PlanetApp {
     }
 
     void create_unified_atmosphere_frame_resources_if_needed(const cubey::vulkan::Device& device,
-                                                            std::uint32_t frame_slot_count) {
+                                                             std::uint32_t frame_slot_count) {
         if (!unified_atmosphere_frame_.materials_created() ||
-            unified_atmosphere_frame_.material().material_instance().set_count() != frame_slot_count) {
+            unified_atmosphere_frame_.material().material_instance().set_count() !=
+                frame_slot_count) {
             unified_atmosphere_frame_.destroy();
             unified_atmosphere_frame_.create_materials(
                 device, {
@@ -1663,10 +1656,10 @@ class PlanetApp {
         };
         unified_atmosphere_frame_.destroy_pipeline();
         unified_atmosphere_frame_.create_pipeline(device, {
-                                                            .extent = extent,
-                                                            .color_format = color_format,
-                                                            .shader_stage_files = shaders,
-                                                        });
+                                                              .extent = extent,
+                                                              .color_format = color_format,
+                                                              .shader_stage_files = shaders,
+                                                          });
     }
 
     void create_cloud_pipelines(const cubey::vulkan::Device& device, VkExtent2D extent,
@@ -1685,21 +1678,16 @@ class PlanetApp {
             const cubey::render::AtmosphereBackgroundTextureBindings sky_textures =
                 sky_atlas_resources_->bindings();
             celestial_body_frame_.destroy();
-            celestial_body_frame_.create_materials(device, {
-                                                               .frame_slot_count = frame_slot_count,
-                                                               .textures =
-                                                                   {
-                                                                       .surface_sampler =
-                                                                           sky_textures
-                                                                               .lunar_surface_sampler,
-                                                                       .surface_view =
-                                                                           sky_textures
-                                                                               .lunar_surface_view,
-                                                                       .surface_layout =
-                                                                           sky_textures
-                                                                               .lunar_surface_layout,
-                                                                   },
-                                                           });
+            celestial_body_frame_.create_materials(
+                device, {
+                            .frame_slot_count = frame_slot_count,
+                            .textures =
+                                {
+                                    .surface_sampler = sky_textures.lunar_surface_sampler,
+                                    .surface_view = sky_textures.lunar_surface_view,
+                                    .surface_layout = sky_textures.lunar_surface_layout,
+                                },
+                        });
         }
     }
 

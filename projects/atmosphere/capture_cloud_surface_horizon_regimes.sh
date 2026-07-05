@@ -8,7 +8,7 @@ WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"
 QUALITY="${QUALITY:-full}"
-PRESET="${PRESET:-reference-parity}"
+PRESET="${PRESET:-surface-volume}"
 VIEW_STEPS="${VIEW_STEPS:-64}"
 RESOLVE_RADIUS_PX="${RESOLVE_RADIUS_PX:-1.5}"
 AFTERGLOW_STRENGTH="${AFTERGLOW_STRENGTH:-0.75}"
@@ -39,7 +39,7 @@ write_header() {
         printf -- '- Afterglow showcase strength: %s\n' "${AFTERGLOW_STRENGTH}"
         printf -- '- Afterglow showcase hour: %s\n\n' "${AFTERGLOW_HOUR}"
         printf 'Variants:\n\n'
-        printf -- '- `local-only`: reference-parity with local distance mode and no horizon layer.\n'
+        printf -- '- `local-only`: surface-volume with local distance mode and no horizon layer.\n'
         printf -- '- `auto-handoff`: same preset with auto distance mode and horizon layer enabled.\n'
         printf -- '- `no-clouds`: clear-sky/background comparison for horizon bands.\n\n'
         printf '| Capture | Variant | Case | Debug | Args |\n'

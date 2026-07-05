@@ -7,8 +7,8 @@ OUT_DIR="${1:-${ROOT_DIR}/outputs/planet-cloud-review-$(date +%Y%m%d-%H%M%S)}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"
-QUALITY="${QUALITY:-quarter}"
-PRESET="${PRESET:-broken-cumulus}"
+QUALITY="${QUALITY:-full}"
+PRESET="${PRESET:-surface-volume}"
 
 mkdir -p "${OUT_DIR}"
 
@@ -117,30 +117,40 @@ high_transition_60=(
     --planet-camera-altitude-m 60000
     --planet-day-of-year 80
     --planet-time-hours 12.0
+    --cloud-density-model experimental-aerial-orbit
+    --cloud-distance-mode auto
 )
 high_transition_140=(
     --planet-camera-mode orbit
     --planet-camera-altitude-m 140000
     --planet-day-of-year 80
     --planet-time-hours 12.0
+    --cloud-density-model experimental-aerial-orbit
+    --cloud-distance-mode auto
 )
 high_transition_260=(
     --planet-camera-mode orbit
     --planet-camera-altitude-m 260000
     --planet-day-of-year 80
     --planet-time-hours 12.0
+    --cloud-density-model experimental-aerial-orbit
+    --cloud-distance-mode auto
 )
 orbit_day=(
     --planet-camera-mode orbit
     --planet-camera-altitude-m 2400000
     --planet-day-of-year 80
     --planet-time-hours 18.0
+    --cloud-density-model experimental-aerial-orbit
+    --cloud-distance-mode auto
 )
 orbit_terminator=(
     --planet-camera-mode orbit
     --planet-camera-altitude-m 2400000
     --planet-day-of-year 80
     --planet-time-hours 16.0
+    --cloud-density-model experimental-aerial-orbit
+    --cloud-distance-mode auto
 )
 
 write_index_header

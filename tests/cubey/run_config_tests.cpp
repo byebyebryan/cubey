@@ -244,15 +244,30 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
                      "run config parser should route ordinary CLI flags through descriptors");
 
     constexpr std::array promoted_flags{
-        "--grid-width",         "--profile-output",        "--profile-diagnostic-interval",
-        "--smoke-injectors",    "--smoke-pressure-solver", "--pyro-sources",
-        "--pyro-source-radius", "--shadow-grid-width",     "--water2d-transfer",
-        "--water2d-hose",       "--water3d-transfer",      "--water3d-p2g-mode",
-        "--water3d-whitewater", "--ocean-field-precision", "--planet-max-lod-level",
-        "--planet-lod-hysteresis", "--planet-time-hours",  "--planet-camera-mode",
-        "--terrain-lab-slice",     "--terrain-lab-camera-preset",
+        "--grid-width",
+        "--profile-output",
+        "--profile-diagnostic-interval",
+        "--smoke-injectors",
+        "--smoke-pressure-solver",
+        "--pyro-sources",
+        "--pyro-source-radius",
+        "--shadow-grid-width",
+        "--water2d-transfer",
+        "--water2d-hose",
+        "--water3d-transfer",
+        "--water3d-p2g-mode",
+        "--water3d-whitewater",
+        "--ocean-field-precision",
+        "--planet-max-lod-level",
+        "--planet-lod-hysteresis",
+        "--planet-time-hours",
+        "--planet-camera-mode",
+        "--terrain-lab-slice",
+        "--terrain-lab-camera-preset",
         "--terrain-lab-noise-source",
-        "--cloud-camera-mode",     "--cloud-quality",      "--cloud-coverage",
+        "--cloud-camera-mode",
+        "--cloud-quality",
+        "--cloud-coverage",
     };
     for (std::string_view flag : promoted_flags) {
         const std::string explicit_branch = "arg == \"" + std::string(flag) + "\"";
@@ -595,10 +610,9 @@ void test_run_config_loads_json_config_file() {
                 config.clouds.resolve_mode == "metadata-bilateral" &&
                 config.clouds.background_mode == "water-context" &&
                 config.clouds.coverage == 0.62F && config.clouds.wind_speed_mps == 24.0F &&
-                config.clouds.shadow_strength == 0.75F &&
-                config.clouds.powder_strength == 0.35F &&
-                config.clouds.jitter_strength == 0.25F &&
-                config.clouds.orbit_fill == 1.4F && config.clouds.temporal == 0,
+                config.clouds.shadow_strength == 0.75F && config.clouds.powder_strength == 0.35F &&
+                config.clouds.jitter_strength == 0.25F && config.clouds.orbit_fill == 1.4F &&
+                config.clouds.temporal == 0,
             "config file should set cloud controls");
 }
 
@@ -640,13 +654,12 @@ void test_run_config_cli_and_set_override_config_file() {
     std::string noise_flag = "--terrain-lab-noise-source";
     std::string noise_value = "fastnoise-lite";
     std::string set_whitewater = "water3d.whitewater=true";
-    std::array<char*, 19> argv{program.data(),     width_flag.data(),    width_value.data(),
-                               config_flag.data(), config_path.data(),   slice_flag.data(),
-                               slice_value.data(), camera_flag.data(),   camera_value.data(),
-                               noise_flag.data(),  noise_value.data(),   set_flag.data(),
-                               set_height.data(),  set_flag.data(),      set_env.data(),
-                               set_flag.data(),    set_terrain.data(),   set_flag.data(),
-                               set_whitewater.data()};
+    std::array<char*, 19> argv{
+        program.data(),      width_flag.data(), width_value.data(),   config_flag.data(),
+        config_path.data(),  slice_flag.data(), slice_value.data(),   camera_flag.data(),
+        camera_value.data(), noise_flag.data(), noise_value.data(),   set_flag.data(),
+        set_height.data(),   set_flag.data(),   set_env.data(),       set_flag.data(),
+        set_terrain.data(),  set_flag.data(),   set_whitewater.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -989,8 +1002,7 @@ void test_run_config_parses_atmosphere_options() {
             "run config should parse camera yaw offset");
     require(config.atmosphere.camera_pitch_offset_degrees == -22.0F,
             "run config should parse camera pitch offset");
-    require(config.atmosphere.rayleigh_scale == 1.15F,
-            "run config should parse Rayleigh scale");
+    require(config.atmosphere.rayleigh_scale == 1.15F, "run config should parse Rayleigh scale");
     require(config.atmosphere.mie_scale == 1.75F, "run config should parse Mie scale");
     require(config.atmosphere.ozone_scale == 1.25F, "run config should parse ozone scale");
     require(config.atmosphere.time_of_day_mode == "manual",
@@ -1034,7 +1046,7 @@ void test_run_config_parses_cloud_options() {
     std::string sampling_mode_flag = "--cloud-sampling-mode";
     std::string sampling_mode_value = "bayer";
     std::string density_model_flag = "--cloud-density-model";
-    std::string density_model_value = "cloud-ref-compatible";
+    std::string density_model_value = "surface-volume";
     std::string resolve_mode_flag = "--cloud-resolve-mode";
     std::string resolve_mode_value = "metadata-bilateral";
     std::string background_mode_flag = "--cloud-background-mode";
@@ -1171,9 +1183,8 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.enabled == 0, "run config should parse negative cloud enable flag");
     require(config.clouds.debug_view == "transition-weights",
             "run config should parse cloud debug view");
-    require(config.clouds.sampling_mode == "bayer",
-            "run config should parse cloud sampling mode");
-    require(config.clouds.density_model == "cloud-ref-compatible",
+    require(config.clouds.sampling_mode == "bayer", "run config should parse cloud sampling mode");
+    require(config.clouds.density_model == "surface-volume",
             "run config should parse cloud density model");
     require(config.clouds.resolve_mode == "metadata-bilateral",
             "run config should parse cloud resolve mode");
@@ -1187,18 +1198,15 @@ void test_run_config_parses_cloud_options() {
             "run config should parse cloud camera altitude");
     require(config.clouds.bottom_altitude_m == 2200.0F,
             "run config should parse cloud bottom altitude");
-    require(config.clouds.top_altitude_m == 9200.0F,
-            "run config should parse cloud top altitude");
+    require(config.clouds.top_altitude_m == 9200.0F, "run config should parse cloud top altitude");
     require(config.clouds.coverage == 0.73F, "run config should parse cloud coverage");
     require(config.clouds.density == 1.25F, "run config should parse cloud density");
     require(config.clouds.weather_scale_km == 260.0F,
             "run config should parse cloud weather scale");
-    require(config.clouds.shape_domain_km == 840.0F,
-            "run config should parse cloud shape domain");
+    require(config.clouds.shape_domain_km == 840.0F, "run config should parse cloud shape domain");
     require(config.clouds.footprint_filter_strength == 1.35F,
             "run config should parse cloud footprint filter strength");
-    require(config.clouds.edge_softness == 1.20F,
-            "run config should parse cloud edge softness");
+    require(config.clouds.edge_softness == 1.20F, "run config should parse cloud edge softness");
     require(config.clouds.edge_detail_fade == 0.55F,
             "run config should parse cloud edge detail fade");
     require(config.clouds.edge_resolve_strength == 0.80F,
@@ -1206,8 +1214,7 @@ void test_run_config_parses_cloud_options() {
     require(config.clouds.vertical_shear_fraction == 0.16F,
             "run config should parse cloud vertical shear fraction");
     require(config.clouds.wind_speed_mps == 32.0F, "run config should parse cloud wind speed");
-    require(config.clouds.shadow_strength == 0.8F,
-            "run config should parse cloud shadow strength");
+    require(config.clouds.shadow_strength == 0.8F, "run config should parse cloud shadow strength");
     require(config.clouds.jitter_strength == 0.25F,
             "run config should parse cloud jitter strength");
     require(config.clouds.orbit_transition_start_m == 14000.0F,
@@ -1810,8 +1817,7 @@ void test_run_config_parses_planet_controls() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
-    require(config.planet.scale_preset == "mini",
-            "run config should parse planet scale preset");
+    require(config.planet.scale_preset == "mini", "run config should parse planet scale preset");
     require(config.planet.radius_m == 600000.0F, "run config should parse planet radius");
     require(config.planet.atmosphere_height_m == 70000.0F,
             "run config should parse planet atmosphere height");
@@ -1832,8 +1838,7 @@ void test_run_config_parses_planet_controls() {
     require(config.planet.max_lod_level_set && config.planet.max_lod_level == 9U,
             "run config should parse planet max LOD level");
     require(config.planet.lod_target_edge_px == 9.5F, "run config should parse planet LOD target");
-    require(config.planet.lod_hysteresis == 0.25F,
-            "run config should parse planet LOD hysteresis");
+    require(config.planet.lod_hysteresis == 0.25F, "run config should parse planet LOD hysteresis");
     require(config.planet.local_detail_lod_levels == 5U,
             "run config should parse planet local detail LOD levels");
     require(config.planet.local_detail_cells_per_axis == 96U,

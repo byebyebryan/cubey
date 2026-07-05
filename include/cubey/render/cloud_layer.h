@@ -90,8 +90,8 @@ enum class CloudLayerOrbitRepresentation : std::uint32_t {
 
 enum class CloudLayerDensityModel : std::uint32_t {
     RefDensity = 0,
-    Procedural = 1,
-    CloudRefCompatible = 2,
+    ExperimentalAerialOrbit = 1,
+    SurfaceVolume = 2,
 };
 
 enum class CloudLayerResolveMode : std::uint32_t {
@@ -238,7 +238,7 @@ struct CloudLayerConfig {
     CloudLayerDistanceMode distance_mode = CloudLayerDistanceMode::Auto;
     CloudLayerOrbitRepresentation orbit_representation =
         CloudLayerOrbitRepresentation::SurfaceShell;
-    CloudLayerDensityModel density_model = CloudLayerDensityModel::Procedural;
+    CloudLayerDensityModel density_model = CloudLayerDensityModel::SurfaceVolume;
     CloudLayerResolveMode resolve_mode = CloudLayerResolveMode::TerrainPost;
     CloudLayerDebugView debug_view = CloudLayerDebugView::Final;
     bool temporal_enabled = false;
@@ -470,9 +470,9 @@ class CloudLayerRuntime {
                                     const CloudLayerGeneratedShaderFiles& shaders,
                                     const CloudLayerConfig& config);
     void destroy_generated_resources();
-    void update_weather_texture(const cubey::vulkan::Device& device,
-                                cubey::vulkan::GpuRuntime& gpu, const ShaderStageFile& shader,
-                                const CloudLayerConfig& config, bool force = false);
+    void update_weather_texture(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                                const ShaderStageFile& shader, const CloudLayerConfig& config,
+                                bool force = false);
     void destroy_swapchain_resources();
     void create_swapchain_resources(const cubey::vulkan::Device& device,
                                     const CloudLayerRuntimeShaderFiles& shaders,
@@ -485,23 +485,23 @@ class CloudLayerRuntime {
     }
     [[nodiscard]] const CloudLayerGeneratedResources& generated_resources() const;
 
-    void upload_frame_uniforms(FrameSlot frame_slot,
-                               const CloudLayerFrameUniforms& uniforms) const;
+    void upload_frame_uniforms(FrameSlot frame_slot, const CloudLayerFrameUniforms& uniforms) const;
     [[nodiscard]] CloudLayerRuntimeFrame declare_product(RenderGraphBuilder& graph,
                                                          VkExtent2D target_extent,
                                                          const CloudLayerConfig& config,
                                                          FrameSlot frame_slot,
                                                          CloudLayerFrameUniforms uniforms) const;
-    void declare_composite(RenderGraphBuilder& graph, RenderGraphTextureHandle target,
-                           const CloudLayerRuntimeFrame& frame, FrameSlot frame_slot,
-                           std::optional<RenderGraphTextureHandle> background = std::nullopt,
-                           std::optional<RenderGraphTextureHandle> scene_depth = std::nullopt) const;
-    void update_descriptors(const cubey::vulkan::Device& device, FrameSlot frame_slot,
-                            const CompiledRenderGraph& graph,
-                            const RenderGraphResourceSet& resources,
-                            const CloudLayerRuntimeFrame& frame,
-                            std::optional<RenderGraphTextureHandle> background = std::nullopt,
-                            std::optional<RenderGraphTextureHandle> scene_depth = std::nullopt) const;
+    void
+    declare_composite(RenderGraphBuilder& graph, RenderGraphTextureHandle target,
+                      const CloudLayerRuntimeFrame& frame, FrameSlot frame_slot,
+                      std::optional<RenderGraphTextureHandle> background = std::nullopt,
+                      std::optional<RenderGraphTextureHandle> scene_depth = std::nullopt) const;
+    void
+    update_descriptors(const cubey::vulkan::Device& device, FrameSlot frame_slot,
+                       const CompiledRenderGraph& graph, const RenderGraphResourceSet& resources,
+                       const CloudLayerRuntimeFrame& frame,
+                       std::optional<RenderGraphTextureHandle> background = std::nullopt,
+                       std::optional<RenderGraphTextureHandle> scene_depth = std::nullopt) const;
     void invalidate_history();
     void complete_frame(FrameSlot frame_slot, const CloudLayerRuntimeFrame& frame);
 
@@ -519,12 +519,11 @@ class CloudLayerRuntime {
                                                          std::uint32_t ping_pong) const;
     [[nodiscard]] const Texture2D& history_metadata_texture(FrameSlot frame_slot,
                                                             std::uint32_t ping_pong) const;
-    [[nodiscard]] bool history_texture_valid(FrameSlot frame_slot,
-                                             std::uint32_t ping_pong) const;
+    [[nodiscard]] bool history_texture_valid(FrameSlot frame_slot, std::uint32_t ping_pong) const;
     [[nodiscard]] bool history_extent_matches(VkExtent2D extent) const noexcept;
-    [[nodiscard]] CloudLayerTemporalUniforms temporal_frame_uniforms(
-        FrameSlot frame_slot, CloudLayerFrameUniforms current,
-        std::uint32_t history_read_index) const;
+    [[nodiscard]] CloudLayerTemporalUniforms
+    temporal_frame_uniforms(FrameSlot frame_slot, CloudLayerFrameUniforms current,
+                            std::uint32_t history_read_index) const;
 
     void create_history_textures(const cubey::vulkan::Device& device, VkExtent2D extent,
                                  std::uint32_t frame_slot_count);
@@ -554,8 +553,7 @@ class CloudLayerRuntime {
     std::uint32_t temporal_frame_index_ = 0;
 };
 
-[[nodiscard]] vulkan::SamplerConfig cloud_layer_repeat_sampler_config(
-    std::uint32_t mip_levels = 1);
+[[nodiscard]] vulkan::SamplerConfig cloud_layer_repeat_sampler_config(std::uint32_t mip_levels = 1);
 [[nodiscard]] std::uint32_t cloud_layer_generated_volume_mip_count(std::uint32_t size);
 [[nodiscard]] Texture3DConfig cloud_layer_volume_texture_config(std::uint32_t size);
 [[nodiscard]] Texture2DConfig cloud_layer_weather_texture_config();
@@ -579,8 +577,8 @@ cloud_layer_blue_noise_texture_config(ShaderStageFile shader);
 [[nodiscard]] CloudLayerViewRegime cloud_layer_view_regime(const CloudLayerViewRegimeInput& input);
 [[nodiscard]] CloudLayerWeatherPushConstants
 cloud_layer_weather_push_constants(const CloudLayerConfig& config);
-[[nodiscard]] bool cloud_layer_weather_generation_equal(
-    const CloudLayerWeatherPushConstants& lhs, const CloudLayerWeatherPushConstants& rhs);
+[[nodiscard]] bool cloud_layer_weather_generation_equal(const CloudLayerWeatherPushConstants& lhs,
+                                                        const CloudLayerWeatherPushConstants& rhs);
 [[nodiscard]] CloudLayerGeneratedResources create_cloud_layer_generated_resources(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
     const CloudLayerGeneratedShaderFiles& shaders, const CloudLayerConfig& config);

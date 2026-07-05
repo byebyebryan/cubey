@@ -47,7 +47,7 @@ void main() {
 
     int density_model = int(clamp(weather_params.density_model, 0.0, 2.0) + 0.5);
     if (density_model == CLOUD_DENSITY_REF_DENSITY ||
-        density_model == CLOUD_DENSITY_CLOUD_REF_COMPATIBLE) {
+        density_model == CLOUD_DENSITY_SURFACE_VOLUME) {
         float ref_cloud_type =
             clamp(cloud_perlin_noise_2d(shifted_uv, 100.0 * 3.0, 0.3, 0.7, 10), 0.0, 1.0);
         float ref_coverage = cloud_perlin_noise_2d(uv, 100.0 * 0.95, 0.8, 0.5, 4);
