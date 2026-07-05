@@ -751,7 +751,7 @@ void test_terrain_product_emits_required_fields() {
     const cubey::projects::terrain::TerrainRegionProduct product =
         cubey::projects::terrain::generate_terrain_region(small_config());
 
-    const std::array<std::string_view, 55> required_fields{
+    const std::array<std::string_view, 58> required_fields{
         cubey::projects::terrain::kTerrainFieldHeightM,
         cubey::projects::terrain::kTerrainFieldPreProcessHeightM,
         cubey::projects::terrain::kTerrainFieldBaseElevation,
@@ -772,6 +772,9 @@ void test_terrain_product_emits_required_fields() {
         cubey::projects::terrain::kTerrainFieldPeakSupport,
         cubey::projects::terrain::kTerrainFieldMountainRidgeSkeleton,
         cubey::projects::terrain::kTerrainFieldMountainRidgeInfluence,
+        cubey::projects::terrain::kTerrainFieldMountainRidgeBody,
+        cubey::projects::terrain::kTerrainFieldMountainValleyFloor,
+        cubey::projects::terrain::kTerrainFieldMountainValleyIncisionM,
         cubey::projects::terrain::kTerrainFieldMountainUplift,
         cubey::projects::terrain::kTerrainFieldRidgeUplift,
         cubey::projects::terrain::kTerrainFieldPeakUplift,
@@ -1333,6 +1336,92 @@ void test_terrain_mountain_macro_fields_are_hierarchical() {
             "mountain high points should have surrounding summit support");
 }
 
+void test_terrain_mountain_ridge_valley_process_is_bounded() {
+    cubey::projects::terrain::TerrainRegionConfig config = small_config();
+    config.grid_width = 257;
+    config.grid_height = 257;
+    const cubey::projects::terrain::TerrainRegionProduct baseline =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    config.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeTemperateMountainRangeStress);
+    const cubey::projects::terrain::TerrainRegionProduct mountain =
+        cubey::projects::terrain::generate_terrain_region(config);
+
+    const auto& baseline_ridge_body =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainRidgeBody);
+    const auto& baseline_valley_floor =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainValleyFloor);
+    const auto& baseline_valley_incision =
+        field(baseline, cubey::projects::terrain::kTerrainFieldMountainValleyIncisionM);
+    require(baseline_ridge_body.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain ridge body inactive");
+    require(baseline_valley_floor.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain valley floor inactive");
+    require(baseline_valley_incision.summarize().max == 0.0F,
+            "default terrain recipe should keep mountain valley incision inactive");
+
+    const auto& profile =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainProfileHeightM);
+    const auto& ridge_skeleton =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgeSkeleton);
+    const auto& ridge_body =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainRidgeBody);
+    const auto& valley_floor =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainValleyFloor);
+    const auto& valley_incision =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainValleyIncisionM);
+    const auto& summit =
+        field(mountain, cubey::projects::terrain::kTerrainFieldMountainSummitCore);
+
+    const cubey::procedural::ScalarFieldStats ridge_body_stats = ridge_body.summarize();
+    const cubey::procedural::ScalarFieldStats valley_floor_stats = valley_floor.summarize();
+    const cubey::procedural::ScalarFieldStats valley_incision_stats =
+        valley_incision.summarize();
+    require(ridge_body_stats.max > 0.40F,
+            "mountain ridge body should be visible as a process field");
+    require(valley_floor_stats.max > 0.35F,
+            "mountain valley floor should be visible as a process field");
+    require(valley_incision_stats.max > 12.0F && valley_incision_stats.max < 112.5F,
+            "mountain valley incision should be visible and bounded");
+
+    const std::size_t total_samples = ridge_body.sample_count();
+    const std::size_t ridge_skeleton_samples = count_active_samples(ridge_skeleton, 0.30F);
+    const std::size_t ridge_body_samples = count_active_samples(ridge_body, 0.18F);
+    const std::size_t valley_floor_samples = count_active_samples(valley_floor, 0.22F);
+    const std::size_t incision_samples = count_active_samples(valley_incision, 8.0F);
+    if (ridge_body_samples <= ridge_skeleton_samples * 5U ||
+        ridge_body_samples * 100U > total_samples * 64U) {
+        throw std::runtime_error(
+            "mountain ridge body should broaden crests without filling the patch: body=" +
+            std::to_string(ridge_body_samples) + " skeleton=" +
+            std::to_string(ridge_skeleton_samples) + " total=" + std::to_string(total_samples));
+    }
+    if (valley_floor_samples * 100U < total_samples * 3U ||
+        valley_floor_samples * 100U > total_samples * 58U) {
+        throw std::runtime_error(
+            "mountain valley floor should be broad but bounded: samples=" +
+            std::to_string(valley_floor_samples) + " total=" + std::to_string(total_samples));
+    }
+    if (incision_samples * 100U < total_samples ||
+        incision_samples * 100U > total_samples * 45U) {
+        throw std::runtime_error(
+            "mountain valley incision should affect a bounded reviewable area: samples=" +
+            std::to_string(incision_samples) + " total=" + std::to_string(total_samples));
+    }
+
+    const float ridge_body_average_height = average_where(profile, ridge_body, 0.36F);
+    const float valley_floor_average_height = average_where(profile, valley_floor, 0.32F);
+    require(ridge_body_average_height > valley_floor_average_height + 70.0F,
+            "mountain ridge bodies should stand above processed valley floors");
+
+    const float valley_floor_average_incision =
+        average_where(valley_incision, valley_floor, 0.34F);
+    const float summit_average_incision = average_where(valley_incision, summit, 0.30F);
+    require(valley_floor_average_incision > summit_average_incision + 5.0F,
+            "mountain valley incision should avoid summit cores");
+}
+
 void test_terrain_mountain_gully_diagnostic_is_bounded() {
     cubey::projects::terrain::TerrainRegionConfig config = small_config();
     config.grid_width = 257;
@@ -1853,6 +1942,16 @@ void test_terrain_debug_export_writes_png() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_ridge_influence") ==
                 cubey::projects::terrain::TerrainDebugView::MountainRidgeInfluence,
             "terrain debug view should parse mountain ridge influence aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_ridge_body") ==
+                cubey::projects::terrain::TerrainDebugView::MountainRidgeBody,
+            "terrain debug view should parse mountain ridge body aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_valley_floor") ==
+                cubey::projects::terrain::TerrainDebugView::MountainValleyFloor,
+            "terrain debug view should parse mountain valley floor aliases");
+    require(cubey::projects::terrain::terrain_debug_view_from_name(
+                "mountain_valley_incision") ==
+                cubey::projects::terrain::TerrainDebugView::MountainValleyIncision,
+            "terrain debug view should parse mountain valley incision aliases");
     require(cubey::projects::terrain::terrain_debug_view_from_name("mountain_uplift") ==
                 cubey::projects::terrain::TerrainDebugView::MountainUplift,
             "terrain debug view should parse mountain uplift aliases");
@@ -2088,6 +2187,15 @@ void test_terrain_debug_export_writes_review_set() {
     require(std::find(outputs.begin(), outputs.end(), "mountain-saddle-gate.png") !=
                 outputs.end(),
             "terrain debug manifest should list mountain saddle gate PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "mountain-ridge-body.png") !=
+                outputs.end(),
+            "terrain debug manifest should list mountain ridge body PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "mountain-valley-floor.png") !=
+                outputs.end(),
+            "terrain debug manifest should list mountain valley floor PNG output");
+    require(std::find(outputs.begin(), outputs.end(), "mountain-valley-incision.png") !=
+                outputs.end(),
+            "terrain debug manifest should list mountain valley incision PNG output");
 
     const nlohmann::json& height_stats =
         manifest.at("fields").at(std::string(cubey::projects::terrain::kTerrainFieldHeightM));
@@ -2129,6 +2237,15 @@ void test_terrain_debug_export_writes_review_set() {
     require(manifest.at("fields").contains(
                 std::string(cubey::projects::terrain::kTerrainFieldMountainSaddleGate)),
             "terrain debug manifest should include mountain saddle gate stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldMountainRidgeBody)),
+            "terrain debug manifest should include mountain ridge body stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldMountainValleyFloor)),
+            "terrain debug manifest should include mountain valley floor stats");
+    require(manifest.at("fields").contains(
+                std::string(cubey::projects::terrain::kTerrainFieldMountainValleyIncisionM)),
+            "terrain debug manifest should include mountain valley incision stats");
 
     std::filesystem::remove_all(output_dir);
 }
@@ -2324,6 +2441,7 @@ int main() {
     test_terrain_stress_recipe_expands_river_network();
     test_terrain_mountain_range_stress_recipe_exposes_mountain_driver();
     test_terrain_mountain_macro_fields_are_hierarchical();
+    test_terrain_mountain_ridge_valley_process_is_bounded();
     test_terrain_mountain_gully_diagnostic_is_bounded();
     test_terrain_mountain_thermal_talus_diagnostic_is_bounded();
     test_terrain_review_river_coverage_is_meaningful();
