@@ -169,6 +169,7 @@ ctest --preset dev -R terrain --output-on-failure
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset profile --terrain-preview-surface height --output outputs/terrain/mountain-range-stress/mountain-profile.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-post-erosion-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-height-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-surface-height.png
 ```
 
 Scalar debug PNG exports hand completed RGBA buffers to the shared
@@ -303,14 +304,17 @@ mesh through the normal Vulkan windowed/headless app path. For the mountain
 stress recipe, `mountain-perspective.png` is the primary 3D read for peak,
 basin, and valley hierarchy, while `mountain-profile.png` is a lower side view
 for checking whether peak height and valley contrast are plausible.
+`mountain-surface-height.png` is the near-ground shape diagnostic; keep it in the
+normal mountain review bundle because it exposes smooth foreground slopes,
+rounded peaks, and missing local detail that oblique views can hide.
 `mountain-post-erosion-perspective.png` renders the diagnostic
 `post_erosion_height_m` surface with height color so process detail can be
 compared against the actual `height_m` product. The current
-`outputs/terrain/mountain-range-stress` directory holds 54 PNGs after the
-scalar set plus oblique, profile, post-erosion, and height-colored perspective
-captures are generated. `manifest.json` is not a rendered view; use it to check
-the recipe, seed, generator revision, grid size, field ranges, and content hash
-for a scalar capture directory.
+`outputs/terrain/mountain-range-stress` directory holds 58 PNGs after the
+scalar set plus oblique, profile, surface-height, post-erosion, and
+height-colored perspective captures are generated. `manifest.json` is not a
+rendered view; use it to check the recipe, seed, generator revision, grid size,
+field ranges, and content hash for a scalar capture directory.
 
 The optional `temperate-mountain-river-stress` recipe keeps the same source
 terrain and routing diagnostics but uses a graph-first visible river source for

@@ -23,6 +23,7 @@ mountain ridge/valley process pass.
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset profile --terrain-preview-surface height --output outputs/terrain/mountain-range-stress/mountain-profile.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-height-perspective.png
 ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-post-erosion-perspective.png
+./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-surface-height.png
 ```
 
 Fixed-extent mountain resolution audit commands keep the patch at roughly
@@ -58,6 +59,9 @@ as needed after the scalar set; the 513 mountain stress directory also includes
 `mountain-perspective.png`,
 `mountain-height-perspective.png`, `mountain-profile.png`, and
 `mountain-post-erosion-perspective.png` from the renderer-backed preview app.
+`mountain-surface-height.png` is now promoted into the normal mountain review
+bundle because it exposes near-ground smoothness, rounded peaks, and missing
+local detail more directly than the oblique captures.
 The 1025 mountain stress set remains scalar-only unless a matching preview
 capture is explicitly generated.
 
@@ -218,15 +222,18 @@ erosion, and talus deposition.
   elevation-first ramp with softer hillshade and subtle ridge/peak tinting,
   without river, wetness, vegetation, or material overlays.
 - `mountain-process-review.png`: compact source/product/process comparison.
-  The panels are profile/source height, final height, post-erosion height,
-  slope instability, thermal erosion delta, and talus deposition. Use this as
-  the first revision 30 mountain review image.
+  Revision 31 uses a 3x3 panel layout: profile/source height, ridge body,
+  valley floor, valley incision, final height, post-erosion height, slope
+  instability, thermal erosion delta, and talus deposition.
 - `mountain-perspective.png`: renderer-backed oblique mesh capture from
   `terrain_preview`. Use this to judge whether broad support, basins, valleys,
   ridges, and high peaks are readable in 3D.
 - `mountain-profile.png`: renderer-backed low side view from `terrain_preview`.
   Use this to check height contrast and to expose the current sharp-peak
   character that flat scalar PNGs can hide.
+- `mountain-surface-height.png`: renderer-backed surface camera with height
+  color. Use this as the foreground/detail check; it makes rounded peaks, smooth
+  slopes, and missing local terrain detail obvious.
 - `mountain-post-erosion-perspective.png`: renderer-backed diagnostic surface
   from `post_erosion_height_m`. In revision 30 this includes bounded gully,
   thermal erosion, and talus deposition review effects; it is not the product
