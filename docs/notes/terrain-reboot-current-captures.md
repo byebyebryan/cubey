@@ -48,13 +48,16 @@ Fixed-extent mountain resolution audit commands keep the patch at roughly
 ```
 
 The primary review images are `513x513` PNGs under `outputs/`, with `1025x1025`
-stress captures for larger river-network and mountain-driver inspection. The
-refreshed revision 31 scalar baseline keeps `outputs/terrain/current-river-network`,
-`outputs/terrain/stress-river-network`, and
-`outputs/terrain/mountain-range-stress` on 58 product fields and 53 scalar/review
-views. The current river manifest reports `river_coverage = 0.00736`, the stress
-river manifest reports `river_coverage = 0.02117`, and the mountain stress
-manifest reports `height_m.span = 1750.187`. Perspective captures are generated
+stress captures for larger river-network and mountain-driver inspection.
+Revision 32 expands the scalar contract to 64 product fields and 59 scalar/review
+views. The refreshed mountain stress manifest reports `height_m.span = 2470.630`,
+`mountain_visual_source_height_m.span = 2387.518`,
+`mountain_profile_height_m.span = 2380.816`,
+`mountain_ridged_chain.mean = 0.2343`, and
+`mountain_morphology_delta_m.max = 47.635`. The 1025 mountain stress manifest
+reports `height_m.span = 2539.712`,
+`mountain_visual_source_height_m.span = 2451.250`, and
+`mountain_morphology_delta_m.max = 55.093`. Perspective captures are generated
 as needed after the scalar set; the 513 mountain stress directory also includes
 `mountain-perspective.png`,
 `mountain-height-perspective.png`, `mountain-profile.png`, and
@@ -62,8 +65,9 @@ as needed after the scalar set; the 513 mountain stress directory also includes
 `mountain-surface-height.png` is now promoted into the normal mountain review
 bundle because it exposes near-ground smoothness, rounded peaks, and missing
 local detail more directly than the oblique captures.
-The 1025 mountain stress set remains scalar-only unless a matching preview
-capture is explicitly generated.
+The 1025 mountain stress set is scalar-first, with
+`mountain-surface-height.png` generated when a higher-resolution surface check is
+needed.
 
 The fixed-extent resolution audit under
 `outputs/terrain/resolution-mountain-16km` keeps the patch near `16.384km` and
@@ -210,6 +214,22 @@ scalar/review outputs, `height_m.span = 1750.187`,
 `mountain-process-review.png` now compares profile, ridge body, valley floor,
 valley incision, final height, post-erosion height, instability, thermal
 erosion, and talus deposition.
+Revision 32 pivots the mountain stress recipe to
+`mountain_visual_source_height_m`, `mountain_ridged_chain`,
+`mountain_detail_weight`, `mountain_morphology_delta_m`, `mountain_crease_map`,
+and `mountain_ridge_map`. The visible mountain height now comes from the ridged
+visual source plus bounded morphology; the older graph ridge/valley fields stay
+diagnostic and no longer apply visible valley incision. The regenerated 513
+mountain manifest reports revision 32, 64 fields, 59 scalar/review outputs,
+`height_m.span = 2470.630`,
+`mountain_visual_source_height_m.span = 2387.518`,
+`mountain_profile_height_m.span = 2380.816`,
+`mountain_ridged_chain.mean = 0.2343`,
+`mountain_morphology_delta_m.max = 47.635`,
+`mountain_crease_map.mean = 0.0382`, and `mountain_ridge_map.mean = 0.0650`.
+The revised `mountain-process-review.png` compares visual source, ridged chain,
+detail weight, morphology delta, final height, post-erosion height, crease map,
+ridge map, and slope.
 
 ## What To Inspect
 

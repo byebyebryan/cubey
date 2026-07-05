@@ -73,3 +73,24 @@ The refreshed capture set should include:
 The expected result is not finished mountains. The expected result is a more
 coherent source: broader range buildup, visible but not fin-like ridges, stronger
 near-field relief, and fewer obvious graph/smoothing artifacts than revision 31.
+
+## Revision 32 Result
+
+Revision 32 landed the visual source and bounded morphology fields. The older
+graph ridge/valley fields remain exported diagnostics, but
+`mountain_valley_incision_m` is no longer subtracted from the visible mountain
+height because its scalar view still reads like graph topology. The visible
+stress height now follows:
+
+```text
+mountain_visual_source_height_m
+  -> bounded mountain_morphology_delta_m
+  -> mountain_profile_height_m / height_m
+```
+
+The regenerated 513 mountain stress manifest reports 64 fields, 59 scalar/debug
+views, `height_m.span = 2470.630`,
+`mountain_visual_source_height_m.span = 2387.518`,
+`mountain_profile_height_m.span = 2380.816`, and
+`mountain_morphology_delta_m.max = 47.635`. The 1025 surface capture was also
+refreshed locally for close-range scale checking.
