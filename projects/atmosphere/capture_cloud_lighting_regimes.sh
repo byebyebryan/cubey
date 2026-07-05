@@ -10,6 +10,8 @@ FRAMES="${FRAMES:-2}"
 PRESET="${PRESET:-reference-parity}"
 VIEW_STEPS="${VIEW_STEPS:-64}"
 RESOLVE_RADIUS_PX="${RESOLVE_RADIUS_PX:-1.5}"
+AFTERGLOW_STRENGTH="${AFTERGLOW_STRENGTH:-0.75}"
+AFTERGLOW_HOUR="${AFTERGLOW_HOUR:-18.1}"
 
 mkdir -p "${OUT_DIR}/surface-up" "${OUT_DIR}/horizon"
 
@@ -33,7 +35,9 @@ write_header() {
         printf -- '- Frames: %s\n' "${FRAMES}"
         printf -- '- Weather preset: %s\n' "${PRESET}"
         printf -- '- View steps: %s\n' "${VIEW_STEPS}"
-        printf -- '- Resolve radius px: %s\n\n' "${RESOLVE_RADIUS_PX}"
+        printf -- '- Resolve radius px: %s\n' "${RESOLVE_RADIUS_PX}"
+        printf -- '- Afterglow showcase strength: %s\n' "${AFTERGLOW_STRENGTH}"
+        printf -- '- Afterglow showcase hour: %s\n\n' "${AFTERGLOW_HOUR}"
         printf '| Capture | View | Case | Debug | Args |\n'
         printf '|---|---|---|---|---|\n'
     } >"${INDEX}"
@@ -81,6 +85,9 @@ capture_atmosphere() {
         --camera-pitch-offset-deg "${pitch}"
         --no-reference-geometry
     )
+    if ((${#CASE_EXTRA_ARGS[@]} > 0)); then
+        local_args+=("${CASE_EXTRA_ARGS[@]}")
+    fi
 
     "${APP}" \
         --headless \
@@ -126,13 +133,18 @@ write_labeled_sheet() {
 
 write_header
 
-for case_name in noon twilight night; do
+for case_name in noon twilight afterglow night; do
+    CASE_EXTRA_ARGS=()
     case "${case_name}" in
     noon)
         hour="14.0"
         ;;
     twilight)
         hour="17.8"
+        ;;
+    afterglow)
+        hour="${AFTERGLOW_HOUR}"
+        CASE_EXTRA_ARGS=(--cloud-afterglow-strength "${AFTERGLOW_STRENGTH}")
         ;;
     night)
         hour="1.0"
