@@ -31,6 +31,7 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/vulkan/sampler.h>
 #include <cubey/vulkan/vk_check.h>
 
@@ -67,6 +68,7 @@ constexpr float kBaseYaw = cubey::render::kAtmosphereEnvironmentSunriseViewYawRa
 constexpr float kBasePitch = cubey::render::kAtmosphereEnvironmentSunriseViewPitchRadians;
 constexpr float kDefaultFovyRadians = 65.0F * (std::numbers::pi_v<float> / 180.0F);
 constexpr VkFormat kAtmosphereSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+constexpr std::uint32_t kAtmosphereGpuProfilerPassCapacity = 16U;
 
 struct ResolvedNightSkyAtlas {
     float procedural_variation = 0.0F;
@@ -198,6 +200,7 @@ class AtmosphereApp {
                         .latest_frame_ms = latest_frame_ms_,
                         .process = process_stats_.sample(),
                         .device_memory_budget = context.device().device_memory_budget(),
+                        .gpu_timings = latest_gpu_timings(),
                     },
                 .render_view = render_view_,
                 .reset_requested = reset_requested_,
@@ -327,6 +330,18 @@ class AtmosphereApp {
         return sample;
     }
 
+    [[nodiscard]] const std::vector<cubey::vulkan::GpuPassTiming>& latest_gpu_timings() const {
+        if (!gpu_profiler_.has_value()) {
+            static const std::vector<cubey::vulkan::GpuPassTiming> empty;
+            return empty;
+        }
+        return gpu_profiler_->latest_timings();
+    }
+
+    [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* gpu_profiler() {
+        return gpu_profiler_.has_value() ? &gpu_profiler_.value() : nullptr;
+    }
+
     void create_gpu_resources(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
                               VkFormat color_format, VkExtent2D extent,
                               std::uint32_t frame_slot_count) {
@@ -419,6 +434,7 @@ class AtmosphereApp {
                                                      .frame_slot_count = frame_slot_count,
                                                  });
         graph_executor_.resize(frame_slot_count);
+        gpu_profiler_.emplace(device, frame_slot_count, kAtmosphereGpuProfilerPassCapacity);
     }
 
     void update_atmosphere_descriptor_bindings(cubey::vulkan::Device& device) const {
@@ -645,6 +661,7 @@ class AtmosphereApp {
     void destroy_global_resources() {
         shutdown_atlas_jobs();
         graph_executor_.clear();
+        gpu_profiler_.reset();
         hdr_post_frame_.destroy();
         cloud_runtime_.destroy_swapchain_resources();
         cloud_runtime_.destroy_generated_resources();
@@ -958,6 +975,10 @@ class AtmosphereApp {
                                  cubey::render::RenderGraphTextureState target_initial_state,
                                  cubey::render::RenderGraphTextureState target_final_state,
                                  cubey::render::RenderGraphCommandBufferMode command_buffer_mode) {
+        cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler();
+        if (profiler != nullptr) {
+            profiler->collect(frame_slot.index);
+        }
         hdr_post_frame_.upload(frame_slot, post_uniforms());
         std::optional<cubey::render::CloudLayerFrameUniforms> cloud_uniforms{};
         if (cloud_layer_enabled()) {
@@ -966,15 +987,8 @@ class AtmosphereApp {
         }
         const CompiledAtmosphereGraph render_graph = current_render_graph(
             target, frame_slot, target_initial_state, target_final_state, cloud_uniforms);
-        graph_executor_.record(
-            cubey::render::RenderGraphFrameRecordInfo{
-                .device = &device,
-                .command_buffer = command_buffer,
-                .frame_slot = frame_slot,
-                .label = "vkEndCommandBuffer atmosphere",
-                .command_buffer_mode = command_buffer_mode,
-            },
-            render_graph.graph,
+
+        const auto prepare_graph_resources =
             [this, &device, frame_slot,
              &render_graph](const cubey::render::RenderGraphResourceSet& resources) {
                 update_post_descriptor(device, frame_slot, render_graph.graph, resources,
@@ -985,7 +999,44 @@ class AtmosphereApp {
                 cloud_runtime_.update_descriptors(device, frame_slot, render_graph.graph, resources,
                                                   render_graph.cloud,
                                                   render_graph.atmosphere_scene_color);
-            });
+            };
+
+        if (profiler != nullptr &&
+            command_buffer_mode == cubey::render::RenderGraphCommandBufferMode::BeginAndEnd) {
+            const cubey::vulkan::CommandRecorder recorder(command_buffer);
+            recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            profiler->begin_frame(command_buffer, frame_slot.index);
+            graph_executor_.record(
+                cubey::render::RenderGraphFrameRecordInfo{
+                    .device = &device,
+                    .command_buffer = command_buffer,
+                    .frame_slot = frame_slot,
+                    .label = "vkEndCommandBuffer atmosphere",
+                    .command_buffer_mode =
+                        cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+                    .profiler = profiler,
+                },
+                render_graph.graph, prepare_graph_resources);
+            recorder.end("vkEndCommandBuffer atmosphere");
+            if (render_graph.clouds_enabled) {
+                cloud_runtime_.complete_frame(frame_slot, render_graph.cloud);
+            }
+            return;
+        }
+
+        if (profiler != nullptr) {
+            profiler->begin_frame(command_buffer, frame_slot.index);
+        }
+        graph_executor_.record(
+            cubey::render::RenderGraphFrameRecordInfo{
+                .device = &device,
+                .command_buffer = command_buffer,
+                .frame_slot = frame_slot,
+                .label = "vkEndCommandBuffer atmosphere",
+                .command_buffer_mode = command_buffer_mode,
+                .profiler = profiler,
+            },
+            render_graph.graph, prepare_graph_resources);
         if (render_graph.clouds_enabled) {
             cloud_runtime_.complete_frame(frame_slot, render_graph.cloud);
         }
@@ -1061,6 +1112,7 @@ class AtmosphereApp {
     bool cloud_global_resources_created_ = false;
     std::optional<cubey::render::Mesh> moon_mesh_;
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
+    std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
     cubey::jobs::JobSystem atlas_jobs_{2};
     std::optional<cubey::jobs::JobHandle<LunarSurfaceMap>> pending_lunar_surface_map_;
     std::optional<PendingNightSkyAtlasJob> pending_night_sky_atlas_;

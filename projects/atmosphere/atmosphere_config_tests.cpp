@@ -1230,6 +1230,12 @@ int main() {
         read_text_file(repo_root / "src/cubey/render/lunar_surface_map.cpp");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
     const std::string render_cmake_source = read_text_file(repo_root / "src/cubey/CMakeLists.txt");
+    require_contains(app_source, "GpuTimestampProfiler",
+                     "atmosphere app should own GPU timestamp diagnostics");
+    require_contains(app_source, ".gpu_timings = latest_gpu_timings()",
+                     "atmosphere performance UI should show GPU pass timings");
+    require_contains(app_source, ".profiler = profiler",
+                     "atmosphere render graph should record GPU pass timings");
     require_contains(shared_environment_header, "struct AtmosphereEnvironmentFrameUniforms",
                      "shared atmosphere environment should define frame uniforms");
     require_contains(shared_environment_header,
