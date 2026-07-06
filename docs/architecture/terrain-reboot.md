@@ -224,9 +224,10 @@ Visual tests should follow:
 
 ## Current Implementation Checkpoint
 
-The reboot now has a CPU/reference `projects/terrain` product generator and
-headless PNG review path. The current slice is `temperate-mountain-river` over a
-local region. Generator revision `26` emits deterministic source fields,
+The preserved workbench now lives as `projects/terrain_workbench_legacy`. It has
+a CPU/reference terrain product generator and headless PNG review path. The
+current slice is `temperate-mountain-river` over a local region. Generator
+revision `26` emits deterministic source fields,
 explicit mountain support/ridge/peak/uplift fields, height/slope analysis,
 repaired routing diagnostics, smoothed active river trunk and tributary masks,
 pre-process and carved height fields, channel/valley incision diagnostics,
@@ -360,7 +361,8 @@ elevation instead of the generic regional tilt, increases peak uplift, broadens
 ridge shoulders, gates residual detail against mountain structure, and retunes
 `mountain-relief.png` around a softer elevation-first ramp.
 
-The terrain workbench now also has a renderer-backed `terrain_preview` app. It
+The terrain workbench also has a renderer-backed
+`terrain_workbench_preview_legacy` app. It
 consumes `TerrainRegionProduct`, adapts `height_m` into an indexed local
 heightfield mesh with normals and review colors, and renders through the normal
 Vulkan windowed/headless host. It is a preview consumer for judging relief in
@@ -483,7 +485,7 @@ Known limitations:
 - The final PNG is an inspectable debug composition, not the target renderer.
   Use `mountain-relief.png` for mountain-form review because `final.png` still
   includes the river/material overlays.
-- `terrain_preview` is a local mesh preview only. It improves peak/basin
+- `terrain_workbench_preview_legacy` is a local mesh preview only. It improves peak/basin
   readability, but it deliberately does not solve tiled scale, LOD, water,
   foliage, atmosphere integration, or terrain algorithm quality.
 - The `surface` and `surface-low` preview cameras make foreground terrain

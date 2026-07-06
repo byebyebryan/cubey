@@ -9,8 +9,10 @@ process fields.
 
 ## Current Position
 
-`projects/terrain` is the active reboot workbench. It is allowed to replace its
-early contracts as long as the data-first direction remains intact:
+`projects/terrain_workbench_legacy` preserves this roadmap and the old reboot
+workbench evidence. New visual terrain rendering work should happen in
+`projects/terrain_ref` unless this note is intentionally revived for product
+field work. The data-first direction remains:
 
 ```text
 coherent source fields -> terrain process fields -> product fields -> consumers
@@ -104,7 +106,7 @@ The detailed extraction and guardrails are in
 
 ## Foundation Boundary
 
-Keep these helpers in `projects/terrain` for now. They are domain-specific
+Keep these helpers in `projects/terrain_workbench_legacy` for now. They are domain-specific
 terrain process operations, not yet general procedural foundation APIs. Promote
 them into `cubey::procedural` only after more than one consumer needs the same
 contract and the names are no longer terrain-specific.

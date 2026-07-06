@@ -5,8 +5,9 @@ Date: 2026-07-05
 This note defines the first TerrainEngine reference lane for the terrain reboot.
 The goal is not to absorb the whole `/home/bryan/code/ref/TerrainEngine-OpenGL`
 application. It is to create a known-good visual midpoint inside
-`projects/terrain` that we can compare against while the current river and
-mountain process experiments remain available for diagnostics.
+`projects/terrain_ref` that we can compare against while the legacy river and
+mountain process experiments remain available for diagnostics in
+`projects/terrain_workbench_legacy`.
 
 ## Source
 
@@ -163,7 +164,7 @@ represented by `material_soil`.
 
 ## Runtime Reference Step
 
-Add a `terrain_preview` runtime mode for `terrain-engine-ref`.
+Add a `terrain_ref` runtime mode for `terrain-engine-ref`.
 
 The mode should:
 
@@ -187,8 +188,7 @@ material rules give a better visual baseline than the process-heavy debug mesh.
 
 The first runtime-reference implementation adds:
 
-- `--terrain-preview-runtime terrain-engine-ref`, gated to the
-  `terrain-engine-ref` recipe;
+- `projects/terrain_ref`, gated to the `terrain-engine-ref` recipe;
 - a Cubey `clipmap_grid_2d` review mesh with vertex height displaced in GLSL;
 - shared C++/GLSL TerrainEngine-inspired height and material rules;
 - `--terrain-water-surface` / `--no-terrain-water-surface` review toggles for

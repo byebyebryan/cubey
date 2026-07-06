@@ -70,8 +70,8 @@ the detailed foundation notes under `docs/architecture/`.
   `terrain-diffusion`, with lessons for code-centric terrain recipes, field
   sets, tile contracts, diagnostics, and ML non-goals.
 - [Terrain reboot current captures](terrain-reboot-current-captures.md):
-  current `projects/terrain` 513 PNG review set, what to inspect, and river
-  driver limitations.
+  archived `projects/terrain_workbench_legacy` PNG review set, what to
+  inspect, and river driver limitations.
 - [Terrain project map](terrain-project-map.md): lane map for source drivers,
   process operators, product fields, review consumers, integration adapters, and
   staged terrain work after the reference and ShaderToy passes.
