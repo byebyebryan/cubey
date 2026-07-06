@@ -180,7 +180,7 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
 
     static_cast<void>(cubey::host::draw_cloud_environment_controls(
         ui.config.clouds,
-        {.help = "Shared cloud layer rendered over the atmosphere background."}));
+        {.help = "Shared surface Cloud V1 layer rendered over the atmosphere background."}));
 
     if (const cubey::host::ScopedImGuiGroup group{
             "Night sky",

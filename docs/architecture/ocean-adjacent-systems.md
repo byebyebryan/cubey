@@ -15,8 +15,8 @@ Build adjacent systems as separate projects first, then integrate them into the
 ocean renderer through small data and shader contracts:
 
 - `projects/atmosphere`: clear-sky scattering, atmosphere debug disks, and
-  horizon aerial perspective, now also hosting the production cloud/weather
-  layer through the shared cloud runtime.
+  horizon aerial perspective, now also hosting the surface-only Cloud V1 layer
+  through the shared cloud runtime.
 - `projects/procedural_terrain_legacy`: heightfield terrain, bathymetry, shoreline
   masks, material masks, and terrain/scene depth rendering.
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,

@@ -104,23 +104,23 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
             mark_changed(imgui_enum_combo(
                              "Density model", layer.density_model, kCloudEnvironmentDensityModels,
                              cloud_environment_density_model_name,
-                             "Cloud density and placement path. Surface-volume is the production "
-                             "local cloud path; experimental-aerial-orbit and ref-density are "
-                             "kept for unfinished scale/reference work."),
+                             "Cloud density and placement path. Surface-volume is the Cloud V1 "
+                             "production path; experimental-aerial-orbit and ref-density are "
+                             "deferred scale/reference paths."),
                          changed);
             if (config.show_aerial_orbit_controls) {
                 mark_changed(
                     imgui_enum_combo("Distance mode", layer.distance_mode,
                                      kCloudEnvironmentDistanceModes,
                                      cloud_environment_distance_mode_name,
-                                     "Local, orbit shell, or blended cloud distance behavior."),
+                                     "Deferred distance behavior. Cloud V1 should remain local."),
                     changed);
                 mark_changed(imgui_enum_combo(
                                  "Orbit repr.", layer.orbit_representation,
                                  kCloudEnvironmentOrbitRepresentations,
                                  cloud_environment_orbit_representation_name,
-                                 "Representation used when the camera is above the local volume "
-                                 "regime."),
+                                 "Deferred representation used when experimenting above the local "
+                                 "volume regime."),
                              changed);
             }
             mark_changed(
@@ -132,7 +132,8 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                                         "Render near and overhead volumetric cloud detail."),
                          changed);
             mark_changed(imgui_checkbox("Horizon layer", &layer.horizon_layer_enabled,
-                                        "Add experimental far cloud support near the horizon."),
+                                        "Enable the deferred far-horizon bridge. Cloud V1 defaults "
+                                        "leave this off."),
                          changed);
         }
 
@@ -236,7 +237,7 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                                             "Cloud self-shadow and prototype shadow weight."),
                          changed);
             mark_changed(imgui_slider_float("Horizon", &layer.horizon_strength, 0.0F, 2.0F, "%.2f",
-                                            "Dedicated far-horizon cloud layer strength."),
+                                            "Surface horizon fill/glow strength."),
                          changed);
             mark_changed(imgui_slider_float("Absorption", &layer.absorption, 0.0F, 2.0F, "%.2f",
                                             "Light absorption through dense cloud."),
@@ -298,49 +299,55 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
 
         if (config.show_aerial_orbit_controls) {
             if (const ScopedImGuiGroup subgroup{
-                    "Aerial / Orbit",
+                    "Deferred Aerial / Orbit",
                     {.default_open = false,
                      .level = 1,
-                     .help = "Experimental high-altitude and orbit shell transition controls."}};
+                     .help = "Later-version high-altitude and orbit shell controls; not part of "
+                             "Cloud V1."}};
                 subgroup) {
-                mark_changed(imgui_slider_float("Orbit start", &layer.orbit_transition_start_m,
-                                                0.0F, 300000.0F, "%.0f m",
-                                                "Altitude where orbit shell blend starts."),
+                mark_changed(imgui_slider_float(
+                                 "Orbit start", &layer.orbit_transition_start_m, 0.0F, 300000.0F,
+                                 "%.0f m", "Deferred altitude where orbit shell blend starts."),
                              changed);
                 mark_changed(imgui_slider_float("Orbit end", &layer.orbit_transition_end_m, 0.0F,
                                                 500000.0F, "%.0f m",
-                                                "Altitude where orbit shell blend is complete."),
+                                                "Deferred altitude where orbit shell blend is "
+                                                "complete."),
                              changed);
-                mark_changed(imgui_slider_float("Far start", &layer.far_shell_start_m, 0.0F,
-                                                300000.0F, "%.0f m",
-                                                "View distance where far shell contribution "
-                                                "starts."),
+                mark_changed(imgui_slider_float(
+                                 "Far start", &layer.far_shell_start_m, 0.0F, 300000.0F, "%.0f m",
+                                 "Deferred view distance where far shell contribution "
+                                 "starts."),
                              changed);
-                mark_changed(imgui_slider_float("Far end", &layer.far_shell_end_m, 0.0F, 500000.0F,
-                                                "%.0f m",
-                                                "View distance where far shell contribution is "
-                                                "full."),
-                             changed);
+                mark_changed(
+                    imgui_slider_float("Far end", &layer.far_shell_end_m, 0.0F, 500000.0F, "%.0f m",
+                                       "Deferred view distance where far shell contribution is "
+                                       "full."),
+                    changed);
                 mark_changed(imgui_slider_float("Far strength", &layer.far_shell_strength, 0.0F,
-                                                1.5F, "%.2f", "Far shell blend contribution."),
+                                                1.5F, "%.2f",
+                                                "Deferred far shell blend contribution."),
                              changed);
                 mark_changed(imgui_slider_float("Orbit detail", &layer.orbit_detail_strength, 0.0F,
                                                 1.0F, "%.2f",
-                                                "High-frequency detail retained by orbit clouds."),
+                                                "Deferred high-frequency detail retained by orbit "
+                                                "clouds."),
                              changed);
                 mark_changed(imgui_slider_float("Orbit density", &layer.orbit_density_scale, 0.0F,
-                                                2.0F, "%.2f", "Orbit shell density multiplier."),
+                                                2.0F, "%.2f",
+                                                "Deferred orbit shell density multiplier."),
                              changed);
                 mark_changed(imgui_slider_float("Orbit fill", &layer.orbit_fill, 0.0F, 2.0F, "%.2f",
-                                                "Broad orbit cloud fill bias."),
+                                                "Deferred broad orbit cloud fill bias."),
                              changed);
                 mark_changed(imgui_slider_float("Orbit motion", &layer.orbit_motion_strength, 0.0F,
                                                 4.0F, "%.2f",
-                                                "Motion multiplier for orbit weather advection."),
+                                                "Deferred motion multiplier for orbit weather "
+                                                "advection."),
                              changed);
-                mark_changed(imgui_slider_float("Orbit extinction", &layer.orbit_shell_extinction,
-                                                0.0F, 8.0F, "%.2f",
-                                                "Cloud-top shell optical depth multiplier."),
+                mark_changed(imgui_slider_float(
+                                 "Orbit extinction", &layer.orbit_shell_extinction, 0.0F, 8.0F,
+                                 "%.2f", "Deferred cloud-top shell optical depth multiplier."),
                              changed);
             }
         }

@@ -52,6 +52,8 @@ write_index_header() {
         printf -- '- Reference quality: %s\n' "${REFERENCE_QUALITY}"
         printf -- '- Weather preset: %s\n' "${PRESET}"
         printf -- '- Deep diagnostics: %s\n\n' "${DEEP}"
+        printf 'Cloud V1 acceptance is surface-only. High-oblique and orbit captures are '
+        printf 'deferred diagnostics, not production requirements.\n\n'
         printf '| Capture | Group | Args |\n'
         printf '|---|---|---|\n'
     } >"${INDEX}"

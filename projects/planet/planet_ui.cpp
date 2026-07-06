@@ -231,7 +231,7 @@ void draw_atmosphere_controls(PlanetUiContext& ui) {
 void draw_cloud_controls(PlanetUiContext& ui) {
     static_cast<void>(cubey::host::draw_cloud_environment_controls(
         ui.clouds_config,
-        {.help = "Shared cloud layer composited into the planet scene.",
+        {.help = "Deferred shared-cloud pressure path for planet-scale aerial/orbit work.",
          .show_regime_status = true,
          .regime = ui.cloud_view_regime,
          .scene_depth_occlusion_enabled = ui.cloud_scene_depth_occlusion_enabled,

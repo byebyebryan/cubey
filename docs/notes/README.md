@@ -52,6 +52,8 @@ the detailed foundation notes under `docs/architecture/`.
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
   captures and optimization candidates.
+- [Performance profiling](performance-profiling.md): repeatable host/GPU
+  profiling workflow and the cloud-vs-atmosphere comparison harness.
 - [Ocean performance notes](ocean-performance.md): current spectral ocean FFT
   cost model, observed map-size tradeoffs, and optimization guardrails.
 - [Ocean visual capture recipes](ocean-visual-captures.md): repeatable ocean

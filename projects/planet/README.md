@@ -83,7 +83,7 @@ The broader manual capture matrix is tracked in
 | Terrain field | Active procedural contract: CPU/shader sampling share height, named terrain bands, normal, water depth, shoreline, material, climate, roughness, and tile-summary vocabulary. It is not final art direction or streamed data. |
 | Local detail clipmap | Near-field surface layer: altitude-gated bounded local detail contributes to `final` surface view and can be inspected in local-detail and terrain-field views, with `local-detail-horizon` reserved for horizon-scale/full-range inspection. Local/global morphing, persistent topology, streaming, and ocean payloads remain deferred. |
 | Sky/celestial/atmosphere | Done as v1: shared mean solar clock/celestial mechanics, unified atmosphere sky with night-sky atlas sampling, depth-tested moon body geometry, HDR post, and view-aware exposure. Full LUT/transmittance atmosphere and true ephemeris remain deferred. |
-| Clouds | Integrated as opt-in v1: `--clouds` composites the shared cloud layer into the planet HDR scene, uses planet-scale view-regime selection, and exposes the shared cloud controls in the Planet UI. Surface/horizon occlusion, shadowing/reflections, and final transition tuning remain active work. |
+| Clouds | Deferred/experimental: `--clouds` can still composite the shared cloud layer into the planet HDR scene for pressure testing, but Cloud V1 is surface-only in atmosphere/ocean. Planet-scale aerial/orbit clouds, transitions, shadows, and reflections are later-version work. |
 | Streaming/cache | Deferred: current patch replans and lazy uploads are not an out-of-core streamer. Parent coverage remains renderable while future child/tile data is prepared. |
 | Ocean integration | Deferred: `projects/ocean` stays local-water focused until planet frame, LOD, terrain, and local-detail contracts are ready to host it as one surface layer. |
 | Config ownership | Deferred cleanup: planet still consumes shared `RunConfig`; a project-owned CLI/config facade should be extracted when the next project repeats this pressure. |
@@ -260,11 +260,12 @@ model for both sky and surface aerial perspective, so horizon and surface
 boundary behavior use one coefficient source. `Surface Haze`, `Haze Start`, and
 `Haze End` tune only the `analytic` distance-haze fallback; `Aerial Strength`
 blends the shared physical aerial perspective. Full LUT/transmittance caching
-and cloud/terrain shadows remain deferred. The cloud path is now an opt-in
-integration of the shared cloud layer: `--clouds` renders the shared
-weather/cloud product over the planet HDR scene with planet-scale view-regime
-selection and scene-depth-aware composition. Cloud shadows, reflections, and
-final transition polish remain follow-up work.
+and cloud/terrain shadows remain deferred. The cloud path is opt-in experimental
+pressure only: `--clouds` renders the shared weather/cloud product over the
+planet HDR scene with planet-scale view-regime selection and scene-depth-aware
+composition, but Cloud V1 does not claim planet-scale aerial/orbit quality yet.
+Cloud shadows, reflections, and final transition polish remain later-version
+work.
 Planet also consumes the shared atmosphere look profile. The windowed
 `Atmosphere > Sky Look` group edits Rayleigh, Mie, ozone, twilight strength, and
 horizon warmth live, and the same options can be seeded from CLI/config through

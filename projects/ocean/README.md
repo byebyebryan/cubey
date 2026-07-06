@@ -88,15 +88,15 @@ texture is bound for terrain depth/shore/slope debug views; enabling
 `--ocean-terrain-fields` only proves a small shoreline foam hook and is not yet
 full bathymetry, seafloor visibility, or surf-zone rendering.
 
-Final view now composites the shared surface-volume cloud layer over the
-atmosphere sky before ocean post. This is deliberately a sky/background
-integration only: clouds use ocean's camera, scene depth, and shared atmosphere
-sun/moon/ambient lighting, but the water material does not yet sample real cloud
-shadow, reflection, or clouded environment-lighting products. `--no-clouds`
-keeps the clear-sky ocean path for A/B checks. `cloud-shadow` remains the older
-procedural direct-light attenuation diagnostic packed through the shared
-`cubey::render::CloudLayerShadowProduct` shape, with strength, scale, and drift
-still exposed in the Shading panel.
+Final view now composites the shared Cloud V1 surface-volume layer over the
+atmosphere sky before ocean post. This is deliberately a surface-view
+sky/background integration only: clouds use ocean's camera, scene depth, and
+shared atmosphere sun/moon/ambient lighting, but the water material does not yet
+sample real cloud shadow, reflection, or clouded environment-lighting products.
+`--no-clouds` keeps the clear-sky ocean path for A/B checks. `cloud-shadow`
+remains the older procedural direct-light attenuation diagnostic packed through
+the shared `cubey::render::CloudLayerShadowProduct` shape, with strength, scale,
+and drift still exposed in the Shading panel.
 
 Cascades are now treated as regular slots. The default `Core` preset enables
 only C0 and C1, which are the reference-derived wave pair carrying the current

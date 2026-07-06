@@ -39,8 +39,11 @@ generated cloud resources, march/temporal/composite pipelines, render-graph
 products, descriptors, and temporal history; atmosphere consumes it in
 external-background mode so clouds are composited over the clear-sky background.
 The Clouds panel exposes the shared quality, sampling, layer, weather, shape,
-lighting, transition, and debug controls, and existing `clouds.*` config/CLI
-overrides apply here too. `--cloud-view-samples 2 --cloud-view-sample-mode
+lighting, and debug controls, and existing `clouds.*` config/CLI overrides
+apply here too. Cloud V1 is intentionally surface-only: `surface-volume`,
+`local`, Bayer sampling, single-frame sampling, and the terrain-post resolve are
+the production baseline. Aerial/high-altitude/orbit controls remain exposed only
+as deferred experiments. `--cloud-view-samples 2 --cloud-view-sample-mode
 single-frame` is the direct local-volume sampling reference; `--cloud-temporal
 --cloud-view-samples 2 --cloud-view-sample-mode temporal-phased` is the cheaper
 temporal reconstruction candidate. Cloud shadows and cloud-driven reflection or
@@ -68,9 +71,9 @@ The cloud review script writes a stable set of labeled captures plus
 `manifest.tsv`, `index.md`, and `contact-sheet.png` for quick visual comparison.
 It defaults to 1920x1080 half-quality captures, because half resolution is the
 current practical target; set `WIDTH`, `HEIGHT`, `QUALITY`, or `DEEP=1` for
-faster smoke runs or full-quality reference comparisons. The high-oblique row
-includes a no-cloud comparison so cloud handoff artifacts can be separated from
-the clear-sky background.
+faster smoke runs or full-quality reference comparisons. Surface rows define
+Cloud V1 acceptance. High-oblique/orbit rows, when present, are deferred
+diagnostics and should not drive V1 tuning.
 
 The edge resolve script is the focused A/B for cloud-edge artifacts. It captures
 `terrain-post` and `metadata-bilateral` resolve modes for `surface-up` and
@@ -80,7 +83,8 @@ diagnostics plus a secondary half-quality final check.
 The far-field handoff script focuses on horizon and grazing-ray artifacts. It
 captures full-resolution `surface-horizon`, `surface-up`, and `high-oblique`
 views with handoff, local-truncation, integrated-horizon, edge, and distance
-regime diagnostics.
+regime diagnostics. For Cloud V1, use the surface captures as the acceptance
+surface; high-oblique output is carried only as later-version evidence.
 
 The lighting-regime script focuses on the `surface-volume` surface cloud path.
 It captures noon, twilight, afterglow, and night in surface-up and horizon views

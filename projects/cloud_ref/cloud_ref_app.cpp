@@ -3,6 +3,7 @@
 #include "cloud_ref_config.h"
 
 #include <cubey/core/math.h>
+#include <cubey/core/profiling.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -18,6 +19,7 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/gpu_runtime.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/immediate_commands.h>
 #include <cubey/vulkan/sampler.h>
@@ -58,6 +60,7 @@ constexpr std::uint32_t kCloudRefComputeGroupSize = 16U;
 constexpr std::uint32_t kCloudRefVolumeGroupSize = 4U;
 constexpr VkFormat kCloudRefColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr VkFormat kCloudRefNoiseFormat = VK_FORMAT_R8G8B8A8_UNORM;
+constexpr std::uint32_t kCloudRefGpuProfilerPassCapacity = 8U;
 constexpr std::uint32_t kCloudRefUniformBinding = 0;
 constexpr std::uint32_t kCloudRefOutputBinding = 1;
 constexpr std::uint32_t kCloudRefBaseNoiseBinding = 2;
@@ -98,6 +101,28 @@ constexpr std::array<CloudsDebugView, 18> kCloudRefDebugViews{
     CloudsDebugView::ViewOpticalDepth,
     CloudsDebugView::LightOpticalDepth,
 };
+
+[[nodiscard]] std::uint64_t profile_frame_index(std::uint64_t frame_index) {
+    return frame_index == 0 ? 0 : frame_index - 1U;
+}
+
+[[nodiscard]] std::uint64_t collected_profile_frame_index(
+    std::uint64_t frame_index, cubey::render::FrameSlot frame_slot) {
+    if (frame_index > frame_slot.count) {
+        return frame_index - static_cast<std::uint64_t>(frame_slot.count) - 1U;
+    }
+    return profile_frame_index(frame_index);
+}
+
+void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64_t frame_index,
+                        const std::vector<cubey::vulkan::GpuPassTiming>& timings) {
+    if (recorder == nullptr) {
+        return;
+    }
+    for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+        recorder->record_gpu_span(frame_index, timing.label, timing.milliseconds);
+    }
+}
 
 struct CloudRefFrameUniforms {
     cubey::math::Vec4 camera_right_aspect;
@@ -564,10 +589,7 @@ class CloudRefApp {
         callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) { draw_ui(); };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
-            record_windowed_frame(context.device(), frame.command_buffer,
-                                  cubey::render::swapchain_color_target_view(context.swapchain(),
-                                                                             frame.image_index),
-                                  frame.frame_slot);
+            record_windowed_frame(context, frame);
         };
         callbacks.frame_stats_sample =
             [this](cubey::host::WindowedAppContext& context,
@@ -818,6 +840,7 @@ class CloudRefApp {
 
     void destroy_swapchain_resources() {
         graph_executor_.clear();
+        gpu_profiler_.reset();
         composite_sampler_.reset();
         march_material_.reset();
         composite_material_.reset();
@@ -829,6 +852,7 @@ class CloudRefApp {
     void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
                          std::uint32_t frame_slot_count) {
         graph_executor_.resize(frame_slot_count);
+        gpu_profiler_.emplace(device, frame_slot_count, kCloudRefGpuProfilerPassCapacity);
         frame_uniforms_.emplace(device, frame_slot_count);
 
         const cubey::render::MaterialPassInfo march_pass = cloud_ref_march_pass_info();
@@ -934,6 +958,30 @@ class CloudRefApp {
         return composite_material_.value();
     }
 
+    [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* gpu_profiler() {
+        return gpu_profiler_.has_value() ? &gpu_profiler_.value() : nullptr;
+    }
+
+    [[nodiscard]] const std::vector<cubey::vulkan::GpuPassTiming>& latest_gpu_timings() const {
+        if (!gpu_profiler_.has_value()) {
+            static const std::vector<cubey::vulkan::GpuPassTiming> empty;
+            return empty;
+        }
+        return gpu_profiler_->latest_timings();
+    }
+
+    void collect_gpu_timings(cubey::profiling::ProfileRecorder* profile_recorder,
+                             std::uint64_t frame_index,
+                             cubey::render::FrameSlot frame_slot) {
+        cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler();
+        if (profiler == nullptr) {
+            return;
+        }
+        profiler->collect(frame_slot.index);
+        record_gpu_timings(profile_recorder, collected_profile_frame_index(frame_index, frame_slot),
+                           latest_gpu_timings());
+    }
+
     void upload_uniforms(cubey::render::FrameSlot frame_slot, VkExtent2D target_extent) const {
         frame_uniforms().upload(
             frame_slot,
@@ -1006,15 +1054,8 @@ class CloudRefApp {
                        const char* label) {
         upload_uniforms(frame_slot, target.extent);
         const CloudRefFrameGraph frame_graph = build_frame_graph(target, frame_slot, mode);
-        graph_executor_.record(
-            cubey::render::RenderGraphFrameRecordInfo{
-                .device = &device,
-                .command_buffer = command_buffer,
-                .frame_slot = frame_slot,
-                .label = label,
-                .command_buffer_mode = command_buffer_mode,
-            },
-            frame_graph.graph,
+        cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler();
+        const auto prepare_graph_resources =
             [this, &device, frame_slot,
              &frame_graph](const cubey::render::RenderGraphResourceSet& graph_resources) {
                 const cubey::render::RenderGraphSampledTextureView cloud_product =
@@ -1043,13 +1084,47 @@ class CloudRefApp {
                                             composite_sampler().handle(), cloud_product.view,
                                             cloud_product.layout)
                     .update(device);
-            });
+            };
+        if (profiler != nullptr &&
+            command_buffer_mode == cubey::render::RenderGraphCommandBufferMode::BeginAndEnd) {
+            const cubey::vulkan::CommandRecorder recorder(command_buffer);
+            recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            profiler->begin_frame(command_buffer, frame_slot.index);
+            graph_executor_.record(
+                cubey::render::RenderGraphFrameRecordInfo{
+                    .device = &device,
+                    .command_buffer = command_buffer,
+                    .frame_slot = frame_slot,
+                    .label = label,
+                    .command_buffer_mode =
+                        cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+                    .profiler = profiler,
+                },
+                frame_graph.graph, prepare_graph_resources);
+            recorder.end(label);
+            return;
+        }
+        if (profiler != nullptr) {
+            profiler->begin_frame(command_buffer, frame_slot.index);
+        }
+        graph_executor_.record(
+            cubey::render::RenderGraphFrameRecordInfo{
+                .device = &device,
+                .command_buffer = command_buffer,
+                .frame_slot = frame_slot,
+                .label = label,
+                .command_buffer_mode = command_buffer_mode,
+                .profiler = profiler,
+            },
+            frame_graph.graph, prepare_graph_resources);
     }
 
-    void record_windowed_frame(cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
-                               const cubey::render::ColorTargetView& target,
-                               cubey::render::FrameSlot frame_slot) {
-        record_target(device, command_buffer, target, frame_slot, CloudRefTargetMode::Present,
+    void record_windowed_frame(cubey::host::WindowedAppContext& context,
+                               const cubey::host::WindowedRenderFrame& frame) {
+        collect_gpu_timings(context.profile_recorder(), frame.timing.frame_index,
+                            frame.frame_slot);
+        record_target(context.device(), frame.command_buffer, frame.color_target,
+                      frame.frame_slot, CloudRefTargetMode::Present,
                       cubey::render::RenderGraphCommandBufferMode::BeginAndEnd,
                       "vkEndCommandBuffer cloud_ref");
     }
@@ -1074,6 +1149,7 @@ class CloudRefApp {
     std::optional<cubey::render::Texture3D> detail_noise_{};
     std::optional<cubey::render::Texture2D> weather_texture_{};
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
+    std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
     std::optional<cubey::vulkan::Sampler> composite_sampler_{};
     std::optional<cubey::render::FrameUniformBuffer<CloudRefFrameUniforms>> frame_uniforms_{};
     std::optional<cubey::render::MaterialInstance> march_material_{};

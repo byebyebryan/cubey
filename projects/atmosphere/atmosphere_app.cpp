@@ -6,6 +6,7 @@
 
 #include <cubey/core/jobs.h>
 #include <cubey/core/math.h>
+#include <cubey/core/profiling.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -69,6 +70,28 @@ constexpr float kBasePitch = cubey::render::kAtmosphereEnvironmentSunriseViewPit
 constexpr float kDefaultFovyRadians = 65.0F * (std::numbers::pi_v<float> / 180.0F);
 constexpr VkFormat kAtmosphereSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr std::uint32_t kAtmosphereGpuProfilerPassCapacity = 16U;
+
+[[nodiscard]] std::uint64_t profile_frame_index(std::uint64_t frame_index) {
+    return frame_index == 0 ? 0 : frame_index - 1U;
+}
+
+[[nodiscard]] std::uint64_t collected_profile_frame_index(
+    std::uint64_t frame_index, cubey::render::FrameSlot frame_slot) {
+    if (frame_index > frame_slot.count) {
+        return frame_index - static_cast<std::uint64_t>(frame_slot.count) - 1U;
+    }
+    return profile_frame_index(frame_index);
+}
+
+void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64_t frame_index,
+                        const std::vector<cubey::vulkan::GpuPassTiming>& timings) {
+    if (recorder == nullptr) {
+        return;
+    }
+    for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+        recorder->record_gpu_span(frame_index, timing.label, timing.milliseconds);
+    }
+}
 
 struct ResolvedNightSkyAtlas {
     float procedural_variation = 0.0F;
@@ -213,7 +236,7 @@ class AtmosphereApp {
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
             refresh_cloud_weather_if_needed(context.device(), context.gpu());
-            record_windowed_frame(context.device(), frame);
+            record_windowed_frame(context.device(), context.profile_recorder(), frame);
         };
         callbacks.frame_stats_sample =
             [this](cubey::host::WindowedAppContext& context,
@@ -343,6 +366,18 @@ class AtmosphereApp {
 
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* gpu_profiler() {
         return gpu_profiler_.has_value() ? &gpu_profiler_.value() : nullptr;
+    }
+
+    void collect_gpu_timings(cubey::profiling::ProfileRecorder* profile_recorder,
+                             std::uint64_t frame_index,
+                             cubey::render::FrameSlot frame_slot) {
+        cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler();
+        if (profiler == nullptr) {
+            return;
+        }
+        profiler->collect(frame_slot.index);
+        record_gpu_timings(profile_recorder, collected_profile_frame_index(frame_index, frame_slot),
+                           latest_gpu_timings());
     }
 
     void create_gpu_resources(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
@@ -1046,7 +1081,9 @@ class AtmosphereApp {
     }
 
     void record_windowed_frame(cubey::vulkan::Device& device,
+                               cubey::profiling::ProfileRecorder* profile_recorder,
                                const cubey::host::WindowedRenderFrame& frame) {
+        collect_gpu_timings(profile_recorder, frame.timing.frame_index, frame.frame_slot);
         record_atmosphere_graph(device, frame.command_buffer, frame.color_target, frame.frame_slot,
                                 cubey::render::render_graph_undefined_texture_state(),
                                 cubey::render::render_graph_present_texture_state(),

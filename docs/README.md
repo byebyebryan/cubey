@@ -51,9 +51,9 @@ Detailed current foundation notes live under
   terrain-field, sky/celestial, and ocean handoff direction.
 - [Ocean adjacent systems](architecture/ocean-adjacent-systems.md): atmosphere,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
-- [Cloud rendering](architecture/cloud-rendering.md): production cloud layer
-  direction hosted by atmosphere from the legacy, TerrainEngine, and Godot-v2
-  reference passes.
+- [Cloud rendering](architecture/cloud-rendering.md): surface-only Cloud V1
+  direction hosted by atmosphere, plus deferred aerial/orbit notes from the
+  legacy, TerrainEngine, and Godot-v2 reference passes.
 - [glTF assets and PBR](architecture/gltf-assets.md): glTF import, PBR material
   contract, animation/deformation, texture upload, HDR environments, and viewer
   boundaries.
@@ -94,6 +94,8 @@ Legacy snapshots:
 
 - [Notes index](notes/README.md): current living notes, research records, and
   promoted implementation checkpoints.
+- [Performance profiling](notes/performance-profiling.md): repeatable host/GPU
+  profiling workflow and the cloud-vs-atmosphere comparison harness.
 - [Working notes](notes/working-notes.md): scratchpad for progress, gotchas,
   and context that has not been promoted into current design docs. Treat it as
   useful context, not current authority.

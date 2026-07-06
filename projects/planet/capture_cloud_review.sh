@@ -41,6 +41,8 @@ write_index_header() {
         printf -- '- Frames: %s\n' "${FRAMES}"
         printf -- '- Quality: %s\n' "${QUALITY}"
         printf -- '- Weather preset: %s\n\n' "${PRESET}"
+        printf 'Planet clouds are deferred pressure captures. Cloud V1 is surface-only '
+        printf 'in atmosphere/ocean and should not be accepted from this pack.\n\n'
         printf '| Capture | Group | Args |\n'
         printf '|---|---|---|\n'
     } >"${INDEX}"
