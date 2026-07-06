@@ -68,29 +68,30 @@ float shadertoy_mountain_reference_height(vec2 world, vec2 seed, bool surface_de
     float amplitude = 1.0;
     float total = 0.0;
     float total_amplitude = 0.0;
-    const int max_octaves = 10;
-    int octave_count = surface_detail ? 10 : 7;
+    const int max_octaves = 8;
+    int octave_count = surface_detail ? 8 : 5;
     for (int octave = 0; octave < max_octaves; ++octave) {
         if (octave >= octave_count) {
             break;
         }
+        float octave_weight = octave < 3 ? 1.0 : (surface_detail ? 0.42 : 0.68);
         vec2 sample_p = (p * frequency) + warp + vec2(float(octave) * 17.31,
             -float(octave) * 9.17);
         ShadertoyMountainNoiseSample noise_sample = shadertoy_mountain_noise(sample_p,
             seed + vec2(float(octave) * 1.91, -float(octave) * 2.47));
         float ridge = pow(max(1.0 - abs((noise_sample.value * 2.0) - 1.0), 0.0), 1.75);
         float billow = pow(max(noise_sample.value, 0.0), 2.35);
-        float shaped = mix(billow, ridge, 0.62);
-        total += shaped * amplitude * (0.62 + 0.38 * support);
-        total_amplitude += amplitude;
-        warp += noise_sample.gradient * amplitude * (0.88 + 0.06 * float(octave));
-        frequency *= 2.14;
-        amplitude *= 0.52 + 0.05 * noise_sample.value;
+        float shaped = mix(billow, ridge, 0.46);
+        total += shaped * amplitude * octave_weight * (0.64 + 0.36 * support);
+        total_amplitude += amplitude * octave_weight;
+        warp += noise_sample.gradient * amplitude * octave_weight * (0.66 + 0.04 * float(octave));
+        frequency *= 1.92;
+        amplitude *= 0.48 + 0.035 * noise_sample.value;
     }
 
     float detail = total_amplitude > 0.0 ? total / total_amplitude : 0.0;
     float broad_base = pow(max(macro, 0.0), 2.20) * 900.0;
-    float mountain = pow(max(detail, 0.0), 1.05) * range * 3200.0;
+    float mountain = pow(max(detail, 0.0), 1.08) * range * 3100.0;
     float valley_cut = pow(max(1.0 - macro, 0.0), 2.0) * 180.0;
     return max(broad_base + mountain - valley_cut, 0.0);
 }

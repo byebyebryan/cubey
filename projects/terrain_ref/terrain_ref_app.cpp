@@ -60,8 +60,16 @@ struct TerrainRefSceneMetrics {
     float scene_extent_m = 1.0F;
 };
 
+[[nodiscard]] float terrain_ref_material_mode_id(TerrainRefMaterialMode mode) {
+    return mode == TerrainRefMaterialMode::Height ? 1.0F : 0.0F;
+}
+
 [[nodiscard]] float terrain_ref_source_id(TerrainRefRecipe recipe) {
     return recipe == TerrainRefRecipe::ShadertoyMountain ? 1.0F : 0.0F;
+}
+
+[[nodiscard]] float terrain_ref_shader_mode(const TerrainRefConfig& config) {
+    return terrain_ref_source_id(config.recipe) + (2.0F * terrain_ref_material_mode_id(config.material_mode));
 }
 
 [[nodiscard]] float terrain_ref_water_height_m(TerrainRefRecipe recipe) {
@@ -351,7 +359,7 @@ class TerrainRefApp {
                     terrain_ref_water_height_m(terrain_config_.recipe),
                     scene_metrics_.min_height_m,
                     scene_metrics_.max_height_m,
-                    terrain_ref_source_id(terrain_config_.recipe),
+                    terrain_ref_shader_mode(terrain_config_),
                 },
             .camera_position_fog =
                 {

@@ -43,9 +43,23 @@ Compare `outputs/terrain_ref/terrain-engine` and
 - surface-low water captures for whether water contact reads or merely tints
   the terrain.
 
+Use `outputs/terrain_ref/shape-compare` when judging source shape instead of
+recipe presentation. Those captures use `--terrain-preview-color height`, which
+applies the same neutral height/slope material to both recipes and removes most
+recipe-specific color variation, snow/talus masks, and detail normals from the
+comparison.
+
 The useful signal is not whether the scene is finished. It is whether the
 height source immediately reads more like coherent mountain terrain than the
 older authored-feature or process-heavy workbench attempts.
+
+## Noise Split
+
+The first ShaderToy-style pass overcorrected from flatness into too much visible
+noise. The fix is to keep the high-level mountain mass in the height source,
+limit high-frequency ridged octaves in geometry, and reserve fine texture for
+material/normal response. When the recipe-specific material looks busy, confirm
+the diagnosis with the neutral height material before changing the source.
 
 ## Follow-Up
 

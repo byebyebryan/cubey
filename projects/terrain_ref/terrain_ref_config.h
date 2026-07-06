@@ -22,6 +22,11 @@ enum class TerrainRefRecipe : std::uint8_t {
     ShadertoyMountain,
 };
 
+enum class TerrainRefMaterialMode : std::uint8_t {
+    Recipe,
+    Height,
+};
+
 inline constexpr std::string_view kTerrainRefRecipeShadertoyMountain = "shadertoy-mountain";
 inline constexpr std::string_view kTerrainRefDefaultCameraPreset = "oblique";
 inline constexpr float kTerrainRefDefaultCellSizeM = 32.0F;
@@ -36,11 +41,13 @@ struct TerrainRefConfig {
     float cell_size_m = kTerrainRefDefaultCellSizeM;
     float vertical_scale = kTerrainRefDefaultVerticalScale;
     TerrainRefCameraPreset camera_preset = TerrainRefCameraPreset::Oblique;
+    TerrainRefMaterialMode material_mode = TerrainRefMaterialMode::Recipe;
     bool water_surface = true;
 };
 
 [[nodiscard]] std::string_view terrain_ref_recipe_name(TerrainRefRecipe recipe);
 [[nodiscard]] TerrainRefRecipe terrain_ref_recipe_from_name(std::string_view name);
+[[nodiscard]] TerrainRefMaterialMode terrain_ref_material_mode_from_name(std::string_view name);
 [[nodiscard]] std::string_view terrain_ref_camera_preset_name(TerrainRefCameraPreset preset);
 [[nodiscard]] TerrainRefCameraPreset terrain_ref_camera_preset_from_name(std::string_view name);
 [[nodiscard]] TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& config);

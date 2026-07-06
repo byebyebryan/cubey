@@ -14,6 +14,7 @@ The current target is useful for renderer and source-model evaluation:
 
 - coherent world-space height sampled in GLSL;
 - procedural slope/elevation material zoning;
+- neutral height material mode for source-shape comparison;
 - distance-faded procedural albedo and normal detail;
 - directional lighting and lightweight distance/altitude fog;
 - optional flat waterline intersection;
@@ -32,7 +33,7 @@ is no biome, hydrology, foliage, streaming, or planet-scale paging.
 cmake --build --preset dev --target cubey_project_terrain_ref cubey_project_terrain_ref_tests
 ctest --preset dev -R terrain_ref --output-on-failure
 
-mkdir -p outputs/terrain_ref/terrain-engine outputs/terrain_ref/shadertoy-mountain
+mkdir -p outputs/terrain_ref/terrain-engine outputs/terrain_ref/shadertoy-mountain outputs/terrain_ref/shape-compare
 ./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-camera-preset oblique --terrain-water-surface --output outputs/terrain_ref/terrain-engine/oblique-water.png
 ./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-camera-preset oblique --no-terrain-water-surface --output outputs/terrain_ref/terrain-engine/oblique-dry.png
 ./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-camera-preset surface-low --terrain-water-surface --output outputs/terrain_ref/terrain-engine/surface-low-water.png
@@ -42,6 +43,11 @@ mkdir -p outputs/terrain_ref/terrain-engine outputs/terrain_ref/shadertoy-mounta
 ./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset oblique --no-terrain-water-surface --output outputs/terrain_ref/shadertoy-mountain/oblique-dry.png
 ./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset surface-low --terrain-water-surface --output outputs/terrain_ref/shadertoy-mountain/surface-low-water.png
 ./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset surface-low --no-terrain-water-surface --output outputs/terrain_ref/shadertoy-mountain/surface-low-dry.png
+
+./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-camera-preset oblique --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/terrain-engine-oblique-height.png
+./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-camera-preset surface-low --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/terrain-engine-surface-low-height.png
+./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset oblique --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/shadertoy-mountain-oblique-height.png
+./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset surface-low --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/shadertoy-mountain-surface-low-height.png
 ```
 
 Next rendering work should handle the parts deliberately deferred here: a

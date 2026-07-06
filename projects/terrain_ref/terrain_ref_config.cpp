@@ -28,6 +28,16 @@ TerrainRefRecipe terrain_ref_recipe_from_name(std::string_view name) {
         "terrain_ref recipe must be terrain-engine-ref or shadertoy-mountain");
 }
 
+TerrainRefMaterialMode terrain_ref_material_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "material") {
+        return TerrainRefMaterialMode::Recipe;
+    }
+    if (name == "height") {
+        return TerrainRefMaterialMode::Height;
+    }
+    throw std::runtime_error("terrain_ref preview color must be material or height");
+}
+
 std::string_view terrain_ref_camera_preset_name(TerrainRefCameraPreset preset) {
     switch (preset) {
     case TerrainRefCameraPreset::Oblique:
@@ -79,6 +89,7 @@ TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& conf
     result.camera_preset = terrain_ref_camera_preset_from_name(
         config.terrain.camera_preset.empty() ? kTerrainRefDefaultCameraPreset
                                              : std::string_view(config.terrain.camera_preset));
+    result.material_mode = terrain_ref_material_mode_from_name(config.terrain.preview_color);
     result.water_surface =
         config.terrain.water_surface >= 0 ? config.terrain.water_surface != 0 : true;
 

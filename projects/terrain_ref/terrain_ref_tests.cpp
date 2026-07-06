@@ -45,6 +45,8 @@ void test_terrain_ref_config_from_run_config() {
             "terrain_ref should default to oblique camera");
     require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::TerrainEngine,
             "terrain_ref should default to TerrainEngine recipe");
+    require(config.material_mode == cubey::projects::terrain_ref::TerrainRefMaterialMode::Recipe,
+            "terrain_ref should default to recipe material");
 
     run_config.grid.width = 129U;
     run_config.grid.height = 257U;
@@ -53,6 +55,7 @@ void test_terrain_ref_config_from_run_config() {
     run_config.terrain.cell_size = 64.0F;
     run_config.terrain.vertical_scale = 0.75F;
     run_config.terrain.camera_preset = "surface_low";
+    run_config.terrain.preview_color = "height";
     run_config.terrain.water_surface = 0;
     run_config.terrain.recipe =
         std::string(cubey::projects::terrain_ref::kTerrainRefRecipeTerrainEngine);
@@ -67,6 +70,8 @@ void test_terrain_ref_config_from_run_config() {
     require(config.camera_preset ==
                 cubey::projects::terrain_ref::TerrainRefCameraPreset::SurfaceLow,
             "terrain_ref should parse surface-low camera alias");
+    require(config.material_mode == cubey::projects::terrain_ref::TerrainRefMaterialMode::Height,
+            "terrain_ref should parse height material preview");
     require(!config.water_surface, "terrain_ref should allow disabling water");
 
     run_config.terrain.recipe =
@@ -82,6 +87,16 @@ void test_terrain_ref_config_from_run_config() {
                 cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config));
         },
         "terrain_ref should reject non-reference terrain recipes");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyMountain);
+    run_config.terrain.preview_color = "river";
+    require_throws(
+        [&run_config] {
+            static_cast<void>(
+                cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config));
+        },
+        "terrain_ref should reject unsupported preview color modes");
 }
 
 void test_terrain_engine_reference_sampling_is_deterministic() {

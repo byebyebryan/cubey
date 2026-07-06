@@ -96,7 +96,7 @@ struct NoiseSample {
 }
 
 [[nodiscard]] float shadertoy_mountain_height_from_seed(Vec2 world, Vec2 seed,
-                                                        int octave_count) {
+                                                        bool surface_detail) {
     Vec2 p{
         .x = (world.x * 0.00026F) + (seed.x * 0.137F) + 7.0F,
         .y = (world.y * 0.00026F) + (seed.y * 0.113F) - 5.0F,
@@ -111,7 +111,10 @@ struct NoiseSample {
     float amplitude = 1.0F;
     float total = 0.0F;
     float total_amplitude = 0.0F;
+    const int octave_count = surface_detail ? 8 : 5;
     for (int octave = 0; octave < octave_count; ++octave) {
+        const float octave_weight =
+            octave < 3 ? 1.0F : (surface_detail ? 0.42F : 0.68F);
         const Vec2 sample_p{
             .x = (p.x * frequency) + warp.x + float(octave) * 17.31F,
             .y = (p.y * frequency) + warp.y - float(octave) * 9.17F,
@@ -123,24 +126,20 @@ struct NoiseSample {
                                               0.0F),
                                      1.75F);
         const float billow = std::pow(std::max(sample.value, 0.0F), 2.35F);
-        const float shaped = mix(billow, ridge, 0.62F);
-        total += shaped * amplitude * (0.62F + 0.38F * support);
-        total_amplitude += amplitude;
-        warp.x += sample.gradient.x * amplitude * (0.88F + 0.06F * float(octave));
-        warp.y += sample.gradient.y * amplitude * (0.88F + 0.06F * float(octave));
-        frequency *= 2.14F;
-        amplitude *= 0.52F + 0.05F * sample.value;
+        const float shaped = mix(billow, ridge, 0.46F);
+        total += shaped * amplitude * octave_weight * (0.64F + 0.36F * support);
+        total_amplitude += amplitude * octave_weight;
+        warp.x += sample.gradient.x * amplitude * octave_weight * (0.66F + 0.04F * float(octave));
+        warp.y += sample.gradient.y * amplitude * octave_weight * (0.66F + 0.04F * float(octave));
+        frequency *= 1.92F;
+        amplitude *= 0.48F + 0.035F * sample.value;
     }
 
     const float detail = total_amplitude > 0.0F ? total / total_amplitude : 0.0F;
     const float broad_base = std::pow(std::max(macro, 0.0F), 2.20F) * 900.0F;
-    const float mountain = std::pow(std::max(detail, 0.0F), 1.05F) * range * 3200.0F;
+    const float mountain = std::pow(std::max(detail, 0.0F), 1.08F) * range * 3100.0F;
     const float valley_cut = std::pow(std::max(1.0F - macro, 0.0F), 2.0F) * 180.0F;
     return std::max(broad_base + mountain - valley_cut, 0.0F);
-}
-
-[[nodiscard]] int octave_count(ShadertoyMountainReferenceDetail detail) {
-    return detail == ShadertoyMountainReferenceDetail::Surface ? 10 : 7;
 }
 
 } // namespace
@@ -151,7 +150,7 @@ float shadertoy_mountain_reference_height(float world_x, float world_z, std::uin
         terrain_engine_reference_seed_components(seed);
     return shadertoy_mountain_height_from_seed(
         {.x = world_x, .y = world_z}, {.x = seed_components.x, .y = seed_components.y},
-        octave_count(detail));
+        detail == ShadertoyMountainReferenceDetail::Surface);
 }
 
 cubey::procedural::ScalarField2D

@@ -50,7 +50,8 @@ vec3 terrain_ref_color_variation(vec3 base, vec2 world_xz, float scale, float am
 }
 
 vec3 terrain_ref_material_color(inout vec3 normal) {
-    bool shadertoy_mountain = pc.water_params.w > 0.5;
+    bool shadertoy_mountain = mod(pc.water_params.w, 2.0) > 0.5;
+    bool height_material = pc.water_params.w >= 2.0;
     float grass_coverage = 0.65;
     float transition_m = 20.0;
     float water_height_m = pc.water_params.x;
@@ -70,6 +71,20 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         0.006, 0.24);
     vec3 snow = terrain_ref_color_variation(vec3(0.82, 0.84, 0.80), frag_world_position.xz,
         0.014, 0.10);
+
+    if (height_material) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        vec3 low = vec3(0.25, 0.33, 0.28);
+        vec3 mid = vec3(0.50, 0.49, 0.43);
+        vec3 high = vec3(0.82, 0.80, 0.74);
+        vec3 color = mix(low, mid, smoothstep(0.14, 0.58, normalized_height));
+        color = mix(color, high, smoothstep(0.60, 0.94, normalized_height));
+        float slope = 1.0 - cos_v;
+        color = mix(color, vec3(0.42, 0.41, 0.39), smoothstep(0.24, 0.74, slope) * 0.42);
+        normal = normalize(mix(normal, vec3(0.0, 1.0, 0.0), 0.08));
+        return color;
+    }
 
     if (shadertoy_mountain) {
         float normalized_height = clamp((frag_height_m - min_height_m) /

@@ -23,7 +23,7 @@ layout(location = 3) out float frag_height_m;
 layout(location = 4) out float frag_water_mask;
 
 bool terrain_ref_uses_shadertoy_mountain() {
-    return pc.water_params.w > 0.5;
+    return mod(pc.water_params.w, 2.0) > 0.5;
 }
 
 float terrain_ref_height(vec2 world_xz, vec2 seed, bool surface_detail) {
