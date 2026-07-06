@@ -165,6 +165,11 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
              .help = "Optional ground grid used to judge scale and horizon color."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Reference");
+        cubey::host::imgui_enum_combo(
+            "Ground mode", ui.config.ground_mode, kAtmosphereGroundModes,
+            atmosphere_ground_mode_name,
+            "Controls whether sky rays stop at the ground horizon or ignore ground occlusion for "
+            "sky/cloud review.");
         cubey::host::imgui_checkbox("Ground reference", &ui.config.reference_geometry_enabled,
                                     "Show the reference grid/ground plane.");
         cubey::host::imgui_slider_float("Grid scale", &ui.config.reference_grid_km, 0.25F, 10.0F,

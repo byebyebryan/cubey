@@ -229,12 +229,7 @@ int main() {
     require_throws([] { static_cast<void>(night_sky_layer_view_from_name("hydrogen")); },
                    "night sky layer parser should reject unknown layers");
 
-    constexpr std::array atmosphere_ground_modes{
-        cubey::render::AtmosphereEnvironmentGroundMode::Ground,
-        cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
-        cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
-    };
-    for (const cubey::render::AtmosphereEnvironmentGroundMode mode : atmosphere_ground_modes) {
+    for (const cubey::render::AtmosphereEnvironmentGroundMode mode : kAtmosphereGroundModes) {
         require(atmosphere_ground_mode_from_name(atmosphere_ground_mode_name(mode)) == mode,
                 "atmosphere ground mode names should round trip");
     }
@@ -432,8 +427,8 @@ int main() {
                     static_cast<float>(static_cast<std::uint32_t>(AtmosphereRenderView::Moon)),
                 "frame uniforms should pack the debug render view");
         require(uniforms.moon_options.x == 1.0F, "frame uniforms should pack the moon enable flag");
-        require(uniforms.render_options.x == 0.0F,
-                "frame uniforms should use grounded atmosphere mode by default");
+        require(uniforms.render_options.x == 2.0F,
+                "frame uniforms should use clean sky/cloud review mode by default");
         require(uniforms.render_options.y == 1.0F,
                 "frame uniforms should render inline celestial content by default");
         require(uniforms.celestial_render_options.x == 1.0F,
@@ -505,11 +500,12 @@ int main() {
                 defaults.rayleigh_scattering.z >= 0.0F && defaults.mie_scattering >= 0.0F &&
                 defaults.mie_extinction >= 0.0F,
             "default scattering coefficients should be nonnegative");
-    require(defaults.reference_geometry_enabled && defaults.reference_grid_km > 0.0F &&
+    require(!defaults.reference_geometry_enabled && defaults.reference_grid_km > 0.0F &&
                 defaults.reference_intensity > 0.0F,
-            "default atmosphere config should expose reference ground geometry");
-    require(defaults.ground_mode == cubey::render::AtmosphereEnvironmentGroundMode::Ground,
-            "default atmosphere config should use grounded sky rendering");
+            "default atmosphere config should keep reference ground geometry available but hidden");
+    require(defaults.ground_mode ==
+                cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
+            "default atmosphere config should use clean sky/cloud review rendering");
     require(defaults.night_sky.twilight_strength > 0.0F &&
                 defaults.night_sky.star_intensity > 0.0F &&
                 defaults.night_sky.star_density > 0.0F && defaults.night_sky.star_density <= 1.0F &&

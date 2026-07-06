@@ -65,6 +65,13 @@ inline constexpr std::array<AtmosphereRenderView, 11> kAtmosphereRenderViews{
     AtmosphereRenderView::MoonSurface,
 };
 
+inline constexpr std::array<cubey::render::AtmosphereEnvironmentGroundMode, 3>
+    kAtmosphereGroundModes{
+        cubey::render::AtmosphereEnvironmentGroundMode::Ground,
+        cubey::render::AtmosphereEnvironmentGroundMode::SkyOnly,
+        cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
+    };
+
 enum class SunControlMode : std::uint32_t {
     ManualSun = 0,
     SolarClock = 1,
@@ -265,12 +272,12 @@ struct AtmosphereConfig {
     float camera_pitch_offset_degrees = 0.0F;
     float exposure = 0.0F;
     cubey::render::AtmosphereEnvironmentGroundMode ground_mode =
-        cubey::render::AtmosphereEnvironmentGroundMode::Ground;
+        cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion;
     bool render_celestial_content = true;
     bool render_sun_disk = true;
     bool render_night_sky = true;
     bool render_moon_disk = true;
-    bool reference_geometry_enabled = true;
+    bool reference_geometry_enabled = false;
     float reference_grid_km = 1.0F;
     float reference_intensity = 0.72F;
 };
