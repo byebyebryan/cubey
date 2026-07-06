@@ -1,4 +1,5 @@
 #include "terrain_engine_reference.h"
+#include "shadertoy_mountain_reference.h"
 #include "terrain_ref_config.h"
 #include "terrain_ref_mesh.h"
 
@@ -42,6 +43,8 @@ void test_terrain_ref_config_from_run_config() {
     require(config.water_surface, "terrain_ref should default water on");
     require(config.camera_preset == cubey::projects::terrain_ref::TerrainRefCameraPreset::Oblique,
             "terrain_ref should default to oblique camera");
+    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::TerrainEngine,
+            "terrain_ref should default to TerrainEngine recipe");
 
     run_config.grid.width = 129U;
     run_config.grid.height = 257U;
@@ -54,6 +57,8 @@ void test_terrain_ref_config_from_run_config() {
     run_config.terrain.recipe =
         std::string(cubey::projects::terrain_ref::kTerrainRefRecipeTerrainEngine);
     config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::TerrainEngine,
+            "terrain_ref should parse TerrainEngine recipe");
     require(config.grid_width == 129U && config.grid_height == 257U,
             "terrain_ref should use shared grid dimensions");
     require(config.seed == 42U, "terrain_ref should use terrain seed");
@@ -63,6 +68,12 @@ void test_terrain_ref_config_from_run_config() {
                 cubey::projects::terrain_ref::TerrainRefCameraPreset::SurfaceLow,
             "terrain_ref should parse surface-low camera alias");
     require(!config.water_surface, "terrain_ref should allow disabling water");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyMountain);
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyMountain,
+            "terrain_ref should parse ShaderToy mountain recipe");
 
     run_config.terrain.recipe = "temperate-mountain-river";
     require_throws(
@@ -113,11 +124,35 @@ void test_terrain_ref_mesh_uses_clipmap_grid() {
             "terrain_ref mesh should leave height displacement to the shader");
 }
 
+void test_shadertoy_mountain_reference_sampling_is_deterministic() {
+    constexpr std::uint64_t seed = 5678U;
+    const float height_a =
+        cubey::projects::terrain_ref::shadertoy_mountain_reference_height(113.0F, -71.0F, seed);
+    const float height_b =
+        cubey::projects::terrain_ref::shadertoy_mountain_reference_height(113.0F, -71.0F, seed);
+    const float height_c =
+        cubey::projects::terrain_ref::shadertoy_mountain_reference_height(113.0F, -71.0F,
+                                                                          seed + 1U);
+    const float detailed_height =
+        cubey::projects::terrain_ref::shadertoy_mountain_reference_height(
+            113.0F, -71.0F, seed,
+            cubey::projects::terrain_ref::ShadertoyMountainReferenceDetail::Surface);
+    require_near(height_a, height_b, 0.0001F,
+                 "ShaderToy mountain sampling should be deterministic");
+    require(std::isfinite(height_a) && height_a >= 0.0F,
+            "ShaderToy mountain height should be finite and nonnegative");
+    require(std::isfinite(detailed_height) && detailed_height >= 0.0F,
+            "ShaderToy mountain detailed height should be finite and nonnegative");
+    require(std::abs(height_a - height_c) > 0.0001F,
+            "ShaderToy mountain seed should affect height");
+}
+
 } // namespace
 
 int main() {
     test_terrain_ref_config_from_run_config();
     test_terrain_engine_reference_sampling_is_deterministic();
+    test_shadertoy_mountain_reference_sampling_is_deterministic();
     test_terrain_ref_mesh_uses_clipmap_grid();
     return 0;
 }

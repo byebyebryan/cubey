@@ -6,6 +6,7 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "terrain_ref: .*rendering terrain reference"
     SOURCES
         main.cpp
+        shadertoy_mountain_reference.cpp
         terrain_engine_reference.cpp
         terrain_ref_app.cpp
         terrain_ref_config.cpp
@@ -22,6 +23,7 @@ cubey_add_app_target(
 if (BUILD_TESTING)
     add_executable(cubey_project_terrain_ref_tests
         terrain_engine_reference.cpp
+        shadertoy_mountain_reference.cpp
         terrain_ref_config.cpp
         terrain_ref_mesh.cpp
         terrain_ref_tests.cpp

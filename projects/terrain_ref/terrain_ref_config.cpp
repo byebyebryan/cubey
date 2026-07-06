@@ -7,6 +7,27 @@
 
 namespace cubey::projects::terrain_ref {
 
+std::string_view terrain_ref_recipe_name(TerrainRefRecipe recipe) {
+    switch (recipe) {
+    case TerrainRefRecipe::TerrainEngine:
+        return kTerrainRefRecipeTerrainEngine;
+    case TerrainRefRecipe::ShadertoyMountain:
+        return kTerrainRefRecipeShadertoyMountain;
+    }
+    return kTerrainRefRecipeTerrainEngine;
+}
+
+TerrainRefRecipe terrain_ref_recipe_from_name(std::string_view name) {
+    if (name.empty() || is_terrain_engine_reference_recipe(name)) {
+        return TerrainRefRecipe::TerrainEngine;
+    }
+    if (name == kTerrainRefRecipeShadertoyMountain) {
+        return TerrainRefRecipe::ShadertoyMountain;
+    }
+    throw std::runtime_error(
+        "terrain_ref recipe must be terrain-engine-ref or shadertoy-mountain");
+}
+
 std::string_view terrain_ref_camera_preset_name(TerrainRefCameraPreset preset) {
     switch (preset) {
     case TerrainRefCameraPreset::Oblique:
@@ -44,11 +65,8 @@ TerrainRefCameraPreset terrain_ref_camera_preset_from_name(std::string_view name
 }
 
 TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& config) {
-    if (!is_terrain_engine_reference_recipe(config.terrain.recipe)) {
-        throw std::runtime_error("terrain_ref currently accepts only terrain-engine-ref recipe");
-    }
-
     TerrainRefConfig result;
+    result.recipe = terrain_ref_recipe_from_name(config.terrain.recipe);
     result.grid_width = config.grid.width == 0U ? kTerrainRefDefaultGridSize : config.grid.width;
     result.grid_height = config.grid.height == 0U ? kTerrainRefDefaultGridSize : config.grid.height;
     result.cell_size_m = cubey::run_config_float_is_set(config.terrain.cell_size)
