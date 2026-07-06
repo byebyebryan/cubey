@@ -85,6 +85,10 @@ the detailed foundation notes under `docs/architecture/`.
   isolated recipe plan for porting TerrainEngine's shader-side height/material
   model into the terrain product contract, plus capability review notes for
   tessellation, water, materials, hydrology gaps, and foliage gaps.
+- [Terrain ref split plan](terrain-ref-split-plan.md): split the current
+  terrain workbench into `terrain_workbench_legacy` and start a clean
+  `terrain_ref` visual reference lane before more TerrainEngine or ShaderToy
+  rendering work.
 - [Terrain mountain gully diagnostic plan](terrain-mountain-gully-diagnostic-plan.md):
   revision 24 plan for diagnostic-only gully / erosion fields over the mountain
   stress recipe before any height-affecting erosion pass.

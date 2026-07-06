@@ -2,10 +2,10 @@
 
 Date: 2026-06-21
 
-This document captures the current terrain reboot direction before a new
-`projects/terrain` implementation starts. It promotes the useful lessons from
-`terrain_lab_legacy`, `procedural_terrain_legacy`, `planet`, the shared
-procedural foundation, and local reference projects into one design checkpoint.
+This document captures the terrain reboot direction. It promotes the useful
+lessons from `terrain_lab_legacy`, `procedural_terrain_legacy`, the terrain
+workbench, `planet`, the shared procedural foundation, and local reference
+projects into one design checkpoint.
 
 ## Decision
 
@@ -40,10 +40,16 @@ The existing terrain-adjacent projects keep distinct roles:
 | `ocean` | Future consumer of shoreline, bathymetry, wetness, and water-depth products. It should not own terrain generation. |
 | `atmosphere` / `cloud` | Environment and lighting consumers/producers that pressure terrain material, weather, climate, and capture integration later. |
 
-The new project should live as `projects/terrain` once implementation starts.
-It should initially be a local workbench over kilometer-scale regions, with a
-product vocabulary that can later map to `planet` tile keys and ocean field
-views.
+The current terrain workbench should be preserved as
+`projects/terrain_workbench_legacy`. It is useful evidence, but no longer the
+active reboot lane.
+
+The next active project should live as `projects/terrain_ref`. It should be a
+clean visual reference lane over known-good terrain models and rendering
+techniques, starting with the TerrainEngine-inspired runtime reference. The
+canonical `projects/terrain` name should stay reserved for a later production
+terrain project after the reference lane proves the source/render/runtime
+shape.
 
 ## Previous Attempt Lessons
 
