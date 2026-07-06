@@ -218,6 +218,9 @@ buffers and schedules PNG encoding through `cubey::jobs`, returning a
 `CaptureTicket` whose `finish()` call makes the blocking wait explicit. It also
 creates fixed-dimension `QueuedVideoEncoder` sessions for ordered MP4 frame
 encoding.
+CPU-side artifact producers can use the same queue without a GPU readback step;
+the terrain scalar/debug exporter, for example, renders each debug view to an
+RGBA buffer and then queues PNG encoding before publishing the manifest.
 `cubey::ProjectGpuServices` now provides the GPU-side counterpart for RGBA8
 image readback: enqueue a readback ticket, drain the GPU runtime at an explicit
 boundary, then take the completed pixel payload. Headless video capture uses a

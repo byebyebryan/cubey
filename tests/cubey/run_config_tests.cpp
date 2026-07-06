@@ -209,7 +209,7 @@ void test_run_config_descriptors_have_help_text() {
                 option.group_path == std::string_view{"Clouds/Reference Diagnostics"};
             saw_cloud_aerial_orbit =
                 saw_cloud_aerial_orbit ||
-                option.group_path == std::string_view{"Clouds/Aerial Orbit Experimental"};
+                option.group_path == std::string_view{"Clouds/Deferred Aerial Orbit"};
         }
         if (option.path == "profile.output") {
             saw_profile = true;
@@ -277,6 +277,7 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--grid-width",
         "--profile-output",
         "--profile-diagnostic-interval",
+        "--grid-size",
         "--smoke-injectors",
         "--smoke-pressure-solver",
         "--pyro-sources",
@@ -292,6 +293,12 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--planet-lod-hysteresis",
         "--planet-time-hours",
         "--planet-camera-mode",
+        "--terrain-recipe",
+        "--terrain-camera-preset",
+        "--terrain-vertical-scale",
+        "--terrain-preview-runtime",
+        "--terrain-preview-color",
+        "--terrain-preview-surface",
         "--terrain-lab-slice",
         "--terrain-lab-camera-preset",
         "--terrain-lab-noise-source",
@@ -310,6 +317,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
     constexpr std::array project_control_paths{
         "grid.width",
         "grid.height",
+        "grid.size",
         "grid.depth",
         "profile.output",
         "profile.warmup_frames",
@@ -365,6 +373,12 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "planet.camera_mode",
         "planet.atmosphere_mode",
         "terrain.cell_size",
+        "terrain.recipe",
+        "terrain.camera_preset",
+        "terrain.vertical_scale",
+        "terrain.preview_runtime",
+        "terrain.preview_color",
+        "terrain.preview_surface",
         "terrain.sea_level",
         "terrain.water_surface",
         "terrain_lab.slice_preset",
@@ -519,6 +533,12 @@ void test_run_config_loads_json_config_file() {
   },
   "terrain": {
     "seed": 12345,
+    "recipe": "temperate-mountain-range-stress",
+    "camera_preset": "profile",
+    "preview_runtime": "terrain-engine-ref",
+    "preview_color": "height",
+    "preview_surface": "post-erosion",
+    "vertical_scale": 0.75,
     "water_surface": false
   },
   "terrain_lab": {
@@ -605,6 +625,18 @@ void test_run_config_loads_json_config_file() {
             "config file should set planet atmosphere mode");
     require(config.terrain.seed_set && config.terrain.seed == 12345U,
             "config file should mark terrain seed as explicit");
+    require(config.terrain.recipe == "temperate-mountain-range-stress",
+            "config file should set terrain recipe");
+    require(config.terrain.camera_preset == "profile",
+            "config file should set terrain camera preset");
+    require(config.terrain.preview_runtime == "terrain-engine-ref",
+            "config file should set terrain preview runtime");
+    require(config.terrain.preview_color == "height",
+            "config file should set terrain preview color");
+    require(config.terrain.preview_surface == "post-erosion",
+            "config file should set terrain preview surface");
+    require(config.terrain.vertical_scale == 0.75F,
+            "config file should set terrain vertical scale");
     require(config.terrain.water_surface == 0, "config file should set terrain booleans");
     require(config.terrain_lab.slice_preset == "arid-mesa-canyon",
             "config file should set Terrain Lab slice preset");
@@ -1604,14 +1636,30 @@ void test_run_config_parses_terrain_controls() {
     std::string ridges_value = "0.85";
     std::string valleys_flag = "--terrain-valleys";
     std::string valleys_value = "1.15";
+    std::string recipe_flag = "--terrain-recipe";
+    std::string recipe_value = "temperate-mountain-range-stress";
+    std::string camera_flag = "--terrain-camera-preset";
+    std::string camera_value = "surface";
+    std::string vertical_scale_flag = "--terrain-vertical-scale";
+    std::string vertical_scale_value = "0.75";
+    std::string preview_runtime_flag = "--terrain-preview-runtime";
+    std::string preview_runtime_value = "terrain-engine-ref";
+    std::string preview_color_flag = "--terrain-preview-color";
+    std::string preview_color_value = "height";
+    std::string preview_surface_flag = "--terrain-preview-surface";
+    std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 18> argv{
+    std::array<char*, 30> argv{
         program.data(),          seed_flag.data(),         seed_value.data(),
         cell_size_flag.data(),   cell_size_value.data(),   sea_level_flag.data(),
         sea_level_value.data(),  land_extent_flag.data(),  land_extent_value.data(),
         coast_noise_flag.data(), coast_noise_value.data(), relief_flag.data(),
         relief_value.data(),     ridges_flag.data(),       ridges_value.data(),
-        valleys_flag.data(),     valleys_value.data(),     water_surface_flag.data()};
+        valleys_flag.data(),     valleys_value.data(),     recipe_flag.data(),
+        recipe_value.data(),     camera_flag.data(),       camera_value.data(),
+        vertical_scale_flag.data(), vertical_scale_value.data(), preview_runtime_flag.data(),
+        preview_runtime_value.data(), preview_color_flag.data(), preview_color_value.data(),
+        preview_surface_flag.data(), preview_surface_value.data(), water_surface_flag.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -1624,6 +1672,18 @@ void test_run_config_parses_terrain_controls() {
     require(config.terrain.relief == 1.35F, "run config should parse terrain relief");
     require(config.terrain.ridges == 0.85F, "run config should parse terrain ridges");
     require(config.terrain.valleys == 1.15F, "run config should parse terrain valleys");
+    require(config.terrain.recipe == "temperate-mountain-range-stress",
+            "run config should parse terrain recipe");
+    require(config.terrain.camera_preset == "surface",
+            "run config should parse terrain camera preset");
+    require(config.terrain.vertical_scale == 0.75F,
+            "run config should parse terrain vertical scale");
+    require(config.terrain.preview_runtime == "terrain-engine-ref",
+            "run config should parse terrain preview runtime");
+    require(config.terrain.preview_color == "height",
+            "run config should parse terrain preview color");
+    require(config.terrain.preview_surface == "post-erosion",
+            "run config should parse terrain preview surface");
     require(config.terrain.water_surface == 0,
             "run config should parse disabled terrain water surface");
 

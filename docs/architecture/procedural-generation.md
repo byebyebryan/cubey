@@ -286,6 +286,13 @@ Remaining candidates after that closure batch are:
   pass;
 - explicit source-field recipes for mountain range, river, and dune drivers.
 
+The ShaderToy terrain/hydro review reinforces this boundary. Gully/erosion,
+shallow-water relaxation, shoreline composition, and scenic terrain debug
+shading should start as `projects/terrain` process diagnostics or consumer
+visual cues. They should move into `cubey::procedural` only after the operator
+is deterministic, meter-aware, documented with physical limits, and needed
+outside the terrain workbench.
+
 Near-term non-goals:
 
 - no full procedural node graph;

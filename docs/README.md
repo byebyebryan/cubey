@@ -49,6 +49,9 @@ Detailed current foundation notes live under
   handoff direction.
 - [Planet rendering](architecture/planet-rendering.md): planet-scale frame, LOD,
   terrain-field, sky/celestial, and ocean handoff direction.
+- [Terrain reboot direction](architecture/terrain-reboot.md): local terrain
+  product generator strategy, previous terrain lessons, reference takeaways,
+  product contract, and first vertical slice.
 - [Ocean adjacent systems](architecture/ocean-adjacent-systems.md): atmosphere,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [Cloud rendering](architecture/cloud-rendering.md): surface-only Cloud V1
@@ -83,10 +86,12 @@ Reference projects:
 
 - [Cloud Ref](../projects/cloud_ref/README.md)
 - [Cloud Ref 2](../projects/cloud_ref_2/README.md)
+- [Terrain Ref](../projects/terrain_ref/README.md)
 
 Legacy snapshots:
 
 - [Clouds Legacy](../projects/clouds_legacy/README.md)
+- [Terrain Workbench Legacy](../projects/terrain_workbench_legacy/README.md)
 - [Terrain Lab Legacy](../projects/terrain_lab_legacy/README.md)
 - [Procedural Terrain Legacy](../projects/procedural_terrain_legacy/README.md)
 

@@ -101,6 +101,14 @@ constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip"
                                                               "pic/flip"};
 constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-faces", "tiled",
                                                            "tiled-faces"};
+constexpr std::array<std::string_view, 5> kTerrainCameraPresets{"oblique", "profile", "top",
+                                                                "surface", "surface-low"};
+constexpr std::array<std::string_view, 2> kTerrainPreviewRuntimeModes{"cpu-product",
+                                                                      "terrain-engine-ref"};
+constexpr std::array<std::string_view, 4> kTerrainPreviewColors{"material", "height", "river",
+                                                                "channel"};
+constexpr std::array<std::string_view, 3> kTerrainPreviewSurfaces{"height", "post-erosion",
+                                                                  "pre-process"};
 constexpr std::array<std::string_view, 6> kTerrainLabSlicePresets{
     "arid-mesa-canyon",      "temperate-mountain-rivers", "desert-dunes",
     "alpine-glacial-valley", "mountain-ridges-peaks",     "temperate-mountain-watershed",
@@ -139,7 +147,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 250> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 257> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -175,6 +183,9 @@ constexpr std::array<ConfigOptionDescriptor, 250> kRunConfigOptions{
     option(RunConfigOptionId::GridHeight, "grid.height", "--grid-height", "Height", "Grid",
            "Project grid height. Zero or null leaves the project default in place.",
            ConfigOptionType::UInt32, min_range(1.0)),
+    option(RunConfigOptionId::GridSize, "grid.size", "--grid-size", "Size", "Grid",
+           "Set project grid width and height to the same value.", ConfigOptionType::UInt32,
+           min_range(1.0)),
     option(RunConfigOptionId::GridDepth, "grid.depth", "--grid-depth", "Depth", "Grid",
            "Project grid depth. Zero or null leaves the project default in place.",
            ConfigOptionType::UInt32, min_range(1.0)),
@@ -436,6 +447,29 @@ constexpr std::array<ConfigOptionDescriptor, 250> kRunConfigOptions{
            "--terrain-water-surface", "Water Surface", "Terrain",
            "Enable the terrain water surface.", ConfigOptionType::Bool, no_range(), {},
            "--no-terrain-water-surface"),
+    option(RunConfigOptionId::TerrainRecipe, "terrain.recipe", "--terrain-recipe", "Recipe",
+           "Terrain", "Named terrain recipe for terrain product consumers.",
+           ConfigOptionType::String),
+    option(RunConfigOptionId::TerrainCameraPreset, "terrain.camera_preset",
+           "--terrain-camera-preset", "Camera Preset", "Terrain",
+           "Initial terrain review camera framing.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kTerrainCameraPresets)),
+    option(RunConfigOptionId::TerrainVerticalScale, "terrain.vertical_scale",
+           "--terrain-vertical-scale", "Vertical Scale", "Terrain",
+           "Display scale applied to terrain height in renderer-backed preview consumers.",
+           ConfigOptionType::Float, min_range(0.000001)),
+    option(RunConfigOptionId::TerrainPreviewRuntime, "terrain.preview_runtime",
+           "--terrain-preview-runtime", "Preview Runtime", "Terrain",
+           "Terrain preview geometry path: cpu-product or terrain-engine-ref.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kTerrainPreviewRuntimeModes)),
+    option(RunConfigOptionId::TerrainPreviewColor, "terrain.preview_color",
+           "--terrain-preview-color", "Preview Color", "Terrain",
+           "Terrain preview diagnostic color mode.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kTerrainPreviewColors)),
+    option(RunConfigOptionId::TerrainPreviewSurface, "terrain.preview_surface",
+           "--terrain-preview-surface", "Preview Surface", "Terrain",
+           "Terrain product height field used as preview mesh geometry.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kTerrainPreviewSurfaces)),
     option(RunConfigOptionId::TerrainLabSlicePreset, "terrain_lab.slice_preset",
            "--terrain-lab-slice", "Slice Preset", "Terrain Lab", "Terrain Lab biome slice preset.",
            ConfigOptionType::Enum, no_range(), enum_choices(kTerrainLabSlicePresets)),
@@ -1195,6 +1229,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_uint32(config.grid.width);
     case RunConfigOptionId::GridHeight:
         return optional_uint32(config.grid.height);
+    case RunConfigOptionId::GridSize:
+        return config.grid.width != 0U && config.grid.width == config.grid.height
+                   ? nlohmann::json(config.grid.width)
+                   : nlohmann::json(nullptr);
     case RunConfigOptionId::GridDepth:
         return optional_uint32(config.grid.depth);
     case RunConfigOptionId::ProfileOutput:
@@ -1367,6 +1405,25 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.terrain.valleys);
     case RunConfigOptionId::TerrainWaterSurface:
         return optional_bool(config.terrain.water_surface);
+    case RunConfigOptionId::TerrainRecipe:
+        return config.terrain.recipe.empty() ? nlohmann::json(nullptr)
+                                             : nlohmann::json(config.terrain.recipe);
+    case RunConfigOptionId::TerrainCameraPreset:
+        return config.terrain.camera_preset.empty() ? nlohmann::json(nullptr)
+                                                    : nlohmann::json(config.terrain.camera_preset);
+    case RunConfigOptionId::TerrainVerticalScale:
+        return optional_float(config.terrain.vertical_scale);
+    case RunConfigOptionId::TerrainPreviewRuntime:
+        return config.terrain.preview_runtime.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain.preview_runtime);
+    case RunConfigOptionId::TerrainPreviewColor:
+        return config.terrain.preview_color.empty() ? nlohmann::json(nullptr)
+                                                    : nlohmann::json(config.terrain.preview_color);
+    case RunConfigOptionId::TerrainPreviewSurface:
+        return config.terrain.preview_surface.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain.preview_surface);
     case RunConfigOptionId::TerrainLabSlicePreset:
         return config.terrain_lab.slice_preset.empty()
                    ? nlohmann::json(nullptr)
@@ -1898,6 +1955,12 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<float>("relief", options.relief);
     adapter.writeField<float>("ridges", options.ridges);
     adapter.writeField<float>("valleys", options.valleys);
+    adapter.writeField<std::string>("recipe", options.recipe);
+    adapter.writeField<std::string>("camera_preset", options.camera_preset);
+    adapter.writeField<std::string>("preview_runtime", options.preview_runtime);
+    adapter.writeField<std::string>("preview_color", options.preview_color);
+    adapter.writeField<std::string>("preview_surface", options.preview_surface);
+    adapter.writeField<float>("vertical_scale", options.vertical_scale);
     adapter.writeField<int>("water_surface", options.water_surface);
 }
 
@@ -1910,6 +1973,12 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<float>("relief", options.relief);
     adapter.readField<float>("ridges", options.ridges);
     adapter.readField<float>("valleys", options.valleys);
+    adapter.readField<std::string>("recipe", options.recipe);
+    adapter.readField<std::string>("camera_preset", options.camera_preset);
+    adapter.readField<std::string>("preview_runtime", options.preview_runtime);
+    adapter.readField<std::string>("preview_color", options.preview_color);
+    adapter.readField<std::string>("preview_surface", options.preview_surface);
+    adapter.readField<float>("vertical_scale", options.vertical_scale);
     adapter.readField<int>("water_surface", options.water_surface);
 }
 
@@ -2294,6 +2363,13 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.grid.height = parse_number<std::uint32_t>(value, option, "unsigned integer");
         validate_range(config.grid.height, option);
         break;
+    case RunConfigOptionId::GridSize: {
+        const auto size = parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(size, option);
+        config.grid.width = size;
+        config.grid.height = size;
+        break;
+    }
     case RunConfigOptionId::GridDepth:
         config.grid.depth = parse_number<std::uint32_t>(value, option, "unsigned integer");
         validate_range(config.grid.depth, option);
@@ -2585,6 +2661,25 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainWaterSurface:
         config.terrain.water_surface = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::TerrainRecipe:
+        config.terrain.recipe = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainCameraPreset:
+        config.terrain.camera_preset = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainVerticalScale:
+        config.terrain.vertical_scale = parse_config_float(value, option);
+        validate_range(config.terrain.vertical_scale, option);
+        break;
+    case RunConfigOptionId::TerrainPreviewRuntime:
+        config.terrain.preview_runtime = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainPreviewColor:
+        config.terrain.preview_color = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainPreviewSurface:
+        config.terrain.preview_surface = std::string(value);
         break;
     case RunConfigOptionId::TerrainLabSlicePreset:
         config.terrain_lab.slice_preset = std::string(value);
