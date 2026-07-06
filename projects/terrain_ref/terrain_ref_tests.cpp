@@ -2,11 +2,19 @@
 #include "terrain_ref_config.h"
 #include "terrain_ref_mesh.h"
 
+#include <cubey/core/image_io.h>
 #include <cubey/core/run_config.h>
 
+#include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <stdexcept>
+
+#ifndef CUBEY_TERRAIN_REF_ASSET_DIR
+#error "CUBEY_TERRAIN_REF_ASSET_DIR must be defined by the terrain_ref test target"
+#endif
 
 namespace {
 
@@ -113,11 +121,28 @@ void test_terrain_ref_mesh_uses_clipmap_grid() {
             "terrain_ref mesh should leave height displacement to the shader");
 }
 
+void test_terrain_ref_material_assets_decode() {
+    const std::filesystem::path asset_dir(CUBEY_TERRAIN_REF_ASSET_DIR);
+    constexpr std::array<const char*, 6> assets{
+        "sand.jpg", "grass.jpg", "terrainTexture.jpg", "rdiffuse.jpg", "snow2.jpg", "rnormal.jpg",
+    };
+
+    for (const char* asset : assets) {
+        const cubey::ImageRgba8 image = cubey::read_image_rgba8(asset_dir / asset);
+        require(image.width > 0U && image.height > 0U,
+                "terrain_ref material asset should decode dimensions");
+        require(image.pixels.size() ==
+                    static_cast<std::size_t>(image.width) * image.height * 4U,
+                "terrain_ref material asset should decode RGBA8 bytes");
+    }
+}
+
 } // namespace
 
 int main() {
     test_terrain_ref_config_from_run_config();
     test_terrain_engine_reference_sampling_is_deterministic();
     test_terrain_ref_mesh_uses_clipmap_grid();
+    test_terrain_ref_material_assets_decode();
     return 0;
 }
