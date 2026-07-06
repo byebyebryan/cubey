@@ -1,6 +1,6 @@
-# Terrain
+# Terrain Workbench Legacy
 
-`projects/terrain` is the rebooted terrain workbench. It starts as a local
+`projects/terrain_workbench_legacy` preserves the rebooted terrain workbench. It starts as a local
 CPU/reference terrain product generator, not as a direct continuation of
 `terrain_lab_legacy`, not as a coastal/ocean demo, and not as a planet renderer.
 
@@ -90,7 +90,7 @@ do not modify `height_m`, materials, rivers, wetness, or vegetation.
 Revision 25 adds explicit mountain macro fields for the same stress recipe:
 `mountain_mass`, `mountain_shoulder`, and `mountain_summit_core`. The mountain
 source now separates broad highland mass, foothill/shoulder buildup, and sparse
-summit cores before local detail is applied. `terrain_preview` can also render
+summit cores before local detail is applied. `terrain_workbench_preview_legacy` can also render
 `height`, `post-erosion`, or `pre-process` surfaces so diagnostic surfaces can
 be compared without changing the product contract.
 Revision 26 changes the mountain stress recipe from additive feature stacking
@@ -137,7 +137,7 @@ the bounded thermal talus diagnostic, and the mountain stress ridge/valley
 process fields.
 The scalar review export writes `manifest.json` with recipe, grid, summary,
 field stats, view names, and output filenames.
-`terrain` and `terrain_preview` also accept `--profile-output <prefix>`. Bare
+`terrain` and `terrain_workbench_preview_legacy` also accept `--profile-output <prefix>`. Bare
 prefixes are written under `outputs/profiles/`, and each run emits
 `<prefix>.terrain_phases.json` with coarse CPU phase timings and run metadata.
 
@@ -173,62 +173,62 @@ waterline clamp/tint, not reflection/refraction water.
 ## Commands
 
 ```sh
-cmake --build --preset dev --target cubey_project_terrain cubey_project_terrain_preview cubey_project_terrain_tests
-ctest --preset dev -R terrain --output-on-failure
+cmake --build --preset dev --target cubey_project_terrain_workbench_legacy cubey_project_terrain_workbench_preview_legacy cubey_project_terrain_workbench_legacy_tests
+ctest --preset dev -R terrain_workbench_legacy --output-on-failure
 
-./build/dev/projects/terrain/terrain
-./build/dev/projects/terrain/terrain --headless --terrain-debug-view final --output outputs/terrain/current/final.png
-./build/dev/projects/terrain/terrain --headless --terrain-debug-view flow-accumulation --grid-size 129 --output outputs/terrain/current/flow-accumulation.png
-./build/dev/projects/terrain/terrain --headless --grid-size 513 --terrain-debug-view all --terrain-output-dir outputs/terrain/current-river-network
-./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network
-./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
-./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress
-./build/dev/projects/terrain/terrain --headless --grid-size 1025 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress-1025
-./build/dev/projects/terrain/terrain --headless --grid-size 513 --recipe terrain-engine-ref --terrain-debug-view all --terrain-output-dir outputs/terrain/terrain-engine-ref
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-preview-runtime terrain-engine-ref --terrain-camera-preset oblique --terrain-water-surface --output outputs/terrain/terrain-engine-ref/runtime-oblique-water.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-preview-runtime terrain-engine-ref --terrain-camera-preset oblique --no-terrain-water-surface --output outputs/terrain/terrain-engine-ref/runtime-oblique-dry.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-preview-runtime terrain-engine-ref --terrain-camera-preset surface-low --terrain-water-surface --output outputs/terrain/terrain-engine-ref/runtime-surface-low-water.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color material --output outputs/terrain/current-river-network/river-perspective.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color height --output outputs/terrain/current-river-network/river-height-perspective.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color channel --output outputs/terrain/current-river-network/river-channel-perspective.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset oblique --terrain-preview-color material --output outputs/terrain/stress-river-network/river-perspective.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset oblique --terrain-preview-color channel --output outputs/terrain/stress-river-network/river-channel-perspective.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/mountain-range-stress/mountain-perspective.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset profile --terrain-preview-surface height --output outputs/terrain/mountain-range-stress/mountain-profile.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-post-erosion-perspective.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-height-perspective.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-surface-height.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress-1025/mountain-surface-height.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color material --output outputs/terrain/terrain-engine-ref/terrain-engine-perspective.png
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/terrain-engine-ref/terrain-engine-surface-height.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy --headless --terrain-debug-view final --output outputs/terrain/current/final.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy --headless --terrain-debug-view flow-accumulation --grid-size 129 --output outputs/terrain/current/flow-accumulation.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy --headless --grid-size 513 --terrain-debug-view all --terrain-output-dir outputs/terrain/current-river-network
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy --headless --grid-size 513 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy --headless --grid-size 1025 --recipe temperate-mountain-river-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/stress-river-network-1025
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy --headless --grid-size 513 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy --headless --grid-size 1025 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/mountain-range-stress-1025
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy --headless --grid-size 513 --recipe terrain-engine-ref --terrain-debug-view all --terrain-output-dir outputs/terrain/terrain-engine-ref
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-preview-runtime terrain-engine-ref --terrain-camera-preset oblique --terrain-water-surface --output outputs/terrain/terrain-engine-ref/runtime-oblique-water.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-preview-runtime terrain-engine-ref --terrain-camera-preset oblique --no-terrain-water-surface --output outputs/terrain/terrain-engine-ref/runtime-oblique-dry.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-preview-runtime terrain-engine-ref --terrain-camera-preset surface-low --terrain-water-surface --output outputs/terrain/terrain-engine-ref/runtime-surface-low-water.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color material --output outputs/terrain/current-river-network/river-perspective.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color height --output outputs/terrain/current-river-network/river-height-perspective.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river --terrain-camera-preset oblique --terrain-preview-color channel --output outputs/terrain/current-river-network/river-channel-perspective.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset oblique --terrain-preview-color material --output outputs/terrain/stress-river-network/river-perspective.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-river-stress --terrain-camera-preset oblique --terrain-preview-color channel --output outputs/terrain/stress-river-network/river-channel-perspective.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/mountain-range-stress/mountain-perspective.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset profile --terrain-preview-surface height --output outputs/terrain/mountain-range-stress/mountain-profile.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-post-erosion-perspective.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-height-perspective.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress/mountain-surface-height.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 1025 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/mountain-range-stress-1025/mountain-surface-height.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-camera-preset oblique --terrain-preview-surface height --terrain-preview-color material --output outputs/terrain/terrain-engine-ref/terrain-engine-perspective.png
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-recipe terrain-engine-ref --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/terrain-engine-ref/terrain-engine-surface-height.png
 ```
 
 Scalar debug PNG exports hand completed RGBA buffers to the shared
 `cubey::CaptureQueue`. Multi-view exports use a small encode worker pool and
 finish all queued tickets before writing `manifest.json`. This overlaps PNG
 encoding with later debug-view rasterization, but terrain generation and
-debug-view rasterization are still serial CPU work. `terrain_preview` already
+debug-view rasterization are still serial CPU work. `terrain_workbench_preview_legacy` already
 uses the host capture path, so its PNG and video artifacts go through the same
 queued capture foundation.
 
 Fixed-extent mountain resolution audit:
 
 ```sh
-/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain --headless --grid-size 513 --cell-size 32 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/513
-/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain --headless --grid-size 1025 --cell-size 16 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/1025
-/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain --headless --grid-size 2049 --cell-size 8 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/2049
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy --headless --grid-size 513 --cell-size 32 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/513
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy --headless --grid-size 1025 --cell-size 16 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/1025
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain_workbench_legacy/terrain_workbench_legacy --headless --grid-size 2049 --cell-size 8 --recipe temperate-mountain-range-stress --terrain-debug-view all --terrain-output-dir outputs/terrain/resolution-mountain-16km/2049
 
-/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/513/mountain-perspective.png
-/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/1025/mountain-perspective.png
-/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/2049/mountain-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/513/mountain-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/1025/mountain-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface height --output outputs/terrain/resolution-mountain-16km/2049/mountain-perspective.png
 
-/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/513/mountain-post-erosion-perspective.png
-/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/1025/mountain-post-erosion-perspective.png
-/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/2049/mountain-post-erosion-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/513/mountain-post-erosion-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/1025/mountain-post-erosion-perspective.png
+/usr/bin/time -f 'elapsed=%E maxrss_kb=%M' ./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset oblique --terrain-preview-surface post-erosion --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/2049/mountain-post-erosion-perspective.png
 
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/513/mountain-surface-height.png --profile-output terrain-res-mountain-16km-513-surface-height
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/1025/mountain-surface-height.png --profile-output terrain-res-mountain-16km-1025-surface-height
-./build/dev/projects/terrain/terrain_preview --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/2049/mountain-surface-height.png --profile-output terrain-res-mountain-16km-2049-surface-height
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 513 --terrain-cell-size 32 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/513/mountain-surface-height.png --profile-output terrain-res-mountain-16km-513-surface-height
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 1025 --terrain-cell-size 16 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/1025/mountain-surface-height.png --profile-output terrain-res-mountain-16km-1025-surface-height
+./build/dev/projects/terrain_workbench_legacy/terrain_workbench_preview_legacy --headless --width 1280 --height 720 --grid-size 2049 --terrain-cell-size 8 --terrain-recipe temperate-mountain-range-stress --terrain-camera-preset surface --terrain-preview-surface height --terrain-preview-color height --output outputs/terrain/resolution-mountain-16km/2049/mountain-surface-height.png --profile-output terrain-res-mountain-16km-2049-surface-height
 ```
 
 The fixed-extent audit currently confirms that `1025` improves normal review
@@ -341,7 +341,7 @@ reports `height_m.span = 2472.466`,
 `mountain_visual_source_height_m.span = 2472.466`, and
 `mountain_morphology_delta_m.max = 5.134`.
 
-`terrain_preview` is a separate renderer-backed consumer for perspective
+`terrain_workbench_preview_legacy` is a separate renderer-backed consumer for perspective
 review. It turns the selected `TerrainRegionProduct` height field into a lit
 mesh through the normal Vulkan windowed/headless app path. For the mountain
 stress recipe, `mountain-perspective.png` is the primary 3D read for peak,

@@ -29,8 +29,8 @@
 #include <stdexcept>
 #include <utility>
 
-#ifndef CUBEY_TERRAIN_PREVIEW_SHADER_DIR
-#error "CUBEY_TERRAIN_PREVIEW_SHADER_DIR must be defined by the terrain_preview CMake target"
+#ifndef CUBEY_TERRAIN_WORKBENCH_PREVIEW_SHADER_DIR
+#error "CUBEY_TERRAIN_WORKBENCH_PREVIEW_SHADER_DIR must be defined by the terrain workbench preview CMake target"
 #endif
 
 namespace cubey::projects::terrain {
@@ -61,7 +61,7 @@ struct TerrainPreviewSceneMetrics {
 };
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
-    return std::filesystem::path(CUBEY_TERRAIN_PREVIEW_SHADER_DIR) / filename;
+    return std::filesystem::path(CUBEY_TERRAIN_WORKBENCH_PREVIEW_SHADER_DIR) / filename;
 }
 
 [[nodiscard]] float terrain_preview_extent_m(const TerrainRegionConfig& config) {
@@ -306,8 +306,8 @@ class TerrainPreviewApp {
         return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
-                .app_name = "terrain_preview",
-                .ready_status = "rendering terrain preview",
+                .app_name = "terrain_workbench_preview_legacy",
+                .ready_status = "rendering terrain workbench preview",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
@@ -489,7 +489,7 @@ class TerrainPreviewApp {
                 .device = &device,
                 .command_buffer = command_buffer,
                 .frame_slot = frame_slot,
-                .label = "vkEndCommandBuffer terrain_preview",
+                .label = "vkEndCommandBuffer terrain_workbench_preview_legacy",
                 .command_buffer_mode =
                     present ? cubey::render::RenderGraphCommandBufferMode::BeginAndEnd
                             : cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,

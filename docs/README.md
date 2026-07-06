@@ -82,6 +82,7 @@ Project-specific design stays beside the project:
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [Ocean](../projects/ocean/README.md)
 - [Planet](../projects/planet/README.md)
+- [Terrain Workbench Legacy](../projects/terrain_workbench_legacy/README.md)
 - [Terrain Lab Legacy](../projects/terrain_lab_legacy/README.md)
 - [Procedural Terrain Legacy](../projects/procedural_terrain_legacy/README.md)
 
