@@ -10,6 +10,7 @@
 #pragma GCC diagnostic ignored "-Wshadow"
 #endif
 #include <cgltf.h>
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop

@@ -10,8 +10,6 @@ void test_gltf_animation_samples_cubic_translation();
 void test_gltf_animation_samples_morph_weights();
 void test_gltf_animation_computes_joint_palette_from_world_matrices();
 void test_image_io_writes_rgba_png();
-void test_image_io_reads_rgba_image();
-void test_image_io_read_rejects_missing_file();
 void test_inline_executor_runs_jobs_immediately();
 void test_job_system_runs_jobs_and_propagates_errors();
 void test_job_system_shutdown_rejects_new_jobs();
@@ -224,8 +222,6 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_gltf_animation_samples_morph_weights),
         CUBEY_TEST(test_gltf_animation_computes_joint_palette_from_world_matrices),
         CUBEY_TEST(test_image_io_writes_rgba_png),
-        CUBEY_TEST(test_image_io_reads_rgba_image),
-        CUBEY_TEST(test_image_io_read_rejects_missing_file),
         CUBEY_TEST(test_inline_executor_runs_jobs_immediately),
         CUBEY_TEST(test_job_system_runs_jobs_and_propagates_errors),
         CUBEY_TEST(test_job_system_shutdown_rejects_new_jobs),

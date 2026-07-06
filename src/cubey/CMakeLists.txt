@@ -14,19 +14,7 @@ target_link_libraries(
 )
 set_target_properties(cubey_stb_image_write PROPERTIES CXX_CLANG_TIDY "")
 
-add_library(cubey_stb_image OBJECT
-    core/stb_image.cpp
-)
-target_link_libraries(
-    cubey_stb_image
-    PRIVATE
-        cubey_external_stb_image
-        cubey_project_options
-)
-set_target_properties(cubey_stb_image PROPERTIES CXX_CLANG_TIDY "")
-
 add_library(cubey_core STATIC
-    $<TARGET_OBJECTS:cubey_stb_image>
     $<TARGET_OBJECTS:cubey_stb_image_write>
     core/config_options.cpp
     core/run_config.cpp
@@ -70,7 +58,6 @@ target_link_libraries(
     PRIVATE
         lazy::serializable::nlohmann-json
         cubey_external_fastnoise_lite
-        cubey_external_stb_image
         cubey_project_warnings
 )
 

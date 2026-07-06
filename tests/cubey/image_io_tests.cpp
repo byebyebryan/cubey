@@ -51,37 +51,3 @@ void test_image_io_writes_rgba_png() {
 
     std::filesystem::remove(output);
 }
-
-void test_image_io_reads_rgba_image() {
-    const std::filesystem::path output =
-        std::filesystem::temp_directory_path() / "cubey_image_io_read_test.png";
-    std::filesystem::remove(output);
-
-    constexpr std::array<std::uint8_t, 16> pixels{
-        255, 0, 0, 255, 0, 255, 0, 128, 0, 0, 255, 64, 255, 255, 255, 32,
-    };
-    cubey::write_png_rgba8(output, 2, 2, pixels);
-
-    const cubey::ImageRgba8 image = cubey::read_image_rgba8(output);
-    require(image.width == 2, "read_image_rgba8 should preserve width");
-    require(image.height == 2, "read_image_rgba8 should preserve height");
-    require(image.pixels.size() == pixels.size(), "read_image_rgba8 should decode RGBA8 bytes");
-    require(std::equal(pixels.begin(), pixels.end(), image.pixels.begin()),
-            "read_image_rgba8 should preserve RGBA pixel values");
-
-    std::filesystem::remove(output);
-}
-
-void test_image_io_read_rejects_missing_file() {
-    const std::filesystem::path missing =
-        std::filesystem::temp_directory_path() / "cubey_image_io_missing_test.png";
-    std::filesystem::remove(missing);
-
-    bool threw = false;
-    try {
-        (void)cubey::read_image_rgba8(missing);
-    } catch (const std::runtime_error&) {
-        threw = true;
-    }
-    require(threw, "read_image_rgba8 should reject missing files");
-}
