@@ -1,5 +1,6 @@
 #include "terrain_ref_app.h"
 
+#include "shadertoy_mountain_reference.h"
 #include "terrain_engine_reference.h"
 #include "terrain_ref_config.h"
 #include "terrain_ref_mesh.h"
@@ -59,6 +60,26 @@ struct TerrainRefSceneMetrics {
     float scene_extent_m = 1.0F;
 };
 
+[[nodiscard]] float terrain_ref_source_id(TerrainRefRecipe recipe) {
+    return recipe == TerrainRefRecipe::ShadertoyMountain ? 1.0F : 0.0F;
+}
+
+[[nodiscard]] float terrain_ref_water_height_m(TerrainRefRecipe recipe) {
+    return recipe == TerrainRefRecipe::ShadertoyMountain ? kShadertoyMountainReferenceWaterHeightM
+                                                         : kTerrainEngineReferenceWaterHeightM;
+}
+
+[[nodiscard]] float terrain_ref_height_m(const TerrainRefConfig& config, float world_x,
+                                         float world_z) {
+    switch (config.recipe) {
+    case TerrainRefRecipe::TerrainEngine:
+        return terrain_engine_reference_height(world_x, world_z, config.seed);
+    case TerrainRefRecipe::ShadertoyMountain:
+        return shadertoy_mountain_reference_height(world_x, world_z, config.seed);
+    }
+    return terrain_engine_reference_height(world_x, world_z, config.seed);
+}
+
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_TERRAIN_REF_SHADER_DIR) / filename;
 }
@@ -112,7 +133,7 @@ struct TerrainRefSceneMetrics {
             const float x_t = static_cast<float>(x) / static_cast<float>(kSamplesPerAxis - 1U);
             const float world_x =
                 -clipmap_config.outer_half_extent + (2.0F * clipmap_config.outer_half_extent * x_t);
-            const float height = terrain_engine_reference_height(world_x, world_z, config.seed);
+            const float height = terrain_ref_height_m(config, world_x, world_z);
             min_height = std::min(min_height, height);
             max_height = std::max(max_height, height);
         }
@@ -327,10 +348,10 @@ class TerrainRefApp {
                 },
             .water_params =
                 {
-                    kTerrainEngineReferenceWaterHeightM,
+                    terrain_ref_water_height_m(terrain_config_.recipe),
                     scene_metrics_.min_height_m,
                     scene_metrics_.max_height_m,
-                    0.006F,
+                    terrain_ref_source_id(terrain_config_.recipe),
                 },
             .camera_position_fog =
                 {

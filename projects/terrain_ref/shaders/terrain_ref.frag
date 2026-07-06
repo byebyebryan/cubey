@@ -50,6 +50,7 @@ vec3 terrain_ref_color_variation(vec3 base, vec2 world_xz, float scale, float am
 }
 
 vec3 terrain_ref_material_color(inout vec3 normal) {
+    bool shadertoy_mountain = pc.water_params.w > 0.5;
     float grass_coverage = 0.65;
     float transition_m = 20.0;
     float water_height_m = pc.water_params.x;
@@ -69,6 +70,33 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         0.006, 0.24);
     vec3 snow = terrain_ref_color_variation(vec3(0.82, 0.84, 0.80), frag_world_position.xz,
         0.014, 0.10);
+
+    if (shadertoy_mountain) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        vec3 talus = terrain_ref_color_variation(vec3(0.38, 0.35, 0.30),
+            frag_world_position.xz, 0.008, 0.22);
+        vec3 alpine_grass = terrain_ref_color_variation(vec3(0.20, 0.30, 0.13),
+            frag_world_position.xz, 0.005, 0.24);
+        vec3 high_rock = terrain_ref_color_variation(vec3(0.50, 0.49, 0.45),
+            frag_world_position.xz, 0.011, 0.20);
+        vec3 color = mix(talus, high_rock, smoothstep(0.35, 0.82, normalized_height));
+        float low_grass = smoothstep(water_height_m + transition_m,
+            water_height_m + transition_m * 5.0, frag_height_m) *
+            (1.0 - smoothstep(0.48, 0.76, normalized_height)) *
+            smoothstep(0.56, 0.86, cos_v);
+        color = mix(color, alpine_grass, low_grass * 0.82);
+        float shore = 1.0 - smoothstep(water_height_m + 8.0, water_height_m + 42.0,
+            frag_height_m);
+        color = mix(color, sand, shore * 0.75);
+        float cliff = 1.0 - smoothstep(0.42, 0.72, cos_v);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.08, 0.20, cliff));
+        float snow_mask = smoothstep(0.62, 0.86, normalized_height) *
+            smoothstep(0.36, 0.70, cos_v);
+        color = mix(color, snow, snow_mask * 0.90);
+        return color;
+    }
 
     vec3 color = rock;
     float ten_percent_grass = grass_coverage - grass_coverage * 0.1;

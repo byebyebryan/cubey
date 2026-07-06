@@ -98,13 +98,13 @@ struct NoiseSample {
 [[nodiscard]] float shadertoy_mountain_height_from_seed(Vec2 world, Vec2 seed,
                                                         int octave_count) {
     Vec2 p{
-        .x = (world.x * 0.00018F) + (seed.x * 0.137F) + 7.0F,
-        .y = (world.y * 0.00018F) + (seed.y * 0.113F) - 5.0F,
+        .x = (world.x * 0.00026F) + (seed.x * 0.137F) + 7.0F,
+        .y = (world.y * 0.00026F) + (seed.y * 0.113F) - 5.0F,
     };
     const float macro = macro_fbm({.x = p.x * 0.42F, .y = p.y * 0.42F},
                                   {.x = seed.x + 2.0F, .y = seed.y - 3.0F});
-    const float support = smoothstep(0.18F, 0.92F, macro);
-    const float range = std::pow(std::max(support, 0.0F), 1.32F);
+    const float support = smoothstep(0.08F, 0.68F, macro);
+    const float range = std::max(support, 0.0F);
 
     Vec2 warp{};
     float frequency = 1.0F;
@@ -133,9 +133,9 @@ struct NoiseSample {
     }
 
     const float detail = total_amplitude > 0.0F ? total / total_amplitude : 0.0F;
-    const float broad_base = std::pow(std::max(macro, 0.0F), 2.20F) * 260.0F;
-    const float mountain = std::pow(std::max(detail, 0.0F), 1.28F) * range * 980.0F;
-    const float valley_cut = std::pow(std::max(1.0F - macro, 0.0F), 2.0F) * 110.0F;
+    const float broad_base = std::pow(std::max(macro, 0.0F), 2.20F) * 900.0F;
+    const float mountain = std::pow(std::max(detail, 0.0F), 1.05F) * range * 3200.0F;
+    const float valley_cut = std::pow(std::max(1.0F - macro, 0.0F), 2.0F) * 180.0F;
     return std::max(broad_base + mountain - valley_cut, 0.0F);
 }
 

@@ -18,6 +18,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/terrain_engine_reference.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadertoy_mountain_reference.glsl"
 )
 
 if (BUILD_TESTING)

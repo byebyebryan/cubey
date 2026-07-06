@@ -93,6 +93,9 @@ the detailed foundation notes under `docs/architecture/`.
   first rendering pass for the clean reference lane: TerrainEngine-style
   material textures, lighting/fog, captures, and explicit water/tessellation
   deferrals.
+- [Terrain ref ShaderToy heightfield plan](terrain-ref-shadertoy-heightfield-plan.md):
+  first clean-room ShaderToy-style heightfield recipe in `terrain_ref`, with
+  source-specific material response and explicit non-goals.
 - [Terrain mountain gully diagnostic plan](terrain-mountain-gully-diagnostic-plan.md):
   revision 24 plan for diagnostic-only gully / erosion fields over the mountain
   stress recipe before any height-affecting erosion pass.

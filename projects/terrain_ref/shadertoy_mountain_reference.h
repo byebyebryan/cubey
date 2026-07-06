@@ -6,6 +6,8 @@
 
 namespace cubey::projects::terrain_ref {
 
+inline constexpr float kShadertoyMountainReferenceWaterHeightM = 180.0F;
+
 enum class ShadertoyMountainReferenceDetail : std::uint8_t {
     Geometry,
     Surface,
