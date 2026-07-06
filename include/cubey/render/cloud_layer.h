@@ -82,7 +82,8 @@ struct CloudLayerGeneratedShaderFiles {
 
 struct CloudLayerRuntimeShaderFiles {
     CloudLayerGeneratedShaderFiles generated{};
-    ShaderStageFile march{};
+    ShaderStageFile general_march{};
+    ShaderStageFile surface_march{};
     ShaderStageFile temporal{};
     ShaderStageFile composite_vertex{};
     ShaderStageFile composite_fragment{};
@@ -109,6 +110,7 @@ struct CloudLayerRuntimeFrame {
     RenderGraphTextureHandle history_cloud_write{};
     RenderGraphTextureHandle history_metadata_write{};
     bool temporal_pass_enabled = false;
+    bool surface_march_enabled = false;
     std::uint32_t history_write_index = 0;
     CloudLayerFrameUniforms frame_uniforms{};
 };
@@ -168,7 +170,8 @@ class CloudLayerRuntime {
     [[nodiscard]] const MaterialInstance& march_material() const;
     [[nodiscard]] const MaterialInstance& temporal_material() const;
     [[nodiscard]] const MaterialInstance& composite_material() const;
-    [[nodiscard]] const ComputePipelineResource& march_pipeline() const;
+    [[nodiscard]] const ComputePipelineResource& general_march_pipeline() const;
+    [[nodiscard]] const ComputePipelineResource& surface_march_pipeline() const;
     [[nodiscard]] const ComputePipelineResource& temporal_pipeline() const;
     [[nodiscard]] const GraphicsPipelineResource& composite_pipeline() const;
     [[nodiscard]] const cubey::vulkan::Sampler& composite_sampler() const;
@@ -185,7 +188,8 @@ class CloudLayerRuntime {
     void create_history_textures(const cubey::vulkan::Device& device, VkExtent2D extent,
                                  std::uint32_t frame_slot_count);
     void record_march_dispatch(const cubey::vulkan::CommandRecorder& recorder,
-                               VkDescriptorSet descriptor_set, VkExtent2D extent) const;
+                               VkDescriptorSet descriptor_set, VkExtent2D extent,
+                               bool surface_march_enabled) const;
     void record_temporal_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                                   VkDescriptorSet descriptor_set, VkExtent2D extent) const;
     void record_composite_draw(const cubey::vulkan::CommandRecorder& recorder,
@@ -197,7 +201,8 @@ class CloudLayerRuntime {
     std::optional<MaterialInstance> march_material_{};
     std::optional<MaterialInstance> temporal_material_{};
     std::optional<MaterialInstance> composite_material_{};
-    std::optional<ComputePipelineResource> march_pipeline_{};
+    std::optional<ComputePipelineResource> general_march_pipeline_{};
+    std::optional<ComputePipelineResource> surface_march_pipeline_{};
     std::optional<ComputePipelineResource> temporal_pipeline_{};
     std::optional<GraphicsPipelineResource> composite_pipeline_{};
     std::optional<cubey::vulkan::Sampler> composite_sampler_{};

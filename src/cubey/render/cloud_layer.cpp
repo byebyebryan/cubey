@@ -189,6 +189,78 @@ namespace {
     return static_cast<float>(static_cast<std::uint32_t>(style));
 }
 
+[[nodiscard]] bool cloud_layer_surface_march_debug_view_supported(CloudLayerDebugView view) {
+    switch (view) {
+    case CloudLayerDebugView::Final:
+    case CloudLayerDebugView::RawFinal:
+    case CloudLayerDebugView::AuthoredWeather:
+    case CloudLayerDebugView::Density:
+    case CloudLayerDebugView::Transmittance:
+    case CloudLayerDebugView::Lighting:
+    case CloudLayerDebugView::Shadow:
+    case CloudLayerDebugView::Steps:
+    case CloudLayerDebugView::Background:
+    case CloudLayerDebugView::CloudAlpha:
+    case CloudLayerDebugView::Distance:
+    case CloudLayerDebugView::MetadataDistance:
+    case CloudLayerDebugView::MetadataAlpha:
+    case CloudLayerDebugView::MetadataConfidence:
+    case CloudLayerDebugView::MetadataDensity:
+    case CloudLayerDebugView::BaseDensity:
+    case CloudLayerDebugView::DetailDensity:
+    case CloudLayerDebugView::AmbientLight:
+    case CloudLayerDebugView::DirectLight:
+    case CloudLayerDebugView::PhaseLight:
+    case CloudLayerDebugView::CloudType:
+    case CloudLayerDebugView::WeatherEdge:
+    case CloudLayerDebugView::CoverageBias:
+    case CloudLayerDebugView::LocalAlpha:
+    case CloudLayerDebugView::JitterPattern:
+    case CloudLayerDebugView::EdgeMask:
+        return true;
+    case CloudLayerDebugView::VisibleDensity:
+    case CloudLayerDebugView::VisibleCloudType:
+    case CloudLayerDebugView::DistanceRegime:
+    case CloudLayerDebugView::OrbitAlpha:
+    case CloudLayerDebugView::OrbitCoverage:
+    case CloudLayerDebugView::OrbitDetail:
+    case CloudLayerDebugView::OrbitHull:
+    case CloudLayerDebugView::OrbitEnvelope:
+    case CloudLayerDebugView::OrbitShellAlpha:
+    case CloudLayerDebugView::OrbitShellHeight:
+    case CloudLayerDebugView::OrbitShellNormal:
+    case CloudLayerDebugView::OrbitShellShadow:
+    case CloudLayerDebugView::LocalScatter:
+    case CloudLayerDebugView::LocalClear:
+    case CloudLayerDebugView::LocalStructure:
+    case CloudLayerDebugView::LocalEdgeDetail:
+    case CloudLayerDebugView::FarShellAlpha:
+    case CloudLayerDebugView::LocalWithShellAlpha:
+    case CloudLayerDebugView::TransitionWeights:
+    case CloudLayerDebugView::SceneDepthOcclusion:
+    case CloudLayerDebugView::OrbitShellFootprint:
+    case CloudLayerDebugView::OrbitShellFilter:
+    case CloudLayerDebugView::OrbitShellMass:
+    case CloudLayerDebugView::HorizonStepLength:
+    case CloudLayerDebugView::HorizonFilterLod:
+    case CloudLayerDebugView::HorizonHandoff:
+    case CloudLayerDebugView::LocalTruncation:
+    case CloudLayerDebugView::IntegratedHorizonAlpha:
+    case CloudLayerDebugView::IntegratedHorizonRadiance:
+        return false;
+    }
+    return false;
+}
+
+[[nodiscard]] bool cloud_layer_use_surface_march(const CloudLayerConfig& config) {
+    return config.density_model == CloudLayerDensityModel::SurfaceVolume &&
+           config.distance_mode == CloudLayerDistanceMode::Local &&
+           config.view_sample_mode == CloudLayerViewSampleMode::SingleFrame &&
+           config.view_samples <= 1 && !config.temporal_enabled && config.local_volume_enabled &&
+           !config.horizon_layer_enabled &&
+           cloud_layer_surface_march_debug_view_supported(config.debug_view);
+}
+
 void validate_compute_shader(const ShaderStageFile& shader, const char* label) {
     if (shader.path.empty()) {
         throw std::runtime_error(std::string(label) + " shader path is empty");
@@ -1033,7 +1105,8 @@ void CloudLayerRuntime::destroy_swapchain_resources() {
     march_material_.reset();
     composite_material_.reset();
     temporal_pipeline_.reset();
-    march_pipeline_.reset();
+    general_march_pipeline_.reset();
+    surface_march_pipeline_.reset();
     composite_pipeline_.reset();
     history_cloud_textures_.clear();
     history_metadata_textures_.clear();
@@ -1060,10 +1133,14 @@ void CloudLayerRuntime::create_swapchain_resources(
                                         .set_count = frame_slot_count,
                                     });
     const std::array<VkDescriptorSetLayout, 1> march_layouts{march_material_->layout()};
-    march_pipeline_.emplace(device, ComputePipelineResourceConfig{
-                                        .shader_stage = shaders.march,
-                                        .descriptor_set_layouts = march_layouts,
-                                    });
+    general_march_pipeline_.emplace(device, ComputePipelineResourceConfig{
+                                                .shader_stage = shaders.general_march,
+                                                .descriptor_set_layouts = march_layouts,
+                                            });
+    surface_march_pipeline_.emplace(device, ComputePipelineResourceConfig{
+                                                .shader_stage = shaders.surface_march,
+                                                .descriptor_set_layouts = march_layouts,
+                                            });
 
     const MaterialPassInfo temporal_pass = cloud_layer_temporal_pass_info();
     temporal_material_.emplace(device, MaterialInstanceConfig{
@@ -1145,6 +1222,7 @@ CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(
                 .extent = cloud_extent,
             },
         .temporal_pass_enabled = temporal_pass_enabled,
+        .surface_march_enabled = cloud_layer_use_surface_march(config),
         .history_write_index = history_write_index,
         .frame_uniforms = uniforms,
     };
@@ -1154,10 +1232,10 @@ CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(
     graph.add_pass("cloud march", RenderGraphQueueDomain::Compute)
         .write_storage_texture(frame.product.cloud, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
         .write_storage_texture(frame.product.metadata, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-        .execute([this, frame_slot, cloud_extent](
+        .execute([this, frame_slot, cloud_extent, surface_march_enabled = frame.surface_march_enabled](
                      const RenderGraphExecutionContext& context) {
             record_march_dispatch(context.recorder(), march_material().set(frame_slot),
-                                  cloud_extent);
+                                  cloud_extent, surface_march_enabled);
         });
 
     if (temporal_pass_enabled) {
@@ -1396,11 +1474,18 @@ const MaterialInstance& CloudLayerRuntime::composite_material() const {
     return composite_material_.value();
 }
 
-const ComputePipelineResource& CloudLayerRuntime::march_pipeline() const {
-    if (!march_pipeline_.has_value()) {
-        throw std::runtime_error("cloud layer march pipeline is not initialized");
+const ComputePipelineResource& CloudLayerRuntime::general_march_pipeline() const {
+    if (!general_march_pipeline_.has_value()) {
+        throw std::runtime_error("cloud layer general march pipeline is not initialized");
     }
-    return march_pipeline_.value();
+    return general_march_pipeline_.value();
+}
+
+const ComputePipelineResource& CloudLayerRuntime::surface_march_pipeline() const {
+    if (!surface_march_pipeline_.has_value()) {
+        throw std::runtime_error("cloud layer surface march pipeline is not initialized");
+    }
+    return surface_march_pipeline_.value();
 }
 
 const ComputePipelineResource& CloudLayerRuntime::temporal_pipeline() const {
@@ -1521,12 +1606,15 @@ void CloudLayerRuntime::invalidate_history() {
 }
 
 void CloudLayerRuntime::record_march_dispatch(const cubey::vulkan::CommandRecorder& recorder,
-                                             VkDescriptorSet descriptor_set,
-                                             VkExtent2D extent) const {
+                                              VkDescriptorSet descriptor_set,
+                                             VkExtent2D extent,
+                                             bool surface_march_enabled) const {
+    const ComputePipelineResource& pipeline =
+        surface_march_enabled ? surface_march_pipeline() : general_march_pipeline();
     record_compute_pipeline_dispatch(
         recorder,
         compute_pipeline_dispatch_info(
-            march_pipeline(), descriptor_set,
+            pipeline, descriptor_set,
             ceil_dispatch_groups(extent.width, extent.height, kCloudLayerComputeGroupSize)));
 }
 

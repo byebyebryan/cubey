@@ -458,7 +458,10 @@ ocean_atmosphere_run_state(const RunConfig& run_config) {
                 .blue_noise = cubey::render::compute_shader_file(
                     ocean_shader_path("cloud_blue_noise.comp.spv")),
             },
-        .march = cubey::render::compute_shader_file(ocean_shader_path("cloud_march.comp.spv")),
+        .general_march =
+            cubey::render::compute_shader_file(ocean_shader_path("cloud_march.comp.spv")),
+        .surface_march =
+            cubey::render::compute_shader_file(ocean_shader_path("surface_cloud_march.comp.spv")),
         .temporal =
             cubey::render::compute_shader_file(ocean_shader_path("cloud_temporal.comp.spv")),
         .composite_vertex =

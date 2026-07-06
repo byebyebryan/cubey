@@ -55,6 +55,12 @@ single-frame sampling, terrain-post resolve, and no temporal reconstruction by
 default. This mode is expected to work for surface and ocean-style background
 use before aerial/orbit clouds are considered production.
 
+The runtime now keeps this surface path separate from the experimental branch:
+`surface_cloud_march.comp` is the lean production surface shader, while
+`cloud_march.comp` remains the general shader for aerial/orbit, far-bridge, and
+deep diagnostic work. Keep new surface-quality fixes in the lean shader unless
+they are explicitly about high/orbit transition behavior.
+
 Keep the unfinished paths, but label them honestly:
 
 - aerial/orbit transition, orbit shell, far shell, and high-altitude controls

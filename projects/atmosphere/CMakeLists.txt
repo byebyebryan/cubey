@@ -18,6 +18,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_blue_noise.comp"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_march.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/surface_cloud_march.comp"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_perlin_worley.comp"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_temporal.comp"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather.comp"

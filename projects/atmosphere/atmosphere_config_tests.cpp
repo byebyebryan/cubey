@@ -1226,6 +1226,8 @@ int main() {
         read_text_file(repo_root / "shaders/cubey/sky/celestial_body.frag");
     const std::string cloud_march_source =
         read_text_file(repo_root / "shaders/cubey/cloud/cloud_march.comp");
+    const std::string surface_cloud_march_source =
+        read_text_file(repo_root / "shaders/cubey/cloud/surface_cloud_march.comp");
     const std::string lunar_surface_source =
         read_text_file(repo_root / "src/cubey/render/lunar_surface_map.cpp");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
@@ -1339,10 +1341,14 @@ int main() {
                      "atmosphere app should load the shared PBR post shader");
     require_contains(app_source, ".external_background = true",
                      "atmosphere clouds should declare external background composition");
-    require_contains(cloud_march_source, "float cloud_shape_domain_m()",
+    require_contains(surface_cloud_march_source, "float cloud_shape_domain_m()",
                      "local cloud detail projection should use explicit domain scale");
-    require_contains(cloud_march_source, "params.density_options.y * 1000.0",
+    require_contains(surface_cloud_march_source, "params.density_options.y * 1000.0",
                      "local cloud domain scale should come from cloud uniforms");
+    require_contains(cloud_march_source, "cloud_orbit_surface_sample",
+                     "general cloud march shader should retain aerial/orbit diagnostics");
+    require_contains(surface_cloud_march_source, "Lean surface-volume cloud path",
+                     "surface cloud march shader should document the lean production path");
     require_contains(cloud_march_source, "!cloud_external_background_enabled()",
                      "external-background clouds should not force the standalone horizon assist");
     require_contains(cmake_source, "forward_pbr_post.frag",

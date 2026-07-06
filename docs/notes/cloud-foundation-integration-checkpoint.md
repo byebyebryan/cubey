@@ -276,6 +276,10 @@ Current split:
 
 - `surface-volume`: production surface/local clouds, tuned through
   `projects/atmosphere` and cross-checked against `projects/cloud_ref`;
+- `surface_cloud_march.comp`: lean shared shader for the production
+  surface-volume path;
+- `cloud_march.comp`: general shared shader for aerial/orbit, far-bridge, and
+  diagnostic paths;
 - `experimental-aerial-orbit`: temporary high/orbit transition scaffold, not a
   fallback for surface rendering;
 - `projects/cloud_ref`: known-good narrow reference/demo that should remain

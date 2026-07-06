@@ -1,0 +1,698 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+// Lean surface-volume cloud path.
+// Keeps the TerrainEngine-style density and accepted surface lighting, without
+// the aerial/orbit/far-bridge branch tree from cloud_march.comp.
+
+#include "cubey/cloud/cloud_common.glsl"
+#include "cubey/cloud/cloud_weather_common.glsl"
+#include "cubey/procedural/noise.glsl"
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout(rgba16f, set = 0, binding = 1) uniform writeonly image2D cloud_product;
+layout(set = 0, binding = 2) uniform sampler3D base_noise_texture;
+layout(set = 0, binding = 3) uniform sampler3D detail_noise_texture;
+layout(set = 0, binding = 4) uniform sampler2D weather_texture;
+layout(set = 0, binding = 6) uniform sampler2D blue_noise_texture;
+layout(rgba16f, set = 0, binding = 5) uniform writeonly image2D cloud_metadata;
+
+const vec4 STRATUS_GRADIENT = vec4(0.00, 0.10, 0.20, 0.30);
+const vec4 STRATOCUMULUS_GRADIENT = vec4(0.02, 0.20, 0.48, 0.625);
+const vec4 CUMULUS_GRADIENT = vec4(0.00, 0.1625, 0.88, 0.98);
+const vec3 WIND_DIRECTION = normalize(vec3(0.5, 0.0, 0.1));
+const float CLOUD_TOP_OFFSET = 750.0;
+const float CLOUD_BASE_NOISE_TEXTURE_SIZE = 128.0;
+const float CLOUD_DETAIL_NOISE_TEXTURE_SIZE = 32.0;
+const vec3 NOISE_KERNEL[6] = vec3[](
+    vec3(0.38051305, 0.92453449, -0.02111345),
+    vec3(-0.50625799, -0.03590792, -0.86163418),
+    vec3(-0.32509218, -0.94557439, 0.01428793),
+    vec3(0.09026238, -0.27376545, 0.95755165),
+    vec3(0.28128598, 0.42443639, -0.86065785),
+    vec3(-0.16852403, 0.14748697, 0.97460106));
+const float BAYER[16] = float[](
+    0.0 / 16.0, 8.0 / 16.0, 2.0 / 16.0, 10.0 / 16.0,
+    12.0 / 16.0, 4.0 / 16.0, 14.0 / 16.0, 6.0 / 16.0,
+    3.0 / 16.0, 11.0 / 16.0, 1.0 / 16.0, 9.0 / 16.0,
+    15.0 / 16.0, 7.0 / 16.0, 13.0 / 16.0, 5.0 / 16.0);
+const float VIEW_SAMPLE_OFFSETS[4] = float[](0.0, 0.5, 0.25, 0.75);
+
+struct DensitySample {
+    float density;
+    float base_density;
+    float detail_density;
+    float authored_weather;
+    float local_scatter;
+    float local_clear;
+    float local_structure;
+    float local_edge_detail;
+    float cloud_type;
+    float weather_edge;
+    float coverage_bias;
+    float height_fraction;
+};
+
+struct LightMarchResult {
+    float transmittance;
+    float optical_depth;
+};
+
+struct MarchResult {
+    vec3 radiance;
+    float transmittance;
+    float alpha;
+    float avg_density;
+    float last_light;
+    float first_distance;
+    float mean_distance;
+    float steps;
+    vec3 ambient_light;
+    vec3 direct_light;
+    vec3 phase_light;
+};
+
+float cloud_interleaved_gradient_noise(ivec2 pixel) {
+    vec2 p = vec2(pixel);
+    return fract(52.9829189 * fract(0.06711056 * p.x + 0.00583715 * p.y));
+}
+
+ivec2 cloud_temporal_pixel(ivec2 pixel) {
+    if (params.temporal_options.y < 0.5 ||
+        int(params.temporal_options.w + 0.5) == CLOUD_VIEW_SAMPLE_TEMPORAL_PHASED) {
+        return pixel;
+    }
+    int frame = int(params.temporal_options.x + 0.5);
+    ivec2 offset = ivec2((frame * 5) & 3, (frame * 3) & 3);
+    return pixel + offset;
+}
+
+int cloud_view_sample_count() {
+    int samples = int(params.density_options.w + 0.5);
+    return samples >= 4 ? 4 : (samples >= 2 ? 2 : 1);
+}
+
+bool cloud_temporal_phased_sampling_enabled() {
+    return params.temporal_options.y > 0.5 &&
+           int(params.temporal_options.w + 0.5) == CLOUD_VIEW_SAMPLE_TEMPORAL_PHASED &&
+           cloud_view_sample_count() > 1;
+}
+
+int cloud_single_frame_sample_count() {
+    return cloud_temporal_phased_sampling_enabled() ? 1 : cloud_view_sample_count();
+}
+
+int cloud_view_sample_index(int iteration) {
+    int samples = cloud_view_sample_count();
+    if (cloud_temporal_phased_sampling_enabled()) {
+        return int(params.temporal_options.x + 0.5) % samples;
+    }
+    return iteration % samples;
+}
+
+float cloud_view_sample_offset(int sample_index) {
+    return VIEW_SAMPLE_OFFSETS[clamp(sample_index, 0, 3)];
+}
+
+float cloud_ray_jitter(ivec2 pixel, int sample_index) {
+    int mode = int(params.sampling_options.x + 0.5);
+    float strength = clamp(params.sampling_options.y, 0.0, 1.0);
+    ivec2 temporal_pixel = cloud_temporal_pixel(pixel);
+    float jitter = 0.5;
+    if (mode == CLOUD_SAMPLING_INTERLEAVED) {
+        int frame_offset =
+            cloud_temporal_phased_sampling_enabled() ? 0
+                                                     : int(params.temporal_options.x + 0.5) * 17;
+        jitter = cloud_interleaved_gradient_noise(
+            temporal_pixel + ivec2(frame_offset, 0));
+    } else if (mode == CLOUD_SAMPLING_BAYER) {
+        jitter = BAYER[(temporal_pixel.y & 3) * 4 + (temporal_pixel.x & 3)];
+    } else if (mode == CLOUD_SAMPLING_OFF) {
+        jitter = 0.5;
+    } else if (mode == CLOUD_SAMPLING_BLUE_NOISE) {
+        ivec2 size = textureSize(blue_noise_texture, 0);
+        int frame = cloud_temporal_phased_sampling_enabled()
+                        ? sample_index
+                        : int(params.temporal_options.x + 0.5);
+        ivec2 offset = ivec2(frame * 47, frame * 29);
+        vec2 uv = (vec2((temporal_pixel + offset) % size) + vec2(0.5)) / vec2(size);
+        vec3 ranks = texture(blue_noise_texture, uv).rgb;
+        int channel = frame % 3;
+        float base = channel == 0 ? ranks.r : (channel == 1 ? ranks.g : ranks.b);
+        jitter = fract(base + 0.61803398875 * float(frame % 32));
+    }
+    if (mode != CLOUD_SAMPLING_OFF) {
+        jitter = fract(jitter + cloud_view_sample_offset(sample_index));
+    }
+    return mix(0.5, jitter, strength);
+}
+
+float cloud_height_fraction(vec3 position) {
+    return (length(position - cloud_sphere_center()) - cloud_inner_radius()) /
+           max(cloud_outer_radius() - cloud_inner_radius(), 0.001);
+}
+
+float cloud_density_gradient(float height_fraction, float cloud_type) {
+    float stratus = 1.0 - clamp(cloud_type * 2.0, 0.0, 1.0);
+    float stratocumulus = 1.0 - abs(cloud_type - 0.5) * 2.0;
+    float cumulus = clamp(cloud_type - 0.5, 0.0, 1.0) * 2.0;
+    vec4 gradient = stratus * STRATUS_GRADIENT +
+                    stratocumulus * STRATOCUMULUS_GRADIENT +
+                    cumulus * CUMULUS_GRADIENT;
+    return smoothstep(gradient.x, gradient.y, height_fraction) -
+           smoothstep(gradient.z, gradient.w, height_fraction);
+}
+
+float cloud_shape_domain_m() {
+    return max(params.density_options.y * 1000.0, 1.0);
+}
+
+float cloud_footprint_filter_strength() {
+    return clamp(params.density_options.z, 0.0, 2.0);
+}
+
+float cloud_detail_filter_lod(float base_lod) {
+    float strength = cloud_footprint_filter_strength();
+    float extra_lod = max(base_lod - 0.35, 0.0) * 0.72 + strength * 0.22;
+    return clamp(base_lod + extra_lod * strength, 0.0, 7.0);
+}
+
+vec2 cloud_terrain_ref_project_uv(vec3 position) {
+    return position.xz / cloud_shape_domain_m() + vec2(0.5);
+}
+
+DensitySample cloud_sample_density_terrain_ref(vec3 position, bool expensive, float lod) {
+    float height_fraction = cloud_height_fraction(position);
+    if (height_fraction <= 0.0 || height_fraction >= 1.0) {
+        return DensitySample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                             0.0, height_fraction);
+    }
+
+    float crispiness = max(params.shape_options.x, 0.001);
+    float curliness = max(params.shape_options.y, 0.001);
+    vec3 animation =
+        height_fraction * WIND_DIRECTION * CLOUD_TOP_OFFSET + WIND_DIRECTION * params.weather.w;
+    vec2 shape_uv = cloud_terrain_ref_project_uv(position);
+    vec2 moving_shape_uv = cloud_terrain_ref_project_uv(position + animation);
+
+    vec4 low_frequency =
+        textureLod(base_noise_texture, vec3(shape_uv * crispiness, height_fraction), lod);
+    float low_fbm = dot(low_frequency.gba, vec3(0.625, 0.25, 0.125));
+    float base_cloud =
+        cloud_remap(low_frequency.r, -(1.0 - low_fbm), 1.0, 0.0, 1.0);
+
+    float cloud_type = 1.0;
+    float density_profile = cloud_density_gradient(height_fraction, cloud_type);
+    base_cloud *= density_profile / max(height_fraction, 0.0001);
+
+    vec3 weather_sample = texture(weather_texture, moving_shape_uv).rgb;
+    float authored_weather = clamp(weather_sample.r, 0.0, 1.0);
+    float weather_edge = clamp(weather_sample.b, 0.0, 1.0);
+    float coverage = authored_weather * clamp(params.weather.x, 0.0, 1.0);
+    float base_with_coverage =
+        cloud_remap(base_cloud, coverage, 1.0, 0.0, 1.0) * coverage;
+    float detail_density = 0.0;
+
+    if (expensive) {
+        float detail_lod = cloud_detail_filter_lod(lod);
+        vec3 detail =
+            textureLod(detail_noise_texture,
+                       vec3(moving_shape_uv * crispiness, height_fraction) * curliness,
+                       detail_lod)
+                .rgb;
+        float high_fbm = dot(detail, vec3(0.625, 0.25, 0.125));
+        float high_modifier =
+            mix(high_fbm, 1.0 - high_fbm, clamp(height_fraction * 10.0, 0.0, 1.0));
+        detail_density = high_modifier;
+        base_with_coverage -= high_modifier * (1.0 - base_with_coverage);
+        base_with_coverage =
+            cloud_remap(base_with_coverage * 2.0, high_modifier * 0.2, 1.0, 0.0, 1.0);
+    }
+
+    float density = clamp(base_with_coverage, 0.0, 1.0);
+    return DensitySample(density, clamp(base_cloud, 0.0, 1.0), detail_density,
+                         authored_weather, authored_weather, 1.0, authored_weather,
+                         detail_density, cloud_type, weather_edge, authored_weather,
+                             height_fraction);
+}
+
+vec3 cloud_local_up(vec3 position) {
+    return normalize(position - cloud_sphere_center());
+}
+
+vec3 cloud_horizon_direction(vec3 direction, vec3 local_up) {
+    vec3 horizon = direction - local_up * dot(direction, local_up);
+    float horizon_len = length(horizon);
+    if (horizon_len < 0.001) {
+        return normalize(vec3(1.0, 0.0, 0.0));
+    }
+    return horizon / horizon_len;
+}
+
+float cloud_twilight_response(float sun_elevation) {
+    return smoothstep(-0.24, 0.03, sun_elevation) *
+           (1.0 - smoothstep(0.05, 0.34, sun_elevation));
+}
+
+vec3 cloud_twilight_sky_radiance(vec3 sun_dir, vec3 local_up) {
+    vec3 horizon_sun_dir = cloud_horizon_direction(sun_dir, local_up);
+    vec3 horizon_sky = cloud_sky_color(horizon_sun_dir);
+    vec3 sun_radiance = cloud_sun_radiance();
+    float sun_energy = max(max(sun_radiance.r, sun_radiance.g), sun_radiance.b);
+    vec3 sun_chroma =
+        sun_energy > 0.0001 ? sun_radiance / sun_energy : vec3(1.0, 0.55, 0.25);
+    vec3 low_sun_color = sun_chroma * max(sun_energy, 0.08);
+    return max(mix(horizon_sky, low_sun_color, 0.48), vec3(0.0));
+}
+
+float cloud_afterglow_response(float sun_elevation) {
+    return smoothstep(-0.16, -0.015, sun_elevation) *
+           (1.0 - smoothstep(0.045, 0.18, sun_elevation));
+}
+
+vec3 cloud_afterglow_radiance(vec3 twilight_radiance, float sun_elevation) {
+    float below_horizon = 1.0 - smoothstep(-0.03, 0.08, sun_elevation);
+    float purple_shift = 1.0 - smoothstep(-0.10, -0.025, sun_elevation);
+    vec3 gold = vec3(1.0, 0.42, 0.12);
+    vec3 rose = vec3(1.0, 0.24, 0.30);
+    vec3 violet = vec3(0.68, 0.30, 0.92);
+    vec3 accent = mix(gold, rose, below_horizon * 0.70);
+    accent = mix(accent, violet, purple_shift * 0.32);
+    float energy = max(max(twilight_radiance.r, twilight_radiance.g),
+                       max(twilight_radiance.b, 0.07));
+    return mix(twilight_radiance, accent * energy, 0.72);
+}
+
+vec3 cloud_cloud_ambient(vec3 position, vec3 direction, DensitySample sample_data) {
+    vec3 local_up = cloud_local_up(position);
+    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
+    vec3 moon_dir = normalize(params.moon_direction_intensity.xyz);
+    float sun_elevation = dot(sun_dir, local_up);
+    float sun_visibility = smoothstep(-0.16, 0.10, sun_elevation);
+    float day = sun_visibility * clamp(params.sun_direction_intensity.w, 0.0, 1.0);
+    float night = 1.0 - smoothstep(-0.14, 0.08, sun_elevation);
+    float moon_elevation = max(dot(moon_dir, local_up), 0.0);
+    float low_sun = 1.0 - smoothstep(0.05, 0.45, max(sun_elevation, 0.0));
+    float twilight = cloud_twilight_response(sun_elevation);
+    float lit_sky = max(day, twilight * 0.42);
+    float height_fill = smoothstep(0.08, 0.92, sample_data.height_fraction);
+
+    vec3 sky_top = cloud_sky_color(local_up);
+    vec3 horizon_sky = cloud_sky_color(cloud_horizon_direction(direction, local_up));
+    vec3 top_fill = params.cloud_color_top_shadow.rgb *
+                    (0.24 + 0.58 * lit_sky + 0.32 * max(sun_elevation, 0.0));
+    top_fill += sky_top * (0.08 + 0.14 * lit_sky);
+
+    vec3 bottom_fill = params.cloud_color_bottom_horizon.rgb * (0.10 + 0.42 * lit_sky);
+    vec3 horizon_fill =
+        horizon_sky * params.cloud_color_bottom_horizon.w * (0.07 + 0.17 * lit_sky);
+    vec3 twilight_radiance = cloud_twilight_sky_radiance(sun_dir, local_up);
+    vec3 twilight_fill = twilight_radiance * low_sun * twilight *
+                          clamp(params.twilight_options.x, 0.0, 2.0) * 0.18;
+    float afterglow =
+        cloud_afterglow_response(sun_elevation) * clamp(params.twilight_options.w, 0.0, 2.0);
+    float afterglow_top = smoothstep(0.32, 0.95, sample_data.height_fraction);
+    vec3 afterglow_fill = cloud_afterglow_radiance(twilight_radiance, sun_elevation) *
+                          afterglow * low_sun * (0.035 + 0.095 * afterglow_top);
+    vec3 environment_fill =
+        cloud_environment_ambient_radiance() *
+        mix(0.050 + 0.035 * height_fill, 0.38 + 0.40 * height_fill,
+            max(day, twilight * 0.42));
+    vec3 moon_fill = cloud_moon_radiance() * night *
+                     (0.014 + 0.060 * moon_elevation) *
+                     (0.45 + 0.55 * height_fill);
+
+    vec3 ambient = mix(bottom_fill, top_fill, height_fill);
+    ambient += horizon_fill * (0.55 + 0.45 * (1.0 - height_fill));
+    ambient += twilight_fill * (1.0 - 0.35 * height_fill);
+    ambient += afterglow_fill;
+    ambient += environment_fill + moon_fill;
+    float ambient_luma = dot(ambient, vec3(0.2126, 0.7152, 0.0722));
+    vec3 night_ambient =
+        vec3(ambient_luma) * vec3(0.60, 0.66, 0.82) * 0.30 +
+        cloud_moon_radiance() * 0.014 * (0.35 + 0.65 * height_fill);
+    ambient = mix(ambient, night_ambient, night * 0.92);
+    return max(ambient, vec3(0.0));
+}
+
+float cloud_surface_volume_direct_phase(float cos_theta) {
+    float forward = cloud_hg(cos_theta, 0.46) * 1.55;
+    float backward = cloud_hg(cos_theta, -0.16) * 1.0;
+    return clamp(0.58 + forward + backward, 0.48, 1.60);
+}
+
+float cloud_surface_volume_rim_phase(float cos_theta, float light_transmittance,
+                                     float view_thickness, float light_thickness,
+                                     float height_fraction) {
+    float forward_rim = pow(max(cos_theta, 0.0), 7.0);
+    float optical_edge = smoothstep(0.035, 0.22, view_thickness) *
+                         (1.0 - smoothstep(0.58, 0.94,
+                                             max(view_thickness, light_thickness * 0.70)));
+    float top_bias = smoothstep(0.18, 0.92, height_fraction);
+    return forward_rim * (0.30 + 0.70 * light_transmittance) *
+           (0.45 + 0.55 * top_bias) * (0.28 + 1.10 * optical_edge);
+}
+
+bool cloud_shell_segment(vec3 origin, vec3 direction, out float start_t, out float end_t) {
+    float outer_near = 0.0;
+    float outer_far = 0.0;
+    if (!cloud_ray_sphere(origin, direction, cloud_outer_radius(), outer_near,
+                              outer_far)) {
+        start_t = 0.0;
+        end_t = 0.0;
+        return false;
+    }
+
+    float inner_near = 0.0;
+    float inner_far = 0.0;
+    bool inner_hit = cloud_ray_sphere(origin, direction, cloud_inner_radius(),
+                                          inner_near, inner_far);
+
+    float camera_radius = length(origin - cloud_sphere_center());
+    start_t = max(outer_near, 0.0);
+    end_t = outer_far;
+
+    if (camera_radius < cloud_inner_radius()) {
+        if (!inner_hit || inner_far <= 0.0) {
+            return false;
+        }
+        start_t = max(start_t, inner_far);
+    } else if (camera_radius < cloud_outer_radius()) {
+        start_t = 0.0;
+        if (inner_hit && inner_near > 0.0) {
+            end_t = min(end_t, inner_near);
+        }
+    } else if (inner_hit && inner_near > start_t) {
+        end_t = min(end_t, inner_near);
+    }
+
+    float ground_near = 0.0;
+    float ground_far = 0.0;
+    if (cloud_ray_sphere(origin, direction, cloud_planet_radius(), ground_near,
+                             ground_far) &&
+        ground_near > 0.0) {
+        end_t = min(end_t, ground_near);
+    }
+
+    return end_t > start_t;
+}
+LightMarchResult cloud_surface_volume_march_light(vec3 start, float step_size, vec3 light_dir) {
+    int light_steps = clamp(int(params.ref_options.z + 0.5), 1, 6);
+    float ds = step_size * 6.0;
+    vec3 ray_step = light_dir * ds;
+    float absorption = params.shape_options.z * 0.01;
+    float transmittance = 1.0;
+    float optical_depth = 0.0;
+    float cone_radius = 1.0;
+    float density_sum = 0.0;
+    vec3 pos = start;
+
+    for (int i = 0; i < 6; ++i) {
+        if (i >= light_steps) {
+            break;
+        }
+        vec3 cone_pos = pos + cone_radius * NOISE_KERNEL[i] * float(i);
+        DensitySample sample_data =
+            cloud_sample_density_terrain_ref(cone_pos, density_sum > 0.3, float(i / 16));
+        if (sample_data.density > 0.0) {
+            float sample_optical_depth = sample_data.density * ds * absorption;
+            transmittance *= exp(-sample_optical_depth);
+            optical_depth += sample_optical_depth;
+            density_sum += sample_data.density;
+        }
+        pos += ray_step;
+        cone_radius += 1.0 / 6.0;
+    }
+    return LightMarchResult(transmittance, optical_depth);
+}
+
+float cloud_surface_volume_surface_horizon_fade(vec3 direction, float first_distance,
+                                                float mean_distance) {
+    float surface_view = cloud_surface_view_factor();
+    if (surface_view <= 0.001) {
+        return 0.0;
+    }
+
+    float visible_distance = mean_distance > 0.0 ? mean_distance : first_distance;
+    if (visible_distance <= 0.0) {
+        return 0.0;
+    }
+
+    float grazing_view = 1.0 - smoothstep(0.018, 0.180, abs(dot(direction, cloud_planet_up())));
+    float distance_gate = smoothstep(80000.0, 260000.0, visible_distance);
+    return clamp(surface_view * grazing_view * distance_gate * 0.36, 0.0, 0.36);
+}
+
+MarchResult cloud_surface_volume_march(vec3 origin, vec3 direction, float start_t, float end_t,
+                                       vec3 background, ivec2 pixel, int sample_index) {
+    int max_steps = clamp(int(params.ref_options.y + 0.5), 1, 96);
+    float length_km = max(end_t - start_t, 0.001);
+    float ds = length_km / float(max_steps);
+    vec3 step_vec = direction * ds;
+    vec3 pos = origin + direction * (start_t + ds * cloud_ray_jitter(pixel, sample_index));
+    vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
+    vec3 sun_color = cloud_sun_radiance() * 1.20;
+    float light_dot_eye = dot(sun_dir, direction);
+    float density_factor = max(params.weather.y, 0.0);
+    float sigma_ds = -ds * density_factor;
+    float transmittance = 1.0;
+    vec3 color = vec3(0.0);
+    float density_sum = 0.0;
+    float last_light = 1.0;
+    float first_distance = -1.0;
+    float weighted_distance_sum = 0.0;
+    float distance_weight_sum = 0.0;
+    float steps_taken = 0.0;
+    vec3 ambient_sum = vec3(0.0);
+    vec3 direct_sum = vec3(0.0);
+    vec3 phase_sum = vec3(0.0);
+
+    for (int i = 0; i < 96; ++i) {
+        if (i >= max_steps) {
+            break;
+        }
+        DensitySample sample_data = cloud_sample_density_terrain_ref(pos, true, float(i / 16));
+        if (sample_data.density > 0.0) {
+            float sample_distance = length(pos - origin);
+            if (first_distance < 0.0) {
+                first_distance = sample_distance;
+            }
+            LightMarchResult light_result =
+                cloud_surface_volume_march_light(pos, ds * 0.1, sun_dir);
+            float light_transmittance = light_result.transmittance;
+            float sample_optical_depth = sample_data.density * max(-sigma_ds, 0.0);
+            float d_transmittance = exp(-sample_optical_depth);
+            float view_thickness = 1.0 - exp(-sample_optical_depth);
+            float light_thickness = 1.0 - exp(-light_result.optical_depth);
+            vec3 local_up = cloud_local_up(pos);
+            float sun_elevation = dot(sun_dir, local_up);
+            float direct_visibility = smoothstep(-0.10, 0.06, sun_elevation);
+            float shadow_strength = max(params.cloud_color_top_shadow.w, 0.0);
+            float forward_alignment = smoothstep(0.22, 0.94, light_dot_eye);
+            float optical_core =
+                smoothstep(0.40, 0.90, max(view_thickness, light_thickness * 0.72));
+            float optical_edge =
+                smoothstep(0.035, 0.22, view_thickness) *
+                (1.0 - smoothstep(0.58, 0.94, max(view_thickness, light_thickness * 0.70)));
+            float forward_shadow_boost =
+                mix(1.0, 1.0 + 0.35 * optical_core, forward_alignment);
+            float shadowed_light =
+                pow(clamp(light_transmittance, 0.001, 1.0),
+                    shadow_strength * forward_shadow_boost);
+            float phase_response = cloud_surface_volume_direct_phase(light_dot_eye);
+            float rim_phase =
+                cloud_surface_volume_rim_phase(light_dot_eye, shadowed_light,
+                                               view_thickness, light_thickness,
+                                               sample_data.height_fraction);
+            float powder_shape =
+                (1.0 - exp(-2.0 * max(sample_optical_depth, light_result.optical_depth))) *
+                (0.35 + 0.65 * smoothstep(-0.25, 0.75, light_dot_eye));
+            float powder_edge_weight = 0.55 + 0.45 * max(optical_edge, 1.0 - optical_core);
+            float powder_strength = params.shape_options.w > 0.5 ? 0.20 : 0.0;
+            float powder_multiplier =
+                1.0 + powder_strength * clamp(powder_shape * powder_edge_weight, 0.0, 0.58);
+
+            vec3 ambient_source = cloud_cloud_ambient(pos, direction, sample_data) *
+                                  max(params.lighting_strengths.x, 0.0);
+            ambient_source *= mix(1.0, 0.97, forward_alignment * optical_core);
+            float forward_direct_gate =
+                mix(1.0, 0.86 + 0.14 * optical_edge, forward_alignment);
+            float direct_core_gate =
+                forward_direct_gate *
+                mix(1.0, mix(0.90, 1.0, optical_edge),
+                    forward_alignment * optical_core);
+            vec3 direct_source = sun_color * direct_visibility * shadowed_light * phase_response *
+                                 direct_core_gate * powder_multiplier *
+                                 max(params.lighting_strengths.y, 0.0);
+            vec3 phase_source =
+                sun_color * direct_visibility * rim_phase *
+                max(params.lighting_strengths.z, 0.0);
+            float twilight = cloud_twilight_response(sun_elevation);
+            vec3 twilight_radiance = cloud_twilight_sky_radiance(sun_dir, local_up);
+            float twilight_edge =
+                twilight * direct_visibility * (0.35 + 0.65 * forward_alignment) *
+                max(optical_edge, rim_phase * 0.30) *
+                clamp(params.twilight_options.y, 0.0, 2.0);
+            vec3 twilight_edge_source =
+                twilight_radiance * twilight_edge * (0.18 + 0.82 * shadowed_light);
+            phase_source += twilight_edge_source * max(params.lighting_strengths.z, 0.0);
+            float afterglow =
+                cloud_afterglow_response(sun_elevation) *
+                clamp(params.twilight_options.w, 0.0, 2.0);
+            float afterglow_top = smoothstep(0.24, 0.96, sample_data.height_fraction);
+            float afterglow_edge =
+                afterglow * direct_visibility * (0.25 + 0.75 * forward_alignment) *
+                max(optical_edge, rim_phase * 0.45) * (0.30 + 0.70 * afterglow_top);
+            vec3 afterglow_edge_source =
+                cloud_afterglow_radiance(twilight_radiance, sun_elevation) *
+                afterglow_edge * (0.18 + 0.82 * shadowed_light) * 0.65;
+            phase_source += afterglow_edge_source * max(params.lighting_strengths.z, 0.0);
+            float scatter_gain = 0.42;
+            vec3 source_terms = scatter_gain * (ambient_source + direct_source + phase_source);
+            color += transmittance * source_terms * (1.0 - d_transmittance);
+            ambient_sum += transmittance * scatter_gain * ambient_source *
+                           (1.0 - d_transmittance);
+            direct_sum += transmittance * scatter_gain * direct_source *
+                          (1.0 - d_transmittance);
+            phase_sum += transmittance * scatter_gain * phase_source *
+                         (1.0 - d_transmittance);
+            transmittance *= d_transmittance;
+            density_sum += sample_data.density;
+            weighted_distance_sum += sample_distance * sample_data.density;
+            distance_weight_sum += sample_data.density;
+            last_light = shadowed_light;
+        }
+        if (transmittance <= 0.01) {
+            break;
+        }
+        pos += step_vec;
+        steps_taken += 1.0;
+    }
+
+    float alpha = 1.0 - transmittance;
+    color = max(color * 1.35, vec3(0.0));
+    ambient_sum = max(ambient_sum * 1.35, vec3(0.0));
+    direct_sum = max(direct_sum * 1.35, vec3(0.0));
+    phase_sum = max(phase_sum * 1.35, vec3(0.0));
+    if (first_distance > 0.0) {
+        float fog = 1.0 - exp(-first_distance * 0.00004 *
+                              params.cloud_color_bottom_horizon.w);
+        color = mix(color, background * alpha, clamp(fog, 0.0, 1.0));
+    }
+    float mean_distance = distance_weight_sum > 0.0
+                              ? weighted_distance_sum / max(distance_weight_sum, 0.0001)
+                              : -1.0;
+    float horizon_fade =
+        cloud_surface_volume_surface_horizon_fade(direction, first_distance, mean_distance);
+    if (horizon_fade > 0.0) {
+        float keep = 1.0 - horizon_fade;
+        color *= keep;
+        ambient_sum *= keep;
+        direct_sum *= keep;
+        phase_sum *= keep;
+        alpha *= keep;
+        transmittance = 1.0 - alpha;
+    }
+    return MarchResult(color, transmittance, alpha, density_sum / float(max_steps), last_light,
+                       first_distance, mean_distance, steps_taken, ambient_sum, direct_sum,
+                       phase_sum);
+}
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(cloud_product);
+    if (any(greaterThanEqual(pixel, size))) {
+        return;
+    }
+
+    vec2 uv = (vec2(pixel) + vec2(0.5)) / vec2(size);
+    vec2 position = uv * 2.0 - 1.0;
+    vec3 origin = params.camera_position_radius.xyz;
+    vec3 direction = cloud_view_direction(position);
+    vec3 background = cloud_background(direction);
+    int debug_view = int(params.ref_options.x + 0.5);
+
+    if (debug_view == CLOUD_DEBUG_JITTER_PATTERN) {
+        float jitter = cloud_ray_jitter(pixel, cloud_view_sample_index(0));
+        imageStore(cloud_product, pixel, vec4(vec3(jitter), 1.0));
+        imageStore(cloud_metadata, pixel, vec4(0.0));
+        return;
+    }
+
+    float start_t = 0.0;
+    float end_t = 0.0;
+    bool has_segment = cloud_shell_segment(origin, direction, start_t, end_t);
+    bool final_view = debug_view == CLOUD_DEBUG_FINAL ||
+                      debug_view == CLOUD_DEBUG_RAW_FINAL;
+    if (!has_segment) {
+        vec3 debug_color = debug_view == CLOUD_DEBUG_BACKGROUND ? background : vec3(0.0);
+        imageStore(cloud_product, pixel,
+                   vec4(final_view ? vec3(0.0) : debug_color, 1.0));
+        imageStore(cloud_metadata, pixel, vec4(0.0));
+        return;
+    }
+
+    MarchResult result =
+        cloud_surface_volume_march(origin, direction, start_t, end_t, background, pixel,
+                                   cloud_view_sample_index(0));
+    vec3 debug_color = result.radiance;
+    float debug_alpha = 1.0;
+
+    if (debug_view == CLOUD_DEBUG_AUTHORED_WEATHER ||
+        debug_view == CLOUD_DEBUG_BASE_DENSITY ||
+        debug_view == CLOUD_DEBUG_DETAIL_DENSITY ||
+        debug_view == CLOUD_DEBUG_CLOUD_TYPE ||
+        debug_view == CLOUD_DEBUG_WEATHER_EDGE ||
+        debug_view == CLOUD_DEBUG_COVERAGE_BIAS ||
+        debug_view == CLOUD_DEBUG_DENSITY) {
+        vec3 mid = origin + direction * mix(start_t, end_t, 0.5);
+        DensitySample sample_data = cloud_sample_density_terrain_ref(mid, true, 0.0);
+        if (debug_view == CLOUD_DEBUG_AUTHORED_WEATHER) {
+            debug_color = vec3(sample_data.authored_weather);
+        } else if (debug_view == CLOUD_DEBUG_BASE_DENSITY) {
+            debug_color = vec3(sample_data.base_density);
+        } else if (debug_view == CLOUD_DEBUG_DETAIL_DENSITY) {
+            debug_color = vec3(sample_data.detail_density);
+        } else if (debug_view == CLOUD_DEBUG_CLOUD_TYPE) {
+            debug_color = vec3(sample_data.cloud_type);
+        } else if (debug_view == CLOUD_DEBUG_WEATHER_EDGE) {
+            debug_color = vec3(sample_data.weather_edge);
+        } else if (debug_view == CLOUD_DEBUG_COVERAGE_BIAS) {
+            debug_color = vec3(sample_data.coverage_bias);
+        } else {
+            debug_color = vec3(sample_data.density);
+        }
+    } else if (debug_view == CLOUD_DEBUG_TRANSMITTANCE) {
+        debug_color = vec3(result.transmittance);
+    } else if (debug_view == CLOUD_DEBUG_LIGHTING) {
+        debug_color = result.ambient_light + result.direct_light + result.phase_light;
+    } else if (debug_view == CLOUD_DEBUG_AMBIENT_LIGHT) {
+        debug_color = result.ambient_light;
+    } else if (debug_view == CLOUD_DEBUG_DIRECT_LIGHT) {
+        debug_color = result.direct_light;
+    } else if (debug_view == CLOUD_DEBUG_PHASE_LIGHT) {
+        debug_color = result.phase_light;
+    } else if (debug_view == CLOUD_DEBUG_SHADOW) {
+        debug_color = vec3(1.0 - result.last_light);
+    } else if (debug_view == CLOUD_DEBUG_STEPS) {
+        debug_color = vec3(result.steps / max(params.ref_options.y, 1.0));
+    } else if (debug_view == CLOUD_DEBUG_BACKGROUND) {
+        debug_color = background;
+    } else if (debug_view == CLOUD_DEBUG_CLOUD_ALPHA ||
+               debug_view == CLOUD_DEBUG_LOCAL_ALPHA) {
+        debug_color = vec3(result.alpha);
+    } else if (debug_view == CLOUD_DEBUG_DISTANCE) {
+        debug_color = vec3(clamp(result.mean_distance / 500.0, 0.0, 1.0));
+    } else if (final_view) {
+        debug_alpha = result.transmittance;
+    }
+
+    imageStore(cloud_product, pixel,
+               vec4(max(debug_color, vec3(0.0)), debug_alpha));
+    float confidence = result.alpha > 0.001 ? clamp(result.steps / max(params.ref_options.y, 1.0),
+                                                    0.0, 1.0)
+                                            : 0.0;
+    imageStore(cloud_metadata, pixel,
+               vec4(max(result.mean_distance, 0.0), result.alpha, confidence,
+                    result.avg_density));
+}

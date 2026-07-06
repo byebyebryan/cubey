@@ -8,6 +8,7 @@ set(CUBEY_PLANET_SHADERS
     "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background_depth.frag"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_blue_noise.comp"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_march.comp"
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/surface_cloud_march.comp"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_perlin_worley.comp"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_temporal.comp"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather.comp"
