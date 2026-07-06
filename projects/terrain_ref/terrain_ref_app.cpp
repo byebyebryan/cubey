@@ -4,17 +4,14 @@
 #include "terrain_ref_config.h"
 #include "terrain_ref_mesh.h"
 
-#include <cubey/core/image_io.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/forward_pass.h>
-#include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>
-#include <cubey/render/texture.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
@@ -27,30 +24,15 @@
 #include <filesystem>
 #include <limits>
 #include <optional>
-#include <span>
 #include <stdexcept>
-#include <type_traits>
 #include <utility>
 
 #ifndef CUBEY_TERRAIN_REF_SHADER_DIR
 #error "CUBEY_TERRAIN_REF_SHADER_DIR must be defined by the terrain_ref CMake target"
 #endif
 
-#ifndef CUBEY_TERRAIN_REF_ASSET_DIR
-#error "CUBEY_TERRAIN_REF_ASSET_DIR must be defined by the terrain_ref CMake target"
-#endif
-
 namespace cubey::projects::terrain_ref {
 namespace {
-
-inline constexpr std::uint32_t kTerrainRefFrameSet = 0;
-inline constexpr std::uint32_t kTerrainRefFrameBinding = 0;
-inline constexpr std::uint32_t kTerrainRefSandBinding = 1;
-inline constexpr std::uint32_t kTerrainRefGrassBinding = 2;
-inline constexpr std::uint32_t kTerrainRefGrassVariationBinding = 3;
-inline constexpr std::uint32_t kTerrainRefRockBinding = 4;
-inline constexpr std::uint32_t kTerrainRefSnowBinding = 5;
-inline constexpr std::uint32_t kTerrainRefRockNormalBinding = 6;
 
 struct TerrainRefCameraFrame {
     float pitch_radians = -0.70F;
@@ -59,18 +41,17 @@ struct TerrainRefCameraFrame {
     float target_height_fraction = 0.42F;
 };
 
-struct TerrainRefFrameUniforms {
+struct TerrainRefPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
     cubey::math::Vec4 light_direction_extent{0.38F, 0.82F, 0.42F, 1.0F};
     cubey::math::Vec4 terrain_params{0.0F, 0.0F, 1.0F, 1.0F};
     cubey::math::Vec4 water_params{kTerrainEngineReferenceWaterHeightM, 0.0F, 0.0F, 0.0F};
     cubey::math::Vec4 camera_position_fog{0.0F, 0.0F, 0.0F, 1.5e-6F};
-    cubey::math::Vec4 material_params{0.65F, 20.0F, 0.006F, 0.0F};
 };
 
-static_assert(std::is_trivially_copyable_v<TerrainRefFrameUniforms>);
-static_assert(sizeof(TerrainRefFrameUniforms) ==
-              sizeof(cubey::math::Mat4) + (5U * sizeof(cubey::math::Vec4)));
+static_assert(sizeof(TerrainRefPushConstants) ==
+              sizeof(cubey::math::Mat4) + (4U * sizeof(cubey::math::Vec4)));
+static_assert(sizeof(TerrainRefPushConstants) <= 128U);
 
 struct TerrainRefSceneMetrics {
     float min_height_m = 0.0F;
@@ -78,59 +59,8 @@ struct TerrainRefSceneMetrics {
     float scene_extent_m = 1.0F;
 };
 
-struct TerrainRefMaterialTextures {
-    cubey::render::Texture2D sand;
-    cubey::render::Texture2D grass;
-    cubey::render::Texture2D grass_variation;
-    cubey::render::Texture2D rock;
-    cubey::render::Texture2D snow;
-    cubey::render::Texture2D rock_normal;
-};
-
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_TERRAIN_REF_SHADER_DIR) / filename;
-}
-
-[[nodiscard]] std::filesystem::path asset_path(const char* filename) {
-    return std::filesystem::path(CUBEY_TERRAIN_REF_ASSET_DIR) / filename;
-}
-
-[[nodiscard]] cubey::render::Texture2D upload_material_texture(
-    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu, const char* filename,
-    VkFormat format) {
-    const cubey::ImageRgba8 image = cubey::read_image_rgba8(asset_path(filename));
-    return cubey::render::create_uploaded_texture_2d(
-        device, gpu,
-        cubey::render::UploadedTexture2DConfig{
-            .extent = {.width = image.width, .height = image.height},
-            .mip_levels = 1,
-            .format = format,
-            .rgba8 = std::span<const std::uint8_t>{image.pixels.data(), image.pixels.size()},
-            .create_sampler = true,
-            .sampler =
-                {
-                    .min_filter = VK_FILTER_LINEAR,
-                    .mag_filter = VK_FILTER_LINEAR,
-                    .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                    .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-                    .min_lod = 0.0F,
-                    .max_lod = 0.0F,
-                },
-        });
-}
-
-[[nodiscard]] TerrainRefMaterialTextures create_terrain_ref_material_textures(
-    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
-    return TerrainRefMaterialTextures{
-        .sand = upload_material_texture(device, gpu, "sand.jpg", VK_FORMAT_R8G8B8A8_SRGB),
-        .grass = upload_material_texture(device, gpu, "grass.jpg", VK_FORMAT_R8G8B8A8_SRGB),
-        .grass_variation =
-            upload_material_texture(device, gpu, "terrainTexture.jpg", VK_FORMAT_R8G8B8A8_SRGB),
-        .rock = upload_material_texture(device, gpu, "rdiffuse.jpg", VK_FORMAT_R8G8B8A8_SRGB),
-        .snow = upload_material_texture(device, gpu, "snow2.jpg", VK_FORMAT_R8G8B8A8_SRGB),
-        .rock_normal =
-            upload_material_texture(device, gpu, "rnormal.jpg", VK_FORMAT_R8G8B8A8_UNORM),
-    };
 }
 
 [[nodiscard]] TerrainRefCameraFrame terrain_ref_camera_frame(TerrainRefCameraPreset preset) {
@@ -203,53 +133,14 @@ struct TerrainRefMaterialTextures {
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo terrain_ref_pass_info() {
+    const VkPushConstantRange push_constant_range{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .offset = 0,
+        .size = sizeof(TerrainRefPushConstants),
+    };
     return cubey::render::MaterialPassInfo{
         .label = "terrain_ref.forward",
-        .descriptor_sets =
-            {
-                cubey::render::MaterialDescriptorSetLayout{
-                    .set = kTerrainRefFrameSet,
-                    .bindings =
-                        {
-                            cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = kTerrainRefFrameBinding,
-                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                .stage_flags =
-                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                            },
-                            cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = kTerrainRefSandBinding,
-                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                            },
-                            cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = kTerrainRefGrassBinding,
-                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                            },
-                            cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = kTerrainRefGrassVariationBinding,
-                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                            },
-                            cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = kTerrainRefRockBinding,
-                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                            },
-                            cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = kTerrainRefSnowBinding,
-                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                            },
-                            cubey::vulkan::DescriptorSetBindingConfig{
-                                .binding = kTerrainRefRockNormalBinding,
-                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                            },
-                        },
-                },
-            },
+        .push_constants = {push_constant_range},
         .cull_mode = VK_CULL_MODE_NONE,
         .depth_test = true,
         .depth_write = true,
@@ -284,7 +175,7 @@ class TerrainRefApp {
     int run_windowed() {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
-            create_global_resources_if_needed(context.device(), context.gpu());
+            create_global_resources_if_needed(context.gpu());
         };
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             create_forward_pass(context.device(), context.swapchain().extent(),
@@ -336,7 +227,7 @@ class TerrainRefApp {
 
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
-            create_global_resources_if_needed(context.device(), context.gpu());
+            create_global_resources_if_needed(context.gpu());
             create_forward_pass(context.device(), context.render_target().extent,
                                 context.render_target().format,
                                 cubey::host::headless_capture_frame_slot_count(config_));
@@ -353,20 +244,14 @@ class TerrainRefApp {
         return host.run();
     }
 
-    void create_global_resources_if_needed(const cubey::vulkan::Device& device,
-                                           cubey::vulkan::GpuRuntime& gpu) {
+    void create_global_resources_if_needed(cubey::vulkan::GpuRuntime& gpu) {
         if (!mesh_.has_value()) {
             mesh_.emplace(gpu, mesh_data_.mesh_config());
-        }
-        if (!material_textures_.has_value()) {
-            material_textures_.emplace(create_terrain_ref_material_textures(device, gpu));
         }
     }
 
     void create_forward_pass(const cubey::vulkan::Device& device, VkExtent2D extent,
                              VkFormat color_format, std::uint32_t frame_slot_count) {
-        create_material_instance(device, frame_slot_count);
-        const std::array descriptor_set_layouts{terrain_material().layout()};
         const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
             cubey::render::vertex_shader_file(shader_path("terrain_ref.vert.spv")),
             cubey::render::fragment_shader_file(shader_path("terrain_ref.frag.spv")),
@@ -385,7 +270,6 @@ class TerrainRefApp {
                         .shader_stage_files = shader_stage_files,
                         .vertex_bindings = vertex_input.bindings(),
                         .vertex_attributes = vertex_input.attribute_descriptions(),
-                        .descriptor_set_layouts = descriptor_set_layouts,
                         .material_pass = terrain_ref_pass_info(),
                     },
                 .clear =
@@ -401,64 +285,14 @@ class TerrainRefApp {
     void destroy_swapchain_resources() {
         graph_executor_.clear();
         forward_pass_.reset();
-        terrain_material_.reset();
     }
 
     void destroy_all_resources() {
         destroy_swapchain_resources();
-        material_textures_.reset();
         mesh_.reset();
     }
 
-    void create_material_instance(const cubey::vulkan::Device& device,
-                                  std::uint32_t frame_slot_count) {
-        if (terrain_material_.has_value()) {
-            return;
-        }
-        const TerrainRefMaterialTextures& textures = material_textures();
-        terrain_material_.emplace(
-            device, cubey::render::FrameUniformMaterialInstanceConfig{
-                        .material_pass = terrain_ref_pass_info(),
-                        .descriptor_set = kTerrainRefFrameSet,
-                        .frame_slot_count = frame_slot_count,
-                        .uniform_binding = kTerrainRefFrameBinding,
-                        .sampled_images =
-                            {
-                                cubey::render::SampledImageMaterialBinding{
-                                    .binding = kTerrainRefSandBinding,
-                                    .sampler = textures.sand.sampler().handle(),
-                                    .image_view = textures.sand.view(),
-                                },
-                                cubey::render::SampledImageMaterialBinding{
-                                    .binding = kTerrainRefGrassBinding,
-                                    .sampler = textures.grass.sampler().handle(),
-                                    .image_view = textures.grass.view(),
-                                },
-                                cubey::render::SampledImageMaterialBinding{
-                                    .binding = kTerrainRefGrassVariationBinding,
-                                    .sampler = textures.grass_variation.sampler().handle(),
-                                    .image_view = textures.grass_variation.view(),
-                                },
-                                cubey::render::SampledImageMaterialBinding{
-                                    .binding = kTerrainRefRockBinding,
-                                    .sampler = textures.rock.sampler().handle(),
-                                    .image_view = textures.rock.view(),
-                                },
-                                cubey::render::SampledImageMaterialBinding{
-                                    .binding = kTerrainRefSnowBinding,
-                                    .sampler = textures.snow.sampler().handle(),
-                                    .image_view = textures.snow.view(),
-                                },
-                                cubey::render::SampledImageMaterialBinding{
-                                    .binding = kTerrainRefRockNormalBinding,
-                                    .sampler = textures.rock_normal.sampler().handle(),
-                                    .image_view = textures.rock_normal.view(),
-                                },
-                            },
-                    });
-    }
-
-    [[nodiscard]] TerrainRefFrameUniforms frame_uniforms(VkExtent2D extent) const {
+    [[nodiscard]] TerrainRefPushConstants push_constants(VkExtent2D extent) const {
         const float aspect = extent.height == 0U ? 1.0F
                                                  : static_cast<float>(extent.width) /
                                                        static_cast<float>(extent.height);
@@ -496,7 +330,7 @@ class TerrainRefApp {
                     kTerrainEngineReferenceWaterHeightM,
                     scene_metrics_.min_height_m,
                     scene_metrics_.max_height_m,
-                    0.0F,
+                    0.006F,
                 },
             .camera_position_fog =
                 {
@@ -505,26 +339,20 @@ class TerrainRefApp {
                     camera_transform.translation.z,
                     1.5e-6F,
                 },
-            .material_params =
-                {
-                    0.65F,
-                    20.0F,
-                    0.006F,
-                    0.0F,
-                },
         };
     }
 
     void record_frame(const cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
                       cubey::render::ColorTargetView color_target,
                       cubey::render::FrameSlot frame_slot, bool present) {
-        terrain_material().upload(frame_slot, frame_uniforms(color_target.extent));
-        const auto record = [this, frame_slot](const cubey::vulkan::CommandRecorder& recorder) {
+        (void)frame_slot;
+        const TerrainRefPushConstants constants = push_constants(color_target.extent);
+        const auto record = [this, &constants](const cubey::vulkan::CommandRecorder& recorder) {
             recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
                                    forward_pass().pipeline().pipeline());
-            cubey::render::bind_material_instance(recorder, forward_pass().pipeline(),
-                                                  terrain_material().material_instance(),
-                                                  frame_slot);
+            recorder.push_constants(forward_pass().pipeline().layout(),
+                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                    constants);
             cubey::render::record_draw_item(recorder.handle(),
                                             cubey::render::DrawItem{.mesh = &mesh()});
         };
@@ -579,21 +407,6 @@ class TerrainRefApp {
         return mesh_.value();
     }
 
-    [[nodiscard]] const TerrainRefMaterialTextures& material_textures() const {
-        if (!material_textures_.has_value()) {
-            throw std::runtime_error("terrain_ref material textures are not initialized");
-        }
-        return material_textures_.value();
-    }
-
-    [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<TerrainRefFrameUniforms>&
-    terrain_material() const {
-        if (!terrain_material_.has_value()) {
-            throw std::runtime_error("terrain_ref material is not initialized");
-        }
-        return terrain_material_.value();
-    }
-
     [[nodiscard]] const cubey::render::ForwardScenePass3D& forward_pass() const {
         if (!forward_pass_.has_value()) {
             throw std::runtime_error("terrain_ref forward pass is not initialized");
@@ -608,9 +421,6 @@ class TerrainRefApp {
     cubey::OrbitController orbit_controller_;
     cubey::Camera3D camera_;
     std::optional<cubey::render::Mesh> mesh_;
-    std::optional<TerrainRefMaterialTextures> material_textures_;
-    std::optional<cubey::render::FrameUniformMaterialInstance<TerrainRefFrameUniforms>>
-        terrain_material_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
 };

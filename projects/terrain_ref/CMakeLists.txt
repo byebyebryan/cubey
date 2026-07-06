@@ -19,12 +19,6 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/terrain_engine_reference.glsl"
 )
 
-target_compile_definitions(
-    cubey_project_terrain_ref
-    PRIVATE
-        CUBEY_TERRAIN_REF_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets"
-)
-
 if (BUILD_TESTING)
     add_executable(cubey_project_terrain_ref_tests
         terrain_engine_reference.cpp
@@ -43,11 +37,6 @@ if (BUILD_TESTING)
             cubey::core
             cubey::render
             cubey_project_warnings
-    )
-    target_compile_definitions(
-        cubey_project_terrain_ref_tests
-        PRIVATE
-            CUBEY_TERRAIN_REF_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets"
     )
     add_test(NAME terrain_ref_tests COMMAND cubey_project_terrain_ref_tests)
 
