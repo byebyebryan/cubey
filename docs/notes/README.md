@@ -89,6 +89,10 @@ the detailed foundation notes under `docs/architecture/`.
   terrain workbench into `terrain_workbench_legacy` and start a clean
   `terrain_ref` visual reference lane before more TerrainEngine or ShaderToy
   rendering work.
+- [Terrain ref presentation port plan](terrain-ref-presentation-port-plan.md):
+  first rendering pass for the clean reference lane: TerrainEngine-style
+  material textures, lighting/fog, captures, and explicit water/tessellation
+  deferrals.
 - [Terrain mountain gully diagnostic plan](terrain-mountain-gully-diagnostic-plan.md):
   revision 24 plan for diagnostic-only gully / erosion fields over the mountain
   stress recipe before any height-affecting erosion pass.
