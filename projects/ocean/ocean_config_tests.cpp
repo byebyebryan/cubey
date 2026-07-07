@@ -937,6 +937,8 @@ int main() {
         const std::string gpu_header_source = read_text_file(source_root / "ocean_gpu_resources.h");
         const std::string config_header = read_text_file(source_root / "ocean_config.h");
         const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
+        const std::string shader_cmake_source =
+            read_text_file(source_root.parent_path().parent_path() / "cmake/CubeyShaders.cmake");
 
         require_contains(spectrum_shader, "xy = h0(k), zw = conj(h0(-k))",
                          "spectrum shader should document reference h0 packing");
@@ -1128,8 +1130,12 @@ int main() {
                          "ocean build should compile the shared atmosphere background shader");
         require_contains(cmake_source, "atmosphere_reflection_prefilter.frag",
                          "ocean build should compile the atmosphere reflection prefilter shader");
-        require_contains(cmake_source, "cloud_composite_post.glsl",
-                         "ocean build should track shared cloud composite post include");
+        require_contains(cmake_source, "cubey_cloud_layer_shader_sources",
+                         "ocean build should use the shared cloud shader source package");
+        require_contains(cmake_source, "cubey_cloud_layer_shader_depends",
+                         "ocean build should use the shared cloud shader dependency package");
+        require_contains(shader_cmake_source, "cloud_composite_post.glsl",
+                         "shared cloud shader package should track composite post include");
         require_contains(app_source, "ocean_config_.foam_density",
                          "app should pass foam density as diagnostics push data");
         require_contains(app_source, "ocean_config_.foam_sharpness",

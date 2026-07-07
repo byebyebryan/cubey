@@ -1280,6 +1280,7 @@ int main() {
     const std::string lunar_surface_source =
         read_text_file(repo_root / "src/cubey/render/lunar_surface_map.cpp");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
+    const std::string shader_cmake_source = read_text_file(repo_root / "cmake/CubeyShaders.cmake");
     const std::string render_cmake_source = read_text_file(repo_root / "src/cubey/CMakeLists.txt");
     require_contains(app_source, "GpuTimestampProfiler",
                      "atmosphere app should own GPU timestamp diagnostics");
@@ -1406,8 +1407,12 @@ int main() {
                      "atmosphere build should compile the shared celestial body vertex shader");
     require_contains(cmake_source, "sky/celestial_body.frag",
                      "atmosphere build should compile the shared celestial body fragment shader");
-    require_contains(cmake_source, "cloud_composite_post.glsl",
-                     "atmosphere build should track shared cloud composite post include");
+    require_contains(cmake_source, "cubey_cloud_layer_shader_sources",
+                     "atmosphere build should use the shared cloud shader source package");
+    require_contains(cmake_source, "cubey_cloud_layer_shader_depends",
+                     "atmosphere build should use the shared cloud shader dependency package");
+    require_contains(shader_cmake_source, "cloud_composite_post.glsl",
+                     "shared cloud shader package should track composite post include");
     require_contains(app_source, "CelestialBodyFrame",
                      "atmosphere app should use the shared geometry moon frame");
     require_contains(app_source, "pending_lunar_surface_map_",
@@ -1493,10 +1498,10 @@ int main() {
                          "atmosphere shader should not keep local 2D hash helpers");
     require_not_contains(shader_source, "float value_noise",
                          "atmosphere shader should not keep local value-noise helpers");
-    require_contains(cmake_source, "shaders/cubey/procedural/noise.glsl",
-                     "atmosphere build should track shared procedural noise dependency");
-    require_contains(cmake_source, "shaders/cubey/procedural/random.glsl",
-                     "atmosphere build should track shared procedural random dependency");
+    require_contains(shader_cmake_source, "shaders/cubey/procedural/noise.glsl",
+                     "shared shader package should track procedural noise dependency");
+    require_contains(shader_cmake_source, "shaders/cubey/procedural/random.glsl",
+                     "shared shader package should track procedural random dependency");
     require_contains(shared_helper_source, "cubey_atmosphere_rayleigh_phase",
                      "shared atmosphere include should define Rayleigh phase");
     require_contains(shared_helper_source, "cubey_atmosphere_mie_phase",
