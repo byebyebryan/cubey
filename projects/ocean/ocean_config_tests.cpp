@@ -1091,6 +1091,8 @@ int main() {
                          "ocean build should compile the shared atmosphere background shader");
         require_contains(cmake_source, "atmosphere_reflection_prefilter.frag",
                          "ocean build should compile the atmosphere reflection prefilter shader");
+        require_contains(cmake_source, "cloud_composite_post.glsl",
+                         "ocean build should track shared cloud composite post include");
         require_contains(app_source, "ocean_config_.foam_density",
                          "app should pass foam density as diagnostics push data");
         require_contains(app_source, "ocean_config_.foam_sharpness",

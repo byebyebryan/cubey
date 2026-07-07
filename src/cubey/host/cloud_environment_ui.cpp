@@ -69,7 +69,7 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                 "Sampling",
                 {.default_open = true,
                  .level = 1,
-                 .help = "Resolution and sampling controls for the shared cloud product."}};
+                 .help = "Resolution and sampling controls for the shared Cloud V1 product."}};
             subgroup) {
             mark_changed(imgui_enum_combo("Quality", layer.quality, kCloudEnvironmentQualities,
                                           cloud_environment_quality_name,
@@ -101,14 +101,15 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                                  "is experimental and alternates one deterministic phase per frame "
                                  "through temporal history."),
                 changed);
-            mark_changed(imgui_enum_combo(
-                             "Density model", layer.density_model, kCloudEnvironmentDensityModels,
-                             cloud_environment_density_model_name,
-                             "Cloud density and placement path. Surface-volume is the Cloud V1 "
-                             "production path; experimental-aerial-orbit and ref-density are "
-                             "deferred scale/reference paths."),
-                         changed);
             if (config.show_aerial_orbit_controls) {
+                mark_changed(imgui_enum_combo(
+                                 "Density model", layer.density_model,
+                                 kCloudEnvironmentDensityModels,
+                                 cloud_environment_density_model_name,
+                                 "Cloud density and placement path. Surface-volume is the Cloud "
+                                 "V1 production path; experimental-aerial-orbit and ref-density "
+                                 "are deferred scale/reference paths."),
+                             changed);
                 mark_changed(
                     imgui_enum_combo("Distance mode", layer.distance_mode,
                                      kCloudEnvironmentDistanceModes,
@@ -131,10 +132,19 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
             mark_changed(imgui_checkbox("Local volume", &layer.local_volume_enabled,
                                         "Render near and overhead volumetric cloud detail."),
                          changed);
-            mark_changed(imgui_checkbox("Horizon layer", &layer.horizon_layer_enabled,
-                                        "Enable the deferred far-horizon bridge. Cloud V1 defaults "
-                                        "leave this off."),
-                         changed);
+            if (config.show_aerial_orbit_controls) {
+                mark_changed(imgui_checkbox(
+                                 "Horizon layer", &layer.horizon_layer_enabled,
+                                 "Enable the deferred far-horizon bridge. Cloud V1 defaults leave "
+                                 "this off."),
+                             changed);
+            } else {
+                ImGui::Text("Model: %s / %s",
+                            cloud_environment_density_model_name(layer.density_model),
+                            cloud_environment_distance_mode_name(layer.distance_mode));
+                imgui_attach_help("Cloud V1 surfaces keep aerial/orbit controls hidden by "
+                                  "default. Planet opts into those deferred pressure controls.");
+            }
         }
 
         if (const ScopedImGuiGroup subgroup{

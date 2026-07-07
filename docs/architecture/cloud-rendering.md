@@ -83,6 +83,13 @@ Compatibility aliases such as `reference-parity`, `cloud-ref-compatible`, and
 `procedural` can keep parsing old configs, but docs, UI, and generated config
 templates should present the canonical names above.
 
+The shared `CloudEnvironmentUiConfig` defaults to the Cloud V1 surface control
+surface. Atmosphere and ocean inherit that default, so density-model,
+distance-mode, horizon-bridge, and orbit-shell controls stay hidden in normal
+tuning. Planet explicitly opts into those deferred controls as a pressure path;
+that makes later aerial/orbit work visible without turning it into the default
+foundation contract.
+
 ## Lessons From Legacy
 
 `clouds_legacy` proved the right long-term product pressure:
@@ -404,6 +411,12 @@ policy remain owned by the atmosphere integration until at least two consumers
 need direct cloud products. Downstream branches should use the atmosphere cloud
 capture helper and shared `clouds.*` config options to check visual and contract
 assumptions without adopting cloud internals.
+
+The final composite tone and color post pass is shared through
+`shaders/cubey/cloud/cloud_composite_post.glsl`. The standalone cloud reference
+path and external-background path still keep separate mode constants, but the
+math should stay in that shared include so atmosphere, ocean, and planet do not
+drift while Cloud V1 lighting is being tuned.
 
 ## Current Milestone
 

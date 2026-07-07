@@ -313,6 +313,22 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
     }
 }
 
+void test_shared_cloud_ui_defaults_to_surface_controls() {
+    const std::filesystem::path source_root = source_root_path();
+    const std::string ui_header =
+        read_text_file(source_root / "include/cubey/host/cloud_environment_ui.h");
+    const std::string ui_source =
+        read_text_file(source_root / "src/cubey/host/cloud_environment_ui.cpp");
+    const std::string planet_ui = read_text_file(source_root / "projects/planet/planet_ui.cpp");
+
+    require_contains(ui_header, "show_aerial_orbit_controls = false",
+                     "shared cloud UI should hide deferred aerial/orbit controls by default");
+    require_contains(ui_source, "Cloud V1 surfaces keep aerial/orbit controls hidden",
+                     "shared cloud UI should label the hidden deferred-control contract");
+    require_contains(planet_ui, ".show_aerial_orbit_controls = true",
+                     "planet UI should explicitly opt into deferred cloud controls");
+}
+
 void test_run_config_descriptors_cover_project_control_paths() {
     constexpr std::array project_control_paths{
         "grid.width",

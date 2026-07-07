@@ -1406,6 +1406,8 @@ int main() {
                      "atmosphere build should compile the shared celestial body vertex shader");
     require_contains(cmake_source, "sky/celestial_body.frag",
                      "atmosphere build should compile the shared celestial body fragment shader");
+    require_contains(cmake_source, "cloud_composite_post.glsl",
+                     "atmosphere build should track shared cloud composite post include");
     require_contains(app_source, "CelestialBodyFrame",
                      "atmosphere app should use the shared geometry moon frame");
     require_contains(app_source, "pending_lunar_surface_map_",

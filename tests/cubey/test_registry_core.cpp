@@ -103,6 +103,7 @@ void test_run_config_rejects_invalid_capture_options();
 void test_run_config_descriptors_have_help_text();
 void test_run_config_descriptor_cli_names_are_unique();
 void test_run_config_promoted_flags_are_not_explicit_parser_branches();
+void test_shared_cloud_ui_defaults_to_surface_controls();
 void test_run_config_descriptors_cover_project_control_paths();
 void test_run_config_toggle_descriptors_have_negative_aliases();
 void test_run_config_loads_json_config_file();
@@ -130,6 +131,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_run_config_descriptors_have_help_text),
         CUBEY_TEST(test_run_config_descriptor_cli_names_are_unique),
         CUBEY_TEST(test_run_config_promoted_flags_are_not_explicit_parser_branches),
+        CUBEY_TEST(test_shared_cloud_ui_defaults_to_surface_controls),
         CUBEY_TEST(test_run_config_descriptors_cover_project_control_paths),
         CUBEY_TEST(test_run_config_toggle_descriptors_have_negative_aliases),
         CUBEY_TEST(test_run_config_loads_json_config_file),
