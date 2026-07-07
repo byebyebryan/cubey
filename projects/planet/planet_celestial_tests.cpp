@@ -553,6 +553,10 @@ void test_planet_atmosphere_environment_config_round_trips_sun_direction() {
             "planet atmosphere adapter should let unified atmosphere draw night sky");
     require(!config.render_moon_disk,
             "planet atmosphere adapter should leave moon disk rendering to planet geometry");
+    require(config.ground_mode ==
+                cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
+            "planet atmosphere adapter should keep sky rays independent of shader ground "
+            "occlusion");
     require_near(config.rayleigh_density_scale, 1.15F, 0.0001F,
                  "planet atmosphere adapter should preserve shared Rayleigh look scale");
     require_near(config.mie_density_scale, 0.75F, 0.0001F,
@@ -612,6 +616,52 @@ void test_planet_unified_atmosphere_frame_uses_local_tangent_up() {
                  "unified atmosphere frame should pack shared Rayleigh look scale");
     require_near(uniforms.ozone.y, look_config.ozone_absorption.y * look_config.ozone_density_scale,
                  0.0001F, "unified atmosphere frame should pack shared ozone look scale");
+}
+
+void test_planet_unified_atmosphere_frame_tracks_camera_rotation() {
+    cubey::projects::planet::PlanetAtmosphereInputs inputs{};
+    inputs.planet_radius_m = 600000.0F;
+    inputs.atmosphere_outer_radius_m = 670000.0F;
+    inputs.camera_position_m = {610000.0F, 0.0F, 0.0F};
+    inputs.camera_altitude_m = 10000.0F;
+    inputs.sun_direction = glm::normalize(cubey::math::Vec3{0.50F, 0.40F, -0.76F});
+    inputs.moon_direction = glm::normalize(cubey::math::Vec3{0.10F, 0.30F, 0.95F});
+
+    const cubey::render::LocalTangentFrame local_frame{
+        .world_origin_m = {600000.0, 0.0, 0.0},
+        .right = {0.0F, 0.0F, 1.0F},
+        .up = {1.0F, 0.0F, 0.0F},
+        .forward = {0.0F, 1.0F, 0.0F},
+        .planet_radius_m = 600000.0F,
+    };
+    const cubey::render::ViewRayBasis3D look_north{
+        .right_aspect = {1.0F, 0.0F, 0.0F, 1.0F},
+        .up_tan_half_fovy = {0.0F, 1.0F, 0.0F, 0.6F},
+        .forward = {0.0F, 0.0F, -1.0F, 0.0F},
+    };
+    const cubey::render::ViewRayBasis3D look_east{
+        .right_aspect = {0.0F, 0.0F, 1.0F, 1.0F},
+        .up_tan_half_fovy = {0.0F, 1.0F, 0.0F, 0.6F},
+        .forward = {1.0F, 0.0F, 0.0F, 0.0F},
+    };
+
+    const cubey::render::AtmosphereEnvironmentFrameUniforms north_uniforms =
+        cubey::projects::planet::planet_unified_atmosphere_frame_uniforms(
+            inputs, {.view_rays = look_north, .local_frame = local_frame});
+    const cubey::render::AtmosphereEnvironmentFrameUniforms east_uniforms =
+        cubey::projects::planet::planet_unified_atmosphere_frame_uniforms(
+            inputs, {.view_rays = look_east, .local_frame = local_frame});
+
+    require_vec_near(cubey::math::Vec3{north_uniforms.camera_forward_debug_view},
+                     {-1.0F, 0.0F, 0.0F},
+                     "surface sky should use the current camera forward ray");
+    require_vec_near(cubey::math::Vec3{east_uniforms.camera_forward_debug_view},
+                     {0.0F, 1.0F, 0.0F},
+                     "surface sky should rotate with camera yaw");
+    require_vec_near(cubey::math::Vec3{north_uniforms.camera_right_aspect}, {0.0F, 1.0F, 0.0F},
+                     "surface sky should use the current camera right ray");
+    require_vec_near(cubey::math::Vec3{east_uniforms.camera_right_aspect}, {1.0F, 0.0F, 0.0F},
+                     "surface sky should rotate the right ray with camera yaw");
 }
 
 void test_planet_unified_atmosphere_frame_splits_sky_and_moon_ownership() {
@@ -1000,6 +1050,7 @@ int main() {
         test_planet_atmosphere_inputs_follow_celestial_state();
         test_planet_atmosphere_environment_config_round_trips_sun_direction();
         test_planet_unified_atmosphere_frame_uses_local_tangent_up();
+        test_planet_unified_atmosphere_frame_tracks_camera_rotation();
         test_planet_unified_atmosphere_frame_splits_sky_and_moon_ownership();
         test_celestial_body_conversion_preserves_moon_state();
         test_celestial_body_render_placement_preserves_apparent_size();
