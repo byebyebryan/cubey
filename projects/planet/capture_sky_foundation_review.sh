@@ -87,7 +87,7 @@ surface_day=(
     --planet-camera-mode surface
     --planet-camera-altitude-m 1200
     --planet-day-of-year 80
-    --planet-time-hours 12.0
+    --planet-time-hours 18.0
     --planet-camera-surface-look sun
     --planet-camera-surface-pitch-deg 8
 )
@@ -95,44 +95,44 @@ surface_night=(
     --planet-camera-mode surface
     --planet-camera-altitude-m 1200
     --planet-day-of-year 80
-    --planet-time-hours 0.0
+    --planet-time-hours 12.0
     --planet-camera-surface-pitch-deg 12
 )
 high_060=(
     --planet-camera-mode orbit
     --planet-camera-altitude-m 60000
     --planet-day-of-year 80
-    --planet-time-hours 12.0
+    --planet-time-hours 18.0
 )
 high_140=(
     --planet-camera-mode orbit
     --planet-camera-altitude-m 140000
     --planet-day-of-year 80
-    --planet-time-hours 12.0
+    --planet-time-hours 18.0
 )
 orbit_lit=(
     --planet-camera-mode orbit
     --planet-camera-altitude-m 2400000
     --planet-day-of-year 80
-    --planet-time-hours 12.0
+    --planet-time-hours 0.0
 )
 orbit_terminator=(
     --planet-camera-mode orbit
     --planet-camera-altitude-m 2400000
     --planet-day-of-year 80
-    --planet-time-hours 18.0
+    --planet-time-hours 15.0
 )
 orbit_starfield=(
     --planet-camera-mode orbit
     --planet-camera-altitude-m 2400000
     --planet-day-of-year 112
-    --planet-time-hours 0.0
+    --planet-time-hours 12.0
 )
 orbit_sun_glare=(
     --planet-camera-mode orbit
     --planet-camera-altitude-m 2400000
     --planet-day-of-year 80
-    --planet-time-hours 12.0
+    --planet-time-hours 6.0
 )
 
 write_index_header
@@ -151,7 +151,7 @@ capture_named high-140 "High 140km" high "${high_140[@]}"
 capture_named orbit-lit "Orbit lit" orbit "${orbit_lit[@]}"
 capture_named orbit-terminator "Orbit terminator" orbit "${orbit_terminator[@]}"
 capture_named orbit-starfield "Orbit starfield" orbit "${orbit_starfield[@]}"
-capture_named orbit-sun-glare "Orbit sun glare" orbit "${orbit_sun_glare[@]}"
+capture_named orbit-sun-glare "Orbit sun limb glow" orbit "${orbit_sun_glare[@]}"
 
 write_contact_sheet
 
