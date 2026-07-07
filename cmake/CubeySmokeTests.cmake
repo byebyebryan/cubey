@@ -12,6 +12,15 @@ function(cubey_add_windowed_smoke_test name target success_pattern)
     set_tests_properties("${name}" PROPERTIES TIMEOUT 20 SKIP_RETURN_CODE 77)
 endfunction()
 
+function(cubey_label_tests label)
+    foreach(test_name ${ARGN})
+        if (NOT TEST "${test_name}")
+            message(FATAL_ERROR "cubey_label_tests: unknown test '${test_name}'")
+        endif()
+        set_property(TEST "${test_name}" APPEND PROPERTY LABELS "${label}")
+    endforeach()
+endfunction()
+
 function(cubey_add_png_smoke_test name target output_path)
     set(skip_marker "${output_path}.skip")
     add_test(

@@ -102,4 +102,16 @@ if (BUILD_TESTING)
         0.005
         0.005
     )
+
+    cubey_label_tests(
+        legacy
+        clouds_legacy_reaches_glfw
+        clouds_legacy_config_tests
+        clouds_legacy_surface_headless_writes_png
+        clouds_legacy_surface_headless_writes_png_stats
+        clouds_legacy_high_headless_writes_png
+        clouds_legacy_high_headless_writes_png_stats
+        clouds_legacy_orbit_headless_writes_png
+        clouds_legacy_orbit_headless_writes_png_stats
+    )
 endif()

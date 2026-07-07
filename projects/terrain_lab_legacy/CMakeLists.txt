@@ -292,4 +292,34 @@ if (BUILD_TESTING)
         0.00001
         0.00005
     )
+
+    cubey_label_tests(
+        legacy
+        terrain_lab_legacy_reaches_glfw
+        terrain_lab_legacy_config_tests
+        terrain_lab_legacy_headless_writes_png
+        terrain_lab_legacy_headless_writes_png_stats
+        terrain_lab_legacy_flow_accumulation_writes_png
+        terrain_lab_legacy_flow_accumulation_writes_png_stats
+        terrain_lab_legacy_river_network_writes_png
+        terrain_lab_legacy_river_network_writes_png_stats
+        terrain_lab_legacy_river_width_writes_png
+        terrain_lab_legacy_river_width_writes_png_stats
+        terrain_lab_legacy_water_presence_writes_png
+        terrain_lab_legacy_water_presence_writes_png_stats
+        terrain_lab_legacy_feature_graph_writes_png
+        terrain_lab_legacy_feature_graph_writes_png_stats
+        terrain_lab_legacy_drainage_regions_writes_png
+        terrain_lab_legacy_drainage_regions_writes_png_stats
+        terrain_lab_legacy_desert_dunes_writes_png
+        terrain_lab_legacy_desert_dunes_writes_png_stats
+        terrain_lab_legacy_desert_dunes_fastnoise_writes_png
+        terrain_lab_legacy_desert_dunes_fastnoise_writes_png_stats
+        terrain_lab_legacy_desert_dunes_fastnoise_warped_writes_png
+        terrain_lab_legacy_desert_dunes_fastnoise_warped_writes_png_stats
+        terrain_lab_legacy_alpine_glacial_valley_writes_png
+        terrain_lab_legacy_alpine_glacial_valley_writes_png_stats
+        terrain_lab_legacy_mountain_ridges_peaks_writes_png
+        terrain_lab_legacy_mountain_ridges_peaks_writes_png_stats
+    )
 endif()

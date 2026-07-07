@@ -64,4 +64,12 @@ if (BUILD_TESTING)
         0.00001
         0.00005
     )
+
+    cubey_label_tests(
+        reference
+        terrain_ref_reaches_glfw
+        terrain_ref_tests
+        terrain_ref_headless_writes_png
+        terrain_ref_headless_writes_png_stats
+    )
 endif()

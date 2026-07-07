@@ -171,4 +171,18 @@ if (BUILD_TESTING)
         0.00001
         0.00005
     )
+
+    cubey_label_tests(
+        legacy
+        terrain_workbench_preview_legacy_reaches_glfw
+        terrain_workbench_legacy_product_tests
+        terrain_workbench_legacy_final_writes_png
+        terrain_workbench_legacy_final_writes_png_stats
+        terrain_workbench_legacy_flow_accumulation_writes_png
+        terrain_workbench_legacy_flow_accumulation_writes_png_stats
+        terrain_workbench_legacy_stress_river_network_writes_png
+        terrain_workbench_legacy_stress_river_network_writes_png_stats
+        terrain_workbench_preview_legacy_headless_writes_png
+        terrain_workbench_preview_legacy_headless_writes_png_stats
+    )
 endif()

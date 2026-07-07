@@ -84,4 +84,14 @@ if (BUILD_TESTING)
         0.005
         0.005
     )
+
+    cubey_label_tests(
+        reference
+        cloud_ref_2_reaches_glfw
+        cloud_ref_2_config_tests
+        cloud_ref_2_surface_headless_writes_png
+        cloud_ref_2_surface_headless_writes_png_stats
+        cloud_ref_2_high_headless_writes_png
+        cloud_ref_2_high_headless_writes_png_stats
+    )
 endif()

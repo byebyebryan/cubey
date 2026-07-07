@@ -87,8 +87,12 @@ Reference and legacy projects:
   density, sampling, and lighting before promotion into the shared cloud layer.
 - `cloud_ref_2`: Godot-v2-style cached-sky architecture reference used to
   inspect octahedral cache behavior, not a visual target.
+- `terrain_ref`: terrain reference renderer used to compare TerrainEngine and
+  ShaderToy-derived terrain cues without making it the active terrain product.
 - `clouds_legacy`: frozen first-pass planet-aware cloud/weather prototype kept
   as evidence for scale, horizon, UI, and integration failure modes.
+- `terrain_workbench_legacy`: frozen terrain reboot workbench and preview kept
+  as product-generation evidence, not the active terrain contract.
 - `terrain_lab_legacy`: preserved local terrain generation R&D snapshot with
   deterministic CPU fields, hydrology-oriented diagnostics, biome slices, and
   headless visual smoke coverage.
@@ -138,6 +142,8 @@ Project-local docs:
 - [Fire 3D](projects/fluid/fire_3d/README.md)
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
 - [Planet](projects/planet/README.md)
+- [Terrain Ref](projects/terrain_ref/README.md)
+- [Terrain Workbench Legacy](projects/terrain_workbench_legacy/README.md)
 - [Terrain Lab Legacy](projects/terrain_lab_legacy/README.md)
 - [Ocean](projects/ocean/README.md)
 - [Procedural Terrain Legacy](projects/procedural_terrain_legacy/README.md)

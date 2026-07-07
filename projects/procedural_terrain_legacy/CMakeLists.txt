@@ -52,4 +52,11 @@ if (BUILD_TESTING)
         --grid-width 65
         --grid-height 65
     )
+
+    cubey_label_tests(
+        legacy
+        procedural_terrain_legacy_reaches_glfw
+        procedural_terrain_legacy_config_tests
+        procedural_terrain_legacy_headless_writes_png
+    )
 endif()

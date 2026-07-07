@@ -11,6 +11,8 @@ for the pre-merge capture pack.
 Generated review output:
 
 ```sh
+# Historical only; projects/cloud was removed after absorption into atmosphere.
+# These commands document the original capture source and are not expected to run.
 cmake --build --preset dev --target cubey_project_cloud cubey_project_cloud_tests
 projects/cloud/capture_review.sh outputs/cloud-pre-merge-current
 ```
@@ -26,7 +28,7 @@ entrypoints are:
 - `outputs/cloud-pre-merge-current/high-oblique.png`
 - `outputs/cloud-pre-merge-current/orbit-satellite-preview.png`
 
-## Current Read
+## Historical Read
 
 - Surface/local cloud shape is the visual baseline for foreground volumetric
   clouds.
@@ -44,8 +46,9 @@ entrypoints are:
 
 ## Known Follow-Ups
 
-- Shared renderer promotion is still deferred; consumers should not copy cloud
-  raymarch code.
+- This note predates shared renderer promotion. Current consumers should use
+  `cubey::render::CloudLayerRuntime` through atmosphere/ocean/planet integration
+  rather than copying cloud raymarch code.
 - Ocean/planet/terrain integration should consume cloud products, metadata, and
   future shadow outputs through a shared contract.
 - Historical quick consumer checks used the quarter-resolution smoke recipe in
