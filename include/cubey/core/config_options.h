@@ -19,6 +19,12 @@ enum class ConfigOptionType {
     Enum,
 };
 
+enum class ConfigOptionStability {
+    Stable,
+    Deferred,
+    Reference,
+};
+
 enum class RunConfigOptionId {
     Title,
     Width,
@@ -302,6 +308,7 @@ struct ConfigOptionDescriptor {
     ConfigOptionType type = ConfigOptionType::String;
     ConfigOptionRange range{};
     ConfigEnumChoices enum_choices{};
+    ConfigOptionStability stability = ConfigOptionStability::Stable;
 };
 
 struct RunConfigFileApplyResult {

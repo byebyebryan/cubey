@@ -70,6 +70,12 @@ const cubey::ConfigOptionDescriptor& require_option(std::string_view path) {
     throw std::runtime_error("missing config descriptor for " + std::string(path));
 }
 
+void require_option_stability(std::string_view path,
+                              cubey::ConfigOptionStability expected,
+                              const char* message) {
+    require(require_option(path).stability == expected, message);
+}
+
 } // namespace
 
 void test_run_config_parses_png_output_path() {
@@ -174,6 +180,9 @@ void test_run_config_descriptors_have_help_text() {
     bool saw_cloud_lighting = false;
     bool saw_cloud_reference = false;
     bool saw_cloud_aerial_orbit = false;
+    bool saw_stable_cloud = false;
+    bool saw_reference_cloud = false;
+    bool saw_deferred_cloud = false;
     bool saw_profile = false;
     bool saw_smoke = false;
     bool saw_water3d = false;
@@ -210,6 +219,20 @@ void test_run_config_descriptors_have_help_text() {
             saw_cloud_aerial_orbit =
                 saw_cloud_aerial_orbit ||
                 option.group_path == std::string_view{"Clouds/Deferred Aerial Orbit"};
+            saw_stable_cloud =
+                saw_stable_cloud || option.stability == cubey::ConfigOptionStability::Stable;
+            saw_reference_cloud =
+                saw_reference_cloud || option.stability == cubey::ConfigOptionStability::Reference;
+            saw_deferred_cloud =
+                saw_deferred_cloud || option.stability == cubey::ConfigOptionStability::Deferred;
+            if (option.group_path == std::string_view{"Clouds/Reference Diagnostics"}) {
+                require(option.stability == cubey::ConfigOptionStability::Reference,
+                        "cloud reference descriptors should be marked reference");
+            }
+            if (option.group_path == std::string_view{"Clouds/Deferred Aerial Orbit"}) {
+                require(option.stability == cubey::ConfigOptionStability::Deferred,
+                        "cloud aerial/orbit descriptors should be marked deferred");
+            }
         }
         if (option.path == "profile.output") {
             saw_profile = true;
@@ -227,6 +250,16 @@ void test_run_config_descriptors_have_help_text() {
     require(saw_cloud_general && saw_cloud_sampling && saw_cloud_layer && saw_cloud_shape &&
                 saw_cloud_lighting && saw_cloud_reference && saw_cloud_aerial_orbit,
             "cloud descriptors should expose tiered UI/config groups");
+    require(saw_stable_cloud && saw_reference_cloud && saw_deferred_cloud,
+            "cloud descriptors should distinguish stable, reference, and deferred options");
+    require_option_stability("clouds.quality", cubey::ConfigOptionStability::Stable,
+                             "cloud quality should be a stable Cloud V1 option");
+    require_option_stability("clouds.resolve_radius_px", cubey::ConfigOptionStability::Reference,
+                             "cloud resolve radius should be a cloud_ref-only option");
+    require_option_stability("clouds.temporal", cubey::ConfigOptionStability::Deferred,
+                             "cloud temporal reconstruction should be marked deferred");
+    require_option_stability("clouds.horizon_layer", cubey::ConfigOptionStability::Deferred,
+                             "cloud horizon layer should be marked deferred");
     require(saw_profile, "config descriptors should include profiling controls");
     require(saw_smoke, "config descriptors should include smoke controls");
     require(saw_water3d, "config descriptors should include water 3D controls");
