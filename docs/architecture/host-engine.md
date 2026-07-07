@@ -226,13 +226,13 @@ setup before swapchain setup, and callback forwarding.
   updates, render recording, and compute simulation into local implementation
   files. They still own their shaders, descriptors, command recording sequence,
   and example-specific state.
-- `cubey::host::HeadlessPngHost` owns the repeated no-window Vulkan
+- `cubey::host::HeadlessCaptureHost` owns the repeated no-window Vulkan
   instance/device, submission coordinator, GPU runtime, offscreen RGBA target,
   deterministic `HeadlessCaptureFrame` timing, color-attachment/readback
   transitions, ticketed RGBA8 image readback through `ProjectGpuServices`, PNG
   writing, and optional MP4 video writing without depending on GLFW. Its target
   view uses the same `cubey::render::ColorTargetView` vocabulary as the
-  windowed path.
+  windowed path. `HeadlessPngHost` remains available as the older name.
 - `headless_cube`, `fractal_2d --headless`, `smoke_2d --headless`,
   `gltf_viewer --headless`, and `pbr_furnace --headless` use the headless host
   while keeping their resource setup, simulation/update work, and capture

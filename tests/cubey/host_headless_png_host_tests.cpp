@@ -29,10 +29,20 @@ concept HasSubmissionAccessor = requires { &T::submission; };
 void test_headless_png_host_validates_capture_shape() {
     require(cubey::host::headless_png_byte_size(2, 3) == 24,
             "headless PNG byte size should cover RGBA8 pixels");
+    require(cubey::host::headless_capture_rgba8_byte_size(2, 3) == 24,
+            "headless capture byte size alias should cover RGBA8 pixels");
     require_throws([] { static_cast<void>(cubey::host::headless_png_byte_size(0, 1)); },
                    "headless PNG byte size should reject zero width");
     require_throws([] { static_cast<void>(cubey::host::headless_png_byte_size(1, 0)); },
                    "headless PNG byte size should reject zero height");
+
+    static_assert(
+        std::is_same_v<cubey::host::HeadlessCaptureContext, cubey::host::HeadlessPngContext>);
+    static_assert(
+        std::is_same_v<cubey::host::HeadlessCaptureHostConfig, cubey::host::HeadlessPngHostConfig>);
+    static_assert(std::is_same_v<cubey::host::HeadlessCaptureHostCallbacks,
+                                 cubey::host::HeadlessPngHostCallbacks>);
+    static_assert(std::is_same_v<cubey::host::HeadlessCaptureHost, cubey::host::HeadlessPngHost>);
 
     cubey::host::HeadlessPngHostConfig config;
     config.run_config.title = "headless-png-host-test";

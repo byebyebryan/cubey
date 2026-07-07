@@ -94,6 +94,10 @@ struct HeadlessSimulationDriver {
 };
 
 [[nodiscard]] std::size_t headless_png_byte_size(std::uint32_t width, std::uint32_t height);
+[[nodiscard]] inline std::size_t headless_capture_rgba8_byte_size(std::uint32_t width,
+                                                                  std::uint32_t height) {
+    return headless_png_byte_size(width, height);
+}
 [[nodiscard]] std::uint32_t headless_capture_frame_slot_count(const RunConfig& config);
 [[nodiscard]] std::uint32_t headless_capture_frame_count(const RunConfig& config);
 [[nodiscard]] HeadlessCaptureFrame headless_capture_frame(const RunConfig& config,
@@ -158,5 +162,10 @@ class HeadlessPngHost {
     std::optional<ProjectGpuServices> project_gpu_;
     std::optional<cubey::profiling::ProfileRecorder> profile_recorder_;
 };
+
+using HeadlessCaptureContext = HeadlessPngContext;
+using HeadlessCaptureHostConfig = HeadlessPngHostConfig;
+using HeadlessCaptureHostCallbacks = HeadlessPngHostCallbacks;
+using HeadlessCaptureHost = HeadlessPngHost;
 
 } // namespace cubey::host

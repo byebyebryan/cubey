@@ -178,9 +178,10 @@ Current state:
 - Shared image and image-transition helpers now cover the first offscreen color
   render target and color-attachment-to-readback transition used by headless
   output.
-- `cubey::host::HeadlessPngHost` owns the repeated no-window offscreen target,
-  capture transition, runtime-queued capture recording, project-GPU readback
-  ticket, PNG artifact write path, and optional MP4 video capture path.
+- `cubey::host::HeadlessCaptureHost` owns the repeated no-window offscreen
+  target, capture transition, runtime-queued capture recording,
+  project-GPU readback ticket, PNG artifact write path, and optional MP4 video
+  capture path. `HeadlessPngHost` remains as the legacy compatibility name.
 - `cubey::render::Texture2D` and `TextureCube` now own the current generated,
   uploaded, and cubemap sampled texture image shapes above the raw Vulkan
   `Image` and optional `Sampler`.
@@ -349,9 +350,10 @@ Current state:
   all current windowed examples.
 - Windowed examples still own shaders, pipelines, descriptors, swapchain-sized
   render resources, command recording, and example behavior.
-- `cubey::host::HeadlessPngHost` owns the repeated no-window Vulkan setup,
+- `cubey::host::HeadlessCaptureHost` owns the repeated no-window Vulkan setup,
   offscreen RGBA render target, capture transitions, readback buffer copy, PNG
   writing, and optional MP4 writing for current headless examples/projects.
+  `HeadlessPngHost` remains as the legacy compatibility name.
 - Shared non-platform helpers cover frame timing, frame stats, and orbit
   control.
 

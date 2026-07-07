@@ -438,8 +438,9 @@ Status: threaded default plus inline test mode complete.
 - Hosts drain or wait for queued GPU work at setup/update/capture/shutdown
   boundaries.
 - `textured_cube` setup-time texture transitions/compute dispatch and
-  `cubey::host::HeadlessPngHost` capture recording now route through the runtime
-  while still preserving a synchronous setup/capture shape at the call site.
+  `cubey::host::HeadlessCaptureHost` capture recording now route through the
+  runtime while still preserving a synchronous setup/capture shape at the call
+  site. `HeadlessPngHost` remains as the older source-compatible name.
 - Added `ProjectGpuServices` for project-facing upload draining, upload
   completion/failure status, RGBA8 image readback tickets, and deferred
   destruction retirement from completed GPU submission tickets.
