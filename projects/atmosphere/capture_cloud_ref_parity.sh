@@ -97,7 +97,6 @@ capture_atmosphere() {
         --time-of-day-mode solar
         --cloud-weather-preset "${ATMOSPHERE_PRESET}"
         --cloud-view-steps "${VIEW_STEPS}"
-        --cloud-resolve-radius-px 1.5
         --cloud-debug-view "${debug}"
         "$@"
     )

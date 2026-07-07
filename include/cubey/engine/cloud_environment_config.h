@@ -22,6 +22,11 @@ enum class CloudEnvironmentWeatherPreset : std::uint32_t {
     SurfaceVolume = 6,
 };
 
+enum class CloudEnvironmentConfigPolicy {
+    SurfaceV1Only,
+    AllowDeferredDiagnostics,
+};
+
 inline constexpr std::array<CloudEnvironmentWeatherPreset, 7> kCloudEnvironmentWeatherPresets{
     CloudEnvironmentWeatherPreset::Clear,         CloudEnvironmentWeatherPreset::FairWeather,
     CloudEnvironmentWeatherPreset::BrokenCumulus, CloudEnvironmentWeatherPreset::OvercastStratus,
@@ -478,6 +483,18 @@ inline void apply_cloud_environment_surface_volume(CloudEnvironmentConfig& confi
     config.layer.jitter_strength = 1.0F;
 }
 
+inline void apply_cloud_environment_surface_v1_policy(CloudEnvironmentConfig& config) {
+    config.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+    config.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    config.layer.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
+    config.layer.orbit_representation = cubey::render::CloudLayerOrbitRepresentation::SurfaceShell;
+    config.layer.resolve_mode = cubey::render::CloudLayerResolveMode::TerrainPost;
+    config.layer.view_sample_mode = cubey::render::CloudLayerViewSampleMode::SingleFrame;
+    config.layer.temporal_enabled = false;
+    config.layer.local_volume_enabled = true;
+    config.layer.horizon_layer_enabled = false;
+}
+
 inline void apply_cloud_environment_weather_preset(CloudEnvironmentConfig& config,
                                                    CloudEnvironmentWeatherPreset preset) {
     config.weather_preset = preset;
@@ -499,8 +516,10 @@ inline void apply_cloud_environment_weather_preset(CloudEnvironmentConfig& confi
     }
 }
 
-inline void apply_cloud_environment_run_config(CloudEnvironmentConfig& config,
-                                               const RunConfig::CloudOptions& run_clouds) {
+inline void apply_cloud_environment_run_config(
+    CloudEnvironmentConfig& config,
+    const RunConfig::CloudOptions& run_clouds,
+    CloudEnvironmentConfigPolicy policy = CloudEnvironmentConfigPolicy::SurfaceV1Only) {
     auto apply_float = [](float value, float& target) {
         if (run_config_float_is_set(value)) {
             target = value;
@@ -608,6 +627,9 @@ inline void apply_cloud_environment_run_config(CloudEnvironmentConfig& config,
         config.layer.horizon_layer_enabled = run_clouds.horizon_layer != 0;
     }
     config.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+    if (policy == CloudEnvironmentConfigPolicy::SurfaceV1Only) {
+        apply_cloud_environment_surface_v1_policy(config);
+    }
 }
 
 } // namespace cubey

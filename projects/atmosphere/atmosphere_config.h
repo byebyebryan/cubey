@@ -764,7 +764,8 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
 
 inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
                                               const RunConfig::CloudOptions& run_clouds) {
-    cubey::apply_cloud_environment_run_config(config, run_clouds);
+    cubey::apply_cloud_environment_run_config(
+        config, run_clouds, cubey::CloudEnvironmentConfigPolicy::AllowDeferredDiagnostics);
 }
 
 [[nodiscard]] inline AtmosphereConfig atmosphere_config_from_run_config(const RunConfig& run) {

@@ -10,7 +10,6 @@ FRAMES="${FRAMES:-2}"
 QUALITY="${QUALITY:-full}"
 PRESET="${PRESET:-surface-volume}"
 VIEW_STEPS="${VIEW_STEPS:-64}"
-RESOLVE_RADIUS_PX="${RESOLVE_RADIUS_PX:-1.5}"
 AFTERGLOW_STRENGTH="${AFTERGLOW_STRENGTH:-0.75}"
 AFTERGLOW_HOUR="${AFTERGLOW_HOUR:-18.1}"
 
@@ -35,7 +34,6 @@ write_header() {
         printf -- '- Quality: %s\n' "${QUALITY}"
         printf -- '- Weather preset: %s\n' "${PRESET}"
         printf -- '- View steps: %s\n' "${VIEW_STEPS}"
-        printf -- '- Resolve radius px: %s\n' "${RESOLVE_RADIUS_PX}"
         printf -- '- Afterglow showcase strength: %s\n' "${AFTERGLOW_STRENGTH}"
         printf -- '- Afterglow showcase hour: %s\n\n' "${AFTERGLOW_HOUR}"
         printf 'Cloud V1 acceptance is the surface/local view. Handoff captures compare '
@@ -79,7 +77,6 @@ capture_atmosphere() {
         --cloud-weather-preset "${PRESET}"
         --cloud-quality "${QUALITY}"
         --cloud-view-steps "${VIEW_STEPS}"
-        --cloud-resolve-radius-px "${RESOLVE_RADIUS_PX}"
         --cloud-debug-view "${debug}"
         --camera-altitude-km 0.15
         --camera-pitch-offset-deg 0

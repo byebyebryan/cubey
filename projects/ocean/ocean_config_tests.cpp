@@ -122,6 +122,43 @@ int main() {
         no_clouds_config.clouds.enabled = 0;
         require(!ocean::ocean_cloud_config_from_run_config(no_clouds_config).enabled,
                 "ocean should honor --no-clouds");
+        cubey::RunConfig deferred_clouds_config;
+        deferred_clouds_config.clouds.quality = "half";
+        deferred_clouds_config.clouds.view_steps = 48;
+        deferred_clouds_config.clouds.view_samples = 2;
+        deferred_clouds_config.clouds.coverage = 0.24F;
+        deferred_clouds_config.clouds.distance_mode = "orbit-shell";
+        deferred_clouds_config.clouds.density_model = "procedural";
+        deferred_clouds_config.clouds.resolve_mode = "metadata-bilateral";
+        deferred_clouds_config.clouds.view_sample_mode = "temporal-phased";
+        deferred_clouds_config.clouds.temporal = 1;
+        deferred_clouds_config.clouds.local_volume = 0;
+        deferred_clouds_config.clouds.horizon_layer = 1;
+        const cubey::CloudEnvironmentConfig clamped_clouds =
+            ocean::ocean_cloud_config_from_run_config(deferred_clouds_config);
+        require(clamped_clouds.layer.quality == cubey::render::CloudLayerQuality::Half,
+                "ocean cloud policy should preserve surface quality overrides");
+        require(clamped_clouds.layer.view_steps_override == 48 &&
+                    clamped_clouds.layer.view_samples == 2,
+                "ocean cloud policy should preserve surface sampling budget overrides");
+        require_near(clamped_clouds.layer.coverage, 0.24F, 0.001F,
+                     "ocean cloud policy should preserve surface coverage overrides");
+        require(clamped_clouds.layer.distance_mode ==
+                    cubey::render::CloudLayerDistanceMode::Local,
+                "ocean cloud policy should clamp deferred distance overrides");
+        require(clamped_clouds.layer.density_model ==
+                    cubey::render::CloudLayerDensityModel::SurfaceVolume,
+                "ocean cloud policy should clamp deferred density overrides");
+        require(clamped_clouds.layer.resolve_mode ==
+                    cubey::render::CloudLayerResolveMode::TerrainPost,
+                "ocean cloud policy should clamp deferred resolve overrides");
+        require(clamped_clouds.layer.view_sample_mode ==
+                    cubey::render::CloudLayerViewSampleMode::SingleFrame,
+                "ocean cloud policy should clamp temporal sample mode overrides");
+        require(!clamped_clouds.layer.temporal_enabled &&
+                    clamped_clouds.layer.local_volume_enabled &&
+                    !clamped_clouds.layer.horizon_layer_enabled,
+                "ocean cloud policy should keep surface-only cloud structure");
         require(std::string(ocean::ocean_surface_mode_name(ocean::OceanSurfaceMode::Flat)) ==
                     "flat",
                 "ocean should name the flat surface mode");

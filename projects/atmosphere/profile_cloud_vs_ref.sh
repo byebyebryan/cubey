@@ -15,7 +15,6 @@ QUALITY="${QUALITY:-full}"
 VIEW_STEPS="${VIEW_STEPS:-64}"
 VIEW_SAMPLES="${VIEW_SAMPLES:-1}"
 WEATHER_PRESET="${WEATHER_PRESET:-broken-cumulus}"
-RESOLVE_RADIUS="${RESOLVE_RADIUS:-1.5}"
 
 mkdir -p "${OUT_DIR}/profiles"
 
@@ -28,7 +27,6 @@ common_cloud_args=(
     --cloud-view-samples "${VIEW_SAMPLES}"
     --cloud-weather-preset "${WEATHER_PRESET}"
     --cloud-resolve-mode terrain-post
-    --cloud-resolve-radius-px "${RESOLVE_RADIUS}"
     --cloud-density-model surface-volume
     --cloud-distance-mode local
     --no-cloud-temporal
