@@ -1,19 +1,13 @@
 #include <cubey/render/render_graph_builder.h>
 
+#include "render_graph_private.h"
+
 #include <limits>
 #include <stdexcept>
 #include <utility>
 
 namespace cubey::render {
 namespace {
-
-[[nodiscard]] bool is_color_aspect(VkImageAspectFlags aspects) {
-    return aspects == VK_IMAGE_ASPECT_COLOR_BIT;
-}
-
-[[nodiscard]] bool is_depth_aspect(VkImageAspectFlags aspects) {
-    return aspects == VK_IMAGE_ASPECT_DEPTH_BIT;
-}
 
 void validate_label(const std::string& label, const char* message) {
     if (label.empty()) {
@@ -29,7 +23,8 @@ void validate_texture_desc(const RenderGraphTextureDesc& desc) {
     if (desc.format == VK_FORMAT_UNDEFINED) {
         throw std::runtime_error("render graph texture format must be defined");
     }
-    if (!is_color_aspect(desc.aspects) && !is_depth_aspect(desc.aspects)) {
+    if (!detail::is_render_graph_color_aspect(desc.aspects) &&
+        !detail::is_render_graph_depth_aspect(desc.aspects)) {
         throw std::runtime_error("render graph texture aspect must be color or depth");
     }
 }
@@ -115,14 +110,14 @@ void validate_texture_usage_for_pass(const RenderGraphCompiledPass& pass,
         throw std::runtime_error("render graph attachment usage requires a graphics pass");
     }
     if (usage == RenderGraphTextureUsage::DepthAttachment &&
-        !is_depth_aspect(resource.desc.aspects)) {
+        !detail::is_render_graph_depth_aspect(resource.desc.aspects)) {
         throw std::runtime_error("render graph depth attachment requires a depth texture");
     }
     if ((usage == RenderGraphTextureUsage::ColorAttachment ||
          usage == RenderGraphTextureUsage::StorageRead ||
          usage == RenderGraphTextureUsage::StorageWrite ||
          usage == RenderGraphTextureUsage::StorageReadWrite) &&
-        !is_color_aspect(resource.desc.aspects)) {
+        !detail::is_render_graph_color_aspect(resource.desc.aspects)) {
         throw std::runtime_error("render graph color/storage usage requires a color texture");
     }
     if (stage_mask != 0 && !is_shader_texture_usage(usage)) {

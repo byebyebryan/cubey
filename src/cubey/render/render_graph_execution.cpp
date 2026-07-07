@@ -1,5 +1,7 @@
 #include <cubey/render/render_graph.h>
 
+#include "render_graph_private.h"
+
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/gpu_timestamps.h>
 
@@ -53,20 +55,7 @@ RenderGraphExecutionContext::buffer(RenderGraphBufferHandle handle) const {
 
 RenderGraphResolvedTexture
 RenderGraphExecutionContext::resolved_texture(RenderGraphTextureHandle handle) const {
-    const RenderGraphTextureResource& resource = texture(handle);
-    if (resources_ != nullptr) {
-        const std::optional<RenderGraphResolvedTexture> resolved = resources_->texture(handle);
-        if (resolved.has_value()) {
-            return resolved.value();
-        }
-    }
-    if (resource.lifetime == RenderGraphResourceLifetime::Imported) {
-        return {
-            .image = resource.imported_image,
-            .view = resource.imported_view,
-        };
-    }
-    throw std::runtime_error("render graph texture requires a resolved resource");
+    return detail::render_graph_resolved_texture(graph(), resources_, handle);
 }
 
 RenderGraphResolvedBuffer

@@ -1,15 +1,13 @@
 #include <cubey/render/render_graph.h>
 
+#include "render_graph_private.h"
+
 #include <algorithm>
 #include <stdexcept>
 #include <vector>
 
 namespace cubey::render {
 namespace {
-
-[[nodiscard]] bool is_depth_aspect(VkImageAspectFlags aspects) {
-    return aspects == VK_IMAGE_ASPECT_DEPTH_BIT;
-}
 
 [[nodiscard]] bool is_texture_read(RenderGraphTextureUsage usage) {
     return usage == RenderGraphTextureUsage::SampledRead ||
@@ -60,7 +58,7 @@ texture_usage_state(const RenderGraphCompiledPass& pass, const RenderGraphTextur
     switch (usage) {
     case RenderGraphTextureUsage::SampledRead:
         return {
-            .layout = is_depth_aspect(resource.desc.aspects)
+            .layout = detail::is_render_graph_depth_aspect(resource.desc.aspects)
                           ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
                           : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .access_mask = VK_ACCESS_SHADER_READ_BIT,
