@@ -115,6 +115,51 @@ void test_capture_queue_propagates_encoding_errors() {
     require(propagated, "capture ticket should propagate PNG encoding failures");
 }
 
+void test_capture_queue_creates_png_parent_directories() {
+    const std::filesystem::path output_root =
+        std::filesystem::temp_directory_path() / "cubey_capture_queue_parent";
+    const std::filesystem::path output = output_root / "nested" / "capture.png";
+    std::filesystem::remove_all(output_root);
+
+    cubey::jobs::InlineExecutor jobs;
+    cubey::CaptureQueue queue(jobs);
+    cubey::CaptureTicket ticket = queue.enqueue_png({
+        .output_path = output,
+        .width = 1,
+        .height = 1,
+        .rgba8 = {255, 255, 255, 255},
+    });
+    ticket.finish();
+
+    require(std::filesystem::exists(output), "capture queue should create PNG parent dirs");
+    std::filesystem::remove_all(output_root);
+}
+
+void test_capture_backlog_drains_at_threshold() {
+    const std::filesystem::path output_root =
+        std::filesystem::temp_directory_path() / "cubey_capture_backlog";
+    std::filesystem::remove_all(output_root);
+
+    cubey::jobs::InlineExecutor jobs;
+    cubey::CaptureQueue queue(jobs);
+    cubey::CaptureBacklog backlog(2);
+
+    for (int index = 0; index < 3; ++index) {
+        backlog.enqueue(queue.enqueue_png({
+            .output_path = output_root / ("capture_" + std::to_string(index) + ".png"),
+            .width = 1,
+            .height = 1,
+            .rgba8 = {255, 255, 255, 255},
+        }));
+        require(backlog.pending_count() == 1,
+                "capture backlog should drain once it reaches the threshold");
+    }
+    backlog.finish_all();
+
+    require(backlog.pending_count() == 0, "capture backlog should drain all pending tickets");
+    std::filesystem::remove_all(output_root);
+}
+
 void test_capture_queue_encodes_video_frames_in_order() {
     const std::shared_ptr<FakeVideoEncoderState> state =
         std::make_shared<FakeVideoEncoderState>();

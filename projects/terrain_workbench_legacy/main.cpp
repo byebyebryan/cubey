@@ -2,8 +2,9 @@
 #include "terrain_debug_export.h"
 #include "terrain_phase_profile.h"
 
+#include <cubey/engine/capture_queue.h>
+
 #include <cstdlib>
-#include <deque>
 #include <exception>
 #include <filesystem>
 #include <iostream>
@@ -162,25 +163,18 @@ int main(int argc, char** argv) {
                 {
                     cubey::projects::terrain::TerrainPhaseScope phase(phase_profile,
                                                                       "write_debug_views");
-                    std::deque<cubey::CaptureTicket> pending_tickets;
+                    cubey::CaptureBacklog backlog(kTerrainDebugEncodeBacklog);
                     for (const cubey::projects::terrain::TerrainDebugView view :
                          cubey::projects::terrain::terrain_debug_review_views()) {
                         const std::filesystem::path output_path =
                             cli_config.output_dir /
                             (std::string(cubey::projects::terrain::terrain_debug_view_name(view)) +
                              ".png");
-                        pending_tickets.push_back(
+                        backlog.enqueue(
                             cubey::projects::terrain::enqueue_terrain_debug_png(
                                 captures, product, view, output_path));
-                        if (pending_tickets.size() >= kTerrainDebugEncodeBacklog) {
-                            pending_tickets.front().finish();
-                            pending_tickets.pop_front();
-                        }
                     }
-                    while (!pending_tickets.empty()) {
-                        pending_tickets.front().finish();
-                        pending_tickets.pop_front();
-                    }
+                    backlog.finish_all();
                 }
                 {
                     cubey::projects::terrain::TerrainPhaseScope phase(phase_profile,

@@ -3,7 +3,9 @@
 #include <cubey/core/jobs.h>
 #include <cubey/engine/video_encoder.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -53,6 +55,31 @@ class CaptureTicket {
   private:
     std::filesystem::path output_path_;
     jobs::JobHandle<void> job_;
+};
+
+class CaptureBacklog {
+  public:
+    explicit CaptureBacklog(std::size_t drain_threshold);
+
+    CaptureBacklog(const CaptureBacklog&) = delete;
+    CaptureBacklog& operator=(const CaptureBacklog&) = delete;
+    CaptureBacklog(CaptureBacklog&&) = delete;
+    CaptureBacklog& operator=(CaptureBacklog&&) = delete;
+
+    [[nodiscard]] std::size_t drain_threshold() const {
+        return drain_threshold_;
+    }
+
+    [[nodiscard]] std::size_t pending_count() const {
+        return pending_.size();
+    }
+
+    void enqueue(CaptureTicket ticket);
+    void finish_all();
+
+  private:
+    std::size_t drain_threshold_ = 0;
+    std::deque<CaptureTicket> pending_;
 };
 
 class QueuedVideoEncoder {

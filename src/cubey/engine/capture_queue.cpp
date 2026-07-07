@@ -5,8 +5,10 @@
 #include <condition_variable>
 #include <deque>
 #include <exception>
+#include <filesystem>
 #include <mutex>
 #include <stdexcept>
+#include <string>
 #include <thread>
 #include <utility>
 
@@ -21,10 +23,52 @@ namespace {
     return encoder;
 }
 
+void validate_capture_png_request(const CaptureRequest& request) {
+    if (request.output_path.empty()) {
+        throw std::runtime_error("capture PNG output path must not be empty");
+    }
+    try {
+        validate_video_frame_size(request.width, request.height, request.rgba8.size());
+    } catch (const std::runtime_error& error) {
+        throw std::runtime_error(std::string{"capture PNG RGBA8 buffer is invalid: "} +
+                                 error.what());
+    }
+}
+
+void write_capture_png(CaptureRequest request) {
+    validate_capture_png_request(request);
+    if (request.output_path.has_parent_path()) {
+        std::filesystem::create_directories(request.output_path.parent_path());
+    }
+    write_png_rgba8(request.output_path, request.width, request.height, request.rgba8);
+}
+
 } // namespace
 
 CaptureTicket::CaptureTicket(std::filesystem::path output_path, jobs::JobHandle<void> job)
     : output_path_(std::move(output_path)), job_(std::move(job)) {}
+
+CaptureBacklog::CaptureBacklog(std::size_t drain_threshold)
+    : drain_threshold_(drain_threshold) {
+    if (drain_threshold_ == 0) {
+        throw std::runtime_error("capture backlog drain threshold must be positive");
+    }
+}
+
+void CaptureBacklog::enqueue(CaptureTicket ticket) {
+    pending_.push_back(std::move(ticket));
+    while (pending_.size() >= drain_threshold_) {
+        pending_.front().finish();
+        pending_.pop_front();
+    }
+}
+
+void CaptureBacklog::finish_all() {
+    while (!pending_.empty()) {
+        pending_.front().finish();
+        pending_.pop_front();
+    }
+}
 
 class QueuedVideoEncoder::Impl {
   public:
@@ -145,9 +189,8 @@ CaptureQueue::CaptureQueue(SubmitFunction submit) : submit_(std::move(submit)) {
 
 CaptureTicket CaptureQueue::enqueue_png(CaptureRequest request) {
     std::filesystem::path output_path = request.output_path;
-    jobs::JobHandle<void> job = submit_([request = std::move(request)] {
-        write_png_rgba8(request.output_path, request.width, request.height, request.rgba8);
-    });
+    jobs::JobHandle<void> job =
+        submit_([request = std::move(request)] { write_capture_png(std::move(request)); });
     return {std::move(output_path), std::move(job)};
 }
 

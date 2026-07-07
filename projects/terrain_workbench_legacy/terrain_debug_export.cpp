@@ -797,9 +797,6 @@ CaptureTicket enqueue_terrain_debug_png(CaptureQueue& captures, const TerrainReg
     if (output_path.empty()) {
         throw std::runtime_error("terrain debug PNG output path must be non-empty");
     }
-    if (output_path.has_parent_path()) {
-        std::filesystem::create_directories(output_path.parent_path());
-    }
     const cubey::procedural::Grid2DDesc& desc = product.fields.desc();
     std::vector<std::uint8_t> pixels = render_debug_view(product, view);
     return captures.enqueue_png({
@@ -841,20 +838,13 @@ void write_terrain_debug_review_pngs(const TerrainRegionProduct& product,
     std::filesystem::create_directories(output_dir);
     cubey::jobs::JobSystem encode_jobs(kTerrainDebugEncodeWorkerCount);
     CaptureQueue captures(encode_jobs);
-    std::deque<CaptureTicket> pending_tickets;
+    CaptureBacklog backlog(kTerrainDebugEncodeBacklog);
     for (const TerrainDebugView view : terrain_debug_review_views()) {
         const std::filesystem::path output_path =
             output_dir / (std::string(terrain_debug_view_name(view)) + ".png");
-        pending_tickets.push_back(enqueue_terrain_debug_png(captures, product, view, output_path));
-        if (pending_tickets.size() >= kTerrainDebugEncodeBacklog) {
-            pending_tickets.front().finish();
-            pending_tickets.pop_front();
-        }
+        backlog.enqueue(enqueue_terrain_debug_png(captures, product, view, output_path));
     }
-    while (!pending_tickets.empty()) {
-        pending_tickets.front().finish();
-        pending_tickets.pop_front();
-    }
+    backlog.finish_all();
     write_terrain_debug_manifest(product, output_dir);
 }
 
