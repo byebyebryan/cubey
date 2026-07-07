@@ -1,6 +1,5 @@
 #include "planet_app.h"
 
-#include "../atmosphere/atmosphere_config.h"
 #include "planet_atmosphere_adapter.h"
 #include "planet_camera.h"
 #include "planet_celestial.h"
@@ -14,6 +13,7 @@
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/math.h>
 #include <cubey/engine/atmosphere_environment_config.h>
+#include <cubey/engine/cloud_environment_config.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -125,9 +125,9 @@ static_assert(sizeof(PlanetSurfaceFrameUniforms) == sizeof(float) * 4U * 30U);
         cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth);
 }
 
-[[nodiscard]] atmosphere::AtmosphereCloudConfig
-planet_cloud_config_from_run_config(const RunConfig& config) {
-    atmosphere::AtmosphereCloudConfig clouds{};
+[[nodiscard]] cubey::CloudEnvironmentConfig planet_cloud_config_from_run_config(
+    const RunConfig& config) {
+    cubey::CloudEnvironmentConfig clouds{};
     clouds.enabled = false;
     clouds.layer.quality = cubey::render::CloudLayerQuality::Full;
     clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
@@ -142,7 +142,8 @@ planet_cloud_config_from_run_config(const RunConfig& config) {
     clouds.layer.orbit_detail_strength = 0.78F;
     clouds.layer.orbit_density_scale = 0.023F;
     clouds.layer.orbit_fill = 1.12F;
-    atmosphere::apply_atmosphere_cloud_run_config(clouds, config.clouds);
+    cubey::apply_cloud_environment_run_config(
+        clouds, config.clouds, cubey::CloudEnvironmentConfigPolicy::AllowDeferredDiagnostics);
     return clouds;
 }
 
@@ -1732,7 +1733,7 @@ class PlanetApp {
     PlanetSolarTime solar_time_{};
     PlanetExposureConfig exposure_config_{};
     cubey::render::AtmosphereEnvironmentConfig atmosphere_look_config_{};
-    atmosphere::AtmosphereCloudConfig clouds_config_{};
+    cubey::CloudEnvironmentConfig clouds_config_{};
     PlanetSolarSystemConfig solar_config_{};
     PlanetCelestialSystem celestial_system_{};
     PlanetCelestialLighting celestial_lighting_{};
