@@ -211,6 +211,10 @@ behavior directly: scalar powder intensity, warm low-sun body tint, stronger
 silver-lining edge response, cool underside ambient, and explicit final resolve
 controls. Increasing coverage alone is the wrong response because it turns the
 sky into a white cap without adding dawn color or useful lighting detail.
+The accepted production default is a restrained sunny-warm version of that
+reference: fuller surface coverage and stronger phase/powder/detail relief than
+the old default, but lower shadow and lower twilight intensity than the explicit
+TerrainEngine-inspired study preset.
 
 The first implementation pass should make `cloud_ref` lighting honest before
 adding more features: remove or relabel inactive controls, make debug views show

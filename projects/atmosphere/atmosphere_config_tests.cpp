@@ -538,18 +538,38 @@ int main() {
                 defaults.clouds.layer.resolve_mode == CloudLayerResolveMode::TerrainPost &&
                 !defaults.clouds.layer.horizon_layer_enabled,
             "default atmosphere clouds should keep the stable production surface defaults");
-    require_near(defaults.clouds.layer.top_altitude_m, 14000.0F, 0.001F,
-                 "default atmosphere clouds should use the accepted lower surface cloud ceiling");
-    require_near(defaults.clouds.layer.twilight_color_strength, 0.85F, 0.001F,
-                 "default atmosphere clouds should include twilight color controls");
-    require_near(defaults.clouds.layer.twilight_edge_strength, 0.55F, 0.001F,
-                 "default atmosphere clouds should include twilight edge controls");
-    require_near(defaults.clouds.layer.twilight_saturation_strength, 0.90F, 0.001F,
-                 "default atmosphere clouds should include twilight saturation controls");
-    require_near(defaults.clouds.layer.afterglow_strength, 0.32F, 0.001F,
-                 "default atmosphere clouds should include a subtle afterglow control");
-    require_near(defaults.clouds.layer.powder_strength, 0.20F, 0.001F,
-                 "default atmosphere clouds should expose scalar powder strength");
+    require_near(defaults.clouds.layer.coverage, 0.38F, 0.001F,
+                 "default atmosphere clouds should use sunny-warm surface coverage");
+    require_near(defaults.clouds.layer.density, 0.018F, 0.001F,
+                 "default atmosphere clouds should use sunny-warm surface density");
+    require_near(defaults.clouds.layer.weather_scale_km, 230.0F, 0.001F,
+                 "default atmosphere clouds should use sunny-warm weather scale");
+    require_near(defaults.clouds.layer.top_altitude_m, 15000.0F, 0.001F,
+                 "default atmosphere clouds should use the accepted sunny surface ceiling");
+    require_near(defaults.clouds.layer.shadow_strength, 0.18F, 0.001F,
+                 "default atmosphere clouds should keep non-stormy fair-weather shadow");
+    require_near(defaults.clouds.layer.ambient_strength, 1.22F, 0.001F,
+                 "default atmosphere clouds should use sunny-warm ambient strength");
+    require_near(defaults.clouds.layer.direct_strength, 1.25F, 0.001F,
+                 "default atmosphere clouds should use sunny-warm direct strength");
+    require_near(defaults.clouds.layer.phase_strength, 1.42F, 0.001F,
+                 "default atmosphere clouds should use sunny-warm phase strength");
+    require_near(defaults.clouds.layer.twilight_color_strength, 1.02F, 0.001F,
+                 "default atmosphere clouds should use warmer twilight cloud color");
+    require_near(defaults.clouds.layer.twilight_edge_strength, 0.78F, 0.001F,
+                 "default atmosphere clouds should use stronger twilight cloud edges");
+    require_near(defaults.clouds.layer.twilight_saturation_strength, 1.05F, 0.001F,
+                 "default atmosphere clouds should preserve sunny twilight saturation");
+    require_near(defaults.clouds.layer.afterglow_strength, 0.40F, 0.001F,
+                 "default atmosphere clouds should include a restrained afterglow control");
+    require_near(defaults.clouds.layer.powder_strength, 0.32F, 0.001F,
+                 "default atmosphere clouds should expose sunny powder strength");
+    require_near(defaults.clouds.layer.final_contrast, 1.03F, 0.001F,
+                 "default atmosphere clouds should use sunny final contrast");
+    require_near(defaults.clouds.layer.final_saturation, 1.06F, 0.001F,
+                 "default atmosphere clouds should use sunny final saturation");
+    require_near(defaults.clouds.layer.sun_glare_strength, 1.10F, 0.001F,
+                 "default atmosphere clouds should use restrained sunny glare");
 
     {
         AtmosphereCloudConfig clouds;
@@ -585,20 +605,38 @@ int main() {
                 "surface volume preset should match cloud_ref full-quality sampling");
         require_near(clouds.layer.jitter_strength, 1.0F, 0.001F,
                      "surface volume preset should keep full jitter to reduce banding");
-        require_near(clouds.layer.top_altitude_m, 14000.0F, 0.001F,
-                     "surface volume preset should use the lower cloud_ref ceiling");
-        require_near(clouds.layer.shadow_strength, 0.15F, 0.001F,
-                     "surface volume preset should use the cloud_ref fair-weather shadow");
-        require_near(clouds.layer.twilight_color_strength, 0.85F, 0.001F,
-                     "surface volume preset should strengthen twilight cloud color");
-        require_near(clouds.layer.twilight_edge_strength, 0.55F, 0.001F,
+        require_near(clouds.layer.coverage, 0.38F, 0.001F,
+                     "surface volume preset should use sunny-warm surface coverage");
+        require_near(clouds.layer.density, 0.018F, 0.001F,
+                     "surface volume preset should use sunny-warm surface density");
+        require_near(clouds.layer.weather_scale_km, 230.0F, 0.001F,
+                     "surface volume preset should use sunny-warm weather scale");
+        require_near(clouds.layer.top_altitude_m, 15000.0F, 0.001F,
+                     "surface volume preset should use the accepted sunny surface ceiling");
+        require_near(clouds.layer.shadow_strength, 0.18F, 0.001F,
+                     "surface volume preset should keep a non-stormy fair-weather shadow");
+        require_near(clouds.layer.ambient_strength, 1.22F, 0.001F,
+                     "surface volume preset should use sunny-warm ambient strength");
+        require_near(clouds.layer.direct_strength, 1.25F, 0.001F,
+                     "surface volume preset should use sunny-warm direct strength");
+        require_near(clouds.layer.phase_strength, 1.42F, 0.001F,
+                     "surface volume preset should use sunny-warm phase strength");
+        require_near(clouds.layer.twilight_color_strength, 1.02F, 0.001F,
+                     "surface volume preset should use warmer twilight cloud color");
+        require_near(clouds.layer.twilight_edge_strength, 0.78F, 0.001F,
                      "surface volume preset should strengthen twilight cloud edges");
-        require_near(clouds.layer.twilight_saturation_strength, 0.90F, 0.001F,
-                     "surface volume preset should preserve twilight cloud saturation");
-        require_near(clouds.layer.afterglow_strength, 0.32F, 0.001F,
-                     "surface volume preset should expose a subtle afterglow accent");
-        require_near(clouds.layer.powder_strength, 0.20F, 0.001F,
-                     "surface volume preset should expose scalar powder strength");
+        require_near(clouds.layer.twilight_saturation_strength, 1.05F, 0.001F,
+                     "surface volume preset should preserve sunny twilight saturation");
+        require_near(clouds.layer.afterglow_strength, 0.40F, 0.001F,
+                     "surface volume preset should expose a restrained afterglow accent");
+        require_near(clouds.layer.powder_strength, 0.32F, 0.001F,
+                     "surface volume preset should expose sunny powder strength");
+        require_near(clouds.layer.final_contrast, 1.03F, 0.001F,
+                     "surface volume preset should use sunny final contrast");
+        require_near(clouds.layer.final_saturation, 1.06F, 0.001F,
+                     "surface volume preset should use sunny final saturation");
+        require_near(clouds.layer.sun_glare_strength, 1.10F, 0.001F,
+                     "surface volume preset should use restrained sunny glare");
     }
 
     {
