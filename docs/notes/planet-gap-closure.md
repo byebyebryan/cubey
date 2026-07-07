@@ -129,8 +129,16 @@ The latest follow-up batch is complete:
   surface and report surface weight plus active local-detail state.
 - added local-detail diagnostic headless smoke coverage alongside the existing
   planet capture checks.
+- added a focused no-cloud sky foundation capture pack for horizon, surface
+  rotation, high-altitude, orbit starfield, and orbit sun-glare review.
+- pinned the unified atmosphere adapter to the explicit local tangent frame so
+  surface sky rays rotate with the camera and stay independent of shader ground
+  occlusion.
+- smoothed the shared atmosphere sun disk/glow using a chord-distance metric,
+  reducing orbit glare banding without adding new sun-rendering controls.
 
 The remaining near-term work should move back to feature slices or targeted
 hardening. It still should not port ocean, add real GIS data, build an
-out-of-core streamer, add clouds, or introduce a full ephemeris until the
-planet frame, LOD, and surface-field contracts need that extra pressure.
+out-of-core streamer, promote aerial/orbit clouds, or introduce a full ephemeris
+until the planet frame, LOD, and surface-field contracts need that extra
+pressure.

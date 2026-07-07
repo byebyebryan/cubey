@@ -131,8 +131,12 @@ separate.
 - Orbit space backgrounds now use a separate night-sky visibility path for rays
   that miss the atmosphere, so stars/Milky Way are no longer suppressed by the
   surface-horizon term.
-- In orbit view, the sun glare has visible banding and does not yet read like a
-  clean solar glow.
+- Orbit sun disk/glow now uses a derivative-stable chord-distance metric in the
+  shared atmosphere shader, reducing the visible banding that came from the
+  prior `acos(dot(ray, sun))` angular distance path.
+- `projects/planet/capture_sky_foundation_review.sh` is the focused no-cloud
+  capture pack for checking horizon bands, surface sky rotation, orbit stars,
+  and orbit sun-glare behavior.
 
 ## Cleanup Outcome
 
@@ -159,6 +163,7 @@ Still deferred until dedicated feature work:
 - replacing the procedural stars or Milky Way with catalog or panorama data;
 - starting a LUT-backed atmosphere rewrite;
 - adding eclipses or real ephemeris.
+- treating planet-scale aerial/orbit clouds as production-ready.
 
 ## Suggested Worktree Sequence
 

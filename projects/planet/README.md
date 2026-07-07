@@ -236,8 +236,11 @@ needs that fidelity.
 Planet sky rendering uses the shared foundation atmosphere in sky-only mode from
 planet-owned frame/celestial inputs: dark space, generated night-sky/Milky Way
 atlas content plus procedural stars, surface twilight, scattering, and sun
-disk/glow. The older `analytic` atmosphere mode remains selectable for
-comparison and debugging. The moon is a depth-tested sphere rendered from the
+disk/glow. The planet adapter feeds that path from the explicit local tangent
+frame so the surface sky rotates with the camera; the sun disk/glow uses the
+shared chord-distance path to avoid orbit glare banding. The older `analytic`
+atmosphere mode remains selectable for comparison and debugging. The moon is a
+depth-tested sphere rendered from the
 same local celestial state on a camera-relative shell that preserves its
 apparent angular size. Phase and terminator shape therefore come from body
 lighting against the modeled sun direction instead of a sky-disk mask. The
