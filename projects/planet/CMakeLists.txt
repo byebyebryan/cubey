@@ -1,18 +1,15 @@
+cubey_cloud_layer_shader_sources(CUBEY_PLANET_CLOUD_SHADERS COMPOSITE background)
+list(APPEND CUBEY_PLANET_CLOUD_SHADERS
+    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background_depth.frag"
+)
+cubey_cloud_layer_shader_depends(CUBEY_PLANET_CLOUD_SHADER_DEPENDS)
+
 set(CUBEY_PLANET_SHADERS
     "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/celestial_body.vert"
     "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/celestial_body.frag"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud.vert"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background.frag"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background_depth.frag"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_blue_noise.comp"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_march.comp"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/surface_cloud_march.comp"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_perlin_worley.comp"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_temporal.comp"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather.comp"
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_worley.comp"
+    ${CUBEY_PLANET_CLOUD_SHADERS}
     shaders/planet_surface.vert
     shaders/planet_surface.frag
     shaders/planet_local_detail.vert
@@ -46,19 +43,9 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_common.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_post.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_noise_common.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_resolve_common.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather_common.glsl"
+        ${CUBEY_PLANET_CLOUD_SHADER_DEPENDS}
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_atmosphere.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_surface_field.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
 )
 
 if(BUILD_TESTING)

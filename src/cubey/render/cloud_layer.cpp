@@ -17,6 +17,32 @@
 #include <utility>
 
 namespace cubey::render {
+
+CloudLayerRuntimeShaderFiles
+cloud_layer_runtime_shader_files(const std::filesystem::path& shader_dir,
+                                 CloudLayerCompositeMode composite_mode) {
+    auto shader_path = [&shader_dir](const char* filename) { return shader_dir / filename; };
+    const char* composite_fragment = "cloud_composite_background.frag.spv";
+    if (composite_mode == CloudLayerCompositeMode::ExternalBackgroundSceneDepth) {
+        composite_fragment = "cloud_composite_background_depth.frag.spv";
+    }
+    return {
+        .generated =
+            {
+                .base_noise =
+                    compute_shader_file(shader_path("cloud_perlin_worley.comp.spv")),
+                .detail_noise = compute_shader_file(shader_path("cloud_worley.comp.spv")),
+                .weather = compute_shader_file(shader_path("cloud_weather.comp.spv")),
+                .blue_noise = compute_shader_file(shader_path("cloud_blue_noise.comp.spv")),
+            },
+        .general_march = compute_shader_file(shader_path("cloud_march.comp.spv")),
+        .surface_march = compute_shader_file(shader_path("surface_cloud_march.comp.spv")),
+        .temporal = compute_shader_file(shader_path("cloud_temporal.comp.spv")),
+        .composite_vertex = vertex_shader_file(shader_path("cloud.vert.spv")),
+        .composite_fragment = fragment_shader_file(shader_path(composite_fragment)),
+    };
+}
+
 namespace {
 
 [[nodiscard]] MaterialDescriptorSetLayout cloud_layer_march_set_layout() {

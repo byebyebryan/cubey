@@ -73,3 +73,58 @@ function(cubey_forward_pbr_shader_sources out_var)
     )
     set(${out_var} ${forward_pbr_shaders} PARENT_SCOPE)
 endfunction()
+
+function(cubey_cloud_layer_shader_sources out_var)
+    set(options)
+    set(one_value_args COMPOSITE)
+    set(multi_value_args)
+    cmake_parse_arguments(CUBEY_CLOUD "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+    if (NOT CUBEY_CLOUD_COMPOSITE)
+        set(CUBEY_CLOUD_COMPOSITE "background")
+    endif()
+
+    if (CUBEY_CLOUD_COMPOSITE STREQUAL "background")
+        set(cloud_composite_fragment
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background.frag"
+        )
+    elseif(CUBEY_CLOUD_COMPOSITE STREQUAL "background-depth")
+        set(cloud_composite_fragment
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background_depth.frag"
+        )
+    else()
+        message(FATAL_ERROR "unknown cloud composite shader mode: ${CUBEY_CLOUD_COMPOSITE}")
+    endif()
+
+    set(
+        cloud_layer_shaders
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud.vert"
+        "${cloud_composite_fragment}"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_blue_noise.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_march.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/surface_cloud_march.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_perlin_worley.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_temporal.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_worley.comp"
+    )
+    set(${out_var} ${cloud_layer_shaders} PARENT_SCOPE)
+endfunction()
+
+function(cubey_cloud_layer_shader_depends out_var)
+    set(
+        cloud_layer_shader_depends
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_post.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_noise_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_resolve_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
+    )
+    set(${out_var} ${cloud_layer_shader_depends} PARENT_SCOPE)
+endfunction()

@@ -1,3 +1,6 @@
+cubey_cloud_layer_shader_sources(CUBEY_ATMOSPHERE_CLOUD_SHADERS COMPOSITE background)
+cubey_cloud_layer_shader_depends(CUBEY_ATMOSPHERE_CLOUD_SHADER_DEPENDS)
+
 cubey_add_app_target(
     cubey_project_atmosphere
     OUTPUT_NAME atmosphere
@@ -14,31 +17,13 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/celestial_body.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/sky/celestial_body.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud.vert"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_blue_noise.comp"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_march.comp"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/surface_cloud_march.comp"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_perlin_worley.comp"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_temporal.comp"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather.comp"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_worley.comp"
+        ${CUBEY_ATMOSPHERE_CLOUD_SHADERS}
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_common.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_post.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_noise_common.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_resolve_common.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather_common.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
+        ${CUBEY_ATMOSPHERE_CLOUD_SHADER_DEPENDS}
 )
 
 if (BUILD_TESTING)

@@ -441,34 +441,10 @@ ocean_atmosphere_run_state(const RunConfig& run_config) {
         });
 }
 
-[[nodiscard]] std::filesystem::path ocean_shader_path(const char* filename) {
-    return std::filesystem::path(CUBEY_OCEAN_SHADER_DIR) / filename;
-}
-
 [[nodiscard]] cubey::render::CloudLayerRuntimeShaderFiles cloud_runtime_shader_files() {
-    return {
-        .generated =
-            {
-                .base_noise = cubey::render::compute_shader_file(
-                    ocean_shader_path("cloud_perlin_worley.comp.spv")),
-                .detail_noise =
-                    cubey::render::compute_shader_file(ocean_shader_path("cloud_worley.comp.spv")),
-                .weather =
-                    cubey::render::compute_shader_file(ocean_shader_path("cloud_weather.comp.spv")),
-                .blue_noise = cubey::render::compute_shader_file(
-                    ocean_shader_path("cloud_blue_noise.comp.spv")),
-            },
-        .general_march =
-            cubey::render::compute_shader_file(ocean_shader_path("cloud_march.comp.spv")),
-        .surface_march =
-            cubey::render::compute_shader_file(ocean_shader_path("surface_cloud_march.comp.spv")),
-        .temporal =
-            cubey::render::compute_shader_file(ocean_shader_path("cloud_temporal.comp.spv")),
-        .composite_vertex =
-            cubey::render::vertex_shader_file(ocean_shader_path("cloud.vert.spv")),
-        .composite_fragment = cubey::render::fragment_shader_file(
-            ocean_shader_path("cloud_composite_background_depth.frag.spv")),
-    };
+    return cubey::render::cloud_layer_runtime_shader_files(
+        std::filesystem::path(CUBEY_OCEAN_SHADER_DIR),
+        cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth);
 }
 
 [[nodiscard]] float jonswap_alpha(float wind_speed, float fetch_length_m) {

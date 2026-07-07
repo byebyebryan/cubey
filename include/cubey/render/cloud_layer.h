@@ -18,6 +18,7 @@
 
 #include <array>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -94,6 +95,10 @@ enum class CloudLayerCompositeMode : std::uint32_t {
     ExternalBackground = 1,
     ExternalBackgroundSceneDepth = 2,
 };
+
+[[nodiscard]] CloudLayerRuntimeShaderFiles
+cloud_layer_runtime_shader_files(const std::filesystem::path& shader_dir,
+                                 CloudLayerCompositeMode composite_mode);
 
 struct CloudLayerGeneratedResources {
     Texture3D base_noise;

@@ -122,26 +122,9 @@ std::filesystem::path shader_path(const char* filename) {
 }
 
 [[nodiscard]] cubey::render::CloudLayerRuntimeShaderFiles cloud_runtime_shader_files() {
-    return {
-        .generated =
-            {
-                .base_noise =
-                    cubey::render::compute_shader_file(shader_path("cloud_perlin_worley.comp.spv")),
-                .detail_noise =
-                    cubey::render::compute_shader_file(shader_path("cloud_worley.comp.spv")),
-                .weather = cubey::render::compute_shader_file(shader_path("cloud_weather.comp.spv")),
-                .blue_noise =
-                    cubey::render::compute_shader_file(shader_path("cloud_blue_noise.comp.spv")),
-            },
-        .general_march =
-            cubey::render::compute_shader_file(shader_path("cloud_march.comp.spv")),
-        .surface_march =
-            cubey::render::compute_shader_file(shader_path("surface_cloud_march.comp.spv")),
-        .temporal = cubey::render::compute_shader_file(shader_path("cloud_temporal.comp.spv")),
-        .composite_vertex = cubey::render::vertex_shader_file(shader_path("cloud.vert.spv")),
-        .composite_fragment =
-            cubey::render::fragment_shader_file(shader_path("cloud_composite_background.frag.spv")),
-    };
+    return cubey::render::cloud_layer_runtime_shader_files(
+        std::filesystem::path(CUBEY_ATMOSPHERE_SHADER_DIR),
+        cubey::render::CloudLayerCompositeMode::ExternalBackground);
 }
 
 [[nodiscard]] ResolvedNightSkyAtlas resolve_night_sky_atlas(const AtmosphereConfig& config) {
