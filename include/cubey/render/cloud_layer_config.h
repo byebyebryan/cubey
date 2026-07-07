@@ -237,12 +237,13 @@ struct CloudLayerConfig {
     float twilight_edge_strength = 0.45F;
     float twilight_saturation_strength = 0.82F;
     float afterglow_strength = 0.22F;
+    float powder_strength = 0.20F;
     float final_contrast = 1.17F;
     float final_saturation = 1.12F;
     float resolve_strength = 0.48F;
     float horizon_glow_strength = 0.55F;
     float sun_glare_strength = 1.0F;
-    float jitter_strength = 0.65F;
+    float jitter_strength = 1.0F;
     float orbit_transition_start_m = 45000.0F;
     float orbit_transition_end_m = 180000.0F;
     float far_shell_start_m = 30000.0F;

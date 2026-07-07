@@ -777,8 +777,7 @@ constexpr std::array<ConfigOptionDescriptor, 257> kRunConfigOptions{
            bounded_range(0.0, 2.0)),
     option(RunConfigOptionId::CloudPowderStrength, "clouds.powder_strength",
            "--cloud-powder-strength", "Powder Strength", kCloudLightingGroup,
-           "cloud_ref lighting diagnostic powder strength; production surface-volume uses runtime "
-           "defaults.",
+           "Powder-style brightening strength for thin cloud edges.",
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudFinalContrast, "clouds.final_contrast", "--cloud-final-contrast",
            "Final Contrast", kCloudLightingGroup, "Final cloud composite contrast multiplier.",

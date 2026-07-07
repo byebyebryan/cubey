@@ -848,7 +848,7 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
                         static_cast<float>(budget.light_steps),
                         static_cast<float>(frame.target_extent.width)},
         .shape_options = {config.crispiness, config.curliness, config.absorption,
-                          config.powder_enabled ? 1.0F : 0.0F},
+                          config.powder_enabled ? config.powder_strength : 0.0F},
         .weather_feature_weights = {config.weather_fronts, config.weather_cells,
                                     config.weather_streaks, config.detail_erosion},
         .cloud_color_top_shadow = {cloud_top_color.x, cloud_top_color.y, cloud_top_color.z,

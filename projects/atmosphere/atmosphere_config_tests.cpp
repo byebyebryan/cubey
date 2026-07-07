@@ -523,6 +523,8 @@ int main() {
     require(defaults.clouds.layer.sampling_mode == CloudLayerSamplingMode::Bayer &&
                 !defaults.clouds.layer.temporal_enabled,
             "default atmosphere clouds should use stable Bayer sampling");
+    require_near(defaults.clouds.layer.jitter_strength, 1.0F, 0.001F,
+                 "default atmosphere clouds should use full jitter to reduce banding");
     require(
         defaults.clouds.layer.view_steps_override == 64 &&
             defaults.clouds.layer.view_samples == 1 &&
@@ -546,6 +548,8 @@ int main() {
                  "default atmosphere clouds should include twilight saturation controls");
     require_near(defaults.clouds.layer.afterglow_strength, 0.32F, 0.001F,
                  "default atmosphere clouds should include a subtle afterglow control");
+    require_near(defaults.clouds.layer.powder_strength, 0.20F, 0.001F,
+                 "default atmosphere clouds should expose scalar powder strength");
 
     {
         AtmosphereCloudConfig clouds;
@@ -579,6 +583,8 @@ int main() {
                 "surface volume preset should isolate the local volume path");
         require(clouds.layer.view_steps_override == 64 && clouds.layer.view_samples == 1,
                 "surface volume preset should match cloud_ref full-quality sampling");
+        require_near(clouds.layer.jitter_strength, 1.0F, 0.001F,
+                     "surface volume preset should keep full jitter to reduce banding");
         require_near(clouds.layer.top_altitude_m, 14000.0F, 0.001F,
                      "surface volume preset should use the lower cloud_ref ceiling");
         require_near(clouds.layer.shadow_strength, 0.15F, 0.001F,
@@ -591,6 +597,8 @@ int main() {
                      "surface volume preset should preserve twilight cloud saturation");
         require_near(clouds.layer.afterglow_strength, 0.32F, 0.001F,
                      "surface volume preset should expose a subtle afterglow accent");
+        require_near(clouds.layer.powder_strength, 0.20F, 0.001F,
+                     "surface volume preset should expose scalar powder strength");
     }
 
     {
@@ -619,6 +627,7 @@ int main() {
         run_config.clouds.twilight_edge_strength = 0.95F;
         run_config.clouds.twilight_saturation_strength = 1.25F;
         run_config.clouds.afterglow_strength = 0.70F;
+        run_config.clouds.powder_strength = 0.45F;
         run_config.clouds.temporal = 0;
         run_config.clouds.local_volume = 0;
         run_config.clouds.horizon_layer = 1;
@@ -673,6 +682,8 @@ int main() {
                      "atmosphere run config should map cloud twilight saturation strength");
         require_near(config.clouds.layer.afterglow_strength, 0.70F, 0.001F,
                      "atmosphere run config should map cloud afterglow strength");
+        require_near(config.clouds.layer.powder_strength, 0.45F, 0.001F,
+                     "atmosphere run config should map cloud powder strength");
         require(!config.clouds.layer.temporal_enabled,
                 "atmosphere run config should map cloud temporal flag");
         require(!config.clouds.layer.local_volume_enabled,

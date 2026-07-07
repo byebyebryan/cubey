@@ -12,7 +12,8 @@ layout(location = 0) out vec4 out_color;
 
 #include "cubey/cloud/cloud_resolve_common.glsl"
 
-vec3 cloud_external_final_post(vec3 color, vec3 direction, float cloud_alpha) {
+vec3 cloud_external_final_post(vec3 color, vec3 direction, float cloud_alpha,
+                               float edge_mask) {
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
     vec3 up = cloud_planet_up();
     float sun_elevation = dot(sun_dir, up);
@@ -34,9 +35,18 @@ vec3 cloud_external_final_post(vec3 color, vec3 direction, float cloud_alpha) {
     float saturation = max(params.composite_options.z, 0.0);
     float surface_view = cloud_surface_view_factor();
     float surface_haze = mix(1.0, cloud_weather_haze_factor(), surface_view);
+    float low_sun = 1.0 - smoothstep(0.05, 0.36, max(sun_elevation, 0.0));
+    float cloud_edge = clamp(edge_mask, 0.0, 1.0);
+    float warm_body_tint =
+        cloud_alpha * low_sun * twilight * clamp(params.twilight_options.x, 0.0, 2.0) * 0.46;
+    color *= mix(1.0, 0.68, clamp(warm_body_tint, 0.0, 1.0));
+    color = cloud_chroma_tint(color, vec3(1.0, 0.46, 0.16), warm_body_tint);
 
     color += vec3(1.0, 0.58, 0.22) * halo * (0.10 + 0.16 * cloud_alpha) *
              glare_strength * mix(1.0, 0.42, surface_view);
+    color += vec3(1.0, 0.58, 0.24) * halo * cloud_alpha * cloud_edge *
+             low_sun * clamp(params.twilight_options.y, 0.0, 2.0) *
+             glare_strength * mix(0.18, 0.52, surface_view);
     color += vec3(1.0, 0.82, 0.50) * tight_glare * 1.25 * glare_strength *
              mix(1.0, 0.34, surface_view);
     color += vec3(0.10, 0.12, 0.13) * horizon * (1.0 - cloud_alpha) * 0.22 *
@@ -88,7 +98,7 @@ void main() {
     } else if (!final_view) {
         color = cloud.rgb;
     } else {
-        vec3 posted = cloud_external_final_post(color, direction, cloud_alpha);
+        vec3 posted = cloud_external_final_post(color, direction, cloud_alpha, edge_mask);
         color = mix(color, posted, clamp(cloud_alpha * 1.15, 0.0, 1.0));
     }
     out_color = vec4(max(color, vec3(0.0)), 1.0);

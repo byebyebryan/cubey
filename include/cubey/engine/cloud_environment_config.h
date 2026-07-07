@@ -66,12 +66,13 @@ inline constexpr std::array<CloudEnvironmentWeatherPreset, 7> kCloudEnvironmentW
     config.twilight_edge_strength = 0.55F;
     config.twilight_saturation_strength = 0.90F;
     config.afterglow_strength = 0.32F;
+    config.powder_strength = 0.20F;
     config.resolve_strength = 1.0F;
     config.final_contrast = 0.98F;
     config.final_saturation = 1.0F;
     config.horizon_glow_strength = 1.05F;
     config.sun_glare_strength = 1.0F;
-    config.jitter_strength = 0.65F;
+    config.jitter_strength = 1.0F;
     return config;
 }
 
@@ -469,11 +470,12 @@ inline void apply_cloud_environment_surface_volume(CloudEnvironmentConfig& confi
     config.layer.twilight_edge_strength = 0.55F;
     config.layer.twilight_saturation_strength = 0.90F;
     config.layer.afterglow_strength = 0.32F;
+    config.layer.powder_strength = 0.20F;
     config.layer.final_contrast = 0.98F;
     config.layer.final_saturation = 1.0F;
     config.layer.resolve_strength = 1.0F;
     config.layer.sun_glare_strength = 1.0F;
-    config.layer.jitter_strength = 0.65F;
+    config.layer.jitter_strength = 1.0F;
 }
 
 inline void apply_cloud_environment_weather_preset(CloudEnvironmentConfig& config,
@@ -578,6 +580,7 @@ inline void apply_cloud_environment_run_config(CloudEnvironmentConfig& config,
     apply_float(run_clouds.twilight_edge_strength, config.layer.twilight_edge_strength);
     apply_float(run_clouds.twilight_saturation_strength, config.layer.twilight_saturation_strength);
     apply_float(run_clouds.afterglow_strength, config.layer.afterglow_strength);
+    apply_float(run_clouds.powder_strength, config.layer.powder_strength);
     apply_float(run_clouds.final_contrast, config.layer.final_contrast);
     apply_float(run_clouds.final_saturation, config.layer.final_saturation);
     apply_float(run_clouds.resolve_strength, config.layer.resolve_strength);

@@ -123,6 +123,18 @@ float cloud_remap(float value, float old_min, float old_max, float new_min, floa
                             new_min, new_max);
 }
 
+float cloud_luminance(vec3 color) {
+    return dot(color, vec3(0.2126, 0.7152, 0.0722));
+}
+
+vec3 cloud_chroma_tint(vec3 color, vec3 tint, float amount) {
+    vec3 safe_tint = max(tint, vec3(0.0));
+    float color_luma = max(cloud_luminance(max(color, vec3(0.0))), 0.0);
+    float tint_luma = max(cloud_luminance(safe_tint), 0.001);
+    vec3 tint_chroma = mix(vec3(1.0), safe_tint / tint_luma, 0.88);
+    return mix(color, color_luma * tint_chroma, clamp(amount, 0.0, 1.0));
+}
+
 vec3 cloud_view_direction(vec2 position) {
     vec3 right = params.camera_right_aspect.xyz;
     vec3 up = params.camera_up_tan_half_fovy.xyz;

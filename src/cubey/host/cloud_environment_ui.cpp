@@ -225,6 +225,13 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
             mark_changed(imgui_checkbox("Powder", &layer.powder_enabled,
                                         "Enable powder-style brightening on thin cloud edges."),
                          changed);
+            ImGui::BeginDisabled(!layer.powder_enabled);
+            mark_changed(imgui_slider_float("Powder strength", &layer.powder_strength, 0.0F,
+                                            1.0F, "%.2f",
+                                            "Strength of powder-style brightening on thin cloud "
+                                            "edges."),
+                         changed);
+            ImGui::EndDisabled();
         }
 
         if (const ScopedImGuiGroup subgroup{

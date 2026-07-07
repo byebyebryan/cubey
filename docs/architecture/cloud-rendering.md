@@ -204,6 +204,14 @@ Reference alignment for this lighting direction:
   lighting, horizon-specific clouds, moonlit fill, and storm flash lighting, but
   not direct code donors because of mixed licenses and flat/AABB assumptions.
 
+The TerrainEngine `resources/pic2.jpg` screenshot is a useful cloud-lighting
+target because the cloud body picks up the orange low-sun color while the forms
+remain bright, detailed, and non-stormy. Cubey should borrow that cloud-specific
+behavior directly: scalar powder intensity, warm low-sun body tint, stronger
+silver-lining edge response, cool underside ambient, and explicit final resolve
+controls. Increasing coverage alone is the wrong response because it turns the
+sky into a white cap without adding dawn color or useful lighting detail.
+
 The first implementation pass should make `cloud_ref` lighting honest before
 adding more features: remove or relabel inactive controls, make debug views show
 real ambient/direct/phase/source terms, replace the ambient/direct mix with an
