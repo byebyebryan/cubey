@@ -47,6 +47,9 @@ evaluation, and volume diagnostic modes.
   `cubey_forward_pbr_shader_depends`, and `cubey_cloud_layer_shader_depends`
   keep shared include dependencies visible to CMake so helper edits rebuild
   SPIR-V outputs.
+- Core source tests audit the active shared shader packages by resolving their
+  GLSL `#include` paths and checking that the CMake dependency packages track
+  those includes.
 - `projects/ocean/shaders/ocean.frag` is now the entry point for layout,
   constants, cascade sampling, and final composition. Project-local helpers hold
   the bulk of the material logic:
@@ -100,8 +103,8 @@ The current oversized shader pressure points are:
 
 The shader foundation does not currently include runtime hot reload, shader
 reflection, generated CPU/GPU ABI headers, SPIR-V optimization passes, or a
-shader dependency graph linter. Those are future batches once the shared source
-layout is stable.
+general shader dependency graph linter for every project-local shader target.
+Those are future batches once the shared source layout is stable.
 
 Near-term shader follow-ups should be cut as separate batches:
 
@@ -115,6 +118,6 @@ Near-term shader follow-ups should be cut as separate batches:
   output helpers;
 - promote volume/raymarch helpers only after cloud and fluid share real code,
   not just similar naming;
-- add an optional shader dependency audit that verifies each included `.glsl`
-  appears in the owning target's `SHADER_DEPENDS`;
+- extend the package include audit into a real dependency graph linter if
+  project-local shader targets start drifting;
 - evaluate `spirv-val` or `spirv-opt` only after source layout stabilizes.
