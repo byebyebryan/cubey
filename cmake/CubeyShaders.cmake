@@ -56,6 +56,23 @@ function(cubey_add_glsl_shaders target)
     add_dependencies(${target} ${target}_shaders)
 endfunction()
 
+function(cubey_shared_shader_depends out_var)
+    set(
+        shared_shader_depends
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/debug.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/environment_lighting.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/lighting.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/view.glsl"
+    )
+    set(${out_var} ${shared_shader_depends} PARENT_SCOPE)
+endfunction()
+
 function(cubey_forward_pbr_shader_sources out_var)
     set(
         forward_pbr_shaders
@@ -72,6 +89,11 @@ function(cubey_forward_pbr_shader_sources out_var)
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_shadow_depth.frag"
     )
     set(${out_var} ${forward_pbr_shaders} PARENT_SCOPE)
+endfunction()
+
+function(cubey_forward_pbr_shader_depends out_var)
+    cubey_shared_shader_depends(forward_pbr_shared_shader_depends)
+    set(${out_var} ${forward_pbr_shared_shader_depends} PARENT_SCOPE)
 endfunction()
 
 function(cubey_cloud_layer_shader_sources out_var)
@@ -112,19 +134,15 @@ function(cubey_cloud_layer_shader_sources out_var)
 endfunction()
 
 function(cubey_cloud_layer_shader_depends out_var)
+    cubey_shared_shader_depends(cloud_layer_shared_shader_depends)
     set(
         cloud_layer_shader_depends
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_post.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_noise_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_resolve_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather_common.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
+        ${cloud_layer_shared_shader_depends}
     )
     set(${out_var} ${cloud_layer_shader_depends} PARENT_SCOPE)
 endfunction()

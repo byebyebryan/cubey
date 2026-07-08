@@ -1,4 +1,5 @@
 cubey_forward_pbr_shader_sources(CUBEY_FORWARD_PBR_SHADERS)
+cubey_forward_pbr_shader_depends(CUBEY_FORWARD_PBR_SHADER_DEPENDS)
 
 cubey_add_app_target(
     cubey_example_material_cubes
@@ -17,7 +18,5 @@ cubey_add_app_target(
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+        ${CUBEY_FORWARD_PBR_SHADER_DEPENDS}
 )

@@ -201,6 +201,10 @@ void test_cloud_layer_cmake_package_tracks_composite_modes() {
     require(shader_cmake.find("CUBEY_CLOUD_COMPOSITE STREQUAL \"background-depth\"") !=
                 std::string::npos,
             "shared cloud shader package should expose the background-depth composite mode");
+    require(shader_cmake.find("cubey_shared_shader_depends") != std::string::npos,
+            "shared cloud shader package should consume common shader dependencies");
+    require(shader_cmake.find("cloud_layer_shared_shader_depends") != std::string::npos,
+            "cloud dependency package should thread shared shader dependencies");
     require(atmosphere_cmake.find("COMPOSITE background") != std::string::npos,
             "atmosphere should request the background cloud composite package");
     require(atmosphere_cmake.find("COMPOSITE background-depth") == std::string::npos,

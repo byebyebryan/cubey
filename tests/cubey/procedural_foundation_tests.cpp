@@ -1057,6 +1057,8 @@ void test_shared_shader_debug_and_view_helpers_compile() {
         cubey::tests::read_source_file(root / "tests/cubey/shaders/procedural_include_smoke.comp");
     const std::string test_cmake =
         cubey::tests::read_source_file(root / "tests/cubey/CMakeLists.txt");
+    const std::string shader_cmake =
+        cubey::tests::read_source_file(root / "cmake/CubeyShaders.cmake");
 
     cubey::tests::require_contains(debug_source, "cubey_debug_false_color01",
                                    "shared debug shader helpers should expose false color");
@@ -1070,10 +1072,12 @@ void test_shared_shader_debug_and_view_helpers_compile() {
                                    "shader smoke target should include shared debug helpers");
     cubey::tests::require_contains(smoke_source, "#include \"cubey/view.glsl\"",
                                    "shader smoke target should include shared view helpers");
-    cubey::tests::require_contains(test_cmake, "shaders/cubey/debug.glsl",
-                                   "shader smoke target should track debug helper edits");
-    cubey::tests::require_contains(test_cmake, "shaders/cubey/view.glsl",
-                                   "shader smoke target should track view helper edits");
+    cubey::tests::require_contains(test_cmake, "cubey_shared_shader_depends",
+                                   "shader smoke target should consume shared shader depends");
+    cubey::tests::require_contains(shader_cmake, "shaders/cubey/debug.glsl",
+                                   "shared shader package should track debug helper edits");
+    cubey::tests::require_contains(shader_cmake, "shaders/cubey/view.glsl",
+                                   "shared shader package should track view helper edits");
 }
 
 void test_procedural_noise_is_deterministic_and_bounded() {

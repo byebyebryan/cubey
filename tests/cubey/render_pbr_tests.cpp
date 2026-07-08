@@ -694,6 +694,10 @@ void test_forward_pbr_shader_package_uses_renderer_names() {
 
     require_contains(shader_cmake, "cubey_forward_pbr_shader_sources",
                      "CMake should expose the shared forward PBR shader package");
+    require_contains(shader_cmake, "cubey_forward_pbr_shader_depends",
+                     "CMake should expose the shared forward PBR shader dependencies");
+    require_contains(shader_cmake, "cubey_shared_shader_depends",
+                     "CMake should expose shared shader dependencies");
     require_contains(shader_cmake, "forward_pbr_shadow_depth.frag",
                      "shared forward PBR package should include the shadow mask shader");
     require_contains(shader_cmake, "shaders/cubey/atmosphere/atmosphere.frag",
@@ -705,8 +709,12 @@ void test_forward_pbr_shader_package_uses_renderer_names() {
         "shared forward PBR package should not include removed atmosphere irradiance path");
     require_contains(viewer_cmake, "cubey_forward_pbr_shader_sources",
                      "glTF viewer should consume the shared forward PBR shader package");
+    require_contains(viewer_cmake, "cubey_forward_pbr_shader_depends",
+                     "glTF viewer should consume the shared forward PBR shader dependencies");
     require_contains(material_cubes_cmake, "cubey_forward_pbr_shader_sources",
                      "material_cubes should consume the shared forward PBR shader package");
+    require_contains(material_cubes_cmake, "cubey_forward_pbr_shader_depends",
+                     "material_cubes should consume the shared forward PBR shader dependencies");
     require_not_contains(shader_cmake, "gltf_pbr",
                          "shared forward PBR package should not use old glTF shader names");
 
