@@ -1,3 +1,4 @@
+#include <cubey/render/cloud_layer.h>
 #include <cubey/render/cloud_layer_config.h>
 
 #include <cctype>
@@ -26,6 +27,16 @@ void require_near(float actual, float expected, float tolerance, const char* mes
 
 std::filesystem::path source_root_path() {
     return std::filesystem::path(CUBEY_SOURCE_DIR);
+}
+
+std::string read_text_file(const std::filesystem::path& path) {
+    std::ifstream input(path);
+    if (!input) {
+        throw std::runtime_error("could not open source file: " + path.string());
+    }
+    std::ostringstream contents;
+    contents << input.rdbuf();
+    return contents.str();
 }
 
 std::unordered_map<std::string, int> cloud_debug_glsl_constants() {
@@ -154,6 +165,52 @@ void test_cloud_layer_debug_views_match_glsl_constants() {
         require(it->second == static_cast<int>(static_cast<std::uint32_t>(view)),
                 "cloud debug view enum should match GLSL constant value");
     }
+}
+
+void test_cloud_layer_runtime_shader_files_select_composite_variants() {
+    const std::filesystem::path shader_dir = "/tmp/cubey-cloud-shaders";
+    const cubey::render::CloudLayerRuntimeShaderFiles background =
+        cubey::render::cloud_layer_runtime_shader_files(
+            shader_dir, cubey::render::CloudLayerCompositeMode::ExternalBackground);
+    const cubey::render::CloudLayerRuntimeShaderFiles background_depth =
+        cubey::render::cloud_layer_runtime_shader_files(
+            shader_dir, cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth);
+
+    require(background.composite_fragment.stage == VK_SHADER_STAGE_FRAGMENT_BIT,
+            "cloud composite should use a fragment shader");
+    require(background.composite_fragment.path.filename() ==
+                std::filesystem::path("cloud_composite_background.frag.spv"),
+            "external background clouds should use the background composite shader");
+    require(background_depth.composite_fragment.path.filename() ==
+                std::filesystem::path("cloud_composite_background_depth.frag.spv"),
+            "scene-depth clouds should use the background-depth composite shader");
+}
+
+void test_cloud_layer_cmake_package_tracks_composite_modes() {
+    const std::filesystem::path source_root = source_root_path();
+    const std::string shader_cmake = read_text_file(source_root / "cmake/CubeyShaders.cmake");
+    const std::string atmosphere_cmake =
+        read_text_file(source_root / "projects/atmosphere/CMakeLists.txt");
+    const std::string ocean_cmake = read_text_file(source_root / "projects/ocean/CMakeLists.txt");
+    const std::string planet_cmake =
+        read_text_file(source_root / "projects/planet/CMakeLists.txt");
+
+    require(shader_cmake.find("CUBEY_CLOUD_COMPOSITE STREQUAL \"background\"") !=
+                std::string::npos,
+            "shared cloud shader package should expose the background composite mode");
+    require(shader_cmake.find("CUBEY_CLOUD_COMPOSITE STREQUAL \"background-depth\"") !=
+                std::string::npos,
+            "shared cloud shader package should expose the background-depth composite mode");
+    require(atmosphere_cmake.find("COMPOSITE background") != std::string::npos,
+            "atmosphere should request the background cloud composite package");
+    require(atmosphere_cmake.find("COMPOSITE background-depth") == std::string::npos,
+            "atmosphere should not request the depth-aware cloud composite package");
+    require(ocean_cmake.find("COMPOSITE background-depth") != std::string::npos,
+            "ocean should request the depth-aware cloud composite package");
+    require(planet_cmake.find("COMPOSITE background-depth") != std::string::npos,
+            "planet should request the depth-aware cloud composite package");
+    require(planet_cmake.find("list(APPEND CUBEY_PLANET_CLOUD_SHADERS") == std::string::npos,
+            "planet should not manually append cloud composite shader variants");
 }
 
 void test_cloud_layer_frame_uniforms_pack_environment_lighting() {

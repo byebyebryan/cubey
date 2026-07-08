@@ -1,7 +1,4 @@
-cubey_cloud_layer_shader_sources(CUBEY_PLANET_CLOUD_SHADERS COMPOSITE background)
-list(APPEND CUBEY_PLANET_CLOUD_SHADERS
-    "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_background_depth.frag"
-)
+cubey_cloud_layer_shader_sources(CUBEY_PLANET_CLOUD_SHADERS COMPOSITE background-depth)
 cubey_cloud_layer_shader_depends(CUBEY_PLANET_CLOUD_SHADER_DEPENDS)
 
 set(CUBEY_PLANET_SHADERS
