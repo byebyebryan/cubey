@@ -1,5 +1,6 @@
 cubey_cloud_layer_shader_sources(CUBEY_PLANET_CLOUD_SHADERS COMPOSITE background-depth)
 cubey_cloud_layer_shader_depends(CUBEY_PLANET_CLOUD_SHADER_DEPENDS)
+cubey_atmosphere_shader_depends(CUBEY_PLANET_ATMOSPHERE_SHADER_DEPENDS)
 
 set(CUBEY_PLANET_SHADERS
     "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
@@ -40,6 +41,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        ${CUBEY_PLANET_ATMOSPHERE_SHADER_DEPENDS}
         ${CUBEY_PLANET_CLOUD_SHADER_DEPENDS}
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_atmosphere.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/planet_surface_field.glsl"

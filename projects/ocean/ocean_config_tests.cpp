@@ -1150,6 +1150,10 @@ int main() {
                          "ocean fragment entry point should include debug helpers");
         require_contains(cmake_source, "shaders/cubey/atmosphere/atmosphere.frag",
                          "ocean build should compile the shared atmosphere background shader");
+        require_contains(cmake_source, "cubey_atmosphere_shader_depends",
+                         "ocean build should use the shared atmosphere shader dependency package");
+        require_contains(cmake_source, "CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS",
+                         "ocean build should track shared atmosphere shader dependencies");
         require_contains(cmake_source, "atmosphere_reflection_prefilter.frag",
                          "ocean build should compile the atmosphere reflection prefilter shader");
         require_contains(cmake_source, "cubey_cloud_layer_shader_sources",

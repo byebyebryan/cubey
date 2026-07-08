@@ -73,6 +73,16 @@ function(cubey_shared_shader_depends out_var)
     set(${out_var} ${shared_shader_depends} PARENT_SCOPE)
 endfunction()
 
+function(cubey_atmosphere_shader_depends out_var)
+    cubey_shared_shader_depends(atmosphere_shared_shader_depends)
+    set(
+        atmosphere_shader_depends
+        ${atmosphere_shared_shader_depends}
+    )
+    list(REMOVE_DUPLICATES atmosphere_shader_depends)
+    set(${out_var} ${atmosphere_shader_depends} PARENT_SCOPE)
+endfunction()
+
 function(cubey_forward_pbr_shader_sources out_var)
     set(
         forward_pbr_shaders
@@ -93,7 +103,14 @@ endfunction()
 
 function(cubey_forward_pbr_shader_depends out_var)
     cubey_shared_shader_depends(forward_pbr_shared_shader_depends)
-    set(${out_var} ${forward_pbr_shared_shader_depends} PARENT_SCOPE)
+    cubey_atmosphere_shader_depends(forward_pbr_atmosphere_shader_depends)
+    set(
+        forward_pbr_shader_depends
+        ${forward_pbr_shared_shader_depends}
+        ${forward_pbr_atmosphere_shader_depends}
+    )
+    list(REMOVE_DUPLICATES forward_pbr_shader_depends)
+    set(${out_var} ${forward_pbr_shader_depends} PARENT_SCOPE)
 endfunction()
 
 function(cubey_cloud_layer_shader_sources out_var)

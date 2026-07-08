@@ -1,5 +1,6 @@
 cubey_cloud_layer_shader_sources(CUBEY_ATMOSPHERE_CLOUD_SHADERS COMPOSITE background)
 cubey_cloud_layer_shader_depends(CUBEY_ATMOSPHERE_CLOUD_SHADER_DEPENDS)
+cubey_atmosphere_shader_depends(CUBEY_ATMOSPHERE_SHADER_DEPENDS)
 
 cubey_add_app_target(
     cubey_project_atmosphere
@@ -23,6 +24,7 @@ cubey_add_app_target(
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        ${CUBEY_ATMOSPHERE_SHADER_DEPENDS}
         ${CUBEY_ATMOSPHERE_CLOUD_SHADER_DEPENDS}
 )
 

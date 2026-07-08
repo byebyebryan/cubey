@@ -772,6 +772,10 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                      "forward PBR scene pass should branch to the atmosphere background");
     require_contains(cmake, "shaders/cubey/atmosphere/atmosphere.frag",
                      "forward PBR shader package should compile the shared atmosphere shader");
+    require_contains(cmake, "cubey_atmosphere_shader_depends",
+                     "forward PBR shader package should track shared atmosphere dependencies");
+    require_contains(cmake, "forward_pbr_atmosphere_shader_depends",
+                     "forward PBR shader package should include atmosphere shader dependencies");
     require_contains(cmake, "atmosphere_reflection_prefilter.frag",
                      "forward PBR shader package should compile the atmosphere probe prefilter");
     require_not_contains(

@@ -1280,6 +1280,12 @@ int main() {
     const std::string lunar_surface_source =
         read_text_file(repo_root / "src/cubey/render/lunar_surface_map.cpp");
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
+    const std::string ocean_cmake_source =
+        read_text_file(repo_root / "projects/ocean/CMakeLists.txt");
+    const std::string planet_cmake_source =
+        read_text_file(repo_root / "projects/planet/CMakeLists.txt");
+    const std::string water_3d_cmake_source =
+        read_text_file(repo_root / "projects/fluid/water_3d/CMakeLists.txt");
     const std::string shader_cmake_source = read_text_file(repo_root / "cmake/CubeyShaders.cmake");
     const std::string render_cmake_source = read_text_file(repo_root / "src/cubey/CMakeLists.txt");
     require_contains(app_source, "GpuTimestampProfiler",
@@ -1411,8 +1417,28 @@ int main() {
                      "atmosphere build should use the shared cloud shader source package");
     require_contains(cmake_source, "cubey_cloud_layer_shader_depends",
                      "atmosphere build should use the shared cloud shader dependency package");
+    require_contains(cmake_source, "cubey_atmosphere_shader_depends",
+                     "atmosphere build should use the shared atmosphere shader dependency package");
+    require_contains(cmake_source, "CUBEY_ATMOSPHERE_SHADER_DEPENDS",
+                     "atmosphere build should track shared atmosphere shader dependencies");
     require_contains(shader_cmake_source, "cloud_composite_post.glsl",
                      "shared cloud shader package should track composite post include");
+    require_contains(shader_cmake_source, "function(cubey_atmosphere_shader_depends",
+                     "shared shader CMake should expose atmosphere shader dependencies");
+    require_contains(shader_cmake_source, "forward_pbr_atmosphere_shader_depends",
+                     "forward PBR shader package should include atmosphere shader dependencies");
+    require_contains(ocean_cmake_source, "cubey_atmosphere_shader_depends",
+                     "ocean build should use the shared atmosphere shader dependency package");
+    require_contains(ocean_cmake_source, "CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS",
+                     "ocean build should track shared atmosphere shader dependencies");
+    require_contains(planet_cmake_source, "cubey_atmosphere_shader_depends",
+                     "planet build should use the shared atmosphere shader dependency package");
+    require_contains(planet_cmake_source, "CUBEY_PLANET_ATMOSPHERE_SHADER_DEPENDS",
+                     "planet build should track shared atmosphere shader dependencies");
+    require_contains(water_3d_cmake_source, "cubey_atmosphere_shader_depends",
+                     "water 3D build should use the shared atmosphere shader dependency package");
+    require_contains(water_3d_cmake_source, "CUBEY_WATER_3D_ATMOSPHERE_SHADER_DEPENDS",
+                     "water 3D build should track shared atmosphere shader dependencies");
     require_contains(app_source, "CelestialBodyFrame",
                      "atmosphere app should use the shared geometry moon frame");
     require_contains(app_source, "pending_lunar_surface_map_",

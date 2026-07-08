@@ -1,5 +1,6 @@
 cubey_cloud_layer_shader_sources(CUBEY_OCEAN_CLOUD_SHADERS COMPOSITE background-depth)
 cubey_cloud_layer_shader_depends(CUBEY_OCEAN_CLOUD_SHADER_DEPENDS)
+cubey_atmosphere_shader_depends(CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS)
 
 cubey_add_app_target(
     cubey_project_ocean
@@ -49,6 +50,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_far_field.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_foam.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_debug.glsl"
+        ${CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS}
         ${CUBEY_OCEAN_CLOUD_SHADER_DEPENDS}
 )
 

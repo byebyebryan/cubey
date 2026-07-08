@@ -1,3 +1,5 @@
+cubey_atmosphere_shader_depends(CUBEY_WATER_3D_ATMOSPHERE_SHADER_DEPENDS)
+
 cubey_add_app_target(
     cubey_project_water_3d
     OUTPUT_NAME water_3d
@@ -69,13 +71,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_surface_common.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_surface_helpers.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/common/shaders/water_3d_grid.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/environment_lighting.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
+        ${CUBEY_WATER_3D_ATMOSPHERE_SHADER_DEPENDS}
 )
 
 target_link_libraries(

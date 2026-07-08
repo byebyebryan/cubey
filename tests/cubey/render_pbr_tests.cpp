@@ -698,6 +698,10 @@ void test_forward_pbr_shader_package_uses_renderer_names() {
                      "CMake should expose the shared forward PBR shader dependencies");
     require_contains(shader_cmake, "cubey_shared_shader_depends",
                      "CMake should expose shared shader dependencies");
+    require_contains(shader_cmake, "cubey_atmosphere_shader_depends",
+                     "CMake should expose shared atmosphere shader dependencies");
+    require_contains(shader_cmake, "forward_pbr_atmosphere_shader_depends",
+                     "forward PBR package should track atmosphere shader dependencies");
     require_contains(shader_cmake, "forward_pbr_shadow_depth.frag",
                      "shared forward PBR package should include the shadow mask shader");
     require_contains(shader_cmake, "shaders/cubey/atmosphere/atmosphere.frag",
