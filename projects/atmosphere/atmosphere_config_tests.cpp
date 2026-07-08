@@ -1269,8 +1269,21 @@ int main() {
         read_text_file(repo_root / "src/cubey/render/atmosphere_background_frame.cpp");
     const std::string shared_helper_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere.glsl");
-    const std::string shader_source =
+    const std::string shader_entry_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere.frag");
+    const std::string atmosphere_common_source =
+        read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_common.glsl");
+    const std::string atmosphere_night_sky_source =
+        read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_night_sky.glsl");
+    const std::string atmosphere_sun_source =
+        read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_sun.glsl");
+    const std::string atmosphere_ground_source =
+        read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_ground.glsl");
+    const std::string atmosphere_debug_source =
+        read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_debug.glsl");
+    const std::string shader_source =
+        shader_entry_source + atmosphere_common_source + atmosphere_night_sky_source +
+        atmosphere_sun_source + atmosphere_ground_source + atmosphere_debug_source;
     const std::string celestial_shader_source =
         read_text_file(repo_root / "shaders/cubey/sky/celestial_body.frag");
     const std::string cloud_march_source =
@@ -1425,6 +1438,16 @@ int main() {
                      "shared cloud shader package should track composite post include");
     require_contains(shader_cmake_source, "function(cubey_atmosphere_shader_depends",
                      "shared shader CMake should expose atmosphere shader dependencies");
+    require_contains(shader_cmake_source, "atmosphere_common.glsl",
+                     "shared atmosphere shader package should track common helpers");
+    require_contains(shader_cmake_source, "atmosphere_night_sky.glsl",
+                     "shared atmosphere shader package should track night-sky helpers");
+    require_contains(shader_cmake_source, "atmosphere_sun.glsl",
+                     "shared atmosphere shader package should track sun helpers");
+    require_contains(shader_cmake_source, "atmosphere_ground.glsl",
+                     "shared atmosphere shader package should track ground helpers");
+    require_contains(shader_cmake_source, "atmosphere_debug.glsl",
+                     "shared atmosphere shader package should track debug helpers");
     require_contains(shader_cmake_source, "forward_pbr_atmosphere_shader_depends",
                      "forward PBR shader package should include atmosphere shader dependencies");
     require_contains(ocean_cmake_source, "cubey_atmosphere_shader_depends",
@@ -1510,12 +1533,32 @@ int main() {
                          "atmosphere shader should leave display transform to the post pass");
     require_not_contains(shader_source, "display_transform",
                          "atmosphere shader should not carry a stale display transform uniform");
-    require_contains(shader_source, "layout(set = 0, binding = 0) uniform AtmosphereFrame",
+    require_contains(shader_entry_source, "layout(set = 0, binding = 0) uniform AtmosphereFrame",
                      "atmosphere shader should read frame data from a uniform buffer");
-    require_contains(shader_source, "#include \"cubey/atmosphere.glsl\"",
+    require_contains(shader_entry_source, "#include \"cubey/atmosphere.glsl\"",
                      "atmosphere shader should use the shared atmosphere helper include");
-    require_contains(shader_source, "#include \"cubey/procedural/noise.glsl\"",
+    require_contains(shader_entry_source, "#include \"cubey/procedural/noise.glsl\"",
                      "atmosphere shader should use shared procedural noise helpers");
+    require_contains(shader_entry_source, "#include \"atmosphere_common.glsl\"",
+                     "atmosphere shader entry should include common helpers");
+    require_contains(shader_entry_source, "#include \"atmosphere_night_sky.glsl\"",
+                     "atmosphere shader entry should include night-sky helpers");
+    require_contains(shader_entry_source, "#include \"atmosphere_sun.glsl\"",
+                     "atmosphere shader entry should include sun helpers");
+    require_contains(shader_entry_source, "#include \"atmosphere_ground.glsl\"",
+                     "atmosphere shader entry should include ground helpers");
+    require_contains(shader_entry_source, "#include \"atmosphere_debug.glsl\"",
+                     "atmosphere shader entry should include debug helpers");
+    require_contains(atmosphere_common_source, "atmosphere_medium",
+                     "common atmosphere helpers should own medium accessors");
+    require_contains(atmosphere_night_sky_source, "night_sky_radiance",
+                     "night-sky atmosphere helpers should own stellar background radiance");
+    require_contains(atmosphere_sun_source, "sun_disk_luminance",
+                     "sun atmosphere helpers should own disk and halo luminance");
+    require_contains(atmosphere_ground_source, "ground_radiance",
+                     "ground atmosphere helpers should own ground and reference grid radiance");
+    require_contains(atmosphere_debug_source, "render_aerial_perspective_debug",
+                     "debug atmosphere helpers should own debug radiance paths");
     require_contains(shader_source, "cubey_proc_hash_pcg_2d",
                      "atmosphere shader should use shared 2D PCG hashes for stars");
     require_contains(shader_source, "cubey_proc_value_noise_pcg_2d",

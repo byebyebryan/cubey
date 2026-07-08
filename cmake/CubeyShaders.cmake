@@ -77,6 +77,11 @@ function(cubey_atmosphere_shader_depends out_var)
     cubey_shared_shader_depends(atmosphere_shared_shader_depends)
     set(
         atmosphere_shader_depends
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_night_sky.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_sun.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_ground.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_debug.glsl"
         ${atmosphere_shared_shader_depends}
     )
     list(REMOVE_DUPLICATES atmosphere_shader_depends)
