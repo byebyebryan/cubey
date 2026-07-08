@@ -2,13 +2,19 @@
 
 `projects/terrain_ref` is the active visual reference lane for terrain. It is
 not the production terrain system and it does not inherit the old river/mountain
-workbench pipeline. It currently carries two reference recipes over a Cubey
+workbench pipeline. It currently carries these reference recipes over a Cubey
 clipmap review mesh:
 
 - `terrain-engine-ref`: a TerrainEngine-inspired shader-side height sampler and
   procedural material presentation.
 - `shadertoy-mountain`: a clean-room ShaderToy-style mountain heightfield
   sampler with a matching procedural material response.
+- `shadertoy-alpine`: a clean-room alpine range reference with broad mountain
+  mass, ridged crests, valley suppression, snow, rock, and meadow bands.
+- `shadertoy-dunes`: a clean-room desert dune reference with wind-aligned
+  rolling ridges and procedural sand/ripple material response.
+- `shadertoy-lake-basin`: a clean-room lake-basin reference with surrounding
+  hills, a warped basin depression, waterline intersection, and shoreline cues.
 
 The current target is useful for renderer and source-model evaluation:
 
@@ -25,7 +31,8 @@ Known limitations are intentional for this slice: the review mesh is finite,
 water is still a tint/clamp rather than reflection/refraction, material detail
 is shader-generated rather than authored texture data, the ShaderToy-inspired
 recipe samples a heightfield rather than porting a raymarch renderer, and there
-is no biome, hydrology, foliage, streaming, or planet-scale paging.
+is no biome, hydrology, foliage, streaming, or planet-scale paging. The
+ShaderToy recipes are visual/source references, not production biome contracts.
 
 ## Commands
 
@@ -48,6 +55,8 @@ mkdir -p outputs/terrain_ref/terrain-engine outputs/terrain_ref/shadertoy-mounta
 ./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-camera-preset surface-low --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/terrain-engine-surface-low-height.png
 ./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset oblique --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/shadertoy-mountain-oblique-height.png
 ./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset surface-low --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/shadertoy-mountain-surface-low-height.png
+
+projects/terrain_ref/capture_shadertoy_biome_refs.sh
 ```
 
 Next rendering work should handle the parts deliberately deferred here: a

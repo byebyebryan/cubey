@@ -130,8 +130,8 @@ float shadertoy_alpine_reference_height(float world_x, float world_z, std::uint6
 float shadertoy_dunes_reference_height(float world_x, float world_z, std::uint64_t seed) {
     const Vec2 seed_value = seed_components(seed);
     Vec2 p{
-        .x = (world_x * 0.00034F) + (seed_value.x * 0.071F),
-        .y = (world_z * 0.00034F) + (seed_value.y * 0.083F),
+        .x = (world_x * 0.00026F) + (seed_value.x * 0.071F),
+        .y = (world_z * 0.00026F) + (seed_value.y * 0.083F),
     };
     const float wind_angle = 0.42F + (seed_value.x * 0.011F);
     const Vec2 wind{.x = std::cos(wind_angle), .y = std::sin(wind_angle)};
@@ -139,7 +139,7 @@ float shadertoy_dunes_reference_height(float world_x, float world_z, std::uint64
     const float along = (p.x * wind.x) + (p.y * wind.y);
     const float across = (p.x * cross.x) + (p.y * cross.y);
     const float broad =
-        fbm({.x = p.x * 0.34F, .y = p.y * 0.34F},
+        fbm({.x = p.x * 0.30F, .y = p.y * 0.30F},
             {.x = seed_value.x - 13.0F, .y = seed_value.y + 17.0F}, 4);
     const float warp =
         (fbm({.x = p.x * 1.25F, .y = p.y * 1.25F},
@@ -149,15 +149,15 @@ float shadertoy_dunes_reference_height(float world_x, float world_z, std::uint64
     const float primary = std::pow(std::max(triangle_wave((across * 1.42F) + warp +
                                                           std::sin(along * 0.82F) * 0.16F),
                                             0.0F),
-                                   1.85F);
+                                   1.52F);
     const float secondary = std::pow(
         std::max(triangle_wave((across * 2.10F) + (along * 0.10F) - warp * 0.55F), 0.0F),
-        2.35F);
+        2.10F);
     const float dune_envelope = smoothstep(0.18F, 0.72F, broad);
     const float rolling = primary * (0.58F + dune_envelope * 0.42F);
     const float ripple =
-        (triangle_wave((across * 9.0F) + std::sin(along * 2.1F) * 0.35F) - 0.5F) * 4.5F;
-    return 18.0F + (broad * 42.0F) + (rolling * 120.0F) + (secondary * 32.0F) + ripple;
+        (triangle_wave((across * 9.0F) + std::sin(along * 2.1F) * 0.35F) - 0.5F) * 7.5F;
+    return 24.0F + (broad * 72.0F) + (rolling * 360.0F) + (secondary * 82.0F) + ripple;
 }
 
 float shadertoy_lake_basin_reference_height(float world_x, float world_z, std::uint64_t seed) {

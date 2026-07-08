@@ -100,24 +100,24 @@ float shadertoy_alpine_reference_height(vec2 world, vec2 seed) {
 }
 
 float shadertoy_dunes_reference_height(vec2 world, vec2 seed) {
-    vec2 p = (world * 0.00034) + (seed * vec2(0.071, 0.083));
+    vec2 p = (world * 0.00026) + (seed * vec2(0.071, 0.083));
     float wind_angle = 0.42 + (seed.x * 0.011);
     vec2 wind = vec2(cos(wind_angle), sin(wind_angle));
     vec2 cross_wind = vec2(-wind.y, wind.x);
     float along = dot(p, wind);
     float across = dot(p, cross_wind);
-    float broad = shadertoy_biome_fbm(p * 0.34, seed + vec2(-13.0, 17.0), 4, 0.52);
+    float broad = shadertoy_biome_fbm(p * 0.30, seed + vec2(-13.0, 17.0), 4, 0.52);
     float warp = (shadertoy_biome_fbm(p * 1.25, seed + vec2(23.0, -29.0), 4, 0.52) -
         0.5) * 0.68;
     float primary = pow(max(shadertoy_biome_triangle_wave((across * 1.42) + warp +
-        sin(along * 0.82) * 0.16), 0.0), 1.85);
+        sin(along * 0.82) * 0.16), 0.0), 1.52);
     float secondary = pow(max(shadertoy_biome_triangle_wave((across * 2.10) +
-        (along * 0.10) - warp * 0.55), 0.0), 2.35);
+        (along * 0.10) - warp * 0.55), 0.0), 2.10);
     float dune_envelope = smoothstep(0.18, 0.72, broad);
     float rolling = primary * (0.58 + dune_envelope * 0.42);
     float ripple = (shadertoy_biome_triangle_wave((across * 9.0) +
-        sin(along * 2.1) * 0.35) - 0.5) * 4.5;
-    return 18.0 + (broad * 42.0) + (rolling * 120.0) + (secondary * 32.0) + ripple;
+        sin(along * 2.1) * 0.35) - 0.5) * 7.5;
+    return 24.0 + (broad * 72.0) + (rolling * 360.0) + (secondary * 82.0) + ripple;
 }
 
 float shadertoy_lake_basin_reference_height(vec2 world, vec2 seed) {

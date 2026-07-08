@@ -145,13 +145,14 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
 
     if (shadertoy_dunes) {
         vec3 low_sand = terrain_ref_color_variation(vec3(0.63, 0.52, 0.31),
-            frag_world_position.xz, 0.006, 0.16);
+            frag_world_position.xz, 0.005, 0.18);
         vec3 sun_sand = terrain_ref_color_variation(vec3(0.82, 0.69, 0.42),
             frag_world_position.xz, 0.014, 0.12);
         float slope = 1.0 - cos_v;
         vec3 color = mix(low_sand, sun_sand, smoothstep(0.42, 0.86, cos_v));
-        color = mix(color, vec3(0.50, 0.41, 0.27), smoothstep(0.25, 0.72, slope) * 0.36);
-        normal = terrain_ref_detail_normal(normal, frag_world_position.xz, detail * 0.10);
+        color = mix(color, vec3(0.46, 0.36, 0.22), smoothstep(0.18, 0.58, slope) * 0.45);
+        color = mix(color, vec3(0.91, 0.80, 0.52), smoothstep(0.82, 0.98, cos_v) * 0.22);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz, detail * 0.12);
         return color;
     }
 
