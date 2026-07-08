@@ -121,6 +121,9 @@ cubey_add_glsl_shaders(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/debug.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/view.glsl"
         "${CUBEY_FASTNOISE_LITE_GLSL_DIR}/FastNoiseLite.glsl"
 )
 add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)

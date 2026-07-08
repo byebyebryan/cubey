@@ -5,6 +5,8 @@
 #include "cubey/procedural/noise.glsl"
 #include "cubey/procedural/operators.glsl"
 #include "cubey/procedural/random.glsl"
+#include "cubey/debug.glsl"
+#include "cubey/view.glsl"
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
@@ -23,5 +25,7 @@ void main() {
     float legacy = cubey_proc_fbm_3d(vec3(0.25, 1.5, -0.75), 42U, 3U);
     float hash = cubey_proc_hash01_u32(123456789U);
     float shaped = cubey_proc_remap(cubey_proc_saturate(hash), 0.0, 1.0, -1.0, 1.0);
-    smoke_output.values[0] = coherent_noise + legacy + shaped;
+    vec3 debug_color = cubey_debug_false_color01(hash);
+    float checker = cubey_debug_checker(cubey_view_uv_from_ndc(vec2(0.25, -0.25)), 8.0);
+    smoke_output.values[0] = coherent_noise + legacy + shaped + dot(debug_color, vec3(0.333)) + checker;
 }

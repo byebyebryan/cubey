@@ -53,6 +53,7 @@ void test_procedural_shader_fastnoise_lite_include_is_shared();
 void test_procedural_shader_hash_helpers_match_glsl_contracts();
 void test_procedural_shader_random_helpers_are_shared();
 void test_procedural_shader_scalar_helpers_match_glsl_contracts();
+void test_shared_shader_debug_and_view_helpers_compile();
 void test_procedural_slope_curvature_handles_flat_ramp_and_peak();
 void test_procedural_source_fields_fill_scalar_fields();
 void test_procedural_source_fields_apply_optional_domain_warp();
@@ -204,6 +205,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_shader_scalar_helpers_match_glsl_contracts),
         CUBEY_TEST(test_procedural_shader_hash_helpers_match_glsl_contracts),
         CUBEY_TEST(test_procedural_shader_3d_noise_helpers_match_glsl_contracts),
+        CUBEY_TEST(test_shared_shader_debug_and_view_helpers_compile),
         CUBEY_TEST(test_procedural_noise_is_deterministic_and_bounded),
         CUBEY_TEST(test_procedural_legacy_noise_golden_values_are_stable),
         CUBEY_TEST(test_procedural_3d_noise_is_deterministic_and_stable),
