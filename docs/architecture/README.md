@@ -41,6 +41,8 @@ than the root design and roadmap.
   complexity.
 - [Renderer foundation](renderer-foundation.md): `cubey::render` contracts
   that sit above Vulkan.
+- [Shader foundation](shader-foundation.md): GLSL module ownership, build-time
+  SPIR-V compilation, shared include boundaries, and first split targets.
 - [Threading and async](threading-and-async.md): CPU jobs, queued GPU work,
   ownership, and future threading boundaries.
 - [Vulkan abstraction map](vulkan-abstractions.md): reusable Vulkan foundation
