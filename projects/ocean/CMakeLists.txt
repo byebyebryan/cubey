@@ -45,6 +45,10 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_fft_body.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_unpack_body.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_foam_filter_body.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_shading.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_far_field.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_foam.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_debug.glsl"
         ${CUBEY_OCEAN_CLOUD_SHADER_DEPENDS}
 )
 

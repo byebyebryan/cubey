@@ -924,7 +924,13 @@ int main() {
         const std::string spectrum_half_entry =
             read_text_file(source_root / "shaders/ocean_spectrum_half.comp");
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
-        const std::string fragment_shader = read_text_file(source_root / "shaders/ocean.frag");
+        const std::string ocean_fragment_entry =
+            read_text_file(source_root / "shaders/ocean.frag");
+        const std::string fragment_shader =
+            ocean_fragment_entry + read_text_file(source_root / "shaders/ocean_shading.glsl") +
+            read_text_file(source_root / "shaders/ocean_far_field.glsl") +
+            read_text_file(source_root / "shaders/ocean_foam.glsl") +
+            read_text_file(source_root / "shaders/ocean_debug.glsl");
         const std::string pillar_vertex_shader =
             read_text_file(source_root / "shaders/ocean_reference_pillar.vert");
         const std::string pillar_fragment_shader =
@@ -1126,6 +1132,22 @@ int main() {
                          "ocean build should compile half precision spectrum shader variants");
         require_contains(cmake_source, "ocean_unpack_body.glsl",
                          "ocean build should track shared compute shader bodies");
+        require_contains(cmake_source, "ocean_shading.glsl",
+                         "ocean build should track extracted fragment shading helpers");
+        require_contains(cmake_source, "ocean_far_field.glsl",
+                         "ocean build should track extracted far-field helpers");
+        require_contains(cmake_source, "ocean_foam.glsl",
+                         "ocean build should track extracted foam helpers");
+        require_contains(cmake_source, "ocean_debug.glsl",
+                         "ocean build should track extracted debug helpers");
+        require_contains(fragment_shader, "#include \"ocean_shading.glsl\"",
+                         "ocean fragment entry point should include shading helpers");
+        require_contains(fragment_shader, "#include \"ocean_far_field.glsl\"",
+                         "ocean fragment entry point should include far-field helpers");
+        require_contains(fragment_shader, "#include \"ocean_foam.glsl\"",
+                         "ocean fragment entry point should include foam helpers");
+        require_contains(fragment_shader, "#include \"ocean_debug.glsl\"",
+                         "ocean fragment entry point should include debug helpers");
         require_contains(cmake_source, "shaders/cubey/atmosphere/atmosphere.frag",
                          "ocean build should compile the shared atmosphere background shader");
         require_contains(cmake_source, "atmosphere_reflection_prefilter.frag",
