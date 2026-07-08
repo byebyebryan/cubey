@@ -83,6 +83,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain ShaderToy operator extraction](terrain-shadertoy-operator-extraction.md):
   deeper ShaderToy terrain/hydro review, what to borrow as clean-room process
   operators or visual cues, and what to keep out of river topology.
+- [Terrain ShaderToy biome reference map](terrain-shadertoy-biome-reference-map.md):
+  classification of local ShaderToy terrain files for clean-room visual/source
+  recipes in `terrain_ref`, starting with alpine, dunes, and lake-basin refs.
 - [TerrainEngine reference port plan](terrain-engine-reference-port-plan.md):
   isolated recipe plan for porting TerrainEngine's shader-side height/material
   model into the terrain product contract, plus capability review notes for
