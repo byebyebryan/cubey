@@ -36,11 +36,11 @@ write_header() {
         printf -- '- View steps: %s\n' "${VIEW_STEPS}"
         printf -- '- Afterglow showcase strength: %s\n' "${AFTERGLOW_STRENGTH}"
         printf -- '- Afterglow showcase hour: %s\n\n' "${AFTERGLOW_HOUR}"
-        printf 'Cloud V1 acceptance is the surface/local view. Handoff captures compare '
-        printf 'deferred horizon-bridge candidates against that baseline.\n\n'
+        printf 'Cloud V1 acceptance is the surface view with the production lower-sky '
+        printf 'horizon handoff. Local-only captures remain the reference fallback.\n\n'
         printf 'Variants:\n\n'
         printf -- '- `local-only`: surface-volume with local distance mode and no horizon layer.\n'
-        printf -- '- `auto-handoff`: deferred candidate with auto distance mode and horizon layer enabled.\n'
+        printf -- '- `auto-handoff`: production default with auto distance mode and horizon layer enabled.\n'
         printf -- '- `no-clouds`: clear-sky/background comparison for horizon bands.\n\n'
         printf '| Capture | Variant | Case | Debug | Args |\n'
         printf '|---|---|---|---|---|\n'

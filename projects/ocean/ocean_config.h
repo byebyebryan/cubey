@@ -693,7 +693,6 @@ ocean_cloud_config_from_run_config(const RunConfig& config) {
     clouds.enabled = true;
     cubey::apply_cloud_environment_run_config(clouds, config.clouds);
     clouds.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
-    clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
     clouds.layer.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
     clouds.layer.orbit_representation = cubey::render::CloudLayerOrbitRepresentation::SurfaceShell;
     return clouds;

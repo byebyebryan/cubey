@@ -106,8 +106,8 @@ int main() {
         const cubey::CloudEnvironmentConfig default_clouds =
             ocean::ocean_cloud_config_from_run_config(cubey::RunConfig{});
         require(default_clouds.enabled, "ocean clouds should be enabled by default");
-        require(default_clouds.layer.distance_mode == cubey::render::CloudLayerDistanceMode::Local,
-                "ocean clouds should use the surface-view local distance mode");
+        require(default_clouds.layer.distance_mode == cubey::render::CloudLayerDistanceMode::Auto,
+                "ocean clouds should use the shared surface horizon handoff distance mode");
         require(default_clouds.layer.density_model ==
                     cubey::render::CloudLayerDensityModel::SurfaceVolume,
                 "ocean clouds should use the shared surface-volume density model");
@@ -116,8 +116,17 @@ int main() {
                     default_clouds.layer.resolve_mode ==
                         cubey::render::CloudLayerResolveMode::TerrainPost &&
                     !default_clouds.layer.temporal_enabled &&
-                    !default_clouds.layer.horizon_layer_enabled,
-                "ocean clouds should inherit stable surface-volume defaults");
+                    default_clouds.layer.horizon_layer_enabled,
+                "ocean clouds should inherit stable surface horizon defaults");
+        cubey::RunConfig local_only_clouds_config;
+        local_only_clouds_config.clouds.distance_mode = "local";
+        local_only_clouds_config.clouds.horizon_layer = 0;
+        const cubey::CloudEnvironmentConfig local_only_clouds =
+            ocean::ocean_cloud_config_from_run_config(local_only_clouds_config);
+        require(local_only_clouds.layer.distance_mode ==
+                    cubey::render::CloudLayerDistanceMode::Local &&
+                    !local_only_clouds.layer.horizon_layer_enabled,
+                "ocean should preserve the local-only cloud fallback");
         cubey::RunConfig no_clouds_config;
         no_clouds_config.clouds.enabled = 0;
         require(!ocean::ocean_cloud_config_from_run_config(no_clouds_config).enabled,
@@ -144,8 +153,8 @@ int main() {
         require_near(clamped_clouds.layer.coverage, 0.24F, 0.001F,
                      "ocean cloud policy should preserve surface coverage overrides");
         require(clamped_clouds.layer.distance_mode ==
-                    cubey::render::CloudLayerDistanceMode::Local,
-                "ocean cloud policy should clamp deferred distance overrides");
+                    cubey::render::CloudLayerDistanceMode::Auto,
+                "ocean cloud policy should clamp deferred distance overrides to surface handoff");
         require(clamped_clouds.layer.density_model ==
                     cubey::render::CloudLayerDensityModel::SurfaceVolume,
                 "ocean cloud policy should clamp deferred density overrides");
@@ -157,8 +166,8 @@ int main() {
                 "ocean cloud policy should clamp temporal sample mode overrides");
         require(!clamped_clouds.layer.temporal_enabled &&
                     clamped_clouds.layer.local_volume_enabled &&
-                    !clamped_clouds.layer.horizon_layer_enabled,
-                "ocean cloud policy should keep surface-only cloud structure");
+                    clamped_clouds.layer.horizon_layer_enabled,
+                "ocean cloud policy should keep the surface handoff cloud structure");
         require(std::string(ocean::ocean_surface_mode_name(ocean::OceanSurfaceMode::Flat)) ==
                     "flat",
                 "ocean should name the flat surface mode");

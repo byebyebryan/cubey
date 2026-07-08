@@ -530,14 +530,14 @@ int main() {
             defaults.clouds.layer.view_samples == 1 &&
             defaults.clouds.layer.view_sample_mode == CloudLayerViewSampleMode::SingleFrame,
         "default atmosphere clouds should use surface reference steps and one single-frame sample");
-    require(defaults.clouds.layer.distance_mode == CloudLayerDistanceMode::Local,
-            "default atmosphere clouds should use the stable local surface path");
+    require(defaults.clouds.layer.distance_mode == CloudLayerDistanceMode::Auto,
+            "default atmosphere clouds should use the surface horizon handoff path");
     require(defaults.clouds.layer.density_model == CloudLayerDensityModel::SurfaceVolume,
             "default atmosphere clouds should use the accepted surface-volume density model");
     require(defaults.clouds.layer.quality == CloudLayerQuality::Full &&
                 defaults.clouds.layer.resolve_mode == CloudLayerResolveMode::TerrainPost &&
-                !defaults.clouds.layer.horizon_layer_enabled,
-            "default atmosphere clouds should keep the stable production surface defaults");
+                defaults.clouds.layer.horizon_layer_enabled,
+            "default atmosphere clouds should keep the production surface horizon defaults");
     require_near(defaults.clouds.layer.coverage, 0.38F, 0.001F,
                  "default atmosphere clouds should use sunny-warm surface coverage");
     require_near(defaults.clouds.layer.density, 0.018F, 0.001F,
@@ -592,15 +592,15 @@ int main() {
                 "surface volume preset should preserve selected preset");
         require(clouds.layer.quality == CloudLayerQuality::Full,
                 "surface volume preset should force full-quality local comparison");
-        require(clouds.layer.distance_mode == CloudLayerDistanceMode::Local,
-                "surface volume preset should force local cloud distance mode");
+        require(clouds.layer.distance_mode == CloudLayerDistanceMode::Auto,
+                "surface volume preset should enable the surface horizon handoff");
         require(clouds.layer.density_model == CloudLayerDensityModel::SurfaceVolume,
                 "surface volume preset should use the accepted density path");
         require(clouds.layer.resolve_mode == CloudLayerResolveMode::TerrainPost,
                 "surface volume preset should use terrain-post resolve");
         require(!clouds.layer.temporal_enabled && clouds.layer.local_volume_enabled &&
-                    !clouds.layer.horizon_layer_enabled,
-                "surface volume preset should isolate the local volume path");
+                    clouds.layer.horizon_layer_enabled,
+                "surface volume preset should keep the local volume plus horizon handoff path");
         require(clouds.layer.view_steps_override == 64 && clouds.layer.view_samples == 1,
                 "surface volume preset should match cloud_ref full-quality sampling");
         require_near(clouds.layer.jitter_strength, 1.0F, 0.001F,

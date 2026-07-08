@@ -114,7 +114,9 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
                     imgui_enum_combo("Distance mode", layer.distance_mode,
                                      kCloudEnvironmentDistanceModes,
                                      cloud_environment_distance_mode_name,
-                                     "Deferred distance behavior. Cloud V1 should remain local."),
+                                     "Cloud distance regime. Auto enables the Cloud V1 surface "
+                                     "horizon handoff; local disables it for reference A/B. "
+                                     "Orbit-shell and blend-debug remain deferred."),
                     changed);
                 mark_changed(imgui_enum_combo(
                                  "Orbit repr.", layer.orbit_representation,
@@ -132,18 +134,18 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
             mark_changed(imgui_checkbox("Local volume", &layer.local_volume_enabled,
                                         "Render near and overhead volumetric cloud detail."),
                          changed);
-            if (config.show_aerial_orbit_controls) {
-                mark_changed(imgui_checkbox(
-                                 "Horizon layer", &layer.horizon_layer_enabled,
-                                 "Enable the deferred far-horizon bridge. Cloud V1 defaults leave "
-                                 "this off."),
-                             changed);
-            } else {
+            mark_changed(imgui_checkbox(
+                             "Horizon handoff", &layer.horizon_layer_enabled,
+                             "Blend a low-detail lower-sky continuation into distant grazing "
+                             "surface-cloud rays. Disable with local distance mode for reference "
+                             "A/B captures."),
+                         changed);
+            if (!config.show_aerial_orbit_controls) {
                 ImGui::Text("Model: %s / %s",
                             cloud_environment_density_model_name(layer.density_model),
                             cloud_environment_distance_mode_name(layer.distance_mode));
-                imgui_attach_help("Cloud V1 surfaces keep aerial/orbit controls hidden by "
-                                  "default. Planet opts into those deferred pressure controls.");
+                imgui_attach_help("Cloud V1 surfaces hide the deferred aerial/orbit controls by "
+                                  "default while keeping the surface horizon handoff visible.");
             }
         }
 

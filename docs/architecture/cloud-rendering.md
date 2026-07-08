@@ -12,9 +12,10 @@ Use the shared `cubey::render::CloudLayerRuntime` through `projects/atmosphere`
 instead of continuing `clouds_legacy`, reviving a standalone `projects/cloud`,
 or pulling `cloud_ref_2` toward visual quality.
 
-The accepted production baseline is now the surface/local volume path that was
-validated through the `cloud_ref` parity work. It should be named and treated as
-`surface-volume`, not as a temporary reference mode.
+The accepted production baseline is now the surface-volume cloud path validated
+through the `cloud_ref` parity work, with the shared lower-sky horizon handoff
+enabled by default. It should be named and treated as `surface-volume`, not as a
+temporary reference mode.
 
 Cloud V1 is intentionally surface-only. Its job is credible clouds for ground,
 ocean, and horizon-scale atmosphere-backed views. Aerial, high-altitude, orbit,
@@ -65,17 +66,20 @@ package frame inputs from atmosphere/celestial lighting. That is acceptable for
 Cloud V1 integration, but it should be the next foundation cleanup before
 adding more cloud consumers or reviving aerial/orbit work.
 
-Treat the accepted production mode as `surface-volume`: full-resolution, local
-distance regime, TerrainEngine-style density/noise, Bayer sampling,
-single-frame sampling, terrain-post resolve, and no temporal reconstruction by
-default. This mode is expected to work for surface and ocean-style background
-use before aerial/orbit clouds are reconsidered in a later version.
+Treat the accepted production mode as `surface-volume`: full-resolution, auto
+distance with the lower-sky horizon handoff, TerrainEngine-style density/noise,
+Bayer sampling, single-frame sampling, terrain-post resolve, and no temporal
+reconstruction by default. `local` plus `--no-cloud-horizon-layer` remains the
+strict surface reference fallback. This mode is expected to work for surface and
+ocean-style background use before aerial/orbit clouds are reconsidered in a
+later version.
 
 The runtime now keeps this surface path separate from the experimental branch:
-`surface_cloud_march.comp` is the lean production surface shader, while
-`cloud_march.comp` remains the deferred/diagnostic shader for aerial/orbit,
-far-bridge, and deep scale work. Keep Cloud V1 fixes in the lean shader unless
-the change is explicitly for a later aerial/orbit experiment.
+`surface_cloud_march.comp` is the lean local-only reference shader, while
+`cloud_march.comp` carries the production horizon handoff plus deferred
+aerial/orbit diagnostics. Keep pure local-cloud fixes in the lean shader, and
+keep handoff/aerial/orbit changes in the general shader where their diagnostics
+are visible.
 
 Keep the unfinished paths, but label them honestly:
 
@@ -378,8 +382,13 @@ Deferred beyond Cloud V1:
 
 Cloud V1 uses one production regime:
 
-- `local`: bounded surface-volume march with real parallax and thickness for
-  surface, surface-up, and horizon-scale review views.
+- `auto`: bounded surface-volume march with real parallax and thickness for
+  surface, surface-up, and horizon-scale review views, plus a low-detail
+  lower-sky handoff so clouds do not end abruptly near the horizon.
+
+The local-only fallback remains useful for A/B review:
+
+- `local`: bounded surface-volume march without the horizon handoff.
 
 The other regimes remain useful design notes and diagnostics, but they are not
 active Cloud V1 targets:

@@ -41,9 +41,11 @@ external-background mode so clouds are composited over the clear-sky background.
 The Clouds panel exposes the shared quality, sampling, layer, weather, shape,
 lighting, and debug controls, and existing `clouds.*` config/CLI overrides
 apply here too. Cloud V1 is intentionally surface-only: `surface-volume`,
-`local`, Bayer sampling, single-frame sampling, and the terrain-post resolve are
-the production baseline. Aerial/high-altitude/orbit controls remain exposed only
-as deferred experiments. `--cloud-view-samples 2 --cloud-view-sample-mode
+`auto`, the lower-sky horizon handoff, Bayer sampling, single-frame sampling,
+and the terrain-post resolve are the production baseline. Use
+`--cloud-distance-mode local --no-cloud-horizon-layer` when a strict local-only
+reference fallback is needed. Aerial/high-altitude/orbit controls remain exposed
+only as deferred experiments. `--cloud-view-samples 2 --cloud-view-sample-mode
 single-frame` is the direct local-volume sampling reference; `--cloud-temporal
 --cloud-view-samples 2 --cloud-view-sample-mode temporal-phased` is the cheaper
 temporal reconstruction candidate. Cloud shadows and cloud-driven reflection or
@@ -97,7 +99,7 @@ optional afterglow color without making night clouds look sunlit.
 
 The surface-horizon regime script is the focused A/B for the lower-sky handoff.
 For each noon, twilight, afterglow, and night case it captures local-only
-`surface-volume`, the same preset with `--cloud-distance-mode auto
+`surface-volume`, the default handoff path with `--cloud-distance-mode auto
 --cloud-horizon-layer`, and a no-cloud background comparison. Use the handoff,
 local-truncation, and integrated-horizon diagnostics there before judging
 surface horizon fixes from final color alone.
