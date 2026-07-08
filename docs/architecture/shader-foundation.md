@@ -51,20 +51,29 @@ evaluation, and volume diagnostic modes.
   the bulk of the material logic:
   `ocean_shading.glsl`, `ocean_far_field.glsl`, `ocean_foam.glsl`, and
   `ocean_debug.glsl`.
+- `shaders/cubey/atmosphere/atmosphere.frag` is the next active split target.
+  It is shared by atmosphere, ocean, planet, water 3D, and forward-PBR users, so
+  its helper dependencies need an explicit atmosphere package before extraction.
 
 ## Large Shader Inventory
 
 The current oversized shader pressure points are:
 
-- `projects/ocean/shaders/ocean.frag`: active, now split into project-local
-  helpers. Keep the entry shader focused on declarations, cascade sampling, and
-  final composition.
+- `shaders/cubey/cloud/cloud_march.comp`: active, about 139 KB, largest shader
+  pressure point. Defer until the cloud model stabilizes further because it is
+  performance-sensitive and still has rendering research in flight.
+- `shaders/cubey/atmosphere/atmosphere.frag`: active, about 38 KB, next split
+  target. Extract reusable background, night-sky, sun, ground, and debug
+  helpers while keeping the entry shader as the binding/layout owner.
+- `shaders/cubey/cloud/surface_cloud_march.comp`: active, about 33 KB, future
+  cloud surface-view split candidate after the atmosphere split.
 - `projects/planet/shaders/planet_surface.frag`: active, about 26 KB, future
   planet surface/rendering split candidate.
 - `projects/fluid/sim/water_3d/shaders/water_3d_diagnostics.comp`: active,
   about 24 KB, future volume diagnostics split candidate.
-- `projects/cloud_ref/shaders/cloud_ref_march.comp`: reference project, about
-  23 KB, keep intact unless the reference role changes.
+- `projects/ocean/shaders/ocean.frag`: active, already split into project-local
+  helpers. Keep the entry shader focused on declarations, cascade sampling, and
+  final composition.
 - `projects/clouds_legacy` and `projects/cloud_ref_2`: legacy/reference
   snapshots, do not refactor as part of shared shader foundation work.
 
@@ -88,6 +97,10 @@ layout is stable.
 
 Near-term shader follow-ups should be cut as separate batches:
 
+- split `atmosphere.frag` into shared background helpers and an entry shader
+  that owns bindings, frame constants, and final composition;
+- keep `cloud_march.comp` intact until cloud rendering has a clearer stable
+  surface/orbit split;
 - split `planet_surface.frag` into planet surface field, material, atmosphere
   blend, and debug helpers;
 - split `water_3d_diagnostics.comp` into volume sampling, raymarch, and debug
