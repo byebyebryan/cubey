@@ -39,11 +39,26 @@ is domain-specific, binding-specific, or still changing quickly. Good examples
 are ocean foam logic, ocean far-field material response, planet surface field
 evaluation, and volume diagnostic modes.
 
+## Current Checkpoint
+
+- `shaders/cubey/debug.glsl` and `shaders/cubey/view.glsl` provide the first
+  generic debug/view helper includes.
+- `cubey_shared_shader_depends`, `cubey_forward_pbr_shader_depends`, and
+  `cubey_cloud_layer_shader_depends` keep shared include dependencies visible to
+  CMake so helper edits rebuild SPIR-V outputs.
+- `projects/ocean/shaders/ocean.frag` is now the entry point for layout,
+  constants, cascade sampling, and final composition. Project-local helpers hold
+  the bulk of the material logic:
+  `ocean_shading.glsl`, `ocean_far_field.glsl`, `ocean_foam.glsl`, and
+  `ocean_debug.glsl`.
+
 ## Large Shader Inventory
 
 The current oversized shader pressure points are:
 
-- `projects/ocean/shaders/ocean.frag`: active, about 55 KB, first split target.
+- `projects/ocean/shaders/ocean.frag`: active, now split into project-local
+  helpers. Keep the entry shader focused on declarations, cascade sampling, and
+  final composition.
 - `projects/planet/shaders/planet_surface.frag`: active, about 26 KB, future
   planet surface/rendering split candidate.
 - `projects/fluid/sim/water_3d/shaders/water_3d_diagnostics.comp`: active,
@@ -70,3 +85,15 @@ The shader foundation does not currently include runtime hot reload, shader
 reflection, generated CPU/GPU ABI headers, SPIR-V optimization passes, or a
 shader dependency graph linter. Those are future batches once the shared source
 layout is stable.
+
+Near-term shader follow-ups should be cut as separate batches:
+
+- split `planet_surface.frag` into planet surface field, material, atmosphere
+  blend, and debug helpers;
+- split `water_3d_diagnostics.comp` into volume sampling, raymarch, and debug
+  output helpers;
+- promote volume/raymarch helpers only after cloud and fluid share real code,
+  not just similar naming;
+- add an optional shader dependency audit that verifies each included `.glsl`
+  appears in the owning target's `SHADER_DEPENDS`;
+- evaluate `spirv-val` or `spirv-opt` only after source layout stabilizes.
