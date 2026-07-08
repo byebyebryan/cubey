@@ -205,6 +205,8 @@ void test_cloud_layer_cmake_package_tracks_composite_modes() {
             "shared cloud shader package should consume common shader dependencies");
     require(shader_cmake.find("cloud_layer_shared_shader_depends") != std::string::npos,
             "cloud dependency package should thread shared shader dependencies");
+    require(!std::filesystem::exists(source_root / "shaders/cubey/cloud/cloud_composite.frag"),
+            "shared cloud package should not keep an unused standalone composite shader");
     require(atmosphere_cmake.find("COMPOSITE background") != std::string::npos,
             "atmosphere should request the background cloud composite package");
     require(atmosphere_cmake.find("COMPOSITE background-depth") == std::string::npos,

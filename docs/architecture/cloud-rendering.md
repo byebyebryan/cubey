@@ -422,10 +422,10 @@ capture helper and shared `clouds.*` config options to check visual and contract
 assumptions without adopting cloud internals.
 
 The final composite tone and color post pass is shared through
-`shaders/cubey/cloud/cloud_composite_post.glsl`. The standalone cloud reference
-path and external-background path still keep separate mode constants, but the
-math should stay in that shared include so atmosphere, ocean, and planet do not
-drift while Cloud V1 lighting is being tuned.
+`shaders/cubey/cloud/cloud_composite_post.glsl`. The active composite shaders
+are the external-background variants used by atmosphere, ocean, and planet;
+legacy standalone/reference cloud projects keep their own local shaders instead
+of depending on a shared standalone composite entry point.
 
 ## Current Milestone
 
