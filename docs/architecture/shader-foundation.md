@@ -43,17 +43,21 @@ evaluation, and volume diagnostic modes.
 
 - `shaders/cubey/debug.glsl` and `shaders/cubey/view.glsl` provide the first
   generic debug/view helper includes.
-- `cubey_shared_shader_depends`, `cubey_forward_pbr_shader_depends`, and
-  `cubey_cloud_layer_shader_depends` keep shared include dependencies visible to
-  CMake so helper edits rebuild SPIR-V outputs.
+- `cubey_shared_shader_depends`, `cubey_atmosphere_shader_depends`,
+  `cubey_forward_pbr_shader_depends`, and `cubey_cloud_layer_shader_depends`
+  keep shared include dependencies visible to CMake so helper edits rebuild
+  SPIR-V outputs.
 - `projects/ocean/shaders/ocean.frag` is now the entry point for layout,
   constants, cascade sampling, and final composition. Project-local helpers hold
   the bulk of the material logic:
   `ocean_shading.glsl`, `ocean_far_field.glsl`, `ocean_foam.glsl`, and
   `ocean_debug.glsl`.
-- `shaders/cubey/atmosphere/atmosphere.frag` is the next active split target.
-  It is shared by atmosphere, ocean, planet, water 3D, and forward-PBR users, so
-  its helper dependencies need an explicit atmosphere package before extraction.
+- `shaders/cubey/atmosphere/atmosphere.frag` is now the entry point for the
+  shared background pass. It owns binding layout, frame constants, local helper
+  includes, and final composition. Shared helpers hold the feature code:
+  `atmosphere_common.glsl`, `atmosphere_night_sky.glsl`,
+  `atmosphere_sun.glsl`, `atmosphere_ground.glsl`, and
+  `atmosphere_debug.glsl`.
 
 ## Large Shader Inventory
 
@@ -62,15 +66,19 @@ The current oversized shader pressure points are:
 - `shaders/cubey/cloud/cloud_march.comp`: active, about 139 KB, largest shader
   pressure point. Defer until the cloud model stabilizes further because it is
   performance-sensitive and still has rendering research in flight.
-- `shaders/cubey/atmosphere/atmosphere.frag`: active, about 38 KB, next split
-  target. Extract reusable background, night-sky, sun, ground, and debug
-  helpers while keeping the entry shader as the binding/layout owner.
 - `shaders/cubey/cloud/surface_cloud_march.comp`: active, about 33 KB, future
-  cloud surface-view split candidate after the atmosphere split.
+  cloud surface-view split candidate after the cloud model settles.
 - `projects/planet/shaders/planet_surface.frag`: active, about 26 KB, future
   planet surface/rendering split candidate.
 - `projects/fluid/sim/water_3d/shaders/water_3d_diagnostics.comp`: active,
   about 24 KB, future volume diagnostics split candidate.
+- `shaders/cubey/atmosphere/atmosphere_night_sky.glsl`: active, about 21 KB,
+  intentionally separated from the entry shader. Split further only if the
+  procedural star field, Milky Way sampling, or twilight model need independent
+  ownership.
+- `shaders/cubey/atmosphere/atmosphere.frag`: active, now about 5 KB after the
+  split. Keep it focused on declarations, includes, ray classification, and
+  final composition.
 - `projects/ocean/shaders/ocean.frag`: active, already split into project-local
   helpers. Keep the entry shader focused on declarations, cascade sampling, and
   final composition.
@@ -97,10 +105,10 @@ layout is stable.
 
 Near-term shader follow-ups should be cut as separate batches:
 
-- split `atmosphere.frag` into shared background helpers and an entry shader
-  that owns bindings, frame constants, and final composition;
 - keep `cloud_march.comp` intact until cloud rendering has a clearer stable
   surface/orbit split;
+- split `surface_cloud_march.comp` after the surface-cloud model settles enough
+  to separate density, lighting, sampling, and post-resolve ownership;
 - split `planet_surface.frag` into planet surface field, material, atmosphere
   blend, and debug helpers;
 - split `water_3d_diagnostics.comp` into volume sampling, raymarch, and debug
