@@ -1,4 +1,5 @@
 #include "terrain_engine_reference.h"
+#include "shadertoy_biome_reference.h"
 #include "shadertoy_mountain_reference.h"
 #include "terrain_ref_config.h"
 #include "terrain_ref_mesh.h"
@@ -79,6 +80,24 @@ void test_terrain_ref_config_from_run_config() {
     config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
     require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyMountain,
             "terrain_ref should parse ShaderToy mountain recipe");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyAlpine);
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyAlpine,
+            "terrain_ref should parse ShaderToy alpine recipe");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyDunes);
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyDunes,
+            "terrain_ref should parse ShaderToy dunes recipe");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyLakeBasin);
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyLakeBasin,
+            "terrain_ref should parse ShaderToy lake-basin recipe");
 
     run_config.terrain.recipe = "temperate-mountain-river";
     require_throws(
@@ -162,12 +181,56 @@ void test_shadertoy_mountain_reference_sampling_is_deterministic() {
             "ShaderToy mountain seed should affect height");
 }
 
+void test_shadertoy_biome_reference_sampling_is_deterministic() {
+    constexpr std::uint64_t seed = 9012U;
+    const auto check_height = [](float height_a, float height_b, float height_c,
+                                 const char* deterministic_message,
+                                 const char* finite_message,
+                                 const char* seed_message) {
+        require_near(height_a, height_b, 0.0001F, deterministic_message);
+        require(std::isfinite(height_a), finite_message);
+        require(std::abs(height_a - height_c) > 0.0001F, seed_message);
+    };
+
+    check_height(cubey::projects::terrain_ref::shadertoy_alpine_reference_height(217.0F, -341.0F,
+                                                                                 seed),
+                 cubey::projects::terrain_ref::shadertoy_alpine_reference_height(217.0F, -341.0F,
+                                                                                 seed),
+                 cubey::projects::terrain_ref::shadertoy_alpine_reference_height(217.0F, -341.0F,
+                                                                                 seed + 1U),
+                 "ShaderToy alpine sampling should be deterministic",
+                 "ShaderToy alpine height should be finite",
+                 "ShaderToy alpine seed should affect height");
+    check_height(cubey::projects::terrain_ref::shadertoy_dunes_reference_height(217.0F, -341.0F,
+                                                                                seed),
+                 cubey::projects::terrain_ref::shadertoy_dunes_reference_height(217.0F, -341.0F,
+                                                                                seed),
+                 cubey::projects::terrain_ref::shadertoy_dunes_reference_height(217.0F, -341.0F,
+                                                                                seed + 1U),
+                 "ShaderToy dunes sampling should be deterministic",
+                 "ShaderToy dunes height should be finite",
+                 "ShaderToy dunes seed should affect height");
+    const auto lake_sample_sum = [](std::uint64_t sample_seed) {
+        return cubey::projects::terrain_ref::shadertoy_lake_basin_reference_height(
+                   217.0F, -341.0F, sample_seed) +
+               cubey::projects::terrain_ref::shadertoy_lake_basin_reference_height(
+                   4021.0F, -2789.0F, sample_seed) +
+               cubey::projects::terrain_ref::shadertoy_lake_basin_reference_height(
+                   -5113.0F, 1900.0F, sample_seed);
+    };
+    check_height(lake_sample_sum(seed), lake_sample_sum(seed), lake_sample_sum(seed + 1U),
+                 "ShaderToy lake-basin sampling should be deterministic",
+                 "ShaderToy lake-basin height should be finite",
+                 "ShaderToy lake-basin seed should affect height");
+}
+
 } // namespace
 
 int main() {
     test_terrain_ref_config_from_run_config();
     test_terrain_engine_reference_sampling_is_deterministic();
     test_shadertoy_mountain_reference_sampling_is_deterministic();
+    test_shadertoy_biome_reference_sampling_is_deterministic();
     test_terrain_ref_mesh_uses_clipmap_grid();
     return 0;
 }

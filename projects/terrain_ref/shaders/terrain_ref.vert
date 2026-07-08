@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "terrain_engine_reference.glsl"
+#include "shadertoy_biome_reference.glsl"
 #include "shadertoy_mountain_reference.glsl"
 
 layout(push_constant) uniform TerrainRefPushConstants {
@@ -23,12 +24,21 @@ layout(location = 3) out float frag_height_m;
 layout(location = 4) out float frag_water_mask;
 
 bool terrain_ref_uses_shadertoy_mountain() {
-    return mod(pc.water_params.w, 2.0) > 0.5;
+    return abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_MOUNTAIN) < 0.5;
 }
 
 float terrain_ref_height(vec2 world_xz, vec2 seed, bool surface_detail) {
     if (terrain_ref_uses_shadertoy_mountain()) {
         return shadertoy_mountain_reference_height(world_xz, seed, surface_detail);
+    }
+    if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_ALPINE) < 0.5) {
+        return shadertoy_alpine_reference_height(world_xz, seed);
+    }
+    if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_DUNES) < 0.5) {
+        return shadertoy_dunes_reference_height(world_xz, seed);
+    }
+    if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_LAKE_BASIN) < 0.5) {
+        return shadertoy_lake_basin_reference_height(world_xz, seed);
     }
     return terrain_engine_reference_height(world_xz, seed);
 }
@@ -37,21 +47,30 @@ vec3 terrain_ref_normal(vec2 world_xz, vec2 seed, float vertical_scale) {
     if (terrain_ref_uses_shadertoy_mountain()) {
         return shadertoy_mountain_reference_normal(world_xz, seed, vertical_scale);
     }
+    if (pc.terrain_params.w > 1.5) {
+        return shadertoy_biome_reference_normal(world_xz, seed, vertical_scale,
+            pc.terrain_params.w);
+    }
     return terrain_engine_reference_normal(world_xz, seed, vertical_scale);
 }
 
 float terrain_ref_material_uv_scale() {
+    if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_DUNES) < 0.5) {
+        return 0.010;
+    }
+    if (pc.terrain_params.w > 1.5) {
+        return 0.0048;
+    }
     return terrain_ref_uses_shadertoy_mountain() ? 0.0042 : 0.006;
 }
 
 void main() {
     vec2 seed = pc.terrain_params.xy;
     float vertical_scale = pc.terrain_params.z;
-    float water_enabled = pc.terrain_params.w;
     float water_height_m = pc.water_params.x;
     vec2 world_xz = in_position.xz;
     float terrain_height = terrain_ref_height(world_xz, seed, false);
-    float water_mask = water_enabled * step(terrain_height, water_height_m);
+    float water_mask = step(terrain_height, water_height_m);
     float display_height = mix(terrain_height, max(terrain_height, water_height_m), water_mask);
     vec3 normal = terrain_ref_normal(world_xz, seed, vertical_scale);
     normal = normalize(mix(normal, vec3(0.0, 1.0, 0.0), water_mask));

@@ -1,5 +1,6 @@
 #include "terrain_ref_app.h"
 
+#include "shadertoy_biome_reference.h"
 #include "shadertoy_mountain_reference.h"
 #include "terrain_engine_reference.h"
 #include "terrain_ref_config.h"
@@ -65,16 +66,35 @@ struct TerrainRefSceneMetrics {
 }
 
 [[nodiscard]] float terrain_ref_source_id(TerrainRefRecipe recipe) {
-    return recipe == TerrainRefRecipe::ShadertoyMountain ? 1.0F : 0.0F;
-}
-
-[[nodiscard]] float terrain_ref_shader_mode(const TerrainRefConfig& config) {
-    return terrain_ref_source_id(config.recipe) + (2.0F * terrain_ref_material_mode_id(config.material_mode));
+    switch (recipe) {
+    case TerrainRefRecipe::TerrainEngine:
+        return 0.0F;
+    case TerrainRefRecipe::ShadertoyMountain:
+        return 1.0F;
+    case TerrainRefRecipe::ShadertoyAlpine:
+        return 2.0F;
+    case TerrainRefRecipe::ShadertoyDunes:
+        return 3.0F;
+    case TerrainRefRecipe::ShadertoyLakeBasin:
+        return 4.0F;
+    }
+    return 0.0F;
 }
 
 [[nodiscard]] float terrain_ref_water_height_m(TerrainRefRecipe recipe) {
-    return recipe == TerrainRefRecipe::ShadertoyMountain ? kShadertoyMountainReferenceWaterHeightM
-                                                         : kTerrainEngineReferenceWaterHeightM;
+    switch (recipe) {
+    case TerrainRefRecipe::TerrainEngine:
+        return kTerrainEngineReferenceWaterHeightM;
+    case TerrainRefRecipe::ShadertoyMountain:
+        return kShadertoyMountainReferenceWaterHeightM;
+    case TerrainRefRecipe::ShadertoyAlpine:
+        return kShadertoyAlpineReferenceWaterHeightM;
+    case TerrainRefRecipe::ShadertoyDunes:
+        return kShadertoyDunesReferenceWaterHeightM;
+    case TerrainRefRecipe::ShadertoyLakeBasin:
+        return kShadertoyLakeBasinReferenceWaterHeightM;
+    }
+    return kTerrainEngineReferenceWaterHeightM;
 }
 
 [[nodiscard]] float terrain_ref_height_m(const TerrainRefConfig& config, float world_x,
@@ -84,6 +104,12 @@ struct TerrainRefSceneMetrics {
         return terrain_engine_reference_height(world_x, world_z, config.seed);
     case TerrainRefRecipe::ShadertoyMountain:
         return shadertoy_mountain_reference_height(world_x, world_z, config.seed);
+    case TerrainRefRecipe::ShadertoyAlpine:
+        return shadertoy_alpine_reference_height(world_x, world_z, config.seed);
+    case TerrainRefRecipe::ShadertoyDunes:
+        return shadertoy_dunes_reference_height(world_x, world_z, config.seed);
+    case TerrainRefRecipe::ShadertoyLakeBasin:
+        return shadertoy_lake_basin_reference_height(world_x, world_z, config.seed);
     }
     return terrain_engine_reference_height(world_x, world_z, config.seed);
 }
@@ -352,14 +378,15 @@ class TerrainRefApp {
                     seed_components.x,
                     seed_components.y,
                     terrain_config_.vertical_scale,
-                    terrain_config_.water_surface ? 1.0F : 0.0F,
+                    terrain_ref_source_id(terrain_config_.recipe),
                 },
             .water_params =
                 {
-                    terrain_ref_water_height_m(terrain_config_.recipe),
+                    terrain_config_.water_surface ? terrain_ref_water_height_m(terrain_config_.recipe)
+                                                  : -100000.0F,
                     scene_metrics_.min_height_m,
                     scene_metrics_.max_height_m,
-                    terrain_ref_shader_mode(terrain_config_),
+                    terrain_ref_material_mode_id(terrain_config_.material_mode),
                 },
             .camera_position_fog =
                 {

@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "terrain_engine_reference.glsl"
+#include "shadertoy_biome_reference.glsl"
 
 layout(push_constant) uniform TerrainRefPushConstants {
     mat4 view_projection;
@@ -50,8 +51,15 @@ vec3 terrain_ref_color_variation(vec3 base, vec2 world_xz, float scale, float am
 }
 
 vec3 terrain_ref_material_color(inout vec3 normal) {
-    bool shadertoy_mountain = mod(pc.water_params.w, 2.0) > 0.5;
-    bool height_material = pc.water_params.w >= 2.0;
+    bool shadertoy_mountain =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_MOUNTAIN) < 0.5;
+    bool shadertoy_alpine =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_ALPINE) < 0.5;
+    bool shadertoy_dunes =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_DUNES) < 0.5;
+    bool shadertoy_lake_basin =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_LAKE_BASIN) < 0.5;
+    bool height_material = pc.water_params.w > 0.5;
     float grass_coverage = 0.65;
     float transition_m = 20.0;
     float water_height_m = pc.water_params.x;
@@ -110,6 +118,59 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         float snow_mask = smoothstep(0.62, 0.86, normalized_height) *
             smoothstep(0.36, 0.70, cos_v);
         color = mix(color, snow, snow_mask * 0.90);
+        return color;
+    }
+
+    if (shadertoy_alpine) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        float slope = 1.0 - cos_v;
+        vec3 meadow = terrain_ref_color_variation(vec3(0.18, 0.28, 0.12),
+            frag_world_position.xz, 0.004, 0.26);
+        vec3 talus = terrain_ref_color_variation(vec3(0.40, 0.38, 0.34),
+            frag_world_position.xz, 0.009, 0.22);
+        vec3 cliff_rock = terrain_ref_color_variation(vec3(0.48, 0.48, 0.45),
+            frag_world_position.xz, 0.014, 0.20);
+        vec3 color = mix(talus, cliff_rock, smoothstep(0.34, 0.92, normalized_height));
+        float meadow_mask = (1.0 - smoothstep(0.34, 0.66, normalized_height)) *
+            smoothstep(0.52, 0.88, cos_v);
+        color = mix(color, meadow, meadow_mask * 0.78);
+        float snow_mask = smoothstep(0.58, 0.88, normalized_height) *
+            smoothstep(0.24, 0.70, cos_v);
+        color = mix(color, snow, snow_mask * 0.92);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.13, 0.25, smoothstep(0.18, 0.72, slope)));
+        return color;
+    }
+
+    if (shadertoy_dunes) {
+        vec3 low_sand = terrain_ref_color_variation(vec3(0.63, 0.52, 0.31),
+            frag_world_position.xz, 0.006, 0.16);
+        vec3 sun_sand = terrain_ref_color_variation(vec3(0.82, 0.69, 0.42),
+            frag_world_position.xz, 0.014, 0.12);
+        float slope = 1.0 - cos_v;
+        vec3 color = mix(low_sand, sun_sand, smoothstep(0.42, 0.86, cos_v));
+        color = mix(color, vec3(0.50, 0.41, 0.27), smoothstep(0.25, 0.72, slope) * 0.36);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz, detail * 0.10);
+        return color;
+    }
+
+    if (shadertoy_lake_basin) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        vec3 wet_soil = terrain_ref_color_variation(vec3(0.23, 0.26, 0.16),
+            frag_world_position.xz, 0.008, 0.24);
+        vec3 upland_grass = terrain_ref_color_variation(vec3(0.21, 0.33, 0.15),
+            frag_world_position.xz, 0.004, 0.26);
+        vec3 hill_rock = terrain_ref_color_variation(vec3(0.42, 0.39, 0.33),
+            frag_world_position.xz, 0.009, 0.20);
+        vec3 color = mix(upland_grass, hill_rock,
+            smoothstep(0.45, 0.86, normalized_height) * (1.0 - smoothstep(0.70, 0.92, cos_v)));
+        float shore = 1.0 - smoothstep(water_height_m + 5.0, water_height_m + 58.0,
+            frag_height_m);
+        color = mix(color, wet_soil, shore * 0.82);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.06, 0.15, 1.0 - cos_v));
         return color;
     }
 
