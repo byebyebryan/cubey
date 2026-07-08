@@ -1074,6 +1074,14 @@ void test_shared_shader_debug_and_view_helpers_compile() {
                                    "shader smoke target should include shared view helpers");
     cubey::tests::require_contains(test_cmake, "cubey_shared_shader_depends",
                                    "shader smoke target should consume shared shader depends");
+    cubey::tests::require_contains(shader_cmake, "function(cubey_shader_package_depends",
+                                   "shared shader packages should use one dependency combiner");
+    cubey::tests::require_contains(
+        shader_cmake, "list(REMOVE_DUPLICATES shader_dependencies)",
+        "shader compile helper should deduplicate final dependency edges");
+    cubey::tests::require_contains(
+        shader_cmake, "list(REMOVE_DUPLICATES shader_package_depends)",
+        "shader package helper should deduplicate composed package dependencies");
     cubey::tests::require_contains(shader_cmake, "shaders/cubey/debug.glsl",
                                    "shared shader package should track debug helper edits");
     cubey::tests::require_contains(shader_cmake, "shaders/cubey/view.glsl",
