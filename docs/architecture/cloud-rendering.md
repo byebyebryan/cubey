@@ -430,7 +430,12 @@ of depending on a shared standalone composite entry point.
 ## Current Milestone
 
 The standalone production pressure project has served its purpose and has been
-absorbed into atmosphere. The current milestone is Cloud V1 surface quality:
+absorbed into atmosphere. Cloud V1 surface quality is good enough to act as the
+current shared foundation checkpoint for atmosphere and ocean surface views.
+Further surface polish is useful, but it is no longer a blocker for resuming
+focused ocean, terrain, planet, or renderer feature work.
+
+The active Cloud V1 milestone is:
 
 1. Keep atmosphere final/no-cloud/debug captures visually comparable through
    `projects/atmosphere/capture_cloud_review.sh`.

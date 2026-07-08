@@ -225,8 +225,9 @@ outside that helper.
    the same shoreline/bathymetry contract.
 6. Continue `projects/planet` as the planet-frame, LOD, local sky, and
    celestial owner before trying to make ocean itself planet-scale.
-7. Continue the atmosphere-hosted production weather/cloud layer and integrate
-   its outputs only after surface/high/orbit captures are stable.
+7. Keep the atmosphere-hosted Cloud V1 surface layer integrated for
+   atmosphere/ocean backgrounds, and defer high/aerial/orbit cloud products
+   until a dedicated later-version track.
 
 This sequence keeps each project independently useful while aiming every slice
 at concrete ocean integration points.

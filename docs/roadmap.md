@@ -24,6 +24,58 @@ scoped engine ownership path, and
 [threading and async design](architecture/threading-and-async.md) for the
 async-ready runtime boundary.
 
+## Current Readiness Checkpoint
+
+Status: ready to resume focused feature work from `main`.
+
+The recent foundation push has landed enough shared runtime, renderer, shader,
+environment, and UI/config infrastructure that the next work should move back
+to product-facing features instead of another broad foundation pass.
+
+Current stable foundation pieces:
+
+- shared windowed/headless host flow, queued capture/video encoding,
+  GPU-owner submission, deferred destruction vocabulary, and project runtime
+  services;
+- shared config descriptors and ImGui option controls for nested project UI,
+  config templates, CLI overrides, and option help text;
+- shared procedural/noise helpers on CPU and GLSL for project-local terrain,
+  water, atmosphere, ocean, and cloud fields;
+- shared sky/celestial/atmosphere state used by atmosphere, ocean,
+  glTF/PBR, water, pyro, and planet-scale adapters;
+- surface-only Cloud V1 promoted into the shared atmosphere/cloud layer and
+  consumed by atmosphere and ocean, with aerial/orbit cloud work explicitly
+  deferred;
+- renderer foundation pieces for target views, render graph declaration,
+  material/pass metadata, forward PBR, generated/HDR IBL, surface LOD
+  planning, and primitive mesh/draw helpers;
+- shader source ownership cleaned up enough that ocean and atmosphere entry
+  shaders are split, shared shader packages expose include dependencies, and
+  tests audit those package dependencies.
+
+Recommended next feature streams:
+
+- `projects/ocean`: water material/far-field quality, foam/whitecap tuning,
+  reflection/glitter/cloud-sky interaction, and later shoreline/bathymetry
+  integration.
+- `projects/planet` and terrain worktrees: local/global terrain morphing,
+  streaming/residency contracts, and eventual ocean-as-local-water handoff.
+- `projects/atmosphere`: cloud look-dev and surface horizon polish only when it
+  directly improves current surface/ocean views; high/aerial/orbit cloud
+  products should stay deferred until a dedicated batch.
+
+Known non-blockers:
+
+- `CloudEnvironmentRuntime` should eventually wrap generated cloud-resource
+  lifetime and per-frame input packaging above `CloudLayerRuntime`, but the
+  current atmosphere/ocean consumers are enough for Cloud V1 feature use.
+- `cloud_march.comp`, `surface_cloud_march.comp`, `planet_surface.frag`, and a
+  few volume diagnostics shaders remain future split targets; the active shader
+  foundation is sufficient for current feature work.
+- Planet still has deferred streaming, project-owned config facade, and
+  planet/ocean composition work. Those should be feature tracks, not reasons to
+  block ocean or atmosphere iteration.
+
 ## Phase 0: Repo Foundation
 
 Status: complete for the first implementation slice.
