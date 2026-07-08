@@ -169,9 +169,10 @@ Current checkpoint:
 - Reusable `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` provide
   the first CPU job facade behind Cubey APIs without exposing a third-party
   executor.
-- Reusable `cubey::CaptureQueue`, `CaptureTicket`, and `QueuedVideoEncoder`
-  provide async-shaped PNG encoding and ordered MP4 frame encoding over
-  completed RGBA pixel buffers.
+- Reusable `cubey::CaptureQueue`, `CaptureTicket`, `CaptureBacklog`, and
+  `QueuedVideoEncoder` provide async-shaped PNG encoding, bounded multi-file
+  export draining, and ordered MP4 frame encoding over completed RGBA pixel
+  buffers.
 - Reusable `cubey::VideoEncoder` provides optional libav/FFmpeg-backed H.264
   MP4 output for queued headless capture sessions when the system development
   packages are available.
@@ -411,9 +412,10 @@ surface while keeping the runtime boundary concrete.
 - Wrote a simple deterministic PNG artifact.
 - Added CTest coverage for the no-display success path, including output-file
   existence and PNG signature checks.
-- Follow-up extraction added the shared no-GLFW `cubey::host::HeadlessPngHost`
-  once repeated examples and the first project revealed a concrete reusable
-  shape.
+- Follow-up extraction added the shared no-GLFW
+  `cubey::host::HeadlessCaptureHost` once repeated examples and the first
+  project revealed a concrete reusable shape. `HeadlessPngHost` remains as the
+  original compatibility name.
 
 Exit criteria:
 

@@ -164,7 +164,7 @@ Create this as `projects/fluid_25d`, not as an example. It should reuse the same
 runtime pieces as `smoke_2d`:
 
 - `cubey::host::WindowedHost` for visible runs.
-- `cubey::host::HeadlessPngHost` for deterministic artifact output.
+- `cubey::host::HeadlessCaptureHost` for deterministic artifact output.
 - `cubey::ProjectRuntimeAdapter` for frame timing, GPU submission tickets, and
   runtime services.
 

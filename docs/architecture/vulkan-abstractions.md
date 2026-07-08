@@ -379,8 +379,9 @@ Current state:
   runnable-owned command recording.
 - `cubey::jobs::JobSystem`, `InlineExecutor`, and `JobHandle` provide the first
   CPU job facade.
-- `CaptureQueue` and `CaptureTicket` provide job-backed PNG encoding for
-  completed RGBA pixel buffers.
+- `CaptureQueue`, `CaptureTicket`, and `CaptureBacklog` provide job-backed PNG
+  encoding for completed RGBA pixel buffers plus bounded multi-file export
+  draining.
 - `UploadQueue`, `UploadTicket`, and `QueuedUpload` provide the first CPU-owned
   upload request queue.
 - `GpuSubmissionTicketIssuer`, `GpuSubmissionTicket`, and
@@ -517,9 +518,9 @@ host layer.
 - Added the missing transition helper for the exact render-target readback path.
 - Copied the image into a readback buffer and wrote a deterministic PNG artifact.
 - Added CTest coverage for artifact creation in no-display terminal sessions.
-- Follow-up extraction added `cubey::host::HeadlessPngHost` and migrated
+- Follow-up extraction added `cubey::host::HeadlessCaptureHost` and migrated
   `headless_cube`, `fractal_2d --headless`, and `smoke_2d --headless` onto the
-  shared no-GLFW host.
+  shared no-GLFW host. `HeadlessPngHost` remains as the original source name.
 
 Keep this batch intentionally small. It should pressure render-target/readback
 vocabulary, not create a general host shell.

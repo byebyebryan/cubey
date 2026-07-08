@@ -49,12 +49,21 @@ cloud app. The current stable path is:
   the cloud product, optional temporal pass, metadata, and composition;
 - `cubey::CloudEnvironmentConfig`: owns the project-facing cloud settings,
   defaults, weather presets, and run-config mapping;
+- `cubey::host::draw_cloud_environment_controls`: owns the shared V1 tuning UI
+  for those settings;
 - `projects/atmosphere`: primary tuning and inspection surface for shared
   clouds;
 - `projects/ocean`: surface-view consumer that composites shared clouds over
   the atmosphere background;
 - `projects/planet`: deferred aerial/orbit pressure surface; not a Cloud V1
   consumer and not the source of surface-cloud defaults yet.
+
+The remaining ownership gap is a `CloudEnvironmentRuntime`-level wrapper above
+`CloudLayerRuntime`. Today each consumer still decides when to create generated
+cloud resources, when config changes require weather/noise refresh, and how to
+package frame inputs from atmosphere/celestial lighting. That is acceptable for
+Cloud V1 integration, but it should be the next foundation cleanup before
+adding more cloud consumers or reviving aerial/orbit work.
 
 Treat the accepted production mode as `surface-volume`: full-resolution, local
 distance regime, TerrainEngine-style density/noise, Bayer sampling,

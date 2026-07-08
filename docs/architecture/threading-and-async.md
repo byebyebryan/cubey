@@ -221,6 +221,8 @@ encoding.
 CPU-side artifact producers can use the same queue without a GPU readback step;
 the terrain scalar/debug exporter, for example, renders each debug view to an
 RGBA buffer and then queues PNG encoding before publishing the manifest.
+`CaptureBacklog` provides the shared bounded-ticket drain policy for multi-file
+exports that want a small encode backlog without open-coding deque management.
 `cubey::ProjectGpuServices` now provides the GPU-side counterpart for RGBA8
 image readback: enqueue a readback ticket, drain the GPU runtime at an explicit
 boundary, then take the completed pixel payload. Headless video capture uses a
@@ -468,3 +470,6 @@ Status: threaded default plus inline test mode complete.
 - Should GPU capture polling integrate directly with `CaptureQueue`, or remain
   a separate project-facing ticket API that hands completed pixels or frames to
   the capture queue?
+- Should the headless video capture-slot ring become a reusable GPU
+  capture/readback session below `HeadlessCaptureHost`, or stay host-local until
+  another caller needs multi-frame readback?
