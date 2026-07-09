@@ -473,8 +473,12 @@ float shadertoy_gorge_reference_height(float world_x, float world_z, std::uint64
         field.tributaries * (320.0F + field.plateau * 310.0F);
     const float wall_lift = field.wall * field.plateau * (170.0F + field.main_corridor * 70.0F);
     const float floor_fill = field.floor * (54.0F + (1.0F - field.plateau) * 40.0F);
-    return std::max(base_height - incision + wall_lift + floor_fill + terrace + rough_detail,
-                    0.0F);
+    const float raw_height =
+        base_height - incision + wall_lift + floor_fill + terrace + rough_detail;
+    const float dry_floor =
+        (32.0F + field.plateau_source * 54.0F + field.corridor_width * 35.0F) *
+        (0.35F + field.floor * 0.65F);
+    return std::max(raw_height, dry_floor);
 }
 
 float shadertoy_glacial_highland_reference_height(float world_x, float world_z,

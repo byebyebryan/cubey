@@ -344,7 +344,10 @@ float shadertoy_gorge_reference_height(vec2 world, vec2 seed) {
         field.tributaries * (320.0 + field.plateau * 310.0);
     float wall_lift = field.wall * field.plateau * (170.0 + field.main_corridor * 70.0);
     float floor_fill = field.floor * (54.0 + (1.0 - field.plateau) * 40.0);
-    return max(base_height - incision + wall_lift + floor_fill + terrace + rough_detail, 0.0);
+    float raw_height = base_height - incision + wall_lift + floor_fill + terrace + rough_detail;
+    float dry_floor = (32.0 + field.plateau_source * 54.0 + field.corridor_width * 35.0) *
+        (0.35 + field.floor * 0.65);
+    return max(raw_height, dry_floor);
 }
 
 float shadertoy_glacial_highland_reference_height(vec2 world, vec2 seed) {
