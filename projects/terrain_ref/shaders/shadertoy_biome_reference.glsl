@@ -3,6 +3,8 @@ const float TERRAIN_REF_RECIPE_SHADERTOY_MOUNTAIN = 1.0;
 const float TERRAIN_REF_RECIPE_SHADERTOY_ALPINE = 2.0;
 const float TERRAIN_REF_RECIPE_SHADERTOY_DUNES = 3.0;
 const float TERRAIN_REF_RECIPE_SHADERTOY_LAKE_BASIN = 4.0;
+const float TERRAIN_REF_RECIPE_SHADERTOY_BADLANDS = 5.0;
+const float TERRAIN_REF_RECIPE_SHADERTOY_COAST_ISLAND = 6.0;
 
 const float TERRAIN_REF_MATERIAL_RECIPE = 0.0;
 const float TERRAIN_REF_MATERIAL_HEIGHT = 1.0;
@@ -10,6 +12,8 @@ const float TERRAIN_REF_MATERIAL_HEIGHT = 1.0;
 const float SHADERTOY_ALPINE_WATER_HEIGHT_M = 260.0;
 const float SHADERTOY_DUNES_WATER_HEIGHT_M = -1000.0;
 const float SHADERTOY_LAKE_BASIN_WATER_HEIGHT_M = 165.0;
+const float SHADERTOY_BADLANDS_WATER_HEIGHT_M = -1000.0;
+const float SHADERTOY_COAST_ISLAND_WATER_HEIGHT_M = 100.0;
 
 float shadertoy_biome_fract_positive(float value) {
     return value - floor(value);
@@ -172,6 +176,14 @@ float shadertoy_lake_basin_reference_height(vec2 world, vec2 seed) {
         (shoreline_shelf * 88.0), -55.0);
 }
 
+float shadertoy_badlands_reference_height(vec2 world, vec2 seed) {
+    return shadertoy_lake_basin_reference_height(world, seed);
+}
+
+float shadertoy_coast_island_reference_height(vec2 world, vec2 seed) {
+    return shadertoy_lake_basin_reference_height(world, seed);
+}
+
 vec3 shadertoy_biome_reference_normal(vec2 world, vec2 seed, float vertical_scale,
     float recipe_id) {
     const float step_m = 1.0;
@@ -192,6 +204,18 @@ vec3 shadertoy_biome_reference_normal(vec2 world, vec2 seed, float vertical_scal
         x1 = shadertoy_dunes_reference_height(world + vec2(step_m, 0.0), seed);
         z0 = shadertoy_dunes_reference_height(world - vec2(0.0, step_m), seed);
         z1 = shadertoy_dunes_reference_height(world + vec2(0.0, step_m), seed);
+    } else if (abs(recipe_id - TERRAIN_REF_RECIPE_SHADERTOY_BADLANDS) < 0.5) {
+        center = shadertoy_badlands_reference_height(world, seed);
+        x0 = shadertoy_badlands_reference_height(world - vec2(step_m, 0.0), seed);
+        x1 = shadertoy_badlands_reference_height(world + vec2(step_m, 0.0), seed);
+        z0 = shadertoy_badlands_reference_height(world - vec2(0.0, step_m), seed);
+        z1 = shadertoy_badlands_reference_height(world + vec2(0.0, step_m), seed);
+    } else if (abs(recipe_id - TERRAIN_REF_RECIPE_SHADERTOY_COAST_ISLAND) < 0.5) {
+        center = shadertoy_coast_island_reference_height(world, seed);
+        x0 = shadertoy_coast_island_reference_height(world - vec2(step_m, 0.0), seed);
+        x1 = shadertoy_coast_island_reference_height(world + vec2(step_m, 0.0), seed);
+        z0 = shadertoy_coast_island_reference_height(world - vec2(0.0, step_m), seed);
+        z1 = shadertoy_coast_island_reference_height(world + vec2(0.0, step_m), seed);
     } else {
         center = shadertoy_lake_basin_reference_height(world, seed);
         x0 = shadertoy_lake_basin_reference_height(world - vec2(step_m, 0.0), seed);

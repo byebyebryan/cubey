@@ -40,6 +40,12 @@ float terrain_ref_height(vec2 world_xz, vec2 seed, bool surface_detail) {
     if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_LAKE_BASIN) < 0.5) {
         return shadertoy_lake_basin_reference_height(world_xz, seed);
     }
+    if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_BADLANDS) < 0.5) {
+        return shadertoy_badlands_reference_height(world_xz, seed);
+    }
+    if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_COAST_ISLAND) < 0.5) {
+        return shadertoy_coast_island_reference_height(world_xz, seed);
+    }
     return terrain_engine_reference_height(world_xz, seed);
 }
 

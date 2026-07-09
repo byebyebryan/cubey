@@ -99,6 +99,18 @@ void test_terrain_ref_config_from_run_config() {
     require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyLakeBasin,
             "terrain_ref should parse ShaderToy lake-basin recipe");
 
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyBadlands);
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyBadlands,
+            "terrain_ref should parse ShaderToy badlands recipe");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyCoastIsland);
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyCoastIsland,
+            "terrain_ref should parse ShaderToy coast-island recipe");
+
     run_config.terrain.recipe = "temperate-mountain-river";
     require_throws(
         [&run_config] {

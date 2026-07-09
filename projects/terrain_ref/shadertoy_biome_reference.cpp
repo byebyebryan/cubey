@@ -235,4 +235,12 @@ float shadertoy_lake_basin_reference_height(float world_x, float world_z, std::u
                     -55.0F);
 }
 
+float shadertoy_badlands_reference_height(float world_x, float world_z, std::uint64_t seed) {
+    return shadertoy_lake_basin_reference_height(world_x, world_z, seed);
+}
+
+float shadertoy_coast_island_reference_height(float world_x, float world_z, std::uint64_t seed) {
+    return shadertoy_lake_basin_reference_height(world_x, world_z, seed);
+}
+
 } // namespace cubey::projects::terrain_ref

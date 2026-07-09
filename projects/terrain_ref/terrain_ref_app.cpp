@@ -77,6 +77,10 @@ struct TerrainRefSceneMetrics {
         return 3.0F;
     case TerrainRefRecipe::ShadertoyLakeBasin:
         return 4.0F;
+    case TerrainRefRecipe::ShadertoyBadlands:
+        return 5.0F;
+    case TerrainRefRecipe::ShadertoyCoastIsland:
+        return 6.0F;
     }
     return 0.0F;
 }
@@ -93,6 +97,10 @@ struct TerrainRefSceneMetrics {
         return kShadertoyDunesReferenceWaterHeightM;
     case TerrainRefRecipe::ShadertoyLakeBasin:
         return kShadertoyLakeBasinReferenceWaterHeightM;
+    case TerrainRefRecipe::ShadertoyBadlands:
+        return kShadertoyBadlandsReferenceWaterHeightM;
+    case TerrainRefRecipe::ShadertoyCoastIsland:
+        return kShadertoyCoastIslandReferenceWaterHeightM;
     }
     return kTerrainEngineReferenceWaterHeightM;
 }
@@ -110,6 +118,10 @@ struct TerrainRefSceneMetrics {
         return shadertoy_dunes_reference_height(world_x, world_z, config.seed);
     case TerrainRefRecipe::ShadertoyLakeBasin:
         return shadertoy_lake_basin_reference_height(world_x, world_z, config.seed);
+    case TerrainRefRecipe::ShadertoyBadlands:
+        return shadertoy_badlands_reference_height(world_x, world_z, config.seed);
+    case TerrainRefRecipe::ShadertoyCoastIsland:
+        return shadertoy_coast_island_reference_height(world_x, world_z, config.seed);
     }
     return terrain_engine_reference_height(world_x, world_z, config.seed);
 }

@@ -19,6 +19,10 @@ std::string_view terrain_ref_recipe_name(TerrainRefRecipe recipe) {
         return kTerrainRefRecipeShadertoyDunes;
     case TerrainRefRecipe::ShadertoyLakeBasin:
         return kTerrainRefRecipeShadertoyLakeBasin;
+    case TerrainRefRecipe::ShadertoyBadlands:
+        return kTerrainRefRecipeShadertoyBadlands;
+    case TerrainRefRecipe::ShadertoyCoastIsland:
+        return kTerrainRefRecipeShadertoyCoastIsland;
     }
     return kTerrainRefRecipeTerrainEngine;
 }
@@ -39,9 +43,16 @@ TerrainRefRecipe terrain_ref_recipe_from_name(std::string_view name) {
     if (name == kTerrainRefRecipeShadertoyLakeBasin) {
         return TerrainRefRecipe::ShadertoyLakeBasin;
     }
+    if (name == kTerrainRefRecipeShadertoyBadlands) {
+        return TerrainRefRecipe::ShadertoyBadlands;
+    }
+    if (name == kTerrainRefRecipeShadertoyCoastIsland) {
+        return TerrainRefRecipe::ShadertoyCoastIsland;
+    }
     throw std::runtime_error("terrain_ref recipe must be terrain-engine-ref, "
                              "shadertoy-mountain, shadertoy-alpine, "
-                             "shadertoy-dunes, or shadertoy-lake-basin");
+                             "shadertoy-dunes, shadertoy-lake-basin, "
+                             "shadertoy-badlands, or shadertoy-coast-island");
 }
 
 TerrainRefMaterialMode terrain_ref_material_mode_from_name(std::string_view name) {

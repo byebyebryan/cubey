@@ -23,6 +23,8 @@ enum class TerrainRefRecipe : std::uint8_t {
     ShadertoyAlpine,
     ShadertoyDunes,
     ShadertoyLakeBasin,
+    ShadertoyBadlands,
+    ShadertoyCoastIsland,
 };
 
 enum class TerrainRefMaterialMode : std::uint8_t {
@@ -34,6 +36,9 @@ inline constexpr std::string_view kTerrainRefRecipeShadertoyMountain = "shaderto
 inline constexpr std::string_view kTerrainRefRecipeShadertoyAlpine = "shadertoy-alpine";
 inline constexpr std::string_view kTerrainRefRecipeShadertoyDunes = "shadertoy-dunes";
 inline constexpr std::string_view kTerrainRefRecipeShadertoyLakeBasin = "shadertoy-lake-basin";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyBadlands = "shadertoy-badlands";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyCoastIsland =
+    "shadertoy-coast-island";
 inline constexpr std::string_view kTerrainRefDefaultCameraPreset = "oblique";
 inline constexpr float kTerrainRefDefaultCellSizeM = 32.0F;
 inline constexpr std::uint32_t kTerrainRefDefaultGridSize = 513U;
