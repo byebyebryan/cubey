@@ -244,3 +244,25 @@ The first review should judge large-scale read first:
 - The visual target is an icy highland slice that differs from alpine through
   broad glacial floors, stronger exposed rock and talus contrast, ice/firn
   accumulation on coherent valley fields, and less uniform snow coverage.
+
+## Glacial Highland Refinement Review
+
+- The refined `shadertoy-glacial-highland` source is accepted as a better
+  reference slice: height now comes from one source field with macro uplift,
+  broad warped trunk valley, variable floor/wall masks, side-valley cuts,
+  cirque-like basins, rock ribs, ice fields, and talus. The material shader
+  samples the same source field instead of guessing glacial regions only from
+  normalized height and slope.
+- Review captures were regenerated in
+  `outputs/terrain_ref/shadertoy-biomes/shadertoy-glacial-highland/`, and the
+  all-biome material contact sheet was refreshed at
+  `outputs/terrain_ref/contact-sheets/shadertoy-biomes-material-contact-sheet.png`.
+- Visual read: the slice is more coherent and less like noisy white alpine
+  terrain. The broad glacial floor/wall structure is clearer from surface-low,
+  and exposed rock/talus bands are more tied to terrain features than before.
+- Remaining caveats: it is still a simple heightfield reference, the ice/rock
+  material contrast remains conservative, and the patch can still read smoother
+  than the stronger ShaderToy mountain references. The next glacial pass should
+  decide whether to push sharper headwalls, crevasse/detail fields, or a more
+  dramatic valley framing camera before promoting any of this into a product
+  terrain generator.
