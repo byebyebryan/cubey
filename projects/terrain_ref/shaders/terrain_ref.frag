@@ -215,27 +215,43 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         float slope = 1.0 - cos_v;
         vec3 wet_sand = terrain_ref_color_variation(vec3(0.45, 0.39, 0.27),
             frag_world_position.xz, 0.012, 0.18);
-        vec3 beach_sand = terrain_ref_color_variation(vec3(0.72, 0.63, 0.43),
+        vec3 beach_sand = terrain_ref_color_variation(vec3(0.68, 0.59, 0.39),
             frag_world_position.xz + vec2(37.0, -19.0), 0.010, 0.16);
-        vec3 coastal_grass = terrain_ref_color_variation(vec3(0.18, 0.32, 0.15),
+        vec3 coastal_grass = terrain_ref_color_variation(vec3(0.20, 0.34, 0.16),
             frag_world_position.xz, 0.004, 0.28);
+        vec3 upland_grass = terrain_ref_color_variation(vec3(0.15, 0.27, 0.13),
+            frag_world_position.xz + vec2(113.0, -41.0), 0.006, 0.24);
+        vec3 scrub = terrain_ref_color_variation(vec3(0.31, 0.35, 0.20),
+            frag_world_position.xz + vec2(-23.0, 101.0), 0.008, 0.20);
         vec3 coastal_rock = terrain_ref_color_variation(vec3(0.38, 0.36, 0.32),
             frag_world_position.xz + vec2(-91.0, 53.0), 0.011, 0.22);
-        vec3 color = mix(beach_sand, coastal_grass,
-            smoothstep(water_height_m + 56.0, water_height_m + 360.0, frag_height_m) *
-            smoothstep(0.54, 0.90, cos_v));
+        vec3 high_rock = terrain_ref_color_variation(vec3(0.30, 0.31, 0.27),
+            frag_world_position.xz + vec2(61.0, -139.0), 0.013, 0.18);
+        float inland = smoothstep(water_height_m + 120.0, water_height_m + 620.0,
+            frag_height_m);
+        float scrub_mask = smoothstep(0.36, 0.78,
+            terrain_ref_fbm(frag_world_position.xz * 0.0025, pc.terrain_params.xy));
+        vec3 color = mix(coastal_grass, upland_grass, inland);
+        color = mix(color, scrub, scrub_mask * smoothstep(water_height_m + 60.0,
+            water_height_m + 520.0, frag_height_m) * 0.42);
+        float beach = 1.0 - smoothstep(water_height_m + 34.0, water_height_m + 150.0,
+            frag_height_m);
+        color = mix(color, beach_sand, beach * smoothstep(0.50, 0.96, cos_v));
         float cliff = smoothstep(0.20, 0.66, slope) *
             smoothstep(water_height_m + 8.0, water_height_m + 520.0, frag_height_m);
-        color = mix(color, coastal_rock, cliff * 0.72);
+        color = mix(color, coastal_rock, cliff * 0.78);
+        float high_exposure = smoothstep(0.52, 0.92, normalized_height) *
+            smoothstep(0.16, 0.54, slope);
+        color = mix(color, high_rock, high_exposure * 0.46);
         float shore = 1.0 - smoothstep(water_height_m + 6.0, water_height_m + 76.0,
             frag_height_m);
         color = mix(color, wet_sand, shore * 0.62);
-        float high_tint = smoothstep(0.60, 0.95, normalized_height) * smoothstep(0.50, 0.92,
-            cos_v);
-        color = mix(color, terrain_ref_color_variation(vec3(0.23, 0.40, 0.18),
-            frag_world_position.xz + vec2(121.0, -77.0), 0.006, 0.20), high_tint * 0.35);
+        float sunlit_grass = smoothstep(0.64, 0.96, cos_v) *
+            smoothstep(water_height_m + 180.0, water_height_m + 720.0, frag_height_m);
+        color = mix(color, terrain_ref_color_variation(vec3(0.25, 0.41, 0.19),
+            frag_world_position.xz + vec2(121.0, -77.0), 0.006, 0.20), sunlit_grass * 0.24);
         normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
-            detail * mix(0.07, 0.20, cliff));
+            detail * mix(0.09, 0.24, max(cliff, high_exposure)));
         return color;
     }
 

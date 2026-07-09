@@ -207,33 +207,38 @@ float shadertoy_badlands_reference_height(vec2 world, vec2 seed) {
 
 float shadertoy_coast_island_reference_height(vec2 world, vec2 seed) {
     vec2 p = world * 0.00018;
-    float warp_x = (shadertoy_biome_fbm(p * 0.72, seed + vec2(163.0, -167.0), 4, 0.52) -
-        0.5) * 0.58;
-    float warp_y = (shadertoy_biome_fbm((p * 0.68) + vec2(6.0, -3.0),
-        seed + vec2(-173.0, 179.0), 4, 0.52) - 0.5) * 0.46;
-    vec2 q = shadertoy_biome_rotate(vec2((p.x + warp_x) * 0.78, (p.y + warp_y) * 1.02),
-        -0.22);
-    float distance_to_center = length(q);
-    float coast_noise = (shadertoy_biome_fbm(p * 0.92, seed + vec2(181.0, -191.0), 5,
-        0.52) - 0.5) * 0.46 +
-        (shadertoy_biome_fbm(p * 2.20, seed + vec2(-193.0, 197.0), 3, 0.52) - 0.5) * 0.12;
-    float island_field = 1.42 + coast_noise - distance_to_center;
-    float land = smoothstep(-0.16, 0.15, island_field);
-    float shelf = smoothstep(-0.50, 0.08, island_field);
-    float beach = smoothstep(-0.06, 0.12, island_field) *
-        (1.0 - smoothstep(0.18, 0.42, island_field));
-    float inland = smoothstep(0.16, 0.78, island_field);
-    float hills = shadertoy_biome_fbm(p * 0.88, seed + vec2(199.0, 211.0), 5, 0.52);
-    float ridges = shadertoy_biome_ridged_fbm(vec2(p.x * 1.34 + warp_x,
-        p.y * 1.34 - warp_y), seed + vec2(-223.0, 227.0), 5);
-    float coastal_cliff = smoothstep(0.58, 0.90, ridges) * smoothstep(-0.04, 0.20,
-        island_field) * (1.0 - smoothstep(0.34, 0.62, island_field));
-    float underwater = SHADERTOY_COAST_ISLAND_WATER_HEIGHT_M - 165.0 + shelf * 150.0 +
-        (hills - 0.5) * 34.0;
-    float land_height = SHADERTOY_COAST_ISLAND_WATER_HEIGHT_M + 16.0 + beach * 36.0 +
-        inland * (380.0 + hills * 760.0) + ridges * inland * 340.0 + coastal_cliff * 230.0;
+    float warp_x = (shadertoy_biome_fbm(p * 0.58, seed + vec2(163.0, -167.0), 4, 0.52) -
+        0.5) * 0.82;
+    float warp_y = (shadertoy_biome_fbm((p * 0.54) + vec2(6.0, -3.0),
+        seed + vec2(-173.0, 179.0), 4, 0.52) - 0.5) * 0.70;
+    vec2 q = shadertoy_biome_rotate(vec2(p.x + warp_x * 0.64, p.y + warp_y * 0.58), -0.34);
+    float broad_coast = (shadertoy_biome_fbm(q * 0.54, seed + vec2(181.0, -191.0), 5,
+        0.52) - 0.5) * 0.58;
+    float headland_noise = (shadertoy_biome_fbm((q * 1.32) + vec2(4.0, -7.0),
+        seed + vec2(-193.0, 197.0), 4, 0.52) - 0.5) * 0.24;
+    float bay_cut = smoothstep(0.58, 0.86, shadertoy_biome_fbm((q * 0.82) +
+        vec2(-5.0, 2.0), seed + vec2(229.0, -233.0), 4, 0.52)) *
+        smoothstep(-1.10, 0.12, q.y) * 0.26;
+    float coast_field = q.y + 0.18 + broad_coast + headland_noise - bay_cut;
+    float land = smoothstep(-0.12, 0.15, coast_field);
+    float shelf = smoothstep(-0.76, 0.08, coast_field);
+    float beach = smoothstep(-0.08, 0.08, coast_field) *
+        (1.0 - smoothstep(0.11, 0.30, coast_field));
+    float coastal_plain = smoothstep(0.02, 0.45, coast_field) *
+        (1.0 - smoothstep(0.70, 1.22, coast_field));
+    float inland = smoothstep(0.22, 1.26, coast_field);
+    float hills = shadertoy_biome_fbm(q * 0.72, seed + vec2(199.0, 211.0), 5, 0.52);
+    float ridges = shadertoy_biome_ridged_fbm(vec2(q.x * 1.26 + warp_x * 0.34,
+        q.y * 1.26 - warp_y * 0.28), seed + vec2(-223.0, 227.0), 5);
+    float coastal_cliff = smoothstep(0.56, 0.88, ridges) * smoothstep(0.02, 0.25,
+        coast_field) * (1.0 - smoothstep(0.45, 0.92, coast_field));
+    float underwater = SHADERTOY_COAST_ISLAND_WATER_HEIGHT_M - 210.0 + shelf * 194.0 +
+        (hills - 0.5) * 30.0;
+    float land_height = SHADERTOY_COAST_ISLAND_WATER_HEIGHT_M + 16.0 + beach * 30.0 +
+        coastal_plain * (52.0 + hills * 84.0) + inland * (230.0 + hills * 620.0) +
+        ridges * inland * 300.0 + coastal_cliff * 260.0;
     float height = mix(underwater, land_height, land);
-    return max(height, -120.0);
+    return max(height, -170.0);
 }
 
 vec3 shadertoy_biome_reference_normal(vec2 world, vec2 seed, float vertical_scale,

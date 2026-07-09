@@ -287,49 +287,57 @@ float shadertoy_coast_island_reference_height(float world_x, float world_z, std:
         .y = world_z * 0.00018F,
     };
     const float warp_x =
-        (fbm({.x = p.x * 0.72F, .y = p.y * 0.72F},
+        (fbm({.x = p.x * 0.58F, .y = p.y * 0.58F},
              {.x = seed_value.x + 163.0F, .y = seed_value.y - 167.0F}, 4) -
          0.5F) *
-        0.58F;
+        0.82F;
     const float warp_y =
-        (fbm({.x = p.x * 0.68F + 6.0F, .y = p.y * 0.68F - 3.0F},
+        (fbm({.x = p.x * 0.54F + 6.0F, .y = p.y * 0.54F - 3.0F},
              {.x = seed_value.x - 173.0F, .y = seed_value.y + 179.0F}, 4) -
          0.5F) *
-        0.46F;
-    const Vec2 q = rotate({.x = (p.x + warp_x) * 0.78F, .y = (p.y + warp_y) * 1.02F}, -0.22F);
-    const float distance = std::sqrt((q.x * q.x) + (q.y * q.y));
-    const float coast_noise =
-        (fbm({.x = p.x * 0.92F, .y = p.y * 0.92F},
+        0.70F;
+    const Vec2 q = rotate({.x = p.x + warp_x * 0.64F, .y = p.y + warp_y * 0.58F}, -0.34F);
+    const float broad_coast =
+        (fbm({.x = q.x * 0.54F, .y = q.y * 0.54F},
              {.x = seed_value.x + 181.0F, .y = seed_value.y - 191.0F}, 5) -
          0.5F) *
-            0.46F +
-        (fbm({.x = p.x * 2.20F, .y = p.y * 2.20F},
-             {.x = seed_value.x - 193.0F, .y = seed_value.y + 197.0F}, 3) -
+        0.58F;
+    const float headland_noise =
+        (fbm({.x = q.x * 1.32F + 4.0F, .y = q.y * 1.32F - 7.0F},
+             {.x = seed_value.x - 193.0F, .y = seed_value.y + 197.0F}, 4) -
          0.5F) *
-            0.12F;
-    const float island_field = 1.42F + coast_noise - distance;
-    const float land = smoothstep(-0.16F, 0.15F, island_field);
-    const float shelf = smoothstep(-0.50F, 0.08F, island_field);
-    const float beach = smoothstep(-0.06F, 0.12F, island_field) *
-                        (1.0F - smoothstep(0.18F, 0.42F, island_field));
-    const float inland = smoothstep(0.16F, 0.78F, island_field);
+        0.24F;
+    const float bay_cut =
+        smoothstep(0.58F, 0.86F,
+                   fbm({.x = q.x * 0.82F - 5.0F, .y = q.y * 0.82F + 2.0F},
+                       {.x = seed_value.x + 229.0F, .y = seed_value.y - 233.0F}, 4)) *
+        smoothstep(-1.10F, 0.12F, q.y) * 0.26F;
+    const float coast_field = q.y + 0.18F + broad_coast + headland_noise - bay_cut;
+    const float land = smoothstep(-0.12F, 0.15F, coast_field);
+    const float shelf = smoothstep(-0.76F, 0.08F, coast_field);
+    const float beach = smoothstep(-0.08F, 0.08F, coast_field) *
+                        (1.0F - smoothstep(0.11F, 0.30F, coast_field));
+    const float coastal_plain = smoothstep(0.02F, 0.45F, coast_field) *
+                                (1.0F - smoothstep(0.70F, 1.22F, coast_field));
+    const float inland = smoothstep(0.22F, 1.26F, coast_field);
     const float hills =
-        fbm({.x = p.x * 0.88F, .y = p.y * 0.88F},
+        fbm({.x = q.x * 0.72F, .y = q.y * 0.72F},
             {.x = seed_value.x + 199.0F, .y = seed_value.y + 211.0F}, 5);
     const float ridges =
-        ridged_fbm({.x = p.x * 1.34F + warp_x, .y = p.y * 1.34F - warp_y},
+        ridged_fbm({.x = q.x * 1.26F + warp_x * 0.34F, .y = q.y * 1.26F - warp_y * 0.28F},
                    {.x = seed_value.x - 223.0F, .y = seed_value.y + 227.0F}, 5);
     const float coastal_cliff =
-        smoothstep(0.58F, 0.90F, ridges) * smoothstep(-0.04F, 0.20F, island_field) *
-        (1.0F - smoothstep(0.34F, 0.62F, island_field));
+        smoothstep(0.56F, 0.88F, ridges) * smoothstep(0.02F, 0.25F, coast_field) *
+        (1.0F - smoothstep(0.45F, 0.92F, coast_field));
     const float underwater =
-        kShadertoyCoastIslandReferenceWaterHeightM - 165.0F + shelf * 150.0F +
-        (hills - 0.5F) * 34.0F;
+        kShadertoyCoastIslandReferenceWaterHeightM - 210.0F + shelf * 194.0F +
+        (hills - 0.5F) * 30.0F;
     const float land_height = kShadertoyCoastIslandReferenceWaterHeightM + 16.0F +
-                              beach * 36.0F + inland * (380.0F + hills * 760.0F) +
-                              ridges * inland * 340.0F + coastal_cliff * 230.0F;
+                              beach * 30.0F + coastal_plain * (52.0F + hills * 84.0F) +
+                              inland * (230.0F + hills * 620.0F) +
+                              ridges * inland * 300.0F + coastal_cliff * 260.0F;
     const float height = mix(underwater, land_height, land);
-    return std::max(height, -120.0F);
+    return std::max(height, -170.0F);
 }
 
 } // namespace cubey::projects::terrain_ref
