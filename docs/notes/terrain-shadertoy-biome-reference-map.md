@@ -198,3 +198,17 @@ The first review should judge large-scale read first:
 - Remaining caveats: tributaries are still subtle from the default cameras,
   wall/floor material contrast may need art tuning, and this remains a
   reference recipe rather than a production canyon or river generator.
+
+## Crater Field Refinement Target
+
+- Focus the next correction pass on `shadertoy-crater-field`; the first-pass
+  jittered-cell source reads too regular because it gives every grid cell one
+  similarly sized crater opportunity.
+- Replace the single-grid crater source with sparse multi-scale populations:
+  occasional large craters, medium craters, and smaller impacts, each with
+  dropout and low-frequency density variation so empty regions remain.
+- Vary crater age and response so rims, floors, ejecta, and overlap do not look
+  uniform. Older craters should soften; fresher craters can keep stronger rims
+  and darker floors.
+- Keep this as a clean-room crater stress recipe, not a planet renderer or
+  physically correct impact simulator.
