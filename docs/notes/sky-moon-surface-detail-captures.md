@@ -23,14 +23,18 @@ mkdir -p outputs/sky-moon-sphere-debug-001
 ./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --debug-view moon-surface --atmosphere-preset moonlit-night --pause-time --no-reference-geometry --output outputs/sky-moon-sphere-debug-001/atmosphere-moon-surface-sphere.png
 ```
 
-## Current Moon-View Checks
+## Current Moon Review Packs
 
 ```sh
-mkdir -p outputs/sky-moon-surface-detail-001
-./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --debug-view moon --atmosphere-preset moonlit-night --moon-size-scale 8 --moon-intensity 0.2 --pause-time --no-reference-geometry --output outputs/sky-moon-surface-detail-001/atmosphere-moonlit-v15-debug-moon-full.png
-./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --atmosphere-preset moonlit-night --pause-time --no-reference-geometry --output outputs/sky-moon-surface-detail-001/atmosphere-moonlit-v15-normal.png
-./build/dev/projects/atmosphere/atmosphere --headless --frames 2 --width 1280 --height 720 --atmosphere-preset moonlit-night --time-hours 12 --sun-azimuth-offset -180 --moon-size-scale 8 --moon-intensity 4 --pause-time --no-reference-geometry --output outputs/sky-moon-surface-detail-001/atmosphere-moonlit-v15-readable.png
+projects/atmosphere/capture_moon_review.sh outputs/atmosphere-moon-review-latest
+projects/planet/capture_moon_review.sh outputs/planet-moon-review-latest
 ```
+
+These packs supersede the older one-off v15 commands for routine review. The
+atmosphere pack is the material/detail baseline because it includes `moon` and
+`moon-surface` debug views across several phase offsets. The planet pack is a
+final-scene integration check for daytime washout, twilight, night, orbit, and
+starfield contexts.
 
 ## Previous Routing Captures
 
