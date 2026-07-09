@@ -64,7 +64,7 @@ Implemented on the `sky-rendering` worktree in June 2026:
 - `LunarSurfaceMap` is a deterministic `1024x512` equirectangular RGBA8
   procedural artifact generated from shared `cubey::procedural` seed, noise,
   hash, and metadata utilities. The current artifact formula is
-  `lunar-surface-map-v15`.
+  `lunar-surface-map-v16`.
 - `CelestialBodyFrame` samples the surface in a stable moon-local body frame,
   so texture coordinates no longer face the camera.
 - `AtmosphereBackgroundAtlasResources` now owns the visible lunar surface map
@@ -95,5 +95,8 @@ low-frequency body-space multipliers inspired by simple moon shader examples,
 implemented with the existing Cubey procedural noise utilities rather than
 copied Shadertoy noise code. Final acceptance should prioritize realistic
 moon-size captures; the close-up sphere view is for seam, mip, and stability
-checks. Crater scale and final-scene lighting balance remain material-tuning
-follow-ups.
+checks. The v16 tuning adds more medium/small crater texture, softens random
+crater relief, slightly warms mare albedo, and reduces packed normal strength so
+terminator detail reads without as much sparkle. Final-scene lighting balance is
+now handled in the shared geometry moon material, with the moon capture scripts
+kept as the review gate for future tuning.
