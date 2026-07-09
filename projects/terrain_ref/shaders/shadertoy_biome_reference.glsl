@@ -181,13 +181,20 @@ void shadertoy_accumulate_crater_population(inout ShadertoyCraterAccumulation ac
     float depth_scale,
     float rim_scale,
     float ejecta_scale,
+    float domain_angle,
+    float warp_strength,
     vec2 seed_offset) {
-    vec2 crater_p = p * scale;
+    vec2 layer_seed = seed + seed_offset;
+    float warp_x = (shadertoy_biome_fbm(vec2(p.x * 0.43 + 7.0, p.y * 0.43 - 3.0),
+        layer_seed + vec2(5.0, -9.0), 4, 0.52) - 0.5) * warp_strength;
+    float warp_y = (shadertoy_biome_fbm(vec2(p.x * 0.39 - 4.0, p.y * 0.39 + 11.0),
+        layer_seed + vec2(-13.0, 15.0), 4, 0.52) - 0.5) * warp_strength;
+    vec2 crater_domain = shadertoy_biome_rotate(p + vec2(warp_x, warp_y), domain_angle);
+    vec2 crater_p = crater_domain * scale;
     vec2 base_cell = floor(crater_p);
     for (int dz = -1; dz <= 1; ++dz) {
         for (int dx = -1; dx <= 1; ++dx) {
             vec2 cell = base_cell + vec2(float(dx), float(dz));
-            vec2 layer_seed = seed + seed_offset;
             float local_density = shadertoy_biome_fbm(cell * 0.17,
                 layer_seed + vec2(11.0, -17.0), 3, 0.52);
             float cell_density = clamp(density * mix(0.28, 1.58, local_density), 0.0, 0.92);
@@ -446,11 +453,17 @@ float shadertoy_crater_field_reference_height(vec2 world, vec2 seed) {
     craters.ejecta = 0.0;
     craters.floor_darkening = 0.0;
     shadertoy_accumulate_crater_population(craters, p, seed, 0.58,
-        0.23 + density_mask * 0.18, 0.22, 0.38, 1.12, 0.86, 0.24, vec2(463.0, -467.0));
+        0.23 + density_mask * 0.18, 0.22, 0.38, 1.12, 0.86, 0.24, 0.37, 0.58,
+        vec2(463.0, -467.0));
+    shadertoy_accumulate_crater_population(craters, p, seed, 0.91,
+        0.07 + density_mask * 0.10, 0.30, 0.46, 0.92, 0.48, 0.16, -1.08, 0.72,
+        vec2(541.0, -547.0));
     shadertoy_accumulate_crater_population(craters, p, seed, 1.22,
-        0.32 + density_mask * 0.22, 0.16, 0.32, 0.78, 0.58, 0.18, vec2(-479.0, 487.0));
+        0.32 + density_mask * 0.22, 0.16, 0.32, 0.78, 0.58, 0.18, -0.71, 0.42,
+        vec2(-479.0, 487.0));
     shadertoy_accumulate_crater_population(craters, p, seed, 2.65,
-        0.18 + density_mask * 0.24, 0.09, 0.16, 0.42, 0.30, 0.10, vec2(491.0, -499.0));
+        0.18 + density_mask * 0.24, 0.09, 0.16, 0.42, 0.30, 0.10, 1.19, 0.26,
+        vec2(491.0, -499.0));
     float rough = (shadertoy_biome_ridged_fbm(p * 4.1, seed + vec2(-503.0, 509.0), 4) -
         0.45) * 74.0;
     return max(240.0 + broad * 270.0 + craters.rim * 230.0 + craters.ejecta * 105.0 -

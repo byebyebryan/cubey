@@ -201,14 +201,26 @@ void accumulate_crater_population(CraterAccumulation& accumulation,
                                   float depth_scale,
                                   float rim_scale,
                                   float ejecta_scale,
+                                  float domain_angle,
+                                  float warp_strength,
                                   Vec2 seed_offset) {
-    const Vec2 crater_p{.x = p.x * scale, .y = p.y * scale};
+    const Vec2 layer_seed{.x = seed_value.x + seed_offset.x, .y = seed_value.y + seed_offset.y};
+    const float warp_x =
+        (fbm({.x = (p.x * 0.43F) + 7.0F, .y = (p.y * 0.43F) - 3.0F},
+             {.x = layer_seed.x + 5.0F, .y = layer_seed.y - 9.0F}, 4) -
+         0.5F) *
+        warp_strength;
+    const float warp_y =
+        (fbm({.x = (p.x * 0.39F) - 4.0F, .y = (p.y * 0.39F) + 11.0F},
+             {.x = layer_seed.x - 13.0F, .y = layer_seed.y + 15.0F}, 4) -
+         0.5F) *
+        warp_strength;
+    const Vec2 crater_domain = rotate({.x = p.x + warp_x, .y = p.y + warp_y}, domain_angle);
+    const Vec2 crater_p{.x = crater_domain.x * scale, .y = crater_domain.y * scale};
     const Vec2 base_cell{.x = std::floor(crater_p.x), .y = std::floor(crater_p.y)};
     for (int dz = -1; dz <= 1; ++dz) {
         for (int dx = -1; dx <= 1; ++dx) {
             const Vec2 cell{.x = base_cell.x + float(dx), .y = base_cell.y + float(dz)};
-            const Vec2 layer_seed{.x = seed_value.x + seed_offset.x,
-                                  .y = seed_value.y + seed_offset.y};
             const float local_density =
                 fbm({.x = cell.x * 0.17F, .y = cell.y * 0.17F},
                     {.x = layer_seed.x + 11.0F, .y = layer_seed.y - 17.0F}, 3);
@@ -622,12 +634,19 @@ float shadertoy_crater_field_reference_height(float world_x, float world_z, std:
     CraterAccumulation craters{};
     accumulate_crater_population(craters, p, seed_value, 0.58F, 0.23F + density_mask * 0.18F,
                                  0.22F, 0.38F, 1.12F, 0.86F, 0.24F,
+                                 0.37F, 0.58F,
                                  {.x = 463.0F, .y = -467.0F});
+    accumulate_crater_population(craters, p, seed_value, 0.91F, 0.07F + density_mask * 0.10F,
+                                 0.30F, 0.46F, 0.92F, 0.48F, 0.16F,
+                                 -1.08F, 0.72F,
+                                 {.x = 541.0F, .y = -547.0F});
     accumulate_crater_population(craters, p, seed_value, 1.22F, 0.32F + density_mask * 0.22F,
                                  0.16F, 0.32F, 0.78F, 0.58F, 0.18F,
+                                 -0.71F, 0.42F,
                                  {.x = -479.0F, .y = 487.0F});
     accumulate_crater_population(craters, p, seed_value, 2.65F, 0.18F + density_mask * 0.24F,
                                  0.09F, 0.16F, 0.42F, 0.30F, 0.10F,
+                                 1.19F, 0.26F,
                                  {.x = 491.0F, .y = -499.0F});
     const float rough =
         (ridged_fbm({.x = p.x * 4.1F, .y = p.y * 4.1F},
