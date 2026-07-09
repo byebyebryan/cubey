@@ -149,25 +149,27 @@ float shadertoy_dunes_reference_height(vec2 world, vec2 seed) {
 
 float shadertoy_lake_basin_reference_height(vec2 world, vec2 seed) {
     vec2 p = (world * 0.00020) + (seed * vec2(0.093, 0.107));
-    float macro = shadertoy_biome_fbm(p * 0.54, seed + vec2(41.0, -43.0), 5, 0.52);
-    float hills = pow(max(macro, 0.0), 1.45) * 760.0;
+    float macro = shadertoy_biome_fbm(p * 0.48, seed + vec2(41.0, -43.0), 5, 0.52);
+    float hills = pow(max(macro, 0.0), 1.30) * 980.0;
     float warp_x = (shadertoy_biome_fbm(p * 0.92, seed + vec2(-47.0, 53.0), 4, 0.52) -
-        0.5) * 1.25;
+        0.5) * 1.35;
     float warp_y = (shadertoy_biome_fbm((p * 0.88) + vec2(9.0, -4.0),
-        seed + vec2(59.0, -61.0), 4, 0.52) - 0.5) * 0.92;
+        seed + vec2(59.0, -61.0), 4, 0.52) - 0.5) * 1.05;
     vec2 q = shadertoy_biome_rotate(vec2((p.x + warp_x) * 0.62, (p.y + warp_y) * 1.18),
         -0.34);
     float basin_distance = length(q);
-    float basin = smoothstep(1.32, 0.22, basin_distance);
-    float lowland = smoothstep(0.66, 0.20,
-        shadertoy_biome_fbm(p * 0.76, seed + vec2(67.0, 71.0), 4, 0.52));
-    float shoreline_shelf = smoothstep(0.32, 0.72, basin) *
-        (1.0 - smoothstep(0.72, 1.0, basin));
-    float ridge_detail = (shadertoy_biome_ridged_fbm(p * 2.1, seed + vec2(-73.0, 79.0), 4) -
-        0.40) * (1.0 - basin * 0.75);
-    float basin_cut = (basin * 520.0) + (lowland * basin * 180.0);
-    return max(75.0 + hills + (ridge_detail * 120.0) - basin_cut +
-        (shoreline_shelf * 44.0), -25.0);
+    float basin = smoothstep(1.46, 0.20, basin_distance);
+    float lowland = smoothstep(0.70, 0.18,
+        shadertoy_biome_fbm(p * 0.70, seed + vec2(67.0, 71.0), 4, 0.52));
+    float basin_rim = smoothstep(1.58, 1.02, basin_distance) *
+        smoothstep(0.60, 1.02, basin_distance);
+    float shoreline_shelf = smoothstep(0.50, 0.82, basin) *
+        (1.0 - smoothstep(0.82, 1.0, basin));
+    float ridge_detail = (shadertoy_biome_ridged_fbm(p * 1.85, seed + vec2(-73.0, 79.0), 4) -
+        0.42) * (1.0 - basin * 0.68);
+    float basin_cut = (basin * 760.0) + (lowland * basin * 260.0);
+    return max(95.0 + hills + (basin_rim * 320.0) + (ridge_detail * 165.0) - basin_cut +
+        (shoreline_shelf * 88.0), -55.0);
 }
 
 vec3 shadertoy_biome_reference_normal(vec2 world, vec2 seed, float vertical_scale,

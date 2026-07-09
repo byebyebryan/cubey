@@ -167,9 +167,12 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
             frag_world_position.xz, 0.009, 0.20);
         vec3 color = mix(upland_grass, hill_rock,
             smoothstep(0.45, 0.86, normalized_height) * (1.0 - smoothstep(0.70, 0.92, cos_v)));
-        float shore = 1.0 - smoothstep(water_height_m + 5.0, water_height_m + 58.0,
+        float shore = 1.0 - smoothstep(water_height_m + 8.0, water_height_m + 92.0,
             frag_height_m);
-        color = mix(color, wet_soil, shore * 0.82);
+        vec3 dry_shelf = terrain_ref_color_variation(vec3(0.36, 0.35, 0.23),
+            frag_world_position.xz + vec2(-61.0, 71.0), 0.010, 0.18);
+        color = mix(color, dry_shelf, shore * 0.34);
+        color = mix(color, wet_soil, shore * 0.78);
         normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
             detail * mix(0.06, 0.15, 1.0 - cos_v));
         return color;

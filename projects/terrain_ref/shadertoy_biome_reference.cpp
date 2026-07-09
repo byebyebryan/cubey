@@ -200,37 +200,39 @@ float shadertoy_lake_basin_reference_height(float world_x, float world_z, std::u
         .y = (world_z * 0.00020F) + (seed_value.y * 0.107F),
     };
     const float macro =
-        fbm({.x = p.x * 0.54F, .y = p.y * 0.54F},
+        fbm({.x = p.x * 0.48F, .y = p.y * 0.48F},
             {.x = seed_value.x + 41.0F, .y = seed_value.y - 43.0F}, 5);
-    const float hills = std::pow(std::max(macro, 0.0F), 1.45F) * 760.0F;
+    const float hills = std::pow(std::max(macro, 0.0F), 1.30F) * 980.0F;
     const float warp_x =
         (fbm({.x = p.x * 0.92F, .y = p.y * 0.92F},
              {.x = seed_value.x - 47.0F, .y = seed_value.y + 53.0F}, 4) -
          0.5F) *
-        1.25F;
+        1.35F;
     const float warp_y =
         (fbm({.x = p.x * 0.88F + 9.0F, .y = p.y * 0.88F - 4.0F},
              {.x = seed_value.x + 59.0F, .y = seed_value.y - 61.0F}, 4) -
          0.5F) *
-        0.92F;
+        1.05F;
     const Vec2 q = rotate({.x = (p.x + warp_x) * 0.62F, .y = (p.y + warp_y) * 1.18F}, -0.34F);
     const float basin_distance = std::sqrt((q.x * q.x) + (q.y * q.y));
-    const float basin = smoothstep(1.32F, 0.22F, basin_distance);
+    const float basin = smoothstep(1.46F, 0.20F, basin_distance);
     const float lowland =
-        smoothstep(0.66F, 0.20F,
-                   fbm({.x = p.x * 0.76F, .y = p.y * 0.76F},
+        smoothstep(0.70F, 0.18F,
+                   fbm({.x = p.x * 0.70F, .y = p.y * 0.70F},
                        {.x = seed_value.x + 67.0F, .y = seed_value.y + 71.0F}, 4));
+    const float basin_rim =
+        smoothstep(1.58F, 1.02F, basin_distance) * smoothstep(0.60F, 1.02F, basin_distance);
     const float shoreline_shelf =
-        smoothstep(0.32F, 0.72F, basin) * (1.0F - smoothstep(0.72F, 1.0F, basin));
+        smoothstep(0.50F, 0.82F, basin) * (1.0F - smoothstep(0.82F, 1.0F, basin));
     const float ridge_detail =
-        (ridged_fbm({.x = p.x * 2.1F, .y = p.y * 2.1F},
+        (ridged_fbm({.x = p.x * 1.85F, .y = p.y * 1.85F},
                     {.x = seed_value.x - 73.0F, .y = seed_value.y + 79.0F}, 4) -
-         0.40F) *
-        (1.0F - basin * 0.75F);
-    const float basin_cut = (basin * 520.0F) + (lowland * basin * 180.0F);
-    return std::max(75.0F + hills + (ridge_detail * 120.0F) - basin_cut +
-                        (shoreline_shelf * 44.0F),
-                    -25.0F);
+         0.42F) *
+        (1.0F - basin * 0.68F);
+    const float basin_cut = (basin * 760.0F) + (lowland * basin * 260.0F);
+    return std::max(95.0F + hills + (basin_rim * 320.0F) + (ridge_detail * 165.0F) -
+                        basin_cut + (shoreline_shelf * 88.0F),
+                    -55.0F);
 }
 
 } // namespace cubey::projects::terrain_ref
