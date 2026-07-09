@@ -211,27 +211,27 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
             frag_world_position.xz, 0.010, 0.10);
         vec3 firn = terrain_ref_color_variation(vec3(0.76, 0.79, 0.77),
             frag_world_position.xz + vec2(41.0, -67.0), 0.012, 0.10);
-        vec3 exposed_rock = terrain_ref_color_variation(vec3(0.31, 0.32, 0.31),
+        vec3 exposed_rock = terrain_ref_color_variation(vec3(0.26, 0.27, 0.27),
             frag_world_position.xz + vec2(-97.0, 53.0), 0.011, 0.22);
-        vec3 talus = terrain_ref_color_variation(vec3(0.46, 0.44, 0.40),
+        vec3 talus = terrain_ref_color_variation(vec3(0.38, 0.36, 0.33),
             frag_world_position.xz, 0.018, 0.18);
-        vec3 color = mix(talus, firn, smoothstep(0.16, 0.84, glacial.uplift));
+        vec3 color = mix(talus, firn, smoothstep(0.20, 0.92, glacial.uplift));
         float ice_mask = clamp(glacial.floor_mask * 0.78 + glacial.ice * 0.44 +
             glacial.side_valley * 0.18, 0.0, 1.0);
         color = mix(color, blue_ice, ice_mask * 0.64);
-        float rock_rib = clamp(glacial.rock_rib * 0.95 + glacial.wall * 0.55 +
-            glacial.wall * slope * 0.50 + glacial.cirque * slope * 0.18, 0.0, 1.0);
-        color = mix(color, exposed_rock, rock_rib * 0.82);
+        float rock_rib = clamp(glacial.rock_rib * 1.15 + glacial.wall * 0.75 +
+            glacial.wall * slope * 0.58 + glacial.cirque * slope * 0.28, 0.0, 1.0);
+        color = mix(color, exposed_rock, rock_rib * 0.92);
         float talus_mask = clamp(glacial.talus *
-            (1.0 - smoothstep(0.76, 0.98, glacial.uplift)) * 0.72 +
-            glacial.side_valley * smoothstep(0.18, 0.65, slope) * 0.35, 0.0, 1.0);
-        color = mix(color, talus, talus_mask * 0.70);
+            (1.0 - smoothstep(0.76, 0.98, glacial.uplift)) * 0.82 +
+            glacial.side_valley * smoothstep(0.18, 0.65, slope) * 0.45, 0.0, 1.0);
+        color = mix(color, talus, talus_mask * 0.78);
         float snow_cap = smoothstep(0.58, 0.94, glacial.uplift) *
-            smoothstep(0.34, 0.84, cos_v) * (1.0 - rock_rib * 0.48) *
+            smoothstep(0.34, 0.84, cos_v) * (1.0 - rock_rib * 0.65) *
             (1.0 - talus_mask * 0.30);
-        color = mix(color, snow, snow_cap * 0.74);
+        color = mix(color, snow, snow_cap * 0.64);
         color = mix(color, firn, smoothstep(0.78, 0.98, normalized_height) *
-            smoothstep(0.52, 0.92, cos_v) * 0.20);
+            smoothstep(0.52, 0.92, cos_v) * 0.12);
         normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
             detail * mix(0.09, 0.26, max(max(rock_rib, talus_mask), glacial.side_valley)));
         return color;
