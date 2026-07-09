@@ -2,6 +2,8 @@
 
 #include <cubey/procedural/artifact_metadata.h>
 #include <cubey/procedural/hash.h>
+#include <cubey/procedural/noise.h>
+#include <cubey/procedural/seed.h>
 
 #include <algorithm>
 #include <array>
@@ -11,6 +13,7 @@
 #include <limits>
 #include <numbers>
 #include <stdexcept>
+#include <string_view>
 #include <vector>
 
 namespace cubey::render {
@@ -272,8 +275,8 @@ struct ProceduralMilkyWayLayers {
     return smoothstep(0.76F, 0.985F, coarse) * std::pow(fine, 5.0F);
 }
 
-[[nodiscard]] ProceduralMilkyWayLayers procedural_milky_way_layers(Vec3 direction,
-                                                                   std::uint32_t seed) {
+[[nodiscard]] ProceduralMilkyWayLayers procedural_milky_way_layers_v1(Vec3 direction,
+                                                                      std::uint32_t seed) {
     GalacticSample sample = galactic_sample(direction);
     const Vec3 domain{
         sample.local_direction.x * 3.0F + static_cast<float>(seed % 37U) * 0.17F,
@@ -428,6 +431,273 @@ struct ProceduralMilkyWayLayers {
     return layers;
 }
 
+[[nodiscard]] std::uint32_t derived_seed32(std::uint32_t seed, std::string_view domain,
+                                           std::uint64_t salt = 0U) {
+    return static_cast<std::uint32_t>(
+        cubey::procedural::derive_seed(static_cast<std::uint64_t>(seed), domain, salt));
+}
+
+[[nodiscard]] float shared_fbm_signed(Vec3 position, std::uint32_t seed, std::uint32_t octaves,
+                                      float lacunarity = 2.03F, float gain = 0.52F) {
+    return cubey::procedural::fbm_3d(
+        position.x, position.y, position.z, seed,
+        cubey::procedural::Fbm3DConfig{
+            .octaves = octaves,
+            .lacunarity = lacunarity,
+            .gain = gain,
+            .initial_amplitude = 0.5F,
+            .seed_stride = 1013U,
+        });
+}
+
+[[nodiscard]] float shared_fbm01(Vec3 position, std::uint32_t seed, std::uint32_t octaves,
+                                 float lacunarity = 2.03F, float gain = 0.52F) {
+    return clamp01(shared_fbm_signed(position, seed, octaves, lacunarity, gain) * 0.5F + 0.5F);
+}
+
+[[nodiscard]] float shared_ridged_fbm(Vec3 position, std::uint32_t seed, std::uint32_t octaves,
+                                      float lacunarity = 2.08F, float gain = 0.52F) {
+    return cubey::procedural::ridged_fbm_3d(
+        position.x, position.y, position.z, seed,
+        cubey::procedural::Fbm3DConfig{
+            .octaves = octaves,
+            .lacunarity = lacunarity,
+            .gain = gain,
+            .initial_amplitude = 0.5F,
+            .seed_stride = 1019U,
+        });
+}
+
+[[nodiscard]] Vec3 scaled(Vec3 value, float scale) {
+    return {value.x * scale, value.y * scale, value.z * scale};
+}
+
+[[nodiscard]] int positive_mod(int value, int divisor) {
+    const int result = value % divisor;
+    return result < 0 ? result + divisor : result;
+}
+
+[[nodiscard]] float procedural_hii_cells(float longitude, float latitude, float disk_gate,
+                                         float cloud_gate, std::uint32_t seed) {
+    constexpr int kLongitudeCells = 56;
+    constexpr int kLatitudeCells = 8;
+    constexpr float kLatitudeSpan = 0.48F;
+    const float u = (longitude + std::numbers::pi_v<float>) /
+                    (2.0F * std::numbers::pi_v<float>) *
+                    static_cast<float>(kLongitudeCells);
+    const float v = (latitude / kLatitudeSpan + 0.5F) * static_cast<float>(kLatitudeCells);
+    const int base_x = static_cast<int>(std::floor(u));
+    const int base_y = static_cast<int>(std::floor(v));
+    float density = 0.0F;
+    for (int oy = -1; oy <= 1; ++oy) {
+        const int y = base_y + oy;
+        if (y < 0 || y >= kLatitudeCells) {
+            continue;
+        }
+        for (int ox = -1; ox <= 1; ++ox) {
+            const int x = positive_mod(base_x + ox, kLongitudeCells);
+            const std::uint32_t index =
+                static_cast<std::uint32_t>(y * kLongitudeCells + x);
+            const float active =
+                cubey::procedural::random01(seed, "milky-way-v2.hii", index, 0U);
+            if (active < 0.70F) {
+                continue;
+            }
+            const float center_u =
+                static_cast<float>(x) +
+                cubey::procedural::random01(seed, "milky-way-v2.hii", index, 1U);
+            const float center_v =
+                static_cast<float>(y) +
+                cubey::procedural::random01(seed, "milky-way-v2.hii", index, 2U);
+            float dx = u - center_u;
+            dx -= std::round(dx / static_cast<float>(kLongitudeCells)) *
+                  static_cast<float>(kLongitudeCells);
+            const float dy = v - center_v;
+            const float radius_u =
+                mix(0.14F, 0.38F,
+                    cubey::procedural::random01(seed, "milky-way-v2.hii", index, 3U));
+            const float radius_v =
+                mix(0.08F, 0.22F,
+                    cubey::procedural::random01(seed, "milky-way-v2.hii", index, 4U));
+            const float strength =
+                smoothstep(0.70F, 1.0F, active) *
+                mix(0.55F, 1.35F,
+                    cubey::procedural::random01(seed, "milky-way-v2.hii", index, 5U));
+            density += strength *
+                       std::exp(-((dx * dx) / (radius_u * radius_u) +
+                                  (dy * dy) / (radius_v * radius_v)));
+        }
+    }
+    return density * smoothstep(0.18F, 0.86F, disk_gate) * smoothstep(0.08F, 0.62F, cloud_gate);
+}
+
+[[nodiscard]] float shared_sparse_speckles(Vec3 position, std::uint32_t seed) {
+    const float coarse = shared_fbm01(position, derived_seed32(seed, "milky-way-v2.speckle.coarse"),
+                                     2U, 2.31F, 0.48F);
+    const float fine =
+        shared_fbm01({position.x * 2.17F + 9.0F, position.y * 2.17F - 3.0F,
+                      position.z * 2.17F + 15.0F},
+                     derived_seed32(seed, "milky-way-v2.speckle.fine"), 2U, 2.17F, 0.50F);
+    return smoothstep(0.67F, 0.91F, coarse) * std::pow(fine, 6.0F);
+}
+
+[[nodiscard]] ProceduralMilkyWayLayers procedural_milky_way_layers_v2(Vec3 direction,
+                                                                      std::uint32_t seed) {
+    const GalacticSample sample = galactic_sample(direction);
+    const Vec3 local = sample.local_direction;
+    const float disk_gate = smoothstep(0.0F, 0.62F, 1.0F - std::abs(sample.pole_axis));
+    const Vec3 macro_domain = scaled(local, 2.45F);
+    const Vec3 detail_domain = {local.x * 8.7F, local.y * 8.7F, local.z * 19.0F};
+    const float warp_lat =
+        shared_fbm_signed(macro_domain, derived_seed32(seed, "milky-way-v2.warp-lat"), 3U) *
+            0.062F +
+        (shared_ridged_fbm(scaled(detail_domain, 0.46F),
+                           derived_seed32(seed, "milky-way-v2.warp-ridge"), 2U) -
+         0.5F) *
+            0.030F;
+    const float warp_lon =
+        shared_fbm_signed({macro_domain.y + 11.0F, macro_domain.z - 7.0F,
+                           macro_domain.x + 3.0F},
+                          derived_seed32(seed, "milky-way-v2.warp-lon"), 3U) *
+        0.18F;
+    const float latitude_warp = sample.latitude + warp_lat * disk_gate;
+    const float longitude_warp = sample.longitude + warp_lon * disk_gate;
+    const float center_longitude = angle_delta(longitude_warp, 0.0F);
+    const float anticenter_longitude =
+        angle_delta(longitude_warp, std::numbers::pi_v<float>);
+    const float center_weight = std::exp(-(center_longitude * center_longitude) / 0.50F);
+    const float anticenter_weight =
+        std::exp(-(anticenter_longitude * anticenter_longitude) / 0.42F);
+
+    const float disk_sigma =
+        std::clamp(mix(0.048F, 0.100F, center_weight) - anticenter_weight * 0.006F,
+                   0.038F, 0.110F);
+    const float thin_sigma = disk_sigma * 0.52F;
+    const float broad_sigma = disk_sigma * 2.35F;
+    const float broad_disk =
+        std::exp(-(latitude_warp * latitude_warp) / (2.0F * broad_sigma * broad_sigma));
+    const float thin_disk =
+        std::exp(-(latitude_warp * latitude_warp) / (2.0F * thin_sigma * thin_sigma));
+    const float inner_disk =
+        std::exp(-(latitude_warp * latitude_warp) / (2.0F * (disk_sigma * 0.35F) *
+                                                     (disk_sigma * 0.35F)));
+    const float bulge =
+        std::exp(-(center_longitude * center_longitude) / 0.18F -
+                 (latitude_warp * latitude_warp) / 0.028F);
+    const float bar_longitude = angle_delta(longitude_warp, -0.30F);
+    const float bar =
+        std::exp(-(bar_longitude * bar_longitude) / 0.54F -
+                 ((latitude_warp + 0.018F) * (latitude_warp + 0.018F)) / 0.022F);
+
+    const float arm_noise =
+        shared_fbm_signed(scaled(macro_domain, 1.35F),
+                          derived_seed32(seed, "milky-way-v2.arm-noise"), 3U) *
+        1.40F;
+    const float arm_wave_a =
+        1.0F -
+        std::abs(std::sin(longitude_warp * 2.4F + latitude_warp * 10.0F + arm_noise));
+    const float arm_wave_b =
+        1.0F -
+        std::abs(std::sin(longitude_warp * 4.8F - latitude_warp * 7.0F + arm_noise * 0.63F));
+    const float arm_probability =
+        smoothstep(0.42F, 0.92F, std::max(arm_wave_a * 0.82F, arm_wave_b * 0.56F));
+
+    const float dust_noise =
+        shared_fbm01({detail_domain.x * 0.72F + 4.0F, detail_domain.y * 0.72F - 8.0F,
+                      detail_domain.z * 0.52F + 2.0F},
+                     derived_seed32(seed, "milky-way-v2.dust-base"), 4U, 2.11F, 0.54F);
+    const float dust_ridge =
+        shared_ridged_fbm({detail_domain.x * 1.28F - 5.0F, detail_domain.y * 1.28F + 6.0F,
+                           detail_domain.z * 0.70F - 1.0F},
+                          derived_seed32(seed, "milky-way-v2.dust-ridge"), 4U, 2.16F, 0.50F);
+    const float primary_lane_center =
+        std::sin(longitude_warp * 2.35F + arm_noise * 0.82F) * 0.036F +
+        shared_fbm_signed({macro_domain.x * 1.8F, macro_domain.y * 1.8F,
+                           macro_domain.z * 0.8F},
+                          derived_seed32(seed, "milky-way-v2.lane-center"), 2U) *
+            0.030F;
+    const float secondary_lane_center =
+        -0.060F + std::sin(longitude_warp * 1.55F - arm_noise * 0.58F) * 0.030F;
+    const float primary_lane_width = mix(0.010F, 0.035F, dust_noise);
+    const float primary_lane =
+        std::exp(-std::abs(latitude_warp - primary_lane_center) / primary_lane_width) *
+        smoothstep(0.12F, 0.88F, thin_disk);
+    const float secondary_lane =
+        std::exp(-std::abs(latitude_warp - secondary_lane_center) / 0.035F) *
+        smoothstep(0.08F, 0.76F, broad_disk) *
+        smoothstep(1.95F, 0.24F, std::abs(center_longitude));
+    const float core_lane =
+        std::exp(-std::abs(latitude_warp + 0.035F) / 0.030F) *
+        std::exp(-(center_longitude * center_longitude) / 0.52F);
+    const float dust_tau =
+        std::clamp(broad_disk * mix(0.04F, 0.18F, dust_noise) +
+                       primary_lane * mix(0.35F, 1.05F, dust_ridge) +
+                       secondary_lane * 0.38F + core_lane * 0.70F +
+                       arm_probability * thin_disk * dust_ridge * 0.24F,
+                   0.0F, 2.45F);
+
+    const float cloud_noise =
+        shared_fbm01({detail_domain.x * 1.10F, detail_domain.y * 1.10F,
+                      detail_domain.z * 0.62F},
+                     derived_seed32(seed, "milky-way-v2.cloud-base"), 4U, 2.07F, 0.53F);
+    const float cloud_ridge =
+        shared_ridged_fbm({detail_domain.x * 1.86F + 2.0F, detail_domain.y * 1.86F - 6.0F,
+                           detail_domain.z * 0.92F + 11.0F},
+                          derived_seed32(seed, "milky-way-v2.cloud-ridge"), 4U, 2.18F, 0.49F);
+    const float cloud_clumps =
+        smoothstep(0.42F, 0.90F, cloud_noise * 0.55F + cloud_ridge * 0.52F +
+                                      arm_probability * 0.24F + center_weight * 0.16F);
+    const float dust_clear = 1.0F - smoothstep(0.68F, 1.90F, dust_tau) * 0.72F;
+    const float star_cloud_density =
+        ((thin_disk * 0.0052F + broad_disk * 0.0010F) *
+             mix(0.55F, 1.55F, cloud_clumps) +
+         bulge * 0.0040F + bar * 0.0022F) *
+        dust_clear;
+
+    const Vec3 band_color = {0.70F, 0.78F, 1.0F};
+    const Vec3 core_color = {1.0F, 0.80F, 0.52F};
+    const Vec3 cloud_color =
+        mix({0.70F, 0.78F, 1.0F}, {0.98F, 0.90F, 0.70F},
+            clamp01(center_weight * 0.62F + arm_probability * 0.12F));
+
+    ProceduralMilkyWayLayers layers;
+    const float stellar_density =
+        broad_disk * 0.0008F + thin_disk * 0.0032F + inner_disk * 0.0018F +
+        bulge * 0.023F + bar * 0.008F;
+    const float stellar_texture = mix(0.78F, 1.30F, cloud_noise) * mix(0.86F, 1.24F, cloud_ridge);
+    layers.stellar_emission =
+        mix(band_color, core_color, clamp01(bulge * 1.25F + bar * 0.48F)) *
+        (stellar_density * stellar_texture);
+    layers.star_clouds = cloud_color * star_cloud_density;
+
+    const float speckle_mask = smoothstep(0.07F, 0.88F, thin_disk + broad_disk * 0.32F);
+    layers.speckles =
+        shared_sparse_speckles({local.x * 62.0F + 7.0F, local.y * 62.0F - 13.0F,
+                                local.z * 86.0F + 19.0F},
+                               seed) *
+        speckle_mask * mix(0.0007F, 0.0038F, clamp01(cloud_clumps + center_weight * 0.15F));
+
+    const float hii_density =
+        procedural_hii_cells(longitude_warp, latitude_warp, thin_disk + bulge * 0.5F,
+                             cloud_clumps, derived_seed32(seed, "milky-way-v2.hii.seed"));
+    layers.hii_emission = Vec3{1.0F, 0.32F, 0.15F} * hii_density * 0.0028F;
+
+    const Vec3 extinction{
+        std::exp(-dust_tau * 0.48F),
+        std::exp(-dust_tau * 0.78F),
+        std::exp(-dust_tau * 1.14F),
+    };
+    const Vec3 speckle_color =
+        mix({0.62F, 0.70F, 1.0F}, {1.0F, 0.84F, 0.58F},
+            clamp01(center_weight * 0.55F + cloud_noise * 0.20F));
+    layers.final_rgb =
+        (layers.stellar_emission + layers.star_clouds + speckle_color * layers.speckles) *
+            extinction +
+        layers.hii_emission;
+    layers.dust_tau = dust_tau;
+    return layers;
+}
+
 [[nodiscard]] Vec3 procedural_layer_color(const ProceduralMilkyWayLayers& layers,
                                           NightSkyLayerView layer) {
     switch (layer) {
@@ -449,8 +719,11 @@ struct ProceduralMilkyWayLayers {
 
 [[nodiscard]] Vec3 procedural_milky_way(Vec3 direction, std::uint32_t seed,
                                         NightSkyLayerView layer,
-                                        [[maybe_unused]] NightSkyAtlasFormula formula) {
-    return procedural_layer_color(procedural_milky_way_layers(direction, seed), layer);
+                                        NightSkyAtlasFormula formula) {
+    const ProceduralMilkyWayLayers layers =
+        formula == NightSkyAtlasFormula::V2 ? procedural_milky_way_layers_v2(direction, seed)
+                                            : procedural_milky_way_layers_v1(direction, seed);
+    return procedural_layer_color(layers, layer);
 }
 
 void set_texel(NightSkyAtlas& atlas, std::uint32_t mip, std::uint32_t face, std::uint32_t x,

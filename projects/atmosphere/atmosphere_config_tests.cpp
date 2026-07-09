@@ -883,16 +883,19 @@ int main() {
     {
         const NightSkyAtlasConfig procedural_config{
             .procedural_variation = 0.0F,
+            .formula = NightSkyAtlasFormula::V1,
         };
         const NightSkyAtlas default_atlas = generate_night_sky_atlas(procedural_config);
         require(default_atlas.extent == kNightSkyAtlasExtent && default_atlas.mip_levels == 10U,
                 "default night sky atlas should use a 512-face cubemap with mips");
 
+        const NightSkyAtlas default_formula_atlas = generate_night_sky_atlas({}, 64U);
         const NightSkyAtlas atlas = generate_night_sky_atlas(procedural_config, 64U);
         const NightSkyAtlas atlas_again = generate_night_sky_atlas(procedural_config, 64U);
         const NightSkyAtlas varied = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .procedural_variation = 3.0F,
+                .formula = NightSkyAtlasFormula::V1,
             },
             64U);
         const NightSkyAtlas formula_v2 = generate_night_sky_atlas(
@@ -900,23 +903,40 @@ int main() {
                 .formula = NightSkyAtlasFormula::V2,
             },
             64U);
+        const NightSkyAtlas formula_v2_dust_layer = generate_night_sky_atlas(
+            NightSkyAtlasConfig{
+                .layer = NightSkyLayerView::DustTau,
+                .formula = NightSkyAtlasFormula::V2,
+            },
+            64U);
+        const NightSkyAtlas formula_v2_hii_layer = generate_night_sky_atlas(
+            NightSkyAtlasConfig{
+                .layer = NightSkyLayerView::HiiEmission,
+                .formula = NightSkyAtlasFormula::V2,
+            },
+            64U);
         const NightSkyAtlas dust_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .layer = NightSkyLayerView::DustTau,
+                .formula = NightSkyAtlasFormula::V1,
             },
             64U);
         const NightSkyAtlas hii_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .layer = NightSkyLayerView::HiiEmission,
+                .formula = NightSkyAtlasFormula::V1,
             },
             64U);
         const NightSkyAtlas speckle_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .layer = NightSkyLayerView::Speckles,
+                .formula = NightSkyAtlasFormula::V1,
             },
             64U);
         require(atlas.extent == 64U && atlas.mip_levels == 7U,
                 "night sky atlas should use the requested power-of-two extent");
+        require(default_formula_atlas.formula == cubey::render::kDefaultNightSkyAtlasFormula,
+                "night sky atlas default formula should track the shared default");
         require(atlas.formula == NightSkyAtlasFormula::V1 &&
                     formula_v2.formula == NightSkyAtlasFormula::V2,
                 "night sky atlas should preserve selected formula");
@@ -932,6 +952,12 @@ int main() {
                 "procedural night sky atlas variation should alter generated structure");
         require(night_sky_atlas_hash(atlas.rgba32f) != night_sky_atlas_hash(dust_layer.rgba32f),
                 "procedural diagnostic layers should differ from final output");
+        require(night_sky_atlas_hash(atlas.rgba32f) !=
+                    night_sky_atlas_hash(formula_v2.rgba32f),
+                "night sky atlas v2 formula should alter generated structure");
+        require(night_sky_atlas_hash(formula_v2.rgba32f) !=
+                    night_sky_atlas_hash(formula_v2_dust_layer.rgba32f),
+                "night sky atlas v2 diagnostic layers should differ from final output");
         cubey::procedural::validate_procedural_artifact_metadata(atlas.metadata);
         require(atlas.metadata.generator == "cubey::render::generate_night_sky_atlas",
                 "night sky atlas metadata should identify its generator");
@@ -1001,6 +1027,10 @@ int main() {
         const AtlasLuminanceStats dust_stats = night_sky_luminance_stats(dust_layer, 0.006F);
         const AtlasLuminanceStats hii_stats = night_sky_luminance_stats(hii_layer, 0.0004F);
         const AtlasLuminanceStats speckle_stats = night_sky_luminance_stats(speckle_layer, 0.0008F);
+        const AtlasLuminanceStats formula_v2_dust_stats =
+            night_sky_luminance_stats(formula_v2_dust_layer, 0.006F);
+        const AtlasLuminanceStats formula_v2_hii_stats =
+            night_sky_luminance_stats(formula_v2_hii_layer, 0.0004F);
         require(dust_stats.max - dust_stats.min > 0.006F,
                 "procedural dust optical depth layer should expose visible contrast");
         require(hii_stats.above_threshold > 0U &&
@@ -1008,6 +1038,12 @@ int main() {
                 "procedural H II layer should be sparse and nonzero");
         require(speckle_stats.above_threshold > 0U,
                 "procedural speckle layer should contain faint dense stars");
+        require(formula_v2_dust_stats.max - formula_v2_dust_stats.min > 0.006F,
+                "procedural night sky v2 dust layer should expose visible contrast");
+        require(formula_v2_hii_stats.above_threshold > 0U &&
+                    formula_v2_hii_stats.above_threshold <
+                        formula_v2.extent * formula_v2.extent * 6U / 3U,
+                "procedural night sky v2 H II layer should be sparse and nonzero");
         const float seam_latitude = 0.035F;
         const float seam_epsilon = 0.025F;
         const float seam_a = night_sky_luminance_at(
