@@ -28,8 +28,9 @@ models prove worthwhile.
 | Reference files | Use | Notes |
 | --- | --- | --- |
 | `mountains.glsl`, `mountain_peak.glsl`, `swiss_alps_*`, `eroded_mountains_*` | Alpine source/material target | Use for visual vocabulary: broad mass, peak/ridge drama, snowline, rock/grass zoning, atmospheric scale. Keep code clean-room because licensing is often noncommercial/share-alike or unclear. |
-| `desert_sand.glsl` | Dune/source-material target | Use the concept of wind-aligned rolling ridges, domain warp, and small ripple normals. Avoid copying the implementation directly. |
-| `mountains_and_lakes_*`, `day_at_the_lake_*`, `misty_lake.glsl`, `castaway_*` | Lake basin and shoreline target | Use for waterline, shallow/deep tint, shoreline wetness, and basin contrast. Keep real lake generation and water rendering deferred. |
+| `desert_sand.glsl` | Dune material/detail target | Use for sand material, wind-aligned ripple normals, subtle layer crossing, and close surface texture. Do not treat it as a strong macro dune-height source; the source itself calls out the scene as artificial and texture-focused. |
+| `Hesiod/WaveDune`, `TerraForge3D/dunes.glsl`, `SimpleWindErosion` | Dune source-shape study | Better references for macro dune shape than `desert_sand.glsl`. Use them clean-room: asymmetric windward/slip-face profiles, envelope modulation, and domain displacement should drive the heightfield. |
+| `mountains_and_lakes_*`, `day_at_the_lake_*`, `misty_lake.glsl`, `castaway_*` | Lake basin and shoreline target | Use for waterline, shallow/deep tint, shoreline wetness, basin contrast, and explicit water-depth/shoreline fields. Keep real lake generation and water rendering deferred. |
 | `dry_rocky_gorge.glsl`, `desert_canyon.glsl`, `canyon.glsl` | Later canyon/badlands study | Useful for arid color/material and canyon composition, but several examples are path-authored or restrictive. Do not make them first-batch recipes. |
 | `rainforest_*`, `the_forest.glsl`, `windy_plains.glsl` | Later material/foliage study | These are more about vegetation, atmosphere, and scene composition than heightfield terrain. Wait until terrain fields can drive foliage eligibility. |
 | `terrain_*`, `terrain_erosion_noise_*`, `clean_terrain_erosion_filter_*`, `advanced_terrain_erosion_filter_*` | Process/operator study | Keep under the existing ShaderToy operator extraction path, not this visual recipe batch. |
@@ -61,6 +62,20 @@ The first review should judge large-scale read first:
 - dunes should read as rolling wind-shaped ridges, not random streaks;
 - lake basin should make water/shoreline contact obvious without claiming lake
   generation.
+
+## Current Port Review
+
+- `shadertoy-alpine` is the strongest current port. It reads as a mountain mass
+  with ridges, snow, rock, grass, and small water bodies. Remaining weaknesses
+  are mostly render/capture issues: finite patch framing, snow over-brightness,
+  and clipmap faceting in low views.
+- `shadertoy-dunes` should be corrected. The first implementation used
+  symmetric periodic bands as the primary height driver, which reads like waves.
+  The next pass should use `desert_sand.glsl` only for material/ripple cues and
+  derive macro height from an asymmetric dune-field source.
+- `shadertoy-lake-basin` works mechanically but is visually too flat. It needs a
+  stronger surrounding basin/rim and clearer shoreline/wetness response before
+  it is useful as a source-model reference.
 
 ## Deferred
 
