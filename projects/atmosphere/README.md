@@ -59,6 +59,7 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view moon-surface --output /tmp/cubey-atmosphere-moon-surface.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --output /tmp/cubey-atmosphere-milky-way.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --milky-way-layer dust-tau --output /tmp/cubey-atmosphere-milky-way-dust.png
+./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --milky-way-formula v1 --output /tmp/cubey-atmosphere-milky-way-v1.png
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
@@ -81,9 +82,9 @@ diagnostics and should not drive V1 tuning.
 
 The Milky Way layer script captures the `milky-way` debug view for every
 generated atlas layer: final, stellar emission, dust optical depth, star clouds,
-H II emission, and speckles. Use it before changing the procedural night-sky
-atlas recipe; the v2 design direction is tracked in
-`docs/notes/milky-way-v2-research.md`.
+H II emission, and speckles. It defaults to the V2 atlas formula; set
+`FORMULA=v1` to compare against the historical formula. The v2 design direction
+and current checkpoint are tracked in `docs/notes/milky-way-v2-research.md`.
 
 The background horizon script disables clouds and reference geometry, then
 captures `ground`, `sky-only`, and `sky-only-no-ground-occlusion` at noon,

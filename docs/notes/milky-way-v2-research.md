@@ -1,8 +1,9 @@
 # Procedural Milky Way V2 Research
 
-Status: research and design checkpoint. The current runtime remains the
-`atmosphere-night-sky-atlas-v1` generator. This note captures what should
-change before replacing it.
+Status: implementation checkpoint. The runtime default is now
+`atmosphere-night-sky-atlas-v2`; `v1` remains available through
+`--milky-way-formula v1` for comparison. This note captures the motivation,
+baseline, and acceptance criteria behind the replacement.
 
 ## Current Cubey Baseline
 
@@ -118,22 +119,19 @@ Recommended operators:
 - optional derivative-aware or mip-aware filtering only after the layer
   structure is right.
 
-## Implementation Plan
+## Implementation Outcome
 
-1. Keep v1 as the default baseline until v2 captures are clearly better.
-2. Add a formula/version switch inside the atlas config or generator metadata
-   before replacing the formula, so old and new outputs can be compared.
-3. Move Milky Way sampling onto shared `cubey::procedural` primitives:
-   `derive_seed`, coherent noise/domain warp where appropriate, and legacy
-   deterministic value noise only when preserving exact v1 behavior.
-4. Preserve the existing layer names and capture/debug UI so review stays
-   cheap.
-5. Add focused tests for deterministic hash stability, layer distinctness, and
-   no all-black/all-white layer failures. Do not assert exact art values except
-   for a locked formula version.
-6. Use `projects/atmosphere/capture_milky_way_layers.sh` as the before/after
-   visual gate, then validate night-sky visibility in both standalone
-   atmosphere and planet orbit captures.
+Completed:
+
+1. V1 and V2 formulas are selectable with `--milky-way-formula v1|v2`.
+2. V2 uses shared procedural seeds and shared FBM/ridged noise helpers instead
+   of hand-authored landmark stamps.
+3. The atlas product, shader sampling path, and diagnostic layer names are
+   unchanged.
+4. `projects/atmosphere/capture_milky_way_layers.sh` defaults to V2 and accepts
+   `FORMULA=v1` for direct comparison.
+5. Focused tests cover formula parsing, metadata formula versions,
+   deterministic output, layer distinctness, and non-empty V2 dust/H II layers.
 
 ## Acceptance Criteria
 

@@ -35,7 +35,7 @@ enum class NightSkyAtlasFormula : std::uint32_t {
     V2 = 1,
 };
 
-inline constexpr NightSkyAtlasFormula kDefaultNightSkyAtlasFormula = NightSkyAtlasFormula::V1;
+inline constexpr NightSkyAtlasFormula kDefaultNightSkyAtlasFormula = NightSkyAtlasFormula::V2;
 inline constexpr std::array<NightSkyAtlasFormula, 2> kNightSkyAtlasFormulas{
     NightSkyAtlasFormula::V1,
     NightSkyAtlasFormula::V2,
