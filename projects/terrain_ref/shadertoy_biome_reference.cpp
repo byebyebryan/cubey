@@ -236,7 +236,48 @@ float shadertoy_lake_basin_reference_height(float world_x, float world_z, std::u
 }
 
 float shadertoy_badlands_reference_height(float world_x, float world_z, std::uint64_t seed) {
-    return shadertoy_lake_basin_reference_height(world_x, world_z, seed);
+    const Vec2 seed_value = seed_components(seed);
+    Vec2 p{
+        .x = (world_x * 0.00022F) + (seed_value.x * 0.127F) - 4.0F,
+        .y = (world_z * 0.00022F) + (seed_value.y * 0.101F) + 2.0F,
+    };
+    const float macro =
+        fbm({.x = p.x * 0.28F, .y = p.y * 0.28F},
+            {.x = seed_value.x + 101.0F, .y = seed_value.y - 103.0F}, 5);
+    const float plateau = smoothstep(0.28F, 0.72F, macro);
+    const float shoulder = smoothstep(0.06F, 0.62F, macro);
+    const float warp =
+        (fbm({.x = p.x * 0.72F, .y = p.y * 0.72F},
+             {.x = seed_value.x - 107.0F, .y = seed_value.y + 109.0F}, 4) -
+         0.5F) *
+        1.25F;
+    const Vec2 wash_p = rotate({.x = (p.x * 0.72F) + warp, .y = (p.y * 1.28F) - warp}, 0.58F);
+    const float wash_source =
+        ridged_fbm(wash_p, {.x = seed_value.x + 113.0F, .y = seed_value.y - 127.0F}, 6);
+    const float dry_washes = std::pow(std::max(wash_source, 0.0F), 1.55F) * shoulder;
+    const float tributary_source =
+        ridged_fbm({.x = (p.x * 1.42F) - warp * 0.35F, .y = (p.y * 1.05F) + warp * 0.45F},
+                   {.x = seed_value.x - 131.0F, .y = seed_value.y + 137.0F}, 5);
+    const float tributaries =
+        std::pow(std::max(tributary_source, 0.0F), 2.05F) * smoothstep(0.18F, 0.88F, plateau);
+    const float mesa_breakup =
+        fbm({.x = p.x * 0.92F, .y = p.y * 0.92F},
+            {.x = seed_value.x + 139.0F, .y = seed_value.y + 149.0F}, 4);
+    const float plateau_height = 90.0F + (std::pow(plateau, 0.88F) * 1260.0F) +
+                                 (std::pow(shoulder, 2.15F) * 360.0F);
+    const float cut_depth =
+        (dry_washes * (820.0F + plateau * 420.0F)) + (tributaries * 320.0F);
+    const float cliff_lift = smoothstep(0.50F, 0.86F, wash_source) *
+                             smoothstep(0.20F, 0.82F, plateau) * 150.0F;
+    const float strata =
+        (triangle_wave((plateau_height - cut_depth) * 0.012F + mesa_breakup * 1.15F) - 0.5F) *
+        (24.0F + plateau * 34.0F) * smoothstep(0.16F, 0.82F, dry_washes + tributaries);
+    const float rough_detail =
+        (ridged_fbm({.x = p.x * 3.2F, .y = p.y * 3.2F},
+                    {.x = seed_value.x - 151.0F, .y = seed_value.y + 157.0F}, 4) -
+         0.42F) *
+        (24.0F + shoulder * 58.0F);
+    return std::max(plateau_height - cut_depth + cliff_lift + strata + rough_detail, 0.0F);
 }
 
 float shadertoy_coast_island_reference_height(float world_x, float world_z, std::uint64_t seed) {

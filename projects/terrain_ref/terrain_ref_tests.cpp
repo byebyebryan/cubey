@@ -234,6 +234,15 @@ void test_shadertoy_biome_reference_sampling_is_deterministic() {
                  "ShaderToy lake-basin sampling should be deterministic",
                  "ShaderToy lake-basin height should be finite",
                  "ShaderToy lake-basin seed should affect height");
+    check_height(cubey::projects::terrain_ref::shadertoy_badlands_reference_height(217.0F,
+                                                                                   -341.0F, seed),
+                 cubey::projects::terrain_ref::shadertoy_badlands_reference_height(217.0F,
+                                                                                   -341.0F, seed),
+                 cubey::projects::terrain_ref::shadertoy_badlands_reference_height(
+                     217.0F, -341.0F, seed + 1U),
+                 "ShaderToy badlands sampling should be deterministic",
+                 "ShaderToy badlands height should be finite",
+                 "ShaderToy badlands seed should affect height");
 }
 
 } // namespace

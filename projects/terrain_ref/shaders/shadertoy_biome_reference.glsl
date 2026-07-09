@@ -177,7 +177,32 @@ float shadertoy_lake_basin_reference_height(vec2 world, vec2 seed) {
 }
 
 float shadertoy_badlands_reference_height(vec2 world, vec2 seed) {
-    return shadertoy_lake_basin_reference_height(world, seed);
+    vec2 p = (world * 0.00022) + (seed * vec2(0.127, 0.101)) + vec2(-4.0, 2.0);
+    float macro = shadertoy_biome_fbm(p * 0.28, seed + vec2(101.0, -103.0), 5, 0.52);
+    float plateau = smoothstep(0.28, 0.72, macro);
+    float shoulder = smoothstep(0.06, 0.62, macro);
+    float warp = (shadertoy_biome_fbm(p * 0.72, seed + vec2(-107.0, 109.0), 4, 0.52) -
+        0.5) * 1.25;
+    vec2 wash_p = shadertoy_biome_rotate(vec2((p.x * 0.72) + warp, (p.y * 1.28) - warp),
+        0.58);
+    float wash_source = shadertoy_biome_ridged_fbm(wash_p, seed + vec2(113.0, -127.0), 6);
+    float dry_washes = pow(max(wash_source, 0.0), 1.55) * shoulder;
+    float tributary_source = shadertoy_biome_ridged_fbm(vec2((p.x * 1.42) - warp * 0.35,
+        (p.y * 1.05) + warp * 0.45), seed + vec2(-131.0, 137.0), 5);
+    float tributaries = pow(max(tributary_source, 0.0), 2.05) *
+        smoothstep(0.18, 0.88, plateau);
+    float mesa_breakup = shadertoy_biome_fbm(p * 0.92, seed + vec2(139.0, 149.0), 4, 0.52);
+    float plateau_height = 90.0 + (pow(plateau, 0.88) * 1260.0) +
+        (pow(shoulder, 2.15) * 360.0);
+    float cut_depth = (dry_washes * (820.0 + plateau * 420.0)) + (tributaries * 320.0);
+    float cliff_lift = smoothstep(0.50, 0.86, wash_source) * smoothstep(0.20, 0.82, plateau) *
+        150.0;
+    float strata = (shadertoy_biome_triangle_wave((plateau_height - cut_depth) * 0.012 +
+        mesa_breakup * 1.15) - 0.5) * (24.0 + plateau * 34.0) *
+        smoothstep(0.16, 0.82, dry_washes + tributaries);
+    float rough_detail = (shadertoy_biome_ridged_fbm(p * 3.2, seed + vec2(-151.0, 157.0), 4) -
+        0.42) * (24.0 + shoulder * 58.0);
+    return max(plateau_height - cut_depth + cliff_lift + strata + rough_detail, 0.0);
 }
 
 float shadertoy_coast_island_reference_height(vec2 world, vec2 seed) {

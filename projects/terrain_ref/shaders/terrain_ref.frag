@@ -59,6 +59,8 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_DUNES) < 0.5;
     bool shadertoy_lake_basin =
         abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_LAKE_BASIN) < 0.5;
+    bool shadertoy_badlands =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_BADLANDS) < 0.5;
     bool height_material = pc.water_params.w > 0.5;
     float grass_coverage = 0.65;
     float transition_m = 20.0;
@@ -153,6 +155,33 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         color = mix(color, vec3(0.46, 0.36, 0.22), smoothstep(0.18, 0.58, slope) * 0.45);
         color = mix(color, vec3(0.91, 0.80, 0.52), smoothstep(0.82, 0.98, cos_v) * 0.22);
         normal = terrain_ref_detail_normal(normal, frag_world_position.xz, detail * 0.12);
+        return color;
+    }
+
+    if (shadertoy_badlands) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        float slope = 1.0 - cos_v;
+        vec3 wash_sand = terrain_ref_color_variation(vec3(0.58, 0.43, 0.25),
+            frag_world_position.xz, 0.010, 0.22);
+        vec3 ochre = terrain_ref_color_variation(vec3(0.70, 0.48, 0.26),
+            frag_world_position.xz + vec2(43.0, -71.0), 0.006, 0.20);
+        vec3 red_rock = terrain_ref_color_variation(vec3(0.50, 0.25, 0.16),
+            frag_world_position.xz + vec2(-83.0, 29.0), 0.012, 0.22);
+        vec3 dark_cliff = terrain_ref_color_variation(vec3(0.29, 0.20, 0.16),
+            frag_world_position.xz, 0.018, 0.18);
+        vec3 color = mix(wash_sand, ochre, smoothstep(0.14, 0.58, normalized_height));
+        color = mix(color, red_rock, smoothstep(0.48, 0.94, normalized_height) * 0.62);
+        float strata = shadertoy_biome_triangle_wave((frag_height_m * 0.017) +
+            terrain_ref_fbm(frag_world_position.xz * 0.0035, pc.terrain_params.xy) * 1.4);
+        color *= 0.92 + strata * 0.16;
+        float cliff = smoothstep(0.18, 0.62, slope);
+        color = mix(color, dark_cliff, cliff * 0.62);
+        float wash_floor = (1.0 - smoothstep(0.18, 0.44, normalized_height)) *
+            smoothstep(0.48, 0.90, cos_v);
+        color = mix(color, wash_sand, wash_floor * 0.38);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.10, 0.26, cliff));
         return color;
     }
 
