@@ -167,3 +167,20 @@ The first review should judge large-scale read first:
 - `shadertoy-crater-field` is accepted as a first-pass non-biome terrain stress
   case. Crater rims and floors read at macro scale; later work can vary crater
   density and regolith color if this lane remains useful.
+
+## Gorge Refinement Target
+
+- Focus the next correction pass on `shadertoy-gorge`; plains and crater-field
+  are good enough as coverage references, and glacial-highland can wait for a
+  later snow, ice, rock, and talus material-separation pass.
+- Current gorge problems: the main incision can land too close to the patch
+  edge, the surface-low view reads more like arid texture than terrain relief,
+  tributaries are too scratch-like, and material zoning relies too much on
+  normalized height instead of the actual gorge source field.
+- The refined gorge should use one procedural source model for corridor,
+  floor, walls, and tributaries. Keep it clean-room and noise-field driven:
+  no authored line, no hand-placed center path, and no isolated mask that does
+  not also drive the heightfield.
+- The visual target is a broad dry plateau with a warped incised corridor,
+  variable-width floor, coherent wall bands, and tributary cuts that feed the
+  main gorge without becoming hairy disconnected scratches.
