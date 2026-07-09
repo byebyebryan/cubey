@@ -73,16 +73,16 @@ void main() {
         ignore_ground_occlusion
             ? sky_background_sample_direction(ray_direction, ray_origin, planet_center)
             : ray_direction;
-    float celestial_horizon_visibility =
-        ignore_ground_occlusion
-            ? smoothstep(-0.015, 0.040,
-                         dot(ray_direction, atmosphere_camera_up(ray_origin, planet_center)))
-            : 1.0;
     CubeyAtmosphereRaySegment segment =
         ignore_ground_occlusion
             ? cubey_atmosphere_classify_sky_background_ray(
                   medium, ray_origin, atmosphere_ray_direction, -1.0)
             : cubey_atmosphere_classify_ray(medium, ray_origin, atmosphere_ray_direction, -1.0);
+    float celestial_horizon_visibility =
+        (ignore_ground_occlusion && segment.camera_inside_atmosphere)
+            ? smoothstep(-0.015, 0.040,
+                         dot(ray_direction, atmosphere_camera_up(ray_origin, planet_center)))
+            : 1.0;
     if (!segment.hit_atmosphere) {
         vec3 space_color = (render_sun_disk ? sun_disk_luminance(ray_origin, atmosphere_ray_direction,
                                                                  planet_center) *
@@ -102,10 +102,14 @@ void main() {
 
     CubeyAtmosphereSample atmosphere_sample = integrate_atmosphere(
         ray_origin, atmosphere_ray_direction, segment.start, segment.end, planet_center);
+    vec3 night_sky_radiance_value =
+        segment.camera_inside_atmosphere
+            ? night_sky_radiance(atmosphere_ray_direction, sun_direction)
+            : space_night_sky_radiance(atmosphere_ray_direction, sun_direction);
     vec3 night_sky = (hit_ground || !render_night_sky)
         ? vec3(0.0)
-        : night_sky_radiance(atmosphere_ray_direction, sun_direction) *
-              atmosphere_sample.transmittance * celestial_horizon_visibility;
+        : night_sky_radiance_value * atmosphere_sample.transmittance *
+              celestial_horizon_visibility;
     vec3 sun_disk = (hit_ground || !render_sun_disk) ? vec3(0.0) :
         sun_disk_luminance(ray_origin, atmosphere_ray_direction, planet_center) *
             celestial_horizon_visibility;

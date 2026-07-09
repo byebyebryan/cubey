@@ -1610,6 +1610,9 @@ int main() {
                      "atmosphere shader should classify the remapped sky-background ray");
     require_contains(shader_entry_source, "celestial_horizon_visibility",
                      "atmosphere shader should keep no-ground celestial content above the real horizon");
+    require_contains(shader_entry_source,
+                     "ignore_ground_occlusion && segment.camera_inside_atmosphere",
+                     "no-ground horizon masking should not suppress orbit-space stars");
     require_contains(shader_source, "procedural_star_radiance",
                      "atmosphere shader should include procedural stars");
     require_contains(shader_source, "bright_star_radiance",
@@ -1626,6 +1629,12 @@ int main() {
                      "atmosphere shader should weight stars by sampled magnitude");
     require_contains(shader_source, "night_object_visibility",
                      "atmosphere shader should share night object visibility");
+    require_contains(shader_entry_source,
+                     "segment.camera_inside_atmosphere\n"
+                     "            ? night_sky_radiance(atmosphere_ray_direction, sun_direction)\n"
+                     "            : space_night_sky_radiance(atmosphere_ray_direction, sun_direction)",
+                     "orbit sky rays through the atmosphere shell should use space night-sky "
+                     "visibility");
     require_contains(shader_source, "star_sample_direction",
                      "atmosphere shader should rotate star sampling through celestial space");
     require_contains(shader_source, "celestial_options",
