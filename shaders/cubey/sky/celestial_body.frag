@@ -94,16 +94,18 @@ void main() {
         return;
     }
 
-    const vec3 albedo = in_color * mix(vec3(1.0), vec3(surface.albedo * 1.78),
-                                       texture_strength * detail_strength);
-    const float ambient = 0.030 * (1.0 - sky_visibility);
+    const vec3 moon_tint = mix(vec3(0.82, 0.80, 0.74), in_color, 0.38);
+    const float surface_tone = clamp(surface.albedo * 1.60 + 0.035, 0.24, 1.0);
+    const vec3 albedo = moon_tint * mix(vec3(0.94), vec3(surface_tone),
+                                        texture_strength * detail_strength);
+    const float ambient = mix(0.016, 0.008, sky_visibility);
     const float lit =
-        (ambient + direct * body.light_direction_intensity.w * 0.66) *
+        (ambient + direct * body.light_direction_intensity.w * mix(0.72, 0.55, sky_visibility)) *
         mix(1.0, 0.12, eclipse_shadow);
     const float limb_shade = mix(1.0, mix(0.72, 1.0, limb), limb_strength);
-    vec3 shaded = albedo * lit * limb_shade * mix(1.25, 1.05, sky_visibility);
-    const float unlit_alpha = 0.035 * (1.0 - sky_visibility);
-    const float lit_alpha = 0.96 * body_transmittance;
+    vec3 shaded = albedo * lit * limb_shade * mix(1.18, 1.03, sky_visibility);
+    const float unlit_alpha = 0.012 * (1.0 - sky_visibility);
+    const float lit_alpha = mix(0.94, 0.88, sky_visibility) * body_transmittance;
     const float limb_width = max(fwidth(ndotv) * 3.0, mix(0.055, 0.105, sky_visibility));
     const float limb_alpha = smoothstep(0.0, limb_width, ndotv);
     const float alpha = clamp(mix(unlit_alpha, lit_alpha, direct) * limb_alpha, 0.0, 1.0);
