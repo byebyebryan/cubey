@@ -164,6 +164,66 @@ ShadertoyGorgeSourceField shadertoy_gorge_source_field(vec2 p, vec2 seed) {
     return field;
 }
 
+struct ShadertoyCraterAccumulation {
+    float depression;
+    float rim;
+    float ejecta;
+    float floor_darkening;
+};
+
+void shadertoy_accumulate_crater_population(inout ShadertoyCraterAccumulation accumulation,
+    vec2 p,
+    vec2 seed,
+    float scale,
+    float density,
+    float min_radius,
+    float radius_range,
+    float depth_scale,
+    float rim_scale,
+    float ejecta_scale,
+    vec2 seed_offset) {
+    vec2 crater_p = p * scale;
+    vec2 base_cell = floor(crater_p);
+    for (int dz = -1; dz <= 1; ++dz) {
+        for (int dx = -1; dx <= 1; ++dx) {
+            vec2 cell = base_cell + vec2(float(dx), float(dz));
+            vec2 layer_seed = seed + seed_offset;
+            float local_density = shadertoy_biome_fbm(cell * 0.17,
+                layer_seed + vec2(11.0, -17.0), 3, 0.52);
+            float cell_density = clamp(density * mix(0.28, 1.58, local_density), 0.0, 0.92);
+            float h_presence = shadertoy_biome_hash(cell, layer_seed + vec2(19.0, -23.0));
+            if (h_presence > cell_density) {
+                continue;
+            }
+
+            float h0 = shadertoy_biome_hash(cell, layer_seed + vec2(29.0, 31.0));
+            float h1 = shadertoy_biome_hash(cell, layer_seed + vec2(-37.0, 41.0));
+            float h2 = shadertoy_biome_hash(cell, layer_seed + vec2(43.0, -47.0));
+            float h3 = shadertoy_biome_hash(cell, layer_seed + vec2(-53.0, 59.0));
+            float h4 = shadertoy_biome_hash(cell, layer_seed + vec2(61.0, -67.0));
+            vec2 center = cell + vec2(0.08 + h0 * 0.84, 0.08 + h1 * 0.84);
+            float radius = min_radius + h2 * radius_range;
+            float normalized_d = length(crater_p - center) / max(radius, 0.001);
+            float asymmetry = 0.88 + 0.18 * (h3 - 0.5) +
+                (shadertoy_biome_value_noise(crater_p * 2.2,
+                    layer_seed + vec2(71.0, 73.0)) - 0.5) * 0.16;
+            float shaped_d = normalized_d * asymmetry;
+            float freshness = smoothstep(0.18, 0.96, h4);
+            float bowl = pow(max(1.0 - smoothstep(0.08, 1.02, shaped_d), 0.0), 1.10);
+            float rim_band = smoothstep(0.74, 1.02, shaped_d) *
+                (1.0 - smoothstep(1.02, 1.48, shaped_d));
+            float ejecta_band = 1.0 - smoothstep(1.02, 2.35, shaped_d);
+            float age_depth = mix(0.48, 1.0, freshness);
+            accumulation.depression = max(accumulation.depression,
+                bowl * depth_scale * age_depth);
+            accumulation.rim += rim_band * rim_scale * mix(0.22, 1.0, freshness);
+            accumulation.ejecta += ejecta_band * ejecta_scale * mix(0.20, 0.74, freshness);
+            accumulation.floor_darkening = max(accumulation.floor_darkening,
+                bowl * mix(0.20, 0.90, freshness));
+        }
+    }
+}
+
 float shadertoy_alpine_reference_height(vec2 world, vec2 seed) {
     vec2 p = (world * 0.00018) + (seed * vec2(0.119, 0.143)) + vec2(-3.0, 5.0);
     float macro = shadertoy_biome_fbm(p * 0.48, seed + vec2(4.0, -7.0), 5, 0.52);
@@ -379,33 +439,22 @@ float shadertoy_glacial_highland_reference_height(vec2 world, vec2 seed) {
 float shadertoy_crater_field_reference_height(vec2 world, vec2 seed) {
     vec2 p = (world * 0.00022) + (seed * vec2(0.077, 0.089));
     float broad = shadertoy_biome_fbm(p * 0.32, seed + vec2(443.0, -449.0), 5, 0.52);
-    vec2 crater_p = p * 1.45;
-    vec2 base_cell = floor(crater_p);
-    float depression = 0.0;
-    float rim = 0.0;
-    float ejecta = 0.0;
-    for (int dz = -1; dz <= 1; ++dz) {
-        for (int dx = -1; dx <= 1; ++dx) {
-            vec2 cell = base_cell + vec2(float(dx), float(dz));
-            float h0 = shadertoy_biome_hash(cell, seed + vec2(457.0, -461.0));
-            float h1 = shadertoy_biome_hash(cell, seed + vec2(-463.0, 467.0));
-            float h2 = shadertoy_biome_hash(cell, seed + vec2(479.0, -487.0));
-            vec2 center = cell + vec2(0.18 + h0 * 0.64, 0.18 + h1 * 0.64);
-            float radius = 0.18 + h2 * 0.28;
-            float d = length(crater_p - center);
-            float bowl = 1.0 - smoothstep(radius * 0.18, radius, d);
-            float rim_band = smoothstep(radius * 0.72, radius * 1.02, d) *
-                (1.0 - smoothstep(radius * 1.02, radius * 1.34, d));
-            float ejecta_band = 1.0 - smoothstep(radius * 1.05, radius * 2.15, d);
-            depression = max(depression, bowl * (0.55 + h0 * 0.55));
-            rim += rim_band * (0.36 + h1 * 0.44);
-            ejecta += ejecta_band * (0.06 + h2 * 0.12);
-        }
-    }
-    float rough = (shadertoy_biome_ridged_fbm(p * 4.4, seed + vec2(-491.0, 499.0), 4) -
+    float density_mask = shadertoy_biome_fbm(p * 0.18, seed + vec2(-451.0, 457.0), 4, 0.52);
+    ShadertoyCraterAccumulation craters;
+    craters.depression = 0.0;
+    craters.rim = 0.0;
+    craters.ejecta = 0.0;
+    craters.floor_darkening = 0.0;
+    shadertoy_accumulate_crater_population(craters, p, seed, 0.58,
+        0.23 + density_mask * 0.18, 0.22, 0.38, 1.12, 0.86, 0.24, vec2(463.0, -467.0));
+    shadertoy_accumulate_crater_population(craters, p, seed, 1.22,
+        0.32 + density_mask * 0.22, 0.16, 0.32, 0.78, 0.58, 0.18, vec2(-479.0, 487.0));
+    shadertoy_accumulate_crater_population(craters, p, seed, 2.65,
+        0.18 + density_mask * 0.24, 0.09, 0.16, 0.42, 0.30, 0.10, vec2(491.0, -499.0));
+    float rough = (shadertoy_biome_ridged_fbm(p * 4.1, seed + vec2(-503.0, 509.0), 4) -
         0.45) * 74.0;
-    return max(240.0 + broad * 280.0 + rim * 260.0 + ejecta * 110.0 - depression * 310.0 +
-        rough, 0.0);
+    return max(240.0 + broad * 270.0 + craters.rim * 230.0 + craters.ejecta * 105.0 -
+        craters.depression * 330.0 + rough, 0.0);
 }
 
 vec3 shadertoy_biome_reference_normal(vec2 world, vec2 seed, float vertical_scale,

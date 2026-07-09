@@ -184,6 +184,85 @@ struct GorgeSourceField {
             .tributaries = tributaries};
 }
 
+struct CraterAccumulation {
+    float depression = 0.0F;
+    float rim = 0.0F;
+    float ejecta = 0.0F;
+    float floor_darkening = 0.0F;
+};
+
+void accumulate_crater_population(CraterAccumulation& accumulation,
+                                  Vec2 p,
+                                  Vec2 seed_value,
+                                  float scale,
+                                  float density,
+                                  float min_radius,
+                                  float radius_range,
+                                  float depth_scale,
+                                  float rim_scale,
+                                  float ejecta_scale,
+                                  Vec2 seed_offset) {
+    const Vec2 crater_p{.x = p.x * scale, .y = p.y * scale};
+    const Vec2 base_cell{.x = std::floor(crater_p.x), .y = std::floor(crater_p.y)};
+    for (int dz = -1; dz <= 1; ++dz) {
+        for (int dx = -1; dx <= 1; ++dx) {
+            const Vec2 cell{.x = base_cell.x + float(dx), .y = base_cell.y + float(dz)};
+            const Vec2 layer_seed{.x = seed_value.x + seed_offset.x,
+                                  .y = seed_value.y + seed_offset.y};
+            const float local_density =
+                fbm({.x = cell.x * 0.17F, .y = cell.y * 0.17F},
+                    {.x = layer_seed.x + 11.0F, .y = layer_seed.y - 17.0F}, 3);
+            const float cell_density =
+                std::clamp(density * mix(0.28F, 1.58F, local_density), 0.0F, 0.92F);
+            const float h_presence =
+                seeded_hash(cell, {.x = layer_seed.x + 19.0F, .y = layer_seed.y - 23.0F});
+            if (h_presence > cell_density) {
+                continue;
+            }
+
+            const float h0 =
+                seeded_hash(cell, {.x = layer_seed.x + 29.0F, .y = layer_seed.y + 31.0F});
+            const float h1 =
+                seeded_hash(cell, {.x = layer_seed.x - 37.0F, .y = layer_seed.y + 41.0F});
+            const float h2 =
+                seeded_hash(cell, {.x = layer_seed.x + 43.0F, .y = layer_seed.y - 47.0F});
+            const float h3 =
+                seeded_hash(cell, {.x = layer_seed.x - 53.0F, .y = layer_seed.y + 59.0F});
+            const float h4 =
+                seeded_hash(cell, {.x = layer_seed.x + 61.0F, .y = layer_seed.y - 67.0F});
+            const Vec2 center{.x = cell.x + 0.08F + h0 * 0.84F,
+                              .y = cell.y + 0.08F + h1 * 0.84F};
+            const float radius = min_radius + h2 * radius_range;
+            const float dx_to_center = crater_p.x - center.x;
+            const float dz_to_center = crater_p.y - center.y;
+            const float d =
+                std::sqrt(dx_to_center * dx_to_center + dz_to_center * dz_to_center);
+            const float normalized_d = d / std::max(radius, 0.001F);
+            const float asymmetry =
+                0.88F + 0.18F * (h3 - 0.5F) +
+                (value_noise({.x = crater_p.x * 2.2F, .y = crater_p.y * 2.2F},
+                             {.x = layer_seed.x + 71.0F, .y = layer_seed.y + 73.0F}) -
+                 0.5F) *
+                    0.16F;
+            const float shaped_d = normalized_d * asymmetry;
+            const float freshness = smoothstep(0.18F, 0.96F, h4);
+            const float bowl =
+                std::pow(std::max(1.0F - smoothstep(0.08F, 1.02F, shaped_d), 0.0F),
+                         1.10F);
+            const float rim_band = smoothstep(0.74F, 1.02F, shaped_d) *
+                                   (1.0F - smoothstep(1.02F, 1.48F, shaped_d));
+            const float ejecta_band = 1.0F - smoothstep(1.02F, 2.35F, shaped_d);
+            const float age_depth = mix(0.48F, 1.0F, freshness);
+            accumulation.depression =
+                std::max(accumulation.depression, bowl * depth_scale * age_depth);
+            accumulation.rim += rim_band * rim_scale * mix(0.22F, 1.0F, freshness);
+            accumulation.ejecta += ejecta_band * ejecta_scale * mix(0.20F, 0.74F, freshness);
+            accumulation.floor_darkening =
+                std::max(accumulation.floor_darkening, bowl * mix(0.20F, 0.90F, freshness));
+        }
+    }
+}
+
 } // namespace
 
 float shadertoy_alpine_reference_height(float world_x, float world_z, std::uint64_t seed) {
@@ -537,43 +616,26 @@ float shadertoy_crater_field_reference_height(float world_x, float world_z, std:
     const float broad =
         fbm({.x = p.x * 0.32F, .y = p.y * 0.32F},
             {.x = seed_value.x + 443.0F, .y = seed_value.y - 449.0F}, 5);
-    const Vec2 crater_p{.x = p.x * 1.45F, .y = p.y * 1.45F};
-    const Vec2 base_cell{.x = std::floor(crater_p.x), .y = std::floor(crater_p.y)};
-    float depression = 0.0F;
-    float rim = 0.0F;
-    float ejecta = 0.0F;
-    for (int dz = -1; dz <= 1; ++dz) {
-        for (int dx = -1; dx <= 1; ++dx) {
-            const Vec2 cell{.x = base_cell.x + float(dx), .y = base_cell.y + float(dz)};
-            const float h0 = seeded_hash(cell, {.x = seed_value.x + 457.0F,
-                                                .y = seed_value.y - 461.0F});
-            const float h1 = seeded_hash(cell, {.x = seed_value.x - 463.0F,
-                                                .y = seed_value.y + 467.0F});
-            const float h2 = seeded_hash(cell, {.x = seed_value.x + 479.0F,
-                                                .y = seed_value.y - 487.0F});
-            const Vec2 center{.x = cell.x + 0.18F + h0 * 0.64F,
-                              .y = cell.y + 0.18F + h1 * 0.64F};
-            const float radius = 0.18F + h2 * 0.28F;
-            const float dx_to_center = crater_p.x - center.x;
-            const float dz_to_center = crater_p.y - center.y;
-            const float d = std::sqrt(dx_to_center * dx_to_center + dz_to_center * dz_to_center);
-            const float bowl = 1.0F - smoothstep(radius * 0.18F, radius, d);
-            const float rim_band =
-                smoothstep(radius * 0.72F, radius * 1.02F, d) *
-                (1.0F - smoothstep(radius * 1.02F, radius * 1.34F, d));
-            const float ejecta_band = 1.0F - smoothstep(radius * 1.05F, radius * 2.15F, d);
-            depression = std::max(depression, bowl * (0.55F + h0 * 0.55F));
-            rim += rim_band * (0.36F + h1 * 0.44F);
-            ejecta += ejecta_band * (0.06F + h2 * 0.12F);
-        }
-    }
+    const float density_mask =
+        fbm({.x = p.x * 0.18F, .y = p.y * 0.18F},
+            {.x = seed_value.x - 451.0F, .y = seed_value.y + 457.0F}, 4);
+    CraterAccumulation craters{};
+    accumulate_crater_population(craters, p, seed_value, 0.58F, 0.23F + density_mask * 0.18F,
+                                 0.22F, 0.38F, 1.12F, 0.86F, 0.24F,
+                                 {.x = 463.0F, .y = -467.0F});
+    accumulate_crater_population(craters, p, seed_value, 1.22F, 0.32F + density_mask * 0.22F,
+                                 0.16F, 0.32F, 0.78F, 0.58F, 0.18F,
+                                 {.x = -479.0F, .y = 487.0F});
+    accumulate_crater_population(craters, p, seed_value, 2.65F, 0.18F + density_mask * 0.24F,
+                                 0.09F, 0.16F, 0.42F, 0.30F, 0.10F,
+                                 {.x = 491.0F, .y = -499.0F});
     const float rough =
-        (ridged_fbm({.x = p.x * 4.4F, .y = p.y * 4.4F},
-                    {.x = seed_value.x - 491.0F, .y = seed_value.y + 499.0F}, 4) -
+        (ridged_fbm({.x = p.x * 4.1F, .y = p.y * 4.1F},
+                    {.x = seed_value.x - 503.0F, .y = seed_value.y + 509.0F}, 4) -
          0.45F) *
         74.0F;
-    return std::max(240.0F + broad * 280.0F + rim * 260.0F + ejecta * 110.0F -
-                        depression * 310.0F + rough,
+    return std::max(240.0F + broad * 270.0F + craters.rim * 230.0F +
+                        craters.ejecta * 105.0F - craters.depression * 330.0F + rough,
                     0.0F);
 }
 
