@@ -448,7 +448,8 @@ struct ProceduralMilkyWayLayers {
 }
 
 [[nodiscard]] Vec3 procedural_milky_way(Vec3 direction, std::uint32_t seed,
-                                        NightSkyLayerView layer) {
+                                        NightSkyLayerView layer,
+                                        [[maybe_unused]] NightSkyAtlasFormula formula) {
     return procedural_layer_color(procedural_milky_way_layers(direction, seed), layer);
 }
 
@@ -501,12 +502,14 @@ void build_mips(NightSkyAtlas& atlas) {
     }
 }
 
-[[nodiscard]] NightSkyAtlas make_empty_atlas(std::uint32_t extent, NightSkyLayerView layer) {
+[[nodiscard]] NightSkyAtlas make_empty_atlas(std::uint32_t extent, NightSkyLayerView layer,
+                                             NightSkyAtlasFormula formula) {
     const std::uint32_t mip_levels = night_sky_atlas_mip_count(extent);
     NightSkyAtlas atlas{
         .extent = extent,
         .mip_levels = mip_levels,
         .layer = layer,
+        .formula = formula,
     };
     atlas.mips.reserve(mip_levels);
     std::size_t byte_offset = 0;
@@ -545,7 +548,7 @@ NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::u
         throw std::runtime_error("night sky atlas extent must be a power of two");
     }
 
-    NightSkyAtlas atlas = make_empty_atlas(extent, config.layer);
+    NightSkyAtlas atlas = make_empty_atlas(extent, config.layer, config.formula);
     const std::uint32_t variation_seed =
         hash_u32(static_cast<std::uint32_t>(std::round(config.procedural_variation * 1000.0F)) +
                  0x7a41c6d3U);
@@ -554,7 +557,7 @@ NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::u
             for (std::uint32_t x = 0; x < extent; ++x) {
                 const Vec3 direction = cubemap_direction(face, x, y, extent);
                 const Vec3 color =
-                    procedural_milky_way(direction, variation_seed, config.layer);
+                    procedural_milky_way(direction, variation_seed, config.layer, config.formula);
                 set_texel(atlas, 0U, face, x, y, color);
             }
         }
@@ -564,7 +567,8 @@ NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::u
         cubey::procedural::make_procedural_artifact_identity(
             "atmosphere night sky atlas",
             "cubey::render::generate_night_sky_atlas",
-            "atmosphere-night-sky-atlas-v1",
+            config.formula == NightSkyAtlasFormula::V2 ? "atmosphere-night-sky-atlas-v2"
+                                                       : "atmosphere-night-sky-atlas-v1",
             "atmosphere.night_sky_atlas",
             variation_seed,
             cubey::procedural::ProceduralDomainSpace::Spherical),

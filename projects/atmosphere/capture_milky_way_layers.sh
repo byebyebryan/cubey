@@ -8,6 +8,7 @@ WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"
 VARIATION="${VARIATION:-0.0}"
+FORMULA="${FORMULA:-v1}"
 
 LAYERS=(
     final
@@ -39,6 +40,7 @@ CAPTURE_LABELS=()
     printf -- '- Size: %sx%s\n' "${WIDTH}" "${HEIGHT}"
     printf -- '- Frames: %s\n' "${FRAMES}"
     printf -- '- Procedural variation: %s\n\n' "${VARIATION}"
+    printf -- '- Formula: %s\n\n' "${FORMULA}"
     printf 'This pack captures the generated night-sky atlas through the atmosphere '
     printf '`milky-way` debug view. It is intended as a fast layer-composition '
     printf 'baseline before changing the procedural Milky Way recipe.\n\n'
@@ -55,6 +57,7 @@ for layer in "${LAYERS[@]}"; do
         --height "${HEIGHT}"
         --debug-view milky-way
         --milky-way-layer "${layer}"
+        --milky-way-formula "${FORMULA}"
         --milky-way-variation "${VARIATION}"
         --output "${OUT_DIR}/${rel_file}"
     )

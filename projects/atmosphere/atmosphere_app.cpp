@@ -96,6 +96,7 @@ void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64
 struct ResolvedNightSkyAtlas {
     float procedural_variation = 0.0F;
     NightSkyLayerView layer = NightSkyLayerView::Final;
+    NightSkyAtlasFormula formula = cubey::render::kDefaultNightSkyAtlasFormula;
 };
 
 struct GeneratedNightSkyAtlas {
@@ -131,18 +132,21 @@ std::filesystem::path shader_path(const char* filename) {
     return {
         .procedural_variation = config.night_sky.procedural_variation,
         .layer = config.night_sky.layer,
+        .formula = config.night_sky.formula,
     };
 }
 
 [[nodiscard]] bool same_night_sky_atlas(const ResolvedNightSkyAtlas& lhs,
                                         const ResolvedNightSkyAtlas& rhs) {
-    return lhs.procedural_variation == rhs.procedural_variation && lhs.layer == rhs.layer;
+    return lhs.procedural_variation == rhs.procedural_variation && lhs.layer == rhs.layer &&
+           lhs.formula == rhs.formula;
 }
 
 [[nodiscard]] NightSkyAtlasConfig night_sky_atlas_config(const ResolvedNightSkyAtlas& resolved) {
     return {
         .procedural_variation = resolved.procedural_variation,
         .layer = resolved.layer,
+        .formula = resolved.formula,
     };
 }
 

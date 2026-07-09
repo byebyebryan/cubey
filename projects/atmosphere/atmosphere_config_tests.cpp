@@ -228,6 +228,15 @@ int main() {
             "empty night sky layer should default to final");
     require_throws([] { static_cast<void>(night_sky_layer_view_from_name("hydrogen")); },
                    "night sky layer parser should reject unknown layers");
+    for (const NightSkyAtlasFormula formula : kNightSkyAtlasFormulas) {
+        require(night_sky_atlas_formula_from_name(night_sky_atlas_formula_name(formula)) ==
+                    formula,
+                "night sky atlas formula names should round trip");
+    }
+    require(night_sky_atlas_formula_from_name("") == cubey::render::kDefaultNightSkyAtlasFormula,
+            "empty night sky atlas formula should default");
+    require_throws([] { static_cast<void>(night_sky_atlas_formula_from_name("painted")); },
+                   "night sky atlas formula parser should reject unknown formulas");
 
     for (const cubey::render::AtmosphereEnvironmentGroundMode mode : kAtmosphereGroundModes) {
         require(atmosphere_ground_mode_from_name(atmosphere_ground_mode_name(mode)) == mode,
@@ -886,6 +895,11 @@ int main() {
                 .procedural_variation = 3.0F,
             },
             64U);
+        const NightSkyAtlas formula_v2 = generate_night_sky_atlas(
+            NightSkyAtlasConfig{
+                .formula = NightSkyAtlasFormula::V2,
+            },
+            64U);
         const NightSkyAtlas dust_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .layer = NightSkyLayerView::DustTau,
@@ -903,6 +917,9 @@ int main() {
             64U);
         require(atlas.extent == 64U && atlas.mip_levels == 7U,
                 "night sky atlas should use the requested power-of-two extent");
+        require(atlas.formula == NightSkyAtlasFormula::V1 &&
+                    formula_v2.formula == NightSkyAtlasFormula::V2,
+                "night sky atlas should preserve selected formula");
         require(dust_layer.layer == NightSkyLayerView::DustTau &&
                     hii_layer.layer == NightSkyLayerView::HiiEmission &&
                     speckle_layer.layer == NightSkyLayerView::Speckles,
@@ -920,6 +937,8 @@ int main() {
                 "night sky atlas metadata should identify its generator");
         require(atlas.metadata.formula_version == "atmosphere-night-sky-atlas-v1",
                 "night sky atlas metadata should identify its formula version");
+        require(formula_v2.metadata.formula_version == "atmosphere-night-sky-atlas-v2",
+                "night sky atlas v2 metadata should identify its formula version");
         require(atlas.metadata.domain == "atmosphere.night_sky_atlas",
                 "night sky atlas metadata should identify its domain");
         require(atlas.metadata.seed == atlas_again.metadata.seed,
@@ -1159,6 +1178,7 @@ int main() {
         run_config.debug_view = "moon";
         run_config.atmosphere.night_sky_mode = "camera";
         run_config.atmosphere.milky_way_layer = "dust-tau";
+        run_config.atmosphere.milky_way_formula = "v2";
         run_config.atmosphere.sun_elevation_degrees = 6.0F;
         run_config.atmosphere.sun_azimuth_degrees = 33.0F;
         run_config.atmosphere.camera_altitude_km = 2.0F;
@@ -1186,8 +1206,9 @@ int main() {
         require(config.render_view == AtmosphereRenderView::Moon,
                 "run config should select atmosphere debug view");
         require(config.night_sky.visual_mode == NightSkyVisualMode::Camera &&
-                    config.night_sky.layer == NightSkyLayerView::DustTau,
-                "run config should select night sky visual mode and layer");
+                    config.night_sky.layer == NightSkyLayerView::DustTau &&
+                    config.night_sky.formula == NightSkyAtlasFormula::V2,
+                "run config should select night sky visual mode, layer, and formula");
         require(config.sun_elevation_degrees == 6.0F && config.sun_azimuth_degrees == 33.0F &&
                     config.camera_altitude_km == 2.0F && config.mie_density_scale == 2.25F,
                 "run config atmosphere overrides should win over preset defaults");

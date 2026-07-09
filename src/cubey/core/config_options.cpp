@@ -63,6 +63,7 @@ constexpr std::array<std::string_view, 3> kAtmosphereGroundModes{"ground", "sky-
 constexpr std::array<std::string_view, 6> kMilkyWayLayers{
     "final", "stellar-emission", "dust-tau", "star-clouds", "hii-emission", "speckles",
 };
+constexpr std::array<std::string_view, 2> kMilkyWayFormulas{"v1", "v2"};
 constexpr std::array<std::string_view, 7> kCloudCameraModes{
     "surface", "surface-up", "surface-sun", "high", "high-oblique", "orbit", "orbit-terminator"};
 constexpr std::array<std::string_view, 3> kCloudQualities{"quarter", "half", "full"};
@@ -151,7 +152,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 257> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 258> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -502,6 +503,10 @@ constexpr std::array<ConfigOptionDescriptor, 257> kRunConfigOptions{
            "--milky-way-layer", "Milky Way Layer", "Atmosphere",
            "Generated Milky Way atlas layer to inspect.", ConfigOptionType::Enum, no_range(),
            enum_choices(kMilkyWayLayers)),
+    option(RunConfigOptionId::AtmosphereMilkyWayFormula, "atmosphere.milky_way_formula",
+           "--milky-way-formula", "Milky Way Formula", "Atmosphere",
+           "Generated Milky Way atlas formula.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kMilkyWayFormulas)),
     option(RunConfigOptionId::AtmosphereSunElevation, "atmosphere.sun_elevation_degrees",
            "--sun-elevation", "Sun Elevation", "Atmosphere", "Manual sun elevation in degrees.",
            ConfigOptionType::Float, bounded_range(-90.0, 90.0)),
@@ -1465,6 +1470,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
                    : nlohmann::json(config.atmosphere.ground_mode);
     case RunConfigOptionId::AtmosphereMilkyWayLayer:
         return config.atmosphere.milky_way_layer;
+    case RunConfigOptionId::AtmosphereMilkyWayFormula:
+        return config.atmosphere.milky_way_formula;
     case RunConfigOptionId::AtmosphereSunElevation:
         return optional_float(config.atmosphere.sun_elevation_degrees);
     case RunConfigOptionId::AtmosphereSunAzimuth:
@@ -2017,6 +2024,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::AtmosphereOptions& 
     adapter.writeField<std::string>("night_sky_mode", options.night_sky_mode);
     adapter.writeField<std::string>("ground_mode", options.ground_mode);
     adapter.writeField<std::string>("milky_way_layer", options.milky_way_layer);
+    adapter.writeField<std::string>("milky_way_formula", options.milky_way_formula);
     adapter.writeField<float>("sun_elevation_degrees", options.sun_elevation_degrees);
     adapter.writeField<float>("sun_azimuth_degrees", options.sun_azimuth_degrees);
     adapter.writeField<float>("camera_altitude_km", options.camera_altitude_km);
@@ -2055,6 +2063,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::AtmosphereOptions& opti
     adapter.readField<std::string>("night_sky_mode", options.night_sky_mode);
     adapter.readField<std::string>("ground_mode", options.ground_mode);
     adapter.readField<std::string>("milky_way_layer", options.milky_way_layer);
+    adapter.readField<std::string>("milky_way_formula", options.milky_way_formula);
     adapter.readField<float>("sun_elevation_degrees", options.sun_elevation_degrees);
     adapter.readField<float>("sun_azimuth_degrees", options.sun_azimuth_degrees);
     adapter.readField<float>("camera_altitude_km", options.camera_altitude_km);
@@ -2721,6 +2730,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::AtmosphereMilkyWayLayer:
         config.atmosphere.milky_way_layer = std::string(value);
+        break;
+    case RunConfigOptionId::AtmosphereMilkyWayFormula:
+        config.atmosphere.milky_way_formula = std::string(value);
         break;
     case RunConfigOptionId::AtmosphereSunElevation:
         config.atmosphere.sun_elevation_degrees = parse_config_float(value, option);
