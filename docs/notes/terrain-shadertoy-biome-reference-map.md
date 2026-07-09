@@ -12,11 +12,18 @@ Use selected ShaderToy examples as visual and source-model references for clean
 room `terrain_ref` recipes. Do not copy restrictive or unclear shader code into
 Cubey, and do not treat the recipes as production biome contracts.
 
-The first expansion batch should add three broad comparisons:
+The first expansion batch added three broad comparisons:
 
 - `shadertoy-alpine`: high mountain mass, ridges, valleys, snow/rock/grass.
 - `shadertoy-dunes`: wind-aligned dune forms and sand/ripple material cues.
 - `shadertoy-lake-basin`: basin terrain, standing water, shoreline/wetness cues.
+
+The next expansion batch should add two more terrain-family probes:
+
+- `shadertoy-badlands`: arid plateau, eroded cuts, dry washes, cliffs, and
+  strata-like material.
+- `shadertoy-coast-island`: island/coastal landform, beach shelf, inland
+  buildup, local coastal cliffs, and simple sea-level contact.
 
 These sit beside `terrain-engine-ref` and `shadertoy-mountain` in
 `terrain_ref`. They are visual/source references only; the future
@@ -31,7 +38,8 @@ models prove worthwhile.
 | `desert_sand.glsl` | Dune material/detail target | Use for sand material, wind-aligned ripple normals, subtle layer crossing, and close surface texture. Do not treat it as a strong macro dune-height source; the source itself calls out the scene as artificial and texture-focused. |
 | `Hesiod/WaveDune`, `TerraForge3D/dunes.glsl`, `SimpleWindErosion` | Dune source-shape study | Better references for macro dune shape than `desert_sand.glsl`. Use them clean-room: asymmetric windward/slip-face profiles, envelope modulation, and domain displacement should drive the heightfield. |
 | `mountains_and_lakes_*`, `day_at_the_lake_*`, `misty_lake.glsl`, `castaway_*` | Lake basin and shoreline target | Use for waterline, shallow/deep tint, shoreline wetness, basin contrast, and explicit water-depth/shoreline fields. Keep real lake generation and water rendering deferred. |
-| `dry_rocky_gorge.glsl`, `desert_canyon.glsl`, `canyon.glsl` | Later canyon/badlands study | Useful for arid color/material and canyon composition, but several examples are path-authored or restrictive. Do not make them first-batch recipes. |
+| `dry_rocky_gorge.glsl`, `desert_canyon.glsl`, `canyon.glsl` | Badlands/gorge source and material target | Use clean-room ideas for plateau cuts, dry washes, arid strata color, and slope/cliff exposure. Avoid direct code copy and avoid a single authored path line as the source model. |
+| `waterworld.glsl`, `castaway_*`, `sunrise_at_pulau_sibu.glsl`, `alien_waterworld.glsl` | Coast/island source and material target | Use for island silhouette, sea-level mask, beach shelf, shallow-water tint, and local coastal cliffs. Keep water rendering simple: fixed sea level plus existing flat water surface. |
 | `rainforest_*`, `the_forest.glsl`, `windy_plains.glsl` | Later material/foliage study | These are more about vegetation, atmosphere, and scene composition than heightfield terrain. Wait until terrain fields can drive foliage eligibility. |
 | `terrain_*`, `terrain_erosion_noise_*`, `clean_terrain_erosion_filter_*`, `advanced_terrain_erosion_filter_*` | Process/operator study | Keep under the existing ShaderToy operator extraction path, not this visual recipe batch. |
 
@@ -69,17 +77,25 @@ The first review should judge large-scale read first:
   with ridges, snow, rock, grass, and small water bodies. Remaining weaknesses
   are mostly render/capture issues: finite patch framing, snow over-brightness,
   and clipmap faceting in low views.
-- `shadertoy-dunes` should be corrected. The first implementation used
-  symmetric periodic bands as the primary height driver, which reads like waves.
-  The next pass should use `desert_sand.glsl` only for material/ripple cues and
-  derive macro height from an asymmetric dune-field source.
-- `shadertoy-lake-basin` works mechanically but is visually too flat. It needs a
-  stronger surrounding basin/rim and clearer shoreline/wetness response before
-  it is useful as a source-model reference.
+- `shadertoy-dunes` is accepted as a reference slice after switching from
+  symmetric periodic bands to a broader asymmetric dune-field source. Remaining
+  weaknesses are material/lighting issues: the height view reads better than the
+  sand material.
+- `shadertoy-lake-basin` is accepted as a reference slice after strengthening
+  the surrounding rim, basin depression, and shoreline response. It remains
+  visually plain because real water rendering is intentionally deferred.
+
+## Next Expansion Review Targets
+
+- `shadertoy-badlands` should read as dry eroded terrain: plateau mass,
+  branching/noise-driven cuts, dry wash floors, local cliffs, and arid strata.
+  It should not be a single authored canyon line.
+- `shadertoy-coast-island` should read as an island or coastal patch: clear
+  land/sea boundary, beach shelf, inland height buildup, and occasional coastal
+  cliffs. The water surface can remain the existing flat review plane.
 
 ## Deferred
 
-- Badlands/canyon recipe.
 - Forest/plains recipe with vegetation eligibility.
 - Real water pass with reflection/refraction.
 - Product-field promotion into `projects/terrain`.
