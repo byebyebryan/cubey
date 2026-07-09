@@ -64,8 +64,8 @@ function(cubey_shader_package_depends out_var)
 endfunction()
 
 function(cubey_shared_shader_depends out_var)
-    cubey_shader_package_depends(
-        ${out_var}
+    set(
+        shared_shader_depends
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/debug.glsl"
@@ -77,12 +77,14 @@ function(cubey_shared_shader_depends out_var)
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/view.glsl"
     )
+    list(REMOVE_DUPLICATES shared_shader_depends)
+    set(${out_var} ${shared_shader_depends} PARENT_SCOPE)
 endfunction()
 
 function(cubey_atmosphere_shader_depends out_var)
     cubey_shared_shader_depends(atmosphere_shared_shader_depends)
-    cubey_shader_package_depends(
-        ${out_var}
+    set(
+        atmosphere_shader_depends
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_night_sky.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_sun.glsl"
@@ -90,6 +92,8 @@ function(cubey_atmosphere_shader_depends out_var)
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_debug.glsl"
         ${atmosphere_shared_shader_depends}
     )
+    list(REMOVE_DUPLICATES atmosphere_shader_depends)
+    set(${out_var} ${atmosphere_shader_depends} PARENT_SCOPE)
 endfunction()
 
 function(cubey_forward_pbr_shader_sources out_var)
@@ -113,11 +117,13 @@ endfunction()
 function(cubey_forward_pbr_shader_depends out_var)
     cubey_shared_shader_depends(forward_pbr_shared_shader_depends)
     cubey_atmosphere_shader_depends(forward_pbr_atmosphere_shader_depends)
-    cubey_shader_package_depends(
-        ${out_var}
+    set(
+        forward_pbr_shader_depends
         ${forward_pbr_shared_shader_depends}
         ${forward_pbr_atmosphere_shader_depends}
     )
+    list(REMOVE_DUPLICATES forward_pbr_shader_depends)
+    set(${out_var} ${forward_pbr_shader_depends} PARENT_SCOPE)
 endfunction()
 
 function(cubey_cloud_layer_shader_sources out_var)
@@ -159,8 +165,8 @@ endfunction()
 
 function(cubey_cloud_layer_shader_depends out_var)
     cubey_shared_shader_depends(cloud_layer_shared_shader_depends)
-    cubey_shader_package_depends(
-        ${out_var}
+    set(
+        cloud_layer_shader_depends
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_post.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_noise_common.glsl"
@@ -168,4 +174,6 @@ function(cubey_cloud_layer_shader_depends out_var)
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather_common.glsl"
         ${cloud_layer_shared_shader_depends}
     )
+    list(REMOVE_DUPLICATES cloud_layer_shader_depends)
+    set(${out_var} ${cloud_layer_shader_depends} PARENT_SCOPE)
 endfunction()

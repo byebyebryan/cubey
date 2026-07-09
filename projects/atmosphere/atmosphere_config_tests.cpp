@@ -1599,6 +1599,17 @@ int main() {
                      "atmosphere shader should include a continuous night airglow fill");
     require_contains(shader_source, "safe_horizontal_direction",
                      "atmosphere shader should guard vertical twilight vectors");
+    require_contains(atmosphere_common_source, "sky_background_sample_direction",
+                     "common atmosphere helpers should clamp sky-only no-ground background rays");
+    require_contains(shader_entry_source,
+                     "? sky_background_sample_direction(ray_direction, ray_origin, planet_center)",
+                     "atmosphere shader should remap no-ground sky-background rays near the horizon");
+    require_contains(shader_entry_source,
+                     "cubey_atmosphere_classify_sky_background_ray(\n"
+                     "                  medium, ray_origin, atmosphere_ray_direction, -1.0)",
+                     "atmosphere shader should classify the remapped sky-background ray");
+    require_contains(shader_entry_source, "celestial_horizon_visibility",
+                     "atmosphere shader should keep no-ground celestial content above the real horizon");
     require_contains(shader_source, "procedural_star_radiance",
                      "atmosphere shader should include procedural stars");
     require_contains(shader_source, "bright_star_radiance",

@@ -62,6 +62,7 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
+projects/atmosphere/capture_atmosphere_background_horizon.sh outputs/atmosphere-background-horizon
 projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
 projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
 projects/atmosphere/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
@@ -76,6 +77,11 @@ current practical target; set `WIDTH`, `HEIGHT`, `QUALITY`, or `DEEP=1` for
 faster smoke runs or full-quality reference comparisons. Surface rows define
 Cloud V1 acceptance. High-oblique/orbit rows, when present, are deferred
 diagnostics and should not drive V1 tuning.
+
+The background horizon script disables clouds and reference geometry, then
+captures `ground`, `sky-only`, and `sky-only-no-ground-occlusion` at noon,
+twilight, and night. Use it before cloud tuning when a hard horizon band is
+visible in final color.
 
 The edge resolve script is the focused A/B for cloud-edge artifacts. It captures
 `terrain-post` and `metadata-bilateral` resolve modes for `surface-up` and
