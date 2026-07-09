@@ -340,4 +340,21 @@ float shadertoy_coast_island_reference_height(float world_x, float world_z, std:
     return std::max(height, -170.0F);
 }
 
+float shadertoy_plains_reference_height(float world_x, float world_z, std::uint64_t seed) {
+    return shadertoy_dunes_reference_height(world_x, world_z, seed);
+}
+
+float shadertoy_gorge_reference_height(float world_x, float world_z, std::uint64_t seed) {
+    return shadertoy_badlands_reference_height(world_x, world_z, seed);
+}
+
+float shadertoy_glacial_highland_reference_height(float world_x, float world_z,
+                                                  std::uint64_t seed) {
+    return shadertoy_alpine_reference_height(world_x, world_z, seed);
+}
+
+float shadertoy_crater_field_reference_height(float world_x, float world_z, std::uint64_t seed) {
+    return shadertoy_badlands_reference_height(world_x, world_z, seed);
+}
+
 } // namespace cubey::projects::terrain_ref

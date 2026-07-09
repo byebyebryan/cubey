@@ -81,6 +81,14 @@ struct TerrainRefSceneMetrics {
         return 5.0F;
     case TerrainRefRecipe::ShadertoyCoastIsland:
         return 6.0F;
+    case TerrainRefRecipe::ShadertoyPlains:
+        return 7.0F;
+    case TerrainRefRecipe::ShadertoyGorge:
+        return 8.0F;
+    case TerrainRefRecipe::ShadertoyGlacialHighland:
+        return 9.0F;
+    case TerrainRefRecipe::ShadertoyCraterField:
+        return 10.0F;
     }
     return 0.0F;
 }
@@ -101,6 +109,14 @@ struct TerrainRefSceneMetrics {
         return kShadertoyBadlandsReferenceWaterHeightM;
     case TerrainRefRecipe::ShadertoyCoastIsland:
         return kShadertoyCoastIslandReferenceWaterHeightM;
+    case TerrainRefRecipe::ShadertoyPlains:
+        return kShadertoyPlainsReferenceWaterHeightM;
+    case TerrainRefRecipe::ShadertoyGorge:
+        return kShadertoyGorgeReferenceWaterHeightM;
+    case TerrainRefRecipe::ShadertoyGlacialHighland:
+        return kShadertoyGlacialHighlandReferenceWaterHeightM;
+    case TerrainRefRecipe::ShadertoyCraterField:
+        return kShadertoyCraterFieldReferenceWaterHeightM;
     }
     return kTerrainEngineReferenceWaterHeightM;
 }
@@ -122,6 +138,14 @@ struct TerrainRefSceneMetrics {
         return shadertoy_badlands_reference_height(world_x, world_z, config.seed);
     case TerrainRefRecipe::ShadertoyCoastIsland:
         return shadertoy_coast_island_reference_height(world_x, world_z, config.seed);
+    case TerrainRefRecipe::ShadertoyPlains:
+        return shadertoy_plains_reference_height(world_x, world_z, config.seed);
+    case TerrainRefRecipe::ShadertoyGorge:
+        return shadertoy_gorge_reference_height(world_x, world_z, config.seed);
+    case TerrainRefRecipe::ShadertoyGlacialHighland:
+        return shadertoy_glacial_highland_reference_height(world_x, world_z, config.seed);
+    case TerrainRefRecipe::ShadertoyCraterField:
+        return shadertoy_crater_field_reference_height(world_x, world_z, config.seed);
     }
     return terrain_engine_reference_height(world_x, world_z, config.seed);
 }

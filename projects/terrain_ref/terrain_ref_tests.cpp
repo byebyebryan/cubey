@@ -121,6 +121,31 @@ void test_terrain_ref_config_from_run_config() {
     require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyCoastIsland,
             "terrain_ref should parse ShaderToy coast-island recipe");
 
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyPlains);
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyPlains,
+            "terrain_ref should parse ShaderToy plains recipe");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyGorge);
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyGorge,
+            "terrain_ref should parse ShaderToy gorge recipe");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyGlacialHighland);
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe ==
+                cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyGlacialHighland,
+            "terrain_ref should parse ShaderToy glacial-highland recipe");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyCraterField);
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyCraterField,
+            "terrain_ref should parse ShaderToy crater-field recipe");
+
     run_config.terrain.recipe = "temperate-mountain-river";
     require_throws(
         [&run_config] {
@@ -262,6 +287,42 @@ void test_shadertoy_biome_reference_sampling_is_deterministic() {
                  "ShaderToy coast-island sampling should be deterministic",
                  "ShaderToy coast-island height should be finite",
                  "ShaderToy coast-island seed should affect height");
+    check_height(cubey::projects::terrain_ref::shadertoy_plains_reference_height(217.0F, -341.0F,
+                                                                                 seed),
+                 cubey::projects::terrain_ref::shadertoy_plains_reference_height(217.0F, -341.0F,
+                                                                                 seed),
+                 cubey::projects::terrain_ref::shadertoy_plains_reference_height(217.0F, -341.0F,
+                                                                                 seed + 1U),
+                 "ShaderToy plains sampling should be deterministic",
+                 "ShaderToy plains height should be finite",
+                 "ShaderToy plains seed should affect height");
+    check_height(cubey::projects::terrain_ref::shadertoy_gorge_reference_height(217.0F, -341.0F,
+                                                                                seed),
+                 cubey::projects::terrain_ref::shadertoy_gorge_reference_height(217.0F, -341.0F,
+                                                                                seed),
+                 cubey::projects::terrain_ref::shadertoy_gorge_reference_height(217.0F, -341.0F,
+                                                                                seed + 1U),
+                 "ShaderToy gorge sampling should be deterministic",
+                 "ShaderToy gorge height should be finite",
+                 "ShaderToy gorge seed should affect height");
+    check_height(cubey::projects::terrain_ref::shadertoy_glacial_highland_reference_height(
+                     217.0F, -341.0F, seed),
+                 cubey::projects::terrain_ref::shadertoy_glacial_highland_reference_height(
+                     217.0F, -341.0F, seed),
+                 cubey::projects::terrain_ref::shadertoy_glacial_highland_reference_height(
+                     217.0F, -341.0F, seed + 1U),
+                 "ShaderToy glacial-highland sampling should be deterministic",
+                 "ShaderToy glacial-highland height should be finite",
+                 "ShaderToy glacial-highland seed should affect height");
+    check_height(cubey::projects::terrain_ref::shadertoy_crater_field_reference_height(
+                     217.0F, -341.0F, seed),
+                 cubey::projects::terrain_ref::shadertoy_crater_field_reference_height(
+                     217.0F, -341.0F, seed),
+                 cubey::projects::terrain_ref::shadertoy_crater_field_reference_height(
+                     217.0F, -341.0F, seed + 1U),
+                 "ShaderToy crater-field sampling should be deterministic",
+                 "ShaderToy crater-field height should be finite",
+                 "ShaderToy crater-field seed should affect height");
 }
 
 } // namespace

@@ -5,6 +5,10 @@ const float TERRAIN_REF_RECIPE_SHADERTOY_DUNES = 3.0;
 const float TERRAIN_REF_RECIPE_SHADERTOY_LAKE_BASIN = 4.0;
 const float TERRAIN_REF_RECIPE_SHADERTOY_BADLANDS = 5.0;
 const float TERRAIN_REF_RECIPE_SHADERTOY_COAST_ISLAND = 6.0;
+const float TERRAIN_REF_RECIPE_SHADERTOY_PLAINS = 7.0;
+const float TERRAIN_REF_RECIPE_SHADERTOY_GORGE = 8.0;
+const float TERRAIN_REF_RECIPE_SHADERTOY_GLACIAL_HIGHLAND = 9.0;
+const float TERRAIN_REF_RECIPE_SHADERTOY_CRATER_FIELD = 10.0;
 
 const float TERRAIN_REF_MATERIAL_RECIPE = 0.0;
 const float TERRAIN_REF_MATERIAL_HEIGHT = 1.0;
@@ -14,6 +18,10 @@ const float SHADERTOY_DUNES_WATER_HEIGHT_M = -1000.0;
 const float SHADERTOY_LAKE_BASIN_WATER_HEIGHT_M = 165.0;
 const float SHADERTOY_BADLANDS_WATER_HEIGHT_M = -1000.0;
 const float SHADERTOY_COAST_ISLAND_WATER_HEIGHT_M = 100.0;
+const float SHADERTOY_PLAINS_WATER_HEIGHT_M = -1000.0;
+const float SHADERTOY_GORGE_WATER_HEIGHT_M = -1000.0;
+const float SHADERTOY_GLACIAL_HIGHLAND_WATER_HEIGHT_M = -1000.0;
+const float SHADERTOY_CRATER_FIELD_WATER_HEIGHT_M = -1000.0;
 
 float shadertoy_biome_fract_positive(float value) {
     return value - floor(value);
@@ -241,6 +249,22 @@ float shadertoy_coast_island_reference_height(vec2 world, vec2 seed) {
     return max(height, -170.0);
 }
 
+float shadertoy_plains_reference_height(vec2 world, vec2 seed) {
+    return shadertoy_dunes_reference_height(world, seed);
+}
+
+float shadertoy_gorge_reference_height(vec2 world, vec2 seed) {
+    return shadertoy_badlands_reference_height(world, seed);
+}
+
+float shadertoy_glacial_highland_reference_height(vec2 world, vec2 seed) {
+    return shadertoy_alpine_reference_height(world, seed);
+}
+
+float shadertoy_crater_field_reference_height(vec2 world, vec2 seed) {
+    return shadertoy_badlands_reference_height(world, seed);
+}
+
 vec3 shadertoy_biome_reference_normal(vec2 world, vec2 seed, float vertical_scale,
     float recipe_id) {
     const float step_m = 1.0;
@@ -273,6 +297,30 @@ vec3 shadertoy_biome_reference_normal(vec2 world, vec2 seed, float vertical_scal
         x1 = shadertoy_coast_island_reference_height(world + vec2(step_m, 0.0), seed);
         z0 = shadertoy_coast_island_reference_height(world - vec2(0.0, step_m), seed);
         z1 = shadertoy_coast_island_reference_height(world + vec2(0.0, step_m), seed);
+    } else if (abs(recipe_id - TERRAIN_REF_RECIPE_SHADERTOY_PLAINS) < 0.5) {
+        center = shadertoy_plains_reference_height(world, seed);
+        x0 = shadertoy_plains_reference_height(world - vec2(step_m, 0.0), seed);
+        x1 = shadertoy_plains_reference_height(world + vec2(step_m, 0.0), seed);
+        z0 = shadertoy_plains_reference_height(world - vec2(0.0, step_m), seed);
+        z1 = shadertoy_plains_reference_height(world + vec2(0.0, step_m), seed);
+    } else if (abs(recipe_id - TERRAIN_REF_RECIPE_SHADERTOY_GORGE) < 0.5) {
+        center = shadertoy_gorge_reference_height(world, seed);
+        x0 = shadertoy_gorge_reference_height(world - vec2(step_m, 0.0), seed);
+        x1 = shadertoy_gorge_reference_height(world + vec2(step_m, 0.0), seed);
+        z0 = shadertoy_gorge_reference_height(world - vec2(0.0, step_m), seed);
+        z1 = shadertoy_gorge_reference_height(world + vec2(0.0, step_m), seed);
+    } else if (abs(recipe_id - TERRAIN_REF_RECIPE_SHADERTOY_GLACIAL_HIGHLAND) < 0.5) {
+        center = shadertoy_glacial_highland_reference_height(world, seed);
+        x0 = shadertoy_glacial_highland_reference_height(world - vec2(step_m, 0.0), seed);
+        x1 = shadertoy_glacial_highland_reference_height(world + vec2(step_m, 0.0), seed);
+        z0 = shadertoy_glacial_highland_reference_height(world - vec2(0.0, step_m), seed);
+        z1 = shadertoy_glacial_highland_reference_height(world + vec2(0.0, step_m), seed);
+    } else if (abs(recipe_id - TERRAIN_REF_RECIPE_SHADERTOY_CRATER_FIELD) < 0.5) {
+        center = shadertoy_crater_field_reference_height(world, seed);
+        x0 = shadertoy_crater_field_reference_height(world - vec2(step_m, 0.0), seed);
+        x1 = shadertoy_crater_field_reference_height(world + vec2(step_m, 0.0), seed);
+        z0 = shadertoy_crater_field_reference_height(world - vec2(0.0, step_m), seed);
+        z1 = shadertoy_crater_field_reference_height(world + vec2(0.0, step_m), seed);
     } else {
         center = shadertoy_lake_basin_reference_height(world, seed);
         x0 = shadertoy_lake_basin_reference_height(world - vec2(step_m, 0.0), seed);

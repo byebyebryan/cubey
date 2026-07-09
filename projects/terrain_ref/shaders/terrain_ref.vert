@@ -46,6 +46,18 @@ float terrain_ref_height(vec2 world_xz, vec2 seed, bool surface_detail) {
     if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_COAST_ISLAND) < 0.5) {
         return shadertoy_coast_island_reference_height(world_xz, seed);
     }
+    if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_PLAINS) < 0.5) {
+        return shadertoy_plains_reference_height(world_xz, seed);
+    }
+    if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_GORGE) < 0.5) {
+        return shadertoy_gorge_reference_height(world_xz, seed);
+    }
+    if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_GLACIAL_HIGHLAND) < 0.5) {
+        return shadertoy_glacial_highland_reference_height(world_xz, seed);
+    }
+    if (abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_CRATER_FIELD) < 0.5) {
+        return shadertoy_crater_field_reference_height(world_xz, seed);
+    }
     return terrain_engine_reference_height(world_xz, seed);
 }
 
