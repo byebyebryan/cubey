@@ -18,12 +18,23 @@ The first expansion batch added three broad comparisons:
 - `shadertoy-dunes`: wind-aligned dune forms and sand/ripple material cues.
 - `shadertoy-lake-basin`: basin terrain, standing water, shoreline/wetness cues.
 
-The next expansion batch should add two more terrain-family probes:
+The second expansion batch added two more terrain-family probes:
 
 - `shadertoy-badlands`: arid plateau, eroded cuts, dry washes, cliffs, and
   strata-like material.
 - `shadertoy-coast-island`: island/coastal landform, beach shelf, inland
   buildup, local coastal cliffs, and simple sea-level contact.
+
+The next wide batch should add four more comparison probes:
+
+- `shadertoy-plains`: low-relief rolling grassland, subtle swales, and wind or
+  grass material variation.
+- `shadertoy-gorge`: dry high-incision canyon terrain with corridor hierarchy,
+  tributary cuts, cliff walls, floors, and strata.
+- `shadertoy-glacial-highland`: icy highland terrain with snowfields, broad
+  glacial valley hints, exposed rock ribs, and talus/ice contrast.
+- `shadertoy-crater-field`: barren cratered terrain with overlapping
+  depressions, raised rims, ejecta roughness, and regolith material.
 
 These sit beside `terrain-engine-ref` and `shadertoy-mountain` in
 `terrain_ref`. They are visual/source references only; the future
@@ -40,7 +51,11 @@ models prove worthwhile.
 | `mountains_and_lakes_*`, `day_at_the_lake_*`, `misty_lake.glsl`, `castaway_*` | Lake basin and shoreline target | Use for waterline, shallow/deep tint, shoreline wetness, basin contrast, and explicit water-depth/shoreline fields. Keep real lake generation and water rendering deferred. |
 | `dry_rocky_gorge.glsl`, `desert_canyon.glsl`, `canyon.glsl` | Badlands/gorge source and material target | Use clean-room ideas for plateau cuts, dry washes, arid strata color, and slope/cliff exposure. Avoid direct code copy and avoid a single authored path line as the source model. |
 | `waterworld.glsl`, `castaway_*`, `sunrise_at_pulau_sibu.glsl`, `alien_waterworld.glsl` | Coast/island source and material target | Use for island silhouette, sea-level mask, beach shelf, shallow-water tint, and local coastal cliffs. Keep water rendering simple: fixed sea level plus existing flat water surface. |
-| `rainforest_*`, `the_forest.glsl`, `windy_plains.glsl` | Later material/foliage study | These are more about vegetation, atmosphere, and scene composition than heightfield terrain. Wait until terrain fields can drive foliage eligibility. |
+| `rainforest_*`, `the_forest.glsl` | Later material/foliage study | These are more about vegetation, atmosphere, and scene composition than heightfield terrain. Wait until terrain fields can drive foliage eligibility. |
+| `windy_plains.glsl`, `cloudy_terrain_*` | Plains source/material target | Use for low-relief height variation, swales, grass/wind color variation, and subtle drainage hints. Do not make the patch empty or noise-flat. |
+| `dry_rocky_gorge.glsl`, `desert_canyon.glsl`, `canyon.glsl` | Gorge/canyon target | Use for high-incision corridor vocabulary, tributary cuts, cliff exposure, arid floors, and strata. Keep the source field procedural; do not author one straight centerline. |
+| `swiss_alps_*`, `eroded_mountains_*`, `foggy_mountains_2.glsl` | Glacial highland target | Use for broad snow/ice coverage, rock ribs, valley carving hints, talus/scree, and high-altitude atmosphere. Keep it distinct from green alpine material zoning. |
+| `a_battered_alien_planet.glsl`, `alien_landscape.glsl`, `lunar_cubemap_*` | Crater field target | Use for crater depressions, raised rims, ejecta roughness, and barren regolith material. Treat this as a terrain-driver stress test, not a planet renderer. |
 | `terrain_*`, `terrain_erosion_noise_*`, `clean_terrain_erosion_filter_*`, `advanced_terrain_erosion_filter_*` | Process/operator study | Keep under the existing ShaderToy operator extraction path, not this visual recipe batch. |
 
 ## Extraction Rules
@@ -116,7 +131,23 @@ The first review should judge large-scale read first:
 
 ## Deferred
 
-- Forest/plains recipe with vegetation eligibility.
+- Forest/rainforest recipe with vegetation eligibility.
 - Real water pass with reflection/refraction.
 - Product-field promotion into `projects/terrain`.
 - ShaderToy manifest normalization or browser-assisted metadata import.
+
+## Wide Batch Review Targets
+
+- `shadertoy-plains` should read as broad low-relief terrain with gentle rolling
+  structure, swales, and material variation. It should not read as a blank
+  plane or as high-relief hills.
+- `shadertoy-gorge` should read as coherent dry incision: a main corridor plus
+  tributary cuts, cliff walls, floor material, and strata. It should not be a
+  single straight authored canyon line or scattered cracks.
+- `shadertoy-glacial-highland` should read differently from `shadertoy-alpine`:
+  broader snow/ice fields, U-shaped valley hints, rock ribs, and talus/ice
+  material rather than mostly green alpine mountains.
+- `shadertoy-crater-field` should show crater rims and floors at macro scale,
+  with ejecta and regolith roughness. It should not devolve into speckled noise.
+- Keep all four as waterless reference recipes in this batch; real lakes,
+  wetlands, water rendering, and foliage stay deferred.
