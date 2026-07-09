@@ -227,3 +227,20 @@ The first review should judge large-scale read first:
   and added a rare intermediate impact population. This further hides the
   underlying cell lattice, though the recipe still remains a procedural
   reference rather than a physically realistic impact history.
+
+## Glacial Highland Refinement Target
+
+- Focus the next correction pass on `shadertoy-glacial-highland`. The first
+  pass reads mostly as a white/blue alpine variant: a single broad valley hint,
+  smooth rounded highlands, and material separation driven too much by height
+  and slope rather than the actual landform source.
+- Replace the ad hoc valley/rib mix with one coherent glacial source field:
+  macro uplift, a warped broad trunk valley, variable-width U-shaped floor and
+  walls, side-valley cuts, cirque-like headwall basins, rock ribs, ice fields,
+  and talus masks should all be derived from the same noise-driven model.
+- Keep this clean-room and procedural. The review patch itself is the crop; do
+  not add a hand-authored glacier path, radial mask, or isolated material mask
+  that does not also participate in height generation.
+- The visual target is an icy highland slice that differs from alpine through
+  broad glacial floors, stronger exposed rock and talus contrast, ice/firn
+  accumulation on coherent valley fields, and less uniform snow coverage.
