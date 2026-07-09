@@ -24,7 +24,11 @@ mkdir -p "${OUT_DIR}"
 for recipe in "${recipes[@]}"; do
     recipe_dir="${OUT_DIR}/${recipe}"
     mkdir -p "${recipe_dir}"
-    for camera in "${cameras[@]}"; do
+    recipe_cameras=("${cameras[@]}")
+    if [[ "${recipe}" == "shadertoy-coast-island" ]]; then
+        recipe_cameras+=(coastal-oblique)
+    fi
+    for camera in "${recipe_cameras[@]}"; do
         "${BIN}" --headless --width "${WIDTH}" --height "${HEIGHT}" \
             --terrain-recipe "${recipe}" \
             --terrain-camera-preset "${camera}" \

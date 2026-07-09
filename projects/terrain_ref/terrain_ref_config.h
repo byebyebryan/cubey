@@ -15,6 +15,7 @@ enum class TerrainRefCameraPreset : std::uint8_t {
     Top,
     Surface,
     SurfaceLow,
+    CoastalOblique,
 };
 
 enum class TerrainRefRecipe : std::uint8_t {

@@ -102,8 +102,8 @@ constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip"
                                                               "pic/flip"};
 constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-faces", "tiled",
                                                            "tiled-faces"};
-constexpr std::array<std::string_view, 5> kTerrainCameraPresets{"oblique", "profile", "top",
-                                                                "surface", "surface-low"};
+constexpr std::array<std::string_view, 6> kTerrainCameraPresets{
+    "oblique", "profile", "top", "surface", "surface-low", "coastal-oblique"};
 constexpr std::array<std::string_view, 2> kTerrainPreviewRuntimeModes{"cpu-product",
                                                                       "terrain-engine-ref"};
 constexpr std::array<std::string_view, 4> kTerrainPreviewColors{"material", "height", "river",

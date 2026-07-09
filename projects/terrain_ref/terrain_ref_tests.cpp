@@ -75,6 +75,16 @@ void test_terrain_ref_config_from_run_config() {
             "terrain_ref should parse height material preview");
     require(!config.water_surface, "terrain_ref should allow disabling water");
 
+    run_config.terrain.camera_preset = "coastal_oblique";
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.camera_preset ==
+                cubey::projects::terrain_ref::TerrainRefCameraPreset::CoastalOblique,
+            "terrain_ref should parse coastal-oblique camera alias");
+    require(cubey::projects::terrain_ref::terrain_ref_camera_preset_name(config.camera_preset) ==
+                "coastal-oblique",
+            "terrain_ref should expose coastal-oblique camera name");
+    run_config.terrain.camera_preset = "surface_low";
+
     run_config.terrain.recipe =
         std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyMountain);
     config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);

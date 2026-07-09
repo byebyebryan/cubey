@@ -77,6 +77,8 @@ std::string_view terrain_ref_camera_preset_name(TerrainRefCameraPreset preset) {
         return "surface";
     case TerrainRefCameraPreset::SurfaceLow:
         return "surface-low";
+    case TerrainRefCameraPreset::CoastalOblique:
+        return "coastal-oblique";
     }
     return "oblique";
 }
@@ -97,8 +99,12 @@ TerrainRefCameraPreset terrain_ref_camera_preset_from_name(std::string_view name
     if (name == "surface-low" || name == "surface_low") {
         return TerrainRefCameraPreset::SurfaceLow;
     }
+    if (name == "coastal-oblique" || name == "coastal_oblique") {
+        return TerrainRefCameraPreset::CoastalOblique;
+    }
     throw std::runtime_error(
-        "terrain_ref camera preset must be oblique, profile, top, surface, or surface-low");
+        "terrain_ref camera preset must be oblique, profile, top, surface, surface-low, "
+        "or coastal-oblique");
 }
 
 TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& config) {

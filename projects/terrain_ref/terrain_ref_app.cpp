@@ -162,6 +162,13 @@ struct TerrainRefSceneMetrics {
             .distance_extent_scale = 0.34F,
             .target_height_fraction = 0.34F,
         };
+    case TerrainRefCameraPreset::CoastalOblique:
+        return {
+            .pitch_radians = -0.50F,
+            .yaw_radians = 0.54F,
+            .distance_extent_scale = 0.58F,
+            .target_height_fraction = 0.30F,
+        };
     }
     return {};
 }
