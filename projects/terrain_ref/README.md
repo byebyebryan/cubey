@@ -15,6 +15,11 @@ clipmap review mesh:
   rolling ridges and procedural sand/ripple material response.
 - `shadertoy-lake-basin`: a clean-room lake-basin reference with surrounding
   hills, a warped basin depression, waterline intersection, and shoreline cues.
+- `shadertoy-badlands`: a clean-room arid badlands reference with plateau mass,
+  dry washes, eroded cuts, cliff exposure, and strata-like material cues.
+- `shadertoy-coast-island`: a clean-room coast/island reference with noisy
+  shoreline, beach shelf, inland hill buildup, local coastal cliffs, and fixed
+  sea-level contact.
 
 The current target is useful for renderer and source-model evaluation:
 

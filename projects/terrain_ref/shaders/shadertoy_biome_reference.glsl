@@ -206,7 +206,34 @@ float shadertoy_badlands_reference_height(vec2 world, vec2 seed) {
 }
 
 float shadertoy_coast_island_reference_height(vec2 world, vec2 seed) {
-    return shadertoy_lake_basin_reference_height(world, seed);
+    vec2 p = world * 0.00018;
+    float warp_x = (shadertoy_biome_fbm(p * 0.72, seed + vec2(163.0, -167.0), 4, 0.52) -
+        0.5) * 0.58;
+    float warp_y = (shadertoy_biome_fbm((p * 0.68) + vec2(6.0, -3.0),
+        seed + vec2(-173.0, 179.0), 4, 0.52) - 0.5) * 0.46;
+    vec2 q = shadertoy_biome_rotate(vec2((p.x + warp_x) * 0.78, (p.y + warp_y) * 1.02),
+        -0.22);
+    float distance_to_center = length(q);
+    float coast_noise = (shadertoy_biome_fbm(p * 0.92, seed + vec2(181.0, -191.0), 5,
+        0.52) - 0.5) * 0.46 +
+        (shadertoy_biome_fbm(p * 2.20, seed + vec2(-193.0, 197.0), 3, 0.52) - 0.5) * 0.12;
+    float island_field = 1.42 + coast_noise - distance_to_center;
+    float land = smoothstep(-0.16, 0.15, island_field);
+    float shelf = smoothstep(-0.50, 0.08, island_field);
+    float beach = smoothstep(-0.06, 0.12, island_field) *
+        (1.0 - smoothstep(0.18, 0.42, island_field));
+    float inland = smoothstep(0.16, 0.78, island_field);
+    float hills = shadertoy_biome_fbm(p * 0.88, seed + vec2(199.0, 211.0), 5, 0.52);
+    float ridges = shadertoy_biome_ridged_fbm(vec2(p.x * 1.34 + warp_x,
+        p.y * 1.34 - warp_y), seed + vec2(-223.0, 227.0), 5);
+    float coastal_cliff = smoothstep(0.58, 0.90, ridges) * smoothstep(-0.04, 0.20,
+        island_field) * (1.0 - smoothstep(0.34, 0.62, island_field));
+    float underwater = SHADERTOY_COAST_ISLAND_WATER_HEIGHT_M - 165.0 + shelf * 150.0 +
+        (hills - 0.5) * 34.0;
+    float land_height = SHADERTOY_COAST_ISLAND_WATER_HEIGHT_M + 16.0 + beach * 36.0 +
+        inland * (380.0 + hills * 760.0) + ridges * inland * 340.0 + coastal_cliff * 230.0;
+    float height = mix(underwater, land_height, land);
+    return max(height, -120.0);
 }
 
 vec3 shadertoy_biome_reference_normal(vec2 world, vec2 seed, float vertical_scale,

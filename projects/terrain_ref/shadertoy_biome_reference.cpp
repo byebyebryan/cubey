@@ -281,7 +281,55 @@ float shadertoy_badlands_reference_height(float world_x, float world_z, std::uin
 }
 
 float shadertoy_coast_island_reference_height(float world_x, float world_z, std::uint64_t seed) {
-    return shadertoy_lake_basin_reference_height(world_x, world_z, seed);
+    const Vec2 seed_value = seed_components(seed);
+    Vec2 p{
+        .x = world_x * 0.00018F,
+        .y = world_z * 0.00018F,
+    };
+    const float warp_x =
+        (fbm({.x = p.x * 0.72F, .y = p.y * 0.72F},
+             {.x = seed_value.x + 163.0F, .y = seed_value.y - 167.0F}, 4) -
+         0.5F) *
+        0.58F;
+    const float warp_y =
+        (fbm({.x = p.x * 0.68F + 6.0F, .y = p.y * 0.68F - 3.0F},
+             {.x = seed_value.x - 173.0F, .y = seed_value.y + 179.0F}, 4) -
+         0.5F) *
+        0.46F;
+    const Vec2 q = rotate({.x = (p.x + warp_x) * 0.78F, .y = (p.y + warp_y) * 1.02F}, -0.22F);
+    const float distance = std::sqrt((q.x * q.x) + (q.y * q.y));
+    const float coast_noise =
+        (fbm({.x = p.x * 0.92F, .y = p.y * 0.92F},
+             {.x = seed_value.x + 181.0F, .y = seed_value.y - 191.0F}, 5) -
+         0.5F) *
+            0.46F +
+        (fbm({.x = p.x * 2.20F, .y = p.y * 2.20F},
+             {.x = seed_value.x - 193.0F, .y = seed_value.y + 197.0F}, 3) -
+         0.5F) *
+            0.12F;
+    const float island_field = 1.42F + coast_noise - distance;
+    const float land = smoothstep(-0.16F, 0.15F, island_field);
+    const float shelf = smoothstep(-0.50F, 0.08F, island_field);
+    const float beach = smoothstep(-0.06F, 0.12F, island_field) *
+                        (1.0F - smoothstep(0.18F, 0.42F, island_field));
+    const float inland = smoothstep(0.16F, 0.78F, island_field);
+    const float hills =
+        fbm({.x = p.x * 0.88F, .y = p.y * 0.88F},
+            {.x = seed_value.x + 199.0F, .y = seed_value.y + 211.0F}, 5);
+    const float ridges =
+        ridged_fbm({.x = p.x * 1.34F + warp_x, .y = p.y * 1.34F - warp_y},
+                   {.x = seed_value.x - 223.0F, .y = seed_value.y + 227.0F}, 5);
+    const float coastal_cliff =
+        smoothstep(0.58F, 0.90F, ridges) * smoothstep(-0.04F, 0.20F, island_field) *
+        (1.0F - smoothstep(0.34F, 0.62F, island_field));
+    const float underwater =
+        kShadertoyCoastIslandReferenceWaterHeightM - 165.0F + shelf * 150.0F +
+        (hills - 0.5F) * 34.0F;
+    const float land_height = kShadertoyCoastIslandReferenceWaterHeightM + 16.0F +
+                              beach * 36.0F + inland * (380.0F + hills * 760.0F) +
+                              ridges * inland * 340.0F + coastal_cliff * 230.0F;
+    const float height = mix(underwater, land_height, land);
+    return std::max(height, -120.0F);
 }
 
 } // namespace cubey::projects::terrain_ref
