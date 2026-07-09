@@ -145,10 +145,10 @@ struct TerrainRefSceneMetrics {
         };
     case TerrainRefCameraPreset::SurfaceLow:
         return {
-            .pitch_radians = -0.08F,
+            .pitch_radians = -0.42F,
             .yaw_radians = 0.62F,
-            .distance_extent_scale = 0.22F,
-            .target_height_fraction = 0.22F,
+            .distance_extent_scale = 0.34F,
+            .target_height_fraction = 0.34F,
         };
     }
     return {};
@@ -185,6 +185,30 @@ struct TerrainRefSceneMetrics {
                                                 const TerrainRefSceneMetrics& metrics) {
     const TerrainRefCameraFrame frame = terrain_ref_camera_frame(config.camera_preset);
     return std::max(1200.0F, metrics.scene_extent_m * frame.distance_extent_scale);
+}
+
+[[nodiscard]] bool terrain_ref_is_surface_camera(TerrainRefCameraPreset preset) {
+    return preset == TerrainRefCameraPreset::Surface ||
+           preset == TerrainRefCameraPreset::SurfaceLow;
+}
+
+[[nodiscard]] float terrain_ref_vertical_extent_m(const TerrainRefConfig& config,
+                                                  const TerrainRefSceneMetrics& metrics) {
+    return std::max((metrics.max_height_m - metrics.min_height_m) * config.vertical_scale, 1.0F);
+}
+
+[[nodiscard]] float terrain_ref_surface_camera_clearance_m(const TerrainRefConfig& config,
+                                                           const TerrainRefSceneMetrics& metrics) {
+    return std::clamp(terrain_ref_vertical_extent_m(config, metrics) * 0.04F, 48.0F, 240.0F);
+}
+
+[[nodiscard]] float terrain_ref_camera_target_y_m(const TerrainRefConfig& config,
+                                                  const TerrainRefSceneMetrics& metrics) {
+    const TerrainRefCameraFrame frame = terrain_ref_camera_frame(config.camera_preset);
+    const float min_height = metrics.min_height_m * config.vertical_scale;
+    const float max_height = metrics.max_height_m * config.vertical_scale;
+    float target_y = min_height + ((max_height - min_height) * frame.target_height_fraction);
+    return target_y;
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo terrain_ref_pass_info() {
@@ -352,16 +376,23 @@ class TerrainRefApp {
                                                  : static_cast<float>(extent.width) /
                                                        static_cast<float>(extent.height);
         const TerrainRefCameraFrame frame = terrain_ref_camera_frame(terrain_config_.camera_preset);
-        const float min_height = scene_metrics_.min_height_m * terrain_config_.vertical_scale;
-        const float max_height = scene_metrics_.max_height_m * terrain_config_.vertical_scale;
-        const float target_y =
-            min_height + ((max_height - min_height) * frame.target_height_fraction);
-        const cubey::Transform3D camera_transform = cubey::orbit_camera_transform({
+        const float target_y = terrain_ref_camera_target_y_m(terrain_config_, scene_metrics_);
+        cubey::Transform3D camera_transform = cubey::orbit_camera_transform({
             .target = {0.0F, target_y, 0.0F},
             .distance = orbit_controller_.distance(),
             .yaw = orbit_controller_.yaw() + frame.yaw_radians,
             .pitch = orbit_controller_.pitch() + frame.pitch_radians,
         });
+        if (terrain_ref_is_surface_camera(terrain_config_.camera_preset)) {
+            const float camera_surface_y =
+                terrain_ref_height_m(terrain_config_, camera_transform.translation.x,
+                                     camera_transform.translation.z) *
+                terrain_config_.vertical_scale;
+            const float min_camera_y =
+                camera_surface_y +
+                terrain_ref_surface_camera_clearance_m(terrain_config_, scene_metrics_);
+            camera_transform.translation.y = std::max(camera_transform.translation.y, min_camera_y);
+        }
         const TerrainEngineReferenceSeedComponents seed_components =
             terrain_engine_reference_seed_components(terrain_config_.seed);
         return {
