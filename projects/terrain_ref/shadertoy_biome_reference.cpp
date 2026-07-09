@@ -184,6 +184,117 @@ struct GorgeSourceField {
             .tributaries = tributaries};
 }
 
+struct GlacialSourceField {
+    Vec2 p{};
+    Vec2 q{};
+    float macro = 0.0F;
+    float uplift = 0.0F;
+    float shoulder = 0.0F;
+    float trunk_distance = 0.0F;
+    float trunk_width = 0.0F;
+    float trunk_valley = 0.0F;
+    float trunk_floor = 0.0F;
+    float trunk_wall = 0.0F;
+    float side_valleys = 0.0F;
+    float cirques = 0.0F;
+    float rock_ribs = 0.0F;
+    float ice_field = 0.0F;
+    float talus = 0.0F;
+};
+
+[[nodiscard]] GlacialSourceField glacial_source_field(Vec2 p, Vec2 seed_value) {
+    const float macro =
+        fbm({.x = p.x * 0.34F, .y = p.y * 0.34F},
+            {.x = seed_value.x + 373.0F, .y = seed_value.y - 379.0F}, 5);
+    const float uplift = smoothstep(0.18F, 0.80F, macro);
+    const float shoulder = smoothstep(0.03F, 0.60F, macro);
+    const float warp_x =
+        (fbm({.x = p.x * 0.58F, .y = p.y * 0.58F},
+             {.x = seed_value.x - 383.0F, .y = seed_value.y + 389.0F}, 4) -
+         0.5F) *
+        1.02F;
+    const float warp_y =
+        (fbm({.x = (p.x * 0.54F) + 3.0F, .y = (p.y * 0.54F) - 5.0F},
+             {.x = seed_value.x + 397.0F, .y = seed_value.y - 401.0F}, 4) -
+         0.5F) *
+        0.80F;
+    const Vec2 q =
+        rotate({.x = (p.x * 0.86F) + warp_x, .y = (p.y * 1.10F) + warp_y}, -0.42F);
+    const float broad_wander =
+        (fbm({.x = q.y * 0.30F, .y = (q.y * 0.15F) + 8.0F},
+             {.x = seed_value.x - 409.0F, .y = seed_value.y + 419.0F}, 4) -
+         0.5F) *
+        0.95F;
+    const float local_wander =
+        (fbm({.x = q.y * 0.72F, .y = (q.y * 0.34F) - 4.0F},
+             {.x = seed_value.x + 421.0F, .y = seed_value.y - 431.0F}, 3) -
+         0.5F) *
+        0.22F;
+    const float trunk_distance = std::abs(q.x + broad_wander + local_wander);
+    const float width_noise =
+        fbm({.x = q.y * 0.24F, .y = q.x * 0.10F},
+            {.x = seed_value.x - 433.0F, .y = seed_value.y + 439.0F}, 4);
+    const float trunk_width = mix(0.42F, 0.86F, width_noise);
+    const float trunk_valley =
+        1.0F - smoothstep(trunk_width * 0.45F, trunk_width * 1.55F, trunk_distance);
+    const float trunk_floor =
+        1.0F - smoothstep(trunk_width * 0.16F, trunk_width * 0.55F, trunk_distance);
+    const float trunk_wall =
+        smoothstep(trunk_width * 0.50F, trunk_width * 1.05F, trunk_distance) *
+        (1.0F - smoothstep(trunk_width * 1.05F, trunk_width * 1.85F, trunk_distance));
+    const float branch_a =
+        ridged_fbm({.x = (q.x * 0.62F) + (q.y * 0.42F) + warp_x * 0.16F,
+                    .y = (q.y * 0.54F) - (q.x * 0.36F) + warp_y * 0.12F},
+                   {.x = seed_value.x + 443.0F, .y = seed_value.y - 449.0F}, 5);
+    const float branch_b =
+        ridged_fbm({.x = (q.x * 0.60F) - (q.y * 0.38F) - warp_x * 0.18F,
+                    .y = (q.y * 0.58F) + (q.x * 0.34F) - warp_y * 0.12F},
+                   {.x = seed_value.x - 451.0F, .y = seed_value.y + 457.0F}, 5);
+    const float side_gate =
+        smoothstep(trunk_width * 0.72F, trunk_width * 2.35F, trunk_distance) *
+        (1.0F - smoothstep(trunk_width * 4.40F, trunk_width * 6.40F, trunk_distance));
+    const float side_valleys =
+        smoothstep(0.34F, 0.78F, std::max(branch_a, branch_b)) * side_gate *
+        smoothstep(0.14F, 0.88F, shoulder) * (1.0F - trunk_floor * 0.70F);
+    const float cirque_source =
+        fbm({.x = (q.x * 0.66F) + branch_a * 0.22F, .y = (q.y * 0.66F) - branch_b * 0.18F},
+            {.x = seed_value.x + 463.0F, .y = seed_value.y - 467.0F}, 5);
+    const float cirques =
+        std::pow(smoothstep(0.56F, 0.88F, cirque_source), 1.35F) *
+        smoothstep(0.36F, 0.96F, uplift) * (1.0F - trunk_floor * 0.46F);
+    const float rib_source =
+        ridged_fbm({.x = (q.x * 1.06F) + warp_x * 0.20F, .y = (q.y * 0.78F) - warp_y * 0.16F},
+                   {.x = seed_value.x - 479.0F, .y = seed_value.y + 487.0F}, 6);
+    const float rock_ribs =
+        smoothstep(0.32F, 0.82F, rib_source) * smoothstep(0.10F, 0.92F, uplift) *
+        (0.38F + trunk_wall * 0.68F + side_valleys * 0.28F);
+    const float ice_source =
+        fbm({.x = p.x * 0.54F, .y = p.y * 0.54F},
+            {.x = seed_value.x + 491.0F, .y = seed_value.y - 499.0F}, 5);
+    const float ice_field =
+        std::clamp(smoothstep(0.30F, 0.76F, ice_source) * smoothstep(0.12F, 0.92F, uplift) +
+                       trunk_floor * 0.58F + side_valleys * 0.22F,
+                   0.0F, 1.0F);
+    const float talus = std::clamp((trunk_wall * 0.72F) + (side_valleys * 0.36F) +
+                                       (1.0F - smoothstep(0.66F, 0.96F, uplift)) * 0.18F,
+                                   0.0F, 1.0F);
+    return {.p = p,
+            .q = q,
+            .macro = macro,
+            .uplift = uplift,
+            .shoulder = shoulder,
+            .trunk_distance = trunk_distance,
+            .trunk_width = trunk_width,
+            .trunk_valley = trunk_valley,
+            .trunk_floor = trunk_floor,
+            .trunk_wall = trunk_wall,
+            .side_valleys = side_valleys,
+            .cirques = cirques,
+            .rock_ribs = rock_ribs,
+            .ice_field = ice_field,
+            .talus = talus};
+}
+
 struct CraterAccumulation {
     float depression = 0.0F;
     float rim = 0.0F;
@@ -575,48 +686,31 @@ float shadertoy_gorge_reference_height(float world_x, float world_z, std::uint64
 float shadertoy_glacial_highland_reference_height(float world_x, float world_z,
                                                   std::uint64_t seed) {
     const Vec2 seed_value = seed_components(seed);
-    Vec2 p{
+    const Vec2 p{
         .x = (world_x * 0.00017F) + (seed_value.x * 0.113F) - 1.0F,
         .y = (world_z * 0.00017F) + (seed_value.y * 0.097F) + 3.0F,
     };
-    const float macro =
-        fbm({.x = p.x * 0.36F, .y = p.y * 0.36F},
-            {.x = seed_value.x + 373.0F, .y = seed_value.y - 379.0F}, 5);
-    const float uplift = smoothstep(0.20F, 0.78F, macro);
-    const float shoulder = smoothstep(0.04F, 0.58F, macro);
-    const float warp =
-        (fbm({.x = p.x * 0.74F, .y = p.y * 0.74F},
-             {.x = seed_value.x - 383.0F, .y = seed_value.y + 389.0F}, 4) -
-         0.5F) *
-        1.10F;
-    const Vec2 q = rotate({.x = (p.x * 0.92F) + warp, .y = (p.y * 1.10F) - warp * 0.52F},
-                          -0.46F);
-    const float valley_wander =
-        (fbm({.x = q.y * 0.38F, .y = q.y * 0.22F + 8.0F},
-             {.x = seed_value.x + 397.0F, .y = seed_value.y - 401.0F}, 4) -
-         0.5F) *
-        0.92F;
-    const float valley_distance = std::abs(q.x + valley_wander);
-    const float u_valley = 1.0F - smoothstep(0.18F, 0.82F, valley_distance);
-    const float ribs =
-        ridged_fbm({.x = q.x * 1.42F + warp * 0.26F, .y = q.y * 1.04F - warp * 0.18F},
-                   {.x = seed_value.x - 409.0F, .y = seed_value.y + 419.0F}, 6);
-    const float ice_field =
-        smoothstep(0.32F, 0.78F,
-                   fbm({.x = p.x * 0.62F, .y = p.y * 0.62F},
-                       {.x = seed_value.x + 421.0F, .y = seed_value.y - 431.0F}, 5));
+    const GlacialSourceField field = glacial_source_field(p, seed_value);
     const float rough =
-        (ridged_fbm({.x = p.x * 3.1F, .y = p.y * 3.1F},
-                    {.x = seed_value.x - 433.0F, .y = seed_value.y + 439.0F}, 4) -
+        (ridged_fbm({.x = p.x * 2.65F, .y = p.y * 2.65F},
+                    {.x = seed_value.x - 503.0F, .y = seed_value.y + 509.0F}, 4) -
          0.45F) *
-        110.0F *
-        uplift;
-    const float broad_height = 260.0F + std::pow(uplift, 1.22F) * 2300.0F +
-                               std::pow(shoulder, 1.80F) * 640.0F;
-    const float rib_height = std::pow(std::max(ribs, 0.0F), 1.18F) * uplift * 1050.0F;
-    const float valley_cut = u_valley * (580.0F + uplift * 560.0F);
-    const float ice_smoothing = ice_field * u_valley * 160.0F;
-    return std::max(broad_height + rib_height - valley_cut - ice_smoothing + rough, 0.0F);
+        80.0F * field.uplift * (1.0F - field.trunk_floor * 0.55F) *
+        (1.0F - field.ice_field * 0.35F);
+    const float broad_height = 240.0F + std::pow(field.uplift, 1.12F) * 2140.0F +
+                               std::pow(field.shoulder, 1.65F) * 480.0F;
+    const float rib_height =
+        std::pow(std::max(field.rock_ribs, 0.0F), 1.15F) * (520.0F + field.trunk_wall * 380.0F);
+    const float valley_cut = field.trunk_valley * (500.0F + field.uplift * 620.0F) +
+                             field.trunk_floor * (180.0F + field.uplift * 240.0F) +
+                             field.side_valleys * (220.0F + field.uplift * 340.0F) +
+                             field.cirques * (160.0F + field.uplift * 320.0F);
+    const float ice_smoothing =
+        field.ice_field * (field.trunk_floor * 170.0F + field.side_valleys * 80.0F +
+                           field.cirques * 90.0F);
+    const float floor_fill = field.trunk_floor * (100.0F + (1.0F - field.uplift) * 40.0F);
+    return std::max(broad_height + rib_height - valley_cut - ice_smoothing + floor_fill + rough,
+                    0.0F);
 }
 
 float shadertoy_crater_field_reference_height(float world_x, float world_z, std::uint64_t seed) {

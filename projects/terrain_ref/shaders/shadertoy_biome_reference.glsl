@@ -164,6 +164,90 @@ ShadertoyGorgeSourceField shadertoy_gorge_source_field(vec2 p, vec2 seed) {
     return field;
 }
 
+struct ShadertoyGlacialSourceField {
+    vec2 p;
+    vec2 q;
+    float macro;
+    float uplift;
+    float shoulder;
+    float trunk_distance;
+    float trunk_width;
+    float trunk_valley;
+    float trunk_floor;
+    float trunk_wall;
+    float side_valleys;
+    float cirques;
+    float rock_ribs;
+    float ice_field;
+    float talus;
+};
+
+ShadertoyGlacialSourceField shadertoy_glacial_source_field(vec2 p, vec2 seed) {
+    float macro = shadertoy_biome_fbm(p * 0.34, seed + vec2(373.0, -379.0), 5, 0.52);
+    float uplift = smoothstep(0.18, 0.80, macro);
+    float shoulder = smoothstep(0.03, 0.60, macro);
+    float warp_x = (shadertoy_biome_fbm(p * 0.58, seed + vec2(-383.0, 389.0), 4,
+        0.52) - 0.5) * 1.02;
+    float warp_y = (shadertoy_biome_fbm(vec2(p.x * 0.54 + 3.0, p.y * 0.54 - 5.0),
+        seed + vec2(397.0, -401.0), 4, 0.52) - 0.5) * 0.80;
+    vec2 q = shadertoy_biome_rotate(vec2((p.x * 0.86) + warp_x, (p.y * 1.10) + warp_y),
+        -0.42);
+    float broad_wander = (shadertoy_biome_fbm(vec2(q.y * 0.30, q.y * 0.15 + 8.0),
+        seed + vec2(-409.0, 419.0), 4, 0.52) - 0.5) * 0.95;
+    float local_wander = (shadertoy_biome_fbm(vec2(q.y * 0.72, q.y * 0.34 - 4.0),
+        seed + vec2(421.0, -431.0), 3, 0.52) - 0.5) * 0.22;
+    float trunk_distance = abs(q.x + broad_wander + local_wander);
+    float width_noise = shadertoy_biome_fbm(vec2(q.y * 0.24, q.x * 0.10),
+        seed + vec2(-433.0, 439.0), 4, 0.52);
+    float trunk_width = mix(0.42, 0.86, width_noise);
+    float trunk_valley = 1.0 - smoothstep(trunk_width * 0.45, trunk_width * 1.55,
+        trunk_distance);
+    float trunk_floor = 1.0 - smoothstep(trunk_width * 0.16, trunk_width * 0.55,
+        trunk_distance);
+    float trunk_wall = smoothstep(trunk_width * 0.50, trunk_width * 1.05, trunk_distance) *
+        (1.0 - smoothstep(trunk_width * 1.05, trunk_width * 1.85, trunk_distance));
+    float branch_a = shadertoy_biome_ridged_fbm(vec2((q.x * 0.62) + q.y * 0.42 +
+        warp_x * 0.16, (q.y * 0.54) - q.x * 0.36 + warp_y * 0.12),
+        seed + vec2(443.0, -449.0), 5);
+    float branch_b = shadertoy_biome_ridged_fbm(vec2((q.x * 0.60) - q.y * 0.38 -
+        warp_x * 0.18, (q.y * 0.58) + q.x * 0.34 - warp_y * 0.12),
+        seed + vec2(-451.0, 457.0), 5);
+    float side_gate = smoothstep(trunk_width * 0.72, trunk_width * 2.35, trunk_distance) *
+        (1.0 - smoothstep(trunk_width * 4.40, trunk_width * 6.40, trunk_distance));
+    float side_valleys = smoothstep(0.34, 0.78, max(branch_a, branch_b)) * side_gate *
+        smoothstep(0.14, 0.88, shoulder) * (1.0 - trunk_floor * 0.70);
+    float cirque_source = shadertoy_biome_fbm(vec2((q.x * 0.66) + branch_a * 0.22,
+        (q.y * 0.66) - branch_b * 0.18), seed + vec2(463.0, -467.0), 5, 0.52);
+    float cirques = pow(smoothstep(0.56, 0.88, cirque_source), 1.35) *
+        smoothstep(0.36, 0.96, uplift) * (1.0 - trunk_floor * 0.46);
+    float rib_source = shadertoy_biome_ridged_fbm(vec2((q.x * 1.06) + warp_x * 0.20,
+        (q.y * 0.78) - warp_y * 0.16), seed + vec2(-479.0, 487.0), 6);
+    float rock_ribs = smoothstep(0.32, 0.82, rib_source) * smoothstep(0.10, 0.92, uplift) *
+        (0.38 + trunk_wall * 0.68 + side_valleys * 0.28);
+    float ice_source = shadertoy_biome_fbm(p * 0.54, seed + vec2(491.0, -499.0), 5, 0.52);
+    float ice_field = clamp(smoothstep(0.30, 0.76, ice_source) *
+        smoothstep(0.12, 0.92, uplift) + trunk_floor * 0.58 + side_valleys * 0.22, 0.0, 1.0);
+    float talus = clamp((trunk_wall * 0.72) + (side_valleys * 0.36) +
+        (1.0 - smoothstep(0.66, 0.96, uplift)) * 0.18, 0.0, 1.0);
+    ShadertoyGlacialSourceField field;
+    field.p = p;
+    field.q = q;
+    field.macro = macro;
+    field.uplift = uplift;
+    field.shoulder = shoulder;
+    field.trunk_distance = trunk_distance;
+    field.trunk_width = trunk_width;
+    field.trunk_valley = trunk_valley;
+    field.trunk_floor = trunk_floor;
+    field.trunk_wall = trunk_wall;
+    field.side_valleys = side_valleys;
+    field.cirques = cirques;
+    field.rock_ribs = rock_ribs;
+    field.ice_field = ice_field;
+    field.talus = talus;
+    return field;
+}
+
 struct ShadertoyCraterAccumulation {
     float depression;
     float rim;
@@ -419,28 +503,23 @@ float shadertoy_gorge_reference_height(vec2 world, vec2 seed) {
 
 float shadertoy_glacial_highland_reference_height(vec2 world, vec2 seed) {
     vec2 p = (world * 0.00017) + (seed * vec2(0.113, 0.097)) + vec2(-1.0, 3.0);
-    float macro = shadertoy_biome_fbm(p * 0.36, seed + vec2(373.0, -379.0), 5, 0.52);
-    float uplift = smoothstep(0.20, 0.78, macro);
-    float shoulder = smoothstep(0.04, 0.58, macro);
-    float warp = (shadertoy_biome_fbm(p * 0.74, seed + vec2(-383.0, 389.0), 4, 0.52) -
-        0.5) * 1.10;
-    vec2 q = shadertoy_biome_rotate(vec2((p.x * 0.92) + warp, (p.y * 1.10) - warp * 0.52),
-        -0.46);
-    float valley_wander = (shadertoy_biome_fbm(vec2(q.y * 0.38, q.y * 0.22 + 8.0),
-        seed + vec2(397.0, -401.0), 4, 0.52) - 0.5) * 0.92;
-    float valley_distance = abs(q.x + valley_wander);
-    float u_valley = 1.0 - smoothstep(0.18, 0.82, valley_distance);
-    float ribs = shadertoy_biome_ridged_fbm(vec2(q.x * 1.42 + warp * 0.26,
-        q.y * 1.04 - warp * 0.18), seed + vec2(-409.0, 419.0), 6);
-    float ice_field = smoothstep(0.32, 0.78, shadertoy_biome_fbm(p * 0.62,
-        seed + vec2(421.0, -431.0), 5, 0.52));
-    float rough = (shadertoy_biome_ridged_fbm(p * 3.1, seed + vec2(-433.0, 439.0), 4) -
-        0.45) * 110.0 * uplift;
-    float broad_height = 260.0 + pow(uplift, 1.22) * 2300.0 + pow(shoulder, 1.80) * 640.0;
-    float rib_height = pow(max(ribs, 0.0), 1.18) * uplift * 1050.0;
-    float valley_cut = u_valley * (580.0 + uplift * 560.0);
-    float ice_smoothing = ice_field * u_valley * 160.0;
-    return max(broad_height + rib_height - valley_cut - ice_smoothing + rough, 0.0);
+    ShadertoyGlacialSourceField field = shadertoy_glacial_source_field(p, seed);
+    float rough = (shadertoy_biome_ridged_fbm(p * 2.65, seed + vec2(-503.0, 509.0), 4) -
+        0.45) * 80.0 * field.uplift * (1.0 - field.trunk_floor * 0.55) *
+        (1.0 - field.ice_field * 0.35);
+    float broad_height = 240.0 + pow(field.uplift, 1.12) * 2140.0 +
+        pow(field.shoulder, 1.65) * 480.0;
+    float rib_height = pow(max(field.rock_ribs, 0.0), 1.15) *
+        (520.0 + field.trunk_wall * 380.0);
+    float valley_cut = field.trunk_valley * (500.0 + field.uplift * 620.0) +
+        field.trunk_floor * (180.0 + field.uplift * 240.0) +
+        field.side_valleys * (220.0 + field.uplift * 340.0) +
+        field.cirques * (160.0 + field.uplift * 320.0);
+    float ice_smoothing = field.ice_field * (field.trunk_floor * 170.0 +
+        field.side_valleys * 80.0 + field.cirques * 90.0);
+    float floor_fill = field.trunk_floor * (100.0 + (1.0 - field.uplift) * 40.0);
+    return max(broad_height + rib_height - valley_cut - ice_smoothing + floor_fill + rough,
+        0.0);
 }
 
 float shadertoy_crater_field_reference_height(vec2 world, vec2 seed) {
