@@ -48,6 +48,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Moon surface detail captures](sky-moon-surface-detail-captures.md):
   reproducible capture commands and observations for the lunar surface-map
   routing pass.
+- [Procedural Milky Way v2 research](milky-way-v2-research.md): current
+  atlas-layer baseline, source/reference takeaways, and the field-based plan for
+  replacing hand-stamped Milky Way landmarks with procedural structure.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling

@@ -62,6 +62,7 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
+projects/atmosphere/capture_milky_way_layers.sh outputs/atmosphere-milky-way-layers
 projects/atmosphere/capture_atmosphere_background_horizon.sh outputs/atmosphere-background-horizon
 projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
 projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
@@ -77,6 +78,12 @@ current practical target; set `WIDTH`, `HEIGHT`, `QUALITY`, or `DEEP=1` for
 faster smoke runs or full-quality reference comparisons. Surface rows define
 Cloud V1 acceptance. High-oblique/orbit rows, when present, are deferred
 diagnostics and should not drive V1 tuning.
+
+The Milky Way layer script captures the `milky-way` debug view for every
+generated atlas layer: final, stellar emission, dust optical depth, star clouds,
+H II emission, and speckles. Use it before changing the procedural night-sky
+atlas recipe; the v2 design direction is tracked in
+`docs/notes/milky-way-v2-research.md`.
 
 The background horizon script disables clouds and reference geometry, then
 captures `ground`, `sky-only`, and `sky-only-no-ground-occlusion` at noon,
