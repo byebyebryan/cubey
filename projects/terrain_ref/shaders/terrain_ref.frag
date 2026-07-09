@@ -69,6 +69,33 @@ TerrainRefGorgeMaterialMasks terrain_ref_gorge_material_masks(vec2 world_xz) {
     return masks;
 }
 
+struct TerrainRefGlacialMaterialMasks {
+    float uplift;
+    float floor_mask;
+    float wall;
+    float side_valley;
+    float cirque;
+    float rock_rib;
+    float ice;
+    float talus;
+};
+
+TerrainRefGlacialMaterialMasks terrain_ref_glacial_material_masks(vec2 world_xz) {
+    vec2 seed = pc.terrain_params.xy;
+    vec2 p = (world_xz * 0.00017) + (seed * vec2(0.113, 0.097)) + vec2(-1.0, 3.0);
+    ShadertoyGlacialSourceField field = shadertoy_glacial_source_field(p, seed);
+    TerrainRefGlacialMaterialMasks masks;
+    masks.uplift = field.uplift;
+    masks.floor_mask = field.trunk_floor;
+    masks.wall = field.trunk_wall;
+    masks.side_valley = field.side_valleys;
+    masks.cirque = field.cirques;
+    masks.rock_rib = field.rock_ribs;
+    masks.ice = field.ice_field;
+    masks.talus = field.talus;
+    return masks;
+}
+
 vec3 terrain_ref_material_color(inout vec3 normal) {
     bool shadertoy_mountain =
         abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_MOUNTAIN) < 0.5;
@@ -178,26 +205,35 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         float normalized_height = clamp((frag_height_m - min_height_m) /
             (max_height_m - min_height_m), 0.0, 1.0);
         float slope = 1.0 - cos_v;
+        TerrainRefGlacialMaterialMasks glacial =
+            terrain_ref_glacial_material_masks(frag_world_position.xz);
         vec3 blue_ice = terrain_ref_color_variation(vec3(0.56, 0.68, 0.70),
             frag_world_position.xz, 0.010, 0.10);
         vec3 firn = terrain_ref_color_variation(vec3(0.76, 0.79, 0.77),
             frag_world_position.xz + vec2(41.0, -67.0), 0.012, 0.10);
-        vec3 exposed_rock = terrain_ref_color_variation(vec3(0.34, 0.35, 0.34),
+        vec3 exposed_rock = terrain_ref_color_variation(vec3(0.31, 0.32, 0.31),
             frag_world_position.xz + vec2(-97.0, 53.0), 0.011, 0.22);
         vec3 talus = terrain_ref_color_variation(vec3(0.46, 0.44, 0.40),
             frag_world_position.xz, 0.018, 0.18);
-        vec3 color = mix(blue_ice, firn, smoothstep(0.22, 0.72, normalized_height));
-        float rock_rib = smoothstep(0.18, 0.62, slope) *
-            smoothstep(0.28, 0.92, normalized_height);
-        color = mix(color, exposed_rock, rock_rib * 0.76);
-        float talus_mask = smoothstep(0.12, 0.42, slope) *
-            (1.0 - smoothstep(0.72, 0.96, normalized_height));
-        color = mix(color, talus, talus_mask * 0.44);
-        float snow_cap = smoothstep(0.58, 0.90, normalized_height) *
-            smoothstep(0.30, 0.82, cos_v);
-        color = mix(color, snow, snow_cap * 0.72);
+        vec3 color = mix(talus, firn, smoothstep(0.16, 0.84, glacial.uplift));
+        float ice_mask = clamp(glacial.floor_mask * 0.78 + glacial.ice * 0.44 +
+            glacial.side_valley * 0.18, 0.0, 1.0);
+        color = mix(color, blue_ice, ice_mask * 0.64);
+        float rock_rib = clamp(glacial.rock_rib * 0.95 + glacial.wall * 0.55 +
+            glacial.wall * slope * 0.50 + glacial.cirque * slope * 0.18, 0.0, 1.0);
+        color = mix(color, exposed_rock, rock_rib * 0.82);
+        float talus_mask = clamp(glacial.talus *
+            (1.0 - smoothstep(0.76, 0.98, glacial.uplift)) * 0.72 +
+            glacial.side_valley * smoothstep(0.18, 0.65, slope) * 0.35, 0.0, 1.0);
+        color = mix(color, talus, talus_mask * 0.70);
+        float snow_cap = smoothstep(0.58, 0.94, glacial.uplift) *
+            smoothstep(0.34, 0.84, cos_v) * (1.0 - rock_rib * 0.48) *
+            (1.0 - talus_mask * 0.30);
+        color = mix(color, snow, snow_cap * 0.74);
+        color = mix(color, firn, smoothstep(0.78, 0.98, normalized_height) *
+            smoothstep(0.52, 0.92, cos_v) * 0.20);
         normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
-            detail * mix(0.10, 0.24, max(rock_rib, talus_mask)));
+            detail * mix(0.09, 0.26, max(max(rock_rib, talus_mask), glacial.side_valley)));
         return color;
     }
 
