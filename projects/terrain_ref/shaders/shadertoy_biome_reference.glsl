@@ -298,11 +298,61 @@ float shadertoy_gorge_reference_height(vec2 world, vec2 seed) {
 }
 
 float shadertoy_glacial_highland_reference_height(vec2 world, vec2 seed) {
-    return shadertoy_alpine_reference_height(world, seed);
+    vec2 p = (world * 0.00017) + (seed * vec2(0.113, 0.097)) + vec2(-1.0, 3.0);
+    float macro = shadertoy_biome_fbm(p * 0.36, seed + vec2(373.0, -379.0), 5, 0.52);
+    float uplift = smoothstep(0.20, 0.78, macro);
+    float shoulder = smoothstep(0.04, 0.58, macro);
+    float warp = (shadertoy_biome_fbm(p * 0.74, seed + vec2(-383.0, 389.0), 4, 0.52) -
+        0.5) * 1.10;
+    vec2 q = shadertoy_biome_rotate(vec2((p.x * 0.92) + warp, (p.y * 1.10) - warp * 0.52),
+        -0.46);
+    float valley_wander = (shadertoy_biome_fbm(vec2(q.y * 0.38, q.y * 0.22 + 8.0),
+        seed + vec2(397.0, -401.0), 4, 0.52) - 0.5) * 0.92;
+    float valley_distance = abs(q.x + valley_wander);
+    float u_valley = 1.0 - smoothstep(0.18, 0.82, valley_distance);
+    float ribs = shadertoy_biome_ridged_fbm(vec2(q.x * 1.42 + warp * 0.26,
+        q.y * 1.04 - warp * 0.18), seed + vec2(-409.0, 419.0), 6);
+    float ice_field = smoothstep(0.32, 0.78, shadertoy_biome_fbm(p * 0.62,
+        seed + vec2(421.0, -431.0), 5, 0.52));
+    float rough = (shadertoy_biome_ridged_fbm(p * 3.1, seed + vec2(-433.0, 439.0), 4) -
+        0.45) * 110.0 * uplift;
+    float broad_height = 260.0 + pow(uplift, 1.22) * 2300.0 + pow(shoulder, 1.80) * 640.0;
+    float rib_height = pow(max(ribs, 0.0), 1.18) * uplift * 1050.0;
+    float valley_cut = u_valley * (580.0 + uplift * 560.0);
+    float ice_smoothing = ice_field * u_valley * 160.0;
+    return max(broad_height + rib_height - valley_cut - ice_smoothing + rough, 0.0);
 }
 
 float shadertoy_crater_field_reference_height(vec2 world, vec2 seed) {
-    return shadertoy_badlands_reference_height(world, seed);
+    vec2 p = (world * 0.00022) + (seed * vec2(0.077, 0.089));
+    float broad = shadertoy_biome_fbm(p * 0.32, seed + vec2(443.0, -449.0), 5, 0.52);
+    vec2 crater_p = p * 1.45;
+    vec2 base_cell = floor(crater_p);
+    float depression = 0.0;
+    float rim = 0.0;
+    float ejecta = 0.0;
+    for (int dz = -1; dz <= 1; ++dz) {
+        for (int dx = -1; dx <= 1; ++dx) {
+            vec2 cell = base_cell + vec2(float(dx), float(dz));
+            float h0 = shadertoy_biome_hash(cell, seed + vec2(457.0, -461.0));
+            float h1 = shadertoy_biome_hash(cell, seed + vec2(-463.0, 467.0));
+            float h2 = shadertoy_biome_hash(cell, seed + vec2(479.0, -487.0));
+            vec2 center = cell + vec2(0.18 + h0 * 0.64, 0.18 + h1 * 0.64);
+            float radius = 0.18 + h2 * 0.28;
+            float d = length(crater_p - center);
+            float bowl = 1.0 - smoothstep(radius * 0.18, radius, d);
+            float rim_band = smoothstep(radius * 0.72, radius * 1.02, d) *
+                (1.0 - smoothstep(radius * 1.02, radius * 1.34, d));
+            float ejecta_band = 1.0 - smoothstep(radius * 1.05, radius * 2.15, d);
+            depression = max(depression, bowl * (0.55 + h0 * 0.55));
+            rim += rim_band * (0.36 + h1 * 0.44);
+            ejecta += ejecta_band * (0.06 + h2 * 0.12);
+        }
+    }
+    float rough = (shadertoy_biome_ridged_fbm(p * 4.4, seed + vec2(-491.0, 499.0), 4) -
+        0.45) * 74.0;
+    return max(240.0 + broad * 280.0 + rim * 260.0 + ejecta * 110.0 - depression * 310.0 +
+        rough, 0.0);
 }
 
 vec3 shadertoy_biome_reference_normal(vec2 world, vec2 seed, float vertical_scale,

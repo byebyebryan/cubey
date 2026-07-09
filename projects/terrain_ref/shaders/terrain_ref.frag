@@ -67,6 +67,10 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_PLAINS) < 0.5;
     bool shadertoy_gorge =
         abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_GORGE) < 0.5;
+    bool shadertoy_glacial_highland =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_GLACIAL_HIGHLAND) < 0.5;
+    bool shadertoy_crater_field =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_CRATER_FIELD) < 0.5;
     bool height_material = pc.water_params.w > 0.5;
     float grass_coverage = 0.65;
     float transition_m = 20.0;
@@ -151,6 +155,33 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         return color;
     }
 
+    if (shadertoy_glacial_highland) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        float slope = 1.0 - cos_v;
+        vec3 blue_ice = terrain_ref_color_variation(vec3(0.56, 0.68, 0.70),
+            frag_world_position.xz, 0.010, 0.10);
+        vec3 firn = terrain_ref_color_variation(vec3(0.76, 0.79, 0.77),
+            frag_world_position.xz + vec2(41.0, -67.0), 0.012, 0.10);
+        vec3 exposed_rock = terrain_ref_color_variation(vec3(0.34, 0.35, 0.34),
+            frag_world_position.xz + vec2(-97.0, 53.0), 0.011, 0.22);
+        vec3 talus = terrain_ref_color_variation(vec3(0.46, 0.44, 0.40),
+            frag_world_position.xz, 0.018, 0.18);
+        vec3 color = mix(blue_ice, firn, smoothstep(0.22, 0.72, normalized_height));
+        float rock_rib = smoothstep(0.18, 0.62, slope) *
+            smoothstep(0.28, 0.92, normalized_height);
+        color = mix(color, exposed_rock, rock_rib * 0.76);
+        float talus_mask = smoothstep(0.12, 0.42, slope) *
+            (1.0 - smoothstep(0.72, 0.96, normalized_height));
+        color = mix(color, talus, talus_mask * 0.44);
+        float snow_cap = smoothstep(0.58, 0.90, normalized_height) *
+            smoothstep(0.30, 0.82, cos_v);
+        color = mix(color, snow, snow_cap * 0.72);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.10, 0.24, max(rock_rib, talus_mask)));
+        return color;
+    }
+
     if (shadertoy_dunes) {
         vec3 low_sand = terrain_ref_color_variation(vec3(0.63, 0.52, 0.31),
             frag_world_position.xz, 0.005, 0.18);
@@ -212,6 +243,32 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         color *= 0.88 + strata * 0.18;
         normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
             detail * mix(0.11, 0.28, cliff));
+        return color;
+    }
+
+    if (shadertoy_crater_field) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        float slope = 1.0 - cos_v;
+        vec3 dust = terrain_ref_color_variation(vec3(0.43, 0.39, 0.33),
+            frag_world_position.xz, 0.010, 0.16);
+        vec3 pale_regolith = terrain_ref_color_variation(vec3(0.62, 0.59, 0.52),
+            frag_world_position.xz + vec2(37.0, -101.0), 0.007, 0.14);
+        vec3 rim_rock = terrain_ref_color_variation(vec3(0.50, 0.47, 0.40),
+            frag_world_position.xz + vec2(-71.0, 43.0), 0.014, 0.18);
+        vec3 dark_floor = terrain_ref_color_variation(vec3(0.25, 0.24, 0.22),
+            frag_world_position.xz, 0.018, 0.14);
+        vec3 color = mix(dust, pale_regolith, smoothstep(0.24, 0.82, normalized_height));
+        float crater_floor = (1.0 - smoothstep(0.12, 0.34, normalized_height)) *
+            smoothstep(0.46, 0.94, cos_v);
+        color = mix(color, dark_floor, crater_floor * 0.54);
+        float rim_exposure = smoothstep(0.16, 0.56, slope) *
+            smoothstep(0.28, 0.88, normalized_height);
+        color = mix(color, rim_rock, rim_exposure * 0.62);
+        float ejecta = terrain_ref_fbm(frag_world_position.xz * 0.0032, pc.terrain_params.xy);
+        color *= 0.88 + ejecta * 0.18;
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.12, 0.25, rim_exposure));
         return color;
     }
 

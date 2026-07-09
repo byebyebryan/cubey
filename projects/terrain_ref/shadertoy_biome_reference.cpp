@@ -423,11 +423,98 @@ float shadertoy_gorge_reference_height(float world_x, float world_z, std::uint64
 
 float shadertoy_glacial_highland_reference_height(float world_x, float world_z,
                                                   std::uint64_t seed) {
-    return shadertoy_alpine_reference_height(world_x, world_z, seed);
+    const Vec2 seed_value = seed_components(seed);
+    Vec2 p{
+        .x = (world_x * 0.00017F) + (seed_value.x * 0.113F) - 1.0F,
+        .y = (world_z * 0.00017F) + (seed_value.y * 0.097F) + 3.0F,
+    };
+    const float macro =
+        fbm({.x = p.x * 0.36F, .y = p.y * 0.36F},
+            {.x = seed_value.x + 373.0F, .y = seed_value.y - 379.0F}, 5);
+    const float uplift = smoothstep(0.20F, 0.78F, macro);
+    const float shoulder = smoothstep(0.04F, 0.58F, macro);
+    const float warp =
+        (fbm({.x = p.x * 0.74F, .y = p.y * 0.74F},
+             {.x = seed_value.x - 383.0F, .y = seed_value.y + 389.0F}, 4) -
+         0.5F) *
+        1.10F;
+    const Vec2 q = rotate({.x = (p.x * 0.92F) + warp, .y = (p.y * 1.10F) - warp * 0.52F},
+                          -0.46F);
+    const float valley_wander =
+        (fbm({.x = q.y * 0.38F, .y = q.y * 0.22F + 8.0F},
+             {.x = seed_value.x + 397.0F, .y = seed_value.y - 401.0F}, 4) -
+         0.5F) *
+        0.92F;
+    const float valley_distance = std::abs(q.x + valley_wander);
+    const float u_valley = 1.0F - smoothstep(0.18F, 0.82F, valley_distance);
+    const float ribs =
+        ridged_fbm({.x = q.x * 1.42F + warp * 0.26F, .y = q.y * 1.04F - warp * 0.18F},
+                   {.x = seed_value.x - 409.0F, .y = seed_value.y + 419.0F}, 6);
+    const float ice_field =
+        smoothstep(0.32F, 0.78F,
+                   fbm({.x = p.x * 0.62F, .y = p.y * 0.62F},
+                       {.x = seed_value.x + 421.0F, .y = seed_value.y - 431.0F}, 5));
+    const float rough =
+        (ridged_fbm({.x = p.x * 3.1F, .y = p.y * 3.1F},
+                    {.x = seed_value.x - 433.0F, .y = seed_value.y + 439.0F}, 4) -
+         0.45F) *
+        110.0F *
+        uplift;
+    const float broad_height = 260.0F + std::pow(uplift, 1.22F) * 2300.0F +
+                               std::pow(shoulder, 1.80F) * 640.0F;
+    const float rib_height = std::pow(std::max(ribs, 0.0F), 1.18F) * uplift * 1050.0F;
+    const float valley_cut = u_valley * (580.0F + uplift * 560.0F);
+    const float ice_smoothing = ice_field * u_valley * 160.0F;
+    return std::max(broad_height + rib_height - valley_cut - ice_smoothing + rough, 0.0F);
 }
 
 float shadertoy_crater_field_reference_height(float world_x, float world_z, std::uint64_t seed) {
-    return shadertoy_badlands_reference_height(world_x, world_z, seed);
+    const Vec2 seed_value = seed_components(seed);
+    Vec2 p{
+        .x = (world_x * 0.00022F) + (seed_value.x * 0.077F),
+        .y = (world_z * 0.00022F) + (seed_value.y * 0.089F),
+    };
+    const float broad =
+        fbm({.x = p.x * 0.32F, .y = p.y * 0.32F},
+            {.x = seed_value.x + 443.0F, .y = seed_value.y - 449.0F}, 5);
+    const Vec2 crater_p{.x = p.x * 1.45F, .y = p.y * 1.45F};
+    const Vec2 base_cell{.x = std::floor(crater_p.x), .y = std::floor(crater_p.y)};
+    float depression = 0.0F;
+    float rim = 0.0F;
+    float ejecta = 0.0F;
+    for (int dz = -1; dz <= 1; ++dz) {
+        for (int dx = -1; dx <= 1; ++dx) {
+            const Vec2 cell{.x = base_cell.x + float(dx), .y = base_cell.y + float(dz)};
+            const float h0 = seeded_hash(cell, {.x = seed_value.x + 457.0F,
+                                                .y = seed_value.y - 461.0F});
+            const float h1 = seeded_hash(cell, {.x = seed_value.x - 463.0F,
+                                                .y = seed_value.y + 467.0F});
+            const float h2 = seeded_hash(cell, {.x = seed_value.x + 479.0F,
+                                                .y = seed_value.y - 487.0F});
+            const Vec2 center{.x = cell.x + 0.18F + h0 * 0.64F,
+                              .y = cell.y + 0.18F + h1 * 0.64F};
+            const float radius = 0.18F + h2 * 0.28F;
+            const float dx_to_center = crater_p.x - center.x;
+            const float dz_to_center = crater_p.y - center.y;
+            const float d = std::sqrt(dx_to_center * dx_to_center + dz_to_center * dz_to_center);
+            const float bowl = 1.0F - smoothstep(radius * 0.18F, radius, d);
+            const float rim_band =
+                smoothstep(radius * 0.72F, radius * 1.02F, d) *
+                (1.0F - smoothstep(radius * 1.02F, radius * 1.34F, d));
+            const float ejecta_band = 1.0F - smoothstep(radius * 1.05F, radius * 2.15F, d);
+            depression = std::max(depression, bowl * (0.55F + h0 * 0.55F));
+            rim += rim_band * (0.36F + h1 * 0.44F);
+            ejecta += ejecta_band * (0.06F + h2 * 0.12F);
+        }
+    }
+    const float rough =
+        (ridged_fbm({.x = p.x * 4.4F, .y = p.y * 4.4F},
+                    {.x = seed_value.x - 491.0F, .y = seed_value.y + 499.0F}, 4) -
+         0.45F) *
+        74.0F;
+    return std::max(240.0F + broad * 280.0F + rim * 260.0F + ejecta * 110.0F -
+                        depression * 310.0F + rough,
+                    0.0F);
 }
 
 } // namespace cubey::projects::terrain_ref
