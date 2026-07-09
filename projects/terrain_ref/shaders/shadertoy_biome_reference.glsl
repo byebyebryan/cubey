@@ -78,6 +78,15 @@ float shadertoy_biome_triangle_wave(float value) {
     return 1.0 - abs((f * 2.0) - 1.0);
 }
 
+float shadertoy_biome_dune_profile(float value, float crest_position, float slip_width) {
+    float phase = shadertoy_biome_fract_positive(value);
+    float crest = clamp(crest_position, 0.32, 0.74);
+    float lee_end = min(crest + clamp(slip_width, 0.06, 0.22), 0.98);
+    float windward = smoothstep(0.02, crest, phase);
+    float lee = 1.0 - smoothstep(crest, lee_end, phase);
+    return pow(max(min(windward, lee), 0.0), 0.92);
+}
+
 float shadertoy_alpine_reference_height(vec2 world, vec2 seed) {
     vec2 p = (world * 0.00018) + (seed * vec2(0.119, 0.143)) + vec2(-3.0, 5.0);
     float macro = shadertoy_biome_fbm(p * 0.48, seed + vec2(4.0, -7.0), 5, 0.52);
@@ -100,24 +109,42 @@ float shadertoy_alpine_reference_height(vec2 world, vec2 seed) {
 }
 
 float shadertoy_dunes_reference_height(vec2 world, vec2 seed) {
-    vec2 p = (world * 0.00026) + (seed * vec2(0.071, 0.083));
-    float wind_angle = 0.42 + (seed.x * 0.011);
+    vec2 p = (world * 0.00020) + (seed * vec2(0.071, 0.083));
+    float wind_angle = 0.48 + (seed.x * 0.013);
     vec2 wind = vec2(cos(wind_angle), sin(wind_angle));
     vec2 cross_wind = vec2(-wind.y, wind.x);
     float along = dot(p, wind);
     float across = dot(p, cross_wind);
-    float broad = shadertoy_biome_fbm(p * 0.30, seed + vec2(-13.0, 17.0), 4, 0.52);
-    float warp = (shadertoy_biome_fbm(p * 1.25, seed + vec2(23.0, -29.0), 4, 0.52) -
-        0.5) * 0.68;
-    float primary = pow(max(shadertoy_biome_triangle_wave((across * 1.42) + warp +
-        sin(along * 0.82) * 0.16), 0.0), 1.52);
-    float secondary = pow(max(shadertoy_biome_triangle_wave((across * 2.10) +
-        (along * 0.10) - warp * 0.55), 0.0), 2.10);
-    float dune_envelope = smoothstep(0.18, 0.72, broad);
-    float rolling = primary * (0.58 + dune_envelope * 0.42);
-    float ripple = (shadertoy_biome_triangle_wave((across * 9.0) +
-        sin(along * 2.1) * 0.35) - 0.5) * 7.5;
-    return 24.0 + (broad * 72.0) + (rolling * 360.0) + (secondary * 82.0) + ripple;
+    float broad = shadertoy_biome_fbm(p * 0.20, seed + vec2(-13.0, 17.0), 5, 0.52);
+    float dune_envelope = smoothstep(0.18, 0.70, broad);
+    float bend = (shadertoy_biome_fbm(p * 0.44, seed + vec2(23.0, -29.0), 4, 0.52) -
+        0.5) * 1.55;
+    float phase_noise = shadertoy_biome_fbm(vec2(along * 0.50, across * 0.34),
+        seed + vec2(31.0, -37.0), 4, 0.52) - 0.5;
+    float crest_noise = shadertoy_biome_fbm(vec2(along * 0.34, across * 0.46),
+        seed + vec2(-41.0, 43.0), 4, 0.52) - 0.5;
+    float lobe_source = shadertoy_biome_fbm(vec2(along * 0.30, across * 0.46),
+        seed + vec2(47.0, 53.0), 4, 0.52);
+    float patch_breakup = smoothstep(0.18, 0.72, lobe_source);
+    float lobe_envelope = smoothstep(0.24, 0.78,
+        shadertoy_biome_fbm(vec2(along * 0.20, across * 0.30),
+            seed + vec2(-83.0, 89.0), 4, 0.52));
+    float primary_phase = (along * 0.64) + bend + sin((across * 0.68) + phase_noise * 1.6) * 0.22;
+    float primary = shadertoy_biome_dune_profile(primary_phase, 0.60 + crest_noise * 0.14,
+        0.12 + patch_breakup * 0.060);
+    float secondary_phase = (along * 0.36) - (across * 0.12) - (bend * 0.32) +
+        (phase_noise * 0.55);
+    float secondary = shadertoy_biome_dune_profile(secondary_phase, 0.66 - crest_noise * 0.10,
+        0.16);
+    float low_swell = shadertoy_biome_fbm(p * 0.16, seed + vec2(59.0, -61.0), 4, 0.52) *
+        84.0;
+    float ripple = (shadertoy_biome_triangle_wave((across * 8.0) + (along * 0.42) +
+        phase_noise * 1.3) - 0.5) * (1.0 + patch_breakup * 2.2);
+    float macro_dunes = primary * dune_envelope * (0.58 + lobe_envelope * 0.62);
+    float secondary_dunes = secondary * dune_envelope * patch_breakup;
+    return 18.0 + (broad * 86.0) + low_swell +
+        (macro_dunes * (290.0 + patch_breakup * 210.0)) +
+        (secondary_dunes * (70.0 + (1.0 - broad) * 120.0)) + ripple;
 }
 
 float shadertoy_lake_basin_reference_height(vec2 world, vec2 seed) {

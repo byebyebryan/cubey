@@ -92,6 +92,15 @@ struct Vec2 {
     return 1.0F - std::abs((f * 2.0F) - 1.0F);
 }
 
+[[nodiscard]] float dune_profile(float value, float crest_position, float slip_width) {
+    const float phase = fract_positive(value);
+    const float crest = std::clamp(crest_position, 0.32F, 0.74F);
+    const float lee_end = std::min(crest + std::clamp(slip_width, 0.06F, 0.22F), 0.98F);
+    const float windward = smoothstep(0.02F, crest, phase);
+    const float lee = 1.0F - smoothstep(crest, lee_end, phase);
+    return std::pow(std::max(std::min(windward, lee), 0.0F), 0.92F);
+}
+
 } // namespace
 
 float shadertoy_alpine_reference_height(float world_x, float world_z, std::uint64_t seed) {
@@ -130,34 +139,58 @@ float shadertoy_alpine_reference_height(float world_x, float world_z, std::uint6
 float shadertoy_dunes_reference_height(float world_x, float world_z, std::uint64_t seed) {
     const Vec2 seed_value = seed_components(seed);
     Vec2 p{
-        .x = (world_x * 0.00026F) + (seed_value.x * 0.071F),
-        .y = (world_z * 0.00026F) + (seed_value.y * 0.083F),
+        .x = (world_x * 0.00020F) + (seed_value.x * 0.071F),
+        .y = (world_z * 0.00020F) + (seed_value.y * 0.083F),
     };
-    const float wind_angle = 0.42F + (seed_value.x * 0.011F);
+    const float wind_angle = 0.48F + (seed_value.x * 0.013F);
     const Vec2 wind{.x = std::cos(wind_angle), .y = std::sin(wind_angle)};
     const Vec2 cross{.x = -wind.y, .y = wind.x};
     const float along = (p.x * wind.x) + (p.y * wind.y);
     const float across = (p.x * cross.x) + (p.y * cross.y);
     const float broad =
-        fbm({.x = p.x * 0.30F, .y = p.y * 0.30F},
-            {.x = seed_value.x - 13.0F, .y = seed_value.y + 17.0F}, 4);
-    const float warp =
-        (fbm({.x = p.x * 1.25F, .y = p.y * 1.25F},
+        fbm({.x = p.x * 0.20F, .y = p.y * 0.20F},
+            {.x = seed_value.x - 13.0F, .y = seed_value.y + 17.0F}, 5);
+    const float dune_envelope = smoothstep(0.18F, 0.70F, broad);
+    const float bend =
+        (fbm({.x = p.x * 0.44F, .y = p.y * 0.44F},
              {.x = seed_value.x + 23.0F, .y = seed_value.y - 29.0F}, 4) -
          0.5F) *
-        0.68F;
-    const float primary = std::pow(std::max(triangle_wave((across * 1.42F) + warp +
-                                                          std::sin(along * 0.82F) * 0.16F),
-                                            0.0F),
-                                   1.52F);
-    const float secondary = std::pow(
-        std::max(triangle_wave((across * 2.10F) + (along * 0.10F) - warp * 0.55F), 0.0F),
-        2.10F);
-    const float dune_envelope = smoothstep(0.18F, 0.72F, broad);
-    const float rolling = primary * (0.58F + dune_envelope * 0.42F);
+        1.55F;
+    const float phase_noise =
+        fbm({.x = along * 0.50F, .y = across * 0.34F},
+            {.x = seed_value.x + 31.0F, .y = seed_value.y - 37.0F}, 4) -
+        0.5F;
+    const float crest_noise =
+        fbm({.x = along * 0.34F, .y = across * 0.46F},
+            {.x = seed_value.x - 41.0F, .y = seed_value.y + 43.0F}, 4) -
+        0.5F;
+    const float lobe_source =
+        fbm({.x = along * 0.30F, .y = across * 0.46F},
+            {.x = seed_value.x + 47.0F, .y = seed_value.y + 53.0F}, 4);
+    const float patch_breakup = smoothstep(0.18F, 0.72F, lobe_source);
+    const float lobe_envelope =
+        smoothstep(0.24F, 0.78F,
+                   fbm({.x = along * 0.20F, .y = across * 0.30F},
+                       {.x = seed_value.x - 83.0F, .y = seed_value.y + 89.0F}, 4));
+    const float primary_phase =
+        (along * 0.64F) + bend + std::sin((across * 0.68F) + phase_noise * 1.6F) * 0.22F;
+    const float primary =
+        dune_profile(primary_phase, 0.60F + crest_noise * 0.14F, 0.12F + patch_breakup * 0.060F);
+    const float secondary_phase = (along * 0.36F) - (across * 0.12F) - (bend * 0.32F) +
+                                  (phase_noise * 0.55F);
+    const float secondary = dune_profile(secondary_phase, 0.66F - crest_noise * 0.10F, 0.16F);
+    const float low_swell =
+        fbm({.x = p.x * 0.16F, .y = p.y * 0.16F},
+            {.x = seed_value.x + 59.0F, .y = seed_value.y - 61.0F}, 4) *
+        84.0F;
     const float ripple =
-        (triangle_wave((across * 9.0F) + std::sin(along * 2.1F) * 0.35F) - 0.5F) * 7.5F;
-    return 24.0F + (broad * 72.0F) + (rolling * 360.0F) + (secondary * 82.0F) + ripple;
+        (triangle_wave((across * 8.0F) + (along * 0.42F) + phase_noise * 1.3F) - 0.5F) *
+        (1.0F + patch_breakup * 2.2F);
+    const float macro_dunes = primary * dune_envelope * (0.58F + lobe_envelope * 0.62F);
+    const float secondary_dunes = secondary * dune_envelope * patch_breakup;
+    return 18.0F + (broad * 86.0F) + low_swell +
+           (macro_dunes * (290.0F + patch_breakup * 210.0F)) +
+           (secondary_dunes * (70.0F + (1.0F - broad) * 120.0F)) + ripple;
 }
 
 float shadertoy_lake_basin_reference_height(float world_x, float world_z, std::uint64_t seed) {
