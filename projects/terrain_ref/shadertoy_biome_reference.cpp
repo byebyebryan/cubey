@@ -341,11 +341,84 @@ float shadertoy_coast_island_reference_height(float world_x, float world_z, std:
 }
 
 float shadertoy_plains_reference_height(float world_x, float world_z, std::uint64_t seed) {
-    return shadertoy_dunes_reference_height(world_x, world_z, seed);
+    const Vec2 seed_value = seed_components(seed);
+    Vec2 p{
+        .x = (world_x * 0.00016F) + (seed_value.x * 0.061F),
+        .y = (world_z * 0.00016F) + (seed_value.y * 0.073F),
+    };
+    const float macro =
+        fbm({.x = p.x * 0.30F, .y = p.y * 0.30F},
+            {.x = seed_value.x + 251.0F, .y = seed_value.y - 257.0F}, 5);
+    const float roll =
+        fbm({.x = p.x * 0.82F, .y = p.y * 0.82F},
+            {.x = seed_value.x - 263.0F, .y = seed_value.y + 269.0F}, 4);
+    const float wind_angle = 0.28F + seed_value.x * 0.021F;
+    const Vec2 wind{.x = std::cos(wind_angle), .y = std::sin(wind_angle)};
+    const float along = (p.x * wind.x) + (p.y * wind.y);
+    const float cross = (p.x * -wind.y) + (p.y * wind.x);
+    const float swale_source =
+        ridged_fbm({.x = (along * 0.58F) + roll * 0.32F, .y = (cross * 0.24F) - roll * 0.20F},
+                   {.x = seed_value.x + 271.0F, .y = seed_value.y - 277.0F}, 5);
+    const float swales = std::pow(std::max(swale_source, 0.0F), 2.35F);
+    const float prairie_detail =
+        (fbm({.x = p.x * 2.40F, .y = p.y * 2.40F},
+             {.x = seed_value.x - 281.0F, .y = seed_value.y + 283.0F}, 4) -
+         0.5F) *
+        16.0F;
+    return 90.0F + macro * 150.0F + roll * 78.0F - swales * 92.0F + prairie_detail;
 }
 
 float shadertoy_gorge_reference_height(float world_x, float world_z, std::uint64_t seed) {
-    return shadertoy_badlands_reference_height(world_x, world_z, seed);
+    const Vec2 seed_value = seed_components(seed);
+    Vec2 p{
+        .x = (world_x * 0.00020F) + (seed_value.x * 0.091F) - 2.0F,
+        .y = (world_z * 0.00020F) + (seed_value.y * 0.083F) + 1.0F,
+    };
+    const float plateau_source =
+        fbm({.x = p.x * 0.24F, .y = p.y * 0.24F},
+            {.x = seed_value.x + 293.0F, .y = seed_value.y - 307.0F}, 5);
+    const float plateau = smoothstep(0.18F, 0.74F, plateau_source);
+    const float warp =
+        (fbm({.x = p.x * 0.64F, .y = p.y * 0.64F},
+             {.x = seed_value.x - 311.0F, .y = seed_value.y + 313.0F}, 4) -
+         0.5F) *
+        1.35F;
+    const Vec2 q = rotate({.x = (p.x * 0.78F) + warp, .y = (p.y * 1.12F) - warp * 0.45F},
+                          0.52F);
+    const float corridor_wander =
+        (fbm({.x = q.y * 0.42F, .y = q.y * 0.18F + 6.0F},
+             {.x = seed_value.x + 317.0F, .y = seed_value.y - 331.0F}, 4) -
+         0.5F) *
+        1.15F;
+    const float corridor_distance = std::abs(q.x + corridor_wander);
+    const float main_corridor = 1.0F - smoothstep(0.09F, 0.52F, corridor_distance);
+    const float floor = 1.0F - smoothstep(0.05F, 0.20F, corridor_distance);
+    const float tributary_a =
+        ridged_fbm({.x = (q.x * 0.95F) + q.y * 0.34F + warp * 0.20F,
+                    .y = (q.y * 0.70F) - q.x * 0.42F},
+                   {.x = seed_value.x - 337.0F, .y = seed_value.y + 347.0F}, 5);
+    const float tributary_b =
+        ridged_fbm({.x = (q.x * 0.82F) - q.y * 0.36F - warp * 0.24F,
+                    .y = (q.y * 0.78F) + q.x * 0.40F},
+                   {.x = seed_value.x + 349.0F, .y = seed_value.y - 353.0F}, 5);
+    const float tributaries =
+        std::pow(std::max(std::max(tributary_a, tributary_b), 0.0F), 2.25F) *
+        smoothstep(0.20F, 0.88F, plateau) * (1.0F - floor * 0.45F);
+    const float terrace =
+        (triangle_wave((q.y * 0.18F) + plateau * 0.74F) - 0.5F) *
+        smoothstep(0.20F, 0.72F, main_corridor) * 42.0F;
+    const float rough_detail =
+        (ridged_fbm({.x = p.x * 3.0F, .y = p.y * 3.0F},
+                    {.x = seed_value.x - 359.0F, .y = seed_value.y + 367.0F}, 4) -
+         0.42F) *
+        72.0F;
+    const float base_height = 180.0F + plateau * 1350.0F + plateau_source * 280.0F;
+    const float incision = main_corridor * (900.0F + plateau * 620.0F) +
+                           tributaries * (360.0F + plateau * 260.0F);
+    const float wall_lift =
+        smoothstep(0.18F, 0.54F, corridor_distance) *
+        (1.0F - smoothstep(0.54F, 0.92F, corridor_distance)) * plateau * 170.0F;
+    return std::max(base_height - incision + wall_lift + terrace + rough_detail, 0.0F);
 }
 
 float shadertoy_glacial_highland_reference_height(float world_x, float world_z,

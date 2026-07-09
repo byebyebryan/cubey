@@ -250,11 +250,51 @@ float shadertoy_coast_island_reference_height(vec2 world, vec2 seed) {
 }
 
 float shadertoy_plains_reference_height(vec2 world, vec2 seed) {
-    return shadertoy_dunes_reference_height(world, seed);
+    vec2 p = (world * 0.00016) + (seed * vec2(0.061, 0.073));
+    float macro = shadertoy_biome_fbm(p * 0.30, seed + vec2(251.0, -257.0), 5, 0.52);
+    float roll = shadertoy_biome_fbm(p * 0.82, seed + vec2(-263.0, 269.0), 4, 0.52);
+    float wind_angle = 0.28 + seed.x * 0.021;
+    vec2 wind = vec2(cos(wind_angle), sin(wind_angle));
+    float along = dot(p, wind);
+    float cross_wind = dot(p, vec2(-wind.y, wind.x));
+    float swale_source = shadertoy_biome_ridged_fbm(vec2((along * 0.58) + roll * 0.32,
+        (cross_wind * 0.24) - roll * 0.20), seed + vec2(271.0, -277.0), 5);
+    float swales = pow(max(swale_source, 0.0), 2.35);
+    float prairie_detail = (shadertoy_biome_fbm(p * 2.40, seed + vec2(-281.0, 283.0), 4,
+        0.52) - 0.5) * 16.0;
+    return 90.0 + macro * 150.0 + roll * 78.0 - swales * 92.0 + prairie_detail;
 }
 
 float shadertoy_gorge_reference_height(vec2 world, vec2 seed) {
-    return shadertoy_badlands_reference_height(world, seed);
+    vec2 p = (world * 0.00020) + (seed * vec2(0.091, 0.083)) + vec2(-2.0, 1.0);
+    float plateau_source = shadertoy_biome_fbm(p * 0.24, seed + vec2(293.0, -307.0), 5,
+        0.52);
+    float plateau = smoothstep(0.18, 0.74, plateau_source);
+    float warp = (shadertoy_biome_fbm(p * 0.64, seed + vec2(-311.0, 313.0), 4, 0.52) -
+        0.5) * 1.35;
+    vec2 q = shadertoy_biome_rotate(vec2((p.x * 0.78) + warp, (p.y * 1.12) - warp * 0.45),
+        0.52);
+    float corridor_wander = (shadertoy_biome_fbm(vec2(q.y * 0.42, q.y * 0.18 + 6.0),
+        seed + vec2(317.0, -331.0), 4, 0.52) - 0.5) * 1.15;
+    float corridor_distance = abs(q.x + corridor_wander);
+    float main_corridor = 1.0 - smoothstep(0.09, 0.52, corridor_distance);
+    float floor = 1.0 - smoothstep(0.05, 0.20, corridor_distance);
+    float tributary_a = shadertoy_biome_ridged_fbm(vec2((q.x * 0.95) + q.y * 0.34 +
+        warp * 0.20, (q.y * 0.70) - q.x * 0.42), seed + vec2(-337.0, 347.0), 5);
+    float tributary_b = shadertoy_biome_ridged_fbm(vec2((q.x * 0.82) - q.y * 0.36 -
+        warp * 0.24, (q.y * 0.78) + q.x * 0.40), seed + vec2(349.0, -353.0), 5);
+    float tributaries = pow(max(max(tributary_a, tributary_b), 0.0), 2.25) *
+        smoothstep(0.20, 0.88, plateau) * (1.0 - floor * 0.45);
+    float terrace = (shadertoy_biome_triangle_wave((q.y * 0.18) + plateau * 0.74) - 0.5) *
+        smoothstep(0.20, 0.72, main_corridor) * 42.0;
+    float rough_detail = (shadertoy_biome_ridged_fbm(p * 3.0, seed + vec2(-359.0, 367.0), 4) -
+        0.42) * 72.0;
+    float base_height = 180.0 + plateau * 1350.0 + plateau_source * 280.0;
+    float incision = main_corridor * (900.0 + plateau * 620.0) +
+        tributaries * (360.0 + plateau * 260.0);
+    float wall_lift = smoothstep(0.18, 0.54, corridor_distance) *
+        (1.0 - smoothstep(0.54, 0.92, corridor_distance)) * plateau * 170.0;
+    return max(base_height - incision + wall_lift + terrace + rough_detail, 0.0);
 }
 
 float shadertoy_glacial_highland_reference_height(vec2 world, vec2 seed) {
