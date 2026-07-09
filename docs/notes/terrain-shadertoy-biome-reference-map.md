@@ -223,3 +223,7 @@ The first review should judge large-scale read first:
 - Material tuning was left unchanged in this pass because the visual weakness
   was the source distribution. Remaining work, if this lane stays useful, is to
   add stronger ejecta scars, partial burial, and more visibly eroded old rims.
+- A follow-up variation pass rotated and warped each crater population domain
+  and added a rare intermediate impact population. This further hides the
+  underlying cell lattice, though the recipe still remains a procedural
+  reference rather than a physically realistic impact history.
