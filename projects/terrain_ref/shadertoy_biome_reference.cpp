@@ -101,6 +101,89 @@ struct Vec2 {
     return std::pow(std::max(std::min(windward, lee), 0.0F), 0.92F);
 }
 
+struct GorgeSourceField {
+    Vec2 p{};
+    Vec2 q{};
+    float plateau_source = 0.0F;
+    float plateau = 0.0F;
+    float signed_corridor = 0.0F;
+    float corridor_distance = 0.0F;
+    float corridor_width = 0.0F;
+    float main_corridor = 0.0F;
+    float floor = 0.0F;
+    float wall = 0.0F;
+    float tributaries = 0.0F;
+};
+
+[[nodiscard]] GorgeSourceField gorge_source_field(Vec2 p, Vec2 seed_value) {
+    const float plateau_source =
+        fbm({.x = p.x * 0.24F, .y = p.y * 0.24F},
+            {.x = seed_value.x + 293.0F, .y = seed_value.y - 307.0F}, 5);
+    const float plateau = smoothstep(0.16F, 0.72F, plateau_source);
+    const float warp_x =
+        (fbm({.x = p.x * 0.54F, .y = p.y * 0.54F},
+             {.x = seed_value.x - 311.0F, .y = seed_value.y + 313.0F}, 4) -
+         0.5F) *
+        1.10F;
+    const float warp_y =
+        (fbm({.x = (p.x * 0.46F) + 5.0F, .y = (p.y * 0.46F) - 3.0F},
+             {.x = seed_value.x + 317.0F, .y = seed_value.y - 331.0F}, 4) -
+         0.5F) *
+        0.88F;
+    const Vec2 q =
+        rotate({.x = (p.x * 0.74F) + warp_x, .y = (p.y * 1.02F) + warp_y}, 0.42F);
+    const float broad_wander =
+        (fbm({.x = q.y * 0.34F, .y = (q.y * 0.16F) + 6.0F},
+             {.x = seed_value.x - 337.0F, .y = seed_value.y + 347.0F}, 4) -
+         0.5F) *
+        1.05F;
+    const float local_wander =
+        (fbm({.x = q.y * 0.86F, .y = (q.y * 0.38F) - 4.0F},
+             {.x = seed_value.x + 349.0F, .y = seed_value.y - 353.0F}, 3) -
+         0.5F) *
+        0.28F;
+    const float signed_corridor = q.x + broad_wander + local_wander;
+    const float corridor_distance = std::abs(signed_corridor);
+    const float width_noise =
+        fbm({.x = q.y * 0.28F, .y = q.x * 0.12F},
+            {.x = seed_value.x - 359.0F, .y = seed_value.y + 367.0F}, 4);
+    const float corridor_width = mix(0.22F, 0.44F, width_noise);
+    const float main_corridor =
+        1.0F - smoothstep(corridor_width * 0.52F, corridor_width * 1.74F, corridor_distance);
+    const float floor =
+        1.0F - smoothstep(corridor_width * 0.16F, corridor_width * 0.58F, corridor_distance);
+    const float wall = smoothstep(corridor_width * 0.56F, corridor_width * 1.20F,
+                                  corridor_distance) *
+                       (1.0F - smoothstep(corridor_width * 1.22F, corridor_width * 2.08F,
+                                           corridor_distance));
+    const float branch_a =
+        ridged_fbm({.x = (q.x * 0.82F) + q.y * 0.44F + warp_x * 0.18F,
+                    .y = (q.y * 0.64F) - q.x * 0.48F + warp_y * 0.12F},
+                   {.x = seed_value.x + 373.0F, .y = seed_value.y - 379.0F}, 5);
+    const float branch_b =
+        ridged_fbm({.x = (q.x * 0.78F) - q.y * 0.42F - warp_x * 0.20F,
+                    .y = (q.y * 0.70F) + q.x * 0.44F - warp_y * 0.10F},
+                   {.x = seed_value.x - 383.0F, .y = seed_value.y + 389.0F}, 5);
+    const float branch_gate =
+        smoothstep(corridor_width * 0.90F, corridor_width * 2.20F, corridor_distance) *
+        (1.0F - smoothstep(corridor_width * 4.20F, corridor_width * 6.10F,
+                            corridor_distance));
+    const float tributaries = std::pow(std::max(std::max(branch_a, branch_b), 0.0F), 2.35F) *
+                              branch_gate * smoothstep(0.18F, 0.88F, plateau) *
+                              (1.0F - floor * 0.72F);
+    return {.p = p,
+            .q = q,
+            .plateau_source = plateau_source,
+            .plateau = plateau,
+            .signed_corridor = signed_corridor,
+            .corridor_distance = corridor_distance,
+            .corridor_width = corridor_width,
+            .main_corridor = main_corridor,
+            .floor = floor,
+            .wall = wall,
+            .tributaries = tributaries};
+}
+
 } // namespace
 
 float shadertoy_alpine_reference_height(float world_x, float world_z, std::uint64_t seed) {
@@ -371,54 +454,27 @@ float shadertoy_plains_reference_height(float world_x, float world_z, std::uint6
 float shadertoy_gorge_reference_height(float world_x, float world_z, std::uint64_t seed) {
     const Vec2 seed_value = seed_components(seed);
     Vec2 p{
-        .x = (world_x * 0.00020F) + (seed_value.x * 0.091F) - 2.0F,
-        .y = (world_z * 0.00020F) + (seed_value.y * 0.083F) + 1.0F,
+        .x = (world_x * 0.00020F) + (seed_value.x * 0.091F) - 0.16F,
+        .y = (world_z * 0.00020F) + (seed_value.y * 0.083F) + 0.08F,
     };
-    const float plateau_source =
-        fbm({.x = p.x * 0.24F, .y = p.y * 0.24F},
-            {.x = seed_value.x + 293.0F, .y = seed_value.y - 307.0F}, 5);
-    const float plateau = smoothstep(0.18F, 0.74F, plateau_source);
-    const float warp =
-        (fbm({.x = p.x * 0.64F, .y = p.y * 0.64F},
-             {.x = seed_value.x - 311.0F, .y = seed_value.y + 313.0F}, 4) -
-         0.5F) *
-        1.35F;
-    const Vec2 q = rotate({.x = (p.x * 0.78F) + warp, .y = (p.y * 1.12F) - warp * 0.45F},
-                          0.52F);
-    const float corridor_wander =
-        (fbm({.x = q.y * 0.42F, .y = q.y * 0.18F + 6.0F},
-             {.x = seed_value.x + 317.0F, .y = seed_value.y - 331.0F}, 4) -
-         0.5F) *
-        1.15F;
-    const float corridor_distance = std::abs(q.x + corridor_wander);
-    const float main_corridor = 1.0F - smoothstep(0.09F, 0.52F, corridor_distance);
-    const float floor = 1.0F - smoothstep(0.05F, 0.20F, corridor_distance);
-    const float tributary_a =
-        ridged_fbm({.x = (q.x * 0.95F) + q.y * 0.34F + warp * 0.20F,
-                    .y = (q.y * 0.70F) - q.x * 0.42F},
-                   {.x = seed_value.x - 337.0F, .y = seed_value.y + 347.0F}, 5);
-    const float tributary_b =
-        ridged_fbm({.x = (q.x * 0.82F) - q.y * 0.36F - warp * 0.24F,
-                    .y = (q.y * 0.78F) + q.x * 0.40F},
-                   {.x = seed_value.x + 349.0F, .y = seed_value.y - 353.0F}, 5);
-    const float tributaries =
-        std::pow(std::max(std::max(tributary_a, tributary_b), 0.0F), 2.25F) *
-        smoothstep(0.20F, 0.88F, plateau) * (1.0F - floor * 0.45F);
+    const GorgeSourceField field = gorge_source_field(p, seed_value);
     const float terrace =
-        (triangle_wave((q.y * 0.18F) + plateau * 0.74F) - 0.5F) *
-        smoothstep(0.20F, 0.72F, main_corridor) * 42.0F;
+        (triangle_wave((field.q.y * 0.14F) + field.plateau * 0.62F) - 0.5F) *
+        smoothstep(0.16F, 0.86F, field.wall + field.main_corridor * 0.35F) * 34.0F;
     const float rough_detail =
-        (ridged_fbm({.x = p.x * 3.0F, .y = p.y * 3.0F},
-                    {.x = seed_value.x - 359.0F, .y = seed_value.y + 367.0F}, 4) -
+        (ridged_fbm({.x = p.x * 2.35F, .y = p.y * 2.35F},
+                    {.x = seed_value.x - 397.0F, .y = seed_value.y + 401.0F}, 4) -
          0.42F) *
-        72.0F;
-    const float base_height = 180.0F + plateau * 1350.0F + plateau_source * 280.0F;
-    const float incision = main_corridor * (900.0F + plateau * 620.0F) +
-                           tributaries * (360.0F + plateau * 260.0F);
-    const float wall_lift =
-        smoothstep(0.18F, 0.54F, corridor_distance) *
-        (1.0F - smoothstep(0.54F, 0.92F, corridor_distance)) * plateau * 170.0F;
-    return std::max(base_height - incision + wall_lift + terrace + rough_detail, 0.0F);
+        (38.0F + field.plateau * 46.0F) * (1.0F - field.floor * 0.62F);
+    const float base_height = 210.0F + field.plateau * 1320.0F + field.plateau_source * 260.0F;
+    const float incision =
+        field.main_corridor * (960.0F + field.plateau * 690.0F) +
+        field.floor * (260.0F + field.plateau * 300.0F) +
+        field.tributaries * (320.0F + field.plateau * 310.0F);
+    const float wall_lift = field.wall * field.plateau * (170.0F + field.main_corridor * 70.0F);
+    const float floor_fill = field.floor * (54.0F + (1.0F - field.plateau) * 40.0F);
+    return std::max(base_height - incision + wall_lift + floor_fill + terrace + rough_detail,
+                    0.0F);
 }
 
 float shadertoy_glacial_highland_reference_height(float world_x, float world_z,

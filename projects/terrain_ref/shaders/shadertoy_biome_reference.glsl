@@ -99,6 +99,71 @@ float shadertoy_biome_dune_profile(float value, float crest_position, float slip
     return pow(max(min(windward, lee), 0.0), 0.92);
 }
 
+struct ShadertoyGorgeSourceField {
+    vec2 p;
+    vec2 q;
+    float plateau_source;
+    float plateau;
+    float signed_corridor;
+    float corridor_distance;
+    float corridor_width;
+    float main_corridor;
+    float floor;
+    float wall;
+    float tributaries;
+};
+
+ShadertoyGorgeSourceField shadertoy_gorge_source_field(vec2 p, vec2 seed) {
+    float plateau_source = shadertoy_biome_fbm(p * 0.24, seed + vec2(293.0, -307.0), 5,
+        0.52);
+    float plateau = smoothstep(0.16, 0.72, plateau_source);
+    float warp_x = (shadertoy_biome_fbm(p * 0.54, seed + vec2(-311.0, 313.0), 4, 0.52) -
+        0.5) * 1.10;
+    float warp_y = (shadertoy_biome_fbm(vec2(p.x * 0.46 + 5.0, p.y * 0.46 - 3.0),
+        seed + vec2(317.0, -331.0), 4, 0.52) - 0.5) * 0.88;
+    vec2 q = shadertoy_biome_rotate(vec2((p.x * 0.74) + warp_x, (p.y * 1.02) + warp_y),
+        0.42);
+    float broad_wander = (shadertoy_biome_fbm(vec2(q.y * 0.34, q.y * 0.16 + 6.0),
+        seed + vec2(-337.0, 347.0), 4, 0.52) - 0.5) * 1.05;
+    float local_wander = (shadertoy_biome_fbm(vec2(q.y * 0.86, q.y * 0.38 - 4.0),
+        seed + vec2(349.0, -353.0), 3, 0.52) - 0.5) * 0.28;
+    float signed_corridor = q.x + broad_wander + local_wander;
+    float corridor_distance = abs(signed_corridor);
+    float width_noise = shadertoy_biome_fbm(vec2(q.y * 0.28, q.x * 0.12),
+        seed + vec2(-359.0, 367.0), 4, 0.52);
+    float corridor_width = mix(0.22, 0.44, width_noise);
+    float main_corridor = 1.0 - smoothstep(corridor_width * 0.52,
+        corridor_width * 1.74, corridor_distance);
+    float floor = 1.0 - smoothstep(corridor_width * 0.16, corridor_width * 0.58,
+        corridor_distance);
+    float wall = smoothstep(corridor_width * 0.56, corridor_width * 1.20, corridor_distance) *
+        (1.0 - smoothstep(corridor_width * 1.22, corridor_width * 2.08, corridor_distance));
+    float branch_a = shadertoy_biome_ridged_fbm(vec2((q.x * 0.82) + q.y * 0.44 +
+        warp_x * 0.18, (q.y * 0.64) - q.x * 0.48 + warp_y * 0.12),
+        seed + vec2(373.0, -379.0), 5);
+    float branch_b = shadertoy_biome_ridged_fbm(vec2((q.x * 0.78) - q.y * 0.42 -
+        warp_x * 0.20, (q.y * 0.70) + q.x * 0.44 - warp_y * 0.10),
+        seed + vec2(-383.0, 389.0), 5);
+    float branch_gate = smoothstep(corridor_width * 0.90, corridor_width * 2.20,
+        corridor_distance) * (1.0 - smoothstep(corridor_width * 4.20,
+        corridor_width * 6.10, corridor_distance));
+    float tributaries = pow(max(max(branch_a, branch_b), 0.0), 2.35) * branch_gate *
+        smoothstep(0.18, 0.88, plateau) * (1.0 - floor * 0.72);
+    ShadertoyGorgeSourceField field;
+    field.p = p;
+    field.q = q;
+    field.plateau_source = plateau_source;
+    field.plateau = plateau;
+    field.signed_corridor = signed_corridor;
+    field.corridor_distance = corridor_distance;
+    field.corridor_width = corridor_width;
+    field.main_corridor = main_corridor;
+    field.floor = floor;
+    field.wall = wall;
+    field.tributaries = tributaries;
+    return field;
+}
+
 float shadertoy_alpine_reference_height(vec2 world, vec2 seed) {
     vec2 p = (world * 0.00018) + (seed * vec2(0.119, 0.143)) + vec2(-3.0, 5.0);
     float macro = shadertoy_biome_fbm(p * 0.48, seed + vec2(4.0, -7.0), 5, 0.52);
@@ -266,35 +331,20 @@ float shadertoy_plains_reference_height(vec2 world, vec2 seed) {
 }
 
 float shadertoy_gorge_reference_height(vec2 world, vec2 seed) {
-    vec2 p = (world * 0.00020) + (seed * vec2(0.091, 0.083)) + vec2(-2.0, 1.0);
-    float plateau_source = shadertoy_biome_fbm(p * 0.24, seed + vec2(293.0, -307.0), 5,
-        0.52);
-    float plateau = smoothstep(0.18, 0.74, plateau_source);
-    float warp = (shadertoy_biome_fbm(p * 0.64, seed + vec2(-311.0, 313.0), 4, 0.52) -
-        0.5) * 1.35;
-    vec2 q = shadertoy_biome_rotate(vec2((p.x * 0.78) + warp, (p.y * 1.12) - warp * 0.45),
-        0.52);
-    float corridor_wander = (shadertoy_biome_fbm(vec2(q.y * 0.42, q.y * 0.18 + 6.0),
-        seed + vec2(317.0, -331.0), 4, 0.52) - 0.5) * 1.15;
-    float corridor_distance = abs(q.x + corridor_wander);
-    float main_corridor = 1.0 - smoothstep(0.09, 0.52, corridor_distance);
-    float floor = 1.0 - smoothstep(0.05, 0.20, corridor_distance);
-    float tributary_a = shadertoy_biome_ridged_fbm(vec2((q.x * 0.95) + q.y * 0.34 +
-        warp * 0.20, (q.y * 0.70) - q.x * 0.42), seed + vec2(-337.0, 347.0), 5);
-    float tributary_b = shadertoy_biome_ridged_fbm(vec2((q.x * 0.82) - q.y * 0.36 -
-        warp * 0.24, (q.y * 0.78) + q.x * 0.40), seed + vec2(349.0, -353.0), 5);
-    float tributaries = pow(max(max(tributary_a, tributary_b), 0.0), 2.25) *
-        smoothstep(0.20, 0.88, plateau) * (1.0 - floor * 0.45);
-    float terrace = (shadertoy_biome_triangle_wave((q.y * 0.18) + plateau * 0.74) - 0.5) *
-        smoothstep(0.20, 0.72, main_corridor) * 42.0;
-    float rough_detail = (shadertoy_biome_ridged_fbm(p * 3.0, seed + vec2(-359.0, 367.0), 4) -
-        0.42) * 72.0;
-    float base_height = 180.0 + plateau * 1350.0 + plateau_source * 280.0;
-    float incision = main_corridor * (900.0 + plateau * 620.0) +
-        tributaries * (360.0 + plateau * 260.0);
-    float wall_lift = smoothstep(0.18, 0.54, corridor_distance) *
-        (1.0 - smoothstep(0.54, 0.92, corridor_distance)) * plateau * 170.0;
-    return max(base_height - incision + wall_lift + terrace + rough_detail, 0.0);
+    vec2 p = (world * 0.00020) + (seed * vec2(0.091, 0.083)) + vec2(-0.16, 0.08);
+    ShadertoyGorgeSourceField field = shadertoy_gorge_source_field(p, seed);
+    float terrace = (shadertoy_biome_triangle_wave((field.q.y * 0.14) +
+        field.plateau * 0.62) - 0.5) *
+        smoothstep(0.16, 0.86, field.wall + field.main_corridor * 0.35) * 34.0;
+    float rough_detail = (shadertoy_biome_ridged_fbm(p * 2.35, seed + vec2(-397.0, 401.0),
+        4) - 0.42) * (38.0 + field.plateau * 46.0) * (1.0 - field.floor * 0.62);
+    float base_height = 210.0 + field.plateau * 1320.0 + field.plateau_source * 260.0;
+    float incision = field.main_corridor * (960.0 + field.plateau * 690.0) +
+        field.floor * (260.0 + field.plateau * 300.0) +
+        field.tributaries * (320.0 + field.plateau * 310.0);
+    float wall_lift = field.wall * field.plateau * (170.0 + field.main_corridor * 70.0);
+    float floor_fill = field.floor * (54.0 + (1.0 - field.plateau) * 40.0);
+    return max(base_height - incision + wall_lift + floor_fill + terrace + rough_detail, 0.0);
 }
 
 float shadertoy_glacial_highland_reference_height(vec2 world, vec2 seed) {
