@@ -50,6 +50,25 @@ vec3 terrain_ref_color_variation(vec3 base, vec2 world_xz, float scale, float am
     return base * (1.0 + (noise - 0.5) * amount);
 }
 
+struct TerrainRefGorgeMaterialMasks {
+    float corridor;
+    float floor_mask;
+    float wall;
+    float tributary;
+};
+
+TerrainRefGorgeMaterialMasks terrain_ref_gorge_material_masks(vec2 world_xz) {
+    vec2 seed = pc.terrain_params.xy;
+    vec2 p = (world_xz * 0.00020) + (seed * vec2(0.091, 0.083)) + vec2(-0.16, 0.08);
+    ShadertoyGorgeSourceField field = shadertoy_gorge_source_field(p, seed);
+    TerrainRefGorgeMaterialMasks masks;
+    masks.corridor = field.main_corridor;
+    masks.floor_mask = field.floor;
+    masks.wall = field.wall;
+    masks.tributary = field.tributaries;
+    return masks;
+}
+
 vec3 terrain_ref_material_color(inout vec3 normal) {
     bool shadertoy_mountain =
         abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_MOUNTAIN) < 0.5;
@@ -223,6 +242,8 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         float normalized_height = clamp((frag_height_m - min_height_m) /
             (max_height_m - min_height_m), 0.0, 1.0);
         float slope = 1.0 - cos_v;
+        TerrainRefGorgeMaterialMasks gorge =
+            terrain_ref_gorge_material_masks(frag_world_position.xz);
         vec3 floor_sand = terrain_ref_color_variation(vec3(0.55, 0.39, 0.22),
             frag_world_position.xz, 0.010, 0.20);
         vec3 ochre = terrain_ref_color_variation(vec3(0.68, 0.44, 0.22),
@@ -234,15 +255,18 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         vec3 color = mix(floor_sand, ochre, smoothstep(0.18, 0.56, normalized_height));
         color = mix(color, red_wall, smoothstep(0.42, 0.90, normalized_height) * 0.68);
         float cliff = smoothstep(0.18, 0.68, slope);
-        color = mix(color, dark_wall, cliff * 0.66);
-        float floor_mask = (1.0 - smoothstep(0.10, 0.34, normalized_height)) *
-            smoothstep(0.44, 0.90, cos_v);
-        color = mix(color, floor_sand, floor_mask * 0.72);
+        float wall_mask = clamp(gorge.wall + cliff * gorge.corridor * 0.42, 0.0, 1.0);
+        color = mix(color, dark_wall, wall_mask * 0.72);
+        float tributary_floor = gorge.tributary * (1.0 - gorge.floor_mask * 0.55);
+        float floor_mask = clamp(gorge.floor_mask * smoothstep(0.36, 0.94, cos_v) +
+            tributary_floor * 0.46, 0.0, 1.0);
+        color = mix(color, floor_sand, floor_mask * 0.80);
+        color = mix(color, ochre, gorge.tributary * 0.22);
         float strata = shadertoy_biome_triangle_wave((frag_height_m * 0.020) +
             terrain_ref_fbm(frag_world_position.xz * 0.0028, pc.terrain_params.xy) * 1.6);
-        color *= 0.88 + strata * 0.18;
+        color *= 0.90 + strata * mix(0.08, 0.24, wall_mask);
         normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
-            detail * mix(0.11, 0.28, cliff));
+            detail * mix(0.09, 0.27, max(wall_mask, gorge.tributary)));
         return color;
     }
 
