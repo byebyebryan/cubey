@@ -12,6 +12,10 @@ recipes=(
     shadertoy-lake-basin
     shadertoy-badlands
     shadertoy-coast-island
+    shadertoy-plains
+    shadertoy-gorge
+    shadertoy-glacial-highland
+    shadertoy-crater-field
 )
 
 cameras=(

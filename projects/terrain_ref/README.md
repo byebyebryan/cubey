@@ -20,6 +20,15 @@ clipmap review mesh:
 - `shadertoy-coast-island`: a clean-room coast/island reference with noisy
   shoreline, beach shelf, inland hill buildup, local coastal cliffs, and fixed
   sea-level contact.
+- `shadertoy-plains`: a clean-room low-relief grassland reference with rolling
+  broad terrain, shallow swales, and wind/grass material variation.
+- `shadertoy-gorge`: a clean-room dry gorge reference with a warped incision
+  corridor, tributary cuts, arid floors, cliff exposure, and strata cues.
+- `shadertoy-glacial-highland`: a clean-room icy highland reference with broad
+  snow/ice fields, U-shaped valley hints, rock ribs, and talus/ice contrast.
+- `shadertoy-crater-field`: a clean-room cratered terrain reference with
+  overlapping depressions, raised rims, ejecta roughness, and barren regolith
+  material.
 
 The current target is useful for renderer and source-model evaluation:
 

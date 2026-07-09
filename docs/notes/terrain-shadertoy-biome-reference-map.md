@@ -151,3 +151,19 @@ The first review should judge large-scale read first:
   with ejecta and regolith roughness. It should not devolve into speckled noise.
 - Keep all four as waterless reference recipes in this batch; real lakes,
   wetlands, water rendering, and foliage stay deferred.
+
+## Wide Batch Initial Review
+
+- `shadertoy-plains` is accepted as a first-pass low-relief slice. The oblique
+  read is intentionally subtle, with broad grassland variation and shallow
+  swales rather than strong landforms. Later work can add clearer drainage or
+  vegetation eligibility fields.
+- `shadertoy-gorge` is accepted as a first-pass dry incision slice. It has a
+  coherent corridor and tributary hints, though the strongest corridor can land
+  near the patch edge. Later work can improve corridor framing and hierarchy.
+- `shadertoy-glacial-highland` is accepted as a first-pass icy highland slice.
+  It is brighter and more snow-dominant than alpine by design, but later
+  material work should add stronger ice, exposed rock, and talus contrast.
+- `shadertoy-crater-field` is accepted as a first-pass non-biome terrain stress
+  case. Crater rims and floors read at macro scale; later work can vary crater
+  density and regolith color if this lane remains useful.
