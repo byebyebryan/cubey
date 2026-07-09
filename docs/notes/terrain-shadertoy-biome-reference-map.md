@@ -184,3 +184,17 @@ The first review should judge large-scale read first:
 - The visual target is a broad dry plateau with a warped incised corridor,
   variable-width floor, coherent wall bands, and tributary cuts that feed the
   main gorge without becoming hairy disconnected scratches.
+
+## Gorge Refinement Review
+
+- The refined `shadertoy-gorge` pass is accepted as a stronger reference slice:
+  the main incision now sits inside the patch, has a broader variable-width
+  floor, and reads clearly from the surface-low camera instead of appearing as
+  mostly arid surface texture.
+- Material now follows the same source field as the height driver, so floor,
+  wall, and tributary cues remain aligned with the landform. The dark bands are
+  intended as opposing gorge walls around one floor, not separate parallel
+  river channels.
+- Remaining caveats: tributaries are still subtle from the default cameras,
+  wall/floor material contrast may need art tuning, and this remains a
+  reference recipe rather than a production canyon or river generator.
