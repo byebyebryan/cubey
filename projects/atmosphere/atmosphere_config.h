@@ -115,8 +115,8 @@ struct NightSkyConfig {
     float twilight_horizon_warmth = 1.0F;
     float star_intensity = 1.0F;
     float star_density = 0.65F;
-    float milky_way_intensity = 0.75F;
-    float milky_way_contrast = 1.0F;
+    float milky_way_intensity = 1.20F;
+    float milky_way_contrast = 1.35F;
     float light_pollution = 0.0F;
     float procedural_variation = 0.0F;
 };
@@ -654,8 +654,8 @@ inline void advance_atmosphere_time_of_day(AtmosphereConfig& config, double delt
         config.exposure = 2.8F;
         config.night_sky.star_intensity = 1.25F;
         config.night_sky.star_density = 0.72F;
-        config.night_sky.milky_way_intensity = 0.90F;
-        config.night_sky.milky_way_contrast = 1.10F;
+        config.night_sky.milky_way_intensity = 1.35F;
+        config.night_sky.milky_way_contrast = 1.45F;
         break;
     case AtmospherePreset::MoonlitNight:
         config.time_of_day.time_hours = 1.75F;

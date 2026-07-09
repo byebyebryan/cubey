@@ -645,13 +645,13 @@ struct ProceduralMilkyWayLayers {
                            detail_domain.z * 0.92F + 11.0F},
                           derived_seed32(seed, "milky-way-v2.cloud-ridge"), 4U, 2.18F, 0.49F);
     const float cloud_clumps =
-        smoothstep(0.42F, 0.90F, cloud_noise * 0.55F + cloud_ridge * 0.52F +
-                                      arm_probability * 0.24F + center_weight * 0.16F);
+        smoothstep(0.48F, 0.92F, cloud_noise * 0.48F + cloud_ridge * 0.46F +
+                                      arm_probability * 0.20F + center_weight * 0.12F);
     const float dust_clear = 1.0F - smoothstep(0.68F, 1.90F, dust_tau) * 0.72F;
     const float star_cloud_density =
-        ((thin_disk * 0.0052F + broad_disk * 0.0010F) *
-             mix(0.55F, 1.55F, cloud_clumps) +
-         bulge * 0.0040F + bar * 0.0022F) *
+        ((thin_disk * 0.0039F + broad_disk * 0.0008F) *
+             mix(0.58F, 1.28F, cloud_clumps) +
+         bulge * 0.0032F + bar * 0.0018F) *
         dust_clear;
 
     const Vec3 band_color = {0.70F, 0.78F, 1.0F};
@@ -662,9 +662,9 @@ struct ProceduralMilkyWayLayers {
 
     ProceduralMilkyWayLayers layers;
     const float stellar_density =
-        broad_disk * 0.0008F + thin_disk * 0.0032F + inner_disk * 0.0018F +
-        bulge * 0.023F + bar * 0.008F;
-    const float stellar_texture = mix(0.78F, 1.30F, cloud_noise) * mix(0.86F, 1.24F, cloud_ridge);
+        broad_disk * 0.0010F + thin_disk * 0.0038F + inner_disk * 0.0018F +
+        bulge * 0.024F + bar * 0.008F;
+    const float stellar_texture = mix(0.84F, 1.22F, cloud_noise) * mix(0.90F, 1.18F, cloud_ridge);
     layers.stellar_emission =
         mix(band_color, core_color, clamp01(bulge * 1.25F + bar * 0.48F)) *
         (stellar_density * stellar_texture);
