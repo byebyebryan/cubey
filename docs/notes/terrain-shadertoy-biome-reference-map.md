@@ -212,3 +212,14 @@ The first review should judge large-scale read first:
   and darker floors.
 - Keep this as a clean-room crater stress recipe, not a planet renderer or
   physically correct impact simulator.
+
+## Crater Field Refinement Review
+
+- The refined `shadertoy-crater-field` source is accepted as a stronger
+  reference slice: crater placement now comes from sparse large, medium, and
+  small populations with density dropout instead of one candidate per cell.
+- The resulting field has more empty regions, stronger size variation, and a
+  few dominant impacts, which reduces the previous wallpaper-like regularity.
+- Material tuning was left unchanged in this pass because the visual weakness
+  was the source distribution. Remaining work, if this lane stays useful, is to
+  add stronger ejecta scars, partial burial, and more visibly eroded old rims.
