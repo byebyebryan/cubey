@@ -10,6 +10,8 @@ recipes=(
     shadertoy-alpine
     shadertoy-dunes
     shadertoy-lake-basin
+    shadertoy-badlands
+    shadertoy-coast-island
 )
 
 cameras=(
