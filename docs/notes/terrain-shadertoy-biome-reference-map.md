@@ -84,6 +84,15 @@ The first review should judge large-scale read first:
 - `shadertoy-lake-basin` is accepted as a reference slice after strengthening
   the surrounding rim, basin depression, and shoreline response. It remains
   visually plain because real water rendering is intentionally deferred.
+- `shadertoy-badlands` is acceptable as a first-pass reference slice. It reads
+  as dry eroded terrain with useful roughness and strata cues, but the drainage
+  hierarchy still needs broader gorge/wash structure before it can be treated as
+  a strong canyon or badlands source model.
+- `shadertoy-coast-island` needs a corrective pass before adding more biome
+  families. The first pass reads too much like a centered radial mask: compact
+  island disk, ring beach, and smooth inland mound. The next version should be a
+  layered coastal field with shoreline/headland/shelf/inland hierarchy rather
+  than another blob-shaped mask.
 
 ## Next Expansion Review Targets
 
@@ -93,6 +102,17 @@ The first review should judge large-scale read first:
 - `shadertoy-coast-island` should read as an island or coastal patch: clear
   land/sea boundary, beach shelf, inland height buildup, and occasional coastal
   cliffs. The water surface can remain the existing flat review plane.
+
+## Coast Correction Target
+
+- Replace the radial island source with a warped coast field that can form a
+  partial coastline, headland, or broken island edge within the fixed review
+  patch.
+- Derive beach, shelf, inland buildup, and coastal cliffs from the same signed
+  coast field so the features remain coherent instead of being tacked on as
+  unrelated masks.
+- Add a closer coastal review camera so the shoreline shape is readable without
+  relying on the low surface view alone.
 
 ## Deferred
 
