@@ -93,6 +93,53 @@ at least climate/moisture, material resistance, slope, and feature scale. Keep
 the current baseline disabled by default and do not bake it into biome source
 functions.
 
+## Recommendation
+
+Classify this filter as a **stateless mesoscale erosion-detail operator**. It is
+not a biome generator, river generator, drainage model, or replacement for
+regional hydrology. Its useful properties are deterministic world-coordinate
+sampling, random access, bounded local displacement, and slope-following detail.
+
+Production activity should be derived from coherent fields:
+
+```text
+activity = runoff * erodibility * slope_window * land_mask * scale_mask
+```
+
+- `runoff` comes from climate, rainfall, moisture, and exposure rather than the
+  biome name alone;
+- `erodibility` comes from material or geology fields;
+- `slope_window` suppresses both flats and terrain too steep for this treatment;
+- `land_mask` distinguishes inland relief from water, shelves, beaches, and
+  other protected terrain classes;
+- `scale_mask` relates the filter wavelength and strength to the source feature
+  scale and target product resolution. LOD may omit unresolved octaves, but it
+  must not change the retained world-space terrain truth.
+
+These must be generated fields, not hand-authored lines, patches, or special
+case shapes. A biome recipe may configure or combine the policy fields, but it
+should not own a separate copy of the filter.
+
+The recommended terrain composition is:
+
+1. A macro source establishes mountain masses, ridges, basins, plains, dunes,
+   coastlines, and other broad structure.
+2. Regional hydrology establishes catchments, drainage continuity, rivers, and
+   major incision where water processes apply.
+3. This stateless filter adds optional mesoscale slope detail where the process
+   policy is active.
+4. Slope, curvature, material, wetness, vegetation, and rendering products are
+   recomputed from the resulting terrain.
+
+This is deliberately a hybrid model. Regional hydrology owns global coherence;
+the stateless filter owns cheap local detail. Stretching either one into the
+other role would repeat the earlier failure mode of using local noise as a
+substitute for terrain structure.
+
+No further per-biome tuning is recommended inside `terrain_ref`. Preserve the
+operator and captures as reference evidence, and revisit it only through an
+explicit process-policy experiment in the terrain reboot.
+
 Review artifacts live under `outputs/terrain_ref/erosion-generalization/`:
 
 - `cross-biome-contact-sheet.png` compares source material, filtered material,

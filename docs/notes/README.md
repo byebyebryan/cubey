@@ -92,7 +92,7 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain erosion filter generalization](terrain-erosion-filter-generalization.md):
   cross-biome positive/negative control matrix for deciding whether the
   slope-aware filter is a reusable selective process or a narrow mountain
-  effect.
+  effect, plus its recommended boundary from regional hydrology.
 - [Terrain ShaderToy biome reference map](terrain-shadertoy-biome-reference-map.md):
   classification of local ShaderToy terrain files for clean-room visual/source
   recipes in `terrain_ref`, starting with alpine, dunes, and lake-basin refs.
