@@ -135,6 +135,32 @@ if (BUILD_TESTING)
         0.00005
     )
 
+    set(CUBEY_ATMOSPHERE_STARS_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-stars.png"
+    )
+    cubey_add_png_smoke_test(
+        atmosphere_stars_writes_png
+        cubey_project_atmosphere
+        "${CUBEY_ATMOSPHERE_STARS_SMOKE_OUTPUT}"
+        --headless
+        --atmosphere-preset
+        night
+        --debug-view
+        stars
+        --star-intensity
+        2.0
+        --star-density
+        1.0
+        --no-reference-geometry
+        --no-clouds
+    )
+    cubey_add_png_stats_test(
+        atmosphere_stars_writes_png
+        "${CUBEY_ATMOSPHERE_STARS_SMOKE_OUTPUT}"
+        0.000001
+        0.00001
+    )
+
     set(CUBEY_ATMOSPHERE_MOONLIT_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-moonlit.png"
     )
@@ -266,6 +292,8 @@ if (BUILD_TESTING)
         atmosphere_twilight_writes_png_stats
         atmosphere_night_writes_png
         atmosphere_night_writes_png_stats
+        atmosphere_stars_writes_png
+        atmosphere_stars_writes_png_stats
         atmosphere_moonlit_writes_png
         atmosphere_moonlit_writes_png_stats
         atmosphere_moon_surface_writes_png

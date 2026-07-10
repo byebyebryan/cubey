@@ -28,6 +28,8 @@ the detailed foundation notes under `docs/architecture/`.
 - [Sky and celestial current state](sky-celestial-current-state.md): current
   ownership, render paths, and cleanup checklist for the `sky-rendering`
   worktree.
+- [Procedural star field v2](star-field-v2.md): isolated diagnostics, mechanical
+  failure modes, and acceptance criteria for the shared analytic star field.
 - [Sky validation baseline](sky-validation-baseline.md): focused sky label,
   build, unit-test, and PNG-smoke baseline for the `sky-rendering` worktree.
 - [Sky visual baseline review](sky-visual-baseline-review.md): capture review

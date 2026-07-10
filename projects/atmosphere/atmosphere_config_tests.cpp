@@ -197,6 +197,9 @@ int main() {
                 AtmosphereRenderView::MoonSurface,
             "atmosphere render view cycle should include moon surface after moon");
     require(next_atmosphere_render_view(AtmosphereRenderView::MoonSurface) ==
+                AtmosphereRenderView::Stars,
+            "atmosphere render view cycle should include stars after moon surface");
+    require(next_atmosphere_render_view(AtmosphereRenderView::Stars) ==
                 AtmosphereRenderView::Final,
             "atmosphere render view cycle should wrap");
     require_throws([] { static_cast<void>(atmosphere_render_view_from_name("density")); },
@@ -1626,10 +1629,10 @@ int main() {
                      "atmosphere shader should weight stars by sampled magnitude");
     require_contains(shader_source, "night_object_visibility",
                      "atmosphere shader should share night object visibility");
+    require_contains(shader_entry_source, "segment.camera_inside_atmosphere",
+                     "night-sky composition should distinguish surface and space visibility");
     require_contains(shader_entry_source,
-                     "segment.camera_inside_atmosphere\n"
-                     "            ? night_sky_radiance(atmosphere_ray_direction, sun_direction)\n"
-                     "            : space_night_sky_radiance(atmosphere_ray_direction, sun_direction)",
+                     "space_night_sky_radiance(atmosphere_ray_direction, sun_direction)",
                      "orbit sky rays through the atmosphere shell should use space night-sky "
                      "visibility");
     require_contains(shader_source, "star_sample_direction",
@@ -1640,6 +1643,10 @@ int main() {
                      "shared atmosphere shader include should define night sky debug view value");
     require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_NIGHT_SKY",
                      "atmosphere shader should include night sky debug output");
+    require_contains(shared_helper_source, "CUBEY_ATMOSPHERE_VIEW_STARS = 11",
+                     "shared atmosphere shader include should append the star debug view value");
+    require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_STARS",
+                     "atmosphere shader should include isolated star debug output");
     require_contains(shader_source,
                      "layout(set = 0, binding = 1) uniform samplerCube night_sky_atlas",
                      "atmosphere shader should sample a night sky atlas");

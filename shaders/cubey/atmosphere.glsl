@@ -15,6 +15,7 @@ const int CUBEY_ATMOSPHERE_VIEW_NIGHT_SKY = 7;
 const int CUBEY_ATMOSPHERE_VIEW_MILKY_WAY = 8;
 const int CUBEY_ATMOSPHERE_VIEW_MOON = 9;
 const int CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE = 10;
+const int CUBEY_ATMOSPHERE_VIEW_STARS = 11;
 
 struct CubeyAtmosphereMedium {
     vec3 planet_center;

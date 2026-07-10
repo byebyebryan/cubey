@@ -49,9 +49,10 @@ enum class AtmosphereRenderView : std::uint32_t {
     MilkyWay = 8,
     Moon = 9,
     MoonSurface = 10,
+    Stars = 11,
 };
 
-inline constexpr std::array<AtmosphereRenderView, 11> kAtmosphereRenderViews{
+inline constexpr std::array<AtmosphereRenderView, 12> kAtmosphereRenderViews{
     AtmosphereRenderView::Final,
     AtmosphereRenderView::Rayleigh,
     AtmosphereRenderView::Mie,
@@ -63,6 +64,7 @@ inline constexpr std::array<AtmosphereRenderView, 11> kAtmosphereRenderViews{
     AtmosphereRenderView::MilkyWay,
     AtmosphereRenderView::Moon,
     AtmosphereRenderView::MoonSurface,
+    AtmosphereRenderView::Stars,
 };
 
 inline constexpr std::array<cubey::render::AtmosphereEnvironmentGroundMode, 3>
@@ -343,6 +345,8 @@ using LunarState = cubey::render::AtmosphereEnvironmentLunarState;
         return "moon";
     case AtmosphereRenderView::MoonSurface:
         return "moon-surface";
+    case AtmosphereRenderView::Stars:
+        return "stars";
     }
     return "final";
 }

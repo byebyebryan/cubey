@@ -29,6 +29,7 @@ enum class AtmosphereEnvironmentRenderView : std::uint32_t {
     MilkyWay = 8,
     Moon = 9,
     MoonSurface = 10,
+    Stars = 11,
 };
 
 struct AtmosphereEnvironmentTimeOfDay {
