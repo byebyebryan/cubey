@@ -1,5 +1,6 @@
 #include "terrain_export.h"
 #include "terrain_hydrology.h"
+#include "terrain_mesh.h"
 #include "terrain_patch.h"
 #include "upland_mountain_source.h"
 
@@ -331,6 +332,37 @@ void test_scalar_export_and_manifest() {
     std::filesystem::remove_all(output_dir);
 }
 
+void test_terrain_mesh_consumes_product_fields() {
+    cubey::projects::terrain::TerrainPatchRequest request =
+        cubey::projects::terrain::default_terrain_patch_request();
+    request.domain.interior_grid.width = 17U;
+    request.domain.interior_grid.height = 17U;
+    const cubey::projects::terrain::TerrainPatchProduct product =
+        cubey::projects::terrain::generate_terrain_patch(request);
+    const cubey::projects::terrain::TerrainMeshData surface =
+        cubey::projects::terrain::make_terrain_mesh(product, "surface", 1.0F);
+    const cubey::projects::terrain::TerrainMeshData flow =
+        cubey::projects::terrain::make_terrain_mesh(product, "flow-direction", 1.0F);
+    require(surface.vertices.size() == 17U * 17U,
+            "terrain mesh should have one vertex per product sample");
+    require(surface.indices.size() == 16U * 16U * 6U,
+            "terrain mesh should triangulate every product cell");
+    require(flow.vertices.size() == surface.vertices.size(),
+            "terrain debug views should preserve mesh topology");
+    require(
+        surface.vertices.front().position[1] ==
+            product.fields.field(cubey::projects::terrain::kTerrainFieldHeightM).values().front(),
+        "terrain mesh height should come from the CPU product");
+    require(surface.vertices.front().color != flow.vertices.front().color,
+            "terrain diagnostic view should change uploaded vertex color");
+    require_throws(
+        [&product] {
+            static_cast<void>(
+                cubey::projects::terrain::make_terrain_mesh(product, "not-a-field", 1.0F));
+        },
+        "terrain mesh should reject unknown debug views");
+}
+
 } // namespace
 
 int main() {
@@ -345,6 +377,7 @@ int main() {
         test_branching_surface_increases_strahler_order();
         test_flow_area_is_conserved();
         test_scalar_export_and_manifest();
+        test_terrain_mesh_consumes_product_fields();
         std::cout << "terrain_tests: ok\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {

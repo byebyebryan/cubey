@@ -45,6 +45,45 @@ target_link_libraries(
         cubey_project_warnings
 )
 
+add_library(cubey_project_terrain_render_support STATIC
+    terrain_mesh.cpp
+)
+target_include_directories(
+    cubey_project_terrain_render_support
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+target_link_libraries(
+    cubey_project_terrain_render_support
+    PUBLIC
+        cubey_project_terrain_core
+        cubey::render
+    PRIVATE
+        cubey_project_warnings
+)
+
+cubey_add_app_target(
+    cubey_project_terrain
+    OUTPUT_NAME terrain
+    SHADER_DEFINE CUBEY_TERRAIN_SHADER_DIR
+    WINDOWED_SMOKE_TEST terrain_reaches_glfw
+    WINDOWED_SMOKE_PATTERN "terrain: .*rendering terrain product"
+    WINDOWED_SMOKE_ARGS
+        --grid-size
+        65
+    SOURCES
+        main.cpp
+        terrain_app.cpp
+    SHADERS
+        shaders/terrain.vert
+        shaders/terrain.frag
+)
+target_link_libraries(
+    cubey_project_terrain
+    PRIVATE
+        cubey_project_terrain_render_support
+)
+
 if (BUILD_TESTING)
     add_executable(cubey_project_terrain_tests
         terrain_tests.cpp
@@ -53,6 +92,7 @@ if (BUILD_TESTING)
         cubey_project_terrain_tests
         PRIVATE
             cubey_project_terrain_export
+            cubey_project_terrain_render_support
             nlohmann_json::nlohmann_json
             cubey_project_warnings
     )
@@ -83,10 +123,65 @@ if (BUILD_TESTING)
             FIXTURES_REQUIRED terrain_generate_output
     )
 
+    set(CUBEY_TERRAIN_HEADLESS_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/terrain-headless.png")
+    cubey_add_png_smoke_test(
+        terrain_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_HEADLESS_OUTPUT}"
+        --headless
+        --width
+        320
+        --height
+        180
+        --grid-size
+        65
+        --debug-view
+        surface
+        --terrain-camera-preset
+        oblique
+    )
+    cubey_add_png_stats_test(
+        terrain_headless_writes_png
+        "${CUBEY_TERRAIN_HEADLESS_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
+    set(CUBEY_TERRAIN_SURFACE_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-surface-low-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_surface_low_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_SURFACE_HEADLESS_OUTPUT}"
+        --headless
+        --width
+        320
+        --height
+        180
+        --grid-size
+        65
+        --debug-view
+        surface
+        --terrain-camera-preset
+        surface-low
+    )
+    cubey_add_png_stats_test(
+        terrain_surface_low_headless_writes_png
+        "${CUBEY_TERRAIN_SURFACE_HEADLESS_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
     cubey_label_tests(
         terrain
+        terrain_reaches_glfw
         terrain_tests
         terrain_generate_exports_fields
         terrain_generate_exports_manifest
+        terrain_headless_writes_png
+        terrain_headless_writes_png_stats
+        terrain_surface_low_headless_writes_png
+        terrain_surface_low_headless_writes_png_stats
     )
 endif()
