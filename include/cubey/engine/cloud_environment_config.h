@@ -38,7 +38,7 @@ inline constexpr std::array<CloudEnvironmentWeatherPreset, 7> kCloudEnvironmentW
     cubey::render::CloudLayerConfig config{};
     config.quality = cubey::render::CloudLayerQuality::Full;
     config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
-    config.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    config.distance_mode = cubey::render::CloudLayerDistanceMode::Auto;
     config.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
     config.resolve_mode = cubey::render::CloudLayerResolveMode::TerrainPost;
     config.debug_view = cubey::render::CloudLayerDebugView::Final;
@@ -56,7 +56,7 @@ inline constexpr std::array<CloudEnvironmentWeatherPreset, 7> kCloudEnvironmentW
     config.edge_resolve_strength = 0.70F;
     config.shadow_strength = 0.18F;
     config.horizon_strength = 0.62F;
-    config.horizon_layer_enabled = false;
+    config.horizon_layer_enabled = true;
     config.view_steps_override = 64;
     config.view_samples = 1;
     config.weather_softness = 0.22F;
@@ -455,12 +455,12 @@ inline void apply_cloud_environment_surface_volume(CloudEnvironmentConfig& confi
     config.layer.quality = cubey::render::CloudLayerQuality::Full;
     config.layer.sampling_mode = cubey::render::CloudLayerSamplingMode::Bayer;
     config.layer.view_sample_mode = cubey::render::CloudLayerViewSampleMode::SingleFrame;
-    config.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    config.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Auto;
     config.layer.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
     config.layer.resolve_mode = cubey::render::CloudLayerResolveMode::TerrainPost;
     config.layer.temporal_enabled = false;
     config.layer.local_volume_enabled = true;
-    config.layer.horizon_layer_enabled = false;
+    config.layer.horizon_layer_enabled = true;
     config.layer.view_steps_override = 64;
     config.layer.view_samples = 1;
     config.layer.footprint_filter_strength = 1.0F;
@@ -485,14 +485,16 @@ inline void apply_cloud_environment_surface_volume(CloudEnvironmentConfig& confi
 
 inline void apply_cloud_environment_surface_v1_policy(CloudEnvironmentConfig& config) {
     config.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
-    config.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    if (config.layer.distance_mode == cubey::render::CloudLayerDistanceMode::OrbitShell ||
+        config.layer.distance_mode == cubey::render::CloudLayerDistanceMode::BlendDebug) {
+        config.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Auto;
+    }
     config.layer.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
     config.layer.orbit_representation = cubey::render::CloudLayerOrbitRepresentation::SurfaceShell;
     config.layer.resolve_mode = cubey::render::CloudLayerResolveMode::TerrainPost;
     config.layer.view_sample_mode = cubey::render::CloudLayerViewSampleMode::SingleFrame;
     config.layer.temporal_enabled = false;
     config.layer.local_volume_enabled = true;
-    config.layer.horizon_layer_enabled = false;
 }
 
 inline void apply_cloud_environment_weather_preset(CloudEnvironmentConfig& config,

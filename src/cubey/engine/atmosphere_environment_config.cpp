@@ -83,6 +83,16 @@ void resolve_solar_sun(render::AtmosphereEnvironmentConfig& environment) {
 void apply_atmosphere_environment_look_options(
     render::AtmosphereEnvironmentConfig& environment,
     const RunConfig::AtmosphereOptions& atmosphere) {
+    if (!atmosphere.night_sky_mode.empty()) {
+        if (atmosphere.night_sky_mode == "camera") {
+            environment.night_sky.camera_visual_mode = true;
+        } else if (atmosphere.night_sky_mode == "human") {
+            environment.night_sky.camera_visual_mode = false;
+        } else {
+            throw std::runtime_error("unknown atmosphere night sky mode: " +
+                                     atmosphere.night_sky_mode);
+        }
+    }
     if (run_config_float_is_set(atmosphere.rayleigh_scale)) {
         environment.rayleigh_density_scale = atmosphere.rayleigh_scale;
     }

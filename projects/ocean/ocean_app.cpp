@@ -1075,7 +1075,6 @@ class OceanApp {
         cubey::render::CloudLayerConfig config = clouds_config_.layer;
         config.planet_radius_m = surface_frame.local_frame.planet_radius_m;
         config.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
-        config.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
         config.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
         config.orbit_representation = cubey::render::CloudLayerOrbitRepresentation::SurfaceShell;
         config.wind_offset_m = elapsed_seconds * clouds_config_.wind_speed_mps;

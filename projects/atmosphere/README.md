@@ -41,9 +41,11 @@ external-background mode so clouds are composited over the clear-sky background.
 The Clouds panel exposes the shared quality, sampling, layer, weather, shape,
 lighting, and debug controls, and existing `clouds.*` config/CLI overrides
 apply here too. Cloud V1 is intentionally surface-only: `surface-volume`,
-`local`, Bayer sampling, single-frame sampling, and the terrain-post resolve are
-the production baseline. Aerial/high-altitude/orbit controls remain exposed only
-as deferred experiments. `--cloud-view-samples 2 --cloud-view-sample-mode
+`auto`, the lower-sky horizon handoff, Bayer sampling, single-frame sampling,
+and the terrain-post resolve are the production baseline. Use
+`--cloud-distance-mode local --no-cloud-horizon-layer` when a strict local-only
+reference fallback is needed. Aerial/high-altitude/orbit controls remain exposed
+only as deferred experiments. `--cloud-view-samples 2 --cloud-view-sample-mode
 single-frame` is the direct local-volume sampling reference; `--cloud-temporal
 --cloud-view-samples 2 --cloud-view-sample-mode temporal-phased` is the cheaper
 temporal reconstruction candidate. Cloud shadows and cloud-driven reflection or
@@ -57,9 +59,12 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view moon-surface --output /tmp/cubey-atmosphere-moon-surface.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --output /tmp/cubey-atmosphere-milky-way.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --milky-way-layer dust-tau --output /tmp/cubey-atmosphere-milky-way-dust.png
+./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --milky-way-formula v1 --output /tmp/cubey-atmosphere-milky-way-v1.png
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
+projects/atmosphere/capture_milky_way_layers.sh outputs/atmosphere-milky-way-layers
+projects/atmosphere/capture_atmosphere_background_horizon.sh outputs/atmosphere-background-horizon
 projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
 projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
 projects/atmosphere/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
@@ -74,6 +79,17 @@ current practical target; set `WIDTH`, `HEIGHT`, `QUALITY`, or `DEEP=1` for
 faster smoke runs or full-quality reference comparisons. Surface rows define
 Cloud V1 acceptance. High-oblique/orbit rows, when present, are deferred
 diagnostics and should not drive V1 tuning.
+
+The Milky Way layer script captures the `milky-way` debug view for every
+generated atlas layer: final, stellar emission, dust optical depth, star clouds,
+H II emission, and speckles. It defaults to the V2 atlas formula; set
+`FORMULA=v1` to compare against the historical formula. The v2 design direction
+and current checkpoint are tracked in `docs/notes/milky-way-v2-research.md`.
+
+The background horizon script disables clouds and reference geometry, then
+captures `ground`, `sky-only`, and `sky-only-no-ground-occlusion` at noon,
+twilight, and night. Use it before cloud tuning when a hard horizon band is
+visible in final color.
 
 The edge resolve script is the focused A/B for cloud-edge artifacts. It captures
 `terrain-post` and `metadata-bilateral` resolve modes for `surface-up` and
@@ -97,7 +113,7 @@ optional afterglow color without making night clouds look sunlit.
 
 The surface-horizon regime script is the focused A/B for the lower-sky handoff.
 For each noon, twilight, afterglow, and night case it captures local-only
-`surface-volume`, the same preset with `--cloud-distance-mode auto
+`surface-volume`, the default handoff path with `--cloud-distance-mode auto
 --cloud-horizon-layer`, and a no-cloud background comparison. Use the handoff,
 local-truncation, and integrated-horizon diagnostics there before judging
 surface horizon fixes from final color alone.

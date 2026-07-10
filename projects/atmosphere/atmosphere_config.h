@@ -18,6 +18,8 @@
 namespace cubey::projects::atmosphere {
 
 using cubey::render::kNightSkyLayerViews;
+using cubey::render::kNightSkyAtlasFormulas;
+using cubey::render::NightSkyAtlasFormula;
 using cubey::render::NightSkyLayerView;
 
 enum class AtmospherePreset : std::uint32_t {
@@ -108,12 +110,13 @@ struct TimeOfDayConfig {
 struct NightSkyConfig {
     NightSkyVisualMode visual_mode = NightSkyVisualMode::HumanEye;
     NightSkyLayerView layer = NightSkyLayerView::Final;
+    NightSkyAtlasFormula formula = cubey::render::kDefaultNightSkyAtlasFormula;
     float twilight_strength = 1.0F;
     float twilight_horizon_warmth = 1.0F;
     float star_intensity = 1.0F;
     float star_density = 0.65F;
-    float milky_way_intensity = 0.75F;
-    float milky_way_contrast = 1.0F;
+    float milky_way_intensity = 1.20F;
+    float milky_way_contrast = 1.35F;
     float light_pollution = 0.0F;
     float procedural_variation = 0.0F;
 };
@@ -411,6 +414,29 @@ using LunarState = cubey::render::AtmosphereEnvironmentLunarState;
     throw std::runtime_error("unknown Milky Way layer: " + std::string(name));
 }
 
+[[nodiscard]] inline const char* night_sky_atlas_formula_name(NightSkyAtlasFormula formula) {
+    switch (formula) {
+    case NightSkyAtlasFormula::V1:
+        return "v1";
+    case NightSkyAtlasFormula::V2:
+        return "v2";
+    }
+    return "v1";
+}
+
+[[nodiscard]] inline NightSkyAtlasFormula night_sky_atlas_formula_from_name(
+    std::string_view name) {
+    if (name.empty()) {
+        return cubey::render::kDefaultNightSkyAtlasFormula;
+    }
+    for (const NightSkyAtlasFormula formula : kNightSkyAtlasFormulas) {
+        if (name == night_sky_atlas_formula_name(formula)) {
+            return formula;
+        }
+    }
+    throw std::runtime_error("unknown Milky Way formula: " + std::string(name));
+}
+
 [[nodiscard]] inline const char*
 atmosphere_ground_mode_name(cubey::render::AtmosphereEnvironmentGroundMode mode) {
     switch (mode) {
@@ -628,8 +654,8 @@ inline void advance_atmosphere_time_of_day(AtmosphereConfig& config, double delt
         config.exposure = 2.8F;
         config.night_sky.star_intensity = 1.25F;
         config.night_sky.star_density = 0.72F;
-        config.night_sky.milky_way_intensity = 0.90F;
-        config.night_sky.milky_way_contrast = 1.10F;
+        config.night_sky.milky_way_intensity = 1.35F;
+        config.night_sky.milky_way_contrast = 1.45F;
         break;
     case AtmospherePreset::MoonlitNight:
         config.time_of_day.time_hours = 1.75F;
@@ -781,6 +807,10 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
     }
     if (!run.atmosphere.milky_way_layer.empty()) {
         config.night_sky.layer = night_sky_layer_view_from_name(run.atmosphere.milky_way_layer);
+    }
+    if (!run.atmosphere.milky_way_formula.empty()) {
+        config.night_sky.formula =
+            night_sky_atlas_formula_from_name(run.atmosphere.milky_way_formula);
     }
     if (!run.atmosphere.ground_mode.empty()) {
         config.ground_mode = atmosphere_ground_mode_from_name(run.atmosphere.ground_mode);

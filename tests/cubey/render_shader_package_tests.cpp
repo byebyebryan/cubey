@@ -129,3 +129,21 @@ void test_shader_package_dependencies_track_forward_pbr_includes() {
         },
         "forward PBR");
 }
+
+void test_shader_package_dependency_helpers_return_composed_lists() {
+    const std::string cmake_source =
+        cubey::tests::read_source_file(source_root() / "cmake/CubeyShaders.cmake");
+
+    cubey::tests::require_contains(
+        cmake_source, "set(${out_var} ${shared_shader_depends} PARENT_SCOPE)",
+        "shared shader dependency helper should return from its own scope");
+    cubey::tests::require_contains(
+        cmake_source, "set(${out_var} ${atmosphere_shader_depends} PARENT_SCOPE)",
+        "atmosphere shader dependency helper should return composed dependencies");
+    cubey::tests::require_contains(
+        cmake_source, "set(${out_var} ${forward_pbr_shader_depends} PARENT_SCOPE)",
+        "forward PBR shader dependency helper should return composed dependencies");
+    cubey::tests::require_contains(
+        cmake_source, "set(${out_var} ${cloud_layer_shader_depends} PARENT_SCOPE)",
+        "cloud shader dependency helper should return composed dependencies");
+}

@@ -98,6 +98,8 @@ capture_atmosphere() {
         --cloud-weather-preset "${ATMOSPHERE_PRESET}"
         --cloud-view-steps "${VIEW_STEPS}"
         --cloud-debug-view "${debug}"
+        --cloud-distance-mode local
+        --no-cloud-horizon-layer
         "$@"
     )
 

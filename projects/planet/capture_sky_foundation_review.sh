@@ -124,7 +124,7 @@ orbit_terminator=(
 )
 orbit_starfield=(
     --planet-camera-mode orbit
-    --planet-camera-altitude-m 2400000
+    --planet-camera-altitude-m 14000000
     --planet-day-of-year 112
     --planet-time-hours 12.0
 )

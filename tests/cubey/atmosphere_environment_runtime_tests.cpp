@@ -168,6 +168,7 @@ void test_atmosphere_environment_look_options_apply_without_time_or_sun() {
     atmosphere.rayleigh_scale = 1.2F;
     atmosphere.mie_scale = 0.8F;
     atmosphere.ozone_scale = 1.4F;
+    atmosphere.night_sky_mode = "camera";
     atmosphere.twilight_strength = 0.7F;
     atmosphere.twilight_horizon_warmth = 0.6F;
     atmosphere.moonlight_intensity = 1.5F;
@@ -185,6 +186,8 @@ void test_atmosphere_environment_look_options_apply_without_time_or_sun() {
                  "shared atmosphere look helper should apply twilight strength");
     require_near(environment.night_sky.twilight_horizon_warmth, 0.6F, 0.0001F,
                  "shared atmosphere look helper should apply twilight warmth");
+    require(environment.night_sky.camera_visual_mode,
+            "shared atmosphere look helper should apply night sky visual mode");
     require_near(environment.moon.moonlight_intensity, 1.5F, 0.0001F,
                  "shared atmosphere look helper should apply moonlight");
     require(!environment.moon.enabled, "shared atmosphere look helper should apply moon enable");

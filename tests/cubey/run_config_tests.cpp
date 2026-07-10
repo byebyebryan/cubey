@@ -258,8 +258,8 @@ void test_run_config_descriptors_have_help_text() {
                              "cloud resolve radius should be a cloud_ref-only option");
     require_option_stability("clouds.temporal", cubey::ConfigOptionStability::Deferred,
                              "cloud temporal reconstruction should be marked deferred");
-    require_option_stability("clouds.horizon_layer", cubey::ConfigOptionStability::Deferred,
-                             "cloud horizon layer should be marked deferred");
+    require_option_stability("clouds.horizon_layer", cubey::ConfigOptionStability::Stable,
+                             "cloud horizon layer should be a stable Cloud V1 option");
     require(saw_profile, "config descriptors should include profiling controls");
     require(saw_smoke, "config descriptors should include smoke controls");
     require(saw_water3d, "config descriptors should include water 3D controls");
@@ -356,7 +356,9 @@ void test_shared_cloud_ui_defaults_to_surface_controls() {
 
     require_contains(ui_header, "show_aerial_orbit_controls = false",
                      "shared cloud UI should hide deferred aerial/orbit controls by default");
-    require_contains(ui_source, "Cloud V1 surfaces keep aerial/orbit controls hidden",
+    require_contains(ui_source, "Horizon handoff",
+                     "shared cloud UI should expose the surface horizon handoff control");
+    require_contains(ui_source, "Cloud V1 surfaces hide the deferred aerial/orbit controls",
                      "shared cloud UI should label the hidden deferred-control contract");
     require_contains(planet_ui, ".show_aerial_orbit_controls = true",
                      "planet UI should explicitly opt into deferred cloud controls");

@@ -228,6 +228,15 @@ int main() {
             "empty night sky layer should default to final");
     require_throws([] { static_cast<void>(night_sky_layer_view_from_name("hydrogen")); },
                    "night sky layer parser should reject unknown layers");
+    for (const NightSkyAtlasFormula formula : kNightSkyAtlasFormulas) {
+        require(night_sky_atlas_formula_from_name(night_sky_atlas_formula_name(formula)) ==
+                    formula,
+                "night sky atlas formula names should round trip");
+    }
+    require(night_sky_atlas_formula_from_name("") == cubey::render::kDefaultNightSkyAtlasFormula,
+            "empty night sky atlas formula should default");
+    require_throws([] { static_cast<void>(night_sky_atlas_formula_from_name("painted")); },
+                   "night sky atlas formula parser should reject unknown formulas");
 
     for (const cubey::render::AtmosphereEnvironmentGroundMode mode : kAtmosphereGroundModes) {
         require(atmosphere_ground_mode_from_name(atmosphere_ground_mode_name(mode)) == mode,
@@ -530,14 +539,14 @@ int main() {
             defaults.clouds.layer.view_samples == 1 &&
             defaults.clouds.layer.view_sample_mode == CloudLayerViewSampleMode::SingleFrame,
         "default atmosphere clouds should use surface reference steps and one single-frame sample");
-    require(defaults.clouds.layer.distance_mode == CloudLayerDistanceMode::Local,
-            "default atmosphere clouds should use the stable local surface path");
+    require(defaults.clouds.layer.distance_mode == CloudLayerDistanceMode::Auto,
+            "default atmosphere clouds should use the surface horizon handoff path");
     require(defaults.clouds.layer.density_model == CloudLayerDensityModel::SurfaceVolume,
             "default atmosphere clouds should use the accepted surface-volume density model");
     require(defaults.clouds.layer.quality == CloudLayerQuality::Full &&
                 defaults.clouds.layer.resolve_mode == CloudLayerResolveMode::TerrainPost &&
-                !defaults.clouds.layer.horizon_layer_enabled,
-            "default atmosphere clouds should keep the stable production surface defaults");
+                defaults.clouds.layer.horizon_layer_enabled,
+            "default atmosphere clouds should keep the production surface horizon defaults");
     require_near(defaults.clouds.layer.coverage, 0.38F, 0.001F,
                  "default atmosphere clouds should use sunny-warm surface coverage");
     require_near(defaults.clouds.layer.density, 0.018F, 0.001F,
@@ -592,15 +601,15 @@ int main() {
                 "surface volume preset should preserve selected preset");
         require(clouds.layer.quality == CloudLayerQuality::Full,
                 "surface volume preset should force full-quality local comparison");
-        require(clouds.layer.distance_mode == CloudLayerDistanceMode::Local,
-                "surface volume preset should force local cloud distance mode");
+        require(clouds.layer.distance_mode == CloudLayerDistanceMode::Auto,
+                "surface volume preset should enable the surface horizon handoff");
         require(clouds.layer.density_model == CloudLayerDensityModel::SurfaceVolume,
                 "surface volume preset should use the accepted density path");
         require(clouds.layer.resolve_mode == CloudLayerResolveMode::TerrainPost,
                 "surface volume preset should use terrain-post resolve");
         require(!clouds.layer.temporal_enabled && clouds.layer.local_volume_enabled &&
-                    !clouds.layer.horizon_layer_enabled,
-                "surface volume preset should isolate the local volume path");
+                    clouds.layer.horizon_layer_enabled,
+                "surface volume preset should keep the local volume plus horizon handoff path");
         require(clouds.layer.view_steps_override == 64 && clouds.layer.view_samples == 1,
                 "surface volume preset should match cloud_ref full-quality sampling");
         require_near(clouds.layer.jitter_strength, 1.0F, 0.001F,
@@ -767,7 +776,7 @@ int main() {
         cubey::procedural::validate_procedural_artifact_metadata(default_map.metadata);
         require(default_map.metadata.generator == "cubey::render::generate_lunar_surface_map",
                 "lunar surface map metadata should identify its generator");
-        require(default_map.metadata.formula_version == "lunar-surface-map-v15",
+        require(default_map.metadata.formula_version == "lunar-surface-map-v16",
                 "lunar surface map metadata should identify its formula version");
         require(default_map.metadata.domain == "render.lunar_surface_map",
                 "lunar surface map metadata should identify its domain");
@@ -874,35 +883,63 @@ int main() {
     {
         const NightSkyAtlasConfig procedural_config{
             .procedural_variation = 0.0F,
+            .formula = NightSkyAtlasFormula::V1,
         };
         const NightSkyAtlas default_atlas = generate_night_sky_atlas(procedural_config);
         require(default_atlas.extent == kNightSkyAtlasExtent && default_atlas.mip_levels == 10U,
                 "default night sky atlas should use a 512-face cubemap with mips");
 
+        const NightSkyAtlas default_formula_atlas = generate_night_sky_atlas({}, 64U);
         const NightSkyAtlas atlas = generate_night_sky_atlas(procedural_config, 64U);
         const NightSkyAtlas atlas_again = generate_night_sky_atlas(procedural_config, 64U);
         const NightSkyAtlas varied = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .procedural_variation = 3.0F,
+                .formula = NightSkyAtlasFormula::V1,
+            },
+            64U);
+        const NightSkyAtlas formula_v2 = generate_night_sky_atlas(
+            NightSkyAtlasConfig{
+                .formula = NightSkyAtlasFormula::V2,
+            },
+            64U);
+        const NightSkyAtlas formula_v2_dust_layer = generate_night_sky_atlas(
+            NightSkyAtlasConfig{
+                .layer = NightSkyLayerView::DustTau,
+                .formula = NightSkyAtlasFormula::V2,
+            },
+            64U);
+        const NightSkyAtlas formula_v2_hii_layer = generate_night_sky_atlas(
+            NightSkyAtlasConfig{
+                .layer = NightSkyLayerView::HiiEmission,
+                .formula = NightSkyAtlasFormula::V2,
             },
             64U);
         const NightSkyAtlas dust_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .layer = NightSkyLayerView::DustTau,
+                .formula = NightSkyAtlasFormula::V1,
             },
             64U);
         const NightSkyAtlas hii_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .layer = NightSkyLayerView::HiiEmission,
+                .formula = NightSkyAtlasFormula::V1,
             },
             64U);
         const NightSkyAtlas speckle_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .layer = NightSkyLayerView::Speckles,
+                .formula = NightSkyAtlasFormula::V1,
             },
             64U);
         require(atlas.extent == 64U && atlas.mip_levels == 7U,
                 "night sky atlas should use the requested power-of-two extent");
+        require(default_formula_atlas.formula == cubey::render::kDefaultNightSkyAtlasFormula,
+                "night sky atlas default formula should track the shared default");
+        require(atlas.formula == NightSkyAtlasFormula::V1 &&
+                    formula_v2.formula == NightSkyAtlasFormula::V2,
+                "night sky atlas should preserve selected formula");
         require(dust_layer.layer == NightSkyLayerView::DustTau &&
                     hii_layer.layer == NightSkyLayerView::HiiEmission &&
                     speckle_layer.layer == NightSkyLayerView::Speckles,
@@ -915,11 +952,19 @@ int main() {
                 "procedural night sky atlas variation should alter generated structure");
         require(night_sky_atlas_hash(atlas.rgba32f) != night_sky_atlas_hash(dust_layer.rgba32f),
                 "procedural diagnostic layers should differ from final output");
+        require(night_sky_atlas_hash(atlas.rgba32f) !=
+                    night_sky_atlas_hash(formula_v2.rgba32f),
+                "night sky atlas v2 formula should alter generated structure");
+        require(night_sky_atlas_hash(formula_v2.rgba32f) !=
+                    night_sky_atlas_hash(formula_v2_dust_layer.rgba32f),
+                "night sky atlas v2 diagnostic layers should differ from final output");
         cubey::procedural::validate_procedural_artifact_metadata(atlas.metadata);
         require(atlas.metadata.generator == "cubey::render::generate_night_sky_atlas",
                 "night sky atlas metadata should identify its generator");
         require(atlas.metadata.formula_version == "atmosphere-night-sky-atlas-v1",
                 "night sky atlas metadata should identify its formula version");
+        require(formula_v2.metadata.formula_version == "atmosphere-night-sky-atlas-v2",
+                "night sky atlas v2 metadata should identify its formula version");
         require(atlas.metadata.domain == "atmosphere.night_sky_atlas",
                 "night sky atlas metadata should identify its domain");
         require(atlas.metadata.seed == atlas_again.metadata.seed,
@@ -982,6 +1027,10 @@ int main() {
         const AtlasLuminanceStats dust_stats = night_sky_luminance_stats(dust_layer, 0.006F);
         const AtlasLuminanceStats hii_stats = night_sky_luminance_stats(hii_layer, 0.0004F);
         const AtlasLuminanceStats speckle_stats = night_sky_luminance_stats(speckle_layer, 0.0008F);
+        const AtlasLuminanceStats formula_v2_dust_stats =
+            night_sky_luminance_stats(formula_v2_dust_layer, 0.006F);
+        const AtlasLuminanceStats formula_v2_hii_stats =
+            night_sky_luminance_stats(formula_v2_hii_layer, 0.0004F);
         require(dust_stats.max - dust_stats.min > 0.006F,
                 "procedural dust optical depth layer should expose visible contrast");
         require(hii_stats.above_threshold > 0U &&
@@ -989,6 +1038,12 @@ int main() {
                 "procedural H II layer should be sparse and nonzero");
         require(speckle_stats.above_threshold > 0U,
                 "procedural speckle layer should contain faint dense stars");
+        require(formula_v2_dust_stats.max - formula_v2_dust_stats.min > 0.006F,
+                "procedural night sky v2 dust layer should expose visible contrast");
+        require(formula_v2_hii_stats.above_threshold > 0U &&
+                    formula_v2_hii_stats.above_threshold <
+                        formula_v2.extent * formula_v2.extent * 6U / 3U,
+                "procedural night sky v2 H II layer should be sparse and nonzero");
         const float seam_latitude = 0.035F;
         const float seam_epsilon = 0.025F;
         const float seam_a = night_sky_luminance_at(
@@ -1159,6 +1214,7 @@ int main() {
         run_config.debug_view = "moon";
         run_config.atmosphere.night_sky_mode = "camera";
         run_config.atmosphere.milky_way_layer = "dust-tau";
+        run_config.atmosphere.milky_way_formula = "v2";
         run_config.atmosphere.sun_elevation_degrees = 6.0F;
         run_config.atmosphere.sun_azimuth_degrees = 33.0F;
         run_config.atmosphere.camera_altitude_km = 2.0F;
@@ -1186,8 +1242,9 @@ int main() {
         require(config.render_view == AtmosphereRenderView::Moon,
                 "run config should select atmosphere debug view");
         require(config.night_sky.visual_mode == NightSkyVisualMode::Camera &&
-                    config.night_sky.layer == NightSkyLayerView::DustTau,
-                "run config should select night sky visual mode and layer");
+                    config.night_sky.layer == NightSkyLayerView::DustTau &&
+                    config.night_sky.formula == NightSkyAtlasFormula::V2,
+                "run config should select night sky visual mode, layer, and formula");
         require(config.sun_elevation_degrees == 6.0F && config.sun_azimuth_degrees == 33.0F &&
                     config.camera_altitude_km == 2.0F && config.mie_density_scale == 2.25F,
                 "run config atmosphere overrides should win over preset defaults");
@@ -1599,6 +1656,20 @@ int main() {
                      "atmosphere shader should include a continuous night airglow fill");
     require_contains(shader_source, "safe_horizontal_direction",
                      "atmosphere shader should guard vertical twilight vectors");
+    require_contains(atmosphere_common_source, "sky_background_sample_direction",
+                     "common atmosphere helpers should clamp sky-only no-ground background rays");
+    require_contains(shader_entry_source,
+                     "? sky_background_sample_direction(ray_direction, ray_origin, planet_center)",
+                     "atmosphere shader should remap no-ground sky-background rays near the horizon");
+    require_contains(shader_entry_source,
+                     "cubey_atmosphere_classify_sky_background_ray(\n"
+                     "                  medium, ray_origin, atmosphere_ray_direction, -1.0)",
+                     "atmosphere shader should classify the remapped sky-background ray");
+    require_contains(shader_entry_source, "celestial_horizon_visibility",
+                     "atmosphere shader should keep no-ground celestial content above the real horizon");
+    require_contains(shader_entry_source,
+                     "ignore_ground_occlusion && segment.camera_inside_atmosphere",
+                     "no-ground horizon masking should not suppress orbit-space stars");
     require_contains(shader_source, "procedural_star_radiance",
                      "atmosphere shader should include procedural stars");
     require_contains(shader_source, "bright_star_radiance",
@@ -1615,6 +1686,12 @@ int main() {
                      "atmosphere shader should weight stars by sampled magnitude");
     require_contains(shader_source, "night_object_visibility",
                      "atmosphere shader should share night object visibility");
+    require_contains(shader_entry_source,
+                     "segment.camera_inside_atmosphere\n"
+                     "            ? night_sky_radiance(atmosphere_ray_direction, sun_direction)\n"
+                     "            : space_night_sky_radiance(atmosphere_ray_direction, sun_direction)",
+                     "orbit sky rays through the atmosphere shell should use space night-sky "
+                     "visibility");
     require_contains(shader_source, "star_sample_direction",
                      "atmosphere shader should rotate star sampling through celestial space");
     require_contains(shader_source, "celestial_options",

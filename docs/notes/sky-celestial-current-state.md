@@ -82,10 +82,12 @@ inputs. It is not yet an explicit rendered body like the moon.
 
 The visible moon now has one canonical app path in migrated projects: explicit
 body geometry, phase/visibility behavior, and a generated equirectangular lunar
-surface map. The atmosphere shader keeps moon data for moonlight, star masking,
-and washout, but it no longer renders a visible moon disk in planet, standalone
-atmosphere final/debug views, or atmosphere-backed fluid views. The old
-near-side disk lunar atlas has been removed.
+surface map. The current procedural surface formula is `lunar-surface-map-v16`;
+the shared material warms the moon tint, softens daylight washout, and lowers
+unlit-side silhouette alpha. The atmosphere shader keeps moon data for
+moonlight, star masking, and washout, but it no longer renders a visible moon
+disk in planet, standalone atmosphere final/debug views, or atmosphere-backed
+fluid views. The old near-side disk lunar atlas has been removed.
 
 Forward PBR generic consumers, ocean, and reflection-probe cubemaps remain
 explicit follow-up work unless they gain their own geometry insertion point.

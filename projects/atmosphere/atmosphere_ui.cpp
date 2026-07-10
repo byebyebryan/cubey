@@ -195,6 +195,9 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
         cubey::host::imgui_enum_combo("Layer", ui.config.night_sky.layer, kNightSkyLayerViews,
                                       night_sky_layer_view_name,
                                       "Debug individual generated night-sky atlas layers.");
+        cubey::host::imgui_enum_combo("Formula", ui.config.night_sky.formula,
+                                      kNightSkyAtlasFormulas, night_sky_atlas_formula_name,
+                                      "Generated Milky Way atlas formula.");
         cubey::host::imgui_slider_float("Twilight", &ui.config.night_sky.twilight_strength, 0.0F,
                                         4.0F, "%.2f", "Brightness of the twilight band.");
         cubey::host::imgui_slider_float("Horizon warmth",

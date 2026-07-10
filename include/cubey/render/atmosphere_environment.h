@@ -48,8 +48,8 @@ struct AtmosphereEnvironmentNightSky {
     float twilight_horizon_warmth = 0.72F;
     float star_intensity = 1.0F;
     float star_density = 0.65F;
-    float milky_way_intensity = 0.75F;
-    float milky_way_contrast = 1.0F;
+    float milky_way_intensity = 1.20F;
+    float milky_way_contrast = 1.35F;
     float light_pollution = 0.0F;
     bool camera_visual_mode = false;
 };

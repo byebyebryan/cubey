@@ -274,15 +274,27 @@ surface-volume local signal without regressing surface quality.
 
 Current split:
 
-- `surface-volume`: production surface/local clouds, tuned through
+- `surface-volume`: production surface clouds, tuned through
   `projects/atmosphere` and cross-checked against `projects/cloud_ref`;
-- `surface_cloud_march.comp`: lean shared shader for the production
-  surface-volume path;
-- `cloud_march.comp`: general shared shader for aerial/orbit, far-bridge, and
-  diagnostic paths;
+- `surface_cloud_march.comp`: lean local-only reference shader for strict
+  Cloud V1 A/B captures;
+- `cloud_march.comp`: general shared shader for the production lower-sky
+  horizon handoff plus aerial/orbit, far-bridge, and diagnostic paths;
 - `experimental-aerial-orbit`: temporary high/orbit transition scaffold, not a
   fallback for surface rendering;
 - `projects/cloud_ref`: known-good narrow reference/demo that should remain
   available;
 - `projects/clouds_legacy` and git history: record of failed standalone and
   absorbed approaches, not active implementation targets.
+
+## Surface Horizon Handoff Promotion 2026-07-08
+
+The shared `surface-volume` defaults now use `clouds.distance_mode=auto` with
+`clouds.horizon_layer=true`. The local-only path is still important, but it is a
+reference fallback: use `--cloud-distance-mode local --no-cloud-horizon-layer`
+when comparing the shared shader against `projects/cloud_ref` or isolating
+near/upward local cloud behavior.
+
+This promotion is still surface-only. The handoff is a low-detail lower-sky
+continuation for surface and ocean backgrounds; it is not the aerial/orbit cloud
+solution and should not be tuned against high-oblique or satellite views.

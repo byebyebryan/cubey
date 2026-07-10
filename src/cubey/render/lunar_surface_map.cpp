@@ -218,7 +218,7 @@ struct Crater {
 
 [[nodiscard]] std::vector<Crater> generate_craters() {
     std::vector<Crater> craters;
-    craters.reserve(64U);
+    craters.reserve(88U);
     const std::array<Crater, 5> kRayCraters{
         Crater{.direction = direction_from_lon_lat(radians(-11.0F), radians(-43.0F)),
                .radius_radians = radians(4.6F),
@@ -248,7 +248,7 @@ struct Crater {
     };
     craters.insert(craters.end(), kRayCraters.begin(), kRayCraters.end());
 
-    for (std::uint32_t index = 0; index < 59U; ++index) {
+    for (std::uint32_t index = 0; index < 83U; ++index) {
         const float longitude =
             (cubey::procedural::random01(kLunarSurfaceBaseSeed, "crater longitude", index, 0U) -
              0.5F) *
@@ -259,15 +259,15 @@ struct Crater {
             0.96F);
         const float size =
             cubey::procedural::random01(kLunarSurfaceBaseSeed, "crater radius", index, 0U);
-        const float radius = radians(mix(0.55F, 3.1F, size * size));
+        const float radius = radians(mix(0.34F, 2.7F, size * size));
         const float prominence =
             cubey::procedural::random01(kLunarSurfaceBaseSeed, "crater prominence", index, 0U);
         craters.push_back(Crater{
             .direction = direction_from_lon_lat(longitude, latitude),
             .radius_radians = radius,
-            .depth = mix(0.012F, 0.040F, prominence),
-            .rim = mix(0.010F, 0.034F, prominence),
-            .ray = prominence > 0.92F ? mix(0.018F, 0.045F, prominence) : 0.0F,
+            .depth = mix(0.010F, 0.034F, prominence),
+            .rim = mix(0.009F, 0.029F, prominence),
+            .ray = prominence > 0.94F ? mix(0.014F, 0.036F, prominence) : 0.0F,
         });
     }
     return craters;
@@ -312,20 +312,21 @@ struct SurfaceSample {
     const Vec3 material = material_direction(direction);
     const float broad = fbm(material, 2.5F, "broad regolith", 5U, 0.55F);
     const float mid = fbm(material, 11.0F, "mid regolith", 4U, 0.52F);
-    const float fine = fbm(material, 44.0F, "fine regolith", 3U, 0.48F);
+    const float fine = fbm(material, 38.0F, "fine regolith", 3U, 0.46F);
     const float normal_tone = fbm(material, 4.0F, "normal-space surface tone", 5U, 0.50F) - 0.5F;
     const float subtle_disk_tone =
         smoothstep(0.25F, 0.70F, fbm(material, 0.85F, "subtle moon disk tone", 4U, 0.50F));
-    const float surface_tone_multiplier = 0.92F + subtle_disk_tone * 0.10F;
+    const float surface_tone_multiplier = 0.94F + subtle_disk_tone * 0.08F;
     const float highland_pores = ridged(material, 29.0F, "highland pores", 4U) - 0.48F;
+    const float micro_crater_flecks = ridged(material, 66.0F, "micro crater flecks", 3U) - 0.54F;
     const float mare_plains = fbm(material, 1.7F, "mare basalt plains", 4U, 0.50F);
     const float mare_mottling = fbm(material, 12.0F, "mare subtle mottling", 3U, 0.42F);
     const float highlands =
-        0.650F + broad * 0.088F + mid * 0.055F + fine * 0.030F + highland_pores * 0.032F +
-        normal_tone * 0.036F;
+        0.655F + broad * 0.086F + mid * 0.058F + fine * 0.024F + highland_pores * 0.030F +
+        micro_crater_flecks * 0.016F + normal_tone * 0.032F;
     const float mare =
-        0.255F + mare_plains * 0.032F + mare_mottling * 0.015F + fine * 0.006F +
-        normal_tone * 0.030F;
+        0.272F + mare_plains * 0.030F + mare_mottling * 0.014F + fine * 0.005F +
+        normal_tone * 0.026F;
 
     float albedo = mix(highlands, mare, mare_fill) * surface_tone_multiplier;
     float height =
@@ -336,14 +337,14 @@ struct SurfaceSample {
     for (const Crater& crater : craters) {
         const float weight = crater_weight(direction, crater);
         if (weight < 1.0F) {
-            const float crater_albedo_scale = mix(1.0F, 0.42F, mare_fill);
-            const float crater_height_scale = mix(1.0F, 0.58F, mare_coverage);
+            const float crater_albedo_scale = mix(1.0F, 0.48F, mare_fill);
+            const float crater_height_scale = mix(0.86F, 0.50F, mare_coverage);
             const float floor = 1.0F - smoothstep(0.18F, 0.82F, weight);
             const float rim =
                 smoothstep(0.62F, 0.86F, weight) * (1.0F - smoothstep(0.86F, 1.0F, weight));
             const float ejecta = 1.0F - smoothstep(0.82F, 1.0F, weight);
-            albedo += (rim * crater.rim * 0.82F - floor * crater.depth * 0.24F +
-                       ejecta * crater.rim * 0.12F) *
+            albedo += (rim * crater.rim * 0.88F - floor * crater.depth * 0.20F +
+                       ejecta * crater.rim * 0.10F) *
                       crater_albedo_scale;
             height += (rim * crater.rim - floor * crater.depth) * crater_height_scale;
             roughness += rim * 0.06F;
@@ -468,8 +469,8 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
                              surface_height[texel_index(left, y, width)];
             const float dy = surface_height[texel_index(x, down, width)] -
                              surface_height[texel_index(x, up, width)];
-            const float normal_x = std::clamp(-dx * 12.0F, -0.72F, 0.72F);
-            const float normal_y = std::clamp(-dy * 18.0F, -0.72F, 0.72F);
+            const float normal_x = std::clamp(-dx * 10.0F, -0.68F, 0.68F);
+            const float normal_y = std::clamp(-dy * 14.0F, -0.68F, 0.68F);
             const std::size_t out = texel_index(x, y, width) * 4U;
             current[out] = pack_unorm(albedo[texel_index(x, y, width)]);
             current[out + 1U] = pack_signed_normal(normal_x);
@@ -497,7 +498,7 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
         cubey::procedural::make_procedural_artifact_identity(
             "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v15", "render.lunar_surface_map",
+            "lunar-surface-map-v16", "render.lunar_surface_map",
             cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
             cubey::procedural::ProceduralDomainSpace::Atlas),
         cubey::procedural::ProceduralArtifactKind::Texture2D,

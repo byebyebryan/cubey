@@ -69,16 +69,28 @@ void main() {
     vec3 sun_direction = normalize(atmosphere.sun_direction_radius.xyz);
     CubeyAtmosphereMedium medium = atmosphere_medium(planet_center);
     bool ignore_ground_occlusion = atmosphere.render_options.x >= 1.5;
+    vec3 atmosphere_ray_direction =
+        ignore_ground_occlusion
+            ? sky_background_sample_direction(ray_direction, ray_origin, planet_center)
+            : ray_direction;
     CubeyAtmosphereRaySegment segment =
         ignore_ground_occlusion
-            ? cubey_atmosphere_classify_sky_background_ray(medium, ray_origin, ray_direction, -1.0)
-            : cubey_atmosphere_classify_ray(medium, ray_origin, ray_direction, -1.0);
+            ? cubey_atmosphere_classify_sky_background_ray(
+                  medium, ray_origin, atmosphere_ray_direction, -1.0)
+            : cubey_atmosphere_classify_ray(medium, ray_origin, atmosphere_ray_direction, -1.0);
+    float celestial_horizon_visibility =
+        (ignore_ground_occlusion && segment.camera_inside_atmosphere)
+            ? smoothstep(-0.015, 0.040,
+                         dot(ray_direction, atmosphere_camera_up(ray_origin, planet_center)))
+            : 1.0;
     if (!segment.hit_atmosphere) {
-        vec3 space_color = (render_sun_disk ? sun_disk_luminance(ray_origin, ray_direction,
-                                                                 planet_center)
+        vec3 space_color = (render_sun_disk ? sun_disk_luminance(ray_origin, atmosphere_ray_direction,
+                                                                 planet_center) *
+                                                  celestial_horizon_visibility
                                             : vec3(0.0)) +
-                           (render_night_sky ? space_night_sky_radiance(ray_direction,
-                                                                         sun_direction)
+                           (render_night_sky ? space_night_sky_radiance(atmosphere_ray_direction,
+                                                                         sun_direction) *
+                                                    celestial_horizon_visibility
                                              : vec3(0.0));
         out_color = vec4(space_color, 1.0);
         return;
@@ -89,15 +101,22 @@ void main() {
     bool shade_ground = hit_ground && !sky_only;
 
     CubeyAtmosphereSample atmosphere_sample = integrate_atmosphere(
-        ray_origin, ray_direction, segment.start, segment.end, planet_center);
+        ray_origin, atmosphere_ray_direction, segment.start, segment.end, planet_center);
+    vec3 night_sky_radiance_value =
+        segment.camera_inside_atmosphere
+            ? night_sky_radiance(atmosphere_ray_direction, sun_direction)
+            : space_night_sky_radiance(atmosphere_ray_direction, sun_direction);
     vec3 night_sky = (hit_ground || !render_night_sky)
         ? vec3(0.0)
-        : night_sky_radiance(ray_direction, sun_direction) * atmosphere_sample.transmittance;
+        : night_sky_radiance_value * atmosphere_sample.transmittance *
+              celestial_horizon_visibility;
     vec3 sun_disk = (hit_ground || !render_sun_disk) ? vec3(0.0) :
-        sun_disk_luminance(ray_origin, ray_direction, planet_center);
+        sun_disk_luminance(ray_origin, atmosphere_ray_direction, planet_center) *
+            celestial_horizon_visibility;
     vec3 color = atmosphere_sample.color + sun_disk + night_sky;
     if (shade_ground) {
-        color += ground_radiance(ray_origin, ray_direction, planet_center, segment.ground_t) *
+        color += ground_radiance(ray_origin, atmosphere_ray_direction, planet_center,
+                                 segment.ground_t) *
                  atmosphere_sample.transmittance;
     }
 
@@ -112,7 +131,8 @@ void main() {
     } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_SUN_DISK) {
         color = sun_disk;
     } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_AERIAL_PERSPECTIVE) {
-        color = render_aerial_perspective_debug(ray_origin, ray_direction, planet_center);
+        color = render_aerial_perspective_debug(ray_origin, atmosphere_ray_direction,
+                                                planet_center);
     } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_NIGHT_SKY) {
         color = night_sky;
     }

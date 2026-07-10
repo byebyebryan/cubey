@@ -133,6 +133,7 @@ enum class RunConfigOptionId {
     AtmosphereNightSkyMode,
     AtmosphereGroundMode,
     AtmosphereMilkyWayLayer,
+    AtmosphereMilkyWayFormula,
     AtmosphereSunElevation,
     AtmosphereSunAzimuth,
     AtmosphereCameraAltitude,
