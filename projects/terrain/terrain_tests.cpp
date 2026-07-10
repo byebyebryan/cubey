@@ -1,5 +1,6 @@
 #include "terrain_export.h"
 #include "terrain_hydrology.h"
+#include "terrain_landscape_graph.h"
 #include "terrain_mesh.h"
 #include "terrain_patch.h"
 #include "terrain_visualization.h"
@@ -221,6 +222,82 @@ void test_flow_area_is_conserved() {
     const double error = std::abs(result.terminal_outflow_area_m2 - result.total_input_area_m2);
     require(error <= result.total_input_area_m2 * 0.00001,
             "fractional routing should conserve contributed area");
+}
+
+void test_landscape_graph_breaches_depressions_and_conserves_area() {
+    cubey::procedural::ScalarField2D height = synthetic_field(33U, 100.0F);
+    for (std::uint32_t y = 0U; y < 33U; ++y) {
+        for (std::uint32_t x = 0U; x < 33U; ++x) {
+            const float dx = static_cast<float>(x) - 16.0F;
+            const float dy = static_cast<float>(y) - 16.0F;
+            height.at(x, y) = 1000.0F - std::sqrt((dx * dx) + (dy * dy)) * 10.0F;
+        }
+    }
+    height.at(16U, 16U) = -500.0F;
+    const cubey::projects::terrain::TerrainLandscapeGraph graph =
+        cubey::projects::terrain::build_terrain_landscape_graph(height, 9012U, 0U);
+    require(graph.breach_mask.at(16U, 16U) == 1.0F,
+            "landscape graph should identify the enclosed depression route");
+    require(graph.unresolved_sink_count == 0U,
+            "landscape graph should route every interior sample to a boundary");
+    const double error = std::abs(graph.terminal_outflow_area_m2 - graph.total_input_area_m2);
+    require(error <= graph.total_input_area_m2 * 0.00001,
+            "landscape river trees should conserve drainage area");
+}
+
+void test_landscape_graph_is_deterministic_and_seed_sensitive() {
+    cubey::procedural::ScalarField2D height = synthetic_field(33U, 100.0F);
+    for (std::uint32_t y = 0U; y < 33U; ++y) {
+        for (std::uint32_t x = 0U; x < 33U; ++x) {
+            height.at(x, y) = 500.0F - static_cast<float>(x + y) * 2.0F;
+        }
+    }
+    const auto first = cubey::projects::terrain::build_terrain_landscape_graph(height, 9012U, 0U);
+    const auto repeat = cubey::projects::terrain::build_terrain_landscape_graph(height, 9012U, 0U);
+    const auto changed =
+        cubey::projects::terrain::build_terrain_landscape_graph(height, 12345U, 0U);
+    require(first.receiver == repeat.receiver,
+            "landscape receiver choices should be deterministic");
+    require(first.receiver != changed.receiver,
+            "landscape receiver choices should consume the world seed");
+}
+
+void test_landscape_multigrid_resampling_preserves_constant_fields() {
+    cubey::procedural::ScalarField2D field = synthetic_field(33U, 50.0F);
+    field.fill(123.0F);
+    const cubey::procedural::ScalarField2D downsampled =
+        cubey::projects::terrain::downsample_terrain_landscape_field(field);
+    require(downsampled.desc().width == 17U && downsampled.desc().height == 17U &&
+                downsampled.desc().cell_size == 100.0F,
+            "landscape downsampling should preserve extent with doubled spacing");
+    const cubey::procedural::ScalarField2D upsampled =
+        cubey::projects::terrain::upsample_terrain_landscape_field(downsampled, 9012U, 0U);
+    require(cubey::procedural::same_grid_desc(field.desc(), upsampled.desc()),
+            "landscape upsampling should restore the source grid");
+    for (const float value : upsampled.values()) {
+        require_near(value, 123.0F, 0.0001F,
+                     "landscape multigrid should preserve a constant field");
+    }
+}
+
+void test_landscape_upsampling_jitter_is_deterministic() {
+    cubey::procedural::ScalarField2D field = synthetic_field(17U, 100.0F);
+    for (std::uint32_t y = 0U; y < 17U; ++y) {
+        for (std::uint32_t x = 0U; x < 17U; ++x) {
+            field.at(x, y) = static_cast<float>((x * x) + (y * 3U));
+        }
+    }
+    const auto first = cubey::projects::terrain::upsample_terrain_landscape_field(field, 9012U, 1U);
+    const auto repeat =
+        cubey::projects::terrain::upsample_terrain_landscape_field(field, 9012U, 1U);
+    const auto changed =
+        cubey::projects::terrain::upsample_terrain_landscape_field(field, 12345U, 1U);
+    require(first.values().size() == repeat.values().size(),
+            "landscape upsampling should preserve deterministic dimensions");
+    require(std::equal(first.values().begin(), first.values().end(), repeat.values().begin()),
+            "landscape upsampling jitter should be deterministic");
+    require(!std::equal(first.values().begin(), first.values().end(), changed.values().begin()),
+            "landscape upsampling jitter should consume the world seed");
 }
 
 void test_patch_determinism_and_seed_variation() {
@@ -530,6 +607,10 @@ int main() {
         test_monotonic_plane_routes_downhill();
         test_branching_surface_increases_strahler_order();
         test_flow_area_is_conserved();
+        test_landscape_graph_breaches_depressions_and_conserves_area();
+        test_landscape_graph_is_deterministic_and_seed_sensitive();
+        test_landscape_multigrid_resampling_preserves_constant_fields();
+        test_landscape_upsampling_jitter_is_deterministic();
         test_scalar_export_and_manifest();
         test_raw_scalar_export_is_little_endian_row_major();
         test_fixed_field_display_ranges();

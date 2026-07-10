@@ -1,5 +1,6 @@
 add_library(cubey_project_terrain_core STATIC
     terrain_hydrology.cpp
+    terrain_landscape_graph.cpp
     terrain_patch.cpp
     terrain_visualization.cpp
     upland_broad_noise_source.cpp
