@@ -1,6 +1,7 @@
 add_library(cubey_project_terrain_core STATIC
     terrain_hydrology.cpp
     terrain_patch.cpp
+    terrain_visualization.cpp
     upland_mountain_source.cpp
 )
 target_include_directories(
@@ -104,6 +105,8 @@ if (BUILD_TESTING)
         COMMAND cubey_project_terrain_generate
             --grid-size 17
             --terrain-seed 42
+            --terrain-origin-x -512
+            --terrain-origin-z 256
             --terrain-output-dir "${CUBEY_TERRAIN_GENERATE_TEST_OUTPUT}"
     )
     set_tests_properties(

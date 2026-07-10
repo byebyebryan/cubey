@@ -1,11 +1,14 @@
 #include "terrain_export.h"
 
+#include "terrain_visualization.h"
+
 #include <cubey/core/jobs.h>
 #include <cubey/procedural/operators.h>
 
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -30,25 +33,8 @@ struct Rgb {
     return static_cast<std::uint8_t>(std::round(cubey::procedural::saturate(value) * 255.0F));
 }
 
-[[nodiscard]] float normalized_value(float value, float low, float high) {
-    if (!(high > low)) {
-        return 0.5F;
-    }
-    return cubey::procedural::saturate((value - low) / (high - low));
-}
-
-[[nodiscard]] bool is_unit_field(std::string_view name) {
-    return name == kTerrainFieldMountainSupport || name.ends_with("_mask") ||
-           name == "discharge_proxy";
-}
-
-[[nodiscard]] bool is_signed_field(std::string_view name) {
-    return name == kTerrainFieldCurvature || name == "flow_direction_x" ||
-           name == "flow_direction_z";
-}
-
-[[nodiscard]] Rgb signed_color(float value, float extent) {
-    const float normalized = extent > 0.0F ? std::clamp(value / extent, -1.0F, 1.0F) : 0.0F;
+[[nodiscard]] Rgb diverging_color(float unit_value) {
+    const float normalized = (unit_value * 2.0F) - 1.0F;
     if (normalized < 0.0F) {
         const float t = -normalized;
         return {
@@ -80,16 +66,110 @@ struct Rgb {
     };
 }
 
+[[nodiscard]] nlohmann::json distribution_json(
+    const cubey::procedural::ScalarFieldDistribution& distribution) {
+    nlohmann::json result = stats_json(distribution.stats);
+    result["p01"] = distribution.p01;
+    result["p05"] = distribution.p05;
+    result["p50"] = distribution.p50;
+    result["p95"] = distribution.p95;
+    result["p99"] = distribution.p99;
+    return result;
+}
+
+[[nodiscard]] nlohmann::json display_json(const TerrainFieldDisplaySpec& display) {
+    return {
+        {"low", display.low},
+        {"high", display.high},
+        {"scale", terrain_field_display_scale_name(display.scale)},
+        {"range_scope", display.patch_relative ? "patch" : "fixed"},
+    };
+}
+
+[[nodiscard]] double coverage_above(const cubey::procedural::ScalarField2D& field,
+                                    float threshold) {
+    const std::size_t count = static_cast<std::size_t>(std::count_if(
+        field.values().begin(), field.values().end(),
+        [threshold](float value) { return value > threshold; }));
+    return field.sample_count() > 0U
+               ? static_cast<double>(count) / static_cast<double>(field.sample_count())
+               : 0.0;
+}
+
+[[nodiscard]] nlohmann::json review_metrics_json(const TerrainPatchProduct& product) {
+    const cubey::procedural::ScalarField2D& fill =
+        product.fields.field(kTerrainFieldRoutingFillDeltaM);
+    const cubey::procedural::ScalarField2D& source =
+        product.fields.field(kTerrainFieldSourceHeightM);
+    const double cell_area = static_cast<double>(fill.desc().cell_size) * fill.desc().cell_size;
+    double fill_volume = 0.0;
+    for (const float value : fill.values()) {
+        fill_volume += static_cast<double>(std::max(value, 0.0F)) * cell_area;
+    }
+
+    constexpr std::size_t kOrientationBinCount = 16U;
+    constexpr float kPi = 3.14159265358979323846F;
+    std::array<double, kOrientationBinCount> orientation_bins{};
+    double orientation_weight = 0.0;
+    for (std::uint32_t y = 1U; y + 1U < source.desc().height; ++y) {
+        for (std::uint32_t x = 1U; x + 1U < source.desc().width; ++x) {
+            const float dx = (source.at(x + 1U, y) - source.at(x - 1U, y)) /
+                             (2.0F * source.desc().cell_size);
+            const float dy = (source.at(x, y + 1U) - source.at(x, y - 1U)) /
+                             (2.0F * source.desc().cell_size);
+            const float magnitude = std::sqrt((dx * dx) + (dy * dy));
+            if (magnitude < 0.01F) {
+                continue;
+            }
+            float angle = std::atan2(dy, dx);
+            if (angle < 0.0F) {
+                angle += kPi;
+            }
+            if (angle >= kPi) {
+                angle -= kPi;
+            }
+            const std::size_t bin = std::min(
+                static_cast<std::size_t>((angle / kPi) * kOrientationBinCount),
+                kOrientationBinCount - 1U);
+            const double weight = std::min(static_cast<double>(magnitude), 2.0);
+            orientation_bins[bin] += weight;
+            orientation_weight += weight;
+        }
+    }
+    if (orientation_weight > 0.0) {
+        for (double& value : orientation_bins) {
+            value /= orientation_weight;
+        }
+    }
+    const double max_orientation =
+        *std::max_element(orientation_bins.begin(), orientation_bins.end());
+
+    return {
+        {"routing_fill_coverage_gt_1m", coverage_above(fill, 1.0F)},
+        {"routing_fill_coverage_gt_10m", coverage_above(fill, 10.0F)},
+        {"routing_fill_coverage_gt_50m", coverage_above(fill, 50.0F)},
+        {"routing_fill_volume_m3", fill_volume},
+        {"source_gradient_orientation_bins", orientation_bins},
+        {"source_gradient_anisotropy", max_orientation * kOrientationBinCount},
+    };
+}
+
 [[nodiscard]] nlohmann::json manifest_json(const TerrainPatchProduct& product) {
     const cubey::procedural::PatchDomain2D& domain = product.request.domain;
     nlohmann::json fields = nlohmann::json::object();
     for (const TerrainFieldSummary& field : product.summary.fields) {
-        nlohmann::json entry = stats_json(field.stats);
+        const cubey::procedural::ScalarField2D& values = product.fields.field(field.name);
+        nlohmann::json entry =
+            distribution_json(cubey::procedural::summarize_scalar_field_distribution(values));
         entry["file"] = field.name + ".png";
+        entry["display"] = display_json(terrain_field_display_spec(field.name, values));
+        if (field.name == kTerrainFieldDischargeProxy) {
+            entry["semantic_scope"] = "patch-relative-legacy";
+        }
         fields[field.name] = std::move(entry);
     }
     return {
-        {"schema", "cubey.terrain.patch.v1"},
+        {"schema", "cubey.terrain.patch.v2"},
         {"recipe_id", product.request.recipe_id},
         {"generator_revision", product.request.generator_revision},
         {"seed", domain.seed},
@@ -113,6 +193,7 @@ struct Rgb {
         {"field_count", product.fields.field_count()},
         {"content_hash", product.summary.content_hash},
         {"content_hash_hex", hex_u64(product.summary.content_hash)},
+        {"review_metrics", review_metrics_json(product)},
         {"fields", std::move(fields)},
     };
 }
@@ -122,22 +203,16 @@ struct Rgb {
 std::vector<std::uint8_t>
 render_terrain_scalar_field_rgba8(const cubey::procedural::ScalarField2D& field,
                                   std::string_view field_name) {
-    const cubey::procedural::ScalarFieldStats stats = field.summarize();
-    const float signed_extent = std::max(std::abs(stats.min), std::abs(stats.max));
+    const TerrainFieldDisplaySpec display = terrain_field_display_spec(field_name, field);
     std::vector<std::uint8_t> pixels(field.sample_count() * 4U, 255U);
     for (std::uint32_t y = 0; y < field.desc().height; ++y) {
         const std::uint32_t source_y = field.desc().height - 1U - y;
         for (std::uint32_t x = 0; x < field.desc().width; ++x) {
             const float value = field.at(x, source_y);
-            Rgb color{};
-            if (is_signed_field(field_name)) {
-                color = signed_color(value, signed_extent);
-            } else {
-                const float t = is_unit_field(field_name)
-                                    ? cubey::procedural::saturate(value)
-                                    : normalized_value(value, stats.min, stats.max);
-                color = {.r = t, .g = t, .b = t};
-            }
+            const float t = terrain_field_display_value(value, display);
+            const Rgb color = display.palette == TerrainFieldDisplayPalette::Diverging
+                                  ? diverging_color(t)
+                                  : Rgb{.r = t, .g = t, .b = t};
             const std::size_t index = (static_cast<std::size_t>(y) * field.desc().width + x) * 4U;
             pixels[index + 0U] = byte(color.r);
             pixels[index + 1U] = byte(color.g);

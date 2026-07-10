@@ -83,6 +83,12 @@ struct TerrainGenerateConfig {
         } else if (arg == "--terrain-cell-size") {
             config.request.domain.interior_grid.cell_size =
                 parse_float(require_value(index, argc, argv, arg), arg);
+        } else if (arg == "--terrain-origin-x") {
+            config.request.domain.interior_grid.origin_x =
+                parse_float(require_value(index, argc, argv, arg), arg);
+        } else if (arg == "--terrain-origin-z") {
+            config.request.domain.interior_grid.origin_y =
+                parse_float(require_value(index, argc, argv, arg), arg);
         } else if (arg == "--terrain-seed") {
             config.request.domain.seed = parse_u64(require_value(index, argc, argv, arg), arg);
         } else if (arg == "--terrain-recipe") {

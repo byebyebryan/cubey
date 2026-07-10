@@ -2,6 +2,7 @@
 #include "terrain_hydrology.h"
 #include "terrain_mesh.h"
 #include "terrain_patch.h"
+#include "terrain_visualization.h"
 #include "upland_mountain_source.h"
 
 #include <cubey/procedural/field_2d.h>
@@ -310,6 +311,8 @@ void test_scalar_export_and_manifest() {
         cubey::projects::terrain::default_terrain_patch_request();
     request.domain.interior_grid.width = 17U;
     request.domain.interior_grid.height = 17U;
+    request.domain.interior_grid.origin_x = -512.0F;
+    request.domain.interior_grid.origin_y = 256.0F;
     const cubey::projects::terrain::TerrainPatchProduct product =
         cubey::projects::terrain::generate_terrain_patch(request);
     const std::filesystem::path output_dir =
@@ -326,8 +329,8 @@ void test_scalar_export_and_manifest() {
     require(static_cast<bool>(manifest_input), "terrain export should write a manifest");
     nlohmann::json manifest;
     manifest_input >> manifest;
-    require(manifest.at("schema") == "cubey.terrain.patch.v1",
-            "terrain manifest should use the v1 schema");
+    require(manifest.at("schema") == "cubey.terrain.patch.v2",
+            "terrain manifest should use the v2 schema");
     require(manifest.at("field_count") == product.fields.field_count(),
             "terrain manifest should report every product field");
     require(manifest.at("content_hash") == product.summary.content_hash,
@@ -335,7 +338,47 @@ void test_scalar_export_and_manifest() {
     require(manifest.at("process_halo_samples") ==
                 cubey::projects::terrain::kTerrainProcessHaloSamples,
             "terrain manifest should report the process halo");
+    require(manifest.at("interior_grid").at("origin_x_m") == -512.0F &&
+                manifest.at("interior_grid").at("origin_z_m") == 256.0F,
+            "terrain manifest should report regional sampling origins");
+    const nlohmann::json& source_entry =
+        manifest.at("fields").at(cubey::projects::terrain::kTerrainFieldSourceHeightM);
+    require(source_entry.contains("p05") && source_entry.contains("p50") &&
+                source_entry.contains("p95"),
+            "terrain manifest should report field distributions");
+    require(source_entry.at("display").at("low") == 0.0F &&
+                source_entry.at("display").at("high") == 2500.0F &&
+                source_entry.at("display").at("range_scope") == "fixed",
+            "terrain height exports should use a fixed physical display range");
+    require(manifest.at("review_metrics").contains("source_gradient_anisotropy") &&
+                manifest.at("review_metrics").contains("routing_fill_coverage_gt_50m"),
+            "terrain manifest should report morphology review metrics");
     std::filesystem::remove_all(output_dir);
+}
+
+void test_fixed_field_display_ranges() {
+    cubey::procedural::ScalarField2D first({.width = 3U, .height = 1U, .cell_size = 32.0F},
+                                           0.0F);
+    cubey::procedural::ScalarField2D second({.width = 3U, .height = 1U, .cell_size = 32.0F},
+                                            0.0F);
+    first.at(0U, 0U) = 0.0F;
+    first.at(1U, 0U) = 1.0F;
+    first.at(2U, 0U) = 2.0F;
+    second.at(0U, 0U) = 0.5F;
+    second.at(1U, 0U) = 1.0F;
+    second.at(2U, 0U) = 2.5F;
+    const cubey::projects::terrain::TerrainFieldDisplaySpec first_display =
+        cubey::projects::terrain::terrain_field_display_spec(
+            cubey::projects::terrain::kTerrainFieldSlope, first);
+    const cubey::projects::terrain::TerrainFieldDisplaySpec second_display =
+        cubey::projects::terrain::terrain_field_display_spec(
+            cubey::projects::terrain::kTerrainFieldSlope, second);
+    require(first_display.low == second_display.low && first_display.high == second_display.high &&
+                !first_display.patch_relative && !second_display.patch_relative,
+            "known terrain fields should not derive display ranges from patch extrema");
+    require_near(cubey::projects::terrain::terrain_field_display_value(1.0F, first_display),
+                 cubey::projects::terrain::terrain_field_display_value(1.0F, second_display),
+                 0.0F, "equal physical values should map to equal display values");
 }
 
 void test_terrain_mesh_consumes_product_fields() {
@@ -383,6 +426,7 @@ int main() {
         test_branching_surface_increases_strahler_order();
         test_flow_area_is_conserved();
         test_scalar_export_and_manifest();
+        test_fixed_field_display_ranges();
         test_terrain_mesh_consumes_product_fields();
         std::cout << "terrain_tests: ok\n";
         return EXIT_SUCCESS;
