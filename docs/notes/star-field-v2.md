@@ -6,10 +6,15 @@ This note records the accepted Star Field V2 pass for the shared atmosphere
 background. The field remains procedural and analytic so every atmosphere
 consumer inherits it without a separate render pass or authored sky asset.
 
-The pre-V2 field already models bright, naked-eye, and faint populations,
+The pre-V2 cube-face implementation was removed rather than retained behind a
+runtime selector. It remains only in Git history. A source-contract test rejects
+the old `star_cube_uv` entry point so the parallel implementation cannot return
+accidentally.
+
+The pre-V2 field already modeled bright, naked-eye, and faint populations,
 magnitude falloff, color-temperature variation, Galactic density, sidereal
 rotation, surface extinction, moon washout, and a separate space path. Its main
-problems are mechanical and diagnostic:
+problems were mechanical and diagnostic:
 
 - stars are generated on independently seeded cube faces, so face boundaries
   are not continuous or equal-area;
@@ -37,6 +42,11 @@ It isolates stars from airglow and Milky Way, sweeps camera yaw, compares human
 and camera response, checks surface pollution and moon washout, and includes
 planet surface/orbit integration. `DEEP=1` also records a slow sidereal-motion
 video when video capture is available.
+
+`PLACEMENT_REVIEW=1` adds a nested `placement-review/` pack. It uses ImageMagick
+to dilate isolated star pixels after capture, with `PLACEMENT_RADIUS=2` as the
+default. This makes placement and density legible in contact sheets without
+changing shader point size, runtime configuration, or common rendering.
 
 The isolated pre-V2 baseline is under `outputs/star-field-v2-baseline/`. At
 1920x1080 it confirms that human and camera rows are effectively identical,
@@ -67,18 +77,21 @@ The shader resolves stars in angular space against a shared per-pixel footprint
 and samples at most the current spherical cell plus one neighbor per axis. The
 longitude seam wraps periodically and pole crossings reflect into the opposite
 longitude hemisphere. Galactic density is evaluated once per pixel and remains
-a population bias rather than a second visible Milky Way layer.
+a population bias rather than a second visible Milky Way layer. A `2.4` display
+gain keeps that subpixel energy readable in SDR captures while the existing star
+intensity control remains the user-facing scale.
 
 Celestial content now retains the physical camera ray when the atmosphere
 background path repairs horizon rays for scattering. This prevents the horizon
 repair from stretching stars radially in orbital views while leaving the
 atmosphere classifier and transmittance path unchanged.
 
-The final full-resolution review is under `outputs/star-field-v2-final/`. It
-contains the surface response matrix, yaw sweep, planet surface/orbit checks,
-and a 240-frame sidereal-motion capture. Review found no directional seam or
-lattice, the human/camera distinction remains controlled, pollution and moon
-washout suppress the surface field, and orbital stars remain round.
+The final full-resolution review is under
+`outputs/star-field-v2-final-readable/`. It contains the surface response
+matrix, yaw sweep, planet surface/orbit checks, and a 240-frame sidereal-motion
+capture. Review found no directional seam or lattice, the human/camera
+distinction remains controlled, pollution and moon washout suppress the surface
+field, and orbital stars remain round.
 
 `projects/atmosphere/profile_star_field.sh` owns the repeatable isolated timing
 review. The accepted 1920x1080, 600-frame, three-repeat run is under

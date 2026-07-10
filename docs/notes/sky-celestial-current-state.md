@@ -1,8 +1,9 @@
 # Sky and Celestial Current State
 
-This note captures the starting context for the `sky-rendering` worktree before
-new sky, sun, moon, stars, or Milky Way feature work. It is an orientation and
-cleanup checklist, not a final architecture document.
+This note records the accepted shared sky/celestial checkpoint after the Moon,
+Milky Way, and Star Field V2 passes. It is the current routing guide for visible
+sky ownership and deferred feature boundaries; historical worktree plans and
+capture reviews remain separate notes.
 
 ## Current Ownership
 
@@ -123,11 +124,10 @@ physical exposure calibration, eclipses, and real ephemeris remain deferred.
 - Legacy sky-frame captures remain useful as historical references, but runtime
   comparison now happens through the unified path and atmosphere-mode controls.
 
-## Planet GUI Issues Observed 2026-06-24
+## Planet Issues Observed 2026-06-24
 
-These were observed interactively in `projects/planet` after the
-`sky-rendering` merge. They are tracked here so fixed and remaining issues stay
-separate.
+These were observed interactively in `projects/planet` during unified sky
+integration. They are tracked here so fixed and remaining issues stay separate.
 
 - The low-surface twilight black band was addressed by a planet-surface
   horizon-fill pass after physical aerial perspective. A 2026-06-28 recapture
@@ -169,15 +169,28 @@ Completed:
 Still deferred until dedicated feature work:
 
 - moving the sun to explicit body geometry;
-- replacing the procedural stars or Milky Way with catalog or panorama data;
 - starting a LUT-backed atmosphere rewrite;
-- adding eclipses or real ephemeris.
+- adding eclipses or real ephemeris;
 - treating planet-scale aerial/orbit clouds as production-ready.
 
-## Suggested Worktree Sequence
+Catalog or panorama-backed night-sky data is not a pending cleanup item. The
+accepted runtime direction remains deterministic procedural stars and Milky Way;
+an authored-data alternative would be a separate product decision.
 
-1. Documentation cleanup and current-state alignment.
-2. Focused build/test/capture baseline for atmosphere and planet sky paths.
-3. Small ownership cleanup if tests expose duplicated or stale plumbing.
-4. Visual iteration in `projects/atmosphere`.
-5. Integrated validation in `projects/planet`.
+## Current Feature Boundaries
+
+The original `sky-rendering` worktree sequence is complete. Moon V2, Milky Way
+V2, and Star Field V2 are accepted baselines on `main`; future changes should
+preserve their focused capture packs instead of reopening the removed V1 paths.
+
+The next sky-level changes are independent feature tracks rather than cleanup
+prerequisites:
+
+1. Keep explicit sun-body geometry separate from atmosphere LUT work; either can
+   proceed without changing celestial state ownership.
+2. Treat a LUT-backed atmosphere, physical exposure calibration, eclipses, and
+   real ephemeris as dedicated research/implementation batches.
+3. Use `projects/atmosphere` for focused surface/night-sky review and
+   `projects/planet` for integrated surface/orbit validation.
+4. Keep aerial/orbit cloud rendering out of the accepted surface-cloud and
+   celestial checkpoints until it has its own production batch.
