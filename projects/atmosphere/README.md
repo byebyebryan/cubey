@@ -65,6 +65,7 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
 projects/atmosphere/capture_milky_way_layers.sh outputs/atmosphere-milky-way-layers
 projects/atmosphere/capture_star_field_review.sh outputs/atmosphere-star-field-review
+PLACEMENT_REVIEW=1 projects/atmosphere/capture_star_field_review.sh outputs/atmosphere-star-field-review
 projects/atmosphere/profile_star_field.sh outputs/perf-star-field
 projects/atmosphere/capture_atmosphere_background_horizon.sh outputs/atmosphere-background-horizon
 projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review

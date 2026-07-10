@@ -9,6 +9,21 @@ WIDTH="${WIDTH:-1920}"
 HEIGHT="${HEIGHT:-1080}"
 FRAMES="${FRAMES:-2}"
 DEEP="${DEEP:-0}"
+PLACEMENT_REVIEW="${PLACEMENT_REVIEW:-0}"
+PLACEMENT_RADIUS="${PLACEMENT_RADIUS:-2}"
+
+if [[ "${PLACEMENT_REVIEW}" != "0" && "${PLACEMENT_REVIEW}" != "1" ]]; then
+    printf 'PLACEMENT_REVIEW must be 0 or 1\n' >&2
+    exit 2
+fi
+if [[ "${PLACEMENT_REVIEW}" == "1" && ! "${PLACEMENT_RADIUS}" =~ ^[1-9][0-9]*$ ]]; then
+    printf 'PLACEMENT_RADIUS must be a positive integer\n' >&2
+    exit 2
+fi
+if [[ "${PLACEMENT_REVIEW}" == "1" ]] && ! command -v magick >/dev/null 2>&1; then
+    printf 'PLACEMENT_REVIEW requires ImageMagick (magick)\n' >&2
+    exit 2
+fi
 
 mkdir -p "${OUT_DIR}"
 
@@ -16,6 +31,8 @@ MANIFEST="${OUT_DIR}/manifest.tsv"
 INDEX="${OUT_DIR}/index.md"
 CAPTURE_FILES=()
 CAPTURE_LABELS=()
+PLACEMENT_FILES=()
+PLACEMENT_LABELS=()
 
 printf 'file\ttitle\tgroup\targs\n' >"${MANIFEST}"
 {
@@ -44,6 +61,10 @@ record_capture() {
         >>"${INDEX}"
     CAPTURE_FILES+=("${OUT_DIR}/${name}.png")
     CAPTURE_LABELS+=("${title}")
+    if [[ "${group}" != "integration" ]]; then
+        PLACEMENT_FILES+=("${OUT_DIR}/${name}.png")
+        PLACEMENT_LABELS+=("${title}")
+    fi
 }
 
 atmosphere_base=(
@@ -97,6 +118,45 @@ if command -v magick >/dev/null 2>&1; then
     done
     magick montage "${montage_inputs[@]}" -geometry 512x288+8+26 -tile 3x \
         "${OUT_DIR}/contact-sheet.png"
+fi
+
+if [[ "${PLACEMENT_REVIEW}" == "1" ]]; then
+    placement_dir="${OUT_DIR}/placement-review"
+    placement_manifest="${placement_dir}/manifest.tsv"
+    placement_index="${placement_dir}/index.md"
+    placement_montage_inputs=()
+    mkdir -p "${placement_dir}"
+    printf 'file\tsource\ttitle\tradius_px\n' >"${placement_manifest}"
+    {
+        printf '# Enlarged Star Placement Review\n\n'
+        printf 'This diagnostic dilates isolated star captures by `%s` pixels in post.\n' \
+            "${PLACEMENT_RADIUS}"
+        printf 'It does not change runtime star size, placement, or rendering.\n\n'
+        printf '| Capture | Source |\n'
+        printf '|---|---|\n'
+    } >"${placement_index}"
+
+    for index in "${!PLACEMENT_FILES[@]}"; do
+        source_file="${PLACEMENT_FILES[${index}]}"
+        source_name="$(basename "${source_file}")"
+        placement_file="${placement_dir}/${source_name}"
+        magick "${source_file}" -alpha off -morphology Dilate "Disk:${PLACEMENT_RADIUS}" \
+            "${placement_file}"
+        placement_montage_inputs+=("-label" "${PLACEMENT_LABELS[${index}]}" \
+            "${placement_file}")
+        printf '%s\t../%s\t%s\t%s\n' "${source_name}" "${source_name}" \
+            "${PLACEMENT_LABELS[${index}]}" "${PLACEMENT_RADIUS}" >>"${placement_manifest}"
+        printf '| [%s](%s) | [source](../%s) |\n' "${PLACEMENT_LABELS[${index}]}" \
+            "${source_name}" "${source_name}" >>"${placement_index}"
+    done
+
+    magick montage "${placement_montage_inputs[@]}" -geometry 512x288+8+26 -tile 3x \
+        "${placement_dir}/contact-sheet.png"
+    {
+        printf '\n## Placement Review\n\n'
+        printf '[Open the post-enlarged placement contact sheet]'
+        printf '(placement-review/contact-sheet.png). Runtime rendering is unchanged.\n'
+    } >>"${INDEX}"
 fi
 
 if [[ "${DEEP}" == "1" ]]; then
